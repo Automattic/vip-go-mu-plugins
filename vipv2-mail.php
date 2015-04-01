@@ -1,5 +1,13 @@
 <?php
 
+/*
+Plugin Name: VIPv2 Mail
+Description: Routes mail via Automattic mail servers
+Author: Automattic
+Version: 1.0
+License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+*/
+
 class VIPV2_SMTP {
 	function init() {
 		add_action( 'phpmailer_init', array( 'VIPV2_SMTP', 'phpmailer_init' ) );

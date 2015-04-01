@@ -1,4 +1,11 @@
 <?php
+/*
+Plugin Name: VIPv2 Hosting Miscellaneous
+Description: Handles CSS and JS concatenation, and Nginx compatibility
+Author: Automattic
+Version: 1.0
+License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+*/
 
 // Cleaner permalink options
 add_filter( 'got_url_rewrite', '__return_true' );
