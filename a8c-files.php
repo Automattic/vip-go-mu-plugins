@@ -5,6 +5,7 @@ Description: Provides a hosted, distributed and fault tolerant files service
 Author: Automattic
 Version: 0.2
 Author URI: http://automattic.com/
+License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
 /* Requires at least: 3.9.0
