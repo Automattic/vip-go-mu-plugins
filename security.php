@@ -1,5 +1,13 @@
 <?php
 
+/*
+Plugin Name: VIPv2 Security
+Description: Various security enhancements
+Author: Automattic
+Version: 1.0
+License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+*/
+
 function login_limiter( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
