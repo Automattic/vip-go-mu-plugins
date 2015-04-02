@@ -16,7 +16,11 @@ class WPcom_JS_Concat extends WP_scripts {
 	public $allow_gzip_compression;
 
 	function __construct( $scripts ) {
-		$this->old_scripts = $scripts;
+		if ( empty( $scripts ) || ! ( $scripts instanceof WP_Scripts ) ) {
+			$this->old_scripts = new WP_Scripts();
+		} else {
+			$this->old_scripts = $scripts;
+		}
 
 		// Unset all the object properties except our private copy of the scripts object.
 		// We have to unset everything so that the overload methods talk to $this->old_scripts->whatever
