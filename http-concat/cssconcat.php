@@ -16,7 +16,11 @@ class WPcom_CSS_Concat extends WP_Styles {
 	public $allow_gzip_compression;
 
 	function __construct( $styles ) {
-		$this->old_styles = $styles;
+		if ( empty( $styles ) || ! ( $styles instanceof WP_Styles ) ) {
+			$this->old_styles = new WP_Styles();
+		} else {
+			$this->old_styles = $styles;
+		}
 
 		// Unset all the object properties except our private copy of the styles object.
 		// We have to unset everything so that the overload methods talk to $this->old_styles->whatever
