@@ -1,0 +1,19 @@
+<?php
+
+/*
+ * Plugin Name: MU Jetpack by WordPress.com
+ * Plugin URI: http://wordpress.org/extend/plugins/jetpack/
+ * Description: Bring the power of the WordPress.com cloud to your self-hosted WordPress. Jetpack enables you to connect your blog to a WordPress.com account to use the powerful features normally only available to WordPress.com users.
+ * Author: Automattic
+ * Version: 3.5
+ * Author URI: http://jetpack.me
+ * License: GPL2+
+ * Text Domain: jetpack
+ * Domain Path: /languages/
+ */
+
+error_log( "JETPACK MU: " . __FILE__ );
+
+require_once( __DIR__ . '/jetpack/jetpack.php' );
+
+error_log( "JETPACK PLUGIN DIR: " . JETPACK__PLUGIN_DIR );
