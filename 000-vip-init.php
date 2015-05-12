@@ -11,6 +11,7 @@ require_once( __DIR__ . '/vip/vip-roles.php' );
 require_once( __DIR__ . '/vip/vip-permastructs.php' );
 require_once( __DIR__ . '/vip/vip-mods.php' );
 require_once( __DIR__ . '/vip/vip-media.php' );
+require_once( __DIR__ . '/vip/vip-elasticsearch.php' );
 require_once( __DIR__ . '/vip/vip-stats.php' );
 require_once( __DIR__ . '/vip/vip-deprecated.php' );
 
