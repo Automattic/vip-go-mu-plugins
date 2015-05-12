@@ -160,21 +160,6 @@ function wpcom_vip_require_lib( $slug ) {
 	trigger_error( "Cannot find a library with slug $slug.", E_USER_ERROR );
 }
 
-/**
- * Loads the shared VIP helper file which defines some helpful functions.
- *
- * @link http://vip.wordpress.com/documentation/development-environment/ Setting up your Development Environment
- */
-function wpcom_vip_load_helper() {
-	$includepath = WP_CONTENT_DIR . '/themes/vip/plugins/vip-helper.php';
-
-	if ( file_exists( $includepath ) ) {
-		require_once( $includepath );
-	} else {
-		die( "Unable to load vip-helper.php using wpcom_vip_load_helper(). The file doesn't exist!" );
-	}
-}
-
 
 /**
  * Loads the WordPress.com-only VIP helper file which defines some helpful functions.
@@ -500,4 +485,225 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  */
 function vip_powered_wpcom_url() {
 	return 'https://vip.wordpress.com/';
+}
+
+/**
+ * Allows users of contributor role to be able to upload media.
+ *
+ * Contrib users still can't publish.
+ *
+ * @author mdawaffe
+ * @link http://vip.wordpress.com/documentation/allow-contributors-to-upload-images/ Allow Contributors to Upload Images
+ */
+function vip_contrib_add_upload_cap() {
+	add_action( 'init', '_vip_contrib_add_upload_cap');
+	add_action( 'xmlrpc_call', '_vip_contrib_add_upload_cap' ); // User is logged in after 'init' for XMLRPC
+}
+
+/**
+ * Helper function for vip_contrib_add_upload_cap() to change the user roles
+ *
+ * @link http://vip.wordpress.com/documentation/allow-contributors-to-upload-images/ Allow Contributors to Upload Images
+ * @see vip_contrib_add_upload_cap()
+ */
+function _vip_contrib_add_upload_cap() {
+	if ( ! is_admin() && ! defined( 'XMLRPC_REQUEST' ) )
+		return;
+
+	wpcom_vip_add_role_caps( 'contributor', array( 'upload_files' ) );
+}
+
+/**
+ * Remove the tracking bug added to all WordPress.com feeds.
+ *
+ * Helper function for wpcom_vip_disable_enhanced_feeds().
+ *
+ * @see wpcom_vip_disable_enhanced_feeds()
+ */
+function wpcom_vip_remove_feed_tracking_bug() {
+	remove_filter( 'the_content', 'add_bug_to_feed', 100 );
+	remove_filter( 'the_excerpt_rss', 'add_bug_to_feed', 100 );
+}
+
+/**
+ * Returns the URL to an image resized and cropped to the given dimensions.
+ *
+ * You can use this image URL directly -- it's cached and such by our servers.
+ * Please use this function to generate the URL rather than doing it yourself as
+ * this function uses staticize_subdomain() makes it serve off our CDN network.
+ *
+ * Somewhat contrary to the function's name, it can be used for ANY image URL, hosted by us or not.
+ * So even though it says "remote", you can use it for attachments hosted by us, etc.
+ *
+ * @link http://vip.wordpress.com/documentation/image-resizing-and-cropping/ Image Resizing And Cropping
+ * @param string $url The raw URL to the image (URLs that redirect are currently not supported with the exception of http://foobar.wordpress.com/files/ type URLs)
+ * @param int $width The desired width of the final image
+ * @param int $height The desired height of the final image
+ * @param bool $escape Optional. If true (the default), the URL will be run through esc_url(). Set this to false if you need the raw URL.
+ * @return string
+ */
+function wpcom_vip_get_resized_remote_image_url( $url, $width, $height, $escape = true ) {
+	$width = (int) $width;
+	$height = (int) $height;
+
+	if ( ! function_exists( 'wpcom_is_vip' ) || ! wpcom_is_vip() )
+		return ( $escape ) ? esc_url( $url ) : $url;
+
+	// Photon doesn't support redirects, so help it out by doing http://foobar.wordpress.com/files/ to http://foobar.files.wordpress.com/
+	if ( function_exists( 'new_file_urls' ) )
+		$url = new_file_urls( $url );
+
+	$thumburl = jetpack_photon_url( $url, array( 'resize' => array( $width, $height ) ) );
+
+	return ( $escape ) ? esc_url( $thumburl ) : $thumburl;
+}
+
+/**
+ * Returns a URL for a given attachment with the appropriate resizing querystring.
+ *
+ * Typically, you should be using image sizes for handling this.
+ *
+ * However, this function can come in handy if you want a specific artibitrary or varying image size.
+ *
+ * @link http://vip.wordpress.com/documentation/image-resizing-and-cropping/
+ *
+ * @param int $attachment_id ID of the attachment
+ * @param int $width Width of our resized image
+ * @param int $height Height of our resized image
+ * @param bool $crop (optional) whether or not to crop the image
+ * @return string URL of the resized attachmen
+ */
+function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height, $crop = false ) {
+	$url = wp_get_attachment_url( $attachment_id );
+
+	if ( ! $url ) {
+		return false;
+	}
+
+	$url = add_query_arg( array(
+		'w' => intval( $width ),
+		'h' => intval( $height ),
+	), $url );
+
+	if ( $crop ) {
+		$url = add_query_arg( 'crop', 1, $url );
+	}
+
+	return $url;
+}
+
+/**
+ * Allows you to customize the /via and follow recommendation for the WP.com Sharing Twitter button.
+ *
+ * @param string $via Optional. What the /via should be set to. Empty value disables the feature (the default).
+ */
+function wpcom_vip_sharing_twitter_via( $via = '' ) {
+	if( empty( $via ) ) {
+		$via_callback = '__return_false';
+	} else {
+		// sanitize_key() without changing capitizalization
+		$raw_via = $via;
+		$via = preg_replace( '/[^A-Za-z0-9_\-]/', '', $via );
+		$via = apply_filters( 'sanitize_key', $via, $raw_via );
+
+		$via_callback = function() use ( $via ) { return $via; };
+	}
+
+	add_filter( 'jetpack_sharing_twitter_via', $via_callback );
+	add_filter( 'jetpack_open_graph_tags', function( $tags ) use ( $via ) {
+		if ( isset( $tags['twitter:site'] ) ) {
+			if ( empty( $via ) )
+				unset( $tags['twitter:site'] );
+			else
+				$tags['twitter:site'] = '@' . $via;
+		}
+		return $tags;
+	}, 99 ); // later so we run after Twitter Cards have run
+}
+
+/**
+ * Disables Jetpack Post Flair entirely on the frontend.
+ * This removes the filters and doesn't allow the stylesheet to be enqueued.
+ */
+function wpcom_vip_disable_post_flair() {
+	add_filter( 'post_flair_disable', '__return_true' );
+}
+
+/**
+ * Disables Jetpack Sharing in Posts and Pages.
+ *
+ * Sharing can be disabled in the dashboard, by removing all buttons from Enabled Services.
+ *
+ * This function is primary for automating sharing when you have numerous sites to administer.
+ * It also assists having consistent CSS containers between development and production.
+ */
+function wpcom_vip_disable_sharing() {
+	// Post Flair sets things up on init so we need to call on that if init hasn't fired yet.
+	_wpcom_vip_call_on_hook_or_execute( function() {
+		remove_filter( 'post_flair', 'sharing_display', 20 );
+		remove_filter( 'the_content', 'sharing_display', 19 );
+   		remove_filter( 'the_excerpt', 'sharing_display', 19 );
+
+		wpcom_vip_disable_sharing_resources();
+	}, 'init', 99 );
+}
+
+/**
+ * Disable CSS and JS output for Jetpack Sharing.
+ *
+ * Note: this disables things like smart buttons and share counts displayed alongside the buttons. Those will need to be handled manually if desired.
+ */
+function wpcom_vip_disable_sharing_resources() {
+	_wpcom_vip_call_on_hook_or_execute( function() {
+		add_filter( 'sharing_js', '__return_false' );
+		remove_action( 'wp_head', 'sharing_add_header', 1 );
+	}, 'init', 99 );
+}
+
+/**
+ * Enables Jetpack Sharing in Posts and Pages.
+ *
+ * This feature is on by default, so the function is only useful if you've also used wpcom_vip_disable_sharing().
+ */
+function wpcom_vip_enable_sharing() {
+	add_filter( 'post_flair', 'sharing_display', 20 );
+}
+
+/**
+ * Enable CSS and JS output for WPCOM sharing.
+ *
+ * Note: if resources were disabled previously and this is called after wp_head, it may not work as expected.
+ */
+function wpcom_vip_enable_sharing_resources() {
+	remove_filter( 'sharing_js', '__return_false' );
+	add_action( 'wp_head', 'sharing_add_header', 1 );
+}
+
+/**
+ * Disables Jetpack Likes for Posts and Custom Post Types
+ *
+ * Sharing can also be disabled from the Dashboard (Settings > Sharing).
+ *
+ * This function is primarily for programmatic disabling of the feature, for example when working with custom post types.
+ */
+function wpcom_vip_disable_likes() {
+	add_filter( 'wpl_is_likes_visible', '__return_false', 999 );
+}
+
+/**
+ * Disables Jetpack Likes for Posts and Custom Post Types
+ *
+ * This feature is on by default, so the function is only useful if you've also used wpcom_vip_disable_sharing().
+ */
+function wpcom_vip_enable_likes() {
+	add_filter( 'wpl_is_likes_visible', '__return_true', 999 );
+}
+
+/**
+ * Disables Olark live chat
+ *
+ * @see show_live_chat()
+ */
+function wpcom_vip_remove_livechat() {
+	add_filter( 'vip_live_chat_enabled', '__return_false' );
 }
