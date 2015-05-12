@@ -63,3 +63,63 @@ function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '' )
 	return $attachment_id;
 }
 
+/**
+ * Set the quality of jpeg images served from files.wordpress.com
+ *
+ * On files.wordpress.com, we accept quality and strip as query parameters.
+ * wpcom_vip_set_image_quality sets these parameters on all jpeg images served
+ * from files.wordpress.com
+ *
+ * @param int $quality The quality of the image out of 100.
+ * @param string $strip What data to strip: exif|color|all
+ */
+function wpcom_vip_set_image_quality( $quality, $strip = false ) {
+	add_filter( 'wp_get_attachment_url', function( $attachment_url ) use ( $quality, $strip ) {
+		return wpcom_vip_set_image_quality_for_url( $attachment_url, $quality, $strip );
+	});
+
+	add_filter( 'the_content', function( $content ) use ( $quality, $strip ) {
+		if ( false !== strpos( $content, 'files.wordpress.com' ) ) {
+			$content = preg_replace_callback( '#https?://\w+\.files\.wordpress\.com[^\s"\'>]+#', function( $matches ) use ( $quality, $strip ) {
+				return wpcom_vip_set_image_quality_for_url( $matches[0], $quality, $strip );
+			}, $content );
+		}
+		return $content;
+	});
+
+	// Photon
+	add_filter('jetpack_photon_pre_args', function( $args ) use ( $quality, $strip ) {
+		$args['quality'] = $quality;
+		$args['strip'] = $strip;
+		return $args;
+	});
+}
+
+/**
+ * Set the quality of a jpeg image
+ *
+ * @param int $quality The quality of the image out of 100.
+ * @param string $strip What data to strip: exif|color|all
+ * @return string A url with proper quality and strip query parameters
+ * @see wpcom_vip_set_image_quality
+ */
+function wpcom_vip_set_image_quality_for_url( $attachment_url, $quality = 100, $strip = false ) {
+	$query = array();
+	$url = parse_url( $attachment_url );
+	$ext = pathinfo( $url['path'], PATHINFO_EXTENSION );
+
+	if ( ! in_array( $ext, array( 'jpg', 'jpeg' ) ) )
+		return $attachment_url;
+
+	if ( isset( $url['query'] ) )
+		$query = parse_str( $url['query'] );
+
+	$query['quality'] = absint( $quality );
+
+	if ( true === $strip )
+		$query['strip'] = 'all';
+	elseif ( $strip )
+		$query['strip'] = $strip;
+
+	return add_query_arg( $query, $url['scheme'] . '://' . $url['host'] . $url['path'] );
+}
