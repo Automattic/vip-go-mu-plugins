@@ -1,6 +1,5 @@
 <?php
 
-if ( !function_exists( 'wpcom_vip_load_permastruct' ) ):
 /**
  * Enables a custom permastruct, if the site wants to use one that's not the WP.com default (/yyyy/mm/dd/post-name/)
  *
@@ -15,9 +14,7 @@ function wpcom_vip_load_permastruct( $new_permastruct ) {
 	$wpcom_vip_permalink_structure = $new_permastruct;
 	add_filter( 'pre_option_permalink_structure', '_wpcom_vip_filter_permalink_structure', 99 ); // needs to be higher priority so we don't conflict with the WP.com filter
 }
-endif;
 
-if ( !function_exists( '_wpcom_vip_filter_permalink_structure' ) ):
 /**
  * Applies the new permalink structure to the option value
  *
@@ -29,9 +26,7 @@ function _wpcom_vip_filter_permalink_structure( $permastruct ) {
 	global $wpcom_vip_permalink_structure;
 	return $wpcom_vip_permalink_structure;
 }
-endif;
 
-if ( !function_exists( 'wpcom_vip_load_category_base' ) ):
 /**
  * Enables a custom or no category base, if the site wants to use one that's not the WP.com default (/category/)
  *
@@ -56,9 +51,7 @@ function wpcom_vip_load_category_base( $new_category_base ) {
 		}, 9, 2 );
 	}
 }
-endif;
 
-if ( !function_exists( '_wpcom_vip_filter_category_base' ) ):
 /**
  * Applies the new category base to the option value
  *
@@ -70,9 +63,7 @@ function _wpcom_vip_filter_category_base( $category_base ) {
 	global $wpcom_vip_category_base;
 	return $wpcom_vip_category_base;
 }
-endif;
 
-if ( !function_exists( 'wpcom_vip_load_tag_base' ) ):
 /**
  * Enables a custom or no tag base, if the site wants to use one that's not the WP.com default (/tag/)
  *
@@ -88,9 +79,7 @@ function wpcom_vip_load_tag_base( $new_tag_base ) {
 	$wpcom_vip_tag_base = $new_tag_base;
 	add_filter( 'pre_option_tag_base', '_wpcom_vip_filter_tag_base', 99 ); // needs to be higher priority so we don't conflict with the WP.com filter/ needs to be higher priority so we don't conflict with the WP.com filter
 }
-endif;
 
-if ( !function_exists( '_wpcom_vip_filter_tag_base' ) ):
 /**
  * Applies the new tag base to the option value
  *
@@ -102,9 +91,7 @@ function _wpcom_vip_filter_tag_base( $tag_base ) {
 	global $wpcom_vip_tag_base;
 	return $wpcom_vip_tag_base;
 }
-endif;
 
-if ( ! function_exists( 'wpcom_vip_load_custom_cdn' ) ):
 /**
  * Use a custom CDN host for displaying theme images and media library content.
  *
@@ -278,4 +265,3 @@ function _wpcom_vip_cdn_disable_ssl( $domains ) {
 function _wpcom_vip_custom_cdn_replace( $url, $cdn_host ) {
 	return preg_replace( '|://[^/]+?/|', "://$cdn_host/", $url );
 }
-endif;
