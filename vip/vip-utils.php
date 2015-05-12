@@ -688,3 +688,60 @@ function wpcom_vip_enable_likes() {
 function wpcom_vip_remove_livechat() {
 	add_filter( 'vip_live_chat_enabled', '__return_false' );
 }
+
+/**
+* Eliminates widows in strings by replace the breaking space that appears before the last word with a non-breaking space.
+*
+* This function is defined on WordPress.com and can be a common source of frustration for VIP devs.
+* Now they can be frustrated in their local environments as well :)
+*
+* @param string $str Optional. String to operate on.
+* @return string
+* @link http://www.shauninman.com/post/heap/2006/08/22/widont_wordpress_plugin Typesetting widows
+*/
+function widont( $str = '' ) {
+	// Don't apply on non-tablet mobile devices so the browsers can fit to the viewport properly.
+	if (
+		function_exists( 'jetpack_is_mobile' ) && jetpack_is_mobile() &&
+		class_exists( 'Jetpack_User_Agent_Info' ) && ! Jetpack_User_Agent_Info::is_tablet()
+	) {
+		return $str;
+	}
+
+	// We're dealing with whitespace from here out, let's not have any false positives. :)
+	$str = trim( $str );
+
+	// If string contains three or fewer words, don't join.
+	if ( count( preg_split( '#\s+#', $str ) ) <= 3 ) {
+		return $str;
+	}
+
+	// Don't join if words exceed a certain length: minimum 10 characters, default 15 characters, filterable via `widont_max_word_length`.
+	$widont_max_word_length = max( 10, absint( apply_filters( 'widont_max_word_length', 15 ) ) );
+	$regex = '#\s+([^\s]{1,' . $widont_max_word_length . '})\s+([^\s]{1,' . $widont_max_word_length . '})$#';
+
+	return preg_replace( $regex, ' $1&nbsp;$2', $str );
+}
+
+function wpcom_initiate_flush_rewrite_rules() {
+	flush_rewrite_rules( false );
+}
+
+// Leave these wrapped in function_exists() b/c they are so generically named
+if ( ! function_exists( 'wp_startswith' ) ) :
+	function wp_startswith( $haystack, $needle ) {
+		return 0 === strpos( $haystack, $needle );
+	}
+endif;
+
+if ( ! function_exists( 'wp_endswith' ) ) :
+	function wp_endswith( $haystack, $needle ) {
+		return $needle === substr( $haystack, -strlen( $needle ));
+	}
+endif;
+
+if ( ! function_exists( 'wp_in' ) ) :
+	function wp_in( $needle, $haystack ) {
+		return false !== strpos( $haystack, $needle );
+	}
+endif;
