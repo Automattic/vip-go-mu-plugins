@@ -160,25 +160,6 @@ function wpcom_vip_require_lib( $slug ) {
 	trigger_error( "Cannot find a library with slug $slug.", E_USER_ERROR );
 }
 
-
-/**
- * Loads the WordPress.com-only VIP helper file which defines some helpful functions.
- *
- * @link http://vip.wordpress.com/documentation/development-environment/ Setting up your Development Environment
- */
-function wpcom_vip_load_helper_wpcom() {
-	$includepath = WP_CONTENT_DIR . '/themes/vip/plugins/vip-helper-wpcom.php';
-	require_once( $includepath );
-}
-
-/**
- * Loads the WordPress.com-only VIP helper file for stats which defines some helpful stats-related functions.
- */
-function wpcom_vip_load_helper_stats() {
-	$includepath = WP_CONTENT_DIR . '/themes/vip/plugins/vip-helper-stats-wpcom.php';
-	require_once( $includepath );
-}
-
 /**
  * Store the name of a VIP plugin that will be loaded
  *

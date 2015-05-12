@@ -10,6 +10,23 @@ function wpcom_vip_load_helper() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
+/**
+ * Loads the WordPress.com-only VIP helper file which defines some helpful functions.
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_load_helper_wpcom() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Loads the WordPress.com-only VIP helper file for stats which defines some helpful stats-related functions.
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_load_helper_stats() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
 
 /**
  * Disable the WordPress.com filter that prevents orphans in titles
