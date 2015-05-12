@@ -510,3 +510,261 @@ function wpcom_vip_debug( $type, $data ) {
 function vary_cache_on_function( $function ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * This is the old deprecated version of wpcom_vip_file_get_contents(). Please don't use this function in any new code.
+ *
+ * @deprecated
+ * @link http://lobby.vip.wordpress.com/best-practices/fetching-remote-data/ Fetching Remote Data
+ * @param string $url URL to fetch
+ * @param bool $echo_content Optional. If true (the default), echo the remote file's contents. If false, return it.
+ * @param int $timeout Optional. The timeout limit in seconds; valid values are 1-10. Defaults to 3.
+ * @return string|null If $echo_content is true, there will be no return value.
+ * @see wpcom_vip_file_get_contents
+ */
+function vip_wp_file_get_content( $url, $echo_content = true, $timeout = 3 ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    $output = wpcom_vip_file_get_contents( $url, $timeout );
+
+    if ( $echo_content )
+        echo $output;
+    else
+        return $output;
+}
+
+/**
+ * Disables the tag suggest on the post screen.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @author mdawaffe
+ */
+function vip_disable_tag_suggest() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+if ( ! function_exists( 'disable_autosave' ) ) {
+
+/**
+ * Disable post autosave
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @author mdawaffe
+ */
+function disable_autosave() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+}
+
+/**
+ * Responds to a blog.wordpress.com/DARTIframe.html request with the contents of a DARTIframe.html file located in the root of your theme.
+ *
+ * @deprecated No longer supported since 2.0.0 - Use AdBusters https://github.com/Automattic/Adbusters/
+ */
+function vip_doubleclick_dartiframe_redirect() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Send comment moderation emails to multiple addresses
+ *
+ * @author nickmomrik
+ * @deprecated No longer supported since 2.0.0
+ * @param array $emails Array of email addresses
+ */
+function vip_multiple_moderators( $emails ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Automatically insert meta description tag into posts/pages.
+ *
+ * You shouldn't need to use this function nowadays because WordPress.com and Jetpack takes care of this for you.
+ *
+ * @author Thorsten Ott
+ * @deprecated No longer supported since 2.0.0
+ */
+function wpcom_vip_meta_desc() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    $text = wpcom_vip_get_meta_desc();
+    if ( !empty( $text ) ) {
+        echo "\n<meta name=\"description\" content=\"$text\" />\n";
+    }
+}
+
+/**
+ * Filter this function to change the meta description value set by wpcom_vip_meta_desc().
+ *
+ * Can be configured to use either first X chars/words of the post content or post excerpt if available
+ * Can use category description for category archive pages if available
+ * Can use tag description for tag archive pages if available
+ * Can use blog description for everything else
+ * Can use a default description if no suitable value is found
+ * Can use the value of a custom field as description
+ *
+ * Usage:
+ * // add a custom configuration via filter
+ * function set_wpcom_vip_meta_desc_settings( $settings ) {
+ * 		return array( 'length' => 10, 'length_unit' => 'char|word', 'use_excerpt' => true, 'add_category_desc' => true, 'add_tag_desc' => true, 'add_other_desc' => true, 'default_description' => '', 'custom_field_key' => '' );
+ * }
+ * add_filter( 'wpcom_vip_meta_desc_settings', 'set_wpcom_vip_meta_desc_settings' );
+ * add_action( 'wp_head', 'wpcom_vip_meta_desc' );
+ *
+ * @return string The meta description
+ * @deprecated No longer supported since 2.0.0
+ * @see wpcom_vip_meta_desc()
+ */
+function wpcom_vip_get_meta_desc() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    $default_settings = array(
+        'length' => 25,              // amount of length units to use for the meta description
+        'length_unit' => 'word',     // the length unit can be either "word" or "char"
+        'use_excerpt' => true,       // if the post/page has an excerpt it will overwrite the generated description if this is set to true
+        'add_category_desc' => true, // add the category description to category views if this value is true
+        'add_tag_desc' => true,      // add the category description to category views if this value is true
+        'add_other_desc' => true,    // add the blog description/tagline to all other pages if this value is true
+        'default_description' => '', // in case no description is defined use this as a default description
+        'custom_field_key' => '',    // if a custom field key is set we try to use the value of this field as description
+    );
+
+    $settings = apply_filters( 'wpcom_vip_meta_desc_settings', $default_settings );
+
+    extract( shortcode_atts( $default_settings, $settings ) );
+
+    global $wp_query;
+
+    if( is_single() || is_page() ) {
+        $post = $wp_query->post;
+
+        // check for a custom field holding a description
+        if ( !empty( $custom_field_key ) ) {
+            $post_custom = get_post_custom_values( $custom_field_key, $post->ID );
+            if ( !empty( $post_custom ) )
+                $text = $post_custom[0];
+        }
+        // check for an excerpt we can use
+        elseif ( $use_excerpt && !empty( $post->post_excerpt ) ) {
+            $text = $post->post_excerpt;
+        }
+        // otherwise use the content
+        else {
+            $text = $post->post_content;
+        }
+
+        $text = str_replace( array( "\r\n", "\r", "\n", "  " ), " ", $text ); // get rid of all line breaks
+        $text = strip_shortcodes( $text ); // make sure to get rid of shortcodes
+        $text = apply_filters( 'the_content', $text ); // make sure it's save
+        $text = trim( strip_tags( $text ) ); // get rid of tags and html fragments
+        if ( empty( $text ) && !empty( $default_description ) )
+            $text = $default_description;
+
+    } else if( is_category() && true == $add_category_desc ) {
+        $category = $wp_query->get_queried_object();
+        $text = trim( strip_tags( $category->category_description ) );
+        if ( empty( $text ) && !empty( $default_description ) )
+            $text = $default_description;
+
+    } else if( is_tag() && true == $add_tag_desc ) {
+        $tag = $wp_query->get_queried_object();
+        $text = trim( strip_tags( $tag->description ) );
+        if ( empty( $text ) && !empty( $default_description ) )
+            $text = $default_description;
+
+    } else if ( true == $add_other_desc ) {
+        $text = trim( strip_tags( get_bloginfo('description') ) );
+        if ( empty( $text ) && !empty( $default_description ) )
+            $text = $default_description;
+    }
+
+    if ( empty( $text ) )
+        return;
+
+    if ( 'word' == $length_unit ) {
+        $words = explode(' ', $text, $length + 1);
+        if ( count( $words ) > $length ) {
+            array_pop( $words );
+            array_push( $words, '...' );
+            $text = implode( ' ', $words );
+        }
+    } else {
+        if ( strlen( $text ) > $length ) {
+            $text = mb_strimwidth( $text, 0, $length, '...' );
+        }
+    }
+
+    return $text;
+}
+
+/**
+ * Disable comment counts in "Right Now" Dashboard widget as it can take a while to query the data.
+ *
+ * @deprecated No longer supported since 2.0.0
+ */
+function disable_right_now_comment_count() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Helper function to disable the WordPress.com wide Zemanta Tools for all users.
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_disable_zemanta_for_all_users() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Checks if the current site_url() matches from a specified list.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param array|string $site_urls List of site URL hosts to check against
+ * @return bool If current site_url() matches one in the list
+ */
+function wpcom_vip_check_site_url( $site_urls ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return false;
+}
+
+/**
+ * Returns the HTTP_HOST for the current site's home_url()
+ *
+ * @deprecated Deprecated since 2.0.0
+ * @return string
+ */
+function wpcom_vip_get_home_host() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    static $host;
+    if ( ! isset( $host ) )
+        $host = parse_url( home_url(), PHP_URL_HOST );
+    return $host;
+}
+
+/**
+ * Give themes the opportunity to disable WPCOM-specific smilies.
+ * Note: Smilies disabled by this method will not fall back to core smilies.
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ * @param  mixed $smilies_to_disable List of strings that will not be converted into smilies.
+ *               A single string will be converted to an array & work
+ * @uses filter smileyproject_smilies
+ */
+function wpcom_vip_disable_smilies( $smilies_to_disable ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Get the URL of theme files relative to the home_url
+ *
+ * @deprecated Deprecated since 2.0.0
+ * @param string $path The path of the file to get a URL for
+ */
+function wpcom_vip_home_template_uri( $path ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return str_replace( site_url(), home_url(), get_template_directory_uri() . $path );
+}

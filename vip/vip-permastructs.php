@@ -255,6 +255,17 @@ function _wpcom_vip_cdn_disable_ssl( $domains ) {
 }
 
 /**
+ * Use secure URLs in rel_canonical
+ */
+function wpcom_vip_https_canonical_url() {
+	// Note: rel_canonical is not in core yet
+	// https://core.trac.wordpress.org/ticket/30581
+	add_filter( 'rel_canonical', function( $link ) {
+		return str_replace( 'http://', 'https://', $link );
+	}, 99 );
+}
+
+/**
  * Replace the hostname in a URL
  *
  * @param string $url Original URL
