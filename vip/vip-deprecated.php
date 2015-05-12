@@ -338,17 +338,6 @@ function wpcom_vip_allow_more_html_in_comments() {
 }
 
 /**
- * Allows non-author users to submit any tags allowed via $allowedposttags instead of just $allowedtags
- *
- * @deprecated Deprecated since 2.0.0
- */
-function wpcom_vip_allow_more_html_in_comments() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-
-	add_action( 'init', '_wpcom_vip_allow_more_html_in_comments', 99 ); // load late so we override the WP.com filter
-}
-
-/**
  * Helper function for wpcom_vip_allow_more_html_in_comments()
  *
  * @see wpcom_vip_allow_more_html_in_comments()
