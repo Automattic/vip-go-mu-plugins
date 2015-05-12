@@ -428,3 +428,85 @@ function wpcom_vip_disable_custom_customizer() {
 function wpcom_vip_remove_opensearch(){
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * Update a user's attribute
+ *
+ * There is no need to serialize values, they will be serialized if it is
+ * needed. The metadata key can only be a string with underscores. All else will
+ * be removed.
+ *
+ * Will remove the attribute, if the meta value is empty.
+ *
+ * @deprecated Deprecated since VIP 2.0.0
+ * @param int $user_id User ID
+ * @param string $meta_key Metadata key.
+ * @param mixed $meta_value Metadata value.
+ * @return bool True on successful update, false on failure.
+ */
+function update_user_attribute( $user_id, $meta_key, $meta_value ) {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'update_user_meta' );
+
+    do_action( 'updating_user_attribute', $user_id, $meta_key, $meta_value );
+
+    $result = update_user_meta( $user_id, $meta_key, $meta_value );
+
+    if ( $result )
+        do_action( 'updated_user_attribute', $user_id, $meta_key, $meta_value );
+
+    return $result;
+}
+
+/**
+ * Retrieve user attribute data.
+ *
+ * If $user_id is not a number, then the function will fail over with a 'false'
+ * boolean return value. Other returned values depend on whether there is only
+ * one item to be returned, which be that single item type. If there is more
+ * than one metadata value, then it will be list of metadata values.
+ *
+ * @deprecated Deprecated since VIP 2.0.0
+ * @param int $user_id User ID
+ * @param string $meta_key Optional. Metadata key.
+ * @return mixed
+ */
+function get_user_attribute( $user_id, $meta_key ) {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'get_user_meta' );
+
+    if ( !$usermeta = get_user_meta( $user_id, $meta_key ) )
+        return false;
+
+    if ( count($usermeta) == 1 )
+        return reset($usermeta);
+
+    return $usermeta;
+}
+
+/**
+ * Remove user attribute data.
+ *
+ * @uses $wpdb WordPress database object for queries.
+ *
+ * @deprecated Deprecated since VIP 2.0.0
+ * @param int $user_id User ID.
+ * @param string $meta_key Metadata key.
+ * @param mixed $meta_value Optional. Metadata value.
+ * @return bool True deletion completed and false if user_id is not a number.
+ */
+function delete_user_attribute( $user_id, $meta_key, $meta_value = '' ) {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'delete_user_meta' );
+
+    $result = delete_user_meta( $user_id, $meta_key, $meta_value );
+
+    do_action( 'deleted_user_attribute', $user_id, $meta_key, $meta_value );
+
+    return $result;
+}
+
+function wpcom_vip_debug( $type, $data ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+function vary_cache_on_function( $function ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
