@@ -10,6 +10,7 @@ require_once( __DIR__ . '/vip/vip-roles.php' );
 require_once( __DIR__ . '/vip/vip-permastructs.php' );
 require_once( __DIR__ . '/vip/vip-mods.php' );
 require_once( __DIR__ . '/vip/vip-media.php' );
+require_once( __DIR__ . '/vip/vip-deprecated.php' );
 
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
