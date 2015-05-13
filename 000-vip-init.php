@@ -2,7 +2,7 @@
 
 // For backwards compatibility - always true. Will have a helper for determining
 // the current environment
-define( 'WPCOM_IS_VIP_ENV', true );
+define( 'WPCOM_IS_VIP_ENV', true )
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip/vip-utils.php' );
