@@ -12,5 +12,5 @@ script:
   # PHP Lint
   - >
     echo "Running PHP lint";
-    find "${TRAVIS_BUILD_DIR}" -name \*.php
+    find "${TRAVIS_BUILD_DIR}" -name \*.php;
     find "${TRAVIS_BUILD_DIR}" -name \*.php | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
