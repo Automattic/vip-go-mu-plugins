@@ -1071,3 +1071,15 @@ function sitemap_handle_update( $post_id ) {
 }
 
 }
+
+/**
+ * Remove the tracking bug added to all WordPress.com feeds.
+ *
+ * @deprecated Not applicable since 2.0.0
+ * Helper function for wpcom_vip_disable_enhanced_feeds().
+ *
+ * @see wpcom_vip_disable_enhanced_feeds()
+ */
+function wpcom_vip_remove_feed_tracking_bug() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}

@@ -495,18 +495,6 @@ function _vip_contrib_add_upload_cap() {
 }
 
 /**
- * Remove the tracking bug added to all WordPress.com feeds.
- *
- * Helper function for wpcom_vip_disable_enhanced_feeds().
- *
- * @see wpcom_vip_disable_enhanced_feeds()
- */
-function wpcom_vip_remove_feed_tracking_bug() {
-	remove_filter( 'the_content', 'add_bug_to_feed', 100 );
-	remove_filter( 'the_excerpt_rss', 'add_bug_to_feed', 100 );
-}
-
-/**
  * Returns the URL to an image resized and cropped to the given dimensions.
  *
  * You can use this image URL directly -- it's cached and such by our servers.
