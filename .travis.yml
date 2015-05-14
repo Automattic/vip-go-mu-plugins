@@ -1,0 +1,12 @@
+language: php
+
+php:
+  - 5.5
+
+before_install:
+  - sudo apt-get update > /dev/null
+
+script:
+
+  # PHP Lint
+  - make lint
