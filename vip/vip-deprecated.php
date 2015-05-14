@@ -1083,3 +1083,12 @@ function sitemap_handle_update( $post_id ) {
 function wpcom_vip_remove_feed_tracking_bug() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * @deprecated Deprecated since 2.0.0 - use flush_rewrite_rules() directly
+ */
+function wpcom_initiate_flush_rewrite_rules() {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'flush_rewrite_rules' );
+
+	flush_rewrite_rules( false );
+}

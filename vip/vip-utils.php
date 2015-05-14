@@ -711,10 +711,6 @@ function widont( $str = '' ) {
 	return preg_replace( $regex, ' $1&nbsp;$2', $str );
 }
 
-function wpcom_initiate_flush_rewrite_rules() {
-	flush_rewrite_rules( false );
-}
-
 // Leave these wrapped in function_exists() b/c they are so generically named
 if ( ! function_exists( 'wp_startswith' ) ) :
 	function wp_startswith( $haystack, $needle ) {
