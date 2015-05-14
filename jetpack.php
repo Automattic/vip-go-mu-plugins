@@ -12,8 +12,4 @@
  * Domain Path: /languages/
  */
 
-error_log( "JETPACK MU: " . __FILE__ );
-
 require_once( __DIR__ . '/jetpack/jetpack.php' );
-
-error_log( "JETPACK PLUGIN DIR: " . JETPACK__PLUGIN_DIR );
