@@ -768,3 +768,92 @@ function wpcom_vip_home_template_uri( $path ) {
 
     return str_replace( site_url(), home_url(), get_template_directory_uri() . $path );
 }
+
+/**
+ * Return the language code.
+ *
+ * Internal wpcom function that's used by the wpcom-sitemap plugin
+ *
+ * Note: Not overrideable in production - this function exists solely for dev environment
+ * compatibility. To set blog language, use the Dashboard UI.
+ *
+ * @deprecated Deprecated since 2.0.0
+ * @return string
+ */
+if ( ! function_exists( 'get_blog_lang_code' ) ) {
+
+function get_blog_lang_code( $blog_id = 0 ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return 'en';
+}
+
+}
+
+/**
+ * Set the roles that can view stats
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param array $roles The roles that can view stats
+ */
+function wpcom_vip_stats_roles( array $roles ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Get the WP.com stats as CSV
+ *
+ * Strings containing double quotes, commas, or "\n" are enclosed in double-quotes. Double-quotes in strings are escaped by inserting another double-quote.
+ * Example: "pet food" recipe
+ * Becomes: """pet food"" recipe"
+ *
+ * @author tott
+ * @deprecated No longer supported since 2.0.0
+ * @param string $table Optional. Table for stats can be views, postviews, referrers, searchterms, clicks. Default is views.
+ * @param string $end_data Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
+ * @param int $num_days Optional. The length of the desired time frame. Default is 1. Maximum 90 days
+ * @param string $and Optional. Possibility to refine the query with additional AND condition. Usually unused.
+ * @param int $limit Optional. The maximum number of records to return. Default is 5. Maximum 100.
+ * @param bool $summarize Optional. If present, summarizes all matching records.
+ * @return string Result format is CSV with one row per line and column names in first row.
+ */
+function wpcom_vip_get_stats_csv( $table = 'views', $end_date = false, $num_days = 1, $and = '', $limit = 5, $summarize = NULL ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Get the most shared posts of the current blog, ordered DESC by share count
+ *
+ * @author jjj
+ * @access public
+ *
+ * @global WPDB $wpdb WordPress's Database class
+ * @deprecated No longer supported since 2.0.0
+ * @param int $limit Optional. Number of posts to retrieve. Defaults to 5.
+ * @param int $cache_duration Optional. Length of time to cache the query. Defaults to 3600.
+ * @return array Array of most shared post IDs
+ */
+function wpcom_vip_get_most_shared_posts( $limit = 5, $cache_duration = 3600 ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return array();
+}
+
+/**
+ * Get the WP.com stats as XML
+ *
+ * @author tott
+ * @deprecated No longer supported since 2.0.0
+ * @param string $table Optional. Table for stats can be views, postviews, referrers, searchterms, clicks. Default is views.
+ * @param string $end_data Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
+ * @param int $num_days Optional. The length of the desired time frame. Default is 1. Maximum 90 days
+ * @param string $and Optional. Possibility to refine the query with additional AND condition. Usually unused.
+ * @param int $limit Optional. The maximum number of records to return. Default is 5. Maximum 100.
+ * @param bool $summarize Optional. If present, summarizes all matching records.
+ * @return string Result format is XML dataset.
+ */
+function wpcom_vip_get_stats_xml( $table = 'views', $end_date = false, $num_days = 1, $and = '', $limit = 5, $summarize = NULL ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return null;
+}
