@@ -2397,7 +2397,7 @@ p {
 			add_action( 'jetpack_notices', array( $this, 'disconnect_survey_notice' ) );
 		}
 
-		add_action( 'admin_notices', array( $this, 'alert_identity_crisis' ) );
+		// add_action( 'admin_notices', array( $this, 'alert_identity_crisis' ) );
 
 		if ( current_user_can( 'manage_options' ) && 'ALWAYS' == JETPACK_CLIENT__HTTPS && ! self::permit_ssl() ) {
 			add_action( 'admin_notices', array( $this, 'alert_required_ssl_fail' ) );
@@ -4522,7 +4522,8 @@ p {
 			return false;
 		}
 
-		if ( 0 !== strpos( $token->secret, "$token_key." ) ) {
+		$token_check = "$token_key.";
+		if ( ! hash_equals( substr( $token->secret, 0, strlen( $token_check ) ), $token_check ) ) {
 			return false;
 		}
 
@@ -4561,7 +4562,7 @@ p {
 			return false;
 		} else if ( is_wp_error( $signature ) ) {
 			return $signature;
-		} else if ( $signature !== $_GET['signature'] ) {
+		} else if ( ! hash_equals( $signature, $_GET['signature'] ) ) {
 			return false;
 		}
 
