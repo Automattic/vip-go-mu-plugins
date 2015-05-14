@@ -5,7 +5,7 @@
 define( 'WPCOM_IS_VIP_ENV', true );
 
 // Load our development and environment helpers
-require_once( __DIR__ . '/vip/vip-utils.php' );
+require_once( __DIR__ . '/vip/vip-utils.php' )
 require_once( __DIR__ . '/vip/vip-caching.php' );
 require_once( __DIR__ . '/vip/vip-roles.php' );
 require_once( __DIR__ . '/vip/vip-permastructs.php' );
