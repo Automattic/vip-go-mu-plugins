@@ -1092,3 +1092,19 @@ function wpcom_initiate_flush_rewrite_rules() {
 
 	flush_rewrite_rules( false );
 }
+
+/**
+ * Technically this function used to return whether or not the given site was
+ * flagged as VIP...though most VIP clients used it as a way to determine if
+ * the code was in production vs. dev, before WPCOM_IS_VIP_ENV was introduced
+ *
+ * For back compat with that usage, we return the value of WPCOM_IS_VIP_ENV
+ * so that v1 client code works as expected
+ *
+ * @deprecated Deprecated since 2.0.0 - use WPCOM_IS_VIP_ENV
+ */
+function wpcom_is_vip() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return WPCOM_IS_VIP_ENV;
+}
