@@ -857,3 +857,217 @@ function wpcom_vip_get_stats_xml( $table = 'views', $end_date = false, $num_days
 
 	return null;
 }
+
+if ( ! function_exists( 'w3cdate_from_mysql' ) ) {
+/**
+ * Convert a MySQL datetime string to an ISO 8601 string
+ *
+ * @deprecated Deprecated since 2.0.0
+ * @link http://www.w3.org/TR/NOTE-datetime W3C date and time formats document
+ * @param string $mysql_date UTC datetime in MySQL syntax of YYYY-MM-DD HH:MM:SS
+ * @return string ISO 8601 UTC datetime string formatted as YYYY-MM-DDThh:mm:ssTZD where timezone offset is always +00:00
+ */
+function w3cdate_from_mysql($mysql_date) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return str_replace(' ', 'T', $mysql_date).'+00:00';
+}
+
+}
+
+if ( ! function_exists( 'sitemap_cache_key' ) ) {
+
+/**
+ * Common definition of sitemap cache key for use in getters, setters and clears
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @returns string cache key
+ */
+function sitemap_cache_key() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return '';
+}
+
+}
+
+if ( ! function_exists( 'sitemap_content_type' ) ) {
+
+/**
+ * Return the content type used to serve a Sitemap XML file
+ * Uses text/xml by default, possibly overridden by sitemap_content_type filter
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @return string Internet media type for the sitemap XML
+ */
+function sitemap_content_type() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return '';
+}
+
+}
+
+function wpcom_print_sitemap_item($data) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+function wpcom_print_xml_tag( $array ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Convert an array to a SimpleXML child of the passed tree.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param array $data array containing element value pairs, including other arrays, for XML contruction
+ * @param SimpleXMLElement $tree A SimpleXMLElement class object used to attach new children
+ * @return SimpleXMLElement full tree with new children mapped from array
+ */
+function wpcom_sitemap_array_to_simplexml($data, &$tree ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return null;
+}
+
+/**
+ * Define an array of attribute value pairs for use inside the root element of an XML document.
+ * Intended for mapping namespace and namespace URI values.
+ * Passes array through sitemap_ns for other functions to add their own namespaces
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @return array array of attribute value pairs passed through the sitemap_ns filter
+ */
+function wpcom_sitemap_namespaces() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return array();
+}
+
+function wpcom_sitemap_initstr( $charset ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return '';
+}
+
+/**
+ * Print an XML sitemap conforming to the Sitemaps.org protocol
+ * Outputs an XML list of up to the latest 1000 posts.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @link http://sitemaps.org/protocol.php Sitemaps.org protocol
+ * @todo set cache and expire on post publish, page publish or approved comment publish
+ */
+function wpcom_print_sitemap() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+function wpcom_print_news_sitemap($format) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+* Transitionary solution in migration from n to news namespace
+*
+* While we get all the VIP clients that have filters that changing the namespace
+* would impact we will convert n: to news: as late as possible.
+*
+* @deprecated No longer supported since 2.0.0
+* @param mixed $url
+*/
+function wpcom_sitemap_n_to_news_namespace( $url ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return null;
+}
+
+if ( ! function_exists( 'sitemap_uri' ) ) {
+
+/**
+ * Absolute URL of the current blog's sitemap
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @return string sitemap URL
+ */
+function sitemap_uri() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return null;
+}
+
+}
+
+if ( ! function_exists( 'news_sitemap_uri' ) ) {
+
+/**
+ * Absolute URL of the current blog's news sitemap
+ *
+ * @deprecated No longer supported since 2.0.0
+ */
+function news_sitemap_uri() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	return null;
+}
+
+}
+
+if ( ! function_exists( 'sitemap_endpoints' ) ) {
+
+/**
+ * A list or HTTP endpoints for a sitemap ping
+ *
+ * Note: disabled ping to http://submissions.ask.com/ping?sitemap=
+ * See http://systemattic.wordpress.com/2010/02/11/sitemap-jobs-queue-showed-up-in-nagios/
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @return array List of endpoints waiting for a URI append
+ */
+function sitemap_endpoints() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return null;
+}
+
+}
+
+if ( ! function_exists( 'do_sitemap_pings' ) ) {
+
+/**
+ * Ping all registered HTTP endpoints for sitemap URIs
+ *
+ * @deprecated No longer supported since 2.0.0
+ */
+function do_sitemap_pings( $job ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+}
+
+if ( ! function_exists( 'sitemap_discovery' ) ) {
+
+/**
+ * Output the master sitemap URLs for the current blog context
+ *
+ * @deprecated No longer supported since 2.0.0
+ */
+function sitemap_discovery() {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+}
+
+if ( ! function_exists( 'sitemap_handle_update' ) ) {
+
+/**
+ * Clear the sitemap cache when a sitemap action has changed
+ * Add a job to the pings queue to send out update notifications
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param int $post_id unique post identifier. not used.
+ */
+function sitemap_handle_update( $post_id ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+}
