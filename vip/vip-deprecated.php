@@ -1137,3 +1137,26 @@ function wpcom_vip_get_resized_remote_image_url( $url, $width, $height, $escape 
 
 	return ( $escape ) ? esc_url( $thumburl ) : $thumburl;
 }
+
+/**
+ * Loads a plugin out of our shared plugins directory.
+ *
+ * @deprecated Since 2.0.0 - use Plugins UI (at least for the time being)
+ * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
+ * @param string $plugin Optional. Plugin folder name (and filename) of the plugin
+ * @param string $folder Optional. Folder to include from; defaults to "plugins". Useful for when you have multiple themes and your own shared plugins folder.
+ * @return bool True if the include was successful
+ */
+function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_release_candidate = false ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Require a library in the VIP shared code library.
+ *
+ * @deprecated Since 2.0.0 - not yet supported
+ * @param string $slug
+ */
+function wpcom_vip_require_lib( $slug ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
