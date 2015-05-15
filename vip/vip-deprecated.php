@@ -1160,3 +1160,86 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_rele
 function wpcom_vip_require_lib( $slug ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * Filter plugins_url() so that it works for plugins inside the shared VIP plugins directory or a theme directory.
+ *
+ * Props to the GigaOm dev team for coming up with this method.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param string $url Optional. Absolute URL to the plugins directory.
+ * @param string $path Optional. Path relative to the plugins URL.
+ * @param string $plugin Optional. The plugin file that you want the URL to be relative to.
+ * @return string
+ */
+function wpcom_vip_plugins_url( $url = '', $path = '', $plugin = '' ) {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'plugins_url' );
+
+	return plugins_url( $path, $plugin );
+}
+
+/**
+ * Return a URL for given VIP theme and path. Does not work with VIP shared plugins.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param string $path Optional. Path to suffix to the theme URL.
+ * @param string $theme Optional. Name of the theme folder.
+ * @return string|bool URL for the specified theme and path. If path doesn't exist, returns false.
+ */
+function wpcom_vip_theme_url( $path = '', $theme = '' ) {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'get_stylesheet_directory_uri' );
+
+    if ( empty( $theme ) )
+		$theme = str_replace( 'vip/', '', get_stylesheet() );
+
+	// We need to reference a file in the specified theme; style.css will almost always be there.
+	$theme_folder = sprintf( '%s/themes/%s', WP_CONTENT_DIR, $theme );
+	$theme_file = $theme_folder . '/style.css';
+
+	// For local environments where the theme isn't under /themes/vip/themename/
+	$theme_folder_alt = sprintf( '%s/themes/%s', WP_CONTENT_DIR, $theme );
+	$theme_file_alt = $theme_folder_alt . '/style.css';
+
+	$path = ltrim( $path, '/' );
+
+	// We pass in a dummy file to plugins_url even if it doesn't exist, otherwise we get a URL relative to the parent of the theme folder (i.e. /themes/vip/)
+	if ( is_dir( $theme_folder ) ) {
+		return plugins_url( $path, $theme_file );
+	} elseif ( is_dir( $theme_folder_alt ) ) {
+		return plugins_url( $path, $theme_file_alt );
+	}
+
+	return false;
+}
+
+/**
+ * Return the directory path for a given VIP theme
+ *
+ * @link http://vip.wordpress.com/documentation/mobile-theme/ Developing for Mobile Phones and Tablets
+ * @param string $theme Optional. Name of the theme folder
+ * @return string Path for the specified theme
+ */
+function wpcom_vip_theme_dir( $theme = '' ) {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'get_stylesheet_directory' );
+
+	if ( empty( $theme ) )
+		$theme = get_stylesheet();
+
+	// Simple sanity check, in case we get passed a lame path
+	$theme = ltrim( $theme, '/' );
+	$theme = str_replace( 'vip/', '', $theme );
+
+	return sprintf( '%s/themes/%s', WP_CONTENT_DIR, $theme );
+}
+
+/**
+ * If you don't want people (de)activating plugins via this UI
+ * and only want to enable plugins via wpcom_vip_load_plugin()
+ * calls in your theme's functions.php file, then call this
+ * function to disable this plugin's (de)activation links.
+ *
+ * @deprecated No longer supported since 2.0.0
+ */
+function wpcom_vip_plugins_ui_disable_activation() {
+    _deprecated_function( __FUNCTION__, '2.0.0', 'plugins_url' );
+}
