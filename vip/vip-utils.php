@@ -28,7 +28,7 @@ function _wpcom_vip_call_on_hook_or_execute( $function, $hook, $priority = 99 ) 
  * @return string
  */
 function wpcom_vip_themes_root() {
-	return WP_CONTENT_DIR . '/themes/vip';
+	return WP_CONTENT_DIR . '/themes';
 }
 
 /**
@@ -42,9 +42,9 @@ function wpcom_vip_themes_root() {
  */
 function wpcom_vip_themes_root_uri() {
 	if ( ! is_admin() ) {
-		return home_url( '/wp-content/themes/vip' );
+		return home_url( '/wp-content/themes' );
 	} else {
-		return content_url( '/themes/vip' );
+		return content_url( '/themes' );
 	}
 }
 
