@@ -1149,16 +1149,135 @@ function wpcom_vip_get_resized_remote_image_url( $url, $width, $height, $escape 
  */
 function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_release_candidate = false ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
+
+	// Make sure there's a plugin to load
+	if ( empty($plugin) ) {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
+		}
+	}
+
+	// Make sure $plugin and $folder are valid
+	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
+	if ( 'plugins' !== $folder )
+		$folder = _wpcom_vip_load_plugin_sanitizer( $folder );
+
+	// Shared plugins are located at /wp-content/themes/vip/plugins/example-plugin/
+	// You should keep your local copies of the plugins in the same location
+
+	$includepath 					= WP_CONTENT_DIR . "/$folder/$plugin/$plugin.php";
+	$release_candidate_includepath 	= WP_CONTENT_DIR . "/$folder/release-candidates/$plugin/$plugin.php";
+
+	if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
+		$includepath = $release_candidate_includepath;
+	}
+
+	if ( file_exists( $includepath ) ) {
+
+		wpcom_vip_add_loaded_plugin( "$folder/$plugin" );
+
+		// Since we're going to be include()'ing inside of a function,
+		// we need to do some hackery to get the variable scope we want.
+		// See http://www.php.net/manual/en/language.variables.scope.php#91982
+
+		// Start by marking down the currently defined variables (so we can exclude them later)
+		$pre_include_variables = get_defined_vars();
+
+		// Now include
+		include_once( $includepath );
+
+		// Blacklist out some variables
+		$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
+
+		// Let's find out what's new by comparing the current variables to the previous ones
+		$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
+
+		// global each new variable
+		foreach ( $new_variables as $new_variable => $devnull )
+			global $$new_variable;
+
+		// Set the values again on those new globals
+		extract( $new_variables );
+
+		return true;
+	} else {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( "Unable to load $plugin ({$folder}) using wpcom_vip_load_plugin()!" );
+		}
+	}
+}
+
+/**
+ * Helper function for wpcom_vip_load_plugin(); sanitizes plugin folder name.
+ *
+ * You shouldn't use this function.
+ *
+ * @param string $folder Folder name
+ * @return string Sanitized folder name
+ */
+function _wpcom_vip_load_plugin_sanitizer( $folder ) {
+	$folder = preg_replace( '#([^a-zA-Z0-9-_.]+)#', '', $folder );
+	$folder = str_replace( '..', '', $folder ); // To prevent going up directories
+
+	return $folder;
+}
+
+/**
+ * Store the name of a VIP plugin that will be loaded
+ *
+ * @param string $plugin Plugin name and folder
+ * @see wpcom_vip_load_plugin()
+ */
+function wpcom_vip_add_loaded_plugin( $plugin ) {
+	global $vip_loaded_plugins;
+
+	if ( ! isset( $vip_loaded_plugins ) )
+		$vip_loaded_plugins = array();
+
+	array_push( $vip_loaded_plugins, $plugin );
+}
+
+/**
+ * Get the names of VIP plugins that have been loaded
+ *
+ * @return array
+ */
+function wpcom_vip_get_loaded_plugins() {
+	global $vip_loaded_plugins;
+
+	if ( ! isset( $vip_loaded_plugins ) )
+		$vip_loaded_plugins = array();
+
+	return $vip_loaded_plugins;
 }
 
 /**
  * Require a library in the VIP shared code library.
  *
- * @deprecated Since 2.0.0 - not yet supported
+ * @deprecated Since 2.0.0 - not yet fully supported
  * @param string $slug
  */
 function wpcom_vip_require_lib( $slug ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    if ( !preg_match( '|^[a-z0-9/_.-]+$|i', $slug ) ) {
+		trigger_error( "Cannot load a library with invalid slug $slug.", E_USER_ERROR );
+		return;
+	}
+	$basename = basename( $slug );
+	$lib_dir = WP_CONTENT_DIR . '/plugins/lib';
+	$choices = array(
+		"$lib_dir/$slug.php",
+		"$lib_dir/$slug/0-load.php",
+		"$lib_dir/$slug/$basename.php",
+	);
+	foreach( $choices as $file_name ) {
+		if ( is_readable( $file_name ) ) {
+			require_once $file_name;
+			return;
+		}
+	}
+	trigger_error( "Cannot find a library with slug $slug.", E_USER_ERROR );
 }
 
 /**
