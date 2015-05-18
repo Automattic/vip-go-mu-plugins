@@ -1362,3 +1362,22 @@ function wpcom_vip_theme_dir( $theme = '' ) {
 function wpcom_vip_plugins_ui_disable_activation() {
     _deprecated_function( __FUNCTION__, '2.0.0', 'plugins_url' );
 }
+
+/**
+ * Get the WP.com stats
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @author tott
+ * @param string $table Optional. Table for stats can be views, postviews, authorviews, referrers, searchterms, clicks. Default is views.
+ * @param string $end_data Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
+ * @param int $num_days Optional. The length of the desired time frame. Default is 1. Maximum 90 days
+ * @param string $and Optional. Possibility to refine the query with additional AND condition. Usually unused.
+ * @param int $limit Optional. The maximum number of records to return. Default is 5. Maximum 100.
+ * @param bool $summarize If present, summarizes all matching records.
+ * @return array Result as array.
+ */
+function wpcom_vip_get_stats_array( $table = 'views', $end_date = false, $num_days = 1, $and = '', $limit = 5, $summarize = NULL ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+
+    return array();
+}
