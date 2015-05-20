@@ -523,7 +523,7 @@ function vary_cache_on_function( $function ) {
  * @see wpcom_vip_file_get_contents
  */
 function vip_wp_file_get_content( $url, $echo_content = true, $timeout = 3 ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
+    _deprecated_function( __FUNCTION__, '2.0.0', 'wpcom_vip_file_get_contents' );
 
     $output = wpcom_vip_file_get_contents( $url, $timeout );
 
