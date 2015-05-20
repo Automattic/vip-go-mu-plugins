@@ -8,19 +8,20 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 }
 
 // Load our development and environment helpers
-require_once( __DIR__ . '/vip/vip-utils.php' );
-require_once( __DIR__ . '/vip/vip-caching.php' );
-require_once( __DIR__ . '/vip/vip-roles.php' );
-require_once( __DIR__ . '/vip/vip-permastructs.php' );
-require_once( __DIR__ . '/vip/vip-mods.php' );
-require_once( __DIR__ . '/vip/vip-media.php' );
-require_once( __DIR__ . '/vip/vip-elasticsearch.php' );
-require_once( __DIR__ . '/vip/vip-stats.php' );
-require_once( __DIR__ . '/vip/vip-deprecated.php' );
+require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
+require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
+require_once( __DIR__ . '/vip-helpers/vip-roles.php' );
+require_once( __DIR__ . '/vip-helpers/vip-permastructs.php' );
+require_once( __DIR__ . '/vip-helpers/vip-mods.php' );
+require_once( __DIR__ . '/vip-helpers/vip-media.php' );
+require_once( __DIR__ . '/vip-helpers/vip-elasticsearch.php' );
+require_once( __DIR__ . '/vip-helpers/vip-stats.php' );
+require_once( __DIR__ . '/vip-helpers/vip-deprecated.php' );
+require_once( __DIR__ . '/vip-helpers/dashboard/vip-dashboard.php' );
 
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once( __DIR__ . '/vip/vip-wp-cli.php' );
+    require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
 do_action( 'vip_loaded' );
