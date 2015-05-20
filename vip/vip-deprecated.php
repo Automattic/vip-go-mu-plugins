@@ -1381,3 +1381,19 @@ function wpcom_vip_get_stats_array( $table = 'views', $end_date = false, $num_da
 
     return array();
 }
+
+/**
+ * Use a custom CDN host for displaying theme images and media library content.
+ *
+ * Please get in touch before using this as it can break your site.
+ *
+ * @deprecated No longer supported since 2.0.0
+ * @param array $args Array of args
+ * 		string|array cdn_host_media => Hostname of the CDN for media library assets.
+ * 		string|array cdn_host_static => Optional. Hostname of the CDN for static assets.
+ * 		bool include_admin => Optional. Whether the custom CDN host should be used in the admin context as well.
+ * 		bool disable_ssl => Optional. Whether SSL should be disabled for the custom CDN.
+ */
+function wpcom_vip_load_custom_cdn( $args ) {
+    _deprecated_function( __FUNCTION__, '2.0.0' );
+}
