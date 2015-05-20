@@ -171,16 +171,14 @@ function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height, 
 		return false;
 	}
 
-	$url = add_query_arg( array(
+	$args = array(
 		'w' => intval( $width ),
 		'h' => intval( $height ),
-	), $url );
+	);
 
-	if ( $crop ) {
-		$url = add_query_arg( 'crop', 1, $url );
-	}
+	// @todo crop handling?
 
-	return $url;
+	return jetpack_photon_url( $url, $args, '//' );
 }
 
 /**
