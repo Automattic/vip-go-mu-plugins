@@ -1,3 +1,0 @@
-[submodule "vip-support"]
-	path = vip-support
-	url = https://github.com/Automattic/vipv2-support.git
