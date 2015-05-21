@@ -11,8 +11,6 @@ php:
   - 5.5
 
 before_install:
-  - echo "Value is: $KEY_PASSWORD"
-  - cat "${TRAVIS_BUILD_DIR}/ci/new-key.enc"
   - openssl aes-256-cbc -k "${KEY_PASSWORD}" -d -a -in "${TRAVIS_BUILD_DIR}/ci/new-key.enc" -out ${TRAVIS_BUILD_DIR}/ci/new-key
   - echo -e "Host github.com\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/new-key" > ~/.ssh/config
   - cat ~/.ssh/config
