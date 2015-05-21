@@ -3,6 +3,9 @@ language: php
 php:
   - 5.5
 
+env:
+    - WP_VERSION=latest WP_MULTISITE=0
+
 before_install:
   - sudo apt-get update > /dev/null
 
@@ -10,6 +13,9 @@ script:
 
   # PHP Lint
   - make lint
+
+  # PHPUnit
+  - make phpunit
 
 notifications:
   slack: a8c:rdeQR68xgiffkssb1ZNw5P1c

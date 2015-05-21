@@ -51,7 +51,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 		}
 	}
 
-	foreach ( $posts as $post ) {
+	foreach ( $posts as & $post ) {
 		$post['post_id']        = absint( $post['post_id'] );
 		$post['post_permalink'] = esc_url( $post['post_permalink'] );
 		$post['views']          = absint( $post['views'] );
@@ -66,9 +66,9 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
  * Note that it is not currently possible to retrieve the post views for
  * the homepage using this function
  *
- * @param int     $post_id   Optional. The post ID to fetch stats for. Defaults to the $post global's value.
- * @param int     $num_days  Optional. How many days to go back to include in the stats. Default is 1. Maximum 90 days.
- * @param string  $end_data  Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is today's UTC date.
+ * @param int          $post_id   Optional. The post ID to fetch stats for. Defaults to the $post global's value.
+ * @param int          $num_days  Optional. How many days to go back to include in the stats. Default is 1. Maximum 90 days.
+ * @param string|bool  $end_data  Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is today's UTC date.
  * @return int|false Number of pageviews or false on error.
  */
 function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date = false ) {
