@@ -53,7 +53,6 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 
 	foreach ( $posts as & $post ) {
 		$post['post_id']        = absint( $post['post_id'] );
-		$post['post_permalink'] = esc_url( $post['post_permalink'] );
 		$post['views']          = absint( $post['views'] );
 	}
 
