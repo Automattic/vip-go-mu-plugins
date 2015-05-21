@@ -1,15 +1,15 @@
 language: php
+env:
+  global:
+      secure: "mkLA/hO4+ETG2TXuVUsck1qAYXo+vEihK+XlKbFrxwmmiXaF5k6ooRRjTkkMBGQYckqE8JsY9E4VXUOk+NnhEXP6iMrXRB0CD8/l9iICFkKpRfgNc2eZHHSz/mDsVFdDLQEbv30Lxcfsuf5mv2ppYyotILNh8xhj+R/V/jm00k8="
 
 git:
-
   submodules: false
 
 php:
-
   - 5.5
 
 before_install:
-
   - echo $KEY_PASSWORD
   - cat "${TRAVIS_BUILD_DIR}/ci/new-key.enc"
   - openssl aes-256-cbc -k "${KEY_PASSWORD}" -d -a -in "${TRAVIS_BUILD_DIR}/ci/new-key.enc" -out ${TRAVIS_BUILD_DIR}/ci/new-key
@@ -21,12 +21,8 @@ before_install:
   - sudo apt-get update > /dev/null
 
 script:
-
-  - make lint
+- make lint
 
 notifications:
-
   slack: a8c:rdeQR68xgiffkssb1ZNw5P1c
 
-KEY_PASSWORD=ef12a5e132f14d2aab2e0719f99f724a4d9d0f8fb39c0fcdb63b50463ab800ed:
-  secure: nQnswFRMSK+cbbMNUmqR8Kegfq+rE16lcgK3iTdsMof1zz6O/yreQRKt0DFaX+3UoTKh+4GPj+BlVtuEhhUwUfa9BtWdlQy91v8XOVgMHN4YnCZWiJlEYcBbNMS4lxCmxH5ez3lkdUWxjVx2oN8kNKKei7FfMIZeK+89BS430mE=
