@@ -1,7 +1,8 @@
 language: php
 env:
   global:
-      secure: "mkLA/hO4+ETG2TXuVUsck1qAYXo+vEihK+XlKbFrxwmmiXaF5k6ooRRjTkkMBGQYckqE8JsY9E4VXUOk+NnhEXP6iMrXRB0CD8/l9iICFkKpRfgNc2eZHHSz/mDsVFdDLQEbv30Lxcfsuf5mv2ppYyotILNh8xhj+R/V/jm00k8="
+      # Encrypted value for $KEY_PASSWORD, which is the password for the key included with this repo
+     - secure: "E6mfvSiH6+hPzoxf2NaZGgQNCChJY1hOhBa3CtIwd0jmlk9IoHUQojIyocIRfqGC+NRLR6a105hLDDqzkL3g6pdVsvTmcKc9uVNGH5R29AFJbPBWA6D/A9eytVfoZ+tz3lsUTxtYHVXaLUCx0QiokkuSDTCOWhQf4mHrHfYYOp4="
 
 git:
   submodules: false
@@ -10,7 +11,7 @@ php:
   - 5.5
 
 before_install:
-  - echo $KEY_PASSWORD
+  - echo "Value is: $KEY_PASSWORD"
   - cat "${TRAVIS_BUILD_DIR}/ci/new-key.enc"
   - openssl aes-256-cbc -k "${KEY_PASSWORD}" -d -a -in "${TRAVIS_BUILD_DIR}/ci/new-key.enc" -out ${TRAVIS_BUILD_DIR}/ci/new-key
   - echo -e "Host github.com\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/new-key" > ~/.ssh/config
