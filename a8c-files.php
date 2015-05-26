@@ -5,7 +5,6 @@ Description: Provides a hosted, distributed and fault tolerant files service
 Author: Automattic
 Version: 0.2
 Author URI: http://automattic.com/
-License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
 /* Requires at least: 3.9.0
@@ -245,7 +244,6 @@ class A8C_Files {
 					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
 					'Content-Type: ' . $details['type'],
 					'Content-Length: ' . filesize( $details['file'] ),
-					'Transfer-Encoding: chunked',
 					'Connection: Keep-Alive',
 				);
 
@@ -258,7 +256,7 @@ class A8C_Files {
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_HEADER, false );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 + (int)( filesize( $details['file'] ) / 512000 ) ); // 10 plus 1 second per 500k
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
 
 		curl_setopt( $ch, CURLOPT_READFUNCTION,
