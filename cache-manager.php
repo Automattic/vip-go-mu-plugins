@@ -8,7 +8,7 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-class Cache_Manager {
+class WPCOM_VIP_Cache_Manager {
 	private $ban_urls = array();
 	private $purge_urls = array();
 	private $site_cache_purged = false;
@@ -66,7 +66,7 @@ class Cache_Manager {
 			curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
 			curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
 			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}" ) );
-			curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] ); 
+			curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
 			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 			curl_setopt( $curl, CURLOPT_NOBODY, true );
 			curl_setopt( $curl, CURLOPT_HEADER, true );
@@ -80,10 +80,10 @@ class Cache_Manager {
 			do {
 				$result = curl_multi_exec( $curl_multi, $running );
 			} while ( $result == CURLM_CALL_MULTI_PERFORM );
-			
+
 			if ( $result != CURLM_OK )
 				error_log( 'curl_multi_exec() returned something different than CURLM_OK' );
-			
+
 			curl_multi_select( $curl_multi, 0.2 );
 		}
 
@@ -177,8 +177,8 @@ class Cache_Manager {
 		}
 
 		$post = get_post( $post_id );
-		if ( empty( $post ) || 
-			'revision' === $post->post_type || 
+		if ( empty( $post ) ||
+			'revision' === $post->post_type ||
 			! in_array( get_post_status( $post_id ), array( 'publish', 'trash' ), true ) )
 		{
 			return;
@@ -199,26 +199,25 @@ class Cache_Manager {
 		$tags = get_the_tags( $post_id );
 		if ( $tags ) {
 			$tag_base = get_option( 'tag_base' ) ? get_option( 'tag_base' ) : '/tag';
-			$tag_base = trailingslashit( str_replace( '..', '', $tag_base ) ); 
+			$tag_base = trailingslashit( str_replace( '..', '', $tag_base ) );
 
 			foreach ( $tags as $tag )
 				$this->purge_urls[] = home_url( $tag_base . $tag->slug . '/' );
 		}
 
-		$feeds = array( 
-			get_bloginfo('rdf_url'), 
-			get_bloginfo('rss_url') , 
-			get_bloginfo('rss2_url'), 
-			get_bloginfo('atom_url'), 
-			get_bloginfo('comments_atom_url'), 
-			get_bloginfo('comments_rss2_url'), 
-			get_post_comments_feed_link( $post_id ) 
+		$feeds = array(
+			get_bloginfo('rdf_url'),
+			get_bloginfo('rss_url') ,
+			get_bloginfo('rss2_url'),
+			get_bloginfo('atom_url'),
+			get_bloginfo('comments_atom_url'),
+			get_bloginfo('comments_rss2_url'),
+			get_post_comments_feed_link( $post_id )
 		);
-		
+
 		foreach ( $feeds as $feed )
 			$this->purge_urls[] = $feed;
 	}
 }
 
-new Cache_Manager();
-
+new WPCOM_VIP_Cache_Manager();
