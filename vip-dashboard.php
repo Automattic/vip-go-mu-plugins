@@ -12,4 +12,6 @@ Text Domain: vip-dashboard
 Domain Path: /languages/
 */
 
-require __DIR__ . '/vip-dashboard/vip-dashboard.php';
+if ( is_admin() ) {
+  require __DIR__ . '/vip-dashboard/vip-dashboard.php';
+}
