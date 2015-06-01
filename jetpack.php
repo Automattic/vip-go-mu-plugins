@@ -11,5 +11,7 @@
  * Text Domain: jetpack
  * Domain Path: /languages/
  */
+ 
+add_filter( 'jetpack_disable_no_verify_ssl_certs', '__return_true' );
 
 require_once( __DIR__ . '/jetpack/jetpack.php' );
