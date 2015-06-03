@@ -1,6 +1,6 @@
 [submodule "vip-dashboard"]
 	path = vip-dashboard
-	url = https://github.com/Automattic/vip-dashboard.git
+	url = git@github.com:Automattic/vip-dashboard.git
 [submodule "vip-support"]
 	path = vip-support
 	url = git@github.com:Automattic/vipv2-support.git
