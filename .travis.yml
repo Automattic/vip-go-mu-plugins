@@ -11,11 +11,12 @@ env:
 
 before_install:
   - mkdir -p ~/.ssh
-  - echo -e "Host github.com\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key" > ~/.ssh/config
+  - echo -e "Host github.com\n  User wpcomvip-deploy\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key\n" > ~/.ssh/config
   - cat ~/.ssh/config
   - cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
   - cat ~/.ssh/known_hosts
   - ls -alh ~/.ssh
+  - ssh -T git@github.com
   - whoami
   - git clone git@github.com:Automattic/vip-dashboard.git
   - git clone git@github.com:Automattic/vipv2-support.git
