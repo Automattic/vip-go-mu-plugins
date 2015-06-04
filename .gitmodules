@@ -13,3 +13,6 @@
 [submodule "jetpack"]
 	path = jetpack
 	url = git@github.com:Automattic/jetpack.git
+[submodule "http-concat"]
+	path = http-concat
+	url = git@github.com:Automattic/nginx-http-concat.git
