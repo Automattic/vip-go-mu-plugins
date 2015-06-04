@@ -1,8 +1,4 @@
 language: php
-env:
-  global:
-      # Encrypted value for $KEY_PASSWORD, which is the password for the key included with this repo
-     - secure: "E6mfvSiH6+hPzoxf2NaZGgQNCChJY1hOhBa3CtIwd0jmlk9IoHUQojIyocIRfqGC+NRLR6a105hLDDqzkL3g6pdVsvTmcKc9uVNGH5R29AFJbPBWA6D/A9eytVfoZ+tz3lsUTxtYHVXaLUCx0QiokkuSDTCOWhQf4mHrHfYYOp4="
 
 git:
   submodules: false
@@ -11,24 +7,21 @@ php:
   - 5.5
 
 env:
-    - WP_VERSION=latest WP_MULTISITE=0
+  - WP_VERSION=latest WP_MULTISITE=0
 
 before_install:
-  - openssl aes-256-cbc -k "${KEY_PASSWORD}" -d -a -in "${TRAVIS_BUILD_DIR}/ci/new-key.enc" -out ${TRAVIS_BUILD_DIR}/ci/new-key
-  - echo -e "Host github.com\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/new-key" > ~/.ssh/config
-  - cat ~/.ssh/config
-  - echo "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==" > ~/.ssh/known_hosts
-  - cat ~/.ssh/known_hosts
-  - git submodule update --init --recursive
   - sudo apt-get update > /dev/null
   - ./ci/prepare.sh
+  - git submodule update --init --recursive
 
 script:
-- make lint
+
+  - make test
 
   # PHPUnit
   - make phpunit
 
 notifications:
+
   slack: a8c:rdeQR68xgiffkssb1ZNw5P1c
 
