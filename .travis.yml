@@ -15,7 +15,7 @@ before_install:
   - cat ~/.ssh/config
   - cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
   - cat ~/.ssh/known_hosts
-  - ssh -vv -T git@github.com
+  - whoami
   - git clone git@github.com:Automattic/vip-dashboard.git
   - git clone git@github.com:Automattic/vipv2-support.git
   - git clone git@github.com:Automattic/vipv2-jetpack.git
