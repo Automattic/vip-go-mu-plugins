@@ -1,8 +1,4 @@
 language: php
-env:
-  global:
-      # Encrypted value for $KEY_PASSWORD, which is the password for the key included with this repo
-     - secure: "E6mfvSiH6+hPzoxf2NaZGgQNCChJY1hOhBa3CtIwd0jmlk9IoHUQojIyocIRfqGC+NRLR6a105hLDDqzkL3g6pdVsvTmcKc9uVNGH5R29AFJbPBWA6D/A9eytVfoZ+tz3lsUTxtYHVXaLUCx0QiokkuSDTCOWhQf4mHrHfYYOp4="
 
 git:
   submodules: false
