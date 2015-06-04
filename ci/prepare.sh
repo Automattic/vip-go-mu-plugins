@@ -6,11 +6,11 @@
 # http://www.peterbe.com/plog/set-ex
 set -ex
 
-#mkdir -p ~/.ssh
-#echo -e "Host github.com\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key" > ~/.ssh/config
-#cat ~/.ssh/config
-#cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
-#cat ~/.ssh/known_hosts
+mkdir -p ~/.ssh
+ssh-add -D
+echo -e "Host github.com\n  User wpcomvip-deploy\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key\n" > ~/.ssh/config
+chmod 600 ${TRAVIS_BUILD_DIR}/ci/ssh/*
+cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
 
 # Install unit tests
 # ==================

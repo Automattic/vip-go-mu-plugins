@@ -10,17 +10,9 @@ env:
   - WP_VERSION=latest WP_MULTISITE=0
 
 before_install:
-  - mkdir -p ~/.ssh
-  - ssh-add -D
-  - echo -e "Host github.com\n  User wpcomvip-deploy\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key\n" > ~/.ssh/config
-  - chmod 600 ${TRAVIS_BUILD_DIR}/ci/ssh/*
-  - cat ~/.ssh/config
-  - cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
-  - cat ~/.ssh/known_hosts
-  - ls -alh ~/.ssh
-  - git submodule update --init --recursive
   - sudo apt-get update > /dev/null
   - ./ci/prepare.sh
+  - git submodule update --init --recursive
 
 script:
 
