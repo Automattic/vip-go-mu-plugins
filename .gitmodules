@@ -7,3 +7,6 @@
 [submodule "vip-jetpack"]
 	path = vip-jetpack
 	url = git@github.com:Automattic/vip-jetpack.git
+[submodule "http-concat"]
+	path = http-concat
+	url = git@github.com:Automattic/nginx-http-concat.git
