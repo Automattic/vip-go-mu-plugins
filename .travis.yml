@@ -10,6 +10,11 @@ env:
   - WP_VERSION=latest WP_MULTISITE=0
 
 before_install:
+  - mkdir -p ~/.ssh
+  - echo -e "Host github.com\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key" > ~/.ssh/config
+  - cat ~/.ssh/config
+  - cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
+  - cat ~/.ssh/known_hosts
   - git submodule update --init --recursive
   - sudo apt-get update > /dev/null
   - ./ci/prepare.sh
