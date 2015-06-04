@@ -21,6 +21,7 @@ script:
   # PHPUnit
   - make phpunit
 
-notifications:
+# notifications:
+#
 #  slack: a8c:rdeQR68xgiffkssb1ZNw5P1c
 
