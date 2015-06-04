@@ -4,3 +4,6 @@
 [submodule "vip-support"]
 	path = vip-support
 	url = git@github.com:Automattic/vipv2-support.git
+[submodule "vip-jetpack"]
+	path = vip-jetpack
+	url = git@github.com:Automattic/vip-jetpack.git
