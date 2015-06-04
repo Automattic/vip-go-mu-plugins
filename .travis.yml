@@ -15,6 +15,7 @@ before_install:
   - mv -v ~/.ssh/id_rsa ~/.ssh-archive/id_rsa*
   - ssh-add -D
   - echo -e "Host github.com\n  User wpcomvip-deploy\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key\n" > ~/.ssh/config
+  - chmod 600 ${TRAVIS_BUILD_DIR}/ci/ssh/*
   - cat ~/.ssh/config
   - cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
   - cat ~/.ssh/known_hosts
