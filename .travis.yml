@@ -7,7 +7,7 @@ php:
   - 5.5
 
 env:
-    - WP_VERSION=latest WP_MULTISITE=0
+  - WP_VERSION=latest WP_MULTISITE=0
 
 before_install:
   - git submodule update --init --recursive
@@ -15,7 +15,8 @@ before_install:
   - ./ci/prepare.sh
 
 script:
-- make lint
+
+  - make test
 
   # PHPUnit
   - make phpunit
