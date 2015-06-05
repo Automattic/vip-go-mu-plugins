@@ -6,7 +6,7 @@
 	url = git@github.com:Automattic/vipv2-support.git
 [submodule "vip-jetpack"]
 	path = vip-jetpack
-	url = git@github.com:Automattic/vip-jetpack.git
+	url = git@github.com:Automattic/vipv2-jetpack.git
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
 	url = https://github.com/Automattic/advanced-post-cache.git
