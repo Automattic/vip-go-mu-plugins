@@ -8,7 +8,7 @@
 		<?php echo esc_attr( $akismet_user->user_email ); ?>
 	</div>
 	<form name="akismet_activate" id="akismet_activate" action="https://akismet.com/get/" method="post" class="right" target="_blank">
-		<input type="hidden" name="passback_url" value="<?php echo esc_attr( Akismet_Admin::get_page_url() ); ?>"/>
+		<input type="hidden" name="passback_url" value="<?php echo esc_url( Akismet_Admin::get_page_url() ); ?>"/>
 		<input type="hidden" name="auto-connect" value="<?php echo $akismet_user->ID;?>"/>
 		<input type="hidden" name="redirect" value="plugin-signup"/>
 		<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Register Akismet' , 'akismet'); ?>"/>
@@ -22,7 +22,7 @@
 		<?php printf( esc_html__( 'Your subscription for %s is cancelled' , 'akismet'), $akismet_user->user_email ); ?>
 	</div>
 	<form name="akismet_activate" id="akismet_activate" action="https://akismet.com/get/" method="post" class="right" target="_blank">
-		<input type="hidden" name="passback_url" value="<?php echo esc_attr( Akismet_Admin::get_page_url() ); ?>"/>
+		<input type="hidden" name="passback_url" value="<?php echo esc_url( Akismet_Admin::get_page_url() ); ?>"/>
 		<input type="hidden" name="user_id" value="<?php echo $akismet_user->ID;?>"/>
 		<input type="hidden" name="redirect" value="upgrade"/>
 		<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Reactivate Akismet' , 'akismet'); ?>"/>
@@ -64,7 +64,7 @@
 		<p><?php esc_html_e('If you already know your API key.', 'akismet'); ?></p>
 	</div>
 	<form action="<?php echo esc_url( Akismet_Admin::get_page_url() ); ?>" method="post" id="akismet-enter-api-key" class="right">
-		<input id="key" name="key" type="text" size="15" maxlength="12" value="" class="regular-text code">
+		<input id="key" name="key" type="text" size="15" value="" class="regular-text code">
 		<input type="hidden" name="action" value="enter-key">
 		<?php wp_nonce_field( Akismet_Admin::NONCE ) ?>
 		<input type="submit" name="submit" id="submit" class="button button-secondary" value="<?php esc_attr_e('Use this key', 'akismet');?>">
@@ -85,7 +85,7 @@
 		<p><?php esc_html_e('If you already know your API key.', 'akismet'); ?></p>
 	</div>
 	<form action="<?php echo esc_url( Akismet_Admin::get_page_url() ); ?>" method="post" id="akismet-enter-api-key" class="right">
-		<input id="key" name="key" type="text" size="15" maxlength="12" value="" class="regular-text code">
+		<input id="key" name="key" type="text" size="15" value="" class="regular-text code">
 		<input type="hidden" name="action" value="enter-key">
 		<?php wp_nonce_field( Akismet_Admin::NONCE ); ?>
 		<input type="submit" name="submit" id="submit" class="button button-secondary" value="<?php esc_attr_e('Use this key', 'akismet');?>">
