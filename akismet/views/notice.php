@@ -75,7 +75,11 @@
 <?php elseif ( $type == 'no-sub' ) :?>
 <div class="wrap alert critical">
 	<h3 class="key-status failed"><?php esc_html_e( 'Your subscription is missing.', 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('Since 2012, Akismet began using subscriptions for all accounts (even free ones). It looks like a subscription has not been assigned to your account, and we’d appreciate it if you’d <a href="%s" target="_blank">sign into your account</a> and choose one. Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet'), 'https://akismet.com/account/upgrade/', 'https://akismet.com/contact/' ); ?></p>
+	<p class="description">
+		<?php printf( __( 'Since 2012, Akismet began using subscriptions for all accounts (even free ones). It looks like a subscription has not been assigned to your account, and we’d appreciate it if you’d <a href="%s" target="_blank">sign into your account</a> and choose one.', 'akismet'), 'https://akismet.com/account/upgrade/' ); ?>
+		<br /><br />
+		<?php printf( __( 'Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet' ), 'https://akismet.com/contact/' ); ?>
+	</p>
 </div>
 <?php elseif ( $type == 'new-key-valid' ) :?>
 <div class="wrap alert active">
@@ -87,16 +91,25 @@
 </div>
 <?php elseif ( $type == 'new-key-failed' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status"><?php esc_html_e( 'The key you entered could not be verified because a connection to akismet.com could not be established. Please check your server configuration.' , 'akismet'); ?></h3>
+	<h3 class="key-status"><?php esc_html_e( 'The key you entered could not be verified.' , 'akismet'); ?></h3>
+	<p class="description"><?php printf( __('The connection to akismet.com cannot be established. Please refer to <a href="%s" target="_blank">our guide about firewalls</a> and check your server configuration.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
 </div>
 <?php elseif ( $type == 'limit-reached' && in_array( $level, array( 'yellow', 'red' ) ) ) :?>
 <div class="wrap alert critical">
 	<?php if ( $level == 'yellow' ): ?>
-	<h3 class="key-status failed"><?php esc_html_e("You're using your Akismet key on more sites than your Pro subscription allows.", 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('Your Pro subscription allows the use of Akismet on only one site. Please <a href="http://docs.akismet.com/billing/add-more-sites/">purchase additional Pro subscriptions</a> or upgrade to an Enterprise subscription that allows the use of Akismet on unlimited sites.<br /><br />If you have any questions, please get in touch with our support team.', 'akismet'), 'https://akismet.com/account/upgrade/', 'https://akismet.com/contact/'); ?></p>
+	<h3 class="key-status failed"><?php esc_html_e( 'You&#8217;re using your Akismet key on more sites than your Pro subscription allows.', 'akismet' ); ?></h3>
+	<p class="description">
+		<?php printf( __( 'Your Pro subscription allows the use of Akismet on only one site. Please <a href="%s" target="_blank">purchase additional Pro subscriptions</a> or upgrade to an Enterprise subscription that allows the use of Akismet on unlimited sites.', 'akismet' ), 'http://docs.akismet.com/billing/add-more-sites/' ); ?>
+		<br /><br />
+		<?php printf( __( 'Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet' ), 'https://akismet.com/contact/'); ?>
+	</p>
 	<?php elseif ( $level == 'red' ): ?>
-	<h3 class="key-status failed"><?php esc_html_e("You're using Akismet on far too many sites for your Pro subscription.", 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('To continue your service, <a href="%s" target="_blank">upgrade to an Enterprise subscription</a>, which covers an unlimited number of sites. Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet'), 'https://akismet.com/account/upgrade/', 'https://akismet.com/contact/'); ?></p>
+	<h3 class="key-status failed"><?php esc_html_e( 'You&#8217;re using Akismet on far too many sites for your Pro subscription.', 'akismet' ); ?></h3>
+	<p class="description">
+		<?php printf( __( 'To continue your service, <a href="%s" target="_blank">upgrade to an Enterprise subscription</a>, which covers an unlimited number of sites.', 'akismet'), 'https://akismet.com/account/upgrade/' ); ?></p>
+		<br /><br />
+		<?php printf( __( 'Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet' ), 'https://akismet.com/contact/'); ?></p>
+	</p>
 	<?php endif; ?>
 </div>
 <?php endif;?>
