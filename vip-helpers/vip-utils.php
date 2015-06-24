@@ -916,3 +916,70 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
 
 	return $html;
 }
+
+/**
+ * Loads a plugin out of our shared plugins directory.
+ *
+ * @deprecated Since 2.0.0 - use Plugins UI (at least for the time being)
+ * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
+ * @param string $plugin Optional. Plugin folder name (and filename) of the plugin
+ * @param string $folder Optional. Folder to include from; defaults to "plugins". Useful for when you have multiple themes and your own shared plugins folder.
+ * @return bool True if the include was successful
+ */
+function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_release_candidate = false ) {
+	// Make sure there's a plugin to load
+	if ( empty($plugin) ) {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
+		}
+	}
+
+	// Make sure $plugin and $folder are valid
+	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
+	if ( 'plugins' !== $folder )
+		$folder = _wpcom_vip_load_plugin_sanitizer( $folder );
+
+	// Shared plugins are located at /wp-content/themes/vip/plugins/example-plugin/
+	// You should keep your local copies of the plugins in the same location
+
+	$includepath 					= WP_CONTENT_DIR . "/$folder/$plugin/$plugin.php";
+	$release_candidate_includepath 	= WP_CONTENT_DIR . "/$folder/release-candidates/$plugin/$plugin.php";
+
+	if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
+		$includepath = $release_candidate_includepath;
+	}
+
+	if ( file_exists( $includepath ) ) {
+
+		wpcom_vip_add_loaded_plugin( "$folder/$plugin" );
+
+		// Since we're going to be include()'ing inside of a function,
+		// we need to do some hackery to get the variable scope we want.
+		// See http://www.php.net/manual/en/language.variables.scope.php#91982
+
+		// Start by marking down the currently defined variables (so we can exclude them later)
+		$pre_include_variables = get_defined_vars();
+
+		// Now include
+		include_once( $includepath );
+
+		// Blacklist out some variables
+		$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
+
+		// Let's find out what's new by comparing the current variables to the previous ones
+		$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
+
+		// global each new variable
+		foreach ( $new_variables as $new_variable => $devnull )
+			global $$new_variable;
+
+		// Set the values again on those new globals
+		extract( $new_variables );
+
+		return true;
+	} else {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( "Unable to load $plugin ({$folder}) using wpcom_vip_load_plugin()!" );
+		}
+	}
+}
