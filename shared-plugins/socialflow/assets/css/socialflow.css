@@ -1,0 +1,304 @@
+
+
+/* ==========================================================================
+   Compose form
+   ========================================================================== */
+
+/* Messages */
+.socialflow-messages b {
+	color:#999;
+}
+.socialflow-messages .success b {
+	color:green;
+}
+.socialflow-messages .sf-error b {
+	color:red;
+}
+
+.socialflow .deleted {
+	font-size:10px;
+}
+
+/* Tabs */
+.compose-tabs {
+	margin:12px 0 0;
+}
+.compose-tabs .tabs {
+	display:inline-block;
+	padding:3px 5px 5px;
+	margin:0;
+
+	border-style:solid solid none;
+	border-width:1px 1px 0;
+	background-color:transparent;
+	border-color:transparent;
+
+	text-transform:capitalize;
+	font-size:13px;
+	line-height:1.35em;
+	position:relative;
+	top:1px;
+
+	-webkit-border-top-left-radius: 3px;
+	-webkit-border-top-right-radius: 3px;
+	-moz-border-radius-topleft: 3px;
+	-moz-border-radius-topright: 3px;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+.compose-tabs .tabs a {
+	text-decoration:none;
+}
+/* Active tab styles */
+.compose-tabs .tabs.active {
+	border-color:#DFDFDF;
+	background-color:#FFF;
+}
+.compose-tabs .tabs.active a {
+	color:#333;
+}
+
+/* Tabs panels */
+.socialflow-compose .tabs-panel {
+	padding:10px;
+	overflow: auto;
+
+	border:1px solid #DFDFDF;
+	background-color:#FFF;
+}
+.socialflow-compose .sf-additional-fields {
+	border-top:1px dashed #DFDFDF;
+	margin:5px 0 0;
+	padding:9px 0 0 110px;
+
+	overflow:hidden;
+	position:relative;
+	min-height:130px;
+}
+.socialflow-compose .sf-additional-fields .widefat {
+	margin-bottom:5px;
+}
+.socialflow .datetimepicker {
+	width: 130px;
+}
+
+/**
+ * Hide Google plus tabs 
+ */
+/*.socialflow-compose .google_plus-tab-panel,
+.socialflow-compose .google_plus-tab-item {
+	display: none;
+}*/
+
+/* Compose form inside thickbox */
+#TB_window .sf_compose {
+	display:none;
+}
+
+
+/*
+.socialflow .delay_compose label {
+	font-size:13px;
+}
+
+
+.socialflow .message-fields label {
+	display:block;
+	font-size:13px;
+}
+*/
+
+/* Wide style */
+/*
+#postbox-container-2 .socialflow .message-fields .field {
+	display:inline-block;
+	width:49%;
+	vertical-align:top;
+}
+#postbox-container-2 .socialflow .message-fields textarea {
+	width:90%;
+	height:90px;
+}
+/*
+
+/* Narrow style */
+/*
+#postbox-container-1 .socialflow .message-fields .field {
+	display:block;
+	width:100%;
+	vertical-align:top;
+}
+#postbox-container-1 .socialflow .message-fields textarea {
+	width:99%;
+	height:120px;
+}
+#postbox-container-1 .socialflow .optimize .from,
+#postbox-container-1 .socialflow .optimize .to {
+	display:inline-block;
+	width:170px;
+}
+.socialflow-user-advanced {
+	line-height:23px;
+}
+
+.socialflow input.time {
+	width:115px;
+	font-size:11px;
+}
+*/
+
+.socialflow .clickable {
+	border-bottom:1px dotted #21759B;
+	color:#21759B;
+	cursor:pointer;
+}
+
+/* Attachments Select */
+.sf-attachments {
+	position:absolute;
+	left:0;
+	top:9px;
+	width:100px;
+}
+.sf-attachment-slider {
+	display:block;
+	width:100px;
+	height:100px;
+	overflow:hidden;
+	margin-bottom:5px;
+}
+.sf-attachment-slider img {
+	max-width:100px;
+	height:auto;
+}
+
+.sf-attachments .icon {
+	text-indent:-9999px;
+	overflow:hidden;
+	background-image:url(../images/thumb-nav.png);
+	background-repeat:no-repeat;
+	display:inline-block;
+	height:14px;
+	margin:0 2px 0 0;
+	cursor:pointer;
+}
+.sf-attachments .icon.next,
+.sf-attachments .icon.prev {
+	width:9px;
+}
+.sf-attachments .icon.next {
+	background-position:-10px 0;
+}
+.sf-attachments .icon.reload {
+	width:12px;
+	background-position:-20px 0;
+}
+
+/* Advanced section toggler */
+.socialflow-compose .advanced-settings {
+	padding:10px;
+	margin:10px 0 0;
+
+	color:#333;
+	text-decoration:none;
+
+	background-color:#FFF;
+	border:1px solid #DFDFDF;
+}
+.socialflow-compose .advanced-toggler {
+	text-decoration:none;
+	display:block;
+
+}
+.socialflow-compose .advanced-settings-content {
+	border-top:1px dashed #DFDFDF;
+	padding:5px 0 0;
+	margin:6px 0 0;
+}
+
+/* ==========================================================================
+   Custom Styles
+   ========================================================================== */
+
+.socialflow table {
+	margin-bottom: 20px;
+}
+.socialflow .widefat td {
+	padding-top: 8px;
+	line-height: 25px;
+}
+.socialflow .category-account-item {
+	display: inline-block;
+	*display: inline;
+	zoom: 1;
+
+	vertical-align: top;
+	margin: 0 4px 8px 0;
+	padding: 0 0 0 6px;
+	
+	line-height: 25px;
+	background-color: #fff;
+	border: 1px solid #B1B2B5;
+}
+.socialflow .category-account-item .close {
+	display: inline-block;
+	*display: inline;
+	zoom: 1;
+
+	width: 25px;
+	margin-left: 6px;
+	cursor: pointer;
+	
+	line-height: 25px;
+	/*border: 1px solid #fff;*/
+	text-align: center;
+}
+.socialflow .category-account-item .close:hover {
+	color: red;
+	/*background-color: #B1B2B5;*/
+}
+
+.sf-js-update-multiple-messages {
+	cursor:pointer;
+}
+
+/* ==========================================================================
+   Statistics
+   ========================================================================== */
+
+
+.sf-statistics .alternate {
+	background:#FFF;
+}
+
+/*
+ List posts styles
+ Make table as compact as possible
+ */
+.wp-list-table .sf-statistics {
+	visibility:hidden;
+	position:absolute;
+	left:-99999px;
+}
+.wp-list-table .column-socialflow.show-stat .sf-statistics {
+	visibility:visible;
+	position:static;
+	margin:0 -7px 0 0;
+	width:100%;
+}
+.wp-list-table .column-socialflow .massage-date img {
+	vertical-align:middle;
+	cursor:pointer;
+}
+.wp-list-table .sf-statistics td {
+	font-size:11px;
+	padding-top:2px;
+}
+.wp-list-table .sf-statistics .refresh-column {
+	width:16px;
+	padding-right:2px;
+	padding-left:0;
+}
+.wp-list-table .sf-statistics .refresh-column img {
+	vertical-align:middle;
+}
