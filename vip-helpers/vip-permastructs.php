@@ -102,3 +102,58 @@ function wpcom_vip_https_canonical_url() {
 		return str_replace( 'http://', 'https://', $link );
 	}, 99 );
 }
+
+/**
+ * VIPs and other themes can declare the permastruct, tag and category bases in their themes.
+ * This is done by filtering the option.
+ *
+ * To ensure we're using the freshest values, and that the option value is available earlier
+ * than when the theme is loaded, we need to get each option, save it again, and then
+ * reinitialize wp_rewrite.
+ *
+ * This is most commonly used in our code to flush rewrites
+ */
+function wpcom_vip_refresh_wp_rewrite() {
+	global $wp_rewrite;
+
+	// Permastructs available in the options table and their core defaults
+	$permastructs = array(
+			'permalink_structure' => '/%year%/%monthnum%/%day%/%postname%/',
+			'category_base' => '',
+			'tag_base' => '',
+		);
+	foreach( $permastructs as $option_key => $default_value ) {
+		$filter = 'pre_option_' . $option_key;
+		$callback = '_wpcom_vip_filter_' . $option_key;
+
+		$option_value = get_option( $option_key );
+
+		$reapply = has_filter( $filter, $callback );
+		// If this value isn't filtered by the VIP, used the default wpcom value
+		if ( !$reapply )
+			$option_value = $default_value;
+		else
+			remove_filter( $filter, $callback, 99 );
+		// Save the precious
+		update_option( $option_key, $option_value );
+		// Only reapply the filter if it was applied previously
+		// as it overrides the option value with a global variable
+		if ( $reapply )
+			add_filter( $filter, $callback, 99 );
+	}
+
+	// Reconstruct WP_Rewrite and make sure we persist any custom endpoints, etc.
+	$old_values = array();
+	$custom_rules = array(
+			'extra_rules',
+			'non_wp_rules',
+			'endpoints',
+		);
+	foreach( $custom_rules as $key ) {
+		$old_values[$key] = $wp_rewrite->$key;
+	}
+	$wp_rewrite->init();
+	foreach( $custom_rules as $key ) {
+		$wp_rewrite->$key = array_merge( $old_values[$key], $wp_rewrite->$key );
+	}
+}
