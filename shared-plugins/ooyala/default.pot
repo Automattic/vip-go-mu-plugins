@@ -1,0 +1,156 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: ooyala\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-09-05 17:50+0200\n"
+"PO-Revision-Date: 2011-09-05 17:50+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e;esc_attr__;esc_attr_e;_x\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-Language: English\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: class-ooyala-backlot-api.php:32
+#, php-format
+msgid "Please set your API codes in the <a href=\"%s\" target=\"_blank\">Ooyala Video</a> Settings page"
+msgstr ""
+
+#: class-ooyala-backlot-api.php:75
+#: class-ooyala-backlot-api.php:83
+msgid "Malformed XML"
+msgstr ""
+
+#: class-ooyala-backlot-api.php:87
+msgid "No videos found"
+msgstr ""
+
+#: ooyala-popup.php:41
+msgid "Ooyala video"
+msgstr ""
+
+#: ooyala-popup.php:42
+#: ooyala-popup.php:79
+msgid "Upload to Ooyala"
+msgstr ""
+
+#: ooyala-popup.php:50
+msgid "Search Keyword"
+msgstr ""
+
+#: ooyala-popup.php:55
+msgid "Loading..."
+msgstr ""
+
+#: ooyala-popup.php:60
+msgid "Insert video ID:"
+msgstr ""
+
+#: ooyala-popup.php:70
+msgid "Insert"
+msgstr ""
+
+#: ooyala-popup.php:72
+msgid "Cancel"
+msgstr ""
+
+#: ooyala-popup.php:89
+msgid "Select File"
+msgstr ""
+
+#: ooyala-popup.php:111
+msgid "Filename"
+msgstr ""
+
+#: ooyala-popup.php:115
+msgid "Description"
+msgstr ""
+
+#: ooyala-popup.php:119
+msgid "Upload!"
+msgstr ""
+
+#: ooyala.php:97
+msgid "Settings"
+msgstr ""
+
+#: ooyala.php:110
+msgid "Latest Videos"
+msgstr ""
+
+#: ooyala.php:111
+msgid "Search Results"
+msgstr ""
+
+#: ooyala.php:112
+msgid "Done!"
+msgstr ""
+
+#: ooyala.php:113
+msgid "Upload Error"
+msgstr ""
+
+#: ooyala.php:114
+msgid "Use as featured image"
+msgstr ""
+
+#: ooyala.php:160
+msgid "[There is a video that cannot be displayed in this feed. "
+msgstr ""
+
+#: ooyala.php:160
+msgid "Visit the blog entry to see the video.]"
+msgstr ""
+
+#: ooyala.php:209
+msgid "Ooyala Video"
+msgstr ""
+
+#: ooyala.php:211
+msgid "Ooyala"
+msgstr ""
+
+#: ooyala.php:211
+msgid "Ooyala Logo"
+msgstr ""
+
+#: ooyala.php:224
+msgid "Ooyala Partner Code"
+msgstr ""
+
+#: ooyala.php:226
+#: ooyala.php:232
+msgid "You can find your Partner and Secret codes under the Developers area of the Backlot Account tab"
+msgstr ""
+
+#: ooyala.php:230
+msgid "Ooyala Secret Code"
+msgstr ""
+
+#: ooyala.php:236
+msgid "In feed, show link to blog post"
+msgstr ""
+
+#: ooyala.php:238
+msgid "Video embedding in feeds is not yet available"
+msgstr ""
+
+#: ooyala.php:243
+msgid "Video object width"
+msgstr ""
+
+#: ooyala.php:251
+msgid "Save Settings"
+msgstr ""
+
+#: ooyala.php:266
+msgid "Embed Ooyala Video"
+msgstr ""
+
+#: ooyala.php:462
+msgid "Error:"
+msgstr ""
+
