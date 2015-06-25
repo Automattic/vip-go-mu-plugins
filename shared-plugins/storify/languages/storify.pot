@@ -1,0 +1,88 @@
+# Copyright (C) 2012 Storify
+# This file is distributed under the same license as the Storify package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Storify 1.0.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/storify\n"
+"POT-Creation-Date: 2012-01-05 19:50:20+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2012-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: dialog.php:16
+msgid "You are not allowed to be here"
+msgstr ""
+
+#: storify.php:458
+msgid "Insert Story"
+msgstr ""
+
+#: storify.php:472
+msgid "Older Stories"
+msgstr ""
+
+#: storify.php:475
+msgid "Showing recent stories created by %s."
+msgstr ""
+
+#: storify.php:476
+msgid "Change account?"
+msgstr ""
+
+#: storify.php:492
+msgid "Storify Login"
+msgstr ""
+
+#: storify.php:493
+msgid "Please enter your Storify login to continue"
+msgstr ""
+
+#: storify.php:497
+msgid "Storify Login:"
+msgstr ""
+
+#: storify.php:500
+msgid ""
+"Don't have a login? <a href=\"https://storify.com\" target=\"_blank\">Sign up "
+"for free</a>."
+msgstr ""
+
+#: storify.php:547
+msgid "An error occurred while publishing the story"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (Storify 1.0.1)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#. #-#-#-#-#  plugin.pot (Storify 1.0.1)  #-#-#-#-#
+#. Author of the plugin/theme
+#: storify.php:795 storify.php:824
+msgid "Storify"
+msgstr ""
+
+#: storify.php:814
+msgid "Edit Story"
+msgstr ""
+
+#: storify.php:933
+msgid "Insert story from your Storify account"
+msgstr ""
+
+#: storify.php:934
+msgid "Storify &mdash; Insert Story"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (Storify 1.0.1)  #-#-#-#-#
+#. Plugin URI of the plugin/theme
+#. #-#-#-#-#  plugin.pot (Storify 1.0.1)  #-#-#-#-#
+#. Author URI of the plugin/theme
+msgid "https://storify.com"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Brings the power of Storify, the popular social media storytelling platform "
+"to your WordPress site"
+msgstr ""

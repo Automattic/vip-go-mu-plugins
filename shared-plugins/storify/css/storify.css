@@ -1,0 +1,13 @@
+/* iframe */
+iframe#storify { width:99%; height: 80%; padding-top:20px; margin-right: 40px; }
+
+/* dialog */
+#storyDialog {padding: 0 5px 0 20px;}
+#storyDialog .icon32 { background-image: url('../img/logo32.png'); background-repeat: no-repeat; }
+#storyDialog #moreLink { float: right; }
+#storyDialog.storifyLogin { text-align: center; padding-top: 100px;}
+#storyList .story { border: 1px solid #ccc; padding: 5px; margin-top: 5px; margin-bottom: 5px; clear: both; min-height: 50px; background: white; position: relative; }
+#storyList .story:hover { border: 1px solid #000; background: #F7F7F7; }
+#storyList .story .title { font-weight: bold; }
+#storyList .story .insertLink { position: absolute; right:5px; bottom: 0;}
+#storyList .story .permalink { display: none; }
