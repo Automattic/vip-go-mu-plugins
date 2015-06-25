@@ -1,0 +1,409 @@
+# Copyright (C) 2013 
+# This file is distributed under the same license as the  package.
+msgid ""
+msgstr ""
+"Project-Id-Version:  \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tags/getty-images\n"
+"POT-Creation-Date: 2013-11-15 03:37:22+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2013-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: getty-images.php:94
+msgid "Invalid nonce"
+msgstr ""
+
+#: getty-images.php:135
+msgid "Enter keywords..."
+msgstr ""
+
+#: getty-images.php:137
+msgid "Search"
+msgstr ""
+
+#: getty-images.php:139
+msgid "Refine"
+msgstr ""
+
+#: getty-images.php:141
+msgid "Search within..."
+msgstr ""
+
+#: getty-images.php:143
+msgid "Refine categories"
+msgstr ""
+
+#: getty-images.php:145 getty-templates.php:56
+msgid "Getty Images"
+msgstr ""
+
+#: getty-images.php:147
+msgid "Insert Image"
+msgstr ""
+
+#: getty-images.php:150
+msgid "Authorizing..."
+msgstr ""
+
+#: getty-images.php:151
+msgid "Downloading..."
+msgstr ""
+
+#: getty-images.php:152 getty-templates.php:165
+msgid "remaining"
+msgstr ""
+
+#: getty-images.php:153 getty-templates.php:162
+msgid "free"
+msgstr ""
+
+#: getty-images.php:156
+msgid "%d result"
+msgstr ""
+
+#: getty-images.php:157
+msgid "%d results"
+msgstr ""
+
+#: getty-images.php:158
+msgid "Sorry, we found zero results matching your search."
+msgstr ""
+
+#: getty-images.php:161 getty-images.php:388
+msgid "Full Size"
+msgstr ""
+
+#: getty-images.php:162
+msgid "Recently Viewed"
+msgstr ""
+
+#: getty-images.php:165
+msgid "Download Image"
+msgstr ""
+
+#: getty-images.php:166
+msgid "Download Again"
+msgstr ""
+
+#: getty-images.php:169
+msgid "Insert Comp into Post"
+msgstr ""
+
+#: getty-images.php:170
+msgid "Insert Image into Post"
+msgstr ""
+
+#: getty-images.php:171
+msgid "Select Image"
+msgstr ""
+
+#: getty-images.php:174
+msgid "Asset Type"
+msgstr ""
+
+#: getty-images.php:175
+msgid "Editorial"
+msgstr ""
+
+#: getty-images.php:176
+msgid "Creative"
+msgstr ""
+
+#: getty-images.php:178
+msgid "Image Type"
+msgstr ""
+
+#: getty-images.php:179
+msgid "Photography"
+msgstr ""
+
+#: getty-images.php:180
+msgid "Illustration"
+msgstr ""
+
+#: getty-images.php:182
+msgid "Orientation"
+msgstr ""
+
+#: getty-images.php:183
+msgid "Horizontal"
+msgstr ""
+
+#: getty-images.php:184
+msgid "Vertical"
+msgstr ""
+
+#: getty-images.php:186
+msgid "Exclude Nudity?"
+msgstr ""
+
+#: getty-images.php:188
+msgid "Sort Order"
+msgstr ""
+
+#: getty-images.php:189
+msgid "Most Popular"
+msgstr ""
+
+#: getty-images.php:190
+msgid "Most Recent"
+msgstr ""
+
+#: getty-images.php:192
+msgid "Best Match"
+msgstr ""
+
+#: getty-images.php:193
+msgid "Newest"
+msgstr ""
+
+#: getty-images.php:207
+msgid "Getty Images..."
+msgstr ""
+
+#: getty-images.php:254
+msgid "<strong>WARNING</strong>: You may not publish posts with Getty Images comps. Download the image first in order to include it into your post."
+msgstr ""
+
+#: getty-images.php:279
+msgid "Invalid image URL"
+msgstr ""
+
+#: getty-images.php:283
+msgid "Missing image meta"
+msgstr ""
+
+#: getty-images.php:289
+msgid "Invalid image meta"
+msgstr ""
+
+#: getty-images.php:297
+msgid "Failed to download image"
+msgstr ""
+
+#: getty-images.php:314
+msgid "Invalid filename"
+msgstr ""
+
+#: getty-images.php:323
+msgid "Failed to sideload image"
+msgstr ""
+
+#: getty-images.php:337
+msgid "Attachment not found"
+msgstr ""
+
+#: getty-images.php:370
+msgid "Image downloaded"
+msgstr ""
+
+#: getty-images.php:385
+msgid "Thumbnail"
+msgstr ""
+
+#: getty-images.php:386
+msgid "Medium"
+msgstr ""
+
+#: getty-images.php:387
+msgid "Large"
+msgstr ""
+
+#: getty-images.php:414
+msgid "No access"
+msgstr ""
+
+#: getty-images.php:419
+msgid "Missing image ID"
+msgstr ""
+
+#: getty-images.php:425
+msgid "Invalid image ID"
+msgstr ""
+
+#: getty-images.php:436
+msgid "No attachments found"
+msgstr ""
+
+#: getty-images.php:439
+msgid "Got image details"
+msgstr ""
+
+#: getty-templates.php:15
+msgid "Getty Images Login"
+msgstr ""
+
+#: getty-templates.php:16
+msgid "Forgot username?"
+msgstr ""
+
+#: getty-templates.php:19
+msgid "Logging in..."
+msgstr ""
+
+#: getty-templates.php:19
+msgid "Getty Images Password"
+msgstr ""
+
+#: getty-templates.php:20
+msgid "Forgot password?"
+msgstr ""
+
+#: getty-templates.php:23 getty-templates.php:60
+msgid "Log in"
+msgstr ""
+
+#: getty-templates.php:27
+msgid "Don't have a login?"
+msgstr ""
+
+#: getty-templates.php:28
+msgid "Sign up to Getty Images"
+msgstr ""
+
+#: getty-templates.php:37
+msgid "Logged in as: "
+msgstr ""
+
+#: getty-templates.php:41
+msgid "Products: "
+msgstr ""
+
+#: getty-templates.php:48
+msgid "log out"
+msgstr ""
+
+#: getty-templates.php:61
+msgid "About"
+msgstr ""
+
+#: getty-templates.php:62
+msgid "Privacy Policy"
+msgstr ""
+
+#: getty-templates.php:77
+msgid "Close"
+msgstr ""
+
+#: getty-templates.php:126
+msgid "Remove"
+msgstr ""
+
+#: getty-templates.php:130
+msgid "Deselect"
+msgstr ""
+
+#: getty-templates.php:137
+msgid "Log in to download images"
+msgstr ""
+
+#: getty-templates.php:173
+msgid "(downloaded)"
+msgstr ""
+
+#: getty-templates.php:227
+msgid "Downloading authorizations..."
+msgstr ""
+
+#: getty-templates.php:233
+msgid "Title: "
+msgstr ""
+
+#: getty-templates.php:236
+msgid "Image #: "
+msgstr ""
+
+#: getty-templates.php:239
+msgid "Artist: "
+msgstr ""
+
+#: getty-templates.php:242
+msgid "Collection: "
+msgstr ""
+
+#: getty-templates.php:246
+msgid "Downloading Details..."
+msgstr ""
+
+#: getty-templates.php:248
+msgid "Could not not get image details."
+msgstr ""
+
+#: getty-templates.php:252
+msgid "Release Information: "
+msgstr ""
+
+#: getty-templates.php:257
+msgid "Restrictions: "
+msgstr ""
+
+#: getty-templates.php:272
+msgid "People: "
+msgstr ""
+
+#: getty-templates.php:283
+msgid "Keywords: "
+msgstr ""
+
+#: getty-templates.php:305
+msgid "Filename"
+msgstr ""
+
+#: getty-templates.php:306
+msgid "Downloaded"
+msgstr ""
+
+#: getty-templates.php:317
+msgid "Image Details"
+msgstr ""
+
+#: getty-templates.php:331
+msgid "Display Options"
+msgstr ""
+
+#: getty-templates.php:334
+msgid "Align"
+msgstr ""
+
+#: getty-templates.php:338
+msgid "None"
+msgstr ""
+
+#: getty-templates.php:342
+msgid "Left"
+msgstr ""
+
+#: getty-templates.php:346
+msgid "Center"
+msgstr ""
+
+#: getty-templates.php:350
+msgid "Right"
+msgstr ""
+
+#: getty-templates.php:356
+msgid "Size"
+msgstr ""
+
+#: getty-templates.php:365
+msgid "Alt Text"
+msgstr ""
+
+#: getty-templates.php:370
+msgid "Caption"
+msgstr ""
+
+#: getty-templates.php:404
+msgid "More"
+msgstr ""
+
+#: getty-templates.php:410
+msgid "Please read and accept the following terms before using image comps in your website:"
+msgstr ""
+
+#: getty-templates.php:416
+msgid "Agree"
+msgstr ""
