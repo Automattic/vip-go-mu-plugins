@@ -926,7 +926,7 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
  * @param string $folder Optional. Folder to include from; defaults to "plugins". Useful for when you have multiple themes and your own shared plugins folder.
  * @return bool True if the include was successful
  */
-function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_release_candidate = false ) {
+function wpcom_vip_load_plugin( $plugin = false, $folder = 'shared-plugins', $load_release_candidate = false ) {
 	// Make sure there's a plugin to load
 	if ( empty($plugin) ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
@@ -934,16 +934,22 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_rele
 		}
 	}
 
+	$plugin_root = WP_PLUGIN_DIR;
+
+	// If this is a VIP plugin, it must be loaded from the separate directory
+	if ( 'shared-plugins' === $folder ) {
+		$plugin_root 	= WP_CONTENT_DIR . '/mu-plugins';
+	}
+
 	// Make sure $plugin and $folder are valid
 	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
-	if ( 'plugins' !== $folder )
-		$folder = _wpcom_vip_load_plugin_sanitizer( $folder );
+	$folder = _wpcom_vip_load_plugin_sanitizer( $folder );
 
-	// Shared plugins are located at /wp-content/themes/vip/plugins/example-plugin/
+	// Shared plugins are located at /wp-content/mu-plugins/shared-plugins/example-plugin/
 	// You should keep your local copies of the plugins in the same location
 
-	$includepath 					= WP_CONTENT_DIR . "/$folder/$plugin/$plugin.php";
-	$release_candidate_includepath 	= WP_CONTENT_DIR . "/$folder/release-candidates/$plugin/$plugin.php";
+	$includepath 					= $plugin_root . "/$folder/$plugin/$plugin.php";
+	$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin/$plugin.php";
 
 	if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
 		$includepath = $release_candidate_includepath;
