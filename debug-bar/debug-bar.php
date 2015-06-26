@@ -27,7 +27,9 @@ class Debug_Bar {
 	}
 
 	function init() {
-		if ( ! is_super_admin() || ! is_admin_bar_showing() || $this->is_wp_login() )
+		$enable = apply_filters( 'debug_bar_enable', true );
+
+		if ( ! $enable || ! is_admin_bar_showing() || $this->is_wp_login() )
 			return;
 
 		add_action( 'admin_bar_menu',               array( &$this, 'admin_bar_menu' ), 1000 );
@@ -50,7 +52,9 @@ class Debug_Bar {
 	}
 
 	function init_ajax() {
-		if ( ! is_super_admin() )
+		$enable = apply_filters( 'debug_bar_enable', true );
+
+		if ( ! $enable )
 			return;
 
 		$this->requirements();
