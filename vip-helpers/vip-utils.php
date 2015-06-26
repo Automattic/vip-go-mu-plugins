@@ -983,3 +983,35 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = 'plugins', $load_rele
 		}
 	}
 }
+
+/**
+ * Is the given user an automattician?
+ *
+ * Note: This does a relatively weak check based on email address and their
+ * VIP Support email address verification status (separate from other email verification)
+ * It's possible to fake that data (it's just meta and user_email), so don't use this
+ * for protecting sensitive info or performing sensitive tasks
+ *
+ * @param int The WP User id
+ * @return bool Bool indicating if user is an Automattician
+ */
+function is_automattician( $user_id = false ) {
+	if ( $user_id ) {
+		$user = new WP_User( $user_id );
+	} else {
+		$user = wp_get_current_user();
+	}
+
+	if ( ! isset( $user->ID ) || ! $user->ID ) {
+		return false;
+	}
+
+	// Check that their address is an a8c one, *and* they have validated that address
+	$vip_support = WPCOM_VIP_Support_User::init();
+
+	if ( WPCOM_VIP_Support_User::is_valid_automattician( $user->ID ) ) {
+		return true;
+	}
+
+	return false;
+}
