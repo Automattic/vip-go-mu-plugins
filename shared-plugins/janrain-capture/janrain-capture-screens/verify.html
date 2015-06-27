@@ -1,0 +1,26 @@
+<script type="text/javascript">
+janrain.settings.capture.flowName = 'plugins';
+janrain.settings.capture.modalCloseHtml = '';
+janrain.settings.capture.screenToRender = 'verifyEmail';
+</script>
+<div style="display: none" id="verifyEmail">    
+    <h2>Sorry we could not verify that email address.</h2>    
+    <p>Enter your email below and we will send you a new verification email:</p>    
+    {* #resendVerificationForm *}    
+      {* traditionalSignIn_emailAddress *}    
+      <div class="capture_footer">    
+      {* submitButton *}    
+      </div>    
+    {* /resendVerificationForm *}    
+</div>    
+<div style="display:none;" id="resendVerificationSuccess">    
+    <h2>New verification link sent.</h2>    
+    <p>Check your email for a new verification link.</p>    
+    <div class="capture_footer">    
+      <a href="./.." class="capture_btn capture_primary">Done</a>    
+    </div>    
+</div>    
+<div style="display: none" id="verifyEmailSuccess">    
+    <h2>Thanks for verifying your email address.</h2>    
+    <a href="./..">Done</a>    
+</div>

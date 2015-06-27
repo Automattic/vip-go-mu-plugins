@@ -1,0 +1,235 @@
+/*-------------------------------------------------
+* General
+*/
+#lfapps h2.logo {
+    width: 112px;
+    height: 33px;
+    background: url("../img/livefyre-logo.png") top right no-repeat;
+    text-indent: -9999px;
+    margin: 5px 0 10px 0;
+    padding: 0;
+}
+
+#lfapps .info {
+    font-size: 0.95em;
+    color: #666;
+    font-weight: normal;
+}
+
+#lfapps td.info {
+    font-size: inherit;
+    background-color: #eee;
+    padding: 10px;
+}
+
+#lfapps .code {
+    font-size: 0.95em;
+    color: #666;
+    font-weight: normal;
+    padding: 10px;
+    background-color: #eee;
+}
+
+#lfapps .lfapps-links a {
+    text-decoration: none;
+}
+
+#lfapps .lfapps-community-signup {
+    float: right;
+    width: 40%;
+}
+
+#lfapps .lfapps-community-signup p {
+    margin-top: 0;
+    font-weight: bold;
+}
+
+#lfapps .lfapps-community-signup a {
+    text-decoration: none;
+}
+/*-------------------------------------------------
+* Initial Modal
+*/
+.lfapps-initial-modal h3 {
+    text-align: center;
+    font-size: 1.6em;    
+}
+
+.lfapps-initial-modal p {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 0;
+}
+
+.lfapps-env-submit {
+    margin: 10px 10px 0;
+}
+
+#lfapps-env-cancel-btn {
+    float: right;
+}
+
+.lfapps-env-select-row {
+    overflow: auto;
+}
+
+.lfapps-env-box {
+    float: left;
+    width: 43%;
+    margin: 10px 10px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    border: 1px solid;
+    border-color: #000;
+    padding: 15px 10px;
+    cursor: pointer;
+    color: #000;
+    min-height: 120px;
+}
+
+.lfapps-env-box:hover {
+    background-color: #DEDEDE;
+}
+
+.lfapps-env-box h4 {
+    margin: 0;
+    font-size: 1.2em;
+    text-align: center;
+}
+
+.lfapps-env-box p {
+    font-size: 1em;
+}
+/*-------------------------------------------------
+* Status
+*/
+#lfapps span.lf-install-notice {
+    font-size: 1.4em;
+}
+
+#lfapps span.lf-error-status {
+    color: red;
+}
+
+/*-------------------------------------------------
+* Content layout
+*/
+.lfapps-environment-container p {
+    margin-bottom: 5px;
+}
+.lfapps-environment-container .lfapps-community,
+.lfapps-environment-container .lfapps-enterprise {
+    color: black;
+    border-radius: 3px;
+    border-color: #000;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.lfapps-environment-container a {
+    text-decoration: none;
+}
+
+#lfapps .postbox-container {
+    width: 100%;
+}
+#lfapps .postbox-large {
+    width: 75%;
+    margin-right: 2%;
+    float: left;
+}
+
+#lfapps .postbox-side {
+    width: 23%;
+    float: left;
+}
+
+#lfapps #publishing-action {
+    text-align: left;
+    float: left;
+}
+/*-------------------------------------------------
+* Form table styles
+*/
+.lfapps-form-table {
+    width: 100%;
+}
+
+.lfapps-form-table-left {
+    float: left;
+    width: 55%;
+}
+
+.lfapps-form-table th {
+    width: 20%;
+    padding-right: 10px;
+}
+
+.lfapps-form-table .spacer {
+    height: 35px;
+}
+
+.lfapps-form-table .regular-text {
+    width: 340px;
+}
+
+.lfapps-form-table input[type=radio] {
+    margin-left: 10px;
+}
+
+.lfapps-form-table input[type=radio]:first-child {
+    margin-left: 0;
+}
+
+/*-------------------------------------------------
+* Livefyre Apps management
+*/
+.lfapps-appmgt-box {
+    float: left;
+    margin: 10px 2%;    
+}
+
+.lfapps-appmgt-controls {
+    width: 160px;
+}
+
+.lfapps-appmgt-box label {
+    font-size: 1.2em;
+    text-align: center;
+}
+.lfapps-appmgt-box p {
+    margin: 5px 0 0 10px;
+}
+.lfapps-appmgt-box label img {
+    width: 80px;
+    height: 80px;
+    padding: 20px;
+}
+
+.lfapps-app-disabled {
+    -webkit-filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    filter: grayscale(100%);
+}
+
+.lfapps-appmgt-box a {
+    text-decoration: none;
+}
+
+/*-------------------------------------------------
+* Misc
+*/
+#lfapps .clearfix:after {
+    visibility: hidden;
+    display: block;
+    font-size: 0;
+    content: " ";
+    clear: both;
+    height: 0;
+}
+
+#lfapps blockquote.code {
+    padding: 10px 0;
+    font-weight: bold;
+}

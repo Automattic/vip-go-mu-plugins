@@ -1,0 +1,103 @@
+# Copyright (C) 2014 SimpleReach Analytics
+# This file is distributed under the same license as the SimpleReach Analytics package.
+msgid ""
+msgstr ""
+"Project-Id-Version: SimpleReach Analytics 0.1.0\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/support/plugin/sranalytics_wordpress\n"
+"POT-Creation-Date: 2014-07-29 20:49:34+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2014-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: sranalytics_admin.php:16 sranalytics_admin.php:30
+msgid "Settings updated"
+msgstr "세팅이 업데이트 되었습니다."
+
+#: sranalytics_admin.php:18
+msgid "ERROR:\tYou must enter a value for pid!"
+msgstr "에러: PID 입력해 주시기 바랍니다."
+
+#: sranalytics_admin.php:49
+msgid "SimpleReach Analytics"
+msgstr "SimpleReach Analytics"
+
+#: sranalytics_admin.php:59
+msgid "Publisher ID"
+msgstr "Publisher ID"
+
+#: sranalytics_admin.php:65
+msgid "Enter your Publisher ID (PID): "
+msgstr "Publisher ID (PID)를 입력해 주시기 바랍니다."
+
+#: sranalytics_admin.php:70
+msgid "You only need to set this once. Do not change this unless you are absolutely sure you know what you are doing!"
+msgstr "이 설정은 한번만 해야 합니다. 어떤 설정인지 불확실하다면 설정을 바꾸지 마시기 바랍니다."
+
+#: sranalytics_admin.php:75 sranalytics_admin.php:88 sranalytics_admin.php:122
+msgid "Save"
+msgstr "저장"
+
+#: sranalytics_admin.php:81
+msgid "iFrame Settings"
+msgstr "iFrame 설정"
+
+#: sranalytics_admin.php:86
+msgid "Disable iFrame loading of the SimpleReach code"
+msgstr "SimpleReach 코드의 iFrame 로딩 막기"
+
+#: sranalytics_admin.php:94
+msgid "Advanced Tracking Settings"
+msgstr "Advanced Tracking 설정"
+
+#: sranalytics_admin.php:96
+msgid "WordPress posts are tracked by default. If you'd like to track additional parts of your site, please use the settings below."
+msgstr "워드프레스의 포스트들은 디폴트로 추적됩니다. 만약 추가로 추적하고 싶은 부분이 있으시면, 설정 페이지를 이용해 주시기 바랍니다."
+
+#: sranalytics_admin.php:100
+msgid "Track pages (these are the pages you create from the 'Pages' link in the left sidebar)"
+msgstr "왼쪽 메뉴의 페이지 링크에서 첨부된 파일들을 추적합니다."
+
+#: sranalytics_admin.php:105
+msgid "Track attachment pages (these are the pages created in the 'media' link on the left sidebar)"
+msgstr "왼쪽 메뉴의 미디어 링크에서 첨부된 파일들을 추적합니다."
+
+#: sranalytics_admin.php:110
+msgid "Track author, category, and tag pages"
+msgstr "저자, 카테고리, 그리고 태그 페이지들을 추적합니다."
+
+#: sranalytics_admin.php:115
+msgid "Track everything, including the home page (includes WordPress, author, category, tag, attachment, and search results pages)"
+msgstr "홈페이지와 워드프레스, 저자, 카테고리, 태그, 첨부파일, 그리고 검색 결과 페이지등 모든 것을 추적합니다."
+
+#: sranalytics_admin.php:120
+msgid "Send urls as HTTP. If your site uses a combination of both HTTP and HTTPS, enable this option."
+msgstr "URL은 HTTP로 보내주시기 바랍니다. 만약 HTTP와 HTTPS를 모두 사용하시는 경우, 이 옵션을 선택해 주시기 바랍니다."
+
+#: sranalytics_admin.php:131
+msgid "Support"
+msgstr "Support 지원"
+
+
+
+#: sranalytics_admin.php:134
+msgid "Questions? Comments? We can be contacted via SimpleReach Support"
+msgstr "질문이나 의견이 있으시면 SimpleReach Support를 통해 연락하실 수 있습니다"
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.simplereach.com/docs/wordpress-plugin/"
+msgstr "http://www.simplereach.com/docs/wordpress-plugin/"
+
+#. Description of the plugin/theme
+msgid "After installation, you must click '<a href='options-general.php?page=SimpleReach-Analytics'>Settings &rarr; SimpleReach Analytics</a>' to turn on the Analytics."
+msgstr "플러그인 설치 후, '<a href='options-general.php?page=SimpleReach-Analytics'>Settings &rarr; SimpleReach Analytics</a>'을 클릭하셔야 Analytics 페이지로 이동합니다."
+
+#. Author of the plugin/theme
+msgid "SimpleReach"
+msgstr "SimpleReach"
+
+#. Author URI of the plugin/theme
+msgid "https://www.simplereach.com"
+msgstr "https://www.simplereach.com"

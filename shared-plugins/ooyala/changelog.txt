@@ -1,0 +1,20 @@
+Changelog:
+
+
+Tested:
+3.0 - 3.1.2
+2.9: Working but with Visual flaws.
+I'd recommend setting the minimum version in the repository to 3.0
+
+A complete rewrite:
+- Use a media screen instead of a tinmyce button, make popup look more like WP's own media screens
+- convert shortcode to shortcode API, removing unused options (shortcode will still work for old style syntax).
+- Use global content_width if no width is set in ooyala options screen
+- Localize the Javascript
+- Either put all functions in a class, or prefixed to prevent function names clashes. (Both JS and PHP)
+- Switch OoyalaBacklotAPI to use WP's HTTP class
+
+Recommendations:
+ - Tighten up the visual styles, add visual "loading" animations where necessary.
+ - Improve the Upload screen (I couldn't get past the 100% to the "done" phase.).
+

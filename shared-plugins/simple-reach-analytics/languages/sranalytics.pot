@@ -1,0 +1,100 @@
+# Copyright (C) 2014 SimpleReach Analytics
+# This file is distributed under the same license as the SimpleReach Analytics package.
+msgid ""
+msgstr ""
+"Project-Id-Version: SimpleReach Analytics 0.1.0\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/support/plugin/sranalytics_wordpress\n"
+"POT-Creation-Date: 2014-07-29 23:00:27+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2014-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: sranalytics_admin.php:16 sranalytics_admin.php:30
+msgid "Settings updated"
+msgstr ""
+
+#: sranalytics_admin.php:18
+msgid "ERROR:\tYou must enter a value for pid!"
+msgstr ""
+
+#: sranalytics_admin.php:49
+msgid "SimpleReach Analytics"
+msgstr ""
+
+#: sranalytics_admin.php:59
+msgid "Publisher ID"
+msgstr ""
+
+#: sranalytics_admin.php:65
+msgid "Enter your Publisher ID (PID): "
+msgstr ""
+
+#: sranalytics_admin.php:70
+msgid "You only need to set this once. Do not change this unless you are absolutely sure you know what you are doing!"
+msgstr ""
+
+#: sranalytics_admin.php:75 sranalytics_admin.php:88 sranalytics_admin.php:122
+msgid "Save"
+msgstr ""
+
+#: sranalytics_admin.php:81
+msgid "iFrame Settings"
+msgstr ""
+
+#: sranalytics_admin.php:86
+msgid "Disable iFrame loading of the SimpleReach code"
+msgstr ""
+
+#: sranalytics_admin.php:94
+msgid "Advanced Tracking Settings"
+msgstr ""
+
+#: sranalytics_admin.php:96
+msgid "WordPress posts are tracked by default. If you'd like to track additional parts of your site, please use the settings below."
+msgstr ""
+
+#: sranalytics_admin.php:100
+msgid "Track pages (these are the pages you create from the 'Pages' link in the left sidebar)"
+msgstr ""
+
+#: sranalytics_admin.php:105
+msgid "Track attachment pages (these are the pages created in the 'media' link on the left sidebar)"
+msgstr ""
+
+#: sranalytics_admin.php:110
+msgid "Track author, category, and tag pages"
+msgstr ""
+
+#: sranalytics_admin.php:115
+msgid "Track everything, including the home page (includes WordPress, author, category, tag, attachment, and search results pages)"
+msgstr ""
+
+#: sranalytics_admin.php:120
+msgid "Send urls as HTTP. If your site uses a combination of both HTTP and HTTPS, enable this option."
+msgstr ""
+
+#: sranalytics_admin.php:134
+msgid "Questions? Comments? We can be contacted via SimpleReach Support"
+msgstr ""
+#. Plugin Name of the plugin/theme
+msgid "SimpleReach Analytics"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.simplereach.com/docs/wordpress-plugin/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "After installation, you must click '<a href='options-general.php?page=SimpleReach-Analytics'>Settings &rarr; SimpleReach Analytics</a>' to turn on the Analytics."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "SimpleReach"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "https://www.simplereach.com"
+msgstr ""

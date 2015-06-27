@@ -1,0 +1,133 @@
+/* general */
+.error-highlight {
+	border-color: #b94a48 !important;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	-moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+ .instructions {
+    padding-top:5px;
+    font-size: 85%;
+  }
+  .instructions a {
+  	text-decoration:none;
+  }
+
+/* admin icon */
+#icon-sailthru {
+	background-image: url('../img/sailthru-header-icon.png');
+}
+.column-right {
+	margin-left: 60%;
+	margin-top: -410px;
+	width:18%;
+	padding: 10px;
+	position: absolute;
+}
+@media (max-width: 650px) {
+    .column-right {
+		margin-top: -520px;
+	}
+}
+@media (max-width: 1000px) {
+    .column-right {
+		margin-top: -502px;
+	}
+}
+@media (max-width: 1200px) {
+    .column-right {
+		margin-top: -493px;
+	}
+}
+@media (max-width: 1300px) {
+    .column-right {
+		margin-top: -463px;
+	}
+}
+.column-left {
+	width:55%;
+	height: 50%;
+	padding: 10px;
+
+}
+
+.column-half {
+	width: 45%;
+	float: left;
+}
+
+p{
+	position:relative;
+}
+/* welcome screen */
+#sailthru-admin .welcome-panel-column {
+	width: 49.5%;
+}
+
+	#sailthru-admin #dashboard-widgets-wrap {
+		margin-top:30px;
+	}
+
+	#sailthru-admin #dashboard-widgets-wrap .postbox h3 {
+		cursor: default;
+	}
+
+		#sailthru-admin  #dashboard-widgets-wrap .postbox-container {
+			width: 49.5%;
+			margin-right:8px;
+			float:left;
+		}
+
+		#sailthru-admin #dashboard-widgets-wrap .postbox-container.last {
+			margin-right:0;
+		}
+
+#fields{
+	margin-left: 550px;
+	margin-top: -440px;
+}
+
+
+/* setup screen */
+#sailthru-add-api-key-form { display:none; }
+
+
+/* meta box width */
+table.cmb_metabox input.cmb_text_small{
+	width: 200px;
+}
+
+.option-box {
+	float:left;
+	margin:-left:10px;
+	margin-right:10px;
+	width:30%;
+	border:1px solid #CCCCCC;
+	padding:10px;
+}
+.option-box h3 {
+	margin:0;
+	padding:0;
+}
+
+#welcome-screen-header {
+	background: #f0f0f0 url(http://media.sailthru.com/1wi/1jx/4/h/516f4bbf83832.png) no-repeat top center;
+	text-indent:-9999px;
+	height:251px;
+	min-width:965px;
+}
+
+/* simple gray border */
+.grayBorder { border: 1px solid #CCCCCC;}
+
+#sailthru-col-left {
+	width:60%;
+	padding:0 20px 0 0;
+	border-right:1px solid #cccccc;
+}
+#sailthru-col-right {
+	width:35%;
+	padding:0 10px 0 20px;
+}
+#add_attr {display:block;}
