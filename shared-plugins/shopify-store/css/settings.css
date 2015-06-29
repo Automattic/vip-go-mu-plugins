@@ -1,0 +1,134 @@
+/* ==================== */
+/* = Login or Sign Up = */
+/* ==================== */
+
+#shopify-store-signin {
+	background: #f5f5f5;
+	border: 1px solid #dde2eb;
+	border-radius: 3px;
+	margin: 65px auto;
+	padding: 35px 55px;
+	width: 380px;
+}
+
+#shopify-store-signin h4 {
+	font-size: 24px;
+	font-weight: 300;
+	margin: 30px 0;
+}
+
+#shopify-store-signin #login-shopify-url {
+	width: 225px;
+	margin-bottom: 30px;
+	border: 1px solid #cccccc;
+}
+
+#shopify-store-signup {
+  text-align: center;
+}
+
+
+/* ================== */
+/* = Widget Preview = */
+/* ================== */
+
+#shopify-widget-preview {
+	float: left;
+	padding: 20px 0;
+	overflow: hidden;
+}
+
+
+/* ==================== */
+/* = Settings Form = */
+/* ==================== */
+
+#shopify-settings-form {
+	float: left;
+	background: #ffffff;
+	border: 1px solid #dde2eb;
+	padding: 20px 15px;
+	margin-right: 20px;
+}
+
+#shopify-settings-form .form-table {
+	display: block;
+	border-bottom: 1px solid #eeeeee;
+	padding-bottom: 20px;
+	margin-bottom: 35px;
+}
+
+#shopify-settings-form .form-table th {
+	color: #666;
+}
+
+#shopify-settings-form .form-table select,
+#shopify-settings-form .form-table input{
+	width: 100%;
+}
+
+#save-shopify-settings {
+	margin-right: 10px;
+}
+
+#shopify-help-link {
+	margin-bottom: 20px;
+}
+
+#edit-myshopify-domain {
+ background: #eee;
+ border: solid 1px #ddd;
+ padding: 4px 6px;
+ width: 173px;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+/* =================== */
+/* = Notice messages = */
+/* =================== */
+
+#shopify-settings .header-notice {
+	padding: 10px 15px;
+	background-color: #ffffff;
+}
+
+#shopify-error {
+	display: none;
+}
+
+/* ========================== */
+/* = Input and button style = */
+/* ========================== */
+
+#shopify-settings input.large {
+	font-size: 16px;
+	line-height: 20px;
+	padding: 12px 18px;
+}
+
+#shopify-settings .button-primary {
+	background: #96bf48;
+	border: 1px solid #8bb43f;
+	border-radius: 1px;
+	box-sizing: border-box;
+	box-shadow: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 14px;
+	height: 100%;
+	padding: 8px 24px;
+	text-shadow: 0 1px 0 #80a53a;
+	vertical-align: middle;
+}
+
+#shopify-settings .button-primary:hover {
+	background: #a1c65b;
+}
+
+#shopify-settings .submit {
+	text-align: right;
+	margin: 0;
+	padding: 0;
+}

@@ -1,0 +1,511 @@
+/* Stylesheet for the admin panel Testing */
+
+h3 {
+	background: url(../img/h3-tile.png) left top repeat-x #efefef;
+	border-top: 5px solid #E6E6E6;
+	color: #999;
+	float: left;
+	font-size: 11px;
+	line-height: 32px;
+	margin: 0;
+	padding: 0;
+	text-transform: uppercase;
+	width: 100%;
+}
+
+h3 span {
+	background-position: 10px center;
+	background-repeat: no-repeat;
+	float: left;
+	line-height: 32px;
+	padding: 0 0 0 35px;
+}
+
+h4 {
+	color: #333;
+	float: left;
+	font-family: "Lucida Grande", Helvetica, Sans-Serif;
+	font-size: 14px;
+	margin: 0;
+}
+
+h4.wide {
+	padding: 0 0 10px;
+}
+
+h4 span a {
+	margin: 0 0 0 15px;
+	text-decoration: none;
+}
+
+h5 {
+	float: left;
+	font-size: 13px;
+	margin: 10px 0 0;
+	width: 100%;
+}
+
+span span a.help {
+	font-weight: 900;
+	margin: 0 0 0 5px;
+	text-decoration: none;
+}
+
+label {
+	color: #666;
+	display: block;
+	font-size: 11px;
+	padding: 0 10px 3px 0;
+}
+
+label[for="remote_post"] {
+	float: left;
+}
+
+.row {
+	padding: 5px 0;
+	width: 100%;
+}
+
+.l .row.even {
+	background: #EFEFEF;
+}
+
+.r .row.even {
+	background: #EDEDCB;
+}
+
+.r span.left {
+	margin: 0 0 5px;
+}
+
+.row.authenticated {
+	background: url(../img/icon-authenticated.png) 95% center no-repeat;
+}
+
+.row span a {
+	margin: 0 0 0 5px;
+}
+
+.left {
+	float: left;
+}
+
+span.left {
+	display: block;
+	margin: 0 0 5px;
+	width: 90%;
+}
+
+.button.right {
+	clear: left;
+	float: right;
+	margin: 5px 0 0;
+}
+
+.link.right {
+	clear: left;
+	float: right;
+	margin: 5px 5px 0 0;
+}
+
+.light {
+	color: #999;
+}
+
+.cl {
+	clear: left;
+}
+
+.wide {
+	width: 100%;
+}
+
+#head-desc {
+	float: left;
+	margin: 0 0 15px;
+}
+
+#head-desc img.logo {
+	float: left;
+	padding: 20px 20px 0 5px;
+}
+
+#head-desc h2 {
+	margin: 20px 0 0;
+}
+
+.desc {
+	color: #666;
+	display: block;
+	float: left;
+	line-height: 160%;
+	margin: 5px 0 0;
+	padding: 0 15px 10px 0;
+}
+
+.desc strong {
+	color: #333;
+}
+
+.small-desc {
+	color: #999;
+	float: left;
+	font-size: 11px;
+	height: 75px;
+	line-height: 160%;
+	margin: 35px 0 8px;
+	padding: 40px 0 0;
+}
+
+.l .small-desc {
+	height: auto;
+	padding: 0 2%;
+	width: 96%;
+}
+
+.hr.wide {
+	background: url(../img/h3-tile.png) left top repeat-x #efefef;
+	border-top: 5px solid #E6E6E6;
+	height: 2px;
+}
+
+div.col {
+	float: left;
+	padding: 0 1%;
+	width: 65%;
+	min-width: 635px;
+}
+
+div.col.r {
+	float: right;
+	width: 38%;
+}
+
+.block {
+	float: left;
+	width: 100%;
+}
+
+.block-content {
+	float: left;
+	padding: 15px 2.5%;
+	width: 95%;
+}
+
+.block-content h4.wide {
+	padding: 0 0 10px;
+}
+
+.block-content p,
+.block-content span {
+	font-size: 11px;
+}
+
+.block.auth,
+.block.sec {
+	min-height: 130px;
+	clear: both;
+}
+
+.inner-block {
+	float: left;
+	width: 50%;
+}
+
+/* Icons */
+.remote-settings {
+	background: #fdfdd9;
+	border-bottom: 1px solid #E6E6E6;
+}
+
+.icon {
+	background-position: left center;
+	background-repeat: no-repeat;
+	clear: left;
+	float: left;
+	height: 32px;
+	margin: 0 0 0 10px;
+	text-indent: -9999px;
+	width: 32px;
+}
+
+.aim {
+	background-image: url(../img/icon-aim.png);
+}
+
+.twitter_logo {
+	background-image: url(../img/icon-twitter.png);
+}
+
+.yahoo {
+	background-image: url(../img/icon-yahoo.png);
+}
+
+.msn {
+	background-image: url(../img/icon-msn.png);
+}
+
+.gtalk {
+	background-image: url(../img/icon-google.png);
+}
+
+.authentication {
+	background-image: url(../img/icon-auth.png);
+}
+
+.settings {
+	background-image: url(../img/icon-settings.png);
+}
+
+.remote {
+	background-image: url(../img/icon-remote.png);
+}
+
+.security {
+	background-image: url(../img/icon-security.png);
+}
+
+.wrap .updated,
+.wrap .error {
+	background-image: url(../img/icon-close.png);
+	background-position: 10px 10px;
+	background-repeat: no-repeat;
+	float: left;
+	margin: 10px;
+	padding-left: 25px;
+}
+
+label[class^=icon] + input {
+	margin: 6px 0;
+}
+
+input[type^=password] {
+	background-color: white;
+	color: #000;
+	font-size: 11px;
+	position: relative;
+	width: 100px;
+	z-index: 20;
+}
+
+input[type^=text] {
+	font-size: 11px;
+}
+
+.l input.username {
+	width: 150px;
+}
+
+input.password-placeholder {
+	color: #BBB;
+	background-color: white;
+	float: left;
+	font-size: 11px;
+	margin-right: 0px;
+	margin-top: 6px;
+	padding-left: 6px;
+	padding-right: 3px;
+	position: relative;
+	z-index: 10;
+}
+
+div.hr {
+	border-top: 1px solid #ccc;
+	margin: 10px 0;
+	width: 100%;
+}
+
+.r div.hr {
+	border-color: #E6E6E6;
+}
+
+.clear {
+	clear: both;
+	height: 1px;
+}
+
+.r .row.twitter {
+	background: transparent;
+}
+
+#newUpdatePlacement {
+	padding-right: 0;
+	width: 50%;
+}
+
+#post_to_twitter_label {
+	line-height: 30px;
+}
+
+#post_to_twitter {
+	margin: 0 0 0 10px;
+}
+
+#post_to_twitter_url a {
+	margin: 0;
+}
+
+#twitter_avatar_message.lp-spinner {
+	padding-left: 20px;
+}
+
+#twitter_avatar_preview_button {
+	display: none;
+}
+
+#twitter_avatar_preview {
+	height: 60px;
+	width: 60px;
+	padding: 3px;
+	display: none;
+}
+
+.post_to_twitter_messages {
+	color: #666;
+	font-size: 11px;
+	font-style: italic;
+	margin-left: 62px;
+}
+
+#author_display_custom_name {
+	margin: 0 0 0 50px;
+}
+
+p.submit {
+	float: left;
+	margin: 0 0 30px 20px;
+	padding: 0;
+}
+
+#api_key {
+	float: left;
+	font-family: Monoco, monospace;
+	font-size: 16px;
+	height: 30px;
+	margin: 0 10px;
+	padding: 5px;
+	width: 173px;
+}
+
+#api_key_submit {
+	border: 0;
+	float: left;
+	height: 30px;
+	line-height: 30px;
+	margin: 0;
+	padding: 0 10px;
+}
+
+#api_key_status {
+	display: block;
+	float: left;
+	padding: 7px 0 2px 18px;
+	width: 150px;
+}
+
+#api_key_status.valid_api_key {
+	background: url(../img/icon-authenticated.png) 5px 10px no-repeat;
+	color: green;
+	font-size: 11px;
+}
+
+#api_key_status.invalid_api_key {
+	color: red;
+}
+
+.tabulation label {
+	margin-left: 30px;
+}
+
+p.description,
+span.description,
+.description {
+	clear: left;
+	display: block;
+	font-size: 11px;
+	font-style: italic;
+	width: 100%;
+}
+
+.title-with-description {
+	display: inline-block;
+	padding-right: 1em;
+}
+
+.form-table.im_bots td {
+	line-height: 0.9em;
+	padding-bottom: 0;
+}
+
+.form-table.im_bots th {
+	vertical-align: middle;
+	padding-bottom: 0;
+	padding-top: 0;
+}
+
+table.tbots {
+	clear: both;
+}
+
+table.tbots td,
+table.tbots tr {
+	font-size: 11px;
+}
+
+table.tbots td .italicized {
+	font-style: italic;
+}
+
+table.tbots td:first-child {
+	width: 200px;
+}
+
+p.no_key {
+	width: 100%;
+	float: left;
+}
+
+.no_key_hidden {
+	display: none;
+}
+
+.tweet_container_side {
+	width: 45%;
+}
+
+.bot_aim,
+.bot_yahoo,
+.bot_msn,
+.bot_gtalk {
+	float: left;
+	margin: 6px 0 6px 6px;
+}
+
+#cancel_aim,
+#cancel_yahoo,
+#cancel_msn,
+#cancel_gtalk,
+#edit_aim,
+#edit_yahoo,
+#edit_msn,
+#edit_gtalk,
+#check_aim,
+#check_yahoo,
+#check_msn,
+#check_gtalk {
+	line-height: 16px;
+	float: left;
+	margin: 6px;
+	height: 20px;
+	padding: 0 5px 5px;
+}
+
+#im_bot_username_aim_message,
+#im_bot_username_yahoo_message,
+#im_bot_username_msn_message,
+#im_bot_username_gtalk_message {
+	float: left;
+	width: 262px;
+	margin: 6px;
+}

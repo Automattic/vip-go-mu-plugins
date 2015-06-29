@@ -1,0 +1,20 @@
+.ecwid-warning {
+	display: block;
+	margin: 10px 0px;
+	color: #333333;
+	padding: 18px 25px;
+	border: 1px solid #e3e1df;
+	border-radius: 5px;
+	box-shadow: 0px 3px 10px rgba(192, 192, 192, 0.2);
+}
+
+.ecwid-warning .header {
+	font-size: 18px;
+	padding-left: 38px;
+	margin-bottom: 14px;
+	background: url('../images/warning.png') 0% 50% no-repeat;
+}
+
+.ecwid-warning .message {
+	font-size: 14px;
+}

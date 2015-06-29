@@ -1,0 +1,201 @@
+# Copyright (C) 2012 Post Forking
+# This file is distributed under the same license as the Post Forking package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Post Forking 0.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/post-forking\n"
+"POT-Creation-Date: 2012-10-02 14:15+0100\n"
+"PO-Revision-Date: 2012-10-02 14:15+0100\n"
+"Last-Translator: Frank Bueltge <frank@bueltge.de>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
+"_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2\n"
+"X-Generator: Poedit 1.5.3\n"
+"X-Poedit-Basepath: c:\\xampp\\htdocs\\wp-plugins\\post-forking\\\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: post-forking.php:104 post-forking.php:115
+msgctxt "fork"
+msgid "Forks"
+msgstr "Forks"
+
+#: post-forking.php:105
+msgctxt "fork"
+msgid "Fork"
+msgstr "Fork"
+
+#: post-forking.php:108
+msgctxt "fork"
+msgid "Edit Fork"
+msgstr "Fork bearbeiten"
+
+#: post-forking.php:109
+msgctxt "fork"
+msgid "New Fork"
+msgstr "Neuer Fork"
+
+#: post-forking.php:110
+msgctxt "fork"
+msgid "View Fork"
+msgstr "Fork ansehen"
+
+#: post-forking.php:111
+msgctxt "fork"
+msgid "Search Forks"
+msgstr "Forks suchen"
+
+#: post-forking.php:112
+msgctxt "fork"
+msgid "No forks found"
+msgstr "Keine Forks gefunden"
+
+#: post-forking.php:113
+msgctxt "fork"
+msgid "No forks found in Trash"
+msgstr "Keine Forks im Papierkorb gefunden "
+
+#: post-forking.php:114
+msgctxt "fork"
+msgid "Parent Fork:"
+msgstr "Eltern-Fork:"
+
+#: post-forking.php:264
+msgid "That post type does not support forking"
+msgstr "Dieser Post-Type unterstützt das Forken nicht"
+
+#: post-forking.php:269
+msgid "You are not authorized to fork that post"
+msgstr "Du bist nicht autorisiert zum Forken dieses Artikels"
+
+#: includes/admin.php:119 includes/admin.php:122
+msgid "Fork updated."
+msgstr "Fork aktualisiert."
+
+#: includes/admin.php:120
+msgid "Custom field updated."
+msgstr "Benutzerdefinertes Feld aktualisiert."
+
+#: includes/admin.php:121
+msgid "Custom field deleted."
+msgstr "Benutzerdefinertes Feld gelöscht."
+
+#: includes/admin.php:123
+#, php-format
+msgid "Fork restored to revision from %s"
+msgstr "Wiederherstellen des Fork zu Revision vom %s"
+
+#: includes/admin.php:124
+#, php-format
+msgid "Fork published. <a href=\"%s\">Download Fork</a>"
+msgstr "Fork veröffentlicht. <a href=\"%s\">Download Zweig</a>"
+
+#: includes/admin.php:125
+msgid "Fork saved."
+msgstr "Fork gespeichert."
+
+#: includes/admin.php:126
+msgid "Fork submitted."
+msgstr "Fork vorgelegt."
+
+#: includes/admin.php:127
+msgid "Fork scheduled for:"
+msgstr "Fork eingeplant für:"
+
+#: includes/admin.php:128
+msgid "Fork draft updated."
+msgstr "Fork -Entwurf aktualisiert."
+
+#: includes/admin.php:163
+msgid "Create branch"
+msgstr "Zweig erstellen"
+
+#: includes/admin.php:163 includes/merge.php:69 includes/merge.php:243
+#: templates/post-meta-box.php:4
+msgid "Fork"
+msgstr "Fork"
+
+#: includes/admin.php:169 templates/fork-meta-box.php:3
+msgid "Compare"
+msgstr "Vergleichen"
+
+#: includes/merge.php:45
+msgid "You are not authorized to merge forks"
+msgstr "Du bist nicht autorisiert zum Zusammenführen der Forks"
+
+#: includes/merge.php:48
+msgid "You are not authorized to edit the parent post"
+msgstr "Du bist nicht autoristiert zum bearbeiten des Eltern-Artikels"
+
+#: includes/merge.php:69 includes/merge.php:243
+msgid "Current Version"
+msgstr "Aktelle Version"
+
+#: includes/options.php:83
+msgid "Fork Settings"
+msgstr "Fork Einstellungen"
+
+#: includes/options.php:83
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: templates/author-post-meta-box.php:1
+msgid "Create New Branch"
+msgstr "Erstelle einen neuen Zweig"
+
+#: templates/branches-dropdown.php:2
+msgid "Branch:"
+msgstr "Zweig:"
+
+#: templates/branches-dropdown.php:3
+msgid "Original"
+msgstr "Original"
+
+#: templates/conflict-warning.php:1
+msgid ""
+"This fork cannot be merged with its parent post. Please resolve the conflict "
+"below before attempting to publish again."
+msgstr ""
+"Dieser Fork kann nicht mit dem Eltern-Artikel zusammengeführt werden. Bitte "
+"beseitige den Konflikt, bevor du erneut veröffentlichst."
+
+#: templates/fork-meta-box.php:3
+#, php-format
+msgid "Forked from <a href=\"%1$s\">%2$s</a>"
+msgstr "Geforkt von  <a href=\"%1$s\">%2$s</a>"
+
+#: templates/fork-meta-box.php:9
+msgid "Save Fork"
+msgstr "Fork gespeichert"
+
+#: templates/fork-meta-box.php:15
+msgid "Merge"
+msgstr "Zusammenführen"
+
+#: templates/options.php:7
+msgid "Fork Options"
+msgstr "Fork Optionen"
+
+#: templates/options.php:12
+msgid "Post Types"
+msgstr "Post Typen"
+
+#: templates/post-meta-box.php:2
+msgid "View Fork"
+msgstr "Fork ansehen"
+
+#~ msgid "Post Forking"
+#~ msgstr "Artikel Forks"
+
+#~ msgid "http://postforking.wordpress.com"
+#~ msgstr "http://postforking.wordpress.com"
+
+#~ msgid "Post forking"
+#~ msgstr "Artikel Forks"
+
+#~ msgid "Benjamin J. Balter, Daniel Bachhuber, Aaron Jorbin"
+#~ msgstr "Benjamin J. Balter, Daniel Bachhuber, Aaron Jorbin"

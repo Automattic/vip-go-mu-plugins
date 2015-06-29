@@ -1,0 +1,36 @@
+div.daylife-response img, div.daylife-gallery-response img {
+	padding: 5px;
+}
+
+div.daylife-image-wrap {
+	float:left;
+	position:relative;
+}
+
+div.daylife-image-wrap button {
+	bottom:10px;
+	display:none;
+	left:10px;
+	margin:auto;
+	position:absolute;
+	right:10px;
+}
+
+div.daylife-image-wrap:hover .daylife-overlay {
+	background-color:#000;
+	height:125px;
+	left:0;
+	margin:5px;
+	position:absolute;
+	top:0;
+	width:125px;
+
+	-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5;
+}
+
+div.daylife-image-wrap:hover button {
+	display:block;
+}

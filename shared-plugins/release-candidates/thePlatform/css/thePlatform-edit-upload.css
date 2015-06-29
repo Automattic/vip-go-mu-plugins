@@ -1,0 +1,92 @@
+.button-file {
+    position: relative;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: .1px;
+    text-rendering: optimizeLegibility;
+}
+.has-error .tp-label {
+    color: red;
+}
+.has-error .tp-input {
+    border-color: red;
+}
+.button-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+#theplatform_upload_label {
+    width: 80%;
+}
+#responsive-form {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    float: left;
+}
+.form-row {
+    width: 100%;
+    clear: both;
+}
+.column-half, .column-full, .column-third {
+    float: left;
+    position: relative;
+    padding: 0.65rem;
+    width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box
+}
+.clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+.tp-label {
+    display: block;
+    font-weight: bold;
+}
+.tp-input {
+    width: 100%;
+}
+.tab-pane.active {
+    display: block;
+    visibility: visible;
+}
+.tab-pane {
+    display: none;
+    visibility: hidden;
+}
+/**---------------- Media query ----------------**/
+
+@media only screen and (min-width: 48em) {
+    .column-half {
+        width: 50%;
+    }
+    .column-third {
+        width: 33.3333%;
+    }
+}
+.button-success {
+    background-color: #5cb85c !important;
+    border-color: #4cae4c !important;
+}
+.button-danger {
+    background-color: #d9534f !important;
+    border-color: #d43f3a !important;
+}
+.button-info {
+    background-color: #f0ad4e !important;
+    border-color: #eea236 !important;
+}

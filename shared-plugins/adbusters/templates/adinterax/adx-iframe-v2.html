@@ -1,0 +1,49 @@
+<HTML>
+<HEAD>
+<SCRIPT>
+ 
+// (c) 2002-2004 adInterax, All Rights Reserved, http://adinterax.com
+//
+// !! DO NOT MODIFY THIS PAGE IN ANY WAY !!
+// 03-2013 :  Changed the file to work for DFP serving (user : rishikag)
+// 04-2014 :  Refactor code (user : mjangda)
+function parseQueryVariables() {
+    var query = window.location.search.substring(1),
+        varsStrings = query.split("&"),
+        varsObject = {};
+ 
+    for (var i=0; i < varsStrings.length; i++) {
+        var pair = varsStrings[i].split("=");
+        varsObject[pair[0]] = unescape( pair[1] );
+    }
+ 
+    return varsObject;
+}
+ 
+var adxid = Math.random(),
+    params = new Array('nest','extra','adx_dfp'),
+    vars = parseQueryVariables(),
+    url = '';
+ 
+if ( vars.ad && ( 'mi.adinterax.com' == vars.ad || 'tr.adinterax.com' == vars.ad ) ) {
+    url = '//' + vars.ad + '/ad-iframe.js?';
+    for(i=0; i<params.length; i++) {
+        var param = params[i],
+            value = vars[params[i]];    
+        if(value) {
+            url += param + '=' + escape(value) + '&';
+        }
+    }
+}
+</SCRIPT>
+</HEAD>
+<BODY STYLE="margin:0px">
+<SCRIPT>
+if ( url ) {
+    var script = document.createElement('script');
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+}
+</SCRIPT>
+</BODY>
+</HTML>

@@ -1,0 +1,165 @@
+#facebox {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 100;
+	text-align: left;
+}
+ 
+.facebox h2 {
+	color: #999;
+	font-size: 14px;
+	letter-spacing: 1px;
+	line-height: 70px;
+	margin: 0 0 15px;
+	padding: 0 0 0 65px;
+	text-transform: uppercase;
+}
+ 
+.facebox h2.twitter {
+	background: url(../img/icon-twitter.png) 20px center no-repeat #e6e6e6;
+}
+ 
+.facebox h2.im {
+	background: url(../img/icon-im.png) 20px center no-repeat #e6e6e6;
+}
+ 
+.facebox h2.bot {
+	background: url(../img/icon-bot.png) 10px center no-repeat #e6e6e6;
+	padding: 0 0 0 75px;
+}
+ 
+.facebox h6 {
+	color: #333;
+	font-size: 14px;
+	margin: 5px 0;
+}
+ 
+.facebox .close {
+	font-weight: 900;
+	margin: 5px 10px;
+	text-decoration: none;
+}
+ 
+.facebox .border-l {
+	border-left: 1px solid #ddd;
+	padding: 0 20px 20px;
+}
+ 
+.facebox p {
+	padding: 0 20px;
+}
+ 
+.facebox .tip_item {
+	width: 279px;
+}
+ 
+.facebox.bots {
+	width: 640px;
+}
+ 
+.facebox.bots .hr {
+	margin: 10px 20px 15px;
+	width: 300px;
+}
+ 
+.facebox.bots h6 {
+	margin: 0 0 10px;
+	width: 300px;
+}
+ 
+.facebox.bots p {
+	font-size: 11px;
+}
+ 
+#facebox .popup {
+	position: relative;
+}
+ 
+#facebox table {
+	border-collapse: collapse;
+}
+ 
+#facebox td {
+	border-bottom: 0;
+	padding: 0;
+}
+ 
+#facebox .body {
+	padding: 0;
+	background: #fff;
+	width: 640px;
+}
+ 
+#facebox .loading {
+	text-align: center;
+}
+ 
+#facebox .image {
+	text-align: center;
+}
+ 
+#facebox img {
+	border: 0;
+	margin: 0;
+}
+ 
+#facebox .footer {
+	padding: 5px 20px 5px 0;
+	margin-top: 10px;
+	text-align: right;
+}
+ 
+#facebox .footer a {
+     clear: both;
+}
+ 
+#facebox .tl,
+#facebox .tr,
+#facebox .bl,
+#facebox .br {
+	height: 10px;
+	width: 10px;
+	overflow: hidden;
+	padding: 0;
+}
+ 
+#facebox_overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+}
+ 
+.facebox_hide {
+	z-index: -100;
+}
+ 
+.facebox_overlayBG {
+	background-color: #000;
+	z-index: 99;
+}
+
+/* ie6 hack */
+* html #facebox_overlay {
+	position: absolute;
+	height: expression(document.body.scrollHeight > document.body.offsetHeight ? document.body.scrollHeight : document.body.offsetHeight + 'px');
+}
+ 
+.tip_item {
+	float: left;
+	font-size: 0.8em;
+	margin-left: 20px;
+}
+ 
+.tip_item strong {
+	font-size: 1.2em;
+	display: block;
+	margin-bottom: 8px;
+}
+
+/*opera hack for bottom botder*/
+#facebox #im_bots .clear {
+     height: 0;
+}

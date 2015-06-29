@@ -1,0 +1,35 @@
+.curtime #exp-timestamp {
+	background-repeat: no-repeat;
+	background-position: left center;
+	padding: 2px 0 1px 20px;
+}
+
+#exp-timestampdiv select {
+	height: 20px;
+	line-height: 14px;
+	padding: 0;
+	vertical-align: top;
+}
+
+#exp-timestampdiv input {
+	border-width: 1px;
+	border-style: solid;
+}
+
+#exp-timestampdiv {
+	padding-top: 5px;
+	line-height: 23px;
+}
+
+#exp-jj, #exp-hh, #exp-mn {
+	width: 2em;
+}
+
+#exp-aa {
+	width: 3.4em;
+}
+
+#exp-aa, #exp-jj, #exp-hh, #exp-mn {
+	padding: 1px;
+	font-size: 12px;
+}

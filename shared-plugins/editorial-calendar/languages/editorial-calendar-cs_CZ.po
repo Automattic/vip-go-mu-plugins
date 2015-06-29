@@ -1,0 +1,190 @@
+# Translation of the WordPress plugin   by .
+# Copyright (C) 2010
+# This file is distributed under the same license as the  package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Editorial-Calendar-cs_CZ\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/editorial-calendar\n"
+"POT-Creation-Date: 2010-01-02 21:49+0000\n"
+"PO-Revision-Date: 2010-02-26 18:26+0100\n"
+"Last-Translator: Road runner <roadrunner@ufoni.cz>\n"
+"Language-Team: Lakva <lakva@volny.cz>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: Y\n"
+"X-Poedit-Language: Czech\n"
+"X-Poedit-Country: CZECH REPUBLIC\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: edcal.php:53
+msgid "Calendar"
+msgstr "Kalendář"
+
+#: edcal.php:116
+msgid "en-US"
+msgstr "cs-CZ"
+
+#: edcal.php:124
+msgid "on"
+msgstr "na"
+
+#: edcal.php:125
+msgid "by"
+msgstr "do"
+
+#: edcal.php:126
+msgid "at"
+msgstr "v"
+
+#: edcal.php:128
+msgid "Sunday"
+msgstr "Pondělí"
+
+#: edcal.php:129
+msgid "Monday"
+msgstr "Úterý"
+
+#: edcal.php:130
+msgid "Tuesday"
+msgstr "Středa"
+
+#: edcal.php:131
+msgid "Wednesday"
+msgstr "Čtvrtek"
+
+#: edcal.php:132
+msgid "Thursday"
+msgstr "Pátek"
+
+#: edcal.php:133
+msgid "Friday"
+msgstr "Sobota"
+
+#: edcal.php:134
+msgid "Saturday"
+msgstr "Neděle"
+
+#: edcal.php:153
+msgid " [DRAFT]"
+msgstr "[KONCEPT]"
+
+#: edcal.php:136
+msgid "Edit"
+msgstr "Upravit"
+
+#: edcal.php:137
+msgid "Delete"
+msgstr "Smazat"
+
+#: edcal.php:138
+msgid "View"
+msgstr "Zobrazit"
+
+#: edcal.php:139
+msgid "Status:"
+msgstr "Stav:"
+
+#: edcal.php:140
+msgid "Cancel"
+msgstr "Storno"
+
+#: edcal.php:141
+msgid "Post Title:"
+msgstr "Název příspěvku:"
+
+#: edcal.php:161
+msgid "Post Content:"
+msgstr "Příspěvek obashuje:"
+
+#: edcal.php:142
+msgid "Save Draft"
+msgstr "Uložit koncept"
+
+#: edcal.php:143
+msgid "Save and Edit Draft"
+msgstr "Uložit a upravit koncept"
+
+#: edcal.php:144
+msgid "Add a new post on "
+msgstr "Přidat nový příspěvek na "
+
+#: edcal.php:146
+msgid "You are about to delete this post "
+msgstr "Chystáte se SMAZAT tento příspěvek "
+
+#: edcal.php:147
+msgid "Press cancel to stop, OK to delete."
+msgstr "Stisknutím \"Storno\" akci zrušíte, \"Ok\" příspěvek smaže."
+
+#: edcal.php:149
+msgid "Looks like someone else already moved this post."
+msgstr "Zdá se že příspěvek už někdo přesunul."
+
+#: edcal.php:150
+msgid "You do not have permission to edit posts."
+msgstr "Nemáte oprávnění změnit příspěvek."
+
+#: edcal.php:151
+msgid "Invalid checksum for post. This is commonly a cross-site scripting error."
+msgstr "Neplatný kontrolní součet příspěvku. To je obvykle chyba při mezi-sitové scriptování."
+
+#: edcal.php:152
+msgid "There was an error contacting your blog."
+msgstr "Došlo k chybě při spojení s vaším blogem."
+
+#: edcal.php:174
+msgid "Screen Options"
+msgstr "Možnosti zobrazení"
+
+#: edcal.php:175
+msgid "Calendar Options"
+msgstr "Možnosti kalendáře"
+
+#: edcal.php:176
+msgid "Apply"
+msgstr "Použít"
+
+#: edcal.php:177
+msgid "Show "
+msgstr "Zobrazit"
+
+#: edcal.php:178
+msgid "weeks at a time"
+msgstr "týdnů naráz"
+
+#: edcal.php:179
+msgid "The calendar can only show between 1 and 5 weeks at a time."
+msgstr "Kalendář může zobrazit 1 až 5 týdnů nazáz."
+
+#: edcal.php:180
+msgid "Enter the number of weeks, between 1 and 5, for the calendar to show."
+msgstr "Vložte počet týdnů, které má kalendář zobrazit, od 1 do 5."
+
+#: edcal.php:184
+msgid "Posts Calendar"
+msgstr "Kalendář článků."
+
+#: edcal.php:193
+msgid "Go back four weeks."
+msgstr "Zpět o čtyři týdny."
+
+#: edcal.php:195
+msgid "Skip ahead four weeks."
+msgstr "Vpřed o čtyři týdny."
+
+#: edcal.php:250
+msgid "Jump to today"
+msgstr "Přejít na dnešek"
+
+#: edcal.php:200
+msgid "Today"
+msgstr "Dnes"
+
+#: edcal.php:457
+#: edcal.php:460
+msgid "Error in deleting..."
+msgstr "Chyba při mazání..."
+

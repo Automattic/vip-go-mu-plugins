@@ -1,0 +1,198 @@
+# Serbian translation for WordPress plugin WP-PageNavi 2.73
+# Copyright (C) 2010 Lester 'GaMerZ' Chan & scribu
+# This file is distributed under the same license as the WordPress package.
+# Milan Dinić <milan@srpski.biz> 2011
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Serbian translation for WordPress plugin WP-PageNavi 2.73\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-pagenavi\n"
+"POT-Creation-Date: 2010-08-17 17:28+0300\n"
+"PO-Revision-Date: 2011-03-23 19:39+0100\n"
+"Last-Translator: Milan Dinić <milan@srpski.biz>\n"
+"Language-Team: srpski.biz <milan@srpski.biz>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3;    plural=n%10==1 && n%100!=11 ? 0 :    n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Poedit-Language: Serbian\n"
+"X-Poedit-Country: SERBIA\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: admin.php:9
+msgid "PageNavi Settings"
+msgstr "Подешавања за PageNavi"
+
+#: admin.php:10
+msgid "PageNavi"
+msgstr "PageNavi"
+
+#: admin.php:28
+msgid "Text For Number Of Pages"
+msgstr "Текст за бројеве страница"
+
+#: admin.php:33
+msgid "The current page number."
+msgstr "Број тренутне странице."
+
+#: admin.php:34
+#: admin.php:58
+#: admin.php:66
+msgid "The total number of pages."
+msgstr "Укупан број страница."
+
+#: admin.php:38
+msgid "Text For Current Page"
+msgstr "Текст тренутне странице"
+
+#: admin.php:42
+#: admin.php:50
+msgid "The page number."
+msgstr "Број странице."
+
+#: admin.php:46
+msgid "Text For Page"
+msgstr "Текст за страницу"
+
+#: admin.php:54
+msgid "Text For First Page"
+msgstr "Текст за прву страницу"
+
+#: admin.php:62
+msgid "Text For Last Page"
+msgstr "Текст за последњу страницу"
+
+#: admin.php:70
+msgid "Text For Previous Page"
+msgstr "Текст за претходну страницу"
+
+#: admin.php:76
+msgid "Text For Next Page"
+msgstr "Текст за следећу страницу"
+
+#: admin.php:82
+msgid "Text For Previous ..."
+msgstr "Текст за претходну ..."
+
+#: admin.php:88
+msgid "Text For Next ..."
+msgstr "Текст за следећу ..."
+
+#: admin.php:95
+msgid "Page Navigation Text"
+msgstr "Текст кретања страницама"
+
+#: admin.php:96
+msgid "Leaving a field blank will hide that part of the navigation."
+msgstr "Остављање поља празним ће сакрити тај део кретања."
+
+#: admin.php:102
+msgid "Use pagenavi-css.css"
+msgstr "Користи pagenavi-css.css"
+
+#: admin.php:108
+msgid "Page Navigation Style"
+msgstr "Стил кретања страницама"
+
+#: admin.php:111
+msgid "Normal"
+msgstr "Уобичајени"
+
+#: admin.php:111
+msgid "Drop-down List"
+msgstr "Падајући списак"
+
+#: admin.php:116
+msgid "Always Show Page Navigation"
+msgstr "Увек покажи кретање странама"
+
+#: admin.php:119
+msgid "Show navigation even if there's only one page."
+msgstr "Покажи кретање чак и када постоји само једна страница."
+
+#: admin.php:123
+msgid "Number Of Pages To Show"
+msgstr "Број страница за приказивање"
+
+#: admin.php:130
+msgid "Number Of Larger Page Numbers To Show"
+msgstr "Број већих бројева страница за приказивање"
+
+#: admin.php:135
+msgid "Larger page numbers are in addition to the normal page numbers. They are useful when there are many pages of posts."
+msgstr "Већи бројеви страница су додатак уобичајеним бројевима страница. Корисни су када постоји много страница чланака."
+
+#: admin.php:136
+msgid "For example, WP-PageNavi will display: Pages 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+msgstr "На пример, WP-PageNavi ће приказати: Странице 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+
+#: admin.php:137
+msgid "Enter 0 to disable."
+msgstr "Унесите 0 за онемогућавање."
+
+#: admin.php:141
+msgid "Show Larger Page Numbers In Multiples Of"
+msgstr "Прикажи веће бројеве страница у садржаоцима од"
+
+#: admin.php:146
+msgid "For example, if mutiple is 5, it will show: 5, 10, 15, 20, 25"
+msgstr "На пример, ако је садржалац 5, приказиваће: 5, 10, 15, 20, 25"
+
+#: admin.php:151
+msgid "Page Navigation Options"
+msgstr "Могућности кретања страницама"
+
+#: scb/AdminPage.php:167
+msgid "Settings <strong>saved</strong>."
+msgstr "Подешавања су <strong>сачувана</strong>."
+
+#: scb/AdminPage.php:179
+#: scb/AdminPage.php:189
+msgid "Save Changes"
+msgstr "Сачувај измене"
+
+#: scb/AdminPage.php:371
+msgid "Settings"
+msgstr "Подешавања"
+
+#: wp-pagenavi.php:37
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "Страница %CURRENT_PAGE% од %TOTAL_PAGES%"
+
+#: wp-pagenavi.php:40
+msgid "&laquo; First"
+msgstr "&laquo; Прва"
+
+#: wp-pagenavi.php:41
+msgid "Last &raquo;"
+msgstr "Последња &raquo;"
+
+#: wp-pagenavi.php:42
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: wp-pagenavi.php:43
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:44
+#: wp-pagenavi.php:45
+msgid "..."
+msgstr "..."
+
+#. Plugin Name of the plugin/theme
+msgid "WP-PageNavi"
+msgstr "WP-PageNavi"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/wp-pagenavi/"
+msgstr "http://wordpress.org/extend/plugins/wp-pagenavi/"
+
+#. Description of the plugin/theme
+msgid "Adds a more advanced paging navigation to your WordPress blog"
+msgstr "Додаје напредније кретање страницама вашем Вордпресовом блогу"
+
+#. Author of the plugin/theme
+msgid "Lester 'GaMerZ' Chan & scribu"
+msgstr "Лестер 'GaMerZ' Чен и Скрибу"
+

@@ -1,0 +1,40 @@
+@media screen {
+	/* keep it to a reasonable width on the screen only - no width constraint for printing so that text wraps to the page correctly */
+	#page {
+		max-width: 1024px;
+	}
+}
+
+#page {
+	margin-left: 1em;
+}
+
+#header h1, #header .description {
+	display: inline;
+}
+
+#header .description {
+	margin-left: 2em;
+}
+
+#header {
+	border-bottom: 1px solid #ccc;
+}
+
+h1 a, h2 a {
+	color: #000;
+	text-decoration: none;
+}
+
+div.post {
+	font-size: 12pt; /* points are a good thing when printing */
+	line-height: 1.3em;
+}
+
+.postmetadata {
+	display: none;
+}
+
+#footer {
+	border-top: 1px solid #ccc;
+}

@@ -1,0 +1,230 @@
+# Copyright (C) 2013 Post Forking
+# This file is distributed under the same license as the Post Forking package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Post Forking 0.2.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/support/plugin/post-forking\n"
+"POT-Creation-Date: 2013-10-09 21:40:33+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2013-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: includes/admin.php:124 includes/admin.php:127
+msgid "Fork updated."
+msgstr ""
+
+#: includes/admin.php:125
+msgid "Custom field updated."
+msgstr ""
+
+#: includes/admin.php:126
+msgid "Custom field deleted."
+msgstr ""
+
+#: includes/admin.php:128
+msgid "Fork restored to revision from %s"
+msgstr ""
+
+#: includes/admin.php:129
+msgid "Fork published. <a href=\"%s\">Download Fork</a>"
+msgstr ""
+
+#: includes/admin.php:130
+msgid "Fork saved."
+msgstr ""
+
+#: includes/admin.php:131
+msgid "Fork submitted."
+msgstr ""
+
+#: includes/admin.php:132
+msgid "Fork scheduled for:"
+msgstr ""
+
+#: includes/admin.php:133
+msgid "Fork draft updated."
+msgstr ""
+
+#: includes/admin.php:168
+msgid "Create branch"
+msgstr ""
+
+#: includes/admin.php:168 includes/merge.php:79 includes/merge.php:262
+#: templates/post-meta-box.php:4
+msgid "Fork"
+msgstr ""
+
+#: includes/admin.php:174 templates/fork-meta-box.php:3
+msgid "Compare"
+msgstr ""
+
+#: includes/diff.php:44
+msgid "Compare a Fork to its parent"
+msgstr ""
+
+#: includes/diff.php:81
+msgid "Invalid type for right side; must be a fork."
+msgstr ""
+
+#: includes/diff.php:96
+msgid "Failed to save"
+msgstr ""
+
+#: includes/merge.php:50
+msgid "You are not authorized to merge forks"
+msgstr ""
+
+#: includes/merge.php:79 includes/merge.php:262
+msgid "Current Version"
+msgstr ""
+
+#: includes/options.php:83
+msgid "Fork Settings"
+msgstr ""
+
+#: includes/options.php:83
+msgid "Settings"
+msgstr ""
+
+#: post-forking.php:110 post-forking.php:121
+msgctxt "post-forking"
+msgid "Forks"
+msgstr ""
+
+#: post-forking.php:111
+msgctxt "post-forking"
+msgid "Fork"
+msgstr ""
+
+#: post-forking.php:114
+msgctxt "post-forking"
+msgid "Edit Fork"
+msgstr ""
+
+#: post-forking.php:115
+msgctxt "post-forking"
+msgid "New Fork"
+msgstr ""
+
+#: post-forking.php:116
+msgctxt "post-forking"
+msgid "View Fork"
+msgstr ""
+
+#: post-forking.php:117
+msgctxt "post-forking"
+msgid "Search Forks"
+msgstr ""
+
+#: post-forking.php:118
+msgctxt "post-forking"
+msgid "No forks found"
+msgstr ""
+
+#: post-forking.php:119
+msgctxt "post-forking"
+msgid "No forks found in Trash"
+msgstr ""
+
+#: post-forking.php:120
+msgctxt "post-forking"
+msgid "Parent Fork:"
+msgstr ""
+
+#: post-forking.php:145
+msgctxt "post-forking"
+msgid "Merged"
+msgstr ""
+
+#: post-forking.php:148
+msgid "Merged <span class=\"count\">(%s)</span>"
+msgid_plural "Merged <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: post-forking.php:279
+msgid "That post type does not support forking"
+msgstr ""
+
+#: post-forking.php:284
+msgid "You are not authorized to fork that post"
+msgstr ""
+
+#: templates/author-post-meta-box.php:2
+msgid "Create New Branch"
+msgstr ""
+
+#: templates/branches-dropdown.php:2
+msgid "Branch:"
+msgstr ""
+
+#: templates/branches-dropdown.php:3
+msgid "Original"
+msgstr ""
+
+#: templates/conflict-warning.php:5
+msgid ""
+"This fork cannot be merged with its parent post. Please resolve the conflict "
+"below before attempting to publish again, or use the <a href=\"%s"
+"\">interactive merge tool.</a>"
+msgstr ""
+
+#: templates/diff.php:31
+msgid "Compare Fork:"
+msgstr ""
+
+#: templates/diff.php:32 templates/fork-meta-box.php:3
+msgid "Forked from <a href=\"%1$s\">%2$s</a>"
+msgstr ""
+
+#: templates/diff.php:43
+msgid "Manually Merge Fork"
+msgstr ""
+
+#: templates/diff.php:45
+msgid ""
+"Clicking \"Manually Merge Fork\" will save your changes above to the "
+"original post and mark the fork as merged."
+msgstr ""
+
+#: templates/fork-meta-box.php:9
+msgid "Save Fork"
+msgstr ""
+
+#: templates/fork-meta-box.php:15
+msgid "Merge"
+msgstr ""
+
+#: templates/options.php:7
+msgid "Fork Options"
+msgstr ""
+
+#: templates/options.php:12
+msgid "Post Types"
+msgstr ""
+
+#: templates/post-meta-box.php:2
+msgid "View Fork"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "Post Forking"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://postforking.wordpress.com"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"WordPress Post Forking allows users to \"fork\" or create an alternate "
+"version of content to foster a more collaborative approach to WordPress "
+"content curation."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Benjamin J. Balter, Daniel Bachhuber, Aaron Jorbin"
+msgstr ""

@@ -1,0 +1,74 @@
+/* Verbose */
+
+.left {
+	float: left;
+}
+.right {
+	float: right;
+}
+
+/* General metabox positioning */
+
+#document-feedback-metabox {
+	width: 100%;
+	max-width: 850px;
+	overflow: hidden;
+}
+
+#document-feedback-chart {
+	width: 240px;
+	height: 250px;
+}
+
+#document-feedback-comment-wrapper {
+	width: 400px;
+	overflow: hidden;
+	float: right;
+}
+
+/* Comment styling */
+
+#document-feedback-comment-wrapper .comment-content {
+	background-color: #DDD;
+	border: 1px solid #DDD;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	padding-left: 10px;
+	padding-right: 10px;
+	font-size: 13px;
+	margin: 5px 0 15px 0;
+}
+
+#document-feedback-comment-wrapper .comment-content.df-accept {
+	border: 3px solid #009344;
+}
+
+#document-feedback-comment-wrapper .comment-content.df-decline {
+	border: 3px solid #BE1E2D;
+}
+	
+/* Legend styling */
+
+#document-feedback-legend-accept {
+	background-color: #009344;
+	color: white;
+	font-size: 16px;
+	width: 100px;
+	height: 20px;
+	text-align: center;
+	line-height: 22px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+}
+#document-feedback-legend-decline {
+	background-color: #BE1E2D;
+	color: white;
+	font-size: 16px;
+	width: 100px;
+	height: 20px;
+	text-align: center;
+	line-height: 22px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+}

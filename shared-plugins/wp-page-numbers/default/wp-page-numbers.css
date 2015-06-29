@@ -1,0 +1,89 @@
+#wp_page_numbers ul, #wp_page_numbers li, #wp_page_numbers a {
+	background: #fff;
+	padding: 0;
+	margin: 0;
+	border: none;
+	text-decoration: none;
+	font-weight: normal;
+	font-style: normal;
+	list-style: none;
+	text-transform: none;
+	text-indent: 0px;
+	font-variant: normal;
+	text-align: left;
+	line-height: 12px;
+	letter-spacing: 0px;
+	word-spacing: 0px;
+}
+
+#wp_page_numbers {
+	margin-top: 10px;
+	width: 100%;
+	background: #fff;
+}
+#wp_page_numbers ul {
+	border-top: 1px solid #ccc;
+	width: 100%;
+}
+#wp_page_numbers li {
+	float: left;
+	display: block;
+}
+
+#wp_page_numbers a {
+	padding: 3px;
+	padding-left: 5px;
+	padding-right: 5px;
+	display: block;
+	color: #aaa;
+	font-family: Arial;
+	font-size: 12px;
+	border-top: 2px solid #fff;
+	border-bottom: 2px solid #fff;
+}
+
+#wp_page_numbers li a:hover {
+	color: #ff00a4;
+	border-top: 2px solid #ff00a4;
+	border-bottom: 2px solid #f1f1f1;
+}
+
+#wp_page_numbers li.space {
+	font-size: 12px;
+	font-family: Arial;
+	color: #aaa;
+	padding: 3px;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-top: 2px solid #fff;
+	border-bottom: 2px solid #fff;
+}
+
+#wp_page_numbers li.first_last_page {
+	font-style: italic;
+}
+
+#wp_page_numbers li.active_page a {
+	color: #fff;
+	background: #45b9f6;
+	border-top: 2px solid #45b9f6;
+	border-bottom: 2px solid #45b9f6;
+	
+}
+#wp_page_numbers li.active_page a:hover  {
+	color: #fff; /* IE fix */
+	border-top: 2px solid #00679d;
+	border-bottom: 2px solid #45b9f6;
+}
+
+#wp_page_numbers li.page_info {
+	float: left;
+	font-size: 12px;
+	font-family: Arial;
+	color: #aaa;
+	display: block;
+	padding: 3px;
+	padding-right: 5px;
+	border-top: 2px solid #fff;
+	border-bottom: 2px solid #fff;
+}

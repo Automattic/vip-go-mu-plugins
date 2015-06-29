@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<title>Iframe helper</title>
+	</head>
+	<body>
+		<div id="debug"></div>
+		<script>
+			function getQueryStringParams(url) {
+				var params = {};
+				if (!url ) {
+					return params;
+				}
+		
+				var pairs = url.replace(/^[^\?]+\??/,'').split(/[;&]/);
+				for (var i = 0; i < pairs.length; i++) {
+					var keyVal = pairs[i].split('=');
+					if (!keyVal || keyVal.length != 2) continue;
+
+					var key = decodeURIComponent(keyVal[0]);
+					var val = decodeURIComponent(keyVal[1]);
+
+					val = val.replace(/\+/g, ' ');
+					params[key] = val;
+				}
+
+				return params;
+			}
+			
+			function setDomain() {
+    			var dom = document.domain;
+				if (isTopAccessible()) {
+					return;
+				}
+    			while(dom.split(".").length > 2) {
+        			var newDomain = dom.substr(dom.indexOf(".") + 1);
+        			document.domain = newDomain;
+        			
+					if (isTopAccessible()) {
+						break;
+					}
+					
+					dom = newDomain;
+    			}
+			}
+			
+			function isTopAccessible() {
+				try {
+					top.document.getElementsByTagName('p');
+					return true;
+				}
+				catch (e) {
+					return false;
+				}
+			}
+
+			setDomain();
+			var params = getQueryStringParams(document.location.toString());
+			var url = params['nodeUrl'] + '?';
+			delete params['nodeUrl'];
+			for (var x in params) {
+				url += x + '=' + params[x] + '&';
+			}
+			
+			if (/^http:\/\/(localhost|ar|staging-ar)\.(survey-poll|voicefive)\.com\//i.test(url)) {
+				if (! (/\@/.test(url)) ) {
+					try {
+						var script = top.document.createElement('script');
+						script.src = url;
+						top.document.body.appendChild(script);
+					}
+					catch (e) {
+					}
+				}
+			}
+		</script>
+	</body>
+</html>

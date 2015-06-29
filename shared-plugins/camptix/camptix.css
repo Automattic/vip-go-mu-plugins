@@ -1,0 +1,191 @@
+#tix-errors, #tix-notices {
+	margin-bottom: 20px;
+}
+
+.tix-error, .tix-notice, .tix-info {
+	margin: 2px 0;
+	padding: 4px 8px;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+}
+
+	.tix-error p,
+	.tix-notice p,
+	.tix-info p {
+		margin: 0 0 1em 0;
+		padding: 0;
+	}
+
+	.tix-error p:last-child,
+	.tix-notice p:last-child,
+	.tix-info p:last-child {
+		margin-bottom: 0;
+	}
+
+.tix-error {
+	background: #FFEBE8;
+	border: solid 1px #C00;
+}
+
+.tix-notice {
+	background: lightYellow;
+	border: solid 1px #E6DB55;
+}
+
+.tix-info {
+	background: #EFF8DF;
+	border: solid 1px #B2D37D;
+}
+
+.tix-clear {
+	height: 0;
+	line-height: 0;
+	display: block;
+	font-size: 0;
+	clear: both;
+}
+
+.tix-required-star {
+	color: #DD0000;
+}
+
+#tix {
+	padding-top: 20px;
+}
+body.admin-bar #tix {
+	padding-top: 50px;
+}
+
+#tix-attendees ul {
+	list-style: none;
+	margin-left: 0;
+}
+
+#tix-attendees li {
+	float: left;
+	width: 50%;
+	margin-bottom: 20px;
+	height: 80px;
+}
+
+#tix-attendees .tix-columns-1 li { width: 100%; }
+#tix-attendees .tix-columns-2 li { width: 50%; }
+#tix-attendees .tix-columns-3 li { width: 33.333%; }
+#tix-attendees .tix-columns-4 li { width: 25%; }
+#tix-attendees .tix-columns-5 li { width: 20%; }
+
+#tix-attendees .avatar {
+	float: left;
+	width: 50px;
+	height: 50px;
+}
+
+#tix-attendees .tix-field {
+	display: block;
+	margin-left: 70px;
+	font-size: 14px;
+	/*width: 100%;*/
+}
+
+#tix-attendees .tix-attendee-name {
+	margin-bottom: 0;
+	clear: none;
+}
+
+.entry-content input,
+.entry-content select {
+	margin: 0 0 0 0;
+}
+
+.tix-ticket-form td,
+.tix-attendee-form td,
+.tix-private-form td,
+.tix-receipt-form td {
+	vertical-align: top;
+}
+
+/* IE tends to center-align th */
+.tix-ticket-form th,
+.tix-attendee-form th,
+.tix-private-form th,
+.tix-receipt-form th {
+	text-align: left;
+}
+
+.tix-ticket-form input[type="text"],
+.tix-ticket-form input[type="email"],
+.tix-ticket-form input[type="url"],
+.tix-ticket-form textarea,
+.tix-private-form input[type="text"],
+.tix-private-form input[type="email"],
+.tix-private-form input[type="url"],
+.tix-private-form textarea,
+.tix-attendee-form input[type="text"],
+.tix-attendee-form input[type="email"],
+.tix-attendee-form input[type="url"],
+.tix-attendee-form textarea,
+.tix-receipt-form input[type="text"],
+.tix-receipt-form input[type="email"],
+.tix-receipt-form input[type="url"],
+.tix-receipt-form textarea {
+	width: 70%;
+}
+
+.tix-ticket-form td.tix-left,
+.tix-private-form td.tix-left,
+.tix-attendee-form td.tix-left,
+.tix-receipt-form td.tix-left {
+	width: 40%;
+}
+.tix-ticket-form td.tix-right,
+.tix-private-form td.tix-right,
+.tix-attendee-form td.tix-right,
+.tix-receipt-form td.tix-right {
+	width: 60%;
+}
+
+.tix-order-summary .tix-column-description {
+	width: 40%;
+}
+
+.tix-order-summary td.tix-column-per-ticket,
+.tix-order-summary td.tix-column-quantity,
+.tix-order-summary td.tix-column-price {
+	vertical-align: middle;
+}
+
+.tix-submit {
+	text-align: right;
+}
+
+.tix-submit input[type="submit"] {
+	cursor: pointer;
+}
+
+#tix.tix-js .tix-hide-if-js,
+#tix .tix-show-if-js,
+.tix-hidden {
+	display: none !important;
+}
+#tix.tix-js .tix-show-if-js,
+#tix .tix-hide-if-js {
+	display: block;
+}
+
+/**
+ * === RTL Styles ===
+ * Should always be at the EOF, since they need to override
+ * some of the default styles in RTL environments.
+ * RTL installs should have a class appended to <body>
+ * named 'rtl'. We're going to use it to line things up.
+ */
+.rtl .tix-ticket-form th,
+.rtl .tix-private-form th,
+.rtl .tix-attendee-form th,
+.rtl .tix-receipt-form th { text-align: right; }
+
+.rtl #tix-attendees li,
+.rtl #tix-attendees .avatar { float: right; }
+
+.rtl #tix-attendees .tix-field { margin-left: 0; margin-right: 70px; }

@@ -1,0 +1,67 @@
+/*
+ * People associated with a company
+ */
+#angellist-companies {
+
+  // list of people
+  .angellist-people {
+    .clearfix();
+    list-style: none;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding: 0;
+
+    li {
+      .text-overflow();
+      display: inline;
+      float: left;
+      height: 40px;
+      width: 33%;
+      padding: 0;
+    }
+  }
+
+  .angellist-person-photo {
+    .center-block();
+    float: left;
+    margin-right: 10px;
+    padding: 0;
+    width: 38px;
+    height: 38px;
+
+    img {
+      border-color: #ddd;
+      border-style: solid;
+      border-width: 1px;
+    }
+  }
+
+  .angellist-person-summary {
+    float: left;
+    max-height: 40px;
+    overflow: hidden;
+    margin-top: auto;
+    margin-bottom: auto;
+    line-height: 20px;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+  }
+
+  .angellist-person-name {
+    .text-overflow();
+    line-height: 20px;
+  }
+
+  .angellist-person-title {
+    text-transform: uppercase;
+    color: #999;
+    letter-spacing: 0.15em;
+    font-size: 10px;
+    font-weight: bold;
+  }
+}

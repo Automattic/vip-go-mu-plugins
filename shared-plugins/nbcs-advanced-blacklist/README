@@ -1,0 +1,5 @@
+######################
+# Advanced Blacklist #
+######################
+
+A plugin to improve the functionality of WordPress's blacklist feature.  The default blacklist will blacklist a string from multiple locations, including substrings within another word, often causing it to overzealously mark posts as spam.  This feature adds two new blacklists: one which blacklists only complete words in post content, and another which will be checked only against usernames, e-mail addresses, user sites, and IP addresses (but not post content).  In addition, the plugin features a user-friendly interface allowing administrators to see exactly what effect each blacklist would have if a given term were added to it.

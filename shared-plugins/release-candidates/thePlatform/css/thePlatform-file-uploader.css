@@ -1,0 +1,35 @@
+#wpwrap {
+    display: none !important;
+}
+#nprogress {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+}
+.mybar {
+    background: #29d;
+    height: 2px;
+}
+.postbox {
+    padding: 20px 25px 15px;
+    margin: 25px;
+    height: 70px;
+    font-family: "Open Sans", sans-serif;
+}
+.progress {
+    height: 2px;
+    overflow: hidden;
+}
+.spinner-icon {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+}
+.lead {
+    text-align: center;
+    font-size: 1.2em;
+}
+.lead .error {
+    color: red;
+}

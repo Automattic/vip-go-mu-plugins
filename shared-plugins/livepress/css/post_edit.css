@@ -1,0 +1,491 @@
+.lp-message {
+	margin: 5px 0 15px;
+        padding: 0 .6em;
+	border-width: 1px;
+	border-style: solid;
+	-moz-border-radius: 3px;
+	-khtml-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	border-top-left-radius: 3px 3px;
+	border-top-right-radius: 3px 3px;
+	border-bottom-right-radius: 3px 3px;
+	border-bottom-left-radius: 3px 3px;
+}
+
+.lp-message p {
+	margin: .5em 0;
+	line-height: 1;
+	padding: 2px;
+}
+
+.lp-message.lp-notice {
+	background-color: lightgreen;
+	border-color: green;
+}
+
+.lp-message.lp-error {
+	background-color: #FFEBE8;
+	border-color: #C00;
+}
+
+.lp-message.lp-warning {
+	background-color: lightYellow;
+	border-color: #E6DB55;
+}
+
+#termadderror {
+	display: none;
+}
+
+#blogging-tools-link-wrap {
+-moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-color: -moz-use-text-color #DDDDDD #DDDDDD;
+    border-image: none;
+    border-right: 1px solid #DDDDDD;
+    border-style: none solid solid;
+    border-width: medium 1px 1px;
+    box-shadow: 0 1px 1px -1px rgba(0, 0, 0, 0.1);
+
+	border-right: 1px solid #ccc;
+	border-left: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	background: #fff;
+
+
+	float: right;
+	height: 28px;
+	padding: 0 0 0 2px;
+	margin: 0 0 0 6px;
+	font-family: sans-serif;
+
+}
+
+.branch-3-6 #blogging-tools-link-wrap,
+.branch-3-7 #blogging-tools-link-wrap {
+	border-right: 1px solid #ccc;
+	border-left: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	background: #e3e3e3;
+	background-image: -webkit-gradient(linear, left bottom, left top, from(#dfdfdf), to(#f1f1f1));
+	background-image: -webkit-linear-gradient(bottom, #dfdfdf, #f1f1f1);
+	background-image:    -moz-linear-gradient(bottom, #dfdfdf, #f1f1f1);
+	background-image:      -o-linear-gradient(bottom, #dfdfdf, #f1f1f1);
+	background-image: linear-gradient(to top, #dfdfdf, #f1f1f1);
+
+	float: right;
+	height: 23px;
+	padding: 0;
+	margin: 0 0 0 6px;
+	font-family: sans-serif;
+
+	-webkit-border-bottom-left-radius: 3px;
+	-webkit-border-bottom-right-radius: 3px;
+	-moz-border-radius-bottomright: 3px;
+	-moz-border-radius-bottomleft: 3px;
+	border-bottom-left-radius: 3px;
+	border-bottom-right-radius: 3px;
+}
+
+/* overrides WP styles; looks better when an icon is placed there. Use of !important to avoid double id selector */
+#blogging-tools-link {
+	padding-left: 9px !important;
+}
+
+#blogging-tools-link .icon-livepress-logo:before {
+	font-size: 1.3em;
+}
+
+#blogging-tools-wrap {
+	padding: 0;
+	margin: 0 0 0 -4px;
+	position: relative;
+	overflow: auto;
+}
+
+#blogging-tools-wrap * {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+}
+
+	.blogging-tools-sidebar {
+		width: 160px;
+		padding: 0 10px;
+		float: right;
+		overflow: hidden;
+	}
+
+	/* Make the blogging tools icons match dashicons */
+.blogging-tools-sidebar [class^="icon-"]:before,
+.blogging-tools-sidebar [class*=" icon-"]:before,
+.blogging-tools-sidebar .dashicons-admin-comments:before {
+	 display: inline-block;
+	 width: 20px;
+	 height: 20px;
+	 line-height: 20px;
+	 color: #888888;
+ }
+
+.blogging-tools-sidebar [class^="icon-"]:before,
+.blogging-tools-sidebar [class*=" icon-"]:before {
+	 font-size: 16px;
+ }
+
+ /* Needs a slight baseline adjustment */
+ .blogging-tools-sidebar .icon-people-online:before {
+	 position: relative;
+	 top: .2em;
+ }
+
+ p.peeklink {
+		margin-bottom: 6px;
+		float: left;
+		cursor: pointer;
+	}
+
+	p.peek {
+		float: right;
+		color: #fff;
+		font-weight: bold;
+		width: 40px;
+		text-align: center;
+		background-color: #bbbbbb;
+		padding: 4px 4px 4px 22px;
+		position: relative;
+		left: 8px;
+		top: 20px;
+		margin-top: -10px;
+		font-size: 1.4em;
+		-webkit-border-bottom-right-radius: 3px;
+		-moz-border-radius-bottomright: 3px;
+		border-bottom-right-radius: 3px;
+		background-image: url(../img/live-status.png);
+	}
+
+	p.peek.live {
+		background-position: 0 -26px;
+	}
+
+	#livepress-online_num,
+	#livepress-authors_num,
+	#livepress-comments_num	{
+		font-weight: bold;
+	}
+
+	#blogging-tools-back,
+	.blogging-tools-tabs .active {
+		border-color: #ccc;
+	}
+
+	#blogging-tools-back {
+		background: white;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 149px;
+		right: 159px; /* 149px instead of 150px so the 1px border always shows */
+		border-width: 0 1px;
+		border-style: solid;
+	}
+
+	#blogging-tools-columns {
+		position: relative;
+	}
+
+	.blogging-tools-tabs {
+		float: left;
+		width: 150px;
+		margin: 0;
+	}
+
+		.blogging-tools-tabs ul {
+			margin: 1em 0;
+		}
+
+		.blogging-tools-tabs li {
+			margin-bottom: 0;
+			list-style-type: none;
+			border-style: solid;
+			border-width: 1px 0;
+			border-color: transparent;
+		}
+
+		.blogging-tools-tabs a {
+			display: block;
+			padding: 5px 5px 5px 12px;
+			line-height: 18px;
+			text-decoration: none;
+		}
+
+		.blogging-tools-tabs .active,
+		.blogging-tools-tabs .active a,
+		.blogging-tools-tabs .active a:hover {
+			background: white;
+			color: #333;
+		}
+
+		.blogging-tools-tabs .active {
+			padding: 0;
+			margin: 0 -1px 0 0;
+			border-width: 1px 0 1px 1px;
+			border-style: solid;
+		}
+
+		.blogging-tools-tabs-wrap {
+			overflow: auto;
+		}
+
+		.blogging-tools-content {
+			display: none;
+			line-height:  1.6em;
+		}
+
+		.blogging-tools-content.active {
+			display: block;
+		}
+
+		/**
+		Default tabs in the Live Blogging Tools section
+		*/
+		#live-notes-text {
+			width: 100%;
+			resize: none;
+		}
+
+		.live-notes-status {
+			display: none;
+			color: #fff;
+			background: green;
+			padding-left: 10px;
+			padding-right: 10px;
+			line-height: 23px;
+			width: 70px;
+			text-align: center;
+			-webkit-transition: opacity 2s;
+			        transition: opacity 2s;
+			-webkit-border-radius: 3px;
+			 -khtml-border-radius: 3px;
+			   -moz-border-radius: 3px;
+			        border-radius: 3px;
+		}
+
+		.hide-fade {
+			opacity: 0;
+		}
+
+.wp-editor-tabs.livepress-inline-editor-tabs {
+	margin-right: 10px;
+	height: 33px;
+	float: none;
+}
+
+.livepress-author-info {
+	float: left;
+}
+	.livepress-author-info input[type="checkbox"] {
+		float: none;
+	}
+
+#lp-pub-status-bar {
+	height: 2em;
+}
+
+	#lp-pub-status-bar .icon {
+		position: relative;
+		float: left;
+		width: 16px;
+		height: 16px;
+		margin-right: 5px;
+		background-image: url(../img/admin-bar-status-sprite.png);
+		background-position: -2px -145px;
+		margin-bottom: 10px;
+	}
+
+	#lp-pub-status-bar .icon.live {
+		background-position: -2px -5px;
+	}
+
+	#lp-pub-status-bar .icon.disabled {
+		background-position: -2px -61px;
+	}
+
+	#lp-pub-status-bar .first-line {
+		display: block;
+	}
+
+    #lp-pub-status-bar .first-line span {
+	     font-size: 14px;
+	     line-height: 28px;
+     }
+
+	#lp-pub-status-bar .second-line a {
+		cursor: pointer;
+	}
+
+	#lp-pub-status-bar.no-toggle a {
+		display: none;
+	}
+
+	#lp-pub-status-bar.not-live a span {
+		display: none;
+	}
+	#lp-pub-status-bar .toggle-live {
+		margin-left: 10px;
+	}
+
+	#livepress_status_meta_box .disabled,
+	#livepress_status_meta_box.live .lp-off,
+	#livepress_status_meta_box.live .turnon,
+	#livepress_status_meta_box.globally_disabled .lp-off,
+	#livepress_status_meta_box.globally_disabled.live .lp-on,
+	#livepress_status_meta_box.not-live .lp-on,
+	#livepress_status_meta_box.globally_disabled.live .turnoff,
+	#livepress_status_meta_box.globally_disabled.not-live .turnon,
+	#livepress_status_meta_box .turnoff {
+		display: none;
+	}
+
+	#livepress_status_meta_box.globally_disabled .disabled,
+	#livepress_status_meta_box.live .lp-on,
+	#livepress_status_meta_box.not-live .turnon,
+	#livepress_status_meta_box.live .turnoff,
+		#livepress_status_meta_box.not-live.globally_disabled .disabled {
+		display: inline-block;
+	}
+
+	#livepress_status_meta_box.postbox.live,
+	.live-status-enabled  {
+		background: #dbfae1;
+	}
+
+	#livepress_status_meta_box h3 {
+		background-color: #fff;
+	}
+
+	#livepress_status_meta_box.postbox.globally_disabled {
+		background: #f8c8ca;
+	}
+
+	#livepress_status_meta_box .disabled {
+		padding: 5px;
+	}
+
+	.livepress-active .switch-tmce,
+	.livepress-active .switch-html,
+	#blogging-tools-link-wrap,
+	.wp-switch-editor.switch-livepress,
+	.wp-switch-editor.switch-livepress.active,
+	.wp-switch-editor.switch-livepress-html,
+	.wp-switch-editor.switch-livepress.active-html {
+		display: none;
+		float: right;
+	}
+
+	.livepress-active #blogging-tools-link-wrap {
+		display: inline;
+	}
+
+	/* Enhanced Editor Button */
+	.wp-switch-editor.switch-livepress .icon-livepress-logo:before {
+		font-size: 1.3em;
+		padding-right: 5px;
+	}
+
+	.livepress-active .wp-switch-editor.switch-livepress.active,
+	.livepress-active .wp-switch-editor.switch-livepress-html.active {
+		display: inline;
+		border-color: #dfdfdf #dfdfdf #f5f5f5;
+		background-color: #f5f5f5;
+		/* Colors for the Blue-style UI */
+		/*border-color: #CCC #CCC #EAF2FA;
+		background-color: #EAF2FA;*/
+		color: #333;
+	}
+
+
+
+	.livepress-active .switch-livepress,
+	.livepress-active .switch-livepress-html {
+		background: none repeat scroll 0% 0% #EBEBEB;
+		border: 1px solid #DEDEDE;
+		color: #777;
+		display: inline;
+	}
+	.switch-livepress:hover {
+		background-color: #f5f5f5;
+	}
+
+	.ui-dialog.ui-front {
+		background-color: #FFF;
+		z-index: 9999999;
+	}
+	.no-close .ui-dialog-titlebar-close {
+		display: none;
+	}
+	.no-close .ui-dialog-titlebar {
+		background-color: #000;
+		color: #FFF;
+		font-size: 14px;
+	}
+
+	.pinned-first-livepress-update {
+		padding: 0;
+		margin-bottom: 0px;
+		border: 1px solid #CCCCCC;
+	}
+
+	#livepress-canvas .pinned-first-livepress-update div.livepress-update {
+		margin: 0;
+		padding: 10px 10px 10px;
+	}
+
+	.pinned-first-livepress-update-header {
+		cursor: pointer;
+	}
+
+	.pinned-first-livepress-update-header:hover {
+		background-color: #d9d9d9;
+	}
+	.pinned-first-livepress-update-header {
+		background-color: #E9E9E9;
+		border-color: #CCCCCC #CCCCCC #E9E9E9;
+		color: #333333;
+		padding-top: 4px;
+		padding-bottom: 0;
+		padding-left: 4px;
+		font-size: 14px;
+		font-weight: bold;
+		height: 24px;
+	}
+
+	.pinned-first-livepress-update .livepress-delete {
+		display: none;
+	}
+
+	.pinned-first-option {
+		margin-top: 8px;
+	}
+
+	#livepress_status_meta_box.not-live .pinned-first-option {
+		display: none;
+	}
+
+/**
+ * HiDPI Graphics
+ */
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+	p.peek {
+		background-image: url(../img/live-status-2x.png);
+		background-size: 66px auto;
+	}
+
+	#lp-pub-status-bar .icon {
+		background-image: url("../img/admin-bar-status-sprite-2x.png");
+		background-size: 20px auto;
+	}
+
+}

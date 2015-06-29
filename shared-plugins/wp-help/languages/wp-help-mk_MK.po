@@ -1,0 +1,179 @@
+# Copyright (C) 2010 WP Help
+# This file is distributed under the same license as the WP Help package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Help 0.2-beta\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-help\n"
+"POT-Creation-Date: 2011-05-19 17:37:03+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2011-05-19 19:54+0100\n"
+"Last-Translator: Boris Kuzmanov <boriskuzmanov2@gmail.com>\n"
+"Language-Team: mk_MK\n"
+
+#: wp-help.php:35
+msgctxt "post type label"
+msgid "Publishing Help"
+msgstr "Помош за објавување"
+
+#: wp-help.php:52
+msgid "Help Documents"
+msgstr "Документи за помош"
+
+#: wp-help.php:53
+msgid "Help Document"
+msgstr "Документ за помош"
+
+#: wp-help.php:54
+msgctxt "i.e. Add new Help Document"
+msgid "Add New"
+msgstr "Додај нов"
+
+#: wp-help.php:55
+msgid "Add New Help Document"
+msgstr "Додај нов документ"
+
+#: wp-help.php:56
+msgctxt "i.e. Edit Help Document"
+msgid "Edit"
+msgstr "Уреди"
+
+#: wp-help.php:57
+msgid "Edit Help Document"
+msgstr "Уреди документ"
+
+#: wp-help.php:58
+msgid "New Help Document"
+msgstr "Додај документ"
+
+#: wp-help.php:59
+msgctxt "i.e. View Help Document"
+msgid "View"
+msgstr "Прегледај"
+
+#: wp-help.php:60
+msgid "View Help Document"
+msgstr "Прегледај документ"
+
+#: wp-help.php:61
+msgid "Search Documents"
+msgstr "Пребарувај документи"
+
+#: wp-help.php:62
+msgid "No Help Documents Found"
+msgstr "Нема пронајдено документи"
+
+#: wp-help.php:63
+msgid "No Help Documents found in Trash"
+msgstr "Нема пронајдено документи во ѓубрето"
+
+#: wp-help.php:64
+msgid "Parent Help Document"
+msgstr "Родителски документ за помош"
+
+#: wp-help.php:99
+msgctxt "page title"
+msgid "Publishing Help"
+msgstr "Помош за објавување"
+
+#: wp-help.php:99
+msgctxt "menu title"
+msgid "Publishing Help"
+msgstr "Помош за објавување"
+
+#: wp-help.php:105
+msgctxt "meta box title"
+msgid "WP Help Options"
+msgstr "WP Помош - Поставувања"
+
+#: wp-help.php:111
+msgid "Make this the default help document"
+msgstr "Постави го како стандарден документ за помош"
+
+#: wp-help.php:133
+msgid "Document updated. <a href=\"%s\">View document</a>"
+msgstr "Документот е ажуриран. <a href=\"%s\">Види го документот</a>."
+
+#: wp-help.php:134
+msgid "Custom field updated."
+msgstr "Сопственото поле е ажурирано."
+
+#: wp-help.php:135
+msgid "Custom field deleted."
+msgstr "Сопственото поле е избришано."
+
+#: wp-help.php:136
+msgid "Document updated."
+msgstr "Документот е ажуриран."
+
+#: wp-help.php:137
+msgid "Document restored to revision from %s"
+msgstr "Документот е вратен на верзијта од %s"
+
+#: wp-help.php:138
+msgid "Document published. <a href=\"%s\">View document</a>"
+msgstr "Документот е објавен. <a href=\"%s\">Види го документот</a>."
+
+#: wp-help.php:139
+msgid "Document saved."
+msgstr "Документот е зачуван"
+
+#: wp-help.php:140
+msgid "Document submitted. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr "Документот е испратен. <a target=\"_blank\" href=\"%s\">Прегледај го документот</a>."
+
+#: wp-help.php:141
+msgid "Document scheduled for: <strong>%1$s</strong>. <a target=\"_blank\" href=\"%2$s\">Preview document</a>"
+msgstr "Документот е закажан за: <strong>%1$s</strong>. <a target=\"_blank\" href=\"%2$s\">Прегледај го документот</a>."
+
+#: wp-help.php:141
+msgid "M j, Y @ G:i"
+msgstr "M j, Y @ G:i"
+
+#: wp-help.php:142
+msgid "Document draft updated. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr "Нацрт документот е ажуриран. <a target=\"_blank\" href=\"%s\">Прегледај го документот</a>."
+
+#: wp-help.php:174
+msgctxt "h2 title"
+msgid "Publishing Help"
+msgstr "Помош за објавување"
+
+#: wp-help.php:178
+msgid "Help Topics"
+msgstr "Теми за помош"
+
+#: wp-help.php:178
+msgctxt "verb. Button with limited space"
+msgid "Manage"
+msgstr "Менаџирај"
+
+#: wp-help.php:190
+msgid "The requested help document could not be found"
+msgstr "Побараниот документ за помош не може да биде пронајден"
+
+#: wp-help.php:196
+msgid "No published help documents found. <a href=\"%s\">Manage Help Documents</a>."
+msgstr "Нема пронајдено објавени документи. <a href=\"%s\">Менаџирај ги документите</a>."
+
+#: wp-help.php:198
+msgid "No help documents found. Contact the site administrator."
+msgstr "Нема пронајдено документи за помош. Контактирајте го администраторот."
+
+#. Plugin Name of the plugin/theme
+msgid "WP Help"
+msgstr "WP Помош"
+
+#. Description of the plugin/theme
+msgid "Administrators can create detailed, hierarchical documentation for the site's authors and editors, viewable in the WordPress admin."
+msgstr "Администраторите може да создаваат детална, хиерархиска документација за авторите на нивниот сајт и да бидат видливи во WordPress работната табла."
+
+#. Author of the plugin/theme
+msgid "Mark Jaquith"
+msgstr "Mark Jaquith"
+
+#. Author URI of the plugin/theme
+msgid "http://coveredwebservices.com/"
+msgstr "http://coveredwebservices.com/"
+

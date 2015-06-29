@@ -1,0 +1,6 @@
+Installation:
+Put the add-meta-tags.php file in your /wp-content/plugins/ directory
+and activate through the administration panel.
+
+Read the info and configure the plugin at the 'Options->Meta Tags' configuration panel.
+

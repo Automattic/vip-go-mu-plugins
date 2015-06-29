@@ -1,0 +1,153 @@
+V 2.5.2:
+Minor bug fix. Silly mistake on options page. Marked height as width on options.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.5.1:
+Minor bug fix. Width & Height if logic.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.5:
+Added legacy support to all parameters & added documentation to cover useage.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.3.5:
+Fixed another stupid mistake. Forgot space after default images alt text.
+Thanks to rougedeals.com for the spot.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.3.4:
+Fixed stupid mistake. Forgot to return to variable in alt text
+also made mistake in if logic for default title/alt.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.3.3:
+Added more function customisation parameters.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.3.2:
+Added parameters back in for CSS class and img size so
+multiple calls to the function can be customised
+since the options page acts as global.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.3.1:
+Stupid fixes that I can't believe I had to do. I'm crap sometimes.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.3:
+Added support for changeable image alt & hyperlink title attributes.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.2:
+Major remodel. Plugin now includes a options page.
+
+~~~~~~~~~~~~~~~~~~~~
+
+
+V 2.1.1:
+Minor bug fix for default images.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.1:
+Added support for adding the rel attribute to the href.
+Thanks to Dip for the suggestion.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.0.1:
+Fixed a small bug in the custom link feature.
+Thanks to Jennifer once more for pointing it out.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 2.0:
+Changed the method by which custom field work to one suggested
+by Jennifer of scriptygoddess.com. Thanks to Jen for that suggestion
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.9:
+You can now supply a custom link path for the image to point to.
+Use link=custom and the custom field key 'att_custom_link'
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.8:
+If a description is supplied to the image within WP that will be
+inserted as the image's alt attribute.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.7:
+Added image_order option after a request by Steve.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.6.1:
+Forgot to remove my testing comment & cleaned the header a litle.
+Thanks to Steve for pointing out the bug.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.6:
+Added ability to show the full size image if wanted.
+Suggested by Brian Wood.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.5:
+Added the ability to choose an image that is not attached
+to the current post defined in the post loop. Can be
+selected in the template call or in the custom post meta.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.4.2:
+Fixed another flaw in the width & height decision system.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.4.1:
+Fixed flaw in width & height checking for custom
+fields.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.4:
+Added the ability to use a custom width & height.
+Just like the default pic it can be defined in the
+template function call or on a post by post basis
+in the custom fields.
+
+~~~~~~~~~~~~~~~~~~~~
+
+V 1.3:
+Added ability to choose a default image to show
+should there be no image to display. If no default 
+image is defined then nothing will be returned.
+Default image can be defined in the post via
+custom fields using 'default_pic' as the key.
+
+~~~~~~~~~~~~~~~~~~~~~
+
+V 1.2 ~ 75 - 90:
+Added the ability to output a link around the image.
+You can choose to link to the pic (default), the
+attachment page or the post that the image is attached to.
+
+~~~~~~~~~~~~~~~~~~~~~
+
+V 1.1 ~ line 62 & 68:
+Fixed a stupid mistake. Used strict type check for true.
+Not going to work if the true is provided by argument
+as it will be a string not a bool.

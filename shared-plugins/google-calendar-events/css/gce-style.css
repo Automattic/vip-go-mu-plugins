@@ -1,0 +1,203 @@
+/* PAGE GRID */
+
+.gce-page-grid .gce-calendar .gce-caption{ /* Caption at top of calendar */
+	color:#333333;
+	text-align:center;
+}
+
+.gce-page-grid .gce-calendar{ /* Main calendar table */
+	width:100%;
+	border-collapse:collapse;
+	border:1px solid #CCCCCC;
+	color:#CCCCCC;
+}
+
+.gce-page-grid .gce-calendar th{ /* Day headings (S, M etc.) */
+	border:1px solid #CCCCCC;
+	text-align:center;
+	width:14.29%;
+	padding:0;
+}
+
+.gce-page-grid .gce-calendar td{ /* Day table cells */
+	border:1px solid #CCCCCC;
+	text-align:center;
+	height:80px;
+	vertical-align:middle;
+	padding:0;
+}
+
+.gce-page-grid .gce-calendar .gce-has-events{ /* Table cells with events */
+	color:#333333;
+	cursor:pointer;
+}
+
+.gce-page-grid .gce-calendar .gce-event-info{ /* Event information */
+	display:none; /* Important! */
+}
+
+.gce-page-grid .gce-calendar .gce-day-number{ /* Day number span */
+	font-size:2em;
+}
+
+.gce-page-grid .gce-calendar .gce-today{ /* Table cell that represents today */
+	background-color:#DDDDDD;
+}
+
+.gce-page-grid .gce-calendar .gce-next,
+.gce-page-grid .gce-calendar .gce-prev{ /* Previous and next month links */
+	cursor:pointer;
+	display:inline-block;
+	width:3%;
+}
+
+.gce-page-grid .gce-calendar .gce-month-title{ /* Month title */
+	display:inline-block;
+	width:90%;
+}
+
+.gce-page-grid .gce-calendar th abbr{ /* Day letter abbreviation */
+	border-bottom:none;
+}
+
+/* PAGE LIST */
+
+.gce-page-list .gce-list p{ /* Each piece of information in the list */
+	margin:0;
+}
+
+.gce-page-list .gce-list p span,
+.gce-page-list .gce-list div span{ /* The text displayed before each piece of info, 'Starts:' for example */
+	color:#999999;
+}
+
+.gce-page-list .gce-list .gce-list-event{ /* The event title */
+	background-color:#DDDDDD;
+}
+
+.gce-page-list .gce-list .gce-list-title{ /* The title (not the same as event title) */
+	font-weight:bold;
+}
+
+.gce-page-list .gce-list ul{
+	list-style-type:none;
+	margin:0;
+	padding:0;
+}
+
+/* WIDGET GRID */
+
+.gce-widget-grid .gce-calendar .gce-caption{
+	text-align:center;
+}
+
+.gce-widget-grid .gce-calendar{ /* Main calendar table */
+	width:100%;
+	border:1px solid #CCCCCC;
+	border-collapse:collapse;
+}
+
+.gce-widget-grid .gce-calendar th{ /* Day headings (S, M etc.) */
+	width:14.29%;
+	border:1px solid #CCCCCC;
+	text-align:center;
+}
+
+.gce-widget-grid .gce-calendar td{ /* Day table cells */
+	color:#CCCCCC;
+	width:14.29%;
+	border:1px solid #CCCCCC;
+	text-align:center;
+}
+
+.gce-widget-grid .gce-calendar .gce-has-events{ /* Table cells with events */
+	cursor:pointer;
+	color:#666666;
+}
+
+.gce-widget-grid .gce-calendar .gce-today{ /* Table cell that represents today */
+	background-color:#DDDDDD;
+}
+
+.gce-widget-grid  .gce-calendar .gce-event-info{ /* Event information */
+	display:none; /* Important! */
+}
+
+.gce-widget-grid  .gce-calendar .gce-next,
+.gce-widget-grid  .gce-calendar .gce-prev{ /* Prev and next month links */
+	cursor:pointer;
+	display:inline-block;
+	width:5%;
+}
+
+.gce-widget-grid .gce-calendar .gce-month-title{ /* Month title in caption at top of table */
+	display:inline-block;
+	width:80%;
+}
+
+.gce-widget-grid .gce-calendar th abbr{ /* Day name abbreviations */
+	border-bottom:none;
+}
+
+/* WIDGET LIST */
+
+.gce-widget-list .gce-list p{ /* Each piece of information in the list */
+	margin:0;
+}
+
+.gce-widget-list .gce-list p span,
+.gce-widget-list .gce-list div span{ /* The text displayed before each piece of info, 'Starts:' for example */
+	color:#999999;
+}
+
+.gce-widget-list .gce-list .gce-list-event{ /* The event title */
+	background-color:#DDDDDD;
+}
+
+.gce-widget-list .gce-list .gce-list-title{ /* The title (not the same as event title) */
+	font-weight:bold;
+}
+
+.gce-widget-list .gce-list ul{
+	list-style-type:none;
+	margin:0;
+	padding:0;
+}
+
+/* TOOLTIP */
+
+.gce-event-info{ /* Tooltip container */
+	background-color:#FFFFFF;
+	border:1px solid #333333;
+	max-width:300px;
+}
+
+.gce-event-info .gce-tooltip-title{ /* 'Events on...' text */
+	margin:5px;
+	font-weight:bold;
+	font-size:1.2em;
+}
+
+.gce-event-info ul{ /* Events list */
+	padding:0;
+	margin:5px;
+	list-style-type:none;
+}
+
+.gce-event-info ul li{ /* Event list item */
+	margin:10px 0 0 0;
+}
+
+.gce-event-info ul li p{ /* Each piece of information */
+	margin:0;
+}
+
+.gce-event-info ul li p span,
+.gce-event-info ul li div span{ /* The text displayed before each piece of info, 'Starts:' for example */
+	color:#999999;
+}
+
+.gce-event-info .gce-tooltip-event{ /* The event title */
+	background-color:#DDDDDD;
+	font-weight:bold;
+}

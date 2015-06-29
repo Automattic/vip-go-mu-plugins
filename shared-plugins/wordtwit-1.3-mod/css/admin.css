@@ -1,0 +1,147 @@
+/* @group Global */
+
+/* @end */
+
+#wordtwit {
+	width: 95%;
+	font-size: 11px;
+	position: relative;
+}
+
+#wordtwit #top-logo-area {
+	background: url(../images/bird.png) no-repeat right;
+}
+
+#wordtwit .bottom-spacer {
+	padding-bottom: 20px;
+}
+
+#wordtwit .sorry {
+	color: red;
+}
+
+#wordtwit #version {
+	float: right;
+	position: absolute;
+	top: 197px;
+	left: 703px;
+	color: #073447;
+	font-size: 22px;
+	font-family: 'helvetica';
+}
+
+#wordtwit #thanks {
+	width: 900px;
+	text-align: right;
+	padding-top: 2px;
+}
+
+#wordtwit #thanks a {
+	text-decoration: none;
+	color: #888;
+}
+
+#wordtwit #thanks a:hover {
+	color: #555;
+}
+
+#wordtwit .plugin-section {
+	border-bottom: 1px solid #ddd;
+	padding-bottom: 0px;
+	width: 900px;
+}
+
+#wordtwit .section-info {
+	float: left;
+	width: 270px;
+	margin-right: 30px;
+	padding-bottom: 20px;
+}
+
+#wordtwit .plugin-section h3 {
+	color: #264761;
+	font-size: 17px;
+	font-family:  georgia;
+	
+}
+
+/* @group Right Sections & Form Content */
+
+#wordtwit .editable-area {
+	float: left;
+	width: 450px;
+	margin-left: 10px;
+}
+
+#wordtwit .editable-area form {
+	font-family: 'lucida grande';
+	padding-top: 40px;
+}
+
+#wordtwit .editable-area input {
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	color: #555;
+	font-size: 11px;
+}
+
+#wordtwit .editable-area form {
+	font-family: 'lucida grande';
+	padding-top: 40px;
+}
+
+#wordtwit .wordtwit-clearer {
+	clear: both;
+	margin-top: 10px;
+}
+
+
+
+/* @end */
+
+/* @group Twitter Profile */
+
+#wordtwit #twitter-profile .avatar {
+	float: left;
+	width: 70px;
+	text-align: left;
+}
+
+#wordtwit #twitter-profile img {
+	width: 60px;
+	height: auto;
+	margin-right: 10px;
+	
+} 
+
+#wordtwit #twitter-profile .info {
+	float: left;
+	width: 300px;
+	padding-bottom: 20px;
+}
+
+#wordtwit #twitter-profile .info p {
+	margin-top: 0px;
+	padding-top: 0px;
+}
+
+#wordtwit #twitter-profile {
+	padding-top: 50px;
+}
+
+#twitter-profile .info h4 {
+	margin: 0px;
+	padding: 0px;
+}
+
+#twitter-profile .info h5 {
+	padding: 0px;
+	margin-top: 5px;
+	font-size: 10px;
+	font-weight: normal;
+	font-color: #555
+}
+
+
+
+/* @end */

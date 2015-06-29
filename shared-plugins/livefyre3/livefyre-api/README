@@ -1,0 +1,44 @@
+Livefyre API Libraries and Documentation
+
+All examples assume something like the following:
+    $DOMAIN = '___.fyre.co';
+    $KEY = 'your Livefyre secret key';
+
+Generating a user token:
+    <?php
+    include('Livefyre.php');
+
+    // Let's say we want to generate a token for uid '_u1'
+    $network = new Livefyre_Domain($DOMAIN, $KEY);
+    $token = $network->user('12345', 'myNameIsJon')->token();
+    ?>
+    
+In order to get SEO-boosting HTML for the conversation itself, cache this result and include it in the rendered page:
+    <?php
+    $conversation = $network->site('339')->article('6113')->conversation();
+    $html = $conversation->to_html();
+    ?>
+
+Render the User's "login" JSON blob which includes their token and display name:
+    <?php
+    //here we provide a display name only to ensure that on first login the interface can be populated
+    $user = $network->user( '12345', 'myNameIsJon' );
+    
+    //returns the serialized string of JSON. You can pass this directly to the JavaScript method LF.login()
+    $lf_init_json = $user->auth_json( );
+    ?>
+
+Render the widget and provide it with a given User's auth credentials:
+    <?php
+    //here we provide a display name only to ensure that on first login the interface can be populated
+    $user = $network->user( '12345', 'myNameIsJon' ); 
+    
+    //pass your Livefyre site id and key
+    $site = $network->site( $SITE_ID, $SITE_KEY);
+    
+    //pass your CMS's content meta data (url, title, tags)
+    $article = $site->article( $cms_content_id, $cms_permalink_url, $cms_title, $cms_tags);
+    $conversation = $article->conversation();
+    echo $conversation->to_initjs( $include_source = false );
+    echo $network->authenticate_js(); # handle cookie management for your users' Livefyre sessions
+    ?>

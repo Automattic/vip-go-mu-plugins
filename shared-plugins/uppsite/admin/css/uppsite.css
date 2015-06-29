@@ -1,0 +1,76 @@
+#uppsite-wrapper {
+    border-bottom: 1px solid #cccccc;
+    display: inline-block;
+    width: 100%;
+}
+
+#toplevel_page_uppsite-settings .wp-menu-image,
+#toplevel_page_uppsite-setup .wp-menu-image,
+#wpadminbar #wp-admin-bar-uppsite-mobile > .ab-item .ab-icon {
+    background-image: url(../images/wp-admin-uppsite-icon.png);
+    background-repeat: no-repeat;
+}
+.icon32.icon-uppsite, #icon-uppsite {
+    background-image: url(../images/wp-admin-uppsite-icon-big.png);
+    background-repeat: no-repeat;
+}
+
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+    #toplevel_page_uppsite-settings .wp-menu-image,
+    #toplevel_page_uppsite-setup .wp-menu-image,
+    #wpadminbar #wp-admin-bar-uppsite-mobile > .ab-item .ab-icon {
+        background-image: url(../images/wp-admin-uppsite-icon@2x.png);
+        background-size: 16px 48px;
+    }
+    .icon32.icon-uppsite #icon-uppsite {
+        background-image: url(../images/wp-admin-uppsite-icon-big@2x.png);
+        background-size: 30px 31px;
+    }
+}
+
+#toplevel_page_uppsite-settings .wp-menu-image,
+#toplevel_page_uppsite-setup .wp-menu-image {
+    background-position:7px -26px !important;
+}
+#toplevel_page_uppsite-settings.current .wp-menu-image, #toplevel_page_uppsite-settings.wp-has-current-submenu .wp-menu-image,
+#toplevel_page_uppsite-settings:hover .wp-menu-image,
+#toplevel_page_uppsite-setup.current .wp-menu-image, #toplevel_page_uppsite-setup.wp-has-current-submenu .wp-menu-image,
+#toplevel_page_uppsite-setup:hover .wp-menu-image {
+    background-position:7px 6px !important;
+}
+
+#wpadminbar #wp-admin-bar-uppsite-mobile > .ab-item .ab-icon {
+    background-position:0px 16px !important;
+}
+
+#wpadminbar #wp-admin-bar-uppsite-mobile:hover > .ab-item .ab-icon {
+    background-position:0px 0px !important;
+}
+
+.uppsite-wrap .subsubsub {
+    float: right;
+    margin: 16px 0 0;
+}
+.uppsite-wrap .subsubsub a { padding: 0 .2em; }
+.uppsite-wrap h2 {
+    float: left;
+}
+
+#wpbody-content { padding-bottom: 37px; }
+
+/* Changes for dashboard footer */
+body[class*='version-3-'][class*='uppsite'] #wpcontent { margin-left: 146px; }
+
+body[class*='version-3-'][class*='uppsite'] #uppsite-wrapper {
+    display: block;
+    width: auto;
+    margin: 0 20px;
+    overflow: auto;
+}
+body[class*='version-3-'][class*='uppsite'] .uppsite-wrap { margin: 0; }
+
+body[class*='version-3-'][class*='uppsite'] #uppsiteFrame { clear: both; }
+
+@media only screen and (max-width: 900px) {
+    body[class*='version-3-'][class*='uppsite'] #wpcontent { margin-left: 33px; }    
+}

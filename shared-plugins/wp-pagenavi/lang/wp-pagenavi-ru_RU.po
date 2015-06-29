@@ -1,0 +1,267 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-PageNavi 2.50\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-pagenavi\n"
+"POT-Creation-Date: 2010-04-19 11:25+0300\n"
+"PO-Revision-Date: 2010-06-26 05:23+0300\n"
+"Last-Translator: Elvis <main@fweb.org.rru>\n"
+"Language-Team: Anna Ozeritskaya <anna.ozeritskaya@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Russian\n"
+"X-Poedit-Country: RUSSIAN FEDERATION\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: admin.php:9
+msgid "PageNavi Settings"
+msgstr "Настройки плагина"
+
+#: admin.php:10
+msgid "PageNavi"
+msgstr "Список страниц"
+
+#: admin.php:27
+msgid "Text For Number Of Pages"
+msgstr "Шаблон общего списка страниц"
+
+#: admin.php:32
+msgid "The current page number."
+msgstr "Номер текущей страницы."
+
+#: admin.php:33
+#: admin.php:57
+#: admin.php:65
+msgid "The total number of pages."
+msgstr "Общее количество страниц."
+
+#: admin.php:37
+msgid "Text For Current Page"
+msgstr "Элемент &laquo;Текущая страница&raquo;"
+
+#: admin.php:41
+#: admin.php:49
+msgid "The page number."
+msgstr "Номер страницы."
+
+#: admin.php:45
+msgid "Text For Page"
+msgstr "Элемент &laquo;Страница&raquo;"
+
+#: admin.php:53
+msgid "Text For First Page"
+msgstr "Элемент &laquo;Первая страница&raquo;"
+
+#: admin.php:61
+msgid "Text For Last Page"
+msgstr "Элемент &laquo;Последняя страница&raquo;"
+
+#: admin.php:69
+msgid "Text For Previous Page"
+msgstr "Элемент &laquo;Предыдущая страница&raquo;"
+
+#: admin.php:75
+msgid "Text For Next Page"
+msgstr "Элемент &laquo;Следующая страница&raquo;"
+
+#: admin.php:81
+msgid "Text For Previous ..."
+msgstr "Элемент &laquo;Предыдущие&hellip;&raquo;"
+
+#: admin.php:87
+msgid "Text For Next ..."
+msgstr "Элемент &laquo;Следующие&hellip;&raquo;"
+
+#: admin.php:94
+msgid "Page Navigation Text"
+msgstr "Шаблоны списка страниц"
+
+#: admin.php:95
+msgid "Leaving a field blank will hide that part of the navigation."
+msgstr "Совет: Если Вы оставите какое-то поле пустым, то и в страничной навигации оно не будет отображаться."
+
+#: admin.php:101
+msgid "Use pagenavi-css.css"
+msgstr "Использовать стиль pagenavi-css.css"
+
+#: admin.php:107
+msgid "Page Navigation Style"
+msgstr "Стиль списка страниц"
+
+#: admin.php:110
+msgid "Normal"
+msgstr "Обычный"
+
+#: admin.php:110
+msgid "Drop-down List"
+msgstr "Выпадающий список"
+
+#: admin.php:115
+msgid "Always Show Page Navigation"
+msgstr "Всегда показывать список страниц"
+
+#: admin.php:118
+msgid "Show navigation even if there's only one page."
+msgstr "Показывать навигацию, даже если страниц с записями больше нет."
+
+#: admin.php:122
+msgid "Number Of Pages To Show"
+msgstr "Кол-во страниц для показа"
+
+#: admin.php:129
+msgid "Number Of Larger Page Numbers To Show"
+msgstr "Диапозон страниц для показа"
+
+#: admin.php:134
+msgid "Larger page numbers are in addition to the normal page numbers. They are useful when there are many pages of posts."
+msgstr "Диапазон страниц дополняют обычную нумерацию и полезен в тех случаях, когда на Вашем сайте очень много записей."
+
+#: admin.php:135
+msgid "For example, WP-PageNavi will display: Pages 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+msgstr "Например, список страниц будет выглядеть так: Страницы 1, 2, 3, 4, 5, 10, 20, 30, 40, 50"
+
+#: admin.php:136
+msgid "Enter 0 to disable."
+msgstr "Введите 0, чтобы отключить эту функцию."
+
+#: admin.php:140
+msgid "Show Larger Page Numbers In Multiples Of"
+msgstr "Коэффициент для диапазонов страниц"
+
+#: admin.php:145
+msgid "For example, if mutiple is 5, it will show: 5, 10, 15, 20, 25"
+msgstr "Например, если коэффициент равен 5, то список страниц будет выглядеть так: 5, 10, 15, 20, 25"
+
+#: admin.php:150
+msgid "Page Navigation Options"
+msgstr "Настройки списка страниц"
+
+#: scb/AdminPage.php:165
+#: scb/AdminPage.php:176
+msgid "Save Changes"
+msgstr "Сохранить изменения"
+
+#: scb/AdminPage.php:279
+msgid "Settings <strong>saved</strong>."
+msgstr "Настройки были <strong>сохранены</strong>."
+
+#: scb/AdminPage.php:337
+msgid "Settings"
+msgstr "Настройки"
+
+#: wp-pagenavi.php:224
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "Страница %CURRENT_PAGE% из %TOTAL_PAGES%"
+
+#: wp-pagenavi.php:227
+msgid "&laquo; First"
+msgstr "&laquo; Первая"
+
+#: wp-pagenavi.php:228
+msgid "Last &raquo;"
+msgstr "Последняя &raquo;"
+
+#: wp-pagenavi.php:229
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: wp-pagenavi.php:230
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:231
+#: wp-pagenavi.php:232
+msgid "..."
+msgstr "..."
+
+#. Plugin Name of the plugin/theme
+msgid "WP-PageNavi"
+msgstr "Список страниц"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/wp-pagenavi/"
+msgstr "http://wordpress.org/extend/plugins/wp-pagenavi/"
+
+#. Description of the plugin/theme
+msgid "Adds a more advanced paging navigation to your WordPress blog"
+msgstr "Плагин добавляет к Вашему блогу расширенную и легко настраиваемую страничную навигацию"
+
+#. Author of the plugin/theme
+msgid "Lester 'GaMerZ' Chan & scribu"
+msgstr "Авторы Lester 'GaMerZ' Chan & scribu"
+
+#~ msgid "Updated"
+#~ msgstr "&mdash; обновлено"
+
+#~ msgid "No Page Navigation Option Updated"
+#~ msgstr "Настройки списка страниц не изменились"
+
+#~ msgid "UNINSTALL WP-PageNavi"
+#~ msgstr "УДАЛИТЬ WP-PageNavi"
+
+#~ msgid "Setting Key '%s' has been deleted."
+#~ msgstr "Настройка &laquo;%s&raquo; удалена."
+
+#~ msgid "Error deleting Setting Key '%s'."
+#~ msgstr "Ошибка при удалении настройки &laquo;%s&raquo;."
+
+#~ msgid "Uninstall WP-PageNavi"
+#~ msgstr "Удалить список страниц"
+
+#~ msgid ""
+#~ "<a href=\"%s\">Click Here</a> To Finish The Uninstallation And WP-"
+#~ "PageNavi Will Be Deactivated Automatically."
+#~ msgstr ""
+#~ "<a href=\"%s\">Нажмите здесь</a> чтобы завершить удаление. WP-PageNavi "
+#~ "будет отключён автоматически."
+
+#~ msgid "Text For Last Post"
+#~ msgstr "Элемент &laquo;Последняя запись&raquo;"
+
+#~ msgid "Text For Next Post"
+#~ msgstr "Элемент &laquo;Следующая запись&raquo;"
+
+#~ msgid "Yes"
+#~ msgstr "Да"
+
+#~ msgid "No"
+#~ msgstr "Нет"
+
+#~ msgid "If mutiple is in 10, it will show: 10, 20, 30, 40, 50"
+#~ msgstr "А если 10&nbsp;&mdash; так: 10, 20, 30, 40, 50"
+
+#~ msgid ""
+#~ "Deactivating WP-PageNavi plugin does not remove any data that may have "
+#~ "been created, such as the page navigation options. To completely remove "
+#~ "this plugin, you can uninstall it here."
+#~ msgstr ""
+#~ "При отключении плагина отображения списка страниц созданные данные, "
+#~ "включая настройки, не удаляются. Для того, чтобы полностью удалить "
+#~ "плагин, отмените здесь его установку."
+
+#~ msgid "WARNING:"
+#~ msgstr "ВНИМАНИЕ:"
+
+#~ msgid ""
+#~ "Once uninstalled, this cannot be undone. You should use a Database Backup "
+#~ "plugin of WordPress to back up all the data first."
+#~ msgstr ""
+#~ "Удаление плагина необратимо. Для того, чтобы создать резервную копию БД "
+#~ "WordPress и сохранить ваши данные, используйте плагин &laquo;Database "
+#~ "Backup&raquo;."
+
+#~ msgid "The following WordPress Options will be DELETED:"
+#~ msgstr "Будут УДАЛЕНЫ следующие настройки WordPress:"
+
+#~ msgid "WordPress Options"
+#~ msgstr "Настройки WordPress"
+
+#~ msgid ""
+#~ "You Are About To Uninstall WP-PageNavi From WordPress.\\nThis Action Is "
+#~ "Not Reversible.\\n\\n Choose [Cancel] To Stop, [OK] To Uninstall."
+#~ msgstr ""
+#~ "Вы собираетесь удалить плагин WP-PageNavi.\\nЭто действие необратимо.\\n"
+#~ "\\nЧтобы остановить удаление, выберите [Отмена]. Выберите [OK], если  вы "
+#~ "хотите его продолжить."

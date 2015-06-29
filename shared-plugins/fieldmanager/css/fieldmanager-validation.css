@@ -1,0 +1,9 @@
+.fm-js-error {
+	margin: 5px 0px;
+	color: red;
+	display: block;
+}
+
+.fm-label-inline + .fm-element.fm-js-error {
+	display: inline;
+}

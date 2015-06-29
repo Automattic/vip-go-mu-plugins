@@ -1,0 +1,244 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-PageNavi v2.73\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-pagenavi\n"
+"POT-Creation-Date: 2010-08-17 17:28+0300\n"
+"PO-Revision-Date: 2011-02-22 16:39+0800\n"
+"Last-Translator: Sh2153 <sh2153@gmail.com>\n"
+"Language-Team: sh2153 <sh2153@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-Language: Chinese\n"
+"X-Poedit-Country: TAIWAN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2\n"
+"X-Textdomain-Support: yes\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
+
+# @ wp-pagenavi
+#: admin.php:9
+msgid "PageNavi Settings"
+msgstr "換頁導航選項"
+
+# @ wp-pagenavi
+#: admin.php:10
+msgid "PageNavi"
+msgstr "換頁導航"
+
+# @ wp-pagenavi
+#: admin.php:28
+msgid "Text For Number Of Pages"
+msgstr "“頁數”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:33
+msgid "The current page number."
+msgstr "目前頁數"
+
+# @ wp-pagenavi
+#: admin.php:34
+#: admin.php:58
+#: admin.php:66
+msgid "The total number of pages."
+msgstr "所有頁數"
+
+# @ wp-pagenavi
+#: admin.php:38
+msgid "Text For Current Page"
+msgstr "“目前頁數”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:42
+#: admin.php:50
+msgid "The page number."
+msgstr "頁數"
+
+# @ wp-pagenavi
+#: admin.php:46
+msgid "Text For Page"
+msgstr "“頁數”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:54
+msgid "Text For First Page"
+msgstr "“首頁”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:62
+msgid "Text For Last Page"
+msgstr "“頁數”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:70
+msgid "Text For Previous Page"
+msgstr "“下一頁”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:76
+msgid "Text For Next Page"
+msgstr "“頁數”文字設定"
+
+# @ wp-pagenavi
+#: admin.php:82
+msgid "Text For Previous ..."
+msgstr "“下一頁”省略文字設定"
+
+# @ wp-pagenavi
+#: admin.php:88
+msgid "Text For Next ..."
+msgstr "“上一頁”省略文字設定"
+
+# @ wp-pagenavi
+#: admin.php:95
+msgid "Page Navigation Text"
+msgstr "換頁導航文字"
+
+#: admin.php:96
+msgid "Leaving a field blank will hide that part of the navigation."
+msgstr "將隱藏導航區域留下的空白的部分。"
+
+#: admin.php:102
+msgid "Use pagenavi-css.css"
+msgstr "使用pagenavi- css.css"
+
+# @ wp-pagenavi
+#: admin.php:108
+msgid "Page Navigation Style"
+msgstr "換頁導航樣式"
+
+# @ wp-pagenavi
+#: admin.php:111
+msgid "Normal"
+msgstr "正常"
+
+# @ wp-pagenavi
+#: admin.php:111
+msgid "Drop-down List"
+msgstr "下拉列表"
+
+# @ wp-pagenavi
+#: admin.php:116
+msgid "Always Show Page Navigation"
+msgstr "始終顯示換頁導航"
+
+#: admin.php:119
+msgid "Show navigation even if there's only one page."
+msgstr "即使只有一個網頁也顯示導航。"
+
+# @ wp-pagenavi
+#: admin.php:123
+msgid "Number Of Pages To Show"
+msgstr "顯示多少頁數"
+
+# @ wp-pagenavi
+#: admin.php:130
+msgid "Number Of Larger Page Numbers To Show"
+msgstr "顯示較大頁面頁數"
+
+# @ wp-pagenavi
+#: admin.php:135
+msgid "Larger page numbers are in addition to the normal page numbers. They are useful when there are many pages of posts."
+msgstr "顯示較大頁面的頁數，通常針對於文章非常多的站點。"
+
+# @ wp-pagenavi
+#: admin.php:136
+msgid "For example, WP-PageNavi will display: Pages 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+msgstr "例如，WP-PageNavi 會顯示為：頁面 1, 2, 3, 4, 5, 10, 20, 30, 40, 50"
+
+# @ wp-pagenavi
+#: admin.php:137
+msgid "Enter 0 to disable."
+msgstr "輸入0可以禁用此功能。"
+
+# @ wp-pagenavi
+#: admin.php:141
+msgid "Show Larger Page Numbers In Multiples Of"
+msgstr "顯示較大的頁面數的倍數"
+
+# @ wp-pagenavi
+#: admin.php:146
+msgid "For example, if mutiple is 5, it will show: 5, 10, 15, 20, 25"
+msgstr "如果倍數設置為5，將會顯示為：5，10，15，20，25"
+
+# @ wp-pagenavi
+#: admin.php:151
+msgid "Page Navigation Options"
+msgstr "換面導航選項"
+
+#: scb/AdminPage.php:167
+msgid "Settings <strong>saved</strong>."
+msgstr "選項<strong>保存</strong>."
+
+# @ wp-pagenavi
+#: scb/AdminPage.php:179
+#: scb/AdminPage.php:189
+msgid "Save Changes"
+msgstr "保存更改"
+
+#: scb/AdminPage.php:371
+msgid "Settings"
+msgstr "設置"
+
+# @ wp-pagenavi
+#: wp-pagenavi.php:37
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "第 %CURRENT_PAGE% 頁，共 %TOTAL_PAGES% 頁"
+
+# @ wp-pagenavi
+#: wp-pagenavi.php:40
+msgid "&laquo; First"
+msgstr "&laquo; 最新"
+
+# @ wp-pagenavi
+#: wp-pagenavi.php:41
+msgid "Last &raquo;"
+msgstr "最後 &raquo;"
+
+# @ wp-pagenavi
+#: wp-pagenavi.php:42
+msgid "&laquo;"
+msgstr "&laquo;"
+
+# @ wp-pagenavi
+#: wp-pagenavi.php:43
+msgid "&raquo;"
+msgstr "&raquo;"
+
+# @ wp-pagenavi
+#: wp-pagenavi.php:44
+#: wp-pagenavi.php:45
+msgid "..."
+msgstr "..."
+
+# @ wp-pagenavi
+#. Plugin Name of the plugin/theme
+msgid "WP-PageNavi"
+msgstr "WP-PageNav換頁導航"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/wp-pagenavi/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Adds a more advanced paging navigation to your WordPress blog"
+msgstr "增加了一個更美觀實用的分頁導航到你的WordPress的博客"
+
+#. Author of the plugin/theme
+msgid "Lester 'GaMerZ' Chan & scribu"
+msgstr ""
+
+msgid "..."
+msgstr "..."
+
+# @ wp-pagenavi
+#. Plugin Name of the plugin/theme
+msgid "WP-PageNavi"
+msgstr "WP-PageNavi換頁導航"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/wp-pagenavi/"
+msgstr ""
+

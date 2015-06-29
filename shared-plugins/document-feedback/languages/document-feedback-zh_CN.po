@@ -1,0 +1,154 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Document Feedback v1.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2013-02-15 03:54:34+0000\n"
+"Last-Translator: admin <info@sparanoid.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=1;\n"
+"X-Generator: CSL v1.x\n"
+"X-Poedit-Language: Chinese\n"
+"X-Poedit-Country: PEOPLE'S REPUBLIC OF CHINA\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;\n"
+"X-Poedit-Basepath: ../\n"
+"X-Poedit-Bookmarks: \n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Textdomain-Support: yes"
+
+#: document-feedback.php:45
+#: document-feedback.php:49
+#@ default
+msgid "Cheatin’ uh?"
+msgstr "想作弊，嗯？"
+
+#: document-feedback.php:106
+#@ document-feedback
+msgid "Did this document answer your question?"
+msgstr "此文档是否对您有帮助？"
+
+#: document-feedback.php:107
+#@ document-feedback
+msgid "Yes"
+msgstr "是"
+
+#: document-feedback.php:108
+#@ document-feedback
+msgid "No"
+msgstr "否"
+
+#: document-feedback.php:109
+#@ document-feedback
+msgid "Thanks for responding."
+msgstr "感谢您的反馈，"
+
+#: document-feedback.php:110
+#@ document-feedback
+msgid "What details were useful to you?"
+msgstr "如果方便的话，请您告诉我们文中对您有帮助的地方："
+
+#: document-feedback.php:111
+#@ document-feedback
+msgid "What details are you still looking for?"
+msgstr "那么您需要哪方面的详细信息？"
+
+#: document-feedback.php:112
+#@ document-feedback
+msgid "Thanks for the feedback! We'll use it to improve our documentation."
+msgstr "感谢您的反馈，我们会根据您的反馈来对我们的文档进行优化。"
+
+#: document-feedback.php:131
+#@ document-feedback
+msgid "Document Feedback"
+msgstr "文档反馈"
+
+#: document-feedback.php:247
+#, php-format
+#@ document-feedback
+msgid "%1$s on %2$s <span class=\"says\">said:</span>"
+msgstr "%1$s 在 %2$s <span class=\"says\">说：</span>"
+
+#. translators: 1: date, 2: time
+#: document-feedback.php:252
+#, php-format
+#@ document-feedback
+msgid "%1$s at %2$s"
+msgstr "%1$s %2$s"
+
+#: document-feedback.php:271
+#@ document-feedback
+msgid "No feedback has been submitted yet."
+msgstr "尚未提交任何反馈。"
+
+#: document-feedback.php:343
+#@ document-feedback
+msgid "You need to be logged in to submit feedback."
+msgstr "您必须登录后才能提交反馈。"
+
+#: document-feedback.php:347
+#@ document-feedback
+msgid "Nonce error. Are you sure you are who you say you are?"
+msgstr "验证错误，您确定您描述的是您本人？"
+
+#: document-feedback.php:352
+#@ document-feedback
+msgid "Invalid post for feedback."
+msgstr "反馈的 Ajax 指令有误"
+
+#: document-feedback.php:357
+#@ document-feedback
+msgid "Invalid comment."
+msgstr "无效的评论。"
+
+#: document-feedback.php:401
+#@ document-feedback
+msgid "Invalid comment entry."
+msgstr "无效的评论内容。"
+
+#: document-feedback.php:404
+#@ document-feedback
+msgid "Invalid user ID for comment."
+msgstr "评论的用户 ID 无效"
+
+#: document-feedback.php:410
+#@ document-feedback
+msgid "Comment not updated."
+msgstr "评论未更新。"
+
+#: document-feedback.php:476
+#@ document-feedback
+msgid "positive"
+msgstr "正面"
+
+#: document-feedback.php:476
+#@ document-feedback
+msgid "negative"
+msgstr "负面"
+
+#: document-feedback.php:478
+#, php-format
+#@ document-feedback
+msgid "Feedback received on '%s'"
+msgstr "收到「%s」的用户反馈"
+
+#: document-feedback.php:479
+#, php-format
+#@ document-feedback
+msgid "You've received new %1$s feedback from %2$s (%3$s):"
+msgstr "您收到来自 %2$s（%3$s）的%1$s反馈："
+
+#: document-feedback.php:481
+#@ document-feedback
+msgid "You can view/edit the document here: "
+msgstr "您可以在此处进行查看或编辑："
+
+#: document-feedback.php:615
+#: document-feedback.php:626
+#@ document-feedback
+msgid "Send feedback"
+msgstr "提交反馈"
+

@@ -1,0 +1,205 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-PageNavi 2.40\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-12-12 00:39+0800\n"
+"PO-Revision-Date: 2008-12-12 00:39+0800\n"
+"Last-Translator: Lester Chan <lesterchan@gmail.com>\n"
+"Language-Team: mishkin.se <mikael@mishkin.se>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: Sweden\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: pagenavi-options.php:46
+#: pagenavi-options.php:108
+#: pagenavi-options.php:172
+msgid "Page Navigation Options"
+msgstr "Inställningar för sidnavigering"
+
+#: pagenavi-options.php:51
+msgid "Updated"
+msgstr "Uppdaterad"
+
+#: pagenavi-options.php:56
+msgid "No Page Navigation Option Updated"
+msgstr "Inga inställningar för sidnavigering uppdaterades"
+
+#: pagenavi-options.php:62
+#: pagenavi-options.php:241
+msgid "UNINSTALL WP-PageNavi"
+msgstr "Avinstallera WP-PageNavi"
+
+#: pagenavi-options.php:70
+#, php-format
+msgid "Setting Key '%s' has been deleted."
+msgstr "Inställnigsnyckeln '%s' har raderats."
+
+#: pagenavi-options.php:74
+#, php-format
+msgid "Error deleting Setting Key '%s'."
+msgstr "Ett fel uppstod då inställningsnyckel '%s' skulle raderas."
+
+#: pagenavi-options.php:96
+#: pagenavi-options.php:209
+msgid "Uninstall WP-PageNavi"
+msgstr "Avinstallera WP-PageNavi"
+
+#: pagenavi-options.php:97
+#, php-format
+msgid "<a href=\"%s\">Click Here</a> To Finish The Uninstallation And WP-PageNavi Will Be Deactivated Automatically."
+msgstr "<a href=\"%s\">Klicka här</a> för att avsluta installationen av WP-PageNavi som sedan avaktiveras automatiskt."
+
+#: pagenavi-options.php:109
+msgid "Page Navigation Text"
+msgstr "Text för sidnavigering"
+
+#: pagenavi-options.php:112
+msgid "Text For Number Of Pages"
+msgstr "Text för antal sidor"
+
+#: pagenavi-options.php:115
+msgid "The current page number."
+msgstr "Det nuvarande antalet sidor."
+
+#: pagenavi-options.php:116
+#: pagenavi-options.php:137
+#: pagenavi-options.php:144
+msgid "The total number of pages."
+msgstr "Det totala antalet sidor."
+
+#: pagenavi-options.php:120
+msgid "Text For Current Page"
+msgstr "Text för nuvarande sida"
+
+#: pagenavi-options.php:123
+#: pagenavi-options.php:130
+msgid "The page number."
+msgstr "Sidnumret."
+
+#: pagenavi-options.php:127
+msgid "Text For Page"
+msgstr "Text för sida"
+
+#: pagenavi-options.php:134
+msgid "Text For First Post"
+msgstr "Text för Första inlägget"
+
+#: pagenavi-options.php:141
+msgid "Text For Last Post"
+msgstr "Text för Sista inlägget"
+
+#: pagenavi-options.php:148
+msgid "Text For Next Post"
+msgstr "Text för Nästa inlägg"
+
+#: pagenavi-options.php:154
+msgid "Text For Previous Post"
+msgstr "Text för Föregående inlägg"
+
+#: pagenavi-options.php:160
+msgid "Text For Next ..."
+msgstr "Text för Nästa..."
+
+#: pagenavi-options.php:166
+msgid "Text For Previous ..."
+msgstr "Text för Föregående..."
+
+#: pagenavi-options.php:175
+msgid "Page Navigation Style"
+msgstr "Stil för sidnavigering"
+
+#: pagenavi-options.php:178
+msgid "Normal"
+msgstr "Normal"
+
+#: pagenavi-options.php:179
+msgid "Drop Down List"
+msgstr "Dropdownmeny"
+
+#: pagenavi-options.php:184
+msgid "Number Of Pages To Show?"
+msgstr "Hur många sidor som ska visas?"
+
+#: pagenavi-options.php:190
+msgid "Always Show Page Navigation?"
+msgstr "Ska sidnavigeringen alltid visas?"
+
+#: pagenavi-options.php:193
+#: pagenavi-options.php:240
+msgid "Yes"
+msgstr "Ja"
+
+#: pagenavi-options.php:194
+msgid "No"
+msgstr "Nej"
+
+#: pagenavi-options.php:200
+msgid "Save Changes"
+msgstr "Spara ändringar"
+
+#: pagenavi-options.php:211
+msgid "Deactivating WP-PageNavi plugin does not remove any data that may have been created, such as the page navigation options. To completely remove this plugin, you can uninstall it here."
+msgstr "Att avaktivera WP-PageNavi tar inte bort någon av den data som skapats, till exempel inställningar. För att ta bort detta tillägg fullständigt kan du avinstallera det här."
+
+#: pagenavi-options.php:214
+msgid "WARNING:"
+msgstr "VARNING:"
+
+#: pagenavi-options.php:215
+msgid "Once uninstalled, this cannot be undone. You should use a Database Backup plugin of WordPress to back up all the data first."
+msgstr "När tillägget avinstallerats kan det inte återskapas. Du rekommenderas att ta backup på din WordPress-databas innan du fortsätter."
+
+#: pagenavi-options.php:218
+msgid "The following WordPress Options will be DELETED:"
+msgstr "Följande WordPress-inställningar kommer att RADERAS:"
+
+#: pagenavi-options.php:223
+msgid "WordPress Options"
+msgstr "Inställningar för WordPress"
+
+#: pagenavi-options.php:241
+msgid ""
+"You Are About To Uninstall WP-PageNavi From WordPress.\\n"
+"This Action Is Not Reversible.\\n"
+"\\n"
+" Choose [Cancel] To Stop, [OK] To Uninstall."
+msgstr ""
+"Du kommer nu att avinstallera WP-PageNavi från WordPress.\\n"
+"Denna åtgärd kan inte göras ogjord.\\n"
+"\\n"
+" Välj [Avbryt] för att stanna, [OK] för att avinstallera."
+
+#: wp-pagenavi.php:42
+msgid "PageNavi"
+msgstr "PageNavi"
+
+#: wp-pagenavi.php:179
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "Sida %CURRENT_PAGE% av %TOTAL_PAGES%"
+
+#: wp-pagenavi.php:182
+msgid "&laquo; First"
+msgstr "&laquo; Första"
+
+#: wp-pagenavi.php:183
+msgid "Last &raquo;"
+msgstr "Sista &raquo;"
+
+#: wp-pagenavi.php:184
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:185
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: wp-pagenavi.php:186
+#: wp-pagenavi.php:187
+msgid "..."
+msgstr "..."
+

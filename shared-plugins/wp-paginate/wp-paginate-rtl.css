@@ -1,0 +1,9 @@
+/*
+ * WP-Paginate - WordPress Pagination Function
+ * Revision: $Id: wp-paginate-rtl.css 286636 2010-09-08 00:11:23Z emartin24 $
+ * Copyright (c) 2010 Eric Martin http://www.ericmmartin.com/projects/wp-paginate/
+ */
+.wp-paginate li {float:right;}
+
+/* style overrides for comments pagination */
+.wp-paginate-comments li {float:right}

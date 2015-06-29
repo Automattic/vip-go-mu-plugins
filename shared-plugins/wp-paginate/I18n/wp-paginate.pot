@@ -1,0 +1,189 @@
+# Translation of the WordPress plugin WP-Paginate 1.1.2 by Eric Martin.
+# Copyright (C) 2010 Eric Martin
+# This file is distributed under the same license as the WP-Paginate package.
+# Eric Martin <eric@ericmmartin.com>, 2010.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-Paginate 1.2\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-paginate\n"
+"POT-Creation-Date: 2010-09-28 21:23+0000\n"
+"PO-Revision-Date: 2010-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: wp-paginate.php:267
+msgid "Settings"
+msgstr ""
+
+#: wp-paginate.php:292
+msgid "Success! Your changes were successfully saved!"
+msgstr ""
+
+#: wp-paginate.php:295
+msgid "Whoops! There was a problem with the data you posted. Please try again."
+msgstr ""
+
+#: wp-paginate.php:307
+msgid "Pagination Label:"
+msgstr ""
+
+#: wp-paginate.php:309
+msgid "The text/HTML to display before the list of pages."
+msgstr ""
+
+#: wp-paginate.php:312
+msgid "Previous Page:"
+msgstr ""
+
+#: wp-paginate.php:314
+msgid "The text/HTML to display for the previous page link."
+msgstr ""
+
+#: wp-paginate.php:317
+msgid "Next Page:"
+msgstr ""
+
+#: wp-paginate.php:319
+msgid "The text/HTML to display for the next page link."
+msgstr ""
+
+#: wp-paginate.php:323
+msgid "Advanced Settings"
+msgstr ""
+
+#: wp-paginate.php:326
+msgid "Before Markup:"
+msgstr ""
+
+#: wp-paginate.php:328
+msgid "The HTML markup to display before the pagination code."
+msgstr ""
+
+#: wp-paginate.php:331
+msgid "After Markup:"
+msgstr ""
+
+#: wp-paginate.php:333
+msgid "The HTML markup to display after the pagination code."
+msgstr ""
+
+#: wp-paginate.php:336
+msgid "Markup Display:"
+msgstr ""
+
+#: wp-paginate.php:338
+msgid "Show Before Markup and After Markup, even if the page list is empty?"
+msgstr ""
+
+#: wp-paginate.php:341
+msgid "WP-Paginate CSS File:"
+msgstr ""
+
+#: wp-paginate.php:343
+#, php-format
+msgid ""
+"Include the default stylesheet wp-paginate.css? WP-Paginate will first look "
+"for <code>wp-paginate.css</code> in your theme directory (<code>themes/%s</"
+"code>)."
+msgstr ""
+
+#: wp-paginate.php:346
+msgid "Page Range:"
+msgstr ""
+
+#: wp-paginate.php:353
+msgid ""
+"The number of page links to show before and after the current page. "
+"Recommended value: 3"
+msgstr ""
+
+#: wp-paginate.php:356
+msgid "Page Anchors:"
+msgstr ""
+
+#: wp-paginate.php:363
+msgid ""
+"The number of links to always show at beginning and end of pagination. "
+"Recommended value: 1"
+msgstr ""
+
+#: wp-paginate.php:366
+msgid "Page Gap:"
+msgstr ""
+
+#: wp-paginate.php:373
+msgid ""
+"The minimum number of pages in a gap before an ellipsis (...) is added. "
+"Recommended value: 3"
+msgstr ""
+
+#: wp-paginate.php:380
+msgid "Need Support?"
+msgstr ""
+
+#: wp-paginate.php:381
+#, php-format
+msgid ""
+"For questions, issues or feature requests, please post them in the %s and "
+"make sure to tag the post with wp-paginate."
+msgstr ""
+
+#: wp-paginate.php:382
+msgid "Like To Contribute?"
+msgstr ""
+
+#: wp-paginate.php:383
+msgid ""
+"If you would like to contribute, the following is a list of ways you can "
+"help:"
+msgstr ""
+
+#: wp-paginate.php:385
+msgid "Translate WP-Paginate into your language"
+msgstr ""
+
+#: wp-paginate.php:386
+msgid "Blog about or link to WP-Paginate so others can find out about it"
+msgstr ""
+
+#: wp-paginate.php:387
+msgid "Report issues, provide feedback, request features, etc."
+msgstr ""
+
+#: wp-paginate.php:388
+msgid "Rate WP-Paginate on the WordPress Plugins Page"
+msgstr ""
+
+#: wp-paginate.php:389
+msgid "Make a donation"
+msgstr ""
+
+#: wp-paginate.php:391
+msgid "Other Links"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "WP-Paginate"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.ericmmartin.com/projects/wp-paginate/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"A simple and flexible pagination plugin for WordPress posts and comments."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Eric Martin"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://www.ericmmartin.com"
+msgstr ""

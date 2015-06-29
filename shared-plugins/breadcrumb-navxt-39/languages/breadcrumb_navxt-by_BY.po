@@ -1,0 +1,496 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Breadcrumb NavXT\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/breadcrumb-navxt\n"
+"POT-Creation-Date: 2009-04-24 03:05+0000\n"
+"PO-Revision-Date: 2009-05-14 23:07+0300\n"
+"Last-Translator: Илья <mrilyuha@gmail.com>\n"
+"Language-Team: John Havlik <mtekkmonkey@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Belarusian\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-Country: BELARUS\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-SearchPath-0: C:\\Users\\John\\Documents\\Aptana Studio\\Breadcrumb NavXT\\trunk\n"
+
+#: breadcrumb_navxt_admin.php:134
+msgid "Insufficient privileges to proceed."
+msgstr "Недастаткова прывілегій для працягвання."
+
+#: breadcrumb_navxt_admin.php:190
+#: breadcrumb_navxt_class.php:165
+msgid "<a title=\"Go to the first page of search results for %title%.\" href=\"%link%\">"
+msgstr "<a title=\"Перайсці да першай старонкі, каб убачыць рэзультат для %title%.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_admin.php:537
+msgid "Settings"
+msgstr "Налады"
+
+#: breadcrumb_navxt_admin.php:632
+msgid "All of your current Breadcrumb NavXT settings will be overwritten with the default values. Are you sure you want to continue?"
+msgstr "Усе цякучыя налады Breadcrumb NavXT будуць перазапісаны звычайнымі наладымі. Вы хочаце працягнуць?"
+
+#: breadcrumb_navxt_admin.php:636
+msgid "All of your current Breadcrumb NavXT settings will be overwritten with the imported values. Are you sure you want to continue?"
+msgstr "Усе цякучыя налады Breadcrumb NavXT будуць перазапісаны імпартаванымі наладымі. Вы хочаце працягнуць?"
+
+#: breadcrumb_navxt_admin.php:699
+msgid "Warning, your version of Breadcrumb NavXT does not match the version supported by this administrative interface. As a result, settings may not work as expected."
+msgstr "Папярэджанне: ваша версія Breadcrumb NavXT не адпавядае версіі, якая падтрымліваецца адміністратыўным інтэрфейсам. У выніку, налады могуць не працаваць, як патрабуецца."
+
+#: breadcrumb_navxt_admin.php:700
+msgid "Your Breadcrumb NavXT Administration interface version is "
+msgstr "Версія адміністратыўнага інтэрфэйсу Breadcrumb NavXT Administration - "
+
+#: breadcrumb_navxt_admin.php:701
+msgid "Your Breadcrumb NavXT version is "
+msgstr "Версія Breadcrumb NavXT Administration - "
+
+#: breadcrumb_navxt_admin.php:705
+msgid "Breadcrumb NavXT Settings"
+msgstr "Налады Breadcrumb NavXT"
+
+#: breadcrumb_navxt_admin.php:707
+#, php-format
+msgid "Tips for the settings are located below select options. Please refer to the %sdocumentation%s for more information."
+msgstr "Парады для налад знаходзяцца ніжэй. калі ласка, перайдзіце да %sdocumentation%s для інфармацыі."
+
+#: breadcrumb_navxt_admin.php:708
+msgid "Go to the Breadcrumb NavXT online documentation"
+msgstr "Перайсці да Breadcrumb NavXT онлайн-дакументацыі"
+
+#: breadcrumb_navxt_admin.php:718
+msgid "General"
+msgstr "Галоўныя"
+
+#: breadcrumb_navxt_admin.php:722
+msgid "Breadcrumb Separator"
+msgstr "Раздзяляльнік Breadcrumb"
+
+#: breadcrumb_navxt_admin.php:726
+msgid "Placed in between each breadcrumb."
+msgstr "Знаходзіцца паміж кожнай хлебнай дробкай."
+
+#: breadcrumb_navxt_admin.php:731
+msgid "Breadcrumb Max Title Length"
+msgstr "Максімальная даўжыня загалоўка хлебнай дробкі"
+
+#: breadcrumb_navxt_admin.php:739
+msgid "Home Breadcrumb"
+msgstr "Хлебныя дробкі галоўнай старонкі"
+
+#: breadcrumb_navxt_admin.php:744
+msgid "Place the home breadcrumb in the trail."
+msgstr "Размяцціць хатнія хлебныя дробкі ў трэйле (trail)."
+
+#: breadcrumb_navxt_admin.php:749
+msgid "Home Title: "
+msgstr "Загаловак галоўнай старонкі:"
+
+#: breadcrumb_navxt_admin.php:758
+msgid "Home Prefix"
+msgstr "Home-прэфікс"
+
+#: breadcrumb_navxt_admin.php:766
+msgid "Home Suffix"
+msgstr "Home-суфікс"
+
+#: breadcrumb_navxt_admin.php:774
+msgid "Home Anchor"
+msgstr "Home-якар"
+
+#: breadcrumb_navxt_admin.php:778
+msgid "The anchor template for the home breadcrumb."
+msgstr "Якарныя шаблон для хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:783
+msgid "Blog Anchor"
+msgstr "Blog-якар"
+
+#: breadcrumb_navxt_admin.php:787
+msgid "The anchor template for the blog breadcrumb, used only in static front page environments."
+msgstr "Якарныя шаблон для хлебных дробак блогу. выкарыстоўваецца толькі на статычных пярэдніх старонках. "
+
+#: breadcrumb_navxt_admin.php:793
+msgid "Current Item"
+msgstr "Дадзены элемент"
+
+#: breadcrumb_navxt_admin.php:797
+msgid "Link Current Item"
+msgstr "Дадзеная спасылка элементу"
+
+#: breadcrumb_navxt_admin.php:802
+msgid "Yes"
+msgstr "Так"
+
+#: breadcrumb_navxt_admin.php:808
+msgid "Current Item Prefix"
+msgstr "Дадзены прэфікс элементу"
+
+#: breadcrumb_navxt_admin.php:812
+msgid "This is always placed in front of the last breadcrumb in the trail, before any other prefixes for that breadcrumb."
+msgstr "Гэта заўсёды знаходзіцца ў пачатку хлебных дробак, перад усімі прэфіксамі для хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:817
+msgid "Current Item Suffix"
+msgstr "Дадзены суфікс элементу"
+
+#: breadcrumb_navxt_admin.php:821
+msgid "This is always placed after the last breadcrumb in the trail, and after any other prefixes for that breadcrumb."
+msgstr "Гэта заўсёды знаходзіцца пасля хлебных дробак і пасля ўсіх прэфіксаў для хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:826
+msgid "Current Item Anchor"
+msgstr "Дадзены якар элементу"
+
+#: breadcrumb_navxt_admin.php:830
+msgid "The anchor template for current item breadcrumbs."
+msgstr "Якарны шаблон для цякучага элементу хлебных драбніц."
+
+#: breadcrumb_navxt_admin.php:835
+msgid "Paged Breadcrumb"
+msgstr "Старонкавыя хлебныя дробкі"
+
+#: breadcrumb_navxt_admin.php:840
+msgid "Include the paged breadcrumb in the breadcrumb trail."
+msgstr "Уключыць старонкавыя хлебныя дробкі ў радок хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:842
+msgid "Indicates that the user is on a page other than the first on paginated posts/pages."
+msgstr "Указваць, што наведвальнік не на першай старонцы, ў пастах і старонках."
+
+#: breadcrumb_navxt_admin.php:847
+msgid "Paged Prefix"
+msgstr "Старонкавы прэфікс"
+
+#: breadcrumb_navxt_admin.php:855
+msgid "Paged Suffix"
+msgstr "Суфікс старонак"
+
+#: breadcrumb_navxt_admin.php:864
+msgid "Posts &amp; Pages"
+msgstr "Пасты &amp; Старонкі"
+
+#: breadcrumb_navxt_admin.php:868
+msgid "Post Prefix"
+msgstr "Прэфікс паста"
+
+#: breadcrumb_navxt_admin.php:876
+msgid "Post Suffix"
+msgstr "Суфікс паста"
+
+#: breadcrumb_navxt_admin.php:884
+msgid "Post Anchor"
+msgstr "Якар паста"
+
+#: breadcrumb_navxt_admin.php:888
+msgid "The anchor template for post breadcrumbs."
+msgstr "Якарны шаблон для хлебных дробак паста."
+
+#: breadcrumb_navxt_admin.php:893
+msgid "Post Taxonomy Display"
+msgstr "Паказваць таксанамію паста"
+
+#: breadcrumb_navxt_admin.php:898
+msgid "Show the taxonomy leading to a post in the breadcrumb trail."
+msgstr "Паказваць таксанамію ў хлебных дробках."
+
+#: breadcrumb_navxt_admin.php:904
+msgid "Post Taxonomy"
+msgstr "Таксанамія паста"
+
+#: breadcrumb_navxt_admin.php:909
+#: breadcrumb_navxt_admin.php:964
+msgid "Categories"
+msgstr "Катэгорыі"
+
+#: breadcrumb_navxt_admin.php:914
+#: breadcrumb_navxt_admin.php:1014
+msgid "Tags"
+msgstr "Тэгі"
+
+#: breadcrumb_navxt_admin.php:917
+msgid "The taxonomy which the breadcrumb trail will show."
+msgstr "Паказваць таксанамію, калі ёсцьхлебныя дробкі."
+
+#: breadcrumb_navxt_admin.php:922
+msgid "Page Prefix"
+msgstr "Прэфікс старонкі"
+
+#: breadcrumb_navxt_admin.php:930
+msgid "Page Suffix"
+msgstr "Суфік старонкі"
+
+#: breadcrumb_navxt_admin.php:938
+msgid "Page Anchor"
+msgstr "Якар старонкі"
+
+#: breadcrumb_navxt_admin.php:942
+msgid "The anchor template for page breadcrumbs."
+msgstr "Паказваць якарны шаблон для хлебных дробак старонкі."
+
+#: breadcrumb_navxt_admin.php:947
+msgid "Attachment Prefix"
+msgstr "Прэфікс дадатка"
+
+#: breadcrumb_navxt_admin.php:955
+msgid "Attachment Suffix"
+msgstr "Суфікс дадатка"
+
+#: breadcrumb_navxt_admin.php:968
+msgid "Category Prefix"
+msgstr "Прэфікс катэгорыі"
+
+#: breadcrumb_navxt_admin.php:972
+msgid "Applied before the anchor on all category breadcrumbs."
+msgstr "Прызначаць перад якарам ўва ўсіх катэгорыях хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:977
+msgid "Category Suffix"
+msgstr "Суфікс катэгорый"
+
+#: breadcrumb_navxt_admin.php:981
+msgid "Applied after the anchor on all category breadcrumbs."
+msgstr "Прызначаць пасля якара ўва ўсіх катэгорыях хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:986
+msgid "Category Anchor"
+msgstr "Якар катэгорыі"
+
+#: breadcrumb_navxt_admin.php:990
+msgid "The anchor template for category breadcrumbs."
+msgstr "Якарны шаблон для катэгорыі хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:995
+msgid "Archive by Category Prefix"
+msgstr "Архіў па прэфіксам катэгорый"
+
+#: breadcrumb_navxt_admin.php:999
+msgid "Applied before the title of the current item breadcrumb on an archive by cateogry page."
+msgstr "Прызначаць перад загалоўкам цякучых хлебных дробак у архіве па катэгорыям старонак."
+
+#: breadcrumb_navxt_admin.php:1004
+msgid "Archive by Category Suffix"
+msgstr "Архіў па суфіксам катэгорый"
+
+#: breadcrumb_navxt_admin.php:1008
+msgid "Applied after the title of the current item breadcrumb on an archive by cateogry page."
+msgstr "Прызначаць пасля загалоўка цякучых хлебных дробак у архіве па катэгорыям старонак."
+
+#: breadcrumb_navxt_admin.php:1018
+msgid "Tag Prefix"
+msgstr "Прэфікс тэга"
+
+#: breadcrumb_navxt_admin.php:1022
+msgid "Applied before the anchor on all tag breadcrumbs."
+msgstr "Прызначаць перад якарам ўва ўсіх катэгорыях хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:1027
+msgid "Tag Suffix"
+msgstr "Суфікс тэга"
+
+#: breadcrumb_navxt_admin.php:1031
+msgid "Applied after the anchor on all tag breadcrumbs."
+msgstr "Прызначаць пасля якара ўва ўсіх тэгах хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:1036
+msgid "Tag Anchor"
+msgstr "Якар тэга"
+
+#: breadcrumb_navxt_admin.php:1040
+msgid "The anchor template for tag breadcrumbs."
+msgstr "Якарны шаблон для тэга хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:1045
+msgid "Archive by Tag Prefix"
+msgstr "Архіў па тэгу прэфікса"
+
+#: breadcrumb_navxt_admin.php:1049
+msgid "Applied before the title of the current item breadcrumb on an archive by tag page."
+msgstr "Прызначаць перад загалоўкам цякучых хлебных дробак у архіве па тэгам старонак."
+
+#: breadcrumb_navxt_admin.php:1054
+msgid "Archive by Tag Suffix"
+msgstr "Архіў па суфіксам тэгаў"
+
+#: breadcrumb_navxt_admin.php:1058
+msgid "Applied after the title of the current item breadcrumb on an archive by tag page."
+msgstr "Прызначаць пасля загалоўка цякучых хлебных дробак у архіве па тэгам старонак."
+
+#: breadcrumb_navxt_admin.php:1064
+msgid "Date Archives"
+msgstr "Каляндарны архіў"
+
+#: breadcrumb_navxt_admin.php:1068
+msgid "Archive by Date Prefix"
+msgstr "Архіў па прэфіксу даты"
+
+#: breadcrumb_navxt_admin.php:1072
+msgid "Applied before the anchor on all date breadcrumbs."
+msgstr "Прызначаць перад якарам ўва ўсіх датах хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:1077
+msgid "Archive by Date Suffix"
+msgstr "Архіў па суфіксе даты"
+
+#: breadcrumb_navxt_admin.php:1081
+msgid "Applied after the anchor on all date breadcrumbs."
+msgstr "Прызначаць пасля якара ўва ўсіх датах хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:1086
+msgid "Date Anchor"
+msgstr "Якар даты"
+
+#: breadcrumb_navxt_admin.php:1090
+msgid "The anchor template for date breadcrumbs."
+msgstr "Якарны шаблон для даты хлебных дробак."
+
+#: breadcrumb_navxt_admin.php:1096
+msgid "Miscellaneous"
+msgstr "Рознае"
+
+#: breadcrumb_navxt_admin.php:1100
+msgid "Author Prefix"
+msgstr "Прэфікс аўтара"
+
+#: breadcrumb_navxt_admin.php:1108
+msgid "Author Suffix"
+msgstr "Суфікс аўтара"
+
+#: breadcrumb_navxt_admin.php:1116
+msgid "Author Display Format"
+msgstr "Фармат паказу аўтара"
+
+#: breadcrumb_navxt_admin.php:1122
+msgid "display_name uses the name specified in \"Display name publicly as\" under the user profile the others correspond to options in the user profile."
+msgstr "display_name выкарыстоўвае імя, вызначанае ў \"Display name publicly as\"."
+
+#: breadcrumb_navxt_admin.php:1127
+msgid "Search Prefix"
+msgstr "Прэфікс пошуку"
+
+#: breadcrumb_navxt_admin.php:1135
+msgid "Search Suffix"
+msgstr "Суфікс пошуку"
+
+#: breadcrumb_navxt_admin.php:1143
+msgid "Search Anchor"
+msgstr "Пошукавы якар"
+
+#: breadcrumb_navxt_admin.php:1147
+msgid "The anchor template for search breadcrumbs, used only when the search results span several pages."
+msgstr "Якарны шаблон для хлебных дробак пошуку, толькі тады, каклі рэзультаты пошуку размяшчаюцца на некалькіх старонках."
+
+#: breadcrumb_navxt_admin.php:1152
+msgid "404 Title"
+msgstr "404-загаловак"
+
+#: breadcrumb_navxt_admin.php:1160
+msgid "404 Prefix"
+msgstr "404-суфікс"
+
+#: breadcrumb_navxt_admin.php:1168
+msgid "404 Suffix"
+msgstr "404-суфікс"
+
+#: breadcrumb_navxt_admin.php:1177
+msgid "Save Changes"
+msgstr "Налады захаваныя"
+
+#: breadcrumb_navxt_admin.php:1182
+msgid "Import/Export/Reset Settings"
+msgstr "Налады імпарту/экспарту/збіцця налад"
+
+#: breadcrumb_navxt_admin.php:1183
+msgid "Import Breadcrumb NavXT settings from a XML file, export the current settings to a XML file, or reset to the default Breadcrumb NavXT settings."
+msgstr "Імпартаваць налады Breadcrumb NavXT з XML-файла, экспартаваць цякучыя налады ў XML-файл або збіць звычайныя налады Breadcrumb NavXT."
+
+#: breadcrumb_navxt_admin.php:1187
+msgid "Settings File"
+msgstr "Файл налад"
+
+#: breadcrumb_navxt_admin.php:1191
+msgid "Select a XML settings file to upload and import settings from."
+msgstr "Выберыце XML-налады для імпарту налад."
+
+#: breadcrumb_navxt_admin.php:1196
+msgid "Import"
+msgstr "Імпартаваць"
+
+#: breadcrumb_navxt_admin.php:1197
+msgid "Export"
+msgstr "Экспартаваць"
+
+#: breadcrumb_navxt_admin.php:1198
+msgid "Reset"
+msgstr "Збіць"
+
+#: breadcrumb_navxt_admin.php:1327
+msgid "Importing settings from file failed."
+msgstr "Імпартаванне налад з файла пацярпела няўдачу."
+
+#: breadcrumb_navxt_admin.php:1331
+msgid "The Breadcrumb NavXT settings were successfully imported from file."
+msgstr "Налады Breadcrumb NavXT поўнасцю імпартаваныя з файла."
+
+#: breadcrumb_navxt_admin.php:1335
+msgid "The Breadcrumb NavXT settings were reset to the default values."
+msgstr "Налады Breadcrumb NavXT збітыя да звычайных."
+
+#: breadcrumb_navxt_class.php:100
+msgid "Blog"
+msgstr "Блог"
+
+#: breadcrumb_navxt_class.php:102
+#: breadcrumb_navxt_class.php:104
+#: breadcrumb_navxt_class.php:128
+#: breadcrumb_navxt_class.php:142
+msgid "<a title=\"Go to %title%.\" href=\"%link%\">"
+msgstr "<a title=\"Перайсці да %title%.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:117
+msgid "<a title=\"Reload the current page.\" href=\"%link%\">"
+msgstr "<a title=\"Reload the current page.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:158
+msgid "404"
+msgstr "404 "
+
+#: breadcrumb_navxt_class.php:161
+msgid "Search results for &#39;"
+msgstr "Рэзультат пошуку для &#39;"
+
+#: breadcrumb_navxt_class.php:172
+msgid "<a title=\"Go to the %title% tag archives.\" href=\"%link%\">"
+msgstr "<a title=\"Перайсці да %title% тэгаў архіваў.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:175
+msgid "Articles by: "
+msgstr "Артыкулы па:"
+
+#: breadcrumb_navxt_class.php:186
+msgid "<a title=\"Go to the %title% category archives.\" href=\"%link%\">"
+msgstr "<a title=\"Перайсці да %title% катэгорый архіваў.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:189
+msgid "Archive by category &#39;"
+msgstr "Архіў па катэгорыям  &#39;"
+
+#: breadcrumb_navxt_class.php:193
+msgid "Archive by tag &#39;"
+msgstr "Архіў па тэгам  &#39;"
+
+#: breadcrumb_navxt_class.php:196
+msgid "<a title=\"Go to the %title% archives.\" href=\"%link%\">"
+msgstr "<a title=\"Перайсці да %title% архіваў.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:464
+msgid "Untagged"
+msgstr "Без тэгаў"
+
+#~ msgid "Leave the home breadcrumb out of the trail."
+#~ msgstr "Soll nicht dargestellt werden."
+

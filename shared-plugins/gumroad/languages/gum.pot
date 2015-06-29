@@ -1,0 +1,154 @@
+# Copyright (C) 2014 Gumroad Overlay & Embed
+# This file is distributed under the same license as the Gumroad Overlay & Embed package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Gumroad Overlay & Embed 1.1.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/gumroad\n"
+"POT-Creation-Date: 2014-04-04 07:38:40+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2014-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: class-gumroad.php:178
+msgid " Help"
+msgstr ""
+
+#: class-gumroad.php:179
+msgid "Gumroad"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (Gumroad Overlay & Embed 1.1.1)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: class-gumroad.php:217
+msgid "Gumroad Overlay & Embed"
+msgstr ""
+
+#: class-gumroad.php:251
+msgid "Settings"
+msgstr ""
+
+#: views/admin-install-notice.php:26
+msgid " is now installed."
+msgstr ""
+
+#: views/admin-install-notice.php:27
+msgid "See how to add Gumroad products"
+msgstr ""
+
+#: views/admin-sidebar.php:19
+msgid ""
+"Help us get noticed (and boost our egos) with a rating and short review."
+msgstr ""
+
+#: views/admin-sidebar.php:23
+msgid "Rate this plugin on WordPress.org"
+msgstr ""
+
+#: views/admin-sidebar.php:29
+msgid "Need more Pinterest traffic?"
+msgstr ""
+
+#: views/admin-sidebar.php:42
+msgid "Get the Free \"Pin It\" Button plugin"
+msgstr ""
+
+#: views/admin-sidebar.php:43
+msgid "Visit the \"Pin It\" Button plugin page"
+msgstr ""
+
+#: views/admin.php:26
+msgid "Important SSL Requirement"
+msgstr ""
+
+#: views/admin.php:36
+msgid "Reference the official Gumroad documentation:"
+msgstr ""
+
+#: views/admin.php:42
+msgid "Shortcode Help"
+msgstr ""
+
+#: views/admin.php:45 views/admin.php:48
+msgid "Use the shortcode"
+msgstr ""
+
+#: views/admin.php:45
+msgid "to add a product link that will popup in an overlay"
+msgstr ""
+
+#: views/admin.php:48
+msgid "to add an embedded Gumroad product."
+msgstr ""
+
+#: views/admin.php:51
+msgid "Use the function"
+msgstr ""
+
+#: views/admin.php:52
+msgid "to display within template or theme files."
+msgstr ""
+
+#: views/admin.php:55
+msgid "Available Attributes"
+msgstr ""
+
+#: views/admin.php:60
+msgid "Attribute"
+msgstr ""
+
+#: views/admin.php:61
+msgid "Description"
+msgstr ""
+
+#: views/admin.php:62
+msgid "Options"
+msgstr ""
+
+#: views/admin.php:63
+msgid "Default"
+msgstr ""
+
+#: views/admin.php:69
+msgid "The Gumroad product ID"
+msgstr ""
+
+#: views/admin.php:75
+msgid "The type of product link you want to show."
+msgstr ""
+
+#: views/admin.php:81
+msgid ""
+"The text that shows on the overlay button. This only applies if the type is "
+"set to overlay."
+msgstr ""
+
+#: views/admin.php:87
+msgid ""
+"Will take the user right to the checkout page for this item. This only "
+"applies if the type is set to overlay."
+msgstr ""
+
+#: views/admin.php:94
+msgid "Examples"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://philderksen.com/gumroad-for-wordpress/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Display your Gumroad purchase pages in a pretty lightbox or embed them right "
+"on your pages."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Phil Derksen"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://philderksen.com"
+msgstr ""

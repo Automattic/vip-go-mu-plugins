@@ -1,0 +1,146 @@
+/* Category widget */
+.feedwordpress-category-div .tabs-panel {
+	height: 200px;
+	overflow: auto;
+	border: 1px solid #DFDFDF;
+	margin-left: 126px;
+}
+.feedwordpress-category-div ul.category-tabs {
+	float: left;
+	margin: 0 -120px 0 5px;
+	padding: 0;
+	text-align: right;
+	width: 120px;
+}
+.feedwordpress-category-div ul.category-tabs li.tabs {
+	-moz-border-radius: 3px 0 0 3px;
+	-webkit-border-radius: 3px 0 0 3px;
+	border-radius: 3px 0 0 3px;
+	border-color: #DFDFDF;
+	border-style: solid none solid solid;
+	border-width: 1px 0 1px 1px;
+	margin-right: -1px;
+	padding: 8px;
+	background-color: #F1F1F1;
+}
+
+.feedwordpress-category-div ul.categorychecklist ul {
+	margin-left: 18px;
+}
+.feedwordpress-category-div ul.category-tabs a {
+	color: #333333;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+/* Common settings page elements */
+#post-search {
+	float: right;
+	margin:11px 12px 0;
+	min-width: 130px;
+	position:relative;
+}
+.fwpfs {
+	color: #dddddd !important; background-color: #333 !important;
+	background:#797979 url(<?php bloginfo('url') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
+	border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
+	-moz-border-radius-bottomright:12px;
+	-moz-border-radius-topleft:12px;
+	-moz-border-radius-topright:12px;
+	border-style:solid;
+	border-width:1px;
+	line-height:15px;
+	padding:3px 30px 4px 12px;
+}
+.fwpfs.slide-down {
+	border-bottom-color: #626262;
+	-moz-border-radius-bottomleft:0;
+	-moz-border-radius-bottomright:0;
+	-moz-border-radius-topleft:12px;
+	-moz-border-radius-topright:12px;
+	background-image:url(<?php bloginfo('url') ?>/wp-admin/images/fav-top.png);
+	background-position:0 top;
+	background-repeat:repeat-x;
+	border-bottom-style:solid;
+	border-bottom-width:1px;
+}
+
+/* Switchfeed interface elements */
+
+#feed-finder form {
+	padding-bottom: 2.0em;
+	border-bottom: 1px dashed #333;
+	margin-bottom: 2.0em;
+}
+#feed-finder form.multi .inside {
+	margin-left: 1.0em;
+	border-left: 3px solid #333;
+	padding-left: 2.0em;
+}
+
+#feed-finder form fieldset {
+	clear: both;
+	border: 1px solid #777;
+	padding: 5px 25px;
+	background-color: #fff;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+#feed-finder form fieldset.alt {
+	background-color: #eee;
+}
+#feed-finder form fieldset.current {
+	background-color: #efe;
+}
+#feed-finder form fieldset.current legend {
+	background-color: #7f7;
+}
+#feed-finder form fieldset legend {
+	border-left: 1px solid #777;
+	border-right: 1px solid #777;
+	border-top: 1px solid #777;
+	border-bottom: 1px solid #777;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background-color: #7FF;
+	padding: 3px 10px;
+	font-weight: bold;
+}
+#feed-finder form fieldset label {
+	font-weight: bold;
+}
+#feed-finder form fieldset div.submit {
+	clear: both;
+	text-align: left;
+}
+#feed-finder form fieldset div.submit input {
+	margin-right: 3.0em;
+}
+
+#feed-finder .feed-sample { 
+	float: right;
+	background-color: #D0D0D0;
+	color: black;
+	width: 45%;
+	font-size: 70%;
+	border-left: 1px dotted #A0A0A0;
+	margin-left: 1.0em;
+	padding: 3px;
+	max-height: 200px;
+	overflow: auto;
+}
+#feed-finder .feed-sample p, .feed-sample h3 {
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+}
+#feed-finder .feed-sample .feed-problem {
+	background-color: #ffd0d0;
+	border-bottom: 1px dotted black;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+}
+

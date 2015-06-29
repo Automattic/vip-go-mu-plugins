@@ -1,0 +1,100 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<SCRIPT language=JavaScript>
+<!--
+	function loadIFrameScript() {
+		try {
+			var mediaServer = "";
+			var globalTemplateVersion = "";
+			var searchString = document.location.search.substr(1);
+			var parameters = searchString.split('&');
+
+			for(var i = 0; i < parameters.length; i++) {
+				var keyValuePair = parameters[i].split('=');
+				var parameterName = keyValuePair[0];
+				var parameterValue = keyValuePair[1];
+
+				if(parameterName == "gtVersion")
+					globalTemplateVersion = unescape(parameterValue);
+				else if(parameterName == "mediaserver")
+					mediaServer = unescape(parameterValue);
+			}
+			
+			generateScriptBlock(mediaServer, globalTemplateVersion);
+		}
+		catch(e) {
+		}
+	}
+
+	function generateScriptBlock(mediaServerUrl, gtVersion) {
+
+		if(!isValid(gtVersion)) {
+			reportError();
+			return;
+		}
+
+		var mediaServerParts = mediaServerUrl.split("/");
+		var host = mediaServerParts[2];
+		var hostParts = host.split(".");
+
+		if(hostParts.length > 4 || hostParts.length < 3) {
+			reportError();
+    		return;
+		}
+
+		var subdomainOne = hostParts[0];
+		if(!isValid(subdomainOne)) {
+			reportError();
+			return;
+		}
+
+		var subdomainTwo = (hostParts.length == 4) ? hostParts[1] : "";
+		if(!isValid(subdomainTwo)) {
+			reportError();
+			return;
+		}
+		
+		var subdomain = subdomainOne + ((subdomainTwo == "") ? "" : "." + subdomainTwo);
+		
+		var advertiserId = mediaServerParts[3];
+		if(!isValid(advertiserId)) {
+			reportError();
+			return;
+		}
+
+		// Generate call to the script file on DoubleClick server.
+
+		var publisherProtocol = window.location.protocol + "//";
+		var iframeScriptFile = advertiserId + '/DARTIFrame_' + gtVersion + '.js';
+		var urlStart = publisherProtocol + subdomain;
+		document.write('<scr' + 'ipt src="' + urlStart + ".doubleclick.net/" + iframeScriptFile + '">');
+		document.write('</scr'+ 'ipt>');
+	}
+
+	// Validation routine for parameters passed on the URL.
+	// The parameter should contain only word characters including underscore (limited to '\w')
+	// and should not exceed 15 characters in length.
+	function isValid(stringValue) {
+		var isValid = false;
+		
+		if(stringValue.length <= 15 && stringValue.search(new RegExp("[^A-Za-z0-9_]")) == -1)
+			isValid = true;
+			
+		return isValid;
+	}
+
+	//Report error to the DoubleClick ad server.
+	function reportError() {
+		var publisherProtocol = window.location.protocol + "//";
+		document.write(' <img src="' + publisherProtocol + 'ad.doubleclick.net/activity;badserve=1" style="visibility:hidden" width=1 height=1>');
+	}
+
+
+	loadIFrameScript();
+	
+-->
+</SCRIPT>
+</BODY>
+</HTML>
