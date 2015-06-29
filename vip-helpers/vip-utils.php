@@ -920,13 +920,16 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
 /**
  * Loads a plugin out of our shared plugins directory.
  *
- * @deprecated Since 2.0.0 - use Plugins UI (at least for the time being)
+ * Note - This function does not trigger plugin activation / deactivation hooks.
+ * As such, it may not be compatible with all plugins
+ *
  * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
  * @param string $plugin Optional. Plugin folder name (and filename) of the plugin
- * @param string $folder Optional. Folder to include from; defaults to "plugins". Useful for when you have multiple themes and your own shared plugins folder.
+ * @param string $folder Deprecated. No longer used
+ * @param bool $load_release_candidate Whether to load a release candidate version of this plugin, if available
  * @return bool True if the include was successful
  */
-function wpcom_vip_load_plugin( $plugin = false, $folder = 'shared-plugins', $load_release_candidate = false ) {
+function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_release_candidate = false ) {
 	// Make sure there's a plugin to load
 	if ( empty($plugin) ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
@@ -934,28 +937,44 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = 'shared-plugins', $lo
 		}
 	}
 
-	$plugin_root = WP_PLUGIN_DIR;
-
-	// If this is a VIP plugin, it must be loaded from the separate directory
-	if ( 'shared-plugins' === $folder ) {
-		$plugin_root 	= WP_CONTENT_DIR . '/mu-plugins';
-	}
-
 	// Make sure $plugin and $folder are valid
 	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
-	$folder = _wpcom_vip_load_plugin_sanitizer( $folder );
 
-	// Shared plugins are located at /wp-content/mu-plugins/shared-plugins/example-plugin/
-	// You should keep your local copies of the plugins in the same location
+	// Is this a Shared Plugin?
+	$folder 	 = 'shared-plugins';
+	$plugin_root = WP_CONTENT_DIR . '/mu-plugins';
 
-	$includepath 					= $plugin_root . "/$folder/$plugin/$plugin.php";
-	$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin/$plugin.php";
+	$plugin_file = $plugin_root . "/$folder/$plugin/$plugin.php";
 
-	if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
-		$includepath = $release_candidate_includepath;
+	$includepath = false;
+
+	if ( file_exists( $plugin_file ) ) {
+		// Shared plugins are located at /wp-content/mu-plugins/shared-plugins/example-plugin/
+		// You should keep your local copies of the plugins in the same location
+
+		$includepath 					= $plugin_root . "/$folder/$plugin/$plugin.php";
+		$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin/$plugin.php";
+
+		if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
+			$includepath = $release_candidate_includepath;
+		}
+	} else {
+		// Attempt to load it in the plugins dir
+		$plugin_root 	= WP_PLUGIN_DIR;
+		$folder 		= 'plugins';
+
+		$all_plugins = get_plugins();
+
+		// The folder and plugin file may not match - we need to match on folder
+		foreach( $all_plugins as $plugin_file => $plugin_data ) {
+			if ( $plugin === dirname( $plugin_file ) ) {
+				$includepath = $plugin_root . "/$plugin_file";
+				break;
+			}
+		}
 	}
 
-	if ( file_exists( $includepath ) ) {
+	if ( $includepath && file_exists( $includepath ) ) {
 
 		wpcom_vip_add_loaded_plugin( "$folder/$plugin" );
 
@@ -985,7 +1004,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = 'shared-plugins', $lo
 		return true;
 	} else {
 		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( "Unable to load $plugin ({$folder}) using wpcom_vip_load_plugin()!" );
+			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
 		}
 	}
 }
