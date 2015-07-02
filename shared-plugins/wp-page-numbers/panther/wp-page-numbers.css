@@ -1,0 +1,77 @@
+#wp_page_numbers ul, #wp_page_numbers li, #wp_page_numbers a {
+	background: #4f4f4f;
+	padding: 0;
+	margin: 0;
+	border: none;
+	text-decoration: none;
+	font-weight: normal;
+	font-style: normal;
+	list-style: none;
+	text-transform: none;
+	text-indent: 0px;
+	font-variant: normal;
+	text-align: left;
+	line-height: 12px;
+	letter-spacing: 0px;
+	word-spacing: 0px;
+	font-size: 12px;
+	font-family: Arial;
+	color: white;
+}
+
+#wp_page_numbers {
+	margin-top: 10px;
+	width: 100%;
+	background: #4f4f4f;
+	border-top: 2px solid black;
+}
+#wp_page_numbers ul {
+	
+	width: 100%;
+}
+#wp_page_numbers li {
+	float: left;
+	display: block;
+}
+
+#wp_page_numbers a {
+	padding: 6px;
+	padding-left: 4px;
+	padding-right: 4px;
+	display: block;
+	color: #ddd;
+}
+
+#wp_page_numbers li a:hover {
+	text-decoration: underline;
+}
+
+#wp_page_numbers li.space {
+	padding: 6px;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#wp_page_numbers li.first_last_page {
+	font-style: italic;
+}
+
+#wp_page_numbers li.active_page a {
+	background: black;
+	padding: 6px;
+	padding-left: 8px;
+	padding-right: 8px;
+	color: white;
+}
+#wp_page_numbers li.active_page a:hover  {
+	color: #fff; /* IE fix */
+}
+
+#wp_page_numbers li.page_info {
+	float: left;
+	display: block;
+	padding: 6px;
+	padding-right: 8px;
+	color: #ddd;
+	font-size: 11px;
+}
