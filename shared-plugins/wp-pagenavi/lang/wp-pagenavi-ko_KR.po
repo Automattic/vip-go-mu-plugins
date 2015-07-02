@@ -1,0 +1,206 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Korean by Soul\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-12-10 00:43+0800\n"
+"PO-Revision-Date: 2009-02-19 03:51-0500\n"
+"Last-Translator: Jong-In Kim <soulofpure@hotmail.com>\n"
+"Language-Team: Jong-In Kim <soulofpure@hotmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Korean\n"
+"X-Poedit-Country: KOREA, REPUBLIC OF\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: pagenavi-options.php:46
+#: pagenavi-options.php:108
+#: pagenavi-options.php:172
+msgid "Page Navigation Options"
+msgstr "페이지 네비게이션 옵션"
+
+#: pagenavi-options.php:51
+msgid "Updated"
+msgstr "업데이트됨"
+
+#: pagenavi-options.php:56
+msgid "No Page Navigation Option Updated"
+msgstr "페이지 네비게이션 옵션이 업데이트된 것이 없음"
+
+#: pagenavi-options.php:62
+#: pagenavi-options.php:241
+msgid "UNINSTALL WP-PageNavi"
+msgstr "WP-PageNavi 삭제"
+
+#: pagenavi-options.php:70
+#, php-format
+msgid "Setting Key '%s' has been deleted."
+msgstr "설정 Key '%s' 가 삭제되었음."
+
+#: pagenavi-options.php:74
+#, php-format
+msgid "Error deleting Setting Key '%s'."
+msgstr "설정 Key '%s' 를 삭제하는 중 에러."
+
+#: pagenavi-options.php:96
+#: pagenavi-options.php:209
+msgid "Uninstall WP-PageNavi"
+msgstr "WP-PageNavi 삭제"
+
+#: pagenavi-options.php:97
+#, php-format
+msgid "<a href=\"%s\">Click Here</a> To Finish The Uninstallation And WP-PageNavi Will Be Deactivated Automatically."
+msgstr "<a href=\"%s\">여기 클릭</a>제거를 끝내고 WP-PageNavi 는 자동으로 비활성화 될 것 입니다."
+
+#: pagenavi-options.php:109
+msgid "Page Navigation Text"
+msgstr "페이지 네비게이션 텍스트"
+
+#: pagenavi-options.php:112
+msgid "Text For Number Of Pages"
+msgstr "페이지의 번호를 위한 텍스트"
+
+#: pagenavi-options.php:115
+msgid "The current page number."
+msgstr "현재 페이지 번호."
+
+#: pagenavi-options.php:116
+#: pagenavi-options.php:137
+#: pagenavi-options.php:144
+msgid "The total number of pages."
+msgstr "페이지의 총 갯수."
+
+#: pagenavi-options.php:120
+msgid "Text For Current Page"
+msgstr "현재 페이지를 위한 텍스트"
+
+#: pagenavi-options.php:123
+#: pagenavi-options.php:130
+msgid "The page number."
+msgstr "페이지 번호."
+
+#: pagenavi-options.php:127
+msgid "Text For Page"
+msgstr "페이지를 위한 텍스트"
+
+#: pagenavi-options.php:134
+msgid "Text For First Post"
+msgstr "처음 글을 위한 텍스트"
+
+#: pagenavi-options.php:141
+msgid "Text For Last Post"
+msgstr "마지막 글을 위한 텍스트"
+
+#: pagenavi-options.php:148
+msgid "Text For Next Post"
+msgstr "다음 글을 위한 텍스트"
+
+#: pagenavi-options.php:154
+msgid "Text For Previous Post"
+msgstr "이전 글을 위한 텍스트"
+
+#: pagenavi-options.php:160
+msgid "Text For Next ..."
+msgstr "다음을 위한 텍스트 ..."
+
+#: pagenavi-options.php:166
+msgid "Text For Previous ..."
+msgstr "이전을 위한 텍스트 ..."
+
+#: pagenavi-options.php:175
+msgid "Page Navigation Style"
+msgstr "페이지 네비게이션 스타일"
+
+#: pagenavi-options.php:178
+msgid "Normal"
+msgstr "보통"
+
+#: pagenavi-options.php:179
+msgid "Drop Down List"
+msgstr "드랍 다운 리스트"
+
+#: pagenavi-options.php:184
+msgid "Number Of Pages To Show?"
+msgstr "보여줄 페이지의 수?"
+
+#: pagenavi-options.php:190
+msgid "Always Show Page Navigation?"
+msgstr "항상 페이지 네비게이션을 보입니까?"
+
+#: pagenavi-options.php:193
+#: pagenavi-options.php:240
+msgid "Yes"
+msgstr "예"
+
+#: pagenavi-options.php:194
+msgid "No"
+msgstr "아니오"
+
+#: pagenavi-options.php:200
+msgid "Save Changes"
+msgstr "변경 저장"
+
+#: pagenavi-options.php:211
+msgid "Deactivating WP-PageNavi plugin does not remove any data that may have been created, such as the page navigation options. To completely remove this plugin, you can uninstall it here."
+msgstr "WP-PageNavi 플러그인의 비활성화는 생성되었던 데이터를 제거하지 않습니다(예를 들어 페이지 네비게이션 옵션). 이 플러그인을 완전히 제거하려면 여기서 삭제하세요."
+
+#: pagenavi-options.php:214
+msgid "WARNING:"
+msgstr "경고:"
+
+#: pagenavi-options.php:215
+msgid "Once uninstalled, this cannot be undone. You should use a Database Backup plugin of WordPress to back up all the data first."
+msgstr "제거 후에는 복구 할 수 없습니다. 워드프레스의 데이터베이스 백업 플러그인으로 모든 데이터를 백업부터 해야합니다."
+
+#: pagenavi-options.php:218
+msgid "The following WordPress Options will be DELETED:"
+msgstr "다음의 워드프레스 옵션은 삭제됩니다:"
+
+#: pagenavi-options.php:223
+msgid "WordPress Options"
+msgstr "워드프레스 옵션"
+
+#: pagenavi-options.php:241
+msgid ""
+"You Are About To Uninstall WP-PageNavi From WordPress.\\n"
+"This Action Is Not Reversible.\\n"
+"\\n"
+" Choose [Cancel] To Stop, [OK] To Uninstall."
+msgstr ""
+"워드프레스에서 WP-PageNavi 를 삭제합니다.\\n"
+"이 동작은 복구할 수 없습니다.\\n"
+"\\n"
+" 멈추려면 [취소] 를, [예] 를 누르면 삭제됩니다."
+
+#: wp-pagenavi.php:42
+msgid "PageNavi"
+msgstr "페이지네비"
+
+#: wp-pagenavi.php:179
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "페이지 %CURRENT_PAGE% 의 %TOTAL_PAGES%"
+
+#: wp-pagenavi.php:182
+msgid "&laquo; First"
+msgstr "&laquo; 처음"
+
+#: wp-pagenavi.php:183
+msgid "Last &raquo;"
+msgstr "마지막 &raquo;"
+
+#: wp-pagenavi.php:184
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:185
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: wp-pagenavi.php:186
+#: wp-pagenavi.php:187
+msgid "..."
+msgstr "..."
+

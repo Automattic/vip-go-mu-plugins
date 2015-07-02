@@ -1,0 +1,244 @@
+# Copyright (C) 2010 
+# This file is distributed under the same license as the  package.
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/editorial-calendar\n"
+"POT-Creation-Date: 2011-01-03 12:24:41+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2011-01-03 08:56-0500\n"
+"Last-Translator: Zack Grossbart <zack@grossbart.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: edcal.php:71
+#: edcal.php:93
+msgid "Calendar"
+msgstr "Calendário"
+
+#: edcal.php:221
+#: edcal.php:465
+msgid "en-US"
+msgstr "pt-BR"
+
+#: edcal.php:229
+msgid "%1$s by %2$s"
+msgstr "%1$s por %2$s"
+
+#: edcal.php:231
+msgid "New Post"
+msgstr "Novo Post"
+
+#: edcal.php:233
+msgid " [DRAFT]"
+msgstr "[RASCUNHO]"
+
+#: edcal.php:234
+msgid " [PENDING]"
+msgstr "[PENDENTE]"
+
+#: edcal.php:235
+msgid " [STICKY]"
+msgstr "[FIXO]"
+
+#: edcal.php:236
+msgid " [DRAFT, STICKY]"
+msgstr "[RASCUNHO, FIXO]"
+
+#: edcal.php:237
+msgid " [PENDING, STICKY]"
+msgstr "[PENDENTE, FIXO]"
+
+#: edcal.php:238
+#: edcal.php:242
+msgid "Edit"
+msgstr "Editar"
+
+#: edcal.php:239
+msgid "Quick Edit"
+msgstr "Ed Rápida"
+
+#: edcal.php:240
+msgid "Delete"
+msgstr "Deletar"
+
+#: edcal.php:241
+msgid "View"
+msgstr "Ver"
+
+#: edcal.php:243
+msgid "Status:"
+msgstr "Estado:"
+
+#: edcal.php:244
+#: edcal.php:409
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: edcal.php:245
+#: edcal.php:363
+msgid "Title"
+msgstr "Título"
+
+#: edcal.php:246
+#: edcal.php:368
+msgid "Content"
+msgstr "Conteúdo"
+
+#: edcal.php:247
+msgid "Add a new post on "
+msgstr "Adicionar novo post em "
+
+#: edcal.php:248
+msgid "New %s - "
+msgstr "Novo %s - "
+
+#: edcal.php:249
+msgid "Update"
+msgstr "Atualizar"
+
+#: edcal.php:250
+#: edcal.php:408
+msgid "Schedule"
+msgstr "Agendar"
+
+#: edcal.php:251
+msgid "Submit for Review"
+msgstr "Enviar para Revisão"
+
+#: edcal.php:252
+msgid "Save"
+msgstr "Salvar"
+
+#: edcal.php:253
+msgid "Edit %1$s - %2$s"
+msgstr "Editar %1$s - %2$s"
+
+#: edcal.php:254
+#: edcal.php:394
+msgid "Scheduled"
+msgstr "Agentado"
+
+#: edcal.php:256
+msgid "You are about to delete the post \""
+msgstr "Você está prestes a deletar o post \""
+
+#: edcal.php:257
+msgid "\". Press Cancel to stop, OK to delete."
+msgstr "\". Clique Cancelar para parar, OK para deletar."
+
+#: edcal.php:259
+msgid "Looks like someone else already moved this post."
+msgstr "Parece que alguém já moveu este post."
+
+#: edcal.php:260
+msgid "You do not have permission to edit posts."
+msgstr "Você não tem permissão para editar posts"
+
+#: edcal.php:261
+msgid "Invalid checksum for post. This is commonly a cross-site scripting error."
+msgstr "Soma de verificação inválida para o post. Este é normalmente um erro de cross-site scripting."
+
+#: edcal.php:262
+msgid "There was an error contacting your blog."
+msgstr "Ocorreu um erro contatando seu blog."
+
+#: edcal.php:264
+msgid "Screen Options"
+msgstr "Opções de Tela"
+
+#: edcal.php:265
+msgid "Colors"
+msgstr "Cores"
+
+#: edcal.php:266
+msgid "Drafts: "
+msgstr "Rascunhos: "
+
+#: edcal.php:267
+msgid "Apply"
+msgstr "Aplicar"
+
+#: edcal.php:268
+msgid "Show on screen"
+msgstr "Exibir na tela"
+
+#: edcal.php:269
+msgid " weeks at a time"
+msgstr " semanas de uma vez"
+
+#: edcal.php:270
+msgid "Show in Calendar Cell"
+msgstr "Mostrar na Célula do Calendário"
+
+#: edcal.php:271
+msgid "Author"
+msgstr "Autor"
+
+#: edcal.php:272
+#: edcal.php:388
+msgid "Status"
+msgstr "Estado"
+
+#: edcal.php:273
+msgid "Time of day"
+msgstr "Hora do dia"
+
+#: edcal.php:274
+msgid "An error occurred while loading the calendar: "
+msgstr "Ocorreu um erro carregando o calendário: "
+
+#: edcal.php:276
+msgid "The calendar can only show between 1 and 5 weeks at a time."
+msgstr "O calendário só pode exibir entre 1 e 5 semanas de uma vez."
+
+#: edcal.php:277
+msgid "Select the number of weeks for the calendar to show."
+msgstr "Selecione o número de semanas a exibir no calendário."
+
+#: edcal.php:285
+msgid "<h2>We're done</h2>We've finished collecting data.  Thank you for helping us make the calendar better."
+msgstr "<h2>Feito</h2>Acabamos a coleta de dados. Obrigado por nos ajudar a fazer o calendário melhor."
+
+#: edcal.php:326
+msgid " Calendar"
+msgstr " - Calendário"
+
+#: edcal.php:335
+msgid "Jump back"
+msgstr "Para trás"
+
+#: edcal.php:337
+msgid "Skip ahead"
+msgstr "Para frente"
+
+#: edcal.php:342
+msgid "Scroll the calendar and make the today visible"
+msgstr "Rolar o calendário e fazer 'hoje' visível"
+
+#: edcal.php:342
+msgid "Show Today"
+msgstr "Mostrar Hoje"
+
+#: edcal.php:354
+msgid "Edit Post"
+msgstr "Editar Post"
+
+#: edcal.php:383
+msgid "Time"
+msgstr "Hora"
+
+#: edcal.php:391
+msgid "Draft"
+msgstr "Rascunho"
+
+#: edcal.php:392
+msgid "Pending Review"
+msgstr "Revisão Pendente"
+
+#: edcal.php:734
+#: edcal.php:737
+msgid "Error in deleting..."
+msgstr "Erro ao deletar..."
+

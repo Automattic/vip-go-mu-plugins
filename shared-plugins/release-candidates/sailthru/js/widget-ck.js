@@ -1,0 +1,1 @@
+(function(e){"use strict";e(function(){e("#sailthru-add-subscriber-form").submit(function(t){t.preventDefault();var n=e("#sailthru_ajax_php").val(),r=e(this).serialize();e.post(n,r,function(t){t=jQuery.parseJSON(t);t.error==1?e("#sailthru-add-subscriber-errors").html(t.message):e("#sailthru-add-subscriber-form").html("Thank you for subscribing.")})})})})(jQuery);

@@ -1,0 +1,9 @@
+--- shopify-store.php
++++ shopify-store.php
+@@ -19,3 +19,6 @@
+ 
+ require_once( dirname( __FILE__ ) . '/class-assets.php');
+ new Shopify_Assets();
++
++require_once( dirname( __FILE__ ) . '/class-help.php');
++new Shopify_Help();

@@ -1,0 +1,220 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<title>A guide to the Get the Image plugin</title>
+
+<link rel="stylesheet" href="readme.css" type="text/css" media="screen" />
+
+</head>
+<body>
+
+<h1>A guide to Get the Image</h1>
+
+<p class="first"><em>Get the Image</em> is a plugin that grabs images for you.  It was designed to make the process of things such as adding thumbnails, feature images, and/or other images to your blog much easier, but it's so much more than that.  It is an image-based representation of your WordPress posts.</p>
+
+<p class="second">To use this plugin, you must be familiar with two very important things in WordPress: the <a href="http://codex.wordpress.org/Template_Hierarchy" title="Template Hierarchy">Template Hierarchy</a> and <a href="http://codex.wordpress.org/The_Loop" title="The Loop">The Loop</a>.  If you don't have a working knowledge of those two things, then you should not attempt to use this plugin.  More importantly, you should be familiar with how all of this works within your theme because not all themes are the same.</p>
+
+<h2>What this plugin does</h2>
+
+<p>This plugin was made to easily find images and add them on pages where the full post isn't shown.  This is the order in which the plugin attempts to grab an image.</p>
+
+<ol>
+	<li>Looks for an image by custom field.</li>
+	<li>If no image is added by custom field, check for a <a href="http://justintadlock.com/archives/2009/11/16/everything-you-need-to-know-about-wordpress-2-9s-post-image-feature" title="WordPress 2.9's post image feature">post image</a> (WordPresss 2.9+ feature).</li>
+	<li>If no image is found, it grabs an image attached to your post.</li>
+	<li>If no image is attached, it can extract an image from your post content (off by default).</li>
+	<li>If no image is found, checks for a custom callback function that developers may optionally set.</li>
+	<li>If no image is found at this point, it will default to an image you set (not set by default).</li>
+</ol>
+
+<h2>How to install the plugin</h2>
+
+<ol>
+	<li>Uzip the <code>get-the-image.zip</code> folder.</li>
+	<li>Upload the <code>get-the-image</code> folder to your <code>/wp-content/plugins</code> directory.</li>
+	<li>In your WordPress dashboard, head over to the <em>Plugins</em> section.</li>
+	<li>Activate <em>Get The Image</em>.</li>
+</ol>
+
+<h2>How to use the plugin</h2>
+
+<p>To call the image script, you'll need to use what's called <a href="http://codex.wordpress.org/Template_Tags/How_to_Pass_Tag_Parameters#Tags_with_PHP_function-style_parameters" title="PHP function-style parameters">function-style parameters</a>.</p>
+
+<p><strong>Example with function-style parameters</strong></p>
+
+<pre><code>&lt;?php get_the_image( array( 'meta_key' => array( 'Thumbnail', 'thumbnail' ), 'size' => 'thumbnail' ) ); ?></code></pre>
+
+<h2>The image script parameters</h2>
+
+<p>By simply making a function call to <code>&lt;?php get_the_image(); ?></code> within a template file, the script will default to this:</p>
+
+<pre><code>$defaults = array(
+	'meta_key'           => array( 'Thumbnail', 'thumbnail' ), // array|string
+	'post_id'            => get_the_ID(),
+	'attachment'         => true,
+	'the_post_thumbnail' => true, // WP 2.9+ image function
+	'size'               => 'thumbnail',
+	'default_image'      => false,
+	'order_of_image'     => 1,
+	'link_to_post'       => true,
+	'image_class'        => false,
+	'image_scan'         => false,
+	'width'              => false,
+	'height'             => false,
+	'format'             => 'img',
+	'meta_key_save'      => false,
+	'thumbnail_id_save'  => false, // Set 'featured image'.
+	'callback'           => null,
+	'cache'              => true,
+	'before'             => '',
+	'after'              => '',
+	'echo'               => true,
+	'custom_key'         => null, // @deprecated 0.6. Use 'meta_key'.
+	'default_size'       => null, // @deprecated 0.5.  Use 'size'.
+);</code></pre>
+
+<dl>
+	<dt>meta_key</dt>
+	<dd>This parameter refers to post meta keys (custom fields) that you use.  Remember, meta keys are case-sensitive (defaults are <code>Thumbnail</code> and <code>thumbnail</code>).  By default, this is an array of meta keys, but it can also be a string for a single meta key.</dd>
+	<dt>post_id</dt>
+	<dd>The ID of the post to get the image for.  This defaults to the current post in the loop.</dd>
+	<dt>attachment</dt>
+	<dd>The script will look for images attached to the post (set to <code>true</code> by default).</dd>
+	<dt>the_post_thumbnail</dt>
+	<dd>This refers to the WordPress 2.9's new <code>the_post_thumbnail()</code> feature. By having this set to <code>true</code>, you may select an image from the post image meta box while in the post editor.</dd>
+	<dt>size</dt>
+	<dd>This refers to the size of an attached image.  You can choose between <code>thumbnail</code>, <code>medium</code>, <code>large</code>, <code>full</code>, or any custom image size you have available (the default is <code>thumbnail</code>).</dd>
+	<dt>default_image</dt>
+	<dd>Will take the input of an image URL and use it if no other images are found (no default set).</dd>
+	<dt>order_of_image</dt>
+	<dd>You can choose for the script to grab something other than the first attached image. This only refers to image attachments.</dd>
+	<dt>link_to_post</dt>
+	<dd>Whether the image shown should be linked to the post (set to <code>true</code> by default).</dd>
+	<dt>image_class</dt>
+	<dd>You can give an additional class to the image for use in your CSS.</dd>
+	<dt>image_scan</dt>
+	<dd>If set to <code>true</code>, the script will search within your post for an image that's been added.</dd>
+	<dt>width</dt>
+	<dd>Set the width of the image on output.</dd>
+	<dt>height</dt>
+	<dd>Set the height of the image on output.</dd>
+	<dt>format</dt>
+	<dd>What format to return the image in.  If set to <code>array</code> the return value of the function will be an array of <code>&lt;img></code> attributes.  All other values will return the <code>&lt;img></code> element.</dd>
+	<dt>meta_key_save</dt>
+	<dd>A meta key to save the image <acronym title="Uniform Resource Locator">URL</acronym> as.  This is useful if you're not using custom fields but want to cut back on database queries by having the script automatically set the custom field for you.  By default, this is set to <code>false</code>.</dd>
+	<dt>thumbnail_id_save</dt>
+	<dd>Whether to save the attachment ID as the post thumbnail (featured image) ID if no featured image is set for the post.  By default, this is set to <code>false</code></dd>
+	<dt>callback</dt>
+	<dd>A custom callback function that will be called if set.  It's only called if no images are found by any other options of the plugin.  However, it will be run before the <code>default_image</code> is set.  The <code>$args</code> array is passed to the callback function as the only parameter.</dd>
+	<dt>cache</dt>
+	<dd>Whether to use the WordPress Cache <acronym title="Application Programming Interface">API</acronym> (integrates with caching plugins) to serve the post images.  By default, this is set to <code>true</code>.</dd>
+	<dt>before</dt>
+	<dd><abbr title="Hypertext Markup Language">HTML</abbr> to place before the output of the image.</dd>
+	<dt>after</dt>
+	<dd><abbr title="Hypertext Markup Language">HTML</abbr> to place after the output of the image.</dd>
+	<dt>echo</dt>
+	<dd>If set to <code>true</code>, the image is shown on the page.  If set to <code>false</code>, the image will be returned to use in your own function. (Set to <code>true</code> by default.)</dd>
+</dl>
+
+<h2>Some examples of how to use this plugin</h2>
+
+<p><strong>Example 1:</strong> Let's suppose that you want to add thumbnails to your category archive pages.  What you'll need to do is open your <code>category.php</code> file and add this code within the Loop:</p>
+
+<pre><code>&lt;?php get_the_image(); ?></code></pre>
+
+<p>By default, that will look for an image with the custom field <strong>key</strong> <code>Thumbnail</code> and <code>thumnbail</code>.  If that image doesn't exist, it will check if a post image has been set.  If that image doesn't exist, it will search for any images attached to your post.</p>
+
+<p><strong>Example 2:</strong> Let's suppose you want a full-sized image and maybe you want to grab it by a custom field key of <code>Feature</code>.  Depending on your theme, this will need to go within the Loop in whatever file is calling the featured article.</p>
+
+<pre><code>&lt;?php get_the_image( array( 'meta_key' => 'Feature', 'size' => 'full' ) ); ?></code></pre>
+
+<p>If no feature image exists by custom field, it will look for images attached to your post.</p>
+
+<p><strong>Example 3:</strong> If you want to have a sort of fallback image, then you can set an image for the script to default to if no other images are found.</p>
+
+<pre><code>&lt;?php get_the_image( array( 'default_image' => 'http://mysite.com/wp-content/uploads/example.jpg' ) ); ?></code></pre>
+
+<p><strong>Example 4:</strong> You can even make the script scan for images that have been added to your post with this:</p>
+
+<pre><code>&lt;?php get_the_image( array( 'image_scan' => true ) ); ?></code></pre>
+
+<p><strong>Example 5:</strong> You might want to make the script grab the second attached image to a post. You can do that with this code:</p>
+
+<pre><code>&lt;?php get_the_image( array( 'order_of_image' => 2 ) ); ?></code></pre>
+
+<p><strong>Example 6:</strong> Saving an image to the <code>Thumbnail</code> custom field automatically.</p>
+
+<pre><code>&lt;?php get_the_image( array( 'meta_key_save' => 'Thumbnail' ) ); ?></code></pre>
+
+<h2>A real-world example</h2>
+
+<p>This is an example Loop, which may differ slightly from your theme, but the concept is the same.  The call to get the image can go anywhere between the opening and closing lines.</p>
+
+<pre><code>&lt;?php if ( have_posts() ) : while ( have_posts() ) : the_post(); ?>
+
+	&lt;div id="post-&lt;?php the_ID(); ?>" &lt;?php post_class(); ?>>
+
+		&lt;?php get_the_image( array( 'meta_key' => 'feature_img', 'size' => 'medium', 'width' => '200', 'height' => '200', 'image_class' => 'feature' ) ); ?>
+
+		&lt;h2>&lt;a href="&lt;?php the_permalink(); ?>" title="&lt;?php the_title_attribute(); ?>" rel="bookmark">&lt;?php the_title(); ?>&lt;/a>&lt;/h2>
+
+		&lt;div class="entry-summary">
+			&lt;?the_excerpt(); ?>
+		&lt;/div>
+
+	&lt;/div>
+
+&lt;?php endwhile; endif; ?></code></pre>
+
+<h2>Protect yourself from errors in the future</h2>
+
+<p>Sometimes, we stop using plugins, but we forget to remove the function calls to the plugin in our theme files.  When deactivated, this causes errors.  To protect yourself from these errors, you can call the image script like this:</p>
+
+<pre><code>&lt;?php if ( function_exists( 'get_the_image' ) ) { get_the_image(); } ?></code></pre>
+
+<p>Basically, this just checks to see if the plugin is activated and has loaded the appropriate function.</p>
+
+<h2>Styling your images</h2>
+
+<p>The plugin will help you style your images by giving you some CSS classes to work with.  It will turn your custom field keys and default size into CSS classes.  You can also choose to input your own class.</p>
+
+<p>By default, you can add this to your CSS:</p>
+
+<pre><code>img.thumbnail { }</code></pre>
+
+<p>Let's suppose you've used this code:</p>
+
+<pre><code>&lt;?php get_the_image( array( 'meta_key' => array( 'Donkey Kong', 'mario' ), 'size' => 'full' ) ); ?></code></pre>
+
+<p>This will give you these CSS classes to work with:</p>
+
+<pre><code>img.full { }
+img.donkey-kong { }
+img.mario { }</code></pre>
+
+<p>You can also input a custom CSS class like so:</p>
+
+<pre><code>&lt;?php get_the_image( array( 'image_class' => 'custom-image' ) ); ?></code></pre>
+
+<p>You will still have the <code>size</code> and <code>custom_key</code> classes plus your additional class:</p>
+
+<pre><code>img.custom-image { }
+img.thumbnail { }</code></pre>
+
+<h2>Plugin support</h2>
+
+<p>I run a WordPress community called <a href="http://themehybrid.com" title="Theme Hybrid">Theme Hybrid</a>, which is where I fully support all of my WordPress projects, including plugins.  You can sign up for an account to get plugin support for a small yearly fee ($29 <acronym title="United States Dollars">USD</acronym> at the time of writing).</p>
+
+<p>I know.  I know.  You might not want to pay for support, but just consider it a donation to the project.  To continue making cool, GPL-licensed plugins and having the time to support them, I must pay the bills.</p>
+
+<h2>Copyright &amp; license</h2>
+
+<p><em>Get the Image</em> is licensed under the <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html" title="GNU GPL">GNU General Public License</a>, version 2 (<acronym title="GNU General Public License">GPL</acronym>).</p>
+
+<p>This plugin is copyrighted to <a href="http://justintadlock.com" title="Justin Tadlock">Justin Tadlock</a>.</p>
+
+<p>2008&thinsp;&ndash;&thinsp;2012 &copy; Justin Tadlock..</p>
+
+</body>
+</html>

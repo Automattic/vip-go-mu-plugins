@@ -1,0 +1,288 @@
+# Copyright (C) 2012 WP Help
+# This file is distributed under the same license as the WP Help package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Help 1.2-alpha\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-help\n"
+"POT-Creation-Date: 2012-07-23 17:02:05+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2012-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: templates/list-documents.php:7
+msgctxt "Button with limited space"
+msgid "Settings"
+msgstr ""
+
+#: templates/list-documents.php:8
+msgctxt "Button with limited space"
+msgid "Add New"
+msgstr ""
+
+#: templates/list-documents.php:8 wp-help.php:268
+msgctxt "verb. Button with limited space"
+msgid "Manage"
+msgstr ""
+
+#: templates/list-documents.php:16
+msgid "There are no help documents."
+msgstr ""
+
+#: templates/list-documents.php:18
+msgid "There are no help documents yet."
+msgstr ""
+
+#: templates/list-documents.php:36
+msgid "edit"
+msgstr ""
+
+#: templates/list-documents.php:39
+msgid "The requested help document could not be found."
+msgstr ""
+
+#: templates/settings.php:7
+msgid "WP Help Settings"
+msgstr ""
+
+#: templates/settings.php:9
+msgid "Headlines"
+msgstr ""
+
+#: templates/settings.php:11
+msgid ""
+"The main WP Help headline and document listing headline are directly "
+"editable."
+msgstr ""
+
+#: templates/settings.php:13
+msgid "Menu Location"
+msgstr ""
+
+#: templates/settings.php:15
+msgid "Display the help documents menu item:"
+msgstr ""
+
+#: templates/settings.php:17
+msgid "as a Dashboard submenu"
+msgstr ""
+
+#: templates/settings.php:18
+msgid "above the Dashboard menu"
+msgstr ""
+
+#: templates/settings.php:19
+msgid "below the Dashboard menu"
+msgstr ""
+
+#: templates/settings.php:20
+msgid "at the bottom"
+msgstr ""
+
+#: templates/settings.php:23
+msgctxt "noun, h3 heading about synchronization"
+msgid "Sync Source"
+msgstr ""
+
+#: templates/settings.php:25
+msgid "To treat this install as a source, use this secret URL:"
+msgstr ""
+
+#: templates/settings.php:27
+msgid "Sync Pull"
+msgstr ""
+
+#: templates/settings.php:29
+msgid "Pull in help documents from this WP Help secret URL:"
+msgstr ""
+
+#: templates/settings.php:31
+msgid "Note:"
+msgstr ""
+
+#: templates/settings.php:33
+msgid "Sync pull refreshes automatically once a day."
+msgstr ""
+
+#: templates/settings.php:34
+msgid "You can manually refresh by saving the setting again."
+msgstr ""
+
+#: templates/settings.php:35
+msgid ""
+"Synced documents cannot be modified locally while syncing is still enabled."
+msgstr ""
+
+#: templates/settings.php:38
+msgid "Save Changes"
+msgstr ""
+
+#: templates/settings.php:38
+msgid "Cancel"
+msgstr ""
+
+#: wp-help.php:108
+msgctxt "post type label"
+msgid "Publishing Help"
+msgstr ""
+
+#: wp-help.php:125
+msgid "Help Documents"
+msgstr ""
+
+#: wp-help.php:126
+msgid "Help Document"
+msgstr ""
+
+#: wp-help.php:127
+msgid "Add New Help Document"
+msgstr ""
+
+#: wp-help.php:128
+msgid "Edit Help Document"
+msgstr ""
+
+#: wp-help.php:129
+msgid "New Help Document"
+msgstr ""
+
+#: wp-help.php:130
+msgid "View Help Document"
+msgstr ""
+
+#: wp-help.php:131
+msgid "Search Documents"
+msgstr ""
+
+#: wp-help.php:132
+msgid "No Help Documents Found"
+msgstr ""
+
+#: wp-help.php:133
+msgid "No Help Documents found in Trash"
+msgstr ""
+
+#: wp-help.php:134
+msgid "Parent Help Document"
+msgstr ""
+
+#: wp-help.php:135
+msgctxt "i.e. Add new Help Document"
+msgid "Add New"
+msgstr ""
+
+#: wp-help.php:136
+msgctxt "i.e. Edit Help Document"
+msgid "Edit"
+msgstr ""
+
+#: wp-help.php:137
+msgctxt "i.e. View Help Document"
+msgid "View"
+msgstr ""
+
+#: wp-help.php:152
+msgctxt "h2 default title"
+msgid "Publishing Help"
+msgstr ""
+
+#: wp-help.php:153
+msgctxt "h3 default title"
+msgid "Help Topics"
+msgstr ""
+
+#: wp-help.php:170
+msgid "Donate"
+msgstr ""
+
+#: wp-help.php:246
+msgid "&mdash; Remote document"
+msgstr ""
+
+#: wp-help.php:273
+msgid "Parent:"
+msgstr ""
+
+#: wp-help.php:481
+msgid "What are you doing? You&#8217;re going to create an infinite loop!"
+msgstr ""
+
+#: wp-help.php:485
+msgid "That is not a WP Help URL. Make sure you copied it correctly."
+msgstr ""
+
+#: wp-help.php:574
+msgid "Set as default help document"
+msgstr ""
+
+#: wp-help.php:596
+msgid "Document updated. <a href=\"%s\">View document</a>"
+msgstr ""
+
+#: wp-help.php:597
+msgid "Custom field updated."
+msgstr ""
+
+#: wp-help.php:598
+msgid "Custom field deleted."
+msgstr ""
+
+#: wp-help.php:599
+msgid "Document updated."
+msgstr ""
+
+#: wp-help.php:600
+msgid "Document restored to revision from %s"
+msgstr ""
+
+#: wp-help.php:601
+msgid "Document published. <a href=\"%s\">View document</a>"
+msgstr ""
+
+#: wp-help.php:602
+msgid "Document saved."
+msgstr ""
+
+#: wp-help.php:603
+msgid ""
+"Document submitted. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr ""
+
+#: wp-help.php:604
+msgid ""
+"Document scheduled for: <strong>%1$s</strong>. <a target=\"_blank\" href="
+"\"%2$s\">Preview document</a>"
+msgstr ""
+
+#: wp-help.php:604
+msgid "M j, Y @ G:i"
+msgstr ""
+
+#: wp-help.php:605
+msgid ""
+"Document draft updated. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "WP Help"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://txfx.net/wordpress-plugins/wp-help/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Administrators can create detailed, hierarchical documentation for the "
+"site's authors and editors, viewable in the WordPress admin."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Mark Jaquith"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://coveredwebservices.com/"
+msgstr ""

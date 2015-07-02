@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Jivox</title>
+</head>
+<body>
+<script type="text/javascript">
+    var parameters = {};
+    function getValueWithDefault(key, input, defaultValue)
+    {
+        if(input != null && array_key_exists(key, input))
+            return input[key];
+        return defaultValue;
+    }
+    function array_key_exists(key, search) {
+       return (typeof search[key] != "undefined");
+    }
+    
+    function initIBuster() {
+        try {
+            var queryString = unescape(document.location.search.substr(1));
+            var queryParameters = queryString.split('&');
+            for(var i = 0; i < queryParameters.length; i++) {
+                var keyValue = queryParameters[i].split('=');
+                parameters[keyValue[0]] = keyValue[1]; 
+            }
+            var iBusterResourceURL = getValueWithDefault("iBusterResourceURL", parameters, "");
+            iBusterResourceURL = iBusterResourceURL.split(".");
+                        var filePath = getValueWithDefault("filePath", parameters, "");
+
+            var scheme = ( iBusterResourceURL[0].match( /^https:\/\//gi ) ) ? 'https://' : 'http://';
+
+            // Sanitize subdomain by stripping non alphanumeric characters
+            var subdomain = iBusterResourceURL[0].replace( /^https?:\/\//gi, '').replace(/[\W]/gi, '');
+
+            var buster_js = window.top.document.createElement("script"); 
+            buster_js.setAttribute("type", 'text/javascript'); 
+            buster_js.setAttribute("src", scheme + subdomain + '.jivox.com/player/'+ getValueWithDefault("iBusterVersion", parameters, "") +'/iBuster.js' ); 
+            document.getElementsByTagName('head')[0].appendChild(buster_js);
+        }
+        catch(e) {
+        }
+    }
+    initIBuster();
+</script>
+</body>
+</html>

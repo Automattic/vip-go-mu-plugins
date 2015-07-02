@@ -1,0 +1,1802 @@
+# Copyright (C) 2013 CampTix Event Ticketing
+# This file is distributed under the same license as the CampTix Event Ticketing package.
+# Translators:
+# michalvittek <miso.par1c@gmail.com>, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: CampTix\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/support/plugin/camptix\n"
+"POT-Creation-Date: 2014-06-10 00:06:11+00:00\n"
+"PO-Revision-Date: 2015-03-06 16:40+0100\n"
+"Last-Translator: Peter Nemcok <info@wp.sk>\n"
+"Language-Team: Slovak (Slovakia) (http://www.transifex.com/projects/p/"
+"camptix/language/sk_SK/)\n"
+"Language: sk_SK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Generator: Poedit 1.6.9\n"
+
+#: addons/payment-blackhole.php:39
+msgid "Always Succeed"
+msgstr "Vždy úspešná"
+
+#: addons/payment-paypal.php:59
+msgid "Predefined Account"
+msgstr "Predvolený účet"
+
+#: addons/payment-paypal.php:64
+msgid "API Username"
+msgstr "Používateľské meno API"
+
+#: addons/payment-paypal.php:65
+msgid "API Password"
+msgstr "Heslo API"
+
+#: addons/payment-paypal.php:66
+msgid "API Signature"
+msgstr "Podpis API"
+
+#: addons/payment-paypal.php:67
+msgid "Sandbox Mode"
+msgstr "Testovací Sandbox mód"
+
+#: addons/payment-paypal.php:68
+msgid ""
+"The PayPal Sandbox is a way to test payments without using real accounts and "
+"transactions. If you'd like to use Sandbox Mode, you'll need to create a %s "
+"account and obtain the API credentials for your sandbox user."
+msgstr ""
+"PayPal Sandbox mód je uspôsobený na testovanie platieb bez reálnych účtov a "
+"transakcií. Ak chcete použiť testovací Sandbox mód, musíte si vytovriť %s "
+"účet a získať API údaje vašeho používateľa."
+
+#: addons/payment-paypal.php:68
+msgid "PayPal Developer"
+msgstr "Vývojár PayPal"
+
+#: addons/payment-paypal.php:88 camptix.php:433 camptix.php:2134
+#: camptix.php:3744
+msgid "None"
+msgstr "Žiadny"
+
+#: addons/payment-paypal.php:479
+msgid "Unexpected total!"
+msgstr "Neočakávaný súčet!"
+
+#: addons/payment-paypal.php:550
+msgid "The selected currency is not supported by this payment method."
+msgstr "Vybratá mena nie je podporovaná touto platobnou metódou."
+
+#: addons/payment-paypal.php:576
+msgctxt "PayPal locale code, leave default to guess"
+msgid "default"
+msgstr "základné"
+
+#: addons/payment-paypal.php:599 addons/payment-paypal.php:647
+msgid "PayPal error: %s (%d)"
+msgstr "PayPal chyba: %s (%d)"
+
+#: addons/payment-paypal.php:685
+msgid "Request did not complete successfully"
+msgstr "Žiadosť nebola úspešne dokončená"
+
+#: addons/shortcodes.php:182
+msgid "Generated attendees list in %s seconds"
+msgstr "Vytvorený zoznam účastníkov za %s sekúnd"
+
+#: addons/shortcodes.php:223
+msgid "Please fill in all fields."
+msgstr "Prosím vyplňte všetky polia."
+
+#: addons/shortcodes.php:226
+msgid "The e-mail address you have entered does not seem to be valid."
+msgstr "Zadaná emailová adresa nie je platná."
+
+#: addons/shortcodes.php:266
+msgid "The information you have entered is incorrect. Please try again."
+msgstr "Zadaná informácia nie je správna. Prosím skúste znova."
+
+#: addons/shortcodes.php:284
+msgid "An error has occured."
+msgstr "Nastala chyba."
+
+#: addons/shortcodes.php:323
+msgid ""
+"Looks like you logged in from a different computer. Please log in again."
+msgstr ""
+"Vyzerá to, že ste sa prihlásili z iného počítača. Prosím prihláste sa znova."
+
+#: addons/shortcodes.php:345 addons/shortcodes.php:351
+msgid "Sorry, but your ticket does not allow you to view this content."
+msgstr "Ľutujeme, váš lístok nedovoľuje zobraziť tento obsah."
+
+#: addons/shortcodes.php:357
+msgid "Success! Enjoy your content!"
+msgstr "Úspech! Užite si váš obsah!"
+
+#: addons/shortcodes.php:362
+msgid ""
+"The content on this page is private. Please log in using the form below."
+msgstr "Obsah stránky je súkromný. Prosím prihláste sa pomocou formulára."
+
+#: addons/shortcodes.php:387
+msgid "Have a ticket? Sign in"
+msgstr "Máte lístok? Prihláste sa"
+
+#: addons/shortcodes.php:390 camptix.php:2533 camptix.php:3803
+#: camptix.php:4742 camptix.php:5094
+msgid "First Name"
+msgstr "Krstné meno"
+
+#: addons/shortcodes.php:394 camptix.php:2534 camptix.php:3804
+#: camptix.php:4747 camptix.php:5098
+msgid "Last Name"
+msgstr "Priezvisko"
+
+#: addons/shortcodes.php:398 camptix.php:576 camptix.php:987 camptix.php:3805
+#: camptix.php:4752 camptix.php:5102 camptix.php:5272
+msgid "E-mail"
+msgstr "E-mail"
+
+#: addons/shortcodes.php:403
+msgid "Login &rarr;"
+msgstr "Prihlásiť sa"
+
+#: addons/track-attendance.php:29 addons/track-attendance.php:60
+#: addons/track-attendance.php:87
+msgid "Attended the event"
+msgstr "Zúčastnili sa podujatia"
+
+#: addons/track-attendance.php:76
+msgid "Attended"
+msgstr "sa zúčastnilo"
+
+#: camptix.php:183
+msgid "Once every 10 minutes"
+msgstr "Raz za 10 minút"
+
+#: camptix.php:445
+msgid "Please enter the e-mail addresses in the forms above."
+msgstr "Prosím zadajte emailové adresy vo formulári vyššie."
+
+#: camptix.php:516 camptix.php:4496 camptix.php:4677
+msgid "Price"
+msgstr "Cena"
+
+#: camptix.php:517 camptix.php:638 camptix.php:3407 camptix.php:3436
+#: camptix.php:4500 camptix.php:4676
+msgid "Quantity"
+msgstr "Počet"
+
+#: camptix.php:518
+msgid "Purchased"
+msgstr "Zakúpené"
+
+#: camptix.php:519 camptix.php:640 camptix.php:703 camptix.php:2424
+#: camptix.php:2433 camptix.php:4498
+msgid "Remaining"
+msgstr "Zostáva"
+
+#: camptix.php:520 camptix.php:642 camptix.php:3149 camptix.php:3156
+msgid "Availability"
+msgstr "Dostupnosť"
+
+#: camptix.php:553
+msgid "(%d reserved)"
+msgstr "(%d rezervovaných)"
+
+#: camptix.php:562 camptix.php:688
+msgid "Auto"
+msgstr "Automaticky"
+
+#. translators: 1: "from" date, 2: "to" date
+#: camptix.php:565 camptix.php:691
+msgid "%1$s &mdash; %2$s"
+msgstr "%1$s &mdash; %2$s"
+
+#: camptix.php:577 camptix.php:847 camptix.php:3806
+msgid "Ticket"
+msgstr "Lístok"
+
+#: camptix.php:578 camptix.php:951 camptix.php:2539 camptix.php:3833
+msgid "Coupon"
+msgstr "Kupón"
+
+#: camptix.php:581 camptix.php:3845
+msgid "Reservation"
+msgstr "Rezervácia"
+
+#: camptix.php:583
+msgid "Ticket Price"
+msgstr "Cena lístka"
+
+#: camptix.php:584 camptix.php:3836
+msgid "Order Total"
+msgstr "Objednávka celkom"
+
+#: camptix.php:639 camptix.php:3408
+msgid "Used"
+msgstr "Použité"
+
+#: camptix.php:641
+msgid "Discount"
+msgstr "Zľava"
+
+#: camptix.php:643 camptix.php:846 camptix.php:852 camptix.php:857
+msgid "Tickets"
+msgstr "Lístky"
+
+#: camptix.php:702
+msgid "Sent"
+msgstr "Odoslané"
+
+#: camptix.php:704
+msgid "Total"
+msgstr "Celkom"
+
+#: camptix.php:848 camptix.php:851
+msgid "New Ticket"
+msgstr "Nový lístok"
+
+#: camptix.php:849
+msgid "Add New Ticket"
+msgstr "Pridať nový lístok"
+
+#: camptix.php:850
+msgid "Edit Ticket"
+msgstr "Upraviť lístok"
+
+#: camptix.php:853
+msgid "View Ticket"
+msgstr "Zobraziť lístok"
+
+#: camptix.php:854
+msgid "Search Tickets"
+msgstr "Hľadať lístky"
+
+#: camptix.php:855
+msgid "No tickets found"
+msgstr "Nenašli sa žiadne lístky"
+
+#: camptix.php:856
+msgid "No tickets found in trash"
+msgstr "V koši sa nenašli žiadne lístky"
+
+#: camptix.php:881 camptix.php:887 camptix.php:892 camptix.php:3150
+#: camptix.php:3849
+msgid "Questions"
+msgstr "Otázky"
+
+#: camptix.php:882 camptix.php:3589
+msgid "Question"
+msgstr "Otázka"
+
+#: camptix.php:883 camptix.php:886
+msgid "New Question"
+msgstr "Nová otázka"
+
+#: camptix.php:884
+msgid "Add New Question"
+msgstr "Pridať novú otázku"
+
+#: camptix.php:885
+msgid "Edit Question"
+msgstr "Upraviť otázku"
+
+#: camptix.php:888
+msgid "View Question"
+msgstr "Zobraziť otázku"
+
+#: camptix.php:889
+msgid "Search Questions"
+msgstr "Hľadať otázky"
+
+#: camptix.php:890
+msgid "No questions found"
+msgstr "Nenašli sa žiadne otázky"
+
+#: camptix.php:891
+msgid "No questions found in trash"
+msgstr "V koši sa nenašli žiadne otázky"
+
+#: camptix.php:910 camptix.php:916 camptix.php:921
+msgid "Attendees"
+msgstr "Učastníci"
+
+#: camptix.php:911
+msgid "Attendee"
+msgstr "Učastník"
+
+#: camptix.php:912
+msgid "New Attendee"
+msgstr "Nový učastník"
+
+#: camptix.php:913
+msgid "Add New Attendee"
+msgstr "Pridať nového účastníka"
+
+#: camptix.php:914
+msgid "Edit Attendee"
+msgstr "Upraviť účastníka"
+
+#: camptix.php:915
+msgid "Add Attendee"
+msgstr "Pridať účastníka"
+
+#: camptix.php:917
+msgid "View Attendee"
+msgstr "Zobraziť účastníka"
+
+#: camptix.php:918
+msgid "Search Attendees"
+msgstr "Hľadať účastníkov"
+
+#: camptix.php:919
+msgid "No attendees found"
+msgstr "Nenašli sa žiadni účastníci"
+
+#: camptix.php:920
+msgid "No attendees found in trash"
+msgstr "V koši sa nenašli žiadni účastníci"
+
+#: camptix.php:950 camptix.php:956 camptix.php:961
+msgid "Coupons"
+msgstr "Kupóny"
+
+#: camptix.php:952 camptix.php:955
+msgid "New Coupon"
+msgstr "Nový kupón"
+
+#: camptix.php:953
+msgid "Add New Coupon"
+msgstr "Pridať nový kupón"
+
+#: camptix.php:954
+msgid "Edit Coupon"
+msgstr "Upraviť kupón"
+
+#: camptix.php:957
+msgid "View Coupon"
+msgstr "Zobraziť kupón"
+
+#: camptix.php:958
+msgid "Search Coupons"
+msgstr "Hľadať kupóny"
+
+#: camptix.php:959
+msgid "No coupons found"
+msgstr "Nenašli sa žiadne kupóny"
+
+#: camptix.php:960
+msgid "No coupons found in trash"
+msgstr "V koši sa nenašli žiadne kupóny"
+
+#: camptix.php:986 camptix.php:992
+msgid "E-mails"
+msgstr "Emaily"
+
+#: camptix.php:988 camptix.php:991
+msgid "New E-mail"
+msgstr "Nový email"
+
+#: camptix.php:989
+msgid "Add New E-mail"
+msgstr "Pridať nový email"
+
+#: camptix.php:990
+msgid "Edit E-mail"
+msgstr "Upraviť email"
+
+#: camptix.php:993
+msgid "View E-mail"
+msgstr "Zobraziť email"
+
+#: camptix.php:994
+msgid "Search E-mails"
+msgstr "Hľadať emaily"
+
+#: camptix.php:995
+msgid "No e-mails found"
+msgstr "Nenašli sa žiadne emaily"
+
+#: camptix.php:996
+msgid "No e-mails found in trash"
+msgstr "V koši sa nenašli žiadne emaily"
+
+#: camptix.php:997
+msgid "E-mails (debug)"
+msgstr "Emaily (ladenie chýb)"
+
+#: camptix.php:1010
+msgctxt "post"
+msgid "Cancelled"
+msgstr "Zrušené"
+
+#: camptix.php:1011
+msgctxt "camptix"
+msgid "Cancelled <span class=\"count\">(%s)</span>"
+msgid_plural "Cancelled <span class=\"count\">(%s)</span>"
+msgstr[0] "Zrušený <span class=\"count\">(%s)</span>"
+msgstr[1] "Zrušené <span class=\"count\">(%s)</span>"
+msgstr[2] "Zrušených <span class=\"count\">(%s)</span>"
+
+#: camptix.php:1019
+msgctxt "post"
+msgid "Failed"
+msgstr "Zlyhalo"
+
+#: camptix.php:1020
+msgctxt "camptix"
+msgid "Failed <span class=\"count\">(%s)</span>"
+msgid_plural "Failed <span class=\"count\">(%s)</span>"
+msgstr[0] "Zlyhal <span class=\"count\">(%s)</span>"
+msgstr[1] "Zlyhali <span class=\"count\">(%s)</span>"
+msgstr[2] "Zlyhalo <span class=\"count\">(%s)</span>"
+
+#: camptix.php:1028
+msgctxt "post"
+msgid "Timeout"
+msgstr "Vypršal čas"
+
+#: camptix.php:1029
+msgctxt "camptix"
+msgid "Timeout <span class=\"count\">(%s)</span>"
+msgid_plural "Timeout <span class=\"count\">(%s)</span>"
+msgstr[0] "Vypršal čas <span class=\"count\">(%s)</span>"
+msgstr[1] "Vypršal čas <span class=\"count\">(%s)</span>"
+msgstr[2] "Vypršal čas <span class=\"count\">(%s)</span>"
+
+#: camptix.php:1037
+msgctxt "post"
+msgid "Refunded"
+msgstr "Refundované"
+
+#: camptix.php:1038
+msgctxt "camptix"
+msgid "Refunded <span class=\"count\">(%s)</span>"
+msgid_plural "Refunded <span class=\"count\">(%s)</span>"
+msgstr[0] "Refundovaný <span class=\"count\">(%s)</span>"
+msgstr[1] "Refundované <span class=\"count\">(%s)</span>"
+msgstr[2] "Refundovaných <span class=\"count\">(%s)</span>"
+
+#: camptix.php:1052
+msgid "Timeout"
+msgstr "Vypršal čas"
+
+#: camptix.php:1055
+msgid "Failed"
+msgstr "Zlyhalo"
+
+#: camptix.php:1058
+msgid "Cancelled"
+msgstr "Zrušené"
+
+#: camptix.php:1061
+msgid "Refunded"
+msgstr "Refundované"
+
+#: camptix.php:1077
+msgid ""
+"Hi there!\n"
+"\n"
+"You have purchased the following ticket:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"You can edit the information for the purchased ticket at any time before the "
+"event, by visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Zakúpili ste si nasledovný lístok.\n"
+"\n"
+"[receipt]\n"
+"\n"
+"Návštevou nasledujúceho odkazu si môžete zmeniť podrobnosti zakúpeného "
+"lístka kedykoľvek pred udalosťou:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1078
+msgid ""
+"Hi there!\n"
+"\n"
+"Thank you so much for purchasing a ticket and hope to see you soon at our "
+"event. You can edit your information at any time before the event, by "
+"visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Vďaka za zakúpenie lístka a dúfame, že Vás čoskoro uvidíme na našej "
+"udalosti. Návštevou nasledujúceho odkazu si môžete zmeniť podrobnosti "
+"zakúpeného lístka kedykoľvek pred udalosťou:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1079
+msgid ""
+"Hi there!\n"
+"\n"
+"You have purchased the following tickets:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"You can edit the information for all the purchased tickets at any time "
+"before the event, by visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Zakúpili ste si nasledovné lístky.\n"
+"\n"
+"[receipt]\n"
+"\n"
+"Návštevou nasledujúceho odkazu si môžete zmeniť podrobnosti zakúpeného "
+"lístka kedykoľvek pred udalosťou:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1080
+msgid ""
+"Hey there!\n"
+"\n"
+"Your payment for [event_name] has been completed, looking forward to seeing "
+"you at the event! You can access and change your tickets information by "
+"visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Vaša platba pre udalosť  [event_name] bola dokončená. Tešíme sa na Vašu "
+"prítomnosť. Návštevou nasledujúceho odkazu si môžete zmeniť podrobnosti "
+"zakúpeného lístka kedykoľvek pred udalosťou:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1081
+msgid ""
+"Hey there!\n"
+"\n"
+"We're so sorry, but it looks like your payment for [event_name] has failed! "
+"Please check your payment transactions for more details. If you still wish "
+"to attend the event, feel free to purchase a new ticket using the following "
+"link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Vaša platba pre udalosť  [event_name] zlyhala. Prosím skontrolujte si stav "
+"platby pre viac detailov. Ak si stále želáte zúčastniť sa na udalosti, "
+"môžete si zakúpiť nový lístok pomocou nasledujúceho odkazu:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1082
+msgid ""
+"Hey there!\n"
+"\n"
+"Your refund for [event_name] has been completed. If you change your mind and "
+"still wish to attend the event, feel free to purchase a new ticket using the "
+"following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Vaša refundácia udalosti  [event_name] bola dokončená. Ak zmeníte názor na "
+"účasť udalosti, stále si môžete znova zakúpiť lístok pomocou nasledujúceho "
+"odkazu:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1083
+msgid ""
+"Hey there!\n"
+"\n"
+"Your ticket for [event_name] has been refunded. If you change your mind and "
+"still wish to attend the event, feel free to purchase a new ticket using the "
+"following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Dobrý deň!\n"
+"\n"
+"Váš lístok udalosti  [event_name] bol refundovaný. Ak zmeníte názor na účasť "
+"udalosti, stále si môžete znova zakúpiť lístok pomocou nasledujúceho "
+"odkazu:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Ak máte ešte nejaké otázky, neváhajte nás kontaktovať!"
+
+#: camptix.php:1404
+msgid "General Configuration"
+msgstr "Hlavné nastavenie"
+
+#: camptix.php:1405
+msgid "Event Name"
+msgstr "Názov udalosti"
+
+#: camptix.php:1406
+msgid "Currency"
+msgstr "Mena"
+
+#: camptix.php:1408
+msgid "Enable Refunds"
+msgstr "Povoliť refundovanie"
+
+#: camptix.php:1409
+msgid ""
+"This will allows your customers to refund their tickets purchase by filling "
+"out a simple refund form."
+msgstr ""
+"Toto dovolí refundovať zákazníkom ich lístky pomocou jednoduchého formulára."
+
+#: camptix.php:1418
+msgid "Enabled"
+msgstr "Povolené"
+
+#: camptix.php:1427 camptix.php:1903
+msgid "E-mail Templates"
+msgstr "Emailové šablóny"
+
+#: camptix.php:1428
+msgid "Single purchase"
+msgstr "Nákup"
+
+#: camptix.php:1429
+msgid "Multiple purchase"
+msgstr "Viacnásobný nákup"
+
+#: camptix.php:1430
+msgid "Multiple purchase (receipt)"
+msgstr "Viacnásobný nákup (potvrdenie)"
+
+#: camptix.php:1431
+msgid "Pending Payment Succeeded"
+msgstr "Prebiehajúca platba bola dokončená úspešne"
+
+#: camptix.php:1432
+msgid "Pending Payment Failed"
+msgstr "Prebiehajúca platba zlyhala"
+
+#: camptix.php:1433
+msgid "Single Refund"
+msgstr "Jednorazová refundácia"
+
+#: camptix.php:1434
+msgid "Multiple Refund"
+msgstr "Viacnásobná refundácia"
+
+#: camptix.php:1444
+msgid "Beta Features"
+msgstr "Beta vlastnosti"
+
+#: camptix.php:1446
+msgid "Enable Reservations"
+msgstr "Povoliť rezervácie"
+
+#: camptix.php:1447
+msgid ""
+"Reservations is a way to make sure that a certain group of people, can "
+"always purchase their tickets, even if you sell out fast."
+msgstr ""
+"Rezervácie patria medzi dobrý spôsob ako sa uistiť, že istá skupina ľudí si "
+"bude vždy môcť zakúpiť lístky, aj keď sa vypredávajú rýchlo."
+
+#: camptix.php:1451
+msgid "Enable Refund All"
+msgstr "Povoliť úplné refundovanie"
+
+#: camptix.php:1452
+msgid "Allows to refund all purchased tickets by an admin via the Tools menu."
+msgstr ""
+"Povolí refundáciu všetkých zakúpených lístkov v nástrojoch "
+"administrátorského menu."
+
+#: camptix.php:1456
+msgid "Archived Event"
+msgstr "Archivovaná udalosť"
+
+#: camptix.php:1457
+msgid "Archived events are read-only."
+msgstr "Archivovaná udalosť slúži iba na čítanie"
+
+#: camptix.php:1467
+msgid ""
+"Beta features are things that are being worked on in CampTix, but are not "
+"quite finished yet. You can try them out, but we do not recommend doing that "
+"in a live environment on a real event. If you have any kind of feedback on "
+"any of the beta features, please let us know."
+msgstr ""
+"Beta funkčnosť je aktuálne vyvíjaná ale stále nie dokonalá. Môžete vyskúšať "
+"nové možnosti ale neodporúčame ich skúšať na dôležitých udalostiach. Ak "
+"budete mať akúkoľvek skúsenosť s Beta funkčnosťou, neváhajte nás kontaktovať."
+
+#: camptix.php:1471
+msgid ""
+"Customize your confirmation e-mail templates. You can use the following "
+"shortcodes inside the message: [event_name], [ticket_url], and [receipt]."
+msgstr ""
+"Upravte si šablóny potvrdzovacích emailov. Môžete požiť nasledujúce krátke "
+"kódy: [event_name] (názov udalosti), [ticket_url] (odkaz na lístok ), a "
+"[receipt](potvrdenie)."
+
+#: camptix.php:1475
+msgid "General configuration."
+msgstr "Hlavné nastavenie."
+
+#: camptix.php:1497
+msgid "Reset Default"
+msgstr "Obnoviť na základné nastavenie"
+
+#: camptix.php:1606 camptix.php:1620 camptix.php:3503
+#: inc/class-camptix-payment-method.php:212
+msgid "Yes"
+msgstr "Áno"
+
+#: camptix.php:1607 camptix.php:1621 inc/class-camptix-payment-method.php:213
+msgid "No"
+msgstr "Nie"
+
+#: camptix.php:1625
+msgid "Allow refunds until:"
+msgstr "Povoliť refundáciu do:"
+
+#: camptix.php:1648
+msgid ""
+"Make sure you select a currency that is supported by all the payment methods "
+"you plan to use."
+msgstr ""
+"Uistite sa, že vybratá mena je podporovaná všetkými platobnými metódami, "
+"ktoré plánujete použiť."
+
+#: camptix.php:1661
+msgid "Australian Dollar"
+msgstr "Austrálsky dolár"
+
+#: camptix.php:1665
+msgid "Canadian Dollar"
+msgstr "Kanadský dolár"
+
+#: camptix.php:1669
+msgid "Euro"
+msgstr "Euro"
+
+#: camptix.php:1673
+msgid "Pound Sterling"
+msgstr "Pound Sterling"
+
+#: camptix.php:1677
+msgid "Japanese Yen"
+msgstr "Japonský jen"
+
+#: camptix.php:1681 camptix.php:1771
+msgid "U.S. Dollar"
+msgstr "Americký dolár"
+
+#: camptix.php:1685
+msgid "N.Z. Dollar"
+msgstr "N.Z. Dollar"
+
+#: camptix.php:1689
+msgid "Swiss Franc"
+msgstr "Švajčiarsky frank"
+
+#: camptix.php:1693
+msgid "Hong Kong Dollar"
+msgstr "Hong Kong Dollar"
+
+#: camptix.php:1697
+msgid "Singapore Dollar"
+msgstr "Singapore Dollar"
+
+#: camptix.php:1701
+msgid "Swedish Krona"
+msgstr "Swedish Krona"
+
+#: camptix.php:1705
+msgid "Danish Krone"
+msgstr "Danish Krone"
+
+#: camptix.php:1709
+msgid "Polish Zloty"
+msgstr "Poľský zloty"
+
+#: camptix.php:1713
+msgid "Norwegian Krone"
+msgstr "Norwegian Krone"
+
+#: camptix.php:1717
+msgid "Hungarian Forint"
+msgstr "Maďarský forint"
+
+#: camptix.php:1721
+msgid "Czech Koruna"
+msgstr "Česká koruna"
+
+#: camptix.php:1725
+msgid "Israeli New Sheqel"
+msgstr "Israeli New Sheqel"
+
+#: camptix.php:1729
+msgid "Mexican Peso"
+msgstr "Mexican Peso"
+
+#: camptix.php:1733
+msgid "Brazilian Real"
+msgstr "Brazilian Real"
+
+#: camptix.php:1737
+msgid "Malaysian Ringgit"
+msgstr "Malaysian Ringgit"
+
+#: camptix.php:1741
+msgid "Philippine Peso"
+msgstr "Philippine Peso"
+
+#: camptix.php:1745
+msgid "New Taiwan Dollar"
+msgstr "New Taiwan Dollar"
+
+#: camptix.php:1749
+msgid "Thai Baht"
+msgstr "Thai Baht"
+
+#: camptix.php:1753
+msgid "Turkish Lira"
+msgstr "Turkish Lira"
+
+#: camptix.php:1813
+msgid "Tools"
+msgstr "Nástroje"
+
+#: camptix.php:1814
+msgid "Setup"
+msgstr "Nastavenie"
+
+#: camptix.php:1860
+msgid "CampTix Setup"
+msgstr "Nastavenie CampTix"
+
+#: camptix.php:1876
+msgid "Current time on server: %s"
+msgstr "Aktuálny čas servera: %s"
+
+#: camptix.php:1901 camptix.php:3801
+msgid "General"
+msgstr "Hlavné"
+
+#: camptix.php:1902
+msgid "Payment"
+msgstr "Platba"
+
+#: camptix.php:1907
+msgid "Beta"
+msgstr "Beta"
+
+#: camptix.php:1924
+msgid "CampTix Tools"
+msgstr "Nástroje CampTix"
+
+#: camptix.php:1963
+msgid "Summarize"
+msgstr "Sumár"
+
+#: camptix.php:1964 camptix.php:2427 camptix.php:2436
+msgid "Revenue"
+msgstr "Príjem"
+
+#: camptix.php:1965 camptix.php:2481
+msgid "Export"
+msgstr "Export"
+
+#: camptix.php:1966
+msgid "Notify"
+msgstr "Oznámiť"
+
+#: camptix.php:1970
+msgid "Refund"
+msgstr "Refundácia"
+
+#: camptix.php:1993
+msgid "Summarize by"
+msgstr "Sumarizovať podľa"
+
+#: camptix.php:2013
+msgid "Show Summary"
+msgstr "Zobraziť sumár"
+
+#: camptix.php:2014
+msgid "Export Summary to CSV"
+msgstr "Export sumára do CSV"
+
+#: camptix.php:2029 camptix.php:2067
+msgid "Count"
+msgstr "Počet"
+
+#: camptix.php:2155 camptix.php:2422 camptix.php:2431
+msgid "Ticket type"
+msgstr "Typ lístka"
+
+#: camptix.php:2156
+msgid "Coupon code"
+msgstr "Kód kupónu"
+
+#: camptix.php:2157 camptix.php:2536
+msgid "Purchase date"
+msgstr "Dátum nákupu"
+
+#: camptix.php:2158
+msgid "Purchase time"
+msgstr "Čas nákupu"
+
+#: camptix.php:2159
+msgid "Purchase date and time"
+msgstr "Dátum a čas nákupu"
+
+#: camptix.php:2160
+msgid "Purchase day of week"
+msgstr "Nákup v dni týždna"
+
+#: camptix.php:2305
+msgid ""
+"<strong>Woah!</strong> The revenue total does not match with the "
+"transactions total. The actual total is: <strong>%s</strong>. Something "
+"somewhere has gone wrong, please report this."
+msgstr ""
+"<strong>Hups!</strong> Celkový príjem sa nerovná súčtu platieb. Aktuálny "
+"súčet je: <strong>%s</strong>. Niekde sa stala chyba, prosím nahláste ju."
+
+#: camptix.php:2309
+msgid "Revenue report generated in %s seconds."
+msgstr "Report príjmov vytvorený za %s sekúnd"
+
+#: camptix.php:2423 camptix.php:2432
+msgid "Sold"
+msgstr "Predané"
+
+#: camptix.php:2425 camptix.php:2434
+msgid "Sub-Total"
+msgstr "Medzisúčet"
+
+#: camptix.php:2426 camptix.php:2435
+msgid "Discounted"
+msgstr "Zľavnené"
+
+#: camptix.php:2467
+msgid "Export all attendees data to"
+msgstr "Export všetkých účastníkov do"
+
+#: camptix.php:2472
+msgid "(coming soon)"
+msgstr "(už čoskoro)"
+
+#: camptix.php:2501
+msgid "Format not supported."
+msgstr "Formát nie jepodporovaný"
+
+#: camptix.php:2531
+msgid "Attendee ID"
+msgstr "ID účastníka"
+
+#: camptix.php:2532
+msgid "Ticket Type"
+msgstr "Typ lístka"
+
+#: camptix.php:2535
+msgid "E-mail Address"
+msgstr "Emailová adresa"
+
+#: camptix.php:2537 camptix.php:2851 camptix.php:3802
+msgid "Status"
+msgstr "Stav"
+
+#: camptix.php:2538 camptix.php:3818
+msgid "Transaction ID"
+msgstr "ID transakcie"
+
+#: camptix.php:2669
+msgid "Please enter a subject line."
+msgstr "Prosím zadajte predmet"
+
+#: camptix.php:2672
+msgid "Please enter the e-mail body."
+msgstr "Prosím zadajte obsah emailu"
+
+#: camptix.php:2675
+msgid "Please select at least one ticket group."
+msgstr "Prosím vyberte aspoň jednu skupinu lístka."
+
+#: camptix.php:2719
+msgid "Your e-mail job has been queued for %s recipients."
+msgstr "Počet príjemcov na odosielanie emailov: %s."
+
+#: camptix.php:2753
+msgid "To"
+msgstr "Komu"
+
+#: camptix.php:2768 camptix.php:2848
+msgid "Subject"
+msgstr "Predmet"
+
+#: camptix.php:2774
+msgid "Message"
+msgstr "Správa"
+
+#: camptix.php:2778
+msgid "You can use the following shortcodes:"
+msgstr "Môžete použiť nasledujúce krátke kódy"
+
+#: camptix.php:2822 camptix.php:2825
+msgid "Preview"
+msgstr "Náhľad"
+
+#: camptix.php:2824
+msgid "Send E-mails"
+msgstr "Odoslať emaily"
+
+#: camptix.php:2843
+msgid "History"
+msgstr "História"
+
+#: camptix.php:2849
+msgid "Updated"
+msgstr "Aktualizované"
+
+#: camptix.php:2849
+msgid "%1$s at %2$s"
+msgstr "%1$s o %2$s"
+
+#: camptix.php:2850
+msgid "Author"
+msgstr "Autor"
+
+#: camptix.php:2873 camptix.php:2875
+msgid "Refund all transactions"
+msgstr "Refundovať všetky platby"
+
+#: camptix.php:2876
+msgid "Seriously, refund them all"
+msgstr "Naozaj, refundovať všetko"
+
+#: camptix.php:2877
+msgid "I know what I'm doing, please refund"
+msgstr "Viem čo robím, chcem refundovať lístky"
+
+#: camptix.php:2878
+msgid "I know this may result in money loss, refund anyway"
+msgstr "Viem, že stratím peniaze, aj tak chcem refundovať"
+
+#: camptix.php:2879
+msgid "I will not blame Konstantin if something goes wrong"
+msgstr "Nebudem sa vyhovárať na Konštantína ak niečo nepôjde podľa plánu"
+
+#: camptix.php:2887
+msgid "Refund Transactions"
+msgstr "Refundovať platby"
+
+#: camptix.php:2907
+msgid ""
+"CampTix has finished attempting to refund all transactions. The results were:"
+"<br /><br /> &bull;Succeeded: %s<br /> &bull;Failed: %s"
+msgstr ""
+"CampTix dokončil pokus o refundáciu platieb. Výsledok:<br /><br /> &bull;"
+"Počet úspešných refundácií: %s<br /> &bull;Počet neúspešných refundácií: %s"
+
+#: camptix.php:2932
+msgid "Looks like you have missed a checkbox or two. Try again!"
+msgstr ""
+"Vyzerá to, že ste zabudli zaškrtnúť jedno alebo dve políčka. Skúste to znova!"
+
+#: camptix.php:2963
+msgid "A refund job has been queued for %d attendees."
+msgstr "Počet platieb refundovaných účastníkom: %d"
+
+#: camptix.php:2986
+msgid ""
+"A refund job is in progress, with %d attendees left in the queue. Next run "
+"in %d seconds."
+msgstr ""
+"Práve prebieha refundácia. Zostávaj=uci počet účastníkov: %s. Ďaľšie kolo za "
+"%s sekúnd"
+
+#: camptix.php:3018
+msgid "None of the enabled payment modules support refunding all tickets."
+msgstr "Žiadna z platobných metód nemá povolenú refundáciu."
+
+#: camptix.php:3148
+msgid "Ticket Options"
+msgstr "Nastavenia lístka"
+
+#: camptix.php:3153
+msgid "Reservations"
+msgstr "Rezervácie"
+
+#: camptix.php:3155
+msgid "Coupon Options"
+msgstr "Nastavenia kupónu"
+
+#: camptix.php:3158 camptix.php:5085
+msgid "Attendee Information"
+msgstr "Informácie o účastníkovi"
+
+#: camptix.php:3160
+msgid "Publish"
+msgstr "Publikovať"
+
+#: camptix.php:3179
+msgid "Save"
+msgstr "Uložiť"
+
+#: camptix.php:3190
+msgid "Status:"
+msgstr "Stav:"
+
+#: camptix.php:3195
+msgid "Unknown status"
+msgstr "Neznámy stav"
+
+#: camptix.php:3201
+msgid "M j, Y @ G:i"
+msgstr "j. F Y G:i"
+
+#: camptix.php:3203
+msgid "Created: <b>%1$s</b>"
+msgstr "Vytvoril: <b>%1$s</b>"
+
+#: camptix.php:3206
+msgid "Publish <b>immediately</b>"
+msgstr "Publikovať <b>okamžite</b>"
+
+#: camptix.php:3222
+msgid "Edit Attendee Info"
+msgstr "Upraviť informácie účastníka"
+
+#: camptix.php:3227
+msgid "Hide from public attendees list"
+msgstr "Schovať pred verejným zoznamom účastníkov"
+
+#: camptix.php:3241
+msgid "Delete Permanently"
+msgstr "Zmazať natrvalo"
+
+#: camptix.php:3243
+msgid "Move to Trash"
+msgstr "Presunúť do koša"
+
+#: camptix.php:3250
+msgid "Save Attendee"
+msgstr "Uložiť účastníka"
+
+#: camptix.php:3271
+msgid "Price:"
+msgstr "Cena:"
+
+#: camptix.php:3276
+msgid ""
+"You can not change the price because one or more tickets have already been "
+"purchased."
+msgstr "Nemôžete zmeniť cenu pretože už bol predaný aspoň 1 lístok"
+
+#: camptix.php:3280 camptix.php:3735
+msgid "Quantity:"
+msgstr "Množstvo:"
+
+#: camptix.php:3283
+msgid ""
+"You can not set the quantity to less than the number of purchased tickets."
+msgstr "Nemôžete nastaviť menšie množstvo než je počet predaných lístkov"
+
+#: camptix.php:3298 camptix.php:3772
+msgid "Leave blank for auto-availability"
+msgstr "Nechajte prázdne pre automatickú dostupnosť"
+
+#: camptix.php:3301 camptix.php:3775
+msgid "Start:"
+msgstr "Začiatok:"
+
+#: camptix.php:3305 camptix.php:3779
+msgid "End:"
+msgstr "Koniec:"
+
+#: camptix.php:3406
+msgid "Name"
+msgstr "Meno"
+
+#: camptix.php:3409
+msgid "Token"
+msgstr "Kľúč"
+
+#: camptix.php:3410
+msgid "Actions"
+msgstr "Akcie"
+
+#: camptix.php:3421
+msgid "Release"
+msgstr "Vydanie"
+
+#: camptix.php:3422
+msgid "Cancel"
+msgstr "Zrušiť"
+
+#: camptix.php:3431
+msgid "Create a New Reservation:"
+msgstr "Vytvoriť novú rezerváciu:"
+
+#: camptix.php:3434
+msgid "Reservation Name"
+msgstr "Meno rezervácie"
+
+#: camptix.php:3438
+msgid "Create Reservation"
+msgstr "Vytvorenie rezervácie"
+
+#: camptix.php:3440
+msgid ""
+"If you create a reservation with more quantity than available by the total "
+"ticket quantity, we'll bump the ticket quantity for you."
+msgstr ""
+"Ak vytvoríte rezerváciu pre viac lístkov než je dostupných, automaticky "
+"zvýšime množstvo lístkov."
+
+#: camptix.php:3450
+msgid "Text input"
+msgstr "Textový vstup"
+
+#: camptix.php:3451
+msgid "Text area"
+msgstr "Textová oblasť"
+
+#: camptix.php:3452
+msgid "Dropdown select"
+msgstr "Rozbaľovacie menu"
+
+#: camptix.php:3453
+msgid "Radio select"
+msgstr "Prepínací výber"
+
+#: camptix.php:3454
+msgid "Checkbox"
+msgstr "Zaškrtávacie políčko"
+
+#: camptix.php:3542
+msgid "Default"
+msgstr "Základné"
+
+#: camptix.php:3545
+msgid "First name, last name and e-mail address"
+msgstr "Meno, priezvisko, a emailová adresa"
+
+#: camptix.php:3559
+msgid "Add a %1$s or an %2$s."
+msgstr "Pridať %1$s alebo  %2$s."
+
+#: camptix.php:3560
+msgid "new question"
+msgstr "nová otázka"
+
+#: camptix.php:3561
+msgid "existing one"
+msgstr "exitujúca"
+
+#: camptix.php:3572
+msgid "Add a new question:"
+msgstr "Pridať novú otázku:"
+
+#: camptix.php:3577
+msgid "Type"
+msgstr "Typ"
+
+#: camptix.php:3597
+msgid "Values"
+msgstr "Hodnoty"
+
+#: camptix.php:3601
+msgid "Separate multiple values with a comma."
+msgstr "Oddeľte viac hodnôt čiarkou"
+
+#: camptix.php:3606
+msgid "Required"
+msgstr "Povinné"
+
+#: camptix.php:3609
+msgid "This field is required"
+msgstr "Toto pole je povinné"
+
+#: camptix.php:3614
+msgid "Add Question"
+msgstr "Pridať otázku"
+
+#: camptix.php:3615 camptix.php:3652
+msgid "Close"
+msgstr "Zavrieť"
+
+#: camptix.php:3616 camptix.php:3653
+msgid "Do not forget to update the ticket post to save changes."
+msgstr "Nezabudnite aktualizovať príspevok lístka pre uloženie zmien"
+
+#: camptix.php:3622
+msgid "Add an existing question:"
+msgstr "Pridať existujúcu otázku"
+
+#: camptix.php:3626
+msgid "Available Questions"
+msgstr "Dostupné otázky"
+
+#: camptix.php:3651
+msgid "Add Selected"
+msgstr "Pridať vybrané"
+
+#: camptix.php:3663
+msgid "Move"
+msgstr "Presunúť"
+
+#: camptix.php:3664
+msgid "Edit"
+msgstr "Upraviť"
+
+#: camptix.php:3665
+msgid "Remove"
+msgstr "Odstrániť"
+
+#: camptix.php:3718
+msgid "Discount:"
+msgstr "Zľava:"
+
+#: camptix.php:3731
+msgid ""
+"You can not change the discount because one or more tickets have already "
+"been purchased using this coupon."
+msgstr "Nemôžete zmeniť zľavu pretože už bol predaný aspoň 1 lístok s kupónom"
+
+#: camptix.php:3738
+msgid "The quantity can not be less than the number of coupons already used."
+msgstr "Nemôžete nastaviť menšie množstvo než je počet použitých kupónov."
+
+#: camptix.php:3742
+msgid "Applies to:"
+msgstr "Platí pre:"
+
+#: camptix.php:3744
+msgid "All"
+msgstr "Všetky"
+
+#: camptix.php:3807
+msgid "Edit Token"
+msgstr "Upraviť kľúč"
+
+#: camptix.php:3808
+msgid "Access Token"
+msgstr "Prístupový kľúč"
+
+#: camptix.php:3811
+msgid "Transaction"
+msgstr "Platba"
+
+#: camptix.php:4256
+msgid "Discounted %s"
+msgstr "Zľavnené %s"
+
+#: camptix.php:4259
+msgid "Discounted %s%%"
+msgstr "Zľavnené %s%%"
+
+#: camptix.php:4409
+msgid "An error has occurred."
+msgstr "Nastala chyba."
+
+#: camptix.php:4426
+msgid "Sorry, but the coupon you have entered seems to be invalid or expired."
+msgstr "Ľutujeme, váš kupón je neplatný alebo mu vypršala platnosť."
+
+#: camptix.php:4429
+msgid ""
+"Sorry, but the reservation you are trying to use seems to be invalid or "
+"expired."
+msgstr "Ľutujeme, vaša rezervácie je neplatná alebo jej vypršala platnosť."
+
+#: camptix.php:4432
+msgid ""
+"Sorry, but there are currently no tickets for sale. Please try again later."
+msgstr "Ľutujeme, všetky lístky sú vypredané. Prosím skúste neskôr."
+
+#: camptix.php:4435
+msgid "You are using a reservation, cool!"
+msgstr "Používate rezerváciu, super!"
+
+#: camptix.php:4439
+msgid "Please select at least one ticket."
+msgstr "Prosím vyberte aspoň jeden lístok."
+
+#: camptix.php:4442
+msgid ""
+"It looks like somebody took that last ticket before you, sorry! You try a "
+"different ticket."
+msgstr "Zdá sa, že vám niekto zobral lístok! Vyskúšajte iný lístok."
+
+#: camptix.php:4445
+msgid "Payment methods have not been configured yet. Please try again later."
+msgstr "Ešte neboli nakonfigurované platobné metódy. Prosím skúste znova."
+
+#: camptix.php:4453
+msgid ""
+"An error has occurred and your payment has failed. Please try again later."
+msgstr "Nastala chyba a vaša platba neprebehla úspešne. Prosím skúste znova."
+
+#: camptix.php:4457
+msgid ""
+"It looks like somebody grabbed those tickets before you could complete the "
+"purchase. You have not been charged, please try again."
+msgstr ""
+"Zdá sa, že niekto kúpil tieto lístky než ste stihli dokončiť platbu. Prosím "
+"prezrite si objednávku a skúste to znova."
+
+#: camptix.php:4460
+msgid ""
+"It looks like somebody has used the coupon before you could complete your "
+"purchase. You have not been charged, please try again."
+msgstr ""
+"Niekto použil rovnaký kupón než ste stihli dokončiť objednávku. Nestiahli "
+"sme vám žiadne prostriedky, skúste to znova."
+
+#: camptix.php:4463
+msgid ""
+"It looks like the coupon you are trying to use has expired before you could "
+"complete your purchase. You have not been charged, please try again."
+msgstr ""
+"Váš kupón pravdepodobne vypršal než ste stihli dokončiť objednávku. "
+"Nestiahli sme vám prostriedky, prosím skúste to znova."
+
+#: camptix.php:4466
+msgid "Your access token does not seem to be valid."
+msgstr "Váš prístupový kľúč nie je platný."
+
+#: camptix.php:4469
+msgid "Your payment has been cancelled. Feel free to try again!"
+msgstr "Vaša platba bola zrušená. Skúste to znova!"
+
+#: camptix.php:4472
+msgid "The edit link you are trying to use is either invalid or has expired."
+msgstr "Odkaz úpravy ktorý chcete použiť je neplatný alebo vypršal."
+
+#: camptix.php:4475
+msgid ""
+"Your refund request can not be processed. Please try again later or contact "
+"support."
+msgstr ""
+"Refundácia nemôže byť spracovaná. Prosím skúste znova alebo kontaktujte "
+"podporu."
+
+#: camptix.php:4478
+msgid ""
+"Sorry, but the reservation you are trying to use has been cancelled or has "
+"expired."
+msgstr "Ľutujeme, vaša rezervácia bola zrušená alebo vypršala."
+
+#: camptix.php:4495 camptix.php:4674
+msgid "Description"
+msgstr "Popis"
+
+#: camptix.php:4569 camptix.php:4717
+msgid "Coupon Applied: <strong>%s</strong>, %s discount"
+msgstr "Použitý kupón: <strong>%s</strong>, zľava %s"
+
+#: camptix.php:4571
+msgid "Click here to enter a coupon code"
+msgstr "Prosím kliknite sem pre zadanie kupónu"
+
+#: camptix.php:4574
+msgid "Apply Coupon"
+msgstr "Použiť kupón"
+
+#: camptix.php:4594
+msgid "Register &rarr;"
+msgstr "Pokračovať na registráciu"
+
+#: camptix.php:4621
+msgid ""
+"It looks like you have chosen more tickets than we have left! We have "
+"stripped the extra ones."
+msgstr ""
+"Vybrali ste si viac lístkov než je dostupných! Lístky navyše sme odobrali."
+
+#: camptix.php:4623
+msgid ""
+"It looks like somebody purchased a ticket before you could finish your "
+"purchase. Please review your order and try again."
+msgstr ""
+"Zdá sa, že niekto kúpil váš lístok než ste stihli dokončiť platby. Prosím "
+"prezrite si objednávku a skúste to znova."
+
+#: camptix.php:4627
+msgid ""
+"You have exceeded the coupon limits, so we have stripped down the extra "
+"tickets."
+msgstr "Prekročili ste limit kupónov, odobrali sme vám nedostupné lístky."
+
+#: camptix.php:4629
+msgid ""
+"It looks like somebody used the same coupon before you could finish your "
+"purchase. Please review your order and try again."
+msgstr ""
+"Niekto použil rovnaký kupón než ste stihli dokončiť objednávku. Prosím "
+"prezrite si objednávku a skúste to znova."
+
+#: camptix.php:4632 camptix.php:5037 camptix.php:5053
+msgid "Please fill in all required fields."
+msgstr "Prosím vyplňte všetky polia."
+
+#: camptix.php:4635
+msgid "The e-mail address you have entered seems to be invalid."
+msgstr "Zadaná emailová adresa nie je platná."
+
+#: camptix.php:4638
+msgid "The chosen receipt e-mail address is either empty or invalid."
+msgstr "Zadaná emailová adresa je neplatná alebo je pole prázdne."
+
+#: camptix.php:4641
+msgid ""
+"A payment error has occurred, looks like chosen payment method is not "
+"responding. Please try again later."
+msgstr ""
+"Nastala chyba a zlyhala vaša platba. Platobná metóda neodpovedá. Prosím "
+"skúste znova."
+
+#: camptix.php:4644
+msgid "You have selected an invalid payment method. Please try again."
+msgstr "Vybrali ste neplatnú platobnú metódu. Prosím skúste znova."
+
+#: camptix.php:4647
+msgid "Looks like you're trying to use an invalid or expired coupon."
+msgstr "Kupón ktorý chcete použiť je neplatný alebo vypršal."
+
+#: camptix.php:4670
+msgid "Order Summary"
+msgstr "Sumár obejdnávky"
+
+#: camptix.php:4675
+msgid "Per Ticket"
+msgstr "Na lístok"
+
+#: camptix.php:4725
+msgid "Registration Information"
+msgstr "Informácie o registrácii"
+
+#: camptix.php:4761
+msgid "Send the receipt to this address"
+msgstr "Odoslať potvrdenie na tento email"
+
+#: camptix.php:4800
+msgid "Receipt"
+msgstr "Potvrdenie"
+
+#: camptix.php:4803
+msgid "E-mail the receipt to"
+msgstr "Odoslať potvrdenie emailom na"
+
+#: camptix.php:4821
+msgid "Checkout &rarr;"
+msgstr "Kúpiť lístok"
+
+#: camptix.php:4823
+msgid "Claim Tickets &rarr;"
+msgstr "Žiadať lístky"
+
+#: camptix.php:4878
+msgid "Please note that the payment for this set of tickets is still pending."
+msgstr "Platba pre túto sadu lístkov stále trvá. "
+
+#: camptix.php:4885
+msgid "Tickets Summary"
+msgstr "Sumár lístkov"
+
+#: camptix.php:4886
+msgid "Purchase Date"
+msgstr "Dátum nákupu"
+
+#: camptix.php:4941
+msgid "Edit information"
+msgstr "Upraviť informácie"
+
+#: camptix.php:4958
+msgid "Change of plans? Made a mistake? Don't worry, you can %s."
+msgstr "Zmena plánov? Spravili ste chybu? Nebojte sa, môžete %s."
+
+#: camptix.php:4958
+msgid "request a refund"
+msgstr "si vyžiadať refundáciu"
+
+#: camptix.php:5003
+msgid "This attendee is not published."
+msgstr "Účastník nie je publikovaný."
+
+#: camptix.php:5017
+msgid "Please note that the payment for this ticket is still pending."
+msgstr "Platba pre tento lístok stále trvá."
+
+#: camptix.php:5040
+msgid "You have entered an invalid e-mail, please try again."
+msgstr "Zadali ste neplatný email,prosím skúste znova."
+
+#: camptix.php:5058
+msgid "Your information has not been changed!"
+msgstr "Vaša informácia nebola zmenená!"
+
+#: camptix.php:5073
+msgid "Your information has been saved!"
+msgstr "Vaša informácia bola uložená!"
+
+#: camptix.php:5126
+msgid "Save Attendee Information"
+msgstr "Uložiť informácie o účastníkovi"
+
+#: camptix.php:5223
+msgid "You have to agree to the terms to request a refund."
+msgstr "Musíte súhlasiť s podmienkami pre vyžiadanie refundácie."
+
+#: camptix.php:5248
+msgid "Your tickets have been successfully refunded."
+msgstr "Vaše lístky boli úspešne refundované."
+
+#: camptix.php:5251
+msgid "Can not refund the transaction at this time. Please try again later."
+msgstr "Nemôžeme práve refundovať transakciu. Prosím skúste znova."
+
+#: camptix.php:5263
+msgid "Refund Request"
+msgstr "Vyžiadanie refundácie"
+
+#: camptix.php:5268
+msgid "Request Details"
+msgstr "Detaily vyžiadania"
+
+#: camptix.php:5276
+msgid "Original Payment"
+msgstr "Pôvodná platba"
+
+#: camptix.php:5280
+msgid "Purchased Tickets"
+msgstr "Zakúpené lístky"
+
+#: camptix.php:5288
+msgid "Refund Amount"
+msgstr "Refundovaná suma"
+
+#: camptix.php:5292
+msgid "Refund Reason"
+msgstr "Dôvod refundácie"
+
+#: camptix.php:5298
+msgid ""
+"Refunds can take up to several days to process. All of the tickets you "
+"purchased in the original transaction will be cancelled. We are not able to "
+"provide partial refunds and/or refunds to a different account than the "
+"original purchaser. You must agree to these terms before requesting a refund."
+msgstr ""
+"Refundácia môže trvať niekoľko dní. Všetky lístky zakúpené pôvodnou "
+"transakciou budú zrušené. Nie sme schopní zabezpečiť čiastočné refundácie, "
+"ani previesť prostriedky na iný účet. Musíte súhlasiť s týmito podmienkami "
+"pri žiadaní refundácie."
+
+#: camptix.php:5300
+msgid "I agree to the above terms"
+msgstr "Súhlasím s podmienkami"
+
+#: camptix.php:5301
+msgid "Send Request"
+msgstr "Odoslať žiadosť"
+
+#: camptix.php:6347
+msgid "Coupon used: %s"
+msgstr "Kupón použitý: %s"
+
+#: camptix.php:6349
+msgid "Total: %s"
+msgstr "Celkom: %s"
+
+#: camptix.php:6350
+msgid "Let us know if you have any questions!"
+msgstr "Dajte nám vedieť, ak máte otázky!"
+
+#: camptix.php:6371 camptix.php:6429
+msgid "Your Ticket to %s"
+msgstr "Váš lístok na %s"
+
+#: camptix.php:6391 camptix.php:6470
+msgid "Your Refund for %s"
+msgstr "Vaša refundácia za %s"
+
+#: camptix.php:6423
+msgid ""
+"Your payment status is: %s. You will receive a notification e-mail once your "
+"payment is completed."
+msgstr ""
+"Stav vašej platby: %s. Keď vaša platba bude dokončená, budete informovaný "
+"emailom."
+
+#: camptix.php:6440
+msgid "Your Tickets to %s"
+msgstr "Vaše lístky na %s"
+
+#: camptix.php:6452 camptix.php:6461
+msgid "Your Payment for %s"
+msgstr "Vaša platba za %s"
+
+#: camptix.php:6589
+msgid ""
+"CampTix is in <strong>archive mode</strong>. Please do not make any changes."
+msgstr ""
+"CampTix je v <strong>móde archivácie</strong>. Prosím nerobte žiadne zmeny."
+
+#: camptix.php:6722
+msgid "Please register your CampTix addons before CampTix is initialized."
+msgstr "Prosím registrujte doplnky CampTix pred spustením modulu."
+
+#: camptix.php:6727
+msgid "The CampTix addon you are trying to register does not exist."
+msgstr "Camptix modul ktorý sa snažíte registrovať neexistuje."
+
+#: inc/class-camptix-payment-method.php:60
+msgid "Supported currencies: <code>%s</code>."
+msgstr "Podporované meny: "
+
+#: inc/class-camptix-payment-method.php:67
+msgid "Disabled"
+msgstr "Zakázané"
+
+#: inc/class-camptix-payment-method.php:69
+msgid "%s is not supported by this payment method."
+msgstr "%s nie je podporovaná platobná metóda."
+
+#. Plugin Name of the plugin/theme
+msgid "CampTix Event Ticketing"
+msgstr "CampTix lístky k eventom"
+
+#. Plugin URI of the plugin/theme
+#. Author URI of the plugin/theme
+msgid "http://wordcamp.org"
+msgstr "http://wordcamp.org"
+
+#. Description of the plugin/theme
+msgid "Simple and flexible event ticketing for WordPress."
+msgstr "Jednoduchý a flexibilný modul predaja lístkov pre WordPress"
+
+#. Author of the plugin/theme
+msgid "Automattic"
+msgstr "Automattic"

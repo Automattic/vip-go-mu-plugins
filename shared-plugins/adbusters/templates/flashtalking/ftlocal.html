@@ -1,0 +1,53 @@
+<html>
+<head>
+</head>
+<body>
+<script>
+var qs = {};
+function init(){
+	function loadScript(url){
+		if(!/^https?:\/\/(cdn|secure)\.flashtalking\.com\//.test(url)){
+			return;
+		}
+		var adScript = document.createElement("script");
+		adScript.src=url;
+		document.body.appendChild(adScript);
+	}
+	var querystring=decodeURIComponent(location.search.substring(1,location.search.length)),
+	args = querystring.split('&'),
+	qso = {},
+	pair,temp0,temp1;
+	for (var i=0;i<args.length;i++)
+	{
+		var pair = args[i].split('=');
+		if (pair.length > 1){
+			for (var i2=2;i2<pair.length;i2++)
+			{
+				pair[1] += "=" + pair[i2];
+			}
+		}
+		temp = unescape(pair[0]).split('+');
+		temp0 = temp.join(' ');
+		temp = unescape(pair[1]).split('+');
+		temp1 = temp.join(' ');
+		qso[temp0]=temp1;
+	}
+	qs.get=function(key,def){
+		return ((typeof qso[key]=="undefined")?def:qso[key]);
+	};
+	loadScript(qs.get("ifsrc",""));
+}
+if(window!=top){
+	try{
+		if(document.domain==parent.document.domain){
+			init();
+		}
+	}catch(e){
+		if(document.domain==parent.parent.document.domain){
+			init();
+		}
+	}
+}
+</script>
+</body>
+</html>

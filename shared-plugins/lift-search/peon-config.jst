@@ -1,0 +1,36 @@
+{
+    "jshint": {
+        "options": {
+            "curly": true,
+            "eqeqeq": true,
+            "eqnull": true,
+            "browser": true,
+            "plusplus": true,
+            "undef": true,
+            "unused": true,
+            "trailing": true,
+            "globals": {
+                "jQuery": true,
+                "$": true,
+                "ajaxurl": true,
+								"Backbone": true,
+								"_": true
+            },
+						"expr": false
+        },
+        "all": [
+            "js/admin.js",
+						"lift-search-form.js"
+        ]
+    },
+		"uglify": {
+			"options" : {
+				"mangle" : false
+			},
+			"all": {
+				"files": {
+					"js/admin.min.js": ["js/admin.js"]
+				}
+			}
+		}
+}

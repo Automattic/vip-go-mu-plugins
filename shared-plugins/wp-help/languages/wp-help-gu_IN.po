@@ -1,0 +1,272 @@
+# Translation of WP Help in Gujarati
+# This file is distributed under the same license as the WP Help package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2012-07-24 05:06:30+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/0.1\n"
+"Project-Id-Version: WP Help\n"
+
+#: wp-help.php:273
+msgid "Parent:"
+msgstr "મૂળ"
+
+#: templates/list-documents.php:7
+msgctxt "Button with limited space"
+msgid "Settings"
+msgstr "સેટિંગ્સ"
+
+#: templates/list-documents.php:8
+msgctxt "Button with limited space"
+msgid "Add New"
+msgstr "નવો ઉમેરો"
+
+#: templates/list-documents.php:8 wp-help.php:268
+msgctxt "verb. Button with limited space"
+msgid "Manage"
+msgstr "વ્યવસ્થિત કરો"
+
+#: templates/list-documents.php:16
+msgid "There are no help documents."
+msgstr "કોઈ માહિતી દસ્તાવેજ ઉપલબ્ધ નથી "
+
+#: templates/list-documents.php:18
+msgid "There are no help documents yet."
+msgstr "હજુ સુધી કોઈ માહિતી દસ્તાવેજ ઉપલબ્ધ નથી"
+
+#: templates/list-documents.php:36
+msgid "edit"
+msgstr "ફેરફાર કરો"
+
+#: templates/list-documents.php:39
+msgid "The requested help document could not be found."
+msgstr "વિનંતી કરાયેલ માહિતી દસ્તાવેજ હજુ સુધી મળી શક્યો નથી "
+
+#: templates/settings.php:7
+msgid "WP Help Settings"
+msgstr "વર્ડપ્રેસ હેલ્પ સેટિંગ્સ"
+
+#: templates/settings.php:9
+msgid "Headlines"
+msgstr "શીર્ષક"
+
+#: templates/settings.php:11
+msgid "The main WP Help headline and document listing headline are directly editable."
+msgstr "મુખ્ય શીર્ષક અને દસ્તાવેજ યાદીના શીર્ષકમાં સીધો ફેરફાર થયી શકે છે"
+
+#: templates/settings.php:13
+msgid "Menu Location"
+msgstr "મેનુ સ્થાન"
+
+#: templates/settings.php:15
+msgid "Display the help documents menu item:"
+msgstr "માહિતી દસ્તાવેજ ની મેનુ વસ્તુ બતાવો"
+
+#: templates/settings.php:17
+msgid "as a Dashboard submenu"
+msgstr "એક ડેશબોર્ડના ઉપમેનુ તરીકે"
+
+#: templates/settings.php:18
+msgid "above the Dashboard menu"
+msgstr "ડેશબોર્ડ મેનુની ઉપર"
+
+#: templates/settings.php:19
+msgid "below the Dashboard menu"
+msgstr "ડેશબોર્ડ મેનુની નીચે"
+
+#: templates/settings.php:20
+msgid "at the bottom"
+msgstr "તળિયે"
+
+#: templates/settings.php:23
+msgctxt "noun, h3 heading about synchronization"
+msgid "Sync Source"
+msgstr "સીન્ક્રોનાઈઝ સૌર્સ"
+
+#: templates/settings.php:25
+msgid "To treat this install as a source, use this secret URL:"
+msgstr "આ ઇન્સ્ટોલને સૌર્સ તરીકે ગણવા માટે, આ ખાનગી યુઆરએલનો ઉપયોગ કરો"
+
+#: templates/settings.php:27
+msgid "Sync Pull"
+msgstr "દસ્તાવેજનો સમન્વય"
+
+#: templates/settings.php:29
+msgid "Pull in help documents from this WP Help secret URL:"
+msgstr "આ WP હેલ્પ ખાનગી યુ આર એલ થી માહિતી દસ્તાવેજ મેળવો."
+
+#: templates/settings.php:31
+msgid "Note:"
+msgstr "નોંધ:"
+
+#: templates/settings.php:33
+msgid "Sync pull refreshes automatically once a day."
+msgstr "દસ્તાવેજનો સમન્વય દરરોજ એક સમયે આપો આપ તાજો થાય છે."
+
+#: templates/settings.php:34
+msgid "You can manually refresh by saving the setting again."
+msgstr "આ સેટિંગ્સને કાયમી કરી તમે જાતે રીફ્રેશ કરી શકો છો."
+
+#: templates/settings.php:35
+msgid "Synced documents cannot be modified locally while syncing is still enabled."
+msgstr "સીન્કરોનાઈજિંગ ચાલુ હોય ત્યાં સુધી તમે સ્થાનિક સીન્કરોનાઈઝડ દસ્તાવેજોમાં ફેરફાર કરી નહિ શકો."
+
+#: templates/settings.php:38
+msgid "Save Changes"
+msgstr "ફેરફાર કાયમી કરો"
+
+#: templates/settings.php:38
+msgid "Cancel"
+msgstr "રદ કરો"
+
+#: wp-help.php:108
+msgctxt "post type label"
+msgid "Publishing Help"
+msgstr "પ્રકાશન માહિતી"
+
+#: wp-help.php:125
+msgid "Help Documents"
+msgstr "માહિતી દસ્તાવેજો"
+
+#: wp-help.php:126
+msgid "Help Document"
+msgstr "માહિતી દસ્તાવેજ"
+
+#: wp-help.php:127
+msgid "Add New Help Document"
+msgstr "નવો માહિતી દસ્તાવેજ ઉમેરો"
+
+#: wp-help.php:128
+msgid "Edit Help Document"
+msgstr "માહિતી દસ્તાવેજમાં ફેરફાર કરો."
+
+#: wp-help.php:129
+msgid "New Help Document"
+msgstr "નવો માહિતી દસ્તાવેજ બનાવો."
+
+#: wp-help.php:130
+msgid "View Help Document"
+msgstr "માહિતી દસ્તાવેજને જુઓ."
+
+#: wp-help.php:131
+msgid "Search Documents"
+msgstr "દસ્તાવેજને શોધો."
+
+#: wp-help.php:132
+msgid "No Help Documents Found"
+msgstr "કોઈ માહિતી દસ્તાવેજ મળ્યા નથી."
+
+#: wp-help.php:133
+msgid "No Help Documents found in Trash"
+msgstr "કોઈ પણ માહિતી દસ્તાવેજ કચરાપેટીમાં નથી."
+
+#: wp-help.php:134
+msgid "Parent Help Document"
+msgstr "મૂળ માહિતી દસ્તાવેજ."
+
+#: wp-help.php:135
+msgctxt "i.e. Add new Help Document"
+msgid "Add New"
+msgstr "નવો ઉમેરો"
+
+#: wp-help.php:136
+msgctxt "i.e. Edit Help Document"
+msgid "Edit"
+msgstr "ફેરફાર કરો"
+
+#: wp-help.php:137
+msgctxt "i.e. View Help Document"
+msgid "View"
+msgstr "જુઓ"
+
+#: wp-help.php:152
+msgctxt "h2 default title"
+msgid "Publishing Help"
+msgstr "પ્રકાશન માટે મદદ."
+
+#: wp-help.php:153
+msgctxt "h3 default title"
+msgid "Help Topics"
+msgstr "મદદ માટેના વિષયો."
+
+#: wp-help.php:170
+msgid "Donate"
+msgstr "ડૉનેટ કરો."
+
+#: wp-help.php:246
+msgid "&mdash; Remote document"
+msgstr "&mdash; દૂર પડેલો  દસ્તાવેજ "
+
+#: wp-help.php:481
+msgid "What are you doing? You&#8217;re going to create an infinite loop!"
+msgstr "તમે શું કરી રહ્યા છો? તમે ક્યારેય પૂરું ના થાય તેવું લૂપ બનાવવા જઈ રહ્યા છો."
+
+#: wp-help.php:485
+msgid "That is not a WP Help URL. Make sure you copied it correctly."
+msgstr "આ વર્ડપ્રેસ હેલ્પ યુ આર એલ નથી. ખાતરી કરીલો કે તમે બરોબર કોપી કરી છે."
+
+#: wp-help.php:574
+msgid "Set as default help document"
+msgstr "મૂળભૂત દસ્તાવેજ તરીકે રાખી દો."
+
+#: wp-help.php:596
+msgid "Document updated. <a href=\"%s\">View document</a>"
+msgstr "દસ્તાવેજ સુધારી લેવામાં આવ્યો છે.  <a href=\"%s\">દસ્તાવેજ જુઓ.</a>"
+
+#: wp-help.php:597
+msgid "Custom field updated."
+msgstr "કસ્ટમ ફિલ્ડ સુધારી લેવામાં આવ્યું છે."
+
+#: wp-help.php:598
+msgid "Custom field deleted."
+msgstr "કસ્ટમ ફિલ્ડને કાઢી નાખવામાં આવ્યું છે."
+
+#: wp-help.php:599
+msgid "Document updated."
+msgstr "દસ્તાવેજ સુધારી લેવામાં આવ્યો છે."
+
+#: wp-help.php:600
+msgid "Document restored to revision from %s"
+msgstr "%sનો દસ્તાવેજ મૂળ સ્વરૂપમાં બદલી દેવામાં આવ્યો છે."
+
+#: wp-help.php:601
+msgid "Document published. <a href=\"%s\">View document</a>"
+msgstr "દસ્તાવેજ પ્રકાશિત કરી લેવામાં આવ્યો છે.  <a href=\"%s\">દસ્તાવેજ જુઓ.</a>"
+
+#: wp-help.php:602
+msgid "Document saved."
+msgstr "દસ્તાવેજ સેવ થયી ગયો છે."
+
+#: wp-help.php:603
+msgid "Document submitted. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr "દસ્તાવેજ મોકલી દેવામાં આવ્યો છે. <a target=\"_blank\" href=\"%s\">દસ્તાવેજ ને ચકાસી જુઓ.</a> "
+
+#: wp-help.php:604
+msgid "Document scheduled for: <strong>%1$s</strong>. <a target=\"_blank\" href=\"%2$s\">Preview document</a>"
+msgstr "દસ્તાવેજ ને  <strong>%1$s</strong> માટે નિશ્ચિત કરી લેવામાં આવ્યો છે. <a target=\"_blank\" href=\"%2$s\">દસ્તાવેજ ને ચકાસી જુઓ.</a>"
+
+#: wp-help.php:604
+msgid "M j, Y @ G:i"
+msgstr "M j, Y @ G:i"
+
+#: wp-help.php:605
+msgid "Document draft updated. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr "દસ્તાવેજના ડ્રાફ્ટને સુધારી લેવામાં આવ્યો છે. <a target=\"_blank\" href=\"%s\">દસ્તાવેજ ને ચકાસી જુઓ.</a>"
+
+msgid "WP Help"
+msgstr "WP હેલ્પ"
+
+msgid "http://txfx.net/wordpress-plugins/wp-help/"
+msgstr "http://txfx.net/wordpress-plugins/wp-help/"
+
+msgid "Administrators can create detailed, hierarchical documentation for the site's authors and editors, viewable in the WordPress admin."
+msgstr "એડ્મિનિસ્ટ્રેટર વેબસાઈટના લેખકો અને સંપાદકો માટે  પૂર્રી માહિતીવાળા અને દર્રજ્જા પ્રમાણે ગોઠવાયેલા દસ્તાવેજો બનાવી શકે છે કે જે વર્ડપ્રેસ એડમીન એરિયામાં જોઈ શકાય છે."
+
+msgid "Mark Jaquith"
+msgstr "માર્ક જેક્વિથ"
+
+msgid "http://coveredwebservices.com/"
+msgstr "http://coveredwebservices.com/"

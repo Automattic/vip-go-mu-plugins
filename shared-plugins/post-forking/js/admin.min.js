@@ -1,0 +1,1 @@
+jQuery(document).ready(function(a){a("#branches").change(function(){a(location).attr("href","post.php?post="+a(this).val()+"&action=edit")})});

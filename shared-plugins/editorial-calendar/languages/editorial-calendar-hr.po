@@ -1,0 +1,141 @@
+# Translation of the WordPress plugin   by .
+# Copyright (C) 2010
+# This file is distributed under the same license as the  package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/editorial-calendar\n"
+"POT-Creation-Date: 2010-01-02 21:49+0000\n"
+"PO-Revision-Date: 2010-01-02 18:01-0500\n"
+"Last-Translator: Zack Grossbart <zack@grossbart.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: edcal.php:53
+msgid "Calendar"
+msgstr "Kalendar"
+
+#: edcal.php:116
+msgid "en-US"
+msgstr "hr-HR"
+
+#: edcal.php:124
+msgid "on"
+msgstr "na"
+
+#: edcal.php:125
+msgid "by"
+msgstr "do"
+
+#: edcal.php:126
+msgid "at"
+msgstr "u"
+
+#: edcal.php:128
+msgid "Sunday"
+msgstr "Nedjelja"
+
+#: edcal.php:129
+msgid "Monday"
+msgstr "Ponedjeljak"
+
+#: edcal.php:130
+msgid "Tuesday"
+msgstr "Utorak"
+
+#: edcal.php:131
+msgid "Wednesday"
+msgstr "Srijeda"
+
+#: edcal.php:132
+msgid "Thursday"
+msgstr "Cetvrtak"
+
+#: edcal.php:133
+msgid "Friday"
+msgstr "Petar"
+
+#: edcal.php:134
+msgid "Saturday"
+msgstr "Subota"
+
+#: edcal.php:136
+msgid "Edit"
+msgstr "Uredi"
+
+#: edcal.php:137
+msgid "Delete"
+msgstr "Izbrisi"
+
+#: edcal.php:138
+msgid "View"
+msgstr "Pregledaj"
+
+#: edcal.php:139
+msgid "Status:"
+msgstr "Status:"
+
+#: edcal.php:140
+msgid "Cancel"
+msgstr "Prekini"
+
+#: edcal.php:141
+msgid "Post Title:"
+msgstr "Naslov clanka:"
+
+#: edcal.php:142
+msgid "Save Draft"
+msgstr "Spremite predlozak"
+
+#: edcal.php:143
+msgid "Save and Edit Draft"
+msgstr "Spremite predlozak i uredite ga"
+
+#: edcal.php:144
+msgid "Add a new post on "
+msgstr "Dodajte novi clanak za "
+
+#: edcal.php:146
+msgid "You are about to delete this post "
+msgstr "Izbrisati cete clanak "
+
+#: edcal.php:147
+msgid "Press cancel to stop, OK to delete."
+msgstr "Kliknite prekini kako biste zaustavili akciju, Ok kako biste izbrisali."
+
+#: edcal.php:149
+msgid "Looks like someone else already moved this post."
+msgstr "Cini se da je netko vec premjestio ovaj clanak."
+
+#: edcal.php:150
+msgid "You do not have permission to edit posts."
+msgstr "Niste ovlasteni za uredivanje clanaka."
+
+#: edcal.php:151
+msgid "Invalid checksum for post. This is commonly a cross-site scripting error."
+msgstr "Invalid checksum za clanak. Ovo je cesta cross-site scripting greska."
+
+#: edcal.php:152
+msgid "There was an error contacting your blog."
+msgstr "Doslo je do greske prilikom kontaktiranja vaseg bloga."
+
+#: edcal.php:184
+msgid "Posts Calendar"
+msgstr "Kalendar clanaka."
+
+#: edcal.php:193
+msgid "Go back four weeks."
+msgstr "Vratite se 4 tjedna unazad."
+
+#: edcal.php:195
+msgid "Skip ahead four weeks."
+msgstr "Preskocite 4 tjedna."
+
+#: edcal.php:200
+msgid "Today"
+msgstr "Danas"
+

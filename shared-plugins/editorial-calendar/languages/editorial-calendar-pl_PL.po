@@ -1,0 +1,203 @@
+# Translation of the WordPress plugin   by .
+# Copyright (C) 2010
+# This file is distributed under the same license as the  package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/editorial-calendar\n"
+"POT-Creation-Date: 2010-04-14 14:22+0000\n"
+"PO-Revision-Date: 2010-04-14 18:44-0500\n"
+"Last-Translator: Zack Grossbart <zack@grossbart.com>\n"
+"Language-Team: POLISH <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Polish\n"
+"X-Poedit-Country: POLAND\n"
+
+#: edcal.php:63
+msgid "Calendar"
+msgstr "Kalendarz"
+
+#: edcal.php:137
+#: edcal.php:349
+msgid "en-US"
+msgstr "pl-PL"
+
+#: edcal.php:145
+msgid "on"
+msgstr "na"
+
+#: edcal.php:146
+msgid "by"
+msgstr "przez"
+
+#: edcal.php:147
+msgid "at"
+msgstr "o"
+
+#: edcal.php:149
+msgid "New Post"
+msgstr "Nowy wpis"
+
+#: edcal.php:151
+msgid " [DRAFT]"
+msgstr "[SZKIC]"
+
+#: edcal.php:152
+msgid "Edit"
+msgstr "Edytuj"
+
+#: edcal.php:153
+msgid "Delete"
+msgstr "Usuń"
+
+#: edcal.php:154
+msgid "View"
+msgstr "Podejrzyj"
+
+#: edcal.php:155
+msgid "Republish"
+msgstr "Publikuj ponownie"
+
+#: edcal.php:156
+msgid "Status:"
+msgstr "Stan:"
+
+#: edcal.php:157
+#: edcal.php:295
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: edcal.php:158
+#: edcal.php:261
+msgid "Title"
+msgstr "Tytuł"
+
+#: edcal.php:159
+#: edcal.php:266
+msgid "Content"
+msgstr "Treść"
+
+#: edcal.php:160
+msgid "Add a new post on "
+msgstr "Dodaj nowy wpis dnia"
+
+#: edcal.php:161
+msgid "New Post - "
+msgstr "Nowy wpis -"
+
+#: edcal.php:162
+msgid "Update"
+msgstr "Zaktualizuj"
+
+#: edcal.php:163
+#: edcal.php:294
+msgid "Schedule"
+msgstr "Zaplanuj"
+
+#: edcal.php:164
+msgid "Save"
+msgstr "Zapisz"
+
+#: edcal.php:165
+#: edcal.php:255
+msgid "Edit Post"
+msgstr "Edytuj wpis"
+
+#: edcal.php:166
+#: edcal.php:287
+msgid "Scheduled"
+msgstr "Zaplanowano"
+
+#: edcal.php:168
+msgid "You are about to delete the post \""
+msgstr "Zamierzasz usunąć wpis \""
+
+#: edcal.php:169
+msgid "\". Press Cancel to stop, OK to delete."
+msgstr "\". Kliknij Anuluj, aby zatrzymać, OK, aby usunąć"
+
+#: edcal.php:171
+msgid "Looks like someone else already moved this post."
+msgstr "Prawdopodobnie ktoś inny przeniósł ten wpis."
+
+#: edcal.php:172
+msgid "You do not have permission to edit posts."
+msgstr "Nie masz uprawnień do edycji tego wpisu."
+
+#: edcal.php:173
+msgid "Invalid checksum for post. This is commonly a cross-site scripting error."
+msgstr "Niewłaściwa suma kontrolna dla wpisu. Jest to zwykle związane z błędem cross-site scripting. "
+
+#: edcal.php:174
+msgid "There was an error contacting your blog."
+msgstr "Nie udało się połączyć z Twoim blogiem."
+
+#: edcal.php:176
+msgid "Screen Options"
+msgstr "Opcje ekranu"
+
+#: edcal.php:177
+msgid "Calendar Options"
+msgstr "Opcje kalendarza"
+
+#: edcal.php:178
+msgid "Apply"
+msgstr "Zatwierdź"
+
+#: edcal.php:179
+msgid "Show "
+msgstr "Pokaż"
+
+#: edcal.php:180
+msgid "weeks at a time"
+msgstr "tygodni jednocześnie"
+
+#: edcal.php:181
+msgid "The calendar can only show between 1 and 5 weeks at a time."
+msgstr "Kalendarz może pokazywać jednocześnie tylko od 1 do 5 tygodni."
+
+#: edcal.php:182
+msgid "Select the number of weeks for the calendar to show."
+msgstr "Wybierz liczbę tygodni, które mają się pokazywać w kalendarzu."
+
+#: edcal.php:226
+msgid "Posts Calendar"
+msgstr "Kalendarz wpisów"
+
+#: edcal.php:235
+msgid "Jump back"
+msgstr "Skocz wstecz"
+
+#: edcal.php:237
+msgid "Skip ahead"
+msgstr "Skocz naprzód"
+
+#: edcal.php:242
+msgid "Jump to today"
+msgstr "Skocz do dzisiaj"
+
+#: edcal.php:242
+msgid "Today"
+msgstr "Dzisiaj"
+
+#: edcal.php:281
+msgid "Time"
+msgstr "Czas"
+
+#: edcal.php:285
+msgid "Status"
+msgstr "Stan"
+
+#: edcal.php:289
+msgid "Draft"
+msgstr "Szkic"
+
+#: edcal.php:544
+#: edcal.php:547
+msgid "Error in deleting..."
+msgstr "Błąd podczas usuwania..."
+

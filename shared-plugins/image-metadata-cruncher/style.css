@@ -1,0 +1,131 @@
+input[type="text"] {
+	width: 100%;
+}
+
+.to-be-removed, .error {
+	background-color: #FF8297
+}
+
+#custom-meta-list {
+	margin-top: 10px;
+	margin-bottom: 10px
+}
+
+#custom-meta-list .col-template {
+	width: 100%
+}
+
+#custom-meta-list .name {
+	width: 200px
+}
+
+button {
+    height: 22px
+}
+
+tr {
+    height: 42px
+}
+
+.hidden-input {
+	display: none;
+	visibility: hidden;
+	height: 0px;
+	line-height: 0px;
+}
+
+input[type="text"], #metadata-cruncher .ce, #metadata-cruncher .example {
+	color: #555;
+	min-height: 20px;
+	border: 1px solid #DFDFDF;
+	vertical-align: middle;
+	border-radius: 10px;
+	background-color: white;
+	font-family: sans-serif;
+	padding: 1px 3px;
+	margin: 1px;
+	outline: 0;
+	line-height: 25px;
+	font-weight: bold;
+}
+
+#metadata-cruncher .example {
+	background-color: #F5F5F5;
+	word-wrap: break-word
+}
+
+#metadata-cruncher .example.ok {
+	background-color: #e7f5c4
+}
+
+#metadata-cruncher .example.err {
+	background-color: #ffccd4
+}
+
+#metadata-cruncher .ce:focus {border-color: #BBB}
+
+/* syntax highlighting */
+
+#metadata-cruncher .tag.group {
+	padding: 4px;
+    border-radius: 6px;
+	background-color: #505050;
+    color: #DDDDDD;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+#metadata-cruncher .group .group {
+    padding: 2px;
+    border-radius: 3px;
+    background-color: #676767;
+}
+
+/* keys */
+#metadata-cruncher .keys .prefix, .tag-list .prefix {color: #75C1FF}
+#metadata-cruncher .keys .colon, .tag-list .colon  {color: #BAE7FF}
+#metadata-cruncher .keys .key .part, .tag-list .part {color: #98C720}
+#metadata-cruncher .keys .key .gt, .tag-list .gt {color: #D1F578}
+
+/* success */
+#metadata-cruncher .success .identifier {color: #FFF15C}
+#metadata-cruncher .success .value {color: #F1AA00}
+#metadata-cruncher .success .dolar {color: #FF7300}
+
+/* default */
+#metadata-cruncher .default .identifier {color: #FF91C2}
+#metadata-cruncher .default .value {color: #ec428c}
+
+/* default */
+#metadata-cruncher .delimiter .identifier {color: #E3C4FF}
+#metadata-cruncher .delimiter .value {color: #BE85F2}
+
+/**
+ * 	list of available tags
+ */
+
+#metadata-cruncher .tag-list > span {
+	background-color: #505050;
+	color: #DDDDDD;
+	font-weight: bold;
+	display: inline-block;
+	border-radius: 6px;
+	padding: 2px;
+	margin: 4px;
+}
+
+#metadata-cruncher .tag-list > span > span {
+	display: inline-block;
+	background-color: #676767;
+	color: #BBBBBB;
+	border-radius: 3px;
+	padding: 2px 6px;
+}
+
+#metadata-cruncher .tag-list .first {
+	width: 220px;
+}
+
+#metadata-cruncher .tag-list .second {
+	width: 70px;
+}

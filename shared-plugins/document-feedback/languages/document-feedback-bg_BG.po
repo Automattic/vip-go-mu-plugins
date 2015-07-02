@@ -1,0 +1,135 @@
+# Copyright (C) 2012 Document Feedback
+# This file is distributed under the same license as the Document Feedback package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Document Feedback 1.0-working\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/document-feedback\n"
+"POT-Creation-Date: 2012-12-28 00:12:05+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2013-01-11 01:36+0200\n"
+"Last-Translator: Mario Peshev <mario@peshev.net>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: document-feedback.php:45
+#: document-feedback.php:49
+msgid "Cheatin’ uh?"
+msgstr "Мамим, а?"
+
+#: document-feedback.php:104
+msgid "Did this document answer your question?"
+msgstr "Този документ отговаря ли на въпроса Ви?"
+
+#: document-feedback.php:105
+msgid "Yes"
+msgstr "Да"
+
+#: document-feedback.php:106
+msgid "No"
+msgstr "Не"
+
+#: document-feedback.php:107
+msgid "Thanks for responding."
+msgstr "Благодарим за отговоря Ви."
+
+#: document-feedback.php:108
+msgid "What details were useful to you?"
+msgstr "Кои детайли бяха полезни за Вас?"
+
+#: document-feedback.php:109
+msgid "What details are you still looking for?"
+msgstr "Какво още бихте желали да научите?"
+
+#: document-feedback.php:110
+msgid "Thanks for the feedback! We'll use it to improve our documentation."
+msgstr "Благодарим за обратната връзка! Тя ще бъде използвана за допълване на документацията."
+
+#. #-#-#-#-#  plugin.pot (Document Feedback 1.0-working)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: document-feedback.php:129
+msgid "Document Feedback"
+msgstr "Отзив за документ"
+
+#: document-feedback.php:245
+msgid "%1$s on %2$s <span class=\"says\">said:</span>"
+msgstr "%1$s на %2$s <span class=\"says\">каза:</span>"
+
+#. translators: 1: date, 2: time
+#: document-feedback.php:250
+msgid "%1$s at %2$s"
+msgstr "%1$s в %2$s"
+
+#: document-feedback.php:269
+msgid "No feedback has been submitted yet."
+msgstr "Все още няма изпратена обратна връзка."
+
+#: document-feedback.php:341
+msgid "You need to be logged in to submit feedback."
+msgstr "Обратната връзка е налична само за вписани потребители."
+
+#: document-feedback.php:345
+msgid "Nonce error. Are you sure you are who you say you are?"
+msgstr "Грешка с код за сигурност. Използвайте правилния метод за оторизиране."
+
+#: document-feedback.php:350
+msgid "Invalid post for feedback."
+msgstr "Невалидна публикация за отзив."
+
+#: document-feedback.php:355
+msgid "Invalid comment."
+msgstr "Невалиден коментар."
+
+#: document-feedback.php:399
+msgid "Invalid comment entry."
+msgstr "Невалиден запис за коментар."
+
+#: document-feedback.php:402
+msgid "Invalid user ID for comment."
+msgstr "Несъществуващ потребител."
+
+#: document-feedback.php:408
+msgid "Comment not updated."
+msgstr "Коментарът не е обновен."
+
+#: document-feedback.php:474
+msgid "positive"
+msgstr "положителен"
+
+#: document-feedback.php:474
+msgid "negative"
+msgstr "отрицателен"
+
+#: document-feedback.php:476
+msgid "Feedback received on '%s'"
+msgstr "Обратна връзка на '%s'"
+
+#: document-feedback.php:477
+msgid "You've received new %1$s feedback from %2$s (%3$s):"
+msgstr "Получихте нов %1$s отзив от %2$s (%3$s):"
+
+#: document-feedback.php:479
+msgid "You can view/edit the document here: "
+msgstr "Може да прегледате/редактирате документа тук:"
+
+#: document-feedback.php:613
+#: document-feedback.php:624
+msgid "Send feedback"
+msgstr "Изпратете отзив"
+
+#. Plugin URI of the plugin/theme
+msgid "http://danielbachhuber.com/plugins/document-feedback/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Close the loop &mdash; get feedback from readers on the documentation you write"
+msgstr "Форма за обратна връзка за публикуване на отзиви за Вашата документация."
+
+#. Author of the plugin/theme
+msgid "Daniel Bachhuber"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://danielbachhuber.com/"
+msgstr ""
+

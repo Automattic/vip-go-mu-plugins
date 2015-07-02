@@ -1,0 +1,47 @@
+#ug-photo-form li {
+	list-style: none;
+}
+.ugc-inner-wrapper .ugc-input-wrapper {
+	min-width: 50%;
+	padding: 5px 0px;
+}
+.ugc-inner-wrapper .ugc-input-wrapper input {
+	display: block;
+}
+.ugc-inner-wrapper .ugc-input-wrapper select {
+	display: block;
+}
+.ugc-inner-wrapper .ugc-input-wrapper label {
+	font-weight: bold;
+}
+.ugc-inner-wrapper .ugc-input-wrapper input[type="text"], .ugc-inner-wrapper .ugc-input-wrapper textarea {
+	width: 100%;
+}
+.ugc-inner-wrapper h2 {
+	padding: 5px 0px;
+}
+.ugc-notice {
+	border: 1px solid;
+	border-radius: 5px;
+	padding: 5px 5px;
+}
+.ugc-notice.success {
+	border-color: #3dbc15;
+/*	background-color: #19D215;
+	color: white;
+	 */
+}
+.ugc-notice.failure {
+	border-color: red;
+}
+
+.ugc-input-wrapper .checkbox-option-wrapper {
+	padding: 3px 0;
+	line-height: 14px;
+}
+
+.ugc-input-wrapper .checkbox-option-wrapper input {
+	float: left; margin-right: 8px;
+}
+
+.ugc-input-wrapper .checkbox-option-wrapper label { font-weight: normal; }

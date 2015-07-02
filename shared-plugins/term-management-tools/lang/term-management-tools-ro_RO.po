@@ -1,0 +1,47 @@
+# Translation of the WordPress plugin Term Management Tools 1.0 by scribu.
+# Copyright (C) 2010 scribu
+# This file is distributed under the same license as the Term Management Tools package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Term Management Tools 1.0\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/tmt\n"
+"POT-Creation-Date: 2011-05-17 00:24:33+00:00\n"
+"PO-Revision-Date: 2011-05-17 03:25+0200\n"
+"Last-Translator: scribu <mail@scribu.net>\n"
+"Language-Team: ROMANIAN <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Romanian\n"
+
+#: term-management-tools.php:40
+msgid "Merge"
+msgstr "Combină"
+
+#: term-management-tools.php:41
+msgid "Change taxonomy"
+msgstr "Schimbă taxonomia"
+
+#: term-management-tools.php:46
+msgid "Set parent"
+msgstr "Setează părinte"
+
+#: term-management-tools.php:100
+msgid "Terms updated."
+msgstr "Termenii au fost actualizați."
+
+#: term-management-tools.php:103
+msgid "Terms not updated."
+msgstr "Termenii nu au fost actualizați."
+
+#: term-management-tools.php:215
+msgid "into: %s"
+msgstr "în: %s"
+
+#: term-management-tools.php:242
+msgid "None"
+msgstr "Fără"
+

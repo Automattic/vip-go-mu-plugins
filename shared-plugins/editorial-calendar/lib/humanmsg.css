@@ -1,0 +1,40 @@
+/*
+	HUMANIZED MESSAGES 1.0
+	idea - http://www.humanized.com/weblog/2006/09/11/monolog_boxes_and_transparent_messages
+	home - http://humanmsg.googlecode.com
+*/
+
+.humanMsg {
+	font: normal 2em Helvetica, Arial, Sans-Serif;
+	letter-spacing: -1px;
+	position: fixed;
+	top: 130px;
+	left: 25%;
+	width: 50%;
+	color: white;
+	background-color: red;
+	text-align: center; 
+	display: none;
+	opacity: 0;
+	z-index: 100000;
+}
+
+.humanMsg .round {
+    border-left: solid 2px white;
+	border-right: solid 2px white;
+    font-size: 1px; height: 2px;
+	}
+
+.humanMsg p {
+	padding: .3em;
+	display: inline;
+    font-size: 1.5em; 
+	}
+
+.humanMsg a {
+	display: none;
+	}
+
+#humanMsgLog {
+    display: none;
+}

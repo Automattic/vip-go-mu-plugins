@@ -1,0 +1,53 @@
+This file lists all of the third-party JavaScript libraries we are using and where they came from.  All of these files are compressed and combined into the edcallib.min.js file.  This compressed file was made with the Google Closure JavaScript compiler.  I haven't checked in that compiler because it is over 4MB and you don't need it for runtime.  I haven't been able to figure out a way to make WordPress's Subversion exclude a file when building a plugin.
+
+languages/date-*.js
+date.extras.js
+This is an open source JavaScript date library that we use to provide and manipulate dates for the calendar.
+http://www.datejs.com/
+MIT License
+
+humanmsg.css
+humanmsg.js
+We use Humanized style error messages when we show concurrency errors and other issues the user might run into when dragging posts.
+http://code.google.com/p/humanmsg/
+Apache License 2.0
+
+jquery.bgiframe.js
+jquery.delegate.js
+jquery.tools.min.js
+JQuery tools supports the scrolling.
+http://flowplayer.org/tools/index.html
+MIT license
+
+jquery.cookie.js
+A nice utility for setting and reading cookies.
+http://plugins.jquery.com/project/Cookie
+MIT license
+
+timePicker.css
+jquery.timepicker.js
+The JQuery time picker shows a nice time picker when you edit the post time.
+http://labs.perifer.se/timedatepicker
+MIT License
+
+json2.js
+We use this library for faster JSON parsing.
+http://www.json.org/js.html
+It is available under the public domain.
+
+sprintf-0.7-beta1.js
+This libraries helps us to PHP style string substitution for localization.
+http://www.diveintojavascript.com/projects/javascript-sprintf
+BSD license
+
+tools.scrollable-1.1.2.js
+tools.scrollable.mousewheel-1.0.1.js
+The scrollable library supports the mouse wheel scrolling and manages the calendar's vertical scrolling.
+http://flowplayer.org/tools/scrollable.html
+MIT License
+
+qunit.js
+qunit.css
+A unit testing framework for the calendar
+http://docs.jquery.com/QUnit
+MIT License

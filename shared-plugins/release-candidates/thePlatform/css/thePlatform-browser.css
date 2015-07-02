@@ -1,0 +1,170 @@
+/* thePlatform Video Manager Wordpress Plugin
+Copyright (C) 2013-2015 thePlatform, LLC
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA. */
+
+.tp-thumb-img {
+    width: 128px;
+    height: 72px;
+}
+
+.tp-nav {
+  height: 30px !important;
+}
+
+#modal-player {
+    position: relative;
+    width: 100%;
+}
+#modal-player:before {
+    content: "";
+    display: block;
+    padding-top: 56.25%;
+}
+#player {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+#modal-player-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+.tp-media.selected {
+    background-color: #D8E8FF !important;
+}
+.tp-media:hover {
+    background-color: #f5f5f5;
+}
+.list-group-item.active {
+    border-color: #dddddd !important;
+    background-color: #f5f5f5 !important;
+    color: #333333 !important;
+    font-size: 16px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 500;
+    line-height: 1.1;
+}
+.btn-metadata {
+    margin-right: 5px !important;
+}
+.tp-form-group {
+    margin-left: 10px;
+}
+.tp-media-left, .tp-media-right, .tp-media-body {
+    display: table-cell;
+    vertical-align: top;
+}
+.tp-media, .tp-media-body {
+    zoom: 1;
+    overflow: hidden;
+}
+.tp-media-body {
+    width: 100%;
+}
+.tp-media {
+    margin-top: 15px;
+    display: table;
+}
+.tp-media-left, .tp-media>.pull-left {
+    padding-right: 10px;
+}
+.tp-search-form {
+    margin: 10px 0;
+}
+.tp-search-form input, select {
+    margin-right: 5px;
+    max-width: 140px;
+}
+.tp-header {
+    float: left;
+}
+#btn-search {
+    margin-left: 5px;
+}
+#message-panel {
+    width: 99%;
+    padding: 5px;
+}
+#tp-edit-dialog {
+    display: none;
+}
+#selectpick-player-wrapper {
+    float: right;
+    display: inline;
+}
+.tp-media-toolbar {
+    position: fixed;
+    bottom: 0px;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    background: white;
+    left: 0px;
+}
+.tp-media-button-insert {
+    margin-left: 10px !important;
+    float: left !important;
+    margin-top: 15px !important;
+    margin-right: 10px !important;
+}
+.tp-media-toolbar-primary {
+    float: right;
+    height: 100%;
+}
+#media-upload {
+    margin: 0px 15px;
+}
+.wp-filter {
+    margin-bottom: 0px !important;
+}
+#tp-load .spinner {
+  display: block;
+  position: fixed;
+  z-index: 1031;
+  top: 15px;
+  right: 15px;
+}
+
+#media-upload #post-body-content {
+    margin-bottom: 80px;
+}
+
+#tp-load .spinner-icon {
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+
+  border: solid 2px transparent;
+  border-top-color: #29d;
+  border-left-color: #29d;
+  border-radius: 50%;
+
+  -webkit-animation: nprogress-spinner 400ms linear infinite;
+  -moz-animation: nprogress-spinner 400ms linear infinite;
+          animation: nprogress-spinner 400ms linear infinite;
+}
+.tp-field {
+    overflow-wrap: break-word;
+}
+label {
+    margin-right: 5px;
+}

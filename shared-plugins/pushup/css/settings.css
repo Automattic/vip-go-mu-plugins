@@ -1,0 +1,147 @@
+.pushup-notifications-settings .icon-preview {
+	padding: 10px;
+	background-color: #d9d9d9;
+	border: 1px solid #bbb;
+	text-align: center;
+	margin: 10px 10px 10px 0;
+}
+.pushup-notifications-settings .icon-preview .title {
+	font-size: 12px;
+	margin: 0 0 10px 0;
+}
+.pushup-notifications-settings .icon-preview .thumbnail {
+	background-color: #f2f2f2;
+	background: url(../images/grid.gif);
+	width: 128px;
+	height: 128px;
+	outline: 1px solid #c9c9c9;
+	position: relative;
+	cursor: pointer;
+}
+.pushup-notifications-settings .icon-preview .thumbnail img {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+}
+.pushup-notifications-settings .icon-preview .thumbnail .loader {
+	background: url(../images/loader.gif) no-repeat;
+	height: 16px;
+	width: 16px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin: -8px 0 0 -8px;
+	z-index: 100;
+	display: none;
+}
+.pushup-notifications-settings .icon-preview .button {
+	margin: 10px 0 0 0;
+	outline: none;
+}
+.pushup-notifications-settings .icon-preview#icon-16x16 .thumbnail img {
+	margin: -8px 0 0 -8px;
+	height: 16px;
+	width: 16px;
+}
+.pushup-notifications-settings .icon-preview#icon-16x16-2x .thumbnail img {
+	margin: -16px 0 0 -16px;
+	height: 32px;
+	width: 32px;
+}
+.pushup-notifications-settings .icon-preview#icon-32x32 .thumbnail img {
+	margin: -16px 0 0 -16px;
+	height: 32px;
+	width: 32px;
+}
+.pushup-notifications-settings .icon-preview#icon-32x32-2x .thumbnail img {
+	margin: -32px 0 0 -32px;
+	height: 64px;
+	width: 64px;
+}
+.pushup-notifications-settings .icon-preview#icon-128x128 .thumbnail img {
+	margin: -64px 0 0 -64px;
+	height: 128px;
+	width: 128px;
+}
+.pushup-notifications-settings .icon-preview#icon-128x128-2x .thumbnail img {
+	margin: -64px 0 0 -64px;
+	height: 128px;
+	width: 128px;
+}
+
+/** STATUS **/
+
+.settings_page_pushup-settings .pushup-authentication-status:before,
+.settings_page_pushup-settings .pushup-connection-status:before,
+.settings_page_pushup-settings .pushup-domain-status:before {
+	font-family: dashicons;
+	content: "\f159";
+	display: inline-block;
+	font-size: 30px;
+	line-height: 10px;
+	vertical-align: middle;
+	margin: -3px 5px 0 0;
+}
+
+.settings_page_pushup-settings .status-success:before {
+	color: #4F8A10;
+	content: "\f147";
+}
+
+.settings_page_pushup-settings .status-error:before {
+	color: #D8000C;
+	content: "\f158";
+	font-size: 24px;
+	padding: 0 3px;
+}
+
+/** ANALYTICS **/
+
+.pushup-analytics canvas,
+.pushup-analytics div {
+	float: left;
+}
+
+.pushup-analytics div {
+	margin-left: 12px;
+	margin-top: 18px;
+	background-color: rgba(220,220,220,.5);
+	padding: 5px;
+}
+
+.pushup-analytics p.pushup {
+	padding: 5px;
+	margin: 0;
+	font-size: 0.85em;
+	font-weight: bold;
+}
+
+.pushup-analytics p.description {
+	clear: both;
+	margin-top: 8px;
+}
+
+.pushup.Accepted,
+.pushup.AllTime {
+	color: rgba(74,198,143,1);
+}
+
+.pushup.Declined,
+.pushup.ThisMonth {
+	color: #63bde4;
+}
+
+#pushup_custom_prompt_help,
+#pushup_custom_prompt_help .inside {
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
+#pushup_custom_prompt_help li {
+	list-style: square;
+	margin-left: 20px;
+}
+#pushup_custom_prompt_help p,
+#pushup_custom_prompt_help code {
+	font-size: 1em;
+}

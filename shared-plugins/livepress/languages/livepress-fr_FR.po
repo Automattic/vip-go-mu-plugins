@@ -1,0 +1,903 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LivePress\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: LivePress Development <support@livepress.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"Language: Español\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: /home/fernando/workspace/livepress/vagrant-local/www/wp-"
+"plugin\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: php/livepress-admin-bar-status-menu.php:71
+#: php/livepress-admin-settings.php:85 php/livepress-blogging-tools.php:249
+msgid "LivePress"
+msgstr "LivePress"
+
+#: php/livepress-admin-bar-status-menu.php:76
+msgid "LivePress connected."
+msgstr "LivePress conectado."
+
+#: php/livepress-admin-bar-status-menu.php:77
+msgid "LivePress connection error."
+msgstr "Error de conexión de LivePress."
+
+#: php/livepress-admin-settings.php:85 php/livepress-admin-settings.php:367
+msgid "LivePress Settings"
+msgstr "Préférences LivePress"
+
+#: php/livepress-admin-settings.php:98
+msgid "Connection to LivePress"
+msgstr "Connexion à LivePress"
+
+#: php/livepress-admin-settings.php:99
+msgid "Appearance"
+msgstr "Apariencia"
+
+#: php/livepress-admin-settings.php:100
+msgid "Remote Publishing"
+msgstr "Publicación remota"
+
+#: php/livepress-admin-settings.php:103
+msgid "Authorization Key"
+msgstr "Llave de autorización"
+
+#: php/livepress-admin-settings.php:104
+msgid "When using the real-time editor, place new updates on"
+msgstr "Al usar el editor en tiempo real, posicionar nuevas actualizaciones"
+
+#: php/livepress-admin-settings.php:105
+msgid "Readers receive these notifications when you update or publish a post"
+msgstr ""
+"Los lectores reciben estas notificaciones cuando actualizas o publicas un "
+"post"
+
+#: php/livepress-admin-settings.php:106
+msgid "Allow authors to publish via Twitter"
+msgstr "Permitir a los autores publicar a través de Twitter"
+
+#: php/livepress-admin-settings.php:107
+msgid "Allow authors to publish via SMS"
+msgstr "Permitir a los autores publicar a través de SMS"
+
+#: php/livepress-admin-settings.php:108
+msgid "Publish Updates to Twitter"
+msgstr "Publicar Actualizaciones a Twitter"
+
+#: php/livepress-admin-settings.php:117
+msgid "Website not ready for live blogging"
+msgstr "El sitio web no está disponible para blogging en tiempo real"
+
+#: php/livepress-admin-settings.php:119
+msgid "LivePress does not have this website on file as being activated."
+msgstr "LivePress no tiene esto sitio como activado."
+
+#: php/livepress-admin-settings.php:121
+msgid ""
+"Signup or login to a LivePress.com account to manage services for your "
+"websites."
+msgstr ""
+"Regístrese o acceda a una cuenta LivePress.com para gestionar los servicios "
+"para su sitio."
+
+#: php/livepress-admin-settings.php:137
+msgid "Authorization key missing or invalid"
+msgstr "Falta la llave de autorización o es inválida"
+
+#: php/livepress-admin-settings.php:139
+msgid "The authorization key connects this website with LivePress services."
+msgstr ""
+"La llave de autorización conecta a este sitio con los servicios de LivePress."
+
+#: php/livepress-admin-settings.php:141
+#, php-format
+msgid ""
+"Your authorization key can be found in your welcome email or online in your "
+"account at <a href=\"%s\">LivePress.com.</a>"
+msgstr ""
+"Puede encontrar su llave de autorización en su correo de bienvenida o en "
+"línea en su cuenta en <a href=\"%s\">LivePress.com.</a>"
+
+#: php/livepress-admin-settings.php:155
+msgid "LivePress was unable to create a connection."
+msgstr "LivePress no pudo crear una conexión"
+
+#: php/livepress-admin-settings.php:157
+msgid ""
+"We'll keep trying, but check that you're online and that this website is "
+"accessible to others on the internet."
+msgstr ""
+"Seguiremos intentando, pero revise que está en línea y que este sitio esté "
+"accesible para otros en internet."
+
+#: php/livepress-admin-settings.php:168
+msgid "LivePress enabled"
+msgstr "LivePress habilitado"
+
+#: php/livepress-admin-settings.php:170
+msgid "All posts can be live blogged."
+msgstr "Todos los posts pueden ser blogueados en tiempo real."
+
+#: php/livepress-admin-settings.php:172
+msgid "Thank you for using LivePress."
+msgstr "Gracias por usar LivePress."
+
+#: php/livepress-admin-settings.php:183 php/livepress-updater.php:350
+msgid "Check"
+msgstr ""
+
+#: php/livepress-admin-settings.php:190 php/livepress-updater.php:352
+msgid "Key not valid"
+msgstr "Llave no válida"
+
+#: php/livepress-admin-settings.php:193
+msgid "Authenticated!"
+msgstr "¡Autenticado!"
+
+#: php/livepress-admin-settings.php:196
+msgid "Found in your welcome email!"
+msgstr "¡Se encuentra en tu correo de bienvenida!"
+
+#: php/livepress-admin-settings.php:213
+msgid "Top (reverse chronological order, newest first)"
+msgstr "Arriba (order cronológico invertido, los más nuevos primero)"
+
+#: php/livepress-admin-settings.php:219
+msgid "Bottom (chronological order, oldest first)"
+msgstr "Abajo (orden cronológico, los más viejos primero)"
+
+#: php/livepress-admin-settings.php:231
+msgid "Tool-tip style popups"
+msgstr "Ventanas emergentes estilo tooltip"
+
+#: php/livepress-admin-settings.php:233
+msgid "A soft chime (audio)"
+msgstr "Suave campaneo (audio)"
+
+#: php/livepress-admin-settings.php:235
+msgid "Autoscroll to update"
+msgstr "Autoscroll para actualizar"
+
+#: php/livepress-admin-settings.php:242
+msgid "This setting may be removed in favor of a filter hook."
+msgstr "Este ajuste puede ser borrado en favor de un filter hook"
+
+#: php/livepress-admin-settings.php:251 php/livepress-admin-settings.php:260
+msgid "Allow"
+msgstr "Permitir"
+
+#: php/livepress-admin-settings.php:273
+msgid "Authorize"
+msgstr "Autorizar"
+
+#: php/livepress-admin-settings.php:277 php/livepress-updater.php:399
+msgid "Sending out alerts on Twitter account:"
+msgstr "Enviar alertas en cuenta de Twitter:"
+
+#: php/livepress-admin-settings.php:280
+msgid "Click here to change accounts."
+msgstr "Clic aquí para cambiar cuentas."
+
+#: php/livepress-admin-settings.php:316
+msgid "Key is not valid"
+msgstr "La llave no es válida"
+
+#: php/livepress-admin-settings.php:376
+msgid "Sign up for LivePress"
+msgstr "Registrarse para LivePress"
+
+#: php/livepress-admin-settings.php:382
+msgid "I have already activated my LivePress account"
+msgstr "Ya he activado mi cuenta de LivePress"
+
+#: php/livepress-administration.php:177
+msgid "Activate your LivePress account"
+msgstr "Active su cuenta LivePress"
+
+#: php/livepress-administration.php:180
+msgid "Almost done - activate your account to go live with LivePress"
+msgstr "Casi listo - actuve su cuenta para habilitar LivePress"
+
+#: php/livepress-administration.php:228
+msgid ""
+"Can't enable remote post feature, so the remote post updates for this user "
+"will not work."
+msgstr ""
+
+#: php/livepress-administration.php:364
+msgid "Failed to get avatar for "
+msgstr ""
+
+#: php/livepress-administration.php:628
+msgid "To enable the \"Post to twitter\" you still need to "
+msgstr ""
+
+#: php/livepress-administration.php:629
+msgid "authorize the livepress webservice to post in your "
+msgstr ""
+
+#: php/livepress-administration.php:630
+msgid "twitter account, to do it please click on the following "
+msgstr ""
+
+#: php/livepress-administration.php:631
+msgid "link and then on \"Allow\""
+msgstr ""
+
+#: php/livepress-blogging-tools.php:224 php/livepress-blogging-tools.php:225
+msgid "This Post is"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:224 php/livepress-template.php:25
+msgid "LIVE"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:225
+msgid "NOT LIVE"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:226
+msgid "LivePress is Disabled"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:227
+msgid "Turn off live"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:228
+msgid "Turn on live"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:237
+msgid "First update sticky"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:473 php/livepress-blogging-tools.php:496
+#: php/livepress-updater.php:377
+msgid "Comments"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:479
+msgid "Twitter Search"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:485
+msgid "Manage Remote Authors"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:491
+msgid "Author Notes"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:495
+msgid "This post at a glance:"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:497 php/livepress-updater.php:430
+msgid "Remote Authors"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:498 php/livepress-updater.php:375
+msgid "People Online"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:517
+msgid ""
+"These notes are for reference and will not be published. They will be saved "
+"with the post for future reference for sharing with co-authors."
+msgstr ""
+
+#: php/livepress-blogging-tools.php:520 php/livepress-updater.php:382
+msgid "Save"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:521
+msgid "Notes Saved"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:553
+msgid "New comments will be shown here."
+msgstr ""
+
+#: php/livepress-blogging-tools.php:579
+msgid "Updates in real-time using your search terms."
+msgstr ""
+
+#: php/livepress-blogging-tools.php:582
+msgid "Add Search Term"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:584
+msgid "play/pause"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:606
+msgid "All"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:606
+msgid ""
+"tweets from these remote authors will automatically be published as updates "
+"to this blog post until removed.."
+msgstr ""
+
+#: php/livepress-blogging-tools.php:609
+msgid "Account Name"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:610
+msgid "Add Remote Author"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:611
+msgid "Author error: "
+msgstr ""
+
+#: php/livepress-blogging-tools.php:613
+msgid "Done live blogging on this post?"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:614
+msgid "Remove All"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:663
+msgid "New Real-Time Writing Tools!"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:664
+msgid ""
+"Click the above link to expand a set of tools for managing comments, "
+"searching Twitter, adding remote authors, and saving notes. &mdash; All in "
+"real-time!"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:684
+msgid "This Post is LIVE"
+msgstr ""
+
+#: php/livepress-blogging-tools.php:687
+msgid "This Post is NOT LIVE"
+msgstr ""
+
+#: php/livepress-boot.php:121
+msgid "LivePress Status"
+msgstr ""
+
+#: php/livepress-boot.php:166
+msgid "LivePress Real-time Tools"
+msgstr ""
+
+#: php/livepress-communication.php:629
+msgid "Connection refused."
+msgstr ""
+
+#: php/livepress-post-format-controller.php:256
+msgid "(see updates...)"
+msgstr ""
+
+#: php/livepress-template.php:26
+msgid "Receive live updates to<br />this and other posts on<br />this site."
+msgstr ""
+
+#: php/livepress-template.php:27
+msgid "Notifications"
+msgstr ""
+
+#: php/livepress-template.php:28
+msgid "Live Updates"
+msgstr ""
+
+#: php/livepress-template.php:29
+msgid "powered by <a href=\"http://livepress.com\">LivePress</a>"
+msgstr ""
+
+#: php/livepress-template.php:129
+msgid "Show or Hide the Real-Time Editor"
+msgstr ""
+
+#: php/livepress-template.php:130
+msgid "Show"
+msgstr ""
+
+#: php/livepress-template.php:133
+msgid "Real-Time Editor"
+msgstr ""
+
+#: php/livepress-template.php:136
+msgid ""
+"Click \"Show\" to activate the Real-Time Editor and streamline your "
+"liveblogging workflow."
+msgstr ""
+
+#: php/livepress-updater.php:311
+msgid "Error: [USERNAME] isn't a valid Google Talk account"
+msgstr ""
+
+#: php/livepress-updater.php:312
+msgid "Error: [USERNAME] wasn't find in jabber client bot roster"
+msgstr ""
+
+#: php/livepress-updater.php:313 php/livepress-updater.php:314
+msgid "[USERNAME] has been authorized"
+msgstr ""
+
+#: php/livepress-updater.php:315
+msgid "LivePress! error. Try again in a few minutes"
+msgstr ""
+
+#: php/livepress-updater.php:316
+msgid "Authorization request sent to [USERNAME]"
+msgstr ""
+
+#: php/livepress-updater.php:317
+msgid "new updates"
+msgstr ""
+
+#: php/livepress-updater.php:318
+msgid "Refresh"
+msgstr ""
+
+#: php/livepress-updater.php:319
+msgid "to see"
+msgstr ""
+
+#: php/livepress-updater.php:320
+msgid "them"
+msgstr ""
+
+#: php/livepress-updater.php:321
+msgid "Refresh page"
+msgstr ""
+
+#: php/livepress-updater.php:322
+msgid "updated just now"
+msgstr ""
+
+#: php/livepress-updater.php:323
+msgid "updated 1 minute ago"
+msgstr ""
+
+#: php/livepress-updater.php:324
+msgid "updated"
+msgstr ""
+
+#: php/livepress-updater.php:325
+msgid "minutes ago"
+msgstr ""
+
+#: php/livepress-updater.php:326
+msgid "no recent updates"
+msgstr ""
+
+#: php/livepress-updater.php:327
+msgid "Sending error."
+msgstr ""
+
+#: php/livepress-updater.php:328 php/livepress-updater.php:349
+msgid "Sending"
+msgstr ""
+
+#: php/livepress-updater.php:329
+msgid "Unknown error."
+msgstr ""
+
+#: php/livepress-updater.php:330
+msgid "Comment Status"
+msgstr ""
+
+#: php/livepress-updater.php:346
+msgid ""
+"Unexpected result from the LivePress server.  Please contact LivePress "
+"support at support@livepress.com for help."
+msgstr ""
+
+#: php/livepress-updater.php:347
+msgid "Connection problem... Try Again..."
+msgstr ""
+
+#: php/livepress-updater.php:348
+msgid "Authenticated"
+msgstr ""
+
+#: php/livepress-updater.php:351
+msgid "Remove"
+msgstr ""
+
+#: php/livepress-updater.php:353
+msgid "Sending out alerts on Twitter account"
+msgstr ""
+
+#: php/livepress-updater.php:354
+msgid "Failed to check status."
+msgstr ""
+
+#: php/livepress-updater.php:355
+msgid "Checking authorization status"
+msgstr ""
+
+#: php/livepress-updater.php:356
+msgid "Status isn't available yet."
+msgstr ""
+
+#: php/livepress-updater.php:357
+msgid "Internal server error."
+msgstr ""
+
+#: php/livepress-updater.php:358
+msgid "Can't connect to Twitter."
+msgstr ""
+
+#: php/livepress-updater.php:359
+msgid "Can't connect to livepress service."
+msgstr ""
+
+#: php/livepress-updater.php:360
+msgid "Failed for an unknown reason."
+msgstr ""
+
+#: php/livepress-updater.php:361
+msgid "return code"
+msgstr ""
+
+#: php/livepress-updater.php:362
+msgid "A new window should be open to Twitter.com awaiting your login."
+msgstr ""
+
+#: php/livepress-updater.php:363
+msgid "Twitter access unauthorized."
+msgstr ""
+
+#: php/livepress-updater.php:364
+msgid "Start live blogging"
+msgstr ""
+
+#: php/livepress-updater.php:365
+msgid "Stop live blogging"
+msgstr ""
+
+#: php/livepress-updater.php:366
+msgid "readers online"
+msgstr ""
+
+#: php/livepress-updater.php:367
+msgid "live updates posted"
+msgstr ""
+
+#: php/livepress-updater.php:368
+msgid "comments"
+msgstr ""
+
+#: php/livepress-updater.php:369
+msgid "Click to toggle"
+msgstr ""
+
+#: php/livepress-updater.php:370
+msgid "Live Blogging Real-Time Editor"
+msgstr ""
+
+#: php/livepress-updater.php:371
+msgid "off"
+msgstr ""
+
+#: php/livepress-updater.php:372
+msgid "on"
+msgstr ""
+
+#: php/livepress-updater.php:373
+msgid "Private chat"
+msgstr ""
+
+#: php/livepress-updater.php:374
+msgid "Person Online"
+msgstr ""
+
+#: php/livepress-updater.php:376
+msgid "Comment"
+msgstr ""
+
+#: php/livepress-updater.php:378
+msgid "include timestamp and author information"
+msgstr ""
+
+#: php/livepress-updater.php:379
+msgid "Delete Permanently"
+msgstr ""
+
+#: php/livepress-updater.php:380
+msgid "Ctrl+Enter"
+msgstr ""
+
+#: php/livepress-updater.php:381
+msgid "Cancel"
+msgstr ""
+
+#: php/livepress-updater.php:383
+msgid "Push Update"
+msgstr ""
+
+#: php/livepress-updater.php:384
+msgid "Add update"
+msgstr ""
+
+#: php/livepress-updater.php:385
+msgid ""
+"Are you sure you want to cancel your changes? This action cannot be undone."
+msgstr ""
+
+#: php/livepress-updater.php:386
+msgid ""
+"Are you sure you want to delete this update? This action cannot be undone."
+msgstr ""
+
+#: php/livepress-updater.php:387
+msgid "Updates"
+msgstr ""
+
+#: php/livepress-updater.php:388
+msgid "You have unsaved editors open. Discard them?"
+msgstr ""
+
+#: php/livepress-updater.php:389
+msgid "Loading content"
+msgstr ""
+
+#: php/livepress-updater.php:390
+msgid "Double added updates. Not supported now."
+msgstr ""
+
+#: php/livepress-updater.php:391
+msgid "Are you sure you want to switch to Not Live?"
+msgstr ""
+
+#: php/livepress-updater.php:392
+msgid "Scroll to Comment"
+msgstr ""
+
+#: php/livepress-updater.php:393
+msgid "Update was published live to users."
+msgstr ""
+
+#: php/livepress-updater.php:394
+msgid "Update was published NOT live."
+msgstr ""
+
+#: php/livepress-updater.php:395
+msgid "Can't get update status from LivePress."
+msgstr ""
+
+#: php/livepress-updater.php:396
+msgid "Wrong AJAX nonce."
+msgstr ""
+
+#: php/livepress-updater.php:397
+msgid "Can't get upate status from blog server."
+msgstr ""
+
+#: php/livepress-updater.php:398
+msgid "Checking authorization status..."
+msgstr ""
+
+#: php/livepress-updater.php:400
+msgid "Live Blogging Tools"
+msgstr ""
+
+#: php/livepress-updater.php:401
+msgid "submit"
+msgstr ""
+
+#: php/livepress-updater.php:402
+msgid "Live Press"
+msgstr ""
+
+#: php/livepress-updater.php:403
+msgid "Live Chat"
+msgstr ""
+
+#: php/livepress-updater.php:404
+msgid "Warning"
+msgstr ""
+
+#: php/livepress-updater.php:405
+msgid "Will try to reconnect in some time."
+msgstr ""
+
+#: php/livepress-updater.php:406
+msgid "Please try to reconnect later."
+msgstr ""
+
+#: php/livepress-updater.php:407
+msgid "The connection to the server has been lost."
+msgstr ""
+
+#: php/livepress-updater.php:408
+msgid ""
+"Syncronization of live editor seems to be lost. Try to enable/disable live "
+"editor or reload page."
+msgstr ""
+
+#: php/livepress-updater.php:409
+msgid "Collaboration state may be out of sync. Try to reload page."
+msgstr ""
+
+#: php/livepress-updater.php:410
+msgid "Collaboration may be out of sync. Try to reload page."
+msgstr ""
+
+#: php/livepress-updater.php:411
+msgid "Copy the commenter name and full text into the post text box"
+msgstr ""
+
+#: php/livepress-updater.php:412
+msgid "Send to editor"
+msgstr ""
+
+#: php/livepress-updater.php:413
+msgid "Approve this comment"
+msgstr ""
+
+#: php/livepress-updater.php:414
+msgid "Approve"
+msgstr ""
+
+#: php/livepress-updater.php:415
+msgid "Unapprove this comment"
+msgstr ""
+
+#: php/livepress-updater.php:416
+msgid "Unapprove"
+msgstr ""
+
+#: php/livepress-updater.php:417
+msgid "Mark this comment as spam"
+msgstr ""
+
+#: php/livepress-updater.php:418
+msgid "Spam"
+msgstr ""
+
+#: php/livepress-updater.php:419
+msgid "Move this comment to the trash"
+msgstr ""
+
+#: php/livepress-updater.php:420
+msgid "Trash"
+msgstr ""
+
+#: php/livepress-updater.php:421
+msgid "Save and Refresh"
+msgstr ""
+
+#: php/livepress-updater.php:422
+msgid "Publish and Refresh"
+msgstr ""
+
+#: php/livepress-updater.php:423
+msgid "Click to pause the tweets so you can decide when to display them"
+msgstr ""
+
+#: php/livepress-updater.php:424
+msgid "Click to copy tweets into the post editor."
+msgstr ""
+
+#: php/livepress-updater.php:425
+msgid "Copy the tweet into the post editing area"
+msgstr ""
+
+#: php/livepress-updater.php:426
+msgid "Remove this term"
+msgstr ""
+
+#: php/livepress-updater.php:427
+msgid "Remove this account"
+msgstr ""
+
+#: php/livepress-updater.php:428
+msgid "remove"
+msgstr ""
+
+#: php/livepress-updater.php:429
+msgid "Remote Author"
+msgstr ""
+
+#: php/livepress-updater.php:431
+msgid "Account not found"
+msgstr ""
+
+#: php/livepress-updater.php:432
+msgid "Connecting"
+msgstr ""
+
+#: php/livepress-updater.php:433
+msgid "offline"
+msgstr ""
+
+#: php/livepress-updater.php:434
+msgid "connected"
+msgstr ""
+
+#: php/livepress-updater.php:435
+msgid "username/password invalid"
+msgstr ""
+
+#: php/livepress-updater.php:436
+msgid "Wrong account name supplied"
+msgstr ""
+
+#: php/livepress-updater.php:437
+msgid "Problem connecting to the blog server."
+msgstr ""
+
+#: php/livepress-updater.php:438
+msgid "Test message sent"
+msgstr ""
+
+#: php/livepress-updater.php:439
+msgid "Failure sending test message"
+msgstr ""
+
+#: php/livepress-updater.php:440
+msgid "Send test message again"
+msgstr ""
+
+#: php/livepress-updater.php:441
+msgid "Pinned Live Post Header"
+msgstr ""
+
+#: php/livepress-user-settings.php:99
+msgid "Publish from Twitter"
+msgstr ""
+
+#: php/livepress-user-settings.php:105
+msgid "Tweet this with a blog title to start publishing from Twitter"
+msgstr ""
+
+#: php/livepress-user-settings.php:109
+msgid "All tweets in between are live published to one post"
+msgstr ""
+
+#: php/livepress-user-settings.php:113
+msgid "Tweet this on your last update to stop"
+msgstr ""
+
+#: php/livepress-user-settings.php:123
+msgid "Your Mobile Phone Number, to publish from SMS"
+msgstr ""
+
+#: php/livepress-user-settings.php:128
+msgid "Text commands from your phone to LivePress at: "
+msgstr ""
+
+#: php/livepress-user-settings.php:132
+msgid "Create a new live blog post with title \"post title\""
+msgstr ""
+
+#: php/livepress-user-settings.php:136
+msgid "List recent live blog posts"
+msgstr ""
+
+#: php/livepress-user-settings.php:139
+msgid "...and much more, for a complete list text <code>#help</code> to"
+msgstr ""
+
+#: php/livepress-xmlrpc.php:116
+#, php-format
+msgid ""
+"XML-RPC services are disabled on this site. An admin user can enable them at "
+"%s"
+msgstr ""
+
+#: php/special_comments.php:20
+msgid "Name"
+msgstr ""
+
+#: php/special_comments.php:24
+msgid "Email"
+msgstr ""

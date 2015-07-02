@@ -1,0 +1,211 @@
+.ecwid-settings {
+	max-width: 650px;
+	padding-left: 6px;
+}
+
+.ecwid-settings h2 {
+	margin-bottom: 15px;
+}
+
+.ecwid-settings .settings-block.complete,
+.ecwid-settings.complete .settings-block.initial
+{
+	display: none;
+}
+
+.ecwid-settings.complete .settings-block.complete {
+	display: block;
+}
+
+.ecwid-settings h3 {
+	font-size: 21px;
+	line-height: 28px;
+	margin-top: 27px;
+	margin-bottom: 7px;
+}
+
+
+.ecwid-settings p {
+	margin: 10px 0px;
+	line-height: 1.4;
+}
+
+.ecwid-settings hr {
+	margin-top: 20px;
+	border-top: 1px solid #cccccc;
+	border-bottom: 0px none;
+}
+
+.ecwid-settings p.note {
+	color: #999999;
+
+}
+
+.ecwid-settings .greeting-box {
+	display: table-row;
+	height: 140px;
+}
+
+.ecwid-settings .greeting-box > div {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.ecwid-settings .greeting-box .image {
+	width: 175px;
+}
+
+.ecwid-settings .image img {
+	display: block;
+}
+
+.ecwid-settings .greeting-box h3 {
+	margin: 0px 0px 6px;
+	line-height: 28px;
+	font-size: 23px;
+	max-width: 400px;
+}
+
+.ecwid-settings .greeting-box p {
+	font-size: 17px;
+	margin: 0px;
+}
+
+.ecwid-settings .buttons {
+	margin-bottom: 14px;
+}
+
+.ecwid-settings a.button {
+	font-weight: bold;
+	font-size: 14px;
+	line-height: 38px;
+	height: 40px;
+	padding: 0px 15px;
+}
+
+.ecwid-settings .buttons .button {
+	margin-right: 20px;
+}
+
+.ecwid-settings label {
+	display: block;
+	margin-bottom: 5px;
+}
+
+.ecwid-settings input,
+.ecwid-settings input.button-primary {
+	height: 35px;
+}
+
+.ecwid-settings input.store-id {
+	width: 155px;
+	font-size: 16px;
+	border-radius: 5px;
+	margin-right: 5px;
+	padding: 7px;
+}
+
+.ecwid-settings input::-webkit-outer-spin-button,
+.ecwid-settings input::-webkit-inner-spin-button {
+	/* display: none; <- Crashes Chrome on hover */
+	-webkit-appearance: none;
+	margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+.ecwid-settings input.button-primary {
+	padding: 0px 30px;
+}
+
+.ecwid-settings.complete .greeting-box h3 {
+	font-weight: normal;
+}
+
+.ecwid-settings .greeting-box a {
+	margin-right: 15px;
+}
+
+.ecwid-settings .greeting-box a.secondary {
+	color: #999999;
+}
+
+.ecwid-settings .shortcode {
+	width: 100%;
+	padding: 14px 18px;
+	resize: none;
+	font-family: Consolas, monaco, courier, monospace;
+	margin-top: 7px;
+}
+
+.ecwid-settings h4 {
+	font-weight: normal;
+	font-size: 16px;
+	margin-bottom: 10px;
+}
+
+.ecwid-settings ol {
+	margin-left: 0px;
+	list-style-position: inside;
+	margin-top: 0px;
+}
+
+@media screen and (max-width: 650px) {
+	.ecwid-settings {
+		padding: 0px;
+	}
+
+	.ecwid-settings h2 {
+		margin-bottom: 0px;
+	}
+
+	.ecwid-settings h2,
+	.ecwid-settings .greeting-box {
+		text-align: center;
+		padding-right: 0px;
+	}
+
+	.ecwid-settings .greeting-box {
+		width: 100%;
+		display: inline-block;
+		height: auto;
+	}
+
+	.ecwid-settings .greeting-box > div {
+		display: block;
+		width: 100%;
+	}
+
+	.ecwid-settings .greeting-box h3 {
+		font-size: 17px;
+		margin-top: 7px;
+		line-height: 20px;
+	}
+
+	.ecwid-settings .greeting-box p {
+		font-size: inherit;
+	}
+
+	.ecwid-settings .greeting-box a {
+		margin: 10px;
+		display: block;
+	}
+
+	.ecwid-settings .greeting-box div.image {
+		display: none;
+	}
+
+	.ecwid-settings .button {
+		width: 100%;
+		text-align: center;
+	}
+
+	.ecwid-settings input.store-id {
+		width: 100%;
+		margin-bottom: 8px;
+	}
+
+	.ecwid-settings .shortcode {
+		height: 130px;
+		font-size: 14px;
+		padding: 5px;
+	}
+}

@@ -1,0 +1,42 @@
+<html> 
+<head> 
+<script type='text/javascript'> 
+var dom=location.hash
+if (dom!=''){
+  dom=dom.substr(1)
+  document.domain=dom
+}
+ 
+function adsPageOnL(){
+  var adFr=window.frameElement
+  if (adFr){
+      if (adFr.textAd!=1){
+        var collapse=parent.adsCkCol(adFr,document)
+        if (!collapse&&adFr.divName){
+          var parDiv=parent.document.getElementById(adFr.divName)
+          if (parDiv&&(parDiv.dynSz==1)&&parent.adsRMIFOnL){
+	      parent.adsRMIFOnL(window,document)
+          }
+        }
+      }
+      else
+        parent.adsDoOnL(adFr,document)
+  }
+}
+</script> 
+</head> 
+<body onload='setTimeout("adsPageOnL()",10)' style="overflow: visible; border:0; background-color: transparent;"> 
+ 
+<div id="adDiv" style="overflow: visible; border:0;"> 
+<span id="adSpan" style="overflow: visible; border:0;"> 
+<table id="adTable" style="display:inline; border-collapse:collapse;"> 
+<tr><td style="padding:0px"> 
+<script type='text/javascript'> 
+inDapIF=true
+inFIF=true
+if (parent.adsGetAdURL)
+    document.write("<scr"+"ipt type='text/javascript' src='"+parent.adsGetAdURL(window)+"'></scr"+"ipt>")
+</script> 
+</td></tr></table> 
+</span></div> 
+</body></html>

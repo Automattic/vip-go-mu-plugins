@@ -1,0 +1,205 @@
+#optimizely-tabs .code {
+	width: 100%;
+	font-family: Consolas, Monaco, "Courier New", Courier, monospace;
+	font-size: 1.5em;
+}
+
+#optimizely-tabs textarea {
+	width: 100%;
+}
+
+#optimizely_created, #optimizely_not_created {
+	display: none;
+}
+
+#optimizely-tabs .opt_results {
+	border: solid 1px #d5d5d5;
+	margin-bottom: 30px;
+	box-shadow: 4px 4px 5px 2px rgba(36,36,0,0.1);
+}
+
+#optimizely-tabs .header .title {
+	display: inline-block;
+	width: 60%;
+}
+
+#optimizely-tabs .header .title i {
+	color: green;
+	font-size: 20px
+}
+
+#optimizely-tabs .winner {
+	background-color: #D9FBD6;
+}
+
+#optimizely-tabs #winners, #optimizely-tabs #stillwaiting, #optimizely-tabs #ready {
+	display: none;
+}
+
+#optimizely-tabs .header .results_toolbar {
+	display: inline-block;
+	width: 40%;
+	float: right;
+	text-align: right;
+}
+
+#optimizely-tabs .variationrow {
+	display: none;
+	border-bottom: 1px solid #000;
+}
+
+#optimizely-tabs #launchWinners {
+	margin-bottom: 15px;
+}
+
+#optimizely-tabs .header, #optimizely-tabs .footer {
+	height: 20px;
+	background: #EAEFF1;
+	padding: 5px 15px 5px 10px;
+	min-height: 30px;
+	position: relative;
+	overflow: visible;
+	font-family: "Gotham A","Gotham B",Helvetica,Arial,sans-serif;
+	font-size: 1.15em;
+	font-weight: 300;
+	line-height: 1.2;
+	
+}
+
+#optimizely-tabs .header .title {
+	margin-top: 5px;
+}
+
+#optimizely-tabs .header {
+	border-bottom: solid 2px #999;
+}
+
+#optimizely-tabs .results_toolbar .button {
+	margin-left: 5px;
+}
+
+#optimizely-tabs td,#optimizely-tabs th {
+	padding: 10px 30px 10px 10px;
+
+}
+
+#optimizely-tabs .variations {
+	background-color: gray;
+}
+
+#optimizely-tabs tr {
+	background-color: #FFFFFF;
+	
+}
+
+#optimizely-tabs table {
+	width: 100%;
+	text-align: right;
+	border-spacing: 0pt;
+}
+
+#optimizely-tabs td.first {
+	width: 20%
+}
+
+#optimizely-tabs td.last {
+	border-right: none;
+	text-align: center;
+}
+
+#optimizely-tabs {
+	background-color: white;
+	z-index: 1;
+}
+
+#optimizely-tabs .tabs-header {
+	background-color: white;
+	border: none;
+	background: #f7f7f7;
+}
+
+#optimizely-tabs th {
+	background-color: #F8F8F8
+}
+
+#optimizely-tabs td.last i {
+	color: green;
+	font-size: 25px;
+	
+}
+#optimizely-tabs td.last {
+	padding: 0px;
+}
+
+#optimizely-tabs .loading {
+	width: 100%;
+	padding: 20px;
+	text-align: center;
+}
+
+#optimizely-tabs .progressbar {
+	border-bottom-right-radius: 15px;
+	border-top-right-radius: 15px;
+	border-top-left-radius: 15px;
+	border-bottom-left-radius: 15px;
+	width: 100%;
+	display: inline-block;
+	height: 20px;
+	margin-top: 5px;
+	margin-right: 50px;
+}
+
+#optimizely-tabs .ready, .not-ready {
+	display: inline-block;
+	height: 20px;
+	width: 140px;
+	text-align: center;
+}
+
+#optimizely-tabs .ready i {
+	color: #1964AF;
+}
+
+#optimizely-tabs .button.winner {
+	background: #1964AF;
+	color: #ffffff;
+}
+
+#optimizely-tabs .ready.launch {
+	background-color: #1964AF;
+	color: #ffffff; 
+}
+
+#optimizely-tabs #successMessage {
+	display: none;
+	width: 100%;
+	padding: 10px;
+	background-color: #D9FBD6;
+	
+}
+
+#optimizely-tabs #stillwaiting > h2 {
+	padding: 0px 0px 10px 10px;
+	border-left: solid 1px #1964AF;
+	border-bottom: solid 1px #1964AF;
+	margin-bottom: 10px;
+	
+}
+
+#optimizely-tabs #stillwaiting > h2 > span, #optimizely-tabs #tabs-1 > h2 > span {
+	font-size: 13px;
+	float: right;
+}
+
+#noresults {
+	display: none;
+}
+
+#optimizely-tabs #stillwaiting, #optimizely-tabs #ready {
+	margin-top: 30px;
+}
+
+input.optimizely_variation {
+	width: 100%;
+}
+

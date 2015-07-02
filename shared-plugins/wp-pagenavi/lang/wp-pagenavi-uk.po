@@ -1,0 +1,206 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-PageNavi Uk 2.40\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-12-10 00:43+0800\n"
+"PO-Revision-Date: 2009-02-14 22:52+0200\n"
+"Last-Translator: Jurko Chervony <info@skinik.name>\n"
+"Language-Team: pavonine.com.ua <info@skinik.name>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Ukrainian\n"
+"X-Poedit-Country: UKRAINE\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: pagenavi-options.php:46
+#: pagenavi-options.php:108
+#: pagenavi-options.php:172
+msgid "Page Navigation Options"
+msgstr "Налаштунки вигляду Page Navigation"
+
+#: pagenavi-options.php:51
+msgid "Updated"
+msgstr "оновлено"
+
+#: pagenavi-options.php:56
+msgid "No Page Navigation Option Updated"
+msgstr "Жодних налаштунків не оновлено!"
+
+#: pagenavi-options.php:62
+#: pagenavi-options.php:241
+msgid "UNINSTALL WP-PageNavi"
+msgstr "ВИДАЛИТИ WP-PageNavi"
+
+#: pagenavi-options.php:70
+#, php-format
+msgid "Setting Key '%s' has been deleted."
+msgstr "Ключ налаштунків '%s' видалено."
+
+#: pagenavi-options.php:74
+#, php-format
+msgid "Error deleting Setting Key '%s'."
+msgstr "Помилка видалення ключа налаштувань '%s'."
+
+#: pagenavi-options.php:96
+#: pagenavi-options.php:209
+msgid "Uninstall WP-PageNavi"
+msgstr "Деінсталювати WP-PageNavi"
+
+#: pagenavi-options.php:97
+#, php-format
+msgid "<a href=\"%s\">Click Here</a> To Finish The Uninstallation And WP-PageNavi Will Be Deactivated Automatically."
+msgstr "<a href=\"%s\">Натисніть тут</a> Для завершення деінсталяції та деактивації WP-PageNavi."
+
+#: pagenavi-options.php:109
+msgid "Page Navigation Text"
+msgstr "Текст навіґації сторінками"
+
+#: pagenavi-options.php:112
+msgid "Text For Number Of Pages"
+msgstr "Текст номеру сторінки"
+
+#: pagenavi-options.php:115
+msgid "The current page number."
+msgstr "Номер поточної сторінки."
+
+#: pagenavi-options.php:116
+#: pagenavi-options.php:137
+#: pagenavi-options.php:144
+msgid "The total number of pages."
+msgstr "Загальна кількість сторінок."
+
+#: pagenavi-options.php:120
+msgid "Text For Current Page"
+msgstr "Текст для поточної сторінки"
+
+#: pagenavi-options.php:123
+#: pagenavi-options.php:130
+msgid "The page number."
+msgstr "Номер сторінки."
+
+#: pagenavi-options.php:127
+msgid "Text For Page"
+msgstr "Текст для сторінки"
+
+#: pagenavi-options.php:134
+msgid "Text For First Post"
+msgstr "Текст для першої публікації"
+
+#: pagenavi-options.php:141
+msgid "Text For Last Post"
+msgstr "Текст для останньої публікації"
+
+#: pagenavi-options.php:148
+msgid "Text For Next Post"
+msgstr "Текст для наступної публікації"
+
+#: pagenavi-options.php:154
+msgid "Text For Previous Post"
+msgstr "Текст для попередньої публікації"
+
+#: pagenavi-options.php:160
+msgid "Text For Next ..."
+msgstr "Текст для наступної ..."
+
+#: pagenavi-options.php:166
+msgid "Text For Previous ..."
+msgstr "Текст для попередньої ..."
+
+#: pagenavi-options.php:175
+msgid "Page Navigation Style"
+msgstr "Стиль навіґації"
+
+#: pagenavi-options.php:178
+msgid "Normal"
+msgstr "Звичайний"
+
+#: pagenavi-options.php:179
+msgid "Drop Down List"
+msgstr "Випадаючий список"
+
+#: pagenavi-options.php:184
+msgid "Number Of Pages To Show?"
+msgstr "Кількість сторінок для показу:"
+
+#: pagenavi-options.php:190
+msgid "Always Show Page Navigation?"
+msgstr "Завжди показувати посторінкову навіґацію?"
+
+#: pagenavi-options.php:193
+#: pagenavi-options.php:240
+msgid "Yes"
+msgstr "Так"
+
+#: pagenavi-options.php:194
+msgid "No"
+msgstr "Ні"
+
+#: pagenavi-options.php:200
+msgid "Save Changes"
+msgstr "Зберегти зміни"
+
+#: pagenavi-options.php:211
+msgid "Deactivating WP-PageNavi plugin does not remove any data that may have been created, such as the page navigation options. To completely remove this plugin, you can uninstall it here."
+msgstr "Деактивація плаґіну WP-PageNav не видаляє жодних даних, тому Вам необхідно окрім деінсталяції плаґіну видалити усі дані, що було ним створено."
+
+#: pagenavi-options.php:214
+msgid "WARNING:"
+msgstr "УВАГА:"
+
+#: pagenavi-options.php:215
+msgid "Once uninstalled, this cannot be undone. You should use a Database Backup plugin of WordPress to back up all the data first."
+msgstr "Одного разу видаливши всі дані і налаштунки, вони будуть втрачені назавжди. Добре подумайте спершу ніж це робити!"
+
+#: pagenavi-options.php:218
+msgid "The following WordPress Options will be DELETED:"
+msgstr "Наступні налаштунки WordPress буде ВИДАЛЕНО:"
+
+#: pagenavi-options.php:223
+msgid "WordPress Options"
+msgstr "Налаштунки WordPress"
+
+#: pagenavi-options.php:241
+msgid ""
+"You Are About To Uninstall WP-PageNavi From WordPress.\\n"
+"This Action Is Not Reversible.\\n"
+"\\n"
+" Choose [Cancel] To Stop, [OK] To Uninstall."
+msgstr ""
+"Ви збираєтеся деінсталюватиl WP-PageNavi з WordPress.\\n"
+"Ця дія НЕЗВОРОТНЯ!.\\n"
+"\\n"
+" Оберіть [Cancel] щоб скасувати, [OK] для продовження."
+
+#: wp-pagenavi.php:42
+msgid "PageNavi"
+msgstr "PageNavi"
+
+#: wp-pagenavi.php:179
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+
+#: wp-pagenavi.php:182
+msgid "&laquo; First"
+msgstr "&laquo; Перша"
+
+#: wp-pagenavi.php:183
+msgid "Last &raquo;"
+msgstr "Остання &raquo;"
+
+#: wp-pagenavi.php:184
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:185
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: wp-pagenavi.php:186
+#: wp-pagenavi.php:187
+msgid "..."
+msgstr "..."
+

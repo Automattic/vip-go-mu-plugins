@@ -1,0 +1,777 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Breadcrumb NavXT\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/breadcrumb-navxt\n"
+"POT-Creation-Date: 2011-02-09 17:37:49+00:00\n"
+"PO-Revision-Date: 2011-02-19 16:54-0600\n"
+"Last-Translator: Karin Sequen <karin.sequen@bumerang180.com>\n"
+"Language-Team: Karin Sequen || Bumerang180 <info@bumerang180.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Spanish\n"
+"X-Poedit-KeywordsList: __;_es\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-Country: GUATEMALA\n"
+": \n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-SearchPath-0: C:/Documents and Settings/mtekk/My Documents/Aptana Studio/Breadcrumb NavXT/trunk\n"
+
+#: breadcrumb_navxt_widget.php:24
+msgid "Adds a breadcrumb trail to your sidebar"
+msgstr "Agrega una ruta de navegación en su barra lateral"
+
+#: breadcrumb_navxt_widget.php:85
+msgid "Title:"
+msgstr "Título:"
+
+#: breadcrumb_navxt_widget.php:89
+msgid "Output trail as:"
+msgstr "Mostrar ruta como:"
+
+#: breadcrumb_navxt_widget.php:91
+msgid "List"
+msgstr "Lista"
+
+#: breadcrumb_navxt_widget.php:92
+msgid "RDFa"
+msgstr "RDFa"
+
+#: breadcrumb_navxt_widget.php:93
+msgid "Microformat"
+msgstr "Microformato"
+
+#: breadcrumb_navxt_widget.php:94
+msgid "Plain"
+msgstr "Texto plano"
+
+#: breadcrumb_navxt_widget.php:99
+msgid "Link the breadcrumbs"
+msgstr "Enlace a la Ruta"
+
+#: breadcrumb_navxt_widget.php:101
+msgid "Reverse the order of the trail"
+msgstr "Invertir el orden de la ruta"
+
+#: breadcrumb_navxt_widget.php:103
+msgid "Hide the trail on the front page"
+msgstr "Ocultar la ruta de la página principal"
+
+#: mtekk_admin_class.php:59
+msgid "Undo"
+msgstr "Deshacer"
+
+#: mtekk_admin_class.php:67
+#: mtekk_admin_class.php:191
+msgid "Migrate now."
+msgstr "Migrar ahora."
+
+#: mtekk_admin_class.php:164
+msgid "Settings"
+msgstr "Configuraciones"
+
+#: mtekk_admin_class.php:191
+msgid "Your settings are out of date."
+msgstr "Sus ajustes están desactualizados."
+
+#: mtekk_admin_class.php:191
+msgid "Migrate the settings now."
+msgstr "Migrar los ajustes ahora."
+
+#: mtekk_admin_class.php:198
+msgid "Your plugin install is incomplete."
+msgstr "La instalación del plugin no se ha completado."
+
+#: mtekk_admin_class.php:198
+msgid "Load default settings now."
+msgstr "Cargar los ajustes predeterminados ahora."
+
+#: mtekk_admin_class.php:198
+msgid "Complete now."
+msgstr "Completar ahora."
+
+#: mtekk_admin_class.php:311
+msgid "Settings successfully imported from the uploaded file."
+msgstr "Los ajustes de Breadcrumb NavXT se importaron exitosamente desde el archivo."
+
+#: mtekk_admin_class.php:311
+msgid "Undo the options import."
+msgstr "Deshacer importación de opciones."
+
+#: mtekk_admin_class.php:316
+msgid "Importing settings from file failed."
+msgstr "Falló la importación de los ajustes desde el archivo."
+
+#: mtekk_admin_class.php:335
+msgid "Settings successfully reset to the default values."
+msgstr "Los ajustes predeterminados de Breadcrumb NavXT se restauraron exitosamente."
+
+#: mtekk_admin_class.php:335
+msgid "Undo the options reset."
+msgstr "Deshacer reinicio de opciones."
+
+#: mtekk_admin_class.php:352
+msgid "Settings successfully undid the last operation."
+msgstr "Se deshizo exitosamente la operación anterior."
+
+#: mtekk_admin_class.php:352
+msgid "Undo the last undo operation."
+msgstr "Deshacer la última operación de \"deshacer\""
+
+#: mtekk_admin_class.php:387
+msgid "Settings successfully migrated."
+msgstr "Ajustes migrados exitosamente."
+
+#: mtekk_admin_class.php:394
+msgid "Default settings successfully installed."
+msgstr "Los ajustes predeterminados se instalaron exitosamente."
+
+#: mtekk_admin_class.php:425
+msgid "Get help with \"%s\""
+msgstr "Obtener ayuda con \"%s\""
+
+#: mtekk_admin_class.php:495
+msgid "Import/Export/Reset Settings"
+msgstr "Importar/Exportar/Reiniciar Ajustes"
+
+#: mtekk_admin_class.php:496
+msgid "Import settings from a XML file, export the current settings to a XML file, or reset to the default settings."
+msgstr "Importar los ajustes de Breadcrumb NavXT desde un archivo XML, exportar los ajustes actuales a un archivo XML o reiniciar los valores predeterminados de Breadcrumb NavXT."
+
+#: mtekk_admin_class.php:499
+msgid "Settings File"
+msgstr "Archivo de Ajustes"
+
+#: mtekk_admin_class.php:502
+msgid "Select a XML settings file to upload and import settings from."
+msgstr "Seleccionar un archivo XML para cargar e importar los ajustes de este plugin."
+
+#: mtekk_admin_class.php:504
+#: breadcrumb_navxt_admin.php:423
+msgid "Import"
+msgstr "Importar"
+
+#: mtekk_admin_class.php:505
+#: breadcrumb_navxt_admin.php:423
+msgid "Export"
+msgstr "Exportar"
+
+#: mtekk_admin_class.php:506
+#: breadcrumb_navxt_admin.php:423
+msgid "Reset"
+msgstr "Reiniciar"
+
+#: breadcrumb_navxt_admin.php:35
+msgid "Your PHP version is too old, please upgrade to a newer version. Your version is %s, Breadcrumb NavXT requires %s"
+msgstr "Su versión de PHP es obsoleta, por favor, actualícese a la nueva versión. Su versión es %s, este plugin requiere %s"
+
+#: breadcrumb_navxt_admin.php:112
+msgid "Insufficient privileges to proceed."
+msgstr "No tiene privilegios para proceder."
+
+#: breadcrumb_navxt_admin.php:217
+#: breadcrumb_navxt_class.php:207
+msgid "Home"
+msgstr "Inicio"
+
+#: breadcrumb_navxt_admin.php:219
+#: breadcrumb_navxt_admin.php:580
+#: breadcrumb_navxt_admin.php:773
+#: breadcrumb_navxt_class.php:130
+#: breadcrumb_navxt_class.php:209
+#: breadcrumb_navxt_class.php:219
+#: breadcrumb_navxt_class.php:223
+#: breadcrumb_navxt_class.php:247
+#: breadcrumb_navxt_class.php:263
+msgid "<a title=\"Go to %title%.\" href=\"%link%\">"
+msgstr "<a title=\"Ir a %title%.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_admin.php:304
+msgid "Settings successfully saved."
+msgstr "Ajustes guardados exitosamente."
+
+#: breadcrumb_navxt_admin.php:304
+#: breadcrumb_navxt_admin.php:309
+msgid "Undo the options save."
+msgstr "Deshacer modificación de opciones."
+
+#: breadcrumb_navxt_admin.php:309
+msgid "Some settings were not saved."
+msgstr "Algunos ajustes no fueron grabados."
+
+#: breadcrumb_navxt_admin.php:310
+msgid "The following settings were not saved:"
+msgstr "Los siguientes ajustes no fueron grabados:"
+
+#: breadcrumb_navxt_admin.php:315
+msgid "Please include this message in your %sbug report%s."
+msgstr "Por favor, incluir este mensaje en su %sreporte de bugs%s."
+
+#: breadcrumb_navxt_admin.php:315
+#: breadcrumb_navxt_admin.php:339
+msgid "Go to the Breadcrumb NavXT support post for your version."
+msgstr "Ir a la documentación en línea de Breadcrumb NavXT para su versión."
+
+#: breadcrumb_navxt_admin.php:337
+msgid "Tips for the settings are located below select options. Please refer to the %sdocumentation%s for more information."
+msgstr "Encontrará tips para las configuraciones debajo de cada opción. Por favor lea la %sdocumentación%s para más información (en inglés)."
+
+#: breadcrumb_navxt_admin.php:338
+msgid "Go to the Breadcrumb NavXT online documentation"
+msgstr "Ir a la documentación en línea de Breadcrumb NavXT (en inglés)"
+
+#: breadcrumb_navxt_admin.php:339
+msgid "If you think you have found a bug, please include your WordPress version and details on how to reproduce the bug when you %sreport the issue%s."
+msgstr "Si piensa que ha encontrado un bug, por favor incluya su versión de WordPress y los detalles de cómo se reproduce el bug cuando %sreporte el problema%s."
+
+#: breadcrumb_navxt_admin.php:340
+msgid "Quick Start Information"
+msgstr "Información para Inicio Rápido"
+
+#: breadcrumb_navxt_admin.php:340
+msgid "For the settings on this page to take effect, you must either use the included Breadcrumb NavXT widget, or place either of the code sections below into your theme."
+msgstr "Para que tomen efecto los ajustes en esta página, debe  incluir el widget del plugin o colocar el código en su plantilla."
+
+#: breadcrumb_navxt_admin.php:341
+msgid "Breadcrumb trail with separators"
+msgstr "Ruta de Navegación con Separadores"
+
+#: breadcrumb_navxt_admin.php:342
+msgid "Breadcrumb trail in list form"
+msgstr "Ruta de Navegación como Listado"
+
+#: breadcrumb_navxt_admin.php:445
+msgid "Breadcrumb NavXT Settings"
+msgstr "Opciones de Configuración de Breadcrumb NavXT"
+
+#: breadcrumb_navxt_admin.php:453
+msgid "General"
+msgstr "General"
+
+#: breadcrumb_navxt_admin.php:456
+msgid "Breadcrumb Separator"
+msgstr "Separador de Navegación"
+
+#: breadcrumb_navxt_admin.php:456
+msgid "Placed in between each breadcrumb."
+msgstr "Colocado en medio de cada opción de navegación."
+
+#: breadcrumb_navxt_admin.php:457
+msgid "Breadcrumb Max Title Length"
+msgstr "Máximo # de caracteres del Título en la Ruta de Navegación"
+
+#: breadcrumb_navxt_admin.php:461
+msgid "Home Breadcrumb"
+msgstr "Incluir Inicio"
+
+#: breadcrumb_navxt_admin.php:466
+msgid "Place the home breadcrumb in the trail."
+msgstr "Colocar un enlace a la página de inicio en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:471
+msgid "Home Title: "
+msgstr "Título de Página de Inicio:"
+
+#: breadcrumb_navxt_admin.php:479
+msgid "Home Prefix"
+msgstr "Prefijo de Inicio"
+
+#: breadcrumb_navxt_admin.php:480
+msgid "Home Suffix"
+msgstr "Sufijo de Inicio"
+
+#: breadcrumb_navxt_admin.php:481
+msgid "Home Anchor"
+msgstr "Vínculo a Inicio"
+
+#: breadcrumb_navxt_admin.php:481
+msgid "The anchor template for the home breadcrumb."
+msgstr "Plantilla del vínculo para la página de inicio en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:482
+msgid "Blog Breadcrumb"
+msgstr "Incluir Inicio (del Blog)"
+
+#: breadcrumb_navxt_admin.php:482
+msgid "Place the blog breadcrumb in the trail."
+msgstr "Colocar un enlace a la página de inicio en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:483
+msgid "Blog Anchor"
+msgstr "Vínculo a Blog"
+
+#: breadcrumb_navxt_admin.php:483
+msgid "The anchor template for the blog breadcrumb, used only in static front page environments."
+msgstr "Plantilla del vínculo al blog en la ruta de navegación, utilizado sólo en páginas estáticas."
+
+#: breadcrumb_navxt_admin.php:487
+msgid "Main Site Breadcrumb"
+msgstr "Ruta del Sitio Principal"
+
+#: breadcrumb_navxt_admin.php:492
+msgid "Place the main site home breadcrumb in the trail in an multisite setup."
+msgstr "Colocar un enlace a la página de inicio del sitio principal en la ruta de navegación de una configuración con múltiples blogs."
+
+#: breadcrumb_navxt_admin.php:497
+msgid "Main Site Home Title: "
+msgstr "Título de Página de Inicio del Sitio Principal: "
+
+#: breadcrumb_navxt_admin.php:506
+msgid "Main Site Home Prefix"
+msgstr "Prefijo de Inicio del Sitio Principal"
+
+#: breadcrumb_navxt_admin.php:506
+#: breadcrumb_navxt_admin.php:507
+msgid "Used for the main site home breadcrumb in an multisite setup"
+msgstr "Utilizado para el sitio principal de breadcrumb en una configuración para múltiples blogs"
+
+#: breadcrumb_navxt_admin.php:507
+msgid "Main Site Home Suffix"
+msgstr "Sufijo de Inicio del Sitio Principal"
+
+#: breadcrumb_navxt_admin.php:508
+msgid "Main Site Home Anchor"
+msgstr "Vínculo a Inicio del Sitio Principal"
+
+#: breadcrumb_navxt_admin.php:508
+msgid "The anchor template for the main site home breadcrumb, used only in multisite environments."
+msgstr "La plantilla de enlace para la página de inicio del sitio principal, utilizada sólo en configuraciones con múltiples blogs."
+
+#: breadcrumb_navxt_admin.php:513
+msgid "Current Item"
+msgstr "Item Actual"
+
+#: breadcrumb_navxt_admin.php:516
+msgid "Link Current Item"
+msgstr "Incluir Vínculo a Item Actual"
+
+#: breadcrumb_navxt_admin.php:516
+msgid "Yes"
+msgstr "Sí"
+
+#: breadcrumb_navxt_admin.php:517
+msgid "Current Item Prefix"
+msgstr "Prefijo de Item Actual"
+
+#: breadcrumb_navxt_admin.php:517
+msgid "This is always placed in front of the last breadcrumb in the trail, before any other prefixes for that breadcrumb."
+msgstr "Esto se coloca siempre antes de la última opción de la ruta de navegación, antes que cualquier otro prefijo para esa opción."
+
+#: breadcrumb_navxt_admin.php:518
+msgid "Current Item Suffix"
+msgstr "Sufijo de Item Actual"
+
+#: breadcrumb_navxt_admin.php:518
+msgid "This is always placed after the last breadcrumb in the trail, and after any other prefixes for that breadcrumb."
+msgstr "Esto se coloca siempre después del último item de la ruta de navegación y después de cualquier otro sufijo para ese item."
+
+#: breadcrumb_navxt_admin.php:519
+msgid "Current Item Anchor"
+msgstr "Vínculo a Item Actual"
+
+#: breadcrumb_navxt_admin.php:519
+msgid "The anchor template for current item breadcrumbs."
+msgstr "Plantilla del vínculo para el item actual en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:520
+msgid "Paged Breadcrumb"
+msgstr "Ruta de Navegación Paginada"
+
+#: breadcrumb_navxt_admin.php:520
+msgid "Include the paged breadcrumb in the breadcrumb trail."
+msgstr "Incluir la navegación paginada en la ruta de navegación"
+
+#: breadcrumb_navxt_admin.php:520
+msgid "Indicates that the user is on a page other than the first on paginated posts/pages."
+msgstr "Mostrar que el usuario está en una página distinta a la primera de una entrada/archivo con multiples páginas."
+
+#: breadcrumb_navxt_admin.php:521
+msgid "Paged Prefix"
+msgstr "Prefijo para Paginado"
+
+#: breadcrumb_navxt_admin.php:522
+msgid "Paged Suffix"
+msgstr "Sufijo para Paginado"
+
+#: breadcrumb_navxt_admin.php:527
+msgid "Posts &amp; Pages"
+msgstr "Entradas &amp; Páginas"
+
+#: breadcrumb_navxt_admin.php:530
+msgid "Post Prefix"
+msgstr "Prefijo de Entrada"
+
+#: breadcrumb_navxt_admin.php:531
+msgid "Post Suffix"
+msgstr "Sufijo de Entrada"
+
+#: breadcrumb_navxt_admin.php:532
+msgid "Post Anchor"
+msgstr "Vínculo a Entrada"
+
+#: breadcrumb_navxt_admin.php:532
+msgid "The anchor template for post breadcrumbs."
+msgstr "Plantilla del vínculo para entradas en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:533
+msgid "Post Taxonomy Display"
+msgstr "Mostrar Clasificación de Entradas"
+
+#: breadcrumb_navxt_admin.php:533
+msgid "Show the taxonomy leading to a post in the breadcrumb trail."
+msgstr "Mostrar la ruta de navegación con la clasificación que lleva la entrada."
+
+#: breadcrumb_navxt_admin.php:537
+msgid "Post Taxonomy"
+msgstr "Clasificación de Entradas"
+
+#: breadcrumb_navxt_admin.php:541
+#: breadcrumb_navxt_admin.php:663
+msgid "Categories"
+msgstr "Categorías"
+
+#: breadcrumb_navxt_admin.php:542
+#: breadcrumb_navxt_admin.php:641
+msgid "Dates"
+msgstr "Fechas"
+
+#: breadcrumb_navxt_admin.php:543
+#: breadcrumb_navxt_admin.php:675
+msgid "Tags"
+msgstr "Etiquetas"
+
+#: breadcrumb_navxt_admin.php:544
+#: breadcrumb_navxt_admin.php:642
+msgid "Pages"
+msgstr "Páginas"
+
+#: breadcrumb_navxt_admin.php:555
+#: breadcrumb_navxt_admin.php:653
+msgid "The taxonomy which the breadcrumb trail will show."
+msgstr "El tipo de clasificación que se mostrará en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:559
+msgid "Page Prefix"
+msgstr "Prefijo de Página"
+
+#: breadcrumb_navxt_admin.php:560
+msgid "Page Suffix"
+msgstr "Sufijo de Página"
+
+#: breadcrumb_navxt_admin.php:561
+msgid "Page Anchor"
+msgstr "Vínculo a Página"
+
+#: breadcrumb_navxt_admin.php:561
+msgid "The anchor template for page breadcrumbs."
+msgstr "Plantilla del vínculo para páginas en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:562
+msgid "Attachment Prefix"
+msgstr "Prefijo de Archivo Adjunto"
+
+#: breadcrumb_navxt_admin.php:563
+msgid "Attachment Suffix"
+msgstr "Sufijo de Archivo Adjunto"
+
+#: breadcrumb_navxt_admin.php:616
+#: breadcrumb_navxt_admin.php:708
+msgid "%s Prefix"
+msgstr "Prefijo de %s"
+
+#: breadcrumb_navxt_admin.php:617
+#: breadcrumb_navxt_admin.php:709
+msgid "%s Suffix"
+msgstr "Sufijo de %s"
+
+#: breadcrumb_navxt_admin.php:618
+#: breadcrumb_navxt_admin.php:710
+msgid "%s Anchor"
+msgstr "Vínculo a %s"
+
+#: breadcrumb_navxt_admin.php:618
+#: breadcrumb_navxt_admin.php:710
+msgid "The anchor template for %s breadcrumbs."
+msgstr "La plantilla de vínculo para los elementos de ruta de %s."
+
+#: breadcrumb_navxt_admin.php:623
+msgid "%s Root Page"
+msgstr "%s Página Raíz"
+
+#: breadcrumb_navxt_admin.php:626
+msgid "&mdash; Select &mdash;"
+msgstr "&mdash; Seleccione &mdash;"
+
+#: breadcrumb_navxt_admin.php:633
+msgid "%s Taxonomy Display"
+msgstr "%s Despliegue de Clasificación"
+
+#: breadcrumb_navxt_admin.php:633
+msgid "Show the taxonomy leading to a %s in the breadcrumb trail."
+msgstr "Mostrar la clasificación que lleva a %s en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:637
+msgid "%s Taxonomy"
+msgstr "%s Clasificación"
+
+#: breadcrumb_navxt_admin.php:666
+msgid "Category Prefix"
+msgstr "Prefijo de Categoría"
+
+#: breadcrumb_navxt_admin.php:666
+msgid "Applied before the anchor on all category breadcrumbs."
+msgstr "Aplicado antes del vínculo de todas las opciones de categoría en la ruta."
+
+#: breadcrumb_navxt_admin.php:667
+msgid "Category Suffix"
+msgstr "Sufijo de Categoría"
+
+#: breadcrumb_navxt_admin.php:667
+msgid "Applied after the anchor on all category breadcrumbs."
+msgstr "Aplicado después del vínculo de todas las opciones de categoría en la ruta."
+
+#: breadcrumb_navxt_admin.php:668
+msgid "Category Anchor"
+msgstr "Vínculo a Categoría"
+
+#: breadcrumb_navxt_admin.php:668
+msgid "The anchor template for category breadcrumbs."
+msgstr "Plantilla del vínculo para categorías en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:669
+msgid "Archive by Category Prefix"
+msgstr "Prefijo de Archivo por Categoría"
+
+#: breadcrumb_navxt_admin.php:669
+msgid "Applied before the title of the current item breadcrumb on an archive by cateogry page."
+msgstr "Aplicado antes del título del item actual en un archivo por categoría."
+
+#: breadcrumb_navxt_admin.php:670
+msgid "Archive by Category Suffix"
+msgstr "Sufijo de Archivo por Categoría"
+
+#: breadcrumb_navxt_admin.php:670
+msgid "Applied after the title of the current item breadcrumb on an archive by cateogry page."
+msgstr "Aplicado después del título del item actual en un archivo por categoría."
+
+#: breadcrumb_navxt_admin.php:678
+msgid "Tag Prefix"
+msgstr "Prefijo de Etiqueta"
+
+#: breadcrumb_navxt_admin.php:678
+msgid "Applied before the anchor on all tag breadcrumbs."
+msgstr "Aplicado antes del vínculo de todas las opciones de etiqueta en la ruta."
+
+#: breadcrumb_navxt_admin.php:679
+msgid "Tag Suffix"
+msgstr "Sufijo de Etiqueta"
+
+#: breadcrumb_navxt_admin.php:679
+msgid "Applied after the anchor on all tag breadcrumbs."
+msgstr "Aplicado después del vínculo de todas las opciones de etiqueta en la ruta."
+
+#: breadcrumb_navxt_admin.php:680
+msgid "Tag Anchor"
+msgstr "Vínculo a Etiqueta"
+
+#: breadcrumb_navxt_admin.php:680
+msgid "The anchor template for tag breadcrumbs."
+msgstr "Plantilla del vínculo para etiquetas en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:681
+msgid "Archive by Tag Prefix"
+msgstr "Prefijo de Archivo por Etiqueta"
+
+#: breadcrumb_navxt_admin.php:681
+msgid "Applied before the title of the current item breadcrumb on an archive by tag page."
+msgstr "Aplicado antes del título del item actual en un archivo por etiqueta."
+
+#: breadcrumb_navxt_admin.php:682
+msgid "Archive by Tag Suffix"
+msgstr "Sufijo de Archivo por Etiqueta"
+
+#: breadcrumb_navxt_admin.php:682
+msgid "Applied after the title of the current item breadcrumb on an archive by tag page."
+msgstr "Aplicado después del título del item actual en un archivo por etiqueta."
+
+#: breadcrumb_navxt_admin.php:708
+msgid "Applied before the anchor on all %s breadcrumbs."
+msgstr "Aplicado antes del vínculo de todos los elementos de la ruta de %s."
+
+#: breadcrumb_navxt_admin.php:709
+msgid "Applied after the anchor on all %s breadcrumbs."
+msgstr "Aplicado después del vínculo de todos los elementos de la ruta de %s."
+
+#: breadcrumb_navxt_admin.php:711
+msgid "Archive by %s Prefix"
+msgstr "Archivo por Prefijo de %s"
+
+#: breadcrumb_navxt_admin.php:711
+msgid "Applied before the title of the current item breadcrumb on an archive by %s page."
+msgstr "Aplicado antes del título del item actual en un archivo por página %s."
+
+#: breadcrumb_navxt_admin.php:712
+msgid "Archive by %s Suffix"
+msgstr "Archivo por Sufijo de %s"
+
+#: breadcrumb_navxt_admin.php:712
+msgid "Applied after the title of the current item breadcrumb on an archive by %s page."
+msgstr "Aplicado después del título del item actual en un archivo por página %s."
+
+#: breadcrumb_navxt_admin.php:721
+msgid "Date Archives"
+msgstr "Archivos por Fecha"
+
+#: breadcrumb_navxt_admin.php:724
+msgid "Date Anchor"
+msgstr "Vínculo a Fecha"
+
+#: breadcrumb_navxt_admin.php:724
+msgid "The anchor template for date breadcrumbs."
+msgstr "Plantilla del vínculo para fechas en la ruta de navegación."
+
+#: breadcrumb_navxt_admin.php:725
+msgid "Archive by Date Prefix"
+msgstr "Prefijo de Archivo por Fecha"
+
+#: breadcrumb_navxt_admin.php:725
+msgid "Applied before the anchor on all date breadcrumbs."
+msgstr "Aplicado antes del vínculo de todas las opciones de fecha en la ruta."
+
+#: breadcrumb_navxt_admin.php:726
+msgid "Archive by Date Suffix"
+msgstr "Sufijo de Archivo por Fecha"
+
+#: breadcrumb_navxt_admin.php:726
+msgid "Applied after the anchor on all date breadcrumbs."
+msgstr "Aplicado después del vínculo de todas las opciones de fecha en la ruta."
+
+#: breadcrumb_navxt_admin.php:731
+msgid "Miscellaneous"
+msgstr "Misceláneos"
+
+#: breadcrumb_navxt_admin.php:734
+msgid "Author Prefix"
+msgstr "Prefijo de Autor"
+
+#: breadcrumb_navxt_admin.php:735
+msgid "Author Suffix"
+msgstr "Sufijo de Autor"
+
+#: breadcrumb_navxt_admin.php:736
+msgid "Author Display Format"
+msgstr "Formato de Despliegue de Autor"
+
+#: breadcrumb_navxt_admin.php:736
+msgid "display_name uses the name specified in \"Display name publicly as\" under the user profile the others correspond to options in the user profile."
+msgstr "display_name utiliza el nombre especificado en \"Mostrar este nombre públicamente\" en el perfil del usuario, la otras opciones corresponden a los campos nombre (first_name), apellido (last_name) y alias (nickname) en el perfil del usuario."
+
+#: breadcrumb_navxt_admin.php:737
+msgid "Search Prefix"
+msgstr "Prefijo de Búsqueda"
+
+#: breadcrumb_navxt_admin.php:738
+msgid "Search Suffix"
+msgstr "Sufijo de Búsqueda"
+
+#: breadcrumb_navxt_admin.php:739
+msgid "Search Anchor"
+msgstr "Vínculo a Búsqueda"
+
+#: breadcrumb_navxt_admin.php:739
+msgid "The anchor template for search breadcrumbs, used only when the search results span several pages."
+msgstr "Plantilla del vínculo a la primera página de resultados de búsqueda en la ruta de navegación, utilizado sólo cuando éstos ocupan más de una página."
+
+#: breadcrumb_navxt_admin.php:740
+msgid "404 Title"
+msgstr "Título Error 404"
+
+#: breadcrumb_navxt_admin.php:741
+msgid "404 Prefix"
+msgstr "Prefijo de Error 404"
+
+#: breadcrumb_navxt_admin.php:742
+msgid "404 Suffix"
+msgstr "Sufijo de Error 404"
+
+#: breadcrumb_navxt_admin.php:747
+msgid "Save Changes"
+msgstr "Grabar Cambios"
+
+#: breadcrumb_navxt_class.php:217
+msgid "Blog"
+msgstr "Inicio"
+
+#: breadcrumb_navxt_class.php:236
+msgid "<a title=\"Reload the current page.\" href=\"%link%\">"
+msgstr "<a title=\"Cargar de Nuevo\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:281
+msgid "404"
+msgstr "Página no encontrada"
+
+#: breadcrumb_navxt_class.php:284
+msgid "Search results for &#39;"
+msgstr "Resultados de búsqueda para &#39;"
+
+#: breadcrumb_navxt_class.php:288
+msgid "<a title=\"Go to the first page of search results for %title%.\" href=\"%link%\">"
+msgstr "<a title=\"Ir a la primera página de los resultados de búsqueda para %title%.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:295
+msgid "<a title=\"Go to the %title% tag archives.\" href=\"%link%\">"
+msgstr "<a title=\"Ir a los archivos de la etiqueta %title%\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:298
+msgid "Articles by: "
+msgstr "Artículos por: "
+
+#: breadcrumb_navxt_class.php:302
+msgid "<a title=\"Go to the first page of posts by %title%.\" href=\"%link%\">"
+msgstr "<a title=\"Ir a la primera página de entradas por %title%.\" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:311
+msgid "<a title=\"Go to the %title% category archives.\" href=\"%link%\">"
+msgstr "<a title=\"Ir a los archivos de la categoría %title% \" href=\"%link%\">"
+
+#: breadcrumb_navxt_class.php:314
+msgid "Archive by category &#39;"
+msgstr "Archivo por Categoría &#39;"
+
+#: breadcrumb_navxt_class.php:318
+msgid "Archive by tag &#39;"
+msgstr "Archivo por Etiqueta &#39;"
+
+#: breadcrumb_navxt_class.php:321
+msgid "<a title=\"Go to the %title% archives.\" href=\"%link%\">"
+msgstr "<a title=\"Ir a los archivos de %title%\" href=\"%link%\">"
+
+#~ msgid "Un"
+#~ msgstr "Des"
+#~ msgid "Untagged"
+#~ msgstr "Sin etiqueta"
+#~ msgid ""
+#~ "All of your current Breadcrumb NavXT settings will be overwritten with "
+#~ "the default values. Are you sure you want to continue?"
+#~ msgstr ""
+#~ "Todos los ajustes actuales de Breacrumb NavXT se sustituirán por los "
+#~ "valores predeterminados. ¿Seguro que desea continuar?"
+#~ msgid ""
+#~ "All of your current Breadcrumb NavXT settings will be overwritten with "
+#~ "the imported values. Are you sure you want to continue?"
+#~ msgstr ""
+#~ "Todos los ajustes actuales de Breacrumb NavXT se sustituirán por los "
+#~ "valores que se importen. ¿Seguro que desea continuar?"
+#~ msgid ""
+#~ "Warning, your version of Breadcrumb NavXT does not match the version "
+#~ "supported by this administrative interface. As a result, settings may not "
+#~ "work as expected."
+#~ msgstr ""
+#~ "Advertencia, la versión de Breadcrumb NavXT que usted posee no es "
+#~ "compatible con la versión proveída por la iinterfaz de administración. "
+#~ "Como resultado, las configuraciones pueden no funcionar apropiadamente."
+#~ msgid "Your Breadcrumb NavXT Administration interface version is "
+#~ msgstr "La versión de su interfaz de Administración Breadcrumb NavXT es "
+#~ msgid "Your Breadcrumb NavXT version is "
+#~ msgstr "La versión de Breadcrubm NavXT que posee es "
+

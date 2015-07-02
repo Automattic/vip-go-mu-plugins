@@ -1,0 +1,105 @@
+/* Playbuzz item info in the visual editor */
+.wp_playbuzz_container {
+	position: relative;
+	max-width: 100%;
+	width: 96%;
+	height: auto;
+	margin-bottom: 10px;
+	-webkit-transition: 0.5s;
+	transition: all 0.5s;
+	padding: 2% !important;
+	border: 3px dashed #eee !important;
+}
+.wp_playbuzz_container:hover,
+.wp_playbuzz_container:focus {
+	border-color: #bbb !important;
+}
+.wp_playbuzz_image {
+	background-color: rgba(255, 255, 255, 1);
+	background-size: 50%;
+	background-repeat: no-repeat;
+	background-position: 50% 50%;
+	background-image: url( './../img/plybuzz-logo.png' );
+}
+.wp_playbuzz_placeholder {
+	display: block;
+	max-width: 100%;
+	width: 100%;
+	height: auto;
+	box-sizing: border-box;
+	box-shadow: none;
+	margin: 0 auto;
+	text-align: center;
+	cursor: pointer;
+	opacity: 0.2;
+}
+.wp_playbuzz_info {
+	padding: 0 2% 2%;
+	width: 96%;	
+	cursor: default;
+}
+.wp_playbuzz_title {
+	width: 85%;
+	margin: 0;
+	color: #666;
+	font-size: 1.5em;
+	font-weight: normal;
+	line-height: 1.3em;
+}
+.wp_playbuzz_meta {
+	color: #999;
+	font-size: 0.9em;
+	font-style: italic;
+	margin: 0;
+}
+.wp_playbuzz_author {
+	color: #0ae;
+}
+.wp_playbuzz_embed {
+	text-align: center;
+	font-size: 0.9em;
+	line-height: 1.5em;
+	padding-top: 0.75em;
+	text-transform: uppercase;
+}
+.wp_playbuzz_buttons {
+	display: block;
+	position: absolute;
+	width: 100%;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	cursor: pointer;
+}
+.wp_playbuzz_edit,
+.wp_playbuzz_delete {
+	position: absolute;
+	top: 2%;
+	width: 35px;
+	height: 35px;
+	padding: 5px;
+	border: 1px solid #eee;
+	border-radius: 5px;
+	box-sizing: border-box;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 21px 21px;
+	cursor: pointer;
+}
+.wp_playbuzz_delete {
+	right: 2%;
+	background-image: url( './../img/action_close_grey.png' );
+}
+.wp_playbuzz_delete:hover,
+.wp_playbuzz_delete:focus {
+	background-image: url( './../img/action_close_blue.png' );
+}
+.wp_playbuzz_edit {
+	right: 9%;
+	background-image: url( './../img/action_edit_grey.png' );
+}
+.wp_playbuzz_edit:hover,
+.wp_playbuzz_edit:focus {
+	background-image: url( './../img/action_edit_blue.png' );
+}

@@ -1,0 +1,191 @@
+# Translation of the WordPress plugin Editorial Calendar by stresslimitdesign.
+# Copyright (C) 2010
+# This file is distributed under the same license as the  package.
+# COLIN VERNON <COLIN@STRESSLIMITDESIGN.COM>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/editorial-calendar\n"
+"POT-Creation-Date: 2010-01-14 20:13+0000\n"
+"PO-Revision-Date: 2010-01-18 10:08-0500\n"
+"Last-Translator: Zack Grossbart <zack@grossbart.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: edcal.php:60
+msgid "Calendar"
+msgstr "Calendrier"
+
+#: edcal.php:130
+#: edcal.php:277
+msgid "en-US"
+msgstr "fr_FR"
+
+#: edcal.php:138
+msgid "on"
+msgstr "le"
+
+#: edcal.php:139
+msgid "by"
+msgstr "par"
+
+#: edcal.php:140
+msgid "at"
+msgstr "à"
+
+#: edcal.php:142
+msgid "Add a post"
+msgstr "Ajouter un post"
+
+#: edcal.php:144
+msgid "Sunday"
+msgstr "Dimanche"
+
+#: edcal.php:145
+msgid "Monday"
+msgstr "Lundi"
+
+#: edcal.php:146
+msgid "Tuesday"
+msgstr "Mardi"
+
+#: edcal.php:147
+msgid "Wednesday"
+msgstr "Mercredi"
+
+#: edcal.php:148
+msgid "Thursday"
+msgstr "Jeudi"
+
+#: edcal.php:149
+msgid "Friday"
+msgstr "Vendredi"
+
+#: edcal.php:150
+msgid "Saturday"
+msgstr "Samedi"
+
+#: edcal.php:152
+msgid " [DRAFT]"
+msgstr " [BROUILLON]"
+
+#: edcal.php:153
+msgid "Edit"
+msgstr "Éditer"
+
+#: edcal.php:154
+msgid "Delete"
+msgstr "Supprimer"
+
+#: edcal.php:155
+msgid "View"
+msgstr "Voir"
+
+#: edcal.php:156
+msgid "Republish"
+msgstr "Republier"
+
+#: edcal.php:157
+msgid "Status:"
+msgstr "Status :"
+
+#: edcal.php:158
+msgid "Cancel"
+msgstr "Annuler"
+
+#: edcal.php:159
+msgid "Post Title:"
+msgstr "Titre du post :"
+
+#: edcal.php:160
+msgid "Save Draft"
+msgstr "Enregistrer brouillon"
+
+#: edcal.php:161
+msgid "Save and Edit Draft"
+msgstr "Enregistrer et éditer brouillon"
+
+#: edcal.php:162
+msgid "Add a new post on "
+msgstr "Ajouter un nouveau post le "
+
+#: edcal.php:164
+msgid "You are about to delete this post "
+msgstr "Vous allez supprimer le post '"
+
+#: edcal.php:165
+msgid "Press cancel to stop, OK to delete."
+msgstr "'. Cliquer sur annuler pour arrêter, OK pour supprimer"
+
+#: edcal.php:167
+msgid "Looks like someone else already moved this post."
+msgstr "Quelqu'un d'autre a déjà déplacé ce post."
+
+#: edcal.php:168
+msgid "You do not have permission to edit posts."
+msgstr "Vous n'avez pas les permissions d'éditer les posts."
+
+#: edcal.php:169
+msgid "Invalid checksum for post. This is commonly a cross-site scripting error."
+msgstr "Désolé, le post est corrompu, il se peut que ce soit une erreur de 'cross-site scripting' (XSS)."
+
+#: edcal.php:170
+msgid "There was an error contacting your blog."
+msgstr "Une erreur est survenue en contactant votre blog."
+
+#: edcal.php:172
+msgid "Screen Options"
+msgstr "Options d'affichage"
+
+#: edcal.php:173
+msgid "Calendar Options"
+msgstr "Options du calendrier"
+
+#: edcal.php:174
+msgid "Apply"
+msgstr "Appliquer"
+
+#: edcal.php:175
+msgid "Show "
+msgstr "Afficher "
+
+#: edcal.php:176
+msgid "weeks at a time"
+msgstr "semaines à la fois"
+
+#: edcal.php:177
+msgid "The calendar can only show between 1 and 5 weeks at a time."
+msgstr "Le calendrier ne peut afficher qu'une à cinq semaines à la fois."
+
+#: edcal.php:178
+msgid "Enter the number of weeks, between 1 and 5, for the calendar to show."
+msgstr "Entrer le nombre de semaines que le calendrier va afficher (entre 1 et 5)"
+
+#: edcal.php:214
+msgid "Posts Calendar"
+msgstr "Calendrier de posts"
+
+#: edcal.php:223
+msgid "Jump back"
+msgstr "Mois précédent"
+
+#: edcal.php:225
+msgid "Skip ahead"
+msgstr "Mois suivant"
+
+#: edcal.php:230
+msgid "Jump to today"
+msgstr "Retourner à aujourd'hui"
+
+#: edcal.php:230
+msgid "Today"
+msgstr "Aujourd'hui"
+
+#: edcal.php:361
+#: - this is the time format (12 hour or 24 hour)
+msgid "ga"
+msgstr "H"
+

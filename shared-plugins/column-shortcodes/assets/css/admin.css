@@ -1,0 +1,51 @@
+/* =Popup
+-------------------------------------------------------------- */
+#cpsh {
+	margin-top: 13px;
+	width: 100%;
+}
+#cpsh .cpsh-title {
+	display: block;
+	height: 20px;
+	line-height: 20px;
+	width: 224px;
+	margin: 0 0 6px;
+	padding: 0;
+	text-align: left;
+	color: #666;
+	font-size: 13px;
+}
+#cpsh #cpsh-generator-header {
+	border: 1px dashed #CCCCCC;
+    padding: 20px;
+}
+#cpsh .columns {
+	display: block;
+	height: 20px;
+	line-height: 20px;
+	text-align: left;
+	padding-left: 94px;
+	min-width: 130px;
+	text-decoration: none;
+	background: transparent url(../images/columns.png) no-repeat left 6px;
+}
+#cpsh .cp-one_half { background-position: left 6px; }
+#cpsh .cp-one_half_last { background-position: left -14px; }
+#cpsh .cp-one_third { background-position: left -34px; }
+#cpsh .cp-one_third_last { background-position: left -54px; }
+#cpsh .cp-two_third { background-position: left -74px; }
+#cpsh .cp-two_third_last { background-position: left -94px; }
+#cpsh .cp-one_fourth { background-position: left -114px; }
+#cpsh .cp-one_fourth_last { background-position: left -134px; }
+#cpsh .cp-three_fourth { background-position: left -154px; }
+#cpsh .cp-three_fourth_last { background-position: left -174px; }
+#cpsh .cp-one_fifth { background-position: left -194px; }
+#cpsh .cp-one_fifth_last { background-position: left -214px; }
+#cpsh .cp-two_fifth { background-position: left -234px; }
+#cpsh .cp-two_fifth_last { background-position: left -254px; }
+#cpsh .cp-three_fifth { background-position: left -274px; }
+#cpsh .cp-three_fifth_last { background-position: left -294px; }
+#cpsh .cp-four_fifth { background-position: left -314px; }
+#cpsh .cp-four_fifth_last { background-position: left -334px; }
+#cpsh .cp-one_sixth { background-position: left -354px; }
+#cpsh .cp-one_sixth_last { background-position: left -374px; }
