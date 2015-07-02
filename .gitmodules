@@ -19,3 +19,6 @@
 [submodule "rewrite-rules-inspector"]
 	path = rewrite-rules-inspector
 	url = https://github.com/Automattic/rewrite-rules-inspector
+[submodule "shared-plugins/wp-api"]
+	path = shared-plugins/wp-api
+	url = git@github.com:WP-API/WP-API.git
