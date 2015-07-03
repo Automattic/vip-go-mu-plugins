@@ -1,0 +1,237 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-PageNavi 2.73\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-08-29 14:42+0700\n"
+"PO-Revision-Date: 2010-08-29 14:42+0700\n"
+"Last-Translator: Masino Sinaga <admin@masinosinaga.com>\n"
+"Language-Team: Masino Sinaga <admin@masinosinaga.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Indonesian\n"
+"X-Poedit-Country: INDONESIA\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-SearchPath-0: ..\n"
+
+#: ../admin.php:9
+msgid "PageNavi Settings"
+msgstr "Pengaturan PageNavi"
+
+#: ../admin.php:10
+msgid "PageNavi"
+msgstr "PageNavi"
+
+#: ../admin.php:28
+msgid "Text For Number Of Pages"
+msgstr "Teksi untuk Nomor Halaman"
+
+#: ../admin.php:33
+msgid "The current page number."
+msgstr "Nomor halaman saat ini."
+
+#: ../admin.php:34
+#: ../admin.php:58
+#: ../admin.php:66
+msgid "The total number of pages."
+msgstr "Total jumlah halaman."
+
+#: ../admin.php:38
+msgid "Text For Current Page"
+msgstr "Teks untuk Halaman yang Sedang Aktif"
+
+#: ../admin.php:42
+#: ../admin.php:50
+msgid "The page number."
+msgstr "Nomor halaman."
+
+#: ../admin.php:46
+msgid "Text For Page"
+msgstr "Teks untuk Halaman"
+
+#: ../admin.php:54
+msgid "Text For First Page"
+msgstr "Teks untuk Halaman Pertama"
+
+#: ../admin.php:62
+msgid "Text For Last Page"
+msgstr "Teks untuk Halaman Terakhir"
+
+#: ../admin.php:70
+msgid "Text For Previous Page"
+msgstr "Teks untuk Halaman Sebelumnya"
+
+#: ../admin.php:76
+msgid "Text For Next Page"
+msgstr "Teks untuk Halaman Berikutnya"
+
+#: ../admin.php:82
+msgid "Text For Previous ..."
+msgstr "Teks untuk Sebelumnya ..."
+
+#: ../admin.php:88
+msgid "Text For Next ..."
+msgstr "Teks untuk Berikutnya ..."
+
+#: ../admin.php:95
+msgid "Page Navigation Text"
+msgstr "Tulisan Navigasi Halaman"
+
+#: ../admin.php:96
+msgid "Leaving a field blank will hide that part of the navigation."
+msgstr "Ruas yang kosong akan menyembunyikan bagian itu dari navigasi."
+
+#: ../admin.php:102
+msgid "Use pagenavi-css.css"
+msgstr "Gunakan pagenavi-css.css"
+
+#: ../admin.php:108
+msgid "Page Navigation Style"
+msgstr "Gaya Navigasi Halaman"
+
+#: ../admin.php:111
+msgid "Normal"
+msgstr "Normal"
+
+#: ../admin.php:111
+msgid "Drop-down List"
+msgstr "Senarai Jatuh-ke-bawah"
+
+#: ../admin.php:116
+msgid "Always Show Page Navigation"
+msgstr "Selalu Tampilkan Halaman Navigasi"
+
+#: ../admin.php:119
+msgid "Show navigation even if there's only one page."
+msgstr "Tampilkan navigasi bahkan jika hanya ada satu halaman."
+
+#: ../admin.php:123
+msgid "Number Of Pages To Show"
+msgstr "Jumlah Halaman yang Ditampilkan"
+
+#: ../admin.php:130
+msgid "Number Of Larger Page Numbers To Show"
+msgstr "Jumlah Halaman yang Lebih Besar Ditampilkan"
+
+#: ../admin.php:135
+msgid "Larger page numbers are in addition to the normal page numbers. They are useful when there are many pages of posts."
+msgstr "Nomor halaman yang lebih besar merupakan tambahan untuk nomor halaman default. Hal ini berguna untuk penulis yang melakukan navigasi halaman melalui banyak artikel."
+
+#: ../admin.php:136
+msgid "For example, WP-PageNavi will display: Pages 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+msgstr "Sebagai contoh, WP-PageNavi akan menampilkan: Halaman: 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+
+#: ../admin.php:137
+msgid "Enter 0 to disable."
+msgstr "Masukkan 0 untuk menonaktifkan."
+
+#: ../admin.php:141
+msgid "Show Larger Page Numbers In Multiples Of"
+msgstr "Tampilkan Nomor Halaman yang Lebih Besar dalam Kelipatan"
+
+#: ../admin.php:146
+msgid "For example, if mutiple is 5, it will show: 5, 10, 15, 20, 25"
+msgstr "Sebagai contoh, jika kelipatan 5, akan menampilkan: 5, 10, 15, 20, 25"
+
+#: ../admin.php:151
+msgid "Page Navigation Options"
+msgstr "Pilihan Navigasi Halaman"
+
+#: ../wp-pagenavi.php:37
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "Halaman %CURRENT_PAGE% dari %TOTAL_PAGES%"
+
+#: ../wp-pagenavi.php:40
+msgid "&laquo; First"
+msgstr "&laquo; Awal"
+
+#: ../wp-pagenavi.php:41
+msgid "Last &raquo;"
+msgstr "Akhir &raquo;"
+
+#: ../wp-pagenavi.php:42
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: ../wp-pagenavi.php:43
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: ../wp-pagenavi.php:44
+#: ../wp-pagenavi.php:45
+msgid "..."
+msgstr "..."
+
+#: ../scb/AdminPage.php:167
+msgid "Settings <strong>saved</strong>."
+msgstr "Pengaturan <strong>telah disimpan</strong>."
+
+#: ../scb/AdminPage.php:179
+#: ../scb/AdminPage.php:189
+msgid "Save Changes"
+msgstr "Simpan Perubahan"
+
+#: ../scb/AdminPage.php:371
+msgid "Settings"
+msgstr "Pengaturan"
+
+#~ msgid "Updated"
+#~ msgstr "Telah diperbaharui"
+#~ msgid "No Page Navigation Option Updated"
+#~ msgstr "Tidak ada pilihan navigasi halaman yang telah diperbaharui"
+#~ msgid "UNINSTALL WP-PageNavi"
+#~ msgstr "HAPUS WP-PageNavi"
+#~ msgid "Setting Key '%s' has been deleted."
+#~ msgstr "Kunci Pengaturan '%s' telah diperbaharui."
+#~ msgid "Error deleting Setting Key '%s'."
+#~ msgstr "Terjadi kesalahan saat menghapus Kunci Pengaturan '%s'"
+#~ msgid "Uninstall WP-PageNavi"
+#~ msgstr "Hapus WP-PageNavi"
+#~ msgid ""
+#~ "<a href=\"%s\">Click Here</a> To Finish The Uninstallation And WP-"
+#~ "PageNavi Will Be Deactivated Automatically."
+#~ msgstr ""
+#~ "<a href=\"%s\">Klik Di Sini</a> untuk menyelesaikan penghapusan dan WP-"
+#~ "PageNavi akan otomatis dinonaktifkan."
+#~ msgid "Text For Last Post"
+#~ msgstr "Teks untuk Halaman Terakhir"
+#~ msgid "Text For Next Post"
+#~ msgstr "Teks untuk Halaman Berikutnya"
+#~ msgid "Yes"
+#~ msgstr "Ya"
+#~ msgid "No"
+#~ msgstr "Tidak"
+#~ msgid "If mutiple is in 10, it will show: 10, 20, 30, 40, 50"
+#~ msgstr "Jika dalam kelipatan 10, dia akan menampilkan: 10, 20, 30, 40, 50"
+#~ msgid ""
+#~ "Deactivating WP-PageNavi plugin does not remove any data that may have "
+#~ "been created, such as the page navigation options. To completely remove "
+#~ "this plugin, you can uninstall it here."
+#~ msgstr ""
+#~ "Dengan menonaktifkan plugin WP-PageNavi, maka tidak akan menghapus data "
+#~ "apapun yang telah dibuat, seperti pilihan navigasi halaman. Untuk "
+#~ "menghapus seluruhnya plugin ini, Anda dapat meng-uninstall-nya di sini."
+#~ msgid "WARNING:"
+#~ msgstr "PERINGATAN:"
+#~ msgid ""
+#~ "Once uninstalled, this cannot be undone. You should use a Database Backup "
+#~ "plugin of WordPress to back up all the data first."
+#~ msgstr ""
+#~ "Setelah dihapus, hal ini tidak dapat dikembalikan kembali. Anda "
+#~ "disarankan untuk melakukan Backup plugin dari WordPress Anda untuk "
+#~ "membackup semua data pertama sekali."
+#~ msgid "The following WordPress Options will be DELETED:"
+#~ msgstr "Pilihan WordPress berikut akan DIHAPUS:"
+#~ msgid "WordPress Options"
+#~ msgstr "Pilihan WordPress"
+#~ msgid ""
+#~ "You Are About To Uninstall WP-PageNavi From WordPress.\\nThis Action Is "
+#~ "Not Reversible.\\n\\n Choose [Cancel] To Stop, [OK] To Uninstall."
+#~ msgstr "Anda akan menghapus WP-PageNavi dari WordPress Anda.\\n"
+#~ msgid "First"
+#~ msgstr "Awal"
+#~ msgid "Last"
+#~ msgstr "Akhir"
+

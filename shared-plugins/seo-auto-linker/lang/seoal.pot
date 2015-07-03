@@ -1,0 +1,184 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: SEO Auto Linker 0.7.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-04 16:55-0600\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: inc/admin.php:35
+msgid "Sitewide Blacklist"
+msgstr ""
+
+#: inc/admin.php:42
+#: inc/post-type.php:167
+msgid "Blacklist"
+msgstr ""
+
+#: inc/admin.php:59
+#: inc/admin.php:99
+msgid "SEO Auto Linker Options"
+msgstr ""
+
+#: inc/admin.php:60
+msgid "Options"
+msgstr ""
+
+#: inc/admin.php:84
+msgid "Settings Saved"
+msgstr ""
+
+#: inc/admin.php:105
+msgid "Save Settings"
+msgstr ""
+
+#: inc/admin.php:122
+msgid "The URLs on your site where you do not want any automatic links to appear.  One URL per line."
+msgstr ""
+
+#: inc/base.php:93
+msgid "_blank"
+msgstr ""
+
+#: inc/base.php:94
+msgid "_top"
+msgstr ""
+
+#: inc/base.php:95
+msgid "_self"
+msgstr ""
+
+#: inc/post-type.php:87
+#: inc/post-type.php:101
+msgid "Automatic Links"
+msgstr ""
+
+#: inc/post-type.php:88
+msgid "Automatic Link"
+msgstr ""
+
+#: inc/post-type.php:89
+#: inc/post-type.php:91
+msgid "Add New Link"
+msgstr ""
+
+#: inc/post-type.php:90
+msgid "All Links"
+msgstr ""
+
+#: inc/post-type.php:92
+msgid "Edit Link"
+msgstr ""
+
+#: inc/post-type.php:93
+msgid "New Link"
+msgstr ""
+
+#: inc/post-type.php:94
+msgid "Search Links"
+msgstr ""
+
+#: inc/post-type.php:95
+msgid "No Links Found"
+msgstr ""
+
+#: inc/post-type.php:96
+msgid "No Links in the Trash"
+msgstr ""
+
+#: inc/post-type.php:97
+msgid "SEO Auto Linker"
+msgstr ""
+
+#: inc/post-type.php:103
+msgid "A container for SEO Auto Linker"
+msgstr ""
+
+#: inc/post-type.php:147
+msgid "Save"
+msgstr ""
+
+#: inc/post-type.php:157
+msgid "Keywords & URL"
+msgstr ""
+
+#: inc/post-type.php:177
+msgid "Allowed Post Types"
+msgstr ""
+
+#: inc/post-type.php:326
+msgid "You must be an admin to edit links"
+msgstr ""
+
+#: inc/post-type.php:332
+msgid "Status: "
+msgstr ""
+
+#: inc/post-type.php:334
+msgid "Enabled"
+msgstr ""
+
+#: inc/post-type.php:335
+#: inc/post-type.php:548
+msgid "Disabled"
+msgstr ""
+
+#: inc/post-type.php:339
+msgid "Delete"
+msgstr ""
+
+#: inc/post-type.php:358
+#: inc/post-type.php:487
+msgid "Keywords"
+msgstr ""
+
+#: inc/post-type.php:364
+msgid "Comman separated. These are the terms you want to link."
+msgstr ""
+
+#: inc/post-type.php:371
+#: inc/post-type.php:488
+msgid "URL"
+msgstr ""
+
+#: inc/post-type.php:377
+msgid "The url to which you want to link."
+msgstr ""
+
+#: inc/post-type.php:384
+msgid "Links per Page"
+msgstr ""
+
+#: inc/post-type.php:391
+msgid "The number of times per page (or post type) you wantthe above keyowrds to link to the url"
+msgstr ""
+
+#: inc/post-type.php:400
+msgid "Target"
+msgstr ""
+
+#: inc/post-type.php:429
+msgid "URLs on which you don't want to have this link."
+msgstr ""
+
+#: inc/post-type.php:463
+#: inc/post-type.php:466
+#: inc/post-type.php:468
+#: inc/post-type.php:469
+#: inc/post-type.php:472
+msgid "Link Updated"
+msgstr ""
+
+#: inc/post-type.php:486
+msgid "Title"
+msgstr ""
+
+#: inc/post-type.php:509
+msgid "No Keywords."
+msgstr ""
+
+#: inc/post-type.php:519
+msgid "No URL."
+msgstr ""
+

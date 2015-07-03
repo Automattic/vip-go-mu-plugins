@@ -1,0 +1,20 @@
+.wpview-wrap {
+
+	&.wp-mce-view-show-toolbar {
+		.toolbar {
+			display: block;
+		}
+	}
+
+	.shortcake-error {
+		color: red;
+		font-weight: bold;
+	}
+
+	.shortcake-empty {
+		font-family: Consolas, Monaco, monospace;
+		color: #666;
+		font-size: 14px;
+	}
+
+}

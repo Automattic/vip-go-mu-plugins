@@ -1,0 +1,57 @@
+/* post.php retina/standard icon */
+.icon32-posts-fork{background-position: 0 0 !important; background-image:url('../img/icon32.png') !important;}
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),
+only screen and (-o-min-device-pixel-ratio: 3/2),
+only screen and (min-moz-device-pixel-ratio: 1.5),
+only screen and (min-device-pixel-ratio: 1.5) {
+	.icon32-posts-fork{ background-image:url( '../img/icon64.png' ) !important; background-size:32px 32px !important; }
+}
+
+/* Not Fork screen fork meta box */
+
+#branches{
+    width: 180px;
+    float:right;
+}
+
+.fork-actions{
+    border-top: 1px solid whiteSmoke;
+    clear:both;
+    padding:10px 10px 8px;
+}
+.fork-select{
+    padding:10px 10px 18px;
+    border-bottom: 1px solid #DFDFDF;
+}
+.fork-select label{
+    float:left; 
+    padding-top:5px;
+}
+
+#poststuff #fork .inside{
+    margin: 0;
+    padding: 0;
+}
+
+.create-new-fork-button{
+    float:right;
+    clear:both;
+
+}
+
+
+/* Fork screen fork meta box */
+
+#fork-info p{
+    padding:10px 10px 18px;
+    border-bottom: 1px solid #DFDFDF;
+}
+#fork-info p .fork-compare{
+    float:right;
+}
+
+/* Fork list table */
+
+.fork-list .wrap .add-new-h2 {
+	display:none;
+}

@@ -1,0 +1,181 @@
+# Copyright (C) 2010 WP Help
+# This file is distributed under the same license as the WP Help package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Help 0.2-beta\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-help\n"
+"POT-Creation-Date: 2011-05-19 17:37:03+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2011-05-19 23:03+0100\n"
+"Last-Translator: Luc De Brouwer <info@lucdebrouwer.nl>\n"
+"Language-Team: Luc De Brouwer <info@lucdebrouwer.nl>\n"
+"X-Poedit-Language: Dutch\n"
+"X-Poedit-Country: NETHERLANDS\n"
+
+#: wp-help.php:35
+msgctxt "post type label"
+msgid "Publishing Help"
+msgstr "Publicatie hulp"
+
+#: wp-help.php:52
+msgid "Help Documents"
+msgstr "Help documenten"
+
+#: wp-help.php:53
+msgid "Help Document"
+msgstr "Help document"
+
+#: wp-help.php:54
+msgctxt "i.e. Add new Help Document"
+msgid "Add New"
+msgstr "Nieuwe toevoegen"
+
+#: wp-help.php:55
+msgid "Add New Help Document"
+msgstr "Nieuw help document toevoegen"
+
+#: wp-help.php:56
+msgctxt "i.e. Edit Help Document"
+msgid "Edit"
+msgstr "Bewerken"
+
+#: wp-help.php:57
+msgid "Edit Help Document"
+msgstr "Help document bewerken"
+
+#: wp-help.php:58
+msgid "New Help Document"
+msgstr "Nieuw help document"
+
+#: wp-help.php:59
+msgctxt "i.e. View Help Document"
+msgid "View"
+msgstr "Bekijk"
+
+#: wp-help.php:60
+msgid "View Help Document"
+msgstr "Bekijk help document"
+
+#: wp-help.php:61
+msgid "Search Documents"
+msgstr "Doorzoek documenten"
+
+#: wp-help.php:62
+msgid "No Help Documents Found"
+msgstr "Geen help documenten gevonden"
+
+#: wp-help.php:63
+msgid "No Help Documents found in Trash"
+msgstr "Geen help documenten gevonden in de prullenbak"
+
+#: wp-help.php:64
+msgid "Parent Help Document"
+msgstr "Help document ouder"
+
+#: wp-help.php:99
+msgctxt "page title"
+msgid "Publishing Help"
+msgstr "Publicatie hulp"
+
+#: wp-help.php:99
+msgctxt "menu title"
+msgid "Publishing Help"
+msgstr "Publicatie hulp"
+
+#: wp-help.php:105
+msgctxt "meta box title"
+msgid "WP Help Options"
+msgstr "WP Help opties"
+
+#: wp-help.php:111
+msgid "Make this the default help document"
+msgstr "Maak dit het standaard help document"
+
+#: wp-help.php:133
+msgid "Document updated. <a href=\"%s\">View document</a>"
+msgstr "Document bijgewerkt. <a href=\"%s\">Bekijk het document</a>"
+
+#: wp-help.php:134
+msgid "Custom field updated."
+msgstr "Aangepast veld bijgewerkt"
+
+#: wp-help.php:135
+msgid "Custom field deleted."
+msgstr "Aangepast veld verwijderd."
+
+#: wp-help.php:136
+msgid "Document updated."
+msgstr "Document bijgewerkt."
+
+#: wp-help.php:137
+msgid "Document restored to revision from %s"
+msgstr "Document hersteld naar revisie van %s"
+
+#: wp-help.php:138
+msgid "Document published. <a href=\"%s\">View document</a>"
+msgstr "Document gepubliceerd. <a href=\"%s\">Bekijk document</a>"
+
+#: wp-help.php:139
+msgid "Document saved."
+msgstr "Document opgeslagen."
+
+#: wp-help.php:140
+msgid "Document submitted. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr "Document ingediend. <a target=\"_blank\" href=\"%s\">Voorvertoning document</a>"
+
+#: wp-help.php:141
+msgid "Document scheduled for: <strong>%1$s</strong>. <a target=\"_blank\" href=\"%2$s\">Preview document</a>"
+msgstr "Document gepland voor: <strong>%1$s</strong>. <a target=\"_blank\" href=\"%2$s\">Voorvertoning document</a>"
+
+#: wp-help.php:141
+msgid "M j, Y @ G:i"
+msgstr "M j, Y @ G:i"
+
+#: wp-help.php:142
+msgid "Document draft updated. <a target=\"_blank\" href=\"%s\">Preview document</a>"
+msgstr "Document concept bijgewerkt. <a target=\"_blank\" href=\"%s\">Voorvertoning document</a>"
+
+#: wp-help.php:174
+msgctxt "h2 title"
+msgid "Publishing Help"
+msgstr "Publicatie hulp"
+
+#: wp-help.php:178
+msgid "Help Topics"
+msgstr "Help onderwerpen"
+
+#: wp-help.php:178
+msgctxt "verb. Button with limited space"
+msgid "Manage"
+msgstr "Beheer"
+
+#: wp-help.php:190
+msgid "The requested help document could not be found"
+msgstr "Het opgevraagde help document kon niet worden gevonden"
+
+#: wp-help.php:196
+msgid "No published help documents found. <a href=\"%s\">Manage Help Documents</a>."
+msgstr "Geen gepubliceerde help documenten gevonden. <a href=\"%s\">Help documenten beheren</a>."
+
+#: wp-help.php:198
+msgid "No help documents found. Contact the site administrator."
+msgstr "Geen help documenten gevonden. Contacteer de website beheerder."
+
+#. Plugin Name of the plugin/theme
+msgid "WP Help"
+msgstr "WP Help"
+
+#. Description of the plugin/theme
+msgid "Administrators can create detailed, hierarchical documentation for the site's authors and editors, viewable in the WordPress admin."
+msgstr "Beheerders kunnen een gedetailleerde, hierarchische documentatie voor de website auteurs en redacteurs samenstellen. Deze is te vinden in het WordPress beheer paneel."
+
+#. Author of the plugin/theme
+msgid "Mark Jaquith"
+msgstr "Mark Jaquith"
+
+#. Author URI of the plugin/theme
+msgid "http://coveredwebservices.com/"
+msgstr "http://coveredwebservices.com/"
+

@@ -1,0 +1,246 @@
+# Copyright (C) 2010 
+# This file is distributed under the same license as the  package.
+msgid ""
+msgstr ""
+"Project-Id-Version: EditorialCalendar\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/editorial-calendar\n"
+"POT-Creation-Date: 2011-02-01 15:28:07+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2011-02-01 15:10-0500\n"
+"Last-Translator: Zack Grossbart <zack@grossbart.com>\n"
+"Language-Team: Paternostre <info@paternostre.nl>\n"
+"X-Poedit-Language: Dutch\n"
+"X-Poedit-Country: NETHERLANDS\n"
+
+#: edcal.php:71
+#: edcal.php:93
+msgid "Calendar"
+msgstr "Kalender"
+
+#: edcal.php:221
+#: edcal.php:465
+msgid "en-US"
+msgstr "nl-NL"
+
+#: edcal.php:229
+msgid "%1$s by %2$s"
+msgstr "%1$s door %2$s"
+
+#: edcal.php:231
+msgid "New Post"
+msgstr "Nieuw bericht"
+
+#: edcal.php:233
+msgid " [DRAFT]"
+msgstr "[ CONCEPT]"
+
+#: edcal.php:234
+msgid " [PENDING]"
+msgstr "[WACHTEND]"
+
+#: edcal.php:235
+msgid " [STICKY]"
+msgstr "[STICKY]"
+
+#: edcal.php:236
+msgid " [DRAFT, STICKY]"
+msgstr "[CONCEPT, STICKY]"
+
+#: edcal.php:237
+msgid " [PENDING, STICKY]"
+msgstr "[WACHTEND, STICKY]"
+
+#: edcal.php:238
+#: edcal.php:242
+msgid "Edit"
+msgstr "Bewerken"
+
+#: edcal.php:239
+msgid "Quick Edit"
+msgstr "Snel bewerken"
+
+#: edcal.php:240
+msgid "Delete"
+msgstr "Verwijderen"
+
+#: edcal.php:241
+msgid "View"
+msgstr "Bekijken"
+
+#: edcal.php:243
+msgid "Status:"
+msgstr "Status:"
+
+#: edcal.php:244
+#: edcal.php:409
+msgid "Cancel"
+msgstr "Annuleren"
+
+#: edcal.php:245
+#: edcal.php:363
+msgid "Title"
+msgstr "Titel"
+
+#: edcal.php:246
+#: edcal.php:368
+msgid "Content"
+msgstr "Inhoud"
+
+#: edcal.php:247
+msgid "Add a new post on %s"
+msgstr "Voeg een nieuwe bericht toe op %s"
+
+#: edcal.php:248
+msgid "New %s - "
+msgstr "Nieuwe %s - "
+
+#: edcal.php:249
+msgid "Update"
+msgstr "Bijwerken"
+
+#: edcal.php:250
+#: edcal.php:408
+msgid "Schedule"
+msgstr "Planning"
+
+#: edcal.php:251
+msgid "Submit for Review"
+msgstr "Inzenden voor review"
+
+#: edcal.php:252
+msgid "Save"
+msgstr "Opslaan"
+
+#: edcal.php:253
+msgid "Edit %1$s - %2$s"
+msgstr "Bewerk %1$s - %2$s"
+
+#: edcal.php:254
+#: edcal.php:394
+msgid "Scheduled"
+msgstr "Gepland"
+
+#: edcal.php:256
+msgid "You are about to delete the post \""
+msgstr "Je staat op het punt om het bericht te verwijderen \""
+
+#: edcal.php:257
+msgid "\". Press Cancel to stop, OK to delete."
+msgstr "\". Klik op Annuleer om te stoppen of op OK om te verwijderen."
+
+#: edcal.php:259
+msgid "Looks like someone else already moved this post."
+msgstr "Het lijkt erop dat iemand anders dit bericht al verplaatst heeft."
+
+#: edcal.php:260
+msgid "You do not have permission to edit posts."
+msgstr "Je hebt onvoldoende rechten om berichten te mogen bewerken."
+
+#: edcal.php:261
+msgid "Invalid checksum for post. This is commonly a cross-site scripting error."
+msgstr "Ongeldige checksum voor bericht. Dit is gebruikelijk bij een cross-site scripting-fout."
+
+#: edcal.php:262
+msgid "There was an error contacting your blog."
+msgstr "Er is een fout opgetreden bij de verbinding met je blog."
+
+#: edcal.php:264
+msgid "Screen Options"
+msgstr "Schermopties"
+
+#: edcal.php:265
+msgid "Colors"
+msgstr "Kleuren"
+
+#: edcal.php:266
+msgid "Drafts: "
+msgstr "Concepten:"
+
+#: edcal.php:267
+msgid "Apply"
+msgstr "Toepassen"
+
+#: edcal.php:268
+msgid "Show on screen"
+msgstr "Toon op scherm"
+
+#: edcal.php:269
+msgid " weeks at a time"
+msgstr "weken per keer"
+
+#: edcal.php:270
+msgid "Show in Calendar Cell"
+msgstr "Toon in kalendercel"
+
+#: edcal.php:271
+msgid "Author"
+msgstr "Auteur"
+
+#: edcal.php:272
+#: edcal.php:388
+msgid "Status"
+msgstr "Status"
+
+#: edcal.php:273
+msgid "Time of day"
+msgstr "Tijd van de dag"
+
+#: edcal.php:274
+msgid "An error occurred while loading the calendar: "
+msgstr "Er is een fout opgetreden tijdens het laden van de kalender:"
+
+#: edcal.php:276
+msgid "The calendar can only show between 1 and 5 weeks at a time."
+msgstr "De kalender kan alleen tussen 1 en 5 weken per keer tonen."
+
+#: edcal.php:277
+msgid "Select the number of weeks for the calendar to show."
+msgstr "Selecteer het aantal weken dat de kalender moet tonen."
+
+#: edcal.php:285
+msgid "<h2>We're done</h2>We've finished collecting data.  Thank you for helping us make the calendar better."
+msgstr "<h2>We zijn klaar</h2>We zijn klaar met het verzamelen van de data. Dank je wel voor het helpen bij het verbeteren van de kalender."
+
+#: edcal.php:326
+msgid " Calendar"
+msgstr "Kalender"
+
+#: edcal.php:335
+msgid "Jump back"
+msgstr "Ga terug"
+
+#: edcal.php:337
+msgid "Skip ahead"
+msgstr "Ga vooruit"
+
+#: edcal.php:342
+msgid "Scroll the calendar and make the today visible"
+msgstr "Verschuif de kalender en maak vandaag zichtbaar"
+
+#: edcal.php:342
+msgid "Show Today"
+msgstr "Toon vandaag"
+
+#: edcal.php:354
+msgid "Edit Post"
+msgstr "Bericht bewerken"
+
+#: edcal.php:383
+msgid "Time"
+msgstr "Tijd"
+
+#: edcal.php:391
+msgid "Draft"
+msgstr "Concept"
+
+#: edcal.php:392
+msgid "Pending Review"
+msgstr "Wachtend op review"
+
+#: edcal.php:734
+#: edcal.php:737
+msgid "Error in deleting..."
+msgstr "Fout bij het verwijderen..."
+

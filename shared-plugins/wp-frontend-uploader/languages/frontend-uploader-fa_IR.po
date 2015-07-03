@@ -1,0 +1,551 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Frontend Uploader v0.5.9.2\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-frontend-uploader\n"
+"POT-Creation-Date: 2012-09-01 23:44:34+00:00\n"
+"PO-Revision-Date: 2014-07-12 16:24+0330\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <chifile.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 1.6.4\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
+"_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2\n"
+"X-Poedit-Basepath: .\n"
+"X-Textdomain-Support: yes\n"
+"Language: fa_IR\n"
+"X-Poedit-SearchPath-0: .\n"
+
+# @ frontend-uploader
+#: frontend-uploader.php:494 frontend-uploader.php:497
+#: frontend-uploader.php:501 lib/views/manage-ugc-media.tpl.php:2
+msgid "Manage UGC"
+msgstr "پیکربندی UGC"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:5
+msgid "You do not have permission to upload files."
+msgstr "شما اجازه آپلود فایل ندارید"
+
+# @ default
+#: lib/views/manage-ugc-media.tpl.php:14 lib/views/manage-ugc-posts.tpl.php:15
+msgctxt "file"
+msgid "Add New"
+msgstr "افزودن"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:16 lib/views/manage-ugc-posts.tpl.php:17
+#, php-format
+msgid "Search results for &#8220;%s&#8221;"
+msgstr "جستجوی اطلاعات برای &#8220;%s&#8221;"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:22 lib/views/manage-ugc-media.tpl.php:52
+msgid "Media attachment updated."
+msgstr "فایل های پیوستی به روز شده."
+
+# @ default
+#: lib/views/manage-ugc-media.tpl.php:28 lib/views/manage-ugc-posts.tpl.php:29
+#, php-format
+msgid "Reattached %d attachment."
+msgid_plural "Reattached %d attachments."
+msgstr[0] ""
+msgstr[1] ""
+
+# @ default
+#: lib/views/manage-ugc-media.tpl.php:33
+#, php-format
+msgid "Media attachment permanently deleted."
+msgid_plural "%d media attachments permanently deleted."
+msgstr[0] "حذف شده"
+msgstr[1] "%d حذف شده"
+
+# @ default
+#: lib/views/manage-ugc-media.tpl.php:38
+#, php-format
+msgid "Media attachment moved to the trash."
+msgid_plural "%d media attachments moved to the trash."
+msgstr[0] "انتقال به زباله دان"
+msgstr[1] "%d انتقال به زباله دان"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:39 lib/views/manage-ugc-media.tpl.php:55
+#: lib/views/manage-ugc-posts.tpl.php:40 lib/views/manage-ugc-posts.tpl.php:56
+msgid "Undo"
+msgstr "بازگشت"
+
+# @ default
+#: lib/views/manage-ugc-media.tpl.php:44
+#, php-format
+msgid "Media attachment restored from the trash."
+msgid_plural "%d media attachments restored from the trash."
+msgstr[0] "بازیابی از زباله دان"
+msgstr[1] "%d بازیابی از زباله دان"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:53 lib/views/manage-ugc-posts.tpl.php:54
+msgid "Media permanently deleted."
+msgstr "حذف شده"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:54
+msgid "Error saving media attachment."
+msgstr "خطا در ذخیره پیوست."
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:55 lib/views/manage-ugc-posts.tpl.php:56
+msgid "Media moved to the trash."
+msgstr "فایل به زباله دان منتقل شد."
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:56 lib/views/manage-ugc-posts.tpl.php:57
+msgid "Media restored from the trash."
+msgstr "فایل از زباله دان بازیابی شد"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-media.tpl.php:71
+msgid "Search Media"
+msgstr "جستجوی فایل"
+
+# @ frontend-uploader
+#: frontend-uploader.php:778
+msgid "Submit"
+msgstr "ارسال"
+
+# @ frontend-uploader
+#: frontend-uploader.php:960
+msgid "Your file was successfully uploaded!"
+msgstr "فایل شما با موفقیت آپلود شد!"
+
+# @ frontend-uploader
+#: frontend-uploader.php:996
+msgid ""
+"This kind of file is not allowed. Please, try again selecting other file."
+msgstr "این فایل پشتیبانی نمی شود. لطفا، فایل دیگری انتخاب نمایید."
+
+# @ default
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:60
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:85
+#, php-format
+msgctxt "uploaded files"
+msgid "All <span class=\"count\">(%s)</span>"
+msgid_plural "All <span class=\"count\">(%s)</span>"
+msgstr[0] "همه <span class=\"count\">(%s)</span>"
+msgstr[1] "همه <span class=\"count\">(%s)</span>"
+
+# @ default
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:72
+#, php-format
+msgctxt "detached files"
+msgid "Unattached <span class=\"count\">(%s)</span>"
+msgid_plural "Unattached <span class=\"count\">(%s)</span>"
+msgstr[0] "پیوست نشده <span class=\"count\">(%s)</span>"
+msgstr[1] "پیوست نشده <span class=\"count\">(%s)</span>"
+
+# @ default
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:75
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:99
+#, php-format
+msgctxt "uploaded files"
+msgid "Trash <span class=\"count\">(%s)</span>"
+msgid_plural "Trash <span class=\"count\">(%s)</span>"
+msgstr[0] "زباله دان <span class=\"count\">(%s)</span>"
+msgstr[1] "زباله دان <span class=\"count\">(%s)</span>"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:82
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:303
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:319
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:325
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:30
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:108
+msgid "Delete Permanently"
+msgstr "حذف کردن"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:84
+msgid "Attach to a post"
+msgstr "پیوست به نوشته"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:107
+msgid "No media attachments found."
+msgstr "هیچ فایل پیوستی پیدا نشد"
+
+# @ default
+#. translators: column name
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:115
+msgctxt "column name"
+msgid "File"
+msgstr "فایل"
+
+# @ frontend-uploader
+#: frontend-uploader.php:842
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:116
+msgid "Author"
+msgstr "نویسنده"
+
+# @ default
+#. translators: column name
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:119
+msgctxt "column name"
+msgid "Attached to"
+msgstr "پیوست به"
+
+# @ default
+#. translators: column name
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:122
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:128
+msgctxt "column name"
+msgid "Date"
+msgstr "تاریخ"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:171
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:184
+#, php-format
+msgid "Edit \"%s\""
+msgstr "ویرایش\"%s\""
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:216
+msgid "No Tags"
+msgstr "بدون برچسب"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:231
+msgid "Unpublished"
+msgstr "منتشر نشده"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:233
+msgid "Y/m/d g:i:s A"
+msgstr "Y/m/d g:i:s A"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:238
+#, php-format
+msgid "%s from now"
+msgstr "%s اکنون از"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:240
+#, php-format
+msgid "%s ago"
+msgstr "%s قبل"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:242
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:258
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:365
+msgid "Y/m/d"
+msgstr "Y/m/d"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:263
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:372
+msgid "(Unattached)"
+msgstr "(پیوست نشده)"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:296
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:311
+msgid "Edit"
+msgstr "ویرایش"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:299
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:316
+msgid "Trash"
+msgstr "زباله دان"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:305
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:330
+#, php-format
+msgid "View \"%s\""
+msgstr "نمایش \"%s\""
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:305
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:330
+msgid "View"
+msgstr "نمایش"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:307
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:373
+msgid "Attach"
+msgstr "پیوست"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:314
+msgid "Restore"
+msgstr "بازیابی"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:324
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:29
+msgid "Approve"
+msgstr "تأیید"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-media-list-table.php:367
+msgid "Re-Attach"
+msgstr "پیوست دوباره"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:47
+msgid "Frontend Uploader Settings"
+msgstr "تنظیمات Frontend Uploader"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:54
+msgid "Basic Settings"
+msgstr "تنظیمات اصلی"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:71
+msgid "Notify site admins"
+msgstr "آگاهی سازی مدیران"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:72
+#: lib/php/frontend-uploader-settings.php:102
+#: lib/php/frontend-uploader-settings.php:117
+#: lib/php/frontend-uploader-settings.php:132
+#: lib/php/frontend-uploader-settings.php:139
+#: lib/php/frontend-uploader-settings.php:154
+msgid "Yes"
+msgstr "آری"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:78
+msgid "Admin Notification"
+msgstr "خبر ساز مدیر"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:79
+msgid "Message that admin will get on new file upload"
+msgstr "دریافت پیام در مورد آپلود فایل جدید"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:86
+msgid "Notification email"
+msgstr "ایمیل آگاهی سازی"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:87
+msgid "Leave blank to use site admin email"
+msgstr "برای استفاده از ایمیل پیش فرض مدیر سایت این گزینه را خالی بگذارید"
+
+# @ frontend-uploader
+#: frontend-uploader.php:395
+msgid "New content was uploaded on your site"
+msgstr "یک فایل تازه در سایت شما آپلود شده است"
+
+# @ frontend-uploader
+#: frontend-uploader.php:497 frontend-uploader.php:501
+#: lib/views/manage-ugc-posts.tpl.php:2
+msgid "Manage UGC Posts"
+msgstr "پیکربندی UGC پست های "
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-posts.tpl.php:5
+msgid "You do not have permission to publish posts."
+msgstr "شما اجازه انتشار نوشته را ندارید."
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-posts.tpl.php:72
+msgid "Search Posts"
+msgstr "جستجوی پست ها"
+
+# @ frontend-uploader
+#: frontend-uploader.php:776
+msgid "Description"
+msgstr "توضیح"
+
+# @ frontend-uploader
+#: frontend-uploader.php:1000
+msgid "The content you are trying to post is invalid."
+msgstr "تلاش برای انتشار محتوای نامعتبر"
+
+# @ default
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:124
+msgctxt "column name"
+msgid "Title"
+msgstr ""
+
+# @ default
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:126
+msgctxt "column name"
+msgid "Categories"
+msgstr ""
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:94
+msgid "Allowed categories"
+msgstr "دسته بندی های مجاز"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:95
+msgid "Comma separated IDs (leave blank for all)"
+msgstr "جدا کردن شناسه با ویرگول (خالی برای ترک همه)"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:101
+msgid "Show author field"
+msgstr "نمایش فیلد نویسنده"
+
+# @ frontend-uploader
+#: frontend-uploader.php:789
+msgid "Title"
+msgstr "عنوان"
+
+# @ frontend-uploader
+#: frontend-uploader.php:263 frontend-uploader.php:264
+msgid "Unnamed"
+msgstr "نام گذاری نشده"
+
+# @ frontend-uploader
+#: frontend-uploader.php:743
+msgid "Submit a new post"
+msgstr "ارسال پست تازه"
+
+# @ frontend-uploader
+#: frontend-uploader.php:760
+msgid "Submit a media file"
+msgstr "ارسال فایل"
+
+# @ frontend-uploader
+#: frontend-uploader.php:968
+msgid "There was an error with your submission"
+msgstr "خطایی در ارسال شما وجود دارد"
+
+# @ frontend-uploader
+#: frontend-uploader.php:993
+msgid "Security check failed!"
+msgstr "بررسی امنیتی شکست خورده!"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:108
+msgid "Enable Frontend Uploader for the following post types"
+msgstr "فعال کردن Frontend Uploader برای انواع پست های زیر"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:131
+msgid "Auto-approve registered users files"
+msgstr "تأیید خودکار فایل های کاربران ثبت نام شده"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:138
+msgid "Auto-approve any files"
+msgstr "تأیید خودکار هر فایلی"
+
+# @ frontend-uploader
+#: frontend-uploader.php:172
+msgid "Frontend Uploader requires WordPress 3.3 or newer. Please upgrade."
+msgstr "Frontend Uploader نیاز به وردپرس 3.3 یا جدیدتر دارد. لطفا ارتقا دهید."
+
+# @ frontend-uploader
+#: frontend-uploader.php:777
+msgid "Your Media Files"
+msgstr "فایل های شما"
+
+# @ frontend-uploader
+#: frontend-uploader.php:808
+msgid "Post content or file description"
+msgstr "محتوای پست یا توضیحات فایل"
+
+# @ frontend-uploader
+#: frontend-uploader.php:828
+msgid "Post content"
+msgstr "محتوای پست"
+
+# @ frontend-uploader
+#: frontend-uploader.php:964
+msgid "Your post was successfully uploaded!"
+msgstr "پست شما با موفقیت آپلود شد!"
+
+# @ frontend-uploader
+#: frontend-uploader.php:1003
+msgid "Couldn't upload the file"
+msgstr "ناتوان از آپلود فایل"
+
+# @ frontend-uploader
+#: frontend-uploader.php:1006
+msgid "Couldn't create the post"
+msgstr "ناتوان از ساخت پست"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:116
+msgid "Enable visual editor for textareas"
+msgstr "فعال سازی ویرایشگر پیشرفته برای ویرایشگر نوشته"
+
+# @ frontend-uploader
+#: lib/php/class-frontend-uploader-wp-posts-list-table.php:117
+msgid "No posts found."
+msgstr "پستی یافت نشد"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:153
+msgid "Suppress default fields"
+msgstr "بازگردانی فیلدهای پیش فرض"
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-posts.tpl.php:23 lib/views/manage-ugc-posts.tpl.php:53
+msgid "Post updated."
+msgstr "پست به روز رسانی شد"
+
+# @ default
+#: lib/views/manage-ugc-posts.tpl.php:34
+#, php-format
+msgid "Post permanently deleted."
+msgid_plural "%d Posts permanently deleted."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+# @ default
+#: lib/views/manage-ugc-posts.tpl.php:39
+#, php-format
+msgid "Post moved to the trash."
+msgid_plural "%d Posts moved to the trash."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+# @ default
+#: lib/views/manage-ugc-posts.tpl.php:45
+#, php-format
+msgid "Post restored from the trash."
+msgid_plural "%d Posts restored from the trash."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+# @ frontend-uploader
+#: lib/views/manage-ugc-posts.tpl.php:55
+msgid "Error saving Post."
+msgstr "خطا در ذخیره پست"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:123
+msgid ""
+"Also allow to upload these files (in addition to the ones that WP allows by "
+"default)"
+msgstr ""
+"اجازه آپلود فایل های بیشتر (علاوه بر فایل هایی که وردپرس اجازه آپلود می دهد)"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:145
+msgid "Default file name"
+msgstr "نام پیش فرض فایل"
+
+# @ frontend-uploader
+#: lib/php/frontend-uploader-settings.php:146
+msgid "Leave blank to use original file name"
+msgstr "برای استفاده از نام اصلی فایل این گزینه را خالی بگذارید"

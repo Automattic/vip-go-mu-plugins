@@ -1,0 +1,29 @@
+#draw_history ul{
+	height:250px;
+	overflow:scroll;
+	overflow-x:auto;
+	list-style:none;
+	border:none;
+}
+#draw_history ul li {
+	list-style:none;
+	border:none;
+	border-bottom:1px solid #dddddd;
+	margin:5px;
+	padding:5px;
+	min-height:45px;
+}
+#draw_history ul li strong {
+	float:left;
+	margin-left:5px;
+}
+#draw_history ul li a {
+	float:left;
+	max-width:90%;
+	overflow:hidden;
+}
+#draw_history ul li div.block {
+	float:left;
+	height:40px;
+	width:40px;
+}

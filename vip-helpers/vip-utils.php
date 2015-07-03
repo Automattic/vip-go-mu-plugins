@@ -916,3 +916,131 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
 
 	return $html;
 }
+
+/**
+ * Loads a plugin out of our shared plugins directory.
+ *
+ * Note - This function does not trigger plugin activation / deactivation hooks.
+ * As such, it may not be compatible with all plugins
+ *
+ * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
+ * @param string $plugin Optional. Plugin folder name (and filename) of the plugin
+ * @param string $folder Deprecated. No longer used
+ * @param bool $load_release_candidate Whether to load a release candidate version of this plugin, if available
+ * @return bool True if the include was successful
+ */
+function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_release_candidate = false ) {
+	// Make sure there's a plugin to load
+	if ( empty($plugin) ) {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
+		}
+	}
+
+	// Make sure $plugin and $folder are valid
+	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
+
+	// Is this a Shared Plugin?
+	$folder 	 = 'shared-plugins';
+	$plugin_root = WP_CONTENT_DIR . '/mu-plugins';
+
+	$plugin_file = $plugin_root . "/$folder/$plugin/$plugin.php";
+
+	$includepath = false;
+
+	if ( file_exists( $plugin_file ) ) {
+		// Shared plugins are located at /wp-content/mu-plugins/shared-plugins/example-plugin/
+		// You should keep your local copies of the plugins in the same location
+
+		$includepath 					= $plugin_root . "/$folder/$plugin/$plugin.php";
+		$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin/$plugin.php";
+
+		if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
+			$includepath = $release_candidate_includepath;
+		}
+	} else {
+		// Attempt to load it in the plugins dir
+		$plugin_root 	= WP_PLUGIN_DIR;
+		$folder 		= 'plugins';
+
+		$all_plugins = get_plugins();
+
+		// The folder and plugin file may not match - we need to match on folder
+		foreach( $all_plugins as $plugin_file => $plugin_data ) {
+			if ( $plugin === dirname( $plugin_file ) ) {
+				$includepath = $plugin_root . "/$plugin_file";
+				break;
+			}
+		}
+	}
+
+	if ( $includepath && file_exists( $includepath ) ) {
+
+		wpcom_vip_add_loaded_plugin( "$folder/$plugin" );
+
+		// Since we're going to be include()'ing inside of a function,
+		// we need to do some hackery to get the variable scope we want.
+		// See http://www.php.net/manual/en/language.variables.scope.php#91982
+
+		// Start by marking down the currently defined variables (so we can exclude them later)
+		$pre_include_variables = get_defined_vars();
+
+		// Now include
+		include_once( $includepath );
+
+		// Blacklist out some variables
+		$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
+
+		// Let's find out what's new by comparing the current variables to the previous ones
+		$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
+
+		// global each new variable
+		foreach ( $new_variables as $new_variable => $devnull )
+			global $$new_variable;
+
+		// Set the values again on those new globals
+		extract( $new_variables );
+
+		return true;
+	} else {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
+		}
+	}
+}
+
+/**
+ * Is the given user an automattician?
+ *
+ * Note: This does a relatively weak check based on email address and their
+ * VIP Support email address verification status (separate from other email verification)
+ * It's possible to fake that data (it's just meta and user_email), so don't use this
+ * for protecting sensitive info or performing sensitive tasks
+ *
+ * @param int The WP User id
+ * @return bool Bool indicating if user is an Automattician
+ */
+function is_automattician( $user_id = false ) {
+	if ( $user_id ) {
+		$user = new WP_User( $user_id );
+	} else {
+		$user = wp_get_current_user();
+	}
+
+	if ( ! isset( $user->ID ) || ! $user->ID ) {
+		return false;
+	}
+
+	// Check that their address is an a8c one, *and* they have validated that address
+	if ( ! class_exists( 'WPCOM_VIP_Support_User' ) ) {
+		return false;
+	}
+	
+	$vip_support = WPCOM_VIP_Support_User::init();
+
+	if ( WPCOM_VIP_Support_User::is_valid_automattician( $user->ID ) ) {
+		return true;
+	}
+
+	return false;
+}

@@ -1,0 +1,303 @@
+@CHARSET "UTF-8";
+
+.chartbeatWidget {
+	position: relative;
+}
+
+.chartbeatWidget a.branding {
+	background: transparent
+		url("http://static2.chartbeat.com/images/branding/favicons/chartbeat.png")
+		no-repeat left top;
+	bottom: -20px;
+	height: 14px;
+	position: absolute;
+	left: 0;
+	text-indent: -9999px;
+	width: 138px;
+}
+
+.chartbeatWidget {
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	background-color: #fafafa;
+	background-repeat: no-repeat;
+	background-image: -moz-linear-gradient(#fefefe, #fafafa);
+	background-image: -ms-linear-gradient(top, #fefefe, #fafafa);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#fefefe),
+		to(#fafafa) );
+	background-image: -webkit-linear-gradient(#fefefe, #fafafa);
+	background-image: linear-gradient(top, #fefefe, #fafafa);
+	border: 1px solid #d9d9d9;
+	border-radius: 5px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	color: #333;
+	font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+	padding: 10px;
+	text-align: center;
+}
+
+#chartbeatGauge {
+	float: left;
+	margin: 0px 30px 10px 0px;
+	width: 30%;
+}
+
+.chartbeatTable {
+	width: 50%;
+}
+
+#chartbeatRefsTable {
+	float: left;
+	margin: 0px 0px 10px 5px;
+	width: 60%;
+}
+
+div.chartbeatRefTerm, div.chartbeatRefDom {
+	width: 150px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-align: left;
+}
+
+td.chartbeatRefTdCnt {
+	width: 5px;
+}
+
+#chartbeatLinks {
+	float: left;
+	padding: 0px 0px 5px 5px;
+}
+
+#chartbeatSearch {
+	float: left;
+	padding: 0px 5px 5px 5px;
+}
+
+.clear {
+	clear: both;
+}
+
+.chartbeatWidget .chartbeatNumber {
+	font-weight: bold;
+	line-height: 1.25;
+}
+
+.chartbeatWidget .chartbeatLabel {
+	color: #777;
+	line-height: 1.5;
+}
+
+.chartbeatWidget .chartbeatLabel .host {
+	color: #555;
+}
+
+.chartbeatWidget th.chartbeatLabel {
+	color: #555;
+	font-size: 9pt;
+}
+
+.chartbeatWidget a.branding {
+	bottom: -25px;
+	left: auto;
+	right: 0;
+}
+
+.chartbeatRefDom {
+	width: 100px;
+}
+
+.chartbeatRefTerm {
+	width: 100px;
+}
+
+@cubicEase: cubic-bezier(0.2, 0.6, 0.3, 1);
+
+#annotations {
+  position: relative;
+  z-index: 2;
+}
+
+#annotations {
+	position: relative;
+	z-index: 2;
+}
+
+#annotations .annotation {
+	position: absolute;
+}
+
+#annotations .annotation .infoBubble {
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	background-color: #f0f0f0;
+	background-repeat: no-repeat;
+	background-image: -moz-linear-gradient(#ffffff, #f0f0f0);
+	background-image: -ms-linear-gradient(top, #ffffff, #f0f0f0);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff),
+		to(#f0f0f0) );
+	background-image: -webkit-linear-gradient(#ffffff, #f0f0f0);
+	background-image: linear-gradient(top, #ffffff, #f0f0f0);
+	background-color: #f0f0f0;
+	background-repeat: no-repeat;
+	background-image: -moz-linear-gradient(#ffffff, #f0f0f0);
+	background-image: -ms-linear-gradient(top, #ffffff, #f0f0f0);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff),
+		to(#f0f0f0) );
+	background-image: -webkit-linear-gradient(#ffffff, #f0f0f0);
+	background-image: linear-gradient(top, #ffffff, #f0f0f0);
+	border: 1px solid #ccc;
+	border-top: 1px solid #d9d9d9;
+	border-bottom: 1px solid #c0c0c0;
+	color: #777;
+	display: none;
+	font-size: 1.1em;
+	left: -97px;
+	line-height: 1.35;
+	max-height: 50px;
+	opacity: 0;
+	padding: 10px 15px;
+	position: absolute;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+	bottom: 18px;
+	width: 175px;
+	z-index: 2147483647;
+	-webkit-transform: translate3d(0, 0, 0);
+	-webkit-backface-visibility: hidden;
+}
+
+#annotations .annotation .infoBubble:before {
+	content: "";
+	border-color: #f0f0f0 transparent;
+	border-style: solid;
+	border-width: 8px 8px 0;
+	bottom: -7px;
+	display: block;
+	left: 92px;
+	position: absolute;
+	width: 0;
+	z-index: 10002;
+}
+
+#annotations .annotation .infoBubble:after {
+	content: "";
+	border-color: #c0c0c0 transparent;
+	border-style: solid;
+	border-width: 8px 8px 0;
+	bottom: -8px;
+	display: block;
+	left: 92px;
+	position: absolute;
+	width: 0;
+	z-index: 10001;
+}
+
+#annotations .annotation a {
+	-moz-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-ms-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-o-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-webkit-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-moz-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-ms-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-o-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-webkit-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-moz-animation-fill-mode: forwards;
+	-ms-animation-fill-mode: forwards;
+	-o-animation-fill-mode: forwards;
+	-webkit-animation-fill-mode: forwards;
+	animation-fill-mode: forwards;
+	-moz-animation-fill-mode: forwards;
+	-ms-animation-fill-mode: forwards;
+	-o-animation-fill-mode: forwards;
+	-webkit-animation-fill-mode: forwards;
+	animation-fill-mode: forwards;
+	-moz-border-radius: 50px;
+	-webkit-border-radius: 50px;
+	border-radius: 50px;
+	-moz-border-radius: 50px;
+	-webkit-border-radius: 50px;
+	border-radius: 50px;
+	-moz-box-shadow: 0 0 2px rgba(0, 0, 0, 0.07);
+	-webkit-box-shadow: 0 0 2px rgba(0, 0, 0, 0.07);
+	box-shadow: 0 0 2px rgba(0, 0, 0, 0.07);
+	-moz-box-shadow: 0 0 2px rgba(0, 0, 0, 0.07);
+	-webkit-box-shadow: 0 0 2px rgba(0, 0, 0, 0.07);
+	box-shadow: 0 0 2px rgba(0, 0, 0, 0.07);
+	background-color: #cccccc;
+	background-repeat: no-repeat;
+	background-image: -moz-linear-gradient(#dddddd, #cccccc);
+	background-image: -ms-linear-gradient(top, #dddddd, #cccccc);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#dddddd),
+		to(#cccccc) );
+	background-image: -webkit-linear-gradient(#dddddd, #cccccc);
+	background-image: linear-gradient(top, #dddddd, #cccccc);
+	background-color: #cccccc;
+	background-repeat: no-repeat;
+	background-image: -moz-linear-gradient(#dddddd, #cccccc);
+	background-image: -ms-linear-gradient(top, #dddddd, #cccccc);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#dddddd),
+		to(#cccccc) );
+	background-image: -webkit-linear-gradient(#dddddd, #cccccc);
+	background-image: linear-gradient(top, #dddddd, #cccccc);
+	border: 1px solid #c0c0c0;
+	cursor: default;
+	display: block;
+	height: 5px;
+	margin: 0 0 0 1px;
+	padding: 0;
+	text-decoration: none;
+	width: 5px;
+}
+
+#annotations .annotation a:hover .infoBubble {
+	-moz-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-ms-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-o-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-webkit-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-moz-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-ms-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-o-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-webkit-animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	animation: fadeInUp 0.75s cubic-bezier(0.2, 0.6, 0.3, 1);
+	-moz-animation-fill-mode: forwards;
+	-ms-animation-fill-mode: forwards;
+	-o-animation-fill-mode: forwards;
+	-webkit-animation-fill-mode: forwards;
+	animation-fill-mode: forwards;
+	-moz-animation-fill-mode: forwards;
+	-ms-animation-fill-mode: forwards;
+	-o-animation-fill-mode: forwards;
+	-webkit-animation-fill-mode: forwards;
+	animation-fill-mode: forwards;
+	cursor: default;
+	display: block;
+	opacity: 1;
+}
+
+#annotations .annotation .verticalLine {
+	background-color: #ccc;
+	display: block;
+	height: 142px;
+	left: 50%;
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+}
+
+#annotations .annotation:hover .verticalLine {
+	opacity: 1;
+}

@@ -1,0 +1,41 @@
+.taxonomy-images-modal .create-association .term-name {
+	font-style:italic;
+}
+.taxonomy-images-modal .create-association {
+	display:inline-block;
+}
+.taxonomy-images-modal .remove-association {
+	display:none;
+	color:#bc0b0b;
+	text-decoration:underline;
+	cursor:pointer;
+}
+.taxonomy-images-modal #tab-type_url,
+.taxonomy-images-modal .savesend input {
+	display:none !important;
+}
+.taxonomy-image-thumbnail {
+	display:block;
+	height:77px;
+	width:77px;
+	overflow:hidden;
+	text-align:center;
+	margin-bottom:3px;
+}
+.taxonomy-image-control .control {
+	display:block;
+	float:left;
+	text-indent:-9999em;
+	width:15px;
+	height:15px;
+	background:url( controls.png );
+	background-repeat:no-repeat;
+}
+.taxonomy-image-control .control:hover { cursor:pointer; }
+.taxonomy-image-control .upload { background-position: 0 0; }
+.taxonomy-image-control .upload:hover { background-position: -15px 0 }
+.taxonomy-image-control .remove { background-position:-30px 0; }
+.taxonomy-image-control .remove:hover { background-position:-45px 0; }
+.taxonomy-image-control .library { background-position: -60px 0; }
+.taxonomy-image-control .hide { visibility:hidden; }
+.taxonomy-image-control .show { visibility:visible; }

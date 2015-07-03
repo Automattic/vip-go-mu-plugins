@@ -7,6 +7,15 @@
 [submodule "vip-jetpack"]
 	path = vip-jetpack
 	url = git@github.com:Automattic/vipv2-jetpack.git
+[submodule "advanced-post-cache"]
+	path = advanced-post-cache
+	url = https://github.com/Automattic/advanced-post-cache.git
 [submodule "jetpack"]
 	path = jetpack
 	url = git@github.com:Automattic/jetpack.git
+[submodule "rewrite-rules-inspector"]
+	path = rewrite-rules-inspector
+	url = https://github.com/Automattic/rewrite-rules-inspector
+[submodule "shared-plugins/wp-api"]
+	path = shared-plugins/wp-api
+	url = git@github.com:WP-API/WP-API.git

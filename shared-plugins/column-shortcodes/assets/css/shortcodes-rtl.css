@@ -1,0 +1,102 @@
+/* =General CSS
+-------------------------------------------------------------- */
+.one_half,
+.one_third,
+.two_third,
+.one_fourth,
+.three_fourth,
+.one_fifth,
+.two_fifth,
+.three_fifth,
+.four_fifth,
+.one_sixth {
+	float: right;
+}
+.clear_column {
+	clear:both;
+	display:block;
+	font-size:0; height:0;
+	line-height:0; width:100%;
+	overflow: hidden;
+}
+
+/* =Shortcodes Templates
+-------------------------------------------------------------- */
+
+/* =Default Template (no margin)
+-------------------------------------------------------------- */
+.one_half  {
+	width: 50%;
+}
+.one_third  {
+	width: 33.3%;
+}
+.two_third  {
+	width: 66.6%;
+}
+.one_fourth  {
+	width: 25%;
+}
+.three_fourth  {
+	width: 75%;
+}
+.one_fifth  {
+	width: 20%;
+}
+.two_fifth  {
+	width: 40%;
+}
+.three_fifth  {
+	width: 60%;
+}
+.four_fifth  {
+	width: 80%;
+}
+.one_sixth  {
+	width: 16.6%;
+}
+
+/* =Small Margins Template
+-------------------------------------------------------------- */
+/*
+.one_half  {
+	width: 48%;
+	margin-left: 2%;
+}
+.one_third  {
+	width: 32%;
+	margin-left: 1.3%;
+}
+.two_third  {
+	width: 64%;
+	margin-left: 2.6%;
+}
+.one_fourth  {
+	width: 24%;
+	margin-left: 1%;
+}
+.three_fourth  {
+	width: 72%;
+	margin-left: 3%;
+}
+.one_fifth  {
+	width: 19%;
+	margin-left: 1%;
+}
+.two_fifth  {
+	width: 38%;
+	margin-left: 2%;
+}
+.three_fifth  {
+	width: 57%;
+	margin-left: 3%;
+}
+.four_fifth  {
+	width: 76%;
+	margin-right: 3%;
+}
+.one_sixth  {
+	width: 16%;
+	margin-left: 0.6%;
+}
+*/

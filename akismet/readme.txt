@@ -2,8 +2,8 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs
 Tags: akismet, comments, spam
 Requires at least: 3.2
-Tested up to: 4.2.1
-Stable tag: 3.1.1
+Tested up to: 4.2.2
+Stable tag: 3.1.2
 License: GPLv2 or later
 
 Akismet checks your comments against the Akismet Web service to see if they look like spam or not.
@@ -29,6 +29,16 @@ Upload the Akismet plugin to your blog, Activate it, then enter your [Akismet.co
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 3.1.2 =
+*Release Date - 7 June 2015*
+
+* Reduced the amount of space Akismet uses in the commentmeta table.
+* Fixed a bug where some comments with quotes in the author name weren't getting history entries
+* Pre-emptive security improvements to ensure that the Akismet plugin can't be used by attackers to compromise a WordPress installation.
+* Better UI for the key entry field: allow whitespace to be included at the beginning or end of the key and strip it out automatically when the form is submitted.
+* When deactivating the plugin, notify the Akismet API so the site can be marked as inactive.
+* Clearer error messages.
 
 = 3.1.1 =
 *Release Date - 17th March, 2015*

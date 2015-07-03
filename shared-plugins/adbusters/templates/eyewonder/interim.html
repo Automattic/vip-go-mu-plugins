@@ -1,0 +1,17 @@
+<html>
+	<head>
+		<title>Ad</title>
+	</head>
+	<body>
+		<script type="text/javascript">
+			var cdn="100125";
+			if(window.location.search.indexOf("/300125/")>0) cdn="300125";
+			window.onload = function() {
+				var s = document.createElement('script');
+				s.type = 'text/javascript';
+				s.src = 'http://cdn.eyewonder.com/'+cdn+'/QA/_interim.js?ewbust='+new Date().getTime();
+				document.body.appendChild(s);
+			};
+		</script>
+	</body>
+</html>

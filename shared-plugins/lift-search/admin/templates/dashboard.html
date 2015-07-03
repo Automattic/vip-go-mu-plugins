@@ -1,0 +1,51 @@
+<div class="liftBanner">
+	<h1>Lift:Search for Wordpress</h1>
+</div>
+<div class="dashboard-box">
+	<div class="grid">
+		<div class="col-1-8 textcenter">
+			<div class="lift-status good">normal</div>
+		</div>
+		<div class="col-3-8">
+			<h2>CloudSearch Document Sync</h2>
+			<div class="col-1-2">
+				Last: <%- settings.last_sync %>
+			</div>
+			<div class="col-1-2">
+			Next: <%- settings.next_sync %>
+			</div>
+		</div>
+		<div class="col-1-2">
+			<input id="batch_interval" value="<%- settings.batch_interval.value %>" class="small-text" type="text" />
+			<select id="batch_interval_unit">
+				<option value="m">Minutes</option>
+				<option value="h">Hours</option>
+				<option value="d">Days</option>
+			</select>
+			<input type="button" id="batch_interval_update" class="button-primary" value="Save"/>
+			<input type="button" id="batch_sync_now" class="button-primary right" value="Sync Queue Now"/>
+		</div>
+	</div>
+</div>
+
+<div class="dashboard-box">
+	<div class="grid">
+		<div class="col-1-2">
+			Override Search
+			<div class="toggle">
+				<input id="override_search" name="searchOverride" type="checkbox"<%= settings.override_search ? 'checked="checked"' : '' %> />
+				<label for="searchOverride" class="switch"></label>
+			</div>			
+		</div>
+		<div class="col-1-2 textright">
+			<input type="button" id="lift_update_keys" class="button-primary" value="Change AWS Keys"/>
+			<input type="button" id="lift_reset" class="button-primary" value="Reset Lift"/>
+		</div>
+	</div>
+</div>
+
+<div id="document_queue">
+</div> <!--end #document_queue -->
+<div id="error_log">
+	
+</div> <!--end #error_log -->

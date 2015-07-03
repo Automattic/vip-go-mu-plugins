@@ -1,0 +1,422 @@
+/*******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
+#edcal_scrollable {
+    /* required settings */ 
+    position:relative; 
+    overflow:hidden; 
+ 
+    /* This height will be reset with JavaScript */ 
+    height: 100%;
+    margin-top: 5px;
+    margin-left: 4px;
+    margin-right: 2px;
+}
+
+#cal_cont, #edcal_scrollable {
+    -x-system-font:none;
+    font-family:"Lucida Grande",Verdana,Arial,"Bitstream Vera Sans",sans-serif;
+    font-size:11px;
+    font-size-adjust:none;
+    font-stretch:normal;
+    font-style:normal;
+    font-variant:normal;
+    font-weight:normal;
+    line-height:18px;
+}
+
+#cal {
+    position:absolute; 
+ 
+    /* this time we have very large space for the height */ 
+    height:100%; 
+    margin-right: 10px;
+}
+
+.day {
+    border: 1px solid rgb(164, 164, 164); /* this will add to total height in IE. So, 100% + 2px */
+    -moz-border-radius-topright:3px;
+    -moz-border-radius-topleft:3px;
+    -webkit-border-top-left-radius:3px;
+    -webkit-border-top-right-radius:3px;
+    background: white;
+}
+
+.day.beforeToday {
+    background: #f1f1f1;
+}
+
+.day.todayAndAfter {
+    background: #fff;
+}
+
+.day.day-active {
+    background-color: lightyellow;
+}
+
+.scrollHover {
+    background: lightblue;
+}
+
+.row {
+    height: 100%;
+}
+
+.dayobj {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.firstOfMonth .dayobj {
+    background-color: #eaf2fb;
+}
+
+.daylabel {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    font-weight:bold;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.daynewlink {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    display: none;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    text-decoration: none;
+    font-size:10px;
+    z-index: 10;
+    overflow: hidden;
+    height: 1.5em;
+}
+
+.today .daylabel {
+    color: white;
+}
+
+.today .daynewlink {
+    color: white;
+}
+
+.post {
+    display: block;
+    list-style-type: none;
+    z-index: 10;
+    margin-left: 2px;
+    margin-right: 2px;
+    font-size: 10px;
+    padding: 0px;
+}
+
+.posttime {
+    font-weight: bold;
+}
+
+.post.draggable .postlink {
+    cursor: move;
+}
+
+.post .postactions {
+    display: none;
+}
+
+.postactions a {
+  text-decoration:none;
+}
+
+.post .postlink:hover {
+    color: #d54e21;
+    background-color: #f5f5f5;
+}
+
+.dayhead {
+    font-weight: bold;
+    text-align: left;
+    text-indent: 5px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    color: #000;
+    line-height: 2.4em;
+    min-width: 10em;
+}
+
+.dayheadcont {
+    position: relative;
+    height: 28px;
+    top: 0px;
+}
+
+.dayhead.firstday {
+    margin-left: 5px;
+}
+
+.dayhead.lastday {
+}
+
+#cal_cont {
+    border:1px solid #dfdfdf;
+    padding-bottom:1px;
+    -moz-border-radius:4px;
+    -webkit-border-radius:4px;
+}
+
+#topbar {
+    margin-bottom: 1em;
+    width: 100%;
+    margin-top: 1em;
+    position: relative;
+    height: 2em;
+}
+
+#topleft {
+    position: absolute;
+    left: 0px;
+    top: -14px;
+    width: auto;
+}
+
+#topright {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: auto;
+    text-align: right;
+}
+
+#moveToToday {
+    margin-left: 2em;
+    margin-right: 6px;
+    text-decoration: none;
+}
+
+.publish, .post.readonly {
+    color: #a4a4a4;
+    font-weight:normal;
+}
+
+#loadingcont {
+    position: relative;
+}
+
+#loading {
+    background-image: url('images/loading.gif'); 
+    background-repeat: no-repeat;
+    position: absolute;
+    width: 43px;
+    height: 43px;
+    display: block;
+    left: 20em;
+    top: -1.5em;
+}
+
+.loadingclass > .postlink, .tiploading, .loadingclass:hover > .postlink {
+    background-image: url('images/loading_post.gif'); 
+    background-position: top right;
+    background-repeat: no-repeat;
+    cursor: auto;
+}
+
+.postlist {
+    position: relative;
+    top:24px;  /* 1.5em; */
+    overflow: auto;
+}
+
+/*.page-numbers {
+    text-decoration: none;
+    border-bottom-style: none;
+    border: none;
+    background: white;
+    color: #21759B;
+}*/
+
+
+/* Quick Add/Edit Tooltip */
+
+#tooltip {
+    background: #f9f9f9;
+    width:500px;
+    border:1px solid #D3D3D3;
+    -moz-border-radius:6px;
+    -webkit-border-radius:6px;
+    -moz-box-shadow:0 4px 8px #C8C8C8;
+    position: relative;
+    z-index: 25;
+}
+
+.tooltip {
+    padding: 1em;
+    position: relative;
+}
+
+#tooltiptitle {
+    font-weight:bold;
+    padding-left:1em;
+    padding-right:1em;
+    height:30px;
+    line-height:30px;
+    position:relative;
+    text-shadow: #fff 0px 1px 0px;
+}
+
+#tipclose {
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    top:8px;
+    right:1em;
+}
+
+#tooltip .inline-edit-row fieldset {
+    padding-bottom:1.2em;
+}
+
+#edcal-title {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}
+
+/*
+TinyMCE Rich Editor and Media buttons are not currently used
+#tooltip .mceEditor,*/
+#tooltip textarea {
+    height: 15em;
+}
+
+/*
+#tooltip #cal_mediabar {
+    font-size: 11px;
+}
+
+#tooltip #media-buttons {
+    padding: 5px 0;
+}*/
+
+#tooltip #edcal-time {
+    width: 9em;
+    background-color: white;
+}
+
+#edcal-author-p {
+    line-height:1.8em;
+    padding-left:0.2em;
+}
+
+#edit-slug-buttons {
+    position: relative;
+    margin:0;
+    padding:0 0 0.5em 0;
+}
+
+#newPostScheduleButton {
+    position: absolute;
+    right: 0;
+    top: -5px;
+}
+
+#newPostScheduleButton.disabled {
+    color: #AAAAAA;
+}
+
+/* End Add/Edit Tooltip */
+
+
+#nextmonth, #prevmonth {
+    /*padding: 0.5em;*/
+    font-size:12px;
+}
+
+#edcal_weeks_pref {
+    width: 4em;
+}
+
+#calendar-fields-prefs {
+    margin-bottom: 1em;
+}
+
+#calendar-fields-prefs label {
+    margin-left: 1em;
+    line-height: normal;
+    vertical-align: baseline;
+}
+
+#edcal-qunit {
+    margin-top: 2em;
+}
+
+.optionscolorrow {
+    position: relative;
+    height: 20px;
+}
+
+.optionscolor {
+    width: 16px; 
+    height: 16px; 
+    margin-left: 1em; 
+    display: block;
+    position: absolute;
+    top: 2px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    opacity: 0.5;
+    
+}
+
+.optionscolor:hover {
+    opacity: 1;
+}
+
+
+.colorselected {
+    opacity: 1;
+}
+
+.colorlabel {
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+}
+
+#feedbacksection {
+    margin-top: 15px;
+    padding: 1em;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    width: 55%;
+    min-width: 500px;
+    background-color: #eaf2fb;
+    font-family:"Lucida Grande",Verdana,Arial,"Bitstream Vera Sans",sans-serif;
+    font-size:11px;
+}
+
+#feedbacksection h2 {
+    font-family:"Lucida Grande",Verdana,Arial,"Bitstream Vera Sans",sans-serif;
+    font-size: 14.3px;
+    font-style: normal;
+    font-weight: bold;
+    color: #333333;
+    padding: 0px;
+    margin: 0px;
+    margin-top: -10px;
+}
+
+#nofeedbacklink {
+    margin-left: 1em;
+}

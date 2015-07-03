@@ -1,0 +1,42 @@
+# Copyright (C) 2010 
+# This file is distributed under the same license as the  package.
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/tmt\n"
+"POT-Creation-Date: 2011-05-17 00:24:33+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2013-01-21 23:03+0300\n"
+"Last-Translator: Serg\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#: term-management-tools.php:40
+msgid "Merge"
+msgstr "Zlúčiť"
+
+#: term-management-tools.php:41
+msgid "Change taxonomy"
+msgstr "Zmena taxonómie"
+
+#: term-management-tools.php:46
+msgid "Set parent"
+msgstr "Nastaviť nadradenú položku"
+
+#: term-management-tools.php:100
+msgid "Terms updated."
+msgstr "Podmienky aktualizované."
+
+#: term-management-tools.php:103
+msgid "Terms not updated."
+msgstr "Podmienky neaktualizuje."
+
+#: term-management-tools.php:215
+msgid "into: %s"
+msgstr "do: %s"
+
+#: term-management-tools.php:242
+msgid "None"
+msgstr "Žiadny"

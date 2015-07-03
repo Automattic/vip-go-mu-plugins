@@ -1,0 +1,2206 @@
+# Copyright (C) 2012 CampTix Event Ticketing
+# This file is distributed under the same license as the CampTix Event Ticketing package.
+msgid ""
+msgstr ""
+"Project-Id-Version: CampTix Event Ticketing\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/camptix\n"
+"POT-Creation-Date: 2015-03-04 17:17-0300\n"
+"PO-Revision-Date: 2015-03-04 17:48-0300\n"
+"Last-Translator: Valério Souza <eu@valeriosouza.com.br>\n"
+"Language-Team: Valerio Souza <valeriosza@gmail.com>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.6.10\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;_ngettext_noop:1,2;"
+"_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;"
+"esc_attr_e\n"
+"X-Poedit-Basepath: ../\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: addons/payment-blackhole.php:39
+msgid "Always Succeed"
+msgstr "Sucesso Sempre"
+
+#: addons/payment-paypal.php:59
+msgid "Predefined Account"
+msgstr "Conta Pré Definida"
+
+#: addons/payment-paypal.php:64
+msgid "API Username"
+msgstr "API Usuário"
+
+#: addons/payment-paypal.php:65
+msgid "API Password"
+msgstr "API Senha"
+
+#: addons/payment-paypal.php:66
+msgid "API Signature"
+msgstr "API Assinatura"
+
+#: addons/payment-paypal.php:67
+msgid "Sandbox Mode"
+msgstr "Modo Sandbox"
+
+#: addons/payment-paypal.php:68
+#, php-format
+msgid ""
+"The PayPal Sandbox is a way to test payments without using real accounts and "
+"transactions. If you'd like to use Sandbox Mode, you'll need to create a %s "
+"account and obtain the API credentials for your sandbox user."
+msgstr ""
+"O Sandbox do PayPal é uma maneira de testar pagamentos sem usar contas e "
+"transações reais. Se você quiser usar o Modo Sandbox, você precisará criar "
+"uma conta %s e obter as credenciais do API para o seu usuário sandbox."
+
+#: addons/payment-paypal.php:68
+msgid "PayPal Developer"
+msgstr "Desenvolvedor PayPal"
+
+#: addons/payment-paypal.php:88 camptix.php:440 camptix.php:2161
+#: camptix.php:3844
+msgid "None"
+msgstr "Nenhum"
+
+#: addons/payment-paypal.php:479
+msgid "Unexpected total!"
+msgstr "Total Inexperado!"
+
+#: addons/payment-paypal.php:551
+msgid "The selected currency is not supported by this payment method."
+msgstr "A moeda selecionada não é suportada por esse método de pagamento."
+
+#: addons/payment-paypal.php:577
+msgctxt "PayPal locale code, leave default to guess"
+msgid "default"
+msgstr "Padrão"
+
+#: addons/payment-paypal.php:606 addons/payment-paypal.php:654
+#, php-format
+msgid "PayPal error: %s (%d)"
+msgstr "PayPal erro: %s (%d)"
+
+#: addons/payment-paypal.php:692
+msgid "Request did not complete successfully"
+msgstr "A solicitação não foi concluída com êxito"
+
+#: addons/require-login.php:103
+#, php-format
+msgid ""
+"Please <a href=\"%s\">log in</a> or <a href=\"%s\">create an account</a> to "
+"purchase your tickets."
+msgstr ""
+"Por favor <a href=\"%s\"> faça log in</a> ou <a href=\"%s\">crie uma conta</"
+"a> para comprar os seus ingressos."
+
+#: addons/require-login.php:112
+msgid ""
+"<p>Please enter your own information for the first ticket, and then enter "
+"the names and e-mail addresses of other attendees in the subsequent ticket "
+"fields.</p>"
+msgstr ""
+"<p>Por favor, informe seus dados pessoais para o primeiro ingresso, e, em "
+"seguida, digite os nomes e endereços de e-mail dos outros participantes nos "
+"campos ingressos.</p>"
+
+#: addons/require-login.php:115
+msgid ""
+"<p>The other attendees will receive an e-mail asking them to confirm their "
+"registration and enter their additional information.</p>"
+msgstr ""
+"<p>Os outros participantes receberão um e-mail, solicitando para confirmar "
+"sua inscrição e inserir suas informações adicionais.</ p>"
+
+#: addons/require-login.php:127
+msgid ""
+"To complete your registration, please fill out the fields below, and then "
+"click on the Confirm Registration button."
+msgstr ""
+"Para completar o seu registro, por favor preencha os campos abaixo e clique "
+"no botão de Confirmar."
+
+#: addons/require-login.php:129
+msgid ""
+"To complete your registration, please verify that all of the information "
+"below is correct, and then click on the Confirm Registration button."
+msgstr ""
+"Para completar sua inscrição, por favor, verifique se todas as informações "
+"abaixo estão corretas e, em seguida, clique no botão de Confirmar."
+
+#: addons/require-login.php:334 addons/require-login.php:347
+msgid "Username"
+msgstr "Usuário"
+
+#: addons/require-login.php:354
+msgid "Multiple Purchase (receipt with unconfirmed attendees)"
+msgstr "Compra Múltipla (recibo com os participantes não confirmados)"
+
+#: addons/require-login.php:359
+msgid "Multiple Purchase (to unconfirmed attendees)"
+msgstr "Compra Múltipla (para os participantes não confirmados)"
+
+#: addons/require-login.php:364
+msgid "Multiple Purchase (for unknown attendees)"
+msgstr "Compra Múltipla (para os participantes desconhecidos)"
+
+#: addons/require-login.php:379
+msgid ""
+"Hi there!\n"
+"\n"
+"You have purchased the following tickets:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"You can view and edit your order at any time before the event, by visiting "
+"the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"The other attendees that you purchased tickets for will need to confirm "
+"their registration by visiting a link that was sent to them by e-mail.\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Você comprou o seguinte ingresso:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"Você pode editar as informações de compra do ingresso a qualquer momento "
+"antes do evento visitando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Será necessário que os outros participantes que compraram ingressos confirme "
+"suas inscrições acessando um link que lhes foi enviado por e-mail. \n"
+"\n"
+"Entre em contato se tiver alguma dúvida."
+
+#: addons/require-login.php:380
+msgid ""
+"Hi there!\n"
+"\n"
+"A ticket to [event_name] has been purchased for you by [buyer_full_name].\n"
+"\n"
+"Please visit the following page and fill in your information to complete "
+"your registration:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Olá! \n"
+"\n"
+"Um ingresso para o [event_name] foi comprado para você pelo "
+"[buyer_full_name]. \n"
+"\n"
+"Por favor, visite a página a seguir e preencha suas informações para "
+"concluir o seu registo: \n"
+"\n"
+"[ticket_url] \n"
+"\n"
+"Deixe-nos saber se você tem alguma dúvida!"
+
+#: addons/require-login.php:381
+msgid ""
+"Hi there!\n"
+"\n"
+"This e-mail is for the unknown attendee that you purchased a ticket for. "
+"When you decide who will be using the ticket, please forward the link below "
+"to them so that they can complete their registration.\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Este e-mail é para o participante desconhecido no qual você comprou um "
+"ingresso. Quando você decidir que vai usar o ingresso, por favor envie o "
+"link abaixo para que eles possam completar a sua inscrição.\n"
+"\n"
+"[ticket_url] \n"
+"\n"
+"Deixe-nos saber se você tem alguma dúvida!"
+
+#: addons/require-login.php:465
+msgid "I don't know who will use this ticket yet"
+msgstr "Não sei quem usará este ingresso ainda"
+
+#: addons/require-login.php:602
+msgid "Unknown"
+msgstr "Situação desconhecida"
+
+#: addons/require-login.php:603 camptix.php:922
+msgid "Attendee"
+msgstr "Participante"
+
+#: addons/require-login.php:685
+msgid ""
+"You cannot edit the requested attendee's information because your user "
+"account has already been assigned to another ticket. Please ask the person "
+"using this ticket to sign in with their own account and fill out their "
+"information."
+msgstr ""
+"Você não pode editar as informações do participante solicitado, porque sua "
+"conta de usuário já foi usado em outro ingresso. Por favor, solicite a "
+"pessoa que usa este ingresso para entrar com seu login e preencher as "
+"informações."
+
+#: addons/require-login.php:731
+msgid "Confirm Registration"
+msgstr "Confirmar Compra"
+
+#: addons/shortcodes.php:199
+#, php-format
+msgid "Generated attendees list in %s seconds"
+msgstr "Lista de participantes gerada em %s segundos."
+
+#: addons/shortcodes.php:270
+msgid "Please fill in all fields."
+msgstr "Por favor, preencha todos os campos."
+
+#: addons/shortcodes.php:273
+msgid "The e-mail address you have entered does not seem to be valid."
+msgstr "O endereço de e-mail informado parece não ser válido."
+
+#: addons/shortcodes.php:313
+msgid "The information you have entered is incorrect. Please try again."
+msgstr "Os dados informados são incorretos. Por favor, tente novamente."
+
+#: addons/shortcodes.php:331 camptix.php:4528
+msgid "An error has occurred."
+msgstr "Ocorreu um erro."
+
+#: addons/shortcodes.php:371
+msgid ""
+"Looks like you logged in from a different computer. Please log in again."
+msgstr ""
+"Parece que você está logado a partir de um computador diferente. Por favor, "
+"faça login novamente."
+
+#: addons/shortcodes.php:393 addons/shortcodes.php:399
+msgid "Sorry, but your ticket does not allow you to view this content."
+msgstr ""
+"Desculpe-nos, mas o seu ingresso não permite que você acesse esse conteúdo."
+
+#: addons/shortcodes.php:405
+msgid "Success! Enjoy your content!"
+msgstr "Sucesso! Aproveite seu conteúdo!"
+
+#: addons/shortcodes.php:410
+msgid ""
+"The content on this page is private. Please log in using the form below."
+msgstr ""
+"O conteúdo nessa página é privado. Por favor, faça login usando o formulário "
+"abaixo."
+
+#: addons/shortcodes.php:435
+msgid "Have a ticket? Sign in"
+msgstr "Possui um ingresso? Faça login"
+
+#: addons/shortcodes.php:438 camptix.php:2611 camptix.php:3902
+#: camptix.php:4870 camptix.php:5240
+msgid "First Name"
+msgstr "Primeiro Nome"
+
+#: addons/shortcodes.php:442 camptix.php:2612 camptix.php:3903
+#: camptix.php:4875 camptix.php:5244
+msgid "Last Name"
+msgstr "Último Nome"
+
+#: addons/shortcodes.php:446 camptix.php:582 camptix.php:998 camptix.php:3904
+#: camptix.php:4883 camptix.php:5251 camptix.php:5428
+msgid "E-mail"
+msgstr "E-mail"
+
+#: addons/shortcodes.php:451
+msgid "Login &rarr;"
+msgstr "Login &rarr;"
+
+#: addons/track-attendance.php:38 addons/track-attendance.php:73
+#: addons/track-attendance.php:100
+msgid "Attended the event"
+msgstr "Participou do evento"
+
+#: addons/track-attendance.php:89 addons/track-attendance.php:123
+#: addons/track-attendance.php:144 addons/track-attendance.php:179
+msgid "Attended"
+msgstr "Participou"
+
+#: addons/track-attendance.php:154 addons/track-attendance.php:188
+msgid "Mark as attended"
+msgstr "Marcar como participou"
+
+#: camptix.php:185
+msgid "Once every 10 minutes"
+msgstr "A cada 10 minutos"
+
+#: camptix.php:452
+msgid "Please enter the e-mail addresses in the forms above."
+msgstr "Por favor, digite os endereços de e-mail nos campos acima."
+
+#: camptix.php:522 camptix.php:4617 camptix.php:4802
+msgid "Price"
+msgstr "Preço"
+
+#: camptix.php:523 camptix.php:644 camptix.php:3507 camptix.php:3536
+#: camptix.php:4622 camptix.php:4801
+msgid "Quantity"
+msgstr "Quantidade"
+
+#: camptix.php:524
+msgid "Purchased"
+msgstr "Comprado"
+
+#: camptix.php:525 camptix.php:646 camptix.php:709 camptix.php:2502
+#: camptix.php:2511 camptix.php:4619
+msgid "Remaining"
+msgstr "Restante"
+
+#: camptix.php:526 camptix.php:648 camptix.php:3247 camptix.php:3254
+msgid "Availability"
+msgstr "Disponível"
+
+#: camptix.php:559
+#, php-format
+msgid "(%d reserved)"
+msgstr "(%d reservados)"
+
+#: camptix.php:568 camptix.php:694
+msgid "Auto"
+msgstr "Auto"
+
+#. translators: 1: "from" date, 2: "to" date
+#: camptix.php:571 camptix.php:697
+#, php-format
+msgid "%1$s &mdash; %2$s"
+msgstr "%1$s &mdash; %2$s"
+
+#: camptix.php:583 camptix.php:857 camptix.php:3905
+msgid "Ticket"
+msgstr "Ingresso"
+
+#: camptix.php:584 camptix.php:962 camptix.php:2618 camptix.php:3935
+msgid "Coupon"
+msgstr "Cupom"
+
+#: camptix.php:587 camptix.php:3947
+msgid "Reservation"
+msgstr "Reserva"
+
+#: camptix.php:589
+msgid "Ticket Price"
+msgstr "Preço do Ingresso"
+
+#: camptix.php:590 camptix.php:3938
+msgid "Order Total"
+msgstr "Total do Pedido"
+
+#: camptix.php:645 camptix.php:3508
+msgid "Used"
+msgstr "Usados"
+
+#: camptix.php:647
+msgid "Discount"
+msgstr "Desconto"
+
+#: camptix.php:649 camptix.php:856 camptix.php:862 camptix.php:867
+msgid "Tickets"
+msgstr "Ingressos"
+
+#: camptix.php:708
+msgid "Sent"
+msgstr "Enviado"
+
+#: camptix.php:710
+msgid "Total"
+msgstr "Total"
+
+#: camptix.php:858 camptix.php:861
+msgid "New Ticket"
+msgstr "Novo Ingresso"
+
+#: camptix.php:859
+msgid "Add New Ticket"
+msgstr "Adicionar Novo Ingresso"
+
+#: camptix.php:860
+msgid "Edit Ticket"
+msgstr "Editar Ingresso"
+
+#: camptix.php:863
+msgid "View Ticket"
+msgstr "Visualizar Ingresso"
+
+#: camptix.php:864
+msgid "Search Tickets"
+msgstr "Pesquisar Ingressos"
+
+#: camptix.php:865
+msgid "No tickets found"
+msgstr "Nenhum ingresso encontrado"
+
+#: camptix.php:866
+msgid "No tickets found in trash"
+msgstr "Nenhum ingresso localizado na lixeira"
+
+#: camptix.php:892 camptix.php:898 camptix.php:903 camptix.php:3248
+#: camptix.php:3951
+msgid "Questions"
+msgstr "Perguntas"
+
+#: camptix.php:893 camptix.php:3689
+msgid "Question"
+msgstr "Pergunta"
+
+#: camptix.php:894 camptix.php:897
+msgid "New Question"
+msgstr "Nova Pergunta"
+
+#: camptix.php:895
+msgid "Add New Question"
+msgstr "Adicionar Nova Pergunta"
+
+#: camptix.php:896
+msgid "Edit Question"
+msgstr "Editar Pergunta"
+
+#: camptix.php:899
+msgid "View Question"
+msgstr "Visualizar Pergunta"
+
+#: camptix.php:900
+msgid "Search Questions"
+msgstr "Pesquisar Perguntas"
+
+#: camptix.php:901
+msgid "No questions found"
+msgstr "Nenhuma pesquisa encontrada"
+
+#: camptix.php:902
+msgid "No questions found in trash"
+msgstr "Nenhuma pesquisa encontrada na lixeira"
+
+#: camptix.php:921 camptix.php:927 camptix.php:932
+msgid "Attendees"
+msgstr "Participantes"
+
+#: camptix.php:923
+msgid "New Attendee"
+msgstr "Novo Participante"
+
+#: camptix.php:924
+msgid "Add New Attendee"
+msgstr "Adicionar Novo Participante"
+
+#: camptix.php:925
+msgid "Edit Attendee"
+msgstr "Editar Participante"
+
+#: camptix.php:926
+msgid "Add Attendee"
+msgstr "Adicionar Participante"
+
+#: camptix.php:928
+msgid "View Attendee"
+msgstr "Visualizar Participante"
+
+#: camptix.php:929
+msgid "Search Attendees"
+msgstr "Pesquisar Participantes"
+
+#: camptix.php:930
+msgid "No attendees found"
+msgstr "Nenhum participante encontrado"
+
+#: camptix.php:931
+msgid "No attendees found in trash"
+msgstr "Nenhum participante encontrado na lixeira"
+
+#: camptix.php:961 camptix.php:967 camptix.php:972
+msgid "Coupons"
+msgstr "Cupons"
+
+#: camptix.php:963 camptix.php:966
+msgid "New Coupon"
+msgstr "Novo Cupom"
+
+#: camptix.php:964
+msgid "Add New Coupon"
+msgstr "Adicionar Novo Cupom"
+
+#: camptix.php:965
+msgid "Edit Coupon"
+msgstr "Editar Cupom"
+
+#: camptix.php:968
+msgid "View Coupon"
+msgstr "Visualizar Cupom"
+
+#: camptix.php:969
+msgid "Search Coupons"
+msgstr "Pesquisar Cupons"
+
+#: camptix.php:970
+msgid "No coupons found"
+msgstr "Nenhum cupom encontrado"
+
+#: camptix.php:971
+msgid "No coupons found in trash"
+msgstr "Nenhum cupom encontrado na lixeira"
+
+#: camptix.php:997 camptix.php:1003
+msgid "E-mails"
+msgstr "E-mails"
+
+#: camptix.php:999 camptix.php:1002
+msgid "New E-mail"
+msgstr "Novo E-mail"
+
+#: camptix.php:1000
+msgid "Add New E-mail"
+msgstr "Adicionar Novo E-mail"
+
+#: camptix.php:1001
+msgid "Edit E-mail"
+msgstr "Editar E-mail"
+
+#: camptix.php:1004
+msgid "View E-mail"
+msgstr "Visualizar E-mail"
+
+#: camptix.php:1005
+msgid "Search E-mails"
+msgstr "Pesquisar E-mails"
+
+#: camptix.php:1006
+msgid "No e-mails found"
+msgstr "Nenhum e-mail encontrado"
+
+#: camptix.php:1007
+msgid "No e-mails found in trash"
+msgstr "Nenhum e-mail encontrado na lixeira"
+
+#: camptix.php:1008
+msgid "E-mails (debug)"
+msgstr "E-mails (debug)"
+
+#: camptix.php:1021
+msgctxt "post"
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#: camptix.php:1030
+msgctxt "post"
+msgid "Failed"
+msgstr "Falhou"
+
+#: camptix.php:1039
+msgctxt "post"
+msgid "Timeout"
+msgstr "Tempo Limite"
+
+#: camptix.php:1048
+msgctxt "post"
+msgid "Refunded"
+msgstr "Reembolsado"
+
+#: camptix.php:1063
+msgid "Timeout"
+msgstr "Tempo Limite"
+
+#: camptix.php:1066
+msgid "Failed"
+msgstr "Falhou"
+
+#: camptix.php:1069
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#: camptix.php:1072
+msgid "Refunded"
+msgstr "Reembolsado"
+
+#: camptix.php:1088
+msgid ""
+"Hi there!\n"
+"\n"
+"You have purchased the following ticket:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"You can edit the information for the purchased ticket at any time before the "
+"event, by visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Você comprou o seguinte ingresso:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"Você pode editar as informações de compra do ingresso a qualquer momento "
+"antes do evento visitando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida."
+
+#: camptix.php:1089
+msgid ""
+"Hi there!\n"
+"\n"
+"Thank you so much for purchasing a ticket and hope to see you soon at our "
+"event. You can edit your information at any time before the event, by "
+"visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Muito obrigado por comprar um ingresso, esperamos nos encontrar no nosso "
+"evento. Você pode editar suas informações a qualquer momento antes do evento "
+"visitando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida."
+
+#: camptix.php:1090
+msgid ""
+"Hi there!\n"
+"\n"
+"You have purchased the following tickets:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"You can edit the information for all the purchased tickets at any time "
+"before the event, by visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you have any questions!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Você comprou os seguintes ingressos:\n"
+"\n"
+"[receipt]\n"
+"\n"
+"Você pode editar as informações de compra de todos os ingressos a qualquer "
+"momento antes do evento visitando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida."
+
+#: camptix.php:1091
+msgid ""
+"Hey there!\n"
+"\n"
+"Your payment for [event_name] has been completed, looking forward to seeing "
+"you at the event! You can access and change your tickets information by "
+"visiting the following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Seu pagamento para [event_name] foi concluído, estamos torcendo para te "
+"encontrar no evento! Você pode acessar e alterar as informações do seu "
+"ingresso visitando o seguinte link::\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida!"
+
+#: camptix.php:1092
+msgid ""
+"Hey there!\n"
+"\n"
+"We're so sorry, but it looks like your payment for [event_name] has failed! "
+"Please check your payment transactions for more details. If you still wish "
+"to attend the event, feel free to purchase a new ticket using the following "
+"link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Desculpe-nos, mas parece que seu pagamento para [event_name] falhou! Por "
+"favor, cheque suas transações de pagamento para mais detalhes. Se você ainda "
+"deseja participar do evento, sinta-se a vontade para comprar um novo "
+"ingresso usando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida!"
+
+#: camptix.php:1093
+msgid ""
+"Hey there!\n"
+"\n"
+"Your refund for [event_name] has been completed. If you change your mind and "
+"still wish to attend the event, feel free to purchase a new ticket using the "
+"following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Desculpe-nos, mas parece que seu pagamento para [event_name] falhou! Por "
+"favor, cheque suas transações de pagamento para mais detalhes. Se você ainda "
+"deseja participar do evento, sinta-se a vontade para comprar um novo "
+"ingresso usando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida!"
+
+#: camptix.php:1094
+msgid ""
+"Hey there!\n"
+"\n"
+"Your ticket for [event_name] has been refunded. If you change your mind and "
+"still wish to attend the event, feel free to purchase a new ticket using the "
+"following link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Let us know if you need any help!"
+msgstr ""
+"Olá!\n"
+"\n"
+"Desculpe-nos, mas parece que seu pagamento para [event_name] falhou! Por "
+"favor, cheque suas transações de pagamento para mais detalhes. Se você ainda "
+"deseja participar do evento, sinta-se a vontade para comprar um novo "
+"ingresso usando o seguinte link:\n"
+"\n"
+"[ticket_url]\n"
+"\n"
+"Entre em contato se tiver alguma dúvida!"
+
+#: camptix.php:1415
+msgid "General Configuration"
+msgstr "Configurações Gerais"
+
+#: camptix.php:1416
+msgid "Event Name"
+msgstr "Nome do Evento"
+
+#: camptix.php:1417
+msgid "Currency"
+msgstr "Moeda"
+
+#: camptix.php:1419
+msgid "Enable Refunds"
+msgstr "Habilitar Reembolsos"
+
+#: camptix.php:1420
+msgid ""
+"This will allows your customers to refund their tickets purchase by filling "
+"out a simple refund form."
+msgstr ""
+"Isso permitirá que seus clientes possam reembolsar suas compras preenchendo "
+"um simples formulário de reembolso."
+
+#: camptix.php:1429
+msgid "Enabled"
+msgstr "Habilitado"
+
+#: camptix.php:1438 camptix.php:1930
+msgid "E-mail Templates"
+msgstr "Modelos de E-mail"
+
+#: camptix.php:1439
+msgid "Single purchase"
+msgstr "Compra Única"
+
+#: camptix.php:1440
+msgid "Multiple purchase"
+msgstr "Compra Múltipla"
+
+#: camptix.php:1441
+msgid "Multiple purchase (receipt)"
+msgstr "Compra Múltipla (comprovante)"
+
+#: camptix.php:1442
+msgid "Pending Payment Succeeded"
+msgstr "Pagamentos Pendentes bem Sucedido"
+
+#: camptix.php:1443
+msgid "Pending Payment Failed"
+msgstr "Pagamentos Pendentes Falhou"
+
+#: camptix.php:1444
+msgid "Single Refund"
+msgstr "Reembolsos Único"
+
+#: camptix.php:1445
+msgid "Multiple Refund"
+msgstr "Múltiplo Reembolso"
+
+#: camptix.php:1459
+msgid "Beta Features"
+msgstr "Recursos Beta"
+
+#: camptix.php:1461
+msgid "Enable Reservations"
+msgstr "Habilitar Reservas"
+
+#: camptix.php:1462
+msgid ""
+"Reservations is a way to make sure that a certain group of people, can "
+"always purchase their tickets, even if you sell out fast."
+msgstr ""
+"Reservas é uma maneira de certificar que um determinado grupo de pessoas "
+"poderá comprar os ingressos a qualquer momento, mesmo que você venda todos "
+"os outros rapidamente."
+
+#: camptix.php:1466
+msgid "Enable Refund All"
+msgstr "Habilitar Reembolso para Todos"
+
+#: camptix.php:1467
+msgid "Allows to refund all purchased tickets by an admin via the Tools menu."
+msgstr ""
+"Permitir reembolsar todas as compras por um administrador através do menu "
+"Ferramentas."
+
+#: camptix.php:1471
+msgid "Archived Event"
+msgstr "Evento Arquivado"
+
+#: camptix.php:1472
+msgid "Archived events are read-only."
+msgstr "Eventos arquivados são apenas leitura."
+
+#: camptix.php:1482
+msgid ""
+"Beta features are things that are being worked on in CampTix, but are not "
+"quite finished yet. You can try them out, but we do not recommend doing that "
+"in a live environment on a real event. If you have any kind of feedback on "
+"any of the beta features, please let us know."
+msgstr ""
+"Recursos Beta são funções que estão sendo desenvolvidas no CampTix, mas que "
+"ainda não estão finalizadas. Você pode tentar usá-las, mas nós não "
+"recomendamos usá-las em um evento real. Se você tiver algum comentário sobre "
+"os Recursos Beta, por favor, ente em contato conosco."
+
+#: camptix.php:1486
+msgid ""
+"Customize your confirmation e-mail templates. You can use the following "
+"shortcodes inside the message: [event_name], [ticket_url], [receipt], and "
+"[buyer_full_name]."
+msgstr ""
+"Personalize seus templates de confirmação de e-mail. Você pode utilizar os "
+"seguintes shortcodes nas mensagem: [event_name], [ticket_url], [receipt] e "
+"[buyer_full_name]."
+
+#: camptix.php:1490
+msgid "General configuration."
+msgstr "Configurações Gerais."
+
+#: camptix.php:1512
+msgid "Reset Default"
+msgstr "Restaurar Padrão"
+
+#: camptix.php:1647 camptix.php:1661 camptix.php:3603
+#: inc/class-camptix-payment-method.php:212
+msgid "Yes"
+msgstr "Sim"
+
+#: camptix.php:1648 camptix.php:1662 inc/class-camptix-payment-method.php:213
+msgid "No"
+msgstr "Não"
+
+#: camptix.php:1666
+msgid "Allow refunds until:"
+msgstr "Permitir Reembolso até:"
+
+#: camptix.php:1689
+msgid ""
+"Make sure you select a currency that is supported by all the payment methods "
+"you plan to use."
+msgstr ""
+"Certifique-se de selecionar uma moeda que seja aceita por todos os métodos "
+"de pagamento que deseja usar."
+
+#: camptix.php:1702
+msgid "Australian Dollar"
+msgstr "Dólar Australiano"
+
+#: camptix.php:1706
+msgid "Canadian Dollar"
+msgstr "Dólar Canadense"
+
+#: camptix.php:1710
+msgid "Euro"
+msgstr "Euro"
+
+#: camptix.php:1714
+msgid "Pound Sterling"
+msgstr "Libra Esterlina"
+
+#: camptix.php:1718
+msgid "Japanese Yen"
+msgstr "Yen Japonês"
+
+#: camptix.php:1722 camptix.php:1812
+msgid "U.S. Dollar"
+msgstr "Dólar Americano"
+
+#: camptix.php:1726
+msgid "N.Z. Dollar"
+msgstr "Dólar Neozeolandes"
+
+#: camptix.php:1730
+msgid "Swiss Franc"
+msgstr "Franco Suíço"
+
+#: camptix.php:1734
+msgid "Hong Kong Dollar"
+msgstr "Dólar de Hong Kong"
+
+#: camptix.php:1738
+msgid "Singapore Dollar"
+msgstr "Dólar de Cingapura"
+
+#: camptix.php:1742
+msgid "Swedish Krona"
+msgstr "Coroa Sueca"
+
+#: camptix.php:1746
+msgid "Danish Krone"
+msgstr "Coroa Dinamarquesa"
+
+#: camptix.php:1750
+msgid "Polish Zloty"
+msgstr "Zloty Polonês"
+
+#: camptix.php:1754
+msgid "Norwegian Krone"
+msgstr "Coroa Norueguesa"
+
+#: camptix.php:1758
+msgid "Hungarian Forint"
+msgstr "Florim Húngaro"
+
+#: camptix.php:1762
+msgid "Czech Koruna"
+msgstr "Coroa Tcheca"
+
+#: camptix.php:1766
+msgid "Israeli New Sheqel"
+msgstr "Novo Shekel Israelense"
+
+#: camptix.php:1770
+msgid "Mexican Peso"
+msgstr "Peso Mexicano"
+
+#: camptix.php:1774
+msgid "Brazilian Real"
+msgstr "Real Brasileiro"
+
+#: camptix.php:1778
+msgid "Malaysian Ringgit"
+msgstr "Ringgit da Malásia"
+
+#: camptix.php:1782
+msgid "Philippine Peso"
+msgstr "Peso Filipino"
+
+#: camptix.php:1786
+msgid "New Taiwan Dollar"
+msgstr "Dólar de Taiwan"
+
+#: camptix.php:1790
+msgid "Thai Baht"
+msgstr "Baht Tailandês"
+
+#: camptix.php:1794
+msgid "Turkish Lira"
+msgstr "Lira Turca"
+
+#: camptix.php:1854
+msgid "Tools"
+msgstr "Ferramentas"
+
+#: camptix.php:1855
+msgid "Setup"
+msgstr "Configurações"
+
+#: camptix.php:1887
+msgid "CampTix Setup"
+msgstr "Configurações do CampTix"
+
+#: camptix.php:1903
+#, php-format
+msgid "Current time on server: %s"
+msgstr "Horário atual do servidor: %s"
+
+#: camptix.php:1928 camptix.php:3900
+msgid "General"
+msgstr "Geral"
+
+#: camptix.php:1929
+msgid "Payment"
+msgstr "Pagamento"
+
+#: camptix.php:1934
+msgid "Beta"
+msgstr "Beta"
+
+#: camptix.php:1951
+msgid "CampTix Tools"
+msgstr "Ferramentas do CampTix"
+
+#: camptix.php:1990
+msgid "Summarize"
+msgstr "Resumo"
+
+#: camptix.php:1991 camptix.php:2505 camptix.php:2514
+msgid "Revenue"
+msgstr "Renda"
+
+#: camptix.php:1992 camptix.php:2559
+msgid "Export"
+msgstr "Exportar"
+
+#: camptix.php:1993
+msgid "Notify"
+msgstr "Notificar"
+
+#: camptix.php:1997
+msgid "Refund"
+msgstr "Reembolsar"
+
+#: camptix.php:2020
+msgid "Summarize by"
+msgstr "Resumir por"
+
+#: camptix.php:2040
+msgid "Show Summary"
+msgstr "Exibir Resumo"
+
+#: camptix.php:2041
+msgid "Export Summary to CSV"
+msgstr "Exportar Resumo para CSV"
+
+#: camptix.php:2056 camptix.php:2094
+msgid "Count"
+msgstr "Contar"
+
+#: camptix.php:2182 camptix.php:2500 camptix.php:2509
+msgid "Ticket type"
+msgstr "Tipo de Ingresso"
+
+#: camptix.php:2183
+msgid "Coupon code"
+msgstr "Código do Cupom"
+
+#: camptix.php:2184 camptix.php:2614
+msgid "Purchase date"
+msgstr "Data da Compra"
+
+#: camptix.php:2185
+msgid "Purchase time"
+msgstr "Horário da Compra"
+
+#: camptix.php:2186
+msgid "Purchase date and time"
+msgstr "Data e Horário da Compra"
+
+#: camptix.php:2187
+msgid "Purchase day of week"
+msgstr "Dia da Semana da Compra"
+
+#: camptix.php:2383
+#, php-format
+msgid ""
+"<strong>Woah!</strong> The revenue total does not match with the "
+"transactions total. The actual total is: <strong>%s</strong>. Something "
+"somewhere has gone wrong, please report this."
+msgstr ""
+"<strong>Hey!</strong> A renda total não coincide com o total de transações. "
+"O valor atual é: <strong>%s</strong>. Em algum lugar algo deu erro, por "
+"favor, reporte isso."
+
+#: camptix.php:2387
+#, php-format
+msgid "Revenue report generated in %s seconds."
+msgstr "Relatório de renda gerado em %s segundos."
+
+#: camptix.php:2501 camptix.php:2510
+msgid "Sold"
+msgstr "Vendido"
+
+#: camptix.php:2503 camptix.php:2512
+msgid "Sub-Total"
+msgstr "Sub Total"
+
+#: camptix.php:2504 camptix.php:2513
+msgid "Discounted"
+msgstr "Descontado"
+
+#: camptix.php:2545
+msgid "Export all attendees data to"
+msgstr "Exportar todas as informações dos participantes para"
+
+#: camptix.php:2550
+msgid "(coming soon)"
+msgstr "(em breve)"
+
+#: camptix.php:2579
+msgid "Format not supported."
+msgstr "Formato não suportado."
+
+#: camptix.php:2609
+msgid "Attendee ID"
+msgstr "ID do Participante"
+
+#: camptix.php:2610
+msgid "Ticket Type"
+msgstr "Tipo de Ingresso"
+
+#: camptix.php:2613
+msgid "E-mail Address"
+msgstr "Endereço de  E-mail"
+
+#: camptix.php:2615
+msgid "Last Modified date"
+msgstr "Última data de modificação"
+
+#: camptix.php:2616 camptix.php:2949 camptix.php:3901
+msgid "Status"
+msgstr "Situação"
+
+#: camptix.php:2617 camptix.php:3920
+msgid "Transaction ID"
+msgstr "ID da Transação"
+
+#: camptix.php:2619
+msgid "Ticket Buyer Name"
+msgstr "Nome do Comprador"
+
+#: camptix.php:2620
+msgid "Ticket Buyer E-mail Address"
+msgstr "Endereço de E-mail do Comprador"
+
+#: camptix.php:2767
+msgid "Please enter a subject line."
+msgstr "Por favor, informe uma linha de assunto."
+
+#: camptix.php:2770
+msgid "Please enter the e-mail body."
+msgstr "Por favor, informe o corpo do e-mail."
+
+#: camptix.php:2773
+msgid "Please select at least one ticket group."
+msgstr "Por favor, selecione pelo menos um grupo de ingresso."
+
+#: camptix.php:2817
+#, php-format
+msgid "Your e-mail job has been queued for %s recipients."
+msgstr "Seu envio foi programado para %s participantes."
+
+#: camptix.php:2851
+msgid "To"
+msgstr "Para"
+
+#: camptix.php:2866 camptix.php:2946
+msgid "Subject"
+msgstr "Assunto"
+
+#: camptix.php:2872
+msgid "Message"
+msgstr "Mensagem"
+
+#: camptix.php:2876
+msgid "You can use the following shortcodes:"
+msgstr "Você pode usar os seguintes códigos:"
+
+#: camptix.php:2920 camptix.php:2923
+msgid "Preview"
+msgstr "Pré visualizar"
+
+#: camptix.php:2922
+msgid "Send E-mails"
+msgstr "Enviar E-mails"
+
+#: camptix.php:2941
+msgid "History"
+msgstr "Histórico"
+
+#: camptix.php:2947
+msgid "Updated"
+msgstr "Atualizado"
+
+#: camptix.php:2947
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s as %2$s"
+
+#: camptix.php:2948
+msgid "Author"
+msgstr "Autor"
+
+#: camptix.php:2971 camptix.php:2973
+msgid "Refund all transactions"
+msgstr "Reembolsar todas as transações"
+
+#: camptix.php:2974
+msgid "Seriously, refund them all"
+msgstr "Sério, reembolsar tudo"
+
+#: camptix.php:2975
+msgid "I know what I'm doing, please refund"
+msgstr "Eu sei o que eu estou fazendo, por favor, reembolse"
+
+#: camptix.php:2976
+msgid "I know this may result in money loss, refund anyway"
+msgstr "Eu sei que isso gerará perda de dinheiro, mas reembolse mesmo assim"
+
+#: camptix.php:2977
+msgid "I will not blame Konstantin if something goes wrong"
+msgstr "Eu não vou culpar Konstantin se algo der errado"
+
+#: camptix.php:2985
+msgid "Refund Transactions"
+msgstr "Transações Reembolsadas"
+
+#: camptix.php:3005
+#, php-format
+msgid ""
+"CampTix has finished attempting to refund all transactions. The results were:"
+"<br /><br /> &bull;Succeeded: %s<br /> &bull;Failed: %s"
+msgstr ""
+"CampTix terminou de tentar reembolsar todas as transações. Os resultados "
+"foram:<br /><br /> &bull;Bem Sucedido: %s<br /> &bull;Falhou: %s"
+
+#: camptix.php:3030
+msgid "Looks like you have missed a checkbox or two. Try again!"
+msgstr "Parece que você esqueceu de selecionar algo. Tente novamente!"
+
+#: camptix.php:3061
+#, php-format
+msgid "A refund job has been queued for %d attendees."
+msgstr "Seu reembolso foi programado para %d participantes."
+
+#: camptix.php:3084
+#, php-format
+msgid ""
+"A refund job is in progress, with %d attendees left in the queue. Next run "
+"in %d seconds."
+msgstr ""
+"Uma tarefa de Reembolso está em progresso com %d participantes sobrando na "
+"lista. Próxima lista em %d segundos."
+
+#: camptix.php:3116
+msgid "None of the enabled payment modules support refunding all tickets."
+msgstr ""
+"Nenhum dos módulos de pagamentos habilitados, aceita o reembolso dos "
+"ingressos."
+
+#: camptix.php:3246
+msgid "Ticket Options"
+msgstr "Opções do Ingresso"
+
+#: camptix.php:3251
+msgid "Reservations"
+msgstr "Reservas"
+
+#: camptix.php:3253
+msgid "Coupon Options"
+msgstr "Opções do Cupom"
+
+#: camptix.php:3256 camptix.php:5231
+msgid "Attendee Information"
+msgstr "Informações do Participante"
+
+#: camptix.php:3258
+msgid "Publish"
+msgstr "Publicado"
+
+#: camptix.php:3277
+msgid "Save"
+msgstr "Salvar"
+
+#: camptix.php:3288
+msgid "Status:"
+msgstr "Situação:"
+
+#: camptix.php:3293
+msgid "Unknown status"
+msgstr "Situação desconhecida"
+
+#: camptix.php:3299
+msgid "M j, Y @ G:i"
+msgstr "M j, Y @ G:i"
+
+#: camptix.php:3301
+#, php-format
+msgid "Created: <b>%1$s</b>"
+msgstr "Criado: <b>%1$s</b>"
+
+#: camptix.php:3304
+msgid "Publish <b>immediately</b>"
+msgstr "Publicar <b>imediatamente</b>"
+
+#: camptix.php:3320
+msgid "Edit Attendee Info"
+msgstr "Editar Informação do Participante"
+
+#: camptix.php:3326
+msgid "Hide from public attendees list"
+msgstr "Ocultar da lista de participantes público"
+
+#: camptix.php:3341
+msgid "Delete Permanently"
+msgstr "Apagar Permanentemente"
+
+#: camptix.php:3343
+msgid "Move to Trash"
+msgstr "Mover para a Lixeira"
+
+#: camptix.php:3350
+msgid "Save Attendee"
+msgstr "Salvar Participante"
+
+#: camptix.php:3371
+msgid "Price:"
+msgstr "Preço:"
+
+#: camptix.php:3376
+msgid ""
+"You can not change the price because one or more tickets have already been "
+"purchased."
+msgstr ""
+"Você não pode alterar o preço porque um ou mais ingressos já foram comprados."
+
+#: camptix.php:3380 camptix.php:3835
+msgid "Quantity:"
+msgstr "Qtde:"
+
+#: camptix.php:3383
+msgid ""
+"You can not set the quantity to less than the number of purchased tickets."
+msgstr ""
+"Você não pode alterar a quantidade para uma menor do que os ingressos "
+"comprados."
+
+#: camptix.php:3398 camptix.php:3872
+msgid "Leave blank for auto-availability"
+msgstr "Deixe em branco para auto-disponibilidade"
+
+#: camptix.php:3401 camptix.php:3875
+msgid "Start:"
+msgstr "Início:"
+
+#: camptix.php:3405 camptix.php:3879
+msgid "End:"
+msgstr "Término:"
+
+#: camptix.php:3506
+msgid "Name"
+msgstr "Nome"
+
+#: camptix.php:3509
+msgid "Token"
+msgstr "Token"
+
+#: camptix.php:3510
+msgid "Actions"
+msgstr "Ações"
+
+#: camptix.php:3521
+msgid "Release"
+msgstr "Liberar"
+
+#: camptix.php:3522
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: camptix.php:3531
+msgid "Create a New Reservation:"
+msgstr "Criar uma Nova Reserva:"
+
+#: camptix.php:3534
+msgid "Reservation Name"
+msgstr "Nome da Reserva"
+
+#: camptix.php:3538
+msgid "Create Reservation"
+msgstr "Criar Reserva"
+
+#: camptix.php:3540
+msgid ""
+"If you create a reservation with more quantity than available by the total "
+"ticket quantity, we'll bump the ticket quantity for you."
+msgstr ""
+"Se você criar uma reserva com mais ingressos do que o total de ingressos "
+"disponíveis, nós arredondaremos para você."
+
+#: camptix.php:3550
+msgid "Text input"
+msgstr "Input de Texto"
+
+#: camptix.php:3551
+msgid "Text area"
+msgstr "Área de Texto"
+
+#: camptix.php:3552
+msgid "Dropdown select"
+msgstr "Lista Suspensa"
+
+#: camptix.php:3553
+msgid "Radio select"
+msgstr "Botão Radio"
+
+#: camptix.php:3554
+msgid "Checkbox"
+msgstr "Checkbox"
+
+#: camptix.php:3642
+msgid "Default"
+msgstr "Padrão"
+
+#: camptix.php:3645
+msgid "First name, last name and e-mail address"
+msgstr "Primeiro nome, último nome e endereço de e-mail"
+
+#: camptix.php:3659
+#, php-format
+msgid "Add a %1$s or an %2$s."
+msgstr "Adicionar um %1$s ou %2$s."
+
+#: camptix.php:3660
+msgid "new question"
+msgstr "nova pergunta"
+
+#: camptix.php:3661
+msgid "existing one"
+msgstr "já existente"
+
+#: camptix.php:3672
+msgid "Add a new question:"
+msgstr "Adicionar uma nova pergunta:"
+
+#: camptix.php:3677
+msgid "Type"
+msgstr "Tipo"
+
+#: camptix.php:3697
+msgid "Values"
+msgstr "Valores"
+
+#: camptix.php:3701
+msgid "Separate multiple values with a comma."
+msgstr "Separe múltiplos valores com vírgula."
+
+#: camptix.php:3706
+msgid "Required"
+msgstr "Obrigatório"
+
+#: camptix.php:3709
+msgid "This field is required"
+msgstr "Esse campo é obrigatório"
+
+#: camptix.php:3714
+msgid "Add Question"
+msgstr "Adicionar Pergunta"
+
+#: camptix.php:3715 camptix.php:3752
+msgid "Close"
+msgstr "Fechar"
+
+#: camptix.php:3716 camptix.php:3753
+msgid "Do not forget to update the ticket post to save changes."
+msgstr ""
+"Não se esqueça de atualizar o post do ingresso para salvar as alterações."
+
+#: camptix.php:3722
+msgid "Add an existing question:"
+msgstr "Adicionar uma Pergunta existente:"
+
+#: camptix.php:3726
+msgid "Available Questions"
+msgstr "Perguntas Disponíveis"
+
+#: camptix.php:3751
+msgid "Add Selected"
+msgstr "Adicionar Selecionada"
+
+#: camptix.php:3763
+msgid "Move"
+msgstr "Mover"
+
+#: camptix.php:3764
+msgid "Edit"
+msgstr "Editar"
+
+#: camptix.php:3765
+msgid "Remove"
+msgstr "Remover"
+
+#: camptix.php:3818
+msgid "Discount:"
+msgstr "Desconto:"
+
+#: camptix.php:3831
+msgid ""
+"You can not change the discount because one or more tickets have already "
+"been purchased using this coupon."
+msgstr ""
+"Você não pode alterar o desconto porque um ou mais ingressos já foram "
+"comprados usando esse cupom."
+
+#: camptix.php:3838
+msgid "The quantity can not be less than the number of coupons already used."
+msgstr "A quantidade não pode ser menor do que o número de cupons já usados."
+
+#: camptix.php:3842
+msgid "Applies to:"
+msgstr "Aplicar para:"
+
+#: camptix.php:3844
+msgid "All"
+msgstr "Tudo"
+
+#: camptix.php:3909
+msgid "Edit Token"
+msgstr "Editar Token"
+
+#: camptix.php:3910
+msgid "Access Token"
+msgstr "Token de Acesso"
+
+#: camptix.php:3913
+msgid "Transaction"
+msgstr "Transação"
+
+#: camptix.php:4358
+#, php-format
+msgid "Discounted %s"
+msgstr "Descontado %s"
+
+#: camptix.php:4361
+#, php-format
+msgid "Discounted %s%%"
+msgstr "Descontado %s%%"
+
+#: camptix.php:4545
+msgid "Sorry, but the coupon you have entered seems to be invalid or expired."
+msgstr "Desculpe-nos, mas parece que o Cupom informado é inválido ou expirou."
+
+#: camptix.php:4548
+msgid ""
+"Sorry, but the reservation you are trying to use seems to be invalid or "
+"expired."
+msgstr ""
+"Desculpe-nos, mas parece que a Reserva informada é inválida ou expirou."
+
+#: camptix.php:4551
+msgid ""
+"Sorry, but there are currently no tickets for sale. Please try again later."
+msgstr ""
+"Desculpe-nos, mas não há ingressos para venda atualmente. Por favor, tente "
+"novamente depois."
+
+#: camptix.php:4554
+msgid "You are using a reservation, cool!"
+msgstr "Você está usando um reserva, legal!"
+
+#: camptix.php:4558
+msgid "Please select at least one ticket."
+msgstr "Por favor, selecione pelo menos um ingresso."
+
+#: camptix.php:4561
+msgid ""
+"It looks like somebody took that last ticket before you, sorry! You try a "
+"different ticket."
+msgstr ""
+"Parece que alguém comprou o último ingresso antes de você. Desculpe. Você "
+"pode tentar um ingresso diferente."
+
+#: camptix.php:4564
+msgid "Payment methods have not been configured yet. Please try again later."
+msgstr ""
+"Métodos de pagamento ainda não foram configurados. Por favor, tente "
+"novamente depois."
+
+#: camptix.php:4572
+msgid ""
+"An error has occurred and your payment has failed. Please try again later."
+msgstr ""
+"Ocorreu um erro e seu pagamento falhou. Por favor, tente novamente depois."
+
+#: camptix.php:4576
+msgid ""
+"It looks like somebody grabbed those tickets before you could complete the "
+"purchase. You have not been charged, please try again."
+msgstr ""
+"Parece que alguém comprou esses ingressos antes que você pudesse completar "
+"sua compra. Você não será cobrado, por favor, tente novamente."
+
+#: camptix.php:4579
+msgid ""
+"It looks like somebody has used the coupon before you could complete your "
+"purchase. You have not been charged, please try again."
+msgstr ""
+"Parece que alguém usou esse Cupom antes que você pudesse completar sua "
+"compra. Você não será cobrado, por favor, tente novamente."
+
+#: camptix.php:4582
+msgid ""
+"It looks like the coupon you are trying to use has expired before you could "
+"complete your purchase. You have not been charged, please try again."
+msgstr ""
+"Parece que o Cupom que você informou expirou antes que você pudesse "
+"completar sua compra. Você não será cobrado, por favor, tente novamente."
+
+#: camptix.php:4585
+msgid "Your access token does not seem to be valid."
+msgstr "Seu Token de Acesso parece não ser válido."
+
+#: camptix.php:4588
+msgid "Your payment has been cancelled. Feel free to try again!"
+msgstr "Seu pagamento foi cancelado. Sinta-se à vontade para tentar novamente!"
+
+#: camptix.php:4591
+msgid "The edit link you are trying to use is either invalid or has expired."
+msgstr "O link de edição que você está tentando usar é inválido ou expirou."
+
+#: camptix.php:4594
+msgid ""
+"Your refund request can not be processed. Please try again later or contact "
+"support."
+msgstr ""
+"Seu pedido de Reembolso não pode ser processado. Por favor, tente novamente "
+"ou entre em contato com o suporte."
+
+#: camptix.php:4597
+msgid ""
+"Sorry, but the reservation you are trying to use has been cancelled or has "
+"expired."
+msgstr ""
+"Desculpe-nos, mas a Reserva que você informou foi cancelada ou expirou."
+
+#: camptix.php:4616 camptix.php:4799
+msgid "Description"
+msgstr "Descrição"
+
+#: camptix.php:4663 camptix.php:4823
+msgid "Free"
+msgstr "Gratuito"
+
+#: camptix.php:4692 camptix.php:4842
+#, php-format
+msgid "Coupon Applied: <strong>%s</strong>, %s discount"
+msgstr "Cupom aplicado: <strong>%s</strong>, %s desconto"
+
+#: camptix.php:4695
+msgid "Click here to enter a coupon code"
+msgstr "Clique aqui para informar um código de cupom"
+
+#: camptix.php:4699
+msgid "Apply Coupon"
+msgstr "Aplicar Cupom"
+
+#: camptix.php:4719
+msgid "Register &rarr;"
+msgstr "Registrar &rarr;"
+
+#: camptix.php:4746
+msgid ""
+"It looks like you have chosen more tickets than we have left! We have "
+"stripped the extra ones."
+msgstr ""
+"Parece que você selecionou mais ingressos do que temos disponível. Nós "
+"tiramos os extras para você."
+
+#: camptix.php:4748
+msgid ""
+"It looks like somebody purchased a ticket before you could finish your "
+"purchase. Please review your order and try again."
+msgstr ""
+"Parece que alguém comprou um ingresso antes que você pudesse finalizar sua "
+"compra. Por favor, revise seu pedido e tente novamente."
+
+#: camptix.php:4752
+msgid ""
+"You have exceeded the coupon limits, so we have stripped down the extra "
+"tickets."
+msgstr ""
+"Você excedeu o limite do cupom, então nós tiramos os ingressos extras para "
+"você."
+
+#: camptix.php:4754
+msgid ""
+"It looks like somebody used the same coupon before you could finish your "
+"purchase. Please review your order and try again."
+msgstr ""
+"Parece que alguém usou o mesmo Cupom antes que você pudesse finalizar sua "
+"compra. Por favor, revise seu pedido e tente novamente."
+
+#: camptix.php:4757 camptix.php:5181 camptix.php:5197
+msgid "Please fill in all required fields."
+msgstr "Por favor, preencha todos os campos obrigatórios."
+
+#: camptix.php:4760
+msgid "The e-mail address you have entered seems to be invalid."
+msgstr "O endereço de e-mail que você informou parece ser inválido."
+
+#: camptix.php:4763
+msgid "The chosen receipt e-mail address is either empty or invalid."
+msgstr "O endereço de e-mail para o comprovante está vazio ou é inválido."
+
+#: camptix.php:4766
+msgid ""
+"A payment error has occurred, looks like chosen payment method is not "
+"responding. Please try again later."
+msgstr ""
+"Ocorreu um erro com o pagamento, parece que o método de pagamento não está "
+"respondendo. Por favor, tente novamente depois."
+
+#: camptix.php:4769
+msgid "You have selected an invalid payment method. Please try again."
+msgstr ""
+"Você selecionou um método de pagamento inválido. Por favor, tente novamente."
+
+#: camptix.php:4772
+msgid "Looks like you're trying to use an invalid or expired coupon."
+msgstr "Parece que você está tentando usar um Cupom inválido ou expirado."
+
+#: camptix.php:4795
+msgid "Order Summary"
+msgstr "Ordem do Resumo"
+
+#: camptix.php:4800
+msgid "Per Ticket"
+msgstr "Por Ingresso"
+
+#: camptix.php:4850
+msgid "Registration Information"
+msgstr "Informação de Registro"
+
+#: camptix.php:4891
+msgid "Send the receipt to this address"
+msgstr "Enviar o comprovante para esse endereço"
+
+#: camptix.php:4936
+msgid "Receipt"
+msgstr "Comprovante"
+
+#: camptix.php:4939
+msgid "E-mail the receipt to"
+msgstr "Enviar e-mail com comprovante para"
+
+#: camptix.php:4957
+msgid "Checkout &rarr;"
+msgstr "Checkout &rarr;"
+
+#: camptix.php:4959
+msgid "Claim Tickets &rarr;"
+msgstr "Reclamar Ingressos &rarr;"
+
+#: camptix.php:5014
+msgid "Please note that the payment for this set of tickets is still pending."
+msgstr ""
+"Por favor, tenha em mente que o pagamento para esses ingressos ainda está "
+"pendente."
+
+#: camptix.php:5021
+msgid "Tickets Summary"
+msgstr "Resumo dos Ingressos"
+
+#: camptix.php:5022
+msgid "Purchase Date"
+msgstr "Data da Compra"
+
+#: camptix.php:5080
+msgid "Edit information"
+msgstr "Editar Informação"
+
+#: camptix.php:5100
+#, php-format
+msgid "Change of plans? Made a mistake? Don't worry, you can %s."
+msgstr "Mudou de planos? Cometeu um erro? Calma, você pode %s."
+
+#: camptix.php:5100
+msgid "request a refund"
+msgstr "solicitar reembolso"
+
+#: camptix.php:5145
+msgid "This attendee is not published."
+msgstr "Esse participante não está publicado."
+
+#: camptix.php:5161
+msgid "Please note that the payment for this ticket is still pending."
+msgstr ""
+"Por favor, tenha em mente que o pagamento para esse ingresso ainda está "
+"pendente."
+
+#: camptix.php:5184
+msgid "You have entered an invalid e-mail, please try again."
+msgstr "Você informou um e-mail inválido, por favor, tente novamente."
+
+#: camptix.php:5202
+msgid "Your information has not been changed!"
+msgstr "Suas informações não foi atualizada!"
+
+#: camptix.php:5217
+msgid "Your information has been saved!"
+msgstr "Suas informações foram salvas!"
+
+#: camptix.php:5281
+msgid "Save Attendee Information"
+msgstr "Salvar Informações do Participante"
+
+#: camptix.php:5379
+msgid "You have to agree to the terms to request a refund."
+msgstr "Você precisar concondar com os termos para solicitar um reembolso."
+
+#: camptix.php:5404
+msgid "Your tickets have been successfully refunded."
+msgstr "Seus ingressos foram reembolsados com sucesso."
+
+#: camptix.php:5407
+msgid "Can not refund the transaction at this time. Please try again later."
+msgstr ""
+"Não é possível reembolsar a transação nesse momento. Por favor, tente "
+"novamente mais tarde."
+
+#: camptix.php:5419
+msgid "Refund Request"
+msgstr "Solicitação de Reembolso"
+
+#: camptix.php:5424
+msgid "Request Details"
+msgstr "Detalhes da Solicitação"
+
+#: camptix.php:5432
+msgid "Original Payment"
+msgstr "Pagamento Original"
+
+#: camptix.php:5436
+msgid "Purchased Tickets"
+msgstr "Ingressos Comprados"
+
+#: camptix.php:5444
+msgid "Refund Amount"
+msgstr "Total Reembolsado"
+
+#: camptix.php:5448
+msgid "Refund Reason"
+msgstr "Razão do Reembolso"
+
+#: camptix.php:5454
+msgid ""
+"Refunds can take up to several days to process. All of the tickets you "
+"purchased in the original transaction will be cancelled. We are not able to "
+"provide partial refunds and/or refunds to a different account than the "
+"original purchaser. You must agree to these terms before requesting a refund."
+msgstr ""
+"Reembolso podem demorar alguns dias para serem processados. Todos os "
+"ingressos comprados serão cancelados. Reembolso parcial ou transferência "
+"para uma outra conta não são permitidos. Você precisa concordar com esses "
+"termos antes de solicitar seu reembolso."
+
+#: camptix.php:5456
+msgid "I agree to the above terms"
+msgstr "Eu concordo com os termos acima."
+
+#: camptix.php:5457
+msgid "Send Request"
+msgstr "Enviar Solicitação"
+
+#: camptix.php:6517
+#, php-format
+msgid "Coupon used: %s"
+msgstr "Cupom usado: %s"
+
+#: camptix.php:6519
+#, php-format
+msgid "Total: %s"
+msgstr "Total: %s"
+
+#: camptix.php:6520
+msgid "Let us know if you have any questions!"
+msgstr "Entre em contato se você tiver alguma dúvida!"
+
+#: camptix.php:6550 camptix.php:6610
+#, php-format
+msgid "Your Ticket to %s"
+msgstr "Seu Ingresso para %s"
+
+#: camptix.php:6570 camptix.php:6654
+#, php-format
+msgid "Your Refund for %s"
+msgstr "Seu Reembolso para %s"
+
+#: camptix.php:6603
+#, php-format
+msgid ""
+"Your payment status is: %s. You will receive a notification e-mail once your "
+"payment is completed."
+msgstr ""
+"A situação do seu pagamento é: %s. Você receberá um e-mail notificando "
+"quando o pagamento for concluído."
+
+#: camptix.php:6622
+#, php-format
+msgid "Your Tickets to %s"
+msgstr "Seus Ingressos para %s"
+
+#: camptix.php:6634 camptix.php:6644
+#, php-format
+msgid "Your Payment for %s"
+msgstr "Seu Pagamento para %s"
+
+#: camptix.php:6795
+msgid ""
+"CampTix is in <strong>archive mode</strong>. Please do not make any changes."
+msgstr ""
+"CampTix está no <strong>modo arquivo</strong>. Não faça nenhuma alteração."
+
+#: camptix.php:6930
+msgid "Please register your CampTix addons before CampTix is initialized."
+msgstr ""
+"Por favor, registre seus complementos do CampTix antes de inicializá-lo"
+
+#: camptix.php:6935
+msgid "The CampTix addon you are trying to register does not exist."
+msgstr "O complemento do CampTix que você está tentando registrar não existe."
+
+#: inc/class-camptix-payment-method.php:60
+#, php-format
+msgid "Supported currencies: <code>%s</code>."
+msgstr "Moedas Suportadas: <code>%s</code>."
+
+#: inc/class-camptix-payment-method.php:67
+msgid "Disabled"
+msgstr "Desabilitado"
+
+#: inc/class-camptix-payment-method.php:69
+#, php-format
+msgid "%s is not supported by this payment method."
+msgstr "%s não é suportado por esse método de pagamento."
+
+#~ msgid "Received old-style IPN request with an empty transaction id."
+#~ msgstr "Recebida solicitação antiga de IPN com um ID de transação vazio."
+
+#~ msgid ""
+#~ "Received old-style IPN request. Could not match to attendee by "
+#~ "transaction id."
+#~ msgstr ""
+#~ "Recebida solicitação antiga de IPN. Não foi possível encontrar o "
+#~ "participante pelo ID da transação."
+
+#~ msgid ""
+#~ "Received old-style IPN request. Could find a payment token by transaction "
+#~ "id."
+#~ msgstr ""
+#~ "Recebida solicitação antiga de IPN. Não foi possível encontrar o Token de "
+#~ "pagamento pelo ID da transação."
+
+#~ msgid "An error has occured."
+#~ msgstr "Ocorreu um erro."
+
+#~ msgctxt "camptix"
+#~ msgid "Cancelled <span class=\"count\">(%s)</span>"
+#~ msgid_plural "Cancelled <span class=\"count\">(%s)</span>"
+#~ msgstr[0] "Cancelado <span class=\"count\">(%s)</span>"
+#~ msgstr[1] "Cancelados <span class=\"count\">(%s)</span>"
+
+#~ msgctxt "camptix"
+#~ msgid "Failed <span class=\"count\">(%s)</span>"
+#~ msgid_plural "Failed <span class=\"count\">(%s)</span>"
+#~ msgstr[0] "Falhou <span class=\"count\">(%s)</span>"
+#~ msgstr[1] "Falharam <span class=\"count\">(%s)</span>"
+
+#~ msgctxt "camptix"
+#~ msgid "Timeout <span class=\"count\">(%s)</span>"
+#~ msgid_plural "Timeout <span class=\"count\">(%s)</span>"
+#~ msgstr[0] "Timeout <span class=\"count\">(%s)</span>"
+#~ msgstr[1] "Timeout <span class=\"count\">(%s)</span>"
+
+#~ msgctxt "camptix"
+#~ msgid "Refunded <span class=\"count\">(%s)</span>"
+#~ msgid_plural "Refunded <span class=\"count\">(%s)</span>"
+#~ msgstr[0] "Reembolsado <span class=\"count\">(%s)</span>"
+#~ msgstr[1] "Reembolsados <span class=\"count\">(%s)</span>"
+
+#~ msgid "CampTix Event Ticketing"
+#~ msgstr "Log do CampTix"
+
+#~ msgid "http://wordcamp.org"
+#~ msgstr "http://wordcamp.org"
+
+#~ msgid "Simple and flexible event ticketing for WordPress."
+#~ msgstr "Simples e flexível venda de ingressos de eventos para WordPress."
+
+#~ msgid "Automattic"
+#~ msgstr "Automattic"
+
+#~ msgid "Customize your confirmation e-mail templates."
+#~ msgstr "Customize seus modelos de confirmação de e-mail."
+
+#~ msgid "Executing e-mail job."
+#~ msgstr "Executando tarefa de e-mail."
+
+#~ msgid "%s is not a valid e-mail, removing from queue."
+#~ msgstr "%s não é um e-mail válido, removendo da lista."
+
+#~ msgid "E-mail successfully sent to %s"
+#~ msgstr "E-mail enviado com sucesso para %s"
+
+#~ msgid "Could not send e-mail to %s, removing from queue."
+#~ msgstr "Não foi possível enviar e-mail para %s, removendo da lista."
+
+#~ msgid "Processed %d recipients. %d recipients remaining."
+#~ msgstr "%d destinatários processados. Restando %d destinatários."
+
+#~ msgid "Email job complete and published."
+#~ msgstr "Tarefa de e-mail completa e publicada."
+
+#~ msgid "Running upgrade script."
+#~ msgstr "Executando script de atualização."
+
+#~ msgid "Upgrading from %s to %s."
+#~ msgstr "Atualizando de %s para %s."
+
+#~ msgid "Going to update options"
+#~ msgstr "Atualizando opções"
+
+#~ msgid "Updated %d attendees data in %f seconds."
+#~ msgstr "%d participantes atualizados em %f segundos."
+
+#~ msgid "Upgrade complete, current version: %s."
+#~ msgstr "Atualização completa, versão atual: %s."
+
+#~ msgid "Options updated."
+#~ msgstr "Opções atualizadas."
+
+#~ msgid "Finished %s data export in %s seconds."
+#~ msgstr "Finalizados %s exportações de dados em %s segundos."
+
+#~ msgid "Created e-mail job with %s recipients."
+#~ msgstr "Criada tarefa de e-mail para %s destinatários."
+
+#~ msgid "Setting all transactions to refund, thanks %s."
+#~ msgstr "Salvando todas as transações como reembolsadas, obrigado %s."
+
+#~ msgid "Attendee set to refund by %s"
+#~ msgstr "Participante salvo como reembolsado por %s"
+
+#~ msgid "Refund all job complete."
+#~ msgstr "Tarefa de Reembolsar Tudo completa."
+
+#~ msgid "Refunded transaction %s."
+#~ msgstr "Reembolsar transação %s."
+
+#~ msgid "Could not refund %s."
+#~ msgstr "Não foi possível reembolsar %s."
+
+#~ msgid "No transaction id for this attendee, not refunding."
+#~ msgstr "Sem ID de transação pra esse participante, não reembolsado."
+
+#~ msgid "Created a new reservation."
+#~ msgstr "Nova Reserva Criada."
+
+#~ msgid "Released a reservation."
+#~ msgstr "Liberar uma Reserva."
+
+#~ msgid "Cancelled a reservation."
+#~ msgstr "Cancelar uma Reserva."
+
+#~ msgid "Saved ticket post with form data."
+#~ msgstr "Post do ingresso salvo com informações."
+
+#~ msgid "Saved attendee post with post data."
+#~ msgstr "Post do Participante salvo com dados do post."
+
+#~ msgid "Saved coupon post with form data."
+#~ msgstr "Post do Cupom salvo com dados do post."
+
+#~ msgid "Something is terribly wrong, extra > 0 after stripping extra coupons"
+#~ msgstr ""
+#~ "Algo está terrivelmente errado, extra > 0 depois de eliminar cupons "
+#~ "extras."
+
+#~ msgid "Something is seriously wrong, did_template_redirect is false."
+#~ msgstr "Algo está muito errado, did_template_redirect é falso."
+
+#~ msgid "Changed attendee data from frontend."
+#~ msgstr "Informação do participante alterada pelo frontend."
+
+#~ msgid "Refunded %s by user request in %s."
+#~ msgstr "Reembolsado %s por solicitação do usuário em %s."
+
+#~ msgid "Refund reason attached with data."
+#~ msgstr "Razões do Reembolso anexadas com os dados."
+
+#~ msgid "Reviewed timeout payments and set %d attendees to timeout status."
+#~ msgstr ""
+#~ "Tempo limite dos pagamentos revisto e atualizado %d situação do tempo "
+#~ "limite dos participantes. "
+
+#~ msgid "Created attendee draft."
+#~ msgstr "Criado Rascunho de participante."
+
+#~ msgid "Could not find attendees by payment token"
+#~ msgstr "Não foi possível localizar participante pelo token de pagamento"
+
+#~ msgid "Payment result for %s."
+#~ msgstr "Resultado do pagamento para %s."
+
+#~ msgid "Attendee status has been changed to %s"
+#~ msgstr "Situação do Participante foi alterada par %s"
+
+#~ msgid "Received payment result for %s but status has not changed."
+#~ msgstr ""
+#~ "Recebido resultado do pagamento para %s mas a situação não foi alterada."
+
+#~ msgid "Sent ticket e-mail to %s and receipt to %s."
+#~ msgstr "Enviado e-mail com ingresso para %s e recibo para %s."
+
+#~ msgid "Sent a ticket and receipt to %s."
+#~ msgstr "Enviado um e-mail com ingresso e recido para %s."
+
+#~ msgid "Sent a receipt to %s."
+#~ msgstr "Enviar um Comprovante para %s."
+
+#~ msgid "Sending completed e-mail notification after IPN to %s."
+#~ msgstr "Enviando e-mail de notificação completo depois IPN para %s."
+
+#~ msgid "Sending failed e-mail notification after IPN to %s."
+#~ msgstr "Enviando e-mail de notificação com falha depois IPN para %s."
+
+#~ msgid "Sent e-mail to %s."
+#~ msgstr "E-mail enviado para %s."
+
+#~ msgid "Twitter (public)"
+#~ msgstr "Twitter (público)"
+
+#~ msgid "URL (public)"
+#~ msgstr "URL (público)"
+
+#~ msgid "No log entries yet."
+#~ msgstr "Nenhum log ainda."

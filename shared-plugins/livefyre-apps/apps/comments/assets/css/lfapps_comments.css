@@ -1,0 +1,39 @@
+/*-------------------------------------------------
+* Comments status blocks
+*/
+.lfcomments-status-box {
+    float: left;
+    width: 46%;
+    padding-right: 2%;
+}
+
+.lfcomments-status-box h4 {
+    margin-top: 0.5em;
+    font-size: 1.1em;
+    color: #666;
+    border-bottom: 1px solid #666;
+    padding-bottom: 5px;
+}
+
+.lfcomments-allow-btn {
+    background-color: #fbfafa;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#ffffff), to(#f7f6f5));
+    background-image: -webkit-linear-gradient(top, #ffffff, #f7f6f5);
+    background-image: -moz-linear-gradient(top, #ffffff, #f7f6f5);
+    background-image: -o-linear-gradient(top, #ffffff, #f7f6f5);
+    background-image: -ms-linear-gradient(top, #ffffff, #f7f6f5);
+    background-image: linear-gradient(top, #ffffff, #f7f6f5);
+    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#ffffff', EndColorStr='#f7f6f5');
+    border: 1px solid #E0DFDC;
+    border-radius: 2px;
+    color: #808080;
+    font-size: 12px;
+    margin-top: 7px;
+    line-height: 18px;
+    text-decoration: none;
+    padding: 3px;
+}
+
+.livefyre-import-postbox {
+    border-color: #ff0000;
+}

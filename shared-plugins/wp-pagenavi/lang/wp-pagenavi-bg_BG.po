@@ -1,0 +1,279 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-PageNavi 2.73\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-pagenavi\n"
+"POT-Creation-Date: 2010-08-17 17:28+0300\n"
+"PO-Revision-Date: 2010-09-10 07:05+0200\n"
+"Last-Translator: Yassen Yotov <cyberoto@gmail.com>\n"
+"Language-Team: Yassen Yotov <cyberoto@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Bulgarian\n"
+"X-Poedit-Country: BULGARIA\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: admin.php:9
+#, fuzzy
+msgid "PageNavi Settings"
+msgstr "Настройки на навигацията"
+
+#: admin.php:10
+msgid "PageNavi"
+msgstr "PageNavi"
+
+#: admin.php:28
+msgid "Text For Number Of Pages"
+msgstr "Текст за брой на страници"
+
+#: admin.php:33
+msgid "The current page number."
+msgstr "Номер на страницата в момента"
+
+#: admin.php:34
+#: admin.php:58
+#: admin.php:66
+msgid "The total number of pages."
+msgstr "Общ брой на страниците."
+
+#: admin.php:38
+msgid "Text For Current Page"
+msgstr "Текст за разглежданата страницата"
+
+#: admin.php:42
+#: admin.php:50
+msgid "The page number."
+msgstr "Номер на страницата."
+
+#: admin.php:46
+msgid "Text For Page"
+msgstr "Текст за страница"
+
+#: admin.php:54
+#, fuzzy
+msgid "Text For First Page"
+msgstr "Текст за първи пост"
+
+#: admin.php:62
+#, fuzzy
+msgid "Text For Last Page"
+msgstr "Текст за страница"
+
+#: admin.php:70
+#, fuzzy
+msgid "Text For Previous Page"
+msgstr "Текст за предишен пост"
+
+#: admin.php:76
+#, fuzzy
+msgid "Text For Next Page"
+msgstr "Текст за страница"
+
+#: admin.php:82
+msgid "Text For Previous ..."
+msgstr "Текст за предишна ..."
+
+#: admin.php:88
+msgid "Text For Next ..."
+msgstr "Текст за следваща ..."
+
+#: admin.php:95
+msgid "Page Navigation Text"
+msgstr "Текст на навигацията"
+
+#: admin.php:96
+msgid "Leaving a field blank will hide that part of the navigation."
+msgstr "Оставянето на празно поле ще скрие тази част от навигация."
+
+#: admin.php:102
+msgid "Use pagenavi-css.css"
+msgstr "Използвай pagenavi-css.css"
+
+#: admin.php:108
+msgid "Page Navigation Style"
+msgstr "Стил на навигацията на страниците"
+
+#: admin.php:111
+msgid "Normal"
+msgstr "Нормален"
+
+#: admin.php:111
+#, fuzzy
+msgid "Drop-down List"
+msgstr "Падащо меню"
+
+#: admin.php:116
+#, fuzzy
+msgid "Always Show Page Navigation"
+msgstr "Показване на навигацията винаги?"
+
+#: admin.php:119
+msgid "Show navigation even if there's only one page."
+msgstr "Покажи навигацията, дори ако има само една страница."
+
+#: admin.php:123
+#, fuzzy
+msgid "Number Of Pages To Show"
+msgstr "Брой на страниците за показване?"
+
+#: admin.php:130
+#, fuzzy
+msgid "Number Of Larger Page Numbers To Show"
+msgstr "Брой на страниците за показване?"
+
+#: admin.php:135
+msgid "Larger page numbers are in addition to the normal page numbers. They are useful when there are many pages of posts."
+msgstr "Големите номера на страници, са в допълнение към обичайните номера на страниците. Те са полезни, когато има много страници с мнения."
+
+#: admin.php:136
+msgid "For example, WP-PageNavi will display: Pages 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+msgstr "Например, WP-PageNavi ще покаже: Страници 1, 2, 3, 4, 5, 10, 20, 30, 40, 50."
+
+#: admin.php:137
+msgid "Enter 0 to disable."
+msgstr "Въведете 0 за да изключите тази опция"
+
+#: admin.php:141
+msgid "Show Larger Page Numbers In Multiples Of"
+msgstr "Покажи големия брой страници, кратни на"
+
+#: admin.php:146
+msgid "For example, if mutiple is 5, it will show: 5, 10, 15, 20, 25"
+msgstr "Например, ако е кратно на 5, ще се покаже: 5, 10, 15, 20, 25"
+
+#: admin.php:151
+msgid "Page Navigation Options"
+msgstr "Настройки на навигацията"
+
+#: scb/AdminPage.php:167
+msgid "Settings <strong>saved</strong>."
+msgstr "Настройките са <strong>запазени</strong>."
+
+#: scb/AdminPage.php:179
+#: scb/AdminPage.php:189
+msgid "Save Changes"
+msgstr "Запазване на промените"
+
+#: scb/AdminPage.php:371
+msgid "Settings"
+msgstr "Настройки"
+
+#: wp-pagenavi.php:37
+msgid "Page %CURRENT_PAGE% of %TOTAL_PAGES%"
+msgstr "Страница %CURRENT_PAGE% от %TOTAL_PAGES%"
+
+#: wp-pagenavi.php:40
+msgid "&laquo; First"
+msgstr "&laquo; Първа"
+
+#: wp-pagenavi.php:41
+msgid "Last &raquo;"
+msgstr "Последна &raquo;"
+
+#: wp-pagenavi.php:42
+msgid "&laquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:43
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: wp-pagenavi.php:44
+#: wp-pagenavi.php:45
+msgid "..."
+msgstr "..."
+
+#. Plugin Name of the plugin/theme
+#, fuzzy
+msgid "WP-PageNavi"
+msgstr "PageNavi"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/wp-pagenavi/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Adds a more advanced paging navigation to your WordPress blog"
+msgstr "Добавя по-напреднала навигация за страниране към вашия блог"
+
+#. Author of the plugin/theme
+msgid "Lester 'GaMerZ' Chan & scribu"
+msgstr ""
+
+#~ msgid "Updated"
+#~ msgstr "Обновено"
+
+#~ msgid "No Page Navigation Option Updated"
+#~ msgstr "Няма промени в настройките  на навигацията"
+
+#~ msgid "UNINSTALL WP-PageNavi"
+#~ msgstr "ДЕИНСТАЛИРАНЕ на WP-PageNavi"
+
+#~ msgid "Setting Key '%s' has been deleted."
+#~ msgstr "Настройка '%s' беше изтрита."
+
+#~ msgid "Error deleting Setting Key '%s'."
+#~ msgstr "Грешка при опит да бъде изтрита настройка '%s'."
+
+#~ msgid "Uninstall WP-PageNavi"
+#~ msgstr "Деинсталиране на WP-PageNavi"
+
+#~ msgid ""
+#~ "<a href=\"%s\">Click Here</a> To Finish The Uninstallation And WP-"
+#~ "PageNavi Will Be Deactivated Automatically."
+#~ msgstr ""
+#~ "<a href=\"%s\">Натиснете тук</a> за да завършите деинсталацията и WP-"
+#~ "PageNavi ще бъде деактивиран автоматично."
+
+#~ msgid "Text For Last Post"
+#~ msgstr "Текст за последен пост"
+
+#~ msgid "Text For Next Post"
+#~ msgstr "Текст за следващ пост"
+
+#~ msgid "Yes"
+#~ msgstr "Да"
+
+#~ msgid "No"
+#~ msgstr "Не"
+
+#~ msgid ""
+#~ "Deactivating WP-PageNavi plugin does not remove any data that may have "
+#~ "been created, such as the page navigation options. To completely remove "
+#~ "this plugin, you can uninstall it here."
+#~ msgstr ""
+#~ "Деактивирането на  WP-PageNavi не изтрива създадените от плъгина данни, "
+#~ "като настройките на навигацията на страниците. За да премахнете напълно "
+#~ "плъгина, деинсталирайте го от тук."
+
+#~ msgid "WARNING:"
+#~ msgstr "ВНИМАНИЕ:"
+
+#~ msgid ""
+#~ "Once uninstalled, this cannot be undone. You should use a Database Backup "
+#~ "plugin of WordPress to back up all the data first."
+#~ msgstr ""
+#~ "Деинсталирането е необратимо. Трябва да използвате резервно копие на "
+#~ "базата данни за да можете да възстановите настройките на плъгина."
+
+#~ msgid "The following WordPress Options will be DELETED:"
+#~ msgstr "Следните настройки на WordPress ще бъдат ИЗТРИТИ:"
+
+#~ msgid "WordPress Options"
+#~ msgstr "WordPress настройки"
+
+#~ msgid ""
+#~ "You Are About To Uninstall WP-PageNavi From WordPress.\\nThis Action Is "
+#~ "Not Reversible.\\n\\n Choose [Cancel] To Stop, [OK] To Uninstall."
+#~ msgstr ""
+#~ "Вие сте на път да деинсталирате WP-PageNavi от WordPress.\\nТова действие "
+#~ "е необратимо.\\n\\n Изберете [Cancel] за да спрете или [OK] за "
+#~ "деинсталиране."
+
+#~ msgid "Update Options"
+#~ msgstr "Обновяване на настройките"
+
+#~ msgid "Cancel"
+#~ msgstr "Отказ"

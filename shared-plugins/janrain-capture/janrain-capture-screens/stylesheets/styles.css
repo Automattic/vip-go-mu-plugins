@@ -1,0 +1,1012 @@
+#wp-admin-bar-logout {
+  visibility: hidden;
+}
+
+#janrain-share, #janrainModal, #janrainModalOverlay {
+    z-index: 99999 !important;
+}
+
+#janrainModal .janrain_modal_closebutton {
+  top: 10px;
+  right: 10px;
+  color: #888;
+  background-color: transparent;
+  width: auto;
+  height: auto;
+  font-size: 12px;
+  font-family: helvetica, sans-serif;
+  font-weight: 100;
+  text-decoration: none
+}
+#janrainModal .janrain-capture-ui.capture-ui-content {
+  background-color: #fff
+}
+#janrainModal .janrain-capture-ui.capture-ui-content.capture_current_screen {
+  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=100);
+  opacity: 1;
+  -moz-transition: all 5s linear 0s;
+  -webkit-transition: all 5s linear 0s;
+  -o-transition: all 5s linear 0s;
+  transition: all 5s linear 0s
+}
+#janrainModal .janrain-capture-ui.capture-ui-content h1 {
+  font-size: 18px;
+  line-height: inherit;
+  color: #333;
+  font-weight: bold
+}
+#janrainModal .janrain-capture-ui.capture-ui-content h2 {
+  font-size: 15px;
+  font-weight: bold
+}
+#janrainModal .janrain-capture-ui.capture-ui-content h3 {
+  font-size: 15px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content h4 {
+  font-size: 1.385em
+}
+#janrainModal .janrain-capture-ui.capture-ui-content h5 {
+  font-size: 1.077em
+}
+#janrainModal .janrain-capture-ui.capture-ui-content .capture_signin {
+  margin: 0 auto
+}
+.janrain-capture-ui {
+  font-size: 13px;
+  font-family: helvetica, sans-serif;
+  line-height: inherit;
+  color: #666;
+  background-color: transparent
+}
+.janrain-capture-ui .grid-block {
+  *zoom: 1;
+  clear: both;
+  margin: 0 0 0 -2%
+}
+.janrain-capture-ui .grid-block:after {
+  content: "";
+  display: table;
+  clear: both
+}
+.janrain-capture-ui .col4 {
+  width: 98%;
+  float: left;
+  display: inline;
+  margin-left: 2%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .col3 {
+  width: 73%;
+  float: left;
+  display: inline;
+  margin-left: 2%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .col2 {
+  width: 48%;
+  float: left;
+  display: inline;
+  margin-left: 2%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .col125 {
+  width: 31.3%;
+  float: left;
+  display: inline;
+  margin-left: 2%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .col250 {
+  width: 64.5%;
+  float: left;
+  display: inline;
+  margin-left: 2%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .col1 {
+  width: 23%;
+  float: left;
+  display: inline;
+  margin-left: 2%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui a, .janrain-capture-ui a:visited, .janrain-capture-ui a:link {
+  color: #009ddc
+}
+.janrain-capture-ui a:hover {
+  color: #006690
+}
+.janrain-capture-ui .capture_backgroundColor {
+  background-color: #f6f6f6;
+  color: #666
+}
+.janrain-capture-ui .capture_backgroundColor .capture_text_input, .janrain-capture-ui .capture_backgroundColor .capture_checkbox, .janrain-capture-ui .capture_backgroundColor .capture_radio, .janrain-capture-ui .capture_backgroundColor .capture_inputPlaceholder, .janrain-capture-ui .capture_backgroundColor .capture_select, .janrain-capture-ui .capture_backgroundColor .capture_textarea, .janrain-capture-ui .capture_backgroundColor .capture_checkbox, .janrain-capture-ui .capture_backgroundColor .capture_radio {
+  background-color: #fff
+}
+.janrain-capture-ui .capture_backgroundColor .capture_text_input:focus, .janrain-capture-ui .capture_backgroundColor .capture_checkbox:focus, .janrain-capture-ui .capture_backgroundColor .capture_radio:focus, .janrain-capture-ui .capture_backgroundColor .capture_inputPlaceholder:focus, .janrain-capture-ui .capture_backgroundColor .capture_select:focus, .janrain-capture-ui .capture_backgroundColor .capture_textarea:focus, .janrain-capture-ui .capture_backgroundColor .capture_checkbox:focus, .janrain-capture-ui .capture_backgroundColor .capture_radio:focus {
+  background-color: #fff
+}
+.janrain-capture-ui .capture_backgroundColor .capture_secondary {
+  border: 1px solid #ddd;
+  border-width: 1px 1px 0 1px
+}
+.janrain-capture-ui .capture_backgroundColor .capture_provider li {
+  background-color: #fff
+}
+.janrain-capture-ui .capture_backgroundColor .capture_form_item .capture_display_toggle_wrap .capture_display_toggle:hover {
+  background-color: #fff
+}
+.janrain-capture-ui .capture_footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 35px;
+  width: 100%;
+  text-align: right;
+  z-index: 5;
+  padding: 10px 0;
+  *zoom: 1;
+  -moz-box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  -webkit-box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  -o-box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  background-color: #f6f6f6;
+  -moz-border-radius: 0 0 5px 5px;
+  -webkit-border-radius: 0 0 5px 5px;
+  -o-border-radius: 0 0 5px 5px;
+  -ms-border-radius: 0 0 5px 5px;
+  -khtml-border-radius: 0 0 5px 5px;
+  border-radius: 0 0 5px 5px
+}
+.janrain-capture-ui .capture_footer:after {
+  content: "";
+  display: table;
+  clear: both
+}
+.janrain-capture-ui .capture_footer .capture_btn {
+  margin: 0 20px
+}
+.janrain-capture-ui .capture_text_input, .janrain-capture-ui .capture_checkbox, .janrain-capture-ui .capture_radio, .janrain-capture-ui .capture_inputPlaceholder, .janrain-capture-ui .capture_select, .janrain-capture-ui .capture_textarea {
+  font-size: 14px;
+  font-family: helvetica, sans-serif;
+  border: 1px solid #ccc;
+  color: #b3b3b3;
+  margin-left: 0;
+  margin-right: 0;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
+  -moz-box-shadow: 0 0 3px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 0 3px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 0 3px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 0 3px rgba(0,0,0,0.2) inset;
+  background-color: #f6f6f6
+}
+.janrain-capture-ui .capture_text_input:focus, .janrain-capture-ui .capture_checkbox:focus, .janrain-capture-ui .capture_radio:focus, .janrain-capture-ui .capture_inputPlaceholder:focus, .janrain-capture-ui .capture_select:focus, .janrain-capture-ui .capture_textarea:focus {
+  color: #333;
+  background-color: #e2e2e2;
+  -moz-box-shadow: 0 0 3px #009ddc, 0 0 3px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 0 3px #009ddc, 0 0 3px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 0 3px #009ddc, 0 0 3px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 0 3px #009ddc, 0 0 3px rgba(0,0,0,0.2) inset;
+  border: 1px solid #009ddc
+}
+.janrain-capture-ui .capture_text_input, .janrain-capture-ui .capture_checkbox, .janrain-capture-ui .capture_radio, .janrain-capture-ui .capture_inputPlaceholder, .janrain-capture-ui .capture_textarea, .janrain-capture-ui .capture_inputPlaceholder {
+  width: 100%;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  color: #333
+}
+.janrain-capture-ui .capture_text_input, .janrain-capture-ui .capture_checkbox, .janrain-capture-ui .capture_radio, .janrain-capture-ui .capture_inputPlaceholder, .janrain-capture-ui .capture_textarea, .janrain-capture-ui .capture_inputPlaceholder {
+  *display: inline
+}
+.janrain-capture-ui .capture_text_input::-webkit-input-placeholder, .janrain-capture-ui .capture_checkbox::-webkit-input-placeholder, .janrain-capture-ui .capture_radio::-webkit-input-placeholder, .janrain-capture-ui .capture_inputPlaceholder::-webkit-input-placeholder, .janrain-capture-ui .capture_textarea::-webkit-input-placeholder, .janrain-capture-ui .capture_inputPlaceholder::-webkit-input-placeholder {
+  color: #b3b3b3
+}
+.janrain-capture-ui .capture_text_input:-moz-placeholder, .janrain-capture-ui .capture_checkbox:-moz-placeholder, .janrain-capture-ui .capture_radio:-moz-placeholder, .janrain-capture-ui .capture_inputPlaceholder:-moz-placeholder, .janrain-capture-ui .capture_textarea:-moz-placeholder, .janrain-capture-ui .capture_inputPlaceholder:-moz-placeholder {
+  color: #b3b3b3
+}
+.janrain-capture-ui .capture_text_input:-ms-input-placeholder, .janrain-capture-ui .capture_checkbox:-ms-input-placeholder, .janrain-capture-ui .capture_radio:-ms-input-placeholder, .janrain-capture-ui .capture_inputPlaceholder:-ms-input-placeholder, .janrain-capture-ui .capture_textarea:-ms-input-placeholder, .janrain-capture-ui .capture_inputPlaceholder:-ms-input-placeholder {
+  color: #b3b3b3
+}
+.janrain-capture-ui .capture_select {
+  width: 100%;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  color: #333
+}
+.janrain-capture-ui .capture_select.capture_disabled {
+  color: #b3b3b3
+}
+.janrain-capture-ui .capture_select.capture_disabled:focus {
+  color: #333
+}
+.janrain-capture-ui .capture_checkbox, .janrain-capture-ui .capture_radio {
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+  border: 0
+}
+.janrain-capture-ui .capture_checkbox label, .janrain-capture-ui .capture_radio label {
+  font-size: 13px
+}
+.janrain-capture-ui .capture_inputPlaceholder {
+  border: 0;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none
+}
+.janrain-capture-ui .capture_btn, .janrain-capture-ui a.capture_btn, .janrain-capture-ui .capture_btn:focus, .janrain-capture-ui a.capture_btn:focus, .janrain-capture-ui button.capture_btn:focus, .janrain-capture-ui input.capture_btn:focus, .janrain-capture-ui .capture_backButton:focus, .janrain-capture-ui button.capture_btn, .janrain-capture-ui input.capture_btn, .janrain-capture-ui .capture_backButton {
+  -moz-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  font-family: helvetica, sans-serif
+}
+.janrain-capture-ui .capture_btn:active, .janrain-capture-ui a.capture_btn:active, .janrain-capture-ui .capture_btn:active:focus, .janrain-capture-ui a.capture_btn:active:focus, .janrain-capture-ui button.capture_btn:active:focus, .janrain-capture-ui input.capture_btn:active:focus, .janrain-capture-ui .capture_backButton:active:focus, .janrain-capture-ui button.capture_btn:active, .janrain-capture-ui input.capture_btn:active, .janrain-capture-ui .capture_backButton:active {
+  -moz-box-shadow: 0 1px 0px 0px rgba(0,0,0,0.1) inset, 0 -1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 1px 0px 0px rgba(0,0,0,0.1) inset, 0 -1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 1px 0px 0px rgba(0,0,0,0.1) inset, 0 -1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 1px 0px 0px rgba(0,0,0,0.1) inset, 0 -1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset
+}
+.janrain-capture-ui .capture_primary, .janrain-capture-ui a.capture_primary, .janrain-capture-ui button.capture_primary, .janrain-capture-ui input.capture_primary {
+  background-color: #009ddc;
+  background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #34c5ff), color-stop(100%, #0092cd));
+  background: -webkit-linear-gradient(top, #34c5ff,#0092cd);
+  background: -moz-linear-gradient(top, #34c5ff,#0092cd);
+  background: -o-linear-gradient(top, #34c5ff,#0092cd);
+  background: -ms-linear-gradient(top, #34c5ff,#0092cd);
+  background: linear-gradient(top, #34c5ff,#0092cd);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.45);
+  color: #fff
+}
+.janrain-capture-ui a.capture_primary:visited, .janrain-capture-ui a.capture_primary:link, .janrain-capture-ui a.capture_primary:hover {
+  color: #fff
+}
+.janrain-capture-ui .capture_secondary, .janrain-capture-ui a.capture_secondary, .janrain-capture-ui button.capture_secondary, .janrain-capture-ui input.capture_secondary {
+  background-color: #f6f6f6;
+  background-image: none;
+  color: #009ddc;
+  text-decoration: none;
+  text-shadow: none
+}
+.janrain-capture-ui .capture_btn_half, .janrain-capture-ui a.capture_btn_half, .janrain-capture-ui button.capture_btn_half, .janrain-capture-ui input.capture_btn_half {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0 1%;
+  padding-left: 5px;
+  padding-right: 5px;
+  width: 48%
+}
+.janrain-capture-ui .capture_btn_full {
+  margin: 0;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%
+}
+.janrain-capture-ui a.capture_secondary:visited, .janrain-capture-ui a.capture_secondary:link, .janrain-capture-ui a.capture_secondary:hover {
+  color: #333
+}
+.janrain-capture-ui .capture_processing {
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+  background-color: none;
+  border: none !important
+}
+.janrain-capture-ui .capture_fatal_error {
+  font-size: 12px;
+  background-color: #ffefde;
+  background-position: 10px 5px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
+  padding: 5px 5px 5px 35px;
+  border: 1px solid #dc7302;
+  color: #f58002
+}
+.janrain-capture-ui .capture_form_error {
+  color: #f58002;
+  background-image: none
+}
+.janrain-capture-ui .capture_form_item {
+  min-height: 0
+}
+.janrain-capture-ui .capture_form_item label {
+  color: #666;
+  overflow: hidden;
+  text-indent: -99999px;
+  height: 0px
+}
+.janrain-capture-ui .capture_form_item .capture_tip {
+  color: #aaa
+}
+.janrain-capture-ui .capture_form_item.capture_focused .capture_tip {
+  color: #333
+}
+.janrain-capture-ui .capture_form_item .capture_tip_validating {
+  color: #aaa
+}
+.janrain-capture-ui .capture_form_item .capture_tip_validated {
+  color: #aaa
+}
+.janrain-capture-ui .capture_form_item .capture_tip_error {
+  color: #f58002
+}
+.janrain-capture-ui .capture_form_item .capture_btn {
+  margin: 0
+}
+.janrain-capture-ui .capture_save_success {
+  color: #64AE29;
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto
+}
+.janrain-capture-ui .capture_save_success {
+  *display: inline
+}
+.janrain-capture-ui .capture_error .capture_radio, .janrain-capture-ui .capture_error .capture_checkbox, .janrain-capture-ui .capture_error .capture_text_input, .janrain-capture-ui .capture_error .capture_checkbox, .janrain-capture-ui .capture_error .capture_radio, .janrain-capture-ui .capture_error .capture_inputPlaceholder {
+  border: 1px solid #f58002;
+  -moz-box-shadow: 0 0 3px rgba(245,148,2,0.3) inset;
+  -webkit-box-shadow: 0 0 3px rgba(245,148,2,0.3) inset;
+  -o-box-shadow: 0 0 3px rgba(245,148,2,0.3) inset;
+  box-shadow: 0 0 3px rgba(245,148,2,0.3) inset
+}
+.janrain-capture-ui .capture_display_toggle_wrap {
+  font-size: 12px;
+  line-height: 16px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -o-border-radius: 4px;
+  -ms-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  left: 300px;
+  top: 20px
+}
+.janrain-capture-ui .capture_display_toggle_wrap:hover {
+  background-color: #f6f6f6
+}
+.janrain-capture-ui .janrain_traditional_account_only {
+  display: none
+}
+.janrain-capture-ui#editProfile .capture_form_item label {
+  text-indent: inherit;
+  overflow: visible;
+  height: auto;
+  *text-indent: 0;
+  *text-transform: capitalize
+}
+.janrain-capture-ui .capture_nameBlock .capture_form_item, .janrain-capture-ui .capture_addressBlock .capture_form_item {
+  margin-bottom: 0;
+  min-height: 0
+}
+.janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_city_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_stateprovince_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_zippostalcode_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_editProfile_addressDrop_city_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_editProfile_addressDrop_stateprovince_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_editProfile_addressDrop_zippostalcode_ {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  margin-left: 1%
+}
+.janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_city_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_stateprovince_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_zippostalcode_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_editProfile_addressDrop_city_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_editProfile_addressDrop_stateprovince_, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_editProfile_addressDrop_zippostalcode_ {
+  *display: inline
+}
+.janrain-capture-ui .capture_form_item.capture_addressBlock .capture_tip_validating, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_tip_error, .janrain-capture-ui .capture_form_item.capture_addressBlock .capture_tip_validated {
+  position: absolute;
+  left: 290px;
+  top: 10px
+}
+.janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_city_ {
+  width: 40%;
+  margin-left: 0
+}
+.janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_stateprovince_ {
+  width: 20%
+}
+.janrain-capture-ui .capture_form_item.capture_addressBlock .capture_form_item_addressDrop_zippostalcode_ {
+  width: 38%
+}
+.janrain-capture-ui .capture_dateselect_day, .janrain-capture-ui .capture_dateselect_month, .janrain-capture-ui .capture_dateselect_year {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  margin-left: 1%
+}
+.janrain-capture-ui .capture_dateselect_day, .janrain-capture-ui .capture_dateselect_month, .janrain-capture-ui .capture_dateselect_year {
+  *display: inline
+}
+.janrain-capture-ui .capture_dateselect_month {
+  width: 40%;
+  margin-left: 0
+}
+.janrain-capture-ui .capture_dateselect_day {
+  width: 18%
+}
+.janrain-capture-ui .capture_dateselect_year {
+  width: 40%
+}
+.janrain-capture-ui .capture_datePicker_wrapper {
+  background-color: #fff;
+  border: 1px solid #ccc
+}
+.janrain-capture-ui .capture_datePicker_header {
+  background-color: #f6f6f6;
+  *background-color: #ccc;
+  border-bottom: 1px solid #ccc;
+  -moz-box-shadow: 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  text-shadow: 0 1px #fff
+}
+.janrain-capture-ui .capture_datePicker_monthButtons:visited, .janrain-capture-ui .capture_datePicker_monthButtons:link {
+  color: #666
+}
+.janrain-capture-ui .capture_datePicker_monthTable th {
+  background-color: #f6f6f6
+}
+.janrain-capture-ui .capture_datePicker_monthTable td {
+  border-color: #ccc;
+  border-style: solid
+}
+.janrain-capture-ui .capture_datePicker_monthTable td.capture_datePicker_prevMonthDay a:visited, .janrain-capture-ui .capture_datePicker_monthTable td.capture_datePicker_prevMonthDay a:link, .janrain-capture-ui .capture_datePicker_monthTable td.capture_datePicker_nextMonthDay a:visited, .janrain-capture-ui .capture_datePicker_monthTable td.capture_datePicker_nextMonthDay a:link {
+  color: #ccc
+}
+.janrain-capture-ui .capture_datePicker_monthTable td.capture_datePicker_prevMonthDay a:hover, .janrain-capture-ui .capture_datePicker_monthTable td.capture_datePicker_nextMonthDay a:hover {
+  color: #666
+}
+.janrain-capture-ui .capture_datePicker_monthTable a:visited, .janrain-capture-ui .capture_datePicker_monthTable a:link {
+  color: #666
+}
+.janrain-capture-ui .capture_datePicker_monthTable a:hover {
+  background-color: #ccc
+}
+.janrain-capture-ui .capture_datePicker_today {
+  background-color: #efefef
+}
+.janrain-capture-ui .capture_datePicker_selectedDate {
+  background-color: #ccc
+}
+.janrain-capture-ui .capture_tabs li {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 48%;
+  margin: 0 1%
+}
+.janrain-capture-ui .capture_tabs li a {
+  font-size: 12px;
+  background-color: #ddd;
+  -moz-box-shadow: 0 -10px 5px -8px rgba(0,0,0,0.1) inset;
+  -webkit-box-shadow: 0 -10px 5px -8px rgba(0,0,0,0.1) inset;
+  -o-box-shadow: 0 -10px 5px -8px rgba(0,0,0,0.1) inset;
+  box-shadow: 0 -10px 5px -8px rgba(0,0,0,0.1) inset;
+  font-size: 14px;
+  display: block
+}
+.janrain-capture-ui .capture_tabs li a:visited, .janrain-capture-ui .capture_tabs li a:link, .janrain-capture-ui .capture_tabs li a:hover {
+  color: #999
+}
+.janrain-capture-ui .capture_tabs li.capture_toggled a {
+  background-color: #f6f6f6;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none
+}
+.janrain-capture-ui .capture_tabs li.capture_toggled a:visited, .janrain-capture-ui .capture_tabs li.capture_toggled a:link, .janrain-capture-ui .capture_tabs li.capture_toggled a:hover {
+  color: #666
+}
+.janrain-capture-ui .capture_data_item {
+  margin-bottom: 15px;
+  *zoom: 1;
+  clear: both
+}
+.janrain-capture-ui .capture_data_item:after {
+  content: "";
+  display: table;
+  clear: both
+}
+.janrain-capture-ui .capture_data_item label {
+  width: 39%;
+  margin-right: 1%;
+  text-align: right;
+  float: left
+}
+.janrain-capture-ui .capture_data_item .capture_data {
+  width: 60%;
+  float: left
+}
+.janrain-capture-ui .capture_provider li {
+  background-color: #f6f6f6;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .capture_provider li .capture_remove {
+  position: absolute;
+  right: 0;
+  cursor: pointer
+}
+.capture_editCol {
+  width: 290px
+}
+.janrain_close_confirm_container {
+  font-size: 13px;
+  line-height: 17px;
+  font-family: helvetica, sans-serif;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -o-border-radius: 10px;
+  -ms-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px
+}
+.janrain_close_confirm_container .janrain_close_confirm {
+  color: white
+}
+.janrain_close_confirm_container .janrain_close_confirm h3 {
+  color: #fff;
+  padding: 0 0 5px;
+  margin: 0;
+  font-size: 1.077em;
+  font-weight: normal;
+  text-shadow: none
+}
+.janrain_close_confirm_container .janrain_close_confirm .janrain_modal_confirm {
+  -moz-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  background-color: #009ddc;
+  background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #34c5ff), color-stop(100%, #0092cd));
+  background: -webkit-linear-gradient(top, #34c5ff,#0092cd);
+  background: -moz-linear-gradient(top, #34c5ff,#0092cd);
+  background: -o-linear-gradient(top, #34c5ff,#0092cd);
+  background: -ms-linear-gradient(top, #34c5ff,#0092cd);
+  background: linear-gradient(top, #34c5ff,#0092cd);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.45);
+  color: #fff
+}
+.janrain_close_confirm_container .janrain_close_confirm .janrain_modal_cancel {
+  -moz-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  -o-box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  box-shadow: 0 1px 0px 0px rgba(255,255,255,0.35) inset, 0 -26px 13px -13px rgba(0,0,0,0.2) inset;
+  background-color: #f6f6f6;
+  color: #333
+}
+#janrainModal .janrain-capture-ui.capture-ui-content {
+  width: 400px;
+  min-height: 350px;
+  padding: 20px 20px 70px 20px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#signIn, #janrainModal .janrain-capture-ui.capture-ui-content#returnSocial, #janrainModal .janrain-capture-ui.capture-ui-content#returnTraditional {
+  width: 392px;
+  min-height: 220px;
+  padding: 20px 0 0 0
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#signIn h1, #janrainModal .janrain-capture-ui.capture-ui-content#returnSocial h1, #janrainModal .janrain-capture-ui.capture-ui-content#returnTraditional h1 {
+  margin: 0 0 0 20px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#capture_editProfile_photoManager_editphotoscreen {
+  width: 740px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#mergeAccounts {
+  width: 510px;
+  padding: 0 0 55px 0
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#mergeAccounts .capture_header {
+  color: inherit;
+  text-align: left;
+  background-color: #f6f6f6;
+  padding-bottom: 0;
+  border: none
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#mergeAccounts .capture_header .capture_icon_col {
+  width: 25px;
+  height: 25px;
+  overflow: hidden
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#mergeAccounts .capture_header img {
+  height: auto;
+  width: 25px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content .capture_signin {
+  width: 310px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#returnTraditional .capture_signin {
+  width: 360px
+}
+#janrainModal .janrain-capture-ui.capture-ui-content#returnSocial {
+  min-height: 275px
+}
+#janrainModal .capture-ui-content.capture_noFooter {
+  padding-top: 20px;
+  padding-bottom: 20px
+}
+#janrainModal .capture_header {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee
+}
+#janrainModal .capture_header h1 {
+  margin: 0;
+  padding: 0
+}
+.janrain-capture-ui.capture-ui-content {
+  width: 600px
+}
+.janrain-capture-ui .capture_backgroundColor {
+  margin-top: 20px;
+  -moz-border-radius: 0 0 5px 5px;
+  -webkit-border-radius: 0 0 5px 5px;
+  -o-border-radius: 0 0 5px 5px;
+  -ms-border-radius: 0 0 5px 5px;
+  -khtml-border-radius: 0 0 5px 5px;
+  border-radius: 0 0 5px 5px;
+  -moz-box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  -webkit-box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  -o-box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset;
+  box-shadow: 0 9px 9px -9px rgba(0,0,0,0.1) inset
+}
+.janrain-capture-ui .capture_dashed {
+  border: 1px #ccc dashed;
+  margin: 0 20px
+}
+.janrain-capture-ui .capture_border, .janrain-capture-ui .capture_form_collection_merge_radioButtonCollection {
+  border: 1px solid #ccc
+}
+.janrain-capture-ui .capture_backButton span {
+  line-height: inherit
+}
+.janrain-capture-ui a.capture_edit {
+  position: absolute;
+  right: 10px;
+  top: 5px;
+  margin: 0;
+  padding: 9px 15px 9px
+}
+.janrain-capture-ui #recaptcha_container .recaptchatable {
+  background-color: #fff;
+  border: none !important;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui #recaptcha_container .recaptchatable #recaptcha_response_field {
+  border: 1px solid #ccc !important;
+  color: #333 !important;
+  width: 290px !important;
+  margin-left: 0
+}
+.janrain-capture-ui #recaptcha_container .recaptchatable #recaptcha_response_field:focus {
+  border: 1px solid #009ddc !important
+}
+.janrain-capture-ui .capture_signInOption, .janrain-capture-ui .capture_createAccountOption {
+  margin-top: 10px
+}
+.janrain-capture-ui#returnTraditional .capture_backgroundColor, .janrain-capture-ui .capture_signInOption .capture_backgroundColor, .janrain-capture-ui .capture_createAccountOption .capture_backgroundColor {
+  padding: 25px 10px
+}
+.janrain-capture-ui#mergeAccounts .capture_form_item label {
+  height: auto;
+  text-indent: inherit;
+  *text-indent: 0;
+  *text-transform: capitalize
+}
+.janrain-capture-ui .capture_displayName_col {
+  margin: 10px 0 10px 10px;
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  vertical-align: top
+}
+.janrain-capture-ui .capture_displayName_col {
+  *display: inline
+}
+.janrain-capture-ui .capture_mergeCol {
+  width: 43%;
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  padding: 10px;
+  margin: 10px;
+  position: relative
+}
+.janrain-capture-ui .capture_mergeCol {
+  *display: inline
+}
+.janrain-capture-ui .capture_mergeCol .capture_popup_container .capture_popup-arrow {
+  left: 100px
+}
+.janrain-capture-ui .capture_mergeCol .capture_mergeProvider, .janrain-capture-ui .capture_header .capture_mergeProvider {
+  position: absolute;
+  right: 30px;
+  top: 8px
+}
+.janrain-capture-ui .capture_dashed .capture_backgroundColor {
+  margin-top: 0;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px
+}
+.janrain-capture-ui .capture_mergeExisting_col {
+  padding: 0
+}
+.janrain-capture-ui .capture_mergeExisting_col .capture_mergeProvider {
+  right: 10px
+}
+.janrain-capture-ui .capture_mergeExisting_col .capture_icon_col {
+  margin-left: 0;
+  margin-top: 4px
+}
+.janrain-capture-ui .capture_mergeExisting_col .capture_displayName_col {
+  margin-top: 0
+}
+.janrain-capture-ui .capture_mergeProvider {
+  margin-right: 5px
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection {
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -o-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
+  width: auto;
+  -moz-box-sizing: content-box;
+  -webkit-box-sizing: content-box;
+  -ms-box-sizing: content-box;
+  box-sizing: content-box;
+  margin: 20px;
+  background-color: #f6f6f6;
+  padding: 0px
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio {
+  padding: 0
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio label {
+  margin: 0;
+  padding: 15px 15px 15px 25px;
+  font-size: 14px
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio label .capture_smallText {
+  display: block
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio label .capture_recommended {
+  position: absolute;
+  right: 3px;
+  top: 2px;
+  text-transform: uppercase;
+  font-weight: 100
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio .capture_input_radio {
+  position: absolute;
+  left: 6px;
+  top: 17px
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio.capture_toggled {
+  background-color: #009ddc;
+  -moz-border-radius: 5px 5px 0 0;
+  -webkit-border-radius: 5px 5px 0 0;
+  -o-border-radius: 5px 5px 0 0;
+  -ms-border-radius: 5px 5px 0 0;
+  -khtml-border-radius: 5px 5px 0 0;
+  border-radius: 5px 5px 0 0
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio.capture_toggled.capture_form_item_mergeAccounts_mergeRadio:first-child {
+  -moz-border-radius: 5px 5px 0 0;
+  -webkit-border-radius: 5px 5px 0 0;
+  -o-border-radius: 5px 5px 0 0;
+  -ms-border-radius: 5px 5px 0 0;
+  -khtml-border-radius: 5px 5px 0 0;
+  border-radius: 5px 5px 0 0
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio.capture_toggled.capture_form_item_mergeAccounts_mergeRadio:nth-of-type(2) {
+  -moz-border-radius: 0 0 5px 5px;
+  -webkit-border-radius: 0 0 5px 5px;
+  -o-border-radius: 0 0 5px 5px;
+  -ms-border-radius: 0 0 5px 5px;
+  -khtml-border-radius: 0 0 5px 5px;
+  border-radius: 0 0 5px 5px
+}
+.janrain-capture-ui .capture_form_collection_merge_radioButtonCollection .capture_form_item_mergeAccounts_mergeRadio.capture_toggled label {
+  color: #fff
+}
+.janrain-capture-ui#returnTraditional .capture_form_item, .janrain-capture-ui .capture_signInOption .capture_form_item, .janrain-capture-ui .capture_createAccountOption .capture_form_item {
+  margin-bottom: 0;
+  min-height: 51px
+}
+.janrain-capture-ui#editProfile {
+  width: auto;
+  background-color: transparent;
+  *zoom: 1;
+  padding: 10px
+}
+.janrain-capture-ui#editProfile:after {
+  content: "";
+  display: table;
+  clear: both
+}
+.janrain-capture-ui#editProfile .capture_tabs li a {
+  background-color: #f6f6f6
+}
+.janrain-capture-ui#editProfile .capture_tabs li.capture_toggled a {
+  background-color: white
+}
+.janrain-capture-ui .capture_profile_pic_display {
+  width: 100%;
+  height: 100%;
+  text-align: center
+}
+.janrain-capture-ui .capture_profile_pic_display img {
+  max-width: 100%
+}
+.janrain-capture-ui .capture_uploadPhoto_container {
+  width: 250px;
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto
+}
+.janrain-capture-ui .capture_uploadPhoto_container {
+  *display: inline
+}
+.janrain-capture-ui .capture_photoManager .options {
+  display: block;
+  text-align: center;
+  margin-top: 10px
+}
+.janrain-capture-ui .capture_photoManager .options li {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  padding: 0 5px;
+  border: 1px #ccc solid;
+  border-width: 0 1px
+}
+.janrain-capture-ui .capture_photoManager .options li {
+  *display: inline
+}
+.janrain-capture-ui .capture_photoManager .options li:first-child, .janrain-capture-ui .capture_photoManager .options li:last-child {
+  border: none
+}
+.janrain-capture-ui #capture_accountInfo {
+  float: left;
+  width: 660px
+}
+.janrain-capture-ui#publicProfile {
+  width: 600px
+}
+.janrain-capture-ui#publicProfile .capture_profile_pic {
+  margin-right: 15px;
+  height: 150px;
+  width: 150px
+}
+.janrain-capture-ui#publicProfile #profile_pic {
+  height: 150px;
+  overflow: hidden
+}
+.janrain-capture-ui#publicProfile #profile_pic img {
+  width: 150px
+}
+.janrain-capture-ui#publicProfile .capture_provider {
+  margin-top: 25px
+}
+.janrain-capture-ui#publicProfile .capture-public-displayName {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto
+}
+.janrain-capture-ui#publicProfile .capture-public-displayName {
+  *display: inline
+}
+.janrain-capture-ui#publicProfile .capture-public-displayName h1 {
+  font-size: 23px;
+  color: #666;
+  padding-top: 0
+}
+.janrain-capture-ui#publicProfile .capture_personal_info h2 {
+  float: right;
+  font-size: 18px;
+  padding: 0
+}
+.janrain-capture-ui#publicProfile .capture_profile_section {
+  margin: 0 auto 20px;
+  padding: 20px 40px;
+  position: relative
+}
+.janrain-capture-ui .capture_profile_section {
+  margin: 0 auto 20px;
+  padding: 20px;
+  position: relative
+}
+.janrain-capture-ui .capture_popup_container {
+  background-color: #f6f6f6;
+  border: 1px solid #ccc
+}
+.janrain-capture-ui .capture_popup_container .capture_popup-arrow:after {
+  background: #f6f6f6;
+  border: 1px solid #ccc
+}
