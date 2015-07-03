@@ -19,3 +19,6 @@
 [submodule "shared-plugins/wp-api"]
 	path = shared-plugins/wp-api
 	url = git@github.com:WP-API/WP-API.git
+[submodule "http-concat"]
+	path = http-concat
+	url = git@github.com:Automattic/nginx-http-concat.git
