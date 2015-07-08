@@ -8,7 +8,7 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-class VIPV2_SMTP {
+class VIP_SMTP {
 	function init() {
 		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ) );
 	}
@@ -29,4 +29,4 @@ class VIPV2_SMTP {
 	}
 }
 
-( new VIPV2_SMTP() )->init();
+( new VIP_SMTP() )->init();
