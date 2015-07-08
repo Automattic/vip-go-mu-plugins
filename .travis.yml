@@ -8,7 +8,8 @@ php:
 
 env:
   global:
-    # Encripted deploy key. See https://gist.github.com/scribu/6241271
+    # Encripted deploy key for Automattic/vip-mu-plugins-public/
+    # See https://gist.github.com/scribu/6241271
     - secure: "jAAHk/Zo8IwpUQLytzxc6K1KmXCCHeg2bU8+6oJ8aZA8smnYTPqn86TbB4pbIPDAF0vHJvWRVvqBcYuXVkcJOS6KQPQDrAz5/KYlcryTQvMhis/hibP+ICurYoqiZibw88alhiyAuxrpIVebFV7IWrUJQEEEVP/fpLA3kwVT5ik="
     - secure: "kygNdn3MGwiG36vW4ulDbyU0AlXrnuJuFF1LmuD3tZA2QyJSTntM70xmyQKv8wqmHXHn6Rivp4lYGB4BuMGKTjK6LklX6tYr4MFV0DGukBWvEsmukFgfBHoKR7RfvTTs458Ray3VA1jQeeo64VAutxdBQk3grt21HAkPFvr5w+M="
     - secure: "QqIqxT9wZUc/uVvvfqeH6TYoSvS9nkFDzBLN57hPIZFNKzsFORADfRvVZYVa1pQiRp1RksTqczU+QosEaqJnRWPG+ZHM8IV0vMvzWHaIiLquxrJhQnr107F/fzE0Kt8ZXcCrsJN4m0MKd2eXBasSSyK+/d0NvopxAeL+mMvlkgA="
