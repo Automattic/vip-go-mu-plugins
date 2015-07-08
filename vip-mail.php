@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: VIPv2 Mail
+Plugin Name: VIP Mail
 Description: Routes mail via Automattic mail servers
 Author: Automattic
 Version: 1.0
