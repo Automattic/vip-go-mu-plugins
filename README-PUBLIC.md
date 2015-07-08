@@ -1,6 +1,6 @@
 # VIP MU Plugins [![Build Status](https://magnum.travis-ci.com/Automattic/vipv2-mu-plugins.svg?token=saKYXPvcnyNUH8ChL4di&branch=master)](https://magnum.travis-ci.com/Automattic/vipv2-mu-plugins)
 
-This is the complete MU plugins folder for the WordPress.com VIP hosting platform.
+This is the complete MU plugins folder for the WordPress.com VIP next generation hosting platform.
 
 ## Tests
 
