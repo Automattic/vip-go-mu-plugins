@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: VIPv2 Security
+Plugin Name: VIP Security
 Description: Various security enhancements
 Author: Automattic
 Version: 1.0
