@@ -53,11 +53,12 @@ find ${DEPLOY_BUILD_DIR} -name ".svn" -exec rm -rfv {} \; 2> /dev/null
 find ${DEPLOY_BUILD_DIR} -name ".git*" -exec rm -rfv {} \; 2> /dev/null
 
 # Remove everything unnecessary to running this (tests, deploy scripts, etc)
-rm -rfv ${DEPLOY_BUILD_DIR}/Makefile
-rm -rfv ${DEPLOY_BUILD_DIR}/bin
-rm -rfv ${DEPLOY_BUILD_DIR}/ci
-rm -rfv ${DEPLOY_BUILD_DIR}/tests
-rm -rfv ${DEPLOY_BUILD_DIR}/.travis.yml
+rm -v ${DEPLOY_BUILD_DIR}/README.md
+mv -v ${DEPLOY_BUILD_DIR}/README-PUBLIC.md ${DEPLOY_BUILD_DIR}/README.md
+# @FIXME: We will need to replace this ci dir with one which can run tests on the public repo
+# BUT this public ci dir cannot include our insecure key (and does not need to)
+rm -rfv ${DEPLOY_BUILD_DIR}/ci/
+rm -v ${DEPLOY_BUILD_DIR}/.travis.yml
 
 # We've finished with commands which may fail, so return to exiting the script
 # if any command exits with a non-zero
