@@ -41,11 +41,8 @@ before_install:
   - git submodule update --init --recursive
 
 script:
-
+  # Linting and unit tests
   - make test
-
-  # PHPUnit
-  - make phpunit
 
 notifications:
 
