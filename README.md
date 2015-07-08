@@ -8,29 +8,7 @@ There are exceptions which are not deployed, these are controlled by the [`deplo
 
 PHP Linting and PHP Unit tests are run by Travis, see the `script` section of [`.travis.yml`](https://github.com/Automattic/vipv2-mu-plugins/blob/master/.travis.yml). Test results are reported in the [#vip-platform Slack channel](https://a8c.slack.com/messages/vip-platform/).
 
-**To run PHP linting locally** on OSX or Unix/Linux (no setup required, beyond having PHP CLI installed):
-
-```bash
-cd /path/to/mu-plugins/
-make lint
-```
-
-**To set up PHPUnit locally** (requires a working WordPress development environment, specifically PHP and MySQL):
-
-Notes: 
-
-* You need to replace the `%placeholder%` strings below with sensible values
-* You DO need an empty DB, because the contents of this DB WILL get trashed during testing
-
-```bash
-./bin/install-wp-tests.sh %empty_DB_name% %db_user% %db_name%
-```
-
-**To run PHPUnit tests locally**:
-
-```bash
-phpunit
-```
+For notes on running tests locally, see [README-PUBLIC.md](README-PUBLIC.md).
 
 ## Deployment
 
