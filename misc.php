@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: VIPv2 Hosting Miscellaneous
+Plugin Name: VIP Hosting Miscellaneous
 Description: Handles CSS and JS concatenation, and Nginx compatibility
 Author: Automattic
 Version: 1.0
