@@ -948,15 +948,27 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 
 	$includepath = false;
 
-	if ( file_exists( $plugin_file ) ) {
+	// Does a shared-plugin folder with this slug match?
+	if ( file_exists( $plugin_root . "/$folder/$plugin" ) ) {
 		// Shared plugins are located at /wp-content/mu-plugins/shared-plugins/example-plugin/
 		// You should keep your local copies of the plugins in the same location
 
-		$includepath 					= $plugin_root . "/$folder/$plugin/$plugin.php";
-		$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin/$plugin.php";
+		// Find the actual filepath to load, using get_plugins(), as they don't strictly
+		// match the 'old' $plugin/$plugin.php pattern
+		// NOTE - must us a path relative to WP_PLUGIN_DIR
+		$shared_plugins = get_plugins( '/../mu-plugins/shared-plugins' );
 
-		if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
-			$includepath = $release_candidate_includepath;
+		foreach( $shared_plugins as $plugin_file => $plugin_info ) {
+			if ( $plugin === dirname( $plugin_file ) ) {
+				$includepath 					= $plugin_root . "/$folder/$plugin_file";
+				$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin_file";
+
+				if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
+					$includepath = $release_candidate_includepath;
+				}
+
+				break;
+			}
 		}
 	} else {
 		// Attempt to load it in the plugins dir
