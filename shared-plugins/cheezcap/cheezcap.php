@@ -1,5 +1,6 @@
 <?php
 /**
+ * Plugin Name: CheezCap
  * CheezCap - Cheezburger Custom Administration Panel
  * (c) 2008 - 2011 Cheezburger Network (Pet Holdings, Inc.)
  * LOL: http://cheezburger.com

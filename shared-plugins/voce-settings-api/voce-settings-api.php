@@ -1,5 +1,6 @@
 <?php
 /**
+ * Plugin Name: Voce Settings API
  * A simplification of the settings API
  * @author Michael Pretty (prettyboymp)
  * @version 0.2
