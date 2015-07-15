@@ -1047,7 +1047,7 @@ function is_automattician( $user_id = false ) {
 	if ( ! class_exists( 'WPCOM_VIP_Support_User' ) ) {
 		return false;
 	}
-	
+
 	$vip_support = WPCOM_VIP_Support_User::init();
 
 	if ( WPCOM_VIP_Support_User::is_valid_automattician( $user->ID ) ) {
