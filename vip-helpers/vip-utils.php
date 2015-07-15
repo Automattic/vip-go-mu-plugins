@@ -1,9 +1,5 @@
 <?php
 
-// We need to include this manually, because we need get_plugins() to work early,
-// for proper plugin loading when using wpcom_vip_load_plugin()
-require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-
 /**
  * Utility function to trigger a callback on a hook with priority or execute immediately if the hook has already been fired previously.
  *
