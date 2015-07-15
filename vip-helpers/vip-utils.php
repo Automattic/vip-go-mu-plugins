@@ -975,38 +975,41 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 	}
 
 	if ( $includepath && file_exists( $includepath ) ) {
-
 		wpcom_vip_add_loaded_plugin( "$folder/$plugin" );
 
-		// Since we're going to be include()'ing inside of a function,
-		// we need to do some hackery to get the variable scope we want.
-		// See http://www.php.net/manual/en/language.variables.scope.php#91982
-
-		// Start by marking down the currently defined variables (so we can exclude them later)
-		$pre_include_variables = get_defined_vars();
-
-		// Now include
-		include_once( $includepath );
-
-		// Blacklist out some variables
-		$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
-
-		// Let's find out what's new by comparing the current variables to the previous ones
-		$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
-
-		// global each new variable
-		foreach ( $new_variables as $new_variable => $devnull )
-			global $$new_variable;
-
-		// Set the values again on those new globals
-		extract( $new_variables );
-
-		return true;
+		return _wpcom_vip_include_plugin( $includepath );
 	} else {
 		if ( ! WPCOM_IS_VIP_ENV ) {
 			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
 		}
 	}
+}
+
+function _wpcom_vip_include_plugin( $file ) {
+	// Since we're going to be include()'ing inside of a function,
+	// we need to do some hackery to get the variable scope we want.
+	// See http://www.php.net/manual/en/language.variables.scope.php#91982
+
+	// Start by marking down the currently defined variables (so we can exclude them later)
+	$pre_include_variables = get_defined_vars();
+
+	// Now include
+	include_once( $includepath );
+
+	// Blacklist out some variables
+	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
+
+	// Let's find out what's new by comparing the current variables to the previous ones
+	$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
+
+	// global each new variable
+	foreach ( $new_variables as $new_variable => $devnull )
+		global $$new_variable;
+
+	// Set the values again on those new globals
+	extract( $new_variables );
+
+	return true;
 }
 
 /**
