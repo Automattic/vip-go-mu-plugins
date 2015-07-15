@@ -15,3 +15,4 @@
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
 require_once( __DIR__ . '/jetpack/jetpack.php' );
+require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );
