@@ -1,9 +1,5 @@
 <?php
 
-// We need to include this manually, because we need get_plugins() to work early,
-// for proper plugin loading when using wpcom_vip_load_plugin()
-require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-
 /**
  * Utility function to trigger a callback on a hook with priority or execute immediately if the hook has already been fired previously.
  *
@@ -928,7 +924,8 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
  * As such, it may not be compatible with all plugins
  *
  * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
- * @param string $plugin Optional. Plugin folder name (and filename) of the plugin
+ * @param string $plugin Optional. Plugin folder name of the plugin, or the folder and
+ * plugin file name (such as wp-api/plugin.php), relative to either the VIP shared-plugins folder, or WP_PLUGIN_DIR
  * @param string $folder Deprecated. No longer used
  * @param bool $load_release_candidate Whether to load a release candidate version of this plugin, if available
  * @return bool True if the include was successful
@@ -941,88 +938,130 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		}
 	}
 
+	// Is it a plugin file with multiple directories? Not supported. _could_ be supported
+	// with some refactoring, but no real need to, just complicates things
+	$exploded = explode( DIRECTORY_SEPARATOR, $plugin );
+
+	if ( count( $exploded ) > 2 ) {
+		if ( ! WPCOM_IS_VIP_ENV ) {
+			die( 'wpcom_vip_load_plugin() was called with multiple subdirectories' );
+		} else {
+			_doing_it_wrong( 'wpcom_vip_load_plugin', 'Subdirectories not supported in file paths' );
+
+			return false;
+		}
+	}
+
+	// Is this a valid path? We know it has less than 3 parts, but it could still be
+	// 'plugin/plugin' (need a php file, if specifying a path rather than a slug)
+	if ( count( $exploded ) === 2 ) {
+		$pathinfo = pathinfo( $plugin );
+
+		if ( ! isset( $pathinfo['extension'] ) || 'php' !== $pathinfo['extension'] ) {
+			if ( ! WPCOM_IS_VIP_ENV ) {
+				die( 'wpcom_vip_load_plugin() was called with a path, but no php file was specified' );
+			} else {
+				_doing_it_wrong( 'wpcom_vip_load_plugin', 'Must specify php file when loading via path' );
+
+				return false;
+			}
+		}
+	}
+
+	// Array of files to check for loading the plugin. This is to support
+	// non-standard plugin structures, such as $folder/plugin.php
+	$test_files = array(
+		"{$plugin}.php",
+		'plugin.php'
+	);
+
+	// Is $plugin a filepath? If so, that's the only file we should test
+	if ( basename( $plugin ) !== $plugin ) {
+		$test_files = array( basename( $plugin ) );
+
+		// Update the $plugin to the slug, so we store it correctly and build paths correctly
+		$plugin = dirname( $plugin );
+	}
+
 	// Make sure $plugin and $folder are valid
 	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
 
-	// Is this a Shared Plugin?
-	$folder 	 = 'shared-plugins';
-	$plugin_root = WP_CONTENT_DIR . '/mu-plugins';
+	// Array of directories to check for the above files in, in priority order
+	$test_directories = array();
 
-	$plugin_file = $plugin_root . "/$folder/$plugin/$plugin.php";
+	if ( true === $load_release_candidate ) {
+		$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins/release-candidates';
+	}
 
-	$includepath = false;
+	$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
+	$test_directories[] = WP_PLUGIN_DIR;
 
-	// Does a shared-plugin folder with this slug match?
-	if ( file_exists( $plugin_root . "/$folder/$plugin" ) ) {
-		// Shared plugins are located at /wp-content/mu-plugins/shared-plugins/example-plugin/
-		// You should keep your local copies of the plugins in the same location
+	$includepath = null;
+	$plugin_type = null;
 
-		// Find the actual filepath to load, using get_plugins(), as they don't strictly
-		// match the 'old' $plugin/$plugin.php pattern
-		// NOTE - must us a path relative to WP_PLUGIN_DIR
-		$shared_plugins = get_plugins( '/../mu-plugins/shared-plugins' );
+	foreach ( $test_directories as $directory ) {
+		foreach ( $test_files as $file ) {
+			// Prevent any traversal here
+			$plugin = basename( $plugin ); // Just to be double, extra sure
+			$file   = basename( $file );
 
-		foreach( $shared_plugins as $plugin_file => $plugin_info ) {
-			if ( $plugin === dirname( $plugin_file ) ) {
-				$includepath 					= $plugin_root . "/$folder/$plugin_file";
-				$release_candidate_includepath 	= $plugin_root . "/$folder/release-candidates/$plugin_file";
+			$path = "{$directory}/{$plugin}/{$file}";
 
-				if( true === $load_release_candidate && file_exists( $release_candidate_includepath ) ) {
-					$includepath = $release_candidate_includepath;
+			if ( file_exists( $path ) ) {
+				$includepath = $path;
+
+				// Store where we found it, so we can properly represent that in UI
+				// This is usually the directory above
+				$plugin_type = basename( $directory );
+
+				// release-candidates is a special case, as it's in a nested folder,
+				// so we must look up one level
+				if ( 'release-candidates' === $plugin_type ) {
+					$plugin_type = dirname( $directory );
 				}
 
-				break;
-			}
-		}
-	} else {
-		// Attempt to load it in the plugins dir
-		$plugin_root 	= WP_PLUGIN_DIR;
-		$folder 		= 'plugins';
-
-		$all_plugins = get_plugins();
-
-		// The folder and plugin file may not match - we need to match on folder
-		foreach( $all_plugins as $plugin_file => $plugin_data ) {
-			if ( $plugin === dirname( $plugin_file ) ) {
-				$includepath = $plugin_root . "/$plugin_file";
-				break;
+				// We found what we were looking for, break from both loops
+				break 2;
 			}
 		}
 	}
 
 	if ( $includepath && file_exists( $includepath ) ) {
+		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}" );
 
-		wpcom_vip_add_loaded_plugin( "$folder/$plugin" );
-
-		// Since we're going to be include()'ing inside of a function,
-		// we need to do some hackery to get the variable scope we want.
-		// See http://www.php.net/manual/en/language.variables.scope.php#91982
-
-		// Start by marking down the currently defined variables (so we can exclude them later)
-		$pre_include_variables = get_defined_vars();
-
-		// Now include
-		include_once( $includepath );
-
-		// Blacklist out some variables
-		$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
-
-		// Let's find out what's new by comparing the current variables to the previous ones
-		$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
-
-		// global each new variable
-		foreach ( $new_variables as $new_variable => $devnull )
-			global $$new_variable;
-
-		// Set the values again on those new globals
-		extract( $new_variables );
-
-		return true;
+		return _wpcom_vip_include_plugin( $includepath );
 	} else {
 		if ( ! WPCOM_IS_VIP_ENV ) {
 			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
 		}
 	}
+}
+
+function _wpcom_vip_include_plugin( $file ) {
+	// Since we're going to be include()'ing inside of a function,
+	// we need to do some hackery to get the variable scope we want.
+	// See http://www.php.net/manual/en/language.variables.scope.php#91982
+
+	// Start by marking down the currently defined variables (so we can exclude them later)
+	$pre_include_variables = get_defined_vars();
+
+	// Now include
+	include_once( $file );
+
+	// Blacklist out some variables
+	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
+
+	// Let's find out what's new by comparing the current variables to the previous ones
+	$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
+
+	// global each new variable
+	foreach ( $new_variables as $new_variable => $devnull )
+		global $$new_variable;
+
+	// Set the values again on those new globals
+	extract( $new_variables );
+
+	return true;
 }
 
 /**
@@ -1051,7 +1090,7 @@ function is_automattician( $user_id = false ) {
 	if ( ! class_exists( 'WPCOM_VIP_Support_User' ) ) {
 		return false;
 	}
-	
+
 	$vip_support = WPCOM_VIP_Support_User::init();
 
 	if ( WPCOM_VIP_Support_User::is_valid_automattician( $user->ID ) ) {
