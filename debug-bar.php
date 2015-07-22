@@ -24,6 +24,10 @@ add_action( 'after_setup_theme', function() {
 
     require_once( __DIR__ . '/debug-bar/debug-bar.php' );
 
+    if ( ! defined( 'SAVEQUERIES' ) ) {
+        define( 'SAVEQUERIES', true );
+    }
+
     // Setup extra panels
     add_filter( 'debug_bar_panels', function( $panels ) {
         // @todo, see wpcom for details
