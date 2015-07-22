@@ -22,6 +22,10 @@ add_action( 'after_setup_theme', function() {
         return;
     }
 
+    if ( ! defined( 'SAVEQUERIES' ) ) {
+        define( 'SAVEQUERIES', true );
+    }
+
     require_once( __DIR__ . '/debug-bar/debug-bar.php' );
 
     if ( ! defined( 'SAVEQUERIES' ) ) {
