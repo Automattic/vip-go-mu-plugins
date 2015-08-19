@@ -196,8 +196,14 @@ class A8C_Files {
 			return $file;
 		}
 
-		$post_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path() .
-					$uploads['subdir'] . '/' . $file['name'];
+		$url_parts = parse_url( $uploads['url'] . '/' . $filename );
+		$file_path = $url_parts['path'];
+		if ( is_multisite() &&
+			preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
+			$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+		}
+
+		$post_url = $this->get_files_service_hostname() . $file_path;
 
 		$ch = curl_init( $post_url );
 
@@ -236,7 +242,13 @@ class A8C_Files {
 			$post_url = $details['url'];
 		} else {
 			$url_parts = parse_url( $details['url'] );
-			$post_url = $this->get_files_service_hostname() . $url_parts['path'];
+			$file_path = $url_parts['path'];
+			if ( is_multisite() &&
+				preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
+				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+				$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
+			}
+			$post_url = $this->get_files_service_hostname() . $file_path;
 		}
 
 		$headers = array(
@@ -301,7 +313,6 @@ class A8C_Files {
 
 	function delete_file( $file_name ) {
 		$url_parts = parse_url( $file_name );
-		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
 		if ( false !== stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) )
 			$file_uri = substr( $url_parts['path'], stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) + strlen( constant( 'LOCAL_UPLOADS' ) ) );
 		else
@@ -311,6 +322,11 @@ class A8C_Files {
 					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
 					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
 				);
+
+		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
+			$service_url .= '/sites/' . get_current_blog_id();
+		}
 
 		$ch = curl_init( $service_url . $file_uri );
 
@@ -331,8 +347,13 @@ class A8C_Files {
 		}
 
 		// We successfully deleted the file, purge the file from the caches
-		$file_url = get_site_url() . '/' . $this->get_upload_path() . $file_uri;
-		$this->purge_file_cache( $file_url, 'PURGE' );
+		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
+			$invalidation_url .= '/sites/' . get_current_blog_id();
+		}
+		$invalidation_url .= $file_uri;
+
+		$this->purge_file_cache( $invalidation_url, 'PURGE' );
 	}
 
 	private function purge_file_cache( $url, $method ) {
