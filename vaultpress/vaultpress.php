@@ -3,7 +3,7 @@
  * Plugin Name: VaultPress
  * Plugin URI: http://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>. Activate, enter your registration key, and never worry again. <a href="http://vaultpress.com/help/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">Need some help?</a>
- * Version: 1.7.5
+ * Version: 1.7.6
  * Author: Automattic
  * Author URI: http://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) or die();
 class VaultPress {
 	var $option_name    = 'vaultpress';
 	var $db_version     = 4;
-	var $plugin_version = '1.7.5';
+	var $plugin_version = '1.7.6';
 
 	function __construct() {
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
@@ -813,6 +813,16 @@ class VaultPress {
 			return $this->add_ping( 'db', array( 'postmeta' => $meta_id ) );
 		foreach ( $meta_id as $id )
 			$this->add_ping( 'db', array( 'postmeta' => $id ) );
+	}
+	
+	// WooCommerce notifications
+	function woocommerce_tax_rate_handler( $id )        { $this->generic_change_handler( 'woocommerce_tax_rates',            array( 'tax_rate_id' => $id ) ); }
+	function woocommerce_order_item_handler( $id )      { $this->generic_change_handler( 'woocommerce_order_items',          array( 'order_item_id' => $id ) ); }
+	function woocommerce_order_item_meta_handler( $id ) { $this->generic_change_handler( 'woocommerce_order_itemmeta',       array( 'meta_id' => $id ) ); }
+	function woocommerce_attribute_handler( $id )       { $this->generic_change_handler( 'woocommerce_attribute_taxonomies', array( 'attribute_id' => $id ) ); }
+	
+	function generic_change_handler( $table, $key ) {
+		$this->add_ping( 'db', array( $table => $key ) );
 	}
 
 	function verify_table( $table ) {
@@ -2205,20 +2215,17 @@ JS;
 		$site_url = '';
 
 		// compatibility for WordPress MU Domain Mapping plugin
-		if ( defined( 'DOMAIN_MAPPING' ) && DOMAIN_MAPPING ) {
-			if ( !function_exists( 'domain_mapping_siteurl' ) ) {
+		if ( defined( 'DOMAIN_MAPPING' ) && DOMAIN_MAPPING && ! function_exists( 'domain_mapping_siteurl' ) ) {
+			if ( !function_exists( 'is_plugin_active' ) )
+				require_once ABSPATH . '/wp-admin/includes/plugin.php';
 
-				if ( !function_exists( 'is_plugin_active' ) )
-					require_once ABSPATH . '/wp-admin/includes/plugin.php';
-
-				$plugin = 'wordpress-mu-domain-mapping/domain_mapping.php';
-				if ( is_plugin_active( $plugin ) )
-					include_once( WP_PLUGIN_DIR . '/' . $plugin );
-			}
-
-			if ( function_exists( 'domain_mapping_siteurl' ) )
-				$site_url = domain_mapping_siteurl( false );
+			$plugin = 'wordpress-mu-domain-mapping/domain_mapping.php';
+			if ( is_plugin_active( $plugin ) )
+				include_once( WP_PLUGIN_DIR . '/' . $plugin );
 		}
+
+		if ( function_exists( 'domain_mapping_siteurl' ) )
+			$site_url = domain_mapping_siteurl( false );
 
 		if ( empty( $site_url ) )
 			$site_url = site_url();
@@ -2317,8 +2324,27 @@ JS;
 		add_action( 'deleted_option', array( $this, 'option_handler' ), 1 );
 		add_action( 'updated_option', array( $this, 'option_handler' ), 1 );
 		add_action( 'added_option',   array( $this, 'option_handler' ), 1 );
-
+		
+		$this->add_woocommerce_actions();
 		$this->add_vp_required_filters();
+	}
+	
+	function add_woocommerce_actions() {
+		add_action( 'woocommerce_tax_rate_deleted', array( $this, 'woocommerce_tax_rate_handler' ), 10, 1 );
+		add_action( 'woocommerce_tax_rate_updated', array( $this, 'woocommerce_tax_rate_handler' ), 10, 1 );
+		add_action( 'woocommerce_tax_rate_added', array( $this, 'woocommerce_tax_rate_handler' ), 10, 1 );
+		
+		add_action( 'woocommerce_new_order_item', array( $this, 'woocommerce_order_item_handler' ), 10, 1 );
+		add_action( 'woocommerce_update_order_item', array( $this, 'woocommerce_order_item_handler' ), 10, 1 );
+		add_action( 'woocommerce_delete_order_item', array( $this, 'woocommerce_order_item_handler' ), 10, 1 );
+
+		add_action( 'added_order_item_meta', array( $this, 'woocommerce_order_item_meta_handler' ), 10, 1 );
+		add_action( 'updated_order_item_meta', array( $this, 'woocommerce_order_item_meta_handler' ), 10, 1 );
+		add_action( 'deleted_order_item_meta', array( $this, 'woocommerce_order_item_meta_handler' ), 10, 1 );
+
+		add_action( 'woocommerce_attribute_added', array( $this, 'woocommerce_attribute_handler' ), 10, 1 );
+		add_action( 'woocommerce_attribute_updated', array( $this, 'woocommerce_attribute_handler' ), 10, 1 );
+		add_action( 'woocommerce_attribute_deleted', array( $this, 'woocommerce_attribute_handler' ), 10, 1 );
 	}
 
 	function add_vp_required_filters() {
