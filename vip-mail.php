@@ -17,7 +17,7 @@ class VIP_SMTP {
 		global $all_smtp_servers;
 
 		$phpmailer->isSMTP();
-		$phpmailer->Sender = "donotreply@{$_SERVER['SERVER_NAME']}";
+		$phpmailer->Sender = "donotreply@wordpress.com";
 
 		if ( ! is_array( $all_smtp_servers ) || empty( $all_smtp_servers ) )
 			return;
