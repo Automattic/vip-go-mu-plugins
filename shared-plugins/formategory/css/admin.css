@@ -1,6 +1,0 @@
-/**
- * Don't display a Categories link under the Category Templates menu.
- */
-#menu-posts-formategory_template ul li:last-child {
-	display: none;
-}
