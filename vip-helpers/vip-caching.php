@@ -114,9 +114,9 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
 /**
  * Properly clear wpcom_vip_term_exists() cache when a term is updated
  */
-add_action( 'deleted_term_taxonomy', 'wp_flush_term_exists', 10, 2 );
-function wp_flush_term_exists( $term_id, $taxonomy ){
-	$term = get_term_by( 'id', $term_id, $taxonomy );
+add_action( 'delete_term', 'wp_flush_term_exists', 10, 4 );
+function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ){
+	$term = get_term_by( 'id', $term );
 	foreach( array( 'id', 'name', 'slug' ) as $field ) {
 		$cache_key = $term->$field . '|' . $taxonomy ;
 		$cache_group = 'term_exists';
