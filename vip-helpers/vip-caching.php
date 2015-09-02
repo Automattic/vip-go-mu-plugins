@@ -116,7 +116,7 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
  */
 add_action( 'delete_term', 'wp_flush_term_exists', 10, 4 );
 function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ){
-	$term = get_term_by( 'id', $term );
+	$term = get_term_by( 'id', $term, $taxonomy );
 	foreach( array( 'id', 'name', 'slug' ) as $field ) {
 		$cache_key = $term->$field . '|' . $taxonomy ;
 		$cache_group = 'term_exists';
