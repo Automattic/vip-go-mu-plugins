@@ -62,10 +62,22 @@ class WPCOM_VIP_Cache_Manager {
 		$curl_multi = curl_multi_init();
 
 		foreach ( $requests as $req ) {
+			// Purge HTTP
 			$curl = curl_init();
 			curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
 			curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}" ) );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: http" ) );
+			curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
+			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+			curl_setopt( $curl, CURLOPT_NOBODY, true );
+			curl_setopt( $curl, CURLOPT_HEADER, true );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_multi_add_handle( $curl_multi, $curl );
+			// Purge HTTPS
+			$curl = curl_init();
+			curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
+			curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: https" ) );
 			curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
 			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 			curl_setopt( $curl, CURLOPT_NOBODY, true );
