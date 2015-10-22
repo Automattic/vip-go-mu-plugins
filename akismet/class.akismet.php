@@ -708,14 +708,19 @@ class Akismet {
 			   isset( $comment1['comment_post_ID'], $comment2['comment_post_ID'] )
 			&& intval( $comment1['comment_post_ID'] ) == intval( $comment2['comment_post_ID'] )
 			&& (
-				$comment1['comment_author'] == $comment2['comment_author']
-				|| stripslashes( $comment1['comment_author'] ) == $comment2['comment_author']
-				|| $comment1['comment_author'] == stripslashes( $comment2['comment_author'] )
+				// The comment author length max is 255 characters, limited by the TINYTEXT column type.
+				substr( $comment1['comment_author'], 0, 255 ) == substr( $comment2['comment_author'], 0, 255 )
+				|| substr( stripslashes( $comment1['comment_author'] ), 0, 255 ) == substr( $comment2['comment_author'], 0, 255 )
+				|| substr( $comment1['comment_author'], 0, 255 ) == substr( stripslashes( $comment2['comment_author'] ), 0, 255 )
 				)
 			&& (
-				$comment1['comment_author_email'] == $comment2['comment_author_email']
-				|| stripslashes( $comment1['comment_author_email'] ) == $comment2['comment_author_email']
-				|| $comment1['comment_author_email'] == stripslashes( $comment2['comment_author_email'] )
+				// The email max length is 100 characters, limited by the VARCHAR(100) column type.
+				substr( $comment1['comment_author_email'], 0, 100 ) == substr( $comment2['comment_author_email'], 0, 100 )
+				|| substr( stripslashes( $comment1['comment_author_email'] ), 0, 100 ) == substr( $comment2['comment_author_email'], 0, 100 )
+				|| substr( $comment1['comment_author_email'], 0, 100 ) == substr( stripslashes( $comment2['comment_author_email'] ), 0, 100 )
+				// Very long emails can be truncated and then stripped if the [0:100] substring isn't a valid address.
+				|| ( ! $comment1['comment_author_email'] && strlen( $comment2['comment_author_email'] ) > 100 )
+				|| ( ! $comment2['comment_author_email'] && strlen( $comment1['comment_author_email'] ) > 100 )
 			)
 		);
 	}

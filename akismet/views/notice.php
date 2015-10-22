@@ -11,7 +11,7 @@
 					<div class="aa_button"><?php esc_html_e('Activate your Akismet account', 'akismet');?></div>
 				</div>
 			</div>
-			<div class="aa_description"><?php _e('<strong>Almost done</strong> - activate your account and say goodbye to comment spam', 'akismet');?></div>
+			<div class="aa_description"><?php _e('<strong>Almost done</strong> - activate Akismet and say goodbye to spam', 'akismet');?></div>
 		</div>
 	</form>
 </div>
@@ -40,26 +40,26 @@
 <?php elseif ( $type == 'missing-functions' ) :?>
 <div class="wrap alert critical">
 	<h3 class="key-status failed"><?php esc_html_e('Network functions are disabled.', 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('Your web host or server administrator has disabled PHP&#8217;s <code>gethostbynamel</code> functions.  <strong>Akismet cannot work correctly until this is fixed.</strong>  Please contact your web host or firewall administrator and give them <a href="%s" target="_blank">this information about Akismet&#8217;s system requirements</a>.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
+	<p class="description"><?php printf( __('Your web host or server administrator has disabled PHP&#8217;s <code>gethostbynamel</code> function.  <strong>Akismet cannot work correctly until this is fixed.</strong>  Please contact your web host or firewall administrator and give them <a href="%s" target="_blank">this information about Akismet&#8217;s system requirements</a>.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
 </div>
 <?php elseif ( $type == 'servers-be-down' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status failed"><?php esc_html_e("We can&#8217;t connect to your site.", 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('Your firewall may be blocking us. Please contact your host and refer to <a href="%s" target="_blank">our guide about firewalls</a>.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
+	<h3 class="key-status failed"><?php esc_html_e("Akismet can&#8217;t connect to your site.", 'akismet'); ?></h3>
+	<p class="description"><?php printf( __('Your firewall may be blocking Akismet. Please contact your host and refer to <a href="%s" target="_blank">our guide about firewalls</a>.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
 </div>
 <?php elseif ( $type == 'active-dunning' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status"><?php esc_html_e("Please update your payment details.", 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('We cannot process your transaction. Please contact your bank for assistance, and <a href="%s" target="_blank">update your payment details</a>.', 'akismet'), 'https://akismet.com/account/'); ?></p>
+	<h3 class="key-status"><?php esc_html_e("Please update your payment information.", 'akismet'); ?></h3>
+	<p class="description"><?php printf( __('We cannot process your payment. Please <a href="%s" target="_blank">update your payment details</a>.', 'akismet'), 'https://akismet.com/account/'); ?></p>
 </div>
 <?php elseif ( $type == 'cancelled' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status"><?php esc_html_e("Your subscription is cancelled.", 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('Please visit the <a href="%s" target="_blank">Akismet account page</a> to reactivate your subscription.', 'akismet'), 'https://akismet.com/account/'); ?></p>
+	<h3 class="key-status"><?php esc_html_e("Your Akismet plan has been cancelled.", 'akismet'); ?></h3>
+	<p class="description"><?php printf( __('Please visit your <a href="%s" target="_blank">Akismet account page</a> to reactivate your subscription.', 'akismet'), 'https://akismet.com/account/'); ?></p>
 </div>
 <?php elseif ( $type == 'suspended' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status failed"><?php esc_html_e("Your subscription is suspended.", 'akismet'); ?></h3>
+	<h3 class="key-status failed"><?php esc_html_e("Your Akismet subscription is suspended.", 'akismet'); ?></h3>
 	<p class="description"><?php printf( __('Please contact <a href="%s" target="_blank">Akismet support</a> for assistance.', 'akismet'), 'https://akismet.com/contact/'); ?></p>
 </div>
 <?php elseif ( $type == 'active-notice' && $time_saved ) :?>
@@ -69,21 +69,21 @@
 </div>
 <?php elseif ( $type == 'missing' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status failed"><?php esc_html_e( 'There is a problem with your key.', 'akismet'); ?></h3>
+	<h3 class="key-status failed"><?php esc_html_e( 'There is a problem with your API key.', 'akismet'); ?></h3>
 	<p class="description"><?php printf( __('Please contact <a href="%s" target="_blank">Akismet support</a> for assistance.', 'akismet'), 'https://akismet.com/contact/'); ?></p>
 </div>
 <?php elseif ( $type == 'no-sub' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status failed"><?php esc_html_e( 'Your subscription is missing.', 'akismet'); ?></h3>
+	<h3 class="key-status failed"><?php esc_html_e( 'You don&#8217;t have an Akismet plan.', 'akismet'); ?></h3>
 	<p class="description">
-		<?php printf( __( 'Since 2012, Akismet began using subscriptions for all accounts (even free ones). It looks like a subscription has not been assigned to your account, and we’d appreciate it if you’d <a href="%s" target="_blank">sign into your account</a> and choose one.', 'akismet'), 'https://akismet.com/account/upgrade/' ); ?>
+		<?php printf( __( 'In 2012, Akismet began using subscription plans for all accounts (even free ones). A plan has not been assigned to your account, and we&#8217;d appreciate it if you&#8217;d <a href="%s" target="_blank">sign into your account</a> and choose one.', 'akismet'), 'https://akismet.com/account/upgrade/' ); ?>
 		<br /><br />
 		<?php printf( __( 'Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet' ), 'https://akismet.com/contact/' ); ?>
 	</p>
 </div>
 <?php elseif ( $type == 'new-key-valid' ) :?>
 <div class="wrap alert active">
-	<h3 class="key-status"><?php esc_html_e('Your Akismet account has been successfully set up and activated. Happy blogging!', 'akismet'); ?></h3>
+	<h3 class="key-status"><?php esc_html_e('Akismet is now activated. Happy blogging!', 'akismet'); ?></h3>
 </div>
 <?php elseif ( $type == 'new-key-invalid' ) :?>
 <div class="wrap alert critical">
@@ -95,8 +95,8 @@
 </div>
 <?php elseif ( $type == 'new-key-failed' ) :?>
 <div class="wrap alert critical">
-	<h3 class="key-status"><?php esc_html_e( 'The key you entered could not be verified.' , 'akismet'); ?></h3>
-	<p class="description"><?php printf( __('The connection to akismet.com cannot be established. Please refer to <a href="%s" target="_blank">our guide about firewalls</a> and check your server configuration.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
+	<h3 class="key-status"><?php esc_html_e( 'The API key you entered could not be verified.' , 'akismet'); ?></h3>
+	<p class="description"><?php printf( __('The connection to akismet.com could not be established. Please refer to <a href="%s" target="_blank">our guide about firewalls</a> and check your server configuration.', 'akismet'), 'http://blog.akismet.com/akismet-hosting-faq/'); ?></p>
 </div>
 <?php elseif ( $type == 'limit-reached' && in_array( $level, array( 'yellow', 'red' ) ) ) :?>
 <div class="wrap alert critical">
