@@ -1,4 +1,5 @@
 language: php
+sudo: false # Use modern Travis builds – http://docs.travis-ci.com/user/migrating-from-legacy/
 
 git:
   submodules: false
@@ -37,7 +38,6 @@ env:
     - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
 
 before_install:
-  - sudo apt-get update > /dev/null
   - ./ci/prepare.sh
   - git submodule update --init --recursive
 
