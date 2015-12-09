@@ -946,7 +946,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		if ( ! WPCOM_IS_VIP_ENV ) {
 			die( 'wpcom_vip_load_plugin() was called with multiple subdirectories' );
 		} else {
-			_doing_it_wrong( 'wpcom_vip_load_plugin', 'Subdirectories not supported in file paths' );
+			_doing_it_wrong( 'wpcom_vip_load_plugin', 'Subdirectories not supported in file paths', '' );
 
 			return false;
 		}
@@ -961,7 +961,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 			if ( ! WPCOM_IS_VIP_ENV ) {
 				die( 'wpcom_vip_load_plugin() was called with a path, but no php file was specified' );
 			} else {
-				_doing_it_wrong( 'wpcom_vip_load_plugin', 'Must specify php file when loading via path' );
+				_doing_it_wrong( 'wpcom_vip_load_plugin', 'Must specify php file when loading via path', '' );
 
 				return false;
 			}
