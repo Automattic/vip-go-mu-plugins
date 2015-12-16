@@ -993,8 +993,8 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins/release-candidates';
 	}
 
-	$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
 	$test_directories[] = WP_PLUGIN_DIR;
+	$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
 
 	$includepath = null;
 	$plugin_type = null;
