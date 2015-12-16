@@ -117,10 +117,20 @@ class A8C_Files {
 		if ( ! $return || is_wp_error( $return ) || ! file_exists( $filename ) )
 			return false;
 
+		$url_parts = parse_url( $filename );
+		if ( false !== stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) )
+			$file_uri = substr( $url_parts['path'], stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) + strlen( constant( 'LOCAL_UPLOADS' ) ) );
+		else
+			$file_uri = '/' . $url_parts['path'];
+
+		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
+			$service_url .= '/sites/' . get_current_blog_id();
+		}
+
 		$file = array(
 				'file'  => $filename,
-				'url'   => $this->get_files_service_hostname() . '/' .
-							str_ireplace( constant( 'LOCAL_UPLOADS' ), $this->get_upload_path(), $filename ),
+				'url'   => $service_url . $file_uri,
 				'type'  => $mime_type,
 				'error' => 0,
 			);
