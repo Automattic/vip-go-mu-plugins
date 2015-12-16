@@ -19,3 +19,6 @@
 [submodule "http-concat"]
 	path = http-concat
 	url = git@github.com:Automattic/nginx-http-concat.git
+[submodule "shared-plugins/fieldmanager"]
+	path = shared-plugins/fieldmanager
+	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
