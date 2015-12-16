@@ -31,7 +31,7 @@ class A8C_Files {
 		add_filter( 'wp_delete_file',   array( &$this, 'delete_file' ), 20, 1 );
 
 		add_filter( 'wp_save_image_file',        array( &$this, 'save_image_file' ), 10, 5 );
-		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_editor_file' ), 10, 5 );
+		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 
 		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 10, 3 );
 
@@ -138,10 +138,6 @@ class A8C_Files {
 		$this->upload_file( $file, 'editor_save' );
 
 		return ( 0 === $file['error'] );
-	}
-
-	function save_image_editor_file( $override, $filename, $image, $mime_type, $post_id ) {
-		return $this->save_image_file( $override, $filename, $image, $mime_type, $post_id );
 	}
 
 	function get_upload_dir( $upload ) {
