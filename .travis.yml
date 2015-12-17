@@ -47,7 +47,7 @@ script:
 
 notifications:
 
-  slack: a8c:rdeQR68xgiffkssb1ZNw5P1c
+  slack: a8c:Hhd7rqdnXOFQgEU4HNZvkGs7
 
 
 after_success:
