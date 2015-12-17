@@ -3,7 +3,7 @@
 	url = git@github.com:Automattic/vip-dashboard.git
 [submodule "vip-support"]
 	path = vip-support
-	url = git@github.com:Automattic/vipv2-support.git
+	url = git@github.com:Automattic/vip-support.git
 [submodule "vip-jetpack"]
 	path = vip-jetpack
 	url = git@github.com:Automattic/vipv2-jetpack.git
