@@ -37,10 +37,21 @@ if ( defined( 'VIP_JETPACK_ALT' ) && VIP_JETPACK_ALT ) {
 		$jetpack_to_test = __DIR__ . '/jetpack' . VIP_JETPACK_ALT_SUFFIX . '/jetpack.php';
 	}
 
+	// Use `validate_file` to check that the directory path has not
+	// had unexpected strings like `/../`, etc, added to it.
+	if ( validate_file( $jetpack_to_test ) ) {
+		$error_msg = sprintf( 'The Jetpack filepath is not valid: %s (%s)', $jetpack_to_test, realpath( $jetpack_to_test ) );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( $error_msg );
+		}
+		wp_die( $error_msg );
+	}
+
 	// Test that our proposed Jetpack exists, otherwise do not use it
 	if ( file_exists( $jetpack_to_test ) ) {
 		$jetpack_to_load = $jetpack_to_test;
 	}
+
 }
 require_once( $jetpack_to_load );
 
