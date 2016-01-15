@@ -38,7 +38,7 @@ if ( defined( 'VIP_JETPACK_ALT' ) && VIP_JETPACK_ALT ) {
 		// had unexpected strings like `/../`, etc, added to it.
 		// Note that validate_file returns 0 if the string passes validation :\
 		if ( 0 !== validate_file( VIP_JETPACK_ALT_SUFFIX ) ) {
-			$error_msg = sprintf( 'The Jetpack "VIP_JETPACK_ALT_SUFFIX" constant does not have a valid valuestree: "%s"', VIP_JETPACK_ALT_SUFFIX );
+			$error_msg = sprintf( 'The Jetpack "VIP_JETPACK_ALT_SUFFIX" constant does not have a valid value: "%s"', VIP_JETPACK_ALT_SUFFIX );
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( $error_msg );
 
