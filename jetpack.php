@@ -33,18 +33,25 @@ if ( defined( 'VIP_JETPACK_ALT' ) && VIP_JETPACK_ALT ) {
 	// Allow the alternative version of Jetpack to be specified on
 	// a site by site basis
 	if ( defined( 'VIP_JETPACK_ALT_SUFFIX' ) && VIP_JETPACK_ALT_SUFFIX ) {
-		// Set a specific alternative Jetpack
-		$jetpack_to_test = __DIR__ . '/jetpack' . VIP_JETPACK_ALT_SUFFIX . '/jetpack.php';
-	}
 
-	// Use `validate_file` to check that the directory path has not
-	// had unexpected strings like `/../`, etc, added to it.
-	if ( validate_file( $jetpack_to_test ) ) {
-		$error_msg = sprintf( 'The Jetpack filepath is not valid: %s (%s)', $jetpack_to_test, realpath( $jetpack_to_test ) );
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( $error_msg );
+		// Use `validate_file` to check that VIP_JETPACK_ALT_SUFFIX has not
+		// had unexpected strings like `/../`, etc, added to it.
+		// Note that validate_file returns 0 if the string passes validation :\
+		if ( 0 !== validate_file( VIP_JETPACK_ALT_SUFFIX ) ) {
+			$error_msg = sprintf( 'The Jetpack "VIP_JETPACK_ALT_SUFFIX" constant does not have a valid valuestree: "%s"', VIP_JETPACK_ALT_SUFFIX );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( $error_msg );
+
+			}
+			// Only die if we're not running in VIP Go, e.g. if we
+			// are running in local dev, etc.
+			if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || ! WPCOM_IS_VIP_ENV ) {
+				wp_die( $error_msg );
+			}
+		} else {
+			// Set a specific alternative Jetpack
+			$jetpack_to_test = __DIR__ . '/jetpack' . VIP_JETPACK_ALT_SUFFIX . '/jetpack.php';
 		}
-		wp_die( $error_msg );
 	}
 
 	// Test that our proposed Jetpack exists, otherwise do not use it
