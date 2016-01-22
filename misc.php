@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: VIP Hosting Miscellaneous
-Description: Handles CSS and JS concatenation, and Nginx compatibility
+Description: Handles CSS and JS concatenation, Nginx compatibility, SSL verification
 Author: Automattic
-Version: 1.0
+Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
@@ -25,3 +25,28 @@ add_filter( 'got_url_rewrite', '__return_true' );
 // Activate concatenation
 require __DIR__ .'/http-concat/jsconcat.php';
 require __DIR__ .'/http-concat/cssconcat.php';
+
+
+/**
+ * This function uses the VIP_VERIFY_STRING and VIP_VERIFY_PATH
+ * constants to respond with a verification string at a particular
+ * path. So if you have a VIP_VERIFY_STRING of `Hello` and a
+ * VIP_VERIFY_PATH of `whatever.html`, then the URL
+ * yourdomain.com/whatever.html will return `Hello`.
+ *
+ * We suggest adding these constants in your `vip-config.php`
+ *
+ * @return void
+ */
+function action_wpcom_vip_verify_string() {
+	if ( ! defined( 'VIP_VERIFY_PATH' ) || ! defined( 'VIP_VERIFY_STRING' ) ) {
+		return;
+	}
+	$verification_path = '/' . VIP_VERIFY_PATH;
+	if ( $verification_path === $_SERVER['REQUEST_URI'] ) {
+		status_header( 200 );
+		echo VIP_VERIFY_STRING;
+		exit;
+	}
+}
+add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
