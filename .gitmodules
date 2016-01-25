@@ -22,3 +22,6 @@
 [submodule "shared-plugins/fieldmanager"]
 	path = shared-plugins/fieldmanager
 	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
+[submodule "shared-plugins/livefyre-apps"]
+	path = shared-plugins/livefyre-apps
+	url = git@github.com:Livefyre/Livefyre-Apps-Wordpress-Plugin.git
