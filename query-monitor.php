@@ -22,3 +22,6 @@ if ( 0 === get_option( 'wpcom_vip_qm_activated', 0 ) ) {
 	QueryMonitor::init( $wpcom_vip_qm_file )->activate( true );
 	update_option( 'wpcom_vip_qm_activated', 1, true );
 }
+
+// We don't want to share our environment information via Query Monitor
+add_filter( 'qm/collectors', 'register_qm_collector_environment', 20, 2 );
