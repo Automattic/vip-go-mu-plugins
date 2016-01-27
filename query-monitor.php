@@ -12,6 +12,14 @@ License:     GPL v2 or later
 
 */
 
+if ( ! defined( 'SAVEQUERIES' ) ) {
+	define( 'SAVEQUERIES', true );
+
+}
+// For hyperdb, which doesn't use SAVEQUERIES
+global $wpdb;
+$wpdb->save_queries = SAVEQUERIES;
+
 $wpcom_vip_qm_file = __DIR__ . '/query-monitor/query-monitor.php';
 
 require_once( $wpcom_vip_qm_file );
