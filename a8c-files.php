@@ -33,7 +33,7 @@ class A8C_Files {
 		add_filter( 'wp_save_image_file',        array( &$this, 'save_image_file' ), 10, 5 );
 		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 
-		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 10, 3 );
+		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
 
 		// disable the automatic creation of intermediate image sizes
 		add_filter( 'intermediate_image_sizes',          function( $sizes ) { return array(); } );
