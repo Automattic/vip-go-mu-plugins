@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Query Monitor
-Description: Monitoring of database queries, hooks, conditionals and more.
+Description: Set WPCOM_VIP_QM_ENABLE constant to true to enable this plugin. Monitoring of database queries, hooks, conditionals and more.
 Version:     2.8.1
 Plugin URI:  https://querymonitor.com/
 Author:      John Blackbourn
