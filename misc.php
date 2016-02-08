@@ -23,9 +23,13 @@ add_filter( 'nocache_headers', 'wpcom_vip_check_for_404_and_remove_cache_headers
 add_filter( 'got_url_rewrite', '__return_true' );
 
 // Activate concatenation
-require __DIR__ .'/http-concat/jsconcat.php';
-require __DIR__ .'/http-concat/cssconcat.php';
+if ( ! isset( $_GET['concat_js'] ) || 'yes' == $_GET['concat_js'] ) {
+	require __DIR__ .'/http-concat/jsconcat.php';
+}
 
+if ( ! isset( $_GET['concat_css'] ) || 'yes' == $_GET['concat_css'] ) {
+	require __DIR__ .'/http-concat/cssconcat.php';
+}
 
 /**
  * This function uses the VIP_VERIFY_STRING and VIP_VERIFY_PATH
