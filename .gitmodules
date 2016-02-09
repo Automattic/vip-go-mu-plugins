@@ -25,3 +25,6 @@
 [submodule "shared-plugins/livefyre-apps"]
 	path = shared-plugins/livefyre-apps
 	url = git@github.com:Livefyre/Livefyre-Apps-Wordpress-Plugin.git
+[submodule "query-monitor"]
+	path = query-monitor
+	url = git@github.com:johnbillion/query-monitor.git
