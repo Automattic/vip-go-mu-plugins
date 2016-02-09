@@ -31,6 +31,9 @@ License:     GPL v2 or later
  */
 function wpcom_vip_qm_enable() {
 
+	// N.B. COOKIEHASH is not yet defined, so we define
+	// a QM_COOKIE to name the QM cookies at this point
+	// in order that we can detect them.
 	if ( ! defined( 'QM_COOKIE' ) ) {
 		$siteurl = get_site_option( 'siteurl' );
 		if ( $siteurl ) {
