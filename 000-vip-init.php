@@ -23,10 +23,4 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
-add_action( 'debug_bar_enable', function( $enable ) {
-    $enable = is_automattician();
-
-    return $enable;
-}, 99 );
-
 do_action( 'vip_loaded' );

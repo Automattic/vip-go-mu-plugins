@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Query Monitor
-Description: Set WPCOM_VIP_QM_ENABLE constant to true to enable this plugin. Monitoring of database queries, hooks, conditionals and more.
+Description: Monitoring of database queries, hooks, conditionals and more.
 Version:     2.8.1
 Plugin URI:  https://querymonitor.com/
 Author:      John Blackbourn
@@ -29,37 +29,35 @@ License:     GPL v2 or later
  *
  * @return bool
  */
-function wpcom_vip_qm_enable() {
+function wpcom_vip_qm_enable( $enable ) {
 
-	// N.B. COOKIEHASH is not yet defined, so we define
-	// a QM_COOKIE to name the QM cookies at this point
-	// in order that we can detect them.
 	if ( ! defined( 'QM_COOKIE' ) ) {
-		$siteurl = get_site_option( 'siteurl' );
-		if ( $siteurl ) {
-			$cookiehash = md5( $siteurl );
-		} else {
-			$cookiehash = '';
-		}
-		define( 'QM_COOKIE', 'query_monitor_' . $cookiehash );
+		define( 'QM_COOKIE', 'query_monitor_' . COOKIEHASH );
 	}
 
-	if ( defined( 'WPCOM_VIP_QM_ENABLE' ) && WPCOM_VIP_QM_ENABLE ) {
+	if ( current_user_can( 'view_query_monitor' ) ) {
 		return true;
 	}
 	if ( isset( $_COOKIE[QM_COOKIE] ) ) {
 		return true;
 	}
 
-	return false;
+	return $enable;
 }
+add_filter( 'wpcom_vip_qm_enable', 'wpcom_vip_qm_enable' );
 
 /**
  * Require the plugin files for Query Monitor, faking a
  * plugin activation, if it's the first time.
  */
 function wpcom_vip_qm_require() {
-	if ( ! wpcom_vip_qm_enable() ) {
+	/**
+	 * Filter whether Query Monitor is activated; return true,
+	 * if QM should be activated.
+	 *
+	 * @param bool $enable False by default
+	 */
+	if ( ! apply_filters( 'wpcom_vip_qm_enable', false ) ) {
 		return;
 	}
 
@@ -88,5 +86,4 @@ function wpcom_vip_qm_require() {
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 }
-
-wpcom_vip_qm_require();
+add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
