@@ -81,6 +81,9 @@ function wpcom_vip_qm_require() {
 
 	// We don't want to share our environment information via Query Monitor
 	remove_filter( 'qm/collectors', 'register_qm_collector_environment', 20, 2 );
+
+	// We know we haven't got the QM DB drop-in in place, so don't show the message
+	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 }
 
 wpcom_vip_qm_require();
