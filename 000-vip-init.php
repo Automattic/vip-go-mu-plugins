@@ -7,6 +7,13 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
     define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+$hostname = gethostname();
+define( 'WPCOM_SANDBOXED', false !== strpos( $hostname, '_web_dev_' ) );
+
+if ( WPCOM_SANDBOXED ) {
+	require __DIR__ . '/vip-helpers/sandbox.php';
+}
+
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
