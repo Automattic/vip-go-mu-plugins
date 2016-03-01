@@ -934,7 +934,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 	// Make sure there's a plugin to load
 	if ( empty($plugin) ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
+			trigger_error( 'wpcom_vip_load_plugin() was called without a first parameter!', E_USER_ERROR );
 		}
 	}
 
@@ -944,7 +944,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 
 	if ( count( $exploded ) > 2 ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( 'wpcom_vip_load_plugin() was called with multiple subdirectories' );
+			trigger_error( 'wpcom_vip_load_plugin() was called with multiple subdirectories', E_USER_ERROR );
 		} else {
 			_doing_it_wrong( 'wpcom_vip_load_plugin', 'Subdirectories not supported in file paths', '' );
 
@@ -959,7 +959,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 
 		if ( ! isset( $pathinfo['extension'] ) || 'php' !== $pathinfo['extension'] ) {
 			if ( ! WPCOM_IS_VIP_ENV ) {
-				die( 'wpcom_vip_load_plugin() was called with a path, but no php file was specified' );
+				trigger_error( 'wpcom_vip_load_plugin() was called with a path, but no php file was specified', E_USER_ERROR );
 			} else {
 				_doing_it_wrong( 'wpcom_vip_load_plugin', 'Must specify php file when loading via path', '' );
 
@@ -1032,7 +1032,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		return _wpcom_vip_include_plugin( $includepath );
 	} else {
 		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
+			trigger_error( "Unable to load $plugin using wpcom_vip_load_plugin()!", E_USER_ERROR );
 		}
 	}
 }
