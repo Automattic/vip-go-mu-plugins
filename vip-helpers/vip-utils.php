@@ -1108,7 +1108,7 @@ function is_automattician( $user_id = false ) {
  * Must be called at or before the `template_redirect` action.
  */
 function wpcom_vip_disable_new_relic_js() {
-	if ( did_action( 'template_redirect' ) ) {
+	if ( did_action( 'template_redirect' ) && ! doing_action( 'template_redirect' ) ) {
 		_doing_it_wrong( __FUNCTION__, 'New Relic&#8217;s browser tracking can only be disabled at or before the `template_redirect` action.', '1.0' );
 		return;
 	}
