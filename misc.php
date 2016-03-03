@@ -54,3 +54,15 @@ function action_wpcom_vip_verify_string() {
 	}
 }
 add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
+
+/**
+ * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
+ *
+ * Since we don't load New Relic on all containers, the function may not always exist.
+ */
+function vip_go_disable_new_relic_for_amp_pages() {
+	if ( function_exists( 'newrelic_disable_autorum' ) ) {
+		newrelic_disable_autorum();
+	}
+}
+add_action( 'pre_amp_render_post', 'vip_go_disable_new_relic_for_amp_pages' );
