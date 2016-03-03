@@ -1,4 +1,4 @@
-# VIP MU Plugins [![Build Status](https://magnum.travis-ci.com/Automattic/vipv2-mu-plugins.svg?token=saKYXPvcnyNUH8ChL4di&branch=master)](https://magnum.travis-ci.com/Automattic/vipv2-mu-plugins)
+# VIP MU Plugins [![Build Status](https://magnum.travis-ci.com/Automattic/vip-go-mu-plugins.svg?token=saKYXPvcnyNUH8ChL4di&branch=master)](https://magnum.travis-ci.com/Automattic/vip-go-mu-plugins)
 
 This is the complete MU plugins folder for the WordPress.com VIP next generation hosting platform.
 
@@ -13,7 +13,7 @@ make lint
 
 **To set up PHPUnit locally** (requires a working WordPress development environment, specifically PHP and MySQL):
 
-Notes: 
+Notes:
 
 * You need to replace the `%placeholder%` strings below with sensible values
 * You DO need an empty DB, because the contents of this DB WILL get trashed during testing
