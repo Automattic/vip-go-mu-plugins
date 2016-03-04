@@ -4,7 +4,25 @@ class Akismet_Admin {
 	const NONCE = 'akismet-update-key';
 
 	private static $initiated = false;
-	private static $notices = array();
+	private static $notices   = array();
+	private static $allowed   = array(
+	    'a' => array(
+	        'href' => true,
+	        'title' => true,
+	    ),
+	    'b' => array(),
+	    'code' => array(),
+	    'del' => array(
+	        'datetime' => true,
+	    ),
+	    'em' => array(),
+	    'i' => array(),
+	    'q' => array(
+	        'cite' => true,
+	    ),
+	    'strike' => array(),
+	    'strong' => array(),
+	);
 
 	public static function init() {
 		if ( ! self::$initiated ) {
@@ -91,11 +109,12 @@ class Akismet_Admin {
 			'post.php',
 			'settings_page_akismet-key-config',
 			'jetpack_page_akismet-key-config',
+			'plugins.php',
 		) ) ) {
-			wp_register_style( 'akismet.css', AKISMET__PLUGIN_URL . '_inc/akismet.css', array(), AKISMET_VERSION );
+			wp_register_style( 'akismet.css', plugin_dir_url( __FILE__ ) . '_inc/akismet.css', array(), AKISMET_VERSION );
 			wp_enqueue_style( 'akismet.css');
 
-			wp_register_script( 'akismet.js', AKISMET__PLUGIN_URL . '_inc/akismet.js', array('jquery','postbox'), AKISMET_VERSION );
+			wp_register_script( 'akismet.js', plugin_dir_url( __FILE__ ) . '_inc/akismet.js', array('jquery','postbox'), AKISMET_VERSION );
 			wp_enqueue_script( 'akismet.js' );
 			wp_localize_script( 'akismet.js', 'WPAkismet', array(
 				'comment_author_url_nonce' => wp_create_nonce( 'comment_author_url_nonce' ),
@@ -257,8 +276,10 @@ class Akismet_Admin {
 				if ( in_array( $akismet_user->status, array( 'active', 'active-dunning', 'no-sub' ) ) )
 					update_option( 'wordpress_api_key', $api_key );
 				
-				if (  $akismet_user->status == 'active' )
+				if ( $akismet_user->status == 'active' )
 					self::$notices['status'] = 'new-key-valid';
+				elseif ( $akismet_user->status == 'notice' )
+					self::$notices['status'] = $akismet_user;
 				else
 					self::$notices['status'] = $akismet_user->status;
 			}
@@ -584,7 +605,7 @@ class Akismet_Admin {
 	}
 
 	public static function plugin_action_links( $links, $file ) {
-		if ( $file == plugin_basename( AKISMET__PLUGIN_URL . '/akismet.php' ) ) {
+		if ( $file == plugin_basename( plugin_dir_url( __FILE__ ) . '/akismet.php' ) ) {
 			$links[] = '<a href="' . esc_url( self::get_page_url() ) . '">'.esc_html__( 'Settings' , 'akismet').'</a>';
 		}
 
@@ -867,11 +888,11 @@ class Akismet_Admin {
 					$cleaning_up      = __( 'Cleaning up spam takes time.' , 'akismet');
 
 					if ( $total_in_days > 1 )
-						$time_saved = $cleaning_up . ' ' . sprintf( __( 'Akismet has saved you %s days!' , 'akismet'), number_format_i18n( $total_in_days ) );
+						$time_saved = $cleaning_up . ' ' . sprintf( _n( 'Akismet has saved you %s day!', 'Akismet has saved you %s days!', $total_in_days, 'akismet' ), number_format_i18n( $total_in_days ) );
 					elseif ( $total_in_hours > 1 )
-						$time_saved = $cleaning_up . ' ' . sprintf( __( 'Akismet has saved you %d hours!' , 'akismet'), $total_in_hours );
+						$time_saved = $cleaning_up . ' ' . sprintf( _n( 'Akismet has saved you %d hour!', 'Akismet has saved you %d hours!', $total_in_hours, 'akismet' ), $total_in_hours );
 					elseif ( $total_in_minutes >= 30 )
-						$time_saved = $cleaning_up . ' ' . sprintf( __( 'Akismet has saved you %d minutes!' , 'akismet'), $total_in_minutes );
+						$time_saved = $cleaning_up . ' ' . sprintf( _n( 'Akismet has saved you %d minute!', 'Akismet has saved you %d minutes!', $total_in_minutes, 'akismet' ), $total_in_minutes );
 				}
 
 				Akismet::view( 'notice', array( 'type' => 'active-notice', 'time_saved' => $time_saved ) );
@@ -918,8 +939,24 @@ class Akismet_Admin {
 		if ( !empty( $type ) )
 			Akismet::view( 'notice', compact( 'type' ) );
 		elseif ( !empty( self::$notices ) ) {
-			foreach ( self::$notices as $type )
-				Akismet::view( 'notice', compact( 'type' ) );
+			foreach ( self::$notices as $type ) {
+				if ( is_object( $type ) ) {
+					$notice_header = $notice_text = '';
+					
+					if ( property_exists( $type, 'notice_header' ) )
+						$notice_header = wp_kses( $type->notice_header, self::$allowed );
+				
+					if ( property_exists( $type, 'notice_text' ) )
+						$notice_text = wp_kses( $type->notice_text, self::$allowed );
+					
+					if ( property_exists( $type, 'status' ) ) {
+						$type = wp_kses( $type->status, self::$allowed );
+						Akismet::view( 'notice', compact( 'type', 'notice_header', 'notice_text' ) );
+					}
+				}
+				else
+					Akismet::view( 'notice', compact( 'type' ) );
+			}				
 		}
 	}
 
