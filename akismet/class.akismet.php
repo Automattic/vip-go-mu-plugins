@@ -29,6 +29,14 @@ class Akismet {
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments_meta' ) );
 		add_action( 'akismet_schedule_cron_recheck', array( 'Akismet', 'cron_recheck' ) );
 
+		/**
+		 * To disable the Akismet comment nonce, add a filter for the 'akismet_comment_nonce' tag
+		 * and return any string value that is not 'true' or '' (empty string).
+		 *
+		 * Don't return boolean false, because that implies that the 'akismet_comment_nonce' option
+		 * has not been set and that Akismet should just choose the default behavior for that
+		 * situation.
+		 */
 		$akismet_comment_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
 
 		if ( $akismet_comment_nonce_option == 'true' || $akismet_comment_nonce_option == '' )
@@ -45,12 +53,6 @@ class Akismet {
 
 		// Run this early in the pingback call, before doing a remote fetch of the source uri
 		add_action( 'xmlrpc_call', array( 'Akismet', 'pre_check_pingback' ) );
-
-		if ( '3.0.5' == $GLOBALS['wp_version'] ) {
-			remove_filter( 'comment_text', 'wp_kses_data' );
-			if ( is_admin() )
-				add_filter( 'comment_text', 'wp_kses_post' );
-		}
 	}
 
 	public static function get_api_key() {
@@ -95,6 +97,7 @@ class Akismet {
 		if ( !empty( $comment['user_ID'] ) )
 			$comment['user_role'] = Akismet::get_user_roles( $comment['user_ID'] );
 
+		/** See filter documentation in init_hooks(). */
 		$akismet_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
 		$comment['akismet_comment_nonce'] = 'inactive';
 		if ( $akismet_nonce_option == 'true' || $akismet_nonce_option == '' ) {
@@ -116,13 +119,19 @@ class Akismet {
 				$comment["POST_{$key}"] = $value;
 		}
 
-		$ignore = array( 'HTTP_COOKIE', 'HTTP_COOKIE2', 'PHP_AUTH_PW' );
-
 		foreach ( $_SERVER as $key => $value ) {
-			if ( !in_array( $key, $ignore ) && is_string($value) )
-				$comment["$key"] = $value;
-			else
-				$comment["$key"] = '';
+			if ( ! is_string( $value ) ) {
+				continue;
+			}
+
+			if ( preg_match( "/^HTTP_COOKIE/", $key ) ) {
+				continue;
+			}
+
+			// Send any potentially useful $_SERVER vars, but avoid sending junk we don't need.
+			if ( preg_match( "/^(HTTP_|REMOTE_ADDR|REQUEST_URI|DOCUMENT_URI)/", $key ) ) {
+				$form[ "$key" ] = $value;
+			}
 		}
 
 		$post = get_post( $comment['comment_post_ID'] );
@@ -709,15 +718,20 @@ class Akismet {
 			&& intval( $comment1['comment_post_ID'] ) == intval( $comment2['comment_post_ID'] )
 			&& (
 				// The comment author length max is 255 characters, limited by the TINYTEXT column type.
-				substr( $comment1['comment_author'], 0, 255 ) == substr( $comment2['comment_author'], 0, 255 )
-				|| substr( stripslashes( $comment1['comment_author'] ), 0, 255 ) == substr( $comment2['comment_author'], 0, 255 )
-				|| substr( $comment1['comment_author'], 0, 255 ) == substr( stripslashes( $comment2['comment_author'] ), 0, 255 )
+				// If the comment author includes multibyte characters right around the 255-byte mark, they
+				// may be stripped when the author is saved in the DB, so a 300+ char author may turn into
+				// a 253-char author when it's saved, not 255 exactly.  The longest possible character is
+				// theoretically 6 bytes, so we'll only look at the first 248 bytes to be safe.
+				substr( $comment1['comment_author'], 0, 248 ) == substr( $comment2['comment_author'], 0, 248 )
+				|| substr( stripslashes( $comment1['comment_author'] ), 0, 248 ) == substr( $comment2['comment_author'], 0, 248 )
+				|| substr( $comment1['comment_author'], 0, 248 ) == substr( stripslashes( $comment2['comment_author'] ), 0, 248 )
 				)
 			&& (
 				// The email max length is 100 characters, limited by the VARCHAR(100) column type.
-				substr( $comment1['comment_author_email'], 0, 100 ) == substr( $comment2['comment_author_email'], 0, 100 )
-				|| substr( stripslashes( $comment1['comment_author_email'] ), 0, 100 ) == substr( $comment2['comment_author_email'], 0, 100 )
-				|| substr( $comment1['comment_author_email'], 0, 100 ) == substr( stripslashes( $comment2['comment_author_email'] ), 0, 100 )
+				// Same argument as above for only looking at the first 93 characters.
+				substr( $comment1['comment_author_email'], 0, 93 ) == substr( $comment2['comment_author_email'], 0, 93 )
+				|| substr( stripslashes( $comment1['comment_author_email'] ), 0, 93 ) == substr( $comment2['comment_author_email'], 0, 93 )
+				|| substr( $comment1['comment_author_email'], 0, 93 ) == substr( stripslashes( $comment2['comment_author_email'] ), 0, 93 )
 				// Very long emails can be truncated and then stripped if the [0:100] substring isn't a valid address.
 				|| ( ! $comment1['comment_author_email'] && strlen( $comment2['comment_author_email'] ) > 100 )
 				|| ( ! $comment2['comment_author_email'] && strlen( $comment1['comment_author_email'] ) > 100 )
@@ -953,7 +967,7 @@ class Akismet {
 	public static function load_form_js() {
 		// WP < 3.3 can't enqueue a script this late in the game and still have it appear in the footer.
 		// Once we drop support for everything pre-3.3, this can change back to a single enqueue call.
-		wp_register_script( 'akismet-form', AKISMET__PLUGIN_URL . '_inc/form.js', array(), AKISMET_VERSION, true );
+		wp_register_script( 'akismet-form', plugin_dir_url( __FILE__ ) . '_inc/form.js', array(), AKISMET_VERSION, true );
 		add_action( 'wp_footer', array( 'Akismet', 'print_form_js' ) );
 		add_action( 'admin_footer', array( 'Akismet', 'print_form_js' ) );
 	}
