@@ -1,4 +1,39 @@
 <?php
+
+//Backward compat class for new Ooyala plugin
+
+class Ooyala_Video extends Ooyala {
+
+	private static $instance;
+
+	var $plugin_url;
+
+	protected function __construct() {
+		$this->plugin_url = plugin_dir_url( __FILE__ );
+	}
+
+    public static function init() {
+
+		//init new Ooyala class just in case it was not initialized yet
+		$ooyala = Ooyala::instance();
+
+		if (null === static::$instance) {
+            static::$instance = new static();
+        }
+
+		return static::$instance;
+	}
+
+	public function media_button() {
+		$ooyala = Ooyala::instance();
+		return $ooyala->media_buttons();
+	}
+
+	private function __clone() {}
+
+	private function __wakeup() {}
+}
+
 /**
  * WordPress Class for interfacing with the Ooyola Backlot API v2
  *
@@ -24,7 +59,7 @@ class WP_Ooyala_Backlot {
 		$params = wp_parse_args( $params, $defaults );
 
 		$signature = $this->api_secret . $request['method'] . $request['path'];
-		ksort( $params ); 
+		ksort( $params );
 		foreach ( $params as $key => $val )
 			$signature .= $key . '=' . $val;
 
@@ -51,7 +86,7 @@ class WP_Ooyala_Backlot {
 
 		if ( $wp_version >= 3.4 )
 			return wp_remote_request( $url, array( 'headers' => array( 'Content-Type' => 'application/json' ), 'method' => 'PATCH', 'body' => $body, 'timeout' => apply_filters( 'ooyala_http_request_timeout', 10 ) ) );
-		
+
 		// Workaround for core bug - http://core.trac.wordpress.org/ticket/18589
 		$curl = curl_init( $url );
 		curl_setopt( $curl, CURLOPT_HEADER, false );
@@ -123,7 +158,7 @@ class WP_Ooyala_Backlot {
 				$c = count( $ids );
 				$prev_token = $c > 1 ? $ids[ count( $ids ) - 2 ] : '-1';
 				$ids[] = $page_token;
-			}			
+			}
 		} elseif ( count( $ids ) > 1 ) {
 			$prev_token = $ids[ count( $ids ) - 2 ];
 		}
@@ -140,7 +175,7 @@ class WP_Ooyala_Backlot {
 		}
 
 		$ids = implode( ',', $ids );
-		$output .= '<input type="hidden" id="ooyala-ids" value="' . esc_attr( $ids ) . '" />';			
+		$output .= '<input type="hidden" id="ooyala-ids" value="' . esc_attr( $ids ) . '" />';
 
 		$output .= '<div id="ooyala-items">';
 		foreach ( $videos->items as $video ) {
@@ -162,7 +197,7 @@ class WP_Ooyala_Backlot {
 	}
 
 	static function get_promo_thumbnail( $xml ) {
-		
+
 		$results = simplexml_load_string( $xml );
 		if ( !$results )
 			return new WP_Error( 'noresults', __( 'Malformed XML' , 'ooyalavideo'));
