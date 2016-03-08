@@ -4,7 +4,7 @@ Plugin Name: Parse.ly
 Plugin URI: http://www.parsely.com/
 Description: This plugin makes it a snap to add Parse.ly tracking code to your WordPress blog.
 Author: Mike Sukmanowsky (mike@parsely.com)
-Version: 1.6
+Version: 1.7
 Requires at least: 3.0.0
 Author URI: http://www.parsely.com/
 License: GPL2
@@ -35,7 +35,7 @@ Authors: Mike Sukmanowsky (mike@parsely.com)
 */
 
 class Parsely {
-    const VERSION             = '1.6';
+    const VERSION             = '1.7';
     const MENU_SLUG           = 'parsely';             // Defines the page param passed to options-general.php
     const MENU_TITLE          = 'Parse.ly';            // Text to be used for the menu as seen in Settings sub-menu
     const MENU_PAGE_TITLE     = 'Parse.ly > Settings'; // Text shown in <title></title> when the settings screen is viewed
@@ -308,10 +308,15 @@ class Parsely {
 
         global $wp_query;
         global $post;
-        $parselyPage = array();
+        // Assign default values for LD+JSON
+        // TODO: Maping of an install's post types to Parse.ly post types (namely page/post)
+        $parselyPage = array(
+            "@context" => "http://schema.org",
+            "@type" => "WebPage"
+        );
         $currentURL = $this->get_current_url();
         if ( is_single() && $post->post_status == 'publish' ) {
-            $author     = $this->get_author_name($post);
+            $authors    = $this->get_author_names($post);
             $category   = $this->get_category_name($post, $parselyOptions);
             $postId     = $parselyOptions['content_id_prefix'] . (string)get_the_ID();
 
@@ -321,57 +326,51 @@ class Parsely {
                 $image_url = wp_get_attachment_image_src($image_id);
                 $image_url = $image_url[0];
             }
-            // TODO: Maping of an install's post types to Parse.ly post types (namely page/post)
-            $parselyPage['title']       = $this->get_clean_parsely_page_value(get_the_title());
-            $parselyPage['link']        = get_permalink();
-            $parselyPage['image_url']   = $image_url;
-            $parselyPage['type']        = 'post';
-            $parselyPage['post_id']     = $postId;
-            $parselyPage['pub_date']    = gmdate('Y-m-d\TH:i:s\Z', get_post_time('U', true));
-            $parselyPage['section']     = $category;
-            $parselyPage['author']      = $author;
-            $parselyPage['tags']        = array_merge($this->get_tags_as_string($post->ID, $parselyOptions),
-                                                      $this->get_categories_as_tags($post, $parselyOptions));
+
+            $parselyPage['@type']          = 'NewsArticle';
+            $parselyPage['headline']       = $this->get_clean_parsely_page_value(get_the_title());
+            $parselyPage['url']            = get_permalink();
+            $parselyPage['thumbnailUrl']   = $image_url;
+            $parselyPage['articleId']      = $postId;
+            $parselyPage['dateCreated']    = gmdate('Y-m-d\TH:i:s\Z', get_post_time('U', true));
+            $parselyPage['articleSection'] = $category;
+            $parselyPage['creator']        = $authors;
+            $parselyPage['keywords']       = array_merge($this->get_tags_as_string($post->ID, $parselyOptions),
+                                                         $this->get_categories_as_tags($post, $parselyOptions));
         } elseif ( is_page() && $post->post_status == 'publish' ) {
-            $parselyPage['type']        = 'sectionpage';
-            $parselyPage['title']       = $this->get_clean_parsely_page_value(get_the_title());
-            $parselyPage['link']        = get_permalink();
+            $parselyPage['headline']       = $this->get_clean_parsely_page_value(get_the_title());
+            $parselyPage['url']            = get_permalink();
         } elseif ( is_author() ) {
             // TODO: why can't we have something like a WP_User object for all the other cases? Much nicer to deal with than functions
             $author = (get_query_var('author_name')) ? get_user_by('slug', get_query_var('author_name')) : get_userdata(get_query_var('author'));
-            $parselyPage['type']        = 'sectionpage';
-            $parselyPage['title']       = $this->get_clean_parsely_page_value('Author - '.$author->data->display_name);
-            $parselyPage['link']        = $currentURL;
+            $parselyPage['headline']       = $this->get_clean_parsely_page_value('Author - '.$author->data->display_name);
+            $parselyPage['url']            = $currentURL;
         } elseif ( is_category() ) {
             $category = get_the_category();
             $category = $category[0];
-            $parselyPage['type']        = 'sectionpage';
-            $parselyPage['title']       = $this->get_clean_parsely_page_value($category->name);
-            $parselyPage['link']        = $currentURL;
+            $parselyPage['headline']       = $this->get_clean_parsely_page_value($category->name);
+            $parselyPage['url']            = $currentURL;
         } elseif ( is_date() ) {
-            $parselyPage['type']        = 'sectionpage';
             if ( is_year() ) {
-                $parselyPage['title']   = 'Yearly Archive - ' . get_the_time('Y');
+                $parselyPage['headline']   = 'Yearly Archive - ' . get_the_time('Y');
             } elseif(is_month() ) {
-                $parselyPage['title']   = 'Monthly Archive - ' . get_the_time('F, Y');
+                $parselyPage['headline']   = 'Monthly Archive - ' . get_the_time('F, Y');
             } elseif ( is_day() ) {
-                $parselyPage['title']   = 'Daily Archive - ' . get_the_time('F jS, Y');
+                $parselyPage['headline']   = 'Daily Archive - ' . get_the_time('F jS, Y');
             } elseif ( is_time() ) {
-                $parselyPage['title']   = 'Hourly, Minutely, or Secondly Archive - ' . get_the_time('F jS g:i:s A');
+                $parselyPage['headline']   = 'Hourly, Minutely, or Secondly Archive - ' . get_the_time('F jS g:i:s A');
             }
-            $parselyPage['link']        = $currentURL;
+            $parselyPage['url']            = $currentURL;
         } elseif ( is_tag() ) {
             $tag = single_tag_title('', FALSE);
             if ( empty($tag) ) {
                 $tag = single_term_title('', FALSE);
             }
-            $parselyPage['type']        = 'sectionpage';
-            $parselyPage['title']       = $this->get_clean_parsely_page_value('Tagged - '.$tag);
-            $parselyPage['link']        = $currentURL; // get_tag_link(get_query_var('tag_id'));
+            $parselyPage['headline']       = $this->get_clean_parsely_page_value('Tagged - '.$tag);
+            $parselyPage['url']            = $currentURL; // get_tag_link(get_query_var('tag_id'));
         } elseif ( is_front_page() ) {
-            $parselyPage['type']        = 'frontpage';
-            $parselyPage['title']       = $this->get_clean_parsely_page_value(get_bloginfo('name', 'raw'));
-            $parselyPage['link']        = home_url(); // site_url();?
+            $parselyPage['headline']       = $this->get_clean_parsely_page_value(get_bloginfo('name', 'raw'));
+            $parselyPage['url']            = home_url(); // site_url();?
         }
         include('parsely-parsely-page.php');
     }
@@ -614,29 +613,81 @@ class Parsely {
     }
 
     /**
-    * Determine author name from display name, falling back to
-    * firstname + lastname, then nickname and finally the nicename.
+     * Returns a list of coauthors for a post assuming the coauthors plugin is
+     * installed. Borrowed from
+     * https://github.com/Automattic/Co-Authors-Plus/blob/master/template-tags.php#L3-35
+     */
+    private function get_coauthor_names($post_id) {
+        $coauthors = array();
+        if (class_exists('coauthors_plus')) {
+            global $post, $post_ID, $coauthors_plus, $wpdb;
+
+            $post_id = (int)$post_id;
+            if ( !$post_id && $post_ID )
+                $post_id = $post_ID;
+            if ( !$post_id && $post )
+                $post_id = $post->ID;
+
+            if ( $post_id ) {
+                $coauthor_terms = get_the_terms( $post_id, $coauthors_plus->coauthor_taxonomy );
+
+                if ( is_array( $coauthor_terms ) && !empty( $coauthor_terms ) ) {
+                    foreach( $coauthor_terms as $coauthor ) {
+                        $coauthor_slug = preg_replace( '#^cap\-#', '', $coauthor->slug );
+                        $post_author =  $coauthors_plus->get_coauthor_by( 'user_nicename', $coauthor_slug );
+                        // In case the user has been deleted while plugin was deactivated
+                        if ( !empty( $post_author ) )
+                            $coauthors[] = $post_author;
+                    }
+                } else if ( !$coauthors_plus->force_guest_authors ) {
+                    if ( $post && $post_id == $post->ID ) {
+                        $post_author = get_userdata( $post->post_author );
+                    } else {
+                        $post_author = get_userdata( $wpdb->get_var( $wpdb->prepare("SELECT post_author FROM $wpdb->posts WHERE ID = %d", $post_id ) ) );
+                    }
+                    if ( !empty( $post_author ) )
+                        $coauthors[] = $post_author;
+                } // the empty else case is because if we force guest authors, we don't ever care what value wp_posts.post_author has.
+            }
+        }
+        return $coauthors;
+    }
+
+    /**
+    * Determine author name from display name, falling back to firstname +
+    * lastname, then nickname and finally the nicename.
     */
-    private function get_author_name($postObj) {
-        $userData = get_user_by('id', $postObj->post_author);
-
-        $author = $userData->display_name;
-        if ( !empty($author) ) {
-            return $this->get_clean_parsely_page_value($author);
+    private function get_author_name($author) {
+        $author_name = $author->display_name;
+        if ( !empty($author_name) ) {
+            return $author_name;
         }
 
-        $author = $userData->user_firstname . ' ' . $userData->user_lastname;
-        if ( $author != ' ' ) {
-            return $this->get_clean_parsely_page_value($author);
+        $author_name = $author->user_firstname . ' ' . $author->user_lastname;
+        if ( $author_name != ' ' ) {
+            return $author_name;
         }
 
-        $author = $userData->nickname;
-        if ( !empty($author) ) {
-            return $this->get_clean_parsely_page_value($author);
+        $author_name = $author->nickname;
+        if ( !empty($author_name) ) {
+            return $author_name;
         }
 
-        $author = $userData->user_nicename;
-        return $this->get_clean_parsely_page_value($author);
+        return $author->user_nicename;
+    }
+
+    /**
+     * Retrieve all the authors for a post as an array. Can include multiple
+     * authors if coauthors plugin is in use.
+     */
+    private function get_author_names($post) {
+        $authors = $this->get_coauthor_names($post->ID);
+        if ( empty($authors) ) {
+            $authors = array(get_user_by('id', $post->post_author));
+        }
+        $authors = array_map(array($this, 'get_author_name'), $authors);
+        $authors = array_map(array($this, 'get_clean_parsely_page_value'), $authors);
+        return $authors;
     }
 
     /* sanitize content
