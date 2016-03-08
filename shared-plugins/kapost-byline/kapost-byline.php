@@ -3,12 +3,13 @@
 	Plugin Name: Kapost Social Publishing Byline
 	Plugin URI: http://www.kapost.com/
 	Description: Kapost Social Publishing Byline
-	Version: 1.9.2
+	Version: 1.9.6
 	Author: Kapost
 	Author URI: http://www.kapost.com
 */
-define('KAPOST_BYLINE_VERSION', '1.9.2-WIP');
-define('KAPOST_BYLINE_ANALYTICS_URL', 'http://analytics.kapost.com');
+define('KAPOST_BYLINE_ANALYTICS_URL', '//analytics.kapost.com');
+
+define('KAPOST_BYLINE_VERSION', '1.9.6-WIP');
 
 function kapost_byline_custom_fields($raw_custom_fields)
 {
@@ -60,14 +61,12 @@ function kapost_byline_protected_custom_fields($custom_fields)
 			$protected_fields[] = "_${prefix}_${kk}";
 		}
 	}	
-		
 	$pcf = array();
 	foreach($custom_fields as $k => $v)
 	{	
 		if(kapost_is_protected_meta($protected_fields, $k))
 			$pcf[$k] = $v;																								  
 	}
-	
 	return $pcf;
 }
 
@@ -83,7 +82,6 @@ function kapost_byline_update_array_custom_fields($id, $custom_fields)
 
 			if(empty($v))
 				continue;
-			
 			$meta_values = @json_decode(@base64_decode($v), true);
 			if(!is_array($meta_values))
 				continue;
@@ -107,6 +105,10 @@ function kapost_byline_update_post($id, $custom_fields, $uid=false, $blog_id=fal
 	// if this is a draft then clear the 'publish date' or set our own
 	if($post->post_status == 'draft')
 	{
+		// this is required because otherwise any date we set will be
+		// cleared by wp_update_post() down below ...
+		$post->edit_date = true;
+
 		if(isset($custom_fields['kapost_publish_date']))
 		{
 			$post_date = $custom_fields['kapost_publish_date']; // UTC
@@ -205,7 +207,7 @@ function kapost_byline_update_post($id, $custom_fields, $uid=false, $blog_id=fal
 	return true;
 }
 
-function kapost_byline_inject_analytics() 
+function kapost_byline_inject_analytics()
 {
 	global $post;
 
@@ -234,10 +236,11 @@ echo "<!-- BEGIN KAPOST ANALYTICS CODE -->
 var _kaq = _kaq || [];
 _kaq.push([2, '$post_id', '$site_id']);
 (function(){
-var ka = document.createElement('script'); ka.async=true; ka.id='ka_tracker'; ka.src='$url/ka.js';
+var scheme = location.protocol == 'https:' ? location.protocol : 'http:';
+var ka = document.createElement('script'); ka.async=true; ka.id='ka_tracker'; ka.src= scheme + '$url/ka.js';
 var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ka, s);
 })();
-//--> 
+//-->
 </script>
 <!-- END KAPOST ANALYTICS CODE -->";
 }
@@ -249,14 +252,13 @@ function kapost_byline_xmlrpc_version()
 	return KAPOST_BYLINE_VERSION;
 }
 
-function kapost_byline_xmlrpc_newPost($args)
+function kapost_byline_xmlrpc_new_post($args)
 {
 	global $wp_xmlrpc_server;
 
 	// create a copy of the arguments and escape that
 	// in order to avoid any potential double escape issues
 	$_args = $args;
-
 	$wp_xmlrpc_server->escape($_args);
 
 	$blog_id	= intval($_args[0]);
@@ -269,7 +271,6 @@ function kapost_byline_xmlrpc_newPost($args)
 
 	if(!current_user_can('publish_posts'))
 		return new IXR_Error(401, __('Sorry, you are not allowed to publish posts on this site.'));
-	
 	$uid = false;
 	$custom_fields = kapost_byline_custom_fields($data['custom_fields']);
 	if(isset($custom_fields['kapost_author_email']))
@@ -278,19 +279,18 @@ function kapost_byline_xmlrpc_newPost($args)
 		if(!$uid || (function_exists('is_user_member_of_blog') && !is_user_member_of_blog($uid, $blog_id)))
 			return new IXR_Error(401, 'The author of the post does not exist in WordPress.');
 	}
-	
 	$id = $wp_xmlrpc_server->mw_newPost($args);
-	
 	if(is_string($id))
 		kapost_byline_update_post($id, $custom_fields, $uid, $blog_id);
-	
 	return $id;
 }
 
-function kapost_byline_xmlrpc_editPost($args)
+function kapost_byline_xmlrpc_edit_post($args)
 {
 	global $wp_xmlrpc_server, $current_site;
-	
+
+	// create a copy of the arguments and escape that
+	// in order to avoid any potential double escape issues
 	$_args = $args;
 	$wp_xmlrpc_server->escape($_args);
 
@@ -299,11 +299,9 @@ function kapost_byline_xmlrpc_editPost($args)
 	$username	= $_args[1];
 	$password	= $_args[2];
 	$data		= $_args[3];
-	$publish	= $_args[4];
 
-	if(!$user = $wp_xmlrpc_server->login($username, $password))
+	if(!$wp_xmlrpc_server->login($username, $password))
 		return $wp_xmlrpc_server->error;
-	
 	if(!current_user_can('edit_post', $post_id))
 		return new IXR_Error(401, __('Sorry, you cannot edit this post.'));
 
@@ -364,35 +362,38 @@ function kapost_byline_xmlrpc_editPost($args)
 	return $result;
 }
 
-function kapost_byline_xmlrpc_getPost($args)
+function kapost_byline_xmlrpc_get_post($args)
 {
 	global $wp_xmlrpc_server;
-	
+
 	return $wp_xmlrpc_server->mw_getPost($args);
 }
 
-function kapost_byline_xmlrpc_newMediaObject($args)
+function kapost_byline_xmlrpc_new_media_Object($args)
 {
 	global $wpdb, $wp_xmlrpc_server;
 
+	// create a copy of the arguments and escape that
+	// in order to avoid any potential double escape issues
 	$_args = $args;
+	$wp_xmlrpc_server->escape($_args);
 
 	$blog_id	= intval($_args[0]);
-	$username	= $wpdb->escape($_args[1]);
-	$password	= $wpdb->escape($_args[2]);
+	$username	= $_args[1];
+	$password	= $_args[2];
 	$data		= $_args[3];
 
-	if(!$user = $wp_xmlrpc_server->login($username, $password))
+	if(!$wp_xmlrpc_server->login($username, $password))
 		return $wp_xmlrpc_server->error;
 
 	if(!current_user_can('upload_files'))
 		return new IXR_Error(401, __('You are not allowed to upload files to this site.'));
-
 	$image = $wp_xmlrpc_server->mw_newMediaObject($args);
 	if(!is_array($image) || empty($image['url']))
 		return $image;
 
 	$attachment = $wpdb->get_row($wpdb->prepare("SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' AND guid = %s LIMIT 1", $image['url']));
+
 	if(empty($attachment))
 		return $image;
 
@@ -422,11 +423,13 @@ function kapost_byline_xmlrpc_newMediaObject($args)
 	if(isset($data['alt'])) 
 		add_post_meta($attachment->ID, '_wp_attachment_image_alt', sanitize_text_field($data['alt']));
 
-	$image['id'] = $attachment->ID;
+	if(!isset($image['id']))
+		$image['id'] = $attachment->ID;
+
 	return $image;
 }
 
-function kapost_byline_xmlrpc_getPermalink($args)
+function kapost_byline_xmlrpc_get_permalink($args)
 {
 	global $wp_xmlrpc_server;
 	$wp_xmlrpc_server->escape($args);
@@ -435,9 +438,8 @@ function kapost_byline_xmlrpc_getPermalink($args)
 	$username	= $args[1];
 	$password	= $args[2];
 
-	if(!$user = $wp_xmlrpc_server->login($username, $password))
+	if(!$wp_xmlrpc_server->login($username, $password))
 		return $wp_xmlrpc_server->error;
-	
 	if(!current_user_can('edit_post', $post_id))
 		return new IXR_Error(401, __('Sorry, you cannot edit this post.'));
 
@@ -448,21 +450,22 @@ function kapost_byline_xmlrpc_getPermalink($args)
 	list($permalink, $post_name) = get_sample_permalink($post->ID);
 	$permalink = str_replace(array('%postname%', '%pagename%'), $post_name, $permalink);
 
-	if(strpos($permalink, "%") === false) # make sure it doesn't contain %day%, etc.
-			return $permalink;
+	if(strpos($permalink, "%") !== false) # make sure it doesn't contain %day%, etc.
+		$permalink = get_permalink($post);
 
-	return get_permalink($post);
+	return $permalink;
 }
 
 function kapost_byline_xmlrpc($methods)
 {
 	$methods['kapost.version']			= 'kapost_byline_xmlrpc_version';
-	$methods['kapost.newPost']			= 'kapost_byline_xmlrpc_newPost';
-	$methods['kapost.editPost']			= 'kapost_byline_xmlrpc_editPost';
-	$methods['kapost.getPost']			= 'kapost_byline_xmlrpc_getPost';
-	$methods['kapost.newMediaObject']	= 'kapost_byline_xmlrpc_newMediaObject';
-	$methods['kapost.getPermalink']		= 'kapost_byline_xmlrpc_getPermalink';
-	
+	$methods['kapost.newPost']			= 'kapost_byline_xmlrpc_new_post';
+	$methods['kapost.editPost']			= 'kapost_byline_xmlrpc_edit_post';
+	$methods['kapost.getPost']			= 'kapost_byline_xmlrpc_get_post';
+	$methods['kapost.newMediaObject']	= 'kapost_byline_xmlrpc_new_media_object';
+	$methods['kapost.getPermalink']		= 'kapost_byline_xmlrpc_get_permalink';
 	return $methods;
 }
 add_filter('xmlrpc_methods', 'kapost_byline_xmlrpc');
+
+?>
