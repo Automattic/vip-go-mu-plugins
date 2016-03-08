@@ -365,14 +365,14 @@ class A8C_Files {
 	private function purge_file_cache( $url, $method ) {
 		global $file_cache_servers;
 
+		$requests = array();
+
 		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) )
 			return $requests;
 
 		$parsed = parse_url( $url );
 		if ( empty( $parsed['host'] ) )
 			return $requests;
-
-		$requests = array();
 
 		foreach ( $file_cache_servers as $server  ) {
 			$server = explode( ':', $server[0] );
