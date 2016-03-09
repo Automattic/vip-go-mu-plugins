@@ -21,7 +21,7 @@ function wpcom_vip_login_limiter( $username ) {
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
-function wpcom_vip_login_limiter_on_success( $username, $user ) {
+function wpcom_vip_login_limiter_on_success( $username ) {
 
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
@@ -30,7 +30,7 @@ function wpcom_vip_login_limiter_on_success( $username, $user ) {
 	wp_cache_decr( $key1, 1, 'login_limit' );
 	wp_cache_decr( $key2, 1, 'login_limit' );
 }
-add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10, 2 );
+add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10 );
 
 function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) )
