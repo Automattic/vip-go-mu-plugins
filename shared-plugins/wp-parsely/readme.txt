@@ -2,18 +2,16 @@
 Contributors: parsely_mike
 Tags: analytics, post, page
 Requires at least: 3.0
-Tested up to: 3.9
+Tested up to: 4.0
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Parse.ly partners with digital publishers by providing clear audience insights through an intuitive analytics platform.  The plugin simplifies integration for Wordpress users.
+The Parse.ly plugin real-time and historical analytics to your content through a platform designed and built for digital publishing.
 
 == Description ==
 
-See your audience clearly.
-
-Parse.ly partners with digital publishers to provide clear audience insights through an intuitive analytics platform.
+Designed and built for digital publishers, Parse.ly helps you understand how your audience is connecting to your content.
 
 Thousands of writers, editors, site managers, and technologists already use Parse.ly to understand what content draws in website visitors, and why. Using our powerful dashboards and APIs, customers build successful digital strategies that allow them to grow and engage a loyal audience.
 
@@ -21,14 +19,16 @@ Join industry leaders -- like Mashable, Slate, News Corp, and Conde Nast -- who 
 
 **Features**
 
-* Inserts the required parsely-page <meta> tag as well as JavaScript on all your published pages and posts.
-* Powerful customization features to provide rich article data to Parse.ly without any additional coding
+* Get started with Parse.ly right away: the plug-in automatically inserts the required parsely-page tag and JavaScript on all your published pages and posts.
+* Allows you to specify the JavaScript implementation to use: standard, DOM free or asynchronous.
 
 Feedback, suggestions, questions or concerns? E-mail us at [support@parsely.com](mailto:support@parsely.com) we always want to hear from you.
 
 == Installation ==
 
-1. If you haven't already done so, [sign up for a trial of Parse.ly](http://www.parsely.com/trial.html?utm_medium=referral&utm_source=wordpress.org&utm_content=wp-parsely)
+1. This plug-in requires an active version of Parse.ly. We offer a free trial, [sign up here](http://www.parsely.com/trial/?utm_medium=referral&utm_source=wordpress.org&utm_content=wp-parsely)
+
+1. If you haven't already done so, [sign up for a trial of Parse.ly](http://www.parsely.com/trial/?utm_medium=referral&utm_source=wordpress.org&utm_content=wp-parsely)
 1. Download the plugin
 1. Upload the entire `wp-parsely` folder to your `/wp-content/plugins` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress (look for "Parse.ly")
@@ -56,6 +56,10 @@ Dash code will only be placed on pages and posts which have been published in Wo
 4. A sample `parsely-page` meta tag for an article or post
 
 == Changelog ==
+
+= 1.7 =
+* Use JSON-LD / schema.org for parsely-page data instead of proprietary format
+* Added support for multiple authors if using the Co-Authors Plus plugin https://wordpress.org/plugins/co-authors-plus/
 
 = 1.6 =
 * Maintenance release with multiple changes needed for WordPress VIP inclusion
@@ -100,6 +104,12 @@ Dash code will only be placed on pages and posts which have been published in Wo
 * Support for parsely-page and JavaScript on home page and published pages and posts as well as archive pages (date/author/category/tag)
 
 == Upgrade Notice ==
+
+= 1.7 =
+This version adds:
+
+* Support for multiple authors if using the Co-Authors Plus plugin
+* JSON-LD / schema.org for parsely-page data instead of proprietary format
 
 = 1.5 =
 This version adds:

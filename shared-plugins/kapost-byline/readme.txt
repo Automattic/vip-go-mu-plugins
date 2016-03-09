@@ -2,15 +2,15 @@
 Contributors: iamnader, icebreaker, worldnamer
 Tags: social, publishing
 Requires at least: 2.9
-Tested up to: 4.0.0
-Stable tag: 1.9.2
+Tested up to: 4.3.1
+Stable tag: 1.9.6
 
 This Kapost plug-in is a companion with the instance that you can create at Kapost.com.
 
 == Description ==
 This plugin allows posts published from Kapost.com into your WordPress blog to keep the same username for the author. If the author on the published post doesn't exist in WordPress (check done by looking at email address), this plugin will return an error message.
 
-In addition, this plugin allows Kapost instances to publish to a Custom Type. 
+In addition, this plugin allows Kapost instances to publish to a Custom Type.
 
 For more information, visit the [Kapost](http://www.kapost.com) and [Kapost Help](http://help.kapost.com) websites.
 
@@ -20,6 +20,13 @@ For more information, visit the [Kapost](http://www.kapost.com) and [Kapost Help
 1. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Changelog ==
+= 1.9.6 =
+* set date for drafts correctly
+* minor clean-up
+
+= 1.9.5 =
+* Now supports sending stats over https
+
 = 1.9.2 =
 * analytics improvement
 
@@ -81,6 +88,13 @@ For more information, visit the [Kapost](http://www.kapost.com) and [Kapost Help
 * First version
 
 == Upgrade Notice ==
+= 1.9.6 =
+* set date for drafts correctly
+* minor clean-up
+
+= 1.9.5 =
+* Now supports sending stats over https
+
 = 1.9.2 =
 * analytics improvement
 
