@@ -1030,11 +1030,27 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}" );
 
 		return _wpcom_vip_include_plugin( $includepath );
-	} else {
-		if ( ! WPCOM_IS_VIP_ENV ) {
-			trigger_error( "Unable to load $plugin using wpcom_vip_load_plugin()!", E_USER_ERROR );
-		}
 	}
+
+	$code_open = WPCOM_IS_VIP_ENV ? '<code>' : '`';
+	$code_close = WPCOM_IS_VIP_ENV ? '</code>' : '`';
+
+	$msg_dirs = array();
+	foreach ( $test_directories as $directory ) {
+		$msg_dirs[] = "{$code_open}{$directory}/{$plugin}/{$file}{$code_close}";
+	}
+
+	$message  = "Unable to load {$code_open}$plugin{$code_close} ";
+	$message .= "from these locations: ";
+	$message .= implode( ', ', $msg_dirs );
+	$message .= " using wpcom_vip_load_plugin()";
+
+	if ( ! WPCOM_IS_VIP_ENV ) {
+		trigger_error( $message, E_USER_ERROR );
+	}
+
+	_doing_it_wrong( 'wpcom_vip_load_plugin', $message, '' );
+	return false;
 }
 
 function _wpcom_vip_include_plugin( $file ) {
