@@ -959,7 +959,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 
 		if ( ! isset( $pathinfo['extension'] ) || 'php' !== $pathinfo['extension'] ) {
 			if ( ! WPCOM_IS_VIP_ENV ) {
-				trigger_error( 'wpcom_vip_load_plugin() was called with a path, but no php file was specified', E_USER_ERROR );
+				trigger_error( 'wpcom_vip_load_plugin() was called with a path, but no PHP file was specified', E_USER_ERROR );
 			} else {
 				_doing_it_wrong( 'wpcom_vip_load_plugin', 'Must specify php file when loading via path', '' );
 
