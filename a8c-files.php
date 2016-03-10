@@ -36,8 +36,8 @@ class A8C_Files {
 		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
 
 		// disable the automatic creation of intermediate image sizes
-		add_filter( 'intermediate_image_sizes',          function( $sizes ) { return array(); } );
-		add_filter( 'intermediate_image_sizes_advanced', function( $sizes ) { return array(); } );
+		add_filter( 'intermediate_image_sizes',          '__return_empty_array' );
+		add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );
 
 		// ensure we always upload with year month folder layouts
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
