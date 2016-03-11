@@ -35,9 +35,7 @@ class A8C_Files {
 
 		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
 
-		// disable the automatic creation of intermediate image sizes
-		add_filter( 'intermediate_image_sizes',          function( $sizes ) { return array(); } );
-		add_filter( 'intermediate_image_sizes_advanced', function( $sizes ) { return array(); } );
+		// Automatic creation of intermediate image sizes is disabled via `wpcom_intermediate_sizes()`
 
 		// ensure we always upload with year month folder layouts
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
@@ -589,6 +587,17 @@ function a8c_files_init() {
 	new A8C_Files();
 }
 
-if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) )
-	add_action( 'init', 'a8c_files_init' );
+/**
+ * Prevent WP from creating intermediate image sizes
+ *
+ * Function name parallels wpcom's implementation to accommodate existing code
+ */
+function wpcom_intermediate_sizes( $sizes ) {
+	__return_empty_array();
+}
 
+if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
+	add_action( 'init', 'a8c_files_init' );
+	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
+	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+}
