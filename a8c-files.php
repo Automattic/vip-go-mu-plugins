@@ -601,4 +601,3 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
 }
-
