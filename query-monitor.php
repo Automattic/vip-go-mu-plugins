@@ -96,11 +96,8 @@ add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
  */
 function wpcom_vip_qm_disable_on_404() {
 	if ( is_404() && ! is_user_logged_in() && isset( $_COOKIE[ QM_COOKIE ] ) ) {
-		unset( $_COOKIE[QM_COOKIE] );
-
-		add_action( 'wp_footer', function () {
-			echo PHP_EOL . "<!-- Query Monitor is disabled for anonymous users on 404 pages -->" . PHP_EOL . PHP_EOL;
-		} );
+		add_filter( "qm/dispatch/ajax", '__return_false' );
+		add_filter( "qm/dispatch/html", '__return_false' );
 	}
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
