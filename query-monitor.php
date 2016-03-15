@@ -85,5 +85,20 @@ function wpcom_vip_qm_require() {
 
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
+
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+
+/**
+ * Hooks the wp action to avoid showing Query Monitor on 404 pages
+ * to non-logged in users, as it is likely to get caught in the
+ * Varnish cache.
+ */
+function wpcom_vip_qm_disable_on_404() {
+	if ( is_404() && ! is_user_logged_in() && isset( $_COOKIE[ QM_COOKIE ] ) ) {
+		add_filter( "qm/dispatch/ajax", '__return_false' );
+		add_filter( "qm/dispatch/html", '__return_false' );
+	}
+}
+add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
+
