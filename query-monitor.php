@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Query Monitor
-Description: Monitoring of database queries, hooks, conditionals and more.
-Version:     2.8.1
+Description: Monitoring of database queries, hooks, conditionals and more (including VIP Go tweaks).
+Version:     2.9.1
 Plugin URI:  https://querymonitor.com/
 Author:      John Blackbourn
 Author URI:  https://johnblackbourn.com/
