@@ -6,10 +6,10 @@
  *
  * @param object WP_Error
  */
-if ( is_wp_error( $errors ) ) : ?>
+if ( is_wp_error( $data['errors'] ) ) : ?>
 <div class="socialflow-messages">
-	<?php foreach ( $errors->get_error_messages() as $message ): ?>
-		<p class="sf-error"><?php echo esc_html( $message ); ?></p>
+	<?php foreach ( $data['errors']->get_error_messages() as $message ): ?>
+		<p class="sf-error"><?php echo wp_kses_post( $message ); ?></p>
 	<?php endforeach ?>
 </div><!-- .socialflow-messages -->
-<?php endif; ?>
+<?php endif;

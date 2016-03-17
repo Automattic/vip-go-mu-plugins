@@ -10,6 +10,10 @@
  *
  * @since 2.0
  */
+
+$post = $data['post'];
+$SocialFlow_Post = $data['SocialFlow_Post'];
+
 ?>
 <form id="sf-compose-form" action="options.php">
 	<?php $SocialFlow_Post->meta_box( $post ); ?>
@@ -24,7 +28,7 @@
 
 	var sf_post = {
 		'#title': '<?php echo addslashes( $post->post_title ) ?>',
-		'editor': '<?php echo trim( str_replace( array( "\r", "\n" ), "", addslashes( $post->post_content ) ) ); ?>'
+		'#content': '<?php echo trim( str_replace( array( "\r", "\n" ), "", addslashes( $post->post_content ) ) ); ?>'
 	};
 
 	jQuery.init_compose_form( true )

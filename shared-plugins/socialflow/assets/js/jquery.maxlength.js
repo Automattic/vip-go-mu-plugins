@@ -5,6 +5,13 @@
  * @copyright	Copyright (C) 2009 Emil Stjerneman / http://www.anon-design.se
  * @license		GNU/GPL, see LICENSE.txt
  */
+/**
+ * jQuery Maxlength plugin
+ * @version		$Id: jquery.maxlength.js 18 2009-05-16 15:37:08Z emil@anon-design.se $
+ * @package		jQuery maxlength 1.0.5
+ * @copyright	Copyright (C) 2009 Emil Stjerneman / http://www.anon-design.se
+ * @license		GNU/GPL, see LICENSE.txt
+ */
 
 (function($) 
 {
@@ -15,14 +22,14 @@
 		{
 			events:				      [], // Array of events to be triggerd
 			maxCharacters:		  10, // Characters limit
-			statusID:				  "count",
 			status:				      true, // True to show status indicator bewlow the element
 			statusClass:		    "status", // The class on the status div
 			statusText:			    "character left", // The status text
 			notificationClass:	"notification",	// Will be added to the emement when maxlength is reached
 			showAlert: 			    false, // True to show a regular alert message
 			alertText:			    "You have typed too many characters.", // Text in the alert message
-			slider:				      false // Use counter slider
+			slider:				      false, // Use counter slider
+			twitterText: false
 		}, options );
 		
 		// Add the default event
@@ -31,7 +38,7 @@
 		return this.each(function() 
 		{
 			var item = $(this);
-			var charactersLength = $(this).val().length;
+			var charactersLength = getLength(item);
 			
       // Update the status text
 			function updateStatus()
@@ -43,8 +50,7 @@
 					charactersLeft = 0;
 				}
 
-				$( "#" + settings.statusID ).html(charactersLeft + " " + settings.statusText);
-				//item.next("div").html(charactersLeft + " " + settings.statusText);
+				item.next("div").html(charactersLeft + " " + settings.statusText);
 			}
 
 			function checkChars() 
@@ -103,6 +109,33 @@
 				return ret;
 			}
 
+			function getLength( item ) {
+				var message = item.val();
+
+				if ( !settings.twitterText || typeof twttr === 'undefined' )
+					return message.length;
+
+				var homeUrl = ( 'undefined' != typeof socialFlowData ) ? socialFlowData.homeUrl : 'https://socialflow.com/';
+
+				var mediaUrl;
+
+				var MAX_LENGTH = 140;
+				var spaceLength = 1;
+
+				// Post url inserted to message, so should add 1 space
+				settings.maxCharacters = MAX_LENGTH - twttr.txt.getTweetLength( homeUrl ) - spaceLength;
+
+				// message will contain image link
+				if ( $('#socialflow-compose').hasClass('sf-compose-attachment') ) {
+					// Media url always has https://
+					// It's sent to the individual attr,
+					// so there doesn't needed a space-divider
+					settings.maxCharacters -= twttr.txt.getTweetLength( 'https://mediaimage.com' );
+				}
+
+				return twttr.txt.getTweetLength(message);
+			}
+
 			// Validate
 			if(!validateElement()) 
 			{
@@ -112,7 +145,7 @@
 			// Loop through the events and bind them to the element
 			$.each(settings.events, function (i, n) {
 				item.bind(n, function(e) {
-					charactersLength = item.val().length;
+					charactersLength = getLength(item);
 					checkChars();
 				});
 			});
@@ -120,7 +153,7 @@
 			// Insert the status div
 			if(settings.status) 
 			{
-				//item.after($("<div/>").addClass(settings.statusClass).html('-'));
+				item.after($("<div/>").addClass(settings.statusClass).html('-'));
 				updateStatus();
 			}
 

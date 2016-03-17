@@ -19,6 +19,10 @@
 	font-size:10px;
 }
 
+.sf-muted-text {
+	color: #777;
+}
+
 /* Tabs */
 .compose-tabs {
 	margin:12px 0 0;
@@ -69,11 +73,11 @@
 .socialflow-compose .sf-additional-fields {
 	border-top:1px dashed #DFDFDF;
 	margin:5px 0 0;
-	padding:9px 0 0 110px;
+	padding:9px 0 0 135px;
 
 	overflow:hidden;
 	position:relative;
-	min-height:130px;
+	min-height:140px;
 }
 .socialflow-compose .sf-additional-fields .widefat {
 	margin-bottom:5px;
@@ -82,13 +86,12 @@
 	width: 130px;
 }
 
-/**
- * Hide Google plus tabs 
- */
-/*.socialflow-compose .google_plus-tab-panel,
-.socialflow-compose .google_plus-tab-item {
-	display: none;
-}*/
+/* For google we have attachments gallery left to message textarea */
+
+.google_plus-tab-panel .sf-additional-fields hr {
+	opacity: 0.5;
+	
+}
 
 /* Compose form inside thickbox */
 #TB_window .sf_compose {
@@ -154,21 +157,47 @@
 }
 
 /* Attachments Select */
+/*.sf-attachments-custom,
+.sf-attachments-slider {
+	display: none;
+}
+
+[data-status="sf-is-attachments-custom"] .sf-attachments-custom {
+	display: block;
+}
+[data-status="sf-is-attachments-slider"] .sf-attachments-slider {
+	display: block;
+}*/
+
+/* Custom attachment status */
+
+/* In default case custom image is hidden */
+.sf-attachments-custom {
+	display: none;
+}
+
+/* In custom image case slider is hidden and custom image is shown */
+.sf-is-custom-attachment .sf-attachments-slider {
+	display: none;
+}
+.sf-is-custom-attachment .sf-attachments-custom {
+	display: block;
+}
+
+
 .sf-attachments {
 	position:absolute;
 	left:0;
 	top:9px;
-	width:100px;
+	width:127px;
 }
-.sf-attachment-slider {
-	display:block;
-	width:100px;
-	height:100px;
-	overflow:hidden;
-	margin-bottom:5px;
+.sf-attachments .image-container {
+	overflow: hidden;
+	height: 95px;
+	margin-bottom: 10px;
 }
-.sf-attachment-slider img {
-	max-width:100px;
+.sf-attachments .image-container img {
+	max-width:100%;
 	height:auto;
 }
 
@@ -178,6 +207,7 @@
 	background-image:url(../images/thumb-nav.png);
 	background-repeat:no-repeat;
 	display:inline-block;
+	vertical-align: middle;
 	height:14px;
 	margin:0 2px 0 0;
 	cursor:pointer;
@@ -192,6 +222,10 @@
 .sf-attachments .icon.reload {
 	width:12px;
 	background-position:-20px 0;
+}
+
+.sf-attachments .button-attachment-switch-status {
+	float: right;
 }
 
 /* Advanced section toggler */
@@ -301,4 +335,88 @@
 }
 .wp-list-table .sf-statistics .refresh-column img {
 	vertical-align:middle;
+}
+
+/* ==========================================================================
+   Media messages
+   ========================================================================== */
+
+/* No need to autofill media messages */
+#TB_window .sf-compose-attachment .sf-autofill-button-container {
+	display: none;
+}
+
+/* Additional fields are not in use
+   @to-do remove them from php too */
+.sf-compose-attachment .sf-additional-fields input,
+.sf-compose-attachment .sf-additional-fields textarea,
+.sf-compose-attachment .tabs-panel .sf-muted-text {
+	display: none;
+}
+
+/*  It's just a single image, no need for navigation */
+.sf-compose-attachment .sf-attachments .icon,
+.sf-compose-attachment .sf-attachments .button,
+#TB_window .sf-compose-attachment .sf-attachments .button {
+	display: none;
+}
+.sf-compose-attachment .sf-attachments .sf-custom-attachment-button,
+.sf-compose-attachment .sf-attachments .sf-attachments-custom,
+#TB_window .sf-compose-attachment.sf-compose-post .sf-attachments .sf-custom-attachment-button {
+	display: block;
+}
+.sf-attachments-custom .additional-hint {
+	display: none;
+}
+.sf-compose-attachment .sf-attachments .sf-attachments-custom .additional-hint {
+	display: inline;
+}
+
+/* Make gallery image a little bit bigger */
+.sf-compose-attachment .sf-attachments {
+	position: static;
+	width: 300px;
+	float: left;
+}
+
+/* Non shared data is hidden */
+.sf-compose-attachment.socialflow-compose .sf-additional-fields {
+	display: none;
+}
+
+.sf-compose-attachment .sf-attachments .image-container {
+	height: auto;
+}
+.sf-compose-attachment .sf-attachments .image-container img {
+	max-height: 200px;
+}
+
+/* You can't send to linkedin media message */
+.sf-compose-attachment .linkedin-tab-item,
+.sf-compose-attachment .linkedin-tab-panel {
+	display: none !important;
+}
+
+/* Media compose on posts */
+.sf-compose-attachment.sf-compose-post .sf-attachments-slider  {
+	display: none !important;
+}
+
+/* For facebook there are special description fields */
+.sf-media-facebook-fields {
+	display: none;
+}
+.sf-compose-attachment.sf-compose-post .sf-media-facebook-fields {
+	display: block;
+}
+
+
+/* New saparate media attachment panel */
+.sf-media-attachment {
+	display: none;
+}
+
+/* In attachment mode only shared media panel is visible */
+.sf-compose-attachment .sf-media-attachment {
+	display: block;
 }

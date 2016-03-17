@@ -283,8 +283,12 @@ class OAuthRequest {
           && strstr($request_headers['Content-Type'],
                      'application/x-www-form-urlencoded')
           ) {
+
+        // Wordpress.com Vip recommend to use wpcom_vip_file_get_contents() - cached version of file_get_contents()
+        $func = function_exists( 'wpcom_vip_file_get_contents' ) ? 'wpcom_vip_file_get_contents' : 'file_get_contents';
+
         $post_data = OAuthUtil::parse_parameters(
-          file_get_contents(self::$POST_INPUT)
+          call_user_func($func, self::$POST_INPUT)
         );
         $parameters = array_merge($parameters, $post_data);
       }
@@ -891,5 +895,3 @@ class OAuthUtil {
     return implode('&', $pairs);
   }
 }
-
-?>

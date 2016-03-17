@@ -38,8 +38,8 @@ class SocialFlow_Admin_Settings_Accounts extends SocialFlow_Admin_Settings_Page 
 		
 		add_submenu_page( 
 			'socialflow',
-			__( 'Account Settings', 'socialflow' ),
-			__( 'Account Settings', 'socialflow' ),
+			esc_attr__( 'Account Settings', 'socialflow' ),
+			esc_attr__( 'Account Settings', 'socialflow' ),
 			'manage_options',
 			$this->slug,
 			array( $this, 'page' )
@@ -52,7 +52,6 @@ class SocialFlow_Admin_Settings_Accounts extends SocialFlow_Admin_Settings_Page 
 	function page() {
 		global $socialflow; ?>
 		<div class="wrap socialflow">
-			<div class="icon32"><img src="<?php echo plugins_url( 'assets/images/socialflow.png', SF_FILE ) ?>" alt=""></div>
 			<h2><?php esc_html_e( 'Account Settings', 'socialflow' ); ?></h2>
 
 			<form action="options.php" method="post">
@@ -78,22 +77,22 @@ class SocialFlow_Admin_Settings_Accounts extends SocialFlow_Admin_Settings_Page 
 		$accounts = $socialflow->accounts->get( array( array( 'key' => 'service_type', 'value' => 'publishing' ) ) ); ?>
 
 		<?php if ( !$accounts ) : ?>
-			<p><?php _e( "You don't have any accounts for publishing on SocialFlow.", 'socialflow' ) ?></p>
+			<p><?php esc_html_e( "You don't have any accounts for publishing on SocialFlow.", 'socialflow' ) ?></p>
 		<?php return; endif; ?>
 
 		<table cellspacing="0" class="wp-list-table widefat fixed sf-accounts">
 			<thead><tr>
 				<th style="width:200px" class="manage-column column-username" id="username" scope="col">
-					<span><?php _e( 'Username', 'socialflow' ) ?></span>
+					<span><?php esc_html_e( 'Username', 'socialflow' ) ?></span>
 				</th>
 				<th class="manage-column column-account-type" id="account-type" scope="col">
-					<span><?php _e( 'Account type', 'socialflow' ) ?></span>
+					<span><?php esc_html_e( 'Account type', 'socialflow' ) ?></span>
 				</th>
 				<th scope="col">
-					<span><?php _e( 'Enable Account in Plugin', 'socialflow' ) ?></span>
+					<span><?php esc_html_e( 'Enable Account in Plugin', 'socialflow' ) ?></span>
 				</th>
 				<th scope="col">
-					<span><?php _e( 'Send to by Default', 'socialflow' ) ?></span>
+					<span><?php esc_html_e( 'Send to by Default', 'socialflow' ) ?></span>
 				</th>
 			</tr></thead>
 

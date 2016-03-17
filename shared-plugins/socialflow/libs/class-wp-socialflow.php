@@ -105,11 +105,18 @@ class WP_SocialFlow {
 		$request = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, $method, $url, $parameters );
 		$request->sign_request( $this->signature_method, $this->consumer, $this->token );
 
-		$args = array( 'sslverify' => false, 'headers' => array( 'Authorization' => 'Basic ' . base64_encode( 'sf_partner' . ':' . 'our partners' ) ) );
+		$args = array( 
+			'sslverify' => false, 
+			'headers' => array( 'Authorization' => 'Basic ' . base64_encode( 'sf_partner' . ':' . 'our partners' ) ),
+			'timeout' => 20
+		);
 		$parameters = array_merge( $request->get_parameters(), $args );
 
-		if ( 'GET' == $method )
-			return wp_remote_get( $request->to_url(), $parameters );
+		if ( 'GET' == $method ) {
+			// Wordpress.com Vip recommend to use vip_safe_wp_remote_get() - cached version of wp_remote_get()
+			$func = function_exists( 'vip_safe_wp_remote_get' ) ? 'vip_safe_wp_remote_get' : 'wp_remote_get';
+			return call_user_func( $func, $request->to_url(), $parameters );
+		}
 		else
 			return wp_remote_post( $request->to_url(), $parameters );
 	  }
@@ -215,6 +222,49 @@ class WP_SocialFlow {
 		} else {
 			$error->add( 'required', __( '<b>Required:</b> Message, service user id and account type are required params.' ), $account_id );
 		}
+
+		return $error;
+	}
+
+	/**
+	 * Send single media to SocialFlow
+	 *
+	 * @param string media_url Image url
+	 *
+	 * @return mixed (object|bool) return true if message was successfully sent or WP_Error object
+	 */
+	public function add_media( $media_url = '' ) {
+		$error = new WP_Error;
+
+		$response = $this->post( 'message/attach_media', array( 'media_url' => $media_url ) );
+
+		if ( 200 == wp_remote_retrieve_response_code( $response ) ) {
+
+			// Return posted message on success
+			$message = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( $message && isset( $message['data']['media'] ) ) {
+				return $message['data']['media'];
+			} else {
+
+				// No content present meaning that some error occurred
+				if ( SF_DEBUG ) {
+					$this->parse_responce_errors( $response, $error, $account_id );
+				} else {
+					return new WP_Error( 'error', __( '<b>Error</b> occurred. Please contact plugin author.', 'socialflow' ) );
+				}
+			}
+		}
+		elseif ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		elseif ( SF_DEBUG ) {
+			$this->parse_responce_errors( $response, $error, $account_id );
+		}
+		else {
+			$error->add( 'error', __( '<b>Error:</b> Error occurred.', 'socialflow' ), $account_id );
+		}
+		
 
 		return $error;
 	}
@@ -347,7 +397,10 @@ class WP_SocialFlow {
 		if ( !$consumer_key )
 			return false;
 
-		$response = wp_remote_get( "{$this->host}/account/links/?consumer_key={$consumer_key}", array( 'headers' => array( 'Authorization' => 'Basic ' . base64_encode( 'sf_partner' . ':' . 'our partners' ) ), 'sslverify' => false ) );
+		// Wordpress.com Vip recommend to use vip_safe_wp_remote_get() - cached version of wp_remote_get()
+		$func = function_exists( 'vip_safe_wp_remote_get' ) ? 'vip_safe_wp_remote_get' : 'wp_remote_get';
+
+		$response = call_user_func( $func, "{$this->host}/account/links/?consumer_key={$consumer_key}", array( 'headers' => array( 'Authorization' => 'Basic ' . base64_encode( 'sf_partner' . ':' . 'our partners' ) ), 'sslverify' => false ) );
 
 		if ( 200 == wp_remote_retrieve_response_code( $response ) ) {
 			$response = json_decode( wp_remote_retrieve_body( $response ) );

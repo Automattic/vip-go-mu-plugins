@@ -204,4 +204,4 @@ jQuery(function($){
 		
 	}) // Post edit page
 
-});// jQuery shell function
+});

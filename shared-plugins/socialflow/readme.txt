@@ -2,8 +2,8 @@
 Contributors: SocialFlow, Dizzain
 Tags: SocialFlow, Facebook, Twitter, Social, Social Optimization, Sharing, Retweets, Social Graph
 Requires at least: 3.2
-Tested up to: 3.6
-Stable tag: 2.2.1
+Tested up to: 3.9.1
+Stable tag: 2.5.2
 
 SocialFlow's WordPress plugin enhances your WordPress experience by allowing you to utilize the power of SocialFlow from right inside WordPress.
 
@@ -17,6 +17,7 @@ Each time you publish a new item, use SocialFlow's powerful technology to ensure
 Craft custom headlines and updates for the social web from your WordPress dashboard or an individual post.
 
 Experience seamless social publishing that gets maximum results with WordPress and SocialFlow.
+
 
 ==Installation==
 1. Get the SocialFlow plugin at Wordpress.org
@@ -35,6 +36,41 @@ Please find support and FAQ information here:
 http://support.socialflow.com/entries/20573086-wordpress-plugin-faq-help
 
 == Changelog == 
+
+= 2.5.2 =
+* Minor bug fixes
+
+= 2.5.1 =
+* Properly escape attributes & html content
+* Minor code cleanup & adjustments
+
+= 2.5 =
+* You can now send attachments directly to SocialFLow
+* Attach custom images to the messages (Not available for LinkedIn)
+* Media compose for posts (Not available for LinkedIn)
+
+= 2.4.3 =
+* Count link as 22 characters for twitter messages
+
+= 2.4.2 =
+* Editable linkedin title and description
+
+= 2.4.1 =
+* Minor text replacements
+* New menu icon
+
+= 2.4 =
+* Support LinkedIn accounts
+* Minor bug fixes
+
+= 2.3 =
+* Fix autopopulating when switching between visual editor and html
+* Optimize for anytime by defatult after plugin activate
+* Fix redirect urls on plugin activation/deactivation
+
+= 2.2.2 =
+* Add semicolon to the end of some Javascript files, so now they can be concatenated together
+* Fix tiny php warning
 
 = 2.2.1 =
 * Fix multiple message submission when sending multiple post update/publish requests

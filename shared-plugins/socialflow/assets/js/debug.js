@@ -25,4 +25,4 @@ jQuery(function($){
 	}
 	*/
 
-});// jQuery shell function
+});

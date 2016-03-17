@@ -24,8 +24,8 @@ class SocialFlow_Admin_Settings_Messages extends SocialFlow_Admin_Settings_Page 
 			// add menu subpage
 			add_submenu_page( 
 				'socialflow',
-				__( 'Messages', 'socialflow' ),
-				__( 'Messages', 'socialflow' ),
+				esc_attr__( 'Messages', 'socialflow' ),
+				esc_attr__( 'Messages', 'socialflow' ),
 				'manage_options',
 				$this->slug,
 				array( $this, 'page' )
@@ -50,10 +50,10 @@ class SocialFlow_Admin_Settings_Messages extends SocialFlow_Admin_Settings_Page 
 		$accounts = $socialflow->accounts->get( array( array( 'key' => 'service_type', 'value' => 'publishing' ) ) ); ?>
 
 		<div class="wrap socialflow">
-			<h2><?php esc_html_e( 'Messages', 'socialflow' ); ?> <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->slug . '&sf_action=update_queue' ) ); ?>">Update messages.</a></h2>
+			<h2><?php esc_html_e( 'Messages', 'socialflow' ); ?> <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->slug . '&sf_action=update_queue' ) ); ?>"><?php esc_html_e( "Update messages", 'socialflow' ) ?>.</a></h2>
 
 			<?php if ( empty( $accounts ) ): ?>
-				<p><?php _e( "You don't have any accounts on SocialFlow.", 'socialflow' ) ?></p>
+				<p><?php esc_html_e( "You don't have any accounts on SocialFlow.", 'socialflow' ) ?></p>
 			<?php return; endif ?>
 
 			<?php foreach ( $accounts as $account ): ?>
@@ -87,10 +87,10 @@ class SocialFlow_Admin_Settings_Messages extends SocialFlow_Admin_Settings_Page 
 			<table cellspacing="0" class="wp-list-table widefat fixed sf-messages">
 				<thead><tr>
 					<th style="width:200px" class="manage-column column-username" scope="col">
-						<span><?php _e('Message', 'socialflow') ?></span>
+						<span><?php esc_html_e('Message', 'socialflow') ?></span>
 					</th>
 					<th style="width:200px" class="manage-column column-account-type" scope="col">
-						<span><?php _e('Publish Status', 'socialflow') ?></span>
+						<span><?php esc_html_e('Publish Status', 'socialflow') ?></span>
 					</th>
 					<th style="width:200px" class="manage-column column-account-type" scope="col">
 						
@@ -99,10 +99,10 @@ class SocialFlow_Admin_Settings_Messages extends SocialFlow_Admin_Settings_Page 
 
 				<tfoot><tr>
 					<th style="width:200px" class="manage-column column-username" scope="col">
-						<span><?php _e('Message', 'socialflow') ?></span>
+						<span><?php esc_html_e('Message', 'socialflow') ?></span>
 					</th>
 					<th style="width:200px" class="manage-column column-account-type" scope="col">
-						<span><?php _e('Publish Status', 'socialflow') ?></span>
+						<span><?php esc_html_e('Publish Status', 'socialflow') ?></span>
 					</th>
 					<th style="width:200px" class="manage-column column-account-type" scope="col">
 						
@@ -116,13 +116,13 @@ class SocialFlow_Admin_Settings_Messages extends SocialFlow_Admin_Settings_Page 
 							<?php echo esc_textarea( $message->content ); ?>
 						</td>
 						<td class="name column-account-type"><?php echo esc_attr( $message->status ); ?></td>
-						<td><a class="clickable" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->slug . '&item_id=' . $message->content_item_id . '&service_user_id=' . $account['service_user_id'] . '&account_type=' . $account['account_type'] . '&sf_action=delete' ) ); ?>">delete</a></td>
+						<td><a class="clickable" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->slug . '&item_id=' . $message->content_item_id . '&service_user_id=' . $account['service_user_id'] . '&account_type=' . $account['account_type'] . '&sf_action=delete' ) ); ?>"><?php esc_html_e( 'delete', 'socialflow' ) ?></a></td>
 					</tr>
 					<?php endforeach ?>
 				</tbody>
 			</table>
 			<?php else : ?>
-				<p><?php _e( 'No messages for this account.', 'socialflow' ) ?></p>
+				<p><?php esc_html_e( 'No messages for this account.', 'socialflow' ) ?></p>
 			<?php endif; ?>
 
 		</div>
@@ -196,11 +196,11 @@ class SocialFlow_Admin_Settings_Messages extends SocialFlow_Admin_Settings_Page 
 			echo '<div id="sf-initial-nag" class="' . $class . '">';
 			echo '<p>';
 			if ( '1' == $_GET['deleted'] ) {
-				echo '<strong>' . __( 'NOTICE:', 'socialflow' ) . '</strong> ';
-				printf( __( 'Message was removed from queue.', 'socialflow' ) );
+				echo '<strong>' . esc_attr__( 'NOTICE:', 'socialflow' ) . '</strong> ';
+				printf( esc_attr__( 'Message was removed from queue.', 'socialflow' ) );
 			} else {
-				echo '<strong>' . __( 'Error:', 'socialflow' ) . '</strong> ';
-				printf( __( 'No message were removed from queue.', 'socialflow' ) );
+				echo '<strong>' . esc_attr__( 'Error:', 'socialflow' ) . '</strong> ';
+				printf( esc_attr__( 'No message were removed from queue.', 'socialflow' ) );
 			}
 			echo '</p></div>';
 		} else {

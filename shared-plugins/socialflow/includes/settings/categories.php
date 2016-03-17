@@ -47,8 +47,8 @@ class SocialFlow_Admin_Settings_Categories extends SocialFlow_Admin_Settings_Pag
 
 		add_submenu_page( 
 			'socialflow',
-			__( 'Category Routing', 'socialflow' ),
-			__( 'Category Routing', 'socialflow' ),
+			esc_attr__( 'Category Routing', 'socialflow' ),
+			esc_attr__( 'Category Routing', 'socialflow' ),
 			'manage_options',
 			$this->slug,
 			array( $this, 'page' )
@@ -64,7 +64,6 @@ class SocialFlow_Admin_Settings_Categories extends SocialFlow_Admin_Settings_Pag
 	function page() {
 		global $socialflow; ?>
 		<div class="wrap socialflow" id="socialflow-<?php echo esc_attr( $this->slug ); ?>">
-			<div class="icon32"><img src="<?php echo plugins_url( 'assets/images/socialflow.png', SF_FILE ) ?>" alt=""></div>
 			<h2><?php esc_html_e( 'Category Routing', 'socialflow' ); ?> <img class="sf-loader" style="display:none;" src="<?php echo plugins_url( 'assets/images/wpspin.gif', SF_FILE ) ?>" alt=""> </h2>
 
 			<?php $this->display_list(); ?>
@@ -90,16 +89,16 @@ class SocialFlow_Admin_Settings_Categories extends SocialFlow_Admin_Settings_Pag
 
 		// Render empty message if there are no categories
 		if ( empty( $terms ) ) : ?>
-			<p><?php _e( 'There are no categories.', 'socialflow' ) ?></p>
+			<p><?php esc_html_e( 'There are no categories.', 'socialflow' ) ?></p>
 		<?php return; endif; ?>
 
 		<table cellspacing="0" class="wp-list-table widefat fixed sf-accounts">
 			<thead><tr>
 				<th style="width:200px" class="manage-column column-username" id="username" scope="col">
-					<span><?php _e( 'Category', 'socialflow' ) ?></span>
+					<span><?php esc_html_e( 'Category', 'socialflow' ) ?></span>
 				</th>
 				<th class="manage-column column-account-type" id="account-type" scope="col">
-					<span><?php _e( 'Accounts', 'socialflow' ) ?></span>
+					<span><?php esc_html_e( 'Accounts', 'socialflow' ) ?></span>
 				</th>
 			</tr></thead>
 
@@ -128,7 +127,7 @@ class SocialFlow_Admin_Settings_Categories extends SocialFlow_Admin_Settings_Pag
 			return;
 		?>
 		<tr class="alternate">
-			<td class="category column-category"><?php echo esc_attr( $term->name ); ?></td>
+			<td class="category column-category"><?php echo esc_html( $term->name ); ?></td>
 			<td data-term_id="<?php echo esc_attr( $term->term_id ); ?>" data-taxonomy="<?php echo esc_attr( $term->taxonomy); ?>" class="accounts column-accounts catetory-accounts" id="js-term-accounts-<?php echo esc_attr( $term->term_id ); ?>">
 				<?php foreach ( $accounts as $account_id ) {
 					$this->account_content( $account_id );
@@ -165,18 +164,18 @@ class SocialFlow_Admin_Settings_Categories extends SocialFlow_Admin_Settings_Pag
 		?>
 		<form id="sf-account-category-form" action="options.php" method="post">
 			<select id="sf-select-account" name="account_id">
-				<option value="-1"><?php _e( 'Select Account', 'socialflow' ); ?></option>
+				<option value="-1"><?php esc_html_e( 'Select Account', 'socialflow' ); ?></option>
 				<?php foreach ( $socialflow->accounts->get( $socialflow->options->get( 'show' ) ) as $account_id => $account ) : ?>
-					<option value="<?php echo esc_attr( $account_id ); ?>" ><?php echo esc_attr( $socialflow->accounts->get_display_name( $account ) ); ?></option>
+					<option value="<?php echo esc_attr( $account_id ); ?>" ><?php echo esc_html( $socialflow->accounts->get_display_name( $account ) ); ?></option>
 				<?php endforeach ?>
 			</select>
 			<?php wp_dropdown_categories(array(
 				'hide_empty' => 0,
 				'name'       => 'term_id',
 				'id'         => 'sf-term-id',
-				'show_option_none' => __( 'Select Category' )
+				'show_option_none' => esc_attr__( 'Select Category' )
 			)); ?>
-			<input class="button" type="submit" value="<?php _e( 'Add', 'socialflow' ) ?>" />
+			<input class="button" type="submit" value="<?php esc_attr_e( 'Add', 'socialflow' ) ?>" />
 			<img class="sf-loader" style="display:none;" src="<?php echo plugins_url( 'assets/images/wpspin.gif', SF_FILE ) ?>" alt="">
 		</form>
 		<?php
@@ -216,7 +215,9 @@ class SocialFlow_Admin_Settings_Categories extends SocialFlow_Admin_Settings_Pag
 			ob_start();
 			switch ( $render ) {
 				case 'term':
-					$term = get_term_by( 'id', $term_id, $taxonomy );
+					// Wordpress.com Vip recommend to use wpcom_vip_get_term_by() - cached version of get_term_by()
+					$func = function_exists( 'wpcom_vip_get_term_by' ) ? 'wpcom_vip_get_term_by' : 'get_term_by';
+					$term = call_user_func( $func, 'id', $term_id, $taxonomy );
 					$this->term_content( $term );
 					break;
 				case 'account':

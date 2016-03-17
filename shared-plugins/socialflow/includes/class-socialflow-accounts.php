@@ -25,6 +25,13 @@ class SocialFlow_Accounts {
 	var $last;
 
 	/**
+	 * Default order for available account types
+	 * 
+	 * @var array
+	 */
+	static $type_order = array( 'twitter', 'facebook', 'google_plus', 'linkedin' );
+
+	/**
 	 * PHP5 Constructor
 	 */
 	function __construct(){}
@@ -39,10 +46,18 @@ class SocialFlow_Accounts {
 	 * @return mixed ( array | bool ) Return array of accounts or false if none matched
 	 * can also return single account if client_account_id is passed instead of query array
 	 */
-	function get( $query = array() ) {
+	function get( $query = array(), $post_type = 'post' ) {
 		global $socialflow;
 
 		$accounts = $socialflow->options->get( 'accounts', array() );
+
+		// For attachments return accounts with specific types only
+		if ( 'attachment' == $post_type ) {
+			foreach ( $accounts as $key => $account ) {
+				if ( !in_array( $account['account_type'], array( 'twitter', 'facebook_page', 'google_plus_page' ) ) )
+					unset( $accounts[ $key ] );
+			}
+		}
 
 		// return all acconts if empty query passed
 		if ( empty( $query ) )
@@ -78,6 +93,7 @@ class SocialFlow_Accounts {
 
 				// break loop if query doesn't match
 				if ( 
+					!isset( $check[ 'key' ] ) OR !is_string( $check[ 'key' ] ) OR
 					!isset( $account[ $check[ 'key' ] ] ) OR 
 					( !is_array( $check[ 'value' ] ) AND !is_array( $account[ $check[ 'key' ] ] ) AND $account[ $check[ 'key' ] ] != $check[ 'value' ] )  OR
 					( is_array( $check[ 'value' ] ) AND !is_array( $account[ $check[ 'key' ] ] ) AND !in_array( $account[ $check[ 'key' ] ], $check[ 'value' ] ) )
@@ -168,6 +184,9 @@ class SocialFlow_Accounts {
 
 		$type = self::get_global_type( $account );
 
+		if ( empty( $type ) )
+			return __( 'Missing account', 'socialflow' );
+
 		// Retrieve account name depending on account type
 		switch ( $type ) {
 			case 'facebook':
@@ -177,6 +196,14 @@ class SocialFlow_Accounts {
 			case 'twitter':
 				$name = $account['screen_name'];
 				$prefix = __('Twitter', 'socialflow') . ' @';
+				break;
+			case 'google_plus':
+				$name = $account['name'];
+				$prefix = __('Google+ ', 'socialflow');
+				break;
+			case 'linkedin':
+				$name = $account['name'];
+				$prefix = __('LinkedIn ', 'socialflow');
 				break;
 			default:
 				$name = $account['name'];
@@ -195,20 +222,28 @@ class SocialFlow_Accounts {
 	 * @param array accounts to group
 	 * @return array grouped accounts
 	 */
-	function group_by( $type = 'global_type', $accounts = array() ) {
-		if ( !empty( $accounts ) ) {
-			$new = array();
-			foreach ($accounts as $key => $account) {
-				// Define
-				$type = self::get_global_type($account);
-				if (isset($new[$type]))
-					$new[$type][] = $account;
-				else
-					$new[$type] = array($account);
-			}
-			$accounts = $new;
+	function group_by( $type = 'global_type', $accounts = array(), $order = false ) {
+		if ( empty( $accounts ) )
+			return $accounts;
+
+		$new = array();
+		foreach ($accounts as $key => $account) {
+			// Define
+			$type = self::get_global_type($account);
+
+			if (isset($new[$type]))
+				$new[$type][] = $account;
+			else
+				$new[$type] = array($account);
 		}
-		return $accounts;
+		$accounts = $new;
+
+		if ( false == $order )
+			return $accounts;
+
+		$types = array_intersect( array_flip( self::$type_order ), array_keys( $accounts ) );
+
+		return array_replace( $types, $accounts );
 	}
 
 
@@ -217,17 +252,20 @@ class SocialFlow_Accounts {
 	 * @param  string $type Account type
 	 * @return string       Account type title
 	 */
-	public function get_type_title( $type ) {
-		$title = '';
+	static function get_type_title( $type ) {
+		switch ( $type ) {
+			case 'google_plus':
+				return 'Google+';
+				break;
 
-		if ( 'twitter' == $type )
-			$title = 'Twitter';
-		elseif ( 'facebook' == $type )
-			$title = 'Facebook';
-		elseif ( 'google_plus' == $type )
-			$title = 'Google Plus';
+			case 'linkedin':
+				return 'LinkedIn';
+				break;
 
-		return $title;
+			default:
+				return ucfirst( $type );
+				break;
+		}
 	}
 
 	/**
@@ -247,6 +285,8 @@ class SocialFlow_Accounts {
 			$type = 'facebook';
 		elseif ( strpos( $type, 'google_plus' ) !== false )
 			$type = 'google_plus';
+		elseif ( strpos( $type, 'linked_in' ) !== false )
+			$type = 'linkedin';
 
 		return $type;
 	}
@@ -372,7 +412,7 @@ class SocialFlow_Accounts {
 
 						// Validate optimize period
 						if ( !empty( $values['optimize_end_date'] ) AND !empty( $values['optimize_start_date'] ) ) {
-							if ( strtotime( $values['optimize_end_date'] ) < strtotime( $values['optimize_start_date'] ) ) {
+							if ( $values['optimize_end_date'] < $values['optimize_start_date'] ) {
 								$errors[] = new WP_Error( 'invalid_optimize_period:', __( '<b>Error:</b> Invalid optimize period for <i>%s.</i>' ), array( $account_id ) );
 							}
 						}
@@ -397,6 +437,15 @@ class SocialFlow_Accounts {
 				}
 
 				$valid_data[ $account_id ]['content_attributes'] = json_encode( $values['content_attributes'] );
+			}
+
+			// Custom image
+			if ( isset( $values['media_thumbnail_url'] ) ) {
+				$valid_data[ $account_id ]['media_thumbnail_url'] = $values['media_thumbnail_url'];
+
+				if ( isset( $values['media_filename'] ) ) {
+					$valid_data[ $account_id ]['media_filename'] = $values['media_filename'];
+				}
 			}
 
 			// add additianal fields

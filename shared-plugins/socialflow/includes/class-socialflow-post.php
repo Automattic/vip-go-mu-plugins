@@ -39,11 +39,19 @@ class SocialFlow_Post {
 			// Output compose form on ajax call
 			add_action( 'wp_ajax_sf-composeform', array( $this, 'ajax_compose_form' ) );
 
+			add_filter( 'sf_message', array( $this, 'default_message' ), 10, 3 );
+
 			// Compose message to socialflow via ajax
 			add_action( 'wp_ajax_sf-compose', array( $this, 'ajax_compose' ) );
 
 			// Get single message via ajax request
 			add_action( 'wp_ajax_sf-get-message', array( $this, 'sf_get_message' ) );
+
+			// Get custom attachment media
+			add_action( 'wp_ajax_sf_get_custom_message_image', array( $this, 'ajax_attachment_media' ) );
+
+			// Add media 
+			add_filter( 'tiny_mce_before_init', array( $this, 'bind_editor_update' ) );
 
 			// Add new updated message
 			add_filter( 'post_updated_messages', array($this, 'post_updated_messages') );
@@ -77,6 +85,7 @@ class SocialFlow_Post {
 		// Add send action to posts list table 
 		add_action( 'post_row_actions', array( $this, 'row_actions' ), 10, 2 );
 		add_action( 'page_row_actions', array( $this, 'row_actions' ), 10, 2 );
+		add_action( 'media_row_actions', array( $this, 'row_actions' ), 10, 2 );
 	}
 
 	/**
@@ -89,10 +98,17 @@ class SocialFlow_Post {
 		global $socialflow;
 
 		// Don't add meta box if user is not authorized or no post types selected
-		if ( $socialflow->is_authorized() AND $socialflow->options->get( 'post_type' ) ) {
-			foreach ( $socialflow->options->get( 'post_type' ) as $type ) {
-				add_meta_box( 'socialflow', __( 'SocialFlow', 'socialflow' ), array( $this, 'meta_box' ), $type, 'side', 'high', array( 'post_page' => true ) );
-			}
+		if ( !( $socialflow->is_authorized() AND $socialflow->options->get( 'post_type' ) ) )
+			return;
+
+		foreach ( $socialflow->options->get( 'post_type' ) as $type ) {
+
+			// Meta boxes for attachments are too narrow
+			// and you can send attachment only from attachments media list
+			if ( 'attachment' == $type )
+				continue;
+
+			add_meta_box( 'socialflow', __( 'SocialFlow', 'socialflow' ), array( $this, 'meta_box' ), $type, 'side', 'high', array( 'post_page' => true ) );
 		}
 	}
 
@@ -108,7 +124,7 @@ class SocialFlow_Post {
 		global $socialflow;
 
 		// Retrieve only enabled accounts
-		$accounts = $socialflow->options->get( 'show' ) ? $socialflow->accounts->get( $socialflow->options->get( 'show' ) ) : array();
+		$accounts = $socialflow->options->get( 'show' ) ? $socialflow->accounts->get( $socialflow->options->get( 'show' ), $post->post_type ) : array();
 
 		$socialflow->render_view( 'meta-box', array(
 			'accounts' => $accounts,
@@ -130,7 +146,7 @@ class SocialFlow_Post {
 		global $socialflow;
 
 		// get active accounts and group by type
-		$grouped_accounts = $socialflow->accounts->group_by( 'global_type', $accounts ); 
+		$grouped_accounts = $socialflow->accounts->group_by( 'global_type', $accounts, true );
 
 		// Get compose now value, if post was not publish yet get value from options
 		$compose_now = ( 'auto-draft' == $post->post_status ) ? $socialflow->options->get( 'compose_now' ) : get_post_meta( $post->ID, 'sf_compose_now', true );
@@ -235,6 +251,7 @@ class SocialFlow_Post {
 			// Prevent multiple form submission
 			if ( get_post_meta( $post->ID, 'socialflow_nonce', true ) !== $_POST['socialflow_nonce'] )
 				return;
+
 			delete_post_meta( $post->ID, 'socialflow_nonce' );
 
 			// Check if user has enough capabilities
@@ -245,20 +262,16 @@ class SocialFlow_Post {
 		// Prevent action duplication
 		remove_action( 'transition_post_status', array( $this, 'transition_post_status'), 1, 3 );
 
-		$post_id = $post->ID;
-
 		// no need to save post meta inside schedule scenario
 		if ( ! ( 'future' == $previous_status && 'publish' == $post_status ) ) {
-
-			// Save socialflow meta data 
-			$this->save_meta( $post_id );
+			$this->save_meta( $post->ID );
 		}
 
 		// Compose to socialflow 
 		// Check if send now is checked
-		if ( get_post_meta( $post_id, 'sf_compose_now', true ) && 'publish' == $post_status ) {
+		if ( get_post_meta( $post->ID, 'sf_compose_now', true ) && 'publish' == $post_status ) {
 
-			$result = $this->compose( $post_id );
+			$result = $this->compose( $post->ID );
 
 			// If message compose fails and post was inteded to be published
 			// set post status as draft
@@ -269,7 +282,7 @@ class SocialFlow_Post {
 				wp_update_post( $post );
 
 				// Redirect user to approptiate message
-				$location = add_query_arg( 'message', 20, get_edit_post_link( $post_id, 'url' ) );
+				$location = add_query_arg( 'message', 20, get_edit_post_link( $post->ID, 'url' ) );
 				wp_redirect( $location );
 				exit;
 			}
@@ -291,6 +304,9 @@ class SocialFlow_Post {
 
 		// Compose now variable
 		update_post_meta( $post_id, 'sf_compose_now', absint( isset( $data['compose_now'] ) ) );
+
+		// Compose media feature
+		update_post_meta( $post_id, 'sf_compose_media', absint( isset( $data['compose_media'] ) ) );
 
 		// Collect and save all socialflow messages
 		if ( isset( $data['message'] ) ) {
@@ -317,6 +333,23 @@ class SocialFlow_Post {
 		if ( isset( $data['image'] ) ) {
 			foreach ( $data['image'] as $key => $value ) {
 				update_post_meta( $post_id, 'sf_image_' . $key, trim( sanitize_text_field( $value ) ) );
+			}
+		}
+
+		// Custom image or one of attachments
+		if ( isset( $data['is_custom_image'] ) ) {
+			foreach ( $data['is_custom_image'] as $key => $value ) {
+				update_post_meta( $post_id, 'sf_is_custom_image_' . $key, absint( $value ) );
+			}
+		}
+		if ( isset( $data['custom_image'] ) ) {
+			foreach ( $data['custom_image'] as $key => $value ) {
+				update_post_meta( $post_id, 'sf_custom_image_' . $key, sanitize_text_field( $value ) );
+			}
+		}
+		if ( isset( $data['custom_image_filename'] ) ) {
+			foreach ( $data['custom_image_filename'] as $key => $value ) {
+				update_post_meta( $post_id, 'sf_custom_image_filename_' . $key, sanitize_text_field( $value ) );
 			}
 		}
 
@@ -386,6 +419,9 @@ class SocialFlow_Post {
 
 		$advanced_meta = get_post_meta( $post_id, 'sf_advanced', true );
 
+		$is_compose_media = get_post_type($post_id) == 'attachment' ? true : absint( get_post_meta( $post_id, 'sf_compose_media', true ) );
+		$media = get_post_meta( $post_id, 'sf_media', true );
+
 		// Get all accounts ids to include
 		foreach ( $advanced_meta as $key => $value ) {
 			if ( !in_array( $key, $enabled ) ) {
@@ -416,28 +452,57 @@ class SocialFlow_Post {
 				trim( get_post_meta( $post_id, 'sf_message_' . $type, true ) ) : 
 				trim( get_post_meta( $post_id, 'sf_message_' . $user_id, true ) );
 
+			if ( $is_compose_media && 'linkedin' == $type )
+				continue;
+
+			// Custom image is switch for each account type (should be checked against each account type)
+			$is_custom_image = absint( get_post_meta( $post_id, 'sf_is_custom_image_' . $type, true ) );
 
 			// Add settings from saved meta
 			$advanced[ $account_id ] = isset( $advanced_meta[ $user_id ] ) ? $advanced_meta[ $user_id ] : array();
 
 			// add account message with permalink
-			$advanced[ $account_id ]['message'] = ( 'twitter' == $type AND !empty( $message ) ) ? $message . ' ' . get_permalink( $post_id ) : $message;
+			if ( !empty( $message ) AND ( 'twitter' == $type OR ( $is_compose_media AND get_post_type($post_id) !== 'attachment' ) ) ) {
+				$advanced[ $account_id ]['message'] =  $message . ' ' . get_permalink( $post_id );
+			}
+			else {
+
+				$advanced[ $account_id ]['message'] = $message;
+			}
 
 			// Retrieve some specific account data depending on account type
-			if ( 'facebook' == $type || 'google_plus' == $type ) {
+			if ( in_array( $type, array( 'facebook', 'google_plus', 'linkedin' ) ) ) {
 				$advanced[ $account_id ]['content_attributes'] = array();
-				$advanced[ $account_id ]['content_attributes']['link'] = get_permalink( $post_id );
-
-				if ( 'facebook' == $type ) {
-					if ( get_post_meta( $post_id, 'sf_title_facebook', true ) )
-						$advanced[ $account_id ]['content_attributes']['name'] = esc_html( get_post_meta( $post_id, 'sf_title_facebook', true ) );
-					if ( get_post_meta( $post_id, 'sf_description_facebook', true ) )
-						$advanced[ $account_id ]['content_attributes']['description'] = wp_trim_words(esc_html( get_post_meta( $post_id, 'sf_description_facebook', true ) ), 150, ' ...' );
-					if ( get_post_meta( $post_id, 'sf_image_facebook', true ) )
-						$advanced[ $account_id ]['content_attributes']['picture'] = get_post_meta( $post_id, 'sf_image_facebook', true );
-				}
-				
+				$advanced[ $account_id ]['content_attributes']['link'] = get_permalink( $post_id );				
 			}
+
+			// Dont send title and description for media compose
+			if ( !$is_compose_media && in_array( $type, array( 'facebook', 'linkedin' ) ) ) {
+				if ( get_post_meta( $post_id, 'sf_title_' . $type, true ) )
+					$advanced[ $account_id ]['content_attributes']['name'] = esc_html( get_post_meta( $post_id, 'sf_title_' . $type, true ) );
+				if ( get_post_meta( $post_id, 'sf_description_' . $type, true ) )
+					$advanced[ $account_id ]['content_attributes']['description'] = wp_trim_words(esc_html( get_post_meta( $post_id, 'sf_description_' . $type, true ) ), 150, ' ...' );
+			}
+
+			// Maybe attach custom image
+			if ( 'linkedin' !== $type && $is_custom_image && $image = get_post_meta( $post_id, 'sf_custom_image_' . $type , true ) ) {
+				$advanced[ $account_id ]['media_thumbnail_url'] = $image;
+				$advanced[ $account_id ]['media_filename'] = get_post_meta( $post_id, 'sf_custom_image_filename_' . $type , true );
+			}
+			elseif ( 'linkedin' !== $type && $is_compose_media && $media ) {
+				$advanced[ $account_id ]['media_thumbnail_url'] = $media['medium_thumbnail_url'];
+				$advanced[ $account_id ]['media_filename'] = $media['filename'];
+			}
+			elseif ( $image = get_post_meta( $post_id, 'sf_image_' . $type , true ) ) {
+				$advanced[ $account_id ]['content_attributes']['picture'] = $image;
+			}
+
+
+			// Temporary fix for twitter media messages
+			// if ( 'twitter' == $type && get_post_type($post_id) == 'attachment' && $image = get_post_meta( $post_id, 'sf_custom_image_facebook' , true ) ) {
+			// 	$advanced[ $account_id ]['media_thumbnail_url'] = $image;
+			// 	$advanced[ $account_id ]['media_filename'] = get_post_meta( $post_id, 'sf_custom_image_filename_facebook' , true );
+			// }
 
 			// add current user display name and email to send queue
 			$advanced[ $account_id ]['created_by'] = get_user_option( 'display_name', get_current_user_id() ) .' <'. get_user_option( 'user_email', get_current_user_id() ) .'>';
@@ -491,6 +556,7 @@ class SocialFlow_Post {
 	 *
 	 */
 	function ajax_post_attachments() {
+
 		// Retrieve args from ajax request
 		$this->post_attachments( absint( $_POST['ID'] ), $_POST['content'] );
 		exit;
@@ -506,6 +572,12 @@ class SocialFlow_Post {
 	 * @param string - current post content
 	 */
 	function post_attachments( $post_id, $post_content = '' ) {
+		$post = get_post( $post_id );
+
+		$thumbnail = get_the_post_thumbnail( $post_id, 'full' );
+		if ( $thumbnail )
+			echo '<div class="slide">'. $thumbnail .'</div>';
+
 		if ( empty( $post_content ) )
 			return;
 
@@ -516,8 +588,77 @@ class SocialFlow_Post {
 			return;
 
 		foreach ( $images[2] as $image ) {
-			?><div class="slide"><img src="<?php echo esc_url( $image ); ?>" /></div><?php
+			echo '<div class="slide"><img src="'. esc_url( $image ) .'" /></div>';
 		}
+	}
+
+	/**
+	 * To retrieve image for attachment we need to make api call first
+	 * @param  int $attachment_id Attachment id
+	 * @return string             Attachment image
+	 */
+	function get_attachment_image( $attachment_id ) {
+		$media = $this->get_attachment_media( $attachment_id );
+
+		if ( empty( $media ) ) {
+			return '';
+		}
+
+		return '<img src="'. esc_url( $media['medium_thumbnail_url'] ) .'" alt="">';
+	}
+
+	/**
+	 * Retrieve custom media object for requested attachment
+	 * @param  [type] $attachment_id [description]
+	 * @return [type]                [description]
+	 */
+	function get_attachment_media( $attachment_id ) {
+		global $socialflow;
+
+		if ( $media = get_post_meta( $attachment_id, 'sf_media', true ) ) {
+			return $media;
+		}
+
+		$image = wp_get_attachment_image_src( $attachment_id, 'full' );
+
+		if ( !$image ) {
+			return false;
+		}
+
+		$media = $socialflow
+			->get_api()
+			->add_media( $image[0] );
+
+		if ( is_wp_error( $media ) )
+			return false;
+
+		update_post_meta( $attachment_id, 'sf_media', $media );
+
+		// media already presents so we can call recursievly
+		return $media;
+	}
+
+	/**
+	 * Response to ajax request for attachment media
+	 * Can be requested as media attach request
+	 * @return void
+	 */
+	function ajax_attachment_media() {
+		if ( !isset( $_POST['attachment_id'] ) ) {
+			die(0);
+		}
+
+		$media = $this->get_attachment_media( absint( $_POST['attachment_id'] ) );
+
+		if ( ! $media ){
+			die(0);
+		}
+
+		if ( isset( $_POST['attach_to_post'] ) ) {
+			update_post_meta( absint( $_POST['attach_to_post'] ), 'sf_media', $media );
+		}
+
+		wp_send_json( $media );
 	}
 
 	/**
@@ -566,7 +707,7 @@ class SocialFlow_Post {
 		$this->save_meta( $post_id );
 
 		$this->compose( $post_id );
-		
+
 		// Check if there are any success messages and return updated messages block
 		ob_start();
 		$this->display_messages( get_post( absint( $post_id ) ) );
@@ -642,7 +783,52 @@ class SocialFlow_Post {
 		echo $status;
 		exit;
 	}
-	
+
+	/**
+	 * After editor loaded we need to notify parent document body about this
+	 * @to-do add support for tinyMCE editor < 4
+	 * @param  array $config Mce editor config
+	 * @return array         Mce editor config
+	 */
+	function bind_editor_update( $config ) {
+		global $socialflow;
+		$screen = get_current_screen();
+
+		if ( !( is_admin() && $screen->parent_base == 'edit' && in_array( $screen->post_type, $socialflow->options->get( 'post_type' )) ) )
+			return $config;
+
+		$config['setup'] = "function (editor) {
+			editor.on('init', function(event) {
+				parent.window.jQuery('body').trigger('wp-tinymce-loaded');
+			});
+		}";
+
+		return $config;
+	}
+
+	/**
+	 * Default socialflow message 
+	 * @param  string $message SocialFlow message
+	 * @param  string $type    Default type
+	 * @param  object $post    Post object
+	 * @return string          Default message
+	 */
+	function default_message( $message, $type, $post ) {
+		if ( !empty( $message ) )
+			return $message;
+
+		if ( 'attachment' === $post->post_type ) {
+			if ( !empty( $post->post_content ) )
+				$message = $post->post_content;
+			elseif ( !empty( $post->post_excerpt ) )
+				$message = $post->post_excerpt;
+			else
+				$message = $post->post_title;
+		}
+
+		return $message;
+	}
+
 	/**
 	 * Add SocialFlow custom column heading
 	 *
@@ -697,17 +883,39 @@ class SocialFlow_Post {
 	 * @return array filtered actions
 	 */
 	function row_actions( $actions, $post ) {
-		global $socialflow;
+
 		// Post must be published and post type enabled in plugin options
-		if ( 'publish' == $post->post_status AND in_array( $post->post_type, $socialflow->options->get( 'post_type', array() ) ) ) {
-			$url = add_query_arg( array( 
-				'action' => 'sf-composeform', 
-				'post' => $post->ID,
-				'width' => '740'
-			), admin_url( '/admin-ajax.php' ) );
-			$actions['sf-compose-action'] = '<a class="thickbox" href="' .  $url . '" title="' . esc_attr__( 'Send to SocialFlow', 'socialflow' ) . '">' . __( 'Send to SocialFlow', 'socialflow' ) . '</a>';
-		}
+		if ( !$this->is_post_enabled( $post ) )
+			return $actions;
+
+		$url = add_query_arg( array( 
+			'action' => 'sf-composeform', 
+			'post' => $post->ID,
+			'width' => '740'
+		), admin_url( '/admin-ajax.php' ) );
+		$actions['sf-compose-action'] = '<a class="thickbox" href="' .  esc_url( $url ) . '" title="' . esc_attr__( 'Send to SocialFlow', 'socialflow' ) . '">' . esc_attr__( 'Send to SocialFlow', 'socialflow' ) . '</a>';
+
 		return $actions;
+	}
+
+	/**
+	 * Check if socialflow is enabled for current post
+	 * @param  Object  $post WP_Post object
+	 * @return boolean       Enabled status
+	 */
+	function is_post_enabled( $post ) {
+		global $socialflow;
+
+		// Post type must be enabled in plugin options
+		if ( !in_array( $post->post_type, $socialflow->options->get( 'post_type', array() ) ) )
+			return false;
+
+		// Include only image attachments
+		if ( 'attachment' == $post->post_type )
+			return strpos( $post->post_mime_type, 'image' ) !== false;
+
+		// All other post types must be published
+		return $post->post_status === 'publish';
 	}
 
 	/**

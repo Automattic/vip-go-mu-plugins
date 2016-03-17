@@ -145,9 +145,9 @@ class SF_Plugin_View {
 		// Check if file exists
 		if ( $this->file_exists() ) {
 
-			// Extract view variables if they present
+			// Set vaiw variables to common data variable
 			if ( isset( $this->data ) AND is_array( $this->data ) ) {
-				extract( $this->data, EXTR_SKIP );
+				$data = $this->data;
 			}
 
 			// Store rendered view

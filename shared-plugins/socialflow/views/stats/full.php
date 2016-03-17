@@ -9,27 +9,32 @@
  * @param $post_id       - int ID for current post
  */
 global $socialflow;
+
+$form_messages = $data['form_messages'];
+$last_sent     = $data['last_sent'];
+$post_id       = $data['post_id'];
+
 $i = 0;
 ?>
 <div class="full-stats-container">
 <?php if ( !empty( $form_messages ) ) : ?>
 <p>
-	<?php printf( __( 'Last time message was successfully sent at %s', 'socialflow' ), mysql2date( 'd F, Y h:i a', $last_sent ) ); ?>
-	<span id="js-sf-toggle-statistics" class="clickable"><?php _e( 'Expand Statistics.', 'socialflow' ); ?></span>
+	<?php printf(  esc_attr__( 'Last time message was successfully sent at %s', 'socialflow' ), mysql2date( 'd F, Y h:i a', $last_sent ) ); ?>
+	<span id="js-sf-toggle-statistics" class="clickable"><?php esc_html_e( 'Expand Statistics.', 'socialflow' ); ?></span>
 </p>
 <table id="sf-statistics" cellspacing="0" class="wp-list-table widefat fixed sf-statistics" style="display:none">
 	<thead><tr>
 		<th style="width:150px" class="manage-column column-date" scope="col">
-			<span><?php _e( 'Last Sent', 'socialflow' ) ?></span>
+			<span><?php esc_html_e( 'Last Sent', 'socialflow' ) ?></span>
 		</th>
 		<th class="manage-column column-status" scope="col">
-			<?php _e( 'Account', 'socialflow' ) ?>
+			<?php esc_html_e( 'Account', 'socialflow' ) ?>
 		</th>
 		<th class="manage-column column-status" scope="col">
-			<?php _e( 'Status', 'socialflow' ) ?>
+			<?php esc_html_e( 'Status', 'socialflow' ) ?>
 		</th>
 		<th scope="col" width="20px">
-			<img title="<?php _e( 'Refresh Message Stats', 'socialflow' ); ?>" alt="<?php _e( 'Refresh', 'socialflow' ); ?>" class="sf-js-update-multiple-messages" src="<?php echo plugins_url( 'assets/images/reload.png', SF_FILE ) ?>" >
+			<img title="<?php esc_html_e( 'Refresh Message Stats', 'socialflow' ); ?>" alt="<?php esc_attr_e( 'Refresh', 'socialflow' ); ?>" class="sf-js-update-multiple-messages" src="<?php echo plugins_url( 'assets/images/reload.png', SF_FILE ) ?>" >
 		</th>
 	</tr></thead>
 
@@ -44,7 +49,7 @@ $i = 0;
 
 				// In queue status
 				if ( isset( $message['is_published'] ) ) {
-					$queue_status = ( 0 == $message['is_published'] ) ? __( 'In Queue', 'socialflow' ) : __( 'Published', 'socialflow' );
+					$queue_status = ( 0 == $message['is_published'] ) ?  esc_attr__( 'In Queue', 'socialflow' ) :  esc_attr__( 'Published', 'socialflow' );
 				} else {
 					$queue_status = '';
 				}

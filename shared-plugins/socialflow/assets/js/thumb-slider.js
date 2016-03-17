@@ -16,11 +16,13 @@
 	$.featureList = function(slides, options) {
 		var total_items  = slides.length,
 			visible_item = options.start_item || 0,
-			nav_next     = $(options.nav_next),
-			nav_prev     = $(options.nav_prev)
+			nav_next     = ( options.nav_next instanceof jQuery ) ? options.nav_next : $(options.nav_next),
+			nav_prev     = ( options.nav_prev instanceof jQuery ) ? options.nav_prev : $(options.nav_prev);
+
+		// console.log(nav_next);
 
 		// Hide all slides
-		slides.hide().eq( visible_item ).show().trigger('slide')
+		slides.hide().eq( visible_item ).show().trigger('slide');
 
 		nav_next.click(function(){
 			slide()
@@ -43,4 +45,4 @@
 			visible_item = nr
 		}
 	}
-})(jQuery)
+})(jQuery);
