@@ -14,9 +14,9 @@
  
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
-add_filter( 'jetpack_is_staging_site', function() {
-	return ! ( defined('WPCOM_IS_VIP_ENV') && WPCOM_IS_VIP_ENV );
-});
+if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
+	add_filter( 'jetpack_is_staging_site', '__return_true' );
+}
 
 $jetpack_to_load = __DIR__ . '/jetpack/jetpack.php';
 
