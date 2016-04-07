@@ -64,7 +64,7 @@ class VIP_Go_Geo_Uniques {
 	}
 }
 
-new VIP_Go_Geo_Uniques;
+new VIP_Go_Geo_Uniques();
 
 function vip_geo_get_country_code() {
 	return VIP_Go_Geo_Uniques::get_country_code();
