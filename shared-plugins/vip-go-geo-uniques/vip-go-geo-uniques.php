@@ -17,7 +17,13 @@ class VIP_Go_Geo_Uniques {
 	}
 
 	static function get_country_code() {
-		return $_SERVER['GEOIP_COUNTRY_CODE'];
+		$loc = $_SERVER['GEOIP_COUNTRY_CODE'];
+
+		if ( self::is_valid_location( $loc ) ) {
+			return $loc;
+		}
+
+		return self::get_default_location();
 	}
 
 	static function get_default_location() {
