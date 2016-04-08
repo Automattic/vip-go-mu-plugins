@@ -65,12 +65,21 @@ class WPCOM_Legacy_Redirector {
  	 *
  	 * @param string $from_url URL or path that should be redirected; should have leading slash if path.
  	 * @param int|string $redirect_to The post ID or URL to redirect to.
- 	 * @return bool|WP_Error Error if invalid redirect URL specified; true otherwise. 
+ 	 * @return bool|WP_Error Error if invalid redirect URL specified or if the URI already has a rule; false if not is_admin, true otherwise.
  	 */
 	static function insert_legacy_redirect( $from_url, $redirect_to ) {
 
+		if ( !( defined( 'WP_CLI' ) && WP_CLI ) && !is_admin() ) {
+			// never run on the front end
+			return false;
+		}
+
 		$from_url = parse_url( $from_url, PHP_URL_PATH );
 		$from_url_hash = self::get_url_hash( $from_url );
+
+		if ( false !== self::get_redirect_uri( $from_url ) ) {
+			return new WP_Error( 'duplicate-redirect-uri', 'A redirect for this URI already exists' );
+		}
 
 		$args = array(
 			'post_name' => $from_url_hash,

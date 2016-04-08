@@ -28,7 +28,7 @@ class WPCOM_Legacy_Redirector_CLI extends WP_CLI_Command {
  	 * Bulk import redirects from URLs stored as meta values for posts.
  	 *
  	 * @subcommand import-from-meta
- 	 * @synopsis --meta_key=<name-of-meta-key> [--start=<start-offset>] [--end=<end-offset>]
+ 	 * @synopsis --meta_key=<name-of-meta-key> [--start=<start-offset>] [--end=<end-offset>] [--skip_dupes=<skip-dupes>] [--dry_run]
  	 */
 	function import_from_meta( $args, $assoc_args ) {
 		define( 'WP_IMPORTING', true );
@@ -36,7 +36,15 @@ class WPCOM_Legacy_Redirector_CLI extends WP_CLI_Command {
 		global $wpdb;
 		$offset = isset( $assoc_args['start'] ) ? intval( $assoc_args['start'] ) : 0;
 		$end_offset = isset( $assoc_args['end'] ) ? intval( $assoc_args['end'] ) : 99999999;;
-		$meta_key = isset( $assoc_args['meta_key'] ) ? sanitize_key( $assoc_args['meta_key'] ) : ''; 
+		$meta_key = isset( $assoc_args['meta_key'] ) ? sanitize_key( $assoc_args['meta_key'] ) : '';
+		$skip_dupes = isset( $assoc_args['skip_dupes'] ) ? (bool)intval( $assoc_args['skip_dupes'] ) : false;
+		$dry_run = isset( $assoc_args['dry_run'] ) ? true : false;
+
+		if ( true === $dry_run ) {
+			WP_CLI::line( "---Dry Run---" );
+		} else {
+			WP_CLI::line( "---Live Run--" );
+		}
 
 		do {
 			$redirects = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM $wpdb->postmeta WHERE meta_key = %s ORDER BY post_id ASC LIMIT %d, 1000", $meta_key, $offset ) );
@@ -48,7 +56,15 @@ class WPCOM_Legacy_Redirector_CLI extends WP_CLI_Command {
 				$i++;
 				WP_CLI::line( "Adding redirect for {$redirect->post_id} from {$redirect->meta_value}" );
 				WP_CLI::line( "-- $i of $total (starting at offset $offset)" );
-				WPCOM_Legacy_Redirector::insert_legacy_redirect( $redirect->meta_value, $redirect->post_id );
+				
+				if ( true === $skip_dupes && 0 !== WPCOM_Legacy_Redirector::get_redirect_post_id( parse_url( $redirect->meta_value, PHP_URL_PATH ) ) ) {
+					WP_CLI::line( "Redirect for {$redirect->post_id} from {$redirect->meta_value} already exists. Skipping" );
+					continue;
+				}
+
+				if ( false === $dry_run ) {
+					WPCOM_Legacy_Redirector::insert_legacy_redirect( $redirect->meta_value, $redirect->post_id );
+				}
 
 				if ( 0 == $i % 100 ) {
 					if ( function_exists( 'stop_the_insanity' ) )
