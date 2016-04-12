@@ -3,7 +3,7 @@
  * Plugin Name: VaultPress
  * Plugin URI: http://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>. Activate, enter your registration key, and never worry again. <a href="http://vaultpress.com/help/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">Need some help?</a>
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: Automattic
  * Author URI: http://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
@@ -18,12 +18,13 @@ class VaultPress {
 	var $option_name          = 'vaultpress';
 	var $auto_register_option = 'vaultpress_auto_register';
 	var $db_version           = 4;
-	var $plugin_version       = '1.8.0';
+	var $plugin_version       = '1.8.1';
 
 	function __construct() {
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 
+		$this->options_blog_id = get_current_blog_id();
 		$options = get_option( $this->option_name );
 		if ( !is_array( $options ) )
 			$options = array();
@@ -194,6 +195,11 @@ class VaultPress {
 	}
 
 	function update_options() {
+		// Avoid overwriting the VaultPress option if current blog_id has changed since reading it
+		if ( get_current_blog_id() !== $this->options_blog_id ) {
+			return;
+		}
+
 		update_option( $this->option_name, $this->options );
 	}
 
@@ -820,13 +826,21 @@ class VaultPress {
 	}
 	
 	// WooCommerce notifications
-	function woocommerce_tax_rate_handler( $id )        { $this->generic_change_handler( 'woocommerce_tax_rates',            array( 'tax_rate_id' => $id ) ); }
+	function woocommerce_tax_rate_handler( $id ) {
+		$this->generic_change_handler( 'woocommerce_tax_rates', array( 'tax_rate_id' => $id ) );
+		$this->block_change_handler( 'woocommerce_tax_rate_locations', array( 'tax_rate_id' => $id ) );
+	}
+	
 	function woocommerce_order_item_handler( $id )      { $this->generic_change_handler( 'woocommerce_order_items',          array( 'order_item_id' => $id ) ); }
 	function woocommerce_order_item_meta_handler( $id ) { $this->generic_change_handler( 'woocommerce_order_itemmeta',       array( 'meta_id' => $id ) ); }
 	function woocommerce_attribute_handler( $id )       { $this->generic_change_handler( 'woocommerce_attribute_taxonomies', array( 'attribute_id' => $id ) ); }
 	
 	function generic_change_handler( $table, $key ) {
 		$this->add_ping( 'db', array( $table => $key ) );
+	}
+	
+	function block_change_handler( $table, $query ) {
+		$this->add_ping( 'db', array( "bulk~{$table}" => $query ) );
 	}
 
 	function verify_table( $table ) {
@@ -1770,9 +1784,9 @@ JS;
 			$args['cause_user_id'] = -1;
 			$args['cause_user_login'] = '';
 		}
-		$args['cause_ip'] = $_SERVER['REMOTE_ADDR'];
-		$args['cause_uri'] = $_SERVER['REQUEST_URI'];
-		$args['cause_method'] = $_SERVER['REQUEST_METHOD'];
+		$args['cause_ip'] = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null ;
+		$args['cause_uri'] = isset( $_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null;
+		$args['cause_method'] = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : null;
 		// End audit trail breadcrumbs
 
 		$args['version']   = $this->plugin_version;
