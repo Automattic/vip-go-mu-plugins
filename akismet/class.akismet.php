@@ -53,6 +53,10 @@ class Akismet {
 
 		// Run this early in the pingback call, before doing a remote fetch of the source uri
 		add_action( 'xmlrpc_call', array( 'Akismet', 'pre_check_pingback' ) );
+		
+		// Jetpack compatibility
+		add_filter( 'jetpack_options_whitelist', array( 'Akismet', 'add_to_jetpack_options_whitelist' ) );
+		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
 	}
 
 	public static function get_api_key() {
@@ -79,6 +83,37 @@ class Akismet {
 			return 'failed';
 
 		return $response[1];
+	}
+
+	/**
+	 * Add the akismet option to the Jetpack options management whitelist.
+	 *
+	 * @param array $options The list of whitelisted option names.
+	 * @return array The updated whitelist
+	 */
+	public static function add_to_jetpack_options_whitelist( $options ) {
+		$options[] = 'wordpress_api_key';
+		return $options;
+	}
+
+	/**
+	 * When the akismet option is updated, run the registration call.
+	 *
+	 * This should only be run when the option is updated from the Jetpack/WP.com
+	 * API call, and only if the new key is different than the old key.
+	 *
+	 * @param mixed  $old_value   The old option value.
+	 * @param mixed  $value       The new option value.
+	 */
+	public static function updated_option( $old_value, $value ) {
+		// Not an API call
+		if ( ! class_exists( 'WPCOM_JSON_API_Update_Option_Endpoint' ) ) {
+			return;
+		}
+		// Only run the registration if the old key is different.
+		if ( $old_value !== $value ) {
+			self::verify_key( $value );
+		}
 	}
 
 	public static function auto_check_comment( $commentdata ) {
@@ -130,7 +165,7 @@ class Akismet {
 
 			// Send any potentially useful $_SERVER vars, but avoid sending junk we don't need.
 			if ( preg_match( "/^(HTTP_|REMOTE_ADDR|REQUEST_URI|DOCUMENT_URI)/", $key ) ) {
-				$form[ "$key" ] = $value;
+				$comment[ "$key" ] = $value;
 			}
 		}
 
@@ -254,7 +289,9 @@ class Akismet {
 					elseif ( self::$last_comment['akismet_result'] == 'false' ) {
 						update_comment_meta( $comment->comment_ID, 'akismet_result', 'false' );
 						self::update_comment_history( $comment->comment_ID, '', 'check-ham' );
-						if ( $comment->comment_approved == 'spam' ) {
+						// Status could be spam or trash, depending on the WP version and whether this change applies:
+						// https://core.trac.wordpress.org/changeset/34726
+						if ( $comment->comment_approved == 'spam' || $comment->comment_approved == 'trash' ) {
 							if ( wp_blacklist_check($comment->comment_author, $comment->comment_author_email, $comment->comment_author_url, $comment->comment_content, $comment->comment_author_IP, $comment->comment_agent) )
 								self::update_comment_history( $comment->comment_ID, '', 'wp-blacklisted' );
 							else
@@ -713,7 +750,7 @@ class Akismet {
 		$comment1 = (array) $comment1;
 		$comment2 = (array) $comment2;
 		
-		return (
+		$comments_match = (
 			   isset( $comment1['comment_post_ID'], $comment2['comment_post_ID'] )
 			&& intval( $comment1['comment_post_ID'] ) == intval( $comment2['comment_post_ID'] )
 			&& (
@@ -725,6 +762,9 @@ class Akismet {
 				substr( $comment1['comment_author'], 0, 248 ) == substr( $comment2['comment_author'], 0, 248 )
 				|| substr( stripslashes( $comment1['comment_author'] ), 0, 248 ) == substr( $comment2['comment_author'], 0, 248 )
 				|| substr( $comment1['comment_author'], 0, 248 ) == substr( stripslashes( $comment2['comment_author'] ), 0, 248 )
+				// Certain long comment author names will be truncated to nothing, depending on their encoding.
+				|| ( ! $comment1['comment_author'] && strlen( $comment2['comment_author'] ) > 248 )
+				|| ( ! $comment2['comment_author'] && strlen( $comment1['comment_author'] ) > 248 )
 				)
 			&& (
 				// The email max length is 100 characters, limited by the VARCHAR(100) column type.
@@ -737,6 +777,8 @@ class Akismet {
 				|| ( ! $comment2['comment_author_email'] && strlen( $comment1['comment_author_email'] ) > 100 )
 			)
 		);
+
+		return $comments_match;
 	}
 	
 	// Does the supplied comment match the details of the one most recently stored in self::$last_comment?
