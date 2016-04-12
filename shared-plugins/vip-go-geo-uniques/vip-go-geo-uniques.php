@@ -17,10 +17,12 @@ class VIP_Go_Geo_Uniques {
 	}
 
 	static function get_country_code() {
-		$loc = $_SERVER['GEOIP_COUNTRY_CODE'];
+		if ( ! empty( $_SERVER['GEOIP_COUNTRY_CODE'] ) ) {
+			$loc = $_SERVER['GEOIP_COUNTRY_CODE'];
 
-		if ( self::is_valid_location( $loc ) ) {
-			return $loc;
+			if ( self::is_valid_location( $loc ) ) {
+				return $loc;
+			}
 		}
 
 		return self::get_default_location();
@@ -40,7 +42,7 @@ class VIP_Go_Geo_Uniques {
 	}
 
 	static function is_valid_location( $loc ) {
-		return in_array( self::$supported_locations, $loc );
+		return in_array( $loc, self::$supported_locations );
 	}
 
 	function init() {
@@ -76,10 +78,10 @@ function vip_geo_get_country_code() {
 	return VIP_Go_Geo_Uniques::get_country_code();
 }
 
-function vip_geo_set_default_location() {
-	return VIP_Go_Geo_Uniques::set_default_location();
+function vip_geo_set_default_location( $loc ) {
+	return VIP_Go_Geo_Uniques::set_default_location( $loc );
 }
 
-function vip_geo_add_location() {
-	return VIP_Go_Geo_Uniques::add_location();
+function vip_geo_add_location( $loc ) {
+	return VIP_Go_Geo_Uniques::add_location( $loc );
 }
