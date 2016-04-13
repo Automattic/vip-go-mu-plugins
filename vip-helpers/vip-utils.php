@@ -931,10 +931,16 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
  * @return bool True if the include was successful
  */
 function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_release_candidate = false ) {
+
+	$is_vip_env = defined( 'WPCOM_IS_VIP_ENV' ) && WPCOM_IS_VIP_ENV;
+
 	// Make sure there's a plugin to load
 	if ( empty($plugin) ) {
-		if ( ! WPCOM_IS_VIP_ENV ) {
-			trigger_error( 'wpcom_vip_load_plugin() was called without a first parameter!', E_USER_ERROR );
+		if ( $is_vip_env ) {
+			_doing_it_wrong( 'wpcom_vip_load_plugin', 'No plugin was specified', '' );
+			return false;
+		} else {
+			trigger_error( 'wpcom_vip_load_plugin() was called without a plugin specified in the first parameter', E_USER_ERROR );
 		}
 	}
 
@@ -943,12 +949,11 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 	$exploded = explode( DIRECTORY_SEPARATOR, $plugin );
 
 	if ( count( $exploded ) > 2 ) {
-		if ( ! WPCOM_IS_VIP_ENV ) {
-			trigger_error( 'wpcom_vip_load_plugin() was called with multiple subdirectories', E_USER_ERROR );
-		} else {
+		if ( $is_vip_env ) {
 			_doing_it_wrong( 'wpcom_vip_load_plugin', 'Subdirectories not supported in file paths', '' );
-
 			return false;
+		} else {
+			trigger_error( 'wpcom_vip_load_plugin() was called with multiple subdirectories', E_USER_ERROR );
 		}
 	}
 
@@ -958,12 +963,11 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		$pathinfo = pathinfo( $plugin );
 
 		if ( ! isset( $pathinfo['extension'] ) || 'php' !== $pathinfo['extension'] ) {
-			if ( ! WPCOM_IS_VIP_ENV ) {
-				trigger_error( 'wpcom_vip_load_plugin() was called with a path, but no PHP file was specified', E_USER_ERROR );
-			} else {
+			if ( $is_vip_env ) {
 				_doing_it_wrong( 'wpcom_vip_load_plugin', 'Must specify php file when loading via path', '' );
-
 				return false;
+			} else {
+				trigger_error( 'wpcom_vip_load_plugin() was called with a path, but no PHP file was specified', E_USER_ERROR );
 			}
 		}
 	}
@@ -1032,8 +1036,8 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 		return _wpcom_vip_include_plugin( $includepath );
 	}
 
-	$code_open = WPCOM_IS_VIP_ENV ? '<code>' : '`';
-	$code_close = WPCOM_IS_VIP_ENV ? '</code>' : '`';
+	$code_open = $is_vip_env ? '<code>' : '`';
+	$code_close = $is_vip_env ? '</code>' : '`';
 
 	$msg_dirs = array();
 	foreach ( $test_directories as $directory ) {
@@ -1045,12 +1049,12 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 	$message .= implode( ', ', $msg_dirs );
 	$message .= " using wpcom_vip_load_plugin()";
 
-	if ( ! WPCOM_IS_VIP_ENV ) {
-		trigger_error( $message, E_USER_ERROR );
+	if ( $is_vip_env ) {
+		_doing_it_wrong( 'wpcom_vip_load_plugin', $message, '' );
+		return false;
 	}
 
-	_doing_it_wrong( 'wpcom_vip_load_plugin', $message, '' );
-	return false;
+	trigger_error( $message, E_USER_ERROR );
 }
 
 function _wpcom_vip_include_plugin( $file ) {
