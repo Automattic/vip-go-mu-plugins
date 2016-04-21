@@ -576,6 +576,7 @@ class A8C_Files {
 		// the image_add_wh() filter will add the ?w= query string at display time.
 		elseif ( 'full' != $size ) {
 			$img_url = add_query_arg( 'w', $w, $img_url );
+			$resized = true;
 		}
 
 		return array( $img_url, $w, $h, $resized );
