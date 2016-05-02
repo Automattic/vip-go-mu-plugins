@@ -463,6 +463,7 @@ class A8C_Files {
 
 		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
 		$crop = false;
+		$args = array();
 
 		// For resize requests coming from an image's attachment page, override
 		// the supplied $size and use the user-defined $content_width if the
@@ -520,6 +521,14 @@ class A8C_Files {
 		$resized = false;
 		$img_url = wp_get_attachment_url( $id );
 
+		/**
+		 * Filter the original image Photon-compatible parameters before changes are 
+		 *
+		 * @param array|string $args Array of Photon-compatible arguments.
+		 * @param string $image_url Image URL.
+		 */
+		$args = apply_filters( 'vip_go_image_resize_pre_args', $args, $image_url );
+
 		if ( ! $crop ) {
 			$imagedata = wp_get_attachment_metadata( $id );
 
@@ -566,18 +575,31 @@ class A8C_Files {
 			if ( $constrain )
 				list( $w, $h ) = wp_constrain_dimensions( $w, $h, $_max_w, $_max_h );
 
-			$img_url = add_query_arg( 'w', $w, $img_url );
-			$img_url = add_query_arg( 'h', $h, $img_url );
+			$args['w'] = $w;
+			$args['h'] = $h;
 
-			$img_url = add_query_arg( 'crop', '1', $img_url );
+			$args['crop'] = '1';
 			$resized = true;
 		}
 		// we want users to be able to resize full size images with tinymce.
 		// the image_add_wh() filter will add the ?w= query string at display time.
 		elseif ( 'full' != $size ) {
-			$img_url = add_query_arg( 'w', $w, $img_url );
+			$args['w'] = $w;
 			$resized = true;
 		}
+
+		if ( is_array( $args ) ) {
+			// Convert values that are arrays into stri
+			foreach ( $args as $arg => $value ) {
+				if ( is_array( $value ) ) {
+					$args[ $arg ] = implode( ',', $valu
+				}
+			}
+			// Encode values
+			// See http://core.trac.wordpress.org/ticke
+			$args = rawurlencode_deep( $args );
+		}
+		$img_url = add_query_arg( $args, $img_url );
 
 		return array( $img_url, $w, $h, $resized );
 	}
