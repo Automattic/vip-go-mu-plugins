@@ -1,8 +1,13 @@
 <?php
 
-// For backwards compatibility - always true. Will have a helper for determining
-// the current environment
-// @todo This needs to be set on VIP env only, and set to `false` here
+/**
+ * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
+ */
+if ( ! defined( 'VIP_GO_ENV' ) ) {
+	define( 'VIP_GO_ENV', false );
+}
+
+// For backwards compatibility - always true.
 if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
     define( 'WPCOM_IS_VIP_ENV', false );
 }
