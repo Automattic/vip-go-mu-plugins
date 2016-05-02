@@ -589,14 +589,14 @@ class A8C_Files {
 		}
 
 		if ( is_array( $args ) ) {
-			// Convert values that are arrays into stri
+			// Convert values that are arrays into strings
 			foreach ( $args as $arg => $value ) {
 				if ( is_array( $value ) ) {
-					$args[ $arg ] = implode( ',', $valu
+					$args[ $arg ] = implode( ',', $value );
 				}
 			}
 			// Encode values
-			// See http://core.trac.wordpress.org/ticke
+			// See http://core.trac.wordpress.org/ticket/17923
 			$args = rawurlencode_deep( $args );
 		}
 		$img_url = add_query_arg( $args, $img_url );
