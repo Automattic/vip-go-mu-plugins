@@ -926,11 +926,11 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
  * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
  * @param string $plugin Optional. Plugin folder name of the plugin, or the folder and
  * plugin file name (such as wp-api/plugin.php), relative to either the VIP shared-plugins folder, or WP_PLUGIN_DIR
- * @param string $folder Deprecated. No longer used
- * @param bool $load_release_candidate Whether to load a release candidate version of this plugin, if available
+ * @param string $folder Subdirectory of WP_PLUGIN_DIR to load plugin from
+ * @param bool $load_release_candidate Deprecated. No longer used
  * @return bool True if the include was successful
  */
-function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_release_candidate = false ) {
+function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_candidate_not_used = null ) {
 	// Make sure there's a plugin to load
 	if ( empty($plugin) ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
@@ -985,16 +985,17 @@ function wpcom_vip_load_plugin( $plugin = false, $folder_not_used = null, $load_
 
 	// Make sure $plugin and $folder are valid
 	$plugin = _wpcom_vip_load_plugin_sanitizer( $plugin );
+	$folder = _wpcom_vip_load_plugin_sanitizer( $folder );
 
 	// Array of directories to check for the above files in, in priority order
 	$test_directories = array();
 
-	if ( true === $load_release_candidate ) {
-		$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins/release-candidates';
+	if ( $folder ) {
+		$test_directories[] = WP_PLUGIN_DIR . '/' . $folder;
+	} else {
+		$test_directories[] = WP_PLUGIN_DIR;
+		$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
 	}
-
-	$test_directories[] = WP_PLUGIN_DIR;
-	$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
 
 	$includepath = null;
 	$plugin_type = null;
