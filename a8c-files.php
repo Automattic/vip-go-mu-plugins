@@ -25,6 +25,7 @@ class A8C_Files {
 		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
 
 		add_filter( 'wp_handle_upload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
+		add_filter( 'wp_handle_sideload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
 		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
 
 		add_filter( 'wp_handle_upload', array( &$this, 'upload_file' ), 10, 2 );
