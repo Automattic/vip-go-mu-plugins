@@ -1,8 +1,6 @@
 # [VIP Go](https://veetoop2.wordpress.com/) MU Plugins [![Build Status](https://magnum.travis-ci.com/Automattic/vip-go-mu-plugins.svg?token=saKYXPvcnyNUH8ChL4di&branch=master)](https://magnum.travis-ci.com/Automattic/vip-go-mu-plugins)
 
-**IMPORTANT NOTE: Do NOT include passwords, private keys, or other sensitive items in this repository or any submodules.** Every commit which is merged to the `master` branch of this repository is automattically pushed to the public copy at [Automattic/vip-mu-plugins-public](https://github.com/Automattic/vip-mu-plugins-public/).
-
-There are exceptions which are not deployed, these are controlled by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh).
+Every commit which is merged to the `master` branch of this repository is automattically pushed to the public copy at [Automattic/vip-mu-plugins-public](https://github.com/Automattic/vip-mu-plugins-public/). There are exceptions which are not deployed, these are controlled by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh).
 
 ## Tests
 
