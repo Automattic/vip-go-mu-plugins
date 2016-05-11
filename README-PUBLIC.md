@@ -1,6 +1,8 @@
-# VIP MU Plugins [![Build Status](https://magnum.travis-ci.com/Automattic/vip-go-mu-plugins.svg?token=saKYXPvcnyNUH8ChL4di&branch=master)](https://magnum.travis-ci.com/Automattic/vip-go-mu-plugins)
+# VIP MU Plugins
 
-This is the complete MU plugins folder for the WordPress.com VIP next generation hosting platform.
+This is the complete MU plugins folder for the WordPress.com VIP next generation hosting platform, assembled without submodules for convenience. 
+
+**If you wish to issue a pull request for code here, please do so on [Automattic/vip-go-mu-plugins](https://github.com/Automattic/vip-go-mu-plugins/).**
 
 ## Tests
 
