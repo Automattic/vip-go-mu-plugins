@@ -1049,6 +1049,12 @@ function _wpcom_vip_include_plugin( $file ) {
 	// Now include
 	include_once( $file );
 
+	// If there's a wpcom-helper file for the plugin, load that too
+	$helper_path = dirname($file) . "/wpcom-helper.php";
+	if ( file_exists( $helper_path ) ) {
+		require_once( $helper_path );
+	}
+
 	// Blacklist out some variables
 	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
 
