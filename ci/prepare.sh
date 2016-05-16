@@ -10,7 +10,7 @@ set -ex
 # are authenticated and authorised on that repo (and we aren't,
 # for the submodules here)
 if [ -w ${TRAVIS_BUILD_DIR}/.gitmodules ]; then
-    sed -i \"s#https\?://github.com/#git@github.com:#\" ${TRAVIS_BUILD_DIR}/.gitmodules
+    sed -i "s#https\?://github.com/#git@github.com:#" ${TRAVIS_BUILD_DIR}/.gitmodules
 fi;
 
 # Install unit tests
