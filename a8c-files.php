@@ -183,7 +183,7 @@ class A8C_Files {
 	}
 
 	/**
-	 *
+	 * Filter's the return value of `wp_unique_filename()`
 	 */
 	function filter_unique_filename( $filename, $ext, $dir, $unique_filename_callback ) {
 		if ( '.tmp' === $ext || '/tmp/' === $dir ) {
@@ -208,6 +208,9 @@ class A8C_Files {
 		return $filename;
 	}
 
+	/**
+	 * Ensure filename uniqueness prior to WP 4.5's wp_unique_filename filter
+	 */
 	function get_unique_filename( $file ) {
 		$filename = strtolower( $file['name'] );
 		$info = pathinfo( $filename );
@@ -241,7 +244,7 @@ class A8C_Files {
 	}
 
 	/**
-	 *
+	 * Common method to check Mogile backend for filename uniqueness
 	 */
 	private function _check_uniqueness_with_backend( $filename ) {
 		$headers = array(
