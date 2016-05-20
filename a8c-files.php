@@ -225,48 +225,16 @@ class A8C_Files {
 		$filename = str_replace( $ext, '', $filename );
 		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
 
-		$headers = array(
-					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
-					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
-					'X-Action: unique_filename',
-				);
+		$check = $this->_check_uniqueness_with_backend( $filename );
 
-		if ( ! ( ( $uploads = wp_upload_dir() ) && false === $uploads['error'] ) ) {
-			$file['error'] = $uploads['error'];
-			return $file;
-		}
-
-		$url_parts = parse_url( $uploads['url'] . '/' . $filename );
-		$file_path = $url_parts['path'];
-		if ( is_multisite() &&
-			preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-			$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
-		}
-
-		$post_url = $this->get_files_service_hostname() . $file_path;
-
-		$ch = curl_init( $post_url );
-
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
-		curl_setopt( $ch, CURLOPT_VERBOSE, true );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0 );
-
-		$content = curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-
-		if ( 200 == $http_code ) {
-			$obj = json_decode( $content );
+		if ( 200 == $check['http_code'] ) {
+			$obj = json_decode( $check['content'] );
 			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) )
 				$file['name'] = $obj->filename;
-		} else if ( 406 == $http_code ) {
+		} else if ( 406 == $check['http_code'] ) {
 			$file['error'] = __( 'The file type you uploaded is not supported.' );
 		} else {
-			$file['error'] = sprintf( __( 'Error getting the file name from the remote servers: Code %d' ), $http_code );
+			$file['error'] = sprintf( __( 'Error getting the file name from the remote servers: Code %d' ), $check['http_code'] );
 		}
 
 		return $file;
