@@ -190,6 +190,8 @@ class A8C_Files {
 			return $filename;
 		}
 
+		$ext = strtolower( $ext );
+
 		// This should probably be `sanitize_file_name()` instead, but for legacy reasons, we go through this process
 		$filename = str_replace( $ext, '', $filename );
 		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
