@@ -24,8 +24,17 @@ class A8C_Files {
 		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
 		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
 
-		add_filter( 'wp_handle_upload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
-		add_filter( 'wp_handle_sideload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
+		// WP 4.5 introduced a new filter, which simplifies how we generate unique filenames
+		// We retain test sites on the version that precedes the current stable release, making this necessary
+		global $wp_version;
+
+		if ( version_compare( $wp_version, '4.5', '>=' ) ) {
+			add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
+		} else {
+			add_filter( 'wp_handle_upload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
+			add_filter( 'wp_handle_sideload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
+		}
+
 		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
 
 		add_filter( 'wp_handle_upload', array( &$this, 'upload_file' ), 10, 2 );
@@ -171,6 +180,61 @@ class A8C_Files {
 		curl_close( $ch );
 
 		return ( 200 == $http_code );
+	}
+
+	/**
+	 *
+	 */
+	function filter_unique_filename( $filename, $ext, $dir, $unique_filename_callback ) {
+		if ( '.tmp' === $ext || '/tmp/' === $dir ) {
+			return $filename;
+		}
+
+		// This should probably be `sanitize_file_name()` instead, but for legacy reasons, we go through this process
+		$filename = str_replace( $ext, '', $filename );
+		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
+
+		$headers = array(
+			'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
+			'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
+			'X-Action: unique_filename',
+		);
+
+		if ( ! ( ( $uploads = wp_upload_dir() ) && false === $uploads['error'] ) ) {
+			return $filename;
+		}
+
+		$url_parts = parse_url( $uploads['url'] . '/' . $filename );
+		$file_path = $url_parts['path'];
+		if ( is_multisite() &&
+		     preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
+			$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+		}
+
+		$post_url = $this->get_files_service_hostname() . $file_path;
+
+		$ch = curl_init( $post_url );
+
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_HEADER, false );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
+		curl_setopt( $ch, CURLOPT_VERBOSE, true );
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0 );
+
+		$content = curl_exec( $ch );
+		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		curl_close( $ch );
+
+		if ( 200 == $http_code ) {
+			$obj = json_decode( $content );
+			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) ) {
+				$filename = $obj->filename;
+			}
+		}
+
+		return $filename;
 	}
 
 	function get_unique_filename( $file ) {
