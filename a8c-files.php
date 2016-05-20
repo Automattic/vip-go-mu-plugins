@@ -671,7 +671,7 @@ function a8c_files_init() {
  * Function name parallels wpcom's implementation to accommodate existing code
  */
 function wpcom_intermediate_sizes( $sizes ) {
-	__return_empty_array();
+	return __return_empty_array();
 }
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
