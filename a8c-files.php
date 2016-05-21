@@ -17,6 +17,8 @@ if ( ! defined( 'FILE_SERVICE_ENDPOINT' ) )
 
 define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
+define( 'ALLOW_UNFILTERED_UPLOADS', false );
+
 class A8C_Files {
 
 	function __construct() {
@@ -30,6 +32,7 @@ class A8C_Files {
 
 		if ( version_compare( $wp_version, '4.5', '>=' ) ) {
 			add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
+			add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
 		} else {
 			add_filter( 'wp_handle_upload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
 			add_filter( 'wp_handle_sideload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
@@ -185,16 +188,14 @@ class A8C_Files {
 	/**
 	 * Filter's the return value of `wp_unique_filename()`
 	 */
-	function filter_unique_filename( $filename, $ext, $dir, $unique_filename_callback ) {
+	public function filter_unique_filename( $filename, $ext, $dir, $unique_filename_callback ) {
 		if ( '.tmp' === $ext || '/tmp/' === $dir ) {
 			return $filename;
 		}
 
 		$ext = strtolower( $ext );
 
-		// This should probably be `sanitize_file_name()` instead, but for legacy reasons, we go through this process
-		$filename = str_replace( $ext, '', $filename );
-		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
+		$filename = $this->_sanitize_filename( $filename, $ext );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
@@ -206,6 +207,27 @@ class A8C_Files {
 		}
 
 		return $filename;
+	}
+
+	/**
+	 * Check filetype support against Mogile
+	 *
+	 * Leverages Mogile backend, which will return a 406 or other non-200 code if the filetype is unsupported
+	 */
+	public function filter_filetype_check( $filetype_data, $file, $filename, $mimes ) {
+		$filename = $this->_sanitize_filename( $filename, '.' . pathinfo( $filename, PATHINFO_EXTENSION ) );
+
+		$check = $this->_check_uniqueness_with_backend( $filename );
+
+		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
+		// See `_wp_handle_upload()`
+		if ( 200 != $check['http_code'] ) {
+			$filetype_data['ext']             = '';
+			$filetype_data['type']            = '';
+			$filetype_data['proper_filename'] = false; // Never set this true, which leaves filename changing to dedicated methods in this class
+		}
+
+		return $filetype_data;
 	}
 
 	/**
@@ -225,8 +247,7 @@ class A8C_Files {
 		else
 			$ext = strtolower( ".$ext" );
 
-		$filename = str_replace( $ext, '', $filename );
-		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
+		$filename = $this->_sanitize_filename( $filename, $ext );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
@@ -241,6 +262,18 @@ class A8C_Files {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Ensure consistent filename sanitization
+	 *
+	 * Eventually, this should be `sanitize_file_name()` instead, but for legacy reasons, we go through this process
+	 */
+	private function _sanitize_filename( $filename, $ext ) {
+		$filename = str_replace( $ext, '', $filename );
+		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
+
+		return $filename;
 	}
 
 	/**
