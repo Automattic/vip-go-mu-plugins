@@ -6,11 +6,14 @@
 # http://www.peterbe.com/plog/set-ex
 set -ex
 
-mkdir -p ~/.ssh
-ssh-add -D
-echo -e "Host github.com\n  User wpcomvip-deploy\n  IdentityFile ${TRAVIS_BUILD_DIR}/ci/ssh/insecure-key\n" > ~/.ssh/config
-chmod 600 ${TRAVIS_BUILD_DIR}/ci/ssh/*
-cp ${TRAVIS_BUILD_DIR}/ci/ssh/known_hosts ~/.ssh/known_hosts
+# We cannot checkout even public repositories via SSH unless we
+# are authenticated and authorised on that repo (and we aren't,
+# for the submodules here)
+cat ${TRAVIS_BUILD_DIR}/.gitmodules
+if [ -w ${TRAVIS_BUILD_DIR}/.gitmodules ]; then
+    sed -i "s#https\?://github.com/#git@github.com:#" ${TRAVIS_BUILD_DIR}/.gitmodules
+fi;
+cat ${TRAVIS_BUILD_DIR}/.gitmodules
 
 # Install unit tests
 # ==================
