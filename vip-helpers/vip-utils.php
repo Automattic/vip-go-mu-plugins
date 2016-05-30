@@ -1118,3 +1118,13 @@ function wpcom_vip_disable_new_relic_js() {
 		newrelic_disable_autorum();
 	}
 }
+
+/**
+ * Add the exact URI to NewRelic tracking but only if we're not in the admin 
+ */
+function wpcom_vip_add_URI_to_newrelic(){
+	if ( ! is_admin() ){
+		newrelic_add_custom_parameter ('URI', $_SERVER['REQUEST_URI']);		
+	}
+}
+
