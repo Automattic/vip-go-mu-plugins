@@ -1123,8 +1123,10 @@ function wpcom_vip_disable_new_relic_js() {
  * Add the exact URI to NewRelic tracking but only if we're not in the admin 
  */
 function wpcom_vip_add_URI_to_newrelic(){
-	if ( ! is_admin() ){
-		newrelic_add_custom_parameter ('URI', $_SERVER['REQUEST_URI']);		
+	if ( ! is_admin() && function_exists( 'newrelic_add_custom_parameter' ) ){
+		newrelic_add_custom_parameter ('REQUEST_URI', $_SERVER['REQUEST_URI']);
+		newrelic_add_custom_parameter ('HTTP_REFERER', $_SERVER['HTTP_REFERER']);
+		newrelic_add_custom_parameter ('HTTP_USER_AGENT', $_SERVER['HTTP_USER_AGENT']);
 	}
 }
 
