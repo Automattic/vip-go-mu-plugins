@@ -1129,4 +1129,4 @@ function wpcom_vip_add_URI_to_newrelic(){
 		newrelic_add_custom_parameter ('HTTP_USER_AGENT', $_SERVER['HTTP_USER_AGENT']);
 	}
 }
-
+add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
