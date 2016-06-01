@@ -229,6 +229,8 @@ class WPCOM_VIP_Cache_Manager {
 
 		foreach ( $feeds as $feed )
 			$this->purge_urls[] = $feed;
+
+		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
 	}
 }
 
