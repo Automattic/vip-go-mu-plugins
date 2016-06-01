@@ -23,12 +23,14 @@ add_filter( 'nocache_headers', 'wpcom_vip_check_for_404_and_remove_cache_headers
 add_filter( 'got_url_rewrite', '__return_true' );
 
 // Activate concatenation
-if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
-	require __DIR__ .'/http-concat/jsconcat.php';
-}
+if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
+	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
+		require __DIR__ .'/http-concat/jsconcat.php';
+	}
 
-if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
-	require __DIR__ .'/http-concat/cssconcat.php';
+	if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
+		require __DIR__ .'/http-concat/cssconcat.php';
+	}
 }
 
 /**
