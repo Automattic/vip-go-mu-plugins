@@ -24,7 +24,7 @@ function wpcom_vip_cron_control_options( $options ) {
 
 	);
 }
-add_filter( 'pre_get_option_wpcroncontrol_settings', 'wpcom_vip_cron_control_options' );
+add_filter( 'pre_option_wpcroncontrol_settings', 'wpcom_vip_cron_control_options' );
 
 /**
  * Load plugin
