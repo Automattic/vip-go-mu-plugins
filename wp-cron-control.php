@@ -21,7 +21,7 @@ class WPCom_VIP_Cron_Control {
 		add_action( 'admin_init', array( $this, 'block_admin_page' ) );
 
 		// Load plugin
-		require( __DIR__ . '/wp-cron-control/wp-cron-control.php' );
+		require_once( __DIR__ . '/wp-cron-control/wp-cron-control.php' );
 	}
 
 	/**
