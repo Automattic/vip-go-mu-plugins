@@ -8,12 +8,9 @@
  Text Domain: wp-cron-control
  */
 
-// TODO:
-// Global WP_CRON_CONTROL_SECRET
-
 class WPCom_VIP_Cron_Control {
 	/**
-	 *
+	 * Register hooks
 	 */
 	public function __construct() {
 		add_filter( 'pre_option_wpcroncontrol_settings', array( $this, 'set_options' ) );
