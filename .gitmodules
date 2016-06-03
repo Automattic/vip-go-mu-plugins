@@ -28,3 +28,6 @@
 [submodule "query-monitor"]
 	path = query-monitor
 	url = git@github.com:johnbillion/query-monitor.git
+[submodule "jetpack-built"]
+	path = jetpack-built
+	url = git@github.com:Automattic/jetpack.git
