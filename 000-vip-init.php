@@ -29,6 +29,7 @@ require_once( __DIR__ . '/vip-helpers/vip-media.php' );
 require_once( __DIR__ . '/vip-helpers/vip-elasticsearch.php' );
 require_once( __DIR__ . '/vip-helpers/vip-stats.php' );
 require_once( __DIR__ . '/vip-helpers/vip-deprecated.php' );
+require_once( __DIR__ . '/vip-helpers/vip-syndication-cache.php' );
 
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
