@@ -8,25 +8,25 @@
  Author URI: http://wordpress.org/
  */
 add_filter( 'debug_bar_enable', function( $enable ) {
-    $enable = is_automattician();
-    return $enable;
+	$enable = is_automattician();
+	return $enable;
 }, 99 );
 // We only need to load the files if it's enabled
 add_action( 'after_setup_theme', function() {
-    $enable = apply_filters( 'debug_bar_enable', false );
-    if ( ! $enable ) {
-        return;
-    }
-    if ( ! defined( 'SAVEQUERIES' ) ) {
-        define( 'SAVEQUERIES', true );
-        // For hyperdb, which doesn't use SAVEQUERIES
-        global $wpdb;
-        $wpdb->save_queries = true;
-    }
-    require_once( __DIR__ . '/debug-bar/debug-bar.php' );
-    // Setup extra panels
-    add_filter( 'debug_bar_panels', function( $panels ) {
-        // @todo, see wpcom for details
-    	return $panels;
-    }, 99);
+	$enable = apply_filters( 'debug_bar_enable', false );
+	if ( ! $enable ) {
+		return;
+	}
+	if ( ! defined( 'SAVEQUERIES' ) ) {
+		define( 'SAVEQUERIES', true );
+		// For hyperdb, which doesn't use SAVEQUERIES
+		global $wpdb;
+		$wpdb->save_queries = true;
+	}
+	require_once( __DIR__ . '/debug-bar/debug-bar.php' );
+	// Setup extra panels
+	add_filter( 'debug_bar_panels', function( $panels ) {
+		// @todo, see wpcom for details
+		return $panels;
+	}, 99);
 }, 99 );
