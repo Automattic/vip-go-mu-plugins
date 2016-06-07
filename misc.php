@@ -67,13 +67,13 @@ add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
 
 add_action( 'update_option', function( $option ) {
     if ( ! wp_installing() ) {
-        wp_cache_delete( '<span class="highlight">alloptions</span>', 'options' );
+        wp_cache_delete( 'alloptions', 'options' );
     }
 }, 10, 1 );
  
 add_action( 'updated_option', function( $option ) {
     if ( ! wp_installing() ) {
-        wp_cache_delete( '<span class="highlight">alloptions</span>', 'options' );
-        wp_load_<span class="highlight">alloptions</span>();
+        wp_cache_delete( 'alloptions', 'options' );
+        wp_load_alloptions();
     }
 }, 10, 1 );
