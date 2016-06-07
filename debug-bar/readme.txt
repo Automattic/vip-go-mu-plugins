@@ -1,8 +1,8 @@
 === Debug Bar ===
-Contributors: wordpressdotorg, ryan, westi, koopersmith, duck_, mitchoyoshitaka
+Contributors: wordpressdotorg, ryan, westi, koopersmith, duck_, mitchoyoshitaka, dd32
 Tags: debug
-Tested up to: 3.5
-Stable tag: 0.8
+Tested up to: 4.5
+Stable tag: 0.8.4
 Requires at least: 3.1
 
 Adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information.
@@ -17,9 +17,21 @@ When WP_DEBUG is enabled it also tracks PHP Warnings and Notices to make them ea
 
 When SAVEQUERIES is enabled the mysql queries are tracked and displayed.
 
-Add a PHP/MySQL console with the [Debug Bar Console plugin](http://wordpress.org/extend/plugins/debug-bar-console/).
+Add a PHP/MySQL console with the [Debug Bar Console plugin](https://wordpress.org/plugins/debug-bar-console/).
 
 == Upgrade Notice ==
+
+= 0.8.4 =
+Updated to avoid incompatibilities with some extensions.
+
+= 0.8.3 =
+Updated to avoid PHP7 Deprecated notices.
+
+= 0.8.2 =
+Updated to handle a new deprecated message in WordPress 4.0.
+
+= 0.8.1 =
+Minor security fix.
 
 = 0.8 =
 WordPress 3.3 compatibility
@@ -68,6 +80,27 @@ Added deprecated function usage tracking
 Initial Release
 
 == Changelog ==
+
+= 0.8.4 =
+Updated to avoid incompatibilities with some extensions.
+
+= 0.8.3 =
+Updated to avoid PHP7 Deprecated notices.
+
+= 0.8.2 =
+Updated to handle a new deprecated message in WordPress 4.0.
+
+= 0.8.1 =
+Minor security fix.
+
+= 0.8 =
+WordPress 3.3 compatibility
+UI refresh
+Removed jQuery UI requirement
+Full screen by default
+New debug-bar query parameter to show on page load
+Removed display cookies
+JavaScript error tracking (disabled by default)
 
 = 0.7 =
 Made compatible with PHP < 5.2.0

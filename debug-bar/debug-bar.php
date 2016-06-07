@@ -1,11 +1,11 @@
 <?php
 /*
  Plugin Name: Debug Bar
- Plugin URI: http://wordpress.org/extend/plugins/debug-bar/
+ Plugin URI: https://wordpress.org/plugins/debug-bar/
  Description: Adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information.
  Author: wordpressdotorg
- Version: 0.8
- Author URI: http://wordpress.org/
+ Version: 0.8.4
+ Author URI: https://wordpress.org/
  */
 
 /***
@@ -20,37 +20,23 @@
 class Debug_Bar {
 	var $panels = array();
 
-	function Debug_Bar() {
+	function __construct() {
 		if ( defined('DOING_AJAX') && DOING_AJAX )
 			add_action( 'admin_init', array( &$this, 'init_ajax' ) );
-
 		add_action( 'admin_bar_init', array( &$this, 'init' ) );
 	}
 
+	function Debug_Bar() {
+		Debug_Bar::__construct();
+	}
+
 	function init() {
-		// WPCOM: Temorary enable the debug bar for certain people when not super admins
-		$user = wp_get_current_user();
-		if ( ! $user || ! $user->exists() )
-			return;
-
-		if ( in_array( $user->user_login, array( 'vnsavage', 'barry' ) ) )
-			$user_has_access = true;
-		else
-			$user_has_access = is_super_admin();
-
-		if ( ! $user_has_access || ! is_admin_bar_showing() || $this->is_wp_login() )
-			return;
-
-		// WPCOM: Breaking widget selection, see http://vip-support.automattic.com/tickets/15531
-		if ( false !== strpos( site_url(), 'postmediacanadadotcompreprod.wordpress.com' ) )
-			return;
-
-		// WPCOM: Allow conditionally disabling this
-		if ( ! apply_filters( 'debug_bar_enable', true ) )
+		if ( ! is_super_admin() || ! is_admin_bar_showing() || $this->is_wp_login() )
 			return;
 
 		add_action( 'admin_bar_menu',               array( &$this, 'admin_bar_menu' ), 1000 );
-		add_action( 'wp_after_admin_bar_render',    array( &$this, 'render' ) );
+		add_action( 'admin_footer',                 array( &$this, 'render' ), 1000 );
+		add_action( 'wp_footer',                    array( &$this, 'render' ), 1000 );
 		add_action( 'wp_head',                      array( &$this, 'ensure_ajaxurl' ), 1 );
 		add_filter( 'body_class',                   array( &$this, 'body_class' ) );
 		add_filter( 'admin_body_class',             array( &$this, 'body_class' ) );
@@ -76,17 +62,19 @@ class Debug_Bar {
 	}
 
 	function requirements() {
+		$path = plugin_dir_path( __FILE__ );
+		require_once( $path . '/compat.php' );
 		$recs = array( 'panel', 'php', 'queries', 'request', 'wp-query', 'object-cache', 'deprecated', 'js' );
 		foreach ( $recs as $rec )
-			require_once __DIR__ . "/panels/class-debug-bar-$rec.php";
+			require_once "$path/panels/class-debug-bar-$rec.php";
 	}
 
 	function enqueue() {
 		$suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '.dev' : '';
 
-		wp_enqueue_style( 'debug-bar', plugins_url( "css/debug-bar$suffix.css", __FILE__ ), array(), '20111209' );
+		wp_enqueue_style( 'debug-bar', plugins_url( "css/debug-bar$suffix.css", __FILE__ ), array(), '20120317' );
 
-		wp_enqueue_script( 'debug-bar', plugins_url( "js/debug-bar$suffix.js", __FILE__ ), array( 'jquery' ), '20111209', true );
+		wp_enqueue_script( 'debug-bar', plugins_url( "js/debug-bar$suffix.js", __FILE__ ), array( 'jquery' ), '20121228.2', true );
 
 		do_action('debug_bar_enqueue_scripts');
 	}
@@ -99,6 +87,7 @@ class Debug_Bar {
 			'Debug_Bar_Deprecated',
 			'Debug_Bar_Request',
 			'Debug_Bar_Object_Cache',
+			'Debug_Bar_JS',
 		);
 
 		foreach ( $classes as $class ) {

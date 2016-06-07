@@ -4,7 +4,7 @@ class Debug_Bar_Panel {
 	var $_title = '';
 	var $_visible = true;
 
-	function Debug_Bar_Panel( $title='' ) {
+	function __construct( $title = '' ) {
 		$this->title( $title );
 
 		if ( $this->init() === false ) {
@@ -13,6 +13,10 @@ class Debug_Bar_Panel {
 		}
 
 		add_filter( 'debug_bar_classes', array( &$this, 'debug_bar_classes' ) );
+	}
+
+	function Debug_Bar_Panel( $title = '' ) {
+		Debug_Bar_Panel::__construct( $title );
 	}
 
 	/**
