@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: VIP Hosting Miscellaneous
-Description: Handles CSS and JS concatenation, Nginx compatibility, SSL verification
+Description: Handles CSS and JS concatenation, Nginx compatibility, SSL verification, alloptions cache fix
 Author: Automattic
 Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -22,17 +22,13 @@ add_filter( 'nocache_headers', 'wpcom_vip_check_for_404_and_remove_cache_headers
 // Cleaner permalink options
 add_filter( 'got_url_rewrite', '__return_true' );
 
-// Checking for VIP_GO_ENV allows this code to work outside VIP Go environments,
-// albeit without concatenation of JS and CSS.
-if ( defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV ) {
-	// Activate concatenation
-	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
-		require __DIR__ .'/http-concat/jsconcat.php';
-	}
+// Activate concatenation
+if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
+	require __DIR__ .'/http-concat/jsconcat.php';
+}
 
-	if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
-		require __DIR__ .'/http-concat/cssconcat.php';
-	}
+if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
+	require __DIR__ .'/http-concat/cssconcat.php';
 }
 
 /**
@@ -63,3 +59,21 @@ add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
  */
 add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
+
+
+/**
+ * Fix a race condition in alloptions caching
+ */
+
+add_action( 'update_option', function( $option ) {
+    if ( ! wp_installing() ) {
+        wp_cache_delete( '<span class="highlight">alloptions</span>', 'options' );
+    }
+}, 10, 1 );
+ 
+add_action( 'updated_option', function( $option ) {
+    if ( ! wp_installing() ) {
+        wp_cache_delete( '<span class="highlight">alloptions</span>', 'options' );
+        wp_load_<span class="highlight">alloptions</span>();
+    }
+}, 10, 1 );
