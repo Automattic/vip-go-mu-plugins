@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: VIP Hosting Miscellaneous
-Description: Handles CSS and JS concatenation, Nginx compatibility, SSL verification
+Description: Handles CSS and JS concatenation, Nginx compatibility, SSL verification, alloptions cache fix
 Author: Automattic
 Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -63,3 +63,21 @@ add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
  */
 add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
+
+
+/**
+ * Fix a race condition in alloptions caching
+ */
+
+add_action( 'update_option', function( $option ) {
+    if ( ! wp_installing() ) {
+        wp_cache_delete( 'alloptions', 'options' );
+    }
+}, 10, 1 );
+ 
+add_action( 'updated_option', function( $option ) {
+    if ( ! wp_installing() ) {
+        wp_cache_delete( 'alloptions', 'options' );
+        wp_load_alloptions();
+    }
+}, 10, 1 );
