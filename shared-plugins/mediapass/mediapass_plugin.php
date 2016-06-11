@@ -157,7 +157,7 @@ class MediaPass_Plugin {
 	}	
 	
 	private function set_site_identifier_options() {
-		$mp_base_url = split("/", site_url());
+		$mp_base_url = explode("/", site_url());
     	$mp_strip_endurl = $mp_base_url[0] ."//". $mp_base_url[2];
 		$mp_str_url = 'www.' . str_replace(array('http://','https://'), '', $mp_strip_endurl);
 
