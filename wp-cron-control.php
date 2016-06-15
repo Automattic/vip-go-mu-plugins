@@ -8,7 +8,7 @@
  Text Domain: wp-cron-control
  */
 
-class WPCom_VIP_Cron_Control {
+class WPCOM_VIP_Cron_Control {
 	/**
 	 * Register hooks
 	 */
@@ -57,4 +57,4 @@ class WPCom_VIP_Cron_Control {
 	}
 }
 
-new WPCom_VIP_Cron_Control;
+new WPCOM_VIP_Cron_Control;
