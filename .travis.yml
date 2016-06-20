@@ -2,9 +2,6 @@ language: php
 
 sudo: false # Use modern Travis builds – http://docs.travis-ci.com/user/migrating-from-legacy/
 
-git:
-  submodules: false
-
 php:
   - 5.5
   - 5.6
@@ -18,7 +15,6 @@ env:
 
 before_install:
   - ./ci/prepare.sh
-  - git submodule update --init --recursive
 
 script:
   # Linting and unit tests
