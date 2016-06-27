@@ -31,3 +31,6 @@
 [submodule "wp-cron-control"]
 	path = wp-cron-control
 	url = https://github.com/Automattic/WP-Cron-Control.git
+[submodule "jetpack-4.1-beta1"]
+	path = jetpack-4.1-beta1
+	url = https://github.com/Automattic/jetpack/
