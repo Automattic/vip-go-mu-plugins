@@ -30,6 +30,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 	private $namespace = 'wpcom-vip/v1';
 
+	private $cached_sites_list = 'wpcom-vip-sites-list';
+
 	/**
 	 * Register hooks
 	 */
@@ -52,12 +54,15 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 
 	/**
+	 * Build list of sites on a multisite network
 	 *
+	 * For consistency, will also return result on single-site
 	 */
 	public function list_sites() {
 		$sites = array();
 
 		if ( is_multisite() ) {
+			// `get_sites()` won't be in Core until at least 4.6
 			if ( function_exists( 'get_sites' ) ) {
 				$_sites = get_sites( array(
 					'public'   => 1,
@@ -68,9 +73,22 @@ class WPCOM_VIP_REST_API_Endpoints {
 				) );
 			} else {
 				// Add support for 4.4 and 4.5, as `get_sites()` wasn't introduced until 4.6
-				$_sites = array();
+				$_sites = get_site_transient( $this->cached_sites_list );
+
+				if ( ! is_array( $_sites ) ) {
+					global $wpdb;
+
+					$_sites = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE `public` = 1 AND `archived` = 0 AND `spam` = 0 AND `deleted` = 0 LIMIT 1000;" );
+
+					if ( is_array( $_sites ) ) {
+						set_site_transient( $this->cached_sites_list, $_sites, 30 * MINUTE_IN_SECONDS );
+					} else {
+						$_sites = false;
+					}
+				}
 			}
 
+			// Inflate raw list of site IDs, if available
 			if ( is_array( $_sites ) ) {
 				// Switch to the blog to ensure certain domain filtering is respected
 				foreach ( $_sites as $_site ) {
@@ -86,13 +104,13 @@ class WPCOM_VIP_REST_API_Endpoints {
 				$sites = new WP_Error( 'no-sites-found', 'Failed to retrieve any sites for this multisite network.' );
 			}
 		} else {
+			// Provided for consistency, even though this provides no insightful response
 			$sites[] = array(
 				'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
 			);
 		}
 
-		$response = new WP_REST_Response( $this->format_response( $sites ) );
-		return $response;
+		return new WP_REST_Response( $this->format_response( $sites ) );
 	}
 
 	/**
