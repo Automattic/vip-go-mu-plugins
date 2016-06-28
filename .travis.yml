@@ -1,8 +1,6 @@
 language: php
-sudo: false # Use modern Travis builds – http://docs.travis-ci.com/user/migrating-from-legacy/
 
-git:
-  submodules: false
+sudo: false # Use modern Travis builds – http://docs.travis-ci.com/user/migrating-from-legacy/
 
 php:
   - 5.5
@@ -12,38 +10,11 @@ php:
   - nightly
 
 env:
-  global:
-    # Encripted deploy key for Automattic/vip-mu-plugins-public/
-    # See https://gist.github.com/scribu/6241271
-    - secure: "jAAHk/Zo8IwpUQLytzxc6K1KmXCCHeg2bU8+6oJ8aZA8smnYTPqn86TbB4pbIPDAF0vHJvWRVvqBcYuXVkcJOS6KQPQDrAz5/KYlcryTQvMhis/hibP+ICurYoqiZibw88alhiyAuxrpIVebFV7IWrUJQEEEVP/fpLA3kwVT5ik="
-    - secure: "kygNdn3MGwiG36vW4ulDbyU0AlXrnuJuFF1LmuD3tZA2QyJSTntM70xmyQKv8wqmHXHn6Rivp4lYGB4BuMGKTjK6LklX6tYr4MFV0DGukBWvEsmukFgfBHoKR7RfvTTs458Ray3VA1jQeeo64VAutxdBQk3grt21HAkPFvr5w+M="
-    - secure: "QqIqxT9wZUc/uVvvfqeH6TYoSvS9nkFDzBLN57hPIZFNKzsFORADfRvVZYVa1pQiRp1RksTqczU+QosEaqJnRWPG+ZHM8IV0vMvzWHaIiLquxrJhQnr107F/fzE0Kt8ZXcCrsJN4m0MKd2eXBasSSyK+/d0NvopxAeL+mMvlkgA="
-    - secure: "YRbbB91bAYAU7C0xddUkwUC1EUm2ZLHxWcCJNqfmlBttHObybXPGnG503Fcy8c0pRYEuGUo+lbozbGLnAiTn/76nW/FHOcr7ZSCREQnyg1HuylyILESlBGjxc0QKjnlmgKzwILAaalcaWGoHWhIASfU1fesc6rpwwNoVEca2UjI="
-    - secure: "fBzR8oQTeb0JsAiDHONdAHfvjMJoRnVY1xcBbOV3AgtUp8x77eQ19670GaC4wW5B7yXrEnPhGXynbgML/68uV00Sn8GGv9g5I9o4S9vJzAjzwtG1O4Mqx9l7gW1tY/P8J8jbiGeiyabX5wr4MghJ5nNbBIRUavafVGD02qgv804="
-    - secure: "nMvc3NdOwnXMCmefO+h+N+qpNmjmH7Bw3uTcSmPuBfvCufxDKjp25fAmxCxQemOLKhNZ9D8pOLaNTUDep2lfitDFLXJUXuYIv5iVMvSw7WOeqekiVfBrswWCmZJbNKo7oQUkORkpe2+N1Q7LAHA2UT9qvXb15/ZEqrfOtAdnifY="
-    - secure: "eihWh+YjM/Mzk4kvAfQWzZW7dVqTlp/V9EraNPsvS5yDcHvx12Rvlb6AiA9dQe2mIcaisxaoX0imBGWZplwE2NeidzcL0MHURtMzFCsfY/yyQX9/zBkt3+Oa13BZYrB15duhgFwtyw9vNUFihca8M4yS0Wpt0mtFgCIxpkO+VAU="
-    - secure: "Y9EaWUgz4HeLQVw8LconnQtUqWhSbcqAkJHEzRJkHpWVCK5mTsvsn+09Zh95Nip/bomPjCWyd7OsP1Rbgbv7ZsAHXEfNisr+8YP/74MZBwHxQnulJ1QOijks58ZB2W0xcoj+0LOe/ZXQ7TPsgyATk9gsAIl9mJBpcJsFs6nkSzg="
-    - secure: "dZGQRm4e+aLPzVaGJE8qEA3XJHKTQOucLpOLlF42svk+McY+WMqUwvjkXqYzdV0I/CDV5uK26Yq/5S15eM2jkRASWXdpg1WgQ+W/WBElo+FxKwSLOQKow/IXt8ZT7rLuRfr/BOwNhchwxbW+uQoncljDImPzPwouPSJym0EKEyA="
-    - secure: "B9DftaoW9YtNS8Ot0BYRjmzr0d4BlgXjnyqwge7c83nnKGDcWVSihQHYOYFSInc+YivDw0AKOvCeReRtJjSiyMABPVMFFQ/qyyXGE+HEDX9kiJOGshnlcPw2FjYh4VgcUbUtg8HkAnF3aH/pyw+LtO2KNrcg+ESpSpc+tZ3eOYE="
-    - secure: "SrgcBPcz9a4mg0nQZZc53YaJpDTMht9Qg7wfptk/YBv4CZIgDIgAiSsbwN/gRTioLg/Obmzb4QAM3ye9Nd4tV743vPcas/gp2gl0m5KWivWyHRYWyF4aUUec3DuipcGYtN7i888SeFNtrxdff74rQf5etN/1m25orHjYCBxgxc8="
-    - secure: "k3/lr8mb8FyfJi2VMurdqOpqds9FkFToCYh8tpqqeE+waVrwLLjYPyRhkYd3nQgxc/EX8/iKkgFdIodIEiNzP93P43/DCxbDadb1xMQTCvH7nhEhbbIFrAO4ke3IxxTqp67VPI975OaC5IZlhmSralOvWqlvBeUoVBrCYiLbM24="
-    - secure: "kCGftLzBPs+WABmPYKLkiKp189x7tDtx8KlU1v/4+gCcNfc6+WbGUypxKq19hBlEqWDkVuEnsYx9/Bpbra7Oj+dYf/SIPeQHcz8rnIkk7T/RxNJaGRAPtFRVQ8Jo9vN9qRKMnlJGCOLZTstaxBQiSHRkQm5ERPN5n0BdlBRmQdI="
-    - secure: "K2PH2RD5D3pHPzURuc6W26ERlNJ8pj0MEj2VkcyFuvtpAyDjQLYhQjq95EDsxv7rXVi9CV1h4uDuSBoy3lyJUVdKd68YAS+AW9Mq9RY/iSKLJW/bwXfTBg+lcmgv+zRuqm9tgGPIZDW1eOv5S84UonmUFmMmtiVO91qrdMtyCvQ="
-    - secure: "S5QyNR6P46TaAY1eNIoO50YGGhGOzINInPn/so9vEW9k5i/DuRn5JIfV/yzgkFmgwIqAxm/uwWC1JZVHWesnoFgxiGA1N/sNFrRgB/h5dPpWrvlL8vEX58sUh6JZaeEKzp30AP7PCw3dqVl6g0mLnYYLq+tNPAjcm2zMKVfuNqw="
-    - secure: "bplAW8pPVH3R0pyC9tFnWdwIglSkGr/qpPNtCp2ilBBC+kEniBWaKIwq8S3mq18RxeVQj4vbMBZMXAViz19HOOhmFucKXF1f/D8vjKvID6iXLaUSOQlg272UPpNfCfKCVj78ePoVK9eVogFcDf6IkbSuq/ZzIRDr81+tc6gJ+fY="
-    - secure: "JlNaVWjJRNZVPvhx18vs4HXfSkkR5PqjS+Syf/PE0g3j0vymufII89KUvN8JLUmTtnSC0qR4X/x5J5XodfVw00ij69viFi0ks3XOAqE8f5nJZfx4YjQAnsq3y4iYrH0LKptydyWsgcjoEBl149JXGPzsbG7OVG8QIUG/Db7nsYQ="
-    - secure: "gmVK5zG22ONgXL7WGHdRQtCEc0qPtdp10sXR4cqx8ec6hWBNnFOqtEQPMdT0iKVqH/+UZrhhGhJMrMVGp9/nDVnP6xLjojFHrXuOBWcZtIJ/tmaPH+Pn2fKHVKS0DkQO4N+g+KJkPiSOOda7qZ9JLNUIl1GtnPg/cfYoU17dCBI="
-    - secure: "O1TZjndjjlEGmUnVVdl/MKIv68moeClYYsm3+HZc6DorRA5kR4MRlJDte9NgeNLSA5i+YZsWAufz7a00EXCizyW1Yi+BU0xmNqAiVv7ZJnWFYFy8u/ZxXASjHpLDF4iPyKxrE5AdWTphe6M8tqlfQzRKLVp647PLQludZAKWFqU="
-    - secure: "MNi01ZlqPOeI8J0OyLIvaFbszZCvofDO9wNGAv49gLG5HwvPCCLymOOzEG3Yde817Zlm+RdI7qfhU0pCQLEl4/nnl8kA84wq00C9o4h5XYX57T6pjk12EQbTquoUb0BbiNhqufZ7VlSyGEgAHnmQyVR8Sw2neNTmTH1Xl3sw5Ho="
-    - secure: "kuWIabX7oPFBQqfq8ogjTUnQ4OcUDaRD19i5UOejspdWVxs22B+G6ZGgD/zJtebwj6toSeb2xLljyh4CvRIxcJcUEcSkpx0RuBdPwyx8IlCWcMey3rBXRYhtcracyz2vQg409feZ0IfCYhX6VcHPL1r9lptJM56bjWmGysjFINs="
-    - secure: "I0dtMDbjHm2570ZJMOX5wOrF2LiU695Uec9jmoOGqao2AXyxISdi0X8DQELTLrGnap/SAHxlzUHSaFBXrD2UyCWb94iw6X6zedvMeDOUCR/F7drOIN1OfZlgJBOV5iBrtIktq5tG8U4b0+KML4xMK1e4Fzl2oDBYp61fQsqcOII="
-    - secure: "A4YCU8quz9YYB+tJXP7IOCsNkYlU0A31H9lBaKO/YZ4k9p2DwWLCoODOYvMdPGwrUDrj5gRG3GUuBII38Jpbupj5KuspYSGjzEQt4m56EdJG3g5kM3Y6W7XtZBfA5N/KWHWn/JQyPfX8Ly+yKaEMzfqFkiLbOZLN5z5LAJ6XYVU="
   matrix:
     - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
 
 before_install:
   - ./ci/prepare.sh
-  - git submodule update --init --recursive
 
 script:
   # Linting and unit tests
@@ -52,8 +23,3 @@ script:
 notifications:
 
   slack: a8c:Hhd7rqdnXOFQgEU4HNZvkGs7
-
-
-after_success:
-  # Push the aggregated code, including submodules, to the public repo
-  - ./ci/deploy.sh
