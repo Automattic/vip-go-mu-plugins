@@ -28,7 +28,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	/**
 	 * Class properties
 	 */
-	private $namespace = 'wpcom-vip/v1';
+	private $namespace = 'vip/v1';
 
 	private $cached_sites_list = 'wpcom-vip-sites-list';
 
