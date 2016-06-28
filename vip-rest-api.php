@@ -95,9 +95,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 					switch_to_blog( $_site );
 
 					$sites[] = array(
-						'primary_domain' => array(
-							'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
-						),
+						'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
 					);
 
 					restore_current_blog();
@@ -108,40 +106,11 @@ class WPCOM_VIP_REST_API_Endpoints {
 		} else {
 			// Provided for consistency, even though this provides no insightful response
 			$sites[] = array(
-				'primary_domain' => array(
-					'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
-				),
+				'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
 			);
 		}
 
-		return new WP_REST_Response( $this->format_response( $sites ) );
-	}
-
-	/**
-	 * Mimic response format from VIP Go API
-	 *
-	 * Consistency simplifies incorporating data from the VIP Go API with this API
-	 */
-	private function format_response( $data ) {
-		if ( is_wp_error( $data ) ) {
-			$response = array(
-				'status' => 'error',
-				'data'   => false,
-			);
-		} else {
-			$response = array(
-				'status'    => 'success',
-				'page'      => 1,
-				'pagesize'  => 500,
-				'totalrecs' => count( $data ),
-				'result'    => null, // placeholder to maintain array order
-				'data'      => $data,
-			);
-
-			$response['result'] = $response['totalrecs'];
-		}
-
-		return $response;
+		return new WP_REST_Response( $sites );
 	}
 }
 
