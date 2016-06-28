@@ -12,8 +12,9 @@ add_filter( 'debug_bar_enable', function( $enable ) {
 
 	return $enable;
 }, 99 );
+
 // We only need to load the files if it's enabled
-add_action( 'after_setup_theme', function() {
+add_action( 'init', function() {
 	$enable = apply_filters( 'debug_bar_enable', false );
 
 	if ( ! $enable ) {
@@ -34,4 +35,4 @@ add_action( 'after_setup_theme', function() {
 		// @todo, see wpcom for details
 		return $panels;
 	}, 99);
-}, 99 );
+}, 1 );
