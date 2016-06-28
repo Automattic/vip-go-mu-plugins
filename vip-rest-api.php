@@ -119,19 +119,22 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Consistency simplifies incorporating data from the VIP Go API with this API
 	 */
 	private function format_response( $data ) {
-		$response = array();
-
 		if ( is_wp_error( $data ) ) {
-			$response['status'] = 'error';
-			$response['data']   = false;
+			$response = array(
+				'status' => 'error',
+				'data'   => false,
+			);
 		} else {
-			$response['status'] = 'success';
-			$response['page']      = 1;
-			$response['pagesize']  = 1000;
-			$response['totalrecs'] = count( $data );
-			$response['result']    = $response['totalrecs'];
+			$response = array(
+				'status'    => 'success',
+				'page'      => 1,
+				'pagesize'  => 1000,
+				'totalrecs' => count( $data ),
+				'result'    => null, // placeholder to maintain array order
+				'data'      => $data,
+			);
 
-			$response['data'] = $data;
+			$response['result'] = $response['totalrecs'];
 		}
 
 		return $response;
