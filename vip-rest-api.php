@@ -58,7 +58,33 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$sites = array();
 
 		if ( is_multisite() ) {
-			//
+			if ( function_exists( 'get_sites' ) ) {
+				$_sites = get_sites( array(
+					'public'   => 1,
+					'archived' => 0,
+					'spam'     => 0,
+					'deleted'  => 0,
+					'fields'   => 'ids',
+				) );
+			} else {
+				// Add support for 4.4 and 4.5, as `get_sites()` wasn't introduced until 4.6
+				$_sites = array();
+			}
+
+			if ( is_array( $_sites ) ) {
+				// Switch to the blog to ensure certain domain filtering is respected
+				foreach ( $_sites as $_site ) {
+					switch_to_blog( $_site );
+
+					$sites[] = array(
+						'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+					);
+
+					restore_current_blog();
+				}
+			} else {
+				$sites = new WP_Error( 'no-sites-found', 'Failed to retrieve any sites for this multisite network.' );
+			}
 		} else {
 			$sites[] = array(
 				'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
@@ -79,7 +105,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 		if ( is_wp_error( $data ) ) {
 			$response['status'] = 'error';
-			$response['data']   = array();
+			$response['data']   = false;
 		} else {
 			$response['status'] = 'success';
 			$response['page']      = 1;
