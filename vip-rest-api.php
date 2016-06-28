@@ -95,7 +95,9 @@ class WPCOM_VIP_REST_API_Endpoints {
 					switch_to_blog( $_site );
 
 					$sites[] = array(
-						'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+						'primary_domain' => array(
+							'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+						),
 					);
 
 					restore_current_blog();
@@ -106,7 +108,9 @@ class WPCOM_VIP_REST_API_Endpoints {
 		} else {
 			// Provided for consistency, even though this provides no insightful response
 			$sites[] = array(
-				'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+				'primary_domain' => array(
+					'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+				),
 			);
 		}
 
