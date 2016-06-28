@@ -128,7 +128,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 			$response = array(
 				'status'    => 'success',
 				'page'      => 1,
-				'pagesize'  => 1000,
+				'pagesize'  => 500,
 				'totalrecs' => count( $data ),
 				'result'    => null, // placeholder to maintain array order
 				'data'      => $data,
