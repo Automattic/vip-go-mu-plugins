@@ -201,6 +201,21 @@ class WPCOM_VIP_Cache_Manager {
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
+		/**
+		 * Allows you to customise the URL suffix used to specify a page for paged term archives
+		 *
+		 * Developers should hook this filter to provide a different page endpoint if they have
+		 * custom or translated rewrite rules for paging in term archives:
+		 *
+		 * Standard:     example.com/category/news/page/2
+		 * Non-standard: example.com/category/news/p/2
+		 *
+		 * The string should be formatted as for sprintf, with a `%d` in place of the page number.
+		 *
+		 * @param string sprintf formatted string, including `%d`
+		 * }
+		 */
+		$paging_endpoint = apply_filters( 'wpcom_vip_cache_purge_urls_paging_endpoint', $GLOBALS['wp_rewrite']->pagination_base . '/%d/' );
 
 		/**
 		 * The maximum page to purge from each term archive when a post associated with that term is published
