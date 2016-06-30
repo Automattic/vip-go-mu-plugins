@@ -199,22 +199,53 @@ class WPCOM_VIP_Cache_Manager {
 		$this->purge_urls[] = get_permalink( $post_id );
 		$this->purge_urls[] = trailingslashit( home_url() );
 
-		$categories = get_the_category( $post_id );
-		if ( $categories ) {
-			$category_base = get_option( 'category_base' ) ? get_option( 'category_base' ) : '/category';
-			$category_base = trailingslashit( $category_base );
+		$taxonomies = get_object_taxonomies( $post, 'object' );
 
-			foreach ( $categories as $cat )
-				$this->purge_urls[] = home_url( $category_base . $cat->slug . '/' );
-		}
 
-		$tags = get_the_tags( $post_id );
-		if ( $tags ) {
-			$tag_base = get_option( 'tag_base' ) ? get_option( 'tag_base' ) : '/tag';
-			$tag_base = trailingslashit( str_replace( '..', '', $tag_base ) );
+		/**
+		 * The maximum page to purge from each term archive when a post associated with that term is published
+		 *
+		 * Developers should hook this filter to provide a different page endpoint if they have
+		 * custom or translated rewrite rules for paging in term archives; e.g. if the value is 3
+		 * the following pagination URLs will be purged for the news category archive:
+		 *
+		 * example.com/category/news/
+		 * example.com/category/news/page/2
+		 * example.com/category/news/page/3
+		 *
+		 * @param int The maximum page to purge from each term archive
+		 * }
+		 */
+		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 5 );
 
-			foreach ( $tags as $tag )
-				$this->purge_urls[] = home_url( $tag_base . $tag->slug . '/' );
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( true !== $taxonomy->public ) {
+				continue;
+			}
+			$taxonomy_name = $taxonomy->name;
+			$terms = get_the_terms( $post_id, $taxonomy_name );
+			if ( false === $terms ) {
+				continue;
+			}
+			foreach ( $terms as $term ) {
+				if ( ! term_exists( $term->slug, $taxonomy_name ) ) {
+					continue;
+				}
+				$maybe_purge_url = get_term_link( $term, $taxonomy_name );
+				if ( is_wp_error( $maybe_purge_url ) ) {
+					continue;
+				}
+				if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
+					$this->purge_urls[] = $maybe_purge_url;
+					for( $i = 2; $i <= $max_pages; $i++ ) {
+						$this->purge_urls[] = sprintf( trailingslashit( $maybe_purge_url ) . $paging_endpoint, $i );
+					}
+				}
+				$maybe_purge_feed = get_term_feed_link( $term->term_id, $taxonomy_name );
+				if ( false !== $maybe_purge_feed ) {
+					$this->purge_urls[] = $maybe_purge_feed;
+				}
+			}
 		}
 
 		$feeds = array(
