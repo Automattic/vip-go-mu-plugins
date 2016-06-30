@@ -258,8 +258,9 @@ class WPCOM_VIP_Cache_Manager {
 			get_post_comments_feed_link( $post_id )
 		);
 
-		foreach ( $feeds as $feed )
+		foreach ( $feeds as $feed ) {
 			$this->purge_urls[] = $feed;
+		}
 
 		/**
 		 * Allows adding URLs to be PURGEd from cache when a given post ID is PURGEd
