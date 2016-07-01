@@ -249,9 +249,6 @@ class WPCOM_VIP_Cache_Manager {
 				continue;
 			}
 			foreach ( $terms as $term ) {
-				if ( ! term_exists( $term->slug, $taxonomy_name ) ) {
-					continue;
-				}
 				$maybe_purge_url = get_term_link( $term, $taxonomy_name );
 				if ( is_wp_error( $maybe_purge_url ) ) {
 					continue;
