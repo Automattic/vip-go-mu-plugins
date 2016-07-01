@@ -28,6 +28,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
+		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 3 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
@@ -255,6 +256,35 @@ class WPCOM_VIP_Cache_Manager {
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
 	}
 
+	/**
+	 * Purge the cache for some terms
+	 *
+	 * Hooks the `clean_term_cache` action
+	 *
+	 * We do not respect requests to clear caches for the entire taxonomy,
+	 * as this would be potentially hundreds or thousands of PURGE requests.
+	 *
+	 * @param array  $ids            An array of term IDs.
+	 * @param string $taxonomy       Taxonomy slug.
+	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
+	 */
+	function queue_term_purge( $ids, $taxonomy ) {
+		$get_term_args = array(
+			'taxonomy'    => $taxonomy,
+			'include'     => $ids,
+			'hide_empty'  => false,
+		);
+		$terms = get_terms( $get_term_args );
+		if ( is_wp_error( $terms ) ) {
+			return;
+		}
+		foreach ( $terms as $term ) {
+			if ( ! term_exists( $term->term_id, $taxonomy ) ) {
+				continue;
+			}
+			$this->queue_purge_urls_for_term( $term );
+		}
+	}
 
 	/**
 	 * Queue all URLs to be purged for a given term
