@@ -255,8 +255,11 @@ class WPCOM_VIP_Cache_Manager {
 				}
 				if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
 					$this->purge_urls[] = $maybe_purge_url;
+					// Now add the pages for the archive we're clearing
 					for( $i = 2; $i <= $max_pages; $i++ ) {
-						$this->purge_urls[] = sprintf( trailingslashit( $maybe_purge_url ) . $paging_endpoint, $i );
+						$maybe_purge_url_page = trailingslashit( $maybe_purge_url ) . $paging_endpoint;
+						$maybe_purge_url_page = sprintf( $maybe_purge_url_page, $i );
+						$this->purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
 					}
 				}
 				$maybe_purge_feed_url = get_term_feed_link( $term->term_id, $taxonomy_name );
