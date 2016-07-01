@@ -201,41 +201,6 @@ class WPCOM_VIP_Cache_Manager {
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
-		/**
-		 * Allows you to customise the URL suffix used to specify a page for
-		 * paged term archives.
-		 *
-		 * Developers should hook this filter to provide a different page
-		 * endpoint if they have custom or translated rewrite rules for
-		 * paging in term archives:
-		 *
-		 * Standard:     example.com/category/news/page/2
-		 * Non-standard: example.com/category/news/p/2
-		 *
-		 * The string should be formatted as for `sprintf`, with a `%d` in place
-		 * of the page number.
-		 *
-		 * @param string sprintf formatted string, including `%d`
-		 * }
-		 */
-		$paging_endpoint = apply_filters( 'wpcom_vip_cache_purge_urls_paging_endpoint', $GLOBALS['wp_rewrite']->pagination_base . '/%d/' );
-
-		/**
-		 * The maximum page to purge from each term archive when a post associated with
-		 * that term is published.
-		 *
-		 * e.g. if the value is 3, the following pagination URLs will be purged for the
-		 * news category archive:
-		 *
-		 * example.com/category/news/
-		 * example.com/category/news/page/2
-		 * example.com/category/news/page/3
-		 *
-		 * @param int The maximum page to purge from each term archive
-		 * }
-		 */
-		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 5 );
-
 		// Set some limits on max and min values for pages
 		$max_pages = max( 1, min( 20, $max_pages ) );
 
@@ -249,23 +214,7 @@ class WPCOM_VIP_Cache_Manager {
 				continue;
 			}
 			foreach ( $terms as $term ) {
-				$maybe_purge_url = get_term_link( $term, $taxonomy_name );
-				if ( is_wp_error( $maybe_purge_url ) ) {
-					continue;
-				}
-				if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
-					$this->purge_urls[] = $maybe_purge_url;
-					// Now add the pages for the archive we're clearing
-					for( $i = 2; $i <= $max_pages; $i++ ) {
-						$maybe_purge_url_page = trailingslashit( $maybe_purge_url ) . $paging_endpoint;
-						$maybe_purge_url_page = sprintf( $maybe_purge_url_page, $i );
-						$this->purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
-					}
-				}
-				$maybe_purge_feed_url = get_term_feed_link( $term->term_id, $taxonomy_name );
-				if ( false !== $maybe_purge_feed_url ) {
-					$this->purge_urls[] = $maybe_purge_feed_url;
-				}
+				$this->queue_purge_urls_for_term( $term );
 			}
 		}
 
@@ -304,6 +253,69 @@ class WPCOM_VIP_Cache_Manager {
 		 * @param type  $post_id The ID of the post which is the primary reason for the purge
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
+	}
+
+
+	/**
+	 * Queue all URLs to be purged for a given term
+	 *
+	 * @param object $term A WP term object
+	 */
+	function queue_purge_urls_for_term( $term ) {
+
+		/**
+		 * Allows you to customise the URL suffix used to specify a page for
+		 * paged term archives.
+		 *
+		 * Developers should hook this filter to provide a different page
+		 * endpoint if they have custom or translated rewrite rules for
+		 * paging in term archives:
+		 *
+		 * Standard:     example.com/category/news/page/2
+		 * Non-standard: example.com/category/news/p/2
+		 *
+		 * The string should be formatted as for `sprintf`, with a `%d` in place
+		 * of the page number.
+		 *
+		 * @param string sprintf formatted string, including `%d`
+		 * }
+		 */
+		$paging_endpoint = apply_filters( 'wpcom_vip_cache_purge_urls_paging_endpoint', $GLOBALS['wp_rewrite']->pagination_base . '/%d/' );
+
+		/**
+		 * The maximum page to purge from each term archive when a post associated with
+		 * that term is published.
+		 *
+		 * e.g. if the value is 3, the following pagination URLs will be purged for the
+		 * news category archive:
+		 *
+		 * example.com/category/news/
+		 * example.com/category/news/page/2
+		 * example.com/category/news/page/3
+		 *
+		 * @param int The maximum page to purge from each term archive
+		 * }
+		 */
+		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 5 );
+
+		$taxonomy_name = $term->taxonomy;
+		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
+		if ( is_wp_error( $maybe_purge_url ) ) {
+			continue;
+		}
+		if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
+			$this->purge_urls[] = $maybe_purge_url;
+			// Now add the pages for the archive we're clearing
+			for( $i = 2; $i <= $max_pages; $i++ ) {
+				$maybe_purge_url_page = rtrim( $maybe_purge_url, '/' ) . '/' . ltrim( $paging_endpoint, '/' );
+				$maybe_purge_url_page = sprintf( $maybe_purge_url_page, $i );
+				$this->purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
+			}
+		}
+		$maybe_purge_feed_url = get_term_feed_link( $term->term_id, $taxonomy_name );
+		if ( false !== $maybe_purge_feed_url ) {
+			$this->purge_urls[] = $maybe_purge_feed_url;
+		}
 	}
 }
 
