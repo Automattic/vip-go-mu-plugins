@@ -202,15 +202,18 @@ class WPCOM_VIP_Cache_Manager {
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
 		/**
-		 * Allows you to customise the URL suffix used to specify a page for paged term archives
+		 * Allows you to customise the URL suffix used to specify a page for
+		 * paged term archives.
 		 *
-		 * Developers should hook this filter to provide a different page endpoint if they have
-		 * custom or translated rewrite rules for paging in term archives:
+		 * Developers should hook this filter to provide a different page
+		 * endpoint if they have custom or translated rewrite rules for
+		 * paging in term archives:
 		 *
 		 * Standard:     example.com/category/news/page/2
 		 * Non-standard: example.com/category/news/p/2
 		 *
-		 * The string should be formatted as for sprintf, with a `%d` in place of the page number.
+		 * The string should be formatted as for `sprintf`, with a `%d` in place
+		 * of the page number.
 		 *
 		 * @param string sprintf formatted string, including `%d`
 		 * }
