@@ -202,9 +202,6 @@ class WPCOM_VIP_Cache_Manager {
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
-		// Set some limits on max and min values for pages
-		$max_pages = max( 1, min( 20, $max_pages ) );
-
 		foreach ( $taxonomies as $taxonomy ) {
 			if ( true !== $taxonomy->public ) {
 				continue;
@@ -327,6 +324,9 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 */
 		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 5 );
+
+		// Set some limits on max and min values for pages
+		$max_pages = max( 1, min( 20, $max_pages ) );
 
 		$taxonomy_name = $term->taxonomy;
 		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
