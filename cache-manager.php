@@ -218,11 +218,11 @@ class WPCOM_VIP_Cache_Manager {
 		$paging_endpoint = apply_filters( 'wpcom_vip_cache_purge_urls_paging_endpoint', $GLOBALS['wp_rewrite']->pagination_base . '/%d/' );
 
 		/**
-		 * The maximum page to purge from each term archive when a post associated with that term is published
+		 * The maximum page to purge from each term archive when a post associated with
+		 * that term is published.
 		 *
-		 * Developers should hook this filter to provide a different page endpoint if they have
-		 * custom or translated rewrite rules for paging in term archives; e.g. if the value is 3
-		 * the following pagination URLs will be purged for the news category archive:
+		 * e.g. if the value is 3, the following pagination URLs will be purged for the
+		 * news category archive:
 		 *
 		 * example.com/category/news/
 		 * example.com/category/news/page/2
