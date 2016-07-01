@@ -276,9 +276,6 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 		foreach ( $terms as $term ) {
-			if ( ! term_exists( $term->term_id, $taxonomy ) ) {
-				continue;
-			}
 			$this->queue_purge_urls_for_term( $term );
 		}
 	}
