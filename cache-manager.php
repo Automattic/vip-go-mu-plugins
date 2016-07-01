@@ -259,9 +259,9 @@ class WPCOM_VIP_Cache_Manager {
 						$this->purge_urls[] = sprintf( trailingslashit( $maybe_purge_url ) . $paging_endpoint, $i );
 					}
 				}
-				$maybe_purge_feed = get_term_feed_link( $term->term_id, $taxonomy_name );
-				if ( false !== $maybe_purge_feed ) {
-					$this->purge_urls[] = $maybe_purge_feed;
+				$maybe_purge_feed_url = get_term_feed_link( $term->term_id, $taxonomy_name );
+				if ( false !== $maybe_purge_feed_url ) {
+					$this->purge_urls[] = $maybe_purge_feed_url;
 				}
 			}
 		}
