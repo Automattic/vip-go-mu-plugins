@@ -4,7 +4,7 @@ Every commit which is merged to the `master` branch of this repository is automa
 
 ## Tests
 
-PHP Linting and PHP Unit tests are run by Travis, see the `script` section of [`.travis.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.travis.yml). Test results are reported in the [#vip-platform Slack channel](https://a8c.slack.com/messages/vip-platform/).
+PHP Linting and PHP Unit tests are run by Travis, see the `script` section of [`.travis.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.travis.yml). Test results are reported into one of the WordPress.com VIP Slack channels.
 
 For notes on running tests locally, see [README-PUBLIC.md](README-PUBLIC.md).
 
