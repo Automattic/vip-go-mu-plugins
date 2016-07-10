@@ -366,6 +366,8 @@ class WPCOM_VIP_Cache_Manager {
 	 */
 	function queue_purge_urls_for_term( $term ) {
 
+		$this->purge_urls[] = trailingslashit( home_url() );
+
 		/**
 		 * Allows you to customise the URL suffix used to specify a page for
 		 * paged term archives.
