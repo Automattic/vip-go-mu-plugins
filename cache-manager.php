@@ -326,7 +326,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * @param array $this->purge_urls {
 		 *     An array of URLs for you to add to
 		 * }
-		 * @param type  $post_id The ID of the post which is the primary reason for the purge
+		 * @param int   $post_id The ID of the post which is the primary reason for the purge
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
 
@@ -343,7 +343,6 @@ class WPCOM_VIP_Cache_Manager {
 	 *
 	 * @param array  $ids            An array of term IDs.
 	 * @param string $taxonomy       Taxonomy slug.
-	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
 	 */
 	function queue_term_purge( $ids, $taxonomy ) {
 		$get_term_args = array(
@@ -381,7 +380,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * The string should be formatted as for `sprintf`, with a `%d` in place
 		 * of the page number.
 		 *
-		 * @param string sprintf formatted string, including `%d`
+		 * @param string $paging_endpoint sprintf formatted string, including `%d`
 		 * }
 		 */
 		$paging_endpoint = apply_filters( 'wpcom_vip_cache_purge_urls_paging_endpoint', $GLOBALS['wp_rewrite']->pagination_base . '/%d/' );
@@ -397,7 +396,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * example.com/category/news/page/2
 		 * example.com/category/news/page/3
 		 *
-		 * @param int The maximum page to purge from each term archive
+		 * @param int $max_pages The maximum page to purge from each term archive
 		 * }
 		 */
 		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 5 );
