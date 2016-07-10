@@ -35,6 +35,10 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'updated_post_meta', array( $this, 'changed_post_meta' ), 10, 2 );
 		add_action( 'deleted_post_meta', array( $this, 'changed_post_meta' ), 10, 2 );
 
+		add_action( 'added_term_meta',   array( $this, 'changed_term_meta' ), 10, 2 );
+		add_action( 'updated_term_meta', array( $this, 'changed_term_meta' ), 10, 2 );
+		add_action( 'deleted_term_meta', array( $this, 'changed_term_meta' ), 10, 2 );
+
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
 
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
@@ -196,6 +200,21 @@ class WPCOM_VIP_Cache_Manager {
 	 */
 	function changed_post_meta( $meta_id, $post_id ) {
 		$this->queue_post_purge( $post_id );
+	}
+
+	/**
+	 * Hooks the following actions:
+	 *
+	 * * `added_{$meta_type}_meta` action for term meta
+	 * * `updated_{$meta_type}_meta` action for term meta
+	 * * `deleted_{$meta_type}_meta` action for term meta
+	 *
+	 * @param int    $meta_id  ID of updated metadata entry.
+	 * @param int    $term_id  Term ID.
+	 */
+	function changed_term_meta( $meta_id, $term_id ) {
+		$term = get_term( $term_id );
+		$this->queue_term_purge( $term->term_id, $term->taxonomy );
 	}
 
 	function queue_post_purge( $post_id ) {
