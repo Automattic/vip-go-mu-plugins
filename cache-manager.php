@@ -31,13 +31,13 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 3 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 
-		add_action( 'added_post_meta',   array( $this, 'changed_post_meta' ), 10, 2 );
-		add_action( 'updated_post_meta', array( $this, 'changed_post_meta' ), 10, 2 );
-		add_action( 'deleted_post_meta', array( $this, 'changed_post_meta' ), 10, 2 );
+		add_action( 'added_post_meta',   array( $this, 'changed_post_meta' ) );
+		add_action( 'updated_post_meta', array( $this, 'changed_post_meta' ) );
+		add_action( 'deleted_post_meta', array( $this, 'changed_post_meta' ) );
 
-		add_action( 'added_term_meta',   array( $this, 'changed_term_meta' ), 10, 2 );
-		add_action( 'updated_term_meta', array( $this, 'changed_term_meta' ), 10, 2 );
-		add_action( 'deleted_term_meta', array( $this, 'changed_term_meta' ), 10, 2 );
+		add_action( 'added_term_meta',   array( $this, 'changed_term_meta' ) );
+		add_action( 'updated_term_meta', array( $this, 'changed_term_meta' ) );
+		add_action( 'deleted_term_meta', array( $this, 'changed_term_meta' ) );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
 
@@ -198,8 +198,33 @@ class WPCOM_VIP_Cache_Manager {
 	 * @param int    $meta_id  ID of updated metadata entry.
 	 * @param int    $post_id  Post ID.
 	 */
-	function changed_post_meta( $meta_id, $post_id ) {
-		$this->queue_post_purge( $post_id );
+	function changed_post_meta( $meta_id ) {
+		// N.B. get_post_meta_by_id is not defined on the front end
+		$meta = get_metadata_by_mid( 'post', $meta_id );
+
+		// Some meta keys are irrelevant to content display and we
+		// should not purge cache when they change, e.g. we should
+		// not purge post cache when post lock is updated
+		$meta_key_blacklist = array(
+			'_wp_old_slug',
+			'_edit_lock',
+			'_edit_last',
+			'_pingme',
+			'_encloseme',
+		);
+
+		/**
+		 * Amend the blacklist of post meta keys which do NOT
+		 * trigger cache purges
+		 *
+		 * @param array $meta_key_blacklist An array of post meta keys
+		 */
+		$meta_key_blacklist = apply_filters( 'wpcom_vip_cache_post_meta_blacklist', $meta_key_blacklist );
+		if ( in_array( $meta->meta_key, $meta_key_blacklist ) ) {
+			return;
+		}
+
+		$this->queue_post_purge( $meta->post_id );
 	}
 
 	/**
@@ -209,12 +234,27 @@ class WPCOM_VIP_Cache_Manager {
 	 * * `updated_{$meta_type}_meta` action for term meta
 	 * * `deleted_{$meta_type}_meta` action for term meta
 	 *
-	 * @param int    $meta_id  ID of updated metadata entry.
-	 * @param int    $term_id  Term ID.
-	 */
-	function changed_term_meta( $meta_id, $term_id ) {
-		$term = get_term( $term_id );
-		$this->queue_term_purge( $term->term_id, $term->taxonomy );
+	 * @param int    $meta_id  ID of updated metadata entry.*/
+	function changed_term_meta( $meta_id ) {
+		$meta = get_metadata_by_mid( 'term', $meta_id );
+
+		// Some meta keys are irrelevant to content display and we
+		// should not purge cache when they change
+		$meta_key_blacklist = array();
+
+		/**
+		 * Amend the blacklist of term meta keys which do NOT
+		 * trigger cache purges
+		 *
+		 * @param array $meta_key_blacklist An array of term meta keys
+		 */
+		$meta_key_blacklist = apply_filters( 'wpcom_vip_cache_term_meta_blacklist', $meta_key_blacklist );
+		if ( in_array( $meta->meta_key, $meta_key_blacklist ) ) {
+			return;
+		}
+
+		$term = get_term( $meta->term_id );
+		$this->queue_purge_urls_for_term( $term );
 	}
 
 	function queue_post_purge( $post_id ) {
