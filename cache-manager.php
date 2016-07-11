@@ -211,6 +211,7 @@ class WPCOM_VIP_Cache_Manager {
 			'_edit_last',
 			'_pingme',
 			'_encloseme',
+			'_jetpack_related_posts_cache',
 		);
 
 		/**
