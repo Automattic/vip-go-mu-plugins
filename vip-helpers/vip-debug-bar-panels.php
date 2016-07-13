@@ -161,3 +161,72 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 		echo $out;
 	}
 }
+
+class WPCOM_VIP_Debug_Bar_DB_Connections extends Debug_Bar_Panel {
+	function init() {
+		$this->title( __( 'DB Connections', 'debug-bar' ) );
+	}
+
+	function prerender() {
+		$this->set_visible( true );
+	}
+
+	function render() {
+		foreach ( $GLOBALS as $var => $global ) {
+			if ( ! is_object( $global ) || ! get_class( $global ) || ! is_a( $global, 'wpdb' ) ) {
+				continue;
+			}
+
+			if ( is_array( $global->db_connections ) && count( $global->db_connections ) ) {
+				$elapsed = 0;
+
+				foreach ( $global->db_connections as $conn )
+					if ( isset( $conn['elapsed'] ) ) {
+						$elapsed += $conn['elapsed'];
+					}
+	?>
+				<h2><span>Total connection time:</span> <?php echo number_format( sprintf( '%0.1f', $elapsed * 1000), 1 ); ?>ms</h2>
+				<h2><span>Total connections:</span> <?php echo count( $global->db_connections ); ?></h2>
+	<?php
+				$keys = array_keys( reset( $global->db_connections ) );
+	?>
+				<table style="clear:both; font-size: 130%" cellspacing="8px">
+				<thead>
+					<tr>
+	<?php			foreach ( $keys as $key ) { ?>
+						<th scope="col" style="text-align: center; font-size: 120%; border-bottom: 1px solid black"><?php echo esc_html( $key ); ?></th>
+	<?php			} ?>
+					</tr>
+				</thead>
+				<tbody style="text-align: right">
+	<?php			foreach ( $global->db_connections as $conn ) { ?>
+					<tr>
+	<?php				foreach ( $keys as $key ) { ?>
+						<td><?php
+						$value = isset( $conn[ $key ] ) ? $conn[ $key ] : '-';
+
+						switch ( $key ) {
+							case 'elapsed':
+								printf( '%0.1fms', $value * 1000 );
+
+								break;
+
+							default :
+								if ( $value === true ) {
+									echo 'true';
+								} elseif ( $value === false ) {
+									echo 'false';
+								} else {
+									echo esc_html( print_r( $value, 1 ) );
+								}
+						}
+						?></td>
+	<?php				} ?>
+					</tr>
+	<?php			} ?>
+				</tbody>
+				</table>
+	<?php		}
+		}
+	}
+}

@@ -47,6 +47,7 @@ add_action( 'init', function() {
 		}
 
 		$panels[] = new WPCOM_VIP_Debug_Bar_Query_Summary();
+		$panels[] = new WPCOM_VIP_Debug_Bar_DB_Connections();
 
 		return $panels;
 	}, 99);
