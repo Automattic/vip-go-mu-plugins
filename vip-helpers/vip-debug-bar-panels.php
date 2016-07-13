@@ -238,3 +238,173 @@ class WPCOM_VIP_Debug_Bar_PHP extends Debug_Bar_PHP {
 		$this->real_error_handler = set_error_handler( array( &$this, 'error_handler' ) );
 	}
 }
+
+// Tracks remote requests made using the WordPress HTTP API and displays their results
+class WPCOM_VIP_Debug_Bar_Remote_Requests extends Debug_Bar_Panel {
+	var $ignore_urls = array(
+		'http://127.0.0.1/wp-cron.php?doing_wp_cron',
+	);
+
+	var $requests        = array();
+	var $status_counts   = array();
+	var $current_request = array();
+
+	function init() {
+		$this->title( __( 'Remote Requests', 'debug-bar' ) );
+
+		add_filter( 'http_request_args', array( $this, 'log_http_requests' ), 99, 2 ); // after all args have been set up
+		add_action( 'http_api_debug', array( $this, 'log_http_request_result' ), 0, 5 ); // as soon as it's complete
+
+		$this->status_counts = array(
+			'Informational (1xx)'    => 0,
+			'Success (2xx)'          => 0,
+			'Multiple Choices (3xx)' => 0,
+			'Client Error (4xx)'     => 0,
+			'Server Error (5xx)'     => 0,
+			'Unknown'                => 0,
+		);
+
+	}
+
+	function prerender() {
+		if ( empty( $this->requests  ) ) {
+			$this->set_visible( false );
+		}
+	}
+
+	function render() {
+		global $wp;
+		?>
+		<div id='debug-bar-remote-requests'>
+
+			<h2>
+				<span>Total Time</span>
+				<?php echo number_format( $this->total_time, 2 ) . 's'; ?>
+			</h2>
+
+			<?php foreach( $this->status_counts as $status_type => $status_count ) : ?>
+				<h2>
+					<span><?php echo esc_html( $status_type ); ?></span>
+					<?php echo intval( $status_count ); ?>
+				</h2>
+			<?php endforeach; ?>
+			<div class="clear"></div>
+
+			<h3 style="font-family: georgia, times, serif; font-size: 22px;">Remote Requests:</h3>
+
+			<?php if ( ! empty( $this->requests ) ) : ?>
+				<table style="clear:both; font-size: 130%" cellspacing="8px">
+					<thead>
+						<tr>
+								<th scope="col" style="text-align: center; font-size: 120%; border-bottom: 1px solid black">status</th>
+								<th scope="col" style="text-align: center; font-size: 120%; border-bottom: 1px solid black">url</th>
+								<th scope="col" style="text-align: center; font-size: 120%; border-bottom: 1px solid black">time</th>
+								<th scope="col" style="text-align: center; font-size: 120%; border-bottom: 1px solid black">message</th>
+							</tr>
+					</thead>
+					<tbody>
+					<?php foreach ( $this->requests as $url => $requests ) :
+						foreach( $requests as $request ) : ?>
+							<tr>
+								<td><strong><?php echo esc_html( $request['status'] ); ?></strong></td>
+								<td><code><?php echo esc_url( $url ); ?></code></td>
+								<td><?php echo ( -1 < $request['time'] ) ? number_format( $request['time'], 2 ) . 's' : 'unknown'; ?></td>
+								<td><?php echo esc_html( $request['message'] ); ?></td>
+							</tr>
+							<tr>
+								<td colspan="4">
+									<?php echo esc_html( $request['backtrace'] ); ?>
+								</td>
+							</tr>
+						<?php endforeach;
+					endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	function log_http_requests( $args, $url ) {
+		if ( ! in_array( $url, $this->ignore_urls ) ) {
+			if ( ! isset( $this->requests[ $url ] ) )
+				$this->requests[ $url ] = array();
+		}
+
+		// Store the current request so we can track times
+		$this->current_request = array(
+			'url'   => $url,
+			'start' => microtime( true ),
+		);
+
+		return $args;
+	}
+
+	function log_http_request_result( $response, $context, $transport, $args, $url ) {
+		if ( 'response' != $context ) {
+			return;
+		}
+
+		if ( ! isset( $this->total_time ) ) {
+			$this->total_time = 0;
+		}
+
+		// We don't have an easy way to match exact requests initiated with those completed since $args can be changed before it gets to us here
+		if ( isset( $this->current_request['url'] ) && $url == $this->current_request['url'] ) {
+			$time_elapsed = microtime(true) - $this->current_request['start'];
+		} else {
+			$time_elapsed = -1; // hm, some other request got in the way
+		}
+
+		// clear the values
+		$this->current_request = array();
+
+		if ( ! $response || is_wp_error( $response ) ) {
+			$message = is_wp_error( $response ) ? $response->get_error_message() : 'Something clearly went very wrong...';
+
+			$status = 'fail';
+		} else {
+			$message = $response['response']['message'];
+
+			$status = $response['response']['code'];
+		}
+
+		$this->requests[ $url ][] = array(
+			'message'   => $message,
+			'status'    => $status,
+			'time'      => $time_elapsed,
+			'backtrace' => wp_debug_backtrace_summary(),
+		);
+
+		if ( -1 < $time_elapsed ) {
+			$this->total_time += $time_elapsed;
+		}
+
+		// Prevent debug notice if no request counts exist yet
+		if ( empty( $this->status_counts['Total Requests'] ) ) {
+			$this->status_counts['Total Requests'] = 0;
+		}
+
+		$this->status_counts['Total Requests']++;
+
+		switch( substr( $status, 0, 1 ) ) {
+			case 1:
+				$this->status_counts['Informational (1xx)']++;
+			case 2:
+				$this->status_counts['Success (2xx)']++;
+				break;
+			case 3:
+				$this->status_counts['Multiple Choices (3xx)']++;
+				break;
+			case 4:
+				$this->status_counts['Client Error (4xx)']++;
+				break;
+			case 5:
+				$this->status_counts['Server Error (5xx)']++;
+				break;
+			default:
+				$this->status_counts['Unknown']++;
+				break;
+		}
+	}
+}
