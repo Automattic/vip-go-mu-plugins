@@ -39,4 +39,4 @@ add_action( 'init', function() {
 		// @todo, see wpcom for details
 		return $panels;
 	}, 99);
-}, 1 );
+}, 1 ); // Priority must be lower than that of Query Monitor
