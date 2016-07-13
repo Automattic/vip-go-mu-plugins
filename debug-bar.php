@@ -46,6 +46,8 @@ add_action( 'init', function() {
 			}
 		}
 
+		$panels[] = new WPCOM_Debug_Bar_Query_Summary();
+
 		return $panels;
 	}, 99);
 }, 1 ); // Priority must be lower than that of Query Monitor
