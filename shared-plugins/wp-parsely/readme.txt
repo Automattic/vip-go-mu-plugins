@@ -1,8 +1,8 @@
 === Parse.ly ===
 Contributors: parsely_mike
 Tags: analytics, post, page
-Requires at least: 3.0
-Tested up to: 4.0
+Requires at least: 4.0
+Tested up to: 4.5
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -33,7 +33,7 @@ Feedback, suggestions, questions or concerns? E-mail us at [support@parsely.com]
 1. Upload the entire `wp-parsely` folder to your `/wp-content/plugins` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress (look for "Parse.ly")
 1. Head to the settings page for the plugin (should be /wp-admin/options-general.php?page=parsely)
-1. Set your Site ID which can be found in [your settings screen](http://dash.parsely.com/to/settings/api?highlight=apikey)
+1. Set your Site ID, which is your own site domain name (e.g., `mysite.com`)
 1. Save your changes and enjoy your data!
 
 Feedback, suggestions, questions or concerns? E-mail us at [support@parsely.com](mailto:support@parsely.com) we always want to hear from you.
@@ -42,7 +42,7 @@ Feedback, suggestions, questions or concerns? E-mail us at [support@parsely.com]
 
 = Where do I find my Site ID? =
 
-Head to [your settings screen](http://dash.parsely.com/to/settings/api?highlight=apikey) and copy the value for Site ID.
+Your Site ID is your own site domain name (e.g., `mysite.com`).
 
 = Why can't I see Dash code on my post when I preview? =
 
@@ -56,6 +56,15 @@ Dash code will only be placed on pages and posts which have been published in Wo
 4. A sample `parsely-page` meta tag for an article or post
 
 == Changelog ==
+
+= 1.9 =
+* Adds ability to assign custom taxonomies as section
+* Fixes bug related to add section to tag field
+
+= 1.8 =
+* Updated documentation for installation
+* Allow developers to adjust the tag list and the category reported for a post
+* Added support for themes to extend the reported authors
 
 = 1.7 =
 * Use JSON-LD / schema.org for parsely-page data instead of proprietary format
@@ -104,6 +113,19 @@ Dash code will only be placed on pages and posts which have been published in Wo
 * Support for parsely-page and JavaScript on home page and published pages and posts as well as archive pages (date/author/category/tag)
 
 == Upgrade Notice ==
+
+= 1.9 =
+This version adds:
+
+* Ability to assign custom taxonomies as section
+* Bug fix related to adding section to tag field
+
+= 1.8 =
+This version adds:
+
+* Documentation edits for installation
+* Ability for developers to adjust the tag list and the category reported for a post
+* Support for themes to extend the reported authors
 
 = 1.7 =
 This version adds:
