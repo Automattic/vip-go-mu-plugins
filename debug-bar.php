@@ -43,6 +43,8 @@ add_action( 'init', function() {
 		for ( $i = 0; $i < $total; $i++) {
 			if ( $panels[ $i ] instanceof Debug_Bar_Queries ) {
 				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_Queries();
+			} elseif ( $panels[ $i ] instanceof Debug_Bar_PHP ) {
+				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_PHP();
 			}
 		}
 

@@ -230,3 +230,11 @@ class WPCOM_VIP_Debug_Bar_DB_Connections extends Debug_Bar_Panel {
 		}
 	}
 }
+
+class WPCOM_VIP_Debug_Bar_PHP extends Debug_Bar_PHP {
+	function init() {
+		$this->title( __('Notices / Warnings', 'debug-bar') );
+
+		$this->real_error_handler = set_error_handler( array( &$this, 'error_handler' ) );
+	}
+}
