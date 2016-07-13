@@ -29,6 +29,7 @@ add_action( 'init', function() {
 	global $wpdb;
 
 	$wpdb->save_queries        = true;
+	$wpdb->save_backtrace      = true;
 	$wpdb->save_query_callback = 'wpcom_vip_save_query_callback';
 
 	require_once( __DIR__ . '/debug-bar/debug-bar.php' );
