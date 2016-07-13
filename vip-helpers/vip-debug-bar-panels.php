@@ -75,6 +75,35 @@ class WPCOM_VIP_Debug_Bar_Queries extends Debug_Bar_Panel {
 	}
 }
 
+class WPCOM_VIP_Debug_Bar_Memcached extends Debug_Bar_Panel {
+	function init() {
+		$this->title( __( 'Memcache', 'debug-bar' ) );
+	}
+
+	function prerender() {
+		$this->set_visible( true );
+	}
+
+	function render() {
+		global $wp_object_cache;
+		ob_start();
+
+		echo "<div id='memcache-stats'>";
+
+		$wp_object_cache->stats();
+
+		echo "</div>";
+
+		$out = ob_get_contents();
+
+		ob_end_clean();
+
+		$out = str_replace( '&nbsp;', '', $out );
+
+		echo $out;
+	}
+}
+
 class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 	function init() {
 		$this->title( __('Query Summary', 'debug-bar') );
