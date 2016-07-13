@@ -1130,3 +1130,38 @@ function wpcom_vip_add_URI_to_newrelic(){
 	}
 }
 add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
+
+function wpcom_vip_save_query_callback( $query, $elapsed, $backtrace, &$wpdb ) {
+	global $current_user;
+
+	if ( ! $wpdb->save_queries ) {
+		return;
+	}
+
+	$host            = $wpdb->current_host;
+	$microtime       = microtime();
+	$callback_result = $wpdb->callback_result;
+	$connection      = $wpdb->last_connection;
+
+	if ( isset( $backtrace ) && is_array( $backtrace ) ) {
+		// Convert debug_backtrace array (large) into trac links (smaller).
+		// Moved from admin-bar-debug.php to reduce peak memory usage.
+		$backtrace = array_reverse( $backtrace );
+		$folder    = 'trunk';
+
+		foreach ( (array) $backtrace as $call ) {
+			$line     = isset( $call['line'] ) ? $call['line'] : '';
+			$function = $call['function'];
+
+			if ( isset( $call['class'] ) ) {
+				$function = $call['class'] . "->$function";
+			}
+
+			$debug[] = $function;
+		}
+
+		$debug = join( ', ', $debug );
+	}
+
+	return compact('elapsed', 'host', 'microtime', 'debug', 'query', 'dbhname', 'dataset', 'callback_result', 'connection');
+}
