@@ -36,7 +36,16 @@ add_action( 'init', function() {
 
 	// Setup extra panels
 	add_filter( 'debug_bar_panels', function( $panels ) {
-		// @todo, see wpcom for details
+		require_once( __DIR__ . '/vip-helpers/vip-debug-bar-panels.php' );
+
+		$total = count( $panels );
+
+		for ( $i = 0; $i < $total; $i++) {
+			if ( $panels[ $i ] instanceof Debug_Bar_Queries ) {
+				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_Queries();
+			}
+		}
+
 		return $panels;
 	}, 99);
 }, 1 ); // Priority must be lower than that of Query Monitor
