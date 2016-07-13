@@ -5,7 +5,7 @@
 <div id="parsely-root" style="display: none">
   <div id="parsely-cfg" data-parsely-site="<?php echo esc_html($parselyOptions["apikey"]); ?>"></div>
 </div>
-<script>
+<script data-cfasync="false">
 (function(s, p, d) {
   var h=d.location.protocol, i=p+"-"+s,
       e=d.getElementById(i), r=d.getElementById(p+"-root"),
@@ -13,7 +13,7 @@
       :"static."+p+".com";
   if (e) return;
   e = d.createElement(s); e.id = i; e.async = true;
-  e.src = h+"//"+u+"/p.js"; r.appendChild(e);
+  e.setAttribute('data-cfasync', 'false'); e.src = h+"//"+u+"/p.js"; r.appendChild(e);
 })("script", "parsely", document);
 </script>
 <!-- END Parse.ly Include: Standard -->
