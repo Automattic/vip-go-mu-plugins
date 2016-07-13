@@ -75,7 +75,7 @@ class WPCOM_VIP_Debug_Bar_Queries extends Debug_Bar_Panel {
 	}
 }
 
-class WPCOM_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
+class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 	function init() {
 		$this->title( __('Query Summary', 'debug-bar') );
 	}
