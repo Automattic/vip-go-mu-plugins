@@ -257,6 +257,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * during initial code review and pre-deployment review where we
 		 * see issues.
 		 *
+		 * @deprecated 1.1 Use `wpcom_vip_cache_purge_post_urls` instead
 		 * @param array $this->purge_urls {
 		 *     An array of URLs for you to add to
 		 * }
@@ -264,6 +265,27 @@ class WPCOM_VIP_Cache_Manager {
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
 
+		/**
+		 * Allows adding URLs to be PURGEd from cache when a given post ID is PURGEd
+		 *
+		 * Developers can hook this filter and check the post being purged in order
+		 * to also purge related URLs, e.g. feeds.
+		 *
+		 * Related category archives, tag archives, generic feeds, etc, are already
+		 * included to be purged (see code above).
+		 *
+		 * PLEASE NOTE: Your site benefits from the performance that our HTTP
+		 * Reverse Proxy Caching provides, and purging URLs from that cache
+		 * should be done cautiously. VIP may push back on use of this filter
+		 * during initial code review and pre-deployment review where we
+		 * see issues.
+		 *
+		 * @param array $this->purge_urls {
+		 *     An array of URLs for you to add to
+		 * }
+		 * @param type  $post_id The ID of the post which is the primary reason for the purge
+		 */
+		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_post_urls', $this->purge_urls, $post_id );
 		return true;
 	}
 
@@ -357,6 +379,25 @@ class WPCOM_VIP_Cache_Manager {
 		if ( false !== $maybe_purge_feed_url ) {
 			$this->purge_urls[] = $maybe_purge_feed_url;
 		}
+
+		/**
+		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd
+		 *
+		 * Developers can hook this filter and check the term being purged in order
+		 * to also purge related URLs, e.g. feeds.
+		 *
+		 * PLEASE NOTE: Your site benefits from the performance that our HTTP
+		 * Reverse Proxy Caching provides, and purging URLs from that cache
+		 * should be done cautiously. VIP may push back on use of this filter
+		 * during initial code review and pre-deployment review where we
+		 * see issues.
+		 *
+		 * @param array $this->purge_urls {
+		 *     An array of URLs for you to add to
+		 * }
+		 * @param type  $term_id The ID of the term which is the primary reason for the purge
+		 */
+		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $this->purge_urls, $term_id );
 	}
 }
 
