@@ -194,19 +194,19 @@ class WPCOM_VIP_Cache_Manager {
 
 	public function queue_post_purge( $post_id ) {
 		if ( $this->site_cache_purged )
-			return;
+			return false;
 
 		if ( defined( 'WP_IMPORTING' ) ) {
 			$this->purge_site_cache();
-			return;
+			return false;
 		}
 
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
-			'revision' === $post->post_type ||
-			! in_array( get_post_status( $post_id ), array( 'publish', 'trash' ), true ) )
+		     'revision' === $post->post_type ||
+		     ! in_array( get_post_status( $post_id ), array( 'publish', 'trash' ), true ) )
 		{
-			return;
+			return false;
 		}
 
 		$this->purge_urls[] = get_permalink( $post_id );
@@ -263,6 +263,8 @@ class WPCOM_VIP_Cache_Manager {
 		 * @param type  $post_id The ID of the post which is the primary reason for the purge
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
+
+		return true;
 	}
 
 	/**
@@ -340,7 +342,7 @@ class WPCOM_VIP_Cache_Manager {
 		$taxonomy_name = $term->taxonomy;
 		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
 		if ( is_wp_error( $maybe_purge_url ) ) {
-			continue;
+			return false;
 		}
 		if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
 			$this->purge_urls[] = $maybe_purge_url;
