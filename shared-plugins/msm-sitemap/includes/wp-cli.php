@@ -148,6 +148,8 @@ class Metro_Sitemap_CLI extends WP_CLI_Command {
 		$date_stamp = Metro_Sitemap::get_date_stamp( $year, $month, $day );
 		if ( Metro_Sitemap::date_range_has_posts( $date_stamp, $date_stamp ) ) {
 			Metro_Sitemap::generate_sitemap_for_date( $date_stamp ); // TODO: simplify; this function should accept the year, month, day and translate accordingly
+		} else {
+			Metro_Sitemap::delete_sitemap_for_date( $date_stamp );
 		}
 	}
 

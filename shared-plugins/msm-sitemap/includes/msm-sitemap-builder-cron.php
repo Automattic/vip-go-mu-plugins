@@ -69,7 +69,12 @@ class MSM_Sitemap_Builder_Cron {
 	public static function action_generate() {
 		$sitemap_create_in_progress = get_option( 'msm_sitemap_create_in_progress' );
 		self::generate_full_sitemap();
-		update_option( 'msm_sitemap_create_in_progress', true );
+
+		if ( false !== get_option( 'msm_sitemap_create_in_progress', false ) ) {
+			update_option( 'msm_sitemap_create_in_progress', true );
+		} else {
+			add_option( 'msm_sitemap_create_in_progress', true, '', 'no' );
+		}
 
 		if ( empty( $sitemap_create_in_progress ) ) {
 			Metro_Sitemap::show_action_message( __( 'Starting sitemap generation...', 'metro-sitemaps' ) );
@@ -300,6 +305,8 @@ class MSM_Sitemap_Builder_Cron {
 		$date_stamp = Metro_Sitemap::get_date_stamp( $year, $month, $day );
 		if ( Metro_Sitemap::date_range_has_posts( $date_stamp, $date_stamp ) ) {
 			Metro_Sitemap::generate_sitemap_for_date( $date_stamp );
+		} else {
+			Metro_Sitemap::delete_sitemap_for_date( $date_stamp );
 		}
 
 		self::find_next_day_to_process( $year, $month, $day );
