@@ -8,6 +8,8 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+require_once( __DIR__ . '/api.php' );
+
 class WPCOM_VIP_Cache_Manager {
 	private $ban_urls = array();
 	private $purge_urls = array();
