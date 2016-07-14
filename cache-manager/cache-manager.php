@@ -40,7 +40,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
-		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 3 );
+		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 2 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
