@@ -414,6 +414,16 @@ class WPCOM_VIP_Cache_Manager {
 
 		return true;
 	}
+
+	public function queue_purge_url( $url ) {
+		$url = esc_url( $url );
+		$url = wp_http_validate_url( $url );
+		if ( false == $url ) {
+			return false;
+		}
+		$this->purge_urls[] = $url;
+		return true;
+	}
 }
 
 WPCOM_VIP_Cache_Manager::instance();
