@@ -326,6 +326,14 @@ class WPCOM_VIP_Cache_Manager {
 	 */
 	public function queue_purge_urls_for_term( $term ) {
 
+		// Belt and braces: get the term object,
+		// in case something sent us a term ID
+		$term = get_term( $term );
+
+		if ( is_wp_error( $term ) || empty( $term ) ) {
+			return false;
+		}
+
 		/**
 		 * Allows you to customise the URL suffix used to specify a page for
 		 * paged term archives.
