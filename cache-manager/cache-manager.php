@@ -411,6 +411,8 @@ class WPCOM_VIP_Cache_Manager {
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $this->purge_urls, $term_id );
 
 		$this->purge_urls = array_unique( $this->purge_urls );
+
+		return true;
 	}
 }
 
