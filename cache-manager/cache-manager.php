@@ -13,7 +13,14 @@ class WPCOM_VIP_Cache_Manager {
 	private $purge_urls = array();
 	private $site_cache_purged = false;
 
-	function __construct() {
+	static public function instance() {
+		static $instance = false;
+		if ( ! $instance )
+			$instance = new WPCOM_VIP_Cache_Manager;
+		return $instance;
+	}
+
+	public function __construct() {
 		// Execute the healthcheck as quickly as possible
 		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 			if ( function_exists( 'newrelic_end_transaction' ) ) {
@@ -351,4 +358,4 @@ class WPCOM_VIP_Cache_Manager {
 	}
 }
 
-new WPCOM_VIP_Cache_Manager();
+WPCOM_VIP_Cache_Manager::instance();
