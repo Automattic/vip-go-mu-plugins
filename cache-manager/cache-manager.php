@@ -286,6 +286,9 @@ class WPCOM_VIP_Cache_Manager {
 		 * @param type  $post_id The ID of the post which is the primary reason for the purge
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_post_urls', $this->purge_urls, $post_id );
+
+		$this->purge_urls = array_unique( $this->purge_urls );
+
 		return true;
 	}
 
@@ -398,6 +401,8 @@ class WPCOM_VIP_Cache_Manager {
 		 * @param type  $term_id The ID of the term which is the primary reason for the purge
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $this->purge_urls, $term_id );
+
+		$this->purge_urls = array_unique( $this->purge_urls );
 	}
 }
 
