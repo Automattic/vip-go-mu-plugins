@@ -33,7 +33,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
-	function init() {
+	public function init() {
 		if ( is_super_admin() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
@@ -48,7 +48,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
 	}
 
-	function get_manual_purge_link() {
+	public function get_manual_purge_link() {
 		global $blog_id;
 
 		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
@@ -67,11 +67,11 @@ class WPCOM_VIP_Cache_Manager {
 		}
 	}
 
-	function manual_purge_message() {
+	public function manual_purge_message() {
 		echo "<div id='message' class='updated fade'><p><strong>".__('Varnish cache purged!', 'varnish-http-purge')."</strong></p></div>";
 	}
 
-	function curl_multi( $requests ) {
+	protected function curl_multi( $requests ) {
 		$curl_multi = curl_multi_init();
 
 		foreach ( $requests as $req ) {
@@ -127,7 +127,7 @@ class WPCOM_VIP_Cache_Manager {
 		curl_multi_close( $curl_multi );
 	}
 
-	function build_purge_request( $url, $method ) {
+	protected function build_purge_request( $url, $method ) {
 		global $varnish_servers;
 
 		$requests = array();
@@ -160,7 +160,7 @@ class WPCOM_VIP_Cache_Manager {
 		return $requests;
 	}
 
-	function execute_purges() {
+	public function execute_purges() {
 		$this->ban_urls = array_unique( $this->ban_urls );
 		$this->purge_urls = array_unique( $this->purge_urls );
 
@@ -182,7 +182,7 @@ class WPCOM_VIP_Cache_Manager {
 		return $this->curl_multi( $requests );
 	}
 
-	function purge_site_cache( $when = null ) {
+	public function purge_site_cache( $when = null ) {
 		if ( $this->site_cache_purged )
 			return;
 
@@ -192,7 +192,7 @@ class WPCOM_VIP_Cache_Manager {
 		return;
 	}
 
-	function queue_post_purge( $post_id ) {
+	public function queue_post_purge( $post_id ) {
 		if ( $this->site_cache_purged )
 			return;
 
@@ -277,7 +277,7 @@ class WPCOM_VIP_Cache_Manager {
 	 * @param string $taxonomy       Taxonomy slug.
 	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
 	 */
-	function queue_term_purge( $ids, $taxonomy ) {
+	public function queue_term_purge( $ids, $taxonomy ) {
 		$get_term_args = array(
 			'taxonomy'    => $taxonomy,
 			'include'     => $ids,
@@ -297,7 +297,7 @@ class WPCOM_VIP_Cache_Manager {
 	 *
 	 * @param object $term A WP term object
 	 */
-	function queue_purge_urls_for_term( $term ) {
+	public function queue_purge_urls_for_term( $term ) {
 
 		/**
 		 * Allows you to customise the URL suffix used to specify a page for
