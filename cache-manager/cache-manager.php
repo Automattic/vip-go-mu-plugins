@@ -323,6 +323,8 @@ class WPCOM_VIP_Cache_Manager {
 	 * Queue all URLs to be purged for a given term
 	 *
 	 * @param object $term A WP term object
+	 *
+	 * @return bool True on success
 	 */
 	public function queue_purge_urls_for_term( $term ) {
 
