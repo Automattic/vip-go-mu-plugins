@@ -212,7 +212,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		$this->purge_urls[] = get_permalink( $post_id );
-		$this->purge_urls[] = trailingslashit( home_url() );
+		$this->purge_urls[] = home_url( '/' );
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
