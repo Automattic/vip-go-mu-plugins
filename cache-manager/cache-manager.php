@@ -55,17 +55,17 @@ class WPCOM_VIP_Cache_Manager {
 
 		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
 
-		$button =  esc_html__( 'Press the button below to force a purge of your entire page cache.' );
-		$button .= '</p><p><span class="button"><a href="' . $url . '"><strong>';
-		$button .= esc_html__( 'Purge Page Cache' );
-		$button .= '</strong></a></span>';
+		$button_html =  esc_html__( 'Press the button below to force a purge of your entire page cache.' );
+		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
+		$button_html .= esc_html__( 'Purge Page Cache' );
+		$button_html .= '</strong></a></span>';
 
-		$nobutton =  esc_html__( 'You do not have permission to purge the cache for the whole site. Please contact your adminstrator.' );
+		$nobutton_html =  esc_html__( 'You do not have permission to purge the cache for the whole site. Please contact your administrator.' );
 
 		if ( is_super_admin() ) {
-			echo "<p>$button</p>\n";
+			echo "<p>$button_html</p>\n";
 		} else {
-			echo "<p>$nobutton</p>\n";
+			echo "<p>$nobutton_html</p>\n";
 		}
 	}
 
