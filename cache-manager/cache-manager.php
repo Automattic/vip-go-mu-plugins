@@ -417,6 +417,13 @@ class WPCOM_VIP_Cache_Manager {
 		return true;
 	}
 
+	/**
+	 * PURGE a single URL
+	 *
+	 * @param string $url The specific URL to purge the cache for
+	 *
+	 * @return bool True on success
+	 */
 	public function queue_purge_url( $url ) {
 		$url = esc_url( $url );
 		$url = wp_http_validate_url( $url );
