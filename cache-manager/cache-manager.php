@@ -230,19 +230,17 @@ class WPCOM_VIP_Cache_Manager {
 			}
 		}
 
-		$feeds = array(
+		// Purge the standard site feeds
+		$site_feeds = array(
 			get_bloginfo('rdf_url'),
 			get_bloginfo('rss_url') ,
 			get_bloginfo('rss2_url'),
 			get_bloginfo('atom_url'),
 			get_bloginfo('comments_atom_url'),
 			get_bloginfo('comments_rss2_url'),
-			get_post_comments_feed_link( $post_id )
+			get_post_comments_feed_link( $post_id ),
 		);
-
-		foreach ( $feeds as $feed ) {
-			$this->purge_urls[] = $feed;
-		}
+		$this->purge_urls = array_merge( $site_feeds, $this->purge_urls );
 
 		/**
 		 * Allows adding URLs to be PURGEd from cache when a given post ID is PURGEd
