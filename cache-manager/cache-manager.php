@@ -366,6 +366,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * example.com/category/news/page/2
 		 * example.com/category/news/page/3
 		 *
+		 * @access private Please do not hook this filter at the moment
 		 * @param int The maximum page to purge from each term archive
 		 * }
 		 */
