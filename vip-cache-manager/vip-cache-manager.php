@@ -73,7 +73,7 @@ class WPCOM_VIP_Cache_Manager {
 		echo "<div id='message' class='updated fade'><p><strong>".__('Varnish cache purged!', 'varnish-http-purge')."</strong></p></div>";
 	}
 
-	protected function curl_multi( $requests ) {
+	public function curl_multi( $requests ) {
 		$curl_multi = curl_multi_init();
 
 		foreach ( $requests as $req ) {
@@ -129,7 +129,19 @@ class WPCOM_VIP_Cache_Manager {
 		curl_multi_close( $curl_multi );
 	}
 
-	protected function build_purge_request( $url, $method ) {
+	/**
+	 *
+	 *
+	 * Instead of using this method directly, please use the API
+	 * functions provided; see `api.php`.
+	 *
+	 * @access private Please do not use this method directly
+	 * @param string $url A URL to PURGE
+	 * @param $method
+	 *
+	 * @return array
+	 */
+	public function build_purge_request( $url, $method ) {
 		global $varnish_servers;
 
 		$requests = array();
