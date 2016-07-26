@@ -1132,8 +1132,6 @@ function wpcom_vip_add_URI_to_newrelic(){
 add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
 
 function wpcom_vip_save_query_callback( $query, $elapsed, $backtrace, &$wpdb ) {
-	global $current_user;
-
 	if ( ! $wpdb->save_queries ) {
 		return;
 	}
