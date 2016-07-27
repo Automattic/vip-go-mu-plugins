@@ -16,6 +16,8 @@ env:
 before_install:
   - ./ci/prepare.sh
 
+install: true
+
 script:
   # Linting and unit tests
   - make test
