@@ -209,12 +209,12 @@ class WPCOM_VIP_Cache_Manager {
 
 		foreach ( $taxonomies as $taxonomy ) {
 			if ( true !== $taxonomy->public ) {
-				break;
+				continue;
 			}
 			$taxonomy_name = $taxonomy->name;
 			$terms = get_the_terms( $post_id, $taxonomy_name );
 			if ( false === $terms ) {
-				break;
+				continue;
 			}
 			foreach ( $terms as $term ) {
 				$this->queue_purge_urls_for_term( $term );
