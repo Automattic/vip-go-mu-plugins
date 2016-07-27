@@ -9,7 +9,7 @@ set -ex
 cd $TRAVIS_BUILD_DIR
 cat .gitmodules
 if [ -w .gitmodules ]; then
-    sed -i -e "s|git@\([^:]*\):|https://\1/|" ./gitmodules.txt
+    sed -i -e "s|git@\([^:]*\):|https://\1/|" .gitmodules
 fi;
 cat .gitmodules
 git submodule update --init --recursive
