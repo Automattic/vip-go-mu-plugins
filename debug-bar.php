@@ -30,7 +30,7 @@ add_action( 'init', function() {
 		$total = count( $panels );
 
 		for ( $i = 0; $i < $total; $i++) {
-			if ( $panels[ $i ] instanceof Debug_Bar_Queries ) {
+			if ( $panels[ $i ] instanceof Debug_Bar_Queries && function_exists( 'wpcom_vip_save_query_callback' ) ) {
 				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_Queries();
 			} elseif ( $panels[ $i ] instanceof Debug_Bar_Object_Cache ) {
 				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_Memcached();
