@@ -209,12 +209,12 @@ class WPCOM_VIP_Cache_Manager {
 
 		foreach ( $taxonomies as $taxonomy ) {
 			if ( true !== $taxonomy->public ) {
-				continue;
+				break;
 			}
 			$taxonomy_name = $taxonomy->name;
 			$terms = get_the_terms( $post_id, $taxonomy_name );
 			if ( false === $terms ) {
-				continue;
+				break;
 			}
 			foreach ( $terms as $term ) {
 				$this->queue_purge_urls_for_term( $term );
@@ -333,7 +333,7 @@ class WPCOM_VIP_Cache_Manager {
 		$taxonomy_name = $term->taxonomy;
 		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
 		if ( is_wp_error( $maybe_purge_url ) ) {
-			continue;
+			return;
 		}
 		if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
 			$this->purge_urls[] = $maybe_purge_url;
