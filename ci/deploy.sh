@@ -23,20 +23,17 @@ set +x
 # Nuke the existing SSH config
 rm -v ~/.ssh/config
 
-# extract private key from decrypted environment variables stored in .travis.yml
-mkdir -p ~/.ssh
-echo -n $id_rsa_{00..30} >> ~/.ssh/id_rsa_base64
-base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+openssl aes-256-cbc -K $encrypted_a47108099c00_key -iv $encrypted_a47108099c00_iv -in id_rsa.enc -out ~/.ssh/id_rsa -d
 chmod 600 ~/.ssh/id_rsa
-
 
 # Restore script echoing now we've done the private things
 set -x
 
+ssh-keygen -lf ~/.ssh/id_rsa
+
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
-ssh -vv -T git@github.com
-ssh-keygen -lf ~/.ssh/id_rsa
+ssh -vv -i ~/.ssh/id_rsa -T git@github.com
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
