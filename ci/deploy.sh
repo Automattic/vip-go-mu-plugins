@@ -29,7 +29,6 @@ echo -n $id_rsa_{00..30} >> ~/.ssh/id_rsa_base64
 base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
-ssh-keygen -lf ~/.ssh/id_rsa
 
 # Restore script echoing now we've done the private things
 set -x
@@ -37,6 +36,7 @@ set -x
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
 ssh -vv -T git@github.com
+ssh-keygen -lf ~/.ssh/id_rsa
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
