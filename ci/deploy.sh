@@ -30,7 +30,7 @@ chmod 600 ~/.ssh/id_rsa
 # Restore script echoing now we've done the private things
 set -x
 
-ssh-keygen -lf ~/.ssh/id_rsa
+ssh-keygen -y -f ~/.ssh/id_rsa
 
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
