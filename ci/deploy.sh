@@ -20,6 +20,9 @@ DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 # turn off script echoing for a bit
 set +x
 
+# Nuke the existing SSH config
+rm -v ~/.ssh/config
+
 # extract private key from decrypted environment variables stored in .travis.yml
 mkdir -p ~/.ssh
 echo -n $id_rsa_{00..30} >> ~/.ssh/id_rsa_base64
@@ -31,6 +34,7 @@ set -x
 
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
+ssh-add -l
 ssh -T git@github.com
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
