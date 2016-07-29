@@ -34,7 +34,7 @@ ssh-keygen -y -f ~/.ssh/id_rsa
 
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
-ssh -vv -i ~/.ssh/id_rsa -T git@github.com
+ssh -vv -T git@github.com
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
