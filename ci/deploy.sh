@@ -21,7 +21,8 @@ DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 set +x
 
 # Nuke the existing SSH config
-rm -v ~/.ssh/config
+rm -rfv ~/.ssh
+mkdir -p ~/.ssh
 
 openssl aes-256-cbc -K $encrypted_a47108099c00_key -iv $encrypted_a47108099c00_iv -in ${TRAVIS_BUILD_DIR}/ci/id_rsa.enc -out ~/.ssh/id_rsa -d
 chmod 600 ~/.ssh/id_rsa
