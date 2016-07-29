@@ -47,7 +47,7 @@ install: true
 
 script:
   # Linting and unit tests
-  - make test
+#  - make test
 
 notifications:
   slack:
