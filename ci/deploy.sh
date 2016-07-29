@@ -30,11 +30,8 @@ chmod 600 ~/.ssh/id_rsa
 # Restore script echoing now we've done the private things
 set -x
 
-ssh-keygen -y -f ~/.ssh/id_rsa
-
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
-ssh -vv -T git@github.com
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
