@@ -49,5 +49,5 @@ function wpcom_vip_purge_edge_cache_for_post( $post ) {
  * @return bool True on success
  */
 function wpcom_vip_purge_edge_cache_for_term( $term ) {
-	return WPCOM_VIP_Cache_Manager::instance()->queue_purge_urls_for_term( $term );
+	return WPCOM_VIP_Cache_Manager::instance()->queue_term_purge( $term );
 }

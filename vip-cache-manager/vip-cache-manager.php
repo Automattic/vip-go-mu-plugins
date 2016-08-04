@@ -43,7 +43,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
-		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 2 );
+		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
@@ -224,8 +224,9 @@ class WPCOM_VIP_Cache_Manager {
 			return false;
 		}
 
-		$this->purge_urls[] = get_permalink( $post_id );
-		$this->purge_urls[] = home_url( '/' );
+		$post_purge_urls = array();
+		$post_purge_urls[] = get_permalink( $post_id );
+		$post_purge_urls[] = home_url( '/' );
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
@@ -239,7 +240,7 @@ class WPCOM_VIP_Cache_Manager {
 				continue;
 			}
 			foreach ( $terms as $term ) {
-				$this->queue_purge_urls_for_term( $term );
+				$post_purge_urls = array_merge( $post_purge_urls, $this->get_purge_urls_for_term( $term ) );
 			}
 		}
 
@@ -253,7 +254,31 @@ class WPCOM_VIP_Cache_Manager {
 			get_bloginfo('comments_rss2_url'),
 			get_post_comments_feed_link( $post_id ),
 		);
-		$this->purge_urls = array_merge( $site_feeds, $this->purge_urls );
+		$post_purge_urls = array_merge( $post_purge_urls, $site_feeds );
+
+		/**
+		 * Allows adding URLs to be PURGEd from cache when a given post ID is PURGEd
+		 *
+		 * Developers can hook this filter and check the post being purged in order
+		 * to also purge related URLs, e.g. feeds.
+		 *
+		 * Related category archives, tag archives, generic feeds, etc, are already
+		 * included to be purged (see code above).
+		 *
+		 * PLEASE NOTE: Your site benefits from the performance that our HTTP
+		 * Reverse Proxy Caching provides, and purging URLs from that cache
+		 * should be done cautiously. VIP may push back on use of this filter
+		 * during initial code review and pre-deployment review where we
+		 * see issues.
+		 *
+		 * @param array $this->purge_urls {
+		 *     An array of URLs for you to add to
+		 * }
+		 * @param type  $post_id The ID of the post which is the primary reason for the purge
+		 */
+		$post_purge_urls = apply_filters( 'wpcom_vip_cache_purge_post_urls', $post_purge_urls, $post_id );
+
+		$this->purge_urls = array_merge( $this->purge_urls, $post_purge_urls );
 
 		/**
 		 * Allows adding URLs to be PURGEd from cache when a given post ID is PURGEd
@@ -278,31 +303,27 @@ class WPCOM_VIP_Cache_Manager {
 		 */
 		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
 
-		/**
-		 * Allows adding URLs to be PURGEd from cache when a given post ID is PURGEd
-		 *
-		 * Developers can hook this filter and check the post being purged in order
-		 * to also purge related URLs, e.g. feeds.
-		 *
-		 * Related category archives, tag archives, generic feeds, etc, are already
-		 * included to be purged (see code above).
-		 *
-		 * PLEASE NOTE: Your site benefits from the performance that our HTTP
-		 * Reverse Proxy Caching provides, and purging URLs from that cache
-		 * should be done cautiously. VIP may push back on use of this filter
-		 * during initial code review and pre-deployment review where we
-		 * see issues.
-		 *
-		 * @param array $this->purge_urls {
-		 *     An array of URLs for you to add to
-		 * }
-		 * @param type  $post_id The ID of the post which is the primary reason for the purge
-		 */
-		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_post_urls', $this->purge_urls, $post_id );
-
 		$this->purge_urls = array_unique( $this->purge_urls );
 
 		return true;
+	}
+
+	/**
+	 * Purge the cache for a terms
+	 *
+	 * @param object|int $term A WP Term object, or a term ID
+	 * @return bool True on success
+	 */
+	public function queue_term_purge( $term ) {
+		$term = get_term( $term );
+		if ( is_wp_error( $term ) ) {
+			return false;
+		}
+		if ( empty( $term ) ) {
+			return false;
+		}
+		$term_ids = array( $term->term_id );
+		$this->queue_terms_purges( $term_ids, $term->taxonomy );
 	}
 
 	/**
@@ -317,7 +338,7 @@ class WPCOM_VIP_Cache_Manager {
 	 * @param string $taxonomy       Taxonomy slug.
 	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
 	 */
-	public function queue_term_purge( $ids, $taxonomy ) {
+	public function queue_terms_purges( $ids, $taxonomy ) {
 		$get_term_args = array(
 			'taxonomy'    => $taxonomy,
 			'include'     => $ids,
@@ -327,27 +348,32 @@ class WPCOM_VIP_Cache_Manager {
 		if ( is_wp_error( $terms ) ) {
 			return;
 		}
+		$term_purge_urls = array();
 		foreach ( $terms as $term ) {
-			$this->queue_purge_urls_for_term( $term );
+			$term_purge_urls = array_merge( $term_purge_urls, $this->get_purge_urls_for_term( $term ) );
 		}
+
+		$this->purge_urls = array_merge( $this->purge_urls, $term_purge_urls );
+		$this->purge_urls = array_unique( $this->purge_urls );
 	}
 
 	/**
-	 * Queue all URLs to be purged for a given term
+	 * Get all URLs to be purged for a given term
 	 *
 	 * @param object $term A WP term object
 	 *
-	 * @return bool True on success
+	 * @return array An array of URLs to be purged
 	 */
-	public function queue_purge_urls_for_term( $term ) {
-
+	protected function get_purge_urls_for_term( $term ) {
 		// Belt and braces: get the term object,
 		// in case something sent us a term ID
 		$term = get_term( $term );
 
 		if ( is_wp_error( $term ) || empty( $term ) ) {
-			return false;
+			return array();
 		}
+
+		$term_purge_urls = array();
 
 		/**
 		 * Allows you to customise the URL suffix used to specify a page for
@@ -391,20 +417,20 @@ class WPCOM_VIP_Cache_Manager {
 		$taxonomy_name = $term->taxonomy;
 		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
 		if ( is_wp_error( $maybe_purge_url ) ) {
-			return false;
+			return array();
 		}
 		if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
-			$this->purge_urls[] = $maybe_purge_url;
+			$term_purge_urls[] = $maybe_purge_url;
 			// Now add the pages for the archive we're clearing
 			for( $i = 2; $i <= $max_pages; $i++ ) {
 				$maybe_purge_url_page = rtrim( $maybe_purge_url, '/' ) . '/' . ltrim( $paging_endpoint, '/' );
 				$maybe_purge_url_page = sprintf( $maybe_purge_url_page, $i );
-				$this->purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
+				$term_purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
 			}
 		}
 		$maybe_purge_feed_url = get_term_feed_link( $term->term_id, $taxonomy_name );
 		if ( false !== $maybe_purge_feed_url ) {
-			$this->purge_urls[] = $maybe_purge_feed_url;
+			$term_purge_urls[] = $maybe_purge_feed_url;
 		}
 
 		/**
@@ -424,11 +450,9 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 * @param type  $term_id The ID of the term which is the primary reason for the purge
 		 */
-		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $this->purge_urls, $term_id );
+		$term_purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $term_purge_urls, $term_id );
 
-		$this->purge_urls = array_unique( $this->purge_urls );
-
-		return true;
+		return $term_purge_urls;
 	}
 
 	/**
