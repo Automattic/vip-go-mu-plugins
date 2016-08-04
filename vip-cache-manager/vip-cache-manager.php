@@ -17,8 +17,9 @@ class WPCOM_VIP_Cache_Manager {
 
 	static public function instance() {
 		static $instance = false;
-		if ( ! $instance )
-			$instance = new WPCOM_VIP_Cache_Manager;
+		if ( ! $instance ) {
+			$instance = new WPCOM_VIP_Cache_Manager();
+		}
 		return $instance;
 	}
 
