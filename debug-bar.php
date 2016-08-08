@@ -21,17 +21,6 @@ add_action( 'init', function() {
 		return;
 	}
 
-	if ( ! defined( 'SAVEQUERIES' ) ) {
-		define('SAVEQUERIES', true);
-	}
-
-	// For hyperdb, which doesn't use SAVEQUERIES
-	global $wpdb;
-
-	$wpdb->save_queries        = true;
-	$wpdb->save_backtrace      = true;
-	$wpdb->save_query_callback = 'wpcom_vip_save_query_callback';
-
 	require_once( __DIR__ . '/debug-bar/debug-bar.php' );
 
 	// Setup extra panels
@@ -41,7 +30,7 @@ add_action( 'init', function() {
 		$total = count( $panels );
 
 		for ( $i = 0; $i < $total; $i++) {
-			if ( $panels[ $i ] instanceof Debug_Bar_Queries ) {
+			if ( $panels[ $i ] instanceof Debug_Bar_Queries && function_exists( 'wpcom_vip_save_query_callback' ) ) {
 				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_Queries();
 			} elseif ( $panels[ $i ] instanceof Debug_Bar_Object_Cache ) {
 				$panels[ $i ] = new WPCOM_VIP_Debug_Bar_Memcached();
