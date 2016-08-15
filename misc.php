@@ -79,3 +79,19 @@ add_action( 'update_option', function( $option ) {
 		}
 	}
 }, 10, 1 );
+
+/**
+ * Hooks pre_ping to stop any pinging from happening,
+ * unless `WPCOM_VIP_DO_PINGS` is set to `true`.
+ *
+ * @param array $post_links The URLs to be pinged
+ */
+function wpcom_vip_pre_ping( $post_links ) {
+	if ( ! defined( 'WPCOM_VIP_DO_PINGS' ) || true !== WPCOM_VIP_DO_PINGS ) {
+		return;
+	}
+	// Clear our the post links array, so we ping nothing
+	$post_links = array();
+}
+add_action( 'pre_ping', 'wpcom_vip_pre_ping' );
+
