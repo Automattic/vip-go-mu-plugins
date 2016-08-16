@@ -87,7 +87,8 @@ add_action( 'update_option', function( $option ) {
  * @param array $post_links The URLs to be pinged
  */
 function wpcom_vip_pre_ping( $post_links ) {
-	if ( ! defined( 'WPCOM_VIP_DO_PINGS' ) || true !== WPCOM_VIP_DO_PINGS ) {
+	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === WPCOM_VIP_DO_PINGS );
+	if ( ! $do_pings ) {
 		return;
 	}
 	// Clear our the post links array, so we ping nothing
