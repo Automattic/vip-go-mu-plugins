@@ -75,11 +75,9 @@ add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 
 function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
 	if ( ! wp_installing() ) {
-		$alloptions = wp_load_alloptions(); //alloptions should be cached at
-this point
+		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
 
-		if ( isset( $alloptions[ $option ] ) ) { //only if option is among al
-loptions
+		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
 			wp_cache_delete( 'alloptions', 'options' );
 		}
 	}
