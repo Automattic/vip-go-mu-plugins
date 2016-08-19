@@ -66,12 +66,36 @@ add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
 
 /**
  * Fix a race condition in alloptions caching
+ *
+ * See https://core.trac.wordpress.org/ticket/31245
+ */
+function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
+	if ( ! wp_installing() ) {
+		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
+
+		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
+			wp_cache_delete( 'alloptions', 'options' );
+		}
+	}
+}
+
+// Temporary testing of new approach...leaving un-indented for better diffs
+if ( defined( 'VIP_JETPACK_ALT' ) && true === VIP_JETPACK_ALT ) {
+
+add_action( 'added_option',   '_wpcom_vip_maybe_clear_alloptions_cache' );
+add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
+add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
+
+} else {
+
+/**
+ * Fix a race condition in alloptions caching
  */
 add_action( 'update_option', function( $option ) {
 	global $wp_object_cache;
 	if ( ! wp_installing()
-	     && method_exists( $wp_object_cache, 'key' )
-		 && method_exists( $wp_object_cache, 'cache' ) ) {
+		&& method_exists( $wp_object_cache, 'key' )
+			&& method_exists( $wp_object_cache, 'cache' ) ) {
 		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
 		if ( isset( $alloptions[$option] ) ) { //only if option is among alloptions
 			$key = $wp_object_cache->key( 'alloptions', 'options' );
@@ -79,3 +103,5 @@ add_action( 'update_option', function( $option ) {
 		}
 	}
 }, 10, 1 );
+
+}
