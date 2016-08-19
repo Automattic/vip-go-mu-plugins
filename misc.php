@@ -93,7 +93,9 @@ add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
  */
 add_action( 'update_option', function( $option ) {
 	global $wp_object_cache;
-	if ( ! wp_installing() ) {
+	if ( ! wp_installing()
+		&& method_exists( $wp_object_cache, 'key' )
+			&& method_exists( $wp_object_cache, 'cache' ) ) { ) {
 		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
 		if ( isset( $alloptions[$option] ) ) { //only if option is among alloptions
 			$key = $wp_object_cache->key( 'alloptions', 'options' );
