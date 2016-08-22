@@ -66,16 +66,19 @@ add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
 
 /**
  * Fix a race condition in alloptions caching
+ *
+ * See https://core.trac.wordpress.org/ticket/31245
  */
-add_action( 'update_option', function( $option ) {
-	global $wp_object_cache;
-	if ( ! wp_installing()
-	     && method_exists( $wp_object_cache, 'key' )
-		 && method_exists( $wp_object_cache, 'cache' ) ) {
+function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
+	if ( ! wp_installing() ) {
 		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
-		if ( isset( $alloptions[$option] ) ) { //only if option is among alloptions
-			$key = $wp_object_cache->key( 'alloptions', 'options' );
-			unset( $wp_object_cache->cache[$key] ); //remove in-memory cache for obtaining the value from memcache
+
+		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
+			wp_cache_delete( 'alloptions', 'options' );
 		}
 	}
-}, 10, 1 );
+}
+
+add_action( 'added_option',   '_wpcom_vip_maybe_clear_alloptions_cache' );
+add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
+add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
