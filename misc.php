@@ -89,10 +89,10 @@ add_action( 'update_option', function( $option ) {
 function wpcom_vip_pre_ping( $post_links ) {
 	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === VIP_DO_PINGS );
 	if ( ! $do_pings ) {
+		// Clear our the post links array, so we ping nothing
+		$post_links = array();
 		return;
 	}
-	// Clear our the post links array, so we ping nothing
-	$post_links = array();
 }
 add_action( 'pre_ping', 'wpcom_vip_pre_ping' );
 
