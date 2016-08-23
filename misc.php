@@ -82,3 +82,19 @@ function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
 add_action( 'added_option',   '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
+
+/**
+ * Hooks pre_ping to stop any pinging from happening,
+ * unless `VIP_DO_PINGS` is set to `true` (boolean).
+ *
+ * @param array $post_links The URLs to be pinged (passed by ref)
+ */
+function wpcom_vip_pre_ping( $post_links ) {
+	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === VIP_DO_PINGS );
+	if ( ! $do_pings ) {
+		// Clear our the post links array, so we ping nothing
+		$post_links = array();
+		return;
+	}
+}
+add_action( 'pre_ping', 'wpcom_vip_pre_ping' );
