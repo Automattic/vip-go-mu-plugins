@@ -82,12 +82,12 @@ add_action( 'update_option', function( $option ) {
 
 /**
  * Hooks pre_ping to stop any pinging from happening,
- * unless `WPCOM_VIP_DO_PINGS` is set to `true` (boolean).
+ * unless `VIP_DO_PINGS` is set to `true` (boolean).
  *
  * @param array $post_links The URLs to be pinged
  */
 function wpcom_vip_pre_ping( $post_links ) {
-	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === WPCOM_VIP_DO_PINGS );
+	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === VIP_DO_PINGS );
 	if ( ! $do_pings ) {
 		return;
 	}
