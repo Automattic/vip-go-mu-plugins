@@ -44,8 +44,15 @@ function rri_wpcom_flush_rules() {
 	/**
 	 * VIPs and other themes can declare the permastruct, tag and category bases in their themes.
 	 * This is done by filtering the option. To ensure we're getting the proper data, refresh.
+	 *
+	 * However, wpcom_vip_refresh_wp_rewrite() noops the values in the database so we only want to run it
+	 * if the permastructs are defined in the theme (not for clients using the admin screen)
 	 */
-	wpcom_vip_refresh_wp_rewrite();
+	if ( ( defined( 'WPCOM_VIP_CUSTOM_PERMALINKS' ) && WPCOM_VIP_CUSTOM_PERMALINKS )
+		|| ( defined( 'WPCOM_VIP_CUSTOM_CATEGORY_BASE' ) && WPCOM_VIP_CUSTOM_CATEGORY_BASE )
+		|| ( defined( 'WPCOM_VIP_CUSTOM_TAG_BASE' ) && WPCOM_VIP_CUSTOM_TAG_BASE ) ) {
+		wpcom_vip_refresh_wp_rewrite();
+	}
 
 	/**
 	 * We can't use flush_rewrite_rules( false ) in this context because

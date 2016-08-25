@@ -63,3 +63,38 @@ add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
  */
 add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
+
+/**
+ * Fix a race condition in alloptions caching
+ *
+ * See https://core.trac.wordpress.org/ticket/31245
+ */
+function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
+	if ( ! wp_installing() ) {
+		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
+
+		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
+			wp_cache_delete( 'alloptions', 'options' );
+		}
+	}
+}
+
+add_action( 'added_option',   '_wpcom_vip_maybe_clear_alloptions_cache' );
+add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
+add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
+
+/**
+ * Hooks pre_ping to stop any pinging from happening,
+ * unless `VIP_DO_PINGS` is set to `true` (boolean).
+ *
+ * @param array $post_links The URLs to be pinged (passed by ref)
+ */
+function wpcom_vip_pre_ping( $post_links ) {
+	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === VIP_DO_PINGS );
+	if ( ! $do_pings ) {
+		// Clear our the post links array, so we ping nothing
+		$post_links = array();
+		return;
+	}
+}
+add_action( 'pre_ping', 'wpcom_vip_pre_ping' );
