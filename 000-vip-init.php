@@ -1,5 +1,18 @@
 <?php
 
+
+/**
+ * Takes the value of a deprecated constant, and sets the currently valid constant to
+ * that value… if that valid constant is not already set.
+ *
+ * @param string $deprecated_constant The deprecated constant name
+ * @param string $valid_constant The valid constant name
+ */
+function wpcom_vip_maybe_convert_deprecated_constant( $deprecated_constant, $valid_constant ) {
+	if ( defined( $deprecated_constant ) && ! defined( $valid_constant ) ) {
+		define( $valid_constant, constant( $deprecated_constant ) );
+	}
+}
 /**
  * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
  */
