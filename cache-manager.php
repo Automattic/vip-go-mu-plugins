@@ -179,7 +179,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( $this->site_cache_purged )
 			return;
 
-		$this->ban_urls[] = untrailingslashit( home_url() ) . '/.*';
+		$this->ban_urls[] = untrailingslashit( home_url() ) . '/(?!wp\-content\/uploads\/).*';
 		$this->site_cache_purged = true;
 
 		return;
