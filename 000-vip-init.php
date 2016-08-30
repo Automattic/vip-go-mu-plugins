@@ -13,6 +13,10 @@ function wpcom_vip_maybe_convert_deprecated_constant( $deprecated_constant, $val
 		define( $valid_constant, constant( $deprecated_constant ) );
 	}
 }
+
+wpcom_vip_maybe_convert_deprecated_constant( 'VIP_JETPACK_ALT', 'WPCOM_VIP_JETPACK_ALT' );
+wpcom_vip_maybe_convert_deprecated_constant( 'VIP_JETPACK_ALT_SUFFIX', 'WPCOM_VIP_JETPACK_ALT_SUFFIX' );
+
 /**
  * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
  */

@@ -20,29 +20,29 @@ if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
 
 $jetpack_to_load = __DIR__ . '/jetpack/jetpack.php';
 
-// If the VIP_JETPACK_ALT constant is defined, we should attempt to load
+// If the WPCOM_VIP_JETPACK_ALT constant is defined, we should attempt to load
 // an alternative to the standard Jetpack
 // Logic:
 // * If no constant is specified, the Jetpack in `mu-plugins/jetpack/`
 //   is loaded
-// * If VIP_JETPACK_ALT alone is specified, the Jetpack in
+// * If WPCOM_VIP_JETPACK_ALT alone is specified, the Jetpack in
 //   `mu-plugins/jetpack-beta/` is loaded
-// * If VIP_JETPACK_ALT and VIP_JETPACK_ALT_SUFFIX are specified,
-//   the Jetpack in `mu-plugins/jetpack-VIP_JETPACK_ALT_SUFFIX/` is loaded
-if ( defined( 'VIP_JETPACK_ALT' ) && VIP_JETPACK_ALT ) {
+// * If WPCOM_VIP_JETPACK_ALT and WPCOM_VIP_JETPACK_ALT_SUFFIX are specified,
+//   the Jetpack in `mu-plugins/jetpack-WPCOM_VIP_JETPACK_ALT_SUFFIX/` is loaded
+if ( defined( 'WPCOM_VIP_JETPACK_ALT' ) && WPCOM_VIP_JETPACK_ALT ) {
 
 	// Set the default alternative Jetpack
 	$jetpack_to_test = __DIR__ . '/jetpack-beta/jetpack.php';
 
 	// Allow the alternative version of Jetpack to be specified on
 	// a site by site basis
-	if ( defined( 'VIP_JETPACK_ALT_SUFFIX' ) && VIP_JETPACK_ALT_SUFFIX ) {
+	if ( defined( 'WPCOM_VIP_JETPACK_ALT_SUFFIX' ) && WPCOM_VIP_JETPACK_ALT_SUFFIX ) {
 
-		// Use `validate_file` to check that VIP_JETPACK_ALT_SUFFIX has not
+		// Use `validate_file` to check that WPCOM_VIP_JETPACK_ALT_SUFFIX has not
 		// had unexpected strings like `/../`, etc, added to it.
 		// Note that validate_file returns 0 if the string passes validation :\
-		if ( 0 !== validate_file( VIP_JETPACK_ALT_SUFFIX ) ) {
-			$error_msg = sprintf( 'The Jetpack "VIP_JETPACK_ALT_SUFFIX" constant does not have a valid value: "%s"', VIP_JETPACK_ALT_SUFFIX );
+		if ( 0 !== validate_file( WPCOM_VIP_JETPACK_ALT_SUFFIX ) ) {
+			$error_msg = sprintf( 'The Jetpack "WPCOM_VIP_JETPACK_ALT_SUFFIX" constant does not have a valid value: "%s"', WPCOM_VIP_JETPACK_ALT_SUFFIX );
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( $error_msg );
 
@@ -54,7 +54,7 @@ if ( defined( 'VIP_JETPACK_ALT' ) && VIP_JETPACK_ALT ) {
 			}
 		} else {
 			// Set a specific alternative Jetpack
-			$jetpack_to_test = __DIR__ . '/jetpack' . VIP_JETPACK_ALT_SUFFIX . '/jetpack.php';
+			$jetpack_to_test = __DIR__ . '/jetpack' . WPCOM_VIP_JETPACK_ALT_SUFFIX . '/jetpack.php';
 		}
 	}
 
