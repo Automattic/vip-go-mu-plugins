@@ -135,11 +135,15 @@ class WPCOM_VIP_Cache_Manager {
 		foreach ( $varnish_servers as $server  ) {
 			$server = explode( ':', $server[0] );
 
-			$uri = '/';
-			if ( isset( $parsed['path'] ) )
-				$uri = $parsed['path'];
-			if ( isset( $parsed['query'] ) )
-				$uri .= $parsed['query'];
+			if ( 'BAN' == $method ) {
+				$uri = $parsed['path'] . '?' . $parsed['query'];
+			} else {
+				$uri = '/';
+				if ( isset( $parsed['path'] ) )
+					$uri = $parsed['path'];
+				if ( isset( $parsed['query'] ) )
+					$uri .= $parsed['query'];
+			}
 
 			$requests[] = array(
 				'ip'     => $server[0],
