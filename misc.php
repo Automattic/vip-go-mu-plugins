@@ -90,7 +90,7 @@ add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
  * @param array $post_links The URLs to be pinged (passed by ref)
  */
 function wpcom_vip_pre_ping( $post_links ) {
-	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === VIP_DO_PINGS );
+	$do_pings = ( defined( 'WPCOM_VIP_DO_PINGS' ) && true === WPCOM_VIP_DO_PINGS );
 	if ( ! $do_pings ) {
 		// Clear our the post links array, so we ping nothing
 		$post_links = array();

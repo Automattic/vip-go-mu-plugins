@@ -16,6 +16,8 @@ function wpcom_vip_maybe_convert_deprecated_constant( $deprecated_constant, $val
 
 wpcom_vip_maybe_convert_deprecated_constant( 'VIP_JETPACK_ALT', 'WPCOM_VIP_JETPACK_ALT' );
 wpcom_vip_maybe_convert_deprecated_constant( 'VIP_JETPACK_ALT_SUFFIX', 'WPCOM_VIP_JETPACK_ALT_SUFFIX' );
+wpcom_vip_maybe_convert_deprecated_constant( 'VIP_DO_PINGS', 'WPCOM_VIP_DO_PINGS' );
+
 
 /**
  * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
