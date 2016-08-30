@@ -36,10 +36,10 @@ if ( defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV ) {
 }
 
 /**
- * This function uses the VIP_VERIFY_STRING and VIP_VERIFY_PATH
+ * This function uses the WPCOM_VIP_VERIFY_STRING and WPCOM_VIP_VERIFY_PATH
  * constants to respond with a verification string at a particular
- * path. So if you have a VIP_VERIFY_STRING of `Hello` and a
- * VIP_VERIFY_PATH of `whatever.html`, then the URL
+ * path. So if you have a WPCOM_VIP_VERIFY_STRING of `Hello` and a
+ * WPCOM_VIP_VERIFY_PATH of `whatever.html`, then the URL
  * yourdomain.com/whatever.html will return `Hello`.
  *
  * We suggest adding these constants in your `vip-config.php`
@@ -47,13 +47,13 @@ if ( defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV ) {
  * @return void
  */
 function action_wpcom_vip_verify_string() {
-	if ( ! defined( 'VIP_VERIFY_PATH' ) || ! defined( 'VIP_VERIFY_STRING' ) ) {
+	if ( ! defined( 'WPCOM_VIP_VERIFY_PATH' ) || ! defined( 'WPCOM_VIP_VERIFY_STRING' ) ) {
 		return;
 	}
-	$verification_path = '/' . VIP_VERIFY_PATH;
+	$verification_path = '/' . WPCOM_VIP_VERIFY_PATH;
 	if ( $verification_path === $_SERVER['REQUEST_URI'] ) {
 		status_header( 200 );
-		echo VIP_VERIFY_STRING;
+		echo WPCOM_VIP_VERIFY_STRING;
 		exit;
 	}
 }
