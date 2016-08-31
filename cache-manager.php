@@ -135,11 +135,15 @@ class WPCOM_VIP_Cache_Manager {
 		foreach ( $varnish_servers as $server  ) {
 			$server = explode( ':', $server[0] );
 
-			$uri = '/';
-			if ( isset( $parsed['path'] ) )
-				$uri = $parsed['path'];
-			if ( isset( $parsed['query'] ) )
-				$uri .= $parsed['query'];
+			if ( 'BAN' == $method ) {
+				$uri = $parsed['path'] . '?' . $parsed['query'];
+			} else {
+				$uri = '/';
+				if ( isset( $parsed['path'] ) )
+					$uri = $parsed['path'];
+				if ( isset( $parsed['query'] ) )
+					$uri .= $parsed['query'];
+			}
 
 			$requests[] = array(
 				'ip'     => $server[0],
@@ -179,7 +183,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( $this->site_cache_purged )
 			return;
 
-		$this->ban_urls[] = untrailingslashit( home_url() ) . '/.*';
+		$this->ban_urls[] = untrailingslashit( home_url() ) . '/(?!wp\-content\/uploads\/).*';
 		$this->site_cache_purged = true;
 
 		return;
