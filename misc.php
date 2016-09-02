@@ -19,6 +19,9 @@ function wpcom_vip_check_for_404_and_remove_cache_headers( $headers ) {
 }
 add_filter( 'nocache_headers', 'wpcom_vip_check_for_404_and_remove_cache_headers' );
 
+// Disable admin notice for jetpack_force_2fa
+add_filter( 'jetpack_force_2fa_dependency_notice', '__return_false' );
+
 // Cleaner permalink options
 add_filter( 'got_url_rewrite', '__return_true' );
 
