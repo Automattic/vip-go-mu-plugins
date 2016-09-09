@@ -7,6 +7,11 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	private $dry_run = true;
 
 	/**
+	 * Class properties
+	 */
+	private $tables = array();
+
+	/**
 	 * Convert site using `utf8` to use `utf8mb4`
 	 *
 	 * @subcommand convert
@@ -18,8 +23,8 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 		// Parse arguments
 		if ( is_array( $assoc_args ) && ! empty( $assoc_args ) ) {
-			if ( isset( $assoc_args['dry-run'] ) && is_bool( $assoc_args['dry-run'] ) ) {
-				$this->dry_run = $assoc_args['dry-run'];
+			if ( isset( $assoc_args['dry-run'] ) && 'false' === $assoc_args['dry-run'] ) {
+				$this->dry_run = false;
 			}
 		}
 
@@ -46,6 +51,71 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		} else {
 			WP_CLI::line( '* Single site detected, so global and blog-specific tables will be converted. Any multisite tables will be skipped.' );
 		}
+
+		// Describe tables to be converted
+		$this->get_tables();
+		$tables_count = number_format( count( $this->tables ) );
+		$tables_string = implode( ', ', $this->tables );
+
+		WP_CLI::line( "* Found {$tables_count} tables to check and potentially convert: {$tables_string}." );
+		WP_CLI::line( '' );
+
+		// Provide an opportunity to abort
+		WP_CLI::confirm( "Proceed and potentially convert {$tables_count} tables from `utf8` to `utf8mb4`?" );
+		WP_CLI::line( '' );
+		WP_CLI::line( 'Proceeding...' );
+		WP_CLI::line( '' );
+
+		// Do the work we came here for
+		foreach ( $this->tables as $table ) {
+			WP_CLI::line( "Converting {$table}..." );
+
+			$converted = $this->maybe_convert_table_to_utf8mb4( $table );
+
+			if ( true === $converted ) {
+				WP_CLI::line( "Done with {$table}." );
+			} elseif ( false === $converted ) {
+				if ( $this->dry_run ) {
+					WP_CLI::line( "Table {$table} not converted during dry run." );
+				} else {
+					WP_CLI::line( "Table {$table} not converted because it doesn't exist or doesn't contain convertible columns." );
+				}
+			} else {
+				WP_CLI::line( 'Unknown response: ' . var_export( $converted, true ) );
+			}
+
+			WP_CLI::line( '' );
+		}
+
+		WP_CLI::line( '' );
+		WP_CLI::line( '' );
+		WP_CLI::line( 'DONE!' );
+		WP_CLI::line( 'Time to update sitemeta and reload web configs.' );
+	}
+
+	/**
+	 * UTILITY METHODS
+	 */
+
+	/**
+	 * Populate array of tables to possibly convert
+	 */
+	private function get_tables() {
+		global $wpdb;
+
+		$tables = array();
+
+		if ( is_multisite() ) {
+			// Get sites list, add global tables, then foreach to get tables for all sites
+			// Goal is to have one huge array of the tables to convert
+		} else {
+			$tables = array_merge( $wpdb->tables( 'global' ), $wpdb->tables( 'blog' ) );
+		}
+
+		$this->tables = $tables;
+		unset( $tables );
+
+		return $this->tables;
 	}
 
 	/**
@@ -84,7 +154,7 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		}
 
 		if ( $this->dry_run ) {
-			return null;
+			return false;
 		} else {
 			return true;
 			//return $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
