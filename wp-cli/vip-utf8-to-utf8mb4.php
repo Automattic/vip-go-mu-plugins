@@ -47,6 +47,49 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			WP_CLI::line( '* Single site detected, so global and blog-specific tables will be converted. Any multisite tables will be skipped.' );
 		}
 	}
+
+	/**
+	 * If a table only contains utf8 or utf8mb4 columns, convert it to utf8mb4.
+	 *
+	 * Copied from wp-admin/includes/upgrade.php
+	 */
+	private function maybe_convert_table_to_utf8mb4( $table ) {
+		global $wpdb;
+
+		$results = $wpdb->get_results( "SHOW FULL COLUMNS FROM `$table`" );
+		if ( ! $results ) {
+			return false;
+		}
+
+		foreach ( $results as $column ) {
+			if ( $column->Collation ) {
+				list( $charset ) = explode( '_', $column->Collation );
+				$charset = strtolower( $charset );
+				if ( 'utf8' !== $charset && 'utf8mb4' !== $charset ) {
+					// Don't upgrade tables that have non-utf8 columns.
+					return false;
+				}
+			}
+		}
+
+		$table_details = $wpdb->get_row( "SHOW TABLE STATUS LIKE '$table'" );
+		if ( ! $table_details ) {
+			return false;
+		}
+
+		list( $table_charset ) = explode( '_', $table_details->Collation );
+		$table_charset = strtolower( $table_charset );
+		if ( 'utf8mb4' === $table_charset ) {
+			return true;
+		}
+
+		if ( $this->dry_run ) {
+			return null;
+		} else {
+			return true;
+			//return $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+		}
+	}
 }
 
 WP_CLI::add_command( 'vip-go-utf8mb4', 'VIP_Go_Convert_utf8_utf8mb4' );
