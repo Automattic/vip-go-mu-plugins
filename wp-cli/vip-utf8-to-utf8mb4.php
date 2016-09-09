@@ -66,6 +66,8 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'Proceeding...' );
 		WP_CLI::line( '' );
 
+		unset( $tables_count, $tables_string );
+
 		// Do the work we came here for
 		foreach ( $this->tables as $table ) {
 			WP_CLI::line( "Converting {$table}..." );
@@ -87,6 +89,7 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			WP_CLI::line( '' );
 		}
 
+		// Wrap up
 		WP_CLI::line( '' );
 		WP_CLI::line( '' );
 		WP_CLI::line( 'DONE!' );
@@ -121,7 +124,7 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	/**
 	 * If a table only contains utf8 or utf8mb4 columns, convert it to utf8mb4.
 	 *
-	 * Copied from wp-admin/includes/upgrade.php
+	 * Copied from wp-admin/includes/upgrade.php, with modifications for CLI usage
 	 */
 	private function maybe_convert_table_to_utf8mb4( $table ) {
 		global $wpdb;
