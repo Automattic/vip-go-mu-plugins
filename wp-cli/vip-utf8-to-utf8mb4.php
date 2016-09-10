@@ -102,20 +102,40 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 	/**
 	 * Populate array of tables to possibly convert
+	 *
+	 * NOTE: We don't use `$wpdb->tables( 'all' )` because it won't include all tables
+	 * for every site in a multisite network. Instead, it will only include the current
+	 * site's tables, along with the global tables. We want ALL tables, so we query for
+	 * sites and merge each site's tables into a single array.
 	 */
 	private function get_tables() {
 		global $wpdb;
 
-		$tables = array();
+		// Start with the global tables
+		// Under multisite, this includes the global multisite tables
+		$tables = array_values( $wpdb->tables( 'global' ) );
 
+		// Add blog-specific tables
 		if ( is_multisite() ) {
-			// Get sites list, add global tables, then foreach to get tables for all sites
-			// Goal is to have one huge array of the tables to convert
+			$site_ids = get_sites( array(
+				'fields' => 'ids',
+			) );
+
+			if ( is_array( $site_ids ) && ! empty( $site_ids ) ) {
+				foreach ( $site_ids as $site_id ) {
+					$tables = array_merge( $tables, array_values( $wpdb->tables( 'blog', true, $site_id ) ) );
+				}
+
+				unset( $site_id );
+			}
+
+			unset( $site_ids );
 		} else {
-			$tables = array_merge( $wpdb->tables( 'global' ), $wpdb->tables( 'blog' ) );
+			$tables = array_merge( $tables, array_values( $wpdb->tables( 'blog' ) ) );
 		}
 
-		$this->tables = $tables;
+		// Store and return
+		$this->tables = array_unique( $tables );
 		unset( $tables );
 
 		return $this->tables;
