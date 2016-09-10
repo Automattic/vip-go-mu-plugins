@@ -61,7 +61,10 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 
 		// Provide an opportunity to abort
-		WP_CLI::confirm( "Proceed and potentially convert {$tables_count} tables from `utf8` to `utf8mb4`?" );
+		WP_CLI::confirm( "Proceed with " . ( $this->dry_run ? 'DRY' : 'LIVE' ) . " RUN and " . ( $this->dry_run ? 'test converting' : 'potentially convert' ) . " {$tables_count} tables from `utf8` to `utf8mb4`?" );
+		if ( ! $this->dry_run ) {
+			WP_CLI::confirm( 'ARE YOU REALLY SURE?' );
+		}
 		WP_CLI::line( '' );
 		WP_CLI::line( 'Proceeding...' );
 		WP_CLI::line( '' );
@@ -179,7 +182,9 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		if ( $this->dry_run ) {
 			return false;
 		} else {
-			return $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+
+			return is_int( $convert ) ? true : $convert;
 		}
 	}
 }
