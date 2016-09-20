@@ -52,7 +52,6 @@ class WPCOM_VIP_Cron_Control {
 				'response' => 401,
 				'back_link' => true,
 			) );
-			// exit;
 		}
 	}
 }
