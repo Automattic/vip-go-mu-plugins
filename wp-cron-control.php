@@ -29,7 +29,7 @@ class WPCOM_VIP_Cron_Control {
 	public function set_options( $options ) {
 		return array(
 			'enable' =>                           '1',
-			'enable_scheduled_post_validation' => '0',
+			'enable_scheduled_post_validation' => '1',
 
 		);
 	}
