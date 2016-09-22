@@ -105,8 +105,14 @@ class A8C_Files {
 		if ( ! $file || file_exists( $file ) )
 			return;
 
+		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
+
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
+			$service_url .= '/sites/' . get_current_blog_id();
+		}
+
 		$file_url = str_ireplace( constant( 'LOCAL_UPLOADS' ),
-						$this->get_files_service_hostname() . '/' . $this->get_upload_path(),
+						$service_url,
 						$file );
 
 		$opts = array(
