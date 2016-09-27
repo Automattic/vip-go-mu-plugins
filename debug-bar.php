@@ -21,7 +21,9 @@ add_action( 'init', function() {
 		return;
 	}
 
-	require_once( __DIR__ . '/debug-bar/debug-bar.php' );
+	if ( ! class_exists( 'Debug_Bar' ) ) {
+		require_once( __DIR__ . '/debug-bar/debug-bar.php' );
+	}
 
 	// Setup extra panels
 	add_filter( 'debug_bar_panels', function( $panels ) {
