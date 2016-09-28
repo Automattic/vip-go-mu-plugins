@@ -48,11 +48,11 @@ class New_Device_Notification {
 		get_currentuserinfo();
 
 		// By default, users to skip:
-		// * Super admins (Automattic employees visiting your site)
 		// * Users who don't have /wp-admin/ access
-		$is_privileged_user = ! is_super_admin() && current_user_can( 'edit_posts' );
-		if ( false === apply_filters( 'ndn_run_for_current_user', $is_privileged_user ) )
+		$is_privileged_user = current_user_can( 'edit_posts' );
+		if ( false === apply_filters( 'ndn_run_for_current_user', $is_privileged_user ) ) {
 			return;
+		}
 
 		// Set up the per-blog salt
 		$salt = get_option( 'newdevicenotification_salt' );
