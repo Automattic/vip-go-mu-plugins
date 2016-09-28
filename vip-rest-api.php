@@ -2,7 +2,7 @@
 /*
  Plugin Name: VIP REST API Endpoints
  Plugin URI: https://vip.wordpress.com/
- Description: Add custom REST API endpoints for VIP requests
+ Description: Add custom REST API endpoints for VIP requests; N.B. these endpoints are subject to change without notice, and should be considered "private".
  Author: Erick Hitter, Automattic
  Version: 0.1
  */
