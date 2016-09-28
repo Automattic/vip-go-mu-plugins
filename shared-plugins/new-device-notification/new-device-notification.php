@@ -50,7 +50,7 @@ class New_Device_Notification {
 		// By default, users to skip:
 		// * Super admins (Automattic employees visiting your site)
 		// * Users who don't have /wp-admin/ access
-		$is_privileged_user = ! is_super_admin() && current_user_can( 'edit_posts' );
+		$is_privileged_user = ! is_automattician() && current_user_can( 'edit_posts' );
 		if ( false === apply_filters( 'ndn_run_for_current_user', $is_privileged_user ) )
 			return;
 
@@ -103,6 +103,11 @@ class New_Device_Notification {
 		// If site is on a mapped domain
 		if ( site_url() != home_url() ) {
 			$parts = parse_url( home_url() );
+			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $parts['host'], false, true );
+		}
+
+		// Is this a VIP Go mapped domain?
+		if ( defined( 'VIP_GO_ENV' ) ) {
 			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $parts['host'], false, true );
 		}
 	}
@@ -159,29 +164,34 @@ class New_Device_Notification {
 	}
 
 	public function ip_to_city( $ip ) {
-		$location = ip2location( $ip );
-
-		$human = array();
-
-		if ( ! empty( $location->city ) && '-' != $location->city )
-			$human[] = $location->city;
-
-		if ( ! empty( $location->region ) && '-' != $location->region && ( empty( $location->city ) || $location->region != $location->city ) )
-			$human[] = $location->region;
-
-		if ( ! empty( $location->country_long ) && '-' != $location->country_long )
-			$human[] = $location->country_long;
-
-		if ( ! empty( $human ) ) {
-			$human = array_map( 'trim',       $human );
-			$human = array_map( 'strtolower', $human );
-			$human = array_map( 'ucwords',    $human );
-
-			$location->human = implode( ', ', $human );
+		// Needs a VIP Go compatible ip2location()
+		if ( ! function_exists( 'ip2location' ) ) {
+			$location = new stdClass();
+			$location->human = 'Unknown: ip2location unavailable';
 		} else {
-			$location->human = 'Unknown';
-		}
+			$location = ip2location( $ip );
 
+			$human = array();
+
+			if ( ! empty( $location->city ) && '-' != $location->city )
+				$human[] = $location->city;
+
+			if ( ! empty( $location->region ) && '-' != $location->region && ( empty( $location->city ) || $location->region != $location->city ) )
+				$human[] = $location->region;
+
+			if ( ! empty( $location->country_long ) && '-' != $location->country_long )
+				$human[] = $location->country_long;
+
+			if ( ! empty( $human ) ) {
+				$human = array_map( 'trim',       $human );
+				$human = array_map( 'strtolower', $human );
+				$human = array_map( 'ucwords',    $human );
+
+				$location->human = implode( ', ', $human );
+			} else {
+				$location->human = 'Unknown';
+			}
+		}
 		return $location;
 	}
 
