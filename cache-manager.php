@@ -15,8 +15,13 @@ class WPCOM_VIP_Cache_Manager {
 
 	function __construct() {
 		// Execute the healthcheck as quickly as possible
-		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] )
+		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+			if ( function_exists( 'newrelic_end_transaction' ) ) {
+				# See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
+				newrelic_end_transaction( true );
+			}
 			die( 'ok' );
+		}
 
 		add_action( 'init', array( $this, 'init' ) );
 	}
@@ -130,11 +135,15 @@ class WPCOM_VIP_Cache_Manager {
 		foreach ( $varnish_servers as $server  ) {
 			$server = explode( ':', $server[0] );
 
-			$uri = '/';
-			if ( isset( $parsed['path'] ) )
-				$uri = $parsed['path'];
-			if ( isset( $parsed['query'] ) )
-				$uri .= $parsed['query'];
+			if ( 'BAN' == $method ) {
+				$uri = $parsed['path'] . '?' . $parsed['query'];
+			} else {
+				$uri = '/';
+				if ( isset( $parsed['path'] ) )
+					$uri = $parsed['path'];
+				if ( isset( $parsed['query'] ) )
+					$uri .= $parsed['query'];
+			}
 
 			$requests[] = array(
 				'ip'     => $server[0],
@@ -174,7 +183,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( $this->site_cache_purged )
 			return;
 
-		$this->ban_urls[] = untrailingslashit( home_url() ) . '/.*';
+		$this->ban_urls[] = untrailingslashit( home_url() ) . '/(?!wp\-content\/uploads\/).*';
 		$this->site_cache_purged = true;
 
 		return;
@@ -320,15 +329,15 @@ class WPCOM_VIP_Cache_Manager {
 		 * @param int The maximum page to purge from each term archive
 		 * }
 		 */
-		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 5 );
+		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 2 );
 
 		// Set some limits on max and min values for pages
-		$max_pages = max( 1, min( 20, $max_pages ) );
+		$max_pages = max( 1, min( 5, $max_pages ) );
 
 		$taxonomy_name = $term->taxonomy;
 		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
 		if ( is_wp_error( $maybe_purge_url ) ) {
-			continue;
+			return;
 		}
 		if ( $maybe_purge_url && is_string( $maybe_purge_url ) ) {
 			$this->purge_urls[] = $maybe_purge_url;

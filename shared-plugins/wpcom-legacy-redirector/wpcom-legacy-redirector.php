@@ -1,7 +1,11 @@
 <?php
 /**
  * Plugin Name: WPCOM Legacy Redirector
+ * Plugin URI: https://vip.wordpress.com/plugins/wpcom-legacy-redirector/
  * Description: Simple plugin for handling legacy redirects in a scalable manner.
+ * Version: 1.2.0
+ * Author: Automattic / WordPress.com VIP
+ * Author URI: https://vip.wordpress.com
  *
  * This is a no-frills plugin (no UI, for example). Data entry needs to be bulk-loaded via the wp-cli commands provided or custom scripts.
  * 
@@ -55,7 +59,8 @@ class WPCOM_Legacy_Redirector {
 
 			if ( $redirect_uri ) {
 				header( 'X-legacy-redirect: HIT' );
-				wp_safe_redirect( $redirect_uri, 301 );
+				$redirect_status = apply_filters( 'wpcom_legacy_redirector_redirect_status', 301, $url );
+				wp_safe_redirect( $redirect_uri, $redirect_status );
 				exit;
 			}
 		}
@@ -69,12 +74,16 @@ class WPCOM_Legacy_Redirector {
  	 */
 	static function insert_legacy_redirect( $from_url, $redirect_to ) {
 
-		if ( !( defined( 'WP_CLI' ) && WP_CLI ) && !is_admin() ) {
+		if ( ! ( defined( 'WP_CLI' ) && WP_CLI ) && ! is_admin() && ! apply_filters( 'wpcom_legacy_redirector_allow_insert', false ) ) {
 			// never run on the front end
 			return false;
 		}
 
-		$from_url = parse_url( $from_url, PHP_URL_PATH );
+		$from_url = self::normalise_url( $from_url );
+		if ( is_wp_error( $from_url ) ) {
+			return $from_url;
+		}
+
 		$from_url_hash = self::get_url_hash( $from_url );
 
 		if ( false !== self::get_redirect_uri( $from_url ) ) {
@@ -103,7 +112,12 @@ class WPCOM_Legacy_Redirector {
 	}
 
 	static function get_redirect_uri( $url ) {
-		$url = urldecode( $url );
+		
+		$url = self::normalise_url( $url );
+		if ( is_wp_error( $url ) ) {
+			return false;
+		}
+
 		$url_hash = self::get_url_hash( $url );
 
 		$redirect_post_id = wp_cache_get( $url_hash, self::CACHE_GROUP );
@@ -115,8 +129,12 @@ class WPCOM_Legacy_Redirector {
 
 		if ( $redirect_post_id ) {
 			$redirect_post = get_post( $redirect_post_id );
+			if ( ! $redirect_post instanceof WP_Post ) {
+				// If redirect post object doesn't exist, reset cache
+				wp_cache_set( $url_hash, 0, self::CACHE_GROUP );
 
-			if ( 0 !== $redirect_post->post_parent ) {
+				return false;
+			} elseif ( 0 !== $redirect_post->post_parent ) {
 				return get_permalink( $redirect_post->post_parent );
 			} elseif ( ! empty( $redirect_post->post_excerpt ) ) {
 				return esc_url_raw( $redirect_post->post_excerpt );
@@ -141,6 +159,53 @@ class WPCOM_Legacy_Redirector {
 
 	private static function get_url_hash( $url ) {
 		return md5( $url );
+	}
+
+	/**
+	 * Takes a request URL and "normalises" it, stripping common elements
+	 *
+	 * Removes scheme and host from the URL, as redirects should be independent of these.
+	 *
+	 * @param string $url URL to transform
+	 *
+	 * @return string $url Transformed URL
+	 */
+	private static function normalise_url( $url ) {
+
+		// Sanitise the URL first rather than trying to normalise a non-URL
+		$url = esc_url_raw( $url );
+		if ( empty( $url ) ) {
+			return new WP_Error( 'invalid-redirect-url', 'The URL does not validate' );
+		}
+
+		// Break up the URL into it's constituent parts
+		$components = wp_parse_url( $url );
+
+		// Avoid playing with unexpected data
+		if ( ! is_array( $components ) ) {
+			return new WP_Error( 'url-parse-failed', 'The URL could not be parsed' );
+		}
+
+		// We should have at least a path or query
+		if ( ! isset( $components['path'] ) && ! isset( $components['query'] ) ) {
+			return new WP_Error( 'url-parse-failed', 'The URL contains neither a path nor query string' );
+		}
+
+		// Make sure $components['query'] is set, to avoid errors
+		$components['query'] = ( isset( $components['query'] ) ) ? $components['query'] : '';
+
+		// All we want is path and query strings
+		// Note this strips hashes (#) too
+		// @todo should we destory the query strings and rebuild with `add_query_arg()`?
+		$normalised_url = $components['path'];
+
+		// Only append '?' and the query if there is one
+		if( ! empty( $components['query'] ) ) {
+			$normalised_url = $components['path'] . '?' . $components['query'];
+		}
+
+		return $normalised_url;
+
 	}
 }
 

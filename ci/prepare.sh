@@ -6,6 +6,12 @@
 # http://www.peterbe.com/plog/set-ex
 set -ex
 
+cd $TRAVIS_BUILD_DIR
+if [ -w .gitmodules ]; then
+    sed -i -e "s|git@\([^:]*\):|https://\1/|" .gitmodules
+fi;
+git submodule update --init --recursive
+
 # Install unit tests
 # ==================
 
