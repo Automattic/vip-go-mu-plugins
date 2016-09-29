@@ -168,30 +168,32 @@ class New_Device_Notification {
 		if ( ! function_exists( 'ip2location' ) ) {
 			$location = new stdClass();
 			$location->human = 'Unknown: ip2location unavailable';
-		} else {
-			$location = ip2location( $ip );
-
-			$human = array();
-
-			if ( ! empty( $location->city ) && '-' != $location->city )
-				$human[] = $location->city;
-
-			if ( ! empty( $location->region ) && '-' != $location->region && ( empty( $location->city ) || $location->region != $location->city ) )
-				$human[] = $location->region;
-
-			if ( ! empty( $location->country_long ) && '-' != $location->country_long )
-				$human[] = $location->country_long;
-
-			if ( ! empty( $human ) ) {
-				$human = array_map( 'trim',       $human );
-				$human = array_map( 'strtolower', $human );
-				$human = array_map( 'ucwords',    $human );
-
-				$location->human = implode( ', ', $human );
-			} else {
-				$location->human = 'Unknown';
-			}
+			return $location;
 		}
+
+		$location = ip2location( $ip );
+
+		$human = array();
+
+		if ( ! empty( $location->city ) && '-' != $location->city )
+			$human[] = $location->city;
+
+		if ( ! empty( $location->region ) && '-' != $location->region && ( empty( $location->city ) || $location->region != $location->city ) )
+			$human[] = $location->region;
+
+		if ( ! empty( $location->country_long ) && '-' != $location->country_long )
+			$human[] = $location->country_long;
+
+		if ( ! empty( $human ) ) {
+			$human = array_map( 'trim',       $human );
+			$human = array_map( 'strtolower', $human );
+			$human = array_map( 'ucwords',    $human );
+
+			$location->human = implode( ', ', $human );
+		} else {
+			$location->human = 'Unknown';
+		}
+
 		return $location;
 	}
 
