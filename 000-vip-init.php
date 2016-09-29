@@ -12,6 +12,10 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
     define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+if ( ! defined( 'VIP_GO_PROXIED_REQUEST' ) ) {
+	define( 'VIP_GO_PROXIED_REQUEST', false );
+}
+
 $hostname = gethostname();
 define( 'WPCOM_SANDBOXED', false !== strpos( $hostname, '_web_dev_' ) );
 
