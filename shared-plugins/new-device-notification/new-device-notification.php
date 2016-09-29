@@ -168,6 +168,11 @@ class New_Device_Notification {
 		if ( ! function_exists( 'ip2location' ) ) {
 			$location = new stdClass();
 			$location->human = 'Unknown: ip2location unavailable';
+			if ( isset( $_SERVER['HTTP_X_COUNTRY_CODE'] ) && is_string( $_SERVER['HTTP_X_COUNTRY_CODE'] ) ) {
+				$location->country_short = wp_strip_all_tags( $_SERVER['HTTP_X_COUNTRY_CODE'] );
+				$location->country_long = $this->country_code_to_long( $location->country_short );
+				$location->human = sprintf( '%1$s (%2$s), town/city accuracy unavailable', $location->country_short, $location->country_long );
+			}
 			return $location;
 		}
 
