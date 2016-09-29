@@ -142,7 +142,6 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	function build_purge_request( $url, $method ) {
-		global $varnish_servers;
 		if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' == PURGE_SERVER_TYPE ) {
 			global $varnish_servers;
 		} else {
