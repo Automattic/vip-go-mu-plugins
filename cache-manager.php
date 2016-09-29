@@ -68,28 +68,49 @@ class WPCOM_VIP_Cache_Manager {
 		$curl_multi = curl_multi_init();
 
 		foreach ( $requests as $req ) {
-			// Purge HTTP
-			$curl = curl_init();
-			curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
-			curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: http" ) );
-			curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
-			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-			curl_setopt( $curl, CURLOPT_NOBODY, true );
-			curl_setopt( $curl, CURLOPT_HEADER, true );
-			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-			curl_multi_add_handle( $curl_multi, $curl );
-			// Purge HTTPS
-			$curl = curl_init();
-			curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
-			curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: https" ) );
-			curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
-			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-			curl_setopt( $curl, CURLOPT_NOBODY, true );
-			curl_setopt( $curl, CURLOPT_HEADER, true );
-			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-			curl_multi_add_handle( $curl_multi, $curl );
+			if ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+				$data = array(
+					'group' => 'vip-go',
+					'scope' => 'global',
+					'type'  => $req['method'],
+					'uri'   => $req['host'] . $req['uri'],
+					'cb'    => 'nil',
+				);
+				$json = json_encode( $data );
+				$curl = curl_init();
+				curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
+				curl_setopt( $curl, CURLOPT_POST, true );
+				curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+						'Content-Type: application/json',
+						'Content-Length: ' . strlen( $json )
+					) );
+				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_multi_add_handle( $curl_multi, $curl );
+			} else {
+				// Purge HTTP
+				$curl = curl_init();
+				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
+				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: http" ) );
+				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
+				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+				curl_setopt( $curl, CURLOPT_NOBODY, true );
+				curl_setopt( $curl, CURLOPT_HEADER, true );
+				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_multi_add_handle( $curl_multi, $curl );
+				// Purge HTTPS
+				$curl = curl_init();
+				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
+				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: https" ) );
+				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
+				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+				curl_setopt( $curl, CURLOPT_NOBODY, true );
+				curl_setopt( $curl, CURLOPT_HEADER, true );
+				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_multi_add_handle( $curl_multi, $curl );
+			}
 		}
 
 		$running = true;
@@ -109,10 +130,10 @@ class WPCOM_VIP_Cache_Manager {
 			$info = curl_getinfo( $completed['handle'] );
 
 			if ( ! $info['http_code'] && curl_error( $completed['handle'] ) )
-				error_log( 'Error on: ' . $info['url'] . ' error: ' . curl_error( $completed['handle'] ) . "\n" );
+				error_log( 'Error on: ' . $info['url'] . ' error: ' . curl_error( $completed['handle'] ) );
 
 			if ( '200' != $info['http_code'] )
-				error_log( 'Request to ' . $info['url'] . ' returned HTTP code ' . $info['http_code'] . "\n" );
+				error_log( 'Request to ' . $info['url'] . ' returned HTTP code ' . $info['http_code'] );
 
 			curl_multi_remove_handle( $curl_multi, $completed['handle'] );
 		}
@@ -122,6 +143,11 @@ class WPCOM_VIP_Cache_Manager {
 
 	function build_purge_request( $url, $method ) {
 		global $varnish_servers;
+		if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' == PURGE_SERVER_TYPE ) {
+			global $varnish_servers;
+		} else {
+			$varnish_servers = array( constant( 'PURGE_SERVER_URL' ) );
+		}
 
 		$requests = array();
 
@@ -132,9 +158,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( empty( $parsed['host'] ) )
 			return $requests;
 
-		foreach ( $varnish_servers as $server  ) {
-			$server = explode( ':', $server[0] );
-
+		foreach ( $varnish_servers as $server ) {
 			if ( 'BAN' == $method ) {
 				$uri = $parsed['path'] . '?' . $parsed['query'];
 			} else {
@@ -145,13 +169,19 @@ class WPCOM_VIP_Cache_Manager {
 					$uri .= $parsed['query'];
 			}
 
-			$requests[] = array(
-				'ip'     => $server[0],
-				'port'   => $server[1],
+			$request = array(
 				'host'   => $parsed['host'],
 				'uri'    => $uri,
-				'method' => $method
+				'method' => $method,
 			);
+
+			if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' == PURGE_SERVER_TYPE ) {
+				$srv = explode( ':', $server[0] );
+				$request['ip']   = $srv[0];
+				$request['port'] = $srv[1];
+			}
+
+			$requests[] = $request;
 		}
 
 		return $requests;
