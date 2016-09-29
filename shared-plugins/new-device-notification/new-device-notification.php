@@ -45,7 +45,7 @@ class New_Device_Notification {
 			return;
 		}
 
-		get_currentuserinfo();
+		wp_get_current_user();
 
 		// By default, users to skip:
 		// * Super admins (Automattic employees visiting your site)
@@ -115,7 +115,7 @@ class New_Device_Notification {
 	public function notify_of_new_device() {
 		global $current_user;
 
-		get_currentuserinfo();
+		wp_get_current_user();
 
 		$location = $this->ip_to_city( $_SERVER['REMOTE_ADDR'] );
 		$blogname = html_entity_decode( get_bloginfo( 'name' ), ENT_QUOTES );
