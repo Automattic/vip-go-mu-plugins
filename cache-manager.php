@@ -86,6 +86,7 @@ class WPCOM_VIP_Cache_Manager {
 						'Content-Length: ' . strlen( $json )
 					) );
 				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 				curl_multi_add_handle( $curl_multi, $curl );
 			} else {
 				// Purge HTTP
