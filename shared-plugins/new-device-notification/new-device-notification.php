@@ -151,7 +151,8 @@ class New_Device_Notification {
 
 		$emails = apply_filters( 'ndn_send_email_to', $emails );
 
-		$headers  = 'From: "WordPress.com VIP Support" <vip-support@wordpress.com>' . "\r\n";
+		$headers  = 'Reply-to: "WordPress.com VIP Support" <vip-support@wordpress.com>' . "\r\n";
+
 
 		// Filtering the email address instead of a boolean so we can change it if needed
 		$cc_user = apply_filters( 'ndn_cc_current_user', $current_user->user_email, $current_user );
