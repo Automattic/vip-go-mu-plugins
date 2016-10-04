@@ -232,7 +232,7 @@ It\'s likely that %1$s simply logged in from a new web browser or computer (in w
 
 Here are some details about the login to help verify if it was legitimate:
 
-WP.com Username: %8$s
+Username: %8$s
 IP Address: %4$s
 Hostname: %5$s
 Guessed Location: %6$s  (likely completely wrong for mobile devices)
@@ -240,13 +240,23 @@ Browser User Agent: %7$s
 
 If you believe that this log in was unauthorized, please immediately reply to this e-mail and our VIP team will work with you to remove %1$s\'s access.
 
-You should also advise %1$s to change their password immediately if you feel this log in was unauthorized:
-
-http://support.wordpress.com/passwords/
+You should also advise %1$s to change their password immediately if you feel this log in was unauthorized (see below on how to change your password).
 
 Feel free to also reply to this e-mail if you have any questions whatsoever.
 
-- WordPress.com VIP',
+- WordPress.com VIP
+
+
+
+To change your WordPress password:
+
+1. In the Admin Panel menu, go to USERS
+2. Click on your username in the list to edit
+3. In the Edit User screen, scroll down to the New Password section and type in a new password in the two boxes provided. The strength box will show how good (strong) your password is.
+4. Click the UPDATE PROFILE button
+
+Your new password takes effect immediately.
+',
 			$user_obj->display_name,                   // 1
 			$args['blogname'],                         // 2
 			trailingslashit( home_url() ),             // 3
@@ -264,7 +274,7 @@ Feel free to also reply to this e-mail if you have any questions whatsoever.
 	function country_code_to_long( $code ) {
 		$longs = array(
 			'AF' => 'Afghanistan',
-			'AX' => 'ALA	Aland Islands',
+			'AX' => 'Aland Islands',
 			'AL' => 'Albania',
 			'DZ' => 'Algeria',
 			'AS' => 'American Samoa',
