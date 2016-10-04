@@ -231,13 +231,18 @@ class WPCOM_VIP_Cache_Manager {
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
 			'revision' === $post->post_type ||
-			! in_array( get_post_status( $post_id ), array( 'publish', 'trash' ), true ) )
+			! in_array( get_post_status( $post_id ), array( 'publish', 'inherit', 'trash' ), true ) )
 		{
 			return;
 		}
 
 		$this->purge_urls[] = get_permalink( $post_id );
 		$this->purge_urls[] = trailingslashit( home_url() );
+
+		// Don't just purge the attachment page, but also include the file itself
+		if ( 'attachment' === get_post_type( $post_id ) ) {
+			$this->purge_urls[] = wp_get_attachment_url( $post_id );
+		}
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
 
