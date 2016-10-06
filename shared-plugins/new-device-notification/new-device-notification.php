@@ -6,6 +6,8 @@ Plugin Name:  New Device Notification
 Description:  Uses a cookie to identify new devices that are used to log in. On new device detection, an e-mail is sent. This provides some basic improved security against compromised accounts.
 Author:       Automattic VIP Team
 Author URI:   http://vip.wordpress.com/
+Version: 2.0
+License: GPLv2
 
 **************************************************************************/
 
@@ -117,9 +119,18 @@ class New_Device_Notification {
 
 		wp_get_current_user();
 
-		$location = $this->ip_to_city( $_SERVER['REMOTE_ADDR'] );
+		$location = new stdClass();
+		$location->human = 'Location unknown';
+		$location->city = false;
+		$location->region = false;
+		$location->country_long = false;
+
+		$location = apply_filters( 'ndn_location', $location );
 		$blogname = html_entity_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		$hostname = gethostbyaddr( $_SERVER['REMOTE_ADDR'] );
+		if ( $_SERVER['REMOTE_ADDR'] === $hostname ) {
+			$hostname = 'we were not able to get the host for this IP address';
+		}
 
 		// If we're still in the grace period, don't send an e-mail
 		$installed_time = get_option( 'newdevicenotification_installedtime' );
@@ -164,45 +175,6 @@ class New_Device_Notification {
 		return true;
 	}
 
-	public function ip_to_city( $ip ) {
-		// Needs a VIP Go compatible ip2location()
-		if ( ! function_exists( 'ip2location' ) ) {
-			$location = new stdClass();
-			$location->human = 'Unknown: ip2location unavailable';
-			if ( isset( $_SERVER['HTTP_X_COUNTRY_CODE'] ) && is_string( $_SERVER['HTTP_X_COUNTRY_CODE'] ) ) {
-				$location->country_short = wp_strip_all_tags( $_SERVER['HTTP_X_COUNTRY_CODE'] );
-				$location->country_long = $this->country_code_to_long( $location->country_short );
-				$location->human = sprintf( '%1$s (%2$s), town/city accuracy unavailable', $location->country_short, $location->country_long );
-			}
-			return $location;
-		}
-
-		$location = ip2location( $ip );
-
-		$human = array();
-
-		if ( ! empty( $location->city ) && '-' != $location->city )
-			$human[] = $location->city;
-
-		if ( ! empty( $location->region ) && '-' != $location->region && ( empty( $location->city ) || $location->region != $location->city ) )
-			$human[] = $location->region;
-
-		if ( ! empty( $location->country_long ) && '-' != $location->country_long )
-			$human[] = $location->country_long;
-
-		if ( ! empty( $human ) ) {
-			$human = array_map( 'trim',       $human );
-			$human = array_map( 'strtolower', $human );
-			$human = array_map( 'ucwords',    $human );
-
-			$location->human = implode( ', ', $human );
-		} else {
-			$location->human = 'Unknown';
-		}
-
-		return $location;
-	}
-
 	function maybe_send_email( $send_email, $user_info ) {
 		if ( $this->is_user_from_valid_ip( $user_info['ip'] ) )
 			$send_email = false;
@@ -235,7 +207,7 @@ Here are some details about the login to help verify if it was legitimate:
 Username: %8$s
 IP Address: %4$s
 Hostname: %5$s
-Guessed Location: %6$s  (likely completely wrong for mobile devices)
+Guessed Location: %6$s
 Browser User Agent: %7$s
 
 If you believe that this log in was unauthorized, please immediately reply to this e-mail and our VIP team will work with you to remove %1$s\'s access.
@@ -255,7 +227,7 @@ To change your WordPress password:
 3. In the Edit User screen, scroll down to the New Password section and type in a new password in the two boxes provided. The strength box will show how good (strong) your password is.
 4. Click the UPDATE PROFILE button
 
-Your new password takes effect immediately.
+Resetting your password takes effect immediately.
 ',
 			$user_obj->display_name,                   // 1
 			$args['blogname'],                         // 2
@@ -269,262 +241,6 @@ Your new password takes effect immediately.
 		);
 
 		return apply_filters( 'ndn_message', $message, $user_obj, $args );
-	}
-
-	function country_code_to_long( $code ) {
-		$longs = array(
-			'AF' => 'Afghanistan',
-			'AX' => 'Aland Islands',
-			'AL' => 'Albania',
-			'DZ' => 'Algeria',
-			'AS' => 'American Samoa',
-			'AD' => 'Andorra',
-			'AO' => 'Angola',
-			'AI' => 'Anguilla',
-			'AQ' => 'Antarctica',
-			'AG' => 'Antigua and Barbuda',
-			'AR' => 'Argentina',
-			'AM' => 'Armenia',
-			'AW' => 'Aruba',
-			'AU' => 'Australia',
-			'AT' => 'Austria',
-			'AZ' => 'Azerbaijan',
-			'BS' => 'Bahamas',
-			'BH' => 'Bahrain',
-			'BD' => 'Bangladesh',
-			'BB' => 'Barbados',
-			'BY' => 'Belarus',
-			'BE' => 'Belgium',
-			'BZ' => 'Belize',
-			'BJ' => 'Benin',
-			'BM' => 'Bermuda',
-			'BT' => 'Bhutan',
-			'BO' => 'Bolivia',
-			'BA' => 'Bosnia and Herzegovina',
-			'BW' => 'Botswana',
-			'BV' => 'Bouvet Island',
-			'BR' => 'Brazil',
-			'VG' => 'British Virgin Islands',
-			'IO' => 'British Indian Ocean Territory',
-			'BN' => 'Brunei Darussalam',
-			'BG' => 'Bulgaria',
-			'BF' => 'Burkina Faso',
-			'BI' => 'Burundi',
-			'KH' => 'Cambodia',
-			'CM' => 'Cameroon',
-			'CA' => 'Canada',
-			'CV' => 'Cape Verde',
-			'KY' => 'Cayman Islands',
-			'CF' => 'Central African Republic',
-			'TD' => 'Chad',
-			'CL' => 'Chile',
-			'CN' => 'China',
-			'HK' => 'Hong Kong, Special Administrative Region of China',
-			'MO' => 'Macao, Special Administrative Region of China',
-			'CX' => 'Christmas Island',
-			'CC' => 'Cocos (Keeling) Islands',
-			'CO' => 'Colombia',
-			'KM' => 'Comoros',
-			'CG' => 'Congo (Brazzaville)',
-			'CD' => 'Congo, Democratic Republic of the',
-			'CK' => 'Cook Islands',
-			'CR' => 'Costa Rica',
-			'CI' => 'Côte d\'Ivoire',
-			'HR' => 'Croatia',
-			'CU' => 'Cuba',
-			'CY' => 'Cyprus',
-			'CZ' => 'Czech Republic',
-			'DK' => 'Denmark',
-			'DJ' => 'Djibouti',
-			'DM' => 'Dominica',
-			'DO' => 'Dominican Republic',
-			'EC' => 'Ecuador',
-			'EG' => 'Egypt',
-			'SV' => 'El Salvador',
-			'GQ' => 'Equatorial Guinea',
-			'ER' => 'Eritrea',
-			'EE' => 'Estonia',
-			'ET' => 'Ethiopia',
-			'FK' => 'Falkland Islands (Malvinas)',
-			'FO' => 'Faroe Islands',
-			'FJ' => 'Fiji',
-			'FI' => 'Finland',
-			'FR' => 'France',
-			'GF' => 'French Guiana',
-			'PF' => 'French Polynesia',
-			'TF' => 'French Southern Territories',
-			'GA' => 'Gabon',
-			'GM' => 'Gambia',
-			'GE' => 'Georgia',
-			'DE' => 'Germany',
-			'GH' => 'Ghana',
-			'GI' => 'Gibraltar',
-			'GR' => 'Greece',
-			'GL' => 'Greenland',
-			'GD' => 'Grenada',
-			'GP' => 'Guadeloupe',
-			'GU' => 'Guam',
-			'GT' => 'Guatemala',
-			'GG' => 'Guernsey',
-			'GN' => 'Guinea',
-			'GW' => 'Guinea-Bissau',
-			'GY' => 'Guyana',
-			'HT' => 'Haiti',
-			'HM' => 'Heard Island and Mcdonald Islands',
-			'VA' => 'Holy See (Vatican City State)',
-			'HN' => 'Honduras',
-			'HU' => 'Hungary',
-			'IS' => 'Iceland',
-			'IN' => 'India',
-			'ID' => 'Indonesia',
-			'IR' => 'Iran, Islamic Republic of',
-			'IQ' => 'Iraq',
-			'IE' => 'Ireland',
-			'IM' => 'Isle of Man',
-			'IL' => 'Israel',
-			'IT' => 'Italy',
-			'JM' => 'Jamaica',
-			'JP' => 'Japan',
-			'JE' => 'Jersey',
-			'JO' => 'Jordan',
-			'KZ' => 'Kazakhstan',
-			'KE' => 'Kenya',
-			'KI' => 'Kiribati',
-			'KP' => 'Korea, Democratic People\'s Republic of',
-			'KR' => 'Korea, Republic of',
-			'KW' => 'Kuwait',
-			'KG' => 'Kyrgyzstan',
-			'LA' => 'Lao PDR',
-			'LV' => 'Latvia',
-			'LB' => 'Lebanon',
-			'LS' => 'Lesotho',
-			'LR' => 'Liberia',
-			'LY' => 'Libya',
-			'LI' => 'Liechtenstein',
-			'LT' => 'Lithuania',
-			'LU' => 'Luxembourg',
-			'MK' => 'Macedonia, Republic of',
-			'MG' => 'Madagascar',
-			'MW' => 'Malawi',
-			'MY' => 'Malaysia',
-			'MV' => 'Maldives',
-			'ML' => 'Mali',
-			'MT' => 'Malta',
-			'MH' => 'Marshall Islands',
-			'MQ' => 'Martinique',
-			'MR' => 'Mauritania',
-			'MU' => 'Mauritius',
-			'YT' => 'Mayotte',
-			'MX' => 'Mexico',
-			'FM' => 'Micronesia, Federated States of',
-			'MD' => 'Moldova',
-			'MC' => 'Monaco',
-			'MN' => 'Mongolia',
-			'ME' => 'Montenegro',
-			'MS' => 'Montserrat',
-			'MA' => 'Morocco',
-			'MZ' => 'Mozambique',
-			'MM' => 'Myanmar',
-			'NA' => 'Namibia',
-			'NR' => 'Nauru',
-			'NP' => 'Nepal',
-			'NL' => 'Netherlands',
-			'AN' => 'Netherlands Antilles',
-			'NC' => 'New Caledonia',
-			'NZ' => 'New Zealand',
-			'NI' => 'Nicaragua',
-			'NE' => 'Niger',
-			'NG' => 'Nigeria',
-			'NU' => 'Niue',
-			'NF' => 'Norfolk Island',
-			'MP' => 'Northern Mariana Islands',
-			'NO' => 'Norway',
-			'OM' => 'Oman',
-			'PK' => 'Pakistan',
-			'PW' => 'Palau',
-			'PS' => 'Palestinian Territory, Occupied',
-			'PA' => 'Panama',
-			'PG' => 'Papua New Guinea',
-			'PY' => 'Paraguay',
-			'PE' => 'Peru',
-			'PH' => 'Philippines',
-			'PN' => 'Pitcairn',
-			'PL' => 'Poland',
-			'PT' => 'Portugal',
-			'PR' => 'Puerto Rico',
-			'QA' => 'Qatar',
-			'RE' => 'Réunion',
-			'RO' => 'Romania',
-			'RU' => 'Russian Federation',
-			'RW' => 'Rwanda',
-			'BL' => 'Saint-Barthélemy',
-			'SH' => 'Saint Helena',
-			'KN' => 'Saint Kitts and Nevis',
-			'LC' => 'Saint Lucia',
-			'MF' => 'Saint-Martin (French part)',
-			'PM' => 'Saint Pierre and Miquelon',
-			'VC' => 'Saint Vincent and Grenadines',
-			'WS' => 'Samoa',
-			'SM' => 'San Marino',
-			'ST' => 'Sao Tome and Principe',
-			'SA' => 'Saudi Arabia',
-			'SN' => 'Senegal',
-			'RS' => 'Serbia',
-			'SC' => 'Seychelles',
-			'SL' => 'Sierra Leone',
-			'SG' => 'Singapore',
-			'SK' => 'Slovakia',
-			'SI' => 'Slovenia',
-			'SB' => 'Solomon Islands',
-			'SO' => 'Somalia',
-			'ZA' => 'South Africa',
-			'GS' => 'South Georgia and the South Sandwich Islands',
-			'SS' => 'South Sudan',
-			'ES' => 'Spain',
-			'LK' => 'Sri Lanka',
-			'SD' => 'Sudan',
-			'SR' => 'Suriname *',
-			'SJ' => 'Svalbard and Jan Mayen Islands',
-			'SZ' => 'Swaziland',
-			'SE' => 'Sweden',
-			'CH' => 'Switzerland',
-			'SY' => 'Syrian Arab Republic (Syria)',
-			'TW' => 'Taiwan, Republic of China',
-			'TJ' => 'Tajikistan',
-			'TZ' => 'Tanzania *, United Republic of',
-			'TH' => 'Thailand',
-			'TL' => 'Timor-Leste',
-			'TG' => 'Togo',
-			'TK' => 'Tokelau',
-			'TO' => 'Tonga',
-			'TT' => 'Trinidad and Tobago',
-			'TN' => 'Tunisia',
-			'TR' => 'Turkey',
-			'TM' => 'Turkmenistan',
-			'TC' => 'Turks and Caicos Islands',
-			'TV' => 'Tuvalu',
-			'UG' => 'Uganda',
-			'UA' => 'Ukraine',
-			'AE' => 'United Arab Emirates',
-			'GB' => 'United Kingdom',
-			'US' => 'United States of America',
-			'UM' => 'United States Minor Outlying Islands',
-			'UY' => 'Uruguay',
-			'UZ' => 'Uzbekistan',
-			'VU' => 'Vanuatu',
-			'VE' => 'Venezuela (Bolivarian Republic of)',
-			'VN' => 'Viet Nam',
-			'VI' => 'Virgin Islands, US',
-			'WF' => 'Wallis and Futuna Islands',
-			'EH' => 'Western Sahara',
-			'YE' => 'Yemen',
-			'ZM' => 'Zambia',
-			'ZW' => 'Zimbabwe',
-		);
-		if ( isset( $longs[ $code ] ) ) {
-			return $longs[ $code ];
-		}
-		return '';
 	}
 
 }
