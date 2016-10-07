@@ -99,19 +99,14 @@ class New_Device_Notification {
 
 		$tenyrsfromnow = time() + ( YEAR_IN_SECONDS * 10 );
 
-		// Covers all subdomains of wordpress.com, which covers admin section as well
-		setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, 'wordpress.com', false, true );
+		$parts = parse_url( home_url() );
+		$cookie_domains = apply_filters( 'ndn_cookie_domains', array( $parts['host'] ) );
+		$cookie_domains = array_unique( $cookie_domains );
 
-		// If site is on a mapped domain
-		if ( site_url() != home_url() ) {
-			$parts = parse_url( home_url() );
-			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $parts['host'], false, true );
+		foreach ( $cookie_domains as $cookie_domain ) {
+			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $cookie_domain, false, true );
 		}
 
-		// Is this a VIP Go mapped domain?
-		if ( defined( 'VIP_GO_ENV' ) ) {
-			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $parts['host'], false, true );
-		}
 	}
 
 	public function notify_of_new_device() {

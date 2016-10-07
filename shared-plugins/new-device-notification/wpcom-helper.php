@@ -11,8 +11,9 @@ class New_Device_Notification_WPCom {
 	 * New_Device_Notification_WPCom constructor.
 	 */
 	public function __construct() {
-		add_filter( 'ndn_location', array( $this, 'filter_ndn_location' ) );
-		add_filter( 'ndn_message',  array( $this, 'filter_ndn_message' ), 10, 3 );
+		add_filter( 'ndn_location',       array( $this, 'filter_ndn_location' ) );
+		add_filter( 'ndn_message',        array( $this, 'filter_ndn_message' ), 10, 3 );
+		add_filter( 'ndn_cookie_domains', array( $this, 'filter_ndn_cookie_domains' ) );
 	}
 
 	/**
@@ -102,6 +103,19 @@ Feel free to also reply to this e-mail if you have any questions whatsoever.
 			$args['installed_time']                    // 9, Not adjusted for timezone but close enough
 		);
 		return $message;
+	}
+
+	/**
+	 * Hooks the `ndn_cookie_domains` filter to add
+	 * the WordPress.com domain
+	 *
+	 * @param $cookie_domains
+	 *
+	 * @return array An array of domains to set cookies on
+	 */
+	public function filter_ndn_cookie_domains( $cookie_domains ) {
+		$cookie_domains[] = 'wordpress.com';
+		return $cookie_domains;
 	}
 
 }
