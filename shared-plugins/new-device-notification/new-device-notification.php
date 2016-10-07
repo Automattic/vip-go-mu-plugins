@@ -97,7 +97,7 @@ class New_Device_Notification {
 		if ( headers_sent() )
 			return false;
 
-		$tenyrsfromnow = time() + 315569260;
+		$tenyrsfromnow = time() + ( YEAR_IN_SECONDS * 10 );
 
 		// Covers all subdomains of wordpress.com, which covers admin section as well
 		setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, 'wordpress.com', false, true );
