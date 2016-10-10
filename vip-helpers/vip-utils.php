@@ -1083,10 +1083,6 @@ function _wpcom_vip_include_plugin( $file ) {
  * @return bool Bool indicating if user is an Automattician
  */
 function is_automattician( $user_id = false ) {
-	if ( !VIP_GO_PROXIED_REQUEST ) {
-		return false;
-	}
-
 	if ( $user_id ) {
 		$user = new WP_User( $user_id );
 	} else {
