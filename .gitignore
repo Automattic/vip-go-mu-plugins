@@ -1,1 +1,4 @@
 .idea
+
+# Secrets directory
+.secrets
