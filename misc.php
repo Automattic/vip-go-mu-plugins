@@ -83,18 +83,37 @@ add_action( 'added_option',   '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 
-/**
- * Hooks pre_ping to stop any pinging from happening,
- * unless `VIP_DO_PINGS` is set to `true` (boolean).
- *
- * @param array $post_links The URLs to be pinged (passed by ref)
- */
-function wpcom_vip_pre_ping( $post_links ) {
-	$do_pings = ( defined( 'VIP_DO_PINGS' ) && true === VIP_DO_PINGS );
-	if ( ! $do_pings ) {
-		// Clear our the post links array, so we ping nothing
-		$post_links = array();
-		return;
-	}
+if ( defined( 'VIP_CUSTOM_PINGS' ) && true === VIP_CUSTOM_PINGS ) {
+	remove_action( 'do_pings', 'do_all_pings' );
+	add_action( 'do_pings', function() {
+		global $wpdb;
+
+		// Do pingbacks
+		if ( apply_filters( 'vip_do_pingbacks', true ) ) {
+			while ($ping = $wpdb->get_row("SELECT ID, post_content, meta_id FROM {$wpdb->posts}, {$wpdb->postmeta} WHERE {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '_pingme' LIMIT 1")) {
+				delete_metadata_by_mid( 'post', $ping->meta_id );
+				pingback( $ping->post_content, $ping->ID );
+			}
+		}
+
+
+		// Do Enclosures
+		if ( apply_filters( 'vip_do_enclosures', true ) ) {
+			while ($enclosure = $wpdb->get_row("SELECT ID, post_content, meta_id FROM {$wpdb->posts}, {$wpdb->postmeta} WHERE {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '_encloseme' LIMIT 1")) {
+				delete_metadata_by_mid( 'post', $enclosure->meta_id );
+				do_enclose( $enclosure->post_content, $enclosure->ID );
+			}
+		}
+
+		// Do Trackbacks
+		if ( apply_filters( 'vip_do_trackbacks', false ) ) {
+			$trackbacks = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE to_ping <> '' AND post_status = 'publish' LIMIT 10");
+			if ( is_array($trackbacks) )
+				foreach ( $trackbacks as $trackback )
+					do_trackbacks($trackback);
+		}
+
+		// Do Update Services/Generic Pings
+		generic_ping();
+	});
 }
-add_action( 'pre_ping', 'wpcom_vip_pre_ping' );
