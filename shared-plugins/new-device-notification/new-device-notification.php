@@ -36,17 +36,6 @@ class New_Device_Notification {
 	public function start() {
 		global $current_user;
 
-		// Internal IP whitelist
-		if ( in_array( $_SERVER['REMOTE_ADDR'], array( '72.233.96.227' ) ) )
-			return;
-
-		// User Agent whitelist
-		if ( in_array( $_SERVER['HTTP_USER_AGENT'], array(
-			'Shockwave Flash', // The uploader
-		) ) ) {
-			return;
-		}
-
 		wp_get_current_user();
 
 		// By default, users to skip:
