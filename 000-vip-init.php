@@ -1,7 +1,7 @@
 <?php
 
-if ( file_exists( __DIR__ . '/.secrets/vip-go-secrets.php' ) ) {
-	require __DIR__ . '/.secrets/vip-go-secrets.php';
+if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
+	require __DIR__ . '/.secrets/vip-secrets.php';
 }
 
 /**
