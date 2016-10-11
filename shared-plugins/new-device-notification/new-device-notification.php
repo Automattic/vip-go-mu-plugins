@@ -52,7 +52,7 @@ class New_Device_Notification {
 		// By default, users to skip:
 		// * Super admins (Automattic employees visiting your site)
 		// * Users who don't have /wp-admin/ access
-		$is_privileged_user = ! is_automattician() && current_user_can( 'edit_posts' );
+		$is_privileged_user = ! is_proxied_automattician() && current_user_can( 'edit_posts' );
 		if ( false === apply_filters( 'ndn_run_for_current_user', $is_privileged_user ) )
 			return;
 
