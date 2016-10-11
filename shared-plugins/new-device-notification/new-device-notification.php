@@ -6,6 +6,8 @@ Plugin Name:  New Device Notification
 Description:  Uses a cookie to identify new devices that are used to log in. On new device detection, an e-mail is sent. This provides some basic improved security against compromised accounts.
 Author:       Automattic VIP Team
 Author URI:   http://vip.wordpress.com/
+Version: 2.0
+License: GPLv2
 
 **************************************************************************/
 
@@ -45,12 +47,12 @@ class New_Device_Notification {
 			return;
 		}
 
-		get_currentuserinfo();
+		wp_get_current_user();
 
 		// By default, users to skip:
 		// * Super admins (Automattic employees visiting your site)
 		// * Users who don't have /wp-admin/ access
-		$is_privileged_user = ! is_super_admin() && current_user_can( 'edit_posts' );
+		$is_privileged_user = ! is_automattician() && current_user_can( 'edit_posts' );
 		if ( false === apply_filters( 'ndn_run_for_current_user', $is_privileged_user ) )
 			return;
 
@@ -95,26 +97,35 @@ class New_Device_Notification {
 		if ( headers_sent() )
 			return false;
 
-		$tenyrsfromnow = time() + 315569260;
+		$tenyrsfromnow = time() + ( YEAR_IN_SECONDS * 10 );
 
-		// Covers all subdomains of wordpress.com, which covers admin section as well
-		setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, 'wordpress.com', false, true );
+		$parts = parse_url( home_url() );
+		$cookie_domains = apply_filters( 'ndn_cookie_domains', array( $parts['host'] ) );
+		$cookie_domains = array_unique( $cookie_domains );
 
-		// If site is on a mapped domain
-		if ( site_url() != home_url() ) {
-			$parts = parse_url( home_url() );
-			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $parts['host'], false, true );
+		foreach ( $cookie_domains as $cookie_domain ) {
+			setcookie( $this->cookie_name, $this->cookie_hash, $tenyrsfromnow, COOKIEPATH, $cookie_domain, false, true );
 		}
+
 	}
 
 	public function notify_of_new_device() {
 		global $current_user;
 
-		get_currentuserinfo();
+		wp_get_current_user();
 
-		$location = $this->ip_to_city( $_SERVER['REMOTE_ADDR'] );
+		$location = new stdClass();
+		$location->human = 'Location unknown';
+		$location->city = false;
+		$location->region = false;
+		$location->country_long = false;
+
+		$location = apply_filters( 'ndn_location', $location );
 		$blogname = html_entity_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		$hostname = gethostbyaddr( $_SERVER['REMOTE_ADDR'] );
+		if ( $_SERVER['REMOTE_ADDR'] === $hostname ) {
+			$hostname = 'we were not able to get the host for this IP address';
+		}
 
 		// If we're still in the grace period, don't send an e-mail
 		$installed_time = get_option( 'newdevicenotification_installedtime' );
@@ -146,7 +157,8 @@ class New_Device_Notification {
 
 		$emails = apply_filters( 'ndn_send_email_to', $emails );
 
-		$headers  = 'From: "WordPress.com VIP Support" <vip-support@wordpress.com>' . "\r\n";
+		$headers  = 'Reply-to: "WordPress.com VIP Support" <vip-support@wordpress.com>' . "\r\n";
+
 
 		// Filtering the email address instead of a boolean so we can change it if needed
 		$cc_user = apply_filters( 'ndn_cc_current_user', $current_user->user_email, $current_user );
@@ -156,33 +168,6 @@ class New_Device_Notification {
 		wp_mail( $emails, $subject, $message, $headers );
 
 		return true;
-	}
-
-	public function ip_to_city( $ip ) {
-		$location = ip2location( $ip );
-
-		$human = array();
-
-		if ( ! empty( $location->city ) && '-' != $location->city )
-			$human[] = $location->city;
-
-		if ( ! empty( $location->region ) && '-' != $location->region && ( empty( $location->city ) || $location->region != $location->city ) )
-			$human[] = $location->region;
-
-		if ( ! empty( $location->country_long ) && '-' != $location->country_long )
-			$human[] = $location->country_long;
-
-		if ( ! empty( $human ) ) {
-			$human = array_map( 'trim',       $human );
-			$human = array_map( 'strtolower', $human );
-			$human = array_map( 'ucwords',    $human );
-
-			$location->human = implode( ', ', $human );
-		} else {
-			$location->human = 'Unknown';
-		}
-
-		return $location;
 	}
 
 	function maybe_send_email( $send_email, $user_info ) {
@@ -214,21 +199,31 @@ It\'s likely that %1$s simply logged in from a new web browser or computer (in w
 
 Here are some details about the login to help verify if it was legitimate:
 
-WP.com Username: %8$s
+Username: %8$s
 IP Address: %4$s
 Hostname: %5$s
-Guessed Location: %6$s  (likely completely wrong for mobile devices)
+Guessed Location: %6$s
 Browser User Agent: %7$s
 
 If you believe that this log in was unauthorized, please immediately reply to this e-mail and our VIP team will work with you to remove %1$s\'s access.
 
-You should also advise %1$s to change their password immediately if you feel this log in was unauthorized:
-
-http://support.wordpress.com/passwords/
+You should also advise %1$s to change their password immediately if you feel this log in was unauthorized (see below on how to change your password).
 
 Feel free to also reply to this e-mail if you have any questions whatsoever.
 
-- WordPress.com VIP',
+- WordPress.com VIP
+
+
+
+To change your WordPress password:
+
+1. In the Admin Panel menu, go to USERS
+2. Click on your username in the list to edit
+3. In the Edit User screen, scroll down to the New Password section and type in a new password in the two boxes provided. The strength box will show how good (strong) your password is.
+4. Click the UPDATE PROFILE button
+
+Resetting your password takes effect immediately.
+',
 			$user_obj->display_name,                   // 1
 			$args['blogname'],                         // 2
 			trailingslashit( home_url() ),             // 3
@@ -246,4 +241,3 @@ Feel free to also reply to this e-mail if you have any questions whatsoever.
 }
 
 $new_device_notification = new New_Device_Notification();
-
