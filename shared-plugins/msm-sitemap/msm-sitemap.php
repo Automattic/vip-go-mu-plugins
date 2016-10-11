@@ -215,7 +215,7 @@ class Metro_Sitemap {
 		$stats = array();
 
 		for ( $i = 0; $i < $n; $i++ ) {
-			$date = date( 'Y-m-d', strtotime( "-$i days" ) );
+			$date = date( get_option( 'date_format', 'Y-m-d' ), strtotime( "-$i days" ) );
 
 			list( $year, $month, $day ) = explode( '-', $date );
 
@@ -395,10 +395,7 @@ class Metro_Sitemap {
 		if ( ! $post_count ) {
 			// If no entries - delete the whole sitemap post
 			if ( $sitemap_exists ) {
-				$total_url_count -= intval( get_post_meta( $sitemap_id, 'msm_indexed_url_count', true ) );
-				update_option( 'msm_sitemap_indexed_url_count' , $total_url_count );
-				wp_delete_post( $sitemap_id, true );
-				do_action( 'msm_delete_sitemap_post', $sitemap_id, $year, $month, $day );
+				self::delete_sitemap_by_id( $sitemap_id );
 			}
 			return;
 		}
@@ -466,6 +463,32 @@ class Metro_Sitemap {
 		update_option( 'msm_sitemap_indexed_url_count' , $total_url_count );
 
 		wp_reset_postdata();
+	}
+
+	public static function delete_sitemap_for_date( $sitemap_date ) {
+		list( $year, $month, $day ) = explode( '-', $sitemap_date );
+		$sitemap_id = self::get_sitemap_post_id( $year, $month, $day );
+		if ( ! $sitemap_id ) {
+			return false;
+		}
+		return self::delete_sitemap_by_id( $sitemap_id );
+	}
+
+	public static function delete_sitemap_by_id( $sitemap_id ) {
+		$sitemap = get_post( $sitemap_id );
+		if ( ! $sitemap ) {
+			return false;
+		}
+
+		$sitemap_date = date( 'Y-m-d', strtotime( $sitemap->post_date ) );
+		list( $year, $month, $day ) = explode( '-', $sitemap_date );
+
+		$total_url_count = self::get_total_indexed_url_count();
+		$total_url_count -= intval( get_post_meta( $sitemap_id, 'msm_indexed_url_count', true ) );
+		update_option( 'msm_sitemap_indexed_url_count' , $total_url_count );
+
+		wp_delete_post( $sitemap_id, true );
+		do_action( 'msm_delete_sitemap_post', $sitemap_id, $year, $month, $day );
 	}
 
 	/**
