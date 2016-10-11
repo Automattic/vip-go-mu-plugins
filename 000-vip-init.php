@@ -4,6 +4,10 @@ if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
 
+if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
+	define( 'A8C_PROXIED_REQUEST', false );
+}
+
 /**
  * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
  */

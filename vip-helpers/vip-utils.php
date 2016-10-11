@@ -1079,6 +1079,8 @@ function _wpcom_vip_include_plugin( $file ) {
  * It's possible to fake that data (it's just meta and user_email), so don't use this
  * for protecting sensitive info or performing sensitive tasks
  *
+ * NOTE: This does not guarantee the current user is proxied. Use is_proxied_automattician() for that
+ *
  * @param int The WP User id
  * @return bool Bool indicating if user is an Automattician
  */
@@ -1098,13 +1100,15 @@ function is_automattician( $user_id = false ) {
 		return false;
 	}
 
-	// $vip_support = WPCOM_VIP_Support_User::init();
-
 	if ( WPCOM_VIP_Support_User::is_verified_automattician( $user->ID ) ) {
 		return true;
 	}
 
 	return false;
+}
+
+function is_proxied_automattician() {
+	return A8C_PROXIED_REQUEST && is_automattician();
 }
 
 /**
