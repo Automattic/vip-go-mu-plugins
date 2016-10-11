@@ -1,5 +1,9 @@
 <?php
 
+if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
+	require __DIR__ . '/.secrets/vip-secrets.php';
+}
+
 /**
  * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
  */
