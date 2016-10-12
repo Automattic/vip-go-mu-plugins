@@ -906,12 +906,12 @@ function wpcom_vip_bulk_user_management_whitelist( $users ) {
  * @return string
  */
 function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
-	$cache_key = md5( $url . '|' . serialize( $args ) );
+	$cache_key = md5( $url . '||' . serialize( $args ) );
 
-	if ( false === $html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed_get' ) ) {
+	if ( false === $html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' ) ) {
 		$html = wp_oembed_get( $url, $args );
 
-		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed_get' );
+		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', 6 * HOUR_IN_SECONDS );
 	}
 
 	return $html;
