@@ -1114,8 +1114,8 @@ function is_automattician( $user_id = false ) {
  * Is the current user an Automattician, authenticated via the Automattic proxy.
  *
  * Determine if the current request is made via the Automattic proxy,
- * which is only available to authenticated Automatticians, AND if the
- * current user is an Automattician.
+ * which is only available to Automatticians, AND if the current user
+ * is an Automattician.
  *
  * @see is_automattician
  *
