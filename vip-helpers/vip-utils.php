@@ -1072,17 +1072,20 @@ function _wpcom_vip_include_plugin( $file ) {
 }
 
 /**
- * Is the given user an automattician?
+ * Is the given user an Automattician?
  *
- * Note: This does a relatively weak check based on email address and their
- * VIP Support email address verification status (separate from other email verification)
- * It's possible to fake that data (it's just meta and user_email), so don't use this
- * for protecting sensitive info or performing sensitive tasks
+ * This does a relatively weak check that the user has an Automattic email address, and that
+ * they have verified that email address. It's possible to fake that data (it's just user meta
+ * and user_email), so don't use this for protecting sensitive info or performing
+ * sensitive tasks.
  *
- * NOTE: This does not guarantee the current user is proxied. Use is_proxied_automattician() for that
+ * This does NOT guarantee the current user is proxied. Use is_proxied_automattician()
+ * for that.
  *
- * @param int The WP User id
- * @return bool Bool indicating if user is an Automattician
+ * @see is_proxied_automattician
+ *
+ * @param int $user_id A WP User id
+ * @return bool True, if user is an Automattician, otherwise false
  */
 function is_automattician( $user_id = false ) {
 	if ( $user_id ) {
@@ -1107,6 +1110,17 @@ function is_automattician( $user_id = false ) {
 	return false;
 }
 
+/**
+ * Is the current user an Automattician, authenticated via the Automattic proxy.
+ *
+ * Determine if the current request is made via the Automattic proxy,
+ * which is only available to authenticated Automatticians, AND if the
+ * current user is an Automattician.
+ *
+ * @see is_automattician
+ *
+ * @return bool True, if the current request is made via the Automattic proxy
+ */
 function is_proxied_automattician() {
 	return A8C_PROXIED_REQUEST && is_automattician();
 }
