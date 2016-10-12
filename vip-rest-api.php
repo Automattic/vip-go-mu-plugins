@@ -2,7 +2,7 @@
 /*
  Plugin Name: VIP REST API Endpoints
  Plugin URI: https://vip.wordpress.com/
- Description: Add custom REST API endpoints for VIP requests
+ Description: Add custom REST API endpoints for VIP requests; N.B. these endpoints are subject to change without notice, and should be considered "private".
  Author: Erick Hitter, Automattic
  Version: 0.1
  */
@@ -94,9 +94,24 @@ class WPCOM_VIP_REST_API_Endpoints {
 				foreach ( $_sites as $_site ) {
 					switch_to_blog( $_site );
 
+					$url_parts = wp_parse_args( parse_url( home_url() ), array(
+						'host' => '',
+						'path' => '',
+					) );
+
+					$url = $url_parts['host'];
+
+					if ( strlen( $url_parts['path'] ) > 1 ) {
+						$url .= $url_parts['path'];
+
+						$url = untrailingslashit( $url );
+					}
+
 					$sites[] = array(
-						'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+						'domain_name' => $url,
 					);
+
+					unset( $url_parts, $url );
 
 					restore_current_blog();
 				}

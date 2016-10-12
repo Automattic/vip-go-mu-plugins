@@ -1049,6 +1049,12 @@ function _wpcom_vip_include_plugin( $file ) {
 	// Now include
 	include_once( $file );
 
+	// Check for a helper file, and include if present
+	$helper_file = dirname( $file ) . '/vipgo-helper.php';
+	if ( file_exists( $helper_file ) ) {
+		include_once( $helper_file );
+	}
+
 	// Blacklist out some variables
 	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
 
