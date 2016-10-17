@@ -34,3 +34,6 @@
 [submodule "shared-plugins/msm-sitemap"]
 	path = shared-plugins/msm-sitemap
 	url = git@github.com:Automattic/msm-sitemap.git
+[submodule "shared-plugins/jetpack-force-2fa"]
+	path = shared-plugins/jetpack-force-2fa
+	url = git@github.com:Automattic/jetpack-force-2fa.git
