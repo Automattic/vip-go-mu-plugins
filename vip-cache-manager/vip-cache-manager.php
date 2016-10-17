@@ -214,6 +214,24 @@ class WPCOM_VIP_Cache_Manager {
 		if ( empty( $this->ban_urls ) && empty( $this->purge_urls ) )
 			return;
 
+		/**
+		 * Before PURGE URLs are assembled for execution.
+		 *
+		 * @param array $this->purge_urls {
+		 *     An array of URLs to be PURGEd
+		 * }
+		 */
+		do_action( 'wpcom_vip_cache_pre_execute_purges', $this->purge_urls );
+
+		/**
+		 * Before BAN requests are assembled for execution.
+		 *
+		 * @param array $this->ban_urls {
+		 *     An array of BAN requests
+		 * }
+		 */
+		do_action( 'wpcom_vip_cache_pre_execute_bans', $this->ban_urls );
+
 		$requests = array();
 		foreach( (array) $this->ban_urls as $url )
 			$requests = array_merge( $requests, $this->build_purge_request( $url, 'BAN' ) );
