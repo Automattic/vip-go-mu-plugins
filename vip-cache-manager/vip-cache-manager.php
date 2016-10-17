@@ -469,7 +469,7 @@ class WPCOM_VIP_Cache_Manager {
 		$max_pages = apply_filters( 'wpcom_vip_cache_purge_urls_max_pages', 2, $term );
 
 		// Set some limits on max and min values for pages
-		$max_pages = max( 1, min( 20, $max_pages ) );
+		$max_pages = max( 1, min( 5, $max_pages ) );
 
 		$taxonomy_name = $term->taxonomy;
 		$maybe_purge_url = get_term_link( $term, $taxonomy_name );
