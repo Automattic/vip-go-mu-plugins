@@ -282,6 +282,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		// Purge the standard site feeds
+		// @TODO Do we need to PURGE the comment feeds if the post_status is publish?
 		$site_feeds = array(
 			get_bloginfo('rdf_url'),
 			get_bloginfo('rss_url') ,
