@@ -906,12 +906,12 @@ function wpcom_vip_bulk_user_management_whitelist( $users ) {
  * @return string
  */
 function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
-	$cache_key = md5( $url . '|' . serialize( $args ) );
+	$cache_key = md5( $url . '||' . serialize( $args ) );
 
-	if ( false === $html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed_get' ) ) {
+	if ( false === $html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' ) ) {
 		$html = wp_oembed_get( $url, $args );
 
-		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed_get' );
+		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', 6 * HOUR_IN_SECONDS );
 	}
 
 	return $html;
@@ -1072,15 +1072,20 @@ function _wpcom_vip_include_plugin( $file ) {
 }
 
 /**
- * Is the given user an automattician?
+ * Is the given user an Automattician?
  *
- * Note: This does a relatively weak check based on email address and their
- * VIP Support email address verification status (separate from other email verification)
- * It's possible to fake that data (it's just meta and user_email), so don't use this
- * for protecting sensitive info or performing sensitive tasks
+ * This does a relatively weak check that the user has an Automattic email address, and that
+ * they have verified that email address. It's possible to fake that data (it's just user meta
+ * and user_email), so don't use this for protecting sensitive info or performing
+ * sensitive tasks.
  *
- * @param int The WP User id
- * @return bool Bool indicating if user is an Automattician
+ * This does NOT guarantee the current user is proxied. Use is_proxied_automattician()
+ * for that.
+ *
+ * @see is_proxied_automattician
+ *
+ * @param int $user_id A WP User id
+ * @return bool True, if user is an Automattician, otherwise false
  */
 function is_automattician( $user_id = false ) {
 	if ( $user_id ) {
@@ -1098,13 +1103,26 @@ function is_automattician( $user_id = false ) {
 		return false;
 	}
 
-	// $vip_support = WPCOM_VIP_Support_User::init();
-
 	if ( WPCOM_VIP_Support_User::is_verified_automattician( $user->ID ) ) {
 		return true;
 	}
 
 	return false;
+}
+
+/**
+ * Is the current user an Automattician, authenticated via the Automattic proxy.
+ *
+ * Determine if the current request is made via the Automattic proxy,
+ * which is only available to Automatticians, AND if the current user
+ * is an Automattician.
+ *
+ * @see is_automattician
+ *
+ * @return bool True, if the current request is made via the Automattic proxy
+ */
+function is_proxied_automattician() {
+	return A8C_PROXIED_REQUEST && is_automattician();
 }
 
 /**
