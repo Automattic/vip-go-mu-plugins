@@ -52,8 +52,6 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function get_manual_purge_link() {
-		global $blog_id;
-
 		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
 
 		$button_html =  esc_html__( 'Press the button below to force a purge of your entire page cache.' );
