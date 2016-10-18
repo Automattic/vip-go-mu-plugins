@@ -1,1 +1,0 @@
-shared-plugins/jetpack-force-2fa/jetpack-force-2fa.php
