@@ -10,7 +10,7 @@
 
 class WP_Cron_Control_Revisited {
 	/**
-	 *
+	 * Class instance
 	 */
 	private static $__instance = null;
 
@@ -23,10 +23,28 @@ class WP_Cron_Control_Revisited {
 	}
 
 	/**
-	 *
+	 * PLUGIN SETUP
+	 */
+
+	/**
+	 * Class properties
+	 */
+	private $namespace = 'wp-cron-control-revisited/v1';
+	private $secret    = null;
+
+	/**
+	 * Register hooks
 	 */
 	private function __construct() {
 		add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
+
+		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
+			$this->secret = WP_CRON_CONTROL_SECRET;
+
+			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
+		} else {
+			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
+		}
 	}
 
 	/**
@@ -37,6 +55,40 @@ class WP_Cron_Control_Revisited {
 			status_header( 403 );
 			exit;
 		}
+	}
+
+	/**
+	 * Register API routes
+	 */
+	public function rest_api_init() {
+		register_rest_route( $this->namespace, '/events/', array(
+			'methods'   => 'GET',
+			'callback' => array( $this, 'get_events' ),
+		) );
+	}
+
+	/**
+	 * Display an error if the plugin's conditions aren't met
+	 */
+	public function admin_notice() {
+		$error = sprintf( __( '<strong>%1$s</strong>: To use this plugin, define the constant %2$s.', 'wp-cron-control-revisited' ), 'WP-Cron Control Revisited', '<code>WP_CRON_CONTROL_SECRET</code>' );
+
+		?>
+		<div class="notice notice-error">
+			<p><?php echo $error; ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * PLUGIN FUNCTIONALITY
+	 */
+
+	/**
+	 * List events pending for the current period
+	 */
+	public function get_events() {
+		return new WP_REST_Response( '¯\_(ツ)_/¯' );
 	}
 }
 
