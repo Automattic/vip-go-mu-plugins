@@ -88,7 +88,47 @@ class WP_Cron_Control_Revisited {
 	 * List events pending for the current period
 	 */
 	public function get_events() {
-		return new WP_REST_Response( '¯\_(ツ)_/¯' );
+		// For now, mimic original plugin's "authentication" method. This needs to be better.
+		if ( ! isset( $_GET[ $this->secret ] ) ) {
+			return new WP_REST_Response( new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) ), 403 );
+		}
+
+		$events = get_option( 'cron' );
+
+		// That was easy
+		if ( ! is_array( $events ) || empty( $events ) ) {
+			return new WP_REST_Response( array( 'events' => null, ) );
+		}
+
+		// Select only those events to run in the next sixty seconds
+		// Will include missed events as well
+		$current_events = array();
+		$current_window = strtotime( '+60 seconds' );
+
+		foreach ( $events as $ts => $ts_events ) {
+			// Skip non-event data that Core includes in the option
+			if ( ! is_numeric( $ts ) ) {
+				continue;
+			}
+
+			// Skip events whose time hasn't come
+			if ( $ts > $current_window ) {
+				continue;
+			}
+
+			// Extract just the essentials needed to retrieve the full job later on
+			foreach ( $ts_events as $action => $action_instances ) {
+				foreach ( $action_instances as $instance => $instance_args ) {
+					$current_events[] = array(
+						'timestamp' => $ts,
+						'action'    => $action,
+						'instance'  => $instance,
+					);
+				}
+			}
+		}
+
+		return new WP_REST_Response( array( 'events' => $current_events, ) );
 	}
 }
 
