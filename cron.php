@@ -36,8 +36,12 @@ class WP_Cron_Control_Revisited {
 	 * Register hooks
 	 */
 	private function __construct() {
+		// Block normal cron execution
 		add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
+		remove_action( 'init', 'wp_cron' );
+		define( 'DISABLE_WP_CRON', true );
 
+		// Load plugin functionality only when conditions are met
 		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
 			$this->secret = WP_CRON_CONTROL_SECRET;
 
