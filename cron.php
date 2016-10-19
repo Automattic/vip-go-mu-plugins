@@ -65,6 +65,11 @@ class WP_Cron_Control_Revisited {
 			'methods'   => 'GET',
 			'callback' => array( $this, 'get_events' ),
 		) );
+
+		register_rest_route( $this->namespace, '/event/', array(
+			'methods'   => 'PUT',
+			'callback' => array( $this, 'run_event' ),
+		) );
 	}
 
 	/**
@@ -90,7 +95,7 @@ class WP_Cron_Control_Revisited {
 	public function get_events() {
 		// For now, mimic original plugin's "authentication" method. This needs to be better.
 		if ( ! isset( $_GET[ $this->secret ] ) ) {
-			return new WP_REST_Response( new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) ), 403 );
+			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
 		}
 
 		$events = get_option( 'cron' );
@@ -128,7 +133,56 @@ class WP_Cron_Control_Revisited {
 			}
 		}
 
-		return new WP_REST_Response( array( 'events' => $current_events, ) );
+		return rest_ensure_response( array(
+			'events'   => $current_events,
+			'endpoint' => get_rest_url( null, $this->namespace . '/events/' ),
+		) );
+	}
+
+	/**
+	 * Execute a specific event
+	 */
+	public function run_event( $request ) {
+		// For now, mimic original plugin's "authentication" method. This needs to be better.
+		if ( ! isset( $_GET[ $this->secret ] ) ) {
+			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
+		}
+
+		// Parse request
+		$event     = $request->get_json_params();
+		$timestamp = isset( $event['timestamp'] ) ? $event['timestamp'] : null;
+		$action    = isset( $event['action'] ) ? $event['action'] : null;
+		$instance  = isset( $event['instance'] ) ? $event['instance'] : null;
+
+		// Validate input data
+		if ( ! is_int( $timestamp ) || empty( $action ) || empty( $instance ) ) {
+			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data', 'wp-cron-control-revisited' ) );
+		}
+
+		// Find the event to retrieve the full arguments
+		$events = get_option( 'cron' );
+
+		if ( isset( $events[ $timestamp ][ $action ][ $instance ] ) ) {
+			define( 'DOING_CRON', true );
+
+			$event_data = $events[ $timestamp ][ $action ][ $instance ];
+
+			// Remove the event, and reschedule if desired
+			// Follows pattern Core uses in wp-cron.php
+			if ( false !== $event_data['schedule'] ) {
+				$new_args = array( $timestamp, $event_data['schedule'], $action, $event_data['args'] );
+				call_user_func_array( 'wp_reschedule_event', $new_args );
+			}
+
+			wp_unschedule_event( $timestamp, $action, $event_data['args'] );
+
+			// Run the event
+			do_action_ref_array( $action, $event_data['args'] );
+
+			return rest_ensure_response( true );
+		} else {
+			return new WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
+		}
 	}
 }
 
