@@ -56,4 +56,7 @@ class WPCOM_VIP_Cron_Control {
 	}
 }
 
-new WPCOM_VIP_Cron_Control;
+if ( ! class_exists( 'WP_Cron_Control_Revisited' ) ) {
+	error_log( 'Loading WP-Cron Control, not WP-Cron Control Revisited' );
+	new WPCOM_VIP_Cron_Control;
+}
