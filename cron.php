@@ -110,22 +110,22 @@ class WP_Cron_Control_Revisited {
 		$current_events = array();
 		$current_window = strtotime( '+60 seconds' );
 
-		foreach ( $events as $ts => $ts_events ) {
+		foreach ( $events as $timestamp => $timestamp_events ) {
 			// Skip non-event data that Core includes in the option
-			if ( ! is_numeric( $ts ) ) {
+			if ( ! is_numeric( $timestamp ) ) {
 				continue;
 			}
 
 			// Skip events whose time hasn't come
-			if ( $ts > $current_window ) {
+			if ( $timestamp > $current_window ) {
 				continue;
 			}
 
 			// Extract just the essentials needed to retrieve the full job later on
-			foreach ( $ts_events as $action => $action_instances ) {
+			foreach ( $timestamp_events as $action => $action_instances ) {
 				foreach ( $action_instances as $instance => $instance_args ) {
 					$current_events[] = array(
-						'timestamp' => $ts,
+						'timestamp' => $timestamp,
 						'action'    => $action,
 						'instance'  => $instance,
 					);
@@ -135,7 +135,7 @@ class WP_Cron_Control_Revisited {
 
 		return rest_ensure_response( array(
 			'events'   => $current_events,
-			'endpoint' => get_rest_url( null, $this->namespace . '/events/' ),
+			'endpoint' => get_rest_url( null, $this->namespace . '/event/' ),
 		) );
 	}
 
@@ -159,6 +159,11 @@ class WP_Cron_Control_Revisited {
 			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data', 'wp-cron-control-revisited' ) );
 		}
 
+		// Ensure we don't run jobs too far ahead
+		if ( $timestamp > strtotime( '+15 seconds' ) ) {
+			return new WP_Error( 'premature', __( 'Event is not scheduled to be run yet.', 'wp-cron-control-revisited' ) );
+		}
+
 		// Find the event to retrieve the full arguments
 		$events = get_option( 'cron' );
 
@@ -170,8 +175,7 @@ class WP_Cron_Control_Revisited {
 			// Remove the event, and reschedule if desired
 			// Follows pattern Core uses in wp-cron.php
 			if ( false !== $event_data['schedule'] ) {
-				$new_args = array( $timestamp, $event_data['schedule'], $action, $event_data['args'] );
-				call_user_func_array( 'wp_reschedule_event', $new_args );
+				wp_reschedule_event( $timestamp, $event_data['schedule'], $action, $event_data['args'] );
 			}
 
 			wp_unschedule_event( $timestamp, $action, $event_data['args'] );
