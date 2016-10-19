@@ -66,13 +66,15 @@ class WP_Cron_Control_Revisited {
 	 */
 	public function rest_api_init() {
 		register_rest_route( $this->namespace, '/events/', array(
-			'methods'   => 'GET',
-			'callback' => array( $this, 'get_events' ),
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_events' ),
+			'permission_callback' => array( $this, 'check_secret' ),
 		) );
 
 		register_rest_route( $this->namespace, '/event/', array(
-			'methods'   => 'PUT',
-			'callback' => array( $this, 'run_event' ),
+			'methods'             => 'PUT',
+			'callback'            => array( $this, 'run_event' ),
+			'permission_callback' => array( $this, 'check_secret' ),
 		) );
 	}
 
@@ -97,11 +99,6 @@ class WP_Cron_Control_Revisited {
 	 * List events pending for the current period
 	 */
 	public function get_events() {
-		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $_GET[ $this->secret ] ) ) {
-			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
-		}
-
 		$events = get_option( 'cron' );
 
 		// That was easy
@@ -147,11 +144,6 @@ class WP_Cron_Control_Revisited {
 	 * Execute a specific event
 	 */
 	public function run_event( $request ) {
-		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $_GET[ $this->secret ] ) ) {
-			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
-		}
-
 		// Parse request
 		$event     = $request->get_json_params();
 		$timestamp = isset( $event['timestamp'] ) ? $event['timestamp'] : null;
@@ -191,6 +183,18 @@ class WP_Cron_Control_Revisited {
 		} else {
 			return new WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
 		}
+	}
+
+	/**
+	 * Check if request is authorized
+	 */
+	public function check_secret() {
+		// For now, mimic original plugin's "authentication" method. This needs to be better.
+		if ( ! isset( $_GET[ $this->secret ] ) ) {
+			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
+		}
+
+		return true;
 	}
 }
 
