@@ -47,7 +47,7 @@ class WP_Cron_Control_Revisited {
 
 		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
 
-		// Load plugin functionality only when conditions are met
+		// Load plugin functionality, when conditions are met
 		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
 			$this->secret = WP_CRON_CONTROL_SECRET;
 
@@ -122,14 +122,14 @@ class WP_Cron_Control_Revisited {
 	public function get_events() {
 		$events = get_option( 'cron' );
 
-		// To be safe, re-sort the array just as Core does when events are scheduled
-		// Ensures events are sorted chronologically
-		uksort( $events, 'strnatcasecmp' );
-
 		// That was easy
 		if ( ! is_array( $events ) || empty( $events ) ) {
 			return new WP_REST_Response( array( 'events' => null, ) );
 		}
+
+		// To be safe, re-sort the array just as Core does when events are scheduled
+		// Ensures events are sorted chronologically
+		uksort( $events, 'strnatcasecmp' );
 
 		// Select only those events to run in the next sixty seconds
 		// Will include missed events as well
