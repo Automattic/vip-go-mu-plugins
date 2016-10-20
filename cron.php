@@ -124,7 +124,7 @@ class WP_Cron_Control_Revisited {
 
 		// That was easy
 		if ( ! is_array( $events ) || empty( $events ) ) {
-			return new WP_REST_Response( array( 'events' => null, ) );
+			return rest_ensure_response( array( 'events' => null, ) );
 		}
 
 		// To be safe, re-sort the array just as Core does when events are scheduled
