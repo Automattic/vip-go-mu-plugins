@@ -136,7 +136,7 @@ class WP_Cron_Control_Revisited {
 
 		// Select only those events to run in the next sixty seconds
 		// Will include missed events as well
-		$current_events = array();
+		$current_events = $internal_events = array();
 		$current_window = strtotime( sprintf( '+%d seconds', $this->job_queue_window_in_seconds ) );
 
 		foreach ( $events as $timestamp => $timestamp_events ) {
@@ -153,11 +153,14 @@ class WP_Cron_Control_Revisited {
 			// Extract just the essentials needed to retrieve the full job later on
 			foreach ( $timestamp_events as $action => $action_instances ) {
 				foreach ( $action_instances as $instance => $instance_args ) {
-					$current_events[] = array(
+					// Queue internal events separately to avoid them being blocked
+					$queue = $this->is_internal_event( $action ) ? 'internal_events' : 'current_events';
+
+					array_push( $$queue, array(
 						'timestamp' => $timestamp,
 						'action'    => md5( $action ),
 						'instance'  => $instance,
-					);
+					) );
 				}
 			}
 		}
@@ -168,7 +171,7 @@ class WP_Cron_Control_Revisited {
 		}
 
 		return rest_ensure_response( array(
-			'events'   => $current_events,
+			'events'   => array_merge( $current_events, $internal_events ),
 			'endpoint' => get_rest_url( null, $this->namespace . '/event/' ),
 		) );
 	}
@@ -251,6 +254,13 @@ class WP_Cron_Control_Revisited {
 		}
 
 		return $event;
+	}
+
+	/**
+	 * Events that are always run, regardless of how many jobs are queued
+	 */
+	private function is_internal_event( $action ) {
+		return false;
 	}
 }
 
