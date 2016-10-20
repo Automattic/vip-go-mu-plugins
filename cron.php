@@ -32,7 +32,10 @@ class WP_Cron_Control_Revisited {
 	private $namespace = 'wp-cron-control-revisited/v1';
 	private $secret    = null;
 
-	private $batch_size = 10;
+	private $job_queue_size                  = 10;
+	private $job_queue_window_in_seconds     = 60;
+	private $job_execution_buffer_in_seconds = 15;
+	private $job_timeout_in_minutes          = 10;
 
 	/**
 	 * Register hooks
@@ -134,7 +137,7 @@ class WP_Cron_Control_Revisited {
 		// Select only those events to run in the next sixty seconds
 		// Will include missed events as well
 		$current_events = array();
-		$current_window = strtotime( '+60 seconds' );
+		$current_window = strtotime( sprintf( '+%d seconds', $this->job_queue_window_in_seconds ) );
 
 		foreach ( $events as $timestamp => $timestamp_events ) {
 			// Skip non-event data that Core includes in the option
@@ -160,8 +163,8 @@ class WP_Cron_Control_Revisited {
 		}
 
 		// Limit batch size to avoid resource exhaustion
-		if ( count( $current_events ) > $this->batch_size ) {
-			$current_events = array_slice( $current_events, 0, $this->batch_size );
+		if ( count( $current_events ) > $this->job_queue_size ) {
+			$current_events = array_slice( $current_events, 0, $this->job_queue_size );
 		}
 
 		return rest_ensure_response( array(
@@ -186,7 +189,7 @@ class WP_Cron_Control_Revisited {
 		}
 
 		// Ensure we don't run jobs too far ahead
-		if ( $timestamp > strtotime( '+15 seconds' ) ) {
+		if ( $timestamp > strtotime( sprintf( '+%d seconds', $this->job_execution_buffer_in_seconds ) ) ) {
 			return new WP_Error( 'premature', __( 'Event is not scheduled to be run yet.', 'wp-cron-control-revisited' ) );
 		}
 
