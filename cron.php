@@ -155,7 +155,7 @@ class WP_Cron_Control_Revisited {
 				foreach ( $action_instances as $instance => $instance_args ) {
 					$current_events[] = array(
 						'timestamp' => $timestamp,
-						'action'    => $action,
+						'action'    => md5( $action ),
 						'instance'  => $instance,
 					);
 				}
@@ -182,6 +182,7 @@ class WP_Cron_Control_Revisited {
 		$timestamp = isset( $event['timestamp'] ) ? absint( $event['timestamp'] ) : null;
 		$action    = isset( $event['action'] ) ? trim( sanitize_text_field( $event['action'] ) ) : null;
 		$instance  = isset( $event['instance'] ) ? trim( sanitize_text_field( $event['instance'] ) ) : null;
+		unset( $event );
 
 		// Validate input data
 		if ( empty( $timestamp ) || empty( $action ) || empty( $instance ) ) {
@@ -194,26 +195,24 @@ class WP_Cron_Control_Revisited {
 		}
 
 		// Find the event to retrieve the full arguments
-		$events = get_option( 'cron' );
+		$event = $this->get_event( $timestamp, $action, $instance );
 
-		if ( isset( $events[ $timestamp ][ $action ][ $instance ] ) ) {
+		if ( is_array( $event ) ) {
 			// Prepare environment to run job
 			ignore_user_abort( true );
 			set_time_limit( $this->job_timeout_in_minutes * MINUTE_IN_SECONDS );
 			define( 'DOING_CRON', true );
 
-			$event_data = $events[ $timestamp ][ $action ][ $instance ];
-
 			// Remove the event, and reschedule if desired
 			// Follows pattern Core uses in wp-cron.php
-			if ( false !== $event_data['schedule'] ) {
-				wp_reschedule_event( $timestamp, $event_data['schedule'], $action, $event_data['args'] );
+			if ( false !== $event['schedule'] ) {
+				wp_reschedule_event( $timestamp, $event['schedule'], $action, $event['args'] );
 			}
 
-			wp_unschedule_event( $timestamp, $action, $event_data['args'] );
+			wp_unschedule_event( $timestamp, $action, $event['args'] );
 
 			// Run the event
-			do_action_ref_array( $action, $event_data['args'] );
+			do_action_ref_array( $action, $event['args'] );
 
 			return rest_ensure_response( true );
 		} else {
@@ -233,6 +232,25 @@ class WP_Cron_Control_Revisited {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Find an event's data using its hashed representations
+	 */
+	private function get_event( $timestamp, $action_hashed, $instance ) {
+		$events = get_option( 'cron' );
+		$event  = false;
+
+		if ( isset( $events[ $timestamp ] ) ) {
+			foreach ( $events[ $timestamp ] as $action => $action_events ) {
+				if ( hash_equals( md5( $action ), $action_hashed ) && isset( $action_events[ $instance ] ) ) {
+					$event = $action_events[ $instance ];
+					break;
+				}
+			}
+		}
+
+		return $event;
 	}
 }
 
