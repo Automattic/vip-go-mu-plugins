@@ -86,12 +86,14 @@ class WP_Cron_Control_Revisited {
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'get_events' ),
 			'permission_callback' => array( $this, 'check_secret' ),
+			'show_in_index'       => false,
 		) );
 
 		register_rest_route( $this->namespace, '/event/', array(
 			'methods'             => 'PUT',
 			'callback'            => array( $this, 'run_event' ),
 			'permission_callback' => array( $this, 'check_secret' ),
+			'show_in_index'       => false,
 		) );
 	}
 
