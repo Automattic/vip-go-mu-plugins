@@ -153,6 +153,12 @@ class WP_Cron_Control_Revisited {
 			// Extract just the essentials needed to retrieve the full job later on
 			foreach ( $timestamp_events as $action => $action_instances ) {
 				foreach ( $action_instances as $instance => $instance_args ) {
+					// There are some jobs we never care to run
+					if ( $this->is_blocked_event( $action ) ) {
+						wp_unschedule_event( $timestamp, $action, $instance_args['args'] );
+						continue;
+					}
+
 					// Queue internal events separately to avoid them being blocked
 					$queue = $this->is_internal_event( $action ) ? 'internal_events' : 'current_events';
 
@@ -261,6 +267,15 @@ class WP_Cron_Control_Revisited {
 	 */
 	private function is_internal_event( $action ) {
 		return false;
+	}
+
+	/**
+	 * Allow specific events to be blocked perpetually
+	 */
+	private function is_blocked_event( $action ) {
+		$blocked_hooks = array();
+
+		return in_array( $action, $blocked_hooks );
 	}
 }
 
