@@ -32,6 +32,8 @@ class WP_Cron_Control_Revisited {
 	private $namespace = 'wp-cron-control-revisited/v1';
 	private $secret    = null;
 
+	private $batch_size = 10;
+
 	/**
 	 * Register hooks
 	 */
@@ -158,8 +160,8 @@ class WP_Cron_Control_Revisited {
 		}
 
 		// Limit batch size to avoid resource exhaustion
-		if ( count( $current_events ) > 10 ) {
-			$current_events = array_slice( $current_events, 0, 9 );
+		if ( count( $current_events ) > $this->batch_size ) {
+			$current_events = array_slice( $current_events, 0, $this->batch_size );
 		}
 
 		return rest_ensure_response( array(
