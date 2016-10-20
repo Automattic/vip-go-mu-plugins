@@ -101,6 +101,10 @@ class WP_Cron_Control_Revisited {
 	public function get_events() {
 		$events = get_option( 'cron' );
 
+		// To be safe, re-sort the array just as Core does when events are scheduled
+		// Ensures events are sorted chronologically
+		uksort( $events, 'strnatcasecmp' );
+
 		// That was easy
 		if ( ! is_array( $events ) || empty( $events ) ) {
 			return new WP_REST_Response( array( 'events' => null, ) );
@@ -119,7 +123,7 @@ class WP_Cron_Control_Revisited {
 
 			// Skip events whose time hasn't come
 			if ( $timestamp > $current_window ) {
-				continue;
+				break;
 			}
 
 			// Extract just the essentials needed to retrieve the full job later on
@@ -132,6 +136,11 @@ class WP_Cron_Control_Revisited {
 					);
 				}
 			}
+		}
+
+		// Limit batch size to avoid resource exhaustion
+		if ( count( $current_events ) > 10 ) {
+			$current_events = array_slice( $current_events, 0, 9 );
 		}
 
 		return rest_ensure_response( array(
