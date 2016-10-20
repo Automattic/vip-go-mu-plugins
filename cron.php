@@ -66,7 +66,7 @@ class WP_Cron_Control_Revisited {
 	 */
 	public function rest_api_init() {
 		register_rest_route( $this->namespace, '/events/', array(
-			'methods'             => 'GET',
+			'methods'             => 'POST',
 			'callback'            => array( $this, 'get_events' ),
 			'permission_callback' => array( $this, 'check_secret' ),
 		) );
@@ -188,9 +188,11 @@ class WP_Cron_Control_Revisited {
 	/**
 	 * Check if request is authorized
 	 */
-	public function check_secret() {
+	public function check_secret( $request ) {
+		$body = $request->get_json_params();
+
 		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $_GET[ $this->secret ] ) ) {
+		if ( ! isset( $body['secret'] ) || $this->secret !== $body['secret'] ) {
 			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
 		}
 
