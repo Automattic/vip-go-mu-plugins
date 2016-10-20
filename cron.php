@@ -197,6 +197,9 @@ class WP_Cron_Control_Revisited {
 		$events = get_option( 'cron' );
 
 		if ( isset( $events[ $timestamp ][ $action ][ $instance ] ) ) {
+			// Prepare environment to run job
+			ignore_user_abort( true );
+			set_time_limit( $this->job_timeout_in_minutes * MINUTE_IN_SECONDS );
 			define( 'DOING_CRON', true );
 
 			$event_data = $events[ $timestamp ][ $action ][ $instance ];
