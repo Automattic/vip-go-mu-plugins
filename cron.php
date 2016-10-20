@@ -176,12 +176,12 @@ class WP_Cron_Control_Revisited {
 	public function run_event( $request ) {
 		// Parse request
 		$event     = $request->get_json_params();
-		$timestamp = isset( $event['timestamp'] ) ? $event['timestamp'] : null;
-		$action    = isset( $event['action'] ) ? $event['action'] : null;
-		$instance  = isset( $event['instance'] ) ? $event['instance'] : null;
+		$timestamp = isset( $event['timestamp'] ) ? absint( $event['timestamp'] ) : null;
+		$action    = isset( $event['action'] ) ? trim( sanitize_text_field( $event['action'] ) ) : null;
+		$instance  = isset( $event['instance'] ) ? trim( sanitize_text_field( $event['instance'] ) ) : null;
 
 		// Validate input data
-		if ( ! is_int( $timestamp ) || empty( $action ) || empty( $instance ) ) {
+		if ( empty( $timestamp ) || empty( $action ) || empty( $instance ) ) {
 			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data', 'wp-cron-control-revisited' ) );
 		}
 
