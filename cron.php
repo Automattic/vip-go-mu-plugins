@@ -37,9 +37,13 @@ class WP_Cron_Control_Revisited {
 	 */
 	private function __construct() {
 		// Block normal cron execution
+		define( 'DISABLE_WP_CRON', true );
+		define( 'ALTERNATE_WP_CRON', false );
+
 		add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
 		remove_action( 'init', 'wp_cron' );
-		define( 'DISABLE_WP_CRON', true );
+
+		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
 
 		// Load plugin functionality only when conditions are met
 		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
@@ -59,6 +63,19 @@ class WP_Cron_Control_Revisited {
 			status_header( 403 );
 			exit;
 		}
+	}
+
+	/**
+	 * Block the `spawn_cron()` function
+	 */
+	public function block_spawn_cron( $spawn_cron_args ) {
+		delete_transient( 'doing_cron' );
+
+		$spawn_cron_args['url']  = '';
+		$spawn_cron_args['key']  = '';
+		$spawn_cron_args['args'] = array();
+
+		return $spawn_cron_args;
 	}
 
 	/**
