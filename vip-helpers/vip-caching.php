@@ -259,7 +259,7 @@ function wpcom_vip_url_to_postid( $url ) {
 
 	if ( false === $post_id ) {
 		$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
-		wp_cache_set( $cache_key, $post_id, 'url_to_postid' );
+		wp_cache_set( $cache_key, $post_id, 'url_to_postid', 3 * HOUR_IN_SECONDS );
 	}
 
 	return $post_id;
