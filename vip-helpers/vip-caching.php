@@ -549,3 +549,35 @@ function wpcom_vip_enable_cache_full_comment_counts(){
 function wpcom_vip_enable_old_slug_redirect_caching(){
 	add_action('template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
 }
+
+/**
+ * This works by first looking in the cache to see if there is a value saved based on the name query var.
+ * If one is found, redirect immediately. If nothing is found, including that there is no already cache "not_found" value we then add a hook to old_slug_redirect_url so that when the 'rea' wp_old_slug_redirect is run it will store the value in the cache @see wpcom_vip_set_old_slug_redirect_cache(). If we found a not_found we remove the template_redirect so the slow query is not run.
+ */
+function wpcom_vip_wp_old_slug_redirect(){
+	global $wp_query;
+	if ( is_404() && '' !== $wp_query->query_vars['name'] ) {
+
+		$redirect = wp_cache_get('old_slug'. $wp_query->query_vars['name']  );
+
+		if ( false === $redirect ){
+			add_filter('old_slug_redirect_url', 'wpcom_vip_set_old_slug_redirect_cache');
+			//If an old slug is not found the function returns early and does not apply the old_slug_redirect_url filter. so we will set the cache for not found and if it is found it will be overwritten later in wpcom_vip_set_old_slug_redirect_cache()
+			wp_cache_set( 'old_slug'. $wp_query->query_vars['name'], 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand(0, 12 * HOUR_IN_SECONDS ) );
+		} elseif ( 'not_found' === $redirect ){
+			//wpcom_vip_set_old_slug_redirect_cache() will cache 'not_found' when a url is not found so we don't keep hammering the database
+			remove_action( 'template_redirect', 'wp_old_slug_redirect' );
+			return;
+		} else {
+			wp_redirect( $redirect, 301 ); //this is kept to not safe_redirect to match the functionality of wp_old_slug_redirect
+			exit;
+		}
+	}
+}
+function wpcom_vip_set_old_slug_redirect_cache( $link ){
+	global $wp_query;
+	if ( ! empty( $link ) ){
+		wp_cache_set( 'old_slug'. $wp_query->query_vars['name'], $link, 'default', 7 * DAY_IN_SECONDS );
+	}
+	return $link;
+}
