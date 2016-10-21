@@ -39,9 +39,9 @@ function wpcom_vip_get_term_by( $field, $value, $taxonomy, $output = OBJECT, $fi
 	if ( false === $term_id ) {
 		$term = get_term_by( $field, $value, $taxonomy );
 		if ( $term && ! is_wp_error( $term ) )
-			wp_cache_set( $cache_key, $term->term_id, 'get_term_by' );
+			wp_cache_set( $cache_key, $term->term_id, 'get_term_by', 4 * HOUR_IN_SECONDS );
 		else
-			wp_cache_set( $cache_key, 0, 'get_term_by' ); // if we get an invalid value, let's cache it anyway
+			wp_cache_set( $cache_key, 0, 'get_term_by', 15 * MINUTE_IN_SECONDS ); // if we get an invalid value, let's cache it anyway but for a shorter period of time
 	} else {
 		$term = get_term( $term_id, $taxonomy, $output, $filter );
 	}
