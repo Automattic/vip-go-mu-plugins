@@ -389,3 +389,107 @@ function wpcom_vip_get_nav_menu_object( $menu ) {
 
 	return $menu_obj;
 }
+
+/**
+ * Retrieve adjacent post.
+ *
+ * Can either be next or previous post. The logic for excluding terms is handled within PHP, for performance benefits.
+ * Props to Elliott Stocks
+ *
+ * @global wpdb $wpdb
+ *
+ * @param bool         $in_same_term   Optional. Whether post should be in a same taxonomy term. Note - only the first term will be used from wp_get_object_terms().
+ * @param int 	       $excluded_term  Optional. The term to exclude.
+ * @param bool         $previous       Optional. Whether to retrieve previous post.
+ * @param string       $taxonomy       Optional. Taxonomy, if $in_same_term is true. Default 'category'.
+ *
+ * @return null|string|WP_Post Post object if successful. Null if global $post is not set. Empty string if no corresponding post exists.
+ */
+function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '', $previous = true, $taxonomy = 'category', $adjacent = '' ) {
+	global $wpdb;
+	if ( ( ! $post = get_post() ) || ! taxonomy_exists( $taxonomy ) ) {
+		return null;
+	}
+	$join = '';
+	$where = '';
+	$current_post_date = $post->post_date;
+
+	if ( $in_same_term ) {
+		if ( is_object_in_taxonomy( $post->post_type, $taxonomy ) ) {
+			$term_array = get_the_terms( $post->ID, $taxonomy );
+			if ( ! empty( $term_array ) && ! is_wp_error( $term_array ) ) {
+				$term_array_ids = wp_list_pluck( $term_array, 'term_id' );
+				// Remove any exclusions from the term array to include.
+				$excluded_terms = explode( ',', $excluded_terms );
+				if ( ! empty( $excluded_terms ) ){
+					$term_array_ids = array_diff( $term_array_ids, (array) $excluded_terms );
+				}
+				if ( ! empty ( $term_array_ids ) ){
+					$term_array_ids = array_map( 'intval', $term_array_ids );
+					$term_id_to_search = array_pop( $term_array_ids ); // only allow for a single term to be used. picked pseudo randomly
+				}else{
+					$term_id_to_search = false;
+				}
+
+				$term_id_to_search = apply_filters( 'wpcom_vip_limit_adjacent_post_term_id', $term_id_to_search, $term_array_ids, $excluded_terms, $taxonomy, $previous );
+
+				if ( ! empty( $term_id_to_search ) ){ //allow filters to short circuit by returning a empty like value
+					$join = " INNER JOIN $wpdb->term_relationships AS tr ON p.ID = tr.object_id INNER JOIN $wpdb->term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id"; //Only join if we are sure there is a term
+					$where = $wpdb->prepare( "AND tt.taxonomy = %s AND tt.term_id IN (%d)  ", $taxonomy,$term_id_to_search ); //
+				}
+			}
+		}
+	}
+
+	$op = $previous ? '<' : '>';
+	$order = $previous ? 'DESC' : 'ASC';
+	$limit = 1;
+	// We need 5 posts so we can filter the excluded term later on
+	if ( ! empty ( $excluded_term ) ) {
+		$limit = 5;
+	}
+	$sort  = "ORDER BY p.post_date $order LIMIT $limit";
+	$where = $wpdb->prepare( "WHERE p.post_date $op %s AND p.post_type = %s AND p.post_status = 'publish' $where", $current_post_date, $post->post_type );
+	$query = "SELECT p.ID FROM $wpdb->posts AS p $join $where $sort";
+
+	$found_post = ''; // blank instead of false so not found is cached.
+	$query_key = 'wpcom_vip_adjacent_post_' . md5( $query );
+	$cached_result = wp_cache_get( $query_key );
+
+	if( "not found" === $cached_result){
+		return false;
+	} else if ( false !== $cached_result ) {
+		return get_post( $cached_result );
+	}
+
+	if ( empty ( $excluded_term ) ) {
+		$result = $wpdb->get_var( $query );
+	} else {
+		$result = $wpdb->get_results( $query );
+	}
+
+	// Find the first post which doesn't have an excluded term
+	if ( ! empty ( $excluded_term ) ) {
+		foreach ( $result as $result_post ) {
+			$post_terms = get_the_terms( $result_post, $taxonomy );
+			$terms_array = wp_list_pluck( $post_terms, 'term_id' );
+			if ( ! in_array( $excluded_term, $terms_array ) ) {
+				$found_post = $result_post->ID;
+				break;
+			}
+		}
+	} else {
+		$found_post = $result;
+	}
+
+	//If the post isn't found lets cache a value we'll check against. Add some variation in the caching so if a site is being crawled all the caches don't get created all the time.
+	if ( empty( $found_post ) ){
+		wp_cache_set( $query_key, "not found", 'default', 15 * MINUTE_IN_SECONDS + rand( 0, 15 * MINUTE_IN_SECONDS ) );
+		return false;
+	}
+
+	wp_cache_set( $query_key, $found_post, 'default', 6 * HOUR_IN_SECONDS + rand( 0, 2 * HOUR_IN_SECONDS ) );
+	$found_post = get_post( $found_post );
+
+	return $found_post;
+}
