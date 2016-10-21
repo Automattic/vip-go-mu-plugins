@@ -133,7 +133,7 @@ function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ){
  *
  * @return string|WP_Error HTML link to taxonomy term archive on success, WP_Error if term does not exist.
  */
-function wpcom_vip_get_term_link( $term, $taxonomy ) {
+function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 	// ID- or object-based lookups already result in cached lookups, so we can ignore those.
 	if ( is_numeric( $term ) || is_object( $term ) ) {
 		return get_term_link( $term, $taxonomy );
