@@ -225,8 +225,10 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_title_cache',
  * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_flush_get_page_by_path_cache( $new_status, $old_status, $post ) {
-	if ( 'publish' === $new_status || 'publish' === $old_status )
-		wp_cache_delete( $post->post_type . '_' . sanitize_key( $post->post_name ), 'get_page_by_path' );
+	if ( 'publish' === $new_status || 'publish' === $old_status ) {
+		$page_path = get_page_uri( $post->ID );
+		wp_cache_delete( $post->post_type . '_' . sanitize_key( $page_path ), 'get_page_by_path' );
+	}
 }
 add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 10, 3 );
 
