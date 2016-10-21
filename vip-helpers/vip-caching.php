@@ -277,6 +277,7 @@ add_action( 'transition_post_status', function( $new_status, $old_status, $post 
  * Cached version of wp_old_slug_redirect.
  *
  * Cache the results of the _wp_old_slug meta query, which can be expensive.
+ * @deprecated use wpcom_vip_wp_old_slug_redirect instead
  */
 function wpcom_vip_old_slug_redirect() {
     global $wp_query;
@@ -332,8 +333,6 @@ function wpcom_vip_old_slug_redirect() {
         exit;
     endif;
 }
-remove_filter( 'template_redirect', 'wp_old_slug_redirect' );
-add_action( 'template_redirect', 'wpcom_vip_old_slug_redirect' );
 
 /**
  * Cached version of count_user_posts, which is uncached but doesn't always need to hit the db
