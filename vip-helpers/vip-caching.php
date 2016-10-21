@@ -129,9 +129,9 @@ function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ){
  * Returns permalink for a taxonomy term archive, or a WP_Error object if the term does not exist.
  *
  * @param int|string|object $term The term object / term ID / term slug whose link will be retrieved.
- * @param string $taxonomy The taxonomy slug. NOT required if you pass the term object in the first parameter
+ * @param string $taxonomy The taxonomy slug. NOT required if you pass the term object in the first parameter 
  *
- * @return string|WP_Error HTML link to taxonomy term archive on success, WP_Error if term does not exist.
+ * @return string|WP_Error HTML link to taxonomy term archive on success, WP_Error if term does not exist. 
  */
 function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 	// ID- or object-based lookups already result in cached lookups, so we can ignore those.
@@ -236,7 +236,7 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 
  * Cached version of url_to_postid, which can be expensive.
  *
  * Examine a url and try to determine the post ID it represents.
- *
+ * 
  * @param string $url Permalink to check.
  * @return int Post ID, or 0 on failure.
  */
@@ -334,11 +334,12 @@ function wpcom_vip_old_slug_redirect() {
     endif;
 }
 
+
 /**
  * Cached version of count_user_posts, which is uncached but doesn't always need to hit the db
  *
  * count_user_posts is generally fast, but it can be easy to end up with many redundant queries
- * if it's called several times per request. This allows bypassing the db queries in favor of
+ * if it's called several times per request. This allows bypassing the db queries in favor of 
  * the cache
  */
 function wpcom_vip_count_user_posts( $user_id ) {
