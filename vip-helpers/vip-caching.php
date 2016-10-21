@@ -391,6 +391,78 @@ function wpcom_vip_get_nav_menu_object( $menu ) {
 }
 
 /**
+ * Require the Stampedeless_Cache class for use in our helper functions below.
+ *
+ * The Stampedeless_Cache helps prevent cache stampedes by internally varying the cache
+ * expiration slightly when creating a cache entry in an effort to avoid multiple keys
+ * expiring simultaneously and allowing a single request to regenerate the cache shortly
+ * before it's expiration.
+ */
+if( function_exists( 'require_lib' ) && defined( 'WPCOM_IS_VIP_ENV' ) && WPCOM_IS_VIP_ENV )
+	require_lib( 'class.stampedeless-cache' );
+
+/**
+ * Drop in replacement for wp_cache_set().
+ *
+ * Wrapper for the WPCOM Stampedeless_Cache class.
+ *
+ * @param string $key Cache key.
+ * @param string|int|array|object $value Data to store in the cache.
+ * @param string $group Optional. Cache group.
+ * @param int $expiration Optional. Cache TTL in seconds.
+ * @return bool This function always returns true.
+ */
+function wpcom_vip_cache_set( $key, $value, $group = '', $expiration = 0 ) {
+	if( ! class_exists( 'Stampedeless_Cache' ) )
+		return wp_cache_set( $key, $value, $group, $expiration );
+
+	$sc = new Stampedeless_Cache( $key, $group );
+	$sc->set( $value, $expiration );
+
+	return true;
+}
+
+/**
+ * Drop in replacement for wp_cache_get().
+ *
+ * Wrapper for the WPCOM Stampedeless_Cache class.
+ *
+ * @param string $key Cache key.
+ * @param string $group Optional. Cache group.
+ * @return mixed Returns false if failing to retrieve cache entry or the cached data otherwise.
+ */
+function wpcom_vip_cache_get( $key, $group = '' ) {
+	if( ! class_exists( 'Stampedeless_Cache' ) )
+		return wp_cache_get( $key, $group );
+
+	$sc = new Stampedeless_Cache( $key, $group );
+
+	return $sc->get();
+}
+
+/**
+ * Drop in replacement for wp_cache_delete().
+ *
+ * Wrapper for WPCOM Stampedeless_Cache class.
+ *
+ * @param string $key Cache key.
+ * @param string $group Optional. Cache group.
+ * @return bool True on successful removal, false on failure.
+ */
+function wpcom_vip_cache_delete( $key, $group = '' ) {
+	//delete cache itself
+	$deleted = wp_cache_delete( $key, $group );
+	
+	if ( class_exists( 'Stampedeless_Cache' ) ) {
+		//delete lock
+		$lock_key = $key . '_lock';
+		wp_cache_delete( $lock_key, $group );
+	}
+
+	return $deleted;
+}
+
+/**
  * Retrieve adjacent post.
  *
  * Can either be next or previous post. The logic for excluding terms is handled within PHP, for performance benefits.
