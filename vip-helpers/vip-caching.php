@@ -357,3 +357,34 @@ function wpcom_vip_count_user_posts( $user_id ) {
 
     return $count;
 }
+
+/*
+ * Cached version of wp_get_nav_menu_object
+ *
+ * Many calls to get_term_by (with name or slug lookup as used inside the wp_get_nav_menu_object) across on a single pageload can easily add up the query count.
+ * This function helps prevent that by taking advantage of wpcom_vip_get_term_by function which adds a layer of caching.
+ *
+ * @param string $menu Menu ID, slug, or name.
+ * @uses wpcom_vip_get_term_by
+ * @return mixed false if $menu param isn't supplied or term does not exist, menu object if successful.
+ */
+function wpcom_vip_get_nav_menu_object( $menu ) {
+	if ( ! $menu )
+		return false;
+
+	$menu_obj = get_term( $menu, 'nav_menu' );
+
+	if ( ! $menu_obj ) {
+		$menu_obj = wpcom_vip_get_term_by( 'slug', $menu, 'nav_menu' );
+	}
+
+	if ( ! $menu_obj ) {
+		$menu_obj = wpcom_vip_get_term_by( 'name', $menu, 'nav_menu' );
+	}
+
+	if ( ! $menu_obj ) {
+		$menu_obj = false;
+	}
+
+	return $menu_obj;
+}
