@@ -518,7 +518,7 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return bool True on success
 	 */
 	public function queue_purge_url( $url ) {
-		$url = esc_url( $url );
+		$url = esc_url_raw( $url );
 		$url = wp_http_validate_url( $url );
 		if ( false === $url ) {
 			return false;
