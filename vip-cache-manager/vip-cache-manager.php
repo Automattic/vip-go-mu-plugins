@@ -43,7 +43,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function init() {
-		if ( is_super_admin() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
+		if ( isset( $_GET['cm_purge_all'] ) && current_user_can( 'wpcom_vip_cache_manager_purge_entire_site' ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
@@ -69,7 +69,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		$nobutton_html =  esc_html__( 'You do not have permission to purge the cache for the whole site. Please contact your administrator.' );
 
-		if ( is_super_admin() ) {
+		if ( current_user_can( 'wpcom_vip_cache_manager_purge_entire_site' ) ) {
 			echo "<p>$button_html</p>\n";
 		} else {
 			echo "<p>$nobutton_html</p>\n";
