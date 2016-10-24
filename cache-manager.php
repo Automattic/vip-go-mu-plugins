@@ -236,10 +236,8 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
-		$post_type = get_post_type( $post_id );
-
 		// Only send PURGE requests for public post types
-		if ( ! is_post_type_viewable( $post_type ) ) {
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
 			return;
 		}
 
@@ -247,7 +245,7 @@ class WPCOM_VIP_Cache_Manager {
 		$this->purge_urls[] = trailingslashit( home_url() );
 
 		// Don't just purge the attachment page, but also include the file itself
-		if ( 'attachment' === $post_type ) {
+		if ( 'attachment' === $post->post_type ) {
 			$this->purge_urls[] = wp_get_attachment_url( $post_id );
 		}
 
