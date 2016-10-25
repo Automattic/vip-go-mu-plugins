@@ -145,9 +145,7 @@ class WP_Cron_Control_Revisited {
 	 * Include custom schedules used for internal jobs
 	 */
 	public function register_internal_events_schedules( $schedules ) {
-		$schedules = array_merge( $schedules, $this->internal_jobs_schedules );
-
-		return $schedules;
+		return array_merge( $schedules, $this->internal_jobs_schedules );
 	}
 
 	/**
