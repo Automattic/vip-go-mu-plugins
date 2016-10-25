@@ -37,6 +37,9 @@ class WP_Cron_Control_Revisited {
 	private $job_execution_buffer_in_seconds = 15;
 	private $job_timeout_in_minutes          = 10;
 
+	private $internal_jobs           = array();
+	private $internal_jobs_schedules = array();
+
 	/**
 	 * Register hooks
 	 */
@@ -52,12 +55,43 @@ class WP_Cron_Control_Revisited {
 
 			add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
 
-			$this->secret = WP_CRON_CONTROL_SECRET;
-
+			// Core plugin functionality
+			$this->prepare_vars();
 			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
+			add_filter( 'cron_schedules', array( $this, 'register_internal_events_schedules' ) );
+			add_action( 'admin_init', array( $this, 'schedule_internal_events' ) );
 		} else {
 			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
 		}
+	}
+
+	/**
+	 * Set additional variables required for plugin functionality
+	 */
+	private function prepare_vars() {
+		$this->secret = WP_CRON_CONTROL_SECRET;
+
+		$this->internal_jobs = array(
+			'wpccrij_force_publish' => array(
+				'schedule' => 'wpccrij_minute',
+				'action'   => 'wpccrij_force_publish_missed_schedules',
+			),
+			'wpccrij_confirm_scheduled_posts' => array(
+				'schedule' => 'wpccrij_ten_minutes',
+				'action'   => 'wpccrij_confirm_scheduled_posts',
+			),
+		);
+
+		$this->internal_jobs_schedules = array(
+			'wpccrij_minute' => array(
+				'interval' => 1 * MINUTE_IN_SECONDS,
+				'display' => __( 'WP Cron Control Revisited internal job - every minute', 'wp-cron-control-revisited' ),
+			),
+			'wpccrij_ten_minutes' => array(
+				'interval' => 10 * MINUTE_IN_SECONDS,
+				'display' => __( 'WP Cron Control Revisited internal job - every 10 minutes', 'wp-cron-control-revisited' ),
+			),
+		);
 	}
 
 	/**
@@ -100,6 +134,28 @@ class WP_Cron_Control_Revisited {
 			'permission_callback' => array( $this, 'check_secret' ),
 			'show_in_index'       => false,
 		) );
+	}
+
+	/**
+	 * Include custom schedules used for internal jobs
+	 */
+	public function register_internal_events_schedules( $schedules ) {
+		$schedules = array_merge( $schedules, $this->internal_jobs_schedules );
+
+		return $schedules;
+	}
+
+	/**
+	 * Schedule internal jobs
+	 */
+	public function schedule_internal_events() {
+		$when = strtotime( sprintf( '+%d seconds', 2 * $this->job_queue_window_in_seconds ) );
+
+		foreach ( $this->internal_jobs as $job => $job_args ) {
+			if ( ! wp_next_scheduled( $job_args['action'] ) ) {
+				wp_schedule_event( $when, $job_args['schedule'], $job_args['action'] );
+			}
+		}
 	}
 
 	/**
@@ -270,7 +326,7 @@ class WP_Cron_Control_Revisited {
 	 * Events that are always run, regardless of how many jobs are queued
 	 */
 	private function is_internal_event( $action ) {
-		return false;
+		return array_key_exists( $action, $this->internal_jobs );
 	}
 
 	/**
