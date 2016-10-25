@@ -287,7 +287,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		if ( 'publish' !== get_post_status( $post_id ) ) {
-			return
+			return;
 		}
 
 		$fields = apply_filters( 'wpcom_vip_cache_purge_on_updated_fields', array( 'post_title', 'post_excerpt' ), $post );
