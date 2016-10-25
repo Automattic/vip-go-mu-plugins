@@ -41,17 +41,17 @@ class WP_Cron_Control_Revisited {
 	 * Register hooks
 	 */
 	private function __construct() {
-		// Block normal cron execution
-		define( 'DISABLE_WP_CRON', true );
-		define( 'ALTERNATE_WP_CRON', false );
-
-		add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
-		remove_action( 'init', 'wp_cron' );
-
-		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
-
 		// Load plugin functionality, when conditions are met
 		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
+			// Block normal cron execution
+			define( 'DISABLE_WP_CRON', true );
+			define( 'ALTERNATE_WP_CRON', false );
+
+			add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
+			remove_action( 'init', 'wp_cron' );
+
+			add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
+
 			$this->secret = WP_CRON_CONTROL_SECRET;
 
 			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
