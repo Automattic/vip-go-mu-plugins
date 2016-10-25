@@ -230,20 +230,6 @@ class WP_Cron_Control_Revisited {
 	}
 
 	/**
-	 * Check if request is authorized
-	 */
-	public function check_secret( $request ) {
-		$body = $request->get_json_params();
-
-		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $body['secret'] ) || $this->secret !== $body['secret'] ) {
-			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
-		}
-
-		return true;
-	}
-
-	/**
 	 * Find an event's data using its hashed representations
 	 */
 	private function get_event( $timestamp, $action_hashed, $instance ) {
@@ -260,6 +246,24 @@ class WP_Cron_Control_Revisited {
 		}
 
 		return $event;
+	}
+
+	/**
+	 * PLUGIN UTILITY METHODS
+	 */
+
+	/**
+	 * Check if request is authorized
+	 */
+	public function check_secret( $request ) {
+		$body = $request->get_json_params();
+
+		// For now, mimic original plugin's "authentication" method. This needs to be better.
+		if ( ! isset( $body['secret'] ) || $this->secret !== $body['secret'] ) {
+			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
+		}
+
+		return true;
 	}
 
 	/**
