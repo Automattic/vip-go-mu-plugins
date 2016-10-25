@@ -188,6 +188,10 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	function execute_purges() {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
 		$this->ban_urls = array_unique( $this->ban_urls );
 		$this->purge_urls = array_unique( $this->purge_urls );
 
@@ -236,11 +240,16 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
+		// Only send PURGE requests for public post types
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
+
 		$this->purge_urls[] = get_permalink( $post_id );
 		$this->purge_urls[] = trailingslashit( home_url() );
 
 		// Don't just purge the attachment page, but also include the file itself
-		if ( 'attachment' === get_post_type( $post_id ) ) {
+		if ( 'attachment' === $post->post_type ) {
 			$this->purge_urls[] = wp_get_attachment_url( $post_id );
 		}
 
