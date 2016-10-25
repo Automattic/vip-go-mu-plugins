@@ -44,6 +44,11 @@ class WP_Cron_Control_Revisited {
 	 * Register hooks
 	 */
 	private function __construct() {
+		// For now, leave WP-CLI alone
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return;
+		}
+
 		// Load plugin functionality, when conditions are met
 		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
 			// Block normal cron execution
