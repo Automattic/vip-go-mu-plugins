@@ -35,6 +35,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 3 );
 		add_action( 'transition_post_status', array( $this, 'transition_post_status' ), 10, 3 );
+		add_action( 'post_updated', array( $this, 'post_updated' ), 10, 3 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
@@ -268,6 +269,39 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 		
+		$this->clear_feed_urls( $post );
+	}
+
+	function post_updated( $post_id, $post, $old_post ) {
+		if ( $this->site_cache_purged ) {
+			return;
+		}
+
+		if ( defined( 'WP_IMPORTING' ) ) {
+			return;
+		}
+
+		// Only send PURGE requests for public post types
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
+
+		if ( 'publish' !== get_post_status( $post_id ) ) {
+			return
+		}
+
+		$fields = apply_filters( 'wpcom_vip_cache_purge_on_updated_fields', array( 'post_title', 'post_excerpt' ), $post );
+
+		// PURGE all feeds if one of the whitelisted fields is updated
+		foreach( $fields as $field ) {
+			if ( $post->{$field} != $old_post->{$field} ) {
+				$this->clear_feed_urls( $post );
+				return;
+			}
+		}
+	}
+
+	function clear_feed_urls( $post ) {
 		$this->purge_urls[] = trailingslashit( home_url() );
 
 		// Don't just purge the attachment page, but also include the file itself
