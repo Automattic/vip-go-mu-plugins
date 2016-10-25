@@ -25,6 +25,9 @@ add_filter( 'jetpack_force_2fa_dependency_notice', '__return_false' );
 // Cleaner permalink options
 add_filter( 'got_url_rewrite', '__return_true' );
 
+// Disable custom fields meta box dropdown (very slow)
+add_filter( 'postmeta_form_keys', '__return_false' );
+
 // Checking for VIP_GO_ENV allows this code to work outside VIP Go environments,
 // albeit without concatenation of JS and CSS.
 if ( defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV ) {
