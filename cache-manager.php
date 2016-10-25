@@ -269,7 +269,7 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 		
-		$this->clear_feed_urls( $post );
+		$this->clear_related_urls( $post );
 	}
 
 	function post_updated( $post_id, $post, $old_post ) {
@@ -295,13 +295,13 @@ class WPCOM_VIP_Cache_Manager {
 		// PURGE all feeds if one of the whitelisted fields is updated
 		foreach( $fields as $field ) {
 			if ( $post->{$field} != $old_post->{$field} ) {
-				$this->clear_feed_urls( $post );
+				$this->clear_related_urls( $post );
 				return;
 			}
 		}
 	}
 
-	function clear_feed_urls( $post ) {
+	function clear_related_urls( $post ) {
 		$this->purge_urls[] = trailingslashit( home_url() );
 
 		// Don't just purge the attachment page, but also include the file itself
