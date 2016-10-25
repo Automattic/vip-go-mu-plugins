@@ -261,6 +261,7 @@ class WP_Cron_Control_Revisited {
 
 		// Find the event to retrieve the full arguments
 		$event = $this->get_event( $timestamp, $action, $instance );
+		unset( $timestamp, $action, $instance );
 
 		if ( is_array( $event ) ) {
 			// Prepare environment to run job
@@ -271,13 +272,13 @@ class WP_Cron_Control_Revisited {
 			// Remove the event, and reschedule if desired
 			// Follows pattern Core uses in wp-cron.php
 			if ( false !== $event['schedule'] ) {
-				wp_reschedule_event( $timestamp, $event['schedule'], $action, $event['args'] );
+				wp_reschedule_event( $event['timestamp'], $event['schedule'], $event['action'], $event['args'] );
 			}
 
-			wp_unschedule_event( $timestamp, $action, $event['args'] );
+			wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
 
 			// Run the event
-			do_action_ref_array( $action, $event['args'] );
+			do_action_ref_array( $event['action'], $event['args'] );
 
 			return rest_ensure_response( true );
 		} else {
@@ -295,7 +296,9 @@ class WP_Cron_Control_Revisited {
 		if ( isset( $events[ $timestamp ] ) ) {
 			foreach ( $events[ $timestamp ] as $action => $action_events ) {
 				if ( hash_equals( md5( $action ), $action_hashed ) && isset( $action_events[ $instance ] ) ) {
-					$event = $action_events[ $instance ];
+					$event              = $action_events[ $instance ];
+					$event['action']    = $action;
+					$event['timestamp'] = $timestamp;
 					break;
 				}
 			}
