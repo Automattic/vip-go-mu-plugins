@@ -359,7 +359,6 @@ class WPCOM_VIP_Cache_Manager {
 		 * during initial code review and pre-deployment review where we
 		 * see issues.
 		 *
-		 * @deprecated 1.1 Use `wpcom_vip_cache_purge_post_urls` instead
 		 * @param array $this->purge_urls {
 		 *     An array of URLs for you to add to
 		 * }
