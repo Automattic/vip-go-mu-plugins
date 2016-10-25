@@ -34,6 +34,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_term_purge' ), 10, 3 );
+		add_action( 'transition_post_status', array( $this, 'transition_post_status' ), 10, 3 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
@@ -246,11 +247,32 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		$this->purge_urls[] = get_permalink( $post_id );
+	}
+	
+	function transition_post_status( $new, $old, $post ) {
+		if ( $this->site_cache_purged ) {
+			return;
+		}
+		
+		if ( defined( 'WP_IMPORTING' ) ) {
+			return;
+		}
+		
+		// Only send PURGE requests for public post types
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
+		
+		// Don't PURGE if we're not transitioning to or from publish
+		if ( $new === $old || ( $new != 'publish' && $old != 'publish' ) ) {
+			return;
+		}
+		
 		$this->purge_urls[] = trailingslashit( home_url() );
 
 		// Don't just purge the attachment page, but also include the file itself
 		if ( 'attachment' === $post->post_type ) {
-			$this->purge_urls[] = wp_get_attachment_url( $post_id );
+			$this->purge_urls[] = wp_get_attachment_url( $post->ID );
 		}
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
@@ -260,7 +282,7 @@ class WPCOM_VIP_Cache_Manager {
 				continue;
 			}
 			$taxonomy_name = $taxonomy->name;
-			$terms = get_the_terms( $post_id, $taxonomy_name );
+			$terms = get_the_terms( $post->ID, $taxonomy_name );
 			if ( false === $terms ) {
 				continue;
 			}
@@ -276,7 +298,7 @@ class WPCOM_VIP_Cache_Manager {
 			get_bloginfo('atom_url'),
 			get_bloginfo('comments_atom_url'),
 			get_bloginfo('comments_rss2_url'),
-			get_post_comments_feed_link( $post_id )
+			get_post_comments_feed_link( $post->ID )
 		);
 
 		foreach ( $feeds as $feed ) {
@@ -303,7 +325,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 * @param type  $post_id The ID of the post which is the primary reason for the purge
 		 */
-		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post_id );
+		$this->purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $this->purge_urls, $post->ID );
 	}
 
 	/**
