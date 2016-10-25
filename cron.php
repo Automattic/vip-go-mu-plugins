@@ -65,6 +65,7 @@ class WP_Cron_Control_Revisited {
 			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 			add_filter( 'cron_schedules', array( $this, 'register_internal_events_schedules' ) );
 			add_action( 'admin_init', array( $this, 'schedule_internal_events' ) );
+			add_action( 'wpccrij_force_publish_missed_schedules', array( $this, 'force_publish_missed_schedules' ) );
 		} else {
 			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
 		}
@@ -342,6 +343,22 @@ class WP_Cron_Control_Revisited {
 		$blocked_hooks = array();
 
 		return in_array( $action, $blocked_hooks );
+	}
+
+	/**
+	 * Published scheduled posts that miss their schedule
+	 */
+	public function force_publish_missed_schedules() {
+		global $wpdb;
+
+		$missed_posts = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date <= %s LIMIT 100;", current_time( 'mysql', false ) ) );
+
+		if ( is_array( $missed_posts ) && ! empty( $missed_posts ) ) {
+			foreach ( $missed_posts as $missed_post ) {
+				check_and_publish_future_post( $missed_post );
+				do_action( 'wpccr_published_post_that_missed_schedule', $missed_post );
+			}
+		}
 	}
 }
 
