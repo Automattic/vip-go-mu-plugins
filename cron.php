@@ -64,8 +64,9 @@ class WP_Cron_Control_Revisited {
 			$this->prepare_vars();
 			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 			add_filter( 'cron_schedules', array( $this, 'register_internal_events_schedules' ) );
-			add_action( 'admin_init', array( $this, 'schedule_internal_events' ) );
+			add_action( 'muplugins_loaded', array( $this, 'schedule_internal_events' ), 11 );
 			add_action( 'wpccrij_force_publish_missed_schedules', array( $this, 'force_publish_missed_schedules' ) );
+			add_action( 'wpccrij_confirm_scheduled_posts', array( $this, 'confirm_scheduled_posts' ) );
 		} else {
 			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
 		}
@@ -357,6 +358,30 @@ class WP_Cron_Control_Revisited {
 			foreach ( $missed_posts as $missed_post ) {
 				check_and_publish_future_post( $missed_post );
 				do_action( 'wpccr_published_post_that_missed_schedule', $missed_post );
+			}
+		}
+	}
+
+	/**
+	 * Ensure scheduled posts have a corresponding cron job to publish them
+	 */
+	public function confirm_scheduled_posts() {
+		global $wpdb;
+
+		$future_posts = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_date FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date > %s LIMIT 100;", current_time( 'mysql', false ) ) );
+
+		if ( is_array( $future_posts ) && ! empty( $future_posts ) ) {
+			foreach ( $future_posts as $future_post ) {
+				$future_post->ID = absint( $future_post->ID );
+				$gmt_time        = strtotime( get_gmt_from_date( $future_post->post_date ) . ' GMT' );
+				$timestamp       = wp_next_scheduled( 'publish_future_post', array( $future_post->ID ) );
+
+				if ( false === $timestamp ) {
+					wp_schedule_single_event( $gmt_time, 'publish_future_post', array( $future_post->ID ) );
+				} elseif ( (int) $timestamp !== $gmt_time ) {
+					wp_clear_scheduled_hook( 'publish_future_post', array( (int) $future_post->ID ) );
+					wp_schedule_single_event( $gmt_time, 'publish_future_post', array( $future_post->ID ) );
+				}
 			}
 		}
 	}
