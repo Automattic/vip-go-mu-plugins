@@ -206,6 +206,11 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function execute_purges() {
+
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
 		$this->ban_urls = array_unique( $this->ban_urls );
 		$this->purge_urls = array_unique( $this->purge_urls );
 

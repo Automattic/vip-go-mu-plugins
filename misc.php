@@ -19,8 +19,14 @@ function wpcom_vip_check_for_404_and_remove_cache_headers( $headers ) {
 }
 add_filter( 'nocache_headers', 'wpcom_vip_check_for_404_and_remove_cache_headers' );
 
+// Disable admin notice for jetpack_force_2fa
+add_filter( 'jetpack_force_2fa_dependency_notice', '__return_false' );
+
 // Cleaner permalink options
 add_filter( 'got_url_rewrite', '__return_true' );
+
+// Disable custom fields meta box dropdown (very slow)
+add_filter( 'postmeta_form_keys', '__return_false' );
 
 // Checking for VIP_GO_ENV allows this code to work outside VIP Go environments,
 // albeit without concatenation of JS and CSS.
@@ -116,4 +122,21 @@ if ( defined( 'VIP_CUSTOM_PINGS' ) && true === VIP_CUSTOM_PINGS ) {
 		// Do Update Services/Generic Pings
 		generic_ping();
 	});
+}
+
+/**
+ * On Go, all API usage must be over HTTPS for security
+ *
+ * Filter `rest_url` to always return the https:// version
+ *
+ * If this must be disabled for local development, the filter
+ * can be removed, but be aware that HTTPS is enforced at the web server
+ * level in production, meaning non-HTTPS API calls will result in a 406 error.
+ */
+add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl' );
+
+function _vip_filter_rest_url_for_ssl( $url ) {
+	$url = set_url_scheme( $url, 'https' );
+
+	return $url;
 }
