@@ -79,11 +79,11 @@ class WP_Cron_Control_Revisited {
 		$this->secret = WP_CRON_CONTROL_SECRET;
 
 		$this->internal_jobs = array(
-			'wpccrij_force_publish' => array(
+			array(
 				'schedule' => 'wpccrij_minute',
 				'action'   => 'wpccrij_force_publish_missed_schedules',
 			),
-			'wpccrij_confirm_scheduled_posts' => array(
+			array(
 				'schedule' => 'wpccrij_ten_minutes',
 				'action'   => 'wpccrij_confirm_scheduled_posts',
 			),
@@ -156,7 +156,7 @@ class WP_Cron_Control_Revisited {
 	public function schedule_internal_events() {
 		$when = strtotime( sprintf( '+%d seconds', 2 * $this->job_queue_window_in_seconds ) );
 
-		foreach ( $this->internal_jobs as $job => $job_args ) {
+		foreach ( $this->internal_jobs as $job_args ) {
 			if ( ! wp_next_scheduled( $job_args['action'] ) ) {
 				wp_schedule_event( $when, $job_args['schedule'], $job_args['action'] );
 			}
@@ -336,7 +336,7 @@ class WP_Cron_Control_Revisited {
 	 * Events that are always run, regardless of how many jobs are queued
 	 */
 	private function is_internal_event( $action ) {
-		return array_key_exists( $action, $this->internal_jobs );
+		return in_array( $action, wp_list_pluck( $this->internal_jobs, 'action' ) );
 	}
 
 	/**
