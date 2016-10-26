@@ -278,7 +278,8 @@ class WP_Cron_Control_Revisited {
 			// Remove the event, and reschedule if desired
 			// Follows pattern Core uses in wp-cron.php
 			if ( false !== $event['schedule'] ) {
-				wp_reschedule_event( $event['timestamp'], $event['schedule'], $event['action'], $event['args'] );
+				$reschedule_args = array( $event['timestmap'], $event['schedule'], $event['action'], $event['args'] );
+				call_user_func_array( 'wp_reschedule_event', $reschedule_args );
 			}
 
 			wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
