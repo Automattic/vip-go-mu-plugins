@@ -378,9 +378,11 @@ class WP_Cron_Control_Revisited {
 
 				if ( false === $timestamp ) {
 					wp_schedule_single_event( $gmt_time, 'publish_future_post', array( $future_post->ID ) );
+					do_action( 'wpccr_publish_scheduled', $future_post->ID );
 				} elseif ( (int) $timestamp !== $gmt_time ) {
 					wp_clear_scheduled_hook( 'publish_future_post', array( (int) $future_post->ID ) );
 					wp_schedule_single_event( $gmt_time, 'publish_future_post', array( $future_post->ID ) );
+					do_action( 'wpccr_publish_rescheduled', $future_post->ID );
 				}
 			}
 		}
