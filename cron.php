@@ -117,7 +117,7 @@ class WP_Cron_Control_Revisited {
 	public function block_direct_cron() {
 		if ( false !== strpos( $_SERVER['REQUEST_URI'], '/wp-cron.php' ) ) {
 			status_header( 403 );
-			exit;
+			wp_send_json_error( new WP_Error( 'forbidden', sprintf( __( 'Normal cron execution is blocked when the %s plugin is active.', 'wp-cron-control-revisited' ), 'WP-Cron Control Revisited' ) ) );
 		}
 	}
 
