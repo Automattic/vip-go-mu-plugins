@@ -262,7 +262,7 @@ class WP_Cron_Control_Revisited {
 
 		// Validate input data
 		if ( empty( $timestamp ) || empty( $action ) || empty( $instance ) ) {
-			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data', 'wp-cron-control-revisited' ) );
+			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data.', 'wp-cron-control-revisited' ) );
 		}
 
 		// Ensure we don't run jobs too far ahead
