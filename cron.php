@@ -309,7 +309,7 @@ class WP_Cron_Control_Revisited {
 
 			return rest_ensure_response( array(
 				'success' => true,
-				'message' => sprintf( __( 'Job with action `%1$s` completed in %2$d seconds.', 'wp-cron-control-revisited' ), $event['action'], $time_end - $time_start ),
+				'message' => sprintf( __( 'Job with action `%1$s` and arguments `%2$s` completed in %3$d seconds.', 'wp-cron-control-revisited' ), $event['action'], serialize( $event['args'] ), $time_end - $time_start ),
 			) );
 		} else {
 			return new WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
@@ -327,8 +327,8 @@ class WP_Cron_Control_Revisited {
 			foreach ( $events[ $timestamp ] as $action => $action_events ) {
 				if ( hash_equals( md5( $action ), $action_hashed ) && isset( $action_events[ $instance ] ) ) {
 					$event              = $action_events[ $instance ];
-					$event['action']    = $action;
 					$event['timestamp'] = $timestamp;
+					$event['action']    = $action;
 					break;
 				}
 			}
