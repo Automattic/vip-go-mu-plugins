@@ -177,11 +177,9 @@ class WP_Cron_Control_Revisited {
 	 * Display an error if the plugin's conditions aren't met
 	 */
 	public function admin_notice() {
-		$error = sprintf( __( '<strong>%1$s</strong>: To use this plugin, define the constant %2$s.', 'wp-cron-control-revisited' ), 'WP-Cron Control Revisited', '<code>WP_CRON_CONTROL_SECRET</code>' );
-
 		?>
 		<div class="notice notice-error">
-			<p><?php echo $error; ?></p>
+			<p><?php printf( __( '<strong>%1$s</strong>: To use this plugin, define the constant %2$s.', 'wp-cron-control-revisited' ), 'WP-Cron Control Revisited', '<code>WP_CRON_CONTROL_SECRET</code>' ); ?></p>
 		</div>
 		<?php
 	}
