@@ -298,14 +298,19 @@ class WP_Cron_Control_Revisited {
 			wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
 
 			// Run the event
+			$time_start = microtime( true );
 			do_action_ref_array( $event['action'], $event['args'] );
+			$time_end = microtime( true );
 
 			// Free process for the next event
 			if ( ! $this->is_internal_event( $event['action'] ) ) {
 				$this->free_lock();
 			}
 
-			return rest_ensure_response( true );
+			return rest_ensure_response( array(
+				'success' => true,
+				'message' => sprintf( __( 'Job with action `%1$s` completed in %2$d seconds.', 'wp-cron-control-revisited' ), $event['action'], $time_end - $time_start ),
+			) );
 		} else {
 			return new WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
 		}
