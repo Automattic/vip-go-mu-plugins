@@ -18,7 +18,7 @@ if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
 	add_filter( 'jetpack_is_staging_site', '__return_true' );
 }
 
-$jetpack_to_load = __DIR__ . '/jetpack/jetpack.php';
+$jetpack_to_load = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
 
 // If the VIP_JETPACK_ALT constant is defined, we should attempt to load
 // an alternative to the standard Jetpack
