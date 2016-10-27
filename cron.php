@@ -278,6 +278,8 @@ class WP_Cron_Control_Revisited {
 		unset( $timestamp, $action, $instance );
 
 		if ( is_array( $event ) ) {
+			$time_start = microtime( true );
+
 			// Limit how many events are processed concurrently
 			if ( ! $this->is_internal_event( $event['action'] ) && ! $this->check_lock() ) {
 				return new WP_Error( 'no-free-threads', __( 'No resources available to run this job.', 'wp-cron-control-revisited' ) );
@@ -298,14 +300,14 @@ class WP_Cron_Control_Revisited {
 			wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
 
 			// Run the event
-			$time_start = microtime( true );
 			do_action_ref_array( $event['action'], $event['args'] );
-			$time_end = microtime( true );
 
 			// Free process for the next event
 			if ( ! $this->is_internal_event( $event['action'] ) ) {
 				$this->free_lock();
 			}
+
+			$time_end = microtime( true );
 
 			return rest_ensure_response( array(
 				'success' => true,
