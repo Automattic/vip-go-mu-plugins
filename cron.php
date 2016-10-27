@@ -36,9 +36,12 @@ class WP_Cron_Control_Revisited {
 	private $job_queue_window_in_seconds     = 60;
 	private $job_execution_buffer_in_seconds = 15;
 	private $job_timeout_in_minutes          = 10;
+	private $job_concurrency_limit           = 10;
 
 	private $internal_jobs           = array();
 	private $internal_jobs_schedules = array();
+
+	private $cache_key_lock = 'wpccr_lock';
 
 	/**
 	 * Register hooks
@@ -99,6 +102,8 @@ class WP_Cron_Control_Revisited {
 				'display' => __( 'WP Cron Control Revisited internal job - every 10 minutes', 'wp-cron-control-revisited' ),
 			),
 		);
+
+		wp_cache_add( $this->cache_key_lock, 0 );
 	}
 
 	/**
@@ -270,6 +275,11 @@ class WP_Cron_Control_Revisited {
 		unset( $timestamp, $action, $instance );
 
 		if ( is_array( $event ) ) {
+			// Limit how many events are processed concurrently
+			if ( ! $this->is_internal_event( $event['action'] ) && ! $this->check_lock() ) {
+				return new WP_Error( 'no-free-threads', __( 'No resources available to run this job.', 'wp-cron-control-revisited' ) );
+			}
+
 			// Prepare environment to run job
 			ignore_user_abort( true );
 			set_time_limit( $this->job_timeout_in_minutes * MINUTE_IN_SECONDS );
@@ -286,6 +296,11 @@ class WP_Cron_Control_Revisited {
 
 			// Run the event
 			do_action_ref_array( $event['action'], $event['args'] );
+
+			// Free process for the next event
+			if ( ! $this->is_internal_event( $event['action'] ) ) {
+				$this->free_lock();
+			}
 
 			return rest_ensure_response( true );
 		} else {
@@ -346,6 +361,31 @@ class WP_Cron_Control_Revisited {
 		$blocked_hooks = array();
 
 		return in_array( $action, $blocked_hooks );
+	}
+
+	/**
+	 * Set a lock and limit how many concurrent jobs are permitted
+	 */
+	private function check_lock() {
+		if ( (int) wp_cache_get( $this->cache_key_lock ) >= $this->job_concurrency_limit ) {
+			return false;
+		} else {
+			wp_cache_incr( $this->cache_key_lock );
+			return true;
+		}
+	}
+
+	/**
+	 * When event completes, allow another
+	 */
+	private function free_lock() {
+		if ( (int) wp_cache_get( $this->cache_key_lock ) > 1 ) {
+			wp_cache_decr( $this->cache_key_lock );
+		} else {
+			wp_cache_set( $this->cache_key_lock, 0 );
+		}
+
+		return true;
 	}
 
 	/**
