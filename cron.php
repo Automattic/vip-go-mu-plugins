@@ -41,7 +41,8 @@ class WP_Cron_Control_Revisited {
 	private $internal_jobs           = array();
 	private $internal_jobs_schedules = array();
 
-	private $cache_key_lock = 'wpccr_lock';
+	private $cache_key_lock           = 'wpccr_lock';
+	private $cache_key_lock_timestamp = 'wpccr_lock_ts';
 
 	/**
 	 * Register hooks
@@ -107,6 +108,7 @@ class WP_Cron_Control_Revisited {
 
 		// Prime lock cache if not present
 		wp_cache_add( $this->cache_key_lock, 0 );
+		wp_cache_add( $this->cache_key_lock_timestamp, time() );
 	}
 
 	/**
@@ -370,6 +372,14 @@ class WP_Cron_Control_Revisited {
 	 * Set a lock and limit how many concurrent jobs are permitted
 	 */
 	private function check_lock() {
+		// Prevent deadlock
+		if ( (int) wp_cache_get( $this->cache_key_lock_timestamp, null, true ) < time() - $this->job_timeout_in_minutes * MINUTE_IN_SECONDS ) {
+			wp_cache_set( $this->cache_key_lock, 0 );
+			wp_cache_set( $this->cache_key_lock_timestamp, time() );
+			return true;
+		}
+
+		// Check if process can run
 		if ( (int) wp_cache_get( $this->cache_key_lock ) >= $this->job_concurrency_limit ) {
 			return false;
 		} else {
@@ -387,6 +397,8 @@ class WP_Cron_Control_Revisited {
 		} else {
 			wp_cache_set( $this->cache_key_lock, 0 );
 		}
+
+		wp_cache_set( $this->cache_key_lock_timestamp, time() );
 
 		return true;
 	}
