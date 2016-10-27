@@ -64,7 +64,7 @@ class WP_Cron_Control_Revisited {
 			add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
 
 			// Core plugin functionality
-			$this->prepare_vars();
+			$this->prepare();
 			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 			add_filter( 'cron_schedules', array( $this, 'register_internal_events_schedules' ) );
 			add_action( 'muplugins_loaded', array( $this, 'schedule_internal_events' ), 11 );
@@ -78,9 +78,11 @@ class WP_Cron_Control_Revisited {
 	/**
 	 * Set additional variables required for plugin functionality
 	 */
-	private function prepare_vars() {
+	private function prepare() {
+		// Authentication
 		$this->secret = WP_CRON_CONTROL_SECRET;
 
+		// Internal jobs
 		$this->internal_jobs = array(
 			array(
 				'schedule' => 'wpccrij_minute',
@@ -103,6 +105,7 @@ class WP_Cron_Control_Revisited {
 			),
 		);
 
+		// Prime lock cache if not present
 		wp_cache_add( $this->cache_key_lock, 0 );
 	}
 
