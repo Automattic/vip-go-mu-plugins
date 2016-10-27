@@ -345,7 +345,7 @@ class WP_Cron_Control_Revisited {
 		$body = $request->get_json_params();
 
 		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $body['secret'] ) || $this->secret !== $body['secret'] ) {
+		if ( ! isset( $body['secret'] ) || ! hash_equals( $this->secret, $body['secret'] ) ) {
 			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
 		}
 
