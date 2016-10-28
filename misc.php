@@ -140,3 +140,50 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 
 	return $url;
 }
+
+/**
+ * Class WPCOM_VIP_Query_Log
+ */
+class WPCOM_VIP_Query_Log {
+
+	/**
+	 * Storage for the queries
+	 *
+	 * @var array All the queries
+	 */
+	protected $queries;
+
+	/**
+	 * Singleton instantiation
+	 *
+	 * @return bool|SW_Query_log
+	 */
+	static public function instance() {
+		static $instance = false;
+		if ( ! is_a( $instance, __CLASS__ ) ) {
+			$instance = new self;
+		}
+		return $instance;
+	}
+
+	public function __construct() {
+		if ( ! defined( 'SAVEQUERIES' ) ) {
+			define( 'SAVEQUERIES', true );
+		}
+		add_action( 'shutdown', [ $this, 'action_shutdown' ] );
+	}
+
+	public function action_shutdown() {
+		error_log( 'WPCOM VIP Query Log for ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . '): ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
+	}
+
+}
+
+/**
+ * Think carefully before enabling this on a production site. Then
+ * if you still want to do it, think again, and talk it over with
+ * someone else.
+ */
+if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
+	WPCOM_VIP_Query_Log::instance();
+}
