@@ -141,38 +141,13 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 	return $url;
 }
 
-/**
- * Class WPCOM_VIP_Query_Log
- */
-class WPCOM_VIP_Query_Log {
 
-	/**
-	 * Singleton instantiation
-	 *
-	 * @return bool|SW_Query_log
-	 */
-	static public function instance() {
-		static $instance = false;
-		if ( ! is_a( $instance, __CLASS__ ) ) {
-			$instance = new self;
-		}
-		return $instance;
+function wpcom_vip_query_log() {
+	if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+		return;
 	}
-
-	public function __construct() {
-		if ( ! defined( 'SAVEQUERIES' ) ) {
-			define( 'SAVEQUERIES', true );
-		}
-		add_action( 'shutdown', [ $this, 'action_shutdown' ] );
-	}
-
-	public function action_shutdown() {
-		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
-			return;
-		}
-		error_log( 'WPCOM VIP Query Log for ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . '): ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
-	}
-
+	$num_queries = count( $GLOBALS['wpdb']->queries );
+	error_log( 'WPCOM VIP Query Log for ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . ') ' . $num_queries . 'q: ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
 }
 
 /**
@@ -181,5 +156,5 @@ class WPCOM_VIP_Query_Log {
  * someone else.
  */
 if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
-	WPCOM_VIP_Query_Log::instance();
+	add_action( 'shutdown', 'wpcom_vip_query_log' );
 }
