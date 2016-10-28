@@ -167,6 +167,9 @@ class WPCOM_VIP_Query_Log {
 	}
 
 	public function action_shutdown() {
+		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+			return;
+		}
 		error_log( 'WPCOM VIP Query Log for ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . '): ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
 	}
 
