@@ -14,6 +14,15 @@
 
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
+/**
+ * Logs when Jetpack runs the update action
+ */
+function wpcom_vip_log_updating_jetpack_version() {
+	error_log("updating_jetpack_version: " . print_r( func_get_args(), 1 ) );
+}
+add_action( 'updating_jetpack_version', 'wpcom_vip_log_updating_jetpack_version', 10, 2 );
+
+
 if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
 	add_filter( 'jetpack_is_staging_site', '__return_true' );
 }
