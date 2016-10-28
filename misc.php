@@ -147,13 +147,6 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 class WPCOM_VIP_Query_Log {
 
 	/**
-	 * Storage for the queries
-	 *
-	 * @var array All the queries
-	 */
-	protected $queries;
-
-	/**
 	 * Singleton instantiation
 	 *
 	 * @return bool|SW_Query_log
