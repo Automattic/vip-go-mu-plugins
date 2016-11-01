@@ -18,9 +18,23 @@ add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
  * Logs when Jetpack runs the update action
  */
 function wpcom_vip_log_updating_jetpack_version() {
-	error_log('updating_jetpack_version ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . ') ' . ': ' . print_r( func_get_args(), 1 ) );
+	$jetpack_version = 'Jetpack version not yet available';
+	if ( class_exists( 'Jetpack_Options' ) ) {
+		$jetpack_version = Jetpack_Options::get_option( 'version' );
+	}
+	$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
+	$caller = 'unknown caller';
+	foreach ( $backtrace as $call ) {
+		if ( 'do_action' == $call['function'] ) {
+			$caller = sprintf( '%s on line %d', str_replace( WP_CONTENT_DIR, '', $call['file'] ), $call['line'] );
+			break;
+		}
+	}
+	error_log('updating_jetpack_version from ' . $jetpack_version  . ' | ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . ') ' . ' by ' . $caller . ': ' . print_r( func_get_args(), 1 ) );
 }
-add_action( 'updating_jetpack_version', 'wpcom_vip_log_updating_jetpack_version', 10, 2 );
+if ( defined( 'WPCOM_VIP_JETPACK_LOG' ) && WPCOM_VIP_JETPACK_LOG ) {
+	add_action( 'updating_jetpack_version', 'wpcom_vip_log_updating_jetpack_version', 10, 2 );
+}
 
 
 if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
