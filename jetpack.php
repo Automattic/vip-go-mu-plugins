@@ -36,6 +36,24 @@ if ( defined( 'WPCOM_VIP_JETPACK_LOG' ) && WPCOM_VIP_JETPACK_LOG ) {
 	add_action( 'updating_jetpack_version', 'wpcom_vip_log_updating_jetpack_version', 10, 2 );
 }
 
+/**
+ * Logs when Jetpack actually updates its version option
+ */
+function wpcom_vip_log_updating_jetpack_version_option( $option_name, $option_value ) {
+	$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
+	$caller = 'unknown caller';
+	foreach ( $backtrace as $call ) {
+		if ( 'update_option' == $call['function'] ) {
+			$caller = sprintf( '%s on line %d', str_replace( WP_CONTENT_DIR, '', $call['file'] ), $call['line'] );
+			break;
+		}
+	}
+	error_log( 'Update version to ' . $option_value  . ' by ' . $caller );
+}
+if ( defined( 'WPCOM_VIP_JETPACK_LOG' ) && WPCOM_VIP_JETPACK_LOG ) {
+	add_action( 'pre_update_jetpack_option_version', 'wpcom_vip_log_updating_jetpack_version_option', 10, 2 );
+}
+
 
 if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
 	add_filter( 'jetpack_is_staging_site', '__return_true' );
