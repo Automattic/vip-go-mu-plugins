@@ -59,6 +59,7 @@ function wpcom_vip_get_term_by( $field, $value, $taxonomy, $output = OBJECT, $fi
  * Properly clear wpcom_vip_get_term_by() cache when a term is updated
  */
 add_action( 'edit_terms', 'wp_flush_get_term_by_cache', 10, 2 );
+add_action( 'create_term', 'wp_flush_get_term_by_cache', 10, 2 );
 function wp_flush_get_term_by_cache( $term_id, $taxonomy ) {
 	$term = get_term_by( 'id', $term_id, $taxonomy );
 	if ( ! $term ) {
@@ -103,7 +104,7 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
 	// term_exists frequently returns null, but (happily) never false
 	if ( false === $cache_value ) {
 		$term_exists = term_exists( $term, $taxonomy );
-		wp_cache_set( $cache_key, $term_exists, 'term_exists' );
+		wp_cache_set( $cache_key, $term_exists, 'term_exists', 3 * HOUR_IN_SECONDS );
 	} else {
 		$term_exists = $cache_value;
 	}
@@ -163,7 +164,7 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
 	if ( false === $page_id ) {
 		$page = get_page_by_title( $title, OBJECT, $post_type );
 		$page_id = $page ? $page->ID : 0;
-		wp_cache_set( $cache_key, $page_id, 'get_page_by_title' ); // We only store the ID to keep our footprint small
+		wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
 	}
 
 	if ( $page_id ) {
@@ -675,4 +676,22 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 		wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], $link, 'default', 7 * DAY_IN_SECONDS );
 	}
 	return $link;
+}
+
+
+/**
+ * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text
+ * These then cause really slow lookups inside of wp_old_slug_redirect, since wp_old_slug redirect does not match on full urls but rather former slugs it's safe to skip the lookup for these. (Most of the calls are from bad ad providers that generate random urls)
+ */
+function wpcom_vip_maybe_skip_old_slug_redirect(){
+
+	//We look to see if a malformed url (represented by 'http:' ) is right after the starting / in DOCUMENT_URI hence position 1
+	if ( is_404() && ( 1 === strpos( $_SERVER['DOCUMENT_URI'], 'http:' ) || 1 === strpos( $_SERVER['DOCUMENT_URI'], 'https:' ) ) ) {
+		remove_action( 'template_redirect', 'wp_old_slug_redirect' );
+		remove_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
+	}
+
+}
+function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
+	add_action( 'template_redirect', 'wpcom_vip_maybe_skip_old_slug_redirect', 7 ); //Run this before wpcom_vip_wp_old_slug_redirect so we can also remove our caching helper
 }
