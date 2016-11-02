@@ -48,7 +48,8 @@ function wpcom_vip_log_updating_jetpack_version_option( $option_name, $option_va
 			break;
 		}
 	}
-	error_log( 'Update Jetpack version to ' . $option_value  . ', ' . $caller );
+	$current_value = Jetpack_Options::get_option( 'version' );
+	error_log( 'Update Jetpack version to ' . $option_value  . ', ' . $caller . ' - current value is ' . $current_value . ', constant is ' . JETPACK__VERSION );
 }
 if ( defined( 'WPCOM_VIP_JETPACK_LOG' ) && WPCOM_VIP_JETPACK_LOG ) {
 	add_action( 'pre_update_jetpack_option_version', 'wpcom_vip_log_updating_jetpack_version_option', 10, 2 );
