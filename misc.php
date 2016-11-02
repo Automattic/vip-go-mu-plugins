@@ -156,5 +156,10 @@ function wpcom_vip_query_log() {
  * someone else.
  */
 if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
+	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
+		define( 'SAVEQUERIES', true );
+	}
+	// For hyperdb, which doesn't use SAVEQUERIES
+	$GLOBALS['wpdb']->save_queries = SAVEQUERIES;
 	add_action( 'shutdown', 'wpcom_vip_query_log' );
 }
