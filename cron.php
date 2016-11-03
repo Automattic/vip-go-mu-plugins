@@ -75,7 +75,7 @@ class WP_Cron_Control_Revisited {
 			$this->prepare();
 			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 			add_filter( 'cron_schedules', array( $this, 'register_internal_events_schedules' ) );
-			add_action( 'muplugins_loaded', array( $this, 'schedule_internal_events' ), 11 );
+			add_action( 'wp_loaded', array( $this, 'schedule_internal_events' ) );
 			add_action( 'wpccrij_force_publish_missed_schedules', array( $this, 'force_publish_missed_schedules' ) );
 			add_action( 'wpccrij_confirm_scheduled_posts', array( $this, 'confirm_scheduled_posts' ) );
 		} else {
