@@ -171,7 +171,7 @@ class WP_Cron_Control_Revisited {
 	 * Schedule internal jobs
 	 */
 	public function schedule_internal_events() {
-		$when = strtotime( sprintf( '+%d seconds', 2 * $this->job_queue_window_in_seconds ) );
+		$when = strtotime( sprintf( '+%d seconds', $this->job_queue_window_in_seconds ) );
 
 		foreach ( $this->internal_jobs as $job_args ) {
 			if ( ! wp_next_scheduled( $job_args['action'] ) ) {
