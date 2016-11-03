@@ -258,9 +258,8 @@ class WP_Cron_Control_Revisited {
 		}
 
 		return rest_ensure_response( array(
-			'events'          => $current_events,
-			'internal_events' => $internal_events,
-			'endpoint'        => get_rest_url( null, $this->namespace . '/event/' ),
+			'events'   => array_merge( $current_events, $internal_events ),
+			'endpoint' => get_rest_url( null, $this->namespace . '/event/' ),
 		) );
 	}
 
