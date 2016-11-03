@@ -284,45 +284,47 @@ class WP_Cron_Control_Revisited {
 		$event = $this->get_event( $timestamp, $action, $instance );
 		unset( $timestamp, $action, $instance );
 
-		if ( is_array( $event ) ) {
-			$time_start = microtime( true );
-
-			// Limit how many events are processed concurrently
-			if ( ! $this->is_internal_event( $event['action'] ) && ! $this->check_lock() ) {
-				return new WP_Error( 'no-free-threads', __( 'No resources available to run this job.', 'wp-cron-control-revisited' ) );
-			}
-
-			// Prepare environment to run job
-			ignore_user_abort( true );
-			set_time_limit( $this->job_timeout_in_minutes * MINUTE_IN_SECONDS );
-			define( 'DOING_CRON', true );
-
-			// Remove the event, and reschedule if desired
-			// Follows pattern Core uses in wp-cron.php
-			if ( false !== $event['schedule'] ) {
-				$reschedule_args = array( $event['timestamp'], $event['schedule'], $event['action'], $event['args'] );
-				call_user_func_array( 'wp_reschedule_event', $reschedule_args );
-			}
-
-			wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
-
-			// Run the event
-			do_action_ref_array( $event['action'], $event['args'] );
-
-			// Free process for the next event
-			if ( ! $this->is_internal_event( $event['action'] ) ) {
-				$this->free_lock();
-			}
-
-			$time_end = microtime( true );
-
-			return rest_ensure_response( array(
-				'success' => true,
-				'message' => sprintf( __( 'Job with action `%1$s` and arguments `%2$s` completed in %3$d seconds.', 'wp-cron-control-revisited' ), $event['action'], serialize( $event['args'] ), $time_end - $time_start ),
-			) );
-		} else {
+		// Nothing to do...
+		if ( ! is_array( $event ) ) {
 			return new WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
 		}
+
+		// And we're off!
+		$time_start = microtime( true );
+
+		// Limit how many events are processed concurrently
+		if ( ! $this->is_internal_event( $event['action'] ) && ! $this->check_lock() ) {
+			return new WP_Error( 'no-free-threads', __( 'No resources available to run this job.', 'wp-cron-control-revisited' ) );
+		}
+
+		// Prepare environment to run job
+		ignore_user_abort( true );
+		set_time_limit( $this->job_timeout_in_minutes * MINUTE_IN_SECONDS );
+		define( 'DOING_CRON', true );
+
+		// Remove the event, and reschedule if desired
+		// Follows pattern Core uses in wp-cron.php
+		if ( false !== $event['schedule'] ) {
+			$reschedule_args = array( $event['timestamp'], $event['schedule'], $event['action'], $event['args'] );
+			call_user_func_array( 'wp_reschedule_event', $reschedule_args );
+		}
+
+		wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
+
+		// Run the event
+		do_action_ref_array( $event['action'], $event['args'] );
+
+		// Free process for the next event
+		if ( ! $this->is_internal_event( $event['action'] ) ) {
+			$this->free_lock();
+		}
+
+		$time_end = microtime( true );
+
+		return rest_ensure_response( array(
+			'success' => true,
+			'message' => sprintf( __( 'Job with action `%1$s` and arguments `%2$s` completed in %3$d seconds.', 'wp-cron-control-revisited' ), $event['action'], serialize( $event['args'] ), $time_end - $time_start ),
+		) );
 	}
 
 	/**
