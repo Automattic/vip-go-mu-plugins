@@ -387,14 +387,18 @@ class WP_Cron_Control_Revisited {
 	 */
 	private function check_lock() {
 		// Prevent deadlock
-		if ( (int) wp_cache_get( $this->cache_key_lock_timestamp, null, true ) < time() - $this->job_timeout_in_minutes * MINUTE_IN_SECONDS ) {
+		$lock_timestamp = (int) wp_cache_get( $this->cache_key_lock_timestamp, null, true );
+
+		if ( $lock_timestamp < time() - $this->job_timeout_in_minutes * MINUTE_IN_SECONDS ) {
 			wp_cache_set( $this->cache_key_lock, 0 );
 			wp_cache_set( $this->cache_key_lock_timestamp, time() );
 			return true;
 		}
 
 		// Check if process can run
-		if ( (int) wp_cache_get( $this->cache_key_lock, null, true ) >= $this->job_concurrency_limit ) {
+		$lock = (int) wp_cache_get( $this->cache_key_lock, null, true );
+
+		if ( $lock >= $this->job_concurrency_limit ) {
 			return false;
 		} else {
 			wp_cache_incr( $this->cache_key_lock );
@@ -406,7 +410,9 @@ class WP_Cron_Control_Revisited {
 	 * When event completes, allow another
 	 */
 	private function free_lock() {
-		if ( (int) wp_cache_get( $this->cache_key_lock, null, true ) > 1 ) {
+		$lock = (int) wp_cache_get( $this->cache_key_lock, null, true );
+
+		if ( $lock > 1 ) {
 			wp_cache_decr( $this->cache_key_lock );
 		} else {
 			wp_cache_set( $this->cache_key_lock, 0 );
