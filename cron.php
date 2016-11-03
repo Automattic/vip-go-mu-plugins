@@ -235,14 +235,19 @@ class WP_Cron_Control_Revisited {
 						continue;
 					}
 
-					// Queue internal events separately to avoid them being blocked
-					$queue = $this->is_internal_event( $action ) ? 'internal_events' : 'current_events';
-
-					array_push( $$queue, array(
+					// Necessary data to identify an individual event
+					$event = array(
 						'timestamp' => $timestamp,
 						'action'    => md5( $action ),
 						'instance'  => $instance,
-					) );
+					);
+
+					// Queue internal events separately to avoid them being blocked
+					if ( $this->is_internal_event( $action ) ) {
+						$internal_events[] = $event;
+					} else {
+						$current_events[] = $event;
+					}
 				}
 			}
 		}
