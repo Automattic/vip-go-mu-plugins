@@ -435,7 +435,7 @@ class WP_Cron_Control_Revisited {
 
 		$missed_posts = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date <= %s LIMIT 100;", current_time( 'mysql', false ) ) );
 
-		if ( is_array( $missed_posts ) && ! empty( $missed_posts ) ) {
+		if ( ! empty( $missed_posts ) ) {
 			foreach ( $missed_posts as $missed_post ) {
 				check_and_publish_future_post( $missed_post );
 
@@ -452,7 +452,7 @@ class WP_Cron_Control_Revisited {
 
 		$future_posts = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_date FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date > %s LIMIT 100;", current_time( 'mysql', false ) ) );
 
-		if ( is_array( $future_posts ) && ! empty( $future_posts ) ) {
+		if ( ! empty( $future_posts ) ) {
 			foreach ( $future_posts as $future_post ) {
 				$future_post->ID = absint( $future_post->ID );
 				$gmt_time        = strtotime( get_gmt_from_date( $future_post->post_date ) . ' GMT' );
