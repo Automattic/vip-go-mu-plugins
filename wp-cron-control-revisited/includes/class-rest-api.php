@@ -2,20 +2,7 @@
 
 namespace WP_Cron_Control_Revisited;
 
-class REST_API {
-	/**
-	 * Class instance
-	 */
-	private static $__instance = null;
-
-	public static function instance() {
-		if ( ! is_a( self::$__instance, __CLASS__ ) ) {
-			self::$__instance = new self;
-		}
-
-		return self::$__instance;
-	}
-
+class REST_API extends Singleton {
 	/**
 	 * PLUGIN SETUP
 	 */
@@ -23,7 +10,7 @@ class REST_API {
 	/**
 	 * Register hooks
 	 */
-	private function __construct() {
+	protected function class_init() {
 		add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 	}
 
