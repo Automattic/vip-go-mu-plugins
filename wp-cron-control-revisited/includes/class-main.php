@@ -39,7 +39,6 @@ class Main extends Singleton {
 		wp_cache_add( $this->cache_key_lock_timestamp, time() );
 
 		// Load dependencies
-		require __DIR__ . '/class-cron-options-cpt.php';
 		require __DIR__ . '/class-internal-events.php';
 		require __DIR__ . '/class-rest-api.php';
 		require __DIR__ . '/functions-internal-events.php';
