@@ -63,7 +63,7 @@ if ( VIP_GO_ENV && in_array( FILES_CLIENT_SITE_ID, $whitelisted_sites ) ) {
 }
 
 if ( apply_filters( 'wpcom_vip_go_enable_wp_cron_control_revisited', false ) ) {
-	require_once __DIR__ . '/wp-cron-control-revisited/wp-cron-control-revisited.php' ;
+	require_once __DIR__ . '/wp-cron-control-revisited/wp-cron-control-revisited.php';
 } else {
 	new WPCOM_VIP_Cron_Control;
 }

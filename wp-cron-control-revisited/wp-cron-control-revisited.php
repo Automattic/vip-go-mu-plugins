@@ -48,6 +48,9 @@ class WP_Cron_Control_Revisited {
 	 * Register hooks
 	 */
 	private function __construct() {
+		// Load dependencies
+		require __DIR__ . '/includes/class-wp-cron-control-revisited-cron-cpt.php';
+
 		// For now, leave WP-CLI alone
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return;
