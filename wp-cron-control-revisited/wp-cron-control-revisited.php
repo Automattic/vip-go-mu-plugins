@@ -248,6 +248,7 @@ class Main {
 		}
 
 		wp_unschedule_event( $event['timestamp'], $event['action'], $event['args'] );
+		delete_cron_event( $event['timestamp'], $event['action'], $event['instance'] );
 
 		// Run the event
 		do_action_ref_array( $event['action'], $event['args'] );
@@ -280,6 +281,7 @@ class Main {
 					$event              = $action_events[ $instance ];
 					$event['timestamp'] = $timestamp;
 					$event['action']    = $action;
+					$event['instance']  = $instance;
 					break;
 				}
 			}
