@@ -23,7 +23,6 @@ class Cron_Options_CPT {
 	/**
 	 * Class properties
 	 */
-
 	private $post_type = 'wpccr_events';
 
 	/**
