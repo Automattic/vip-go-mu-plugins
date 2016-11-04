@@ -31,8 +31,8 @@ class Main {
 	/**
 	 * Class properties
 	 */
-	private $namespace = 'wp-cron-control-revisited/v1';
-	private $secret    = null;
+	public $namespace = 'wp-cron-control-revisited/v1';
+	public $secret    = null;
 
 	public $job_queue_size                  = 10;
 	public $job_queue_window_in_seconds     = 60;
@@ -64,6 +64,7 @@ class Main {
 		// Load dependencies
 		require __DIR__ . '/includes/class-cron-options-cpt.php';
 		require __DIR__ . '/includes/class-internal-events.php';
+		require __DIR__ . '/includes/class-rest-api.php';
 		require __DIR__ . '/includes/functions-internal-events.php';
 
 		// Block normal cron execution
@@ -74,9 +75,6 @@ class Main {
 		remove_action( 'init', 'wp_cron' );
 
 		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
-
-		// Core plugin functionality
-		add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 	}
 
 	/**
@@ -115,25 +113,6 @@ class Main {
 	}
 
 	/**
-	 * Register API routes
-	 */
-	public function rest_api_init() {
-		register_rest_route( $this->namespace, '/events/', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'get_events' ),
-			'permission_callback' => array( $this, 'check_secret' ),
-			'show_in_index'       => false,
-		) );
-
-		register_rest_route( $this->namespace, '/event/', array(
-			'methods'             => 'PUT',
-			'callback'            => array( $this, 'run_event' ),
-			'permission_callback' => array( $this, 'check_secret' ),
-			'show_in_index'       => false,
-		) );
-	}
-
-	/**
 	 * Display an error if the plugin's conditions aren't met
 	 */
 	public function admin_notice() {
@@ -156,7 +135,7 @@ class Main {
 
 		// That was easy
 		if ( ! is_array( $events ) || empty( $events ) ) {
-			return rest_ensure_response( array( 'events' => null, ) );
+			return array( 'events' => null, );
 		}
 
 		// To be safe, re-sort the array just as Core does when events are scheduled
@@ -212,26 +191,22 @@ class Main {
 			$current_events = array_slice( $current_events, 0, $this->job_queue_size );
 		}
 
-		return rest_ensure_response( array(
+		return array(
 			'events'   => array_merge( $current_events, $internal_events ),
 			'endpoint' => get_rest_url( null, $this->namespace . '/event/' ),
-		) );
+		);
 	}
 
 	/**
 	 * Execute a specific event
+	 *
+	 * @param $timestamp  int     Unix timestamp
+	 * @param $action     string  md5 hash of the action used when the event is registered
+	 * @param $instance   string  md5 hash of the event's arguments array, which Core uses to index the `cron` option
+	 *
+	 * @return array|WP_Error
 	 */
-	public function run_event( $request ) {
-		// Parse request for details needed to identify the event to execute
-		// `$timestamp` is, unsurprisingly, the Unix timestamp the event is scheduled for
-		// `$action` is the md5 hash of the action used when the event is registered
-		// `$instance` is the md5 hash of the event's arguments array, which Core uses to index the `cron` option
-		$event     = $request->get_json_params();
-		$timestamp = isset( $event['timestamp'] ) ? absint( $event['timestamp'] ) : null;
-		$action    = isset( $event['action'] ) ? trim( sanitize_text_field( $event['action'] ) ) : null;
-		$instance  = isset( $event['instance'] ) ? trim( sanitize_text_field( $event['instance'] ) ) : null;
-		unset( $event );
-
+	public function run_event( $timestamp, $action, $instance ) {
 		// Validate input data
 		if ( empty( $timestamp ) || empty( $action ) || empty( $instance ) ) {
 			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data.', 'wp-cron-control-revisited' ) );
@@ -283,10 +258,10 @@ class Main {
 
 		$time_end = microtime( true );
 
-		return rest_ensure_response( array(
+		return array(
 			'success' => true,
 			'message' => sprintf( __( 'Job with action `%1$s` and arguments `%2$s` completed in %3$d seconds.', 'wp-cron-control-revisited' ), $event['action'], serialize( $event['args'] ), $time_end - $time_start ),
-		) );
+		);
 	}
 
 	/**
@@ -315,20 +290,6 @@ class Main {
 	/**
 	 * PLUGIN UTILITY METHODS
 	 */
-
-	/**
-	 * Check if request is authorized
-	 */
-	public function check_secret( $request ) {
-		$body = $request->get_json_params();
-
-		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $body['secret'] ) || ! hash_equals( $this->secret, $body['secret'] ) ) {
-			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
-		}
-
-		return true;
-	}
 
 	/**
 	 * Set a lock and limit how many concurrent jobs are permitted
