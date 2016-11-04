@@ -8,7 +8,9 @@
  Text Domain: wp-cron-control-revisited
  */
 
-class WP_Cron_Control_Revisited {
+namespace WP_Cron_Control_Revisited;
+
+class Main {
 	/**
 	 * Class instance
 	 */
@@ -49,7 +51,7 @@ class WP_Cron_Control_Revisited {
 	 */
 	private function __construct() {
 		// Load dependencies
-		require __DIR__ . '/includes/class-wp-cron-control-revisited-cron-cpt.php';
+		require __DIR__ . '/includes/class-cron-options-cpt.php';
 
 		// For now, leave WP-CLI alone
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -476,4 +478,4 @@ class WP_Cron_Control_Revisited {
 	}
 }
 
-WP_Cron_Control_Revisited::instance();
+Main::instance();
