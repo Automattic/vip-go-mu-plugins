@@ -11,7 +11,6 @@ class Main extends Singleton {
 	 * Class properties
 	 */
 	public $namespace = 'wp-cron-control-revisited/v1';
-	public $secret    = null;
 
 	public $job_queue_size                  = 10;
 	public $job_queue_window_in_seconds     = 60;
@@ -37,8 +36,9 @@ class Main extends Singleton {
 			return;
 		}
 
-		// Set certain class properties
-		$this->prepare();
+		// Prime lock cache if not present
+		wp_cache_add( $this->cache_key_lock, 0 );
+		wp_cache_add( $this->cache_key_lock_timestamp, time() );
 
 		// Load dependencies
 		require __DIR__ . '/class-cron-options-cpt.php';
@@ -55,18 +55,6 @@ class Main extends Singleton {
 		remove_action( 'init', 'wp_cron' );
 
 		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
-	}
-
-	/**
-	 * Set additional variables required for plugin functionality
-	 */
-	private function prepare() {
-		// Authentication
-		$this->secret = WP_CRON_CONTROL_SECRET;
-
-		// Prime lock cache if not present
-		wp_cache_add( $this->cache_key_lock, 0 );
-		wp_cache_add( $this->cache_key_lock_timestamp, time() );
 	}
 
 	/**
