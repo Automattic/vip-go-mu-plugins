@@ -8,13 +8,6 @@
  Text Domain: wp-cron-control-revisited
  */
 
-// Enable in production only for specific sites
-// Otherwise, class WP-Cron Control is loaded
-$whitelisted_sites = array();
-if ( VIP_GO_ENV && ! in_array( FILES_CLIENT_SITE_ID, $whitelisted_sites ) ) {
-	return;
-}
-
 class WP_Cron_Control_Revisited {
 	/**
 	 * Class instance
