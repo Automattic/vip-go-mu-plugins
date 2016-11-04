@@ -10,8 +10,6 @@ class Main extends Singleton {
 	/**
 	 * Class properties
 	 */
-	public $namespace = 'wp-cron-control-revisited/v1';
-
 	public $job_queue_size                  = 10;
 	public $job_queue_window_in_seconds     = 60;
 	public $job_execution_buffer_in_seconds = 15;
@@ -31,7 +29,7 @@ class Main extends Singleton {
 		}
 
 		// Bail when plugin conditions aren't met
-		if ( ! defined( 'WP_CRON_CONTROL_SECRET' ) ) {
+		if ( ! defined( '\WP_CRON_CONTROL_SECRET' ) ) {
 			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
 			return;
 		}
@@ -161,7 +159,7 @@ class Main extends Singleton {
 
 		return array(
 			'events'   => array_merge( $current_events, $internal_events ),
-			'endpoint' => get_rest_url( null, $this->namespace . '/event/' ),
+			'endpoint' => get_rest_url( null, REST_API_NAMESPACE . '/' . REST_API_ENDPOINT_RUN ),
 		);
 	}
 
