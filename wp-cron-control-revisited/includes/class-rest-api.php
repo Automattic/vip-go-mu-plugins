@@ -81,7 +81,7 @@ class REST_API {
 
 		// For now, mimic original plugin's "authentication" method. This needs to be better.
 		if ( ! isset( $body['secret'] ) || ! hash_equals( get_plugin_var( 'secret' ), $body['secret'] ) ) {
-			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
+			return new \WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
 		}
 
 		return true;

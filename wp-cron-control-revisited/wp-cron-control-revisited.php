@@ -96,7 +96,7 @@ class Main {
 	public function block_direct_cron() {
 		if ( false !== strpos( $_SERVER['REQUEST_URI'], '/wp-cron.php' ) ) {
 			status_header( 403 );
-			wp_send_json_error( new WP_Error( 'forbidden', sprintf( __( 'Normal cron execution is blocked when the %s plugin is active.', 'wp-cron-control-revisited' ), 'WP-Cron Control Revisited' ) ) );
+			wp_send_json_error( new \WP_Error( 'forbidden', sprintf( __( 'Normal cron execution is blocked when the %s plugin is active.', 'wp-cron-control-revisited' ), 'WP-Cron Control Revisited' ) ) );
 		}
 	}
 
@@ -210,12 +210,12 @@ class Main {
 	public function run_event( $timestamp, $action, $instance ) {
 		// Validate input data
 		if ( empty( $timestamp ) || empty( $action ) || empty( $instance ) ) {
-			return new WP_Error( 'missing-data', __( 'Invalid or incomplete request data.', 'wp-cron-control-revisited' ) );
+			return new \WP_Error( 'missing-data', __( 'Invalid or incomplete request data.', 'wp-cron-control-revisited' ) );
 		}
 
 		// Ensure we don't run jobs too far ahead
 		if ( $timestamp > strtotime( sprintf( '+%d seconds', $this->job_execution_buffer_in_seconds ) ) ) {
-			return new WP_Error( 'premature', __( 'Event is not scheduled to be run yet.', 'wp-cron-control-revisited' ) );
+			return new \WP_Error( 'premature', __( 'Event is not scheduled to be run yet.', 'wp-cron-control-revisited' ) );
 		}
 
 		// Find the event to retrieve the full arguments
@@ -224,7 +224,7 @@ class Main {
 
 		// Nothing to do...
 		if ( ! is_array( $event ) ) {
-			return new WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
+			return new \WP_Error( 'no-event', __( 'The specified event could not be found.', 'wp-cron-control-revisited' ) );
 		}
 
 		// And we're off!
@@ -232,7 +232,7 @@ class Main {
 
 		// Limit how many events are processed concurrently
 		if ( ! is_internal_event( $event['action'] ) && ! $this->check_lock() ) {
-			return new WP_Error( 'no-free-threads', __( 'No resources available to run this job.', 'wp-cron-control-revisited' ) );
+			return new \WP_Error( 'no-free-threads', __( 'No resources available to run this job.', 'wp-cron-control-revisited' ) );
 		}
 
 		// Prepare environment to run job
