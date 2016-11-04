@@ -37,10 +37,11 @@ class Cron_Options_CPT {
 	 */
 	public function register_post_type() {
 		register_post_type( $this->post_type, array(
-			'label'   => 'Cron Events',
-			'public'  => false,
-			'rewrite' => false,
-			'export'  => false,
+			'label'               => 'Cron Events',
+			'public'              => false,
+			'rewrite'             => false,
+			'export'              => false,
+			'exclude_from_search' => true,
 		) );
 	}
 
