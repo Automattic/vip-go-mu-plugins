@@ -47,15 +47,15 @@ class Main {
 	 * Register hooks
 	 */
 	private function __construct() {
-		// Load dependencies
-		require __DIR__ . '/includes/class-cron-options-cpt.php';
-		require __DIR__ . '/includes/class-internal-events.php';
-		require __DIR__ . '/includes/functions-internal-events.php';
-
 		// For now, leave WP-CLI alone
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return;
 		}
+
+		// Load dependencies
+		require __DIR__ . '/includes/class-cron-options-cpt.php';
+		require __DIR__ . '/includes/class-internal-events.php';
+		require __DIR__ . '/includes/functions-internal-events.php';
 
 		// Load plugin functionality, when conditions are met
 		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
