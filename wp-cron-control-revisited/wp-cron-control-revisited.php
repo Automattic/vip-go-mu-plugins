@@ -52,28 +52,31 @@ class Main {
 			return;
 		}
 
+		// Bail when plugin conditions aren't met
+		if ( ! defined( 'WP_CRON_CONTROL_SECRET' ) ) {
+			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
+			return;
+		}
+
+		// Set certain class properties
+		$this->prepare();
+
 		// Load dependencies
 		require __DIR__ . '/includes/class-cron-options-cpt.php';
 		require __DIR__ . '/includes/class-internal-events.php';
 		require __DIR__ . '/includes/functions-internal-events.php';
 
-		// Load plugin functionality, when conditions are met
-		if ( defined( 'WP_CRON_CONTROL_SECRET' ) ) {
-			// Block normal cron execution
-			define( 'DISABLE_WP_CRON', true );
-			define( 'ALTERNATE_WP_CRON', false );
+		// Block normal cron execution
+		define( 'DISABLE_WP_CRON', true );
+		define( 'ALTERNATE_WP_CRON', false );
 
-			add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
-			remove_action( 'init', 'wp_cron' );
+		add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
+		remove_action( 'init', 'wp_cron' );
 
-			add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
+		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
 
-			// Core plugin functionality
-			$this->prepare();
-			add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
-		} else {
-			add_action( 'admin_notices', array( $this, 'admin_notice' ) );
-		}
+		// Core plugin functionality
+		add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 	}
 
 	/**
