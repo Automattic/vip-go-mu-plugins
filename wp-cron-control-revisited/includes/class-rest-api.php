@@ -35,14 +35,14 @@ class REST_API {
 	 * Register API routes
 	 */
 	public function rest_api_init() {
-		register_rest_route( Main::instance()->namespace, '/events/', array(
+		register_rest_route( get_plugin_var( 'namespace' ), '/events/', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'get_events' ),
 			'permission_callback' => array( $this, 'check_secret' ),
 			'show_in_index'       => false,
 		) );
 
-		register_rest_route( Main::instance()->namespace, '/event/', array(
+		register_rest_route( get_plugin_var( 'namespace' ), '/event/', array(
 			'methods'             => 'PUT',
 			'callback'            => array( $this, 'run_event' ),
 			'permission_callback' => array( $this, 'check_secret' ),
@@ -80,7 +80,7 @@ class REST_API {
 		$body = $request->get_json_params();
 
 		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $body['secret'] ) || ! hash_equals( Main::instance()->secret, $body['secret'] ) ) {
+		if ( ! isset( $body['secret'] ) || ! hash_equals( get_plugin_var( 'secret' ), $body['secret'] ) ) {
 			return new WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'wp-cron-control-revisited' ) );
 		}
 

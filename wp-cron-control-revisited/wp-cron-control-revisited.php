@@ -66,6 +66,7 @@ class Main {
 		require __DIR__ . '/includes/class-internal-events.php';
 		require __DIR__ . '/includes/class-rest-api.php';
 		require __DIR__ . '/includes/functions-internal-events.php';
+		require __DIR__ . '/includes/functions.php';
 
 		// Block normal cron execution
 		define( 'DISABLE_WP_CRON', true );

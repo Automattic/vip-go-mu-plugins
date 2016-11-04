@@ -77,7 +77,7 @@ class Internal_Events {
 	 * Schedule internal jobs
 	 */
 	public function schedule_internal_events() {
-		$when = strtotime( sprintf( '+%d seconds', Main::instance()->job_queue_window_in_seconds ) );
+		$when = strtotime( sprintf( '+%d seconds', get_plugin_var( 'job_queue_window_in_seconds' ) ) );
 
 		foreach ( $this->internal_jobs as $job_args ) {
 			if ( ! wp_next_scheduled( $job_args['action'] ) ) {
