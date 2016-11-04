@@ -236,6 +236,8 @@ class WP_Cron_Control_Revisited {
 					}
 
 					// Necessary data to identify an individual event
+					// `$action` is hashed to avoid information disclosure
+					// Core hashes `$instance` for us
 					$event = array(
 						'timestamp' => $timestamp,
 						'action'    => md5( $action ),
@@ -267,7 +269,10 @@ class WP_Cron_Control_Revisited {
 	 * Execute a specific event
 	 */
 	public function run_event( $request ) {
-		// Parse request
+		// Parse request for details needed to identify the event to execute
+		// `$timestamp` is, unsurprisingly, the Unix timestamp the event is scheduled for
+		// `$action` is the md5 hash of the action used when the event is registered
+		// `$instance` is the md5 hash of the event's arguments array, which Core uses to index the `cron` option
 		$event     = $request->get_json_params();
 		$timestamp = isset( $event['timestamp'] ) ? absint( $event['timestamp'] ) : null;
 		$action    = isset( $event['action'] ) ? trim( sanitize_text_field( $event['action'] ) ) : null;
@@ -333,6 +338,8 @@ class WP_Cron_Control_Revisited {
 
 	/**
 	 * Find an event's data using its hashed representations
+	 *
+	 * The `$instance` argument is hashed for us by Core, while we hash the action to avoid information disclosure
 	 */
 	private function get_event( $timestamp, $action_hashed, $instance ) {
 		$events = get_option( 'cron' );
