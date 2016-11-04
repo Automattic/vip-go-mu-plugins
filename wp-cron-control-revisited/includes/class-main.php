@@ -41,7 +41,6 @@ class Main extends Singleton {
 		// Load dependencies
 		require __DIR__ . '/class-internal-events.php';
 		require __DIR__ . '/class-rest-api.php';
-		require __DIR__ . '/functions-internal-events.php';
 		require __DIR__ . '/functions.php';
 
 		// Block normal cron execution
