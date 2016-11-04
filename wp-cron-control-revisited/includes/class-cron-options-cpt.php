@@ -2,20 +2,7 @@
 
 namespace WP_Cron_Control_Revisited;
 
-class Cron_Options_CPT {
-	/**
-	 * Class instance
-	 */
-	private static $__instance = null;
-
-	public static function instance() {
-		if ( ! is_a( self::$__instance, __CLASS__ ) ) {
-			self::$__instance = new self;
-		}
-
-		return self::$__instance;
-	}
-
+class Cron_Options_CPT extends Singleton {
 	/**
 	 * PLUGIN SETUP
 	 */
@@ -29,7 +16,7 @@ class Cron_Options_CPT {
 	/**
 	 * Register hooks
 	 */
-	private function __construct() {
+	protected function class_init() {
 		// Data storage
 		add_action( 'init', array( $this, 'register_post_type' ) );
 

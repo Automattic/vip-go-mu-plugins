@@ -12,20 +12,7 @@ namespace WP_Cron_Control_Revisited;
 
 require __DIR__ . '/includes/abstract-class-singleton.php';
 
-class Main {
-	/**
-	 * Class instance
-	 */
-	private static $__instance = null;
-
-	public static function instance() {
-		if ( ! is_a( self::$__instance, __CLASS__ ) ) {
-			self::$__instance = new self;
-		}
-
-		return self::$__instance;
-	}
-
+class Main extends Singleton {
 	/**
 	 * PLUGIN SETUP
 	 */
@@ -48,7 +35,7 @@ class Main {
 	/**
 	 * Register hooks
 	 */
-	private function __construct() {
+	protected function class_init() {
 		// For now, leave WP-CLI alone
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return;

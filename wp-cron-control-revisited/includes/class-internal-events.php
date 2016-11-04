@@ -2,20 +2,7 @@
 
 namespace WP_Cron_Control_Revisited;
 
-class Internal_Events {
-	/**
-	 * Class instance
-	 */
-	private static $__instance = null;
-
-	public static function instance() {
-		if ( ! is_a( self::$__instance, __CLASS__ ) ) {
-			self::$__instance = new self;
-		}
-
-		return self::$__instance;
-	}
-
+class Internal_Events extends Singleton {
 	/**
 	 * PLUGIN SETUP
 	 */
@@ -29,7 +16,7 @@ class Internal_Events {
 	/**
 	 * Register hooks
 	 */
-	private function __construct() {
+	protected function class_init() {
 		$this->prepare();
 
 		add_action( 'wp_loaded', array( $this, 'schedule_internal_events' ) );

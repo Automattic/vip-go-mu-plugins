@@ -6,18 +6,18 @@ abstract class Singleton {
 	/**
 	 * Class instance
 	 */
-	private static $__instance = null;
+	private static $__instances = array();
 
 	public static function instance() {
 		$caller = get_called_class();
 
-		if ( ! is_a( self::$__instance, $caller ) ) {
-			self::$__instance = new $caller();
+		if ( ! isset( self::$__instances[ $caller ] ) ) {
+			self::$__instances[ $caller ] = new $caller();
 
-			self::$__instance->class_init();
+			self::$__instances[ $caller ]->class_init();
 		}
 
-		return self::$__instance;
+		return self::$__instances[ $caller ];
 	}
 
 	protected function __construct() {}
