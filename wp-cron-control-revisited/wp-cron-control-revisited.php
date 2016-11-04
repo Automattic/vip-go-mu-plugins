@@ -10,6 +10,8 @@
 
 namespace WP_Cron_Control_Revisited;
 
+require __DIR__ . '/includes/abstract-class-singleton.php';
+
 class Main {
 	/**
 	 * Class instance
