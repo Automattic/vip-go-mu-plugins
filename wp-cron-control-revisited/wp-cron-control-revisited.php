@@ -205,7 +205,7 @@ class Main {
 	 * @param $action     string  md5 hash of the action used when the event is registered
 	 * @param $instance   string  md5 hash of the event's arguments array, which Core uses to index the `cron` option
 	 *
-	 * @return array|WP_Error
+	 * @return array|\WP_Error
 	 */
 	public function run_event( $timestamp, $action, $instance ) {
 		// Validate input data
