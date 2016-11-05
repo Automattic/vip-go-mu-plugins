@@ -104,11 +104,6 @@ class Cron_Options_CPT extends Singleton {
 
 				foreach ( $timestamp_events as $action => $action_instances ) {
 					foreach ( $action_instances as $instance => $instance_args ) {
-						// There are some jobs we never care to run
-						if ( is_blocked_event( $action ) ) {
-							continue;
-						}
-
 						// Check if post exists and bail
 						$job_exists = get_posts( array(
 							'name'             => sprintf( '%s-%s-%s', $timestamp, md5( $action ), $instance ),

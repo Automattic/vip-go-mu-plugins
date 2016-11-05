@@ -85,15 +85,6 @@ class Internal_Events extends Singleton {
 	}
 
 	/**
-	 * Allow specific events to be blocked perpetually
-	 */
-	public function is_blocked_event( $action ) {
-		$blocked_hooks = array();
-
-		return in_array( $action, $blocked_hooks );
-	}
-
-	/**
 	 * Published scheduled posts that miss their schedule
 	 */
 	public function force_publish_missed_schedules() {

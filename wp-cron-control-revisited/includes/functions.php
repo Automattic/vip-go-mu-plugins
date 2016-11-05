@@ -15,10 +15,3 @@ function get_plugin_var( $variable ) {
 function is_internal_event( $action ) {
 	return Internal_Events::instance()->is_internal_event( $action );
 }
-
-/**
- * Check if an event should never run
- */
-function is_blocked_event( $action ) {
-	return Internal_Events::instance()->is_blocked_event( $action );
-}

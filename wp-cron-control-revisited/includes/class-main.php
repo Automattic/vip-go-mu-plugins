@@ -125,12 +125,6 @@ class Main extends Singleton {
 			// Extract just the essentials needed to retrieve the full job later on
 			foreach ( $timestamp_events as $action => $action_instances ) {
 				foreach ( $action_instances as $instance => $instance_args ) {
-					// There are some jobs we never care to run
-					if ( is_blocked_event( $action ) ) {
-						wp_unschedule_event( $timestamp, $action, $instance_args['args'] );
-						continue;
-					}
-
 					// Necessary data to identify an individual event
 					// `$action` is hashed to avoid information disclosure
 					// Core hashes `$instance` for us
