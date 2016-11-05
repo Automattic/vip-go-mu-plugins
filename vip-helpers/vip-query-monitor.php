@@ -13,7 +13,7 @@ class WPCOM_VIP_QM_Collector_DB_Queries extends QM_Collector_DB_Queries
 		foreach ((array)$db->queries as $query) {
 
 			# @TODO: decide what I want to do with this:
-			if (false !== strpos($query['trace'], 'wp_admin_bar') and !isset($_REQUEST['qm_display_admin_bar'])) {
+			if ( ( isset( $query['trace'] ) && false !== strpos($query['trace'], 'wp_admin_bar') ) and !isset($_REQUEST['qm_display_admin_bar']) ) {
 				continue;
 			}
 

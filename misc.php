@@ -25,6 +25,9 @@ add_filter( 'jetpack_force_2fa_dependency_notice', '__return_false' );
 // Cleaner permalink options
 add_filter( 'got_url_rewrite', '__return_true' );
 
+// Disable custom fields meta box dropdown (very slow)
+add_filter( 'postmeta_form_keys', '__return_false' );
+
 // Checking for VIP_GO_ENV allows this code to work outside VIP Go environments,
 // albeit without concatenation of JS and CSS.
 if ( defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV ) {
@@ -136,4 +139,27 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 	$url = set_url_scheme( $url, 'https' );
 
 	return $url;
+}
+
+
+function wpcom_vip_query_log() {
+	if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+		return;
+	}
+	$num_queries = count( $GLOBALS['wpdb']->queries );
+	error_log( 'WPCOM VIP Query Log for ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . ') ' . $num_queries . 'q: ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
+}
+
+/**
+ * Think carefully before enabling this on a production site. Then
+ * if you still want to do it, think again, and talk it over with
+ * someone else.
+ */
+if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
+	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
+		define( 'SAVEQUERIES', true );
+	}
+	// For hyperdb, which doesn't use SAVEQUERIES
+	$GLOBALS['wpdb']->save_queries = SAVEQUERIES;
+	add_action( 'shutdown', 'wpcom_vip_query_log' );
 }
