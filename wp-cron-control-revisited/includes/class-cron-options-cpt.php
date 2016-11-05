@@ -61,11 +61,13 @@ class Cron_Options_CPT extends Singleton {
 		);
 
 		// Get events to re-render as the cron option
-		$jobs_posts = get_posts( array(
+		$jobs_posts = $this->get_jobs( array(
 			'post_type'        => $this->post_type,
 			'post_status'      => $this->post_status,
 			'suppress_filters' => false,
 			'posts_per_page'   => 1000,
+			'orderby'          => 'date',
+			'order'            => 'ASC',
 		) );
 
 		// Loop through results and built output Core expects
@@ -154,6 +156,22 @@ class Cron_Options_CPT extends Singleton {
 	/**
 	 * PLUGIN UTILITY METHODS
 	 */
+
+	/**
+	 * Retrieve list of jobs, respecting whether or not the CPT is registered
+	 */
+	private function get_jobs( $args ) {
+		// If called before `init`, we need to query directly because post types aren't registered earlier
+		if ( did_action( 'init' ) ) {
+			return get_posts( $args );
+		} else {
+			global $wpdb;
+
+			$orderby = 'date' === $args['orderby'] ? 'post_date' : $args['orderby'];
+
+			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status = %s ORDER BY %s %s LIMIT %d;", $args['post_type'], $args['post_status'], $orderby, $args['order'], $args['posts_per_page'] ), 'OBJECT' );
+		}
+	}
 
 	/**
 	 * Check if a job post exists, respecting Core's loading order
