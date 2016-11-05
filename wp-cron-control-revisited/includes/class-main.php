@@ -47,7 +47,8 @@ class Main extends Singleton {
 		define( 'DISABLE_WP_CRON', true );
 		define( 'ALTERNATE_WP_CRON', false );
 
-		add_action( 'muplugins_loaded', array( $this, 'block_direct_cron' ) );
+		$block_action = did_action( 'muplugins_loaded' ) ? 'plugins_loaded' : 'muplugins_loaded';
+		add_action( $block_action, array( $this, 'block_direct_cron' ) );
 		remove_action( 'init', 'wp_cron' );
 
 		add_filter( 'cron_request', array( $this, 'block_spawn_cron' ) );
