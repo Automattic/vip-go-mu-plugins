@@ -13,6 +13,8 @@ class Cron_Options_CPT extends Singleton {
 	private $post_type   = 'wpccr_events';
 	private $post_status = 'inherit';
 
+	private $posts_to_clean = array();
+
 	/**
 	 * Register hooks
 	 */
@@ -36,6 +38,14 @@ class Cron_Options_CPT extends Singleton {
 			'export'              => false,
 			'exclude_from_search' => true,
 		) );
+
+		// Clear caches for any manually-inserted posts, lest stale caches be used
+		if ( ! empty( $this->posts_to_clean ) ) {
+			foreach ( $this->posts_to_clean as $post_to_clean ) {
+				error_log( "Cleaning cron entry # {$post_to_clean}" );
+				clean_post_cache( $post_to_clean );
+			}
+		}
 	}
 
 	/**
@@ -84,7 +94,7 @@ class Cron_Options_CPT extends Singleton {
 			}
 		}
 
-		uksort( $cron_array, "strnatcasecmp" );
+		uksort( $cron_array, 'strnatcasecmp' );
 
 		return $cron_array;
 	}
@@ -105,7 +115,7 @@ class Cron_Options_CPT extends Singleton {
 				foreach ( $timestamp_events as $action => $action_instances ) {
 					foreach ( $action_instances as $instance => $instance_args ) {
 						// Check if post exists and bail
-						$job_exists = get_posts( array(
+						$job_exists = $this->job_exists( array(
 							'name'             => sprintf( '%s-%s-%s', $timestamp, md5( $action ), $instance ),
 							'post_type'        => $this->post_type,
 							'post_status'      => $this->post_status,
@@ -114,22 +124,24 @@ class Cron_Options_CPT extends Singleton {
 						) );
 
 						// Create a post, if needed
-						if ( empty( $job_exists ) ) {
-							$job_args = array(
-								'action'   => $action,
-								'instance' => $instance,
-								'args'     => $instance_args,
-							);
-
-							wp_insert_post( array(
+						if ( ! $job_exists ) {
+							// Build minimum information needed to create a post
+							// Sufficient for `wp_insert_post()`, but requires additional massaging for `$wpdb->insert()`
+							$job_post = array(
 								'post_title'            => sprintf( '%s | %s | %s', $timestamp, $action, $instance ),
 								'post_name'             => sprintf( '%s-%s-%s', $timestamp, md5( $action ), $instance ),
-								'post_content_filtered' => maybe_serialize( $job_args ),
+								'post_content_filtered' => maybe_serialize( array(
+									'action'   => $action,
+									'instance' => $instance,
+									'args'     => $instance_args,
+								) ),
 								'post_date'             => date( 'Y-m-d H:i:s', $timestamp ),
 								'post_date_gmt'         => date( 'Y-m-d H:i:s', $timestamp ),
 								'post_type'             => $this->post_type,
 								'post_status'           => $this->post_status,
-							) );
+							);
+
+							$this->create_event( $job_post );
 						}
 					}
 				}
@@ -142,6 +154,68 @@ class Cron_Options_CPT extends Singleton {
 	/**
 	 * PLUGIN UTILITY METHODS
 	 */
+
+	/**
+	 * Check if a job post exists, respecting Core's loading order
+	 */
+	private function job_exists( $job_post ) {
+		// If called before `init`, we need to insert directly because post types aren't registered earlier
+		if ( did_action( 'init' ) ) {
+			$exists = get_posts( $job_post );
+		} else {
+			global $wpdb;
+
+			$exists = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s AND post_type = %s AND post_status = %s LIMIT 1;", $job_post['name'], $this->post_type, $this->post_status ) );
+		}
+
+		return ! empty( $exists );
+	}
+
+	/**
+	 * Create a job post, respecting whether or not Core is ready for CPTs
+	 */
+	private function create_event( $job_post ) {
+		// If called before `init`, we need to insert directly because post types aren't registered earlier
+		if ( did_action( 'init' ) ) {
+			wp_insert_post( $job_post );
+		} else {
+			global $wpdb;
+
+			// Additional data needed to manually create a post
+			$job_post = wp_parse_args( $job_post, array(
+				'post_author'       => 0,
+				'comment_status'    => 'closed',
+				'ping_status'       => 'closed',
+				'post_parent'       => 0,
+				'post_modified'     => current_time( 'mysql' ),
+				'post_modified_gmt' => current_time( 'mysql', true ),
+			) );
+
+			// Some sanitization in place of `sanitize_post()`, which we can't use this early
+			foreach ( array( 'post_title', 'post_name', 'post_content_filtered' ) as $field ) {
+				$job_post[ $field ] = sanitize_text_field( $job_post[ $field ] );
+			}
+
+			// Duplicate some processing performed in `wp_insert_post()`
+			$charset = $wpdb->get_col_charset( $wpdb->posts, 'post_title' );
+			if ( 'utf8' === $charset ) {
+				$job_post['post_title'] = wp_encode_emoji( $job_post['post_title'] );
+			}
+
+			$job_post = wp_unslash( $job_post );
+
+			// Set this so it isn't empty, even though it serves us no purpose
+			$job_post['guid'] = esc_url( add_query_arg( $this->post_type, $job_post['post_name'], home_url( '/' ) ) );
+
+			// Create the post
+			$inserted = $wpdb->insert( $wpdb->posts, $job_post );
+
+			// Clear caches for new posts once the post type is registered
+			if ( $inserted ) {
+				$this->posts_to_clean[] = $wpdb->insert_id;
+			}
+		}
+	}
 
 	/**
 	 * Remove an event's CPT entry
