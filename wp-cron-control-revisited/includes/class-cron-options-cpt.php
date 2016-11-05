@@ -141,7 +141,7 @@ class Cron_Options_CPT extends Singleton {
 								'post_status'           => $this->post_status,
 							);
 
-							$this->create_event( $job_post );
+							$this->create_job( $job_post );
 						}
 					}
 				}
@@ -174,7 +174,7 @@ class Cron_Options_CPT extends Singleton {
 	/**
 	 * Create a job post, respecting whether or not Core is ready for CPTs
 	 */
-	private function create_event( $job_post ) {
+	private function create_job( $job_post ) {
 		// If called before `init`, we need to insert directly because post types aren't registered earlier
 		if ( did_action( 'init' ) ) {
 			wp_insert_post( $job_post );
@@ -226,7 +226,7 @@ class Cron_Options_CPT extends Singleton {
 	 *
 	 * @return bool
 	 */
-	public function delete_event( $timestamp, $action, $instance ) {
+	public function delete_job( $timestamp, $action, $instance ) {
 		$job_exists = get_posts( array(
 			'name'             => sprintf( '%s-%s-%s', $timestamp, md5( $action ), $instance ),
 			'post_type'        => $this->post_type,
