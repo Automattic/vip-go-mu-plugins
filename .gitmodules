@@ -37,3 +37,7 @@
 [submodule "shared-plugins/jetpack-force-2fa"]
 	path = shared-plugins/jetpack-force-2fa
 	url = git@github.com:Automattic/jetpack-force-2fa.git
+[submodule "wp-cron-control-revisited"]
+	path = wp-cron-control-revisited
+	url = https://github.com/Automattic/WP-Cron-Control-Revisited.git
+	branch = develop
