@@ -163,3 +163,30 @@ if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
 	$GLOBALS['wpdb']->save_queries = SAVEQUERIES;
 	add_action( 'shutdown', 'wpcom_vip_query_log' );
 }
+
+/**
+ * Improve perfomance of the `_WP_Editors::wp_link_query` method
+ *
+ * The WordPress core is currently not setting `no_found_rows` inside the `_WP_Editors::wp_link_query`
+ * and is setting `suppress_filters` to `true`.
+ * 
+ * Since the `_WP_Editors::wp_link_query` method is not using the `found_posts` nor `max_num_pages`
+ * properties of `WP_Query` class, the `SQL_CALC_FOUND_ROWS` in produced SQL query is extra and
+ * useless.
+ *
+ * Setting `suppress_filters` to `false`, on the other hand, is blocking the Advanced Posts Cache
+ * plugin and thus all those queries are not being cached, despite being the same across multiple
+ * post edit screens for all logged in users
+ */
+function wpcom_vip_wp_link_query_args( $query ) {
+	//Since the WP_Query is not checking the $found_posts nor $max_num_pages properties
+	//we don't need to know the total number of matching posts in the database
+	$query['no_found_rows'] = true;
+
+	//The query is suppressing filters by default, but it blocks the caching plugins, eg Advanced Posts Cache
+	$query['suppress_filters'] = false;
+
+	return $query;
+}
+
+add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
