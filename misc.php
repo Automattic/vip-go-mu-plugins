@@ -168,6 +168,7 @@ if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
  * Improve perfomance of the `_WP_Editors::wp_link_query` method
  *
  * The WordPress core is currently not setting `no_found_rows` inside the `_WP_Editors::wp_link_query`
+ * See https://core.trac.wordpress.org/ticket/38784
  * 
  * Since the `_WP_Editors::wp_link_query` method is not using the `found_posts` nor `max_num_pages`
  * properties of `WP_Query` class, the `SQL_CALC_FOUND_ROWS` in produced SQL query is extra and
