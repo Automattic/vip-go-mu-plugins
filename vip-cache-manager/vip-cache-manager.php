@@ -64,7 +64,7 @@ class WPCOM_VIP_Cache_Manager {
 		$button_html .= esc_html__( 'Purge Page Cache' );
 		$button_html .= '</strong></a></span>';
 		
-		echo "<p>$button_html</p>";
+		echo "<p>$button_html</p>\n";
 	}
 
 	public function manual_purge_message() {
