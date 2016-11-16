@@ -37,7 +37,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function init() {
-		if ( is_super_admin() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
+		if ( ! function_exists( 'is_proxied_automattician' ) || ! is_proxied_automattician() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
