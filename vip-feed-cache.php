@@ -8,7 +8,7 @@
  * @return void
  */
 function vipgo_feed_options( &$feed, $url ) {
-	require_once( 'vip-feed-cache/vipgo-feed-cache-classes.php' );
+	require_once( __DIR__ . '/vip-feed-cache/vipgo-feed-cache-classes.php' );
 
 	$feed->set_cache_class( 'VIPGO_Feed_Cache' );
 }
