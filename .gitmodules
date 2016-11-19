@@ -34,7 +34,3 @@
 [submodule "shared-plugins/msm-sitemap"]
 	path = shared-plugins/msm-sitemap
 	url = git@github.com:Automattic/msm-sitemap.git
-[submodule "wp-cron-control-revisited"]
-	path = wp-cron-control-revisited
-	url = git@github.com:Automattic/WP-Cron-Control-Revisited.git
-	branch = develop
