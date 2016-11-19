@@ -59,11 +59,11 @@ class WPCOM_VIP_Cron_Control {
 // Allow testing of new approach to cron execution
 $whitelisted_sites = array();
 if ( VIP_GO_ENV && in_array( FILES_CLIENT_SITE_ID, $whitelisted_sites ) ) {
-	add_filter( 'wpcom_vip_go_enable_wp_cron_control_revisited', '__return_true' );
+	add_filter( 'wpcom_vip_go_enable_new_cron_control', '__return_true' );
 }
 
-if ( apply_filters( 'wpcom_vip_go_enable_wp_cron_control_revisited', false ) ) {
-	require_once __DIR__ . '/wp-cron-control-revisited/wp-cron-control-revisited.php';
+if ( apply_filters( 'wpcom_vip_go_enable_new_cron_control', false ) ) {
+	require_once __DIR__ . '/cron-control/cron-control.php';
 } else {
 	new WPCOM_VIP_Cron_Control;
 }
