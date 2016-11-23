@@ -15,6 +15,12 @@ class WPCOM_VIP_Cache_Manager {
 	private $purge_urls = array();
 	private $site_cache_purged = false;
 
+	/**
+	 * A version used to determine any necessary
+	 * update routines to be run.
+	 */
+	const VERSION = 1;
+
 	static public function instance() {
 		static $instance = false;
 		if ( ! $instance ) {
@@ -37,10 +43,12 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function init() {
-		if ( is_super_admin() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
+		if ( isset( $_GET['cm_purge_all'] ) && current_user_can( 'wpcom_vip_cache_manager_purge_entire_site' ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
+
+		add_action( 'admin_init', array( $this, 'update' ) );
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
@@ -61,7 +69,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		$nobutton_html =  esc_html__( 'You do not have permission to purge the cache for the whole site. Please contact your administrator.' );
 
-		if ( is_super_admin() ) {
+		if ( current_user_can( 'wpcom_vip_cache_manager_purge_entire_site' ) ) {
 			echo "<p>$button_html</p>\n";
 		} else {
 			echo "<p>$nobutton_html</p>\n";
@@ -539,6 +547,38 @@ class WPCOM_VIP_Cache_Manager {
 		$this->purge_urls[] = $url;
 		return true;
 	}
+
+	/**
+	 * Checks the version option value against the version
+	 * property value, and runs update routines as appropriate.
+	 *
+	 */
+	public function update() {
+		$option_name = 'vipcachemanager_version';
+		$version = absint( get_option( $option_name, 0 ) );
+
+		if ( $version >= self::VERSION ) {
+			return;
+		}
+
+		if ( $version < 1 ) {
+			// Sites in a subdirectory multisite install can affect each
+			// other, so let's constrain site cache purging in those to
+			// just Super Admins
+			$subdirectory_multisite = ( is_multisite() && ! is_subdomain_install() );
+			if ( true !== $subdirectory_multisite ) {
+				$role = get_role( 'administrator' );
+				$role->add_cap( 'wpcom_vip_cache_manager_purge_entire_site' );
+			}
+		}
+
+		// N.B. Remember to increment self::VERSION above when you add a new IF
+
+		update_option( $option_name, self::VERSION );
+		error_log( "VIP Cache Manager: Done upgrade, now at version " . self::VERSION );
+
+	}
+
 }
 
 WPCOM_VIP_Cache_Manager::instance();
