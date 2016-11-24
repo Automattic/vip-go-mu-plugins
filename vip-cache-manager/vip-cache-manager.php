@@ -519,7 +519,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 * @param type  $term_id The ID of the term which is the primary reason for the purge
 		 */
-		$term_purge_urls = apply_filters( "wpcom_vip_cache_purge_{$taxonomy_name}_term_urls", $term_purge_urls, $term_id );
+		$term_purge_urls = apply_filters( "wpcom_vip_cache_purge_{$taxonomy_name}_term_urls", $term_purge_urls, $$term->term_id );
 
 		return $term_purge_urls;
 	}
