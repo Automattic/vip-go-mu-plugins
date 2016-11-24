@@ -45,6 +45,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
+		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
 
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
 
@@ -518,7 +519,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 * @param type  $term_id The ID of the term which is the primary reason for the purge
 		 */
-		$term_purge_urls = apply_filters( "wpcom_vip_cache_purge_{$taxonomy_name}_term_urls", $term_purge_urls, $term->term_id );
+		$term_purge_urls = apply_filters( "wpcom_vip_cache_purge_{$taxonomy_name}_term_urls", $term_purge_urls, $term_id );
 
 		return $term_purge_urls;
 	}
@@ -538,6 +539,24 @@ class WPCOM_VIP_Cache_Manager {
 		}
 		$this->purge_urls[] = $url;
 		return true;
+	}
+
+	/**
+	 * Schedule purge of old permalink in case it was changed during post update
+	 * and only if the post's status was publish before the update
+	 *
+	 * @param int $post_ID The post ID of update post
+	 * @param WP_Post $post_after The post object as it looks after the update
+	 * @param WP_Post $post_before The post object as it looked before the update
+	 *
+	 * @return void
+	 */
+	public function queue_old_permalink_purge( $post_ID, $post_after, $post_before ) {
+		if ( get_permalink( $post_before ) !== get_permalink( $post_after ) &&
+			 'publish' === $post_before->post_status
+		) {
+			$this->queue_purge_url( get_permalink( $post_before ) );
+		}
 	}
 }
 
