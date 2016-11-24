@@ -1,5 +1,15 @@
 <?php
 
+// Execute the healthcheck as quickly as possible
+// See `mu-plugins/vip-cache-manager/` for other caching functionality
+if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+	if ( function_exists( 'newrelic_end_transaction' ) ) {
+		# See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
+		newrelic_end_transaction( true );
+	}
+	die( 'ok' );
+}
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }

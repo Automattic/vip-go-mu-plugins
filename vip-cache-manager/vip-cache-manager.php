@@ -24,15 +24,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function __construct() {
-		// Execute the healthcheck as quickly as possible
-		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
-			if ( function_exists( 'newrelic_end_transaction' ) ) {
-				# See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
-				newrelic_end_transaction( true );
-			}
-			die( 'ok' );
-		}
-
+		// N.B. The caching health check is run at the top of `000-vip-init.php`
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
