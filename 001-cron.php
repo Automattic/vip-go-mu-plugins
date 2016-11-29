@@ -62,6 +62,8 @@ if ( VIP_GO_ENV && in_array( FILES_CLIENT_SITE_ID, $whitelisted_sites ) ) {
 	add_filter( 'wpcom_vip_go_enable_new_cron_control', '__return_true' );
 }
 
+unset( $whitelisted_sites );
+
 if ( apply_filters( 'wpcom_vip_go_enable_new_cron_control', false ) ) {
 	require_once __DIR__ . '/cron-control/cron-control.php';
 } else {
