@@ -552,7 +552,7 @@ class A8C_Files {
 		}
 		// Change the upload url path to site's URL + wp-content/uploads without trailing slash
 		// Related core code: https://core.trac.wordpress.org/browser/tags/4.6.1/src/wp-includes/functions.php#L1929
-		$upload_url_path = trailingslashit( get_site_url() ) . 'wp-content/uploads';
+		$upload_url_path = untrailingslashit( get_site_url( null, 'wp-content/uploads' ) );
 		
 		return $upload_url_path;
 	}
