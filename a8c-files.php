@@ -60,7 +60,7 @@ class A8C_Files {
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
-		add_filter( 'pre_option_upload_url_path', array( &$this, 'upload_url_path' ), 10, 1 );
+		add_filter( 'option_upload_url_path', array( &$this, 'upload_url_path' ), 10, 2 );
 	}
 
 	function check_to_upload_file( $data, $postarr ) {
@@ -545,9 +545,9 @@ class A8C_Files {
 		return 'https://' . FILE_SERVICE_ENDPOINT;
 	}
 
-	public function upload_url_path( $upload_url_path ) {
-		// No modifications needed outside multisite.
-		if ( false === is_multisite() ) {
+	public function upload_url_path( $upload_url_path, $option ) {
+		// No modifications needed outside multisite or in case the option is not empty
+		if ( false === is_multisite() || false === empty( $upload_url_path ) ) {
 			return $upload_url_path;
 		}
 		// Change the upload url path to site's URL + wp-content/uploads without trailing slash
