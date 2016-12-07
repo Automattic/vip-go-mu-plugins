@@ -546,8 +546,8 @@ class A8C_Files {
 	}
 
 	public function upload_url_path( $upload_url_path, $option ) {
-		// No modifications needed outside multisite or in case the option is not empty
-		if ( false === is_multisite() || false === empty( $upload_url_path ) ) {
+		// No modifications needed outside multisite
+		if ( false === is_multisite() ) {
 			return $upload_url_path;
 		}
 		// Change the upload url path to site's URL + wp-content/uploads without trailing slash
