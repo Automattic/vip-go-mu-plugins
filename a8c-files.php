@@ -60,7 +60,7 @@ class A8C_Files {
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
-		add_filter( 'option_upload_url_path', array( &$this, 'upload_url_path' ), 10, 2 );
+		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
 	}
 
 	function check_to_upload_file( $data, $postarr ) {
