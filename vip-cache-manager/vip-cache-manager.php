@@ -29,7 +29,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function init() {
-		if ( is_super_admin() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
+		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
@@ -45,20 +45,18 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function get_manual_purge_link() {
+		if ( ! $this->can_purge_cache() ) {
+			return;
+		}
+
 		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
 
 		$button_html =  esc_html__( 'Press the button below to force a purge of your entire page cache.' );
 		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
 		$button_html .= esc_html__( 'Purge Page Cache' );
 		$button_html .= '</strong></a></span>';
-
-		$nobutton_html =  esc_html__( 'You do not have permission to purge the cache for the whole site. Please contact your administrator.' );
-
-		if ( is_super_admin() ) {
-			echo "<p>$button_html</p>\n";
-		} else {
-			echo "<p>$nobutton_html</p>\n";
-		}
+		
+		echo "<p>$button_html</p>\n";
 	}
 
 	public function manual_purge_message() {
@@ -549,6 +547,15 @@ class WPCOM_VIP_Cache_Manager {
 		) {
 			$this->queue_purge_url( get_permalink( $post_before ) );
 		}
+	}
+
+	private function can_purge_cache() {
+		if ( ! function_exists( 'is_proxied_automattician' ) ) {
+			// Local environment; no purging necessary here
+			return false;
+		}
+
+		return is_proxied_automattician();
 	}
 }
 
