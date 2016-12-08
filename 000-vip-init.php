@@ -1,5 +1,52 @@
 <?php
 
+/**
+ * Log and print a message, then die with an HTTP 500 response
+ *
+ * @param string $msg The message to print
+ */
+function wpcomvip_healthcheck_fail( $msg ) {
+        // Our cache interprets a 500 response as unhealthy
+        status_header( 500 );
+        error_log( $msg );
+        die( $msg );
+}
+
+/**
+ * Exercise the database and object cache
+ * to ensure both are working.
+ */
+function wpcomvip_run_healthcheck() {
+        // Exercise the database by checking for a non-autoloaded option
+        global $wpdb;
+        $sql = "SELECT option_value FROM $wpdb->options WHERE option_name = 'wpcomvip_db_healthcheck'";
+        $db_check = $wpdb->get_var( $sql );
+        // The write only happens when the DB doesn't have the entry, which
+        // should just be the first time this check runs on a given database
+        if ( is_null( $db_check ) ) {
+                add_option( 'wpcomvip_db_healthcheck', true, null, 'no' );
+                $db_check = $wpdb->get_var( $sql );
+        }
+        // If this check fails, throw an exception so we can see it in the logs
+        if ( is_null( $db_check ) ) {
+                wpcomvip_healthcheck_fail( 'VIP Go: DB check failed' );
+        }
+}
+
+// Execute the healthcheck as quickly as possible
+// See `mu-plugins/vip-cache-manager/` for other caching functionality
+if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+	
+	nocache_headers();
+	wpcomvip_run_healthcheck();
+	
+	if ( function_exists( 'newrelic_end_transaction' ) ) {
+		# See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
+		newrelic_end_transaction( true );
+	}
+	die( 'ok' );
+}
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
