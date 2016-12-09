@@ -1154,3 +1154,127 @@ function wpcom_vip_add_URI_to_newrelic(){
 	}
 }
 add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
+
+/**
+ * Send a message to IRC
+ *
+ * Example Usage
+ *
+ * wpcom_vip_irc( '@testuser', 'test message' );				// send testuser a pm on IRC from "a8c"
+ * wpcom_vip_irc( '@testuser', 'test message', 'a8c-test' );	// send testuser a pm on IRC from "a8c-test"
+ * wpcom_vip_irc( 'testing', 'test message' );					// have "a8c" join #testing and say something
+ * wpcom_vip_irc( 'testing', 'test message', 'a8c-test' );		// have "a8c-test" join #testing and say something
+ *
+ * @param $target (string) Channel or Username.  Usernames prefixed with an @, channel optionally prefixed by #.
+ * @param $message (string) Message
+ * @param $botname (string) Optional botname to use on IRC.  This can be any valid unused nickname, defaults to a8c.
+ * @param $type string Cache slug
+ * @param $interval integer Interval in seconds between two messages sent from one DC
+ */
+function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '', $interval = 0 ) {
+	if ( $type && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
+		wp_cache_add_global_groups( array( 'irc-ratelimit' ) );
+
+		if ( ! wp_cache_add( $type, 1, 'irc-ratelimit', $interval ) ) {
+			return false;
+		}
+	}
+
+	if ( ! defined( 'VIP_IRC_HOSTNAME' ) || ! VIP_IRC_HOSTNAME ) {
+		error_log( 'Missing IRC host configuration in VIP_IRC_HOSTNAME constant' );
+
+		return false;
+	}
+
+	if ( ! defined( 'VIP_IRC_PORT' ) || ! VIP_IRC_PORT ) {
+		error_log( 'Missing IRC port configuration in VIP_IRC_PORT constant' );
+
+		return false;
+	}
+
+	$channel_or_user = preg_replace( '/[^0-9a-z#@|.-]/', '', $channel_or_user );
+
+	if ( ! $channel_or_user ) {
+		error_log( "Invalid \$channel_or_user: wpcom_vip_irc( '$channel_or_user', '$message' );" );
+
+		return false;
+	}
+
+	if ( is_array( $message ) || is_object( $message ) ) {
+		error_log( "Invalid \$message: wpcom_vip_irc( '$channel_or_user', " . print_r( $message, true ) . " );" );
+
+		return false;
+	}
+
+	$message = trim( $message );
+
+	if ( ! $message ) {
+		error_log( "Invalid \$message: wpcom_vip_irc( '$channel_or_user', '$message' );" );
+
+		return false;
+	}
+
+	if ( ! empty( $botname ) ) {
+		$botname = preg_replace( '/(\s*|[^0-9a-z_-])/', '', $botname );
+	}
+
+	if ( empty( $botname ) ) {
+		$botname = 'a8c';
+	}
+
+	$bot = fsockopen( VIP_IRC_HOSTNAME, VIP_IRC_PORT, $errno, $errst, 0.1 );
+
+	if ( ! $bot ) {
+		error_log( "fsockopen() failed: wpcom_vip_irc( '$channel_or_user', '$message' );" );
+
+		return false;
+	}
+
+	fputs( $bot, "!$botname $channel_or_user $message" );
+
+	if ( ! @feof( $bot ) ) {
+		@fclose( $bot );
+	}
+
+	return true;
+}
+
+/**
+ * Colour a message to be sent to IRC.
+ *
+ * Example Usage
+ *
+ * wpcom_vip_irc_color('WARNING', 'red', 'black');
+ *
+ * @param string $message Message to be coloured
+ * @param string $foreground Foreground colour to be used - see code for list of colours
+ * @param string $background Background colour to be used (default is black)
+ */
+function wpcom_vip_irc_color( $message, $foreground, $background = 'black' ) {
+	static $colour_map = array (
+		'white' => '00',
+		'black' => '01',
+		'blue'  => '02',
+		'green' => '03',
+		'red'   => '04',
+		'brown' => '05',
+		'purple' => '06',
+		'orange' => '07',
+		'yellow' => '08',
+		'lime'   => '09',
+		'teal'   => '10',
+		'aqua'   => '11',
+		'lightblue' => '12',
+		'pink' => '13',
+		'grey' => '14',
+		'silver' => '15',
+	);
+
+	static $ctrl_c = "\x03";
+
+	if ( isset( $colour_map[ $foreground ] ) && $colour_map[ $background ] ) {
+		return $ctrl_c . $colour_map[ $foreground ] . ',' . $colour_map[ $background ] . $message . $ctrl_c;
+	}
+
+	return $message;
+}
