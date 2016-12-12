@@ -645,6 +645,10 @@ class A8C_Files {
 		$resized = false;
 		$img_url = wp_get_attachment_url( $id );
 
+		if ( false === $img_url ) {
+			return false;
+		}
+
 		/**
 		 * Filter the original image Photon-compatible parameters before changes are
 		 *
