@@ -54,46 +54,8 @@ function wpcom_vip_sanity_check_alloptions_die( $size, $alloptions ) {
 	// 503 Service Unavailable - prevent caching, indexing, etc and alert Varnish of the problem
 	http_response_code( 503 );
 
-	?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"><head profile="http://gmpg.org/xfn/11">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>Something went wrong &#8212; Option Error</title>
-<style type="text/css">
-h1 {
-	font-weight: normal;
-	font-size: 40px;
-}
-body {
-line-height: 1.6em; font-family: Georgia, serif; width: 390px; margin: auto;
-text-align: center;
-}
-.message {
-	font-size: 22px;
-	width: 400px;
-	margin: 10px auto;
-}
-</style>
-<script type="text/javascript" src="//stats.wp.com/wpcom.js?22"></script>
-<script type="text/javascript">
-_error = 'big-alloptions';
-fzd();
-</script>
-</head>
-<body>
-<h1>Uh Oh!</h1>
+	echo file_get_contents( __DIR__ . '/errors/alloptions-limit.html' );
 
-<div class="message">
-
-<p>Something has gone wrong with our servers. It&#8217;s probably Matt&#8217;s fault.</p>
-
-<p>We&#8217;ve just been notified of the problem.</p>
-
-<p>Hopefully this should be fixed ASAP, so kindly reload in a few minutes and things should be back to normal.</p>
-
-</div>
-</body>
-</html>
-	<?php
 	exit;
 }
 
