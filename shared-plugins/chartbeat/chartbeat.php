@@ -61,7 +61,7 @@ function chartbeat_console() {
 		), '//chartbeat.com/publishing/dashboard/' );
 		?>
 		<iframe id="chartbeat-iframe"width="100%" height="100%" src="<?php echo esc_url( $iframe_url ); ?>"></iframe>
-	<?php
+		<?php
 	}
 }
 
@@ -77,16 +77,16 @@ function chartbeat_options_page() {
 			settings_fields('chartbeat-options'); ?>
 
 			<script>
-			function showSettings() {
-				window.open('//chartbeat.com/wordpress/?site=' + encodeURIComponent(window.location.host));
-			}
+				function showSettings() {
+					window.open('//chartbeat.com/wordpress/?site=' + encodeURIComponent(window.location.host));
+				}
 			</script>
 			To enable tracking, you must enter your chartbeat account id. <a href="#" onclick="showSettings()">Find yours.</a> <br />
 			<table class="form-table">
 				<tr>
 					<th scope="row">Account ID</th>
 					<td><input size="30" type="text" name="chartbeat_userid"
-						value="<?php echo esc_attr( get_option('chartbeat_userid') ); ?>" />
+					           value="<?php echo esc_attr( get_option('chartbeat_userid') ); ?>" />
 					</td>
 				</tr>
 
@@ -101,11 +101,11 @@ function chartbeat_options_page() {
 						No
 					</td>
 				</tr>
-	
+
 				<tr>
 					<th scope="row"><?php _e('Enable Chartbeat Publishing?','chartbeat'); ?><br /> <small>Sign
 							up for <a href="http://chartbeat.com/publishing/">Chartbeat Publishing</a>.
-					</small></th>
+						</small></th>
 					<td>
 						<input type="radio" name="chartbeat_enable_newsbeat" value="1" <?php checked( get_option('chartbeat_enable_newsbeat'), 1 ); ?> />
 						Yes
@@ -115,66 +115,66 @@ function chartbeat_options_page() {
 				</tr>
 				<tr>
 					<th scope="row">API Key<br/>
-					<?php if (get_option('chartbeat_enable_newsbeat')) { ?>
-						<small>Get API key <a href="http://chartbeat.com/newsbeat/settings/api-keys/">here</a></small>
-					<?php } else { ?>
-						<small>Get API key <a href="http://chartbeat.com/apikeys/">here</a></small>
-					<?php } ?>
+						<?php if (get_option('chartbeat_enable_newsbeat')) { ?>
+							<small>Get API key <a href="http://chartbeat.com/newsbeat/settings/api-keys/">here</a></small>
+						<?php } else { ?>
+							<small>Get API key <a href="http://chartbeat.com/apikeys/">here</a></small>
+						<?php } ?>
 					</th>
 					<td><input size="30" type="text" name="chartbeat_apikey" value="<?php echo esc_attr( get_option('chartbeat_apikey') ); ?>" />
 					</td>
 				</tr>
-	
+
 			</table>
 			<br /> <br />
 
 			<script src="<?php echo plugins_url('media/topwidget.compiled.js', __FILE__); ?>" type="text/javascript"></script>
-			<script type="text/javascript"> 
-			var themes = { 'doe':   { 'bgcolor': '', 'border': '#dde7d4', 'text': '#555' },
-				'gray':  { 'bgcolor': '#e3e3e3', 'border': '#333333', 'text': '#555', 'header_bgcolor': '#999999', 'header_color': '#fff' },
-				'red':   { 'bgcolor': '#ffffff', 'border': '#cc3300', 'text': '#555', 'header_bgcolor': '#f5c5be', 'header_color': '#fff' },
-				'blue':  { 'bgcolor': '#e0ecff', 'border': '#3a5db0' },
-				'green': { 'bgcolor': '#c9edcc', 'border': '#69c17d', 'text': '#555' } };
-			var theme = 'doe';
-			var limit = 10;
+			<script type="text/javascript">
+				var themes = { 'doe':   { 'bgcolor': '', 'border': '#dde7d4', 'text': '#555' },
+					'gray':  { 'bgcolor': '#e3e3e3', 'border': '#333333', 'text': '#555', 'header_bgcolor': '#999999', 'header_color': '#fff' },
+					'red':   { 'bgcolor': '#ffffff', 'border': '#cc3300', 'text': '#555', 'header_bgcolor': '#f5c5be', 'header_color': '#fff' },
+					'blue':  { 'bgcolor': '#e0ecff', 'border': '#3a5db0' },
+					'green': { 'bgcolor': '#c9edcc', 'border': '#69c17d', 'text': '#555' } };
+				var theme = 'doe';
+				var limit = 10;
 
-			function changeTheme(select) {
-				theme = select.options[select.selectedIndex].value;
-				renderWidget();
-			}
-			
-			function changeLimit(select) {
-				limit = select.options[select.selectedIndex].value;
-				renderWidget();
-			}
-			
-			function renderWidget() {
-				new CBTopPagesWidget( '<?php echo esc_js(get_option('chartbeat_apikey')) ?>',
-								   { 'host': '<?php echo esc_js( chartbeat_get_display_url( $domain ) ); ?>',
-									 'background': themes[theme]['bgcolor'],
-									 'border': themes[theme]['border'],
-									 'header_bgcolor': themes[theme]['header_bgcolor'],
-									 'header_color': themes[theme]['header_color'],
-									 'text': themes[theme]['text'],
-									 'limit': limit });
-			}
+				function changeTheme(select) {
+					theme = select.options[select.selectedIndex].value;
+					renderWidget();
+				}
 
-			function addOption(array, key, val) {
-				array.push("'" + key + "': '" + val + "'");
-			}
-			function buildOptions() {
-				var options = [];
-				addOption(options, 'background', themes[theme]['bgcolor']);
-				addOption(options, 'border', themes[theme]['border']);
-				addOption(options, 'header_bgcolor', themes[theme]['header_bgcolor']);
-				addOption(options, 'header_color', themes[theme]['header_color']);
-				addOption(options, 'text', themes[theme]['text']);
-				addOption(options, 'limit', limit);
-				options = '{' + options.join(',') + '}';
-				document.getElementById('chartbeat_widgetconfig').value = options;
-				console.debug("options:" + options);
-			}
-			renderWidget();
+				function changeLimit(select) {
+					limit = select.options[select.selectedIndex].value;
+					renderWidget();
+				}
+
+				function renderWidget() {
+					new CBTopPagesWidget( '<?php echo esc_js(get_option('chartbeat_apikey')) ?>',
+						{ 'host': '<?php echo esc_js( chartbeat_get_display_url( $domain ) ); ?>',
+							'background': themes[theme]['bgcolor'],
+							'border': themes[theme]['border'],
+							'header_bgcolor': themes[theme]['header_bgcolor'],
+							'header_color': themes[theme]['header_color'],
+							'text': themes[theme]['text'],
+							'limit': limit });
+				}
+
+				function addOption(array, key, val) {
+					array.push("'" + key + "': '" + val + "'");
+				}
+				function buildOptions() {
+					var options = [];
+					addOption(options, 'background', themes[theme]['bgcolor']);
+					addOption(options, 'border', themes[theme]['border']);
+					addOption(options, 'header_bgcolor', themes[theme]['header_bgcolor']);
+					addOption(options, 'header_color', themes[theme]['header_color']);
+					addOption(options, 'text', themes[theme]['text']);
+					addOption(options, 'limit', limit);
+					options = '{' + options.join(',') + '}';
+					document.getElementById('chartbeat_widgetconfig').value = options;
+					console.debug("options:" + options);
+				}
+				renderWidget();
 			</script>
 
 			If your theme supports it, you can also add a widget under
@@ -215,7 +215,7 @@ function chartbeat_options_page() {
 			</p>
 		</form>
 	</div>
-<?php
+	<?php
 }
 
 // Function to register settings and sanitize output. To be called later in add_action
@@ -228,7 +228,7 @@ function chartbeat_register_settings() {
 }
 
 function chartbeat_is_validmd5($md5) {
-	if( !empty($md5) && preg_match('/^[a-f0-9]{32}$/', $md5) ) { 
+	if( !empty($md5) && preg_match('/^[a-f0-9]{32}$/', $md5) ) {
 		return $md5;
 	} else {
 		add_settings_error( 'chartbeat_apikey','invalid_apikey','API Key is not correct, please check again','error');
@@ -237,8 +237,8 @@ function chartbeat_is_validmd5($md5) {
 }
 
 function chartbeat_is_validjson($json_str) {
-	if( is_null(json_decode($json_str)) ) { 
-		return $json_str; 
+	if( is_null(json_decode($json_str)) ) {
+		return $json_str;
 	} else {
 		add_settings_error( 'chartbeat_widgetconfig','invalid_widgetconfig','Widget config is malformed','error');
 	}
@@ -259,33 +259,39 @@ function add_chartbeat_footer() {
 			$use_canonical = 'true';
 		else
 			$use_canonical = 'false';
-		
+
 		$js_url    = 'static.chartbeat.com/js/chartbeat.js';
-		$auto_det  = apply_filters( 'chartbeat_config_video_autodetect' , true );	
-		$use_video = apply_filters( 'chartbeat_config_enable_video' , false );	
-		
+		$auto_det  = apply_filters( 'chartbeat_config_video_autodetect' , true );
+		$use_video = apply_filters( 'chartbeat_config_enable_video' , false );
+
 		if( $use_video ) {
 			$js_url   = 'static.chartbeat.com/js/chartbeat_video.js';
-		}		
+		}
 		?>
 
 		<!-- /// LOAD CHARTBEAT /// -->
 		<script type="text/javascript">
-		var _sf_async_config={};
-		_sf_async_config.uid = <?php echo intval( $user_id ); ?>;
-		_sf_async_config.useCanonical = <?php echo esc_js( $use_canonical ); ?>;
-		<?php
-		$enable_newsbeat = get_option('chartbeat_enable_newsbeat');
-		$domain = apply_filters( 'chartbeat_config_domain', chartbeat_get_display_url (get_option('home')) );
-		$title  = apply_filters( 'chartbeat_config_title', false );
-		if( $title ) {
+			var _sf_async_config={};
+			_sf_async_config.uid = <?php echo intval( $user_id ); ?>;
+			_sf_async_config.useCanonical = <?php echo esc_js( $use_canonical ); ?>;
+			<?php
+			$enable_newsbeat = get_option('chartbeat_enable_newsbeat');
+			$domain = apply_filters( 'chartbeat_config_domain', chartbeat_get_display_url (get_option('home')) );
+			$title  = apply_filters( 'chartbeat_config_title', false );
+			$path  = apply_filters( 'chartbeat_config_path', false );
+			if( $title ) {
 			?>
 			_sf_async_config.title = '<?php echo esc_js( $title ); ?>';
 			<?php
-		}
-		if ($enable_newsbeat) { ?>
+			}
+			if( $path ) {
+			?>
+			_sf_async_config.path = '<?php echo esc_js( $path ); ?>';
+			<?php
+			}
+			if ($enable_newsbeat) { ?>
 			_sf_async_config.domain = '<?php echo esc_js( $domain ); ?>';
-			<?php 
+			<?php
 			// Auto detect video turn off
 			if( $use_video && $auto_det === false ) {
 				echo "_sf_async_config.autoDetect = false;\n";
@@ -299,7 +305,7 @@ function add_chartbeat_footer() {
 				$author = get_the_author_meta('display_name', $post->post_author);
 				$author = apply_filters( 'chartbeat_config_author', $author );
 				printf( "_sf_async_config.authors = '%s';\n", esc_js( $author ) );
-			
+
 				// Use the post's categories as sections
 				$cats = get_the_terms($post->ID, 'category');
 
@@ -315,28 +321,28 @@ function add_chartbeat_footer() {
 					foreach( $cat_names as $index => $name ) {
 						$cat_names[ $index ] = '"' . esc_js( $name ) . '"';
 					}
-					
+
 					printf( "_sf_async_config.sections = [%s];\n", implode( ', ', $cat_names ) );
 				}
 			}
-		} // if $enable_newsbeat
-		?>
+			} // if $enable_newsbeat
+			?>
 
-		(function(){
-		  function loadChartbeat() {
-			window._sf_endpt=(new Date()).getTime();
-			var e = document.createElement('script');
-			e.setAttribute('language', 'javascript');
-			e.setAttribute('type', 'text/javascript');
-			e.setAttribute('src',
-			   (("https:" == document.location.protocol) ? "https://" : "http://") +
-			   "<?php echo esc_js( $js_url );?>");
-			document.body.appendChild(e);
-		  }
-		  var oldonload = window.onload;
-		  window.onload = (typeof window.onload != 'function') ?
-			 loadChartbeat : function() { try { oldonload(); } catch (e) { loadChartbeat(); throw e} loadChartbeat(); };
-		})();
+			(function(){
+				function loadChartbeat() {
+					window._sf_endpt=(new Date()).getTime();
+					var e = document.createElement('script');
+					e.setAttribute('language', 'javascript');
+					e.setAttribute('type', 'text/javascript');
+					e.setAttribute('src',
+						(("https:" == document.location.protocol) ? "https://" : "http://") +
+						"<?php echo esc_js( $js_url );?>");
+					document.body.appendChild(e);
+				}
+				var oldonload = window.onload;
+				window.onload = (typeof window.onload != 'function') ?
+					loadChartbeat : function() { try { oldonload(); } catch (e) { loadChartbeat(); throw e} loadChartbeat(); };
+			})();
 		</script>
 		<?php
 	}
@@ -345,29 +351,29 @@ function add_chartbeat_footer() {
 class Chartbeat_Widget extends WP_Widget {
 
 	function __construct() {
-        parent::__construct('chartbeat_widget', 'Chartbeat Widget',array( 'description' => __('Display your site\'s top pages')));
-        
-        if ( is_active_widget(false,false,$this->id_base,true) || is_admin() ) {
-        	wp_enqueue_script( 'chartbeat_topwidget', plugins_url('media/topwidget.compiled.js', __FILE__) );
-        	wp_localize_script( 'chartbeat_topwidget', 'cbproxy', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ),
-        		'cbnonce' => wp_create_nonce( 'cbproxy-nonce' ) ) );
-        }
-    }
+		parent::__construct('chartbeat_widget', 'Chartbeat Widget',array( 'description' => __('Display your site\'s top pages')));
+
+		if ( is_active_widget(false,false,$this->id_base,true) || is_admin() ) {
+			wp_enqueue_script( 'chartbeat_topwidget', plugins_url('media/topwidget.compiled.js', __FILE__) );
+			wp_localize_script( 'chartbeat_topwidget', 'cbproxy', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			                                                             'cbnonce' => wp_create_nonce( 'cbproxy-nonce' ) ) );
+		}
+	}
 
 	function widget( $args, $instance ) {
 		extract( $args );
 		echo $before_widget;
-		
+
 		$api_key = get_option( 'chartbeat_apikey' );
 		$widget_config = get_option('chartbeat_widgetconfig');
-		
+
 		if ( $api_key ) : ?>
-		<div id="cb_top_pages"></div>
-		<script type="text/javascript">
-		var options = { };
-		new CBTopPagesWidget( <?php echo json_encode( json_decode( get_option('chartbeat_widgetconfig') ) ); ?> );
-		</script>
-		<?php
+			<div id="cb_top_pages"></div>
+			<script type="text/javascript">
+				var options = { };
+				new CBTopPagesWidget( <?php echo json_encode( json_decode( get_option('chartbeat_widgetconfig') ) ); ?> );
+			</script>
+			<?php
 		endif;
 		echo $after_widget;
 	}
@@ -404,7 +410,7 @@ function cbproxy_submit() {
 		}
 		set_transient($transient,$response,5);
 	}
-	
+
 	echo json_encode( json_decode( $response ) );
 	exit;
 }
@@ -426,17 +432,17 @@ function chartbeat_dashboard_widget_function() {
 	<div id="chartbeatRefsTable" class="chartbeatWidget">
 		<table id="chartbeatLinks" class="chartbeatTable">
 			<thead>
-				<tr>
-					<th colspan=2 class="chartbeatLabel">Top Referrers</th>
-				</tr>
+			<tr>
+				<th colspan=2 class="chartbeatLabel">Top Referrers</th>
+			</tr>
 			</thead>
 			<tbody></tbody>
 		</table>
 		<table id="chartbeatSearch" class="chartbeatTable">
 			<thead>
-				<tr>
-					<th colspan=2 class="chartbeatLabel">Top Search</th>
-				</tr>
+			<tr>
+				<th colspan=2 class="chartbeatLabel">Top Search</th>
+			</tr>
 			</thead>
 			<tbody></tbody>
 		</table>
@@ -449,62 +455,70 @@ function chartbeat_dashboard_widget_function() {
 		</div>
 	</div>
 	<script type="text/javascript">
-	<?php add_filter( 'posts_where', 'chartbeat_filter_where_last_three_days' ); ?>
-	var events = [];
-	// Get published post Events 
-	<?php
-	$args = array( 'post_type' => array( 'post' ),'post_status' => 'publish', 'orderby' => 'date', 'order' => 'ASC' );
-	$the_query = new WP_Query( $args );
-	$domain = apply_filters( 'chartbeat_config_domain', chartbeat_get_display_url (get_option('home')) );
-	while ( $the_query->have_posts() ) : $the_query->the_post(); 
-		$tstamp = get_the_time('Y,n-1,j,G,i');
-		if ($tstamps[$tstamp])
-			continue; 
+		<?php add_filter( 'posts_where', 'chartbeat_filter_where_last_three_days' ); ?>
+		var events = [];
+		// Get published post Events
+			<?php
+			$the_query = wp_cache_get('chartbeat_published_widget');
+			if ( $the_query === false ) {
+				$args = array( 'post_type' => array( 'post' ),'post_status' => 'publish', 'orderby' => 'date', 'order' => 'ASC' );
+				$the_query = new WP_Query( $args );
+				wp_cache_set( 'chartbeat_published_widget', $the_query, 'default', 1 * HOUR_IN_SECONDS );
+			}
+			$domain = apply_filters( 'chartbeat_config_domain', chartbeat_get_display_url (get_option('home')) );
+			while ( $the_query->have_posts() ) : $the_query->the_post();
+			$tstamp = get_the_time('Y,n-1,j,G,i');
+			if ( ! empty( $tstamps[ $tstamp ] ) )
+				continue;
 
-		$tstamps[$tstamp] = true;
-		$category = get_the_category();
-		if($category[0])
-			$category_link = get_category_link($category[0]->cat_ID );
+			$tstamps[$tstamp] = true;
+			$category = get_the_category();
+			if ( ! empty( $category[ 0 ] ) )
+				$category_link = wpcom_vip_get_term_link($category[0]->cat_ID, 'category' );
 
-		?>var ev = {domain:'<?php echo esc_js( chartbeat_get_display_url( $domain ) );?>',title:'<?php echo esc_js( get_the_title() ); ?>',
-	  	value:'<?php echo esc_js( chartbeat_get_display_url( $category_link ) ); ?>', group_name:'<?php echo esc_js( chartbeat_get_display_url( get_page_link() ) ); ?>',
-	  	t: new Date(<?php echo the_time('Y,n-1,j,G,i'); ?>).getTime()/1000,group_type:'page',num_referrers:10,id:'<?php echo esc_js( get_the_ID() ); ?>',type:'wp',data:{action_type:"create"}};
+			?>var ev = {domain:'<?php echo esc_js( chartbeat_get_display_url( $domain ) );?>',title:'<?php echo esc_js( get_the_title() ); ?>',
+				value:'<?php echo esc_js( chartbeat_get_display_url( $category_link ) ); ?>', group_name:'<?php echo esc_js( chartbeat_get_display_url( get_page_link() ) ); ?>',
+				t: new Date(<?php echo the_time('Y,n-1,j,G,i'); ?>).getTime()/1000,group_type:'page',num_referrers:10,id:'<?php echo esc_js( get_the_ID() ); ?>',type:'wp',data:{action_type:"create"}};
 		events.push(ev);
-	<?php
-	endwhile;
-	wp_reset_postdata();?>
+		<?php
+		endwhile;
+		wp_reset_postdata();?>
 
-	// Get revisions
-	<?php
-	$args = array( 'post_type' => array( 'revision' ), 'post_status' => 'inherit', 'orderby' => 'date', 'order' => 'ASC' );
-	$the_query = new WP_Query( $args );
-	while( $the_query->have_posts() ) : $the_query->the_post();
-		$tstamp = get_the_time('Y,n-1,j,G,i');
-		if ($tstamps[$tstamp])
-			continue;
+		// Get revisions
+			<?php
+			$the_query = wp_cache_get('chartbeat_revision_widget');
+			if ( $the_query === false ) {
+				$args = array( 'post_type' => array( 'revision' ), 'post_status' => 'inherit', 'orderby' => 'date', 'order' => 'ASC' );
+				$the_query = new WP_Query( $args );
+				wp_cache_set( 'chartbeat_revision_widget', $the_query, 'default', 1 * HOUR_IN_SECONDS );
+			}
+			while( $the_query->have_posts() ) : $the_query->the_post();
+			$tstamp = get_the_time('Y,n-1,j,G,i');
+			if ( ! empty( $tstamps[$tstamp]) )
+				continue;
 
-		$tstamps[$tstamp] = true;
-		$category = get_the_category();
-		if($category[0])
-			$category_link = get_category_link($category[0]->cat_ID );
+			$tstamps[$tstamp] = true;
+			$category = get_the_category();
+			if ( ! empty( $category[ 0 ] ) )
+				$category_link = wpcom_vip_get_term_link($category[0]->cat_ID, 'category' );
 
-		?>var ev = {domain:'<?php echo esc_js( chartbeat_get_display_url( $domain ) ); ?>',title:'<?php echo esc_js( get_the_title() ); ?>',
-	  	value:'<?php echo esc_js( chartbeat_get_display_url( $category_link ) ); ?>',group_name:'<?php echo esc_js( chartbeat_get_display_url( get_page_link() ) ); ?>',
-	  	t: new Date(<?php echo the_time('Y,n-1,j,G,i'); ?>).getTime()/1000,group_type:'page',num_referrers:10,id:'<?php echo esc_js( get_the_ID() ); ?>',type:'wp',data:{action_type:"update"}};
+			?>var ev = {domain:'<?php echo esc_js( chartbeat_get_display_url( $domain ) ); ?>',title:'<?php echo esc_js( get_the_title() ); ?>',
+				value:'<?php echo esc_js( chartbeat_get_display_url( $category_link ) ); ?>',group_name:'<?php echo esc_js( chartbeat_get_display_url( get_page_link() ) ); ?>',
+				t: new Date(<?php echo the_time('Y,n-1,j,G,i'); ?>).getTime()/1000,group_type:'page',num_referrers:10,id:'<?php echo esc_js( get_the_ID() ); ?>',type:'wp',data:{action_type:"update"}};
 		events.push(ev);
-	<?php
-	endwhile; 
-	wp_reset_postdata();
+		<?php
+		endwhile;
+		wp_reset_postdata();
 
-	remove_filter( 'posts_where', 'chartbeat_filter_where_last_three_days' );
-	?>
+		remove_filter( 'posts_where', 'chartbeat_filter_where_last_three_days' );
+		?>
 
-	function loadChartBeatWidgets(){
-		new CBDashboard('chartbeatGauge','chartbeatRefsTable','chartbeatHist',200,"<?php echo esc_js( chartbeat_get_display_url( $domain ) ); ?>","<?php echo esc_js( get_option('chartbeat_apikey') ); ?>",events);
-	};
-	
-	var currOnload = window.onload;
-	window.onload = (typeof window.onload != 'function') ? loadChartBeatWidgets : function() { oldonload(); loadChartBeatWidgets(); };
+		function loadChartBeatWidgets(){
+			new CBDashboard('chartbeatGauge','chartbeatRefsTable','chartbeatHist',200,"<?php echo esc_js( chartbeat_get_display_url( $domain ) ); ?>","<?php echo esc_js( get_option('chartbeat_apikey') ); ?>",events);
+		};
+
+		var currOnload = window.onload;
+		window.onload = (typeof window.onload != 'function') ? loadChartBeatWidgets : function() { oldonload(); loadChartBeatWidgets(); };
 	</script>
 	<?php
 }
@@ -561,14 +575,14 @@ function chartbeat_custom_columns($column_name, $id) {
 			'path' => urlencode( $post_url["path"] ),
 		), '//api.chartbeat.com/live/quickstats/' );
 		?>
-	
+
 		<script type="text/javascript">
-		jQuery.getJSON('<?php echo esc_js( $json_url ); ?>',
-			function(data) {
-				if ( !data.visits ) data.visits = 0;
-				jQuery('#post-<?php echo absint( $id ); ?> .cb_visits').append(data.visits);
-			}
-		);
+			jQuery.getJSON('<?php echo esc_js( $json_url ); ?>',
+				function(data) {
+					if ( !data.visits ) data.visits = 0;
+					jQuery('#post-<?php echo absint( $id ); ?> .cb_visits').append(data.visits);
+				}
+			);
 		</script>
 		<?php
 	}
@@ -588,5 +602,3 @@ if ( is_admin() ){
 	add_action('wp_head', 'add_chartbeat_head');
 	add_action('wp_footer', 'add_chartbeat_footer');
 }
-
-?>
