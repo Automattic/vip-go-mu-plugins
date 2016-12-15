@@ -9,8 +9,8 @@ require_once $_tests_dir . '/includes/functions.php';
 
 function _manually_load_plugin() {
 	require __DIR__ . '/../000-vip-init.php';
+	require __DIR__ . '/../performance.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 require $_tests_dir . '/includes/bootstrap.php';
-
