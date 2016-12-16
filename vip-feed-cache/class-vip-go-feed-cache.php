@@ -1,5 +1,5 @@
 <?php
-class VIPGO_Feed_Cache extends SimplePie_Cache {
+class VIP_Go_Feed_Cache extends SimplePie_Cache {
 	/**
 	 * Creates a new SimplePie_Cache object.
 	 *
@@ -8,14 +8,14 @@ class VIPGO_Feed_Cache extends SimplePie_Cache {
 	 * @param string $location  URL location (scheme is used to determine handler).
 	 * @param string $filename  Unique identifier for cache object.
 	 * @param string $extension 'spi' or 'spc'.
-	 * @return VIPGO_Feed_Cache_Transient Feed cache handler object that uses transients and normalizes SimplePie Build number.
+	 * @return VIP_Go_Feed_Cache_Transient Feed cache handler object that uses transients and normalizes SimplePie Build number.
 	 */
 	public function create( $location, $filename, $extension ) {
-		return new VIPGO_Feed_Cache_Transient( $location, $filename, $extension );
+		return new VIP_Go_Feed_Cache_Transient( $location, $filename, $extension );
 	}
 }
 
-class VIPGO_Feed_Cache_Transient extends WP_Feed_Cache_Transient {
+class VIP_Go_Feed_Cache_Transient extends WP_Feed_Cache_Transient {
 	/**
 	 * Gets the transient.
 	 *
