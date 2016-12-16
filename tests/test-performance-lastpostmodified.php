@@ -41,6 +41,14 @@ class lastpostmodified_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 0, did_action( 'wpcom_vip_bump_lastpostmodified' ) );
 	}
 
+	public function test__transition_post_status__ignore_when_locked() {
+		// The first update sets the lock so the action should only fire once when updating twice
+		\wp_transition_post_status( 'publish', 'publish', $this->post );
+		\wp_transition_post_status( 'publish', 'publish', $this->post );
+
+		$this->assertEquals( 1, did_action( 'wpcom_vip_bump_lastpostmodified' ) );
+	}
+
 	public function test__bump_lastpostmodified() {
 		$this->post->post_type = 'book';
 		$this->post->post_modified = '2003-05-27 00:00:00';
