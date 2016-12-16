@@ -8,6 +8,10 @@ class Last_Post_Modified {
 	const LOCK_TIME_IN_SECONDS = 30;
 
 	public static function init() {
+		if ( true === apply_filters( 'wpcom_vip_disable_lastpostmodified', false ) ) {
+			return;
+		}
+
 		add_filter( 'pre_get_lastpostmodified', [ __CLASS__, 'override_get_lastpostmodified' ], 10, 3 );
 		add_action( 'transition_post_status', [ __CLASS__, 'handle_post_transition' ], 10, 3 );
 		add_action( 'wpcom_vip_bump_lastpostmodified', [ __CLASS__, 'bump_lastpostmodified' ] );
@@ -83,7 +87,4 @@ class Last_Post_Modified {
 	}
 }
 
-// Temporarily behind a constant so we can test it out on some sites first
-if ( defined( 'WPCOM_VIP_OVERRIDE_LASTPOSTMODIFIED' ) && true === WPCOM_VIP_OVERRIDE_LASTPOSTMODIFIED ) {
-	add_action( 'init', [ 'Automattic\VIP\Performance\Last_Post_Modified', 'init' ] );
-}
+add_action( 'init', [ 'Automattic\VIP\Performance\Last_Post_Modified', 'init' ] );
