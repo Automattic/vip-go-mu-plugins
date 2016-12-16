@@ -77,5 +77,7 @@ class Last_Post_Modified {
 	}
 }
 
-// TODO: make this opt-in to start
-add_action( 'init', [ 'Automattic\VIP\Performance\Last_Post_Modified', 'init' ] );
+// Temporarily behind a constant so we can test it out on some sites first
+if ( defined( 'WPCOM_VIP_OVERRIDE_LASTPOSTMODIFIED' ) && true === WPCOM_VIP_OVERRIDE_LASTPOSTMODIFIED ) {
+	add_action( 'init', [ 'Automattic\VIP\Performance\Last_Post_Modified', 'init' ] );
+}
