@@ -17,19 +17,6 @@ class VIPGO_Feed_Cache extends SimplePie_Cache {
 
 class VIPGO_Feed_Cache_Transient extends WP_Feed_Cache_Transient {
 	/**
-	 * Constructor.
-	 *
-	 * @access public
-	 *
-	 * @param string $location  URL location (scheme is used to determine handler).
-	 * @param string $filename  Unique identifier for cache object.
-	 * @param string $extension 'spi' or 'spc'.
-	 */
-	public function __construct( $location, $filename, $extension ) {
-		parent::__construct( $location, $filename, $extension );
-	}
-
-	/**
 	 * Gets the transient.
 	 *
 	 * This also normalizes the SimplePie Build number.  If the returned build
