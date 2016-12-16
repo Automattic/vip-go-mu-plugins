@@ -8,9 +8,9 @@
  * @return void
  */
 function vipgo_feed_options( &$feed, $url ) {
-	require_once( __DIR__ . '/vip-feed-cache/vipgo-feed-cache-classes.php' );
+	require_once( __DIR__ . '/vip-feed-cache/class-vip-go-feed-cache.php' );
 
-	$feed->set_cache_class( 'VIPGO_Feed_Cache' );
+	$feed->set_cache_class( 'VIP_Go_Feed_Cache' );
 }
 
 add_action( 'wp_feed_options', 'vipgo_feed_options', 10, 2 );
