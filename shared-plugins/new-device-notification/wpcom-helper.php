@@ -13,6 +13,7 @@ class New_Device_Notification_WPCom {
 	public function __construct() {
 		add_filter( 'ndn_location',       array( $this, 'filter_ndn_location' ) );
 		add_filter( 'ndn_message',        array( $this, 'filter_ndn_message' ), 10, 3 );
+		add_filter( 'ndn_headers',        array( $this, 'filter_ndn_headers' ), 10, 1 );
 		add_filter( 'ndn_cookie_domains', array( $this, 'filter_ndn_cookie_domains' ) );
 	}
 
@@ -65,6 +66,12 @@ class New_Device_Notification_WPCom {
 		}
 
 		return $location;
+	}
+
+	public function filter_ndn_headers( $headers ) {
+		// Emails sent from WordPress.com will need to have the FROM header set, otherwise it will show up as "(unknown sender)"
+		$headers .= 'From: "WordPress.com VIP Support" <vip-support@wordpress.com>' . "\r\n";
+		return $headers;
 	}
 
 	public function filter_ndn_message( $message, $user_obj, $args ) {
