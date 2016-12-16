@@ -42,6 +42,12 @@ class Last_Post_Modified {
 	}
 
 	public static function bump_lastpostmodified( $post ) {
+		// Update default of `any`
+		self::update_lastpostmodified( $post->post_modified_gmt, 'gmt' );
+		self::update_lastpostmodified( $post->post_modified_gmt, 'server' );
+		self::update_lastpostmodified( $post->post_modified, 'blog' );
+
+		// Update value for post_type
 		self::update_lastpostmodified( $post->post_modified_gmt, 'gmt', $post->post_type );
 		self::update_lastpostmodified( $post->post_modified_gmt, 'server', $post->post_type );
 		self::update_lastpostmodified( $post->post_modified, 'blog', $post->post_type );
@@ -52,7 +58,7 @@ class Last_Post_Modified {
 		return get_option( $option_name );
 	}
 
-	public static function update_lastpostmodified( $time, $timezone, $post_type ) {
+	public static function update_lastpostmodified( $time, $timezone, $post_type = 'any' ) {
 		$option_name = self::get_option_name( $timezone, $post_type );
 		return update_option( $option_name, $time );
 	}
