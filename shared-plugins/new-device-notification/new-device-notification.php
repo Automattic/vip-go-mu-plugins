@@ -154,6 +154,8 @@ class New_Device_Notification {
 		if ( is_email( $cc_user ) )
 			$headers .= 'CC: ' . $cc_user . "\r\n";
 
+		$headers = apply_filters( 'ndn_headers', $headers );
+
 		wp_mail( $emails, $subject, $message, $headers );
 
 		return true;
