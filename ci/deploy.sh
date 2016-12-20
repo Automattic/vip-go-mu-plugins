@@ -46,9 +46,10 @@ ls -alh ${DEPLOY_BUILD_DIR}
 # Some of the commands below may fail
 set +e
 
-# Remove VCS config
+# Remove VCS and CI config
 find ${DEPLOY_BUILD_DIR} -name ".svn" -exec rm -rfv {} \; 2> /dev/null
 find ${DEPLOY_BUILD_DIR} -name ".git*" -not -name ".github" -exec rm -rfv {} \; 2> /dev/null
+find ${DEPLOY_BUILD_DIR} -name ".travis.yml" -exec rm -rfv {} \; 2> /dev/null
 
 # Remove everything unnecessary to running this (tests, deploy scripts, etc)
 rm -v ${DEPLOY_BUILD_DIR}/README.md
