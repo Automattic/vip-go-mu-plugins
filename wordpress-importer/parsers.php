@@ -114,28 +114,46 @@ class WXR_Parser_SimpleXML {
 		// grab cats, tags and terms
 		foreach ( $xml->xpath('/rss/channel/wp:category') as $term_arr ) {
 			$t = $term_arr->children( $namespaces['wp'] );
-			$categories[] = array(
+			$category = array(
 				'term_id' => (int) $t->term_id,
 				'category_nicename' => (string) $t->category_nicename,
 				'category_parent' => (string) $t->category_parent,
 				'cat_name' => (string) $t->cat_name,
 				'category_description' => (string) $t->category_description
 			);
+
+			foreach ( $t->termmeta as $meta ) {
+				$category['termmeta'][] = array(
+					'key' => (string) $meta->meta_key,
+					'value' => (string) $meta->meta_value
+				);
+			}
+
+			$categories[] = $category;
 		}
 
 		foreach ( $xml->xpath('/rss/channel/wp:tag') as $term_arr ) {
 			$t = $term_arr->children( $namespaces['wp'] );
-			$tags[] = array(
+			$tag = array(
 				'term_id' => (int) $t->term_id,
 				'tag_slug' => (string) $t->tag_slug,
 				'tag_name' => (string) $t->tag_name,
 				'tag_description' => (string) $t->tag_description
 			);
+
+			foreach ( $t->termmeta as $meta ) {
+				$tag['termmeta'][] = array(
+					'key' => (string) $meta->meta_key,
+					'value' => (string) $meta->meta_value
+				);
+			}
+
+			$tags[] = $tag;
 		}
 
 		foreach ( $xml->xpath('/rss/channel/wp:term') as $term_arr ) {
 			$t = $term_arr->children( $namespaces['wp'] );
-			$terms[] = array(
+			$term = array(
 				'term_id' => (int) $t->term_id,
 				'term_taxonomy' => (string) $t->term_taxonomy,
 				'slug' => (string) $t->term_slug,
@@ -143,6 +161,15 @@ class WXR_Parser_SimpleXML {
 				'term_name' => (string) $t->term_name,
 				'term_description' => (string) $t->term_description
 			);
+
+			foreach ( $t->termmeta as $meta ) {
+				$term['termmeta'][] = array(
+					'key' => (string) $meta->meta_key,
+					'value' => (string) $meta->meta_value
+				);
+			}
+
+			$terms[] = $term;
 		}
 
 		// grab posts
@@ -204,7 +231,7 @@ class WXR_Parser_SimpleXML {
 						);
 					}
 				}
-			
+
 				$post['comments'][] = array(
 					'comment_id' => (int) $comment->comment_id,
 					'comment_author' => (string) $comment->comment_author,
@@ -324,7 +351,11 @@ class WXR_Parser_XML {
 		if ( ! trim( $cdata ) )
 			return;
 
-		$this->cdata .= trim( $cdata );
+		if ( false !== $this->in_tag || false !== $this->in_sub_tag ) {
+			$this->cdata .= $cdata;
+		} else {
+			$this->cdata .= trim( $cdata );
+		}
 	}
 
 	function tag_close( $parser, $tag ) {
@@ -400,10 +431,6 @@ class WXR_Parser_Regex {
 	var $tags = array();
 	var $terms = array();
 	var $base_url = '';
-
-	function WXR_Parser_Regex() {
-		$this->__construct();
-	}
 
 	function __construct() {
 		$this->has_gzip = is_callable( 'gzopen' );
