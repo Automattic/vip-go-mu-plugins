@@ -71,7 +71,7 @@ class JSON
      */
     var $error;
     
-    function Json() {
+    function __construct() {
         $this->error = false;
     }
     
