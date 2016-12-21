@@ -55,7 +55,7 @@ class MediaPass {
 	
 	public $membership_duration_increments;
 	
-	public function MediaPass( $access_token, $asset_id, $env = 'default' ) {
+	public function __construct( $access_token, $asset_id, $env = 'default' ) {
 		$this->access_token = $access_token;
 		$this->asset_id     = $asset_id;
 		
