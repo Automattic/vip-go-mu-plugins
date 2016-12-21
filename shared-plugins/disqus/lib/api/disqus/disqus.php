@@ -72,7 +72,7 @@ class DisqusAPI {
 	 * @param $api_url
 	 *   (optional) The prefix URL to use when calling the Disqus API.
 	 */
-	function DisqusAPI($user_api_key, $forum_api_key, $api_url='http://www.disqus.com/api/') {
+	function __construct($user_api_key, $forum_api_key, $api_url='http://www.disqus.com/api/') {
 		$this->user_api_key = $user_api_key;
 		$this->forum_api_key = $forum_api_key;
 		$this->api_url = $api_url;

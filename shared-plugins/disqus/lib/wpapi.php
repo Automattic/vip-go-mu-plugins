@@ -33,7 +33,7 @@ class DisqusWordPressAPI {
 	var $short_name;
 	var $forum_api_key;
 
-	function DisqusWordPressAPI($short_name=null, $forum_api_key=null, $user_api_key=null) {
+	function __construct($short_name=null, $forum_api_key=null, $user_api_key=null) {
 		$this->short_name = $short_name;
 		$this->forum_api_key = $forum_api_key;
 		$this->user_api_key = $user_api_key;
