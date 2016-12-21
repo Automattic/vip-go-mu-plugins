@@ -814,7 +814,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 	}
 
 	$hashed_email = md5( strtolower( trim( $email ) ) );
-	$profile_url = esc_url_raw( sprintf( '%s.gravatar.com/%s.php', ( is_ssl() ? 'https://secure' : 'http://www' ), $hashed_email ), array( 'http', 'https' ) );
+	$profile_url = esc_url_raw( sprintf( 'https://en.gravatar.com/%s.php', $hashed_email ), array( 'http', 'https' ) );
 
 	$profile = wpcom_vip_file_get_contents( $profile_url, 1, 900 );
 	if ( $profile ) {
