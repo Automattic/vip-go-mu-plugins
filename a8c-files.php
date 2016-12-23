@@ -633,9 +633,9 @@ class A8C_Files {
 		 * Filter the original image Photon-compatible parameters before changes are 
 		 *
 		 * @param array|string $args Array of Photon-compatible arguments.
-		 * @param string $image_url Image URL.
+		 * @param string $img_url Image URL.
 		 */
-		$args = apply_filters( 'vip_go_image_resize_pre_args', $args, $image_url );
+		$args = apply_filters( 'vip_go_image_resize_pre_args', $args, $img_url );
 
 		if ( ! $crop ) {
 			$imagedata = wp_get_attachment_metadata( $id );
