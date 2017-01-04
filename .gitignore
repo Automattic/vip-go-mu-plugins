@@ -2,3 +2,6 @@
 
 # Secrets directory
 .secrets
+
+# Secret files
+jetpack-private.php
