@@ -129,11 +129,13 @@ if ( defined( 'VIP_CUSTOM_PINGS' ) && true === VIP_CUSTOM_PINGS ) {
  *
  * Filter `rest_url` to always return the https:// version
  *
- * If this must be disabled for local development, the filter
- * can be removed, but be aware that HTTPS is enforced at the web server
- * level in production, meaning non-HTTPS API calls will result in a 406 error.
+ * This is disabled for local development, but be aware
+ * that HTTPS is enforced at the web server level in production,
+ * meaning non-HTTPS API calls will result in a 406 error.
  */
-add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl' );
+if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
+	add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl' );
+}
 
 function _vip_filter_rest_url_for_ssl( $url ) {
 	$url = set_url_scheme( $url, 'https' );
