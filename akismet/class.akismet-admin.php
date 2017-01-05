@@ -357,63 +357,15 @@ class Akismet_Admin {
 
 		Akismet::fix_scheduled_recheck();
 
-		if ( ! ( isset( $_GET['recheckqueue'] ) || ( isset( $_REQUEST['action'] ) && 'akismet_recheck_queue' == $_REQUEST['action'] ) ) )
+		if ( ! ( isset( $_GET['recheckqueue'] ) || ( isset( $_REQUEST['action'] ) && 'akismet_recheck_queue' == $_REQUEST['action'] ) ) ) {
 			return;
-
-		$paginate = '';
-		if ( isset( $_POST['limit'] ) && isset( $_POST['offset'] ) ) {
-			$paginate = $wpdb->prepare( " LIMIT %d OFFSET %d", array( $_POST['limit'], $_POST['offset'] ) );
 		}
-		$moderation = $wpdb->get_results( "SELECT * FROM {$wpdb->comments} WHERE comment_approved = '0'{$paginate}", ARRAY_A );
 
-		foreach ( (array) $moderation as $c ) {
-			$c['user_ip']      = $c['comment_author_IP'];
-			$c['user_agent']   = $c['comment_agent'];
-			$c['referrer']     = '';
-			$c['blog']         = get_bloginfo('url');
-			$c['blog_lang']    = get_locale();
-			$c['blog_charset'] = get_option('blog_charset');
-			$c['permalink']    = get_permalink($c['comment_post_ID']);
+		$result_counts = self::recheck_queue_portion( empty( $_POST['offset'] ) ? 0 : $_POST['offset'], empty( $_POST['limit'] ) ? 100 : $_POST['limit'] );
 
-			$c['user_role'] = '';
-			if ( isset( $c['user_ID'] ) )
-				$c['user_role'] = Akismet::get_user_roles($c['user_ID']);
-
-			if ( Akismet::is_test_mode() )
-				$c['is_test'] = 'true';
-
-			add_comment_meta( $c['comment_ID'], 'akismet_rechecking', true );
-
-			$response = Akismet::http_post( Akismet::build_query( $c ), 'comment-check' );
-			
-			if ( 'true' == $response[1] ) {
-				wp_set_comment_status( $c['comment_ID'], 'spam' );
-				update_comment_meta( $c['comment_ID'], 'akismet_result', 'true' );
-				delete_comment_meta( $c['comment_ID'], 'akismet_error' );
-				delete_comment_meta( $c['comment_ID'], 'akismet_delayed_moderation_email' );
-				Akismet::update_comment_history( $c['comment_ID'], '', 'recheck-spam' );
-
-			} elseif ( 'false' == $response[1] ) {
-				update_comment_meta( $c['comment_ID'], 'akismet_result', 'false' );
-				delete_comment_meta( $c['comment_ID'], 'akismet_error' );
-				delete_comment_meta( $c['comment_ID'], 'akismet_delayed_moderation_email' );
-				Akismet::update_comment_history( $c['comment_ID'], '', 'recheck-ham' );
-			// abnormal result: error
-			} else {
-				update_comment_meta( $c['comment_ID'], 'akismet_result', 'error' );
-				Akismet::update_comment_history(
-					$c['comment_ID'],
-					'',
-					'recheck-error',
-					array( 'response' => substr( $response[1], 0, 50 ) )
-				);
-			}
-
-			delete_comment_meta( $c['comment_ID'], 'akismet_rechecking' );
-		}
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			wp_send_json( array(
-				'processed' => count((array) $moderation),
+				'counts' => $result_counts,
 			));
 		}
 		else {
@@ -422,11 +374,51 @@ class Akismet_Admin {
 			exit;
 		}
 	}
+	
+	public static function recheck_queue_portion( $start = 0, $limit = 100 ) {
+		global $wpdb;
+		
+		$paginate = '';
+
+		if ( $limit <= 0 ) {
+			$limit = 100;
+		}
+
+		if ( $start < 0 ) {
+			$start = 0;
+		}
+
+		$moderation = $wpdb->get_col( $wpdb->prepare( "SELECT * FROM {$wpdb->comments} WHERE comment_approved = '0' LIMIT %d OFFSET %d", $limit, $start ) );
+
+		$result_counts = array(
+			'processed' => count( $moderation ),
+			'spam' => 0,
+			'ham' => 0,
+			'error' => 0,
+		);
+
+		foreach ( $moderation as $comment_id ) {
+			$api_response = Akismet::recheck_comment( $comment_id, 'recheck_queue' );
+
+			if ( 'true' === $api_response ) {
+				++$result_counts['spam'];
+			}
+			elseif ( 'false' === $api_response ) {
+				++$result_counts['ham'];
+			}
+			else {
+				++$result_counts['error'];
+			}
+		}
+
+		return $result_counts;
+	}
 
 	// Adds an 'x' link next to author URLs, clicking will remove the author URL and show an undo link
 	public static function remove_comment_author_url() {
 		if ( !empty( $_POST['id'] ) && check_admin_referer( 'comment_author_url_nonce' ) ) {
-			$comment = get_comment( intval( $_POST['id'] ), ARRAY_A );
+			$comment_id = intval( $_POST['id'] );
+			$comment = get_comment( $comment_id, ARRAY_A );
 			if ( $comment && current_user_can( 'edit_comment', $comment['comment_ID'] ) ) {
 				$comment['comment_author_url'] = '';
 				do_action( 'comment_remove_author_url' );
@@ -438,7 +430,8 @@ class Akismet_Admin {
 
 	public static function add_comment_author_url() {
 		if ( !empty( $_POST['id'] ) && !empty( $_POST['url'] ) && check_admin_referer( 'comment_author_url_nonce' ) ) {
-			$comment = get_comment( intval( $_POST['id'] ), ARRAY_A );
+			$comment_id = intval( $_POST['id'] );
+			$comment = get_comment( $comment_id, ARRAY_A );
 			if ( $comment && current_user_can( 'edit_comment', $comment['comment_ID'] ) ) {
 				$comment['comment_author_url'] = esc_url( $_POST['url'] );
 				do_action( 'comment_add_author_url' );
@@ -680,9 +673,14 @@ class Akismet_Admin {
 			update_option('akismet_available_servers', $servers);
 			update_option('akismet_connectivity_time', time());
 		}
-			
-		$response = wp_remote_get( 'http://rest.akismet.com/1.1/test' );
-		
+
+		if ( function_exists( 'wp_http_supports' ) && ( wp_http_supports( array( 'ssl' ) ) ) ) {
+			$response = wp_remote_get( 'https://rest.akismet.com/1.1/test' );
+		}
+		else {
+			$response = wp_remote_get( 'http://rest.akismet.com/1.1/test' );
+		}
+
 		$debug[ 'gethostbynamel' ]  = function_exists('gethostbynamel') ? 'exists' : 'not here';
 		$debug[ 'Servers' ]         = $servers;
 		$debug[ 'Test Connection' ] = $response;
@@ -722,7 +720,7 @@ class Akismet_Admin {
 	public static function get_akismet_user( $api_key ) {
 		$akismet_user = false;
 
-		$subscription_verification = Akismet::http_post( Akismet::build_query( array( 'key' => $api_key, 'blog' => get_bloginfo( 'url' ) ) ), 'get-subscription' );
+		$subscription_verification = Akismet::http_post( Akismet::build_query( array( 'key' => $api_key, 'blog' => get_option( 'home' ) ) ), 'get-subscription' );
 
 		if ( ! empty( $subscription_verification[1] ) ) {
 			if ( 'invalid' !== $subscription_verification[1] ) {
@@ -737,7 +735,7 @@ class Akismet_Admin {
 		$stat_totals = array();
 
 		foreach( array( '6-months', 'all' ) as $interval ) {
-			$response = Akismet::http_post( Akismet::build_query( array( 'blog' => get_bloginfo( 'url' ), 'key' => $api_key, 'from' => $interval ) ), 'get-stats' );
+			$response = Akismet::http_post( Akismet::build_query( array( 'blog' => get_option( 'home' ), 'key' => $api_key, 'from' => $interval ) ), 'get-stats' );
 
 			if ( ! empty( $response[1] ) ) {
 				$stat_totals[$interval] = json_decode( $response[1] );

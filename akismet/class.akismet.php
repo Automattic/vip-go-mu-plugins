@@ -64,7 +64,7 @@ class Akismet {
 	}
 
 	public static function check_key_status( $key, $ip = null ) {
-		return self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option('home') ) ), 'verify-key', $ip );
+		return self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option( 'home' ) ) ), 'verify-key', $ip );
 	}
 
 	public static function verify_key( $key, $ip = null ) {
@@ -77,7 +77,7 @@ class Akismet {
 	}
 
 	public static function deactivate_key( $key ) {
-		$response = self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option('home') ) ), 'deactivate' );
+		$response = self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option( 'home' ) ) ), 'deactivate' );
 
 		if ( $response[1] != 'deactivated' )
 			return 'failed';
@@ -124,7 +124,7 @@ class Akismet {
 		$comment['user_ip']      = self::get_ip_address();
 		$comment['user_agent']   = self::get_user_agent();
 		$comment['referrer']     = self::get_referer();
-		$comment['blog']         = get_option('home');
+		$comment['blog']         = get_option( 'home' );
 		$comment['blog_lang']    = get_locale();
 		$comment['blog_charset'] = get_option('blog_charset');
 		$comment['permalink']    = get_permalink( $comment['comment_post_ID'] );
@@ -347,10 +347,11 @@ class Akismet {
 				do_action( 'delete_comment', $comment_id );
 			}
 
-			$comma_comment_ids = implode( ', ', array_map('intval', $comment_ids) );
+			// Prepared as strings since comment_id is an unsigned BIGINT, and using %d will constrain the value to the maximum signed BIGINT.
+			$format_string = implode( ", ", array_fill( 0, count( $comment_ids ), '%s' ) );
 
-			$wpdb->query("DELETE FROM {$wpdb->comments} WHERE comment_id IN ( $comma_comment_ids )");
-			$wpdb->query("DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( $comma_comment_ids )");
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 
 			clean_comment_cache( $comment_ids );
 		}
@@ -449,27 +450,72 @@ class Akismet {
 		global $wpdb;
 
 		$c = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->comments} WHERE comment_ID = %d", $id ), ARRAY_A );
-		if ( !$c )
-			return;
+		
+		if ( ! $c ) {
+			return new WP_Error( 'invalid-comment-id', __( 'Comment not found.', 'akismet' ) );
+		}
 
 		$c['user_ip']        = $c['comment_author_IP'];
 		$c['user_agent']     = $c['comment_agent'];
 		$c['referrer']       = '';
-		$c['blog']           = get_option('home');
+		$c['blog']           = get_option( 'home' );
 		$c['blog_lang']      = get_locale();
 		$c['blog_charset']   = get_option('blog_charset');
 		$c['permalink']      = get_permalink($c['comment_post_ID']);
 		$c['recheck_reason'] = $recheck_reason;
+
+		$c['user_role'] = '';
+		if ( isset( $c['user_ID'] ) )
+			$c['user_role'] = Akismet::get_user_roles($c['user_ID']);
 
 		if ( self::is_test_mode() )
 			$c['is_test'] = 'true';
 
 		$response = self::http_post( Akismet::build_query( $c ), 'comment-check' );
 
-		return ( is_array( $response ) && ! empty( $response[1] ) ) ? $response[1] : false;
+		if ( ! empty( $response[1] ) ) {
+			return $response[1];
+		}
+
+		return false;
 	}
 	
-	
+	public static function recheck_comment( $id, $recheck_reason = 'recheck_queue' ) {
+		add_comment_meta( $id, 'akismet_rechecking', true );
+		
+		$api_response = self::check_db_comment( $id, $recheck_reason );
+
+		delete_comment_meta( $id, 'akismet_rechecking' );
+
+		if ( is_wp_error( $api_response ) ) {
+			// Invalid comment ID.
+		}
+		else if ( 'true' === $api_response ) {
+			wp_set_comment_status( $id, 'spam' );
+			update_comment_meta( $id, 'akismet_result', 'true' );
+			delete_comment_meta( $id, 'akismet_error' );
+			delete_comment_meta( $id, 'akismet_delayed_moderation_email' );
+			Akismet::update_comment_history( $id, '', 'recheck-spam' );
+		}
+		elseif ( 'false' === $api_response ) {
+			update_comment_meta( $id, 'akismet_result', 'false' );
+			delete_comment_meta( $id, 'akismet_error' );
+			delete_comment_meta( $id, 'akismet_delayed_moderation_email' );
+			Akismet::update_comment_history( $id, '', 'recheck-ham' );
+		}
+		else {
+			// abnormal result: error
+			update_comment_meta( $id, 'akismet_result', 'error' );
+			Akismet::update_comment_history(
+				$id,
+				'',
+				'recheck-error',
+				array( 'response' => substr( $api_response, 0, 50 ) )
+			);
+		}
+
+		return $api_response;
+	}
 
 	public static function transition_comment_status( $new_status, $old_status, $comment ) {
 		
@@ -505,8 +551,9 @@ class Akismet {
 			 ( isset( $_POST['spam'] )   && (int) $_POST['spam'] == 1 ) ||
 			 ( isset( $_POST['unspam'] ) && (int) $_POST['unspam'] == 1 ) ||
 			 ( isset( $_POST['comment_status'] )  && in_array( $_POST['comment_status'], array( 'spam', 'unspam' ) ) ) ||
-			 ( isset( $_GET['action'] )  && in_array( $_GET['action'], array( 'spam', 'unspam' ) ) ) ||
-			 ( isset( $_POST['action'] ) && in_array( $_POST['action'], array( 'editedcomment' ) ) )
+			 ( isset( $_GET['action'] )  && in_array( $_GET['action'], array( 'spam', 'unspam', 'spamcomment', 'unspamcomment', ) ) ) ||
+			 ( isset( $_POST['action'] ) && in_array( $_POST['action'], array( 'editedcomment' ) ) ) ||
+			 ( isset( $_GET['for'] ) && ( 'jetpack' == $_GET['for'] ) ) // Moderation via WP.com notifications/WP app/etc.
 		 ) {
 			if ( $new_status == 'spam' && ( $old_status == 'approved' || $old_status == 'unapproved' || !$old_status ) ) {
 				return self::submit_spam_comment( $comment->comment_ID );
@@ -537,7 +584,7 @@ class Akismet {
 		if ( $as_submitted && is_array( $as_submitted ) && isset( $as_submitted['comment_content'] ) )
 			$comment = (object) array_merge( (array)$comment, $as_submitted );
 
-		$comment->blog         = get_bloginfo('url');
+		$comment->blog         = get_option( 'home' );
 		$comment->blog_lang    = get_locale();
 		$comment->blog_charset = get_option('blog_charset');
 		$comment->permalink    = get_permalink($comment->comment_post_ID);
@@ -583,7 +630,7 @@ class Akismet {
 		if ( $as_submitted && is_array($as_submitted) && isset($as_submitted['comment_content']) )
 			$comment = (object) array_merge( (array)$comment, $as_submitted );
 
-		$comment->blog         = get_bloginfo('url');
+		$comment->blog         = get_option( 'home' );
 		$comment->blog_lang    = get_locale();
 		$comment->blog_charset = get_option('blog_charset');
 		$comment->permalink    = get_permalink( $comment->comment_post_ID );
@@ -824,8 +871,13 @@ class Akismet {
 
 	// filter handler used to return a spam result to pre_comment_approved
 	public static function last_comment_status( $approved, $comment ) {
+		if ( is_null( self::$last_comment_result ) ) {
+			// We didn't have reason to store the result of the last check.
+			return $approved;
+		}
+
 		// Only do this if it's the correct comment
-		if ( is_null(self::$last_comment_result) || ! self::matches_last_comment( $comment ) ) {
+		if ( ! self::matches_last_comment( $comment ) ) {
 			self::log( "comment_is_spam mismatched comment, returning unaltered $approved" );
 			return $approved;
 		}
@@ -1087,7 +1139,7 @@ p {
 		if ( version_compare( $GLOBALS['wp_version'], AKISMET__MINIMUM_WP_VERSION, '<' ) ) {
 			load_plugin_textdomain( 'akismet' );
 			
-			$message = '<strong>'.sprintf(esc_html__( 'Akismet %s requires WordPress %s or higher.' , 'akismet'), AKISMET_VERSION, AKISMET__MINIMUM_WP_VERSION ).'</strong> '.sprintf(__('Please <a href="%1$s">upgrade WordPress</a> to a current version, or <a href="%2$s">downgrade to version 2.4 of the Akismet plugin</a>.', 'akismet'), 'https://codex.wordpress.org/Upgrading_WordPress', 'http://wordpress.org/extend/plugins/akismet/download/');
+			$message = '<strong>'.sprintf(esc_html__( 'Akismet %s requires WordPress %s or higher.' , 'akismet'), AKISMET_VERSION, AKISMET__MINIMUM_WP_VERSION ).'</strong> '.sprintf(__('Please <a href="%1$s">upgrade WordPress</a> to a current version, or <a href="%2$s">downgrade to version 2.4 of the Akismet plugin</a>.', 'akismet'), 'https://codex.wordpress.org/Upgrading_WordPress', 'https://wordpress.org/extend/plugins/akismet/download/');
 
 			Akismet::bail_on_activation( $message );
 		}
@@ -1114,12 +1166,14 @@ p {
 	/**
 	 * Log debugging info to the error log.
 	 *
-	 * Enabled when WP_DEBUG_LOG is enabled, but can be disabled via the akismet_debug_log filter.
+	 * Enabled when WP_DEBUG_LOG is enabled (and WP_DEBUG, since according to
+	 * core, "WP_DEBUG_DISPLAY and WP_DEBUG_LOG perform no function unless
+	 * WP_DEBUG is true), but can be disabled via the akismet_debug_log filter.
 	 *
 	 * @param mixed $akismet_debug The data to log.
 	 */
 	public static function log( $akismet_debug ) {
-		if ( apply_filters( 'akismet_debug_log', defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) ) {
+		if ( apply_filters( 'akismet_debug_log', defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) ) {
 			error_log( print_r( compact( 'akismet_debug' ), true ) );
 		}
 	}
