@@ -119,8 +119,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $alloptions, $blocked 
 			size_format( $size )
 		);
 
-		$email_recipient = defined( VIP_ALLOPTIONS_NOTIFY_EMAIL ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
-
+		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
 
 		/// @TODO Can we use wp_mail()?
 		if ( $email_recipient ) {
