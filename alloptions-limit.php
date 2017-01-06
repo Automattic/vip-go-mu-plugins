@@ -1,8 +1,10 @@
 <?php
 
-function wpcom_vip_sanity_check_alloptions( $alloptions ) {
+add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
+
+function wpcom_vip_sanity_check_alloptions() {
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		return $alloptions;
+		return;
 	}
 
 	// Warn should *always* be =< die
@@ -17,6 +19,8 @@ function wpcom_vip_sanity_check_alloptions( $alloptions ) {
 
 	// Cache miss
 	if ( false === $alloptions_size ) {
+		$alloptions = wp_load_alloptions();
+
 		$alloptions_size = strlen( serialize( $alloptions ) );
 
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
@@ -28,29 +32,16 @@ function wpcom_vip_sanity_check_alloptions( $alloptions ) {
 	// If it's at least over the warning threshold (will also run when blocked), notify
 	if ( $warning ) {
 		// NOTE - This function has built-in rate limiting so it's ok to call on every request
-		wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $alloptions, $blocked );
+		wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $blocked );
 	}
 
 	// Will exit with a 503
 	if ( $blocked ) {
-		wpcom_vip_sanity_check_alloptions_die( $alloptions_size, $alloptions );
+		wpcom_vip_sanity_check_alloptions_die();
 	}
-
-	return $alloptions;
 }
 
-
-
-
-// @TODO need a new hook
-// also see https://core.trac.wordpress.org/ticket/33958
-
-add_filter( 'alloptions', 'wpcom_vip_sanity_check_alloptions' );
-
-
-
-
-function wpcom_vip_sanity_check_alloptions_die( $size, $alloptions ) {
+function wpcom_vip_sanity_check_alloptions_die() {
 	// 503 Service Unavailable - prevent caching, indexing, etc and alert Varnish of the problem
 	http_response_code( 503 );
 
@@ -59,7 +50,7 @@ function wpcom_vip_sanity_check_alloptions_die( $size, $alloptions ) {
 	exit;
 }
 
-function wpcom_vip_sanity_check_alloptions_notify( $size, $alloptions, $blocked = false ) {
+function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 	global $wpdb;
 
 	// Rate limit the alerts to avoid flooding
@@ -112,20 +103,16 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $alloptions, $blocked 
 
 		$to_irc = wpcom_vip_irc_color( 'CRITICAL', 'red', 'black' ) . $subject . ' #vipoptions';
 
-		wpcom_vip_irc( '#nagios-vip', $to_irc, 'a8c-alloptions' );
-		wpcom_vip_irc( '#wordpress.com-errors', $to_irc , 'a8c-alloptions' );
+		// Send to IRC, if we have a host configured
+		if ( defined( 'VIP_IRC_HOSTNAME' ) && VIP_IRC_HOSTNAME ) {
+			wpcom_vip_irc( '#nagios-vip', $to_irc, 'a8c-alloptions' );
+			wpcom_vip_irc( '#wordpress.com-errors', $to_irc , 'a8c-alloptions' );
+		}
 
 		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
 
-		/// @TODO Can we use wp_mail()?
 		if ( $email_recipient ) {
-			mail( $email_recipient, $email_subject, "Alloptions size when serialized: $size\n\n$msg" );
+			wp_mail( $email_recipient, $subject, "Alloptions size when serialized: $size\n\n$msg" );
 		}
 	}
-
-
-
-
-
-	// @TODO Set an admin warning for certain roles
 }
