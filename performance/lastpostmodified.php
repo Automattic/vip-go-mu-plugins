@@ -27,11 +27,10 @@ class Last_Post_Modified {
 			return;
 		}
 
-		if ( self::is_locked( $post->post_type ) ) {
+		$is_locked = self::is_locked( $post->post_type );
+		if ( $is_locked ) {
 			return;
 		}
-
-		self::set_lock( $post->post_type );
 
 		do_action( 'wpcom_vip_bump_lastpostmodified', $post );
 	}
@@ -69,12 +68,8 @@ class Last_Post_Modified {
 
 	private static function is_locked( $post_type ) {
 		$key = self::get_lock_name( $post_type );
-		return false !== get_transient( $key );
-	}
-
-	private static function set_lock( $post_type ) {
-		$key = self::get_lock_name( $post_type );
-		set_transient( $key, 1, self::LOCK_TIME_IN_SECONDS );
+		// if the add fails, then we already have a lock set
+		return false === wp_cache_add( $key, 1, false, self::LOCK_TIME_IN_SECONDS );
 	}
 
 	private static function get_lock_name( $post_type ) {
