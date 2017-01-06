@@ -60,7 +60,7 @@ function wpcom_vip_sanity_check_alloptions_die( $size, $alloptions ) {
 }
 
 function wpcom_vip_sanity_check_alloptions_notify( $size, $alloptions, $blocked = false ) {
-	global $wpdb, $current_blog;
+	global $wpdb;
 
 	// Rate limit the alerts to avoid flooding
 	if ( false !== wp_cache_get( 'alloptions', 'throttle' ) ) {
@@ -78,7 +78,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $alloptions, $blocked 
 	$msg .= "\n\nDebug information can be found in the Fieldguide";
 
 	$is_vip_env    = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
-	$is_production = ( defined( 'VIP_GO_ENV' ) && 'production' === VIP_GO_ENV );
+	$environment   = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
 	$site_id       = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
 
 	// Send notices to VIP staff if this is happening on VIP-hosted sites
@@ -94,30 +94,26 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $alloptions, $blocked 
 			return;
 		}
 
-		$email_subject = 'ALLOPTIONS: %s (VIP Go site ID: %s';
-
-		$to_irc = wpcom_vip_irc_color( 'CRITICAL', 'red', 'black' );
-		$to_irc .=  ' ' . esc_url( $_SERVER['HTTP_HOST'] ) . " (VIP Go site ID " . $site_id;
+		$subject = 'ALLOPTIONS: %s (%s VIP Go site ID: %s';
 
 		if ( 0 !== $wpdb->blogid ) {
-			$email_subject .= ", blog ID {$wpdb->blogid}";
-
-			$to_irc .= ", blog ID {$wpdb->blogid}";
+			$subject .= ", blog ID {$wpdb->blogid}";
 		}
 
-		$email_subject .= ') options is up to %s';
+		$subject .= ') options is up to %s';
 
-		$to_irc .= ") options is up to " . size_format( $size ) . ' ' . $msg . ' #vipoptions';
+		$subject = sprintf(
+			$subject,
+			esc_url( $_SERVER['HTTP_HOST'] ),
+			esc_html( $environment ),
+			(int) $site_id,
+			size_format( $size )
+		);
+
+		$to_irc = wpcom_vip_irc_color( 'CRITICAL', 'red', 'black' ) . $subject . ' #vipoptions';
 
 		wpcom_vip_irc( '#nagios-vip', $to_irc, 'a8c-alloptions' );
 		wpcom_vip_irc( '#wordpress.com-errors', $to_irc , 'a8c-alloptions' );
-
-		$email_subject = sprintf(
-			$email_subject,
-			esc_url( $_SERVER['HTTP_HOST'] ),
-			$site_id,
-			size_format( $size )
-		);
 
 		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
 
