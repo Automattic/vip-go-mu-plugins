@@ -198,7 +198,7 @@ function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 
 		if ( 0 === $page_id ) {
 			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
 		} else {
-			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', ( 12 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
+			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', 0 ); // We only store the ID to keep our footprint small
 		}
 	}
 
