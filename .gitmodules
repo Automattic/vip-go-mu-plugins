@@ -1,42 +1,44 @@
 [submodule "vip-dashboard"]
-	path = vip-dashboard
-	url = git@github.com:Automattic/vip-dashboard.git
+    path = vip-dashboard
+    url = https://github.com/Automattic/vip-dashboard.git
 [submodule "vip-support"]
-	path = vip-support
-	url = git@github.com:Automattic/vip-support.git
+    path = vip-support
+    url = https://github.com/Automattic/vip-support.git 
 [submodule "vip-jetpack"]
-	path = vip-jetpack
-	url = git@github.com:Automattic/vip-jetpack.git
+    path = vip-jetpack
+    url = https://github.com/Automattic/vip-jetpack.git
 [submodule "advanced-post-cache"]
-	path = advanced-post-cache
-	url = git@github.com:Automattic/advanced-post-cache.git
+    path = advanced-post-cache
+    url = https://github.com/Automattic/advanced-post-cache.git
 [submodule "jetpack"]
-	path = jetpack
-	url = git@github.com:Automattic/jetpack.git
+    path = jetpack
+    url = https://github.com/Automattic/jetpack.git
 [submodule "rewrite-rules-inspector"]
-	path = rewrite-rules-inspector
-	url = git@github.com:Automattic/rewrite-rules-inspector
+    path = rewrite-rules-inspector
+    url = https://github.com/Automattic/rewrite-rules-inspector
 [submodule "http-concat"]
-	path = http-concat
-	url = git@github.com:Automattic/nginx-http-concat.git
+    path = http-concat
+    url = https://github.com/Automattic/nginx-http-concat.git
 [submodule "shared-plugins/fieldmanager"]
-	path = shared-plugins/fieldmanager
-	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
+    path = shared-plugins/fieldmanager
+    url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
 [submodule "shared-plugins/livefyre-apps"]
-	path = shared-plugins/livefyre-apps
-	url = git@github.com:Livefyre/Livefyre-Apps-Wordpress-Plugin.git
+    path = shared-plugins/livefyre-apps
+    url = https://github.com/Livefyre/Livefyre-Apps-Wordpress-Plugin.git
 [submodule "query-monitor"]
-	path = query-monitor
-	url = git@github.com:johnbillion/query-monitor.git
+    path = query-monitor
+    url = https://github.com/johnbillion/query-monitor.git
 [submodule "wp-cron-control"]
-	path = wp-cron-control
-	url = https://github.com/Automattic/WP-Cron-Control.git
+    path = wp-cron-control
+    url = https://github.com/Automattic/WP-Cron-Control.git
 [submodule "shared-plugins/msm-sitemap"]
-	path = shared-plugins/msm-sitemap
-	url = git@github.com:Automattic/msm-sitemap.git
+    path = shared-plugins/msm-sitemap
+    url = https://github.com/Automattic/msm-sitemap.git
 [submodule "cron-control"]
-	path = cron-control
-	url = git@github.com:Automattic/Cron-Control.git
+    path = cron-control
+    url = https://github.com/Automattic/Cron-Control.git
 [submodule "debug-bar-cron"]
+    path = debug-bar-cron
+    url = https://github.com/tollmanz/debug-bar-cron.git
 	path = debug-bar-cron
 	url = https://github.com/tollmanz/debug-bar-cron.git
