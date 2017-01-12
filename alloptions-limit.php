@@ -95,7 +95,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 		$subject = sprintf(
 			$subject,
-			esc_url( $_SERVER['HTTP_HOST'] ),
+			esc_url( home_url() ),
 			esc_html( $environment ),
 			(int) $site_id,
 			size_format( $size )
