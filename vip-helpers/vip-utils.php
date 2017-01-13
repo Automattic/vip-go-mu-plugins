@@ -1148,9 +1148,9 @@ function wpcom_vip_disable_new_relic_js() {
  */
 function wpcom_vip_add_URI_to_newrelic(){
 	if ( ! is_admin() && function_exists( 'newrelic_add_custom_parameter' ) ){
-		newrelic_add_custom_parameter ('REQUEST_URI', $_SERVER['REQUEST_URI']);
-		newrelic_add_custom_parameter ('HTTP_REFERER', $_SERVER['HTTP_REFERER']);
-		newrelic_add_custom_parameter ('HTTP_USER_AGENT', $_SERVER['HTTP_USER_AGENT']);
+		newrelic_add_custom_parameter( 'REQUEST_URI', isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '' );
+		newrelic_add_custom_parameter( 'HTTP_REFERER', isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : '' );
+		newrelic_add_custom_parameter( 'HTTP_USER_AGENT', isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '' );
 	}
 }
 add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
