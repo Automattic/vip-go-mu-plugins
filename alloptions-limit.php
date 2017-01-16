@@ -11,11 +11,7 @@ function wpcom_vip_sanity_check_alloptions() {
 	$alloptions_size_warn  =  800000;
 	$alloptions_size_die   = 1000000; // 1000000 ~ 1MB, too big for memcache
 
-	static $alloptions_size = null; // Avoids repeated cache requests
-
-	if ( ! $alloptions_size ) {
-		$alloptions_size = wp_cache_get( 'alloptions_size' );
-	}
+	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
 	// Cache miss
 	if ( false === $alloptions_size ) {
