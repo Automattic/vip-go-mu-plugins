@@ -49,12 +49,13 @@ function wpcom_vip_sanity_check_alloptions_die() {
 function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 	global $wpdb;
 
-	// Rate limit the alerts to avoid flooding
-	if ( false !== wp_cache_get( 'alloptions', 'throttle' ) ) {
+	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 15 * MINUTE_IN_SECONDS );
+
+	// If adding to cache failed, we're already throttled (unless the operation actually failed),
+	// so return without doing anything.
+	if ( false === $throttle_was_set ) {
 		return;
 	}
-
-	wp_cache_add( 'alloptions', 1, 'throttle', 15 * MINUTE_IN_SECONDS );
 
 	if ( $blocked ) {
 		$msg = "This site is now BLOCKED from loading until option sizes are under control.";
