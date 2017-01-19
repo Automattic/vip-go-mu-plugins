@@ -1,0 +1,74 @@
+<?php
+
+/**
+ * Helpers for interacting with alloptions
+ *
+ * @package wp-cli
+ * @subpackage commands/wordpressdotcom
+ */
+
+class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
+	/**
+	 * Get a list of big options listed in biggest size to smallest
+	 *
+	 * @subcommand find
+	 * @synopsis [--big] [--format=<table>]
+	 */
+	public function find( $args, $assoc_args ) {
+		$defaults = array(
+			'big'    => false,
+			'format' => 'table',
+		);
+
+		$assoc_args = wp_parse_args( $assoc_args, $defaults );
+
+		$options    = array();
+		$alloptions = wp_load_alloptions( true );
+		$total_size = 0;
+
+		foreach ( $alloptions as $name => $val ) {
+			$size       = mb_strlen( $val );
+			$total_size += $size;
+
+			// find big options only
+			if ( $assoc_args['big'] && $size < 500 ) {
+				continue;
+			}
+
+			$option = new stdClass();
+
+			$option->name = $name;
+			$option->size = $size;
+
+			$options[] = $option;
+		}
+
+		// sort by size
+		usort( $options, function( $arr1, $arr2 ) {
+			if ( $arr1->size === $arr2->size ) {
+				return 0;
+			}
+
+			return ( $arr1->size < $arr2->size ) ? -1 : 1;
+		});
+
+		$options = array_reverse( $options );
+
+		WP_CLI::line();
+
+		if ( $assoc_args['big'] ) {
+			WP_CLI::success( sprintf( 'Big options for %s - Blog ID %d:', home_url(), get_current_blog_id() ) );
+		} else {
+			WP_CLI::success( sprintf( 'All options for %s - Blog ID %d:', home_url(), get_current_blog_id() ) );
+		}
+
+		WP_CLI\Utils\format_items( $assoc_args['format'], $options, array( 'name', 'size' ) );
+
+		WP_CLI::line( sprintf( 'Total size of all option values for this blog: %s', size_format( $total_size ) ) );
+		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s',   size_format( mb_strlen( serialize( $alloptions ) ) ) ) );
+		WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
+		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
+	}
+}
+
+WP_CLI::add_command( 'alloptions', 'VIP_Go_Alloptions' );
