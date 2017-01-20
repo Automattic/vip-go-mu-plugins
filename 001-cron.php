@@ -56,6 +56,11 @@ class WPCOM_VIP_Cron_Control {
 	}
 }
 
+// Allow all cron overrides to be disabled, such as during local development
+if ( apply_filters( 'wpcom_vip_go_use_core_cron', false ) ) {
+	return;
+}
+
 // Allow testing of new approach to cron execution
 $whitelisted_sites = array();
 if ( VIP_GO_ENV && in_array( FILES_CLIENT_SITE_ID, $whitelisted_sites ) ) {
