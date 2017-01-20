@@ -56,6 +56,16 @@ class WPCOM_VIP_Cron_Control {
 	}
 }
 
+// Non-public multisites can't be reached by our cron runners, so should use Core's native approach
+if ( is_multisite() ) {
+	$details = get_blog_details( get_current_blog_id(), false );
+
+	// get_blog_details() uses numeric strings for backcompat
+	if ( '1' !== $details->public || in_array( '1', array( $details->archived, $details->spam, $details->deleted ), true ) ) {
+		add_filter( 'wpcom_vip_go_use_core_cron', '__return_true' );
+	}
+}
+
 // Allow all cron overrides to be disabled, such as during local development
 if ( apply_filters( 'wpcom_vip_go_use_core_cron', false ) ) {
 	return;
