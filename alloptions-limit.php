@@ -109,6 +109,8 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
 
 		if ( $email_recipient ) {
+			$size = size_format( $size );
+
 			wp_mail( $email_recipient, $subject, "Alloptions size when serialized: $size\n\n$msg" );
 		}
 	}
