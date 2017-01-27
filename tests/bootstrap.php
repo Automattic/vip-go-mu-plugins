@@ -10,7 +10,9 @@ require_once $_tests_dir . '/includes/functions.php';
 function _manually_load_plugin() {
 	require __DIR__ . '/../000-vip-init.php';
 	require __DIR__ . '/../performance.php';
+	// Proxy lib
 	require __DIR__ . '/../lib/proxy/ip-forward.php';
+	require __DIR__ . '/../lib/proxy/ip-utils.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 

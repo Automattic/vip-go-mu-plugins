@@ -1,6 +1,8 @@
 <?php
 
-namespace Automattic\VIP\Proxy;
+namespace Automattic\VIP\Tests;
+
+use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
 
 class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
