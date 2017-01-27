@@ -40,8 +40,9 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 
 	require_once( __DIR__ . '/ip-utils.php' );
 
-	// Verify that our remote proxy matches out whitelist
+	// Verify that the remote proxy matches our whitelist
 	$is_whitelisted_proxy_ip = IpUtils::checkIp( $remote_proxy_ip, $proxy_ip_whitelist );
+
 	if ( ! $is_whitelisted_proxy_ip ) {
 		return false;
 	}

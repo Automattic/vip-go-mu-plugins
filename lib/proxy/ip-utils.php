@@ -6,7 +6,7 @@
  *
  * (c) Fabien Potencier <fabien@symfony.com>
  *
- * For the full copyright and license information, please https://github.com/symfony/http-foundation/blob/master/LICENSE
+ * For the full copyright and license information, please see https://github.com/symfony/http-foundation/blob/master/LICENSE
  */
 
 namespace Automattic\VIP\Proxy;
