@@ -66,6 +66,28 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
+	public function test__fix_remote_address__invalid_remote_ip() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 123456789';
+		$whitelist = [ '5.6.7.8' ];
+
+		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__fix_remote_address__invalid_user_ip() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = 'bad_ip, 5.6.7.8';
+		$whitelist = [ '5.6.7.8' ];
+
+		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
 	public function test__fix_remote_address__ip_not_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
 		$ip_trail = '1.2.3.4, 5.6.7.8';
@@ -77,7 +99,7 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
-	public function test__fix_remote_address__ip_in_whitelist() {
+	public function test__fix_remote_address__ip_in_whitelist_ipv4() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
 		$ip_trail = '1.2.3.4, 5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
@@ -86,5 +108,16 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 
 		$this->assertTrue( $result );
 		$this->assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__fix_remote_address__ip_in_whitelist_ipv6() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '2001:db8::1234:ace:6006:1e, 5.6.7.8';
+		$whitelist = [ '5.6.7.8' ];
+
+		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '2001:db8::1234:ace:6006:1e', $_SERVER['REMOTE_ADDR'] );
 	}
 }

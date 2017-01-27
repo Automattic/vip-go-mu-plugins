@@ -38,6 +38,12 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 		return false;
 	}
 
+	// Validate that user_ip is a valid IP address
+	if ( ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
+		&& ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+            return false;
+        }
+
 	require_once( __DIR__ . '/ip-utils.php' );
 
 	// Verify that the remote proxy matches our whitelist
