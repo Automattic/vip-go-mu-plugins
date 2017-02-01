@@ -62,7 +62,7 @@ function es_api_search_index( $args ) {
 
     $args['blog_id'] = absint( $args['blog_id'] );
 
-    $service_url = 'http://public-api.wordpress.com/rest/v1/sites/' . $args['blog_id'] . '/search';
+    $service_url = 'https://public-api.wordpress.com/rest/v1/sites/' . $args['blog_id'] . '/search';
 
     unset( $args['blog_id'] );
 
