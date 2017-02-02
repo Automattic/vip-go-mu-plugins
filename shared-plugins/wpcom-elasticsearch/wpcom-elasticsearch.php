@@ -29,6 +29,10 @@ http://www.gnu.org/licenses/gpl-2.0.html
 
 **************************************************************************/
 
+if ( ! class_exists( 'Jetpack' ) || ! Jetpack::is_active() ) {
+	return;
+}
+
 require_once( __DIR__ . '/class.es-wpcom-searchresult-posts-iterator.php' );
 
 class WPCOM_elasticsearch {
