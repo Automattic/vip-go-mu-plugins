@@ -4,7 +4,7 @@ This plugins is still in beta. Want to try it? Contact us. :)
 
 **************************************************************************
 
-Plugin Name: WordPress.com VIP Search Add-On
+Plugin Name: VIP Go Search Add-On
 Description: Super-charged search powered by Jetpack and Elasticsearch. Please contact us before using this plugin.
 Author:      Automattic
 Author URI:  http://automattic.com/
@@ -106,7 +106,7 @@ class WPCOM_elasticsearch {
 	}
 
 	public function admin_notice_no_index() {
-		echo '<div class="error"><p>' . __( 'WordPress.com VIP Search Add-On needs a little extra configuration behind the scenes. Please contact support to make it happen.' ) . '</p></div>';
+		echo '<div class="error"><p>' . __( 'VIP Go Search Add-On needs a little extra configuration behind the scenes. Please contact support to make it happen.' ) . '</p></div>';
 	}
 
 	public function filter__post_limits_request( $limits, $query ) {
