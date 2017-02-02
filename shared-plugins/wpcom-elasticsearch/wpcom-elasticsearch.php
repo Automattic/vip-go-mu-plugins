@@ -271,33 +271,6 @@ class WPCOM_elasticsearch {
 			'blog_id'
 		);
 
-		// Ask for a search suggestion (to catch typos)
-		// See http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-suggesters-phrase.html for options
-		$suggest_beta_blogs = array(
-			15797879, 	// viptest.wordpress.com
-			12269838, 	// lobby.vip.wordpress.com
-			2235322, 	// vip.wordpress.com
-		);
-
-		if ( in_array( get_current_blog_id(), $suggest_beta_blogs ) ) {
-			$es_query_args['suggest'] = array(
-				'text' => $query->get( 's' ),
-				'simple_phrase' => array(
-					'phrase' => array(
-						'field' => 'content',
-						'direct_generator' => array(
-							array(
-								'field' 		=> 'content',
-								'suggest_mode' 	=> 'popular',
-								'prefix_len' 	=> 3,
-								'max_term_freq' => 0.02 // If a term appears in this many (or more) documents, it's likely not a typo and we shouldn't suggest an alternative
-							)
-						)
-					)
-				)
-			);
-		}
-
 		// This filter is harder to use if you're unfamiliar with ES but it allows complete control over the query
 		$es_query_args = apply_filters( 'wpcom_elasticsearch_query_args', $es_query_args, $query );
 
