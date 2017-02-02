@@ -56,18 +56,20 @@ class VaultPress_Hotfixes {
 		// WooThemes < 3.8.3, foxypress, asset-manager, wordpress-member-private-conversation.
 		$end_execution = false;
 		if ( isset( $_SERVER['SCRIPT_FILENAME'] ) )
-			foreach ( array( 'preview-shortcode-external.php', 'uploadify.php', 'doupload.php', 'cef-upload.php', 'upload.php' ) as $vulnerable_script )
+			foreach ( array( 'preview-shortcode-external.php', 'uploadify.php', 'doupload.php', 'cef-upload.php', 'upload.php' ) as $vulnerable_script ) {
 				if ( $vulnerable_script == basename( $_SERVER['SCRIPT_FILENAME'] ) ) {
-					switch( $vulnerable_script ) {
+					switch ( $vulnerable_script ) {
 						case 'upload.php':
 							$pma_config_file = realpath( dirname( $_SERVER['SCRIPT_FILENAME'] ) . DIRECTORY_SEPARATOR . 'paam-config-ajax.php' );
-							if ( !in_array( $pma_config_file, get_included_files() ) )
+							if ( false === $pma_config_file || ! in_array( $pma_config_file, get_included_files() ) ) {
 								break;
+							}
 						default:
 							$end_execution = true;
 							break 2;
 					}
 				}
+			}
 		if ( $end_execution )
 			die( 'Disabled for security reasons' );
 
@@ -119,6 +121,41 @@ class VaultPress_Hotfixes {
 		
 		// Protect Akismet < 3.1.5 from stored XSS in admin page
 		add_filter( 'init', array( $this, 'protect_akismet_comment_xss' ), 50 );
+
+		if ( version_compare( $wp_version, '4.7.1', '<=' ) ) {
+			// Protect WordPress 4.4 - 4.7.1 against WP REST type abuse
+			if ( version_compare( $wp_version, '4.4', '>=' ) ) {
+				add_filter( 'rest_pre_dispatch', array( $this, 'protect_rest_type_juggling' ), 10, 3 );
+			}
+			
+			//	Protect WordPress 4.0 - 4.7.1 against faulty youtube embeds
+			if ( version_compare( $wp_version, '4.0', '>=' ) ) {
+				$this->protect_youtube_embeds();
+			}
+		}
+
+	}
+
+	function protect_rest_type_juggling( $replace, $server, $request ) {
+		if ( isset( $request['id'] ) ) {
+			$request['id'] = intval( $request['id'] );
+		}
+
+		return $replace;
+	}
+
+	function protect_youtube_embeds() {
+		if ( ! apply_filters( 'load_default_embeds', true ) ) {
+			return;
+		}
+
+		wp_embed_unregister_handler( 'youtube_embed_url' );
+		wp_embed_register_handler( 'youtube_embed_url', '#https?://(www.)?youtube\.com/(?:v|embed)/([^/]+)#i', array( $this, 'safe_embed_handler_youtube' ), 9, 4 );
+	}
+
+	function safe_embed_handler_youtube( $matches, $attr, $url, $rawattr ) {
+		$matches[2] = urlencode( $matches[2] );
+		return( wp_embed_handler_youtube( $matches, $attr, $url, $rawattr ) );
 	}
 
 	function protect_jetpack_402_from_oembed_xss() {
@@ -1077,11 +1114,12 @@ class VaultPress_kses {
 		$string2 = strtolower($string2);
 
 		$allowed = false;
-		foreach ( (array) $allowed_protocols as $one_protocol )
-			if ( strtolower($one_protocol) == $string2 ) {
+		foreach ( (array) $allowed_protocols as $one_protocol ) {
+			if ( strtolower( $one_protocol ) == $string2 ) {
 				$allowed = true;
 				break;
 			}
+		}
 
 		if ($allowed)
 			return "$string2:";
