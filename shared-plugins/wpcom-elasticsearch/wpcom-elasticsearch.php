@@ -5,13 +5,13 @@ This plugins is still in beta. Want to try it? Contact us. :)
 **************************************************************************
 
 Plugin Name: WordPress.com VIP Search Add-On
-Description: Super-charged search with faceting, powered by ElasticSearch technology.
+Description: Super-charged search powered by Jetpack and Elasticsearch. Please contact us before using this plugin.
 Author:      Automattic
 Author URI:  http://automattic.com/
 
 **************************************************************************
 
-Copyright (C) 2012-2013 Automattic
+Copyright (C) 2012-2017 Automattic
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 2 or greater,
@@ -26,12 +26,6 @@ GNU General Public License for more details.
 
 The license for this software can likely be found here:
 http://www.gnu.org/licenses/gpl-2.0.html
-
-**************************************************************************
-
-TODO:
-
-* PHPDoc
 
 **************************************************************************/
 
