@@ -35,7 +35,6 @@ TODO:
 
 **************************************************************************/
 
-require_once( __DIR__ . '/widget-facets.php' );
 require_once( __DIR__ . '/class.es-wpcom-searchresult-posts-iterator.php' );
 
 class WPCOM_elasticsearch {
@@ -78,8 +77,6 @@ class WPCOM_elasticsearch {
 			return;
 		}
 
-		add_action( 'widgets_init', array( $this, 'action__widgets_init' ) );
-
 		if ( ! is_admin() ) {
 			$this->init_hooks();
 		}
@@ -112,10 +109,6 @@ class WPCOM_elasticsearch {
 
 	public function admin_notice_no_index() {
 		echo '<div class="error"><p>' . __( 'WordPress.com VIP Search Add-On needs a little extra configuration behind the scenes. Please contact support to make it happen.' ) . '</p></div>';
-	}
-
-	public function action__widgets_init() {
-		register_widget( 'WPCOM_elasticsearch_Widget_Facets' );
 	}
 
 	public function filter__post_limits_request( $limits, $query ) {
