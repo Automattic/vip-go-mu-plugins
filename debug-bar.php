@@ -8,8 +8,9 @@
  Author URI: http://wordpress.org/
  */
 add_filter( 'debug_bar_enable', function( $enable ) {
-	$enable = is_automattician();
-
+	if ( true === A8C_PROXIED_REQUEST ) {
+		return true;
+	}
 	return $enable;
 }, 99 );
 
