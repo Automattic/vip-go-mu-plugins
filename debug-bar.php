@@ -7,12 +7,19 @@
  Version: 0.8.2
  Author URI: http://wordpress.org/
  */
+
 add_filter( 'debug_bar_enable', function( $enable ) {
 	if ( true === A8C_PROXIED_REQUEST ) {
 		return true;
 	}
 	return $enable;
 }, 99 );
+
+add_action( 'send_headers', function() {
+	if ( true === A8C_PROXIED_REQUEST ) {
+		header( 'Cache-Control: private' );
+	}
+});
 
 // We only need to load the files if it's enabled
 add_action( 'init', function() {
