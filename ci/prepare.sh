@@ -6,12 +6,8 @@
 # http://www.peterbe.com/plog/set-ex
 set -ex
 
-
-echo "Do we see newlines?"
-echo "$VIP_TEST"
-VIP_BAR=$(printf "$VIP_TEST")
-echo "$VIP_BAR"
-
+printf "$VIP_TEST" > /tmp/vip_test
+cat /tmp/vip_test
 
 cd $TRAVIS_BUILD_DIR
 
