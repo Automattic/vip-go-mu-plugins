@@ -15,9 +15,21 @@ set -ex
 # fi
 
 ## Install the PHPdoc binary
-pear channel-discover pear.phpdoc.org
-pear install phpdoc/phpDocumentor
-phpenv rehash
+#pear channel-discover pear.phpdoc.org
+#pear install phpdoc/phpDocumentor
+#phpenv rehash
+#
+#phpdoc -d $TRAVIS_BUILD_DIR --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
 
-phpdoc -d $TRAVIS_BUILD_DIR --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
+# Composer runs faster without Xdebug, and we don't need Xdebug any more
+phpenv config-rm xdebug.ini
+#phpenv rehash
+
+mkdir -p $TRAVIS_BUILD_DIR/../phpdoc
+cd $TRAVIS_BUILD_DIR/../phpdoc
+
+composer require phpdocumentor/phpdocumentor
+vendor/phpdocumentor/phpdocumentor/bin$ phpdoc -d $TRAVIS_BUILD_DIR --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
+
+
 
