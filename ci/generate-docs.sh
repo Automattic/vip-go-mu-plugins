@@ -27,9 +27,11 @@ phpenv config-rm xdebug.ini
 
 mkdir -p $TRAVIS_BUILD_DIR/../phpdoc
 cd $TRAVIS_BUILD_DIR/../phpdoc
+pwd
 
 composer require phpdocumentor/phpdocumentor
-vendor/phpdocumentor/phpdocumentor/bin$ phpdoc -d $TRAVIS_BUILD_DIR --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
+ls -alh vendor/phpdocumentor/phpdocumentor/bin/
+vendor/phpdocumentor/phpdocumentor/bin/phpdoc -d $TRAVIS_BUILD_DIR --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
 
 
 
