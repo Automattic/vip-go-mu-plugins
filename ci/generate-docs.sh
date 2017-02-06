@@ -19,9 +19,11 @@ VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
 cat ~/.ssh/config
 
 # Get the encrypted private key from the repo settings
-# This is the private pair to the "Travis Docs Deploy Key"
-# GitHub Deploy Key here:
+# This is the private pair to the "Travis GH Pages Deploy Key"
+# The public key portion can be deleted here:
 # https://github.com/Automattic/vip-go-mu-plugins/settings/keys
+# The private key is in Travis settings here:
+# https://travis-ci.org/Automattic/vip-go-mu-plugins/settings
 # Turn off echo for the private key
 set +x
 echo -e $VIP_GITHUB_DEPLOY_KEY > /tmp/vip_deploy_key
