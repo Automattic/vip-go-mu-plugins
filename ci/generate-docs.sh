@@ -15,6 +15,7 @@ set -ex
 # fi
 
 VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
+VIP_PHPDOC_DIR="$TRAVIS_BUILD_DIR/../phpdoc"
 
 cat ~/.ssh/config
 
@@ -37,19 +38,19 @@ echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/co
 git clone "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 cd ${VIP_DOCS_DIR}
 git fetch --all
-git checkout -B gh-pages
+git checkout gh-pages
+ls -alh
 
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
 
-mkdir -p $TRAVIS_BUILD_DIR/../phpdoc
-cd $TRAVIS_BUILD_DIR/../phpdoc
+mkdir -p $VIP_PHPDOC_DIR
+cd $VIP_PHPDOC_DIR
 pwd
 
 composer require phpdocumentor/phpdocumentor
-ls -alh vendor/phpdocumentor/phpdocumentor/bin/
 vendor/phpdocumentor/phpdocumentor/bin/phpdoc --no-interaction --directory="${TRAVIS_BUILD_DIR}" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
-ls -alh $VIP_DOCS_DIR
+#ls -alh $VIP_DOCS_DIR
 
 #cd ${VIP_DOCS_DIR}
 #
