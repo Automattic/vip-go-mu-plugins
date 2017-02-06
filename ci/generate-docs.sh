@@ -20,3 +20,4 @@ pear install phpdoc/phpDocumentor
 phpenv rehash
 
 phpdoc -d $TRAVIS_BUILD_DIR --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
+
