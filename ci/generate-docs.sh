@@ -53,25 +53,24 @@ composer require phpdocumentor/phpdocumentor
 # so we send it to /dev/null
 vendor/phpdocumentor/phpdocumentor/bin/phpdoc --ignore-symlinks --no-interaction --directory="${TRAVIS_BUILD_DIR}/vip-helpers/" --filename="${TRAVIS_BUILD_DIR}/vip-cache-manager/api.php" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean > /dev/null
 ls -alh $VIP_DOCS_DIR
-stat /home/travis/build/Automattic/vip-go-mu-plugins/advanced-post-cache.php
 
-#cd ${VIP_DOCS_DIR}
-#
-#git config user.name "Travis CI"
-#git config user.email "travis@travis-ci.com"
-#git config push.default "current"
-#
-#git add -A .
-#
-#set +ex
-#GIT_MSG=$( printf %"s \n\n" "Built at ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}" "Commits included:" "$(git log ${TRAVIS_COMMIT_RANGE})"; )
-#set -x
-#git commit -am "${GIT_MSG}"
-#if [ 0 != $? ]; then
-#	echo "Nothing to push"
-#else
-#	git branch
-#	git push
-#	echo "Pushing!"
-#fi
-#
+cd ${VIP_DOCS_DIR}
+
+git config user.name "Travis CI"
+git config user.email "travis@travis-ci.com"
+git config push.default "current"
+
+git add -A .
+
+set +ex
+GIT_MSG=$( printf %"s \n\n" "Built at ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}" "Commits included:" "$(git log ${TRAVIS_COMMIT_RANGE})"; )
+set -x
+git commit -am "${GIT_MSG}"
+if [ 0 != $? ]; then
+	echo "Nothing to push"
+else
+	git branch
+	git push
+	echo "Pushing!"
+fi
+
