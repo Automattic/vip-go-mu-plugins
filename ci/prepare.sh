@@ -6,9 +6,6 @@
 # http://www.peterbe.com/plog/set-ex
 set -ex
 
-printf "$VIP_TEST" > /tmp/vip_test
-cat /tmp/vip_test
-
 cd $TRAVIS_BUILD_DIR
 
 ## Convert the URLs in the superproject .gitmodules file,
