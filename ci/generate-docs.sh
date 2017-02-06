@@ -23,13 +23,12 @@ cat ~/.ssh/config
 # GitHub Deploy Key here:
 # https://github.com/Automattic/vip-go-mu-plugins/settings/keys
 # Turn off echo for the private key
-set +e
+set +x
 echo -e $VIP_GITHUB_DEPLOY_KEY > /tmp/vip_deploy_key
-set -e
-cat /tmp/vip_deploy_key
 chmod 600 /tmp/vip_deploy_key
+set -x
 
-echo "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/config
+echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/config
 cat ~/.ssh/config
 
 ssh -T git@github.com
