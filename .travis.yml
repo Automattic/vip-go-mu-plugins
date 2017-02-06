@@ -7,7 +7,7 @@ git:
 
 php:
   - 7
-#  - 7.1
+  - 7.1
 
 env:
   matrix:
@@ -15,13 +15,12 @@ env:
 
 before_install:
   - ./ci/prepare.sh
-  - ./ci/generate-docs.sh
 
 install: true
 
 script:
   # Linting and unit tests
-#  - make test
+  - make test
 
 notifications:
   slack:
@@ -31,5 +30,5 @@ notifications:
 
 after_success:
   # Push the aggregated code, including submodules, to the public repo
-#  - ./ci/deploy.sh
-#  - ./ci/generate-docs.sh
+  - ./ci/deploy.sh
+  - ./ci/generate-docs.sh
