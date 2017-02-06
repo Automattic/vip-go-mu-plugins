@@ -37,7 +37,7 @@ echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/co
 git clone "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 cd ${VIP_DOCS_DIR}
 git fetch --all
-git checkout gh-pages
+git checkout -B gh-pages
 
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
