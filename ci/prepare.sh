@@ -6,6 +6,13 @@
 # http://www.peterbe.com/plog/set-ex
 set -ex
 
+
+echo "Do we see newlines?"
+echo "$VIP_TEST"
+VIP_BAR=$(printf "$VIP_TEST")
+echo "$VIP_BAR"
+
+
 cd $TRAVIS_BUILD_DIR
 
 ## Convert the URLs in the superproject .gitmodules file,
