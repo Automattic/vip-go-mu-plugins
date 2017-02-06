@@ -51,6 +51,7 @@ pwd
 composer require phpdocumentor/phpdocumentor
 vendor/phpdocumentor/phpdocumentor/bin/phpdoc --no-interaction --directory="${TRAVIS_BUILD_DIR}" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean
 ls -alh $VIP_DOCS_DIR
+stat /home/travis/build/Automattic/vip-go-mu-plugins/advanced-post-cache.php
 
 #cd ${VIP_DOCS_DIR}
 #
