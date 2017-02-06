@@ -106,8 +106,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 			// Inflate raw list of site IDs, if available
 			if ( is_array( $_sites ) ) {
 				// Switch to the blog to ensure certain domain filtering is respected
-				foreach ( $_sites as $_site ) {
-					switch_to_blog( $_site );
+				foreach ( $_sites as $blog_id ) {
+					switch_to_blog( $blog_id );
 
 					$url_parts = wp_parse_args( parse_url( home_url() ), array(
 						'host' => '',
