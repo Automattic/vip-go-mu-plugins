@@ -123,6 +123,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 					}
 
 					$sites[] = array(
+						'blog_id'     => $blog_id,
 						'domain_name' => $url,
 					);
 
