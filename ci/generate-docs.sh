@@ -20,10 +20,11 @@ VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
 # This is the private pair to the "Travis Docs Deploy Key"
 # GitHub Deploy Key here:
 # https://github.com/Automattic/vip-go-mu-plugins/settings/keys
-printf "$VIP_GITHUB_DEPLOY_KEY" > /tmp/vip_deploy_key
+echo -e $VIP_GITHUB_DEPLOY_KEY > /tmp/vip_deploy_key
+cat /tmp/vip_deploy_key
 chmod 600 /tmp/vip_deploy_key
 
-echo "\nHost github.com \n  IdentityFile ~/.ssh/new_id_rsa \n" >> ~/.ssh/config
+echo "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/config
 cat ~/.ssh/config
 
 ssh -T git@github.com
