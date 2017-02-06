@@ -14,6 +14,9 @@ set -ex
 # 	exit
 # fi
 
+echo "Do we see newlines?"
+echo $VIP_TEST
+
 VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
 
 git clone "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
