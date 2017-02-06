@@ -51,7 +51,7 @@ pwd
 composer require phpdocumentor/phpdocumentor
 # PHPDoc is really verbose, more than Travis can cope with,
 # so we send it to /dev/null
-vendor/phpdocumentor/phpdocumentor/bin/phpdoc --ignore-symlinks --no-interaction --directory="${TRAVIS_BUILD_DIR}/vip-helpers/" --filename="${TRAVIS_BUILD_DIR}/vip-cache-manager/api.php,${TRAVIS_BUILD_DIR}/lib/proxy/ip-forward.php" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean > /dev/null
+vendor/phpdocumentor/phpdocumentor/bin/phpdoc --ignore-symlinks --sourcecode --no-interaction --directory="${TRAVIS_BUILD_DIR}/vip-helpers/" --filename="${TRAVIS_BUILD_DIR}/vip-cache-manager/api.php,${TRAVIS_BUILD_DIR}/lib/proxy/ip-forward.php" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean > /dev/null
 ls -alh $VIP_DOCS_DIR
 
 cd ${VIP_DOCS_DIR}
