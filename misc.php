@@ -7,6 +7,11 @@ Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+add_filter( 'upload_mimes', function( $mimes ) {
+	unset( $mimes['flv'] );
+	return $mimes;
+}, 99999 );
+
 // Ensure we do not send the cache headers through to Varnish,
 // so responses obey the cache settings we have configured.
 function wpcom_vip_check_for_404_and_remove_cache_headers( $headers ) {
