@@ -44,9 +44,14 @@ cd $VIP_PHPDOC_DIR
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
 
+# Using Composer to install PHPDoc is slower than other methods, but installs
+# a more up to date version.
 composer require phpdocumentor/phpdocumentor
+
 # PHPDoc is really verbose, more than Travis can cope with,
-# so we send it to /dev/null
+# so we send it to /dev/null. The disadvantage of this is that
+# it exacerbates the issue wherein Travis times out after 10 mins
+# of no output from the script.
 vendor/phpdocumentor/phpdocumentor/bin/phpdoc --ignore-symlinks --sourcecode --no-interaction --directory="${TRAVIS_BUILD_DIR}/vip-helpers/" --filename="${TRAVIS_BUILD_DIR}/vip-cache-manager/api.php,${TRAVIS_BUILD_DIR}/lib/proxy/ip-forward.php" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean > /dev/null
 
 cd ${VIP_DOCS_DIR}
@@ -58,6 +63,9 @@ git config push.default "current"
 git add -A .
 
 set +ex
+# Make a commit message for GitHub Pages which concatenates all
+# the commit messages from the commit ranges that we just processed
+# in this Travis run.
 GIT_MSG=$( printf %"s \n\n" "Built at ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}" "Commits included:" "$(git log ${TRAVIS_COMMIT_RANGE})"; )
 set -x
 git commit -am "${GIT_MSG}"
