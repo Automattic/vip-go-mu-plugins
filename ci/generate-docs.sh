@@ -17,8 +17,6 @@ set -ex
 VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
 VIP_PHPDOC_DIR="$TRAVIS_BUILD_DIR/../phpdoc"
 
-cat ~/.ssh/config
-
 # Get the encrypted private key from the repo settings
 # This is the private pair to the "Travis GH Pages Deploy Key"
 # The public key portion can be deleted here:
@@ -39,20 +37,17 @@ git clone "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 cd ${VIP_DOCS_DIR}
 git fetch --all
 git checkout gh-pages
-ls -alh
 
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
 
 mkdir -p $VIP_PHPDOC_DIR
 cd $VIP_PHPDOC_DIR
-pwd
 
 composer require phpdocumentor/phpdocumentor
 # PHPDoc is really verbose, more than Travis can cope with,
 # so we send it to /dev/null
 vendor/phpdocumentor/phpdocumentor/bin/phpdoc --ignore-symlinks --sourcecode --no-interaction --directory="${TRAVIS_BUILD_DIR}/vip-helpers/" --filename="${TRAVIS_BUILD_DIR}/vip-cache-manager/api.php,${TRAVIS_BUILD_DIR}/lib/proxy/ip-forward.php" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean > /dev/null
-ls -alh $VIP_DOCS_DIR
 
 cd ${VIP_DOCS_DIR}
 
