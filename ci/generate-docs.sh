@@ -38,11 +38,11 @@ cd ${VIP_DOCS_DIR}
 git fetch --all
 git checkout gh-pages
 
-# Composer runs faster without Xdebug, and we don't need Xdebug any more
-phpenv config-rm xdebug.ini
-
 mkdir -p $VIP_PHPDOC_DIR
 cd $VIP_PHPDOC_DIR
+
+# Composer runs faster without Xdebug, and we don't need Xdebug any more
+phpenv config-rm xdebug.ini
 
 composer require phpdocumentor/phpdocumentor
 # PHPDoc is really verbose, more than Travis can cope with,
