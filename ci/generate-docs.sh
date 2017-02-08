@@ -4,15 +4,15 @@
 
 set -ex
 
-#if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
-#	echo "Not deploying pull requests."
-#	exit
-#fi
-#
-#if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
-#	echo "Not on the '${DEPLOY_BRANCH}' branch."
-#	exit
-#fi
+if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
+	echo "Not deploying pull requests."
+	exit
+fi
+
+if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
+	echo "Not on the '${DEPLOY_BRANCH}' branch."
+	exit
+fi
 
 VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
 VIP_PHPDOC_DIR="$TRAVIS_BUILD_DIR/../phpdoc"
@@ -55,7 +55,7 @@ cd "${TRAVIS_BUILD_DIR}"
 # See phpdoc.dist.xml for the majority of the configuration. You can override
 # phpdoc.dist.xml in it's entirety by providing a file named phpdoc.xml.
 # The command switches here appear to have no equivalent in phpdoc(.dist).xml.
-phpdoc run --ignore-symlinks --sourcecode --no-interaction --force
+phpdoc run --ignore-symlinks --sourcecode --no-interaction
 
 cd ${VIP_DOCS_DIR}
 
