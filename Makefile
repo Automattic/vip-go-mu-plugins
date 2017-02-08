@@ -7,3 +7,6 @@ lint:
 
 phpunit:
 	phpunit
+
+phpdoc:
+	./vendor/phpdocumentor/phpdocumentor/bin/phpdoc run --ignore-symlinks --no-interaction --quiet --sourcecode
