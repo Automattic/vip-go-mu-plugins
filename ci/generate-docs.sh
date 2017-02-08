@@ -4,15 +4,15 @@
 
 set -ex
 
- if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
- 	echo "Not deploying pull requests."
- 	exit
- fi
+if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
+	echo "Not deploying pull requests."
+	exit
+fi
 
- if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
- 	echo "Not on the '${DEPLOY_BRANCH}' branch."
- 	exit
- fi
+if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
+	echo "Not on the '${DEPLOY_BRANCH}' branch."
+	exit
+fi
 
 VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
 VIP_PHPDOC_DIR="$TRAVIS_BUILD_DIR/../phpdoc"
@@ -47,12 +47,15 @@ phpenv config-rm xdebug.ini
 # Using Composer to install PHPDoc is slower than other methods, but installs
 # a more up to date version.
 composer require phpdocumentor/phpdocumentor
+PATH="$PATH:${VIP_PHPDOC_DIR}/vendor/phpdocumentor/phpdocumentor/bin/"
+echo $PATH
 
-# PHPDoc is really verbose, more than Travis can cope with,
-# so we send it to /dev/null. The disadvantage of this is that
-# it exacerbates the issue wherein Travis times out after 10 mins
-# of no output from the script.
-vendor/phpdocumentor/phpdocumentor/bin/phpdoc --ignore-symlinks --sourcecode --no-interaction --directory="${TRAVIS_BUILD_DIR}/vip-helpers/" --filename="${TRAVIS_BUILD_DIR}/vip-cache-manager/api.php,${TRAVIS_BUILD_DIR}/lib/proxy/ip-forward.php" --target="${VIP_DOCS_DIR}" --title="WordPress.com VIP – VIP Go Function Documentation" --template clean > /dev/null
+cd "${TRAVIS_BUILD_DIR}"
+
+# See phpdoc.dist.xml for the majority of the configuration. You can override
+# phpdoc.dist.xml in it's entirety by providing a file named phpdoc.xml.
+# The command switches here appear to have no equivalent in phpdoc(.dist).xml.
+phpdoc run --ignore-symlinks --sourcecode --no-interaction --force
 
 cd ${VIP_DOCS_DIR}
 
