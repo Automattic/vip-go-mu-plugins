@@ -55,7 +55,7 @@ cd "${TRAVIS_BUILD_DIR}"
 # See phpdoc.dist.xml for the majority of the configuration. You can override
 # phpdoc.dist.xml in it's entirety by providing a file named phpdoc.xml.
 # The command switches here appear to have no equivalent in phpdoc(.dist).xml.
-phpdoc run --ignore-symlinks --sourcecode --no-interaction
+phpdoc run --ignore-symlinks --no-interaction --quiet --sourcecode
 
 cd ${VIP_DOCS_DIR}
 
