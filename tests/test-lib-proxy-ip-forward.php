@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
+use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
 
 class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
@@ -24,6 +25,52 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		}
 	}
 
+	// fix_remote_address
+	public function test__fix_remote_address__invalid_user_ip() {
+		$user_ip = 'bad_ip';
+		$proxy_ip = '5.6.7.8';
+		$whitelist = [ '5.6.7.8' ];
+
+		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__fix_remote_address__ip_not_in_whitelist() {
+		$user_ip = '1.2.3.4';
+		$proxy_ip = '5.6.7.8';
+		$whitelist = [ '0.0.0.0' ];
+
+		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__fix_remote_address__ip_in_whitelist_ipv4() {
+		$user_ip = '1.2.3.4';
+		$proxy_ip = '5.6.7.8';
+		$whitelist = [ '5.6.7.8' ];
+
+		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__fix_remote_address__ip_in_whitelist_ipv6() {
+		$user_ip = '2001:db8::1234:ace:6006:1e';
+		$proxy_ip = '5.6.7.8';
+		$whitelist = [ '5.6.7.8' ];
+
+		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '2001:db8::1234:ace:6006:1e', $_SERVER['REMOTE_ADDR'] );
+	}
+
+	// fix_remote_address_from_ip_trail
 	public function test__fix_remote_address_from_ip_trail__no_forwarded_for() {
 		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
 		$ip_trail = '1.2.3.4, 5.6.7.8';
