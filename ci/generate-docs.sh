@@ -46,7 +46,7 @@ phpenv config-rm xdebug.ini
 
 # Using Composer to install PHPDoc is slower than other methods, but installs
 # a more up to date version.
-composer require phpdocumentor/phpdocumentor
+composer --quiet require phpdocumentor/phpdocumentor
 PATH="$PATH:${VIP_PHPDOC_DIR}/vendor/phpdocumentor/phpdocumentor/bin/"
 echo $PATH
 
