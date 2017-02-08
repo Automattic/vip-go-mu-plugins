@@ -21,8 +21,8 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 	// Validate that user_ip is a valid IP address
 	if ( ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
 		&& ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-            return false;
-        }
+			return false;
+	}
 
 	require_once( __DIR__ . '/ip-utils.php' );
 
