@@ -33,18 +33,6 @@ add_filter( 'got_url_rewrite', '__return_true' );
 // Disable custom fields meta box dropdown (very slow)
 add_filter( 'postmeta_form_keys', '__return_false' );
 
-// We don't want concat running outside VIP Go environments.
-if ( true === WPCOM_IS_VIP_ENV ) {
-	// Activate concatenation
-	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
-		require __DIR__ .'/http-concat/jsconcat.php';
-	}
-
-	if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
-		require __DIR__ .'/http-concat/cssconcat.php';
-	}
-}
-
 /**
  * This function uses the VIP_VERIFY_STRING and VIP_VERIFY_PATH
  * constants to respond with a verification string at a particular
