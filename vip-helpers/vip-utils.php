@@ -1158,24 +1158,33 @@ add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
 /**
  * Send a message to IRC
  *
+ * $level can be an int of one of the following
+ * NONE = 0
+ * WARNING = 1
+ * ALERT = 2
+ * CRITICAL = 3
+ * RECOVERY = 4
+ * INFORMATION = 5
+ * SCALE = 6
+ *
  * Example Usage
  *
  * wpcom_vip_irc( '@testuser', 'test message' );				// send testuser a pm on IRC from "a8c"
- * wpcom_vip_irc( '@testuser', 'test message', 'a8c-test' );	// send testuser a pm on IRC from "a8c-test"
+ * wpcom_vip_irc( '@testuser', 'test message', 3 );	// send testuser a pm on IRC with level 'critical'
  * wpcom_vip_irc( 'testing', 'test message' );					// have "a8c" join #testing and say something
- * wpcom_vip_irc( 'testing', 'test message', 'a8c-test' );		// have "a8c-test" join #testing and say something
+ * wpcom_vip_irc( 'testing', 'test message', 4 );		// have "a8c-test" join #testing and say something with level 'recovery'
  *
  * @param $target (string) Channel or Username.  Usernames prefixed with an @, channel optionally prefixed by #.
  * @param $message (string) Message
- * @param $botname (string) Optional botname to use on IRC.  This can be any valid unused nickname, defaults to a8c.
- * @param $type string Cache slug
+ * @param $level (int) Level The severity level of the message
+ * @param $kind string Cache slug
  * @param $interval integer Interval in seconds between two messages sent from one DC
  */
-function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '', $interval = 0 ) {
-	if ( $type && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
+function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
+	if ( $kind && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
 		wp_cache_add_global_groups( array( 'irc-ratelimit' ) );
 
-		if ( ! wp_cache_add( $type, 1, 'irc-ratelimit', $interval ) ) {
+		if ( ! wp_cache_add( $kind, 1, 'irc-ratelimit', $interval ) ) {
 			return false;
 		}
 	}
@@ -1214,31 +1223,24 @@ function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '',
 		return false;
 	}
 
-	if ( ! empty( $botname ) ) {
-		$botname = preg_replace( '/(\s*|[^0-9a-z_-])/', '', $botname );
-	}
+	$url = ALERT_SERVICE_ADDRESS . ':' . ALERT_SERVICE_PORT;
 
-	if ( empty( $botname ) ) {
-		$botname = 'a8c';
-	}
+	$body = array(
+		'channel' => $channel_or_user,
+		'type'    => $level,
+		'text'    => $message,
+	);
 
-	$bot = fsockopen( VIP_IRC_HOSTNAME, VIP_IRC_PORT, $errno, $errst, 0.1 );
+	$response = wp_remote_post( $url, array(
+		'timeout' => 0.1,
+		'body' => json_encode( $body ),
+	) );
 
-	if ( ! $bot ) {
-		error_log( "fsockopen() failed: wpcom_vip_irc( '$channel_or_user', '$message' );" );
+	if ( is_wp_error( $response ) ) {
+		error_log( 'Error sending IRC message (' . $message . '): ' . $response->get_error_message() );
 
 		return false;
 	}
 
-	fputs( $bot, "!$botname $channel_or_user $message" );
-
-	if ( ! @feof( $bot ) ) {
-		@fclose( $bot );
-	}
-
 	return true;
-}
-	}
-
-	return $message;
 }
