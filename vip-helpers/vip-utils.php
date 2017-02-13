@@ -1180,14 +1180,14 @@ function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '',
 		}
 	}
 
-	if ( ! defined( 'VIP_IRC_HOSTNAME' ) || ! VIP_IRC_HOSTNAME ) {
-		error_log( 'Missing IRC host configuration in VIP_IRC_HOSTNAME constant' );
+	if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
+		error_log( 'Missing IRC host configuration in ALERT_SERVICE_ADDRESS constant' );
 
 		return false;
 	}
 
-	if ( ! defined( 'VIP_IRC_PORT' ) || ! VIP_IRC_PORT ) {
-		error_log( 'Missing IRC port configuration in VIP_IRC_PORT constant' );
+	if ( ! defined( 'ALERT_SERVICE_PORT' ) || ! ALERT_SERVICE_PORT ) {
+		error_log( 'Missing IRC port configuration in ALERT_SERVICE_PORT constant' );
 
 		return false;
 	}
