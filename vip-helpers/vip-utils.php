@@ -1238,42 +1238,6 @@ function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '',
 
 	return true;
 }
-
-/**
- * Colour a message to be sent to IRC.
- *
- * Example Usage
- *
- * wpcom_vip_irc_color('WARNING', 'red', 'black');
- *
- * @param string $message Message to be coloured
- * @param string $foreground Foreground colour to be used - see code for list of colours
- * @param string $background Background colour to be used (default is black)
- */
-function wpcom_vip_irc_color( $message, $foreground, $background = 'black' ) {
-	static $colour_map = array (
-		'white' => '00',
-		'black' => '01',
-		'blue'  => '02',
-		'green' => '03',
-		'red'   => '04',
-		'brown' => '05',
-		'purple' => '06',
-		'orange' => '07',
-		'yellow' => '08',
-		'lime'   => '09',
-		'teal'   => '10',
-		'aqua'   => '11',
-		'lightblue' => '12',
-		'pink' => '13',
-		'grey' => '14',
-		'silver' => '15',
-	);
-
-	static $ctrl_c = "\x03";
-
-	if ( isset( $colour_map[ $foreground ] ) && $colour_map[ $background ] ) {
-		return $ctrl_c . $colour_map[ $foreground ] . ',' . $colour_map[ $background ] . $message . $ctrl_c;
 	}
 
 	return $message;

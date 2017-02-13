@@ -98,7 +98,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 			size_format( $size )
 		);
 
-		$to_irc = wpcom_vip_irc_color( 'CRITICAL', 'red', 'black' ) . $subject . ' #vipoptions';
+		$to_irc = $subject . ' #vipoptions';
 
 		// Send to IRC, if we have a host configured
 		if ( defined( 'VIP_IRC_HOSTNAME' ) && VIP_IRC_HOSTNAME ) {
