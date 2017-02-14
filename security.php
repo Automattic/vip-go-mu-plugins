@@ -8,13 +8,6 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-add_action( 'setup_theme', function() {
-	// Automatically load two-factor if jetpack-force-2fa is disabled
-	if ( ! wpcom_vip_plugin_is_loaded( 'jetpack-force-2fa' ) && ( ! class_exists( 'Jetpack' ) || ! Jetpack::is_active() || ! Jetpack::is_module_active( 'sso' ) ) ) {
-		wpcom_vip_load_plugin( 'two-factor' );
-	}
-});
-
 function wpcom_vip_login_limiter( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
@@ -96,3 +89,39 @@ function wpcom_vip_login_is_limited( $username ) {
 
 	return false;
 }
+
+add_action( 'setup_theme', function() {
+	// Automatically load two-factor if jetpack-force-2fa is disabled
+	if ( ! wpcom_vip_plugin_is_loaded( 'jetpack-force-2fa' ) && ( ! class_exists( 'Jetpack' ) || ! Jetpack::is_active() || ! Jetpack::is_module_active( 'sso' ) ) ) {
+		wpcom_vip_load_plugin( 'two-factor' );
+	}
+});
+
+function wpcom_vip_force_twostep() {
+	return ! ( class_exists( 'Two_Factor_Core' ) && Two_Factor_Core::is_user_using_two_factor() );
+}
+
+add_filter( 'map_meta_cap', function( $caps ) {
+	$contributor = array_keys( get_role( 'contributor' )->capabilities );
+
+	if ( wpcom_vip_force_twostep() ) {
+		foreach( $caps as $cap ) {
+			if ( ! in_array( $cap, $contributor ) ) {
+				return array( 'do_not_allow' );
+			}
+		}
+	}
+
+	return $caps;
+});
+
+add_action( 'admin_notices', function() {
+	if ( ! wpcom_vip_force_twostep() ) {
+		return;
+	}
+	?>
+	<div class="error">
+		<p><a href="<?php echo admin_url( 'profile.php' ); ?>">Two Step Authentication</a> is required to publish to this site.</p>
+	</div>
+	<?php
+});
