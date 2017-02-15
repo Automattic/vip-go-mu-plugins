@@ -18,19 +18,23 @@ function wpcomvip_healthcheck_fail( $msg ) {
  */
 function wpcomvip_run_healthcheck() {
         // Exercise the database by checking for a non-autoloaded option
-        global $wpdb;
-        $sql = "SELECT option_value FROM $wpdb->options WHERE option_name = 'wpcomvip_db_healthcheck'";
-        $db_check = $wpdb->get_var( $sql );
-        // The write only happens when the DB doesn't have the entry, which
-        // should just be the first time this check runs on a given database
-        if ( is_null( $db_check ) ) {
-                add_option( 'wpcomvip_db_healthcheck', true, null, 'no' );
-                $db_check = $wpdb->get_var( $sql );
-        }
+        $db_check = $GLOBALS['wpdb']->get_var( 'SELECT VERSION()' );
+
         // If this check fails, throw an exception so we can see it in the logs
         if ( is_null( $db_check ) ) {
                 wpcomvip_healthcheck_fail( 'VIP Go: DB check failed' );
+				return;
         }
+
+		// Check for memcached status; we fail if more than 50% of cache containers are unable to connect.
+		$memcached_server_count = count( $GLOBALS['memcached_servers']['default'] );
+		$memcached_error_count = count( $GLOBALS['wp_object_cache']['connection_errors'] );
+		$memcached_ratio = ceil( $memcached_error_count / $memcached_server_count * 100 );
+
+		if ( $memcached_ratio > 50 ) {
+			wpcomvip_healthcheck_fail( 'VIP Go: memcached check failed' );
+			return;
+		}	
 }
 
 // Execute the healthcheck as quickly as possible
