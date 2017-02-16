@@ -77,31 +77,13 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$sites = array();
 
 		if ( is_multisite() ) {
-			// `get_sites()` won't be in Core until at least 4.6
-			if ( function_exists( 'get_sites' ) ) {
-				$_sites = get_sites( array(
-					'public'   => 1,
-					'archived' => 0,
-					'spam'     => 0,
-					'deleted'  => 0,
-					'fields'   => 'ids',
-				) );
-			} else {
-				// Add support for 4.4 and 4.5, as `get_sites()` wasn't introduced until 4.6
-				$_sites = get_site_transient( $this->cached_sites_list );
-
-				if ( ! is_array( $_sites ) ) {
-					global $wpdb;
-
-					$_sites = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE `public` = 1 AND `archived` = 0 AND `spam` = 0 AND `deleted` = 0 LIMIT 1000;" );
-
-					if ( is_array( $_sites ) ) {
-						set_site_transient( $this->cached_sites_list, $_sites, 30 * MINUTE_IN_SECONDS );
-					} else {
-						$_sites = false;
-					}
-				}
-			}
+			$_sites = get_sites( array(
+				'public'   => 1,
+				'archived' => 0,
+				'spam'     => 0,
+				'deleted'  => 0,
+				'fields'   => 'ids',
+			) );
 
 			// Inflate raw list of site IDs, if available
 			if ( is_array( $_sites ) ) {
