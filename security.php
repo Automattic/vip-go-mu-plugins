@@ -125,3 +125,11 @@ add_action( 'admin_notices', function() {
 	</div>
 	<?php
 });
+
+add_filter( 'two_factor_providers', function( $providers ) {
+	if ( defined( 'TWILIO_SID' ) && defined( 'TWILIO_SECRET' ) ) {
+		$providers['Two_Factor_SMS'] = __DIR__ . '/wpcom-vip-two-factor/sms-provider.php';
+	}
+
+	return $providers;
+});
