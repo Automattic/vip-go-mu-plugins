@@ -1223,7 +1223,7 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 		return false;
 	}
 
-	$url = ALERT_SERVICE_ADDRESS . ':' . ALERT_SERVICE_PORT;
+	$url = 'http://' . ALERT_SERVICE_ADDRESS . ':' . ALERT_SERVICE_PORT . '/v1.0/alert';
 
 	$body = array(
 		'channel' => $channel_or_user,
