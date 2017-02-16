@@ -63,7 +63,7 @@ class Last_Post_Modified {
 
 	public static function update_lastpostmodified( $time, $timezone, $post_type = 'any' ) {
 		$option_name = self::get_option_name( $timezone, $post_type );
-		return update_option( $option_name, $time );
+		return update_option( $option_name, $time, false );
 	}
 
 	private static function is_locked( $post_type ) {
