@@ -12,6 +12,10 @@ const ASYNC_PUBLISH_EVENT = 'wpcom_async_publish_post';
  * @param object $post
  */
 function _queue_async_publish_post( $new_status, $old_status, $post ) {
+	if ( 'auto-draft' === $post->post_status ) {
+		return;
+	}
+
 	// Pass only consistent data, allowing cron's duplicate handling to take effect
 	// For example, don't include post status here
 	$args = [ 'post_id' => (int) $post->ID ];
