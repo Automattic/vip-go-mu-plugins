@@ -2,58 +2,49 @@
 
 namespace Automattic\VIP\Performance;
 
-class Bulk_Edit {
-	/**
-	 * Generic callback to register class's hooks
-	 */
-	public static function register_hooks() {
-		add_action( 'load-edit.php', array( __CLASS__, 'defer_term_counting' ) );
-
-		add_action( 'wp_loaded', array( __CLASS__, 'limit_bulk_edit_for_registered_post_types' ) );
-	}
-
-	/**
-	 * Bulk edits of lots of posts can trigger slow term count queries for each post updated
-	 */
-	public static function defer_term_counting() {
-		if ( isset( $_REQUEST['bulk_edit'] ) ) {
-			wp_defer_term_counting( true );
-			add_action( 'shutdown', function() {
-				wp_defer_term_counting( false );
-			} );
-		}
-	}
-
-	/**
-	 * Impose our bulk-edit limitations on all registered post types that provide an admin UI
-	 */
-	public static function limit_bulk_edit_for_registered_post_types() {
-		$types = get_post_types( array(
-			'show_ui' => true,
-		) );
-
-		foreach ( $types as $type ) {
-			add_action( 'bulk_actions-edit-' . $type, array( __CLASS__, 'limit_bulk_edit' ) );
-		}
-	}
-
-	/**
-	 * Suppress bulk actions when too many posts would be affected
-	 *
-	 * Often causes database issues when too many posts are modified,
-	 * but since Core expects this to work with 20 posts, we limit to the same.
-	 */
-	public static function limit_bulk_edit( $bulk_actions ) {
-		$per_page = get_query_var( 'posts_per_page' );
-
-		// Core defaults to 20 posts per page
-		// If requesting more, or all entries, hide bulk actions
-		if ( $per_page > 20 || -1 === $per_page ) {
-			$bulk_actions = array();
-		}
-
-		return $bulk_actions;
+/**
+ * Bulk edits of lots of posts can trigger slow term count queries for each post updated
+ */
+function defer_term_counting() {
+	if ( isset( $_REQUEST['bulk_edit'] ) ) {
+		wp_defer_term_counting( true );
+		add_action( 'shutdown', function() {
+			wp_defer_term_counting( false );
+		} );
 	}
 }
 
-Bulk_Edit::register_hooks();
+add_action( 'load-edit.php', __NAMESPACE__ . '\defer_term_counting' );
+
+/**
+ * Impose our bulk-edit limitations on all registered post types that provide an admin UI
+ */
+function limit_bulk_edit_for_registered_post_types() {
+	$types = get_post_types( array(
+		'show_ui' => true,
+	) );
+
+	foreach ( $types as $type ) {
+		add_action( 'bulk_actions-edit-' . $type, __NAMESPACE__ . '\limit_bulk_edit' );
+	}
+}
+
+add_action( 'wp_loaded', __NAMESPACE__ . '\limit_bulk_edit_for_registered_post_types' );
+
+/**
+ * Suppress bulk actions when too many posts would be affected
+ *
+ * Often causes database issues when too many posts are modified,
+ * but since Core expects this to work with 20 posts, we limit to the same.
+ */
+function limit_bulk_edit( $bulk_actions ) {
+	$per_page = get_query_var( 'posts_per_page' );
+
+	// Core defaults to 20 posts per page
+	// If requesting more, or all entries, hide bulk actions
+	if ( $per_page > 20 || -1 === $per_page ) {
+		$bulk_actions = array();
+	}
+
+	return $bulk_actions;
+}
