@@ -22,6 +22,7 @@ class Bulk_Edit {
 			} );
 		}
 	}
+
 	/**
 	 * Suppress bulk actions when too many posts would be affected
 	 *
