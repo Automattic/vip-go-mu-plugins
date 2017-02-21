@@ -17,6 +17,17 @@ function defer_term_counting() {
 add_action( 'load-edit.php', __NAMESPACE__ . '\defer_term_counting' );
 
 /**
+ * Determine if bulk editing should be blocked
+ */
+function bulk_editing_is_limited() {
+	$per_page = get_query_var( 'posts_per_page' );
+
+	// Core defaults to 20 posts per page
+	// If requesting more--or all--entries, hide bulk actions
+	return $per_page > 20 || -1 === $per_page;
+}
+
+/**
  * Impose our bulk-edit limitations on all registered post types that provide an admin UI
  */
 function limit_bulk_edit_for_registered_post_types() {
@@ -26,6 +37,7 @@ function limit_bulk_edit_for_registered_post_types() {
 
 	foreach ( $types as $type ) {
 		add_action( 'bulk_actions-edit-' . $type, __NAMESPACE__ . '\limit_bulk_edit' );
+		add_action( 'admin_notices', __NAMESPACE__ . '\bulk_edit_admin_notice' );
 	}
 }
 
@@ -38,13 +50,24 @@ add_action( 'wp_loaded', __NAMESPACE__ . '\limit_bulk_edit_for_registered_post_t
  * but since Core expects this to work with 20 posts, we limit to the same.
  */
 function limit_bulk_edit( $bulk_actions ) {
-	$per_page = get_query_var( 'posts_per_page' );
-
-	// Core defaults to 20 posts per page
-	// If requesting more, or all entries, hide bulk actions
-	if ( $per_page > 20 || -1 === $per_page ) {
+	if ( bulk_editing_is_limited() ) {
 		$bulk_actions = array();
 	}
 
 	return $bulk_actions;
+}
+
+/**
+ * Display a dismissible admin notice when bulk editing is disabled
+ */
+function bulk_edit_admin_notice() {
+	if ( ! bulk_editing_is_limited() ) {
+		return;
+	}
+
+	?>
+	<div class="notice notice-error is-dismissible">
+		<p><?php _e( 'Bulk actions are disabled due to the number of items displayed in the table below.', 'wpcom-vip' ); ?></p>
+	</div>
+	<?php
 }
