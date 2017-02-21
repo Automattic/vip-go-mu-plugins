@@ -1346,3 +1346,12 @@ function wpcom_vip_remove_playlist_styles() {
 function wpcom_vip_load_geolocation_styles_only_when_needed() {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * Diables Instapost functionality
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_disable_instapost() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
+}
