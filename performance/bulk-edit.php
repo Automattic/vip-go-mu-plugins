@@ -30,11 +30,9 @@ class Bulk_Edit {
 	 * but since Core expects this to work with 20 posts, we limit to the same.
 	 */
 	public static function limit_bulk_edit( $bulk_actions ) {
-		$posts_per_page = get_query_var( 'posts_per_page' );
-
 		// Core defaults to 20 posts per page
 		// If requesting more, hide bulk actions
-		if ( $posts_per_page > 20 ) {
+		if ( get_query_var( 'posts_per_page' ) > 20 ) {
 			$bulk_actions = array();
 		}
 
