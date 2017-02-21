@@ -2,24 +2,26 @@
 
 namespace Automattic\VIP\Performance;
 
-// Bulk edits of lots of posts can trigger slow term count queries for each post updated
-add_action( 'load-edit.php', function() {
-	if ( isset( $_REQUEST['bulk_edit'] ) ) {
-		wp_defer_term_counting( true );
-		add_action( 'shutdown', function() {
-			wp_defer_term_counting( false );
-		} );
-	}
-} );
-
 class Bulk_Edit {
 	/**
 	 * Generic callback to register class's hooks
 	 */
 	public static function register_hooks() {
+		add_action( 'load-edit.php', array( __CLASS__, 'defer_term_counting' ) );
 		add_action( 'bulk_actions-edit-post', array( __CLASS__, 'limit_bulk_edit' ) );
 	}
 
+	/**
+	 * Bulk edits of lots of posts can trigger slow term count queries for each post updated
+	 */
+	public static function defer_term_counting() {
+		if ( isset( $_REQUEST['bulk_edit'] ) ) {
+			wp_defer_term_counting( true );
+			add_action( 'shutdown', function() {
+				wp_defer_term_counting( false );
+			} );
+		}
+	}
 	/**
 	 * Suppress bulk actions when too many posts would be affected
 	 *
