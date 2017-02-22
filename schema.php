@@ -4,6 +4,8 @@
  * Schema Customizations
  */
 
+namespace Automattic\VIP\Schema;
+
 add_filter( 'dbdelta_create_queries', function( $queries ) {
 	global $wpdb;
 	
