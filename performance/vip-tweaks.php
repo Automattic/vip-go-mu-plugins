@@ -1,7 +1,6 @@
 <?php
 /**
  * This is a list of performance tweaks that will become default for All VIP sites
- * You can call it directly in your theme until they are enabled globally
  */
 function wpcom_vip_enable_performance_tweaks() {
 	/**
