@@ -129,8 +129,9 @@ class Akismet {
 		$comment['blog_charset'] = get_option('blog_charset');
 		$comment['permalink']    = get_permalink( $comment['comment_post_ID'] );
 
-		if ( !empty( $comment['user_ID'] ) )
+		if ( ! empty( $comment['user_ID'] ) ) {
 			$comment['user_role'] = Akismet::get_user_roles( $comment['user_ID'] );
+		}
 
 		/** See filter documentation in init_hooks(). */
 		$akismet_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
@@ -465,8 +466,9 @@ class Akismet {
 		$c['recheck_reason'] = $recheck_reason;
 
 		$c['user_role'] = '';
-		if ( isset( $c['user_ID'] ) )
-			$c['user_role'] = Akismet::get_user_roles($c['user_ID']);
+		if ( ! empty( $c['user_ID'] ) ) {
+			$c['user_role'] = Akismet::get_user_roles( $c['user_ID'] );
+		}
 
 		if ( self::is_test_mode() )
 			$c['is_test'] = 'true';
@@ -596,8 +598,9 @@ class Akismet {
 			$comment->site_domain = $current_site->domain;
 
 		$comment->user_role = '';
-		if ( isset( $comment->user_ID ) )
+		if ( ! empty( $comment->user_ID ) ) {
 			$comment->user_role = Akismet::get_user_roles( $comment->user_ID );
+		}
 
 		if ( self::is_test_mode() )
 			$comment->is_test = 'true';
@@ -642,8 +645,9 @@ class Akismet {
 		if ( is_object($current_site) )
 			$comment->site_domain = $current_site->domain;
 
-		if ( isset( $comment->user_ID ) )
-			$comment->user_role = Akismet::get_user_roles($comment->user_ID);
+		if ( ! empty( $comment->user_ID ) ) {
+			$comment->user_role = Akismet::get_user_roles( $comment->user_ID );
+		}
 
 		if ( Akismet::is_test_mode() )
 			$comment->is_test = 'true';
@@ -1038,7 +1042,7 @@ class Akismet {
 	}
 
 	// given a response from an API call like check_key_status(), update the alert code options if an alert is present.
-	private static function update_alert( $response ) {
+	public static function update_alert( $response ) {
 		$code = $msg = null;
 		if ( isset( $response[0]['x-akismet-alert-code'] ) ) {
 			$code = $response[0]['x-akismet-alert-code'];
