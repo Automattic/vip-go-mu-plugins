@@ -23,7 +23,7 @@ add_filter( 'dbdelta_create_queries', function( $queries ) {
 });
 
 function get_postmeta_key_value_index() {
-	// 191 for meta_key is max set by core
-	// 20 for meta_value is arbitrary
-	return '`vip_meta_key_value` (`meta_key`(191), `meta_value`(20))';
+	// 191 for meta_key is max set by core.
+	// 100 for meta_value is arbitrary-ish.
+	return '`vip_meta_key_value` (`meta_key`(191), `meta_value`(100))';
 }
