@@ -137,8 +137,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Check if header matches expected value
 	 */
 	private function header_allows_access( $header ) {
-		// Block requests using default string set in 000-vip-init.php
-		if ( hash_equals( md5( 'false' ), $header ) ) {
+		if ( empty( $header ) || empty( WPCOM_VIP_REST_API_REQUEST_SECRET ) ) {
 			return false;
 		}
 
