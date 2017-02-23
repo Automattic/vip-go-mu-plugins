@@ -7,7 +7,7 @@
  */
 
 function wpcom_vip_force_twostep() {
-	return ! ( class_exists( 'Two_Factor_Core' ) && Two_Factor_Core::is_user_using_two_factor() );
+	return class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
 }
 
 function wpcom_enable_two_factor_plugin() {
