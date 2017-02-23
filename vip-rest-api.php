@@ -58,7 +58,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
 	 */
 	public function disable_auth( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && $this->request_allowed( $result ) ) {
+		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && isset( $_SERVER['HTTP_X_WPCOM_REQUEST_SECRET'] ) && $this->header_allows_access( $_SERVER['HTTP_X_WPCOM_REQUEST_SECRET'] ) ) {
 			return true;
 		}
 
@@ -130,12 +130,18 @@ class WPCOM_VIP_REST_API_Endpoints {
 	public function request_allowed( $request ) {
 		$header = $request->get_header( 'X-WPCom-Request-Secret' );
 
+		return $this->header_allows_access( $header );
+	}
+
+	/**
+	 * Check if header matches expected value
+	 */
+	private function header_allows_access( $header ) {
 		// Block requests using default string set in 000-vip-init.php
 		if ( hash_equals( md5( 'false' ), $header ) ) {
 			return false;
 		}
 
-		//
 		if ( hash_equals( WPCOM_VIP_REST_API_REQUEST_SECRET, $header ) ) {
 			return true;
 		}
