@@ -65,9 +65,31 @@ function bulk_edit_admin_notice() {
 		return;
 	}
 
+	// HTML class doubles as key used to track dismissed notices
+	$id = 'notice-vip-bulk-edit-limited';
+
+	$dismissed_pointers = array_filter( explode( ',', (string) get_user_meta( get_current_user_id(), 'dismissed_wp_pointers', true ) ) );
+	if ( in_array( $id, $dismissed_pointers, true ) ) {
+		return;
+	}
+
 	?>
-	<div class="notice notice-error is-dismissible">
+	<div id="<?php echo esc_attr( $id ); ?>" class="notice notice-error is-dismissible">
 		<p><?php _e( 'Bulk actions are disabled due to the number of items displayed in the table below.', 'wpcom-vip' ); ?></p>
+
+		<script>jQuery(document).ready( function($) { $( '#<?php echo esc_js( $id ); ?>' ).on( 'remove', function() {
+			$.ajax( {
+				url: ajaxurl,
+				type: 'POST',
+				xhrFields: {
+					withCredentials: true
+				},
+				data: {
+					action: 'dismiss-wp-pointer',
+					pointer: '<?php echo esc_js( $id ); ?>'
+				}
+			} );
+		} ) } );</script>
 	</div>
 	<?php
 }
