@@ -12,6 +12,13 @@ if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 }
 
 /**
+ * String used to authenticate certain requests from WordPress.com
+ */
+if ( ! defined( 'WPCOM_VIP_REST_API_REQUEST_SECRET' ) ) {
+	define( 'WPCOM_VIP_REST_API_REQUEST_SECRET', md5( 'false' ) );
+}
+
+/**
  * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
  */
 if ( ! defined( 'VIP_GO_ENV' ) ) {

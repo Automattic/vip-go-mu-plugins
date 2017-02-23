@@ -30,8 +30,6 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 	private $namespace = 'vip/v1';
 
-	private $cached_sites_list = 'wpcom-vip-sites-list';
-
 	/**
 	 * Register hooks
 	 */
@@ -44,8 +42,9 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 	public function rest_api_init() {
 		register_rest_route( $this->namespace, '/sites/', array(
-			'methods' => 'GET',
-			'callback' => array( $this, 'list_sites' ),
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'list_sites' ),
+			'permission_callback' => array( $this, 'request_allowed' ),
 		) );
 
 		add_filter( 'rest_authentication_errors', array( $this, 'disable_auth' ), 999 ); // hook in late to bypass any others that override our auth requirements
@@ -56,12 +55,10 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 
 	/**
-	 * Some `/vip/` endpoints need to be accessible unauthenticated (for now).
-	 *
-	 * This will be replaced with a proper auth scheme in the near future.
+	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
 	 */
 	public function disable_auth( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) ) {
+		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && $this->request_allowed( $result ) ) {
 			return true;
 		}
 
@@ -78,7 +75,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 		if ( is_multisite() ) {
 			$_sites = get_sites( array(
-				'public'   => 1,
+				'public'   => null,
 				'archived' => 0,
 				'spam'     => 0,
 				'deleted'  => 0,
@@ -123,6 +120,27 @@ class WPCOM_VIP_REST_API_Endpoints {
 		}
 
 		return new WP_REST_Response( $sites );
+	}
+
+	/**
+	 * Check if necessary authentication header is present
+	 *
+	 * @return bool
+	 */
+	public function request_allowed( $request ) {
+		$header = $request->get_header( 'X-WPCom-Request-Secret' );
+
+		// Block requests using default string set in 000-vip-init.php
+		if ( hash_equals( md5( 'false' ), $header ) ) {
+			return false;
+		}
+
+		//
+		if ( hash_equals( WPCOM_VIP_REST_API_REQUEST_SECRET, $header ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }
 
