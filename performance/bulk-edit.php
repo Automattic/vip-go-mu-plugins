@@ -2,6 +2,9 @@
 
 namespace Automattic\VIP\Performance;
 
+// Core defaults to 20, so let's assume that's safe
+const BULK_EDIT_LIMIT = 20;
+
 /**
  * Bulk edits of lots of posts can trigger slow term count queries for each post updated
  */
@@ -24,7 +27,7 @@ function bulk_editing_is_limited() {
 
 	// Core defaults to 20 posts per page
 	// If requesting more--or all--entries, hide bulk actions
-	return $per_page > 20 || -1 === $per_page;
+	return $per_page > BULK_EDIT_LIMIT || -1 === $per_page;
 }
 
 /**
@@ -75,7 +78,7 @@ function bulk_edit_admin_notice() {
 
 	?>
 	<div id="<?php echo esc_attr( $id ); ?>" class="notice notice-error is-dismissible">
-		<p><?php _e( 'Bulk actions are disabled due to the number of items displayed in the table below.', 'wpcom-vip' ); ?></p>
+		<p><?php printf( __( 'Bulk actions are disabled because more than %s items were requested. Please adjust your setting under <em>Screen Options</em>.', 'wpcom-vip' ), number_format_i18n( BULK_EDIT_LIMIT ) ); ?></p>
 
 		<script>jQuery(document).ready( function($) { $( '#<?php echo esc_js( $id ); ?>' ).on( 'remove', function() {
 			$.ajax( {
