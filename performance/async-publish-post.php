@@ -39,3 +39,9 @@ function _wpcom_do_async_publish_post( $post_id ) {
 }
 
 add_action( ASYNC_PUBLISH_EVENT, __NAMESPACE__ . '\_wpcom_do_async_publish_post' );
+
+/**
+ * Offload ping- and enclosure-related events
+ */
+remove_action( 'publish_post', '_publish_post_hook', 5, 1 );
+add_action( 'async_publish_post', '_publish_post_hook', 5, 1 );
