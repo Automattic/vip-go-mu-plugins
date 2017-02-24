@@ -14,15 +14,15 @@ set -ex
 #	exit
 #fi
 
-cd ${TRAVIS_BUILD_DIR}/../../
-#mkdir phpdoc
-#cd phpdocs
-pwd
+#cd ${TRAVIS_BUILD_DIR}/../../
+##mkdir phpdoc
+##cd phpdocs
+#pwd
 
-VIP_DOCS_DIR="$(pwd)/phpdoc"
+VIP_DOCS_DIR="$(readlink -m ${TRAVIS_BUILD_DIR}/../../phpdoc)"
 VIP_PHPDOC_DIR="/tmp/phpdoc/"
 
-cd ${TRAVIS_BUILD_DIR}
+#cd ${TRAVIS_BUILD_DIR}
 
 # Get the encrypted private key from the repo settings
 # This is the private pair to the "Travis GH Pages Deploy Key"
@@ -83,7 +83,7 @@ git commit -am "${GIT_MSG}"
 if [ 0 != $? ]; then
 	echo "Nothing to push"
 else
-#	git branch
-#	git push
+	git branch
+	git push
 	echo "Pushing!"
 fi
