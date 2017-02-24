@@ -58,7 +58,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
 	 */
 	public function disable_auth( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && isset( $_SERVER['HTTP_X_WPCOM_REQUEST_SECRET'] ) && $this->header_allows_access( $_SERVER['HTTP_X_WPCOM_REQUEST_SECRET'] ) ) {
+		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && $this->request_allowed() ) {
 			return true;
 		}
 
@@ -123,29 +123,21 @@ class WPCOM_VIP_REST_API_Endpoints {
 	}
 
 	/**
-	 * Check if necessary authentication header is present
+	 * Check if necessary authentication header allows access to this endpoint
+	 *
+	 * Not always called as a REST API permission callback, hence going directly to the global
 	 *
 	 * @return bool
 	 */
-	public function request_allowed( $request ) {
-		$header = $request->get_header( 'X-WPCom-Request-Secret' );
-
-		return $this->header_allows_access( $header );
-	}
-
-	/**
-	 * Check if header matches expected value
-	 */
-	private function header_allows_access( $header ) {
-		if ( empty( $header ) ) {
+	public function request_allowed() {
+		// Do we have a header to check?
+		if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) && ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$header = $_SERVER['HTTP_AUTHORIZATION'];
+		} else {
 			return false;
 		}
 
-		if ( wpcom_vip_verify_go_rest_api_request_secret( $this->namespace, $header ) ) {
-			return true;
-		}
-
-		return false;
+		return wpcom_vip_verify_go_rest_api_request_authorization( $this->namespace, $header );
 	}
 }
 
