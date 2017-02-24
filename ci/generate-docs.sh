@@ -15,13 +15,14 @@ set -ex
 #fi
 
 cd ${TRAVIS_BUILD_DIR}/../../
-mkdir phpdocs
-cd phpdocs
+#mkdir phpdoc
+#cd phpdocs
 pwd
-cd ${TRAVIS_BUILD_DIR}
 
-VIP_DOCS_DIR="$(pwd)"
+VIP_DOCS_DIR="$(pwd)/phpdoc"
 VIP_PHPDOC_DIR="/tmp/phpdoc/"
+
+cd ${TRAVIS_BUILD_DIR}
 
 # Get the encrypted private key from the repo settings
 # This is the private pair to the "Travis GH Pages Deploy Key"
