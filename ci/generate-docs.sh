@@ -46,7 +46,7 @@ cd $VIP_PHPDOC_DIR
 # Using Composer to install PHPDoc is slower than other methods, but installs
 # a more up to date version.
 composer --quiet require phpdocumentor/phpdocumentor
-PATH="$PATH:${VIP_PHPDOC_DIR}/vendor/phpdocumentor/phpdocumentor/bin/"
+PATH="$PATH:${VIP_PHPDOC_DIR}vendor/phpdocumentor/phpdocumentor/bin/"
 echo $PATH
 
 cd "${TRAVIS_BUILD_DIR}"
