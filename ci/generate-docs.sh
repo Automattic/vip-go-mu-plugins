@@ -14,7 +14,13 @@ set -ex
 #	exit
 #fi
 
-VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
+cd ${TRAVIS_BUILD_DIR}/../../
+mkdir phpdocs
+cd phpdocs
+pwd
+cd ${TRAVIS_BUILD_DIR}
+
+VIP_DOCS_DIR="$(pwd)"
 VIP_PHPDOC_DIR="/tmp/phpdoc/"
 
 # Get the encrypted private key from the repo settings
@@ -76,7 +82,7 @@ git commit -am "${GIT_MSG}"
 if [ 0 != $? ]; then
 	echo "Nothing to push"
 else
-	git branch
-	git push
+#	git branch
+#	git push
 	echo "Pushing!"
 fi
