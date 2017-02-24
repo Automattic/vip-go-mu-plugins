@@ -137,11 +137,11 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Check if header matches expected value
 	 */
 	private function header_allows_access( $header ) {
-		if ( empty( $header ) || empty( WPCOM_VIP_REST_API_REQUEST_SECRET ) ) {
+		if ( empty( $header ) ) {
 			return false;
 		}
 
-		if ( hash_equals( WPCOM_VIP_REST_API_REQUEST_SECRET, $header ) ) {
+		if ( wpcom_vip_verify_go_rest_api_request_secret( $this->namespace, $header ) ) {
 			return true;
 		}
 

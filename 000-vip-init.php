@@ -12,10 +12,19 @@ if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 }
 
 /**
- * String used to authenticate certain requests from WordPress.com
+ * Function used to authenticate certain requests from WordPress.com
  */
-if ( ! defined( 'WPCOM_VIP_REST_API_REQUEST_SECRET' ) ) {
-	define( 'WPCOM_VIP_REST_API_REQUEST_SECRET', '' );
+if ( ! function_exists( 'wpcom_vip_verify_go_rest_api_request_secret' ) ) {
+	/**
+	 * Verify that a given secret is valid for a REST API route namespace
+	 *
+	 * @param  string $namespace REST API route's namespace
+	 * @param  string $secret    Secret to verify
+	 * @return bool
+	 */
+	function wpcom_vip_verify_go_rest_api_request_secret( $namespace, $secret ) {
+		return false;
+	}
 }
 
 /**
