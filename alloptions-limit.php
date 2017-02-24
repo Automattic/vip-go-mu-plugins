@@ -57,8 +57,13 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		return;
 	}
 
+	$irc_alert_level = 2; // ALERT
+
 	if ( $blocked ) {
 		$msg = "This site is now BLOCKED from loading until option sizes are under control.";
+
+		// If site is blocked, then the IRC alert is CRITICAL
+		$irc_alert_level = 3;
 	} else {
 		$msg = "Site will be blocked from loading if option sizes get too much bigger.";
 	}
@@ -98,12 +103,12 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 			size_format( $size )
 		);
 
-		$to_irc = wpcom_vip_irc_color( 'CRITICAL', 'red', 'black' ) . $subject . ' #vipoptions';
+		$to_irc = $subject . ' #vipoptions';
 
 		// Send to IRC, if we have a host configured
-		if ( defined( 'VIP_IRC_HOSTNAME' ) && VIP_IRC_HOSTNAME ) {
-			wpcom_vip_irc( '#nagios-vip', $to_irc, 'a8c-alloptions' );
-			wpcom_vip_irc( '#wordpress.com-errors', $to_irc , 'a8c-alloptions' );
+		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
+			wpcom_vip_irc( '#nagios-vip', $to_irc, $irc_alert_level, 'a8c-alloptions' );
+			wpcom_vip_irc( '#wordpress.com-errors', $to_irc , $irc_alert_level, 'a8c-alloptions' );
 		}
 
 		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
