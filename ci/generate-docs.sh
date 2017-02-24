@@ -14,10 +14,10 @@ if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
 	exit
 fi
 
+# In the supposed absence of realpath, use readlink to make the
+# following path "real" (man)
 VIP_DOCS_DIR="$(readlink -m ${TRAVIS_BUILD_DIR}/../../phpdoc)"
 VIP_PHPDOC_DIR="/tmp/phpdoc/"
-
-#cd ${TRAVIS_BUILD_DIR}
 
 # Get the encrypted private key from the repo settings
 # This is the private pair to the "Travis GH Pages Deploy Key"
