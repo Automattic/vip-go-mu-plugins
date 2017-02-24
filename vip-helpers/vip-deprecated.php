@@ -1328,3 +1328,30 @@ function wpcom_vip_get_stats_array( $table = 'views', $end_date = false, $num_da
 function wpcom_vip_load_custom_cdn( $args ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * Dequeue wp-mediaelement.css for sites which don't use the playlist shortcode and thus don't need the stylesheet
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_remove_playlist_styles() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Conditionally dequeues the geo-location-flair.css
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_load_geolocation_styles_only_when_needed() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Diables Instapost functionality
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_disable_instapost() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
+}

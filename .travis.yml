@@ -6,13 +6,13 @@ git:
   submodules: false
 
 php:
-  - 5.6
   - 7
   - 7.1
 
 env:
   matrix:
     - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
+    - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
 
 before_install:
   - ./ci/prepare.sh
