@@ -76,9 +76,11 @@ function bulk_edit_admin_notice() {
 		return;
 	}
 
+	$email_subject = sprintf( '[%s] Bulk Edit Help', home_url() );
+	$mailto = 'mailto:vip-support@wordpress.com?subject=' . urlencode( $email_subject );
 	?>
 	<div id="<?php echo esc_attr( $id ); ?>" class="notice notice-error is-dismissible">
-		<p><?php printf( __( 'Bulk actions are disabled because more than %s items were requested. Please adjust your setting under <em>Screen Options</em>.', 'wpcom-vip' ), number_format_i18n( BULK_EDIT_LIMIT ) ); ?></p>
+		<p><?php printf( __( 'Bulk actions are disabled because more than %s items were requested. To re-enable bulk edit, please adjust the "Number of items" setting under <em>Screen Options</em>. If you have a large number of posts to update, please <a href="%s">get in touch</a> as we may be able to help.', 'wpcom-vip' ), number_format_i18n( BULK_EDIT_LIMIT ), esc_url( $mailto ) ); ?></p>
 
 		<script>jQuery(document).ready( function($) { $( '#<?php echo esc_js( $id ); ?>' ).on( 'remove', function() {
 			$.ajax( {

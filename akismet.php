@@ -15,7 +15,10 @@ require_once( __DIR__ . '/akismet/akismet.php' );
 
 // By default, Akismet tries to delete batches of 10,000 at a time.
 // That's way too high. Let's set a more reasonable limit.
-define( 'AKISMET_DELETE_LIMIT', 500 );
+function wpcom_vip_akismet_delete_limit( $limit ) {
+	return 500;
+}
+add_filter( 'akismet_delete_comment_limit', 'wpcom_vip_akismet_delete_limit' );
 
 // Identify outgoing requests as coming from VIP Go
 function wpcom_vip_akismet_ua( $ua ) {
