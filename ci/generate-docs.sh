@@ -15,7 +15,7 @@ set -ex
 #fi
 
 VIP_DOCS_DIR="/tmp/${TRAVIS_REPO_SLUG}/docs/"
-VIP_PHPDOC_DIR="$TRAVIS_BUILD_DIR/../phpdoc"
+VIP_PHPDOC_DIR="/tmp/phpdoc/"
 
 # Get the encrypted private key from the repo settings
 # This is the private pair to the "Travis GH Pages Deploy Key"
@@ -38,12 +38,11 @@ cd ${VIP_DOCS_DIR}
 git fetch --all
 git checkout gh-pages
 
-mkdir -p $VIP_PHPDOC_DIR
-cd $VIP_PHPDOC_DIR
-
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
 
+mkdir -p $VIP_PHPDOC_DIR
+cd $VIP_PHPDOC_DIR
 # Using Composer to install PHPDoc is slower than other methods, but installs
 # a more up to date version.
 composer --quiet require phpdocumentor/phpdocumentor
