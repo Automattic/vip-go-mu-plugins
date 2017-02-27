@@ -35,10 +35,8 @@ set -x
 # this allows us to write (as the deploy key has write perms)
 echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/config
 
-git clone "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
-cd ${VIP_DOCS_DIR}
-git fetch --all
-git checkout gh-pages
+# Clone the repo at the `gh-pages` branch, getting only the commits for that branch
+git clone --branch gh-pages --single-branch "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
