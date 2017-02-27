@@ -20,5 +20,8 @@ function track_publish_post( $new_status, $old_status ) {
 		'x_vip-go-publish-post' => FILES_CLIENT_SITE_ID,
 	), 'http://pixel.wp.com/b.gif' );
 
-	wp_remote_get( $pixel, array( 'blocking' => false, ) );
+	wp_remote_get( $pixel, array(
+		'blocking' => false,
+		'timeout'  => 1,
+	) );
 }
