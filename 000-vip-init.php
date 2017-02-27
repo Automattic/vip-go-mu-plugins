@@ -15,7 +15,7 @@ if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 
 if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	/**
-	 * @var constant A8C_PROXIED_REQUEST Set to true if the current request is made via the Automattic proxy, which is only available to Automatticians
+	 * @var constant A8C_PROXIED_REQUEST Set to true if the current request is made via the Automattic proxy, which is only available to Automatticians.
 	 */
 	define( 'A8C_PROXIED_REQUEST', false );
 }
