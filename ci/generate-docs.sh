@@ -56,6 +56,8 @@ cd "${TRAVIS_BUILD_DIR}"
 # The command switches here appear to have no equivalent in phpdoc(.dist).xml.
 make phpdoc
 
+grep A8C_PROXIED_REQUEST phpdoc/index.html
+
 cd ${VIP_DOCS_DIR}
 
 git config user.name "Travis CI"
