@@ -3,7 +3,7 @@
 	<title>WordPress.com VIP – VIP Go Function Documentation</title>
 	<parser>
 		<!-- This places the cache dirs in the root dir `/phpdoc/` for your site -->
-		<target>../../phpdoc/</target>
+		<target>phpdoc/</target>
 		<encoding>utf8</encoding>
 		<markers>
 			<item>TODO</item>
@@ -13,7 +13,7 @@
 	</parser>
 	<transformer>
 		<!-- This places the docs in the root dir `/phpdoc/` for your site -->
-		<target>../../phpdoc/</target>
+		<target>phpdoc/</target>
 	</transformer>
 	<logging>
 		<level>warn</level>
