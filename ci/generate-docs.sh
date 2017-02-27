@@ -38,10 +38,6 @@ echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/co
 # Clone the repo at the `gh-pages` branch, getting only the commits for that branch
 git clone --branch gh-pages --single-branch "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 
-set +e
-grep A8C_PROXIED_REQUEST phpdoc/index.html
-set -e
-
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
 
@@ -60,15 +56,7 @@ cd "${TRAVIS_BUILD_DIR}"
 # The command switches here appear to have no equivalent in phpdoc(.dist).xml.
 make phpdoc
 
-set +e
-grep A8C_PROXIED_REQUEST phpdoc/index.html
-set -e
-
 cd ${VIP_DOCS_DIR}
-
-rm -v "${TRAVIS_BUILD_DIR}/.gitignore"
-
-git status --ignored
 
 git config user.name "Travis CI"
 git config user.email "travis@travis-ci.com"
@@ -83,4 +71,10 @@ set +ex
 GIT_MSG=$( printf %"s \n\n" "Built at ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}" "Commits included:" "$(git log ${TRAVIS_COMMIT_RANGE})"; )
 set -x
 git commit -am "${GIT_MSG}"
-git push
+if [ 0 != $? ]; then
+	echo "Nothing to push"
+else
+	git branch
+	git push
+	echo "Pushing!"
+fi
