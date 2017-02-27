@@ -9,4 +9,4 @@ phpunit:
 	phpunit
 
 phpdoc:
-	phpdoc run --ignore-symlinks --no-interaction --sourcecode
+	phpdoc run --no-interaction
