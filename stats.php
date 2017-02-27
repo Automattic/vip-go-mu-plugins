@@ -3,7 +3,7 @@
 namespace Automattic\VIP\Stats;
 
 // Limit tracking to production
-if ( false !== VIP_GO_ENV ) {
+if ( false !== WPCOM_IS_VIP_ENV ) {
 	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 10, 2 );
 }
 
