@@ -38,7 +38,9 @@ echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/co
 # Clone the repo at the `gh-pages` branch, getting only the commits for that branch
 git clone --branch gh-pages --single-branch "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 
+set +e
 grep A8C_PROXIED_REQUEST phpdoc/index.html
+set -e
 
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
@@ -58,7 +60,9 @@ cd "${TRAVIS_BUILD_DIR}"
 # The command switches here appear to have no equivalent in phpdoc(.dist).xml.
 make phpdoc
 
+set +e
 grep A8C_PROXIED_REQUEST phpdoc/index.html
+set -e
 
 cd ${VIP_DOCS_DIR}
 
