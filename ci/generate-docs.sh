@@ -15,7 +15,7 @@ set -ex
 #fi
 
 # Path to the documentation directory
-VIP_DOCS_DIR="${TRAVIS_BUILD_DIR}/phpdoc)"
+VIP_DOCS_DIR="${TRAVIS_BUILD_DIR}/phpdoc"
 # Path to the PHPDoc application
 VIP_PHPDOC_DIR="/tmp/phpdoc"
 
