@@ -75,10 +75,4 @@ set +ex
 GIT_MSG=$( printf %"s \n\n" "Built at ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}" "Commits included:" "$(git log ${TRAVIS_COMMIT_RANGE})"; )
 set -x
 git commit -am "${GIT_MSG}"
-if [ 0 != $? ]; then
-	echo "Nothing to push"
-else
-	git branch
-	git push
-	echo "Pushing!"
-fi
+git push
