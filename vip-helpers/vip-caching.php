@@ -695,3 +695,34 @@ function wpcom_vip_maybe_skip_old_slug_redirect(){
 function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 	add_action( 'template_redirect', 'wpcom_vip_maybe_skip_old_slug_redirect', 7 ); //Run this before wpcom_vip_wp_old_slug_redirect so we can also remove our caching helper
 }
+
+/**
+ * Caches is_multi_author for large sites without multiple authors
+ * 
+ * is_multi_author normally caches itself if the site has multiple authors, but
+ * if not, it tries to cache a `false` value which always makes the lookup
+ * happen.  This can cause a very slow query on sites where many tens of
+ * thousands of posts are attributed to the same author.
+ * 
+ * Can be used by adding this filter to the theme:
+ *  -- add_filter( 'pre_transient_is_multi_author', 'wpcom_vip_is_multi_author' );
+ * 
+ * This helper function will cache the results for one hour as a string so
+ * even failures will be cached, since `is_multi_author()` casts its output
+ * as a boolean.
+ * 
+ * @return string 'no' for false or 'yes' for true.
+ */
+function wpcom_vip_is_multi_author() {
+	// Most of this is copied directly from is_multi_author
+	$is_multi_author = get_transient( 'vip_is_multi_author' );
+
+	if ( false === $is_multi_author ) {
+		global $wpdb;
+		$rows = (array) $wpdb->get_col("SELECT DISTINCT post_author FROM $wpdb->posts WHERE post_type = 'post' AND post_status = 'publish' LIMIT 2");
+		$is_multi_author = 1 < count( $rows ) ? 'yes' : 'no';
+		set_transient( 'vip_is_multi_author', $is_multi_author, PHP_HOUR_IN_SECONDS );
+	}
+
+	return 'yes' === $is_multi_author ? 1 : 0;
+}
