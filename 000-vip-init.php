@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * Initialisation for various VIP functionality
+ *
+ * By virtue of the filename, this file is included first of
+ * all the files in the VIP Go MU plugins directory. All
+ * VIP code should be initialised here, unless there's a
+ * good reason not to.
+ */
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
@@ -11,10 +20,10 @@ if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	define( 'A8C_PROXIED_REQUEST', false );
 }
 
-/**
- * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
- */
 if ( ! defined( 'VIP_GO_ENV' ) ) {
+	/**
+	 * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
+	 */
 	define( 'VIP_GO_ENV', false );
 }
 
