@@ -60,6 +60,8 @@ grep A8C_PROXIED_REQUEST phpdoc/index.html
 
 cd ${VIP_DOCS_DIR}
 
+git status --ignored
+
 git config user.name "Travis CI"
 git config user.email "travis@travis-ci.com"
 git config push.default "current"
