@@ -66,6 +66,8 @@ set -e
 
 cd ${VIP_DOCS_DIR}
 
+rm -v "${TRAVIS_BUILD_DIR}/.gitignore"
+
 git status --ignored
 
 git config user.name "Travis CI"
