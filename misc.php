@@ -51,11 +51,12 @@ function action_wpcom_vip_verify_string() {
 	$verification_path = '/' . VIP_VERIFY_PATH;
 	if ( $verification_path === $_SERVER['REQUEST_URI'] ) {
 		status_header( 200 );
+		nocache_headers();
 		echo VIP_VERIFY_STRING;
 		exit;
 	}
 }
-add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
+add_action( 'parse_request', 'action_wpcom_vip_verify_string', 0 );
 
 /**
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
