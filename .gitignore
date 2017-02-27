@@ -9,6 +9,7 @@ jetpack-private.php
 # Local PHPDoc configuration file
 # overrides phpdoc.dist.xml
 phpdoc.xml
+phpdoc
 
 # Composer
 vendor
