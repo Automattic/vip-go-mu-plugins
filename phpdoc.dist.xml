@@ -26,6 +26,7 @@
 		<template name="clean" />
 	</transformations>
 	<files>
+		<file>000-vip-init.php</file>
 		<file>lib/proxy/ip-forward.php</file>
 		<file>vip-cache-manager/api.php</file>
 		<directory>vip-helpers</directory>
