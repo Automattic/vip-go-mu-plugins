@@ -14,8 +14,6 @@ set -ex
 #	exit
 #fi
 
-# In the supposed absence of realpath, use readlink to make the
-# following path "real" (man)
 VIP_DOCS_DIR="${TRAVIS_BUILD_DIR}/phpdoc)"
 VIP_PHPDOC_DIR="/tmp/phpdoc"
 
