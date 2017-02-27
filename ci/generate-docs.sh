@@ -38,6 +38,8 @@ echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/co
 # Clone the repo at the `gh-pages` branch, getting only the commits for that branch
 git clone --branch gh-pages --single-branch "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 
+grep A8C_PROXIED_REQUEST phpdoc/index.html
+
 # Composer runs faster without Xdebug, and we don't need Xdebug any more
 phpenv config-rm xdebug.ini
 
