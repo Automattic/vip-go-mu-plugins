@@ -1,4 +1,4 @@
-.PHONY: lint phpunit
+.PHONY: lint phpunit phpdoc
 
 test: lint phpunit
 
