@@ -60,8 +60,6 @@ make phpdoc
 
 cd ${VIP_DOCS_DIR}
 
-ls -alh "${VIP_DOCS_DIR}/graphs/"
-
 git config user.name "Travis CI"
 git config user.email "travis@travis-ci.com"
 git config push.default "current"
