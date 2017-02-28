@@ -14,6 +14,11 @@ env:
     - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
     - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
 
+addons:
+  apt:
+    packages:
+    - graphviz
+
 before_install:
   - ./ci/prepare.sh
 
@@ -32,3 +37,4 @@ notifications:
 after_success:
   # Push the aggregated code, including submodules, to the public repo
   - ./ci/deploy.sh
+  - ./ci/generate-docs.sh
