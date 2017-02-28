@@ -31,9 +31,6 @@ echo -e $VIP_GITHUB_DEPLOY_KEY > /tmp/vip_deploy_key
 chmod 600 /tmp/vip_deploy_key
 set -x
 
-cat ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
-cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
-
 # Ensure we use our deploy key when connecting to GitHub,
 # this allows us to write (as the deploy key has write perms)
 echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/config
