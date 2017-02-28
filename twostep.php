@@ -6,6 +6,12 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+// https://github.com/georgestephanis/two-factor/issues/78
+add_filter( 'two_factor_providers', function( $p ) {
+        unset( $p[ 'Two_Factor_FIDO_U2F' ] );
+        return $p;
+})
+
 function wpcom_vip_force_twostep() {
 	return ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
 }
