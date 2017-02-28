@@ -35,6 +35,9 @@ set -x
 # this allows us to write (as the deploy key has write perms)
 echo -e "\nHost github.com \n  IdentityFile /tmp/vip_deploy_key \n" >> ~/.ssh/config
 
+cat ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
+cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
+
 # Clone the repo at the `gh-pages` branch, getting only the commits for that branch
 git clone --branch gh-pages --single-branch "git@github.com:${TRAVIS_REPO_SLUG}.git" ${VIP_DOCS_DIR}
 
