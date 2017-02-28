@@ -19,9 +19,8 @@ addons:
     packages:
     - graphviz
   ssh_known_hosts:
-    # For some reason this sig seems to be missing sometimes
-    # It's a GitHub host
-    - 192.30.253.112
+    # For some reason the GitHub sig seems to be missing sometimes
+    - github.com
 
 before_install:
   - ./ci/prepare.sh
