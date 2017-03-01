@@ -8,13 +8,6 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-add_action( 'setup_theme', function() {
-	// Automatically load two-factor if jetpack-force-2fa is disabled
-	if ( ! wpcom_vip_plugin_is_loaded( 'jetpack-force-2fa' ) && ( ! class_exists( 'Jetpack' ) || ! Jetpack::is_active() || ! Jetpack::is_module_active( 'sso' ) ) ) {
-		wpcom_vip_load_plugin( 'two-factor' );
-	}
-});
-
 function wpcom_vip_login_limiter( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
