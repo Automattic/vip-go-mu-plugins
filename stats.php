@@ -3,7 +3,7 @@
 namespace Automattic\VIP\Stats;
 
 // Limit tracking to production
-if ( true === WPCOM_IS_VIP_ENV ) {
+if ( true === WPCOM_IS_VIP_ENV && ( ! defined( 'WP_IMPORTING' ) || ! WP_IMPORTING ) ) {
 	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
 }
 
