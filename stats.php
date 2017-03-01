@@ -3,7 +3,7 @@
 namespace Automattic\VIP\Stats;
 
 // Limit tracking to production
-if ( true === WPCOM_IS_VIP_ENV && ( ! defined( 'WP_IMPORTING' ) || ! WP_IMPORTING ) ) {
+if ( true === WPCOM_IS_VIP_ENV ) {
 	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
 }
 
@@ -11,6 +11,10 @@ if ( true === WPCOM_IS_VIP_ENV && ( ! defined( 'WP_IMPORTING' ) || ! WP_IMPORTIN
  * Count publish events regardless of post type
  */
 function track_publish_post( $new_status, $old_status ) {
+	if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+		return;
+	}
+
 	if ( 'publish' !== $new_status || 'publish' === $old_status ) {
 		return;
 	}
