@@ -10,7 +10,7 @@
 add_filter( 'two_factor_providers', function( $p ) {
         unset( $p[ 'Two_Factor_FIDO_U2F' ] );
         return $p;
-})
+});
 
 function wpcom_vip_force_twostep() {
 	return ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
