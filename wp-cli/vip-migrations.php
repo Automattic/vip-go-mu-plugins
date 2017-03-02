@@ -72,7 +72,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			WP_CLI::line( $change );
 		}
 
-		WP_CLI::success( count( $changes ) . ' change(s).' );
+		$count = count( $changes );
+		WP_CLI::success( _n( '%s change', '%s changes', $count ), number_format_i18n( $count ) ) );
 	}
 }
 
