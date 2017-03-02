@@ -11,6 +11,10 @@ if ( true === WPCOM_IS_VIP_ENV ) {
  * Count publish events regardless of post type
  */
 function track_publish_post( $new_status, $old_status ) {
+	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+		return;
+	}
+
 	if ( 'publish' !== $new_status || 'publish' === $old_status ) {
 		return;
 	}
