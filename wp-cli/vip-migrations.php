@@ -43,7 +43,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				$total++;
 				$site_ids[] = $blog->site_id;
 				$url = $blog->domain . $blog->path;
-				$cmd = "--url={$url} vip migration dbdelta";
+				$cmd = "--url={$url} vip migration dbdelta blog";
 				if ( $dry_run ) {
 					$cmd .= ' --dry-run';
 				}
