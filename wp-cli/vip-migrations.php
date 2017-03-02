@@ -37,13 +37,18 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				'where' => array( 'spam' => 0, 'deleted' => 0, 'archived' => 0 ),
 			);
 			$it = new \WP_CLI\Iterators\Table( $iterator_args );
-			$success = $total = 0;
-			$site_ids = array();
 			foreach( $it as $blog ) {
-				$total++;
-				$site_ids[] = $blog->site_id;
 				$url = $blog->domain . $blog->path;
-				$cmd = "--url={$url} vip migration dbdelta blog";
+				$cmd = "--url={$url} vip migration dbdelta";
+
+				// Update global tables if this is the main site
+				// otherwise only update the given blog's tables
+				if ( is_main_site( $blog->site_id ) ) {
+					$cmd .= ' all';
+				} else {
+					$cmd .= ' blog';
+				}
+
 				if ( $dry_run ) {
 					$cmd .= ' --dry-run';
 				}
@@ -73,7 +78,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		$count = count( $changes );
-		WP_CLI::success( _n( '%s change', '%s changes', $count ), number_format_i18n( $count ) ) );
+		WP_CLI::success( _n( '%s change', '%s changes', $count ), number_format_i18n( $count ) );
 	}
 }
 
