@@ -19,10 +19,9 @@ function wpcom_vip_force_twostep() {
 function wpcom_enable_two_factor_plugin() {
 	if ( ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && ! class_exists( 'Jetpack' ) && ! Jetpack::is_active() && ! Jetpack::is_module_active( 'sso' ) ) {
 		wpcom_vip_load_plugin( 'two-factor' );
-	} else if ( wpcom_vip_plugin_is_loaded( 'shared-plugins/two-factor' ) && wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) ) {
+	} else if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' ) ) {
+		wpcom_vip_load_plugin( 'jetpack-force-2fa' );
 		remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
-		remove_all_actions( 'login_form_validate_2fa' );
-		remove_all_actions( 'login_form_backup_2fa' );
 	}
 }
 add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
