@@ -189,4 +189,4 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip-go-utf8mb4', 'VIP_Go_Convert_utf8_utf8mb4' );
+WP_CLI::add_command( 'vip utf8mb4', 'VIP_Go_Convert_utf8_utf8mb4' );

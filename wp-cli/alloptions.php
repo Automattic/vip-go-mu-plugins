@@ -71,4 +71,4 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'alloptions', 'VIP_Go_Alloptions' );
+WP_CLI::add_command( 'vip alloptions', 'VIP_Go_Alloptions' );
