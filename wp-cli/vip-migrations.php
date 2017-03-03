@@ -43,7 +43,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 				// Update global tables if this is the main site
 				// otherwise only update the given blog's tables
-				if ( is_main_site( $blog->site_id ) ) {
+				if ( is_main_site( $blog->blog_id ) ) {
 					$cmd .= ' all';
 				} else {
 					$cmd .= ' blog';
