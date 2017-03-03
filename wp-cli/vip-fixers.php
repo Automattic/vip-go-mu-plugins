@@ -156,4 +156,4 @@ class VIP_Go_OneTimeFixers_Command extends WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip-go-one-time-fixers', 'VIP_Go_OneTimeFixers_Command' );
+WP_CLI::add_command( 'vip fixers', 'VIP_Go_OneTimeFixers_Command' );
