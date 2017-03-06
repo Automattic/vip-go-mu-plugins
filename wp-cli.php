@@ -6,4 +6,5 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 
 require __DIR__ . '/wp-cli/alloptions.php';
 require __DIR__ . '/wp-cli/vip-fixers.php';
+require __DIR__ . '/wp-cli/vip-users.php';
 require __DIR__ . '/wp-cli/vip-utf8-to-utf8mb4.php';
