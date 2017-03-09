@@ -17,7 +17,7 @@ add_filter( 'debug_bar_enable', function( $enable ) {
 
 add_action( 'send_headers', function() {
 	if ( true === A8C_PROXIED_REQUEST ) {
-		header( 'Cache-Control: private' );
+		nocache_headers();
 	}
 });
 
