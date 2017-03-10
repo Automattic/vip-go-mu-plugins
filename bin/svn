@@ -1,0 +1,34 @@
+#!/bin/bash
+
+predeploy() {
+	# PHP Lint
+	find . -name \*.php -print0 | xargs -0 -n 1 -P 4 php -nl || exit 1
+
+	# Check for unverioned files
+	if svn status --ignore-externals | grep ^?; then
+		read -p "There are unversioned files. Are you sure you want to continue? [n] " continue
+		if [[ ! $continue =~ ^[Yy]([Ee][Ss])?$ ]]; then
+			exit 2;
+		fi
+	fi
+
+	echo "Continuing..."
+}
+
+SUBCOMMAND=$1
+shift
+
+case $SUBCOMMAND in
+	test|lint)
+		predeploy
+		;;
+	ci|commit)
+		# Run predeploy checks
+		predeploy
+
+		/usr/bin/svn commit "$@"
+		;;
+	*)
+		/usr/bin/svn $SUBCOMMAND "$@"
+		;;
+esac
