@@ -25,12 +25,9 @@ before_install:
 install: true
 
 before_script:
-- |
-  if [[ ${TRAVIS_PHP_VERSION:0:2} == "7." ]]; then
-    composer global require "phpunit/phpunit=5.7.*"
-  elif [[ ${TRAVIS_PHP_VERSION:0:3} != "5.2" ]]; then
-    composer global require "phpunit/phpunit=4.8.*"
-  fi
+# Travis ships phpunit6 which no longer supports `PHPUnit_Framework_TestCase`, see https://core.trac.wordpress.org/ticket/39822
+- composer global require "phpunit/phpunit=5.7.*"
+- phpunit --version
 
 script:
   # Linting and unit tests
