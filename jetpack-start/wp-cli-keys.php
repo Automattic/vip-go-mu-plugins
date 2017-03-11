@@ -1,6 +1,6 @@
 <?php
 
-class Jetpack_Start_CLI_Command extends WP_CLI_Command {
+class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 	/**
 	 * Install Akismet keys
 	 *
@@ -11,7 +11,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp jetpack-start akismet --akismet_key=12345
+	 *     wp jetpack-start keys akismet --akismet_key=12345
 	 *
 	 * @subcommand akismet
 	 */
@@ -76,7 +76,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		if ( is_wp_error( $result ) ) {
 			WP_CLI::error( '- Failed to configure VaultPress: ' . $result->get_error_message() );
 		}
-		
+
 		$vaultpress_ssh_key = $assoc_args['vaultpress_ssh_key'];
 		if ( $vaultpress_ssh_key ) {
 			$result = $this->install_vaultpress_ssh_keys( $vaultpress_ssh_key );
@@ -154,7 +154,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp jetpack-start jetpack --jetpack_id=12345 --jetpack_secret="qwerty..." --jetpack_access_token="zxcv..."
+	 *     wp jetpack-start keys jetpack --jetpack_id=12345 --jetpack_secret="qwerty..." --jetpack_access_token="zxcv..."
 	 *
 	 * @subcommand jetpack
 	 */
@@ -201,7 +201,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		);
 	}
 
-	private function init_recommended_jetpack_modules() {	
+	private function init_recommended_jetpack_modules() {
 		require_once( JETPACK__PLUGIN_DIR . 'class.jetpack-admin.php' );
 		$modules = Jetpack_Admin::init()->get_modules();
 		foreach ( $modules as $module => $value ) {
@@ -215,4 +215,4 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'jetpack-start', 'Jetpack_Start_CLI_Command' );
+WP_CLI::add_command( 'jetpack-start keys', 'Jetpack_Start_Keys_CLI_Command' );
