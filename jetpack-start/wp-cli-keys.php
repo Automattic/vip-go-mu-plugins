@@ -175,7 +175,6 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 
 		if ( isset( $assoc_args['jetpack_init_modules'] ) ) {
 			WP_CLI::line( '- Configuring recommended Jetpack modules' );
-
 			$this->init_recommended_jetpack_modules();
 		}
 
@@ -203,15 +202,15 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 
 	private function init_recommended_jetpack_modules() {
 		require_once( JETPACK__PLUGIN_DIR . 'class.jetpack-admin.php' );
+		$jumpstart_modules = array();
 		$modules = Jetpack_Admin::init()->get_modules();
 		foreach ( $modules as $module => $value ) {
 			if ( in_array( 'Jumpstart', $value['feature'] ) ) {
-				Jetpack::activate_module( $value['module'], false, false );
-				Jetpack::state( 'message', 'no_message' );
-
-				WP_CLI::line( sprintf( '-- Activated Jetpack `%s` module', $value['name'] ) );
+				$jumpstart_modules[] = $value['module'];
 			}
 		}
+
+		Jetpack::activate_default_modules( false, false, $jumpstart_modules, false );
 	}
 }
 
