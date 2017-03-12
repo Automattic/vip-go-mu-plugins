@@ -6,83 +6,50 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 	 *
 	 * Creates a machine user (if needed) and then uses the Jetpack Start API to initialize a connection and sets up the necessary local bits.
 	 *
+	 * ## OPTIONS
+	 *
+	 * [--skip_is_active]
+	 * : Provision even if Jetpack is already connected.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp jetpack-start api connect
+	 *     wp jetpack-start api connect --skip_is_active
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
 		if ( ! defined( 'WPCOM_VIP_JP_START_API_BASE' ) || ! defined( 'WPCOM_VIP_JP_START_API_TOKEN' ) ) {
-			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_BASE` and/or `WPCOM_VIP_JP_START_API_TOKEN`) are not defined. Please check the `vip-secrets` file to confirm they\'re there and accessible.' );
+			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_BASE` and/or `WPCOM_VIP_JP_START_API_TOKEN`) are not defined. Please check the `vip-secrets` file to confirm they\'re there, accessible, and valid.' );
 		}
 
-		// TODO: if Jetpack is connected, bail?
+		$skip_is_active = WP_CLI\Utils\get_flag_value( $assoc_args, 'skip_is_active', false );
+		if ( ! $skip_is_active && Jetpack::is_active() ) {
+			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--skip_is_active` to bypass this check or disconnect Jetpack before continuing.' );
+		}
 
+		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
 		$user = $this->maybe_create_user();
-
-		$url = $this->get_api_url( '/product-keys' );
-		$args = [
-			'site_url' => get_site_url(),
-			'site_name' => get_bloginfo( 'name' ),
-			'site_lang' => get_locale(),
-			'user_id' => $user->ID,
-			'user_role' => WPCOM_VIP_MACHINE_USER_ROLE,
-		];
-		$headers = [
-			 'Authorization' => 'Bearer ' . WPCOM_VIP_JPPHP_TOKEN,
-		];
-
-		$request = wp_remote_post( $url, [
-			'body' => $args,
-			'headers' => $headers,
-		] );
-
-		if ( is_wp_error( $request ) ) {
-			WP_CLI::error( '>> Failed to fetch keys from Jetpack Start: ' . $request->get_error_message() );
+		if ( is_wp_error( $user ) ) {
+			WP_CLI::error( $user->get_error_message() );
 		}
 
-		$response_code = wp_remote_retrieve_response_code( $request );
-		if ( 200 !== $response_code ) {
-			WP_CLI::error( '>> Got non-200 response from Jetpack Start API: ' . $response_code );
+		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
+		$data = $this->fetch_keys( $user );
+		if ( is_wp_error( $data ) ) {
+			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $data->get_error_message() );
 		}
 
-		$body = wp_remote_retrieve_body( $request );
-		$data = wp_json_decode( $body );
-		if ( ! $data || ! $data['success'] ) {
-			WP_CLI::error( '>> Got invalid response from Jetpack Start API: ' . $body );
-		}
+		WP_CLI::line( '-- Adding keys to site' );
+		$this->install_keys( $data );
 
-		// Connect Akismet
-		$akismet_key = $data['akismet_api_key'];
-		$akismet_result = WP_CLI::runcommand( sprintf(
-			'wp jetpack-start akismet --akismet_key="%s"',
-			escapeshellarg( $akismet_key )
-		) );
-
-		// Connect VaultPress
-		$vaultpress_key = $data['vaultpress_registration_key'];
-		$vaultpress_result = WP_CLI::runcommand( sprintf(
-			'wp jetpack-start vaultpress --vaultpress_key="%s"',
-			escapeshellarg( $vaultpress_key )
-		) );
-
-		// Connect Jetpack
-		$jetpack_id = $data['jetpack_id'];
-		$jetpack_secret = $data['jetpack_secret'];
-		$jetpack_access_token = $data['jetpack_access_token'];
-		$jetpack_result = WP_CLI::runcommand( sprintf(
-			'wp jetpack-start vaultpress --jetpack_id="%s" --jetpack_secret="%s", --jetpack_access_token="%s"',
-			escapeshellarg( $jetpack_id ),
-			escapeshellarg( $jetpack_secret ),
-			escapeshellarg( $jetpack_access_token )
-		) );
+		WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
 	}
 
 	private function maybe_create_user() {
 		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 		if ( ! $user ) {
 			$cmd = sprintf(
-				'user create %s %s --role="%s" --display_name="%s" --porcelain',
+				'user create --url=%s %s %s --role=%s --display_name=%s --porcelain',
 				escapeshellarg( get_site_url() ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_LOGIN ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_EMAIL ),
@@ -90,12 +57,13 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_NAME )
 			);
 
-			WP_CLI::line( '-- Creating VIP machine user' );
-			$user_id = WP_CLI::runcommand( $cmd );
+			$user_id = WP_CLI::runcommand( $cmd, [
+				'return' => true,
+			] );
 
 			$user = get_userdata( $user_id );
 			if ( ! $user ) {
-				WP_CLI::error( '>> Failed to create user' );
+				return new WP_Error( 'maybe_create_user-failed', 'Failed to create new user.' );
 			}
 		}
 
@@ -115,8 +83,77 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		return $user;
 	}
 
+	private function fetch_keys( $user ) {
+		$url = $this->get_api_url( '/product-keys' );
+		$args = [
+			'site_url'  => get_site_url(),
+			'site_name' => get_bloginfo( 'name' ),
+			'site_lang' => get_locale(),
+			'user_id'   => $user->ID,
+			'user_role' => WPCOM_VIP_MACHINE_USER_ROLE,
+		];
+		$headers = array_merge( [], $this->get_api_auth_header() );
+
+		$request = wp_remote_post( $url, [
+			'body'    => $args,
+			'headers' => $headers,
+			'timeout' => 30, // Jetpack Start can be a bit slow so give it time
+		] );
+
+		if ( is_wp_error( $request ) ) {
+			return $request;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $request );
+		$body = wp_remote_retrieve_body( $request );
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'fetch_keys-fail-non-200', sprintf( 'Got non-200 response from Jetpack Start API (code: %d | body: %s)', $response_code, $body ) );
+		}
+
+		$data = wp_json_decode( $body );
+		if ( ! $data || ! $data['success'] ) {
+			return new WP_Error( 'fetch_keys-fail-invalid-response', sprintf( 'Got invalid response from Jetpack Start API (body: %s)', $body ) );
+		}
+
+		return $data;
+	}
+
+	private function install_keys( $data ) {
+		$runcommand_args = [
+			'exit_error' => false,
+		];
+
+		$akismet_key = $data['akismet_api_key'] ?? '';
+		$akismet_result = WP_CLI::runcommand( sprintf(
+			'wp jetpack-start akismet --akismet_key=%s',
+			escapeshellarg( $akismet_key )
+		), $runcommand_args );
+
+		$vaultpress_key = $data['vaultpress_registration_key'] ?? '';
+		$vaultpress_result = WP_CLI::runcommand( sprintf(
+			'wp jetpack-start vaultpress --vaultpress_key=%s',
+			escapeshellarg( $vaultpress_key )
+		), $runcommand_args );
+
+		$jetpack_id = $data['jetpack_id'] ?? '';
+		$jetpack_secret = $data['jetpack_secret'] ?? '';
+		$jetpack_access_token = $data['jetpack_access_token'] ?? '';
+		$jetpack_result = WP_CLI::runcommand( sprintf(
+			'wp jetpack-start vaultpress --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s',
+			escapeshellarg( $jetpack_id ),
+			escapeshellarg( $jetpack_secret ),
+			escapeshellarg( $jetpack_access_token )
+		), $runcommand_args );
+	}
+
+	private function get_api_auth_header() {
+		return [
+			'Authorization' => 'Bearer ' . WPCOM_VIP_JP_START_API_TOKEN,
+		];
+	}
+
 	private function get_api_url( $endpoint ) {
-		return WPCOM_VIP_JPPHP_API_BASE . $endpoint;
+		return WPCOM_VIP_JP_START_API_BASE . $endpoint;
 	}
 }
 
