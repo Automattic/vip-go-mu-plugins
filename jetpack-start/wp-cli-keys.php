@@ -167,7 +167,7 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( 'Failed to install Jetpack keys: please re-run this script with the `--user` param set to the Jetpack Connection Owner' );
 		}
 
-		WP_CLI( 'Configuring Jetpack' );
+		WP_CLI::line( 'Configuring Jetpack' );
 
 		$user_id = wp_get_current_user_id();
 
