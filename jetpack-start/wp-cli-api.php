@@ -110,7 +110,7 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 			return new WP_Error( 'fetch_keys-fail-non-200', sprintf( 'Got non-200 response from Jetpack Start API (code: %d | body: %s)', $response_code, $body ) );
 		}
 
-		$data = wp_json_decode( $body );
+		$data = json_decode( $body, true );
 		if ( ! $data || ! $data['success'] ) {
 			return new WP_Error( 'fetch_keys-fail-invalid-response', sprintf( 'Got invalid response from Jetpack Start API (body: %s)', $body ) );
 		}
