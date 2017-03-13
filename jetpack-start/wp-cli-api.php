@@ -125,13 +125,13 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 
 		$akismet_key = $data['akismet_api_key'] ?? '';
 		$akismet_result = WP_CLI::runcommand( sprintf(
-			'wp jetpack-start akismet --akismet_key=%s',
+			'jetpack-start keys akismet --akismet_key=%s',
 			escapeshellarg( $akismet_key )
 		), $runcommand_args );
 
 		$vaultpress_key = $data['vaultpress_registration_key'] ?? '';
 		$vaultpress_result = WP_CLI::runcommand( sprintf(
-			'wp jetpack-start vaultpress --vaultpress_key=%s',
+			'jetpack-start keys vaultpress --vaultpress_key=%s',
 			escapeshellarg( $vaultpress_key )
 		), $runcommand_args );
 
@@ -139,7 +139,7 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		$jetpack_secret = $data['jetpack_secret'] ?? '';
 		$jetpack_access_token = $data['jetpack_access_token'] ?? '';
 		$jetpack_result = WP_CLI::runcommand( sprintf(
-			'wp jetpack-start vaultpress --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s',
+			'jetpack-start keys vaultpress --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s',
 			escapeshellarg( $jetpack_id ),
 			escapeshellarg( $jetpack_secret ),
 			escapeshellarg( $jetpack_access_token )
