@@ -169,7 +169,7 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::line( 'Configuring Jetpack' );
 
-		$user_id = wp_get_current_user_id();
+		$user_id = get_current_user_id();
 
 		$this->register_jetpack( $user_id, $assoc_args );
 
