@@ -6,20 +6,26 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+namespace Automattic\WP\Twostep;
+
 // https://github.com/georgestephanis/two-factor/issues/78
 add_filter( 'two_factor_providers', function( $p ) {
         unset( $p[ 'Two_Factor_FIDO_U2F' ] );
         return $p;
 });
 
+function sso_is_enabled() {
+	return class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' );
+}
+
 function wpcom_vip_force_twostep() {
 	return ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
 }
 
 function wpcom_enable_two_factor_plugin() {
-	if ( ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && ! class_exists( 'Jetpack' ) && ! Jetpack::is_active() && ! Jetpack::is_module_active( 'sso' ) ) {
+	if ( ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && ! sso_is_enabled() ) {
 		wpcom_vip_load_plugin( 'two-factor' );
-	} else if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' ) ) {
+	} else if ( sso_is_enabled() ) {
 		wpcom_vip_load_plugin( 'jetpack-force-2fa' );
 		remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
 	}
