@@ -32,17 +32,8 @@ class A8C_Files {
 		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
 		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
 
-		// WP 4.5 introduced a new filter, which simplifies how we generate unique filenames
-		// We retain test sites on the version that precedes the current stable release, making this necessary
-		global $wp_version;
-
-		if ( version_compare( $wp_version, '4.5', '>=' ) ) {
-			add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
-			add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
-		} else {
-			add_filter( 'wp_handle_upload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
-			add_filter( 'wp_handle_sideload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
-		}
+		add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
+		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
 
 		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
 
@@ -241,40 +232,6 @@ class A8C_Files {
 		}
 
 		return $filetype_data;
-	}
-
-	/**
-	 * Ensure filename uniqueness prior to WP 4.5's wp_unique_filename filter
-	 */
-	function get_unique_filename( $file ) {
-		$filename = strtolower( $file['name'] );
-		$info = pathinfo( $filename );
-		$ext = $info['extension'];
-		$name = basename( $filename, ".{$ext}" );
-
-		if( $name === ".$ext" )
-			$name = '';
-		$number = '';
-		if ( empty( $ext ) )
-			$ext = '';
-		else
-			$ext = strtolower( ".$ext" );
-
-		$filename = $this->_sanitize_filename( $filename, $ext );
-
-		$check = $this->_check_uniqueness_with_backend( $filename );
-
-		if ( 200 == $check['http_code'] ) {
-			$obj = json_decode( $check['content'] );
-			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) )
-				$file['name'] = $obj->filename;
-		} else if ( 406 == $check['http_code'] ) {
-			$file['error'] = __( 'The file type you uploaded is not supported.' );
-		} else {
-			$file['error'] = sprintf( __( 'Error getting the file name from the remote servers: Code %d' ), $check['http_code'] );
-		}
-
-		return $file;
 	}
 
 	/**
