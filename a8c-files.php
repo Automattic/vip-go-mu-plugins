@@ -19,6 +19,9 @@ define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
 define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
+// See inline for usage of this constant
+define( 'WPCOM_VIP_IMAGE_QUALITY_100', 'allow-quality-100' );
+
 class A8C_Files {
 
 	function __construct() {
@@ -711,6 +714,19 @@ class A8C_Files {
 		elseif ( 'full' != $size ) {
 			$args['w'] = $w;
 			$resized = true;
+		}
+
+		if ( isset( $args['quality'] ) ) {
+			$quality = $args['quality'];
+			// `quality=100` is a special value that generates large, lossless images which if not used correctly can cause issues. 
+			// There are valid use cases, but those should be concious choice and we're requiring the use of this constant to make it clear that the decision was thought through.
+			// If you're not sure whether to use this constant, please ask.
+			if ( WPCOM_VIP_IMAGE_QUALITY_100 === $quality ) {
+				$args['quality'] = 100;
+			} elseif ( $quality >= 100 ) {
+				_doing_it_wrong( __FUNCTION__, __( 'Did you really mean to set quality=100? This can be cause load issues if used incorrectly. Just to be safe, we\'re setting the value to 99. Please contact VIP Support to discuss your use case and we\'ll help you figure out the safest path forward. Thanks!' ), null );
+				$args['quality'] = 99;
+			}
 		}
 
 		if ( is_array( $args ) ) {
