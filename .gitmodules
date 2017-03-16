@@ -4,9 +4,6 @@
 [submodule "vip-support"]
 	path = vip-support
 	url = git@github.com:Automattic/vip-support.git
-[submodule "vip-jetpack"]
-	path = vip-jetpack
-	url = git@github.com:Automattic/vip-jetpack.git
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
 	url = git@github.com:Automattic/advanced-post-cache.git
@@ -40,3 +37,6 @@
 [submodule "debug-bar-cron"]
 	path = debug-bar-cron
 	url = https://github.com/tollmanz/debug-bar-cron.git
+[submodule "vip-jetpack/jetpack-force-2fa"]
+	path = vip-jetpack/jetpack-force-2fa
+	url = git@github.com:Automattic/jetpack-force-2fa.git

@@ -14,10 +14,22 @@ env:
     - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
     - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
 
+addons:
+  apt:
+    packages:
+    - graphviz
+
 before_install:
   - ./ci/prepare.sh
 
 install: true
+
+before_script:
+  # Force Travis to use our global install than the system one
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  # Travis ships phpunit6 which no longer supports `PHPUnit_Framework_TestCase`, see https://core.trac.wordpress.org/ticket/39822
+  - composer global require "phpunit/phpunit=5.7.*"
+  - phpunit --version
 
 script:
   # Linting and unit tests
@@ -32,3 +44,4 @@ notifications:
 after_success:
   # Push the aggregated code, including submodules, to the public repo
   - ./ci/deploy.sh
+  - ./ci/generate-docs.sh
