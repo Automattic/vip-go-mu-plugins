@@ -77,7 +77,7 @@ function wpcom_vip_qm_require() {
 	// Because we're including Query Monitor as an MU plugin, we need to
 	// manually call the `activate` method on `activation`.
 	if ( 0 === get_option( 'wpcom_vip_qm_activated', 0 ) ) {
-		QueryMonitor::init( $wpcom_vip_qm_file )->activate( true );
+		QM_Activation::init( $wpcom_vip_qm_file )->activate( true );
 		update_option( 'wpcom_vip_qm_activated', 1, true );
 	}
 
