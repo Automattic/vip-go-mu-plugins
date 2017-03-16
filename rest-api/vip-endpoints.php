@@ -44,7 +44,9 @@ class WPCOM_VIP_REST_API_Endpoints {
 		register_rest_route( $this->namespace, '/sites/', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'list_sites' ),
-			'permission_callback' => 'wpcom_vip_go_rest_api_request_allowed',
+			'permission_callback' => function() {
+				return wpcom_vip_go_rest_api_request_allowed( $this->namespace );
+			},
 		) );
 
 		add_filter( 'rest_authentication_errors', array( $this, 'disable_auth' ), 999 ); // hook in late to bypass any others that override our auth requirements
@@ -58,7 +60,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
 	 */
 	public function disable_auth( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && wpcom_vip_go_rest_api_request_allowed() ) {
+		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
 			return true;
 		}
 
