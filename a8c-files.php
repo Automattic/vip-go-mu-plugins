@@ -22,12 +22,12 @@ define( 'ALLOW_UNFILTERED_UPLOADS', false );
 class A8C_Files {
 
 	function __construct() {
-		
+
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
 			return 1073741824; // pow( 2, 30 )
 		});
-		
+
 		// Hooks for the mu-plugin WordPress Importer
 		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
 		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
@@ -43,7 +43,22 @@ class A8C_Files {
 		add_filter( 'wp_save_image_file',        array( &$this, 'save_image_file' ), 10, 5 );
 		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 
-		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
+		// Limit to certain contexts for the initial testing and roll-out.
+		// This will be phased out and become the default eventually.
+		$use_jetpack_photon = $this->use_jetpack_photon();
+		if ( $use_jetpack_photon ) {
+			// The files service has Photon capabilities, but is served from the same domain.
+			// Force Jetpack to use it instead of the default Photon domains (`i*.wp.com`).
+			add_filter( 'jetpack_photon_domain', function() {
+				return home_url();
+			} );
+
+			// If Photon isn't active, we need to init the necessary filters.
+			// This takes care of rewriting intermediate images for us.
+			Jetpack_Photon::instance();
+		} else {
+			add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
+		}
 
 		// Automatic creation of intermediate image sizes is disabled via `wpcom_intermediate_sizes()`
 
@@ -52,6 +67,18 @@ class A8C_Files {
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+	}
+
+	function use_jetpack_photon() {
+		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
+			return true;
+		}
+
+		if ( isset( $_GET['jetpack-photon'] ) && 'yes' === $_GET['jetpack-photon'] ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	function check_to_upload_file( $data, $postarr ) {
@@ -504,7 +531,7 @@ class A8C_Files {
 		// Change the upload url path to site's URL + wp-content/uploads without trailing slash
 		// Related core code: https://core.trac.wordpress.org/browser/tags/4.6.1/src/wp-includes/functions.php#L1929
 		$upload_url_path = untrailingslashit( get_site_url( null, 'wp-content/uploads' ) );
-		
+
 		return $upload_url_path;
 	}
 
@@ -581,7 +608,7 @@ class A8C_Files {
 		$img_url = wp_get_attachment_url( $id );
 
 		/**
-		 * Filter the original image Photon-compatible parameters before changes are 
+		 * Filter the original image Photon-compatible parameters before changes are
 		 *
 		 * @param array|string $args Array of Photon-compatible arguments.
 		 * @param string $img_url Image URL.
