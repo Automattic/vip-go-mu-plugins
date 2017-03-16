@@ -44,7 +44,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 		register_rest_route( $this->namespace, '/sites/', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'list_sites' ),
-			'permission_callback' => array( $this, 'request_allowed' ),
+			'permission_callback' => 'wpcom_vip_go_rest_api_request_allowed',
 		) );
 
 		add_filter( 'rest_authentication_errors', array( $this, 'disable_auth' ), 999 ); // hook in late to bypass any others that override our auth requirements
@@ -58,7 +58,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
 	 */
 	public function disable_auth( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && $this->request_allowed() ) {
+		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && wpcom_vip_go_rest_api_request_allowed() ) {
 			return true;
 		}
 
@@ -120,24 +120,6 @@ class WPCOM_VIP_REST_API_Endpoints {
 		}
 
 		return new WP_REST_Response( $sites );
-	}
-
-	/**
-	 * Check if necessary authentication header allows access to this endpoint
-	 *
-	 * Not always called as a REST API permission callback, hence going directly to the global
-	 *
-	 * @return bool
-	 */
-	public function request_allowed() {
-		// Do we have a header to check?
-		if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) && ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-			$header = $_SERVER['HTTP_AUTHORIZATION'];
-		} else {
-			return false;
-		}
-
-		return wpcom_vip_verify_go_rest_api_request_authorization( $this->namespace, $header );
 	}
 }
 

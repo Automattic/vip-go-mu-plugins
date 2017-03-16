@@ -62,6 +62,24 @@ function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_h
 }
 
 /**
+ * Check if necessary authentication header allows access to an endpoint
+ *
+ * Not always called as a REST API permission callback, hence going directly to the global
+ *
+ * @return bool
+ */
+function wpcom_vip_go_rest_api_request_allowed() {
+	// Do we have a header to check?
+	if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) && ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+		$header = $_SERVER['HTTP_AUTHORIZATION'];
+	} else {
+		return false;
+	}
+
+	return wpcom_vip_verify_go_rest_api_request_authorization( $this->namespace, $header );
+}
+
+/**
  * Include customizations
  */
 require_once __DIR__ . '/rest-api/vip-endpoints.php';
