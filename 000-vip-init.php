@@ -20,22 +20,6 @@ if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	define( 'A8C_PROXIED_REQUEST', false );
 }
 
-/**
- * Function used to authenticate certain requests from WordPress.com
- */
-if ( ! function_exists( 'wpcom_vip_verify_go_rest_api_request_authorization' ) ) {
-	/**
-	 * Verify that a given authorization header is valid for a REST API route namespace
-	 *
-	 * @param  string $namespace   REST API route's namespace
-	 * @param  string $auth_header Authorization header to verify
-	 * @return bool
-	 */
-	function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_header ) {
-		return false;
-	}
-}
-
 if ( ! defined( 'VIP_GO_ENV' ) ) {
 	/**
 	 * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
