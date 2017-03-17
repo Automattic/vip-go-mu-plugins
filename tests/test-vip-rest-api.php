@@ -35,9 +35,6 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 		global $wp_rest_server;
 		$wp_rest_server = null;
 
-		// make sure the schedule is clear
-		_set_cron_array( array() );
-
 		parent::tearDown();
 	}
 
