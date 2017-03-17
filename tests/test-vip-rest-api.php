@@ -73,4 +73,63 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, $header ) );
 	}
+
+	/**
+	 * Test request with valid authorization
+	 */
+	public function test__request_with_valid_header() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['HTTP_AUTHORIZATION'] );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * Test request with invalid auth mechanism
+	 */
+	public function test__request_with_invalid_mechanism() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['HTTP_AUTHORIZATION'] = self::INVALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['HTTP_AUTHORIZATION'] );
+
+		$this->assertEquals( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test request with token for different namespace
+	 */
+	public function test__request_with_invalid_token() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::INVALID_NAMESPACE );
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['HTTP_AUTHORIZATION'] );
+
+		$this->assertEquals( 403, $response->get_status() );
+	}
+
+	/**
+	 * Test request without any auth header
+	 */
+	public function test__request_without_header() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 403, $response->get_status() );
+	}
 }
