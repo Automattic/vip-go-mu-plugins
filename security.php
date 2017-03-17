@@ -8,13 +8,29 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+function wpcom_vip_is_restricted_username( $username ) {
+	return 'admin' === $username
+		|| WPCOM_VIP_MACHINE_USER_LOGIN === $username
+		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username;
+}
+
+function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $password ) {
+	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	if ( $is_restricted_username ) {
+		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
+	}
+	return $user;
+}
+add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restristed_usernames', 10, 3 );
+
 function wpcom_vip_login_limiter( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
 	$key2 = $ip; // IP only
 
 	// Longer TTL when logging in as admin, which we don't allow on WP.com
-	wp_cache_add( $key1, 0, 'login_limit', 'admin' == $username ? HOUR_IN_SECONDS : ( MINUTE_IN_SECONDS * 5 ) );
+	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	wp_cache_add( $key1, 0, 'login_limit', $is_restricted_username ? HOUR_IN_SECONDS : ( MINUTE_IN_SECONDS * 5 ) );
 	wp_cache_add( $key2, 0, 'login_limit',  HOUR_IN_SECONDS );
 	wp_cache_incr( $key1, 1, 'login_limit' );
 	wp_cache_incr( $key2, 1, 'login_limit' );
@@ -72,7 +88,9 @@ function wpcom_vip_login_is_limited( $username ) {
 	$key1 = $ip . '|' . $username;
 	$key2 = $ip;
 	$count1 = wp_cache_get( $key1, 'login_limit' );
-	if ( 'admin' == $username ) {
+
+	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	if ( $is_restricted_username ) {
 		$threshold1 = 2;
 	} else {
 		$threshold1 = 5;
