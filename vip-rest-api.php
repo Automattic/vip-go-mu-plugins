@@ -70,13 +70,11 @@ function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_h
  */
 function wpcom_vip_go_rest_api_request_allowed( $namespace ) {
 	// Do we have a header to check?
-	if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) && ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-		$header = $_SERVER['HTTP_AUTHORIZATION'];
-	} else {
+	if ( ! isset( $_SERVER['HTTP_AUTHORIZATION'] ) || empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
 		return false;
 	}
 
-	return wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $header );
+	return wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $_SERVER['HTTP_AUTHORIZATION'] );
 }
 
 /**
