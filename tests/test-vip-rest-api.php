@@ -16,10 +16,29 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 	 * Test prep
 	 */
 	public function setUp() {
+		parent::setUp();
+
 		// NONCE_SALT is used to hash tokens
 		if ( ! defined( 'NONCE_SALT' ) ) {
 			define( 'NONCE_SALT', time() );
 		}
+
+		global $wp_rest_server;
+		$this->server = $wp_rest_server = new \WP_REST_Server;
+		do_action( 'rest_api_init' );
+	}
+
+	/**
+	 * Clean up after our tests
+	 */
+	function tearDown() {
+		global $wp_rest_server;
+		$wp_rest_server = null;
+
+		// make sure the schedule is clear
+		_set_cron_array( array() );
+
+		parent::tearDown();
 	}
 
 	/**
