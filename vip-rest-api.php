@@ -22,10 +22,9 @@ function wpcom_vip_generate_go_rest_api_request_token( $namespace, $nonce_salt =
 
 	// Two-minute nonce tick
 	// Generate a four-minute tick per wp_nonce_tick(), but only accept the first half of the tick in wpcom_vip_verify_go_rest_api_request_authorization(), rendering it a two-minute tick
-	$hash_data = ceil( time() / ( ( 4 * $minute_in_seconds ) / 2 ) );
+	$tick = ceil( time() / ( ( 4 * $minute_in_seconds ) / 2 ) );
 
-	$hash_data .= '|';
-	$hash_data .= $namespace;
+	$hash_data = $tick . '|' . $namespace;
 
 	$hash = hash_hmac( 'sha256', $hash_data, $nonce_salt );
 
