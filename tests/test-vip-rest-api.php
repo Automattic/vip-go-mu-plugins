@@ -34,4 +34,15 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( 'test/valid', $header ) );
 	}
+
+	/**
+	 * Test that a valid token doesn't verify with an invalid header
+	 */
+	public function test__invalid_header() {
+		$token = \wpcom_vip_generate_go_rest_api_request_token( 'test/valid' );
+
+		$header = 'Basic ' . $token;
+
+		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( 'test/valid', $header ) );
+	}
 }
