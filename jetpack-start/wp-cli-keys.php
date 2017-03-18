@@ -185,13 +185,13 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 		$jetpack_id = (int) $args['jetpack_id'];
 		$jetpack_secret = (string) $args['jetpack_secret'];
 		$jetpack_access_token = (string) $args['jetpack_access_token'];
-		$jetpack_is_private = isset( $args['jetpack_is_private'] );
+		$jetpack_is_private = (bool) WP_CLI\Utils\get_flag_value( $args, 'jetpack_is_private', false );
 
 		Jetpack_Options::update_options(
 			array(
 				'id'         	=> $jetpack_id,
 				'blog_token' 	=> $jetpack_secret,
-				'public'     	=> $jetpack_is_private,
+				'public'     	=> false === $jetpack_is_private,
 				'master_user'	=> $user_id,
 				'user_tokens'	=> array(
 					$user_id => sprintf( '%s.%s',  $jetpack_access_token, $user_id ),
