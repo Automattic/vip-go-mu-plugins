@@ -68,6 +68,10 @@ class A8C_Files {
 			return home_url();
 		} );
 
+		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
+		// This results in all images being full size (which is not ideal)
+		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
+
 		// The sizes metadata is not used and mostly useless on Go so let's empty it out.
 		// This may need some revisiting for `srcset` handling.
 		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
