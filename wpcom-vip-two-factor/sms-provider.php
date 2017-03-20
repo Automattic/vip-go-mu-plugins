@@ -67,7 +67,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 */
 	public function validate_token( $user_id, $token ) {
 		$hashed_token = get_user_meta( $user_id, self::TOKEN_META_KEY, true );
-		if ( wp_hash( $token ) !== $hashed_token ) {
+		$correct = wp_hash( $token );
+		if ( ! hash_equals( $hashed_token, $correct ) ) {
 			$this->delete_token( $user_id );
 			return false;
 		}
