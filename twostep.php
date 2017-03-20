@@ -6,10 +6,12 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
-// https://github.com/georgestephanis/two-factor/issues/78
 add_filter( 'two_factor_providers', function( $p ) {
-        unset( $p[ 'Two_Factor_FIDO_U2F' ] );
-        return $p;
+	$p['Two_Factor_SMS'] = __DIR__ . '/wpcom-vip-two-factor/sms-provider.php';
+
+	// https://github.com/georgestephanis/two-factor/issues/78
+	unset( $p[ 'Two_Factor_FIDO_U2F' ] );
+	return $p;
 });
 
 function sso_is_enabled() {
