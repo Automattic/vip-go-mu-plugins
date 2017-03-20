@@ -69,9 +69,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		$hashed_token = get_user_meta( $user_id, self::TOKEN_META_KEY, true );
 		$correct = wp_hash( $token );
 		if ( ! hash_equals( $hashed_token, $correct ) ) {
-			$this->delete_token( $user_id );
 			return false;
 		}
+		$this->delete_token( $user_id );
 		return true;
 	}
 
@@ -105,7 +105,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			return;
 		}
 
-		$this->generate_and_send_token( $user );
+		if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
+			$this->generate_and_send_token( $user );
+		}
 
 		// Including template.php for submit_button()
 		require_once( ABSPATH .  '/wp-admin/includes/template.php' );
