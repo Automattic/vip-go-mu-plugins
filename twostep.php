@@ -32,6 +32,11 @@ function wpcom_enable_two_factor_plugin() {
 }
 add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
 
+/**
+ * Twostep: Filter Caps
+ *
+ * Remove caps for users without Twostep enabled
+ */
 function wpcom_vip_twostep_filter_caps( $caps ) {
 	$contributor = array_keys( get_role( 'contributor' )->capabilities );
 
