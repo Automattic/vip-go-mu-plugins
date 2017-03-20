@@ -58,7 +58,7 @@ function wpcom_vip_twostep_admin_notice() {
 	}
 	?>
 	<div class="error">
-		<p><a href="<?php echo admin_url( 'profile.php' ); ?>">Two Step Authentication</a> is required to publish to this site.</p>
+		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Step Authentication</a> is required to publish to this site.</p>
 	</div>
 	<?php
 }
