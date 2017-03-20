@@ -105,6 +105,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		}
 
 		$this->generate_and_send_token( $user );
+
+		// Including template.php for submit_button()
 		require_once( ABSPATH .  '/wp-admin/includes/template.php' );
 		?>
 		<p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
