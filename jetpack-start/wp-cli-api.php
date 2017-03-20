@@ -22,6 +22,10 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_BASE` and/or `WPCOM_VIP_JP_START_API_TOKEN`) are not defined. Please check the `vip-secrets` file to confirm they\'re there, accessible, and valid.' );
 		}
 
+		if ( defined( 'JETPACK_DEV_DEBUG' ) && true === JETPACK_DEV_DEBUG ) {
+			WP_CLI::warning( 'JETPACK_DEV_DEBUG mode is enabled. Please remove the constant after connection.' );
+		}
+
 		$skip_is_active = WP_CLI\Utils\get_flag_value( $assoc_args, 'skip_is_active', false );
 		if ( ! $skip_is_active && Jetpack::is_active() ) {
 			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--skip_is_active` to bypass this check or disconnect Jetpack before continuing.' );
