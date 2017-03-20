@@ -4,6 +4,10 @@ This is the complete MU plugins folder for the WordPress.com VIP next generation
 
 **If you wish to issue a pull request for code here, please do so on [Automattic/vip-go-mu-plugins](https://github.com/Automattic/vip-go-mu-plugins/).**
 
+## PHPDoc
+
+You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
+
 ## Tests
 
 **To run PHP linting locally** on OSX or Unix/Linux (no setup required, beyond having PHP CLI installed):

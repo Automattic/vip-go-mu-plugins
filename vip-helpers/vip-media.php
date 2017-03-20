@@ -10,9 +10,11 @@
  *
  * @param string $image_url URL of the image.
  * @param int $post_ID ID of the post it should be attached to.
+ * @param string $description Description of the image that should be added on upload.
+ * @param array $post_data Array of data to be passed to media_handle_sideload.
  * @return $thumbnail_id id of the thumbnail attachment post id
  */
-function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '' ) {
+function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '', $post_data = array() ) {
 	if ( isset( $_SERVER['REQUEST_METHOD'] ) && strtoupper( $_SERVER['REQUEST_METHOD'] ) == 'GET' ) {
 		return new WP_Error( 'invalid-request-method', 'Media sideloading is not supported via GET. Use POST.' );
 	}
@@ -52,7 +54,7 @@ function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '' )
 	}
 
 	// Now, let's sideload it.
-	$attachment_id = media_handle_sideload( $file_array, $post_id, $description );
+	$attachment_id = media_handle_sideload( $file_array, $post_id, $description, $post_data );
 
 	// If error storing permanently, unlink and return the error
 	if ( is_wp_error( $attachment_id ) ) {

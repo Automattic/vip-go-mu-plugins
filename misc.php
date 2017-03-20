@@ -7,6 +7,11 @@ Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+add_filter( 'upload_mimes', function( $mimes ) {
+	unset( $mimes['flv'] );
+	return $mimes;
+}, 99999 );
+
 // Ensure we do not send the cache headers through to Varnish,
 // so responses obey the cache settings we have configured.
 function wpcom_vip_check_for_404_and_remove_cache_headers( $headers ) {
@@ -28,18 +33,6 @@ add_filter( 'got_url_rewrite', '__return_true' );
 // Disable custom fields meta box dropdown (very slow)
 add_filter( 'postmeta_form_keys', '__return_false' );
 
-// We don't want concat running outside VIP Go environments.
-if ( true === WPCOM_IS_VIP_ENV ) {
-	// Activate concatenation
-	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
-		require __DIR__ .'/http-concat/jsconcat.php';
-	}
-
-	if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
-		require __DIR__ .'/http-concat/cssconcat.php';
-	}
-}
-
 /**
  * This function uses the VIP_VERIFY_STRING and VIP_VERIFY_PATH
  * constants to respond with a verification string at a particular
@@ -58,11 +51,12 @@ function action_wpcom_vip_verify_string() {
 	$verification_path = '/' . VIP_VERIFY_PATH;
 	if ( $verification_path === $_SERVER['REQUEST_URI'] ) {
 		status_header( 200 );
+		nocache_headers();
 		echo VIP_VERIFY_STRING;
 		exit;
 	}
 }
-add_action( 'template_redirect', 'action_wpcom_vip_verify_string' );
+add_action( 'parse_request', 'action_wpcom_vip_verify_string', 0 );
 
 /**
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
@@ -87,41 +81,6 @@ function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
 add_action( 'added_option',   '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
-
-if ( defined( 'VIP_CUSTOM_PINGS' ) && true === VIP_CUSTOM_PINGS ) {
-	remove_action( 'do_pings', 'do_all_pings' );
-	add_action( 'do_pings', function() {
-		global $wpdb;
-
-		// Do pingbacks
-		if ( apply_filters( 'vip_do_pingbacks', true ) ) {
-			while ($ping = $wpdb->get_row("SELECT ID, post_content, meta_id FROM {$wpdb->posts}, {$wpdb->postmeta} WHERE {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '_pingme' LIMIT 1")) {
-				delete_metadata_by_mid( 'post', $ping->meta_id );
-				pingback( $ping->post_content, $ping->ID );
-			}
-		}
-
-
-		// Do Enclosures
-		if ( apply_filters( 'vip_do_enclosures', true ) ) {
-			while ($enclosure = $wpdb->get_row("SELECT ID, post_content, meta_id FROM {$wpdb->posts}, {$wpdb->postmeta} WHERE {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '_encloseme' LIMIT 1")) {
-				delete_metadata_by_mid( 'post', $enclosure->meta_id );
-				do_enclose( $enclosure->post_content, $enclosure->ID );
-			}
-		}
-
-		// Do Trackbacks
-		if ( apply_filters( 'vip_do_trackbacks', false ) ) {
-			$trackbacks = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE to_ping <> '' AND post_status = 'publish' LIMIT 10");
-			if ( is_array($trackbacks) )
-				foreach ( $trackbacks as $trackback )
-					do_trackbacks($trackback);
-		}
-
-		// Do Update Services/Generic Pings
-		generic_ping();
-	});
-}
 
 /**
  * On Go, all API usage must be over HTTPS for security

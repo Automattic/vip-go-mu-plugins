@@ -2,7 +2,46 @@
 
 namespace Automattic\VIP\Proxy;
 
+
 /**
+ * Set REMOTE_ADDR to the end-user's IP address.
+ *
+ * This allows more securely forwarding the origin IP address when your site is fronted by a proxy like Cloudflare or Akamai.
+ *
+ * Without this, the Application will see the Remote Proxy's IP address as the REMOTE_ADDR.
+ * With this, if Remote Proxy's IP address matches a known whitelist, the Application will see the User's real IP address as REMOTE_ADDR.
+ *
+ * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
+ * @param (string) $remote_proxy_ip IP Address of the remote proxy.
+ * @param (string|array) $proxy_ip_whitelist Whitelisted IP addresses for the remote proxy. Supports IPv4 and IPv6, including CIDR format.
+ *
+ * @return (bool) true, if REMOTE_ADDR updated; false, if not.
+ */
+function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
+	// Validate that user_ip is a valid IP address
+	if ( ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
+		&& ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			return false;
+	}
+
+	require_once( __DIR__ . '/ip-utils.php' );
+
+	// Verify that the remote proxy matches our whitelist
+	$is_whitelisted_proxy_ip = IpUtils::checkIp( $remote_proxy_ip, $proxy_ip_whitelist );
+
+	if ( ! $is_whitelisted_proxy_ip ) {
+		return false;
+	}
+
+	// Everything looks good so we can set our SERVER var
+	$_SERVER['REMOTE_ADDR'] = $user_ip;
+
+	return true;
+}
+
+/**
+ * Set REMOTE_ADDR to the end-user's IP address from a trail of IP Addresses.
+ *
  * This allows more securely forwarding the origin IP address when there are multiple proxies in play.
  *
  * Example setup:
@@ -38,23 +77,5 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 		return false;
 	}
 
-	// Validate that user_ip is a valid IP address
-	if ( ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
-		&& ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-            return false;
-        }
-
-	require_once( __DIR__ . '/ip-utils.php' );
-
-	// Verify that the remote proxy matches our whitelist
-	$is_whitelisted_proxy_ip = IpUtils::checkIp( $remote_proxy_ip, $proxy_ip_whitelist );
-
-	if ( ! $is_whitelisted_proxy_ip ) {
-		return false;
-	}
-
-	// Everything looks good so we can set our SERVER var
-	$_SERVER['REMOTE_ADDR'] = $user_ip;
-
-	return true;
+	return fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist );
 }

@@ -644,6 +644,9 @@ function wpcom_vip_enable_cache_full_comment_counts() {
 
 function wpcom_vip_enable_old_slug_redirect_caching() {
 	add_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
+	// Hook the following actions to after the core's wp_check_for_changed_slugs - it's being hooke at prio 12
+	add_action( 'post_updated', 'wpcom_vip_flush_wp_old_slug_redirect_cache', 13, 3 );
+	add_action( 'attachment_updated', 'wpcom_vip_flush_wp_old_slug_redirect_cache', 13, 3 );
 }
 
 /**
@@ -677,7 +680,27 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	}
 	return $link;
 }
+function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
+	// Don't bother if slug hasn't changed.
+	if ( $post->post_name == $post_before->post_name ) {
+		return;
+	}
 
+	// We're only concerned with published, non-hierarchical objects.
+	if ( ! ( 'publish' === $post->post_status || ( 'attachment' === get_post_type( $post ) && 'inherit' === $post->post_status ) ) || is_post_type_hierarchical( $post->post_type ) ) {
+		return;
+	}
+
+	// Flush cache for all old slugs.
+	$old_slugs = (array) get_post_meta( $post_id, '_wp_old_slug' );
+
+	foreach ( $old_slugs as $old_slug ) {
+		wp_cache_delete( 'old_slug' . $old_slug, 'default' );
+	}
+
+	// FLush cache for new post_name since it could had been among old slugs before this update.
+	wp_cache_delete( 'old_slug' . $post->post_name, 'default' );
+}
 
 /**
  * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text

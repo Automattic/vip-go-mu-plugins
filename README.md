@@ -2,6 +2,10 @@
 
 Every commit which is merged to the `master` branch of this repository is automattically pushed to the public copy at [Automattic/vip-mu-plugins-public](https://github.com/Automattic/vip-mu-plugins-public/). There are exceptions which are not deployed, these are controlled by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh).
 
+## PHPDoc
+
+You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
+
 ## Tests
 
 PHP Linting and PHP Unit tests are run by Travis, see the `script` section of [`.travis.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.travis.yml). Test results are reported into one of the WordPress.com VIP Slack channels.
