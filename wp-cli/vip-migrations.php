@@ -80,6 +80,52 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$count = count( $changes );
 		WP_CLI::success( _n( '%s change', '%s changes', $count ), number_format_i18n( $count ) );
 	}
+
+	/**
+	 * Removes unnecessary metadata from attachments (like `sizes`).
+	 *
+	 * @subcommand clean-image-metadata
+	 */
+	function clean_image_metadata( $args, $assoc_args ) {
+		$posts_per_page = 300;
+		$offset = 0;
+
+		$total_attachments = wp_count_posts( 'attachment' )->inherit;
+
+		do {
+			WP_CLI::line( sprintf( 'Processing offset %s (of total %s)', number_format_i18n( $offset ), number_format_i18n( $total_attachments ) ) );
+
+			$attachment_ids = get_posts( [
+				'post_type' => 'attachment',
+				'post_status' => 'inherit',
+				'fields' => 'ids',
+				'orderby' => 'ID',
+				'order' => 'DESC',
+				'posts_per_page' => $posts_per_page,
+				'offset' => $offset,
+			] );
+
+			if ( empty( $attachment_ids ) ) {
+				break;
+			}
+
+			foreach ( $attachment_ids as $attachment_id ) {
+				WP_CLI::line( sprintf( '- attachment %d', $attachment_id ) );
+				$metadata = wp_get_attachment_metadata( $attachment_id );
+				if ( isset( $metadata['sizes'] ) ) {
+					WP_CLI::line( '--> removing `sizes` metadata' );
+
+					unset( $metadata['sizes'] );
+					//wp_update_attachment_metadata( $attachment_id, $metadata );
+				}
+			}
+
+			$this->stop_the_insanity();
+			sleep( 3 );
+
+			$offset += $posts_per_page;
+		} while ( true );
+	}
 }
 
 WP_CLI::add_command( 'vip migration', 'VIP_Go_Migrations_Command' );
