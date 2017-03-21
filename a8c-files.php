@@ -79,6 +79,12 @@ class A8C_Files {
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
 		Jetpack_Photon::instance();
+
+		// Jetpack_Photon's downsize filter doesn't run when is_admin(), so we need to fallback to the Go filters.
+		// This is temporary until Jetpack allows more easily running these filters for is_admin().
+		if ( is_admin() ) {
+			$this->init_vip_photon_filters();
+		}
 	}
 
 	private function init_vip_photon_filters() {
