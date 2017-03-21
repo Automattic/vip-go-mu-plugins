@@ -47,17 +47,9 @@ class A8C_Files {
 		// This will be phased out and become the default eventually.
 		$use_jetpack_photon = $this->use_jetpack_photon();
 		if ( $use_jetpack_photon ) {
-			// The files service has Photon capabilities, but is served from the same domain.
-			// Force Jetpack to use it instead of the default Photon domains (`i*.wp.com`).
-			add_filter( 'jetpack_photon_domain', function() {
-				return home_url();
-			} );
-
-			// If Photon isn't active, we need to init the necessary filters.
-			// This takes care of rewriting intermediate images for us.
-			Jetpack_Photon::instance();
+			$this->init_jetpack_photon_filters();
 		} else {
-			add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
+			$this->init_vip_photon_filters();
 		}
 
 		// Automatic creation of intermediate image sizes is disabled via `wpcom_intermediate_sizes()`
@@ -69,7 +61,23 @@ class A8C_Files {
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
 	}
 
-	function use_jetpack_photon() {
+	private function init_jetpack_photon_filters() {
+		// The files service has Photon capabilities, but is served from the same domain.
+		// Force Jetpack to use it instead of the default Photon domains (`i*.wp.com`).
+		add_filter( 'jetpack_photon_domain', function() {
+			return home_url();
+		} );
+
+		// If Photon isn't active, we need to init the necessary filters.
+		// This takes care of rewriting intermediate images for us.
+		Jetpack_Photon::instance();
+	}
+
+	private function init_vip_photon_filters() {
+		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
+	}
+
+	private function use_jetpack_photon() {
 		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
 			return true;
 		}
