@@ -17,6 +17,8 @@ function _manually_load_plugin() {
 	// Proxy lib
 	require __DIR__ . '/../lib/proxy/ip-forward.php';
 	require __DIR__ . '/../lib/proxy/ip-utils.php';
+
+	require __DIR__ . '/../vip-rest-api.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
