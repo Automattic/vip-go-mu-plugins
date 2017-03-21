@@ -68,6 +68,14 @@ class A8C_Files {
 			return home_url();
 		} );
 
+		// The sizes metadata is not used and mostly useless on Go so let's strip it out.
+		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
+			if ( isset( $data['sizes'] ) ) {
+				unset( $data['sizes'] );
+			}
+			return $data;
+		}, 10, 2 );
+
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
 		Jetpack_Photon::instance();
