@@ -49,7 +49,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 			},
 		) );
 
-		add_filter( 'rest_authentication_errors', array( $this, 'disable_auth' ), 999 ); // hook in late to bypass any others that override our auth requirements
+		add_filter( 'rest_authentication_errors', array( $this, 'force_authorized_access' ), 999 ); // hook in late to bypass any others that override our auth requirements
 	}
 
 	/**
@@ -59,7 +59,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	/**
 	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
 	 */
-	public function disable_auth( $result ) {
+	public function force_authorized_access( $result ) {
 		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
 			return true;
 		}
