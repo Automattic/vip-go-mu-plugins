@@ -27,3 +27,9 @@ function get_postmeta_key_value_index() {
 	// 100 for meta_value is arbitrary-ish.
 	return '`vip_meta_key_value` (`meta_key`(191), `meta_value`(100))';
 }
+
+function remove_core_meta_key_index() {
+	// TODO: need to find someway to fire this after dbDelta
+	global $wpdb;
+	return $wpdb->query( "ALTER ONLINE TABLE $this->postmeta DROP INDEX `meta_key`" );
+}
