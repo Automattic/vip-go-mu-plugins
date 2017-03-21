@@ -115,8 +115,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				if ( isset( $metadata['sizes'] ) ) {
 					WP_CLI::line( '--> removing `sizes` metadata' );
 
-					unset( $metadata['sizes'] );
-					//wp_update_attachment_metadata( $attachment_id, $metadata );
+					$metadata['sizes'] = array();
+					wp_update_attachment_metadata( $attachment_id, $metadata );
 				}
 			}
 
