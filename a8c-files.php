@@ -68,10 +68,11 @@ class A8C_Files {
 			return home_url();
 		} );
 
-		// The sizes metadata is not used and mostly useless on Go so let's strip it out.
+		// The sizes metadata is not used and mostly useless on Go so let's empty it out.
+		// This may need some revisiting for `srcset` handling.
 		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
 			if ( isset( $data['sizes'] ) ) {
-				unset( $data['sizes'] );
+				$data['sizes'] = array();
 			}
 			return $data;
 		}, 10, 2 );
