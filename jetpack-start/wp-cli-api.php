@@ -46,6 +46,8 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '-- Adding keys to site' );
 		$this->install_keys( $data );
 
+		update_option( 'vip_jetpack_start_connected_on', time(), false );
+
 		WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
 	}
 
