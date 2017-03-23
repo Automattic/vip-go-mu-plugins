@@ -71,7 +71,7 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::line( 'Configuring VaultPress' );
 
-		$vaultpress_api_key = $args['vaultpress_key'];
+		$vaultpress_api_key = $assoc_args['vaultpress_key'];
 		$result = $this->register_vaultpress( $vaultpress_api_key );
 		if ( is_wp_error( $result ) ) {
 			WP_CLI::error( '- Failed to configure VaultPress: ' . $result->get_error_message() );
@@ -93,28 +93,7 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function register_vaultpress( $api_key ) {
-		$nonce = wp_create_nonce( 'vp_register_' . $api_key );
-		$vaultpress_args = array(
-			'registration_key' => $api_key,
-			'nonce' => $nonce
-		);
-
-		$vp = VaultPress::init();
-		$vp_response = $vp->contact_service( 'register', $vaultpress_args );
-
-		if ( is_wp_error( $vp_response ) ) {
-			return $vp_response;
-		}
-
-		$vp->update_option( 'key', $vp_response['key'] );
-		$vp->update_option( 'secret', $vp_response['secret'] );
-
-		$vp_check_result = $vp->check_connection( true );
-		if ( ! $vp_check_result ) {
-			return new WP_Error( 'jp-start-vp-connection', 'Site connection not working. Perhaps this domain is inaccessible? Error details: ' . $vp->get_option('connection_error_message') );
-		}
-
-		return true;
+		return VaultPress::register( $api_key );
 	}
 
 	private function install_vaultpress_ssh_keys( $ssh_key ) {
