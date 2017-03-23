@@ -40,13 +40,13 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * [--skip_is_active]
+	 * [--force]
 	 * : Provision even if Jetpack is already connected.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp jetpack-start api connect
-	 *     wp jetpack-start api connect --skip_is_active
+	 *     wp jetpack-start api connect --force
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
@@ -58,9 +58,9 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 			WP_CLI::warning( 'JETPACK_DEV_DEBUG mode is enabled. Please remove the constant after connection.' );
 		}
 
-		$skip_is_active = WP_CLI\Utils\get_flag_value( $assoc_args, 'skip_is_active', false );
-		if ( ! $skip_is_active && Jetpack::is_active() ) {
-			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--skip_is_active` to bypass this check or disconnect Jetpack before continuing.' );
+		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
+		if ( ! $force_connection && Jetpack::is_active() ) {
+			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
 		}
 
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
