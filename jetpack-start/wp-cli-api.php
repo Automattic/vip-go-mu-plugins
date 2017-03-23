@@ -6,19 +6,23 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * --site_id=<site_id>
-	 * : WP.com site ID for the shadow site
+	 * [--jetpack_site_id=<site_id>]
+	 * : WP.com site ID for the shadow site. If not specified, grabs the site ID from Jetpack.
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp jetpack-start api cancel --site_id=999999999
+	 *     wp jetpack-start api cancel
+	 *     wp jetpack-start api cancel --jetpack_site_id=999999999
 	 *
 	 */
 	public function cancel( $args, $assoc_args ) {
-		$site_id = WP_CLI\Utils\get_flag_value( $assoc_args, 'site_id', false );
+		$site_id = WP_CLI\Utils\get_flag_value( $assoc_args, 'jetpack_site_id', false );
 
 		if ( empty( $site_id ) ) {
-			WP_CLI::error( 'Please specify the ID of the Jetpack Shadow site.' );
+			$site_id = Jetpack_Options::get_option( 'id' );
+			if ( empty( $site_id ) ) {
+				WP_CLI::error( 'Could not get WP.com blog_id from the local Jetpack install. Please specify the `--jetpack_site_id` of the Jetpack Shadow site to cancel the subscription. You can get this from the Jetpack Debugger or using WP.com Network Admin.' );
+			}
 		}
 
 		$data = $this->api_cancel_subscription( $site_id );
@@ -27,7 +31,6 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		}
 
 		WP_CLI::success( sprintf( 'Cancelled subscription for site_id = %s (body: %s)', $site_id, var_export( $data, true ) ) );
-
 	}
 
 	/**
