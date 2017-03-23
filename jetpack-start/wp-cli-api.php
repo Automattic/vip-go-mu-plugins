@@ -2,6 +2,35 @@
 
 class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 	/**
+	 * Cancel a Jetpack Start subscription
+	 *
+	 * ## OPTIONS
+	 *
+	 * --site_id=<site_id>
+	 * : WP.com site ID for the shadow site
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp jetpack-start api cancel --site_id=999999999
+	 *
+	 */
+	public function cancel( $args, $assoc_args ) {
+		$site_id = WP_CLI\Utils\get_flag_value( $assoc_args, 'site_id', false );
+
+		if ( empty( $site_id ) ) {
+			WP_CLI::error( 'Please specify the ID of the Jetpack Shadow site.' );
+		}
+
+		$data = $this->api_cancel_subscription( $site_id );
+		if ( is_wp_error( $data ) ) {
+			WP_CLI::error( $data->get_error_message() );
+		}
+
+		WP_CLI::success( sprintf( 'Cancelled subscription for site_id = %s (body: %s)', $site_id, var_export( $data, true ) ) );
+
+	}
+
+	/**
 	 * Connect the site using Jetpack Start
 	 *
 	 * Creates a machine user (if needed) and then uses the Jetpack Start API to initialize a connection and sets up the necessary local bits.
@@ -38,7 +67,7 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		}
 
 		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
-		$data = $this->fetch_keys( $user );
+		$data = $this->api_fetch_keys( $user );
 		if ( is_wp_error( $data ) ) {
 			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $data->get_error_message() );
 		}
@@ -89,21 +118,12 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		return $user;
 	}
 
-	private function fetch_keys( $user ) {
-		$url = $this->get_api_url( '/product-keys' );
-		$args = [
-			'site_url'  => get_site_url(),
-			'site_name' => get_bloginfo( 'name' ),
-			'site_lang' => get_locale(),
-			'user_id'   => $user->ID,
-			'user_role' => WPCOM_VIP_MACHINE_USER_ROLE,
-		];
+	private function api_request( $url, $args ) {
 		$headers = array_merge( [], $this->get_api_auth_header() );
-
 		$request = wp_remote_post( $url, [
 			'body'    => $args,
 			'headers' => $headers,
-			'timeout' => 30, // Jetpack Start can be a bit slow so give it time
+			'timeout' => 30, // jetpack start can be a bit slow so give it time
 		] );
 
 		if ( is_wp_error( $request ) ) {
@@ -113,15 +133,37 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		$response_code = wp_remote_retrieve_response_code( $request );
 		$body = wp_remote_retrieve_body( $request );
 		if ( 200 !== $response_code ) {
-			return new WP_Error( 'fetch_keys-fail-non-200', sprintf( 'Got non-200 response from Jetpack Start API (code: %d | body: %s)', $response_code, $body ) );
+			return new WP_Error( 'api-request-fail-non-200', sprintf( 'got non-200 response from jetpack start api (code: %d | body: %s)', $response_code, $body ) );
 		}
 
 		$data = json_decode( $body, true );
 		if ( ! $data || ! $data['success'] ) {
-			return new WP_Error( 'fetch_keys-fail-invalid-response', sprintf( 'Got invalid response from Jetpack Start API (body: %s)', $body ) );
+			return new WP_Error( 'api-request-fail-invalid-response', sprintf( 'got invalid response from jetpack start api (body: %s)', $body ) );
 		}
 
 		return $data;
+	}
+
+	private function api_cancel_subscription( $site_id ) {
+		$url = $this->get_api_url( '/cancel-subscription' );
+		$args = [
+			'site_id' => $site_id,
+		];
+
+		return $this->api_request( $url, $args );
+	}
+
+	private function api_fetch_keys( $user ) {
+		$url = $this->get_api_url( '/product-keys' );
+		$args = [
+			'site_url'  => get_site_url(),
+			'site_name' => get_bloginfo( 'name' ),
+			'site_lang' => get_locale(),
+			'user_id'   => $user->ID,
+			'user_role' => WPCOM_VIP_MACHINE_USER_ROLE,
+		];
+
+		return $this->api_request( $url, $args );
 	}
 
 	private function install_keys( $data ) {
