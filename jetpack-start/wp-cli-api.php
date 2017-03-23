@@ -187,7 +187,7 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		$jetpack_secret = $data['jetpack_secret'] ?? '';
 		$jetpack_access_token = $data['jetpack_access_token'] ?? '';
 		$jetpack_result = WP_CLI::runcommand( sprintf(
-			'jetpack-start keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s',
+			'jetpack-start keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s --jetpack_init_modules',
 			escapeshellarg( $jetpack_id ),
 			escapeshellarg( $jetpack_secret ),
 			escapeshellarg( $jetpack_access_token ),
