@@ -1,6 +1,9 @@
 <?php
 
 class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
+	const API_ERROR_EXISTING_SUBSCRIPTION = 'Failed to provision WPCOM store subscription';
+	const API_ERROR_USER_PERMISSIONS = 'User does not have permission to administer the given site.';
+
 	/**
 	 * Cancel a Jetpack Start subscription
 	 *
@@ -72,7 +75,13 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
 		$data = $this->api_fetch_keys( $user );
 		if ( is_wp_error( $data ) ) {
-			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $data->get_error_message() );
+			$message = $data->get_error_message();
+			if ( self::API_ERROR_EXISTING_SUBSCRIPTION === $message ) {
+				$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
+			} elseif ( self::API_ERROR_USER_PERMISSIONS === $message ) {
+				$message = 'This site already has an existing Jetpack shadow site but the VIP Machine User does not have the necessary caps. Please `add_user_to_blog` using your WP.co sandbox to continue.';
+			}
+			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
 		}
 
 		WP_CLI::line( '-- Adding keys to site' );
