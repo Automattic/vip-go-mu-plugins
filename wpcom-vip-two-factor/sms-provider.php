@@ -14,6 +14,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 */
 	const TOKEN_META_KEY = '_two_factor_sms_token';
 
+	const PHONE_META_KEY = '_vip_two_factor_phone';
+
 	static function get_instance() {
 		static $instance;
 		$class = __CLASS__;
@@ -25,13 +27,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 	protected function __construct() {
 		add_action( 'two-factor-user-options-' . __CLASS__, array( $this, 'user_options' ) );
-		add_filter( 'user_contactmethods', array( $this, 'user_contactmethods' ) );
+		add_action( 'personal_options_update', array( $this, 'user_options_update' ) );
+		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ) );
 		return parent::__construct();
-	}
-
-	public function user_contactmethods( $methods ) {
-		$methods['phone'] = _x( 'Phone', 'Phone Label', 'two-factor' );
-		return $methods;
 	}
 
 	/**
@@ -87,27 +85,28 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	public function generate_and_send_token( $user ) {
 		require_once( WPMU_PLUGIN_DIR . '/lib/sms.php' );
 		$code = $this->generate_token( $user->ID );
-		return \Automattic\VIP\SMS\send_sms( $user->phone, $code );
-	}
-
-	/**
-	 * Prints the form that prompts the user to authenticate.
-	 *
-	 * @param WP_User $user WP_User object of the logged-in user.
-	 */
-	public function authentication_page( $user ) {
-		if ( ! $user ) {
-			return;
+		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
+			return \Automattic\VIP\SMS\send_sms( $sms, $code );
 		}
 
-		if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
-			$this->generate_and_send_token( $user );
-		}
+		/**
+		 * Prints the form that prompts the user to authenticate.
+		 *
+		 * @param WP_User $user WP_User object of the logged-in user.
+		 */
+		public function authentication_page( $user ) {
+			if ( ! $user ) {
+				return;
+			}
 
-		// Including template.php for submit_button()
-		require_once( ABSPATH .  '/wp-admin/includes/template.php' );
-		?>
-		<p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
+			if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
+				$this->generate_and_send_token( $user );
+			}
+
+			// Including template.php for submit_button()
+			require_once( ABSPATH .  '/wp-admin/includes/template.php' );
+			?>
+			<p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
 		<p>
 			<label for="authcode"><?php esc_html_e( 'Verification Code:', 'two-factor' ); ?></label>
 			<input type="tel" name="two-factor-sms-code" id="authcode" class="input" value="" size="20" pattern="[0-9]*" />
@@ -137,7 +136,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @return boolean
 	 */
 	public function is_available_for_user( $user ) {
-		return ! empty( $user->phone );
+		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
+		return ! empty( $sms );
 	}
 
 	/**
@@ -146,17 +146,26 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @param WP_User $user WP_User object of the logged-in user.
 	 */
 	public function user_options( $user ) {
-		$sms = $user->phone;
+		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
+		wp_nonce_field( 'user_two_factor_sms_options', '_nonce_user_two_factor_sms_options', false );
 		?>
 		<div>
-			<?php
-			echo esc_html( sprintf(
-				/* translators: %s: sms address */
-				__( 'Authentication codes will be sent to %s.', 'two-factor' ),
-				$sms
-			) );
-			?>
+			<input name="vip-two-factor-phone" type="tel" placeholder="+14158675309" value="<?php echo $sms ;?>" />
 		</div>
 		<?php
+	}
+
+	public function user_options_update( $user_id ) {
+		if ( ! isset( $_POST['_nonce_user_two_factor_sms_options'] ) ) {
+			return;
+		}
+
+		check_admin_referer( 'user_two_factor_sms_options', '_nonce_user_two_factor_sms_options' );
+
+		if ( ! isset( $_POST[ 'vip-two-factor-phone' ] ) ) {
+			return;
+		}
+
+		return update_user_meta( $user_id, self::PHONE_META_KEY, $_POST[ 'vip-two-factor-phone' ] );
 	}
 }
