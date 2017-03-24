@@ -32,9 +32,3 @@ if ( true === WPCOM_SANDBOXED ) {
 		wp_die( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack. This is probably not a good idea. As a precaution, we\'re killing this request to prevent this from happening (this === 💥💥💥). Please run `vip stacks update` on your sandbox before doing anything else.', 400 );
 	}, 0 ); // No need to wait till priority 10 since we're going to die anyway
 }
-
-/**
- * Load Jetpack Force 2fa
- */
-add_filter( 'jetpack_force_2fa_dependency_notice', '__return_false' );
-require_once( __DIR__ . '/jetpack-force-2fa/jetpack-force-2fa.php' );

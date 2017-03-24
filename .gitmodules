@@ -37,6 +37,9 @@
 [submodule "debug-bar-cron"]
 	path = debug-bar-cron
 	url = https://github.com/tollmanz/debug-bar-cron.git
-[submodule "vip-jetpack/jetpack-force-2fa"]
-	path = vip-jetpack/jetpack-force-2fa
-	url = git@github.com:Automattic/jetpack-force-2fa.git
+[submodule "shared-plugins/jetpack-force-2fa"]
+	path = shared-plugins/jetpack-force-2fa
+	url = https://github.com/Automattic/jetpack-force-2fa.git
+[submodule "shared-plugins/two-factor"]
+	path = shared-plugins/two-factor
+	url = https://github.com/georgestephanis/two-factor.git

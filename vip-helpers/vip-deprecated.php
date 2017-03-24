@@ -1154,35 +1154,6 @@ function _wpcom_vip_load_plugin_sanitizer( $folder ) {
 }
 
 /**
- * Store the name of a VIP plugin that will be loaded
- *
- * @param string $plugin Plugin name and folder
- * @see wpcom_vip_load_plugin()
- */
-function wpcom_vip_add_loaded_plugin( $plugin ) {
-	global $vip_loaded_plugins;
-
-	if ( ! isset( $vip_loaded_plugins ) )
-		$vip_loaded_plugins = array();
-
-	array_push( $vip_loaded_plugins, $plugin );
-}
-
-/**
- * Get the names of VIP plugins that have been loaded
- *
- * @return array
- */
-function wpcom_vip_get_loaded_plugins() {
-	global $vip_loaded_plugins;
-
-	if ( ! isset( $vip_loaded_plugins ) )
-		$vip_loaded_plugins = array();
-
-	return $vip_loaded_plugins;
-}
-
-/**
  * Require a library in the VIP shared code library.
  *
  * @deprecated Since 2.0.0 - not yet fully supported

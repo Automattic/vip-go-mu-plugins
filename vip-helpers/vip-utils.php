@@ -1038,6 +1038,45 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	}
 }
 
+/**
+ * Store the name of a VIP plugin that will be loaded
+ *
+ * @param string $plugin Plugin name and folder
+ * @see wpcom_vip_load_plugin()
+ */
+function wpcom_vip_add_loaded_plugin( $plugin ) {
+	global $vip_loaded_plugins;
+
+	if ( ! isset( $vip_loaded_plugins ) )
+		$vip_loaded_plugins = array();
+
+	array_push( $vip_loaded_plugins, $plugin );
+}
+
+/**
+ * Get the names of VIP plugins that have been loaded
+ *
+ * @return array
+ */
+function wpcom_vip_get_loaded_plugins() {
+	global $vip_loaded_plugins;
+
+	if ( ! isset( $vip_loaded_plugins ) )
+		$vip_loaded_plugins = array();
+
+	return $vip_loaded_plugins;
+}
+
+/**
+ * Check if plugin is loaded
+ *
+ * @param string $plugin Plugin name and folder
+ * @return bool
+ */
+function wpcom_vip_plugin_is_loaded( $plugin ) {
+	return in_array( $plugin, wpcom_vip_get_loaded_plugins() );
+}
+
 function _wpcom_vip_include_plugin( $file ) {
 	// Since we're going to be include()'ing inside of a function,
 	// we need to do some hackery to get the variable scope we want.
