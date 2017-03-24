@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: VIP Force Two Step
- * Description: Force Two Step Auth
+ * Plugin Name: VIP Force Two Factor
+ * Description: Force Two Factor Auth
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
@@ -20,8 +20,8 @@ function sso_is_enabled() {
 	return class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' );
 }
 
-function wpcom_vip_force_twostep() {
-	return apply_filters( 'wpcom_vip_force_twostep', false ) && ! A8C_PROXIED_REQUEST && ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
+function wpcom_vip_force_twofactor() {
+	return apply_filters( 'wpcom_vip_force_twofactor', false ) && ! A8C_PROXIED_REQUEST && ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
 }
 
 function wpcom_enable_two_factor_plugin() {
@@ -35,14 +35,14 @@ function wpcom_enable_two_factor_plugin() {
 add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
 
 /**
- * Twostep: Filter Caps
+ * twofactor: Filter Caps
  *
- * Remove caps for users without Twostep enabled
+ * Remove caps for users without twofactor enabled
  */
-function wpcom_vip_twostep_filter_caps( $caps ) {
+function wpcom_vip_twofactor_filter_caps( $caps ) {
 	$contributor = array_keys( get_role( 'contributor' )->capabilities );
 
-	if ( wpcom_vip_force_twostep() ) {
+	if ( wpcom_vip_force_twofactor() ) {
 		foreach( $caps as $cap ) {
 			if ( ! in_array( $cap, $contributor ) ) {
 				return array( 'do_not_allow' );
@@ -52,17 +52,17 @@ function wpcom_vip_twostep_filter_caps( $caps ) {
 
 	return $caps;
 }
-add_filter( 'map_meta_cap', 'wpcom_vip_twostep_filter_caps' );
+add_filter( 'map_meta_cap', 'wpcom_vip_twofactor_filter_caps' );
 
-function wpcom_vip_twostep_admin_notice() {
-	if ( ! wpcom_vip_force_twostep() ) {
+function wpcom_vip_twofactor_admin_notice() {
+	if ( ! wpcom_vip_force_twofactor() ) {
 		return;
 	}
 	?>
 	<div class="error">
-		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Step Authentication</a> is required to publish to this site.</p>
+		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> is required to publish to this site.</p>
 	</div>
 	<?php
 }
-add_action( 'admin_notices', 'wpcom_vip_twostep_admin_notice' );
+add_action( 'admin_notices', 'wpcom_vip_twofactor_admin_notice' );
 
