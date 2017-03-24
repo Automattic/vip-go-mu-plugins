@@ -26,7 +26,7 @@ function wpcom_vip_is_jetpack_sso_enabled() {
 	return class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' );
 }
 
-function wpcom_vip_force_twofactor() {
+function wpcom_vip_force_two_factor() {
 	if ( A8C_PROXIED_REQUEST ) {
 		return false;
 	}
@@ -39,7 +39,7 @@ function wpcom_vip_force_twofactor() {
 		return false;
 	}
 
-	return apply_filters( 'wpcom_vip_force_twofactor', false );
+	return apply_filters( 'wpcom_vip_force_two_factor', false );
 }
 
 function wpcom_enable_two_factor_plugin() {
@@ -55,14 +55,14 @@ function wpcom_enable_two_factor_plugin() {
 add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
 
 /**
- * twofactor: Filter Caps
+ * Filter Caps
  *
- * Remove caps for users without twofactor enabled
+ * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
-function wpcom_vip_twofactor_filter_caps( $caps ) {
+function wpcom_vip_two_factor_filter_caps( $caps ) {
 	$contributor = array_keys( get_role( 'contributor' )->capabilities );
 
-	if ( wpcom_vip_force_twofactor() ) {
+	if ( wpcom_vip_force_two_factor() ) {
 		foreach( $caps as $cap ) {
 			if ( ! in_array( $cap, $contributor ) ) {
 				return array( 'do_not_allow' );
@@ -72,10 +72,10 @@ function wpcom_vip_twofactor_filter_caps( $caps ) {
 
 	return $caps;
 }
-add_filter( 'map_meta_cap', 'wpcom_vip_twofactor_filter_caps' );
+add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps' );
 
-function wpcom_vip_twofactor_admin_notice() {
-	if ( ! wpcom_vip_force_twofactor() ) {
+function wpcom_vip_two_factor_admin_notice() {
+	if ( ! wpcom_vip_force_two_factor() ) {
 		return;
 	}
 	?>
@@ -84,5 +84,5 @@ function wpcom_vip_twofactor_admin_notice() {
 	</div>
 	<?php
 }
-add_action( 'admin_notices', 'wpcom_vip_twofactor_admin_notice' );
+add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 
