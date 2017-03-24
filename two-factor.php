@@ -27,15 +27,22 @@ function wpcom_vip_is_jetpack_sso_enabled() {
 }
 
 function wpcom_vip_force_two_factor() {
-	if ( A8C_PROXIED_REQUEST ) {
+	// The proxy is the second factor for VIP Support users
+	if ( true === A8C_PROXIED_REQUEST ) {
 		return false;
 	}
 
+	// Shouldn't run both Jetpack 2fa and Two Factor plugins at the same time.
 	if ( wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) ) {
 		return false;
 	}
 
-	if ( class_exists( 'Two_Factor_Core' ) && Two_Factor_Core::is_user_using_two_factor() ) {
+	// The Two Factor plugin wasn't loaded for some reason.
+	if ( ! class_exists( 'Two_Factor_Core' ) ) {
+		return false;
+	}
+
+	if ( Two_Factor_Core::is_user_using_two_factor() ) {
 		return false;
 	}
 
@@ -85,4 +92,3 @@ function wpcom_vip_two_factor_admin_notice() {
 	<?php
 }
 add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
-
