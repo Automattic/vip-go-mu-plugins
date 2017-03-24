@@ -47,6 +47,8 @@ function wpcom_enable_two_factor_plugin() {
 		wpcom_vip_load_plugin( 'two-factor' );
 	} else if ( wpcom_vip_is_jetpack_sso_enabled() ) {
 		wpcom_vip_load_plugin( 'jetpack-force-2fa' );
+
+		// Prevent lockout if we end up with both jetpack-2fa and twofactor enabled at the same time.
 		remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
 	}
 }
