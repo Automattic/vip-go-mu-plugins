@@ -16,7 +16,7 @@ add_filter( 'two_factor_providers', function( $p ) {
 	return $p;
 });
 
-function sso_is_enabled() {
+function wpcom_vip_is_jetpack_sso_enabled() {
 	return class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' );
 }
 
@@ -37,9 +37,9 @@ function wpcom_vip_force_twofactor() {
 }
 
 function wpcom_enable_two_factor_plugin() {
-	if ( ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && ! sso_is_enabled() ) {
+	if ( ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && ! wpcom_vip_is_jetpack_sso_enabled() ) {
 		wpcom_vip_load_plugin( 'two-factor' );
-	} else if ( sso_is_enabled() ) {
+	} else if ( wpcom_vip_is_jetpack_sso_enabled() ) {
 		wpcom_vip_load_plugin( 'jetpack-force-2fa' );
 		remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
 	}
