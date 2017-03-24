@@ -13,3 +13,8 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 	return $caps;
 }
 add_filter( 'map_meta_cap', 'wpcom_vip_disable_core_update_cap', 100, 2 );
+
+/**
+ * Stop checking for updates since we've disabled them and their alerts
+ */
+remove_action( 'init', 'wp_schedule_update_checks' );
