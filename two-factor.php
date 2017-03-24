@@ -13,6 +13,7 @@ add_filter( 'two_factor_providers', function( $p ) {
 
 	// https://github.com/georgestephanis/two-factor/issues/78
 	unset( $p[ 'Two_Factor_FIDO_U2F' ] );
+	unset( $p[ 'Two_Factor_Dummy' ] );
 	return $p;
 } );
 
