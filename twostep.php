@@ -7,7 +7,9 @@
  */
 
 add_filter( 'two_factor_providers', function( $p ) {
-	$p['Two_Factor_SMS'] = __DIR__ . '/wpcom-vip-two-factor/sms-provider.php';
+	if ( defined( 'TWILIO_SID' ) && defined( 'TWILIO_SECRET' ) ) {
+		$p['Two_Factor_SMS'] = __DIR__ . '/wpcom-vip-two-factor/sms-provider.php';
+	}
 
 	// https://github.com/georgestephanis/two-factor/issues/78
 	unset( $p[ 'Two_Factor_FIDO_U2F' ] );

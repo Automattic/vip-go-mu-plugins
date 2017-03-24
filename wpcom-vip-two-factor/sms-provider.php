@@ -1,10 +1,5 @@
 <?php
 
-// Bail if we don't have Twilio credentials
-if ( ! defined( 'TWILIO_SID' ) || ! defined( 'TWILIO_SECRET' ) ) {
-	return;
-}
-
 /**
  * Class for creating an sms provider.
  *
