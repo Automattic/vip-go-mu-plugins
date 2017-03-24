@@ -33,7 +33,7 @@ function wpcom_vip_force_two_factor() {
 	}
 
 	// Shouldn't run both Jetpack 2fa and Two Factor plugins at the same time.
-	if ( wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) ) {
+	if ( class_exists( 'Jetpack_Force_2FA' ) ) {
 		return false;
 	}
 
@@ -49,14 +49,25 @@ function wpcom_vip_force_two_factor() {
 	return apply_filters( 'wpcom_vip_force_two_factor', false );
 }
 
+function wpcom_vip_load_two_factor_plugin() {
+	wpcom_vip_load_plugin( 'two-factor' );
+
+	add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
+	add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps' );
+}
+
 function wpcom_enable_two_factor_plugin() {
-	if ( ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && ! wpcom_vip_is_jetpack_sso_enabled() ) {
-		wpcom_vip_load_plugin( 'two-factor' );
-	} else if ( wpcom_vip_is_jetpack_sso_enabled() ) {
-		wpcom_vip_load_plugin( 'jetpack-force-2fa' );
+	if ( wpcom_vip_is_jetpack_sso_enabled() ) {
+		if ( ! class_exists( 'Jetpack_Force_2FA' ) ) {
+			wpcom_vip_load_plugin( 'jetpack-force-2fa' );
+		}
 
 		// Prevent lockout if we end up with both jetpack-2fa and twofactor enabled at the same time.
-		remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
+		if ( class_exists( 'Two_Factor_Core' ) ) {
+			remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
+		}
+	} else {
+		wpcom_vip_load_two_factor_plugin();
 	}
 }
 add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
@@ -79,7 +90,6 @@ function wpcom_vip_two_factor_filter_caps( $caps ) {
 
 	return $caps;
 }
-add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps' );
 
 function wpcom_vip_two_factor_admin_notice() {
 	if ( ! wpcom_vip_force_two_factor() ) {
@@ -91,4 +101,3 @@ function wpcom_vip_two_factor_admin_notice() {
 	</div>
 	<?php
 }
-add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
