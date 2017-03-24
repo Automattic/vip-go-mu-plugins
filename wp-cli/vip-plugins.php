@@ -8,7 +8,6 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 	public $fields = array(
 			'name',
 			'author',
-			'active_count',
 			'vip_version',
 			'wporg_version',
 			'slug',
@@ -47,7 +46,6 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 
 			$plugin_output->name = $vip_plugin['Name'];
 			$plugin_output->author = $vip_plugin['Author'];
-			$plugin_output->active_count = count( $this->_get_blogs_using_plugin( $plugin_slug ) );
 			$plugin_output->vip_version = $vip_plugin['Version'];
 			$plugin_output->wporg_version = $this->get_plugin_wporg_version( $plugin_path );
 			$plugin_output->slug = $plugin_slug;
@@ -76,7 +74,7 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 
 		WP_CLI::log( 'fetching active plugins ...' );
 
-		foreach ( get_plugins( '/../themes/vip/plugins' ) as $plugin_file => $plugin_data ) {
+		foreach ( $this->get_vip_plugins() as $plugin_file => $plugin_data ) {
 
 			$plugin_folder = basename( dirname( $plugin_file ) );
 
@@ -90,64 +88,6 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI::log( '... finished fetching active plugins' );
 	}
 
-
-	/**
-	 * List blogs using a given plugin
-	 *
-	 * @subcommand get-blogs-using-plugin
-	 * @synopsis --plugin=<plugin> [--format=<format>]
-	 */
-	public function get_blogs_using_plugin( $args, $assoc_args ) {
-		$defaults = array(
-			'format' => 'table'
-		);
-
-		$args = wp_parse_args( $assoc_args, $defaults );
-
-		$fields = array(
-				'ID',
-				'domain',
-				'blogname',
-				'last_updated',
-				'registered',
-				'public',
-				'post_count',
-			);
-
-		// Specifying explicit fields overrides the defaults
-		if ( ! empty( $params['fields'] ) )
-			$fields = explode( ',', $params['fields'] );
-
-		$output_blogs = array();
-
-		$blog_ids = $this->_get_blogs_using_plugin( $args['plugin'] );
-
-		foreach( $blog_ids as $_blog_id ) {
-			$output_blog = new \stdClass();
-
-			foreach( $fields as $field ) {
-				$details = get_blog_details( $_blog_id );
-
-				switch ( $field ) {
-					case 'ID':
-						$output_blog->ID = $_blog_id;
-						break;
-					case 'domain':
-					case 'blogname':
-					case 'last_updated':
-					case 'registered':
-					case 'public':
-					case 'post_count':
-						$output_blog->$field = $details->$field;
-						break;
-				}
-			}
-
-			$output_blogs[] = $output_blog;
-		}
-
-		\WP_CLI\utils\format_items( $args['format'], $output_blogs, $fields );
-	}
 
 	/**
 	 * Deactivate a VIP Plugin
@@ -260,20 +200,12 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 
 	}
 
-	/**
-	 * Get all of the blogs running a plugin
-	 * Based on an expected 'vip-plugin-' . $plugin_slug blog sticker
-	 * added to the site when the plugin has been activated
-	 */
-	private function _get_blogs_using_plugin( $plugin_slug ) {
-		return get_blog_ids_with_sticker( 'vip-plugin-' . $plugin_slug );
-	}
 
 	/**
 	 * Get details on all of the VIP plugins
 	 */
 	private function get_vip_plugins() {
-		return get_plugins( '/../themes/vip/plugins' );
+		return get_plugins( '/../mu-plugins/shared-plugins' );
 	}
 
 	/**
