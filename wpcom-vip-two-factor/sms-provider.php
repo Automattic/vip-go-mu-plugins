@@ -168,6 +168,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			return;
 		}
 
-		return update_user_meta( $user_id, self::PHONE_META_KEY, sanitize_text_field( $_POST[ 'vip-two-factor-phone' ] ) );
+		// Remove all characters except digits and +-
+		$sms = filter_var( $_POST['vip-two-factor-phone'], FILTER_SANITIZE_NUMBER_FLOAT );
+		return update_user_meta( $user_id, self::PHONE_META_KEY, $sms );
 	}
 }
