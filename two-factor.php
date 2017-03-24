@@ -7,14 +7,19 @@
  */
 
 add_filter( 'two_factor_providers', function( $p ) {
-	if ( defined( 'TWILIO_SID' ) && defined( 'TWILIO_SECRET' ) ) {
+	if ( wpcom_vip_have_twilio_keys() ) {
 		$p['Two_Factor_SMS'] = __DIR__ . '/wpcom-vip-two-factor/sms-provider.php';
 	}
 
 	// https://github.com/georgestephanis/two-factor/issues/78
 	unset( $p[ 'Two_Factor_FIDO_U2F' ] );
 	return $p;
-});
+} );
+
+function wpcom_vip_have_twilio_keys() {
+	return defined( 'TWILIO_SID' ) && ! empty( TWILIO_SID )
+		&& defined( 'TWILIO_SECRET' ) && ! empty( TWILIO_SECRET );
+}
 
 function wpcom_vip_is_jetpack_sso_enabled() {
 	return class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' );
