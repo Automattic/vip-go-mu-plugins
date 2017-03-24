@@ -150,7 +150,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		wp_nonce_field( 'user_two_factor_sms_options', '_nonce_user_two_factor_sms_options', false );
 		?>
 		<div>
-			<input name="vip-two-factor-phone" type="tel" placeholder="+14158675309" value="<?php echo esc_attr( $sms );?>" />
+			<label>Phone Number
+				<input name="vip-two-factor-phone" type="tel" placeholder="+14158675309" value="<?php echo esc_attr( $sms );?>" />
+			</label>
 		</div>
 		<?php
 	}
