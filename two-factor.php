@@ -21,7 +21,19 @@ function sso_is_enabled() {
 }
 
 function wpcom_vip_force_twofactor() {
-	return apply_filters( 'wpcom_vip_force_twofactor', false ) && ! A8C_PROXIED_REQUEST && ! wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) && class_exists( 'Two_Factor_Core' ) && ! Two_Factor_Core::is_user_using_two_factor();
+	if ( A8C_PROXIED_REQUEST ) {
+		return false;
+	}
+
+	if ( wpcom_vip_plugin_is_loaded( 'shared-plugins/jetpack-force-2fa' ) ) {
+		return false;
+	}
+
+	if ( class_exists( 'Two_Factor_Core' ) && Two_Factor_Core::is_user_using_two_factor() ) {
+		return false;
+	}
+
+	return apply_filters( 'wpcom_vip_force_twofactor', false );
 }
 
 function wpcom_enable_two_factor_plugin() {
