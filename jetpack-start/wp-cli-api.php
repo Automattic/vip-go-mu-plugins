@@ -1,6 +1,6 @@
 <?php
 
-class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
+class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	const API_ERROR_EXISTING_SUBSCRIPTION = 'Failed to provision WPCOM store subscription';
 	const API_ERROR_USER_PERMISSIONS = 'User does not have permission to administer the given site.';
 
@@ -186,13 +186,13 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 
 		$akismet_key = $data['akismet_api_key'] ?? '';
 		$akismet_result = WP_CLI::runcommand( sprintf(
-			'jetpack-start keys akismet --akismet_key=%s',
+			'jetpack keys akismet --akismet_key=%s',
 			escapeshellarg( $akismet_key )
 		), $runcommand_args );
 
 		$vaultpress_key = $data['vaultpress_registration_key'] ?? '';
 		$vaultpress_result = WP_CLI::runcommand( sprintf(
-			'jetpack-start keys vaultpress --vaultpress_key=%s',
+			'jetpack keys vaultpress --vaultpress_key=%s',
 			escapeshellarg( $vaultpress_key )
 		), $runcommand_args );
 
@@ -200,7 +200,7 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		$jetpack_secret = $data['jetpack_secret'] ?? '';
 		$jetpack_access_token = $data['jetpack_access_token'] ?? '';
 		$jetpack_result = WP_CLI::runcommand( sprintf(
-			'jetpack-start keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s',
+			'jetpack keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s',
 			escapeshellarg( $jetpack_id ),
 			escapeshellarg( $jetpack_secret ),
 			escapeshellarg( $jetpack_access_token ),
@@ -219,4 +219,4 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'jetpack-start api', 'Jetpack_Start_API_CLI_Command' );
+WP_CLI::add_command( 'jetpack-start', 'Jetpack_Start_CLI_Command' );
