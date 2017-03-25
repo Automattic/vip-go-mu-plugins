@@ -123,7 +123,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 				grant_super_admin( $user_id );
 			}
 		} else {
-			if ( ! $user->has_cap( WPCOM_VIP_MACHINE_USER_ROLE ) ) {
+			$user_roles = (array) $user->roles;
+			if ( ! in_array( WPCOM_VIP_MACHINE_USER_ROLE, $user_roles ) ) {
 				$user->set_role( WPCOM_VIP_MACHINE_USER_ROLE );
 			}
 		}
@@ -132,6 +133,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function api_request( $url, $args ) {
+		// get_api_auth_header returns an associative array.
+		// The merge will make it easier if we have to add more headers in the future.
 		$headers = array_merge( [], $this->get_api_auth_header() );
 		$request = wp_remote_post( $url, [
 			'body'    => $args,
