@@ -136,7 +136,7 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		$request = wp_remote_post( $url, [
 			'body'    => $args,
 			'headers' => $headers,
-			'timeout' => 30, // jetpack start can be a bit slow so give it time
+			'timeout' => 60, // jetpack start can be a bit slow so give it time
 		] );
 
 		if ( is_wp_error( $request ) ) {
