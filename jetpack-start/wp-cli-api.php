@@ -76,9 +76,10 @@ class Jetpack_Start_API_CLI_Command extends WP_CLI_Command {
 		$data = $this->api_fetch_keys( $user );
 		if ( is_wp_error( $data ) ) {
 			$message = $data->get_error_message();
-			if ( self::API_ERROR_EXISTING_SUBSCRIPTION === $message ) {
+			// Use strpos because our API method appends stuff to the error message
+			if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
 				$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
-			} elseif ( self::API_ERROR_USER_PERMISSIONS === $message ) {
+			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
 				$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` WP.com user is either not a member of the site or not an administrator. Please use `add_user_to_blog` on your WP.com sandbox to add the account before continuing.', WPCOM_VIP_MACHINE_USER_LOGIN );
 			}
 			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
