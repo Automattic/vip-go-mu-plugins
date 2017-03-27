@@ -193,4 +193,4 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'jetpack keys', 'Jetpack_Start_Keys_CLI_Command' );
+WP_CLI::add_command( 'jetpack-keys', 'Jetpack_Start_Keys_CLI_Command' );
