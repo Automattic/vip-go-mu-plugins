@@ -37,7 +37,7 @@ class Jetpack_Start_Keys_CLI_Command extends WP_CLI_Command {
 
 	private function register_akismet( $key ) {
 		$verification_response = Akismet::verify_key( $key );
-		if ( $verification_response === 'valid' ) {
+		if ( $verification_response !== 'valid' ) {
 			return new WP_Error( 'jp-start-akismet', 'Akismet key not valid: ' . $verification_response );
 		}
 
