@@ -1,0 +1,36 @@
+language: php
+
+php:
+  - 5.4
+
+env:
+    - WP_VERSION=latest WP_MULTISITE=0
+
+addons:
+  hosts:
+    - local.wordpress.dev
+
+before_install:
+  # These variables have to be set here, so they can be used by
+  # prepare.sh as well as the commands in the script block below
+  - export WORDPRESS_SITE_DIR="$(dirname $TRAVIS_BUILD_DIR)/wordpress/"
+  - export WORDPRESS_TEST_SUBJECT=$(basename $TRAVIS_BUILD_DIR)
+  - export WP_CLI="${TRAVIS_BUILD_DIR}/vendor/bin/wp"
+  - export WORDPRESS_FAKE_MAIL_DIR="$(dirname $TRAVIS_BUILD_DIR)/fake-mail/"
+  - echo $WORDPRESS_FAKE_MAIL_DIR
+
+install:
+  - sudo apt-get update > /dev/null
+  - ./ci/prepare.sh
+
+before_script:
+
+script:
+
+  # PHP Lint
+  - make lint
+
+  - make phpunit
+
+  # Run behat tests.
+  - ${WORDPRESS_SITE_DIR}/wp-content/mu-plugins/${WORDPRESS_TEST_SUBJECT}/vendor/bin/behat -c $WORDPRESS_SITE_DIR/wp-content/mu-plugins/${WORDPRESS_TEST_SUBJECT}/behat.yml
