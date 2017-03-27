@@ -12,6 +12,10 @@ PHP Linting and PHP Unit tests are run by Travis, see the `script` section of [`
 
 For notes on running tests locally, see [README-PUBLIC.md](README-PUBLIC.md).
 
+## PHPCS
+
+As part of the continuous integration process, we run the WordPress-VIP PHP Codesniffer suite. PHPCS includes a tool, phpcbf, to automatically fix some types of errors. We recommend running this with `make phpcbf` or installing a plugin for your text editor which will run it automatically on save.
+
 ## Deployment
 
 When the tests have been successfully run, the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh) deploys a build of this repository and it's submodules to the public repository at [Automattic/vip-mu-plugins-public](https://github.com/Automattic/vip-mu-plugins-public/).
