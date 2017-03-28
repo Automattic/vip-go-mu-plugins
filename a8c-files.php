@@ -81,6 +81,8 @@ class A8C_Files {
 			return $data;
 		}, 10, 2 );
 
+		
+
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
 		Jetpack_Photon::instance();
@@ -717,6 +719,27 @@ class A8C_Files {
 		return array( $img_url, $w, $h, $resized );
 	}
 
+}
+
+class A8C_Files_Utils {
+	public static function strip_dimensions_from_url_path( $url ) {
+		$path = parse_url( $image_url, PHP_URL_PATH );
+
+		if ( ! $path ) {
+			return $image_url;
+		}
+
+		// Look for images ending with something like `-100x100.jpg`.
+		// We include the period in the dimensions match to avoid double string replacing when the file looks something like `image-100x100-100x100.png` (we only catch the latter dimensions).
+		$matched = preg_match( '#(-\d+x\d+\.)(jpg|jpeg|png|gif)$#i', $image_url, $parts );
+		if ( $matched ) {
+			// Strip off the dimensions and return the image
+			$updated_url = str_replace( $parts[1], '.', $image_url );
+			return $updated_url;
+		}
+
+		return $image_url;
+	}	
 }
 
 function a8c_files_init() {
