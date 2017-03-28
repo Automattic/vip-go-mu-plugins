@@ -1,6 +1,40 @@
 <?php
 
 class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
+	public function get_data_for_normalize_quality() {
+		return [
+			'100_is_forced_lower' => [
+				100,
+				99,
+				true,
+			],
+
+			'below_100_is_fine' => [
+				99,
+				99,
+				false,
+			],
+
+			'special_const_allows_100' => [
+				WPCOM_VIP_IMAGE_QUALITY_100,
+				100,
+				false,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_normalize_quality
+	 */
+	public function test__normalize_quality( $quality, $expected, $expected_doing_it_wrong = false ) {
+		if ( $expected_doing_it_wrong ) {
+			$this->setExpectedIncorrectUsage( 'A8C_Files_Utils::normalize_quality' ); 
+		}	
+		$actual = A8C_Files_Utils::normalize_quality( $quality );
+
+		$this->assertEquals( $actual, $expected );
+	}
+
 	public function get_data_for_strip_dimensions_from_url_path() {
 		return [
 			'invalid-url' => [

@@ -19,7 +19,19 @@ define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
 define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
-// See inline for usage of this constant
+/**
+ * @var constant WPCOM_VIP_IMAGE_QUALITY_100 Used to force quality=100 for images.
+ *
+ * `quality=100` is a special value that generates large, lossless images which if not used correctly can cause issues.
+ *
+ * There are valid use cases, but those should be concious choice and we're requiring the use of this constant to make it clear that the decision was thought through.
+ *
+ * If you really want to serve images with `quality=100`, do the following when filtering image resize args:
+ *
+ *     $args['quality'] = WPCOM_VIP_IMAGE_QUALITY_100;
+ *
+ * If you're not sure whether to use this constant, please ask.
+ */
 define( 'WPCOM_VIP_IMAGE_QUALITY_100', 'allow-quality-100' );
 
 class A8C_Files {
@@ -95,6 +107,14 @@ class A8C_Files {
 			remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
 			return $content;
 		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
+
+		// Normalize quality arg for Photon URLs
+		add_filter( 'jetpack_photon_pre_args', function( $args ) {
+			if ( isset( $args['quality'] ) ) {
+				$args['quality'] = A8C_Files_Utils::normalize_quality( $args['quality'] );
+			}
+			return $args;
+		}, 9999 ); // run after most filters since we're adding some protection here
 
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
@@ -717,16 +737,7 @@ class A8C_Files {
 		}
 
 		if ( isset( $args['quality'] ) ) {
-			$quality = $args['quality'];
-			// `quality=100` is a special value that generates large, lossless images which if not used correctly can cause issues. 
-			// There are valid use cases, but those should be concious choice and we're requiring the use of this constant to make it clear that the decision was thought through.
-			// If you're not sure whether to use this constant, please ask.
-			if ( WPCOM_VIP_IMAGE_QUALITY_100 === $quality ) {
-				$args['quality'] = 100;
-			} elseif ( $quality >= 100 ) {
-				_doing_it_wrong( __FUNCTION__, __( 'Did you really mean to set quality=100? This can be cause load issues if used incorrectly. Just to be safe, we\'re setting the value to 99. Please contact VIP Support to discuss your use case and we\'ll help you figure out the safest path forward. Thanks!' ), null );
-				$args['quality'] = 99;
-			}
+			$args['quality'] = A8C_Files_Utils::normalize_quality( $args['quality'] );
 		}
 
 		if ( is_array( $args ) ) {
@@ -748,6 +759,23 @@ class A8C_Files {
 }
 
 class A8C_Files_Utils {
+
+	/**
+	 * Prevents potentially unsafe uses of the quality param
+	 *
+	 * `quality=100` can lead to large, lossless images in certain contexts and should be used in very specific contexts.
+	 */
+	public static function normalize_quality( $quality ) {
+		if ( WPCOM_VIP_IMAGE_QUALITY_100 === $quality ) {
+			return 100;
+		} elseif ( $quality >= 100 ) {
+			_doing_it_wrong( __METHOD__, __( 'Did you really mean to set quality=100? This can be cause load issues if used incorrectly. Just to be safe, we\'re setting the value to 99. Please contact VIP Support to discuss your use case and we\'ll help you figure out the safest path forward. Thanks!' ), null );
+			return 99;
+		}
+
+		return $quality;
+	}
+
 	public static function strip_dimensions_from_url_path( $url ) {
 		$path = parse_url( $url, PHP_URL_PATH );
 
