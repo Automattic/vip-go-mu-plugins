@@ -47,6 +47,11 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 				'https://example.com/wp-content/uploads/image-400x400-400x400.jpg',
 				'https://example.com/wp-content/uploads/image-400x400.jpg',
 			],
+
+			'dimensions-with-querystring' => [
+				'https://example.com/wp-content/uploads/image-400x450.png?resize=338%2C600&strip=all',
+				'https://example.com/wp-content/uploads/image.png?resize=338%2C600&strip=all',
+			],
 		];
 	}
 

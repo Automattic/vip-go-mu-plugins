@@ -81,7 +81,17 @@ class A8C_Files {
 			return $data;
 		}, 10, 2 );
 
-		
+		// This is our catch-all to strip dimensions from intermediate images in content.
+		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
+		add_filter( 'the_content', function( $content ) {
+			add_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
+			return $content;
+		}, 0 );
+
+		add_filter( 'the_content', function( $content ) {
+			remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
+			return $content;
+		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
 
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
@@ -723,22 +733,22 @@ class A8C_Files {
 
 class A8C_Files_Utils {
 	public static function strip_dimensions_from_url_path( $url ) {
-		$path = parse_url( $image_url, PHP_URL_PATH );
+		$path = parse_url( $url, PHP_URL_PATH );
 
 		if ( ! $path ) {
-			return $image_url;
+			return $url;
 		}
 
 		// Look for images ending with something like `-100x100.jpg`.
 		// We include the period in the dimensions match to avoid double string replacing when the file looks something like `image-100x100-100x100.png` (we only catch the latter dimensions).
-		$matched = preg_match( '#(-\d+x\d+\.)(jpg|jpeg|png|gif)$#i', $image_url, $parts );
+		$matched = preg_match( '#(-\d+x\d+\.)(jpg|jpeg|png|gif)$#i', $path, $parts );
 		if ( $matched ) {
 			// Strip off the dimensions and return the image
-			$updated_url = str_replace( $parts[1], '.', $image_url );
+			$updated_url = str_replace( $parts[1], '.', $url );
 			return $updated_url;
 		}
 
-		return $image_url;
+		return $url;
 	}	
 }
 
