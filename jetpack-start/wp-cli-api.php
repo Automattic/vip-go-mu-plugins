@@ -63,9 +63,13 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
 		if ( ! $force_connection && Jetpack::is_active() ) {
-			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+			if ( empty( Jetpack_Options::get_option( 'master_user' ) ) ) {
+				WP_CLI::error( 'Jetpack is already active (connected), but we could not determine the master user; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+			} else {
+				$master_user_login = get_userdata( Jetpack_Options::get_option( 'master_user' ) )->user_login;
+	                        WP_CLI::error( sprintf( 'Jetpack is already active (connected) and the master user is "%s"; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.', $master_user_login ) );
+			}
 		}
-
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
 		$user = $this->maybe_create_user();
 		if ( is_wp_error( $user ) ) {
