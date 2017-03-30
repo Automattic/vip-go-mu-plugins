@@ -100,7 +100,7 @@ function es_api_search_index( $args ) {
         'response_code' => wp_remote_retrieve_response_code( $request ),
         'elapsed'       => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
         'es_time'       => $took,
-		'url'           => $service_url,
+        'url'           => $service_url,
 	);
 
 	do_action( 'did_vip_elasticsearch_query', $queried );
