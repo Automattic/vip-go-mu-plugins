@@ -108,6 +108,25 @@ function es_api_search_index( $args ) {
     return $response;
 }
 
+// Log all ES queries
+function wpcom_vip_did_elasticsearch_query( $query ) {
+	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
+		return;
+	}
+
+	global $wp_elasticsearch_queries_log;
+
+	if ( ! $wp_elasticsearch_queries_log ) {
+		$wp_elasticsearch_queries_log = array();
+	}
+
+	$query['backtrace'] = wp_debug_backtrace_summary();
+
+	$wp_elasticsearch_queries_log[] = $query;
+}
+
+add_action( 'did_vip_elasticsearch_query', 'wpcom_vip_did_elasticsearch_query' );
+
 /**
  * A wrapper for es_api_search_index() that accepts WP-style args
  *
