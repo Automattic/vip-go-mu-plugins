@@ -31,6 +31,8 @@ add_action( 'init', function() {
 	// Setup extra panels
 	add_filter( 'debug_bar_panels', function( $panels ) {
 		require_once( __DIR__ . '/vip-helpers/vip-debug-bar-panels.php' );
+		require_once( __DIR__ . '/debug-bar/panels/class-debug-bar-elasticsearch.php' );
+
 
 		$total = count( $panels );
 
@@ -47,7 +49,7 @@ add_action( 'init', function() {
 		$panels[] = new WPCOM_VIP_Debug_Bar_Query_Summary();
 		$panels[] = new WPCOM_VIP_Debug_Bar_DB_Connections();
 		$panels[] = new WPCOM_VIP_Debug_Bar_Remote_Requests();
-		$panels[] = new WPCOM_VIP_Debug_Bar_Elasticsearch();
+		$panels[] = new Debug_Bar_Elasticsearch();
 
 		return $panels;
 	}, 99);
