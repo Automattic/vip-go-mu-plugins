@@ -9,7 +9,7 @@
  */
 
 /**
- * Non-public multisite subsites can't be reached by our cron runners, so should use Core's native approach
+ * Inactive multisite subsites can't be reached by our cron runners, so should use Core's native approach
  *
  * @return bool
  */
@@ -22,7 +22,7 @@ function wpcom_vip_use_core_cron() {
 	$details = get_blog_details( get_current_blog_id(), false );
 
 	// get_blog_details() uses numeric strings for backcompat
-	if ( '1' !== $details->public || in_array( '1', array( $details->archived, $details->spam, $details->deleted ), true ) ) {
+	if ( in_array( '1', array( $details->archived, $details->spam, $details->deleted ), true ) ) {
 		return true;
 	}
 
