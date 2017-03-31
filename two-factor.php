@@ -78,11 +78,13 @@ add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
 function wpcom_vip_two_factor_filter_caps( $caps ) {
-	$contributor = array_keys( get_role( 'contributor' )->capabilities );
+	
+	$contributer = get_role( 'contributor' );
 
-	if ( wpcom_vip_force_two_factor() ) {
+	if ( ! empty( $contributor->capabilities ) && is_array( $contributor->capabilities ) && wpcom_vip_force_two_factor() ) {
+		$contributor_capabilities = array_keys( $contributor->capabilities );
 		foreach( $caps as $cap ) {
-			if ( ! in_array( $cap, $contributor ) ) {
+			if ( ! in_array( $cap, $contributor_capabilities ) ) {
 				return array( 'do_not_allow' );
 			}
 		}
