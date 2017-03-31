@@ -79,7 +79,7 @@ add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
  */
 function wpcom_vip_two_factor_filter_caps( $caps ) {
 	
-	$contributer = get_role( 'contributor' );
+	$contributor = get_role( 'contributor' );
 
 	if ( ! empty( $contributor->capabilities ) && is_array( $contributor->capabilities ) && wpcom_vip_force_two_factor() ) {
 		$contributor_capabilities = array_keys( $contributor->capabilities );
