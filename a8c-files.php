@@ -63,10 +63,16 @@ class A8C_Files {
 
 	private function init_jetpack_photon_filters() {
 		// The files service has Photon capabilities, but is served from the same domain.
-		// Force Jetpack to use it instead of the default Photon domains (`i*.wp.com`).
-		add_filter( 'jetpack_photon_domain', function() {
-			return home_url();
-		} );
+		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
+		// Externally hosted files continue to use the remot Photon service.
+		add_filter( 'jetpack_photon_domain', function( $photon_url, $image_url ) {
+			$home_url = home_url();
+			if ( wp_startswith( $image_url, $home_url ) ) {
+				return $home_url;
+			}
+
+			return $photon_url;
+		}, 10, 2 );
 
 		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
 		// This results in all images being full size (which is not ideal)
