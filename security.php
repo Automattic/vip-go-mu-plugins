@@ -14,15 +14,6 @@ function wpcom_vip_is_restricted_username( $username ) {
 		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username;
 }
 
-function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $password ) {
-	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
-	if ( $is_restricted_username ) {
-		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
-	}
-	return $user;
-}
-add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 10, 3 );
-
 function wpcom_vip_login_limiter( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
@@ -47,6 +38,16 @@ function wpcom_vip_login_limiter_on_success( $username, $user ) {
 	wp_cache_decr( $key2, 1, 'login_limit' );
 }
 add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10, 2 );
+
+function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $password ) {
+	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	if ( $is_restricted_username ) {
+		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
+	}
+
+	return $user;
+}
+add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 30, 3 ); // core authenticates on 20
 
 function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) )
