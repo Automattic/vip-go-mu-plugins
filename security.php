@@ -53,13 +53,14 @@ function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) )
 		return $user;
 
-	if ( $error = wpcom_vip_login_is_limited( $username ) ) {
-		return $error;
+	$is_login_limited = wpcom_vip_login_is_limited( $username );
+	if ( is_wp_error( $is_login_limited ) ) {
+		return $is_login_limited;
 	}
 
 	return $user;
 }
-add_filter( 'authenticate', 'wpcom_vip_login_limiter_authenticate', 30, 3 );
+add_filter( 'authenticate', 'wpcom_vip_login_limiter_authenticate', 30, 3 ); // core authenticates on 20
 
 function wpcom_vip_login_limit_dont_show_login_form() {
 	if ( 'post' != strtolower( $_SERVER['REQUEST_METHOD'] ) || !isset( $_POST['log'] ) ) {
