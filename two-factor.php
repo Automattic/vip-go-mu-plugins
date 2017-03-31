@@ -52,7 +52,7 @@ function wpcom_vip_force_two_factor() {
 function wpcom_vip_load_two_factor_plugin() {
 	wpcom_vip_load_plugin( 'two-factor' );
 
-	if ( get_current_user_id() > 0 ) {
+	if ( is_user_logged_in() ) {
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps' );
 	}
