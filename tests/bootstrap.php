@@ -12,6 +12,7 @@ function _manually_load_plugin() {
 	require __DIR__ . '/../001-core.php';
 	require __DIR__ . '/../a8c-files.php';
 	require __DIR__ . '/../performance.php';
+	require __DIR__ . '/../security.php';
 
 	require __DIR__ . '/../schema.php';
 

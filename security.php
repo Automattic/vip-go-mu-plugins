@@ -21,7 +21,7 @@ function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $pas
 	}
 	return $user;
 }
-add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restristed_usernames', 10, 3 );
+add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 10, 3 );
 
 function wpcom_vip_login_limiter( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
