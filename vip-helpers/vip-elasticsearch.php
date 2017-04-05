@@ -66,12 +66,16 @@ function es_api_search_index( $args ) {
 
     unset( $args['blog_id'] );
 
+    $start_time = microtime( true );
+
     $request = wp_remote_post( $service_url, array(
         'headers' => array(
             'Content-Type' => 'application/json',
         ),
         'body' => json_encode( $args ),
     ) );
+
+    $end_time = microtime( true );
 
     if ( is_wp_error( $request ) )
         return false;
@@ -88,8 +92,40 @@ function es_api_search_index( $args ) {
         }
     }
 
+    $took = $response && $response['took'] ? $response['took'] : null;
+
+    $queried = array(
+        'args'          => $args,
+        'response'      => $response,
+        'response_code' => wp_remote_retrieve_response_code( $request ),
+        'elapsed'       => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
+        'es_time'       => $took,
+        'url'           => $service_url,
+	);
+
+	do_action( 'did_vip_elasticsearch_query', $queried );
+
     return $response;
 }
+
+// Log all ES queries
+function wpcom_vip_did_elasticsearch_query( $query ) {
+	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
+		return;
+	}
+
+	global $wp_elasticsearch_queries_log;
+
+	if ( ! $wp_elasticsearch_queries_log ) {
+		$wp_elasticsearch_queries_log = array();
+	}
+
+	$query['backtrace'] = wp_debug_backtrace_summary();
+
+	$wp_elasticsearch_queries_log[] = $query;
+}
+
+add_action( 'did_vip_elasticsearch_query', 'wpcom_vip_did_elasticsearch_query' );
 
 /**
  * A wrapper for es_api_search_index() that accepts WP-style args
