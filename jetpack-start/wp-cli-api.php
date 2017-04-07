@@ -97,7 +97,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 		if ( ! $user ) {
 			$cmd = sprintf(
-				'user create --url=%s --role=%s --display_name=%s --porcelain -- %s %s',
+				'user create --url=%s --role=%s --display_name=%s --porcelain %s %s',
 				escapeshellarg( get_site_url() ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_ROLE ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_NAME ),
