@@ -9,8 +9,20 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 				true,
 			],
 
+			'string_100_is_also_forced_lower' => [
+				'100',
+				99,
+				true,
+			],
+
 			'below_100_is_fine' => [
 				99,
+				99,
+				false,
+			],
+
+			'string_99_is_also_fine' => [
+				'99',
 				99,
 				false,
 			],
