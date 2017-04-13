@@ -30,6 +30,13 @@ function wpcom_vip_use_core_cron() {
 }
 
 /**
+ * Don't skip empty events, as it causes them to be rescheduled infinitely
+ *
+ * Functionality will be fixed or removed, but this stops the runaway event creation in the meantime
+ */
+add_filter( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
+
+/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
