@@ -737,9 +737,9 @@ class A8C_Files_Utils {
 				return $home_url;
 			}
 
-			$image_host = parse_url( $image_url, PHP_URL_HOST );
-			if ( wp_endswith( $image_host, '.go-vip.co' ) ) {
-				return $image_host;
+			$image_url_parsed = parse_url( $image_url );
+			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) ) {
+				return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 			}
 
 			return $photon_url;
