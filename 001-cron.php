@@ -34,7 +34,7 @@ function wpcom_vip_use_core_cron() {
  *
  * Functionality will be fixed or removed, but this stops the runaway event creation in the meantime
  */
-add_action( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
+add_filter( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
 
 /**
  * Should Cron Control load
