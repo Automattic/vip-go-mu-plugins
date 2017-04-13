@@ -65,14 +65,7 @@ class A8C_Files {
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
 		// Externally hosted files continue to use the remot Photon service.
-		add_filter( 'jetpack_photon_domain', function( $photon_url, $image_url ) {
-			$home_url = home_url();
-			if ( wp_startswith( $image_url, $home_url ) ) {
-				return $home_url;
-			}
-
-			return $photon_url;
-		}, 10, 2 );
+		add_filter( 'jetpack_photon_domain', [ 'A8C_Files_Utils', 'filter_photon_domain' ], 10, 2 );
 
 		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
 		// This results in all images being full size (which is not ideal)
@@ -738,6 +731,20 @@ class A8C_Files {
 }
 
 class A8C_Files_Utils {
+	public static function filter_photon_domain( $photon_url, $image_url ) {
+			$home_url = home_url();
+			if ( wp_startswith( $image_url, $home_url ) ) {
+				return $home_url;
+			}
+
+			$image_host = parse_url( $image_url, PHP_URL_HOST );
+			if ( wp_endswith( $image_host, '.go-vip.co' ) ) {
+				return $image_host;
+			}
+
+			return $photon_url;
+	}
+
 	public static function strip_dimensions_from_url_path( $url ) {
 		$path = parse_url( $url, PHP_URL_PATH );
 
