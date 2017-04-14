@@ -1,6 +1,38 @@
 <?php
 
 class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
+	public function get_data_for_filter_photon_domain() {
+		return [
+			'image_on_home_url' => [
+				'http://example.com/image.jpg',
+				'http://example.com',
+			],
+
+			'image_on_go-vip_url' => [
+				'http://example.go-vip.co/image.jpg',
+				'http://example.go-vip.co',
+			],
+
+			'image_on_external_url' => [
+				'http://external-url.com/image.jpg',
+				'http://i0.wp.com',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_filter_photon_domain
+	 */
+	public function test__filter_photon_domain( $image_url, $expected_photon_url ) {
+		add_filter( 'home_url', function() {
+			return 'http://example.com';
+		} );
+
+		$actual_photon_url = A8C_Files_Utils::filter_photon_domain( 'http://i0.wp.com', $image_url );
+
+		$this->assertEquals( $expected_photon_url, $actual_photon_url );
+	}
+
 	public function get_data_for_strip_dimensions_from_url_path() {
 		return [
 			'invalid-url' => [
@@ -61,6 +93,6 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	public function test__strip_dimensions_from_url_path( $source, $expected ) {
 		$actual = A8C_Files_Utils::strip_dimensions_from_url_path( $source );
 
-		$this->assertEquals( $actual, $expected );
+		$this->assertEquals( $expected, $actual );
 	}
 }
