@@ -1097,8 +1097,6 @@ add_action( 'muplugins_loaded', 'wpcom_vip_load_helpers_for_network_active_plugi
 /**
  * Load `vipgo-helper.php` if it exists for a plugin loaded outside of our custom UI and helpers
  *
- * Loaded at priority 6 because all plugins are typically loaded before 'plugins_loaded', and the UI-enabled plugins use priority 5
- *
  * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
  */
 function wpcom_vip_load_helpers_for_sites_core_plugins() {
@@ -1106,7 +1104,7 @@ function wpcom_vip_load_helpers_for_sites_core_plugins() {
 		_wpcom_vip_include_plugin( $plugin );
 	}
 }
-add_action( 'plugins_loaded', 'wpcom_vip_load_helpers_for_sites_core_plugins', 6 );
+add_action( 'plugins_loaded', 'wpcom_vip_load_helpers_for_sites_core_plugins', 6 ); // Loaded at priority 6 because all plugins are typically loaded before 'plugins_loaded', and the UI-enabled plugins use priority 5
 
 /**
  * Include a plugin and its helper, handling variable scope in the process
