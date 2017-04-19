@@ -585,6 +585,13 @@ class A8C_Files {
 	function image_resize( $ignore, $id, $size ) {
 		global $_wp_additional_image_sizes, $post;
 
+		// Don't bother resizing non-image (and non-existent) attachment.
+		// We fallthrough to core's image_downsize but that bails as well.
+		$is_img = wp_attachment_is_image( $id );
+		if ( ! $is_img ) {
+			return false;
+		}
+
 		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
 		$crop = false;
 		$args = array();
