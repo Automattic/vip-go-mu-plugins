@@ -1077,6 +1077,41 @@ function wpcom_vip_plugin_is_loaded( $plugin ) {
 	return in_array( $plugin, wpcom_vip_get_loaded_plugins() );
 }
 
+/**
+ * Load `vipgo-helper.php` if it exists for a network-activated plugin
+ *
+ * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
+ */
+function wpcom_vip_load_helpers_for_network_active_plugins() {
+	// wp_get_active_network_plugins() won't exist otherwise
+	if ( ! is_multisite() ) {
+		return;
+	}
+
+	foreach ( wp_get_active_network_plugins() as $plugin ) {
+		_wpcom_vip_include_plugin( $plugin );
+	}
+}
+add_action( 'muplugins_loaded', 'wpcom_vip_load_helpers_for_network_active_plugins' );
+
+/**
+ * Load `vipgo-helper.php` if it exists for a plugin loaded outside of our custom UI and helpers
+ *
+ * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
+ */
+function wpcom_vip_load_helpers_for_sites_core_plugins() {
+	foreach ( wp_get_active_and_valid_plugins() as $plugin ) {
+		_wpcom_vip_include_plugin( $plugin );
+	}
+}
+add_action( 'plugins_loaded', 'wpcom_vip_load_helpers_for_sites_core_plugins', 6 ); // Loaded at priority 6 because all plugins are typically loaded before 'plugins_loaded', and the UI-enabled plugins use priority 5
+
+/**
+ * Include a plugin and its helper, handling variable scope in the process
+ *
+ * @param string $file Plugin file to load
+ * @return true
+ */
 function _wpcom_vip_include_plugin( $file ) {
 	// Since we're going to be include()'ing inside of a function,
 	// we need to do some hackery to get the variable scope we want.

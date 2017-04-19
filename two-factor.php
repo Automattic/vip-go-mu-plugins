@@ -78,11 +78,18 @@ add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
 function wpcom_vip_two_factor_filter_caps( $caps ) {
-	$contributor = array_keys( get_role( 'contributor' )->capabilities );
-
 	if ( wpcom_vip_force_two_factor() ) {
+		// Use a hard-coded list of caps that closely match a Contributor role.
+		// The hard-coded list avoids issues if the Contributor role doesn't exist or is modified.
+		$contributor_caps = [
+			'edit_posts' => true,
+			'read' => true,
+			'level_1' => true,
+			'level_0' => true,
+		];
+
 		foreach( $caps as $cap ) {
-			if ( ! in_array( $cap, $contributor ) ) {
+			if ( ! in_array( $cap, $contributor_caps ) ) {
 				return array( 'do_not_allow' );
 			}
 		}

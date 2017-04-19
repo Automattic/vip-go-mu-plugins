@@ -430,7 +430,7 @@ class WPCOM_elasticsearch {
 	 *
 	 * This method accepts an array of additional blog names, in the format of vip.wordpress.com,
 	 * that should be queried.
-	 * 
+	 *
 	 * @param array $domains The additional blogs to query
 	 */
 	public function set_additional_blogs( $domains = array() ) {
@@ -438,7 +438,7 @@ class WPCOM_elasticsearch {
 
 		foreach( $domains as $domain ) {
 			$blog_id = (int) get_blog_id_from_url( $domain );
-			
+
 			if ( $blog_id ) {
 				$name = es_api_get_index_name_by_blog_id( $blog_id );
 				if ( !is_wp_error( $name ) )
@@ -458,7 +458,7 @@ class WPCOM_elasticsearch {
 	 * Return a string representing a search suggestion for the given query
 	 *
 	 * Useful for retrieving the text for a 'Did You Mean...' style link
-	 * 
+	 *
 	 * @return string The suggested query string
 	 */
 	public function get_search_suggestion() {
@@ -499,7 +499,7 @@ class WPCOM_elasticsearch {
 	 *
 	 * A query suggestion is a similar, more common phrase meant for typo conversion,
 	 * much like Google's 'Did you mean...'
-	 * 
+	 *
 	 * @return boolean Boolean indicating if a suggestion is present
 	 */
 	public function has_search_suggestion() {
