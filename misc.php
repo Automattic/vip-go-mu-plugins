@@ -64,6 +64,22 @@ add_action( 'parse_request', 'action_wpcom_vip_verify_string', 0 );
 add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
 
 /**
+ * Store a copy of the 'notoptions' cache value, so we know which ones we need
+ * to clear the cache for after add|update_option
+ *
+ * This is because add|update_option removes the entry from the notoptions local
+ * and memcached array, which means it's no longer available for testing via
+ * isset( $notoptions[ $option ] ) to conditionally clear that cache entry
+ */
+$_wpcom_vip_notoptions_copy = array();
+
+add_action( 'muplugins_loaded', function() {
+	global $_wpcom_vip_notoptions_copy;
+
+	$_wpcom_vip_notoptions_copy = wp_cache_get( 'notoptions', 'options' );
+});
+
+/**
  * Fix a race condition in alloptions caching
  *
  * See https://core.trac.wordpress.org/ticket/31245
@@ -74,6 +90,16 @@ function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
 
 		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
 			wp_cache_delete( 'alloptions', 'options' );
+		}
+
+		// And we need to do the same for notoptions, as it suffers from the same bug
+		// NOTE - we use the copy we stored earlier, not the current value, as WP has
+		// changed it on us. We need to know if it _used to_ exist in the notoptions array
+		global $_wpcom_vip_notoptions_copy;
+
+		// only flush if option is among original notoptions
+		if ( is_array( $_wpcom_vip_notoptions_copy ) && isset( $_wpcom_vip_notoptions_copy[ $option ] ) ) {
+			wp_cache_delete( 'notoptions', 'options' );
 		}
 	}
 }
