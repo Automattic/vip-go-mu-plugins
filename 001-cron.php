@@ -30,15 +30,39 @@ function wpcom_vip_use_core_cron() {
 }
 
 /**
- * Don't skip empty events, as it causes them to be rescheduled infinitely
+ * Ensure sites don't block the Cron Control endpoints
  *
- * Functionality will be fixed or removed, but this stops the runaway event creation in the meantime
+ * Cron Control handles authentication itself
  */
-add_filter( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
+function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
+	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+		return true;
+	}
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN ) && 'PUT' === $_SERVER['REQUEST_METHOD'] ) {
+		return true;
+	}
+
+	return $allowed;
+}
 
 /**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
+	/**
+	 * Don't skip empty events, as it causes them to be rescheduled infinitely
+	 *
+	 * Functionality will be fixed or removed, but this stops the runaway event creation in the meantime
+	 */
+	add_filter( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
+
+	/**
+	 * Prevent plugins/themes from blocking access to our routes
+	 */
+	add_filter( 'rest_authentication_errors', 'wpcom_vip_permit_cron_control_rest_access', 999 ); // hook in late to bypass any others that override our auth requirements
+
 	require_once __DIR__ . '/cron-control/cron-control.php';
 }
