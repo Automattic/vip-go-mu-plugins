@@ -35,11 +35,13 @@ function wpcom_vip_use_core_cron() {
  * Cron Control handles authentication itself
  */
 function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
-	if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/cron-control/v1/events' ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
 		return true;
 	}
 
-	if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/cron-control/v1/event' ) && 'PUT' === $_SERVER['REQUEST_METHOD'] ) {
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN ) && 'PUT' === $_SERVER['REQUEST_METHOD'] ) {
 		return true;
 	}
 
