@@ -44,6 +44,8 @@ class WPCOM_VIP_Cache_Manager {
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
+		add_action( 'transition_post_status', array( $this, 'transition_post_status' ), 10, 3 );
+		add_action( 'post_updated', array( $this, 'post_updated' ), 10, 3 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
 
@@ -285,13 +287,66 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
-		$post_purge_urls = array();
-		$post_purge_urls[] = get_permalink( $post_id );
-		$post_purge_urls[] = home_url( '/' );
+		$this->purge_urls[] = get_permalink( $post_id );
+	}
+	
+	function transition_post_status( $new, $old, $post ) {
+		if ( $this->site_cache_purged ) {
+			return;
+		}
+		
+		if ( defined( 'WP_IMPORTING' ) ) {
+			return;
+		}
+		
+		// Only send PURGE requests for public post types
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
+		
+		// Don't PURGE if we're not transitioning to or from publish
+		if ( $new === $old || ( $new != 'publish' && $old != 'publish' ) ) {
+			return;
+		}
+		
+		$this->clear_related_urls( $post );
+	}
+
+	function post_updated( $post_id, $post, $old_post ) {
+		if ( $this->site_cache_purged ) {
+			return;
+		}
+
+		if ( defined( 'WP_IMPORTING' ) ) {
+			return;
+		}
+
+		// Only send PURGE requests for public post types
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
+
+		if ( 'publish' !== get_post_status( $post_id ) ) {
+			return;
+		}
+
+		$fields = apply_filters( 'wpcom_vip_cache_purge_on_updated_fields', array( 'post_title', 'post_excerpt' ), $post );
+
+		// PURGE all feeds if one of the whitelisted fields is updated
+		foreach( $fields as $field ) {
+			if ( $post->{$field} != $old_post->{$field} ) {
+				$this->clear_related_urls( $post );
+				return;
+			}
+		}
+	}
+
+	function clear_related_urls( $post ) {
+		$this->purge_urls[] = trailingslashit( home_url() );
 
 		// Don't just purge the attachment page, but also include the file itself
 		if ( 'attachment' === $post->post_type ) {
-			$this->purge_urls[] = wp_get_attachment_url( $post_id );
+			$this->purge_urls[] = wp_get_attachment_url( $post->ID );
 		}
 
 		$taxonomies = get_object_taxonomies( $post, 'object' );
@@ -301,7 +356,7 @@ class WPCOM_VIP_Cache_Manager {
 				continue;
 			}
 			$taxonomy_name = $taxonomy->name;
-			$terms = get_the_terms( $post_id, $taxonomy_name );
+			$terms = get_the_terms( $post->ID, $taxonomy_name );
 			if ( false === $terms ) {
 				continue;
 			}
@@ -319,7 +374,7 @@ class WPCOM_VIP_Cache_Manager {
 			get_bloginfo('atom_url'),
 			get_bloginfo('comments_atom_url'),
 			get_bloginfo('comments_rss2_url'),
-			get_post_comments_feed_link( $post_id ),
+			get_post_comments_feed_link( $post->ID )
 		);
 		$post_purge_urls = array_merge( $post_purge_urls, $site_feeds );
 
@@ -368,8 +423,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 * @param type  $post_id The ID of the post which is the primary reason for the purge
 		 */
-		$this->purge_urls = apply_filters( "wpcom_vip_cache_purge_{$post->post_type}_post_urls", $this->purge_urls, $post_id );
-
+		$this->purge_urls = apply_filters( "wpcom_vip_cache_purge_{$post->post_type}_post_urls", $this->purge_urls, $post->ID );
 		$this->purge_urls = array_unique( $this->purge_urls );
 
 		return true;
