@@ -2,6 +2,18 @@
 
 namespace Automattic\VIP\Proxy;
 
+function is_valid_ip( $ip ) {
+	if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
+		&& ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			return false;
+	}
+
+	return true;
+}
+
+function set_remote_addr( $ip ) {
+	$_SERVER['REMOTE_ADDR'] = $ip;
+}
 
 /**
  * Set REMOTE_ADDR to the end-user's IP address.
@@ -18,10 +30,8 @@ namespace Automattic\VIP\Proxy;
  * @return (bool) true, if REMOTE_ADDR updated; false, if not.
  */
 function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
-	// Validate that user_ip is a valid IP address
-	if ( ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
-		&& ! filter_var( $user_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-			return false;
+	if ( ! is_valid_ip( $user_ip ) ) {
+		return false;
 	}
 
 	require_once( __DIR__ . '/ip-utils.php' );
@@ -34,7 +44,7 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 	}
 
 	// Everything looks good so we can set our SERVER var
-	$_SERVER['REMOTE_ADDR'] = $user_ip;
+	set_remote_addr( $user_ip );
 
 	return true;
 }
@@ -78,4 +88,29 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 	}
 
 	return fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist );
+}
+
+/**
+ * Set REMOTE_ADDR to the end-user's IP address, if the verification key matches
+ *
+ * When an IP whitelist isn't possible, we rely on a verification key being sent as a request header as our method of safely forwarding the IP.
+ *
+ * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
+ * @param (string) $verification_key Verification key passed through request headers
+ *
+ * @return (bool) true, if REMOTE_ADDR updated; false, if not.
+ *
+ */
+function fix_remote_address_with_verification_key( $user_ip, $verification_key ) {
+	if ( ! is_valid_ip( $user_ip ) ) {
+		return false;
+	}
+
+	if ( ! hash_equals( $verification_key, WPCOM_VIP_IP_VERIFICATION_KEY ) ) {
+		return false;
+	}
+
+	set_remote_addr( $user_ip );
+
+	return true;
 }

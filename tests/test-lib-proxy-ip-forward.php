@@ -2,8 +2,10 @@
 
 namespace Automattic\VIP\Tests;
 
+use function Automattic\VIP\Proxy\is_valid_ip;
 use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
+use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 
 class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
@@ -23,6 +25,31 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
 		}
+	}
+
+	// is_valid_ip
+	public function test__is_valid_ip__invalid() {
+		$ip = 'bad_ip';
+
+		$result = is_valid_ip( $ip );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__is_valid_ip__valid_ip4() {
+		$ip = '1.2.3.4';
+
+		$result = is_valid_ip( $ip );
+
+		$this->assertTrue( $result );
+	}
+
+	public function test__is_valid_ip__valid_ip6() {
+		$ip = '2001:db8::1234:ace:6006:1e';
+
+		$result = is_valid_ip( $ip );
+
+		$this->assertTrue( $result );
 	}
 
 	// fix_remote_address
@@ -169,4 +196,19 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		$this->assertTrue( $result );
 		$this->assertEquals( '2001:db8::1234:ace:6006:1e', $_SERVER['REMOTE_ADDR'] );
 	}
+
+	// fix_remote_address_with_verification_key
+	// TODO: invalid IP
+	// TODO: invalid key
+	/*
+	public function test__fix_with_verification_key__valid_ip4() {
+		$key = 'valid-key';
+		$user_ip = '5.6.7.8';
+
+		$result = fix_remote_address_with_verification_key( $user_ip, $key );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '5.6.7.8', $_SERVER['REMOTE_ADDR'] );
+	}
+	*/
 }
