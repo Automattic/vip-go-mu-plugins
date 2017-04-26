@@ -72,6 +72,12 @@ function wpcom_vip_qm_require() {
 	$wpcom_vip_qm_file = __DIR__ . '/query-monitor/query-monitor.php';
 
 	require_once( $wpcom_vip_qm_file );
+
+	// Something stopped QueryMonitor from loading; bail.
+	if ( ! class_exists( 'QueryMonitor' ) ) {
+		return;
+	}
+
 	require_once( __DIR__ . '/vip-helpers/vip-query-monitor.php' );
 
 	// Because we're including Query Monitor as an MU plugin, we need to
