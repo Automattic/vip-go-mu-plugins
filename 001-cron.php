@@ -49,6 +49,19 @@ function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
 }
 
 /**
+ * Don't trigger Jetpack Sync's shutdown actions for cron requests
+ *
+ * Cron runs sync itself, and running sync on shutdown slows the endpoint response, sometimes beyond the 10-second timeout
+ */
+function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
+	if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+		return false;
+	}
+
+	return $load_sync;
+}
+
+/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
@@ -63,6 +76,11 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 * Prevent plugins/themes from blocking access to our routes
 	 */
 	add_filter( 'rest_authentication_errors', 'wpcom_vip_permit_cron_control_rest_access', 999 ); // hook in late to bypass any others that override our auth requirements
+
+	/**
+	 * Don't trigger Jetpack Sync on shutdown for cron requests
+	 */
+	add_filter( 'jetpack_sync_sender_should_load', 'wpcom_vip_disable_jetpack_sync_on_cron_shutdown' );
 
 	require_once __DIR__ . '/cron-control/cron-control.php';
 }
