@@ -32,3 +32,23 @@ add_action( 'after_setup_theme', 'wpcom_vip_enable_performance_tweaks' );
 function wpcom_vip_disable_performance_tweaks() {
 	remove_action( 'after_setup_theme', 'wpcom_vip_enable_performance_tweaks' );
 }
+
+add_filter( 'media_library_show_video_playlist', '__return_true' );
+add_filter( 'media_library_show_audio_playlist', '__return_true' );
+
+add_filter( 'media_library_months_with_files', 'wpcom_vip_media_library_months_with_files' );
+function wpcom_vip_media_library_months_with_files() {
+    $months = get_transient( 'wpcom_media_months_array' );
+
+    if ( false === $months ) {
+        $months = $wpdb->get_results( $wpdb->prepare( "
+            SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
+            FROM $wpdb->posts
+            WHERE post_type = %s
+            ORDER BY post_date DESC
+        ", 'attachment' ) );
+        set_transient( 'wpcom_media_months_array', $months );
+    }
+
+    return $months;
+}
