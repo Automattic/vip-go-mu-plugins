@@ -33,22 +33,71 @@ function wpcom_vip_disable_performance_tweaks() {
 	remove_action( 'after_setup_theme', 'wpcom_vip_enable_performance_tweaks' );
 }
 
-add_filter( 'media_library_show_video_playlist', '__return_true' );
-add_filter( 'media_library_show_audio_playlist', '__return_true' );
-
-add_filter( 'media_library_months_with_files', 'wpcom_vip_media_library_months_with_files' );
-function wpcom_vip_media_library_months_with_files() {
-    $months = get_transient( 'wpcom_media_months_array' );
-
-    if ( false === $months ) {
-        $months = $wpdb->get_results( $wpdb->prepare( "
-            SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
-            FROM $wpdb->posts
-            WHERE post_type = %s
-            ORDER BY post_date DESC
-        ", 'attachment' ) );
-        set_transient( 'wpcom_media_months_array', $months );
-    }
-
-    return $months;
+/**
+ * Filter to clear out the transients for the core hack mentioned here: https://keepingtheirblogsgoing.wordpress.com/2016/04/27/speeding-up-wp-admin/ and implemented in wp-includes/media.php
+ * Deletion of the media_month array is taken care of in wpcom_vip_bust_media_months_cache
+ */
+add_filter( 'add_attachment', 'wpcom_vip_media_clear_caches' );
+function wpcom_vip_media_clear_caches( $id ) {
+	$upload_post = get_post( $id );
+	if ( strpos( $upload_post->post_mime_type, "video" ) === 0 ) {//check if it starts with video
+		delete_transient( 'wpcom_media_has_video' );
+	} else if ( strpos( $upload_post->post_mime_type, "audio" ) === 0 ) {//check if it starts with audio
+		delete_transient( 'wpcom_media_has_audio' );
+	}
 }
+add_action( 'add_attachment', 'wpcom_vip_bust_media_months_cache' );
+function wpcom_vip_bust_media_months_cache( $post_id ) {
+	if( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+		return;
+	}
+
+	// What month/year is the most recent attachment?
+	global $wpdb;
+	$months = $wpdb->get_results( $wpdb->prepare( "
+			SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
+			FROM $wpdb->posts
+			WHERE post_type = %s
+			ORDER BY post_date DESC
+			LIMIT 1
+		", 'attachment' ) );
+
+	// Simplify by assigning the object to $months
+	$months = array_shift( array_values( $months ) );
+
+	// Compare the dates of the new, and most recent, attachment
+	if (
+		! $months->year == get_the_time( 'Y', $post_id ) &&
+		! $months->month == get_the_time( 'm', $post_id )
+	) {
+		// the new attachment is not in the same month/year as the
+		// most recent attachment, so we need to refresh the transient
+		delete_transient( 'wpcom_media_months_array' );
+	}
+
+}
+
+if ( wpcom_is_vip() && is_admin() ) {
+	add_filter( 'media_library_show_video_playlist', '__return_true' );
+	add_filter( 'media_library_show_audio_playlist', '__return_true' );
+
+	add_filter( 'media_library_months_with_files', 'wpcom_vip_media_library_months_with_files' );
+	function wpcom_vip_media_library_months_with_files() {
+ 		global $wpdb;
+
+		$months = get_transient( 'wpcom_media_months_array' );
+
+		if ( false === $months ) {
+        	$months = $wpdb->get_results( $wpdb->prepare( "
+            	SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
+            	FROM $wpdb->posts
+            	WHERE post_type = %s
+            	ORDER BY post_date DESC
+        	", 'attachment' ) );
+			set_transient( 'wpcom_media_months_array', $months );
+		}
+
+		return $months;
+	}
+}
+
