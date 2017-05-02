@@ -181,7 +181,7 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 				$color,
 				str_pad( $query_type_counts[ $q ], 5, ' ', STR_PAD_LEFT ),
 				str_pad( sprintf( '%0.2f', $t * 1000 ), $max_time_len, ' ', STR_PAD_LEFT ),
-				$q
+				esc_html( $q )
 			);
 		}
 
