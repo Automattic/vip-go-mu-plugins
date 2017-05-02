@@ -3,7 +3,7 @@
 Plugin Name: Akismet
 Plugin URI: https://akismet.com/
 Description: Used by millions, Akismet is quite possibly the best way in the world to <strong>protect your blog from spam</strong>. It keeps your site protected even while you sleep.
-Version: 3.2
+Version: 3.3.1
 Author: Automattic
 Author URI: https://automattic.com/wordpress-plugins/
 License: GPLv2 or later
