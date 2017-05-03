@@ -76,12 +76,12 @@ if ( is_admin() ) {
 		$months = get_transient( 'wpcom_media_months_array' );
 
 		if ( false === $months ) {
-        	$months = $wpdb->get_results( $wpdb->prepare( "
-            	SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
-            	FROM $wpdb->posts
-            	WHERE post_type = %s
-            	ORDER BY post_date DESC
-        	", 'attachment' ) );
+        		$months = $wpdb->get_results( $wpdb->prepare( "
+            		     SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
+            			FROM $wpdb->posts
+            			WHERE post_type = %s
+            			ORDER BY post_date DESC
+        			", 'attachment' ) );
 			set_transient( 'wpcom_media_months_array', $months );
 		}
 
