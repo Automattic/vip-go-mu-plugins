@@ -33,19 +33,7 @@ function wpcom_vip_disable_performance_tweaks() {
 	remove_action( 'after_setup_theme', 'wpcom_vip_enable_performance_tweaks' );
 }
 
-/**
- * Filter to clear out the transients for the core hack mentioned here: https://keepingtheirblogsgoing.wordpress.com/2016/04/27/speeding-up-wp-admin/ and implemented in wp-includes/media.php
- * Deletion of the media_month array is taken care of in wpcom_vip_bust_media_months_cache
- */
-add_filter( 'add_attachment', 'wpcom_vip_media_clear_caches' );
-function wpcom_vip_media_clear_caches( $id ) {
-	$upload_post = get_post( $id );
-	if ( strpos( $upload_post->post_mime_type, "video" ) === 0 ) {//check if it starts with video
-		delete_transient( 'wpcom_media_has_video' );
-	} else if ( strpos( $upload_post->post_mime_type, "audio" ) === 0 ) {//check if it starts with audio
-		delete_transient( 'wpcom_media_has_audio' );
-	}
-}
+
 add_action( 'add_attachment', 'wpcom_vip_bust_media_months_cache' );
 function wpcom_vip_bust_media_months_cache( $post_id ) {
 	if( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
@@ -77,7 +65,7 @@ function wpcom_vip_bust_media_months_cache( $post_id ) {
 
 }
 
-if ( wpcom_is_vip() && is_admin() ) {
+if ( is_admin() ) {
 	add_filter( 'media_library_show_video_playlist', '__return_true' );
 	add_filter( 'media_library_show_audio_playlist', '__return_true' );
 
