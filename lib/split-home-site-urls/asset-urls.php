@@ -56,8 +56,6 @@ class Asset_URLs {
 	/**
 	 * Register plugin's actions and filters
 	 *
-	 * @uses add_action()
-	 * @uses add_filter()
 	 * @return null
 	 */
 	private function setup() {
@@ -86,7 +84,6 @@ class Asset_URLs {
 	/**
 	 * Expose static host for filtering
 	 *
-	 * @uses apply_filters()
 	 * @action plugins_loaded
 	 * @return null
 	 */
@@ -100,7 +97,6 @@ class Asset_URLs {
 	 *
 	 * @param string $src
 	 * @param string $handle
-	 * @uses this::staticize()
 	 * @filter script_loader_src
 	 * @filter style_loader_src
 	 * @return string
@@ -113,8 +109,6 @@ class Asset_URLs {
 	 * Rewrite theme assets to static host
 	 *
 	 * @param string $uri
-	 * @uses this::staticize()
-	 * @uses current_filter()
 	 * @filter template_directory_uri
 	 * @filter stylesheet_directory_uri
 	 * @return string
@@ -127,8 +121,6 @@ class Asset_URLs {
 	 * Rewrite theme's stylesheet to static host
 	 *
 	 * @param string $uri
-	 * @uses this::staticize()
-	 * @uses current_filter()
 	 * @filter template_directory_uri
 	 * @filter stylesheet_uri
 	 * @return string
@@ -142,8 +134,6 @@ class Asset_URLs {
 	 * Since plugins can do many crazy things, only select extensions are rewritten
 	 *
 	 * @param string $uri
-	 * @uses this::staticize()
-	 * @uses current_filter
 	 * @filter plugins_url
 	 * @return string
 	 */
@@ -169,8 +159,6 @@ class Asset_URLs {
 	 * Rewrite Jetpack's static paths if they aren't served from an a8c CDN
 	 *
 	 * @param string $uri
-	 * @uses this::staticize()
-	 * @uses current_filter
 	 * @filter jetpack_static_url
 	 * @return string
 	 */
@@ -208,8 +196,6 @@ class Asset_URLs {
 	 * Ensures images not processed with Photon are at least served from the CDN
 	 *
 	 * @param string $url
-	 * @uses get_current_blog_id()
-	 * @uses esc_url_raw()
 	 * @filter pre_option_upload_url_path
 	 * @return string
 	 */
@@ -227,7 +213,6 @@ class Asset_URLs {
 	 * Rewrite URLs for concatenated assets
 	 *
 	 * @param string $url
-	 * @uses set_url_scheme
 	 * @filter ngx_http_concat_site_url
 	 * @return string
 	 */
@@ -244,9 +229,6 @@ class Asset_URLs {
 	 *
 	 * @param string $src
 	 * @param string $context Optional.
-	 * @uses this::should_staticize()
-	 * @uses apply_filters
-	 * @uses this::add_cache_buster()
 	 * @return string
 	 */
 	private function staticize( $src, $context = '' ) {
