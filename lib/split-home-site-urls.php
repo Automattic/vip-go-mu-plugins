@@ -23,57 +23,6 @@ function parse_home_url_for_cookie() {
 }
 
 /**
- * Set auth cookie for front-end requests
- */
-function add_home_auth_cookie( $auth_cookie, $expire, $expiration, $user_id, $scheme ) {
-	if ( 'secure_auth' === $scheme ) {
-		$auth_cookie_name = \SECURE_AUTH_COOKIE;
-	} elseif ( 'auth' === $scheme ) {
-		$auth_cookie_name = \AUTH_COOKIE;
-	} else {
-		return;
-	}
-
-	$cookie_url_parts = parse_home_url_for_cookie();
-
-	// Override the cookie's secure flag following `wp_set_auth_cookie()`'s logic
-	if ( 'secure_auth' !== $scheme ) {
-		$cookie_url_parts['secure'] = false;
-	}
-
-	setcookie( $auth_cookie_name, $auth_cookie, $expire, $cookie_url_parts['path'], $cookie_url_parts['domain'], $cookie_url_parts['secure'], true );
-}
-add_action( 'set_auth_cookie', __NAMESPACE__ . '\add_home_auth_cookie', 10, 5 );
-
-/**
- * Set logged-in cookie for front-end requests
- */
-function add_home_logged_in_cookie( $logged_in_cookie, $expire, $expiration, $user_id, $scheme ) {
-	if ( 'logged_in' !== $scheme ) {
-		return;
-	}
-
-	$cookie_url_parts = parse_home_url_for_cookie();
-
-	setcookie( \LOGGED_IN_COOKIE, $logged_in_cookie, $expire, $cookie_url_parts['path'], $cookie_url_parts['domain'], $cookie_url_parts['secure'], true );
-}
-add_action( 'set_logged_in_cookie', __NAMESPACE__ . '\add_home_logged_in_cookie', 10, 5 );
-
-/**
- * Clear custom cookies
- */
-function clear_home_cookies() {
-	$cookie_url_parts = parse_home_url_for_cookie();
-	$value            = ' ';
-	$expires          = time() - \YEAR_IN_SECONDS;
-
-	setcookie( \AUTH_COOKIE,        $value, $expires, $cookie_url_parts['path'], $cookie_url_parts['domain'] );
-	setcookie( \SECURE_AUTH_COOKIE, $value, $expires, $cookie_url_parts['path'], $cookie_url_parts['domain'] );
-	setcookie( \LOGGED_IN_COOKIE,   $value, $expires, $cookie_url_parts['path'], $cookie_url_parts['domain'] );
-}
-add_action( 'clear_auth_cookie', __NAMESPACE__ . '\clear_home_cookies' );
-
-/**
  * Redirect logged-out users to the canonical (home) URL
  */
 function enforce_logged_out_canonical_redirect() {
