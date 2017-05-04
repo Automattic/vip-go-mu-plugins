@@ -3,6 +3,11 @@
 namespace Automattic\VIP\Split_Home_Site_URLs;
 
 /**
+ * Rewrite static asset URLs back to the home URL, as Core normally relies on site URL
+ */
+require_once __DIR__ . '/split-home-site-urls/asset-urls.php';
+
+/**
  * Ensure preview URLs are served over SSL
  */
 function fix_preview_link_host( $link ) {
