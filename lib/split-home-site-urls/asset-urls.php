@@ -148,7 +148,7 @@ class Asset_URLs {
 		);
 
 		$extension = pathinfo( $uri, PATHINFO_EXTENSION );
-		if ( ! in_array( $extension, $allowed_exts ) ) {
+		if ( ! in_array( $extension, $allowed_exts, true ) ) {
 			return $uri;
 		}
 
@@ -183,7 +183,7 @@ class Asset_URLs {
 		$domain_whitelist = array( 'wordpress.com', 'wp.com' );
 
 		// Return $uri if an Automattic domain, as it's already CDN'd
-		if ( in_array( $domain, $domain_whitelist ) ) {
+		if ( in_array( $domain, $domain_whitelist, true ) ) {
 			return $uri;
 		}
 
@@ -217,7 +217,7 @@ class Asset_URLs {
 	 * @return string
 	 */
 	public function filter_concat_base_url( $url ) {
-		return set_url_scheme( 'https://' . $this->static_host );
+		return 'https://' . $this->static_host;
 	}
 
 	/**
