@@ -29,18 +29,7 @@ class Akismet {
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments_meta' ) );
 		add_action( 'akismet_schedule_cron_recheck', array( 'Akismet', 'cron_recheck' ) );
 
-		/**
-		 * To disable the Akismet comment nonce, add a filter for the 'akismet_comment_nonce' tag
-		 * and return any string value that is not 'true' or '' (empty string).
-		 *
-		 * Don't return boolean false, because that implies that the 'akismet_comment_nonce' option
-		 * has not been set and that Akismet should just choose the default behavior for that
-		 * situation.
-		 */
-		$akismet_comment_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
-
-		if ( $akismet_comment_nonce_option == 'true' || $akismet_comment_nonce_option == '' )
-			add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
+		add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
 
 		add_action( 'admin_head-edit-comments.php', array( 'Akismet', 'load_form_js' ) );
 		add_action( 'comment_form', array( 'Akismet', 'load_form_js' ) );
@@ -171,7 +160,11 @@ class Akismet {
 		}
 
 		$post = get_post( $comment['comment_post_ID'] );
-		$comment[ 'comment_post_modified_gmt' ] = $post->post_modified_gmt;
+
+		if ( ! is_null( $post ) ) {
+			// $post can technically be null, although in the past, it's always been an indicator of another plugin interfering.
+			$comment[ 'comment_post_modified_gmt' ] = $post->post_modified_gmt;
+		}
 
 		$response = self::http_post( Akismet::build_query( $comment ), 'comment-check' );
 
@@ -200,7 +193,9 @@ class Akismet {
 				// akismet_result_spam() won't be called so bump the counter here
 				if ( $incr = apply_filters('akismet_spam_count_incr', 1) )
 					update_option( 'akismet_spam_count', get_option('akismet_spam_count') + $incr );
-				$redirect_to = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : get_permalink( $post );
+				// The spam is obvious, so we're bailing out early. Redirect back to the previous page,
+				// or failing that, the post permalink, or failing that, the homepage of the blog.
+				$redirect_to = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : ( $post ? get_permalink( $post ) : home_url() );
 				wp_safe_redirect( esc_url_raw( $redirect_to ) );
 				die();
 			}
@@ -265,9 +260,6 @@ class Akismet {
 		// failsafe for old WP versions
 		if ( !function_exists('add_comment_meta') )
 			return false;
-
-		if ( !isset( self::$last_comment['comment_author_email'] ) )
-			self::$last_comment['comment_author_email'] = '';
 
 		// wp_insert_comment() might be called in other contexts, so make sure this is the same comment
 		// as was checked by auto_check_comment
@@ -355,6 +347,7 @@ class Akismet {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 
 			clean_comment_cache( $comment_ids );
+			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->comments ) ) // lucky number
@@ -382,6 +375,8 @@ class Akismet {
 			foreach ( $comment_ids as $comment_id ) {
 				delete_comment_meta( $comment_id, 'akismet_as_submitted' );
 			}
+
+			do_action( 'akismet_delete_commentmeta_batch', count( $comment_ids ) );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->commentmeta ) ) // lucky number
@@ -606,7 +601,10 @@ class Akismet {
 			$comment->is_test = 'true';
 
 		$post = get_post( $comment->comment_post_ID );
-		$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+
+		if ( ! is_null( $post ) ) {
+			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+		}
 
 		$response = Akismet::http_post( Akismet::build_query( $comment ), 'submit-spam' );
 		if ( $comment->reporter ) {
@@ -653,7 +651,10 @@ class Akismet {
 			$comment->is_test = 'true';
 
 		$post = get_post( $comment->comment_post_ID );
-		$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+
+		if ( ! is_null( $post ) ) {
+			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+		}
 
 		$response = self::http_post( Akismet::build_query( $comment ), 'submit-ham' );
 		if ( $comment->reporter ) {
@@ -768,9 +769,21 @@ class Akismet {
 	}
 
 	public static function add_comment_nonce( $post_id ) {
-		echo '<p style="display: none;">';
-		wp_nonce_field( 'akismet_comment_nonce_' . $post_id, 'akismet_comment_nonce', FALSE );
-		echo '</p>';
+		/**
+		 * To disable the Akismet comment nonce, add a filter for the 'akismet_comment_nonce' tag
+		 * and return any string value that is not 'true' or '' (empty string).
+		 *
+		 * Don't return boolean false, because that implies that the 'akismet_comment_nonce' option
+		 * has not been set and that Akismet should just choose the default behavior for that
+		 * situation.
+		 */
+		$akismet_comment_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
+
+		if ( $akismet_comment_nonce_option == 'true' || $akismet_comment_nonce_option == '' ) {
+			echo '<p style="display: none;">';
+			wp_nonce_field( 'akismet_comment_nonce_' . $post_id, 'akismet_comment_nonce', FALSE );
+			echo '</p>';
+		}
 	}
 
 	public static function is_test_mode() {
@@ -800,7 +813,25 @@ class Akismet {
 	private static function comments_match( $comment1, $comment2 ) {
 		$comment1 = (array) $comment1;
 		$comment2 = (array) $comment2;
-		
+
+		// Set default values for these strings that we check in order to simplify
+		// the checks and avoid PHP warnings.
+		if ( ! isset( $comment1['comment_author'] ) ) {
+			$comment1['comment_author'] = '';
+		}
+
+		if ( ! isset( $comment2['comment_author'] ) ) {
+			$comment2['comment_author'] = '';
+		}
+
+		if ( ! isset( $comment1['comment_author_email'] ) ) {
+			$comment1['comment_author_email'] = '';
+		}
+
+		if ( ! isset( $comment2['comment_author_email'] ) ) {
+			$comment2['comment_author_email'] = '';
+		}
+
 		$comments_match = (
 			   isset( $comment1['comment_post_ID'], $comment2['comment_post_ID'] )
 			&& intval( $comment1['comment_post_ID'] ) == intval( $comment2['comment_post_ID'] )
@@ -834,9 +865,6 @@ class Akismet {
 	
 	// Does the supplied comment match the details of the one most recently stored in self::$last_comment?
 	public static function matches_last_comment( $comment ) {
-		if ( is_object( $comment ) )
-			$comment = (array) $comment;
-
 		return self::comments_match( self::$last_comment, $comment );
 	}
 
