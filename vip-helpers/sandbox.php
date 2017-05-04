@@ -4,9 +4,11 @@ if ( ! WPCOM_SANDBOXED ) {
 	return;
 }
 
+// Don't cache sandboxed requests by default
+add_action( 'send_headers', 'nocache_headers' );
+
 add_action( 'wp_footer', 'wpcom_do_sandbox_bar', 100 );
 add_action( 'admin_footer', 'wpcom_do_sandbox_bar', 100 );
-
 function wpcom_do_sandbox_bar() {
 	if( is_user_logged_in() && ! is_admin_bar_showing() )
 		return;
