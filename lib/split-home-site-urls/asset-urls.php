@@ -89,7 +89,7 @@ class Asset_URLs {
 	 */
 	public function action_plugins_loaded() {
 		$host              = parse_url( home_url( '/' ), PHP_URL_HOST );
-		$this->static_host = apply_filters( 'eth_cdn_static_host', $host );
+		$this->static_host = apply_filters( 'wpcom_vip_asset_urls_static_host', $host );
 	}
 
 	/**
@@ -245,7 +245,7 @@ class Asset_URLs {
 
 		// Attempt to rewrite if proper conditions are met.
 		$parsed_host = parse_url( $src, PHP_URL_HOST );
-		if ( $parsed_host && $parsed_host !== $this->static_host && $this->should_staticize( $parsed_host ) && apply_filters( 'eth_cdn_staticize', true, $parsed_host, $src, $context ) ) {
+		if ( $parsed_host && $parsed_host !== $this->static_host && $this->should_staticize( $parsed_host ) && apply_filters( 'wpcom_vip_asset_urls_staticize', true, $parsed_host, $src, $context ) ) {
 			$src = str_replace( $parsed_host, $this->static_host, $src );
 		}
 
@@ -263,7 +263,7 @@ class Asset_URLs {
 		$site_url_host    = parse_url( site_url( '/' ), PHP_URL_HOST );
 		$should_staticize = $site_url_host === $host;
 
-		return (bool) apply_filters( 'eth_cdn_should_staticize', $should_staticize, $host, $site_url_host );
+		return (bool) apply_filters( 'wpcom_vip_asset_urls_should_staticize', $should_staticize, $host, $site_url_host );
 	}
 }
 
