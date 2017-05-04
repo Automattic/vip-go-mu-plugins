@@ -36,14 +36,6 @@ class Asset_URLs {
 	 */
 	private $static_host = null;
 
-	private static $network_domains    = null;
-	private $network_domains_cache_key = 'eth_cdn_network_domains';
-
-	private static $mapped_domains     = null;
-	private $mapped_domains_cache_key  = 'eth_cdn_mapped_domains';
-
-	private $cache_life = 1800;
-
 	/**
 	 * Silence is golden!
 	 */
@@ -283,120 +275,13 @@ class Asset_URLs {
 	 * Is current host appropriate for staticization?
 	 *
 	 * @param string $host
-	 * @uses this::get_domains()
-	 * @uses apply_filters
 	 * @return bool
 	 */
 	private function should_staticize( $host ) {
-		$domains = $this->get_domains();
+		$site_url_host    = parse_url( site_url( '/' ), PHP_URL_HOST );
+		$should_staticize = $site_url_host === $host;
 
-		return (bool) apply_filters( 'eth_cdn_should_staticize', isset( $domains[ $host ] ), $host );
-	}
-
-	/**
-	 * Build array of domains associated with this site
-	 *
-	 * @uses this::get_network_domains()
-	 * @uses this::get_mapped_domains()
-	 * @return array
-	 */
-	private function get_domains() {
-		// Base WP URLs
-		$network = array();
-
-		if ( is_multisite() ) {
-			$network = $this->get_network_domains();
-			if ( ! is_array( $network ) ) {
-				$network = array();
-			}
-		} else {
-			$network[ parse_url( home_url( '/' ), PHP_URL_HOST ) ] = 1;
-			$network[ parse_url( site_url( '/' ), PHP_URL_HOST ) ] = 1;
-		}
-
-		// WordPress MU domain mapping
-		$mapped = array();
-		if ( function_exists( 'domain_mapping_siteurl' ) ) {
-			$mapped = $this->get_mapped_domains();
-		}
-
-		return array_merge( $mapped, $network );
-	}
-
-	/**
-	 * Build array of site addresses assigned by WP
-	 *
-	 * @global $wpdb
-	 * @uses get_site_transient()
-	 * @uses set_site_transient()
-	 * @return array
-	 */
-	private function get_network_domains() {
-		if ( null === self::$network_domains ) {
-			// Check the persistent cache first
-			$domains = get_site_transient( $this->network_domains_cache_key );
-			if ( is_array( $domains ) ) {
-				self::$network_domains = $domains;
-				return $domains;
-			}
-
-			// Rebuild cache, both local and persistent, if needed
-			global $wpdb;
-
-			$domains = array();
-
-			// Retrieve all domains
-			$domain_objects = $wpdb->get_results( "SELECT * FROM {$wpdb->blogs}" );
-
-			if ( $domain_objects ) {
-				foreach ( $domain_objects as $domain_object ) {
-					$domains[ $domain_object->domain ] = (int) $domain_object->blog_id;
-				}
-			}
-
-			self::$network_domains = $domains;
-			set_site_transient( $this->network_domains_cache_key, self::$network_domains, $this->cache_life );
-		}
-
-		return self::$network_domains;
-	}
-
-	/**
-	 * Build array of domains mapped to sites on this network
-	 *
-	 * @global $wpdb
-	 * @uses get_site_transient()
-	 * @uses set_site_transient()
-	 * @return array
-	 */
-	private function get_mapped_domains() {
-		if ( null === self::$mapped_domains ) {
-			// Check the persistent cache first
-			$domains = get_site_transient( $this->mapped_domains_cache_key );
-			if ( is_array( $domains ) ) {
-				self::$mapped_domains = $domains;
-				return $domains;
-			}
-
-			// Rebuild cache, both local and persistent, if needed
-			global $wpdb;
-
-			$domains = array();
-
-			// Retrieve all domains
-			$domain_objects = $wpdb->get_results( "SELECT * FROM {$wpdb->dmtable}" );
-
-			if ( $domain_objects ) {
-				foreach ( $domain_objects as $domain_object ) {
-					$domains[ $domain_object->domain ] = (int) $domain_object->blog_id;
-				}
-			}
-
-			self::$mapped_domains = $domains;
-			set_site_transient( $this->mapped_domains_cache_key, self::$mapped_domains, $this->cache_life );
-		}
-
-		return self::$mapped_domains;
+		return (bool) apply_filters( 'eth_cdn_should_staticize', $should_staticize, $host, $site_url_host );
 	}
 }
 
