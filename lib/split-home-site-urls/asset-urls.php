@@ -1,10 +1,10 @@
 <?php
 /*
- Plugin name: Static File Host
+ Plugin name: Rewrite Static URLs
  Description: Rewrite static assets to be served from a different URL
- Version: 1.1
+ Version: 1.5
  Author: Erick Hitter
- Author URI: http://www.ethitter.com
+ Author URI: https://ethitter.com/
  License: GPLv2
 */
 
@@ -23,7 +23,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-class ETH_CDN {
+namespace Automattic\VIP\Split_Home_Site_URLs;
+
+class Asset_URLs {
 	/**
 	 * Singleton
 	 */
@@ -39,8 +41,6 @@ class ETH_CDN {
 
 	private static $mapped_domains     = null;
 	private $mapped_domains_cache_key  = 'eth_cdn_mapped_domains';
-
-	private $mtimes_cache_key = 'eth_cdn_mtimes';
 
 	private $cache_life = 1800;
 
@@ -85,13 +85,10 @@ class ETH_CDN {
 		add_filter( 'jetpack_static_url', array( $this, 'filter_jetpack_static_urls' ), 999 );
 
 		// Paths to uploaded files
-		add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
+		// add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
 
 		// Concatenated assets
 		add_filter( 'ngx_http_concat_site_url', array( $this, 'filter_concat_base_url' ) );
-
-		// DNS Prefetch
-		add_action( 'wp_head', array( $this, 'action_wp_head_early' ), -999 );
 	}
 
 	/**
@@ -102,7 +99,7 @@ class ETH_CDN {
 	 * @return null
 	 */
 	public function action_plugins_loaded() {
-		$host              = defined( 'ETH_CDN_STATIC_HOST' ) ? ETH_CDN_STATIC_HOST : 's.ethitter.com';
+		$host              = parse_url( home_url( '/' ), PHP_URL_HOST );
 		$this->static_host = apply_filters( 'eth_cdn_static_host', $host );
 	}
 
@@ -247,19 +244,6 @@ class ETH_CDN {
 	}
 
 	/**
-	 * Pretech DNS for certain common domains
-	 */
-	public function action_wp_head_early() {
-		?>
-		<link rel='dns-prefetch' href='//s2.e15r.co'>
-		<link rel='dns-prefetch' href='//stats.e15r.co'>
-		<link rel='dns-prefetch' href='//ethitter.com'>
-		<link rel='dns-prefetch' href='//i.ethitter.com'>
-		<link rel='dns-prefetch' href='//stats.ethitter.com'>
-		<?php
-	}
-
-	/**
 	 ** UTILITY METHODS
 	 **/
 
@@ -290,9 +274,6 @@ class ETH_CDN {
 		if ( $parsed_host && $parsed_host !== $this->static_host && $this->should_staticize( $parsed_host ) && apply_filters( 'eth_cdn_staticize', true, $parsed_host, $src, $context ) ) {
 			$src = str_replace( $parsed_host, $this->static_host, $src );
 		}
-
-		// Add a cache buster based on the file's modified time
-		// $src = $this->add_cache_buster( $src );
 
 		// Return something!
 		return $src;
@@ -417,59 +398,6 @@ class ETH_CDN {
 
 		return self::$mapped_domains;
 	}
-
-	/**
-	 * Add a cache busting query string to each URL
-	 *
-	 * Uses Unix timestamp of file's modification time
-	 *
-	 * @param string $src
-	 * @uses get_site_transient()
-	 * @uses path_join()
-	 * @uses set_site_transient()
-	 * @uses add_query_arg()
-	 * @return string
-	 */
-	private function add_cache_buster( $src ) {
-		// Get the relative path of the file, if we can
-		$path = parse_url( $src, PHP_URL_PATH );
-		if ( false === $path || ! preg_match( '#[A-Z0-9\-_]+\.[A-Z0-9]+$#i', $path ) ) {
-			return $src;
-		}
-
-		// Cache mtime for faster future lookups
-		$key   = md5( $this->mtimes_cache_key . $path );
-		$mtime = (int) get_site_transient( $key );
-
-		// Not cached, so let
-		if ( ! $mtime ) {
-			// Defaults to be cached for the current $key
-			$mtime  = time();
-			$expiry = 900;
-
-			// Need to strip the leading slash from the path, as ABSPATH is trailing slashed
-			$path = substr( $path, 1 );
-
-			// If we can access the path, get the file's modification time and cache the value for five minutes
-			if ( $path ) {
-				$path = path_join( ABSPATH, $path );
-				if ( file_exists( $path ) ) {
-					$mtime  = filemtime( $path );
-					$expiry = 86400;
-				}
-			}
-
-			// Always cache something, to reduce future lookups
-			set_site_transient( $key, $mtime, $expiry );
-		}
-
-		// Only add if we have a value
-		if ( $mtime ) {
-			$src = add_query_arg( 'm', $mtime, $src );
-		}
-
-		return $src;
-	}
 }
 
-ETH_CDN::get_instance();
+Asset_URLs::get_instance();
