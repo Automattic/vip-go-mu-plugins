@@ -59,7 +59,19 @@ function add_home_logged_in_cookie( $logged_in_cookie, $expire, $expiration, $us
 }
 add_action( 'set_logged_in_cookie', __NAMESPACE__ . '\add_home_logged_in_cookie', 10, 5 );
 
-// TODO: clear custom cookies on clear_auth_cookie
+/**
+ * Clear custom cookies
+ */
+function clear_home_cookies() {
+	$cookie_url_parts = parse_home_url_for_cookie();
+	$value            = ' ';
+	$expires          = time() - \YEAR_IN_SECONDS;
+
+	setcookie( \AUTH_COOKIE,        $value, $expires, $cookie_url_parts['path'], $cookie_url_parts['domain'] );
+	setcookie( \SECURE_AUTH_COOKIE, $value, $expires, $cookie_url_parts['path'], $cookie_url_parts['domain'] );
+	setcookie( \LOGGED_IN_COOKIE,   $value, $expires, $cookie_url_parts['path'], $cookie_url_parts['domain'] );
+}
+add_action( 'clear_auth_cookie', __NAMESPACE__ . '\clear_home_cookies' );
 
 /**
  * Redirect logged-out users to the canonical (home) URL
