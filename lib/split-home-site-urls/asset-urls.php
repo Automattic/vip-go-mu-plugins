@@ -64,9 +64,8 @@ class Asset_URLs {
 		// Paths to uploaded files
 		// add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
 
-		// Front-end modifications
-		// If applied to non-theme contexts, can introduce CORS and mixed-content issues, at the least
-		if ( ! is_admin() && false === stripos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) ) {
+		// Static assets other than uploads
+		if ( $this->should_rewrite_non_upload_assets() ) {
 			// Enqueued assets
 			add_filter( 'script_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
 			add_filter( 'style_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
@@ -227,6 +226,36 @@ class Asset_URLs {
 	/**
 	 ** UTILITY METHODS
 	 **/
+
+	/**
+	 * Restrict static-asset rewriting to "front-end" requests
+	 *
+	 * @return bool
+	 */
+	private function should_rewrite_non_upload_assets() {
+		// Allow dynamic exclusions
+		$override = apply_filters( 'wpcom_vip_asset_urls_skip_rewrites_for_request', null );
+		if ( is_bool( $override ) ) {
+			return $override;
+		}
+
+		// Admin should use its domain to avoid CORS, mixed content, and authentication issues, et al
+		if ( is_admin() ) {
+			return false;
+		}
+
+		// Skip on some Core front-end screens to avoid CORS and mixed content
+		if ( false !== stripos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) ) {
+			return false;
+		}
+
+		if ( false !== stripos( $_SERVER['REQUEST_URI'], 'wp-signup.php' ) ) {
+			return false;
+		}
+
+		// Rewrite by default
+		return true;
+	}
 
 	/**
 	 * Rewrite host to static
