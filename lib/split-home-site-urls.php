@@ -110,6 +110,7 @@ add_filter( 'registration_redirect', __NAMESPACE__ . '\rewrite_admin_url_to_site
  * Ensure that both home and site URL are valid redirect hosts
  */
 function filter_allowed_redirect_hosts( $hosts ) {
+	$hosts[] = parse_url( home_url( '/' ), PHP_URL_HOST );
 	$hosts[] = parse_url( site_url( '/' ), PHP_URL_HOST );
 
 	// In case something else already added the site_url()
