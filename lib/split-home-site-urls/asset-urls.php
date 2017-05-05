@@ -297,7 +297,7 @@ class Asset_URLs {
 		// Attempt to rewrite if proper conditions are met.
 		$parsed_host = parse_url( $src, PHP_URL_HOST );
 		if ( $parsed_host && $parsed_host !== $this->static_host && $this->should_staticize( $parsed_host ) && apply_filters( 'wpcom_vip_asset_urls_staticize', true, $parsed_host, $src, $context ) ) {
-			$src = str_replace( $parsed_host, $this->static_host, $src );
+			$src = preg_replace( '#' . preg_quote( $parsed_host ) . '#i', $this->static_host, $src, 1 );
 		}
 
 		// Return something!
