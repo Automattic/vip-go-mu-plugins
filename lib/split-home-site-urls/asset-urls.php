@@ -61,9 +61,6 @@ class Asset_URLs {
 	private function setup() {
 		add_action( 'plugins_loaded', array( $this, 'action_plugins_loaded' ) );
 
-		// Paths to uploaded files
-		// add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
-
 		// Static assets other than uploads
 		if ( $this->should_rewrite_non_upload_assets() ) {
 			// Enqueued assets
@@ -81,6 +78,9 @@ class Asset_URLs {
 
 			// Concatenated assets
 			add_filter( 'ngx_http_concat_site_url', array( $this, 'filter_concat_base_url' ) );
+
+			// TODO: Filter images in content
+			add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
 		}
 	}
 
@@ -203,11 +203,22 @@ class Asset_URLs {
 	 * @return string
 	 */
 	public function filter_upload_url_path( $url ) {
-		$url = 'https://' . $this->static_host . '/wp-content/uploads';
+		// Rebuild upload URL
+		$upload_path = trim( get_option( 'upload_path' ) );
+		if ( empty( $upload_path ) ) {
+			$upload_path = 'wp-content/uploads';
+		}
 
-		if ( 2 === get_current_blog_id() ) {
+		$url = 'https://' . $this->static_host . '/' . $upload_path;
+
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$url .= '/sites/' . get_current_blog_id();
 		}
+
+		// Bypass is_ssl() to determine if home is SSL or not, as it uses $_SERVER and context could break things
+		$home_url_scheme = parse_url( get_option( 'home' ), PHP_URL_SCHEME );
+
+		$url = set_url_scheme( $url, $home_url_scheme );
 
 		return esc_url_raw( $url );
 	}
@@ -246,6 +257,7 @@ class Asset_URLs {
 
 		// Previews use the site URL when this library is active
 		// Can't use is_preview() because this is called before the query is parsed
+		// Logged-out users are redirected later on, as it's also premature to check that here
 		if ( isset( $_GET['preview'] ) ) {
 			return false;
 		}
