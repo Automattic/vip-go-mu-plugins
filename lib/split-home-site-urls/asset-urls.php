@@ -46,7 +46,7 @@ class Asset_URLs {
 	 */
 	public static function get_instance() {
 		if ( ! is_a( self::$instance, __CLASS__ ) ) {
-			self::$instance = new self;
+			self::$instance = new self();
 			self::$instance->setup();
 		}
 
