@@ -1,6 +1,6 @@
 <?php
 /*
- Plugin name: Support Different Home and Site Hosts
+ Plugin name: Support Split Home and Site Hosts
  Description: Provide a consistent user experience when the home and site URLs are on different hosts
  Version: 1.0
  Author: Erick Hitter, Automattic
