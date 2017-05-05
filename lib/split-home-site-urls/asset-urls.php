@@ -65,8 +65,8 @@ class Asset_URLs {
 		// add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
 
 		// Front-end modifications
-		// If applied to wp-admin, can introduce CORS issues, at the least
-		if ( ! is_admin() ) {
+		// If applied to non-theme contexts, can introduce CORS and mixed-content issues, at the least
+		if ( ! is_admin() && false === stripos( $_SERVER['REQUEST_URI'], 'wp-login.php' ) ) {
 			// Enqueued assets
 			add_filter( 'script_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
 			add_filter( 'style_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
