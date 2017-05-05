@@ -12,7 +12,7 @@ function rewrite_admin_url_to_site_url( $redirect_to ) {
 	}
 
 	// Grab the path relative to wp-admin
-	$exploded = explode( '/wp-admin', $redirect_to );
+	$exploded = explode( '/wp-admin', $redirect_to , 1 );
 
 	// Build a proper admin URL
 	if ( is_array( $exploded ) && isset( $exploded[1] ) && ! empty( $exploded[1] ) ) {
