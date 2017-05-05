@@ -190,7 +190,7 @@ class Asset_URLs {
 			return $uri;
 		}
 
-		// URI isn't served from a8c CDN, so serve fro mine
+		// URI isn't served from a8c CDN, so serve from ours
 		return $this->staticize( $uri, current_filter() );
 	}
 
@@ -241,6 +241,11 @@ class Asset_URLs {
 
 		// Admin should use its domain to avoid CORS, mixed content, and authentication issues, et al
 		if ( is_admin() ) {
+			return false;
+		}
+
+		// Previews use the site URL when this library is active
+		if ( is_preview() ) {
 			return false;
 		}
 
