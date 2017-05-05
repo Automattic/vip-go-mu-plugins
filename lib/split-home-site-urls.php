@@ -58,12 +58,12 @@ function enforce_logged_out_canonical_redirect() {
 add_action( 'parse_request', __NAMESPACE__ . '\enforce_logged_out_canonical_redirect' );
 
 /**
- * Fix login redirect URLs that point to home URL instead of site URL
+ * Rewrite any admin URLs to use the site URL, not the home URL
  */
-function correct_login_redirect( $login_url, $redirect_to ) {
+function rewrite_admin_url_to_site_url( $redirect_to ) {
 	// Nothing to correct if it's not a wp-admin link
 	if ( empty( $redirect_to ) || false === stripos( $redirect_to, 'wp-admin' ) ) {
-		return $login_url;
+		return $redirect_to;
 	}
 
 	// Grab the path relative to wp-admin
@@ -76,13 +76,35 @@ function correct_login_redirect( $login_url, $redirect_to ) {
 		$redirect_to = admin_url( '/' );
 	}
 
+	return $redirect_to;
+}
+
+/**
+ * Fix admin-related wp_login_url() redirect to use site URL instead of home URL
+ */
+function correct_login_url_redirect( $login_url, $redirect_to ) {
+	// Nothing to correct if it's not a wp-admin link
+	if ( empty( $redirect_to ) || false === stripos( $redirect_to, 'wp-admin' ) ) {
+		return $login_url;
+	}
+
+	$redirect_to = rewrite_admin_url_to_site_url( $redirect_to );
+
 	// Replace the query string wp_login_url() produced, maintaining encoding
 	$login_url = remove_query_arg( 'redirect_to', $login_url );
 	$login_url = add_query_arg( 'redirect_to', urlencode( $redirect_to ), $login_url );
 
 	return $login_url;
 }
-add_filter( 'login_url', __NAMESPACE__ . '\correct_login_redirect', 10, 2 );
+add_filter( 'login_url', __NAMESPACE__ . '\correct_login_url_redirect', 10, 2 );
+
+/**
+ * Fix admin-related login redirects to use site URL instead of home URL
+ */
+add_filter( 'login_redirect',        __NAMESPACE__ . '\rewrite_admin_url_to_site_url' );
+add_filter( 'logout_redirect',       __NAMESPACE__ . '\rewrite_admin_url_to_site_url' );
+add_filter( 'lostpassword_redirect', __NAMESPACE__ . '\rewrite_admin_url_to_site_url' );
+add_filter( 'registration_redirect', __NAMESPACE__ . '\rewrite_admin_url_to_site_url' );
 
 /**
  * Ensure that both home and site URL are valid redirect hosts
