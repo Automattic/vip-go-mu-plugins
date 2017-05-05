@@ -245,7 +245,8 @@ class Asset_URLs {
 		}
 
 		// Previews use the site URL when this library is active
-		if ( is_preview() ) {
+		// Can't use is_preview() because this is called before the query is parsed
+		if ( isset( $_GET['preview'] ) ) {
 			return false;
 		}
 
