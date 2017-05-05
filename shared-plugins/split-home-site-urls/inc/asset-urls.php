@@ -80,7 +80,8 @@ class Asset_URLs {
 			add_filter( 'ngx_http_concat_site_url', array( $this, 'filter_concat_base_url' ) );
 
 			// TODO: Filter images in content
-			add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
+			// add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
+			// TEMP: add `define( 'WPCOM_VIP_USE_JETPACK_PHOTON', true );` to `vip-config/vip-config.php
 		}
 	}
 
