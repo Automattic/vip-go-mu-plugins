@@ -61,24 +61,28 @@ class Asset_URLs {
 	private function setup() {
 		add_action( 'plugins_loaded', array( $this, 'action_plugins_loaded' ) );
 
-		// Enqueued assets
-		add_filter( 'script_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
-		add_filter( 'style_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
-
-		// Theme assets
-		add_filter( 'template_directory_uri', array( $this, 'filter_theme_paths' ) );
-		add_filter( 'stylesheet_directory_uri', array( $this, 'filter_theme_paths' ) );
-		add_filter( 'stylesheet_uri', array( $this, 'filter_stylesheet_uri' ) );
-
-		// Plugin assets
-		add_filter( 'plugins_url', array( $this, 'filter_plugin_paths' ) );
-		add_filter( 'jetpack_static_url', array( $this, 'filter_jetpack_static_urls' ), 999 );
-
 		// Paths to uploaded files
 		// add_filter( 'pre_option_upload_url_path', array( $this, 'filter_upload_url_path' ) );
 
-		// Concatenated assets
-		add_filter( 'ngx_http_concat_site_url', array( $this, 'filter_concat_base_url' ) );
+		// Front-end modifications
+		// If applied to wp-admin, can introduce CORS issues, at the least
+		if ( ! is_admin() ) {
+			// Enqueued assets
+			add_filter( 'script_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
+			add_filter( 'style_loader_src', array( $this, 'filter_enqueued_asset' ), 10, 2 );
+
+			// Theme assets
+			add_filter( 'template_directory_uri', array( $this, 'filter_theme_paths' ) );
+			add_filter( 'stylesheet_directory_uri', array( $this, 'filter_theme_paths' ) );
+			add_filter( 'stylesheet_uri', array( $this, 'filter_stylesheet_uri' ) );
+
+			// Plugin assets
+			add_filter( 'plugins_url', array( $this, 'filter_plugin_paths' ) );
+			add_filter( 'jetpack_static_url', array( $this, 'filter_jetpack_static_urls' ), 999 );
+
+			// Concatenated assets
+			add_filter( 'ngx_http_concat_site_url', array( $this, 'filter_concat_base_url' ) );
+		}
 	}
 
 	/**
