@@ -12,11 +12,11 @@ function rewrite_admin_url_to_site_url( $redirect_to ) {
 	}
 
 	// Grab the path relative to wp-admin
-	preg_match( '#/wp-admin(/)?(.+?)$#i', $redirect_to, $admin_paths );
+	$exploded = explode( '/wp-admin', $redirect_to );
 
 	// Build a proper admin URL
-	if ( is_array( $admin_paths ) && isset( $admin_paths[2] ) ) {
-		$redirect_to = admin_url( $admin_paths[2] );
+	if ( is_array( $exploded ) && isset( $exploded[1] ) && ! empty( $exploded[1] ) ) {
+		$redirect_to = admin_url( $exploded[1] );
 	} else {
 		$redirect_to = admin_url( '/' );
 	}
