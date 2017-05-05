@@ -1,7 +1,7 @@
 <?php
 /*
  Plugin name: Support Split Home and Site Hosts
- Description: Provide a consistent user experience when the home and site URLs are on different hosts
+ Description: Provide a consistent user experience and enforce domain consistency when the home and site URLs are on different hosts.
  Version: 1.0
  Author: Erick Hitter, Automattic
  Author URI: https://vip.wordpress.com/
