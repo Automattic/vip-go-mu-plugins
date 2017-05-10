@@ -21,8 +21,8 @@ DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 set +x
 
 # Nuke the existing SSH config
-rm -rfv ~/.ssh
-mkdir -p ~/.ssh
+rm -fv ~/.ssh/id_rsa
+#mkdir -p ~/.ssh
 
 echo -e $VIP_GITHUB_BUILD_REPO_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
