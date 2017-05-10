@@ -20,9 +20,8 @@ DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 # turn off script echoing for a bit
 set +x
 
-# Nuke the existing SSH config
+# Nuke the existing SSH key
 rm -fv ~/.ssh/id_rsa
-#mkdir -p ~/.ssh
 
 # The private portion of the deploy key is in a Travis repository
 # setting called VIP_GITHUB_BUILD_REPO_DEPLOY_KEY. Before pasting
