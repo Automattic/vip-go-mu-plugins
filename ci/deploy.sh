@@ -24,8 +24,9 @@ set +x
 rm -rfv ~/.ssh
 mkdir -p ~/.ssh
 
-openssl aes-256-cbc -K $encrypted_a47108099c00_key -iv $encrypted_a47108099c00_iv -in ${TRAVIS_BUILD_DIR}/ci/id_rsa.enc -out ~/.ssh/id_rsa -d
+echo -e $VIP_GITHUB_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
+
 
 # Restore script echoing now we've done the private things
 set -x
