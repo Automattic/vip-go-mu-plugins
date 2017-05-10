@@ -24,6 +24,10 @@ set +x
 rm -fv ~/.ssh/id_rsa
 #mkdir -p ~/.ssh
 
+# The private portion of the deploy key is in a Travis repository
+# setting called VIP_GITHUB_BUILD_REPO_DEPLOY_KEY. Before pasting
+# it into the setting, I replaced newlines with \n and surrounded
+# it with double quotes, e.g. "KEY\nHERE\n".
 echo -e $VIP_GITHUB_BUILD_REPO_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
