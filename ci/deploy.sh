@@ -4,15 +4,15 @@
 
 set -ex
 
-if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
-	echo "Not deploying pull requests."
-	exit
-fi
-
-if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
-	echo "Not on the '${DEPLOY_BRANCH}' branch."
-	exit
-fi
+#if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
+#	echo "Not deploying pull requests."
+#	exit
+#fi
+#
+#if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
+#	echo "Not on the '${DEPLOY_BRANCH}' branch."
+#	exit
+#fi
 
 DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 
@@ -27,6 +27,9 @@ mkdir -p ~/.ssh
 echo -e $VIP_GITHUB_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
+ssh -T git@github.com
+
+exit
 
 # Restore script echoing now we've done the private things
 set -x
