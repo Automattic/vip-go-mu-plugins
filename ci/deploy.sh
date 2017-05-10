@@ -20,11 +20,14 @@ DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 # turn off script echoing for a bit
 set +x
 
-# Nuke the existing SSH config
-rm -rfv ~/.ssh
-mkdir -p ~/.ssh
+# Nuke the existing SSH key
+rm -fv ~/.ssh/id_rsa
 
-openssl aes-256-cbc -K $encrypted_a47108099c00_key -iv $encrypted_a47108099c00_iv -in ${TRAVIS_BUILD_DIR}/ci/id_rsa.enc -out ~/.ssh/id_rsa -d
+# The private portion of the deploy key is in a Travis repository
+# setting called VIP_GITHUB_BUILD_REPO_DEPLOY_KEY. Before pasting
+# it into the setting, I replaced newlines with \n and surrounded
+# it with double quotes, e.g. "KEY\nHERE\n".
+echo -e $VIP_GITHUB_BUILD_REPO_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
 # Restore script echoing now we've done the private things
