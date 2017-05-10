@@ -27,14 +27,14 @@ mkdir -p ~/.ssh
 echo -e $VIP_GITHUB_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
-ssh -T git@github.com
-
-exit
-
 # Restore script echoing now we've done the private things
 set -x
 
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
+
+ssh -T git@github.com
+
+exit
 
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
