@@ -24,7 +24,7 @@ set +x
 rm -rfv ~/.ssh
 mkdir -p ~/.ssh
 
-echo -e $VIP_GITHUB_DEPLOY_KEY > ~/.ssh/id_rsa
+echo -e $VIP_GITHUB_BUILD_REPO_DEPLOY_KEY > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
 # Restore script echoing now we've done the private things
