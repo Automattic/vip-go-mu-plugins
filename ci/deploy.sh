@@ -38,8 +38,6 @@ cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
 ssh -T git@github.com
 
-exit
-
 git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
@@ -84,4 +82,7 @@ git add -A .
 # If you get an SSH prompt to enter a passphrase, you likely encrypted then
 # key against the wrong repository
 git commit -am "Built from ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}"
+
+exit
+
 git push
