@@ -4,15 +4,15 @@
 
 set -ex
 
-#if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
-#	echo "Not deploying pull requests."
-#	exit
-#fi
-#
-#if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
-#	echo "Not on the '${DEPLOY_BRANCH}' branch."
-#	exit
-#fi
+if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
+	echo "Not deploying pull requests."
+	exit
+fi
+
+if [[ "$TRAVIS_BRANCH" != "$DEPLOY_BRANCH" ]]; then
+	echo "Not on the '${DEPLOY_BRANCH}' branch."
+	exit
+fi
 
 DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 
@@ -80,7 +80,4 @@ git add -A .
 # If you get an SSH prompt to enter a passphrase, you likely encrypted then
 # key against the wrong repository
 git commit -am "Built from ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}"
-
-exit
-
 git push
