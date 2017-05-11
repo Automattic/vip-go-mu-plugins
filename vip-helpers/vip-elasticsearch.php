@@ -98,7 +98,7 @@ function es_api_search_index( $args ) {
         'args'          => $args,
         'response'      => $response,
         'response_code' => wp_remote_retrieve_response_code( $request ),
-        'elapsed'       => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
+        'elapsed_time'  => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
         'es_time'       => $took,
         'url'           => $service_url,
 	);

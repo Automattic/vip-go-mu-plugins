@@ -10,7 +10,7 @@
  *     'args'          => $args, // Args passed to ES, json decoded
  *     'response'      => $response, // ES results, json decoded
  *     'response_code' => $response_code, // HTTP response code from ES
- *     'elapsed'       => $elapsed, // Total roundtrip time for the request, including network
+ *     'elapsed_time'  => $elapsed_time, // Total roundtrip time for the request, including network
  *     'es_time'       => $took, // How long ES took to run the request
  *     'url'           => $service_url, // url to the ES server
  *     'backtrace'     => wp_debug_backtrace_summary(), // Optional backtrace
@@ -40,7 +40,7 @@ class Debug_Bar_Elasticsearch extends Debug_Bar_Panel {
 			$out .= '<ol class="wpd-queries">';
 
 			foreach ( $wp_elasticsearch_queries_log as $q ) {
-				$total_time        += $q['elapsed'];
+				$total_time        += $q['elapsed_time'];
 				$total_engine_time += $q['es_time'];
 
 				$out .= "<li>";
@@ -49,7 +49,7 @@ class Debug_Bar_Elasticsearch extends Debug_Bar_Panel {
 
 				$out .= '<h3>Response:</h3>';
 				$out .= 'ES time: ' . number_format( sprintf( '%0.1f', $q['es_time'] ), 1 ) . 'ms<br />';
-				$out .= 'Roundtrip time: ' . number_format( sprintf( '%0.1f', $q['elapsed'] ), 1 ) . 'ms<br />';
+				$out .= 'Roundtrip time: ' . number_format( sprintf( '%0.1f', $q['elapsed_time'] ), 1 ) . 'ms<br />';
 
 				$out .= '<textarea readonly rows=20 cols=100>' . esc_textarea( json_encode( $q['response'], JSON_PRETTY_PRINT ) ) . '</textarea>';
 
