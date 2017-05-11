@@ -174,7 +174,7 @@ jQuery( function ( $ ) {
 		$( '.checkforspam' ).click();
 	}
 	
-	if ( typeof 'MutationObserver' !== 'undefined' ) {
+	if ( typeof MutationObserver !== 'undefined' ) {
 		// Dynamically add the "X" next the the author URL links when a comment is quick-edited.
 		var comment_list_container = document.getElementById( 'the-comment-list' );
 
