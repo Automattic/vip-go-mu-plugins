@@ -97,7 +97,7 @@ class VIP_Scrub_Posts extends WPCOM_VIP_CLI_Command {
 					}
 					wp_delete_post( $post_id, true );
 
-					if ( 100 % $count ) {
+					if ( 0 === $count % 100 ) {
 						sleep( 2 );
 						$this->stop_the_insanity();
 					}
