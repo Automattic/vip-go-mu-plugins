@@ -1,6 +1,6 @@
 <?php
 
-class Search_Replace_Command extends WP_CLI_Command {
+class VIP_Search_Replace_Command extends WP_CLI_Command {
 
 	private $dry_run;
 	private $export_handle = false;
