@@ -213,7 +213,7 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 					$count = $this->php_handle_col( $col, $primary_keys, $table, $old, $new );
 				} else {
 					$type = 'SQL';
-					$count = $this->sql_handle_col( $col, $table, $old, $new );
+					$count = $this->sql_handle_col( $col, $primary_keys, $table, $old, $new );
 				}
 
 				$report[] = array( $table, $col, $count, $type );
@@ -308,17 +308,57 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 	private function sql_handle_col( $col, $primary_keys, $table, $old, $new ) {
 		global $wpdb;
 
-		if ( $this->dry_run ) {
-			$count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(`$col`) FROM `$table` WHERE `$col` LIKE %s;", '%' . self::esc_like( $old ) . '%' ) );
-		} else {
-			$count = $wpdb->query( $wpdb->prepare( "UPDATE `$table` SET `$col` = REPLACE(`$col`, %s, %s);", $old, $new ) );
-		}
+		list( $primary_key ) = $primary_keys;
+		$primary_key = sanitize_key( $primary_key );
+
+		$max_id = $wpdb->get_var( "SELECT MAX(`$primary_key`) FROM `$table` LIMIT 1" );
 
 		if ( $this->verbose ) {
-			$time = round( microtime( true ) - $this->start_time, 3 );
-			WP_CLI::log( sprintf( '%d rows affected using SQL (in %ss).', $count, $time ) );
+			WP_CLI::log( sprintf( 'Max ID for column: %d', $max_id ) );
 		}
-		return $count;
+
+		$total_count = 0;
+		$current_index = 0;
+		$per_query = 5000;
+
+		while ( $current_index <= $max_id ) {
+			$count = 0;
+			$start_index = $current_index;
+			$end_index = $current_index + $per_query;
+
+			if ( $this->verbose ) {
+				$start_time = microtime( true );
+				WP_CLI::log( sprintf( '-%s Processing row IDs %d to %d', ( $this->dry_run ? ' (DRY RUN)' : '' ), $start_index, $end_index ) );
+			}
+
+			if ( $this->dry_run ) {
+				$sql = $wpdb->prepare(
+					"SELECT COUNT(`$col`) FROM `$table` WHERE `$col` LIKE %s AND `$primary_key` BETWEEN %d AND %d;",
+					'%' . self::esc_like( $old ) . '%',
+					$start_index,
+					$end_index
+				);
+				$count = $wpdb->get_var( $sql );
+			} else {
+				$sql = $wpdb->prepare(
+					"UPDATE `$table` SET `$col` = REPLACE(`$col`, %s, %s) WHERE `$primary_key` BETWEEN %d AND %d;",
+					$old,
+					$new,
+					$start_index,
+					$end_index
+				);
+				$count = $wpdb->query( $sql );
+			}
+
+			if ( $this->verbose ) {
+				$time = round( microtime( true ) - $start_time, 3 );
+				WP_CLI::log( sprintf( '-- %d rows affected using SQL (in %ss).', $count, $time ) );
+			}
+
+			$total_count += $count;
+			$current_index = $end_index + 1; // we use a BETWEEN clause, which is an inclusive check (`<= AND >=`) so bump by 1 to avoid re-checking the end index
+		}
+		return $total_count;
 	}
 
 	private function php_handle_col( $col, $primary_keys, $table, $old, $new ) {
