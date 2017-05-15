@@ -80,7 +80,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
 				$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
 			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
-				$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` is not an administrator on it.' . PHP_EOL . 'From within `wp shell` on your WPCom sandbox: `add_user_to_blog( %d, get_user_by( "login", "wpcomvip" )->ID, "administrator" ); `', WPCOM_VIP_MACHINE_USER_LOGIN, Jetpack_Options::get_option( 'id' ) );
+                                $jetpack_shadow_site_id = Jetpack_Options::get_option( 'id' );
+                                if ( false === $jetpack_shadow_site_id ) {
+                                        $jetpack_shadow_site_id = '%JETPACK_SHADOW_SITE_ID%';
+                                }
+                                $message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` is not an administrator on it.' . PHP_EOL . 'From within `wp shell` on your WPCom sandbox: `add_user_to_blog( %d, get_user_by( "login", "wpcomvip" )->ID, "administrator" ); `', WPCOM_VIP_MACHINE_USER_LOGIN, $jetpack_shadow_site_id );
 			}
 			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
 		}
