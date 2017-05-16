@@ -726,6 +726,6 @@ function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 * Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
 *
 * This cannot be included inside Jetpack because it ships with caching disabled by default.
-* By enabling caching it's possible to save time in uncached		 page renders.
+* By enabling caching it's possible to save time in uncached page renders.
 **/
 add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
