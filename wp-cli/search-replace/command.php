@@ -195,7 +195,6 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 				}
 
 				if ( $this->verbose ) {
-					$this->start_time = microtime( true );
 					WP_CLI::log( sprintf( 'Checking: %s.%s', $table, $col ) );
 				}
 
@@ -219,6 +218,13 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 				$report[] = array( $table, $col, $count, $type );
 
 				$total += $count;
+
+				if ( $this->verbose ) {
+					// Add a visual break betweek cols
+					WP_CLI::log( '' );
+					WP_CLI::log( '---==---' );
+					WP_CLI::log( '' );
+				}
 			}
 		}
 
@@ -236,6 +242,9 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 		$table->setRows( $report );
 		$table->display();
 
+		$runtime = round( microtime( true ) - $this->start_time, 3 );
+		$runtime_message = sprintf( ' Total run-time: %ss', $runtime );
+
 		if ( ! $this->dry_run ) {
 			if ( ! empty( $assoc_args['export'] ) ) {
 				$success_message = "Made {$total} replacements and exported to {$assoc_args['export']}.";
@@ -245,10 +254,14 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 					$success_message .= ' Please remember to flush your persistent object cache with `wp cache flush`.';
 				}
 			}
+
+			$success_message .= $runtime_message;
+
 			WP_CLI::success( $success_message );
 		}
 		else {
 			$success_message = ( 1 === $total ) ? '%d replacement to be made.' : '%d replacements to be made.';
+			$success_message .= $runtime_message;
 			WP_CLI::success( sprintf( $success_message, $total ) );
 		}
 	}
@@ -265,7 +278,7 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 		$replacer = new \WP_CLI\SearchReplacer( $old, $new, $this->recurse_objects, $this->regex, $this->regex_flags );
 		$col_counts = array_fill_keys( $all_columns, 0 );
 		if ( $this->verbose ) {
-			$this->start_time = microtime( true );
+			$export_start_time = microtime( true );
 			WP_CLI::log( sprintf( 'Checking: %s', $table ) );
 		}
 
@@ -298,7 +311,7 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 		}
 
 		if ( $this->verbose ) {
-			$time = round( microtime( true ) - $this->start_time, 3 );
+			$time = round( microtime( true ) - $export_start_time, 3 );
 			WP_CLI::log( sprintf( '%d columns and %d total rows affected using PHP (in %ss).', $total_cols, $total_rows, $time ) );
 		}
 
@@ -317,9 +330,10 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 			WP_CLI::log( sprintf( 'Max ID for column: %d', $max_id ) );
 		}
 
+		$col_start_time = microtime( true );
 		$total_count = 0;
 		$current_index = 0;
-		$per_query = 5000;
+		$per_query = 10000;
 
 		while ( $current_index <= $max_id ) {
 			$count = 0;
@@ -327,8 +341,8 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 			$end_index = $current_index + $per_query;
 
 			if ( $this->verbose ) {
-				$start_time = microtime( true );
-				WP_CLI::log( sprintf( '-%s Processing row IDs %d to %d', ( $this->dry_run ? ' (DRY RUN)' : '' ), $start_index, $end_index ) );
+				$batch_start_time = microtime( true );
+				WP_CLI::log( sprintf( '-%s Processing `%s.%s` row IDs %d => %d', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $start_index, $end_index ) );
 			}
 
 			if ( $this->dry_run ) {
@@ -351,13 +365,19 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 			}
 
 			if ( $this->verbose ) {
-				$time = round( microtime( true ) - $start_time, 3 );
-				WP_CLI::log( sprintf( '-- %d rows affected using SQL (in %ss).', $count, $time ) );
+				$time = round( microtime( true ) - $batch_start_time, 3 );
+				WP_CLI::log( sprintf( '-- %d rows %s using SQL (in %ss).', $count, ( $this->dry_run ? 'found' : 'updated' ), $time ) );
 			}
 
 			$total_count += $count;
 			$current_index = $end_index + 1; // we use a BETWEEN clause, which is an inclusive check (`<= AND >=`) so bump by 1 to avoid re-checking the end index
 		}
+
+		if ( $this->verbose ) {
+			$runtime = round( microtime( true ) - $col_start_time, 3 );
+			WP_CLI::log( sprintf( '%s %s rows using SQL (in %ss)', ( $this->dry_run ? 'Found' : 'Updated' ), number_format( $total_count ), $runtime ) );
+		}
+
 		return $total_count;
 	}
 
@@ -365,12 +385,18 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 		global $wpdb;
 
 		$count = 0;
+		$php_start_time = microtime( true );
 		$replacer = new \WP_CLI\SearchReplacer( $old, $new, $this->recurse_objects, $this->regex, $this->regex_flags );
 
 		$where = $this->regex ? '' : " WHERE `$col`" . $wpdb->prepare( ' LIKE %s', '%' . self::esc_like( $old ) . '%' );
 		$primary_keys_sql = esc_sql( implode( ',', $primary_keys ) );
 		$col_sql = esc_sql( $col );
 		$rows = $wpdb->get_results( "SELECT {$primary_keys_sql} FROM `{$table}` {$where}" );
+
+		if ( $this->verbose ) {
+			WP_CLI::log( 'Processing %s rows', count( $rows ) );
+		}
+
 		foreach ( $rows as $keys ) {
 			$where_sql = '';
 			foreach( (array) $keys as $k => $v ) {
@@ -389,6 +415,10 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 				continue;
 			}
 
+			if ( $this->verbose ) {
+				WP_CLI::log( sprintf( '-%s processing `%s.%s` => %s', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $where_sql ) );
+			}
+
 			if ( $this->dry_run ) {
 				if ( $value != $col_value )
 					$count++;
@@ -403,7 +433,7 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 		}
 
 		if ( $this->verbose ) {
-			$time = round( microtime( true ) - $this->start_time, 3 );
+			$time = round( microtime( true ) - $php_start_time, 3 );
 			WP_CLI::log( sprintf( '%d rows affected using PHP (in %ss).', $count, $time ) );
 		}
 
