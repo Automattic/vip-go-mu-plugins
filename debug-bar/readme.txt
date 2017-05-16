@@ -1,9 +1,9 @@
 === Debug Bar ===
-Contributors: wordpressdotorg, ryan, westi, koopersmith, duck_, mitchoyoshitaka, dd32
+Contributors: wordpressdotorg, ryan, westi, koopersmith, duck_, mitchoyoshitaka, dd32, jrf, obenland
 Tags: debug
-Tested up to: 4.5
-Stable tag: 0.8.4
-Requires at least: 3.1
+Tested up to: 4.8
+Stable tag: 0.9
+Requires at least: 3.4
 
 Adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information.
 
@@ -13,13 +13,26 @@ Adds a debug menu to the admin bar that shows query, cache, and other helpful de
 
 A must for developers!
 
-When WP_DEBUG is enabled it also tracks PHP Warnings and Notices to make them easier to find.
+When `WP_DEBUG` is enabled it also tracks PHP Warnings and Notices to make them easier to find.
 
-When SAVEQUERIES is enabled the mysql queries are tracked and displayed.
+When `SAVEQUERIES` is enabled the mysql queries are tracked and displayed.
+
+To enable these options, add the following code to your `wp-config.php` file:
+`
+define( 'WP_DEBUG', true );
+define( 'SAVEQUERIES', true );
+`
 
 Add a PHP/MySQL console with the [Debug Bar Console plugin](https://wordpress.org/plugins/debug-bar-console/).
 
+There are numerous other add-ons available to get more insight into, for instance, the registered Post Types, Shortcodes, WP Cron, Language file loading, Actions and Filters and so on. Just [search the plugin directory for 'Debug Bar'](https://wordpress.org/plugins/search/debug+bar/).
+
 == Upgrade Notice ==
+
+= 0.9 =
+Added panel navigation to toolbar.
+Improved localization support.
+Security fixes.
 
 = 0.8.4 =
 Updated to avoid incompatibilities with some extensions.
@@ -80,6 +93,11 @@ Added deprecated function usage tracking
 Initial Release
 
 == Changelog ==
+
+= 0.9 =
+Added panel navigation to toolbar.
+Improved localization support.
+Security fixes.
 
 = 0.8.4 =
 Updated to avoid incompatibilities with some extensions.
