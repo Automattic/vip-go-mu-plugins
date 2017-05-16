@@ -3,7 +3,7 @@
  * Plugin Name: VaultPress
  * Plugin URI: http://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>. Activate, enter your registration key, and never worry again. <a href="http://vaultpress.com/help/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">Need some help?</a>
- * Version: 1.8.8
+ * Version: 1.8.9
  * Author: Automattic
  * Author URI: http://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
@@ -18,7 +18,7 @@ class VaultPress {
 	var $option_name          = 'vaultpress';
 	var $auto_register_option = 'vaultpress_auto_register';
 	var $db_version           = 4;
-	var $plugin_version       = '1.8.8';
+	var $plugin_version       = '1.8.9';
 
 	function __construct() {
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
@@ -511,22 +511,7 @@ class VaultPress {
 					<h2><?php _e( 'The VaultPress plugin <strong>requires a subscription</strong>.', 'vaultpress' ); ?></h2>
 					<p class="vp_card-description"><?php _e( 'Get realtime backups, automated security scanning, and support from WordPress&nbsp;experts.', 'vaultpress' ); ?></p>
 					<a class="vp_button-mega" href="https://vaultpress.com/plugin/?utm_source=plugin-unregistered&amp;utm_medium=view-plans-and-pricing&amp;utm_campaign=1.0-plugin"><?php _e( 'View plans and pricing&nbsp;&raquo;', 'vaultpress' ); ?></a>
-			</div>
-
-				<?php if ( $jetpack_available ): ?>
-					<div class="vp_card half connect-via-jetpack">
-						<h2><?php _e( 'Instantly connect through Jetpack', 'vaultpress' ); ?></h2>
-						<p class="vp_card-description"><?php printf( __( 'Start a <strong>free</strong> five-day trial of VaultPress Lite. Registering will create a VaultPress account for %s.', 'vaultpress' ), $jetpack_email); ?></p>
-				<form method="post" action="">
-					<fieldset>
-								<button class="vp_button-mega"><?php _e( 'Start free trial', 'vaultpress' ); ?></button>
-						<input type="hidden" name="action" value="register" />
-								<input type="hidden" name="key_source" value="jetpack" />
-						<?php wp_nonce_field( 'vaultpress_register' ); ?>
-					</fieldset>
-				</form>
-			</div>
-				<?php endif ?>
+				</div>
 
 				<div class="vp_card half">
 					<h2><?php _e( 'Already have a VaultPress&nbsp;account?', 'vaultpress' ); ?></h2>
