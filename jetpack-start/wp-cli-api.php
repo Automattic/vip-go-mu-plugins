@@ -83,6 +83,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			// Network activation request
 			if ( is_int( $site ) ) {
 				switch_to_blog( $site );
+
+				WP_CLI::line( sprintf( 'Starting %s (site %d)', home_url( '/' ), $site ) );
 			}
 
 			$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
@@ -116,6 +118,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 			// Only restore if we could've switched
 			if ( is_int( $site ) ) {
+				WP_CLI::line( sprintf( 'Done with %s, on to the next site!', home_url( '/' ) ) );
+
 				restore_current_blog();
 			}
 		}
