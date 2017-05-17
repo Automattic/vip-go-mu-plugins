@@ -119,6 +119,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			// Only restore if we could've switched
 			if ( is_int( $site ) ) {
 				WP_CLI::line( sprintf( 'Done with %s, on to the next site!', home_url( '/' ) ) );
+				WP_CLI::line( '' );
 
 				restore_current_blog();
 			}
