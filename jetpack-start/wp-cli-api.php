@@ -46,10 +46,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 * [--force]
 	 * : Provision even if Jetpack is already connected.
 	 *
+	 * [--network]
+	 * : Connect all subsites of this multisite network
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp jetpack-start api connect
 	 *     wp jetpack-start api connect --force
+	 *     wp jetpack-start api connect --network
+	 *     wp jetpack-start api connect --force --network
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
@@ -61,34 +66,54 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			WP_CLI::warning( 'JETPACK_DEV_DEBUG mode is enabled. Please remove the constant after connection.' );
 		}
 
-		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
-		if ( ! $force_connection && Jetpack::is_active() ) {
-			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+		$network = WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
+		if ( $network && is_multisite() ) {
+			// TODO: get sites list and populate $sites
+			$sites = [ false ];
+		} else {
+			$sites = [ false ];
 		}
 
-		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
-		$user = $this->maybe_create_user();
-		if ( is_wp_error( $user ) ) {
-			WP_CLI::error( $user->get_error_message() );
-		}
-
-		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
-		$data = $this->api_fetch_keys( $user );
-		if ( is_wp_error( $data ) ) {
-			$message = $data->get_error_message();
-			// Use strpos because our API method appends stuff to the error message
-			if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
-				$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
-			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
-				$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` WP.com user is either not a member of the site or not an administrator. Please use `add_user_to_blog` on your WP.com sandbox to add the account before continuing.', WPCOM_VIP_MACHINE_USER_LOGIN );
+		foreach ( $sites as $site ) {
+			// Network activation request
+			if ( is_int( $site ) ) {
+				switch_to_blog( $site );
 			}
-			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
+
+			$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
+			if ( ! $force_connection && Jetpack::is_active() ) {
+				WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+			}
+
+			WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
+			$user = $this->maybe_create_user();
+			if ( is_wp_error( $user ) ) {
+				WP_CLI::error( $user->get_error_message() );
+			}
+
+			WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
+			$data = $this->api_fetch_keys( $user );
+			if ( is_wp_error( $data ) ) {
+				$message = $data->get_error_message();
+				// Use strpos because our API method appends stuff to the error message
+				if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
+					$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
+				} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
+					$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` WP.com user is either not a member of the site or not an administrator. Please use `add_user_to_blog` on your WP.com sandbox to add the account before continuing.', WPCOM_VIP_MACHINE_USER_LOGIN );
+				}
+				WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
+			}
+
+			WP_CLI::line( '-- Adding keys to site' );
+			$this->install_keys( $data );
+
+			update_option( 'vip_jetpack_start_connected_on', time(), false );
+
+			// Only restore if we could've switched
+			if ( is_int( $site ) ) {
+				restore_current_blog();
+			}
 		}
-
-		WP_CLI::line( '-- Adding keys to site' );
-		$this->install_keys( $data );
-
-		update_option( 'vip_jetpack_start_connected_on', time(), false );
 
 		WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
 	}
