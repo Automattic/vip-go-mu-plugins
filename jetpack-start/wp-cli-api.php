@@ -66,12 +66,17 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			WP_CLI::warning( 'JETPACK_DEV_DEBUG mode is enabled. Please remove the constant after connection.' );
 		}
 
+		$sites = [ false ];
+
 		$network = WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
 		if ( $network && is_multisite() ) {
-			// TODO: get sites list and populate $sites
-			$sites = [ false ];
-		} else {
-			$sites = [ false ];
+			$sites = get_sites( [
+				'public'   => null,
+				'archived' => 0,
+				'spam'     => 0,
+				'deleted'  => 0,
+				'fields'   => 'ids',
+			] );
 		}
 
 		foreach ( $sites as $site ) {
