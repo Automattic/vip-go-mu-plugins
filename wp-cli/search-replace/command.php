@@ -401,6 +401,8 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 			WP_CLI::log( 'Processing %s rows', count( $rows ) );
 		}
 
+		$i = 0;
+
 		foreach ( $rows as $keys ) {
 			$where_sql = '';
 			foreach( (array) $keys as $k => $v ) {
@@ -433,6 +435,10 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 				}
 
 				$count += $wpdb->update( $table, array( $col => $value ), $where );
+			}
+			if ( ++$i === 100 ) {
+				$this->stop_the_insanity();
+				$i = 0;
 			}
 		}
 
