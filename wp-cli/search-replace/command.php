@@ -1,6 +1,6 @@
 <?php
 
-class VIP_Search_Replace_Command extends WP_CLI_Command {
+class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 
 	private $dry_run;
 	private $export_handle = false;
@@ -129,6 +129,8 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 		$this->skip_columns = explode( ',', \WP_CLI\Utils\get_flag_value( $assoc_args, 'skip-columns' ) );
 		$this->include_columns = array_filter( explode( ',', \WP_CLI\Utils\get_flag_value( $assoc_args, 'include-columns' ) ) );
 
+		$this->start_bulk_operation();
+
 		if ( $old === $new && ! $this->regex ) {
 			WP_CLI::warning( "Replacement value '{$old}' is identical to search value '{$new}'. Skipping operation." );
 			exit;
@@ -225,6 +227,7 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 					WP_CLI::log( '---==---' );
 					WP_CLI::log( '' );
 				}
+				$this->stop_the_insanity();
 			}
 		}
 
@@ -264,6 +267,7 @@ class VIP_Search_Replace_Command extends WP_CLI_Command {
 			$success_message .= $runtime_message;
 			WP_CLI::success( sprintf( $success_message, $total ) );
 		}
+		$this->end_bulk_operation();
 	}
 
 	private function php_export_table( $table, $old, $new ) {
