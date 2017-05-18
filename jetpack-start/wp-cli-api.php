@@ -101,13 +101,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	private function connect_site( $assoc_args ) {
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
 		if ( ! $force_connection && Jetpack::is_active() ) {
-			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+			WP_CLI::warning( 'Jetpack is already active; skipping. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+			return;
 		}
 
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
 		$user = $this->maybe_create_user();
 		if ( is_wp_error( $user ) ) {
-			WP_CLI::error( $user->get_error_message() );
+			WP_CLI::warning( $user->get_error_message() );
+			return;
 		}
 
 		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
@@ -120,7 +122,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
 				$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` WP.com user is either not a member of the site or not an administrator. Please use `add_user_to_blog` on your WP.com sandbox to add the account before continuing.', WPCOM_VIP_MACHINE_USER_LOGIN );
 			}
-			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
+			WP_CLI::warning( 'Failed to fetch keys from Jetpack Start: ' . $message );
+			return;
 		}
 
 		WP_CLI::line( '-- Adding keys to site' );
