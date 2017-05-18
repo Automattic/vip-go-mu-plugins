@@ -84,7 +84,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 				WP_CLI::line( sprintf( 'Starting %s (site %d)', home_url( '/' ), $site ) );
 
-				$this->connect_site();
+				$this->connect_site( $assoc_args );
 
 				WP_CLI::line( sprintf( 'Done with %s, on to the next site!', home_url( '/' ) ) );
 				WP_CLI::line( '' );
@@ -92,13 +92,13 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 			switch_to_blog( $starting_blog_id );
 		} else {
-			$this->connect_site();
+			$this->connect_site( $assoc_args );
 		}
 
 		WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
 	}
 
-	private function connect_site() {
+	private function connect_site( $assoc_args ) {
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
 		if ( ! $force_connection && Jetpack::is_active() ) {
 			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
