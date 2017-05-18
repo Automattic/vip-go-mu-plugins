@@ -994,7 +994,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		$test_directories[] = WP_PLUGIN_DIR . '/' . $folder;
 	} else {
 		$test_directories[] = WP_PLUGIN_DIR;
-		$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
+		$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
 	}
 
 	$includepath = null;
