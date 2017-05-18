@@ -222,6 +222,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function install_keys( $data ) {
+		$site_url = get_site_url();
+
 		$runcommand_args = [
 			'exit_error' => false,
 		];
@@ -230,8 +232,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '---' );
 		WP_CLI::line( sprintf( 'Got Akismet key: %s', $akismet_key ) );
 		$akismet_result = WP_CLI::runcommand( sprintf(
-			'jetpack-keys akismet --akismet_key=%s',
-			escapeshellarg( $akismet_key )
+			'jetpack-keys akismet --akismet_key=%s --url=%s',
+			escapeshellarg( $akismet_key ),
+			escapeshellarg( $site_url )
 		), $runcommand_args );
 		WP_CLI::line( '' );
 
@@ -239,8 +242,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '---' );
 		WP_CLI::line( sprintf( 'Got VaultPress key: %s', $vaultpress_key ) );
 		$vaultpress_result = WP_CLI::runcommand( sprintf(
-			'jetpack-keys vaultpress --vaultpress_key=%s',
-			escapeshellarg( $vaultpress_key )
+			'jetpack-keys vaultpress --vaultpress_key=%s --url=%s',
+			escapeshellarg( $vaultpress_key ),
+			escapeshellarg( $site_url )
 		), $runcommand_args );
 		WP_CLI::line( '' );
 
@@ -250,11 +254,12 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '---' );
 		WP_CLI::line( sprintf( 'Got Jetpack ID: %s', $jetpack_id ) );
 		$jetpack_result = WP_CLI::runcommand( sprintf(
-			'jetpack-keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s',
+			'jetpack-keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s --url=%s',
 			escapeshellarg( $jetpack_id ),
 			escapeshellarg( $jetpack_secret ),
 			escapeshellarg( $jetpack_access_token ),
-			escapeshellarg( WPCOM_VIP_MACHINE_USER_LOGIN )
+			escapeshellarg( WPCOM_VIP_MACHINE_USER_LOGIN ),
+			escapeshellarg( $site_url )
 		), $runcommand_args );
 		WP_CLI::line( '' );
 	}
