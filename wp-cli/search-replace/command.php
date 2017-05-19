@@ -338,7 +338,7 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 		$col_start_time = microtime( true );
 		$total_count = 0;
 		$current_index = 0;
-		$per_query = 10000;
+		$per_query = 50000;
 
 		while ( $current_index <= $max_id ) {
 			$count = 0;
