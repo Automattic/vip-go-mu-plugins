@@ -25,9 +25,17 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			$site_id = Jetpack_Options::get_option( 'id' );
 			if ( empty( $site_id ) ) {
 				WP_CLI::error( 'Could not get WP.com blog_id from the local Jetpack install. Please specify the `--jetpack_site_id` of the Jetpack Shadow site to cancel the subscription. You can get this from the Jetpack Debugger or using WP.com Network Admin.' );
+				return;
 			}
+
+			WP_CLI::line( 'Disconnecting Jetpack...' );
+			WP_CLI::runcommand( sprintf(
+				'jetpack disconnect blog --url=%s',
+				escapeshellarg( get_site_url() )
+			) );
 		}
 
+		WP_CLI::line( 'Cancelling Subscription...' );
 		$data = $this->api_cancel_subscription( $site_id );
 		if ( is_wp_error( $data ) ) {
 			WP_CLI::error( $data->get_error_message() );
