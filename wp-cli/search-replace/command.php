@@ -347,7 +347,7 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 
 			if ( $this->verbose ) {
 				$batch_start_time = microtime( true );
-				WP_CLI::log( sprintf( '-%s Processing `%s.%s` row IDs %d => %d', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $start_index, $end_index ) );
+				WP_CLI::log( sprintf( '-%s Processing `%s.%s` row IDs %d => %d (batches left: %d)', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $start_index, $end_index, ( ( $max_id - $end_index ) / $per_query ) ) );
 			}
 
 			if ( $this->dry_run ) {
@@ -398,13 +398,17 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 		$col_sql = esc_sql( $col );
 		$rows = $wpdb->get_results( "SELECT {$primary_keys_sql} FROM `{$table}` {$where}" );
 
+		$total_rows = count( $rows );
+
 		if ( $this->verbose ) {
-			WP_CLI::log( 'Processing %s rows', count( $rows ) );
+			WP_CLI::log( sprintf( 'Processing %s rows', $total_rows ) );
 		}
 
-		$i = 0;
+		$current_index = 0;
 
 		foreach ( $rows as $keys ) {
+			$row_start_time = microtime( true );
+
 			$where_sql = '';
 			foreach( (array) $keys as $k => $v ) {
 				if ( strlen( $where_sql ) ) {
@@ -419,11 +423,14 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 			$value = $replacer->run( $col_value );
 
 			if ( $value === $col_value ) {
+				if ( $this->verbose ) {
+					WP_CLI::log( sprintf( '-%s skipping `%s.%s` (value unchanged) => %s (remaining: %d)', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $where_sql, ( $total_rows - $current_index ) ) );
+				}
 				continue;
 			}
 
 			if ( $this->verbose ) {
-				WP_CLI::log( sprintf( '-%s processing `%s.%s` => %s', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $where_sql ) );
+				WP_CLI::log( sprintf( '-%s processing `%s.%s` => %s (remaining: %d)', ( $this->dry_run ? ' (DRY RUN)' : '' ), $table, $col, $where_sql, ( $total_rows - $current_index ) ) );
 			}
 
 			if ( $this->dry_run ) {
@@ -437,9 +444,14 @@ class VIP_Search_Replace_Command extends WPCOM_VIP_CLI_Command {
 
 				$count += $wpdb->update( $table, array( $col => $value ), $where );
 			}
-			if ( ++$i === 100 ) {
+
+			$current_index++;
+			if ( 0 === $current_index % 100 ) {
 				$this->stop_the_insanity();
-				$i = 0;
+			}
+
+			if ( $this->verbose ) {
+				WP_CLI::log( sprintf( '- done in %ss', round( microtime( true ) - $row_start_time, 3 ) ) );
 			}
 		}
 
