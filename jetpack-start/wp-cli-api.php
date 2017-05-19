@@ -70,8 +70,14 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		}
 
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
-		if ( ! $force_connection && Jetpack::is_active() ) {
-			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+		if ( Jetpack::is_active() ) {
+			if ( ! $force_connection ) {
+				WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+				return;
+			}
+
+			// Since we want to force the connection, let's disconnect Jetpack and cancel first
+			$this->cancel( [], [] );
 		}
 
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
