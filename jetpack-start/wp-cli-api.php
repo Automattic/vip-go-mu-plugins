@@ -79,12 +79,20 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			// Instead of repeatedly calling restore_current_blog() just to switch again, manually switch back at the end
 			$starting_blog_id = get_current_blog_id();
 
+			// Track whether there were any failures, to adjust messaging
+			$success = true;
+
 			foreach ( $sites as $site ) {
 				switch_to_blog( $site );
 
 				WP_CLI::line( sprintf( 'Starting %s (site %d)', home_url( '/' ), $site ) );
 
-				$this->connect_site( $assoc_args );
+				$_success = $this->connect_site( $assoc_args );
+
+				// Just one failure to flip the message from success
+				if ( true === $success && $success !== $_success ) {
+					$success = $_success;
+				}
 
 				WP_CLI::line( sprintf( 'Done with %s, on to the next site!', home_url( '/' ) ) );
 				WP_CLI::line( '' );
@@ -92,10 +100,14 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 			switch_to_blog( $starting_blog_id );
 		} else {
-			$this->connect_site( $assoc_args );
+			$success = $this->connect_site( $assoc_args );
 		}
 
-		WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
+		if ( $success ) {
+			WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
+		} else {
+			WP_CLI::warning( 'Attempt completed. Please resolve the issues noted above and try again.' );
+		}
 	}
 
 	private function connect_site( $assoc_args ) {
@@ -116,7 +128,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$user = $this->maybe_create_user();
 		if ( is_wp_error( $user ) ) {
 			WP_CLI::warning( $user->get_error_message() );
-			return;
+			return false;
 		}
 
 		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
@@ -134,13 +146,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
                                 $message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` is not an administrator on it.' . PHP_EOL . 'From within `wp shell` on your WPCom sandbox: `add_user_to_blog( %d, get_user_by( "login", "wpcomvip" )->ID, "administrator" ); `', WPCOM_VIP_MACHINE_USER_LOGIN, $jetpack_shadow_site_id );
 			}
 			WP_CLI::warning( 'Failed to fetch keys from Jetpack Start: ' . $message );
-			return;
+			return false;
 		}
 
 		WP_CLI::line( '-- Adding keys to site' );
 		$this->install_keys( $data );
 
 		update_option( 'vip_jetpack_start_connected_on', time(), false );
+
+		return true;
 	}
 
 	private function maybe_create_user() {
