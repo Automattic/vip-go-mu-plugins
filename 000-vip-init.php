@@ -32,6 +32,12 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+// Define these values just in case
+defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
+defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAME', 'VIP' );
+defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
+defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
+
 $hostname = gethostname();
 define( 'WPCOM_SANDBOXED', false !== strpos( $hostname, '_web_dev_' ) );
 
