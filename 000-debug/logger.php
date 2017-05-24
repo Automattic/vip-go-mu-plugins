@@ -1,9 +1,11 @@
 <?php
 
 /**
- * debug.php
+ * logger.php
  *
  * This file contains helpful debugging functions for use on sandboxes.
+ *
+ * This file was stolen from WP.com and renamed to `logger.php`
  */
 
 /**
