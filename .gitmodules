@@ -25,9 +25,6 @@
 [submodule "query-monitor"]
 	path = query-monitor
 	url = git@github.com:johnbillion/query-monitor.git
-[submodule "wp-cron-control"]
-	path = wp-cron-control
-	url = https://github.com/Automattic/WP-Cron-Control.git
 [submodule "shared-plugins/msm-sitemap"]
 	path = shared-plugins/msm-sitemap
 	url = git@github.com:Automattic/msm-sitemap.git

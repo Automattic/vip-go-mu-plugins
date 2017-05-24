@@ -11,31 +11,10 @@ jQuery( function ( $ ) {
 		var thisId = $(this).attr('commentid');
 		$(this).insertAfter('#comment-' + thisId + ' .author strong:first').show();
 	});
-	$('#the-comment-list')
-		.find('tr.comment, tr[id ^= "comment-"]')
-		.find('.column-author a[href^="http"]:first') // Ignore mailto: links, which would be the comment author's email.
-		.each(function () {
-		var linkHref = $(this).attr( 'href' );
-		
-		// Ignore any links to the current domain, which are diagnostic tools, like the IP address link
-		// or any other links another plugin might add.
-		var currentHostParts = document.location.href.split( '/' );
-		var currentHost = currentHostParts[0] + '//' + currentHostParts[2] + '/';
-		
-		if ( linkHref.indexOf( currentHost ) != 0 ) {
-			var thisCommentId = $(this).parents('tr:first').attr('id').split("-");
 
-			$(this)
-				.attr("id", "author_comment_url_"+ thisCommentId[1])
-				.after(
-					$( '<a href="#" class="remove_url">x</a>' )
-						.attr( 'commentid', thisCommentId[1] )
-						.attr( 'title', WPAkismet.strings['Remove this URL'] )
-				);
-		}
-	});
+	akismet_enable_comment_author_url_removal();
 	
-	$( '#the-comment-list' ).on( 'click', '.remove_url', function () {
+	$( '#the-comment-list' ).on( 'click', '.akismet_remove_url', function () {
 		var thisId = $(this).attr('commentid');
 		var data = {
 			action: 'comment_author_deurl',
@@ -103,7 +82,7 @@ jQuery( function ( $ ) {
 	});
 
 	// Show a preview image of the hovered URL. Applies to author URLs and URLs inside the comments.
-	$( 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, table.comments td.comment p a' ).mouseover( function () {
+	$( '#the-comment-list' ).on( 'mouseover', 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a', function () {
 		clearTimeout( mshotRemovalTimer );
 
 		if ( $( '.akismet-mshot' ).length > 0 ) {
@@ -120,7 +99,7 @@ jQuery( function ( $ ) {
 		clearTimeout( mshotSecondTryTimer );
 		clearTimeout( mshotThirdTryTimer );
 
-		var thisHref = $.URLEncode( $( this ).attr( 'href' ) );
+		var thisHref = encodeURIComponent( $( this ).attr( 'href' ) );
 
 		var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="//s0.wordpress.com/mshots/v1/' + thisHref + '?w=450" width="450" height="338" class="mshot-image" /></div>' );
 		mShot.data( 'link', this );
@@ -141,7 +120,7 @@ jQuery( function ( $ ) {
 		}, 12000 );
 
 		$( 'body' ).append( mShot );
-	} ).mouseout( function () {
+	} ).on( 'mouseout', 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a', function () {
 		mshotRemovalTimer = setTimeout( function () {
 			clearTimeout( mshotSecondTryTimer );
 			clearTimeout( mshotThirdTryTimer );
@@ -194,11 +173,54 @@ jQuery( function ( $ ) {
 	if ( "start_recheck" in WPAkismet && WPAkismet.start_recheck ) {
 		$( '.checkforspam' ).click();
 	}
-});
-// URL encode plugin
-jQuery.extend({URLEncode:function(c){var o='';var x=0;c=c.toString();var r=/(^[a-zA-Z0-9_.]*)/;
-  while(x<c.length){var m=r.exec(c.substr(x));
-    if(m!=null && m.length>1 && m[1]!=''){o+=m[1];x+=m[1].length;
-    }else{if(c[x]==' ')o+='+';else{var d=c.charCodeAt(x);var h=d.toString(16);
-    o+='%'+(h.length<2?'0':'')+h.toUpperCase();}x++;}}return o;}
+	
+	if ( typeof MutationObserver !== 'undefined' ) {
+		// Dynamically add the "X" next the the author URL links when a comment is quick-edited.
+		var comment_list_container = document.getElementById( 'the-comment-list' );
+
+		if ( comment_list_container ) {
+			var observer = new MutationObserver( function ( mutations ) {
+				for ( var i = 0, _len = mutations.length; i < _len; i++ ) {
+					if ( mutations[i].addedNodes.length > 0 ) {
+						akismet_enable_comment_author_url_removal();
+						
+						// Once we know that we'll have to check for new author links, skip the rest of the mutations.
+						break;
+					}
+				}
+			} );
+			
+			observer.observe( comment_list_container, { attributes: true, childList: true, characterData: true } );
+		}
+	}
+
+	function akismet_enable_comment_author_url_removal() {
+		$( '#the-comment-list' )
+			.find( 'tr.comment, tr[id ^= "comment-"]' )
+			.find( '.column-author a[href^="http"]:first' ) // Ignore mailto: links, which would be the comment author's email.
+			.each(function () {
+				if ( $( this ).parent().find( '.akismet_remove_url' ).length > 0 ) {
+					return;
+				}
+			
+			var linkHref = $(this).attr( 'href' );
+		
+			// Ignore any links to the current domain, which are diagnostic tools, like the IP address link
+			// or any other links another plugin might add.
+			var currentHostParts = document.location.href.split( '/' );
+			var currentHost = currentHostParts[0] + '//' + currentHostParts[2] + '/';
+		
+			if ( linkHref.indexOf( currentHost ) != 0 ) {
+				var thisCommentId = $(this).parents('tr:first').attr('id').split("-");
+
+				$(this)
+					.attr("id", "author_comment_url_"+ thisCommentId[1])
+					.after(
+						$( '<a href="#" class="akismet_remove_url">x</a>' )
+							.attr( 'commentid', thisCommentId[1] )
+							.attr( 'title', WPAkismet.strings['Remove this URL'] )
+					);
+			}
+		});
+	}
 });

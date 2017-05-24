@@ -63,7 +63,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
 		if ( ! $force_connection && Jetpack::is_active() ) {
-			WP_CLI::error( 'Jetpack is already active; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+			$master_user_id = Jetpack_Options::get_option( 'master_user' );
+			if ( empty( $master_user_id ) ) {
+				WP_CLI::warning( 'Jetpack is already active (connected), but we could not determine the master user; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+				return false;
+			}
+
+			$master_user_login = get_userdata( $master_user_id )->user_login;
+			WP_CLI::warning( sprintf( 'Jetpack is already active (connected) and the master user is "%s"; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.', $master_user_login ) );
+			return false;
 		}
 
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
@@ -80,7 +88,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
 				$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
 			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
-				$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` WP.com user is either not a member of the site or not an administrator. Please use `add_user_to_blog` on your WP.com sandbox to add the account before continuing.', WPCOM_VIP_MACHINE_USER_LOGIN );
+                                $jetpack_shadow_site_id = Jetpack_Options::get_option( 'id' );
+                                if ( false === $jetpack_shadow_site_id ) {
+                                        $jetpack_shadow_site_id = '%JETPACK_SHADOW_SITE_ID%';
+                                }
+                                $message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` is not an administrator on it.' . PHP_EOL . 'From within `wp shell` on your WPCom sandbox: `add_user_to_blog( %d, get_user_by( "login", "wpcomvip" )->ID, "administrator" ); `', WPCOM_VIP_MACHINE_USER_LOGIN, $jetpack_shadow_site_id );
 			}
 			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
 		}
@@ -97,7 +109,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 		if ( ! $user ) {
 			$cmd = sprintf(
-				'user create --url=%s --role=%s --display_name=%s --porcelain -- %s %s',
+				'user create --url=%s --role=%s --display_name=%s --porcelain %s %s',
 				escapeshellarg( get_site_url() ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_ROLE ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_NAME ),
@@ -188,20 +200,28 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		];
 
 		$akismet_key = $data['akismet_api_key'] ?? '';
+		WP_CLI::line( '---' );
+		WP_CLI::line( sprintf( 'Got Akismet key: %s', $akismet_key ) );
 		$akismet_result = WP_CLI::runcommand( sprintf(
 			'jetpack-keys akismet --akismet_key=%s',
 			escapeshellarg( $akismet_key )
 		), $runcommand_args );
+		WP_CLI::line( '' );
 
 		$vaultpress_key = $data['vaultpress_registration_key'] ?? '';
+		WP_CLI::line( '---' );
+		WP_CLI::line( sprintf( 'Got VaultPress key: %s', $vaultpress_key ) );
 		$vaultpress_result = WP_CLI::runcommand( sprintf(
 			'jetpack-keys vaultpress --vaultpress_key=%s',
 			escapeshellarg( $vaultpress_key )
 		), $runcommand_args );
+		WP_CLI::line( '' );
 
 		$jetpack_id = $data['jetpack_id'] ?? '';
 		$jetpack_secret = $data['jetpack_secret'] ?? '';
 		$jetpack_access_token = $data['jetpack_access_token'] ?? '';
+		WP_CLI::line( '---' );
+		WP_CLI::line( sprintf( 'Got Jetpack ID: %s', $jetpack_id ) );
 		$jetpack_result = WP_CLI::runcommand( sprintf(
 			'jetpack-keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s',
 			escapeshellarg( $jetpack_id ),
@@ -209,6 +229,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			escapeshellarg( $jetpack_access_token ),
 			escapeshellarg( WPCOM_VIP_MACHINE_USER_LOGIN )
 		), $runcommand_args );
+		WP_CLI::line( '' );
 	}
 
 	private function get_api_auth_header() {

@@ -25,6 +25,9 @@ VIP_PHPDOC_DIR="/tmp/phpdoc"
 # https://github.com/Automattic/vip-go-mu-plugins/settings/keys
 # The private key is in Travis settings here:
 # https://travis-ci.org/Automattic/vip-go-mu-plugins/settings
+# Before pasting the key into the setting, I replaced newlines
+# with \n and surrounded it with double quotes, e.g. "KEY\nHERE\n".
+
 # Turn off echo for the private key
 set +x
 echo -e $VIP_GITHUB_DEPLOY_KEY > /tmp/vip_deploy_key

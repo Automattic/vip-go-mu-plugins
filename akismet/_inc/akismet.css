@@ -16,12 +16,12 @@
 	text-decoration: inherit;
 	color: inherit;
 }
-#the-comment-list .remove_url {
+#the-comment-list .akismet_remove_url {
     margin-left: 3px;
     color: #999;
     padding: 2px 3px 2px 0;
 }
-#the-comment-list .remove_url:hover {
+#the-comment-list .akismet_remove_url:hover {
     color: #A7301F;
     font-weight: bold;
     padding: 2px 2px 2px 0;
