@@ -101,8 +101,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	private function connect_site( $assoc_args ) {
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
 		if ( ! $force_connection && Jetpack::is_active() ) {
-			WP_CLI::warning( 'Jetpack is already active; skipping. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
-			return;
+			$master_user_id = Jetpack_Options::get_option( 'master_user' );
+			if ( empty( $master_user_id ) ) {
+				WP_CLI::warning( 'Jetpack is already active (connected), but we could not determine the master user; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
+				return false;
+			}
+
+			$master_user_login = get_userdata( $master_user_id )->user_login;
+			WP_CLI::warning( sprintf( 'Jetpack is already active (connected) and the master user is "%s"; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.', $master_user_login ) );
+			return false;
 		}
 
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
@@ -120,7 +127,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
 				$message = 'There is an existing Jetpack Start subscription for this site. Please disconnect using the `cancel` subcommand and try again.';
 			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
-				$message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` WP.com user is either not a member of the site or not an administrator. Please use `add_user_to_blog` on your WP.com sandbox to add the account before continuing.', WPCOM_VIP_MACHINE_USER_LOGIN );
+                                $jetpack_shadow_site_id = Jetpack_Options::get_option( 'id' );
+                                if ( false === $jetpack_shadow_site_id ) {
+                                        $jetpack_shadow_site_id = '%JETPACK_SHADOW_SITE_ID%';
+                                }
+                                $message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` is not an administrator on it.' . PHP_EOL . 'From within `wp shell` on your WPCom sandbox: `add_user_to_blog( %d, get_user_by( "login", "wpcomvip" )->ID, "administrator" ); `', WPCOM_VIP_MACHINE_USER_LOGIN, $jetpack_shadow_site_id );
 			}
 			WP_CLI::warning( 'Failed to fetch keys from Jetpack Start: ' . $message );
 			return;
