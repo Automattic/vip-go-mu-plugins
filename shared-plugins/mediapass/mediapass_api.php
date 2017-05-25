@@ -69,11 +69,7 @@ class MediaPass {
 		
 		$c = self::$client_id;
 		$s = sprintf( self::$api_auth_scope, $p );
-		
-		if( defined('WP_DEBUG') ) {
-		//	echo '<!-- MP API configured with: ' . $p . '-->';
-		}
-		
+	
 		$this->api_prefix = $p;
 		
 		$this->login_url    = $p . 'Account/Auth/?client_id=' 			. $c . $s;
@@ -164,7 +160,7 @@ class MediaPass {
 		$urlPrefix = $this->api_prefix . $this->get_version_if($options);
 		$urlToPost = $urlPrefix . $options['action'] . '/' . implode('/', $options['params']);
 		
-		if( defined('WP_DEBUG') ) {
+		if( defined('WP_DEBUG') && WP_DEBUG ) {
 			echo '<!-- MP API CALL: ' . $urlToPost . "\r\n"; 
 			echo '  options: ';
 			var_dump($options);
@@ -192,7 +188,7 @@ class MediaPass {
 		}
 		
 		//if( true || defined('WP_DEBUG') ) {
-		if (defined('WP_DEBUG')){
+		if (defined('WP_DEBUG') && WP_DEBUG ){
 			echo '<!-- MP API CALL RESPONSE: '. $request_ok . '\r\n';
 			var_dump($result);
 			var_dump($response);
