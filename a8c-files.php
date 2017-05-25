@@ -652,6 +652,11 @@ class A8C_Files {
 		$resized = false;
 		$img_url = wp_get_attachment_url( $id );
 
+		// If there is no image, don't try to modify a non-existent URL.
+		if ( ! $img_url ) {
+			return false;
+		}
+
 		/**
 		 * Filter the original image Photon-compatible parameters before changes are
 		 *
@@ -769,7 +774,7 @@ class A8C_Files_Utils {
 		}
 
 		return $url;
-	}	
+	}
 }
 
 function a8c_files_init() {
