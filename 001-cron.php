@@ -14,7 +14,7 @@
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	if ( VIP_GO_BASIC_AUTH ) {
+	if ( defined( 'WPCOM_VIP_BASIC_AUTH' ) && WPCOM_VIP_BASIC_AUTH ) {
 		define( 'ALTERNATE_WP_CRON', true );
 		return false;
 	}
