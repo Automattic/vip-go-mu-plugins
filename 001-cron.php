@@ -14,6 +14,11 @@
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
+	if ( VIP_GO_BASIC_AUTH ) {
+		define( 'ALTERNATE_WP_CRON', true );
+		return false;
+	}
+	
 	// Bail early for anything that isn't a multisite subsite
 	if ( ! is_multisite() || is_main_site() ) {
 		return false;
