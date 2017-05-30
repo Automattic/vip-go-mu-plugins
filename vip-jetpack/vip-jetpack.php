@@ -40,7 +40,7 @@ function wpcom_vip_did_jetpack_search_query( $query ) {
 
 	global $wp_elasticsearch_queries_log;
 
-	if ( ! $wp_elasticsearch_queries_log ) {
+	if ( ! isset( $wp_elasticsearch_queries_log ) || ! is_array( $wp_elasticsearch_queries_log ) ) {
 		$wp_elasticsearch_queries_log = array();
 	}
 
