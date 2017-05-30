@@ -32,3 +32,21 @@ if ( true === WPCOM_SANDBOXED ) {
 		wp_die( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack. This is probably not a good idea. As a precaution, we\'re killing this request to prevent this from happening (this === 💥💥💥). Please run `vip stacks update` on your sandbox before doing anything else.', 400 );
 	}, 0 ); // No need to wait till priority 10 since we're going to die anyway
 }
+
+function wpcom_vip_did_jetpack_search_query( $query ) {
+	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
+		return;
+	}
+
+	global $wp_elasticsearch_queries_log;
+
+	if ( ! $wp_elasticsearch_queries_log ) {
+		$wp_elasticsearch_queries_log = array();
+	}
+
+	$query['backtrace'] = wp_debug_backtrace_summary();
+
+	$wp_elasticsearch_queries_log[] = $query;
+}
+
+add_action( 'did_jetpack_search_query', 'wpcom_vip_did_jetpack_search_query' );
