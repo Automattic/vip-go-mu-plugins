@@ -80,18 +80,17 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			$starting_blog_id = get_current_blog_id();
 
 			// Track whether there were any failures, to adjust messaging
-			$success = true;
+			$failure_occurred = false;
 
 			foreach ( $sites as $site ) {
 				switch_to_blog( $site );
 
 				WP_CLI::line( sprintf( 'Starting %s (site %d)', home_url( '/' ), $site ) );
 
-				$_success = $this->connect_site( $assoc_args );
+				$connected = $this->connect_site( $assoc_args );
 
-				// Just one failure to flip the message from success
-				if ( true === $success && $success !== $_success ) {
-					$success = $_success;
+				if ( false === $connected ) {
+					$failure_occurred = true;
 				}
 
 				WP_CLI::line( sprintf( 'Done with %s, on to the next site!', home_url( '/' ) ) );
@@ -100,13 +99,13 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 			switch_to_blog( $starting_blog_id );
 		} else {
-			$success = $this->connect_site( $assoc_args );
+			$failure_occurred = ! $this->connect_site( $assoc_args );
 		}
 
-		if ( $success ) {
-			WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
-		} else {
+		if ( $failure_occurred ) {
 			WP_CLI::warning( 'Attempt completed. Please resolve the issues noted above and try again.' );
+		} else {
+			WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
 		}
 	}
 
