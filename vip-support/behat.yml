@@ -1,0 +1,25 @@
+# behat.yml
+default:
+    paths:
+        features: features
+        bootstrap: %behat.paths.features%/bootstrap
+    extensions:
+        Behat\MinkExtension\Extension:
+            base_url: http://local.wordpress.dev
+            files_path: '%behat.paths.features%/files/'
+            goutte:
+              guzzle_parameters:
+                             curl.options:
+                                CURLOPT_SSL_VERIFYPEER: false
+                                CURLOPT_CERTINFO: false
+                                CURLOPT_TIMEOUT: 120
+                             ssl.certificate_authority: false
+            selenium2: ~
+
+phantomjs:
+  filters:
+   tags: '@phantomjs'
+  extensions:
+        Behat\MinkExtension\Extension:
+            goutte: ~
+            selenium2: ~
