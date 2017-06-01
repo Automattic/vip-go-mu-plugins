@@ -1,7 +1,7 @@
 <?php
 
 /** 
- * Note: this file requires that WPCOM_VIP_JP_START_API_CLIENT_ID and WPCOM_VIP_JP_START_CLIENT_SECRET are set
+ * Note: this file requires that WPCOM_VIP_JP_START_API_CLIENT_ID and WPCOM_VIP_JP_START_CLIENT_SECRET and WPCOM_VIP_JP_START_WPCOM_USER_ID are set
  */
 
 class Jetpack_Start_CLI_Command extends WP_CLI_Command {
@@ -51,7 +51,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
-		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) ) {
+		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
 			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_CLIENT_ID` and/or `WPCOM_VIP_JP_START_API_CLIENT_SECRET`) are not defined. Please check the `vip-secrets` file to confirm they\'re there, accessible, and valid.' );
 		}
 
@@ -124,7 +124,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		}
 
 		WP_CLI::line( '-- Provisioning via Jetpack Start API' );
-		$data = $this->run_jetpack_bin( 'partner-provision.sh', array( 'user_id' => $user->ID, 'wpcom_user_id' => 22573739, 'plan' => 'premium' ) );
+		$data = $this->run_jetpack_bin( 'partner-provision.sh', array( 'user_id' => $user->ID, 'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID, 'plan' => 'premium' ) );
 		
 		if ( is_wp_error( $data ) ) {
 			WP_CLI::warning( $data->get_error_message() );
