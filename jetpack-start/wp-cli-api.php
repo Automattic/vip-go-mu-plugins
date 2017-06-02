@@ -192,6 +192,10 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			$cmd .= ' --wpcom_user_id=' . (int) $args['wpcom_user_id'];
 		}
 
+		if ( isset( $args['url'] ) ) {
+			$cmd .= ' --url=' . $args['url'];
+		}
+
 		// TODO: escape arguments instead?
 		$cmd = escapeshellcmd( $cmd );
 
