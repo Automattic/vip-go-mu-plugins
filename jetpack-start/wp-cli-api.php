@@ -1,6 +1,6 @@
 <?php
 
-/** 
+/**
  * Note: this file requires that WPCOM_VIP_JP_START_API_CLIENT_ID and WPCOM_VIP_JP_START_CLIENT_SECRET and WPCOM_VIP_JP_START_WPCOM_USER_ID are set
  */
 
@@ -21,7 +21,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	public function cancel( $args, $assoc_args ) {
 
 		$data = $this->run_jetpack_bin( 'partner-cancel.sh' );
-		
+
 		if ( is_wp_error( $data ) ) {
 			WP_CLI::error( $data->get_error_message() );
 		}
@@ -125,7 +125,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::line( '-- Provisioning via Jetpack Start API' );
 		$data = $this->run_jetpack_bin( 'partner-provision.sh', array( 'user_id' => $user->ID, 'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID, 'plan' => 'premium' ) );
-		
+
 		if ( is_wp_error( $data ) ) {
 			WP_CLI::warning( $data->get_error_message() );
 			return false;
@@ -175,9 +175,27 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		return $user;
 	}
 
-	private function run_jetpack_bin( $script, $args = null ) {
+	private function run_jetpack_bin( $script, $args = array() ) {
 		$script_path = JETPACK__PLUGIN_DIR . 'bin/' . $script;
-		exec( sprintf( '%s --partner_id=%d --partner_secret=%s', $script_path, WPCOM_VIP_JP_START_API_CLIENT_ID, WPCOM_VIP_JP_START_API_CLIENT_SECRET ), $script_output, $script_result );
+
+		$cmd = sprintf( '%s --partner_id=%d --partner_secret=%s', $script_path, WPCOM_VIP_JP_START_API_CLIENT_ID, WPCOM_VIP_JP_START_API_CLIENT_SECRET );
+
+		if ( isset( $args['user_id'] ) ) {
+			$cmd .= ' --user_id=' . (int) $args['user_id'];
+		}
+
+		if ( isset( $args['plan'] ) ) {
+			$cmd .= ' --plan=' . $args['plan'];
+		}
+
+		if ( isset( $args['wpcom_user_id'] ) ) {
+			$cmd .= ' --wpcom_user_id=' . (int) $args['wpcom_user_id'];
+		}
+
+		// TODO: escape arguments instead?
+		$cmd = escapeshellcmd( $cmd );
+
+		exec( $cmd, $script_output, $script_result );
 		$script_output_json = json_decode( end( $script_output ) );
 
 		if ( ! $script_output_json ) {
