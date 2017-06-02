@@ -46,10 +46,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 * [--force]
 	 * : Provision even if Jetpack is already connected.
 	 *
+	 * [--network]
+	 * : Connect all subsites of this multisite network
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp jetpack-start api connect
 	 *     wp jetpack-start api connect --force
+	 *     wp jetpack-start api connect --network
+	 *     wp jetpack-start api connect --force --network
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
@@ -61,6 +66,50 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			WP_CLI::warning( 'JETPACK_DEV_DEBUG mode is enabled. Please remove the constant after connection.' );
 		}
 
+		$network = WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
+		if ( $network && is_multisite() ) {
+			$sites = get_sites( [
+				'public'   => null,
+				'archived' => 0,
+				'spam'     => 0,
+				'deleted'  => 0,
+				'fields'   => 'ids',
+			] );
+
+			// Instead of repeatedly calling restore_current_blog() just to switch again, manually switch back at the end
+			$starting_blog_id = get_current_blog_id();
+
+			// Track whether there were any failures, to adjust messaging
+			$failure_occurred = false;
+
+			foreach ( $sites as $site ) {
+				switch_to_blog( $site );
+
+				WP_CLI::line( sprintf( 'Starting %s (site %d)', home_url( '/' ), $site ) );
+
+				$connected = $this->connect_site( $assoc_args );
+
+				if ( false === $connected ) {
+					$failure_occurred = true;
+				}
+
+				WP_CLI::line( sprintf( 'Done with %s, on to the next site!', home_url( '/' ) ) );
+				WP_CLI::line( '' );
+			}
+
+			switch_to_blog( $starting_blog_id );
+		} else {
+			$failure_occurred = ! $this->connect_site( $assoc_args );
+		}
+
+		if ( $failure_occurred ) {
+			WP_CLI::warning( 'Attempt completed. Please resolve the issues noted above and try again.' );
+		} else {
+			WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
+		}
+	}
+
+	private function connect_site( $assoc_args ) {
 		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
 		if ( ! $force_connection && Jetpack::is_active() ) {
 			$master_user_id = Jetpack_Options::get_option( 'master_user' );
@@ -77,7 +126,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
 		$user = $this->maybe_create_user();
 		if ( is_wp_error( $user ) ) {
-			WP_CLI::error( $user->get_error_message() );
+			WP_CLI::warning( $user->get_error_message() );
+			return false;
 		}
 
 		WP_CLI::line( '-- Fetching keys from Jetpack Start API' );
@@ -86,7 +136,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			$message = $data->get_error_message();
 			// Use strpos because our API method appends stuff to the error message
 			if ( false !== strpos( $message, self::API_ERROR_EXISTING_SUBSCRIPTION ) ) {
-				$message = 'There is an existing Jetpack Start subcription for this site. Please disconnect using the `cancel` subcommand and try again.';
+				$message = 'There is an existing Jetpack Start subscription for this site. Please disconnect using the `cancel` subcommand and try again.';
 			} elseif ( false !== strpos( $message, self::API_ERROR_USER_PERMISSIONS ) ) {
                                 $jetpack_shadow_site_id = Jetpack_Options::get_option( 'id' );
                                 if ( false === $jetpack_shadow_site_id ) {
@@ -94,7 +144,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
                                 }
                                 $message = sprintf( 'This site already has an existing Jetpack shadow site but the `%s` is not an administrator on it.' . PHP_EOL . 'From within `wp shell` on your WPCom sandbox: `add_user_to_blog( %d, get_user_by( "login", "wpcomvip" )->ID, "administrator" ); `', WPCOM_VIP_MACHINE_USER_LOGIN, $jetpack_shadow_site_id );
 			}
-			WP_CLI::error( 'Failed to fetch keys from Jetpack Start: ' . $message );
+			WP_CLI::warning( 'Failed to fetch keys from Jetpack Start: ' . $message );
+			return false;
 		}
 
 		WP_CLI::line( '-- Adding keys to site' );
@@ -102,7 +153,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		update_option( 'vip_jetpack_start_connected_on', time(), false );
 
-		WP_CLI::success( 'All done! Welcome to Jetpack! ✈️️✈️️✈️️' );
+		return true;
 	}
 
 	private function maybe_create_user() {
@@ -195,6 +246,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function install_keys( $data ) {
+		$site_url = get_site_url();
+
 		$runcommand_args = [
 			'exit_error' => false,
 		];
@@ -203,8 +256,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '---' );
 		WP_CLI::line( sprintf( 'Got Akismet key: %s', $akismet_key ) );
 		$akismet_result = WP_CLI::runcommand( sprintf(
-			'jetpack-keys akismet --akismet_key=%s',
-			escapeshellarg( $akismet_key )
+			'jetpack-keys akismet --akismet_key=%s --url=%s',
+			escapeshellarg( $akismet_key ),
+			escapeshellarg( $site_url )
 		), $runcommand_args );
 		WP_CLI::line( '' );
 
@@ -212,8 +266,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '---' );
 		WP_CLI::line( sprintf( 'Got VaultPress key: %s', $vaultpress_key ) );
 		$vaultpress_result = WP_CLI::runcommand( sprintf(
-			'jetpack-keys vaultpress --vaultpress_key=%s',
-			escapeshellarg( $vaultpress_key )
+			'jetpack-keys vaultpress --vaultpress_key=%s --url=%s',
+			escapeshellarg( $vaultpress_key ),
+			escapeshellarg( $site_url )
 		), $runcommand_args );
 		WP_CLI::line( '' );
 
@@ -223,11 +278,12 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '---' );
 		WP_CLI::line( sprintf( 'Got Jetpack ID: %s', $jetpack_id ) );
 		$jetpack_result = WP_CLI::runcommand( sprintf(
-			'jetpack-keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s',
+			'jetpack-keys jetpack --jetpack_id=%s --jetpack_secret=%s --jetpack_access_token=%s --user=%s --url=%s',
 			escapeshellarg( $jetpack_id ),
 			escapeshellarg( $jetpack_secret ),
 			escapeshellarg( $jetpack_access_token ),
-			escapeshellarg( WPCOM_VIP_MACHINE_USER_LOGIN )
+			escapeshellarg( WPCOM_VIP_MACHINE_USER_LOGIN ),
+			escapeshellarg( $site_url )
 		), $runcommand_args );
 		WP_CLI::line( '' );
 	}
