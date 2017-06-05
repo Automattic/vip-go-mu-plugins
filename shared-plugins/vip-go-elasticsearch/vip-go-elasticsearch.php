@@ -171,6 +171,18 @@ class WPCOM_elasticsearch {
 		if ( ! $query->is_main_query() || ! $query->is_search() )
 			return $sql;
 
+		/**
+		 * Whether to run this admin query through ES.
+		 *
+		 * Allow the admin query to be assessed for suitability for being served
+		 * by ES, For example, published posts only.
+		 *
+		 * @var [type]
+		 */
+		if ( is_admin() && false === apply_filters( 'wpcom_elasticsearch_perform_admin_query', false, $query ) ) {
+			return $sql;
+		}
+
 		$page = ( $query->get( 'paged' ) ) ? absint( $query->get( 'paged' ) ) : 1;
 
 		// Start building the WP-style search query args
