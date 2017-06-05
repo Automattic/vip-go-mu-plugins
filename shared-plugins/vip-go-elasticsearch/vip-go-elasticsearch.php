@@ -177,7 +177,7 @@ class WPCOM_elasticsearch {
 		 * Allow the admin query to be assessed for suitability for being served
 		 * by ES, For example, published posts only.
 		 *
-		 * @var [type]
+		 * @var bool $es Whether (true) or note (false) to run the query through ES.
 		 */
 		if ( is_admin() && false === apply_filters( 'wpcom_elasticsearch_perform_admin_query', false, $query ) ) {
 			return $sql;
