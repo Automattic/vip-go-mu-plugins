@@ -62,18 +62,39 @@ function es_api_search_index( $args ) {
 
     $args['blog_id'] = absint( $args['blog_id'] );
 
-    $service_url = 'https://public-api.wordpress.com/rest/v1/sites/' . $args['blog_id'] . '/search';
+    $endpoint = sprintf( '/sites/%s/search', $args['blog_id'] );
+    $service_url = 'https://public-api.wordpress.com/rest/v1' . $endpoint;
+
+    $do_authenticated_request = false;
+    if ( class_exists( 'Jetpack_Client' )
+            && isset( $args['authenticated_request'] )
+	    && true === $args['authenticated_request'] ) {
+        $do_authenticated_request = true;
+    }
 
     unset( $args['blog_id'] );
+    unset( $args['authenticated_request'] );
 
-    $start_time = microtime( true );
-
-    $request = wp_remote_post( $service_url, array(
+    $request_args = array(
         'headers' => array(
             'Content-Type' => 'application/json',
         ),
-        'body' => json_encode( $args ),
-    ) );
+    );
+    $request_body = json_encode( $args );
+
+    $start_time = microtime( true );
+
+    if ( $do_authenticated_request ) {
+      $request_args['method'] = 'POST';
+
+      $request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
+    } else {
+      $request_args = array_merge( $request_args, array(
+        'body' => $request_body,
+	    ) );
+
+      $request = wp_remote_post( $service_url, $request_args );
+    }
 
     $end_time = microtime( true );
 
