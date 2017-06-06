@@ -139,8 +139,9 @@ class WPCOM_elasticsearch {
 	}
 
 	public function filter__the_posts( $posts, $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $this->should_replace_query( $query ) ) {
 			return $posts;
+		}
 
 		if ( ! is_array( $this->search_result ) )
 			return $posts;
@@ -173,21 +174,38 @@ class WPCOM_elasticsearch {
 		return $posts;
 	}
 
-	public function filter__posts_request( $sql, $query ) {
-		global $wpdb;
+	protected function should_replace_query( $query ) {
+		$query_hash = $query->query_vars_hash;
+		if ( isset( $this->should_replace_queries[ $query_hash ] ) ) {
+			return $this->should_replace_queries[ $query_hash ];
+		}
 
-		if ( ! $query->is_main_query() || ! $query->is_search() )
-			return $sql;
+		$should_replace = false;
+
+		// By defauly, we only care about main search queries
+		if ( $query->is_main_query() && $query->is_search() ) {
+			$should_replace = true;
+		}
 
 		/**
-		 * Whether to run this admin query through ES.
+		 * Whether to run this query through ES.
 		 *
 		 * Allow the admin query to be assessed for suitability for being served
 		 * by ES, For example, published posts only.
 		 *
 		 * @var bool $es Whether (true) or note (false) to run the query through ES.
 		 */
-		if ( is_admin() && false === apply_filters( 'wpcom_elasticsearch_perform_admin_query', false, $query ) ) {
+		$should_replace = apply_filters( 'wpcom_elasticsearch_should_replace_query', $should_replace, $query );
+
+		$this->should_replace_queries[ $query_hash ] = $should_replace;
+
+		return $should_replace;
+	}
+
+	public function filter__posts_request( $sql, $query ) {
+		global $wpdb;
+
+		if ( ! $this->should_replace_query( $query ) ) {
 			return $sql;
 		}
 
@@ -331,15 +349,17 @@ class WPCOM_elasticsearch {
 	}
 
 	public function filter__found_posts_query( $sql, $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $this->should_replace_query( $query ) ) {
 			return $sql;
+		}
 
 		return '';
 	}
 
 	public function filter__found_posts( $found_posts, $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $this->should_replace_query( $query ) ) {
 			return $found_posts;
+		}
 
 		return $this->found_posts;
 	}
@@ -352,14 +372,15 @@ class WPCOM_elasticsearch {
 	}
 
 	public function action__pre_get_posts( $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $this->should_replace_query( $query ) ) {
 			return;
+		}
 
 		$query->set( 'cache_results', false );
 	}
 
 	public function action__loop_start( $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() ) {
+		if ( ! $this->should_replace_query( $query ) ) {
 			return;
 		}
 
@@ -372,7 +393,7 @@ class WPCOM_elasticsearch {
 		// Once The Loop is finished, remove any hooks so future queries are unaffected by our shenanigans
 		$this->unregister_loop_hooks();
 
-		if ( ! $query->is_main_query() || ! $query->is_search() ) {
+		if ( ! $this->should_replace_query( $query ) ) {
 			return;
 		}
 
