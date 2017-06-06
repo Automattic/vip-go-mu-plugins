@@ -75,17 +75,25 @@ class WPCOM_elasticsearch {
 			return;
 		}
 
-		/**
-		 * Whether to allow ES to power admin searches.
-		 *
-		 * Will allow the plugin to act on admin as well as frontend searches if set to true,
-		 * subject to conditions specific to the query being performed.
-		 *
-		 * @var bool Whether (true) or not (false) to allow ES searches in the admin.
-		 */
-		if ( ! is_admin() || apply_filters( 'wpcom_elasticsearch_enable_in_admin', false ) ) {
+		if ( $this->is_enabled() ) {
 			$this->init_hooks();
 		}
+	}
+
+	protected function is_enabled() {
+		if ( is_admin() ) {
+			/**
+			 * Whether to allow ES to power admin searches.
+			 *
+			 * Will allow the plugin to act on admin as well as frontend searches if set to true,
+			 * subject to conditions specific to the query being performed.
+			 *
+			 * @var bool Whether (true) or not (false) to allow ES searches in the admin.
+			 */
+			return apply_filters( 'wpcom_elasticsearch_enable_in_admin', false );
+		}
+
+		return true;
 	}
 
 	public function init_hooks() {
