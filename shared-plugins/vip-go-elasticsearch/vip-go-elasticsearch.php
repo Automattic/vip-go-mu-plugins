@@ -198,7 +198,7 @@ class WPCOM_elasticsearch {
 
 		$should_replace = false;
 
-		// By defauly, we only care about main search queries
+		// By default, we only care about main search queries
 		if ( $query->is_main_query() && $query->is_search() ) {
 			$should_replace = true;
 		}
@@ -209,7 +209,7 @@ class WPCOM_elasticsearch {
 		 * Allow the admin query to be assessed for suitability for being served
 		 * by ES, For example, published posts only.
 		 *
-		 * @var bool $es Whether (true) or note (false) to run the query through ES.
+		 * @var bool $es Whether (true) or not (false) to run the query through ES.
 		 */
 		$should_replace = apply_filters( 'wpcom_elasticsearch_should_replace_query', $should_replace, $query );
 
