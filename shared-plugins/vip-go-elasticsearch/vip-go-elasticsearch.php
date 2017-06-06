@@ -44,6 +44,8 @@ class WPCOM_elasticsearch {
 	private $do_found_posts;
 	private $found_posts = 0;
 
+	private $do_authenticated_request = false;
+
 	private $search_result;
 
 	private $original_blog_id;
@@ -85,8 +87,9 @@ class WPCOM_elasticsearch {
 			/**
 			 * Whether to allow ES to power admin searches.
 			 *
-			 * Will allow the plugin to act on admin as well as frontend searches if set to true,
-			 * subject to conditions specific to the query being performed.
+			 * Will allow the plugin to act on admin as well as frontend searches if set to true, subject to conditions specific to the query being performed.
+			 *
+			 * Note that this requires a special index to work.
 			 *
 			 * @var bool Whether (true) or not (false) to allow ES searches in the admin.
 			 */
@@ -97,6 +100,19 @@ class WPCOM_elasticsearch {
 	}
 
 	public function init_hooks() {
+		if ( is_admin() ) {
+			// No ES for roles below contributor
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				return;
+			}
+
+			// All other admin queries should be authenticated
+			$this->do_authenticated_request = true;
+		}
+
+		// Filters the raw result set returned from Elasticsearch
+		add_filter( 'wpcom_elasticsearch_found_posts', array( $this, 'filter__elasticsearch_found_posts' ) );
+
 		// Checks to see if we need to worry about found_posts
 		add_filter( 'post_limits_request', array( $this, 'filter__post_limits_request' ), 999, 2 );
 
@@ -348,6 +364,30 @@ class WPCOM_elasticsearch {
 		return '';
 	}
 
+	public function filter__elasticsearch_found_posts( $search_result ) {
+		// We need to filter out any posts that a user should not have access to.
+		if ( $this->do_authenticated_request ) {
+			$skipped_count = 0;
+			$filtered_hits = array();
+
+			foreach ( $search_result['results']['hits'] as $i => $result ) {
+				$post_id = $result['fields']['post_id'];
+
+				if ( ! current_user_can( 'edit_post', $post_id ) ) {
+					$skipped_count++;
+					continue;
+				}
+
+				$filtered_hits[] = $result;
+			}
+
+			$search_result['results']['hits'] = $filtered_hits;
+			$search_result['results']['total'] -= $skipped_count;
+		}
+
+		return $search_result;
+	}
+
 	public function filter__found_posts_query( $sql, $query ) {
 		if ( ! $this->should_replace_query( $query ) ) {
 			return $sql;
@@ -367,6 +407,11 @@ class WPCOM_elasticsearch {
 	public function filter__wpcom_elasticsearch_query_args( $es_query_args, $query ) {
 		if ( is_array( $this->additional_indices ) && ! empty( $this->additional_indices ) )
 			$es_query_args['additional_indices'] = $this->additional_indices;
+
+		// Admin queries should always be authenticated
+		if ( $this->do_authenticated_request ) {
+			$es_query_args['authenticated_request'] = true;
+		}
 
 		return $es_query_args;
 	}
