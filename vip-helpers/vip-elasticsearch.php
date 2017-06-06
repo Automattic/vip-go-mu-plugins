@@ -85,14 +85,15 @@ function es_api_search_index( $args ) {
     $start_time = microtime( true );
 
     if ( $do_authenticated_request ) {
-        $request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
       $request_args['method'] = 'POST';
 
+      $request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
     } else {
-	$request_args = array_merge( $request_args, array(
-            'body' => $request_body,
-	) );
-	$request = wp_remote_post( $service_url, $request_args );
+      $request_args = array_merge( $request_args, array(
+        'body' => $request_body,
+	    ) );
+
+      $request = wp_remote_post( $service_url, $request_args );
     }
 
     $end_time = microtime( true );
