@@ -129,7 +129,7 @@ if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
  *
  * The WordPress core is currently not setting `no_found_rows` inside the `_WP_Editors::wp_link_query`
  * See https://core.trac.wordpress.org/ticket/38784
- * 
+ *
  * Since the `_WP_Editors::wp_link_query` method is not using the `found_posts` nor `max_num_pages`
  * properties of `WP_Query` class, the `SQL_CALC_FOUND_ROWS` in produced SQL query is extra and
  * useless.
@@ -144,3 +144,27 @@ function wpcom_vip_wp_link_query_args( $query ) {
 }
 
 add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
+
+/**
+ * Limit access to wp-admin/options.php
+ *
+ * Screen shouldn't be accessible to edit options, rather those edits should happen through other interfaces
+ */
+add_action( 'load-options.php', function() {
+	// Limit to GET requests as Settings API et al POSTs here
+	if ( 'GET' !== $_SERVER['REQUEST_METHOD'] ) {
+		return;
+	}
+
+	// Let WP handle some query strings in options.php
+	if ( isset( $_GET['action'] ) ) {
+		return;
+	}
+
+	if ( is_multisite() && ( isset( $_GET['adminhash'] ) || isset( $_GET['dismiss'] ) ) ) {
+		return;
+	}
+
+	// STOP!
+	wp_die( __( 'Sorry, you are not allowed to manage options through this screen.' ) );
+} );
