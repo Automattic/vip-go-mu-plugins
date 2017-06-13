@@ -14,7 +14,7 @@
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	if ( apply_filters( 'wpcom_vip_go_use_core_cron', false ) ) {
+	if ( defined( 'WPCOM_VIP_USE_CORE_CRON' ) && WPCOM_VIP_USE_CORE_CRON ) {
 		return true;
 	}
 
