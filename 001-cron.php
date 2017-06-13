@@ -14,11 +14,15 @@
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
+	if ( apply_filters( 'wpcom_vip_go_use_core_cron', false ) ) {
+		return true;
+	}
+
 	if ( defined( 'WPCOM_VIP_BASIC_AUTH' ) && WPCOM_VIP_BASIC_AUTH ) {
 		define( 'ALTERNATE_WP_CRON', true );
 		return true;
 	}
-	
+
 	// Bail early for anything that isn't a multisite subsite
 	if ( ! is_multisite() || is_main_site() ) {
 		return false;
@@ -40,6 +44,10 @@ function wpcom_vip_use_core_cron() {
  * Cron Control handles authentication itself
  */
 function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
+	if ( ! class_exists( '\Automattic\WP\Cron_Control\REST_API' ) ) {
+		return $allowed;
+	}
+
 	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
 
 	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
