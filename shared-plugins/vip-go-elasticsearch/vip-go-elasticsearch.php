@@ -126,7 +126,7 @@ class WPCOM_elasticsearch {
 		if ( ! $query->is_main_query() || ! $query->is_search() )
 			return $posts;
 
-		if ( ! is_array( $this->search_result ) )
+		if ( is_wp_error( $this->search_result ) || ! is_array( $this->search_result ) || empty( $this->search_result['results'] ) || empty( $this->search_result['results']['hits'] ) )
 			return $posts;
 
 		// This class handles the heavy lifting of transparently switching blogs and inflating posts
