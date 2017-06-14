@@ -23,7 +23,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
 		if ( $network && ! is_multisite() ) {
-			WP_CLI::error( 'This is not a multisite install.' );
+			WP_CLI::warning( 'This is not a multisite install. Proceeding as single site.' );
+			$network = false;
 		}
 
 		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
