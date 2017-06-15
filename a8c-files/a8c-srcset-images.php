@@ -202,7 +202,7 @@ class A8C_Files_Image_Srcset_Meta {
 			$sizes['large']['height'] = 0;
 		}
 
-		return apply_filters( 'vipgo_srcset_image_thumbnails', $sizes );
+		return apply_filters( 'wpcom_vip_srcset_image_thumbnails', $sizes );
 
 	}
 
