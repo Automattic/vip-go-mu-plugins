@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Tests;
 
 use function Automattic\VIP\Proxy\is_valid_ip;
+use function Automattic\VIP\Proxy\set_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
@@ -50,6 +51,15 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		$result = is_valid_ip( $ip );
 
 		$this->assertTrue( $result );
+	}
+
+	// set_remote_address
+	public function test__set_remote_addr() {
+		$user_ip = '5.6.7.8';
+
+		set_remote_addr( $user_ip );
+
+		$this->assertEquals( $user_ip, $_SERVER['REMOTE_ADDR'] );
 	}
 
 	// fix_remote_address
