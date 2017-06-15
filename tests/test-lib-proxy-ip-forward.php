@@ -54,10 +54,10 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 	}
 
 	// set_remote_address
-	public function test__set_remote_addr() {
+	public function test__set_remote_address() {
 		$user_ip = '5.6.7.8';
 
-		set_remote_addr( $user_ip );
+		set_remote_address( $user_ip );
 
 		$this->assertEquals( $user_ip, $_SERVER['REMOTE_ADDR'] );
 	}

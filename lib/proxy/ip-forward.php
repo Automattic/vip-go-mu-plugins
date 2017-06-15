@@ -11,7 +11,7 @@ function is_valid_ip( $ip ) {
 	return true;
 }
 
-function set_remote_addr( $ip ) {
+function set_remote_address( $ip ) {
 	$_SERVER['REMOTE_ADDR'] = $ip;
 }
 
@@ -44,7 +44,7 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 	}
 
 	// Everything looks good so we can set our SERVER var
-	set_remote_addr( $user_ip );
+	set_remote_address( $user_ip );
 
 	return true;
 }
@@ -110,7 +110,7 @@ function fix_remote_address_with_verification_key( $user_ip, $verification_key )
 		return false;
 	}
 
-	set_remote_addr( $user_ip );
+	set_remote_address( $user_ip );
 
 	return true;
 }
