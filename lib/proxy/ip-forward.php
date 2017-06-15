@@ -91,22 +91,35 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 }
 
 /**
+ * Return the defined verification key for a site
+ */
+function get_proxy_verification_key() {
+	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
+		return WPCOM_VIP_PROXY_VERIFICATION;
+	}
+
+	// If not properly defined for some reason, return a random number to avoid guessing the key.
+	return rand();
+}
+
+/**
  * Set REMOTE_ADDR to the end-user's IP address, if the verification key matches
  *
  * When an IP whitelist isn't possible, we rely on a verification key being sent as a request header as our method of safely forwarding the IP.
  *
  * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
- * @param (string) $verification_key Verification key passed through request headers
+ * @param (string) $submitted_verification_key Verification key passed through request headers
  *
  * @return (bool) true, if REMOTE_ADDR updated; false, if not.
  *
  */
-function fix_remote_address_with_verification_key( $user_ip, $verification_key ) {
+function fix_remote_address_with_verification_key( $user_ip, $submitted_verification_key ) {
 	if ( ! is_valid_ip( $user_ip ) ) {
 		return false;
 	}
 
-	if ( ! hash_equals( $verification_key, WPCOM_VIP_IP_VERIFICATION_KEY ) ) {
+	$expected_verification_key = get_proxy_verification_key();
+	if ( ! hash_equals( $submitted_verification_key, $expected_verification_key ) ) {
 		return false;
 	}
 
