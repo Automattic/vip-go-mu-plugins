@@ -9,21 +9,25 @@
  */
 
 /**
- * Inactive multisite subsites can't be reached by our cron runners, so should use Core's native approach
+ * Determine if Cron Control is called for
+ *
+ * Inactive multisite subsites, sites using Basic Auth, and local environments are generally unavailable
  *
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	if ( defined( 'WPCOM_VIP_USE_CORE_CRON' ) && WPCOM_VIP_USE_CORE_CRON ) {
+	// Do not load outside of VIP environments, unless explicitly requested
+	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
 		return true;
 	}
 
+	// Basic Auth sites are unreachable
 	if ( defined( 'WPCOM_VIP_BASIC_AUTH' ) && WPCOM_VIP_BASIC_AUTH ) {
 		define( 'ALTERNATE_WP_CRON', true );
 		return true;
 	}
 
-	// Bail early for anything that isn't a multisite subsite
+	// Bail early for anything else that isn't a multisite subsite
 	if ( ! is_multisite() || is_main_site() ) {
 		return false;
 	}
