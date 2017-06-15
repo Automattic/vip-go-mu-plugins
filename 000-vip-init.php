@@ -45,6 +45,9 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Debugging Tools
+require_once( __DIR__ . '/000-debug/0-load.php' );
+
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
