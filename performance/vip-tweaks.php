@@ -50,8 +50,11 @@ function wpcom_vip_bust_media_months_cache( $post_id ) {
 			LIMIT 1
 		", 'attachment' ) );
 
+	// Storing months values to $tmpmonths
+	$tmpmonths = array_values( $months );
+
 	// Simplify by assigning the object to $months
-	$months = array_shift( array_values( $months ) );
+	$months = array_shift( $tmpmonths );
 
 	// Compare the dates of the new, and most recent, attachment
 	if (
