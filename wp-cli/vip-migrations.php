@@ -147,6 +147,40 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
 	}
+	
+	/**
+	 * Update user IDs after importing.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <file> [--user_key=<userlogin>]
+	 * : The local or remote CSV file of users to import.
+	 *
+	 * @subcommand update-user-ids
+	 */
+	public function update_user_ids( $args, $assoc_args ) {
+		WP_CLI::confirm( 'This can really mess up a site if used wrong.  Are you sure?' );
+
+		$filename = $args[0];
+		$user_key = $assoc_args['user_key'] ?? 'user_login';
+
+		if ( ! file_exists( $filename ) ) {
+			WP_CLI::error( sprintf( "Missing file: %s", $filename ) );
+		}
+
+		global $wpdb;
+
+		foreach ( new \WP_CLI\Iterators\CSV( $filename ) as $new_user ) {
+			// WordPress _really_ doesn't like changing user IDs.  We have to do this manually via a query.
+			$update = $wpdb->prepare( 'UPDATE ' . $wpdb->users . ' SET ID = %d WHERE %s = %s', $new_user['ID'], $user_key, $new_user[ $user_key ] );
+			if ( false !== $wpdb->query( $update ) ) {
+				WP_CLI::line( 'User ' . $new_user[ $user_key ] . ' ID updated to ' . $new_user['ID'] );
+			} else {
+				WP_CLI::warning( 'User ' . $new_user[ $user_key ] . ' ID NOT updated to ' . $new_user['ID'] );
+			}
+		}
+		wp_cache_flush();
+	}
 }
 
 WP_CLI::add_command( 'vip migration', 'VIP_Go_Migrations_Command' );
