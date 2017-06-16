@@ -118,8 +118,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				 * if this turns out to be too slow for large media libraries.
 				 */
 				$request = wp_remote_head( $url );
+				$response_code = wp_remote_retrieve_response_code( $request );
+				$response_message = wp_remote_retrieve_response_message( $request );
 
-				if ( 200 === $request['response']['code'] ) {
+				if ( 200 === $response_code ) {
 					$log_request = $log_found_files;
 				} else {
 					$log_request = true;
@@ -128,8 +130,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				if ( $log_request ) {
 					$output[] = array(
 						$url,
-						$request['response']['code'],
-						$request['response']['message'],
+						$response_code,
+						$response_message,
 					);
 				}
 
@@ -137,7 +139,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 
 			// Pause.
-			sleep( 1 );
+			
+			if ( 0 === $offset % 500 ) {
+				sleep( 1 );
+			}
 
 			$offset += $limit;
 		} while ( count( $attachments ) );
