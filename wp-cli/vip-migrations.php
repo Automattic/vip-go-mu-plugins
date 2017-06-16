@@ -170,7 +170,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		global $wpdb;
 
-		foreach ( new \WP_CLI\Iterators\CSV( $filename ) as $i => $new_user ) {
+		foreach ( new \WP_CLI\Iterators\CSV( $filename ) as $new_user ) {
 			// WordPress _really_ doesn't like changing user IDs.  We have to do this manually via a query.
 			$update = $wpdb->prepare( 'UPDATE ' . $wpdb->users . ' SET ID = %d WHERE %s = %s', $new_user['ID'], $user_key, $new_user[ $user_key ] );
 			if ( false !== $wpdb->query( $update ) ) {
