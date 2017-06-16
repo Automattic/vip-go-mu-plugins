@@ -86,62 +86,60 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * Iterate over attachments and check to see if they actually exist.
 	 *
 	 * @subcommand validate-attachments
-	 * @synopsis --output=<csv-filename> [--log-found]
+	 * @synopsis <csv-filename> [--log-found-files]
 	 */
 	public function validate_attachments( $args, $assoc_args ) {
-		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
+		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
+		$output_file = $args[0];
 
-		if ( isset( $args['log-found'] ) ) {
-			$log_found = true;
-		} else {
-			$log_found = false;
-		}
-
-		$output_file = $assoc_args['output'];
-
-		$posts_per_page = 500;
-		$paged = 1;
-		$count = 0;
+		$offset = 0;
+		$limit = 100;
 		$output = array();
 
+		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+
 		$file_descriptor = fopen( $output_file, 'w' );
+		if ( false === $file_descriptor ) {
+			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $filename ) );
+		}
+
+		global $wpdb;
 		do {
-			$attachments = get_posts( array(
-				'post_type' => 'attachment',
-				'posts_per_page' => $posts_per_page,
-				'paged' => $paged,
-			) );
+			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" LIMIT %d,%d', $offset, $limit );
+			$attachments = $wpdb->get_results( $sql );
 
 			foreach ( $attachments as $attachment ) {
+				$log_request = false;
 				$url = $attachment->guid;
+
+				/*
+				 * TODO: Switch over to `curl_multi` to do lookups in parallel
+				 * if this turns out to be too slow for large media libraries.
+				 */
 				$request = wp_remote_head( $url );
+
 				if ( 200 !== $request['response']['code'] ) {
+					$log_request = $log_found_files;
+				} else {
+					$log_request = true;
+				}
+
+				if ( $log_request ) {
 					$output[] = array(
 						$url,
 						$request['response']['code'],
 						$request['response']['message'],
 					);
-				} else {
-					if ( $log_found ) {
-						$output[] = array(
-							$url,
-							$request['response']['code'],
-							$request['response']['message'],
-						);
-					}
 				}
 
 				$progress->tick();
-				$count++;
 			}
 
 			// Pause.
 			sleep( 1 );
 
-			// Free up memory.
-			$this->stop_the_insanity();
-			$paged++;
+			$offset += $limit;
 		} while ( count( $attachments ) );
 		$progress->finish();
 		WP_CLI\Utils\write_csv( $file_descriptor, $output );
