@@ -93,7 +93,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$output_file = $args[0];
 
 		$offset = 0;
-		$limit = 100;
+		$limit = 500;
 		$output = array();
 
 		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
@@ -139,10 +139,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 
 			// Pause.
-			
-			if ( 0 === $offset % 500 ) {
-				sleep( 1 );
-			}
+			sleep( 1 );
 
 			$offset += $limit;
 		} while ( count( $attachments ) );
