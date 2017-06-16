@@ -119,7 +119,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				 */
 				$request = wp_remote_head( $url );
 
-				if ( 200 !== $request['response']['code'] ) {
+				if ( 200 === $request['response']['code'] ) {
 					$log_request = $log_found_files;
 				} else {
 					$log_request = true;
