@@ -81,6 +81,72 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$count = count( $changes );
 		WP_CLI::success( _n( '%s change', '%s changes', $count ), number_format_i18n( $count ) );
 	}
+
+	/**
+	 * Iterate over attachments and check to see if they actually exist.
+	 *
+	 * @subcommand validate-attachments
+	 * @synopsis <csv-filename> [--log-found-files]
+	 */
+	public function validate_attachments( $args, $assoc_args ) {
+		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
+		$output_file = $args[0];
+
+		$offset = 0;
+		$limit = 500;
+		$output = array();
+
+		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
+		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+
+		$file_descriptor = fopen( $output_file, 'w' );
+		if ( false === $file_descriptor ) {
+			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $filename ) );
+		}
+
+		global $wpdb;
+		do {
+			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" LIMIT %d,%d', $offset, $limit );
+			$attachments = $wpdb->get_results( $sql );
+
+			foreach ( $attachments as $attachment ) {
+				$log_request = false;
+				$url = $attachment->guid;
+
+				/*
+				 * TODO: Switch over to `curl_multi` to do lookups in parallel
+				 * if this turns out to be too slow for large media libraries.
+				 */
+				$request = wp_remote_head( $url );
+				$response_code = wp_remote_retrieve_response_code( $request );
+				$response_message = wp_remote_retrieve_response_message( $request );
+
+				if ( 200 === $response_code ) {
+					$log_request = $log_found_files;
+				} else {
+					$log_request = true;
+				}
+
+				if ( $log_request ) {
+					$output[] = array(
+						$url,
+						$response_code,
+						$response_message,
+					);
+				}
+
+				$progress->tick();
+			}
+
+			// Pause.
+			sleep( 1 );
+
+			$offset += $limit;
+		} while ( count( $attachments ) );
+		$progress->finish();
+		WP_CLI\Utils\write_csv( $file_descriptor, $output );
+		fclose( $file_descriptor );
+	}
 }
 
 WP_CLI::add_command( 'vip migration', 'VIP_Go_Migrations_Command' );
