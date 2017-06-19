@@ -147,6 +147,54 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
 	}
+
+	/**
+	 * Import user meta attributes from a CSV file.
+	 *
+	 * @subcommand import-user-meta
+	 * @synopsis <file> [--user_key=<userlogin>]
+	 */
+	function import_user_meta( $args, $assoc_args ) {
+		$filename = $args[0];
+		$user_key = $assoc_args['user_key'] ?? 'user_login';
+
+		if ( ! file_exists( $filename ) ) {
+			WP_CLI::error( sprintf( 'Missing file: %s', $filename ) );
+		}
+
+		foreach ( new \WP_CLI\Iterators\CSV( $filename ) as $user_data ) {
+			$user_data = array_values( $user_data ); // Strip useless array keys.
+			$user_value = $user_data[0];
+			$meta_key = $user_data[1];
+			$meta_value = json_decode( $user_data[2] );
+
+			switch ( $user_key ) {
+				case 'ID':
+					$user = get_user_by( 'ID', $user_value );
+					break;
+				case 'user_nicename':
+					$user = get_user_by( 'slug', $user_value );
+					break;
+				case 'user_email':
+					$user = get_user_by( 'email', $user_value );
+					break;
+				case 'user_login':
+					$user = get_user_by( 'login', $user_value );
+					break;
+				default:
+					WP_CLI::error( 'Error getting user ' . $user_value );
+			}
+
+			$add_meta = update_user_meta( $user->ID, $meta_key, $meta_value );
+
+			if ( false !== $add_meta ) {
+				WP_CLI::line( 'Meta ' . $meta_key . ' added to user ' . $user_value );
+			} else {
+				WP_CLI::warning( 'Meta ' . $meta_key . ' NOT added to user ' . $user_value );
+			}
+
+		}
+	}
 }
 
 WP_CLI::add_command( 'vip migration', 'VIP_Go_Migrations_Command' );
