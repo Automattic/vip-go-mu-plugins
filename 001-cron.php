@@ -40,6 +40,11 @@ function wpcom_vip_use_core_cron() {
  * Cron Control handles authentication itself
  */
 function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
+	if ( ! defined( 'WP_CRON_CONTROL_SECRET' ) ) {
+		// Cron control is not active, block access to cron control endpoints
+		return false;
+	}
+
 	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
 
 	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
