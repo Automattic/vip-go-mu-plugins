@@ -50,3 +50,30 @@ function wpcom_vip_did_jetpack_search_query( $query ) {
 }
 
 add_action( 'did_jetpack_search_query', 'wpcom_vip_did_jetpack_search_query' );
+
+/**
+ * Decide when Jetpack's Sync Listener should be loaded.
+ *
+ * Sync Listener looks for events that need to be added to the sync queue. On
+ * many requests, such as frontend views, we wouldn't expect there to be any DB
+ * writes so there should be nothing for Jetpack to listen for.
+ *
+ * @param  bool $should_load Current value.
+ * @return bool              Whether (true) or not (false) Listener should load.
+ */
+function wpcom_vip_jetpack_sync_listener_should_load( $should_load ) {
+
+	// Don't run listener when we're on the frontend, not running cron and dealing
+	// with a GET request as opposed to POST/PUT etc.
+	if (
+		! is_admin() &&
+		! DOING_CRON &&
+		( isset( $_SERVER["REQUEST_METHOD"] ) && 'GET' === $_SERVER['REQUEST_METHOD'] )
+	) {
+		$should_load = false;
+	}
+
+	return $should_load;
+
+}
+add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_jetpack_sync_listener_should_load' );
