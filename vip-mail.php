@@ -19,14 +19,13 @@ class VIP_SMTP {
 	function phpmailer_init( $phpmailer ) {
 		global $all_smtp_servers;
 
-		$phpmailer->isSMTP();
-
 		if ( ! is_array( $all_smtp_servers ) || empty( $all_smtp_servers ) )
 			return;
 
 		if ( count( $all_smtp_servers ) > 1 )
 			shuffle( $all_smtp_servers );
 
+		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
 	}
 
