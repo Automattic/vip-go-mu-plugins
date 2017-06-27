@@ -36,7 +36,8 @@
  */
 function l( $stuff = null ) {
 	// Do nothing on production hosts.
-	if ( !defined( 'WPCOM_SANDBOXED' ) || !WPCOM_SANDBOXED ) {
+	if ( true === WPCOM_IS_VIP_ENV
+		&& ( ! defined( 'WPCOM_SANDBOXED' ) || ! WPCOM_SANDBOXED ) ) {
 		return $stuff;
 	}
 	static $pageload;
