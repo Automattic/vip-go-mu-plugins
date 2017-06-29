@@ -64,9 +64,6 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return void
 	 */
 	public function set_rest_api_ttl( $is_user_logged_in ) {
-		if ( ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
-			return $is_user_logged_in;
-		}
 		header( 'Cache-Control: max-age=' . (1 * 60) ); // One minute TTL for REST API requests
 
 		return $is_user_logged_in;
