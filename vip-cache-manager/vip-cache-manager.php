@@ -50,6 +50,25 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
 
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
+
+		add_action( 'rest_send_nocache_headers', array( $this, 'set_rest_api_ttl' ) );
+	}
+
+	/**
+	 * Set a TTL for REST requests
+	 *
+	 * This is hooked on the rest_send_nocache_headers filter,
+	 * so we must return $is_user_logged_in unchanged.
+	 *
+	 * @param bool $is_user_logged_in Whether the current request is authenticated to a user
+	 * @return void
+	 */
+	public function set_rest_api_ttl( $is_user_logged_in ) {
+		if ( ! $is_user_logged_in ) {
+			header( 'Cache-Control: max-age=' . (1 * 60) ); // One minute TTL for REST API requests
+		}
+
+		return $is_user_logged_in;
 	}
 
 	public function get_manual_purge_link() {
