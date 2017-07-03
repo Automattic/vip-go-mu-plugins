@@ -19,6 +19,7 @@ function _manually_load_plugin() {
 	require_once( __DIR__ . '/../lib/proxy/ip-forward.php' );
 	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
 
+	require_once( __DIR__ . '/../vip-cache-manager.php' );
 	require_once( __DIR__ . '/../vip-rest-api.php' );
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
