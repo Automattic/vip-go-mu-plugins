@@ -217,7 +217,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 			$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
 		}
 
-		return new WP_REST_Response( array( 'site' => get_home_url(), 'plugins' => $all_plugins ) );
+		return new WP_REST_Response( $all_plugins );
 	}
 }
 
