@@ -195,8 +195,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 			$shared_plugins = $vip_plugins->get_shared_plugins();
 
 			foreach ( $vip_plugins->get_shared_plugins() as $key => $plugin ) {
-				if ( $t = $vip_plugins->is_plugin_active( basename( dirname( $key ) ) ) ) {
-					if ( 'manual' === $t ) {
+				if ( $active_plugin_type = $vip_plugins->is_plugin_active( basename( dirname( $key ) ) ) ) {
+					if ( 'manual' === $active_plugin_type ) {
 						$tmp_code_plugins[ $key ] = array(
 							'name' => $plugin['Name'],
 							'version' => $plugin['Version'],
