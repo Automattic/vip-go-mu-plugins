@@ -47,7 +47,7 @@ function wpcom_vip_load_client_mu_plugins() {
 	}
 }
 
-function get_client_mu_plugins() {
+function wpcom_vip_get_client_mu_plugins() {
 	$wp_plugins = array();
 	// Files in wp-content/mu-plugins directory
 	$plugin_files = array();
