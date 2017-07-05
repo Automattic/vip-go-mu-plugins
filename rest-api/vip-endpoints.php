@@ -133,9 +133,21 @@ class WPCOM_VIP_REST_API_Endpoints {
 	}
 
 	/**
-	 * Build list of active plugins on site ()
+	 * Endpoint to return active plugins on site
 	 */
 	public function list_plugins() {
+		$plugins = $this->get_all_plugins();
+		if ( is_wp_error( $plugins ) ) {
+			return $plugins->get_error_message();
+		}
+
+		return new WP_REST_Response( $plugins );
+	}
+
+	/**
+	 * Get all the plugins
+	 */
+	public function get_all_plugins() {
 		$all_plugins = array();
 		$standard_plugins = array();
 		$shared_plugins = array();
@@ -217,7 +229,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 			$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
 		}
 
-		return new WP_REST_Response( $all_plugins );
+		return $all_plugins;
 	}
 }
 
