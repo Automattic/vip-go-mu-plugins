@@ -49,12 +49,12 @@ function wpcom_vip_load_client_mu_plugins() {
 
 function wpcom_vip_get_client_mu_plugins() {
 	$wp_plugins = array();
-	// Files in wp-content/mu-plugins directory
 	$plugin_files = array();
 
 	if ( ! is_dir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) ) {
 		return $wp_plugins;
 	}
+
 	if ( $plugins_dir = @opendir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) ) {
 		while ( ( $file = readdir( $plugins_dir ) ) !== false ) {
 			if ( substr( $file, -4 ) === '.php' ) {
@@ -69,6 +69,16 @@ function wpcom_vip_get_client_mu_plugins() {
 
 	if ( empty( $plugin_files ) ) {
 		return $wp_plugins;
+	}
+
+	return $plugin_files;
+}
+
+function wpcom_vip_get_client_mu_plugins_data() {
+	$plugin_files = wpcom_vip_get_client_mu_plugins();
+
+	if ( empty( $plugin_files ) ) {
+		return $plugin_files;
 	}
 
 	foreach ( $plugin_files as $plugin_file ) {
@@ -93,5 +103,3 @@ function wpcom_vip_get_client_mu_plugins() {
 
 	return $wp_plugins;
 }
-
-wpcom_vip_load_client_mu_plugins();

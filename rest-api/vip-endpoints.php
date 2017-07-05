@@ -187,7 +187,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$all_plugins['mu-plugin'] = $tmp_plugins;
 
 		// array of all client mu plugins
-		$client_mu_plugins = wpcom_vip_get_client_mu_plugins();
+		$client_mu_plugins = wpcom_vip_get_client_mu_plugins_data();
 		$tmp_plugins = array();
 		foreach ( $client_mu_plugins as $key => $plugin ) {
 			$tmp_plugins[ $key ] = array(
