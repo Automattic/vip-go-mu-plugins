@@ -205,6 +205,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 				'version' => $plugin['Version'],
 				'description' => $plugin['Description'],
 				'type' => 'mu-plugin',
+				'active' => true,
 			);
 		}
 		$all_plugins['mu-plugin'] = $tmp_plugins;
@@ -218,6 +219,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 				'version' => $plugin['Version'],
 				'description' => $plugin['Description'],
 				'type' => 'client-mu-plugin',
+				'active' => true,
 			);
 		}
 		$all_plugins['client-mu-plugin'] = $tmp_plugins;
@@ -237,6 +239,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 							'version' => $plugin['Version'],
 							'description' => $plugin['Description'],
 							'type' => 'vip-shared-code',
+							'active' => true,
 						);
 					} else {
 						$tmp_ui_plugins[ $key ] = array(
@@ -244,6 +247,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 							'version' => $plugin['Version'],
 							'description' => $plugin['Description'],
 							'type' => 'vip-shared-ui',
+							'active' => true,
 						);
 					}
 				}
