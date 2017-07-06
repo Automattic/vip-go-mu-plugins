@@ -148,11 +148,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * Get all the plugins
 	 */
 	public function get_all_plugins() {
+		global $vip_loaded_plugins;
 		$all_plugins = array();
-		$standard_plugins = array();
-		$shared_plugins = array();
-		$mu_plugins = array();
-		$client_mu_plugins = array();
 
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -162,16 +159,42 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$standard_plugins = get_plugins();
 		$tmp_plugins = array();
 		foreach ( $standard_plugins as $key => $plugin ) {
+			$vip_plugin_slug = 'plugins/' . dirname( $key );
 			if ( is_plugin_active( $key ) ) {
 				$tmp_plugins[ $key ] = array(
 					'name' => $plugin['Name'],
 					'version' => $plugin['Version'],
 					'description' => $plugin['Description'],
 					'type' => 'standard',
+					'active' => true,
+				);
+			} elseif ( ! in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
+				$tmp_plugins[ $key ] = array(
+					'name' => $plugin['Name'],
+					'version' => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type' => 'standard',
+					'active' => false,
 				);
 			}
 		}
 		$all_plugins['standard'] = $tmp_plugins;
+
+		// array of all code activated standard plugins
+		$tmp_plugins = array();
+		foreach ( $standard_plugins as $key => $plugin ) {
+			$vip_plugin_slug = 'plugins/' . dirname( $key );
+			if ( in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
+				$tmp_plugins[ $key ] = array(
+					'name' => $plugin['Name'],
+					'version' => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type' => 'standard-code',
+					'active' => true,
+				);
+			}
+		}
+		$all_plugins['standard-code'] = $tmp_plugins;
 
 		// array of all mu plugins
 		$mu_plugins = get_mu_plugins();
