@@ -137,9 +137,6 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 	public function list_plugins() {
 		$plugins = $this->get_all_plugins();
-		if ( is_wp_error( $plugins ) ) {
-			return $plugins->get_error_message();
-		}
 
 		return new WP_REST_Response( $plugins );
 	}
@@ -147,7 +144,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	/**
 	 * Get all the plugins
 	 */
-	public function get_all_plugins() {
+	protected function get_all_plugins() {
 		global $vip_loaded_plugins;
 		$all_plugins = array();
 
