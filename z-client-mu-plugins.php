@@ -47,6 +47,10 @@ function wpcom_vip_load_client_mu_plugins() {
 	}
 }
 
+// Load the plugins
+// TODO: move out of function scope to avoid issues with globals not being properly set
+wpcom_vip_load_client_mu_plugins();
+
 function wpcom_vip_get_client_mu_plugins() {
 	$wp_plugins = array();
 	$plugin_files = array();
