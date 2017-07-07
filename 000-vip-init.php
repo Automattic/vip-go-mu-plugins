@@ -32,6 +32,10 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+// Define constants for custom VIP Go paths
+define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+define( 'WPCOM_VIP_PRIVATE_DIR', '/private' );
+
 // Define these values just in case
 defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
 defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAME', 'VIP' );
