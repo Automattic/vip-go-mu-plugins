@@ -2,10 +2,14 @@
 
 namespace Automattic\VIP\Tests;
 
+use function Automattic\VIP\Proxy\is_valid_ip;
+use function Automattic\VIP\Proxy\set_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
+use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
+use function Automattic\VIP\Proxy\get_proxy_verification_key;
 
-class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
+abstract class IP_Foward_Test_Base extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
 	public function setUp() {
@@ -23,6 +27,43 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
 		}
+	}
+}
+
+class IP_Foward_Tests extends IP_Foward_Test_Base {
+
+	// is_valid_ip
+	public function test__is_valid_ip__invalid() {
+		$ip = 'bad_ip';
+
+		$result = is_valid_ip( $ip );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__is_valid_ip__valid_ip4() {
+		$ip = '1.2.3.4';
+
+		$result = is_valid_ip( $ip );
+
+		$this->assertTrue( $result );
+	}
+
+	public function test__is_valid_ip__valid_ip6() {
+		$ip = '2001:db8::1234:ace:6006:1e';
+
+		$result = is_valid_ip( $ip );
+
+		$this->assertTrue( $result );
+	}
+
+	// set_remote_address
+	public function test__set_remote_address() {
+		$user_ip = '5.6.7.8';
+
+		set_remote_address( $user_ip );
+
+		$this->assertEquals( $user_ip, $_SERVER['REMOTE_ADDR'] );
 	}
 
 	// fix_remote_address
@@ -168,5 +209,99 @@ class IP_Foward_Test extends \PHPUnit_Framework_TestCase {
 
 		$this->assertTrue( $result );
 		$this->assertEquals( '2001:db8::1234:ace:6006:1e', $_SERVER['REMOTE_ADDR'] );
+	}
+}
+
+class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__not_defined() {
+		// not defining the key
+
+		$actual_key = get_proxy_verification_key();
+
+		$this->assertTrue( is_numeric( $actual_key ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__defined_but_empty() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', '' );
+
+		$actual_key = get_proxy_verification_key();
+
+		$this->assertTrue( is_numeric( $actual_key ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__defined() {
+		$expected_key = 'secretkey';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', $expected_key );
+
+		$actual_key = get_proxy_verification_key();
+
+		$this->assertEquals( $expected_key, $actual_key );
+	}
+}
+
+class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
+
+	public function setUp() {
+		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
+		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
+
+		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
+	}
+
+	public function tearDown() {
+		if ( $this->original_remote_addr ) {
+			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
+		}
+
+		if ( $this->original_x_forwarded_for ) {
+			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
+		}
+	}
+
+	public static function setUpBeforeClass() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+	}
+
+	public function test__invalid_ip() {
+		$key = 'valid-key';
+		$user_ip = 'bad_ip';
+
+		$result = fix_remote_address_with_verification_key( $user_ip, $key );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__invalid_key() {
+		$key = 'not-a-valid-key';
+		$user_ip = '5.6.7.8';
+
+		$result = fix_remote_address_with_verification_key( $user_ip, $key );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	public function test__valid_ip4() {
+		$key = 'valid-key';
+		$user_ip = '5.6.7.8';
+
+		$result = fix_remote_address_with_verification_key( $user_ip, $key );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '5.6.7.8', $_SERVER['REMOTE_ADDR'] );
 	}
 }
