@@ -9,3 +9,4 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 */
 
 require_once( __DIR__ . '/vip-cache-manager/vip-cache-manager.php' );
+require_once( __DIR__ . '/vip-cache-manager/ttl-manager.php' );
