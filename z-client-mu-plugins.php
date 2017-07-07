@@ -2,8 +2,6 @@
 
 // Note: This file is prefixed with `z-` for load order
 
-define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
-
 function wpcom_vip_load_client_mu_plugins() {
 	static $loaded = false;
 
