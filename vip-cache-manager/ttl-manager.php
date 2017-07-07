@@ -2,11 +2,11 @@
 
 /*
 Plugin name: TTL Manager
-Description: Sets sane and reasonable cache TTLs for site responses.
+Description: Sets cache TTLs for site responses, see https://vip.wordpress.com/documentation/vip-go/controlling-vip-go-page-cache/
 Author: Automattic
-Author URI: http://automattic.com/
+Author URI: https://automattic.com/
 Version: 1.0
-License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+License: GPL version 2 or later - https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
 namespace Automattic\VIP\Cache;
