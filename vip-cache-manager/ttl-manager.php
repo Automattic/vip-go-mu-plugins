@@ -37,7 +37,17 @@ class TTL_Manager {
 			return $response;
 		}
 
-		$ttl = apply_filters( 'wpcom_vip_rest_response_ttl', self::DEFAULT_API_TTL, $response, $rest_server, $request );
+		/**
+		 * The fallback TTL (Cache-Control: max-age) value to use for unauthenticated, non-error, read (GET / HEAD) requests to the API.
+		 *
+		 * Defaults to 60 seconds.
+		 *
+		 * @param int $ttl The TTL value to use.
+		 * @param WP_REST_Response $response The outbound REST API response object.
+		 * @param WP_REST_Server $rest_server The REST API server object.
+		 * @param WP_REST_Request $request The incoming REST API request object.
+		 */
+		$ttl = apply_filters( 'wpcom_vip_rest_read_response_ttl', self::DEFAULT_API_TTL, $response, $rest_server, $request );
 		self::set_rest_response_ttl( $response, $ttl );
 
 		return $response;
