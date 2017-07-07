@@ -61,19 +61,22 @@ add_action( 'did_jetpack_search_query', 'wpcom_vip_did_jetpack_search_query' );
  * @param  bool $should_load Current value.
  * @return bool              Whether (true) or not (false) Listener should load.
  */
-function wpcom_vip_jetpack_sync_listener_should_load( $should_load ) {
+function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load ) {
+	// Don't run listener for frontend, non-cron GET requests
 
-	// Don't run listener when we're on the frontend, not running cron and dealing
-	// with a GET request as opposed to POST/PUT etc.
-	if (
-		! is_admin() &&
-		! DOING_CRON &&
-		( isset( $_SERVER["REQUEST_METHOD"] ) && 'GET' === $_SERVER['REQUEST_METHOD'] )
-	) {
+	if ( is_admin() ) {
+		return $should_load;
+	}
+
+	if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+		return $should_load;
+	}
+
+	if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) {
 		$should_load = false;
 	}
 
 	return $should_load;
 
 }
-add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_jetpack_sync_listener_should_load' );
+add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_disable_jetpack_sync_for_frontend_get_requests' );
