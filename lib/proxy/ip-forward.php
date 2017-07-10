@@ -2,6 +2,15 @@
 
 namespace Automattic\VIP\Proxy;
 
+/**
+ * Is the supplied IP address valid?
+ *
+ * Supports v4 and v6 IP addresses
+ *
+ * @param string $ip The IP address to validate
+ *
+ * @return bool True if the IP address is valid
+ */
 function is_valid_ip( $ip ) {
 	if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
 		&& ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
@@ -11,6 +20,11 @@ function is_valid_ip( $ip ) {
 	return true;
 }
 
+/**
+ * Set the remote address in PHP
+ *
+ * @param string $ip The IP address to set the remote address to
+ */
 function set_remote_address( $ip ) {
 	$_SERVER['REMOTE_ADDR'] = $ip;
 }
@@ -92,6 +106,8 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 
 /**
  * Return the defined verification key for a site
+ *
+ * @return string|int The verification key if available, or a random integer if no key is configured.
  */
 function get_proxy_verification_key() {
 	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
