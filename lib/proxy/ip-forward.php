@@ -82,24 +82,12 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
  * @return (bool) true, if REMOTE_ADDR updated; false, if not.
  */
 function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
-	// If X-Forwarded-For is not set, we're not dealing with a remote proxy or something in the proxy configs is doing it wrong.
-	if ( ! isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-		return false;
-	}
-
-	// Verify that the IP trail has multiple IPs but only two levels (remote + local).
-	$ip_addresses = explode( ',', $ip_trail );
-	$ip_addresses = array_map( 'trim', $ip_addresses );
-	if ( 2 !== count( $ip_addresses ) ) {
+	$ip_addresses = get_ip_addresses_from_ip_trail( $ip_trail );
+	if ( false === $ip_addresses ) {
 		return false;
 	}
 
 	list( $user_ip, $remote_proxy_ip ) = $ip_addresses;
-
-	// This should probably never happen, but validate just in case.
-	if ( $remote_proxy_ip !== $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
-		return false;
-	}
 
 	return fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist );
 }
@@ -166,24 +154,12 @@ function fix_remote_address_with_verification_key( $user_ip, $submitted_verifica
  * @return (bool) true, if REMOTE_ADDR updated; false, if not.
  */
 function fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $submitted_verification_key ) {
-	// If X-Forwarded-For is not set, we're not dealing with a remote proxy or something in the proxy configs is doing it wrong.
-	if ( ! isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+	$ip_addresses = get_ip_addresses_from_ip_trail( $ip_trail );
+	if ( false === $ip_addresses ) {
 		return false;
 	}
 
-	// Verify that the IP trail has multiple IPs but only two levels (remote + local).
-	$ip_addresses = explode( ',', $ip_trail );
-	$ip_addresses = array_map( 'trim', $ip_addresses );
-	if ( 2 !== count( $ip_addresses ) ) {
-		return false;
-	}
-
-	list( $user_ip, $remote_proxy_ip ) = $ip_addresses;
-
-	// This should probably never happen, but validate just in case.
-	if ( $remote_proxy_ip !== $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
-		return false;
-	}
+	$user_ip = $ip_addresses[0];
 
 	if ( ! is_valid_proxy_verification_key( $submitted_verification_key ) ) {
 		return false;
@@ -206,4 +182,50 @@ function is_valid_proxy_verification_key( $submitted_verification_key ) {
 		return false;
 	}
 	return true;
+}
+
+/**
+ * Get a list of validated IP addresses from a comma-separated string expected to
+ * be passed as the X-IP-Trail HTTP request header
+ *
+ * Takes IP v4 or v6
+ *
+ * Fails if there's more than two IP addresses
+ * Fails if any IP address is invalid
+ *
+ * Also checks the X-Forwarded-For header makes sense.
+ *
+ * @param string $ip_trail A comma separated string of IP addresses
+ *
+ * @return array|bool An array of validated IP addresses, or false if
+ */
+function get_ip_addresses_from_ip_trail( $ip_trail ) {
+	// If X-Forwarded-For is not set, we're not dealing with a remote proxy or something in the proxy configs is doing it wrong.
+	if ( ! isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+		return false;
+	}
+
+	// Verify that the IP trail has multiple IPs but only two levels (remote + local).
+	$ip_addresses = explode( ',', $ip_trail );
+	$ip_addresses = array_map( 'trim', $ip_addresses );
+	if ( 2 !== count( $ip_addresses ) ) {
+		return false;
+	}
+
+	foreach ( $ip_addresses as $ip_address ) {
+		if ( empty( $ip_address ) ) {
+			return false;
+		}
+		if ( ! is_valid_ip( $ip_address ) ) {
+			return false;
+		}
+	}
+
+	// This should probably never happen, but validate just in case.
+	$remote_proxy_ip = $ip_addresses[1];
+	if ( $remote_proxy_ip !== $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
+		return false;
+	}
+
+	return $ip_addresses;
 }
