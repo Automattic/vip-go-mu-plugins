@@ -9,7 +9,7 @@ use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 use function Automattic\VIP\Proxy\get_proxy_verification_key;
 
-abstract class IP_Foward_Test_Base extends \PHPUnit_Framework_TestCase {
+abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
 	public function setUp() {
@@ -30,7 +30,7 @@ abstract class IP_Foward_Test_Base extends \PHPUnit_Framework_TestCase {
 	}
 }
 
-class IP_Foward_Tests extends IP_Foward_Test_Base {
+class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	// is_valid_ip
 	public function test__is_valid_ip__invalid() {
