@@ -251,6 +251,29 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 	}
 }
 
+class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+
+	public static function setUpBeforeClass() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+	}
+
+	public function test__invalid_key() {
+		$key = 'not-a-valid-key';
+
+		$result = is_valid_proxy_verification_key( $key );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__valid_key() {
+		$key = 'valid-key';
+
+		$result = is_valid_proxy_verification_key( $key );
+
+		$this->assertTrue( $result );
+	}
+}
+
 class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 

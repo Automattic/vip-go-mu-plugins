@@ -169,6 +169,7 @@ function fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $sub
 
 	return true;
 }
+
 /**
  * Validate the provided verification key against the one in config.
  *
