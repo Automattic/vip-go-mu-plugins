@@ -134,8 +134,7 @@ function fix_remote_address_with_verification_key( $user_ip, $submitted_verifica
 		return false;
 	}
 
-	$expected_verification_key = get_proxy_verification_key();
-	if ( ! hash_equals( $submitted_verification_key, $expected_verification_key ) ) {
+	if ( ! is_valid_proxy_verification_key( $submitted_verification_key ) ) {
 		return false;
 	}
 
@@ -186,12 +185,25 @@ function fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $sub
 		return false;
 	}
 
-	$expected_verification_key = get_proxy_verification_key();
-	if ( ! hash_equals( $submitted_verification_key, $expected_verification_key ) ) {
+	if ( ! is_valid_proxy_verification_key( $submitted_verification_key ) ) {
 		return false;
 	}
 
 	set_remote_address( $user_ip );
 
+	return true;
+}
+/**
+ * Validate the provided verification key against the one in config.
+ *
+ * @param string $submitted_verification_key The key to validate
+ *
+ * @return bool True if the key is valid
+ */
+function is_valid_proxy_verification_key( $submitted_verification_key ) {
+	$expected_verification_key = get_proxy_verification_key();
+	if ( ! hash_equals( $submitted_verification_key, $expected_verification_key ) ) {
+		return false;
+	}
 	return true;
 }
