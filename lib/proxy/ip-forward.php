@@ -127,3 +127,55 @@ function fix_remote_address_with_verification_key( $user_ip, $submitted_verifica
 
 	return true;
 }
+
+/**
+ * Set REMOTE_ADDR to the end-user's IP address from a trail of IP Addresses.
+ *
+ * Validate the proxy using a shared secret verification key.
+ *
+ * This allows satisfactorily forwarding the origin IP address when there are multiple
+ * proxies in play.
+ *
+ * Example setup:
+ * User => Remote Proxy (e.g. Cloudflare) => Local Proxy (Varnish) => Application (PHP/WP)
+ *
+ * Without this, the Application will see the Remote Proxy's IP address as the REMOTE_ADDR.
+ * With this, if the secret verification key is correct, the Application will see the User's
+ * real IP address as REMOTE_ADDR.
+ *
+ * Only two levels of proxies are supported.
+ *
+ * @param (string) $ip_trail Comma-separated list of IPs (something like `user_ip, proxy_ip`)
+ * @param (string) $submitted_verification_key Verification key passed through request headers
+ *
+ * @return (bool) true, if REMOTE_ADDR updated; false, if not.
+ */
+function fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $submitted_verification_key ) {
+	// If X-Forwarded-For is not set, we're not dealing with a remote proxy or something in the proxy configs is doing it wrong.
+	if ( ! isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+		return false;
+	}
+
+	// Verify that the IP trail has multiple IPs but only two levels (remote + local).
+	$ip_addresses = explode( ',', $ip_trail );
+	$ip_addresses = array_map( 'trim', $ip_addresses );
+	if ( 2 !== count( $ip_addresses ) ) {
+		return false;
+	}
+
+	list( $user_ip, $remote_proxy_ip ) = $ip_addresses;
+
+	// This should probably never happen, but validate just in case.
+	if ( $remote_proxy_ip !== $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
+		return false;
+	}
+
+	$expected_verification_key = get_proxy_verification_key();
+	if ( ! hash_equals( $submitted_verification_key, $expected_verification_key ) ) {
+		return false;
+	}
+
+	set_remote_address( $user_ip );
+
+	return true;
+}
