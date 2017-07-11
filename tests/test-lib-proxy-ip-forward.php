@@ -108,6 +108,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 	}
 }
 
+
 class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	// is_valid_ip
@@ -330,12 +331,12 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 }
 
 class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
-
-	public static function setUpBeforeClass() {
-		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
-	}
-
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__invalid_key() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'not-a-valid-key';
 
 		$result = is_valid_proxy_verification_key( $key );
@@ -343,7 +344,12 @@ class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framewo
 		$this->assertFalse( $result );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__valid_key() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 
 		$result = is_valid_proxy_verification_key( $key );
@@ -372,11 +378,12 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		}
 	}
 
-	public static function setUpBeforeClass() {
-		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
-	}
-
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__invalid_ip() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 		$user_ip = 'bad_ip';
 
@@ -386,7 +393,12 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__invalid_key() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'not-a-valid-key';
 		$user_ip = '5.6.7.8';
 
@@ -396,7 +408,12 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__valid_ip4() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 		$user_ip = '5.6.7.8';
 
@@ -406,3 +423,4 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		$this->assertEquals( '5.6.7.8', $_SERVER['REMOTE_ADDR'] );
 	}
 }
+
