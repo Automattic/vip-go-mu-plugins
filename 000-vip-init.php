@@ -32,6 +32,11 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+// Used to verify emails sent via our SMTP servers
+if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
+	define( 'WPCOM_VIP_MAIL_TRACKING_KEY', false );
+}
+
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
 define( 'WPCOM_VIP_PRIVATE_DIR', '/private' );
@@ -71,7 +76,7 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
+	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
 // Add Automattic's custom header
