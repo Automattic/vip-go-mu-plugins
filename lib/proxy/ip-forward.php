@@ -3,39 +3,10 @@
 namespace Automattic\VIP\Proxy;
 
 /**
- * Is the supplied IP address valid?
+ * Verify the remote proxy from a whitelist of IP addresses, and set the
+ * end user IP if verification succeeds.
  *
- * Supports v4 and v6 IP addresses
- *
- * @param string $ip The IP address to validate
- *
- * @return bool True if the IP address is valid
- */
-function is_valid_ip( $ip ) {
-	if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
-		&& ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-			return false;
-	}
-
-	return true;
-}
-
-/**
- * Set the remote address in PHP
- *
- * @param string $ip The IP address to set the remote address to
- */
-function set_remote_address( $ip ) {
-	$_SERVER['REMOTE_ADDR'] = $ip;
-}
-
-/**
- * Set REMOTE_ADDR to the end-user's IP address.
- *
- * This allows more securely forwarding the origin IP address when your site is fronted by a proxy like Cloudflare or Akamai.
- *
- * Without this, the Application will see the Remote Proxy's IP address as the REMOTE_ADDR.
- * With this, if Remote Proxy's IP address matches a known whitelist, the Application will see the User's real IP address as REMOTE_ADDR.
+ * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
  *
  * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
  * @param (string) $remote_proxy_ip IP Address of the remote proxy.
@@ -64,17 +35,13 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 }
 
 /**
- * Set REMOTE_ADDR to the end-user's IP address from a trail of IP Addresses.
- *
- * This allows more securely forwarding the origin IP address when there are multiple proxies in play.
- *
- * Example setup:
- * User => Remote Proxy (e.g. Cloudflare) => Local Proxy (Varnish) => Application (PHP/WP)
- *
- * Without this, the Application will see the Remote Proxy's IP address as the REMOTE_ADDR.
- * With this, if Remote Proxy's IP address matches a known whitelist, the Application will see the User's real IP address as REMOTE_ADDR.
+ * Verify the remote proxy from a whitelist of IP addresses, and set the
+ * end user IP from an X-Forwarded-For style comma separated list of IP
+ * addresses if verification succeeds.
  *
  * Only two levels of proxies are supported.
+ *
+ * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
  *
  * @param (string) $ip_trail Comma-separated list of IPs (something like `user_ip, proxy_ip`)
  * @param (string|array) $proxy_ip_whitelist Whitelisted IP addresses for the remote proxy. Supports IPv4 and IPv6, including CIDR format.
@@ -93,23 +60,13 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 }
 
 /**
- * Return the defined verification key for a site
+ * Verify the remote proxy via a secret verification key, and set the
+ * end user IP if verification succeeds.
  *
- * @return string|int The verification key if available, or a random integer if no key is configured.
- */
-function get_proxy_verification_key() {
-	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
-		return WPCOM_VIP_PROXY_VERIFICATION;
-	}
-
-	// If not properly defined for some reason, return a random number to avoid guessing the key.
-	return rand();
-}
-
-/**
- * Set REMOTE_ADDR to the end-user's IP address, if the verification key matches
+ * This is not the preferred method, use only when it is not possible to
+ * acquire a whitelist of remote proxy IP addresses.
  *
- * When an IP whitelist isn't possible, we rely on a verification key being sent as a request header as our method of safely forwarding the IP.
+ * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
  *
  * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
  * @param (string) $submitted_verification_key Verification key passed through request headers
@@ -132,21 +89,16 @@ function fix_remote_address_with_verification_key( $user_ip, $submitted_verifica
 }
 
 /**
- * Set REMOTE_ADDR to the end-user's IP address from a trail of IP Addresses.
+ * Verify the remote proxy via a secret verification key, and set the
+ * end user IP from an X-Forwarded-For style comma separated list of IP
+ * addresses if verification succeeds.
  *
- * Validate the proxy using a shared secret verification key.
- *
- * This allows satisfactorily forwarding the origin IP address when there are multiple
- * proxies in play.
- *
- * Example setup:
- * User => Remote Proxy (e.g. Cloudflare) => Local Proxy (Varnish) => Application (PHP/WP)
- *
- * Without this, the Application will see the Remote Proxy's IP address as the REMOTE_ADDR.
- * With this, if the secret verification key is correct, the Application will see the User's
- * real IP address as REMOTE_ADDR.
+ * This is not the preferred method, use only when it is not possible to
+ * acquire a whitelist of remote proxy IP addresses.
  *
  * Only two levels of proxies are supported.
+ *
+ * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
  *
  * @param (string) $ip_trail Comma-separated list of IPs (something like `user_ip, proxy_ip`)
  * @param (string) $submitted_verification_key Verification key passed through request headers
@@ -171,6 +123,47 @@ function fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $sub
 }
 
 /**
+ * Is the supplied IP address valid?
+ *
+ * Supports v4 and v6 IP addresses
+ *
+ * @param string $ip The IP address to validate
+ *
+ * @return bool True if the IP address is valid
+ */
+function is_valid_ip( $ip ) {
+	if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )
+	     && ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Set the remote address in PHP
+ *
+ * @param string $ip The IP address to set the remote address to
+ */
+function set_remote_address( $ip ) {
+	$_SERVER['REMOTE_ADDR'] = $ip;
+}
+
+/**
+ * Return the defined verification key for a site
+ *
+ * @return string|int The verification key if available, or a random integer if no key is configured.
+ */
+function get_proxy_verification_key() {
+	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
+		return WPCOM_VIP_PROXY_VERIFICATION;
+	}
+
+	// If not properly defined for some reason, return a random number to avoid guessing the key.
+	return rand();
+}
+
+/**
  * Validate the provided verification key against the one in config.
  *
  * @param string $submitted_verification_key The key to validate
@@ -184,12 +177,14 @@ function is_valid_proxy_verification_key( $submitted_verification_key ) {
 
 /**
  * Get a list of validated IP addresses from a comma-separated string expected to
- * be passed as the X-IP-Trail HTTP request header
+ * be passed as the X-IP-Trail HTTP request header.
  *
- * Takes IP v4 or v6
+ * Takes IP v4 or v6.
  *
- * Fails if there's more than two IP addresses
- * Fails if any IP address is invalid
+ * Only two levels of proxies are supported; i.e. fails if there's more than
+ * two IP addresses.
+ *
+ * Fails if any IP address in the list is invalid.
  *
  * Also checks the X-Forwarded-For header makes sense.
  *
