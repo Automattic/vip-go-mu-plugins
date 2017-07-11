@@ -179,10 +179,7 @@ function fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $sub
  */
 function is_valid_proxy_verification_key( $submitted_verification_key ) {
 	$expected_verification_key = get_proxy_verification_key();
-	if ( ! hash_equals( $submitted_verification_key, $expected_verification_key ) ) {
-		return false;
-	}
-	return true;
+	return hash_equals( $submitted_verification_key, $expected_verification_key );
 }
 
 /**
