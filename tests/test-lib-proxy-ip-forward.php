@@ -10,6 +10,7 @@ use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 use function Automattic\VIP\Proxy\get_proxy_verification_key;
 use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
 use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
+use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
 
 abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
@@ -345,6 +346,56 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 
 		$this->assertTrue( $result );
 		$this->assertEquals( '5.6.7.8', $_SERVER['REMOTE_ADDR'] );
+	}
+}
+
+class IP_Forward__Fix_Remote_Address_From_Ip_Trail_With_Verification_Key__Test extends IP_Forward_Test_Base {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__all_valid() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'valid-key';
+
+		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__invalid_key() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'invalid-key';
+
+		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__invalid_ip_trail() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.eight';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'valid-key';
+
+		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 }
 
