@@ -8,6 +8,8 @@ use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 use function Automattic\VIP\Proxy\get_proxy_verification_key;
+use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
+use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
 
 abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
@@ -92,7 +94,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 		$ip_trail = '1.2.3.4, 5.6.7.8';
 		$expected_ip_addresses = [ '1.2.3.4', '5.6.7.8' ];
 
-		$result = get_ip_addresses_from_ip_trail( $ip_trail, $whitelist );
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
 		$this->assertEquals( $expected_ip_addresses, $result );
 	}
@@ -102,7 +104,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 		$ip_trail = '2001:db8::1234:ace:6006:1e, 5.6.7.8';
 		$expected_ip_addresses = [ '2001:db8::1234:ace:6006:1e', '5.6.7.8' ];
 
-		$result = get_ip_addresses_from_ip_trail( $ip_trail, $whitelist );
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
 		$this->assertEquals( $expected_ip_addresses, $result );
 	}
