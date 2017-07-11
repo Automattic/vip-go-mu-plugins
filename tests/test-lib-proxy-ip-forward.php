@@ -204,7 +204,7 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
-	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist_ipv4() {
+	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
 		$ip_trail = '1.2.3.4, 5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
@@ -337,7 +337,7 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__valid_ip4() {
+	public function test__all_valid() {
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 		$user_ip = '5.6.7.8';
