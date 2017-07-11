@@ -32,8 +32,9 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+// Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
-	defined( 'WPCOM_VIP_MAIL_TRACKING_KEY', false );
+	define( 'WPCOM_VIP_MAIL_TRACKING_KEY', false );
 }
 
 // Define constants for custom VIP Go paths
