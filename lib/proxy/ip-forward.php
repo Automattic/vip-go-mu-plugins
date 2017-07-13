@@ -14,7 +14,7 @@ namespace Automattic\VIP\Proxy;
  *
  * @return (bool) true, if REMOTE_ADDR updated; false, if not.
  */
-function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
+function fix_remote_address( $user_ip, $proxy_ip_whitelist ) {
 	if ( ! is_valid_ip( $user_ip ) ) {
 		return false;
 	}
@@ -22,7 +22,7 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 	require_once( __DIR__ . '/ip-utils.php' );
 
 	// Verify that the remote proxy matches our whitelist
-	$is_whitelisted_proxy_ip = IpUtils::checkIp( $remote_proxy_ip, $proxy_ip_whitelist );
+	$is_whitelisted_proxy_ip = IpUtils::checkIp( $_SERVER['HTTP_X_FORWARDED_FOR'], $proxy_ip_whitelist );
 
 	if ( ! $is_whitelisted_proxy_ip ) {
 		return false;
@@ -54,9 +54,9 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
 		return false;
 	}
 
-	list( $user_ip, $remote_proxy_ip ) = $ip_addresses;
+	list( $user_ip ) = $ip_addresses;
 
-	return fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist );
+	return fix_remote_address( $user_ip, $proxy_ip_whitelist );
 }
 
 /**
@@ -177,7 +177,7 @@ function is_valid_proxy_verification_key( $submitted_verification_key ) {
 
 /**
  * Get a list of validated IP addresses from a comma-separated string expected to
- * be passed as the X-IP-Trail HTTP request header.
+ * be passed as the X-IP-Trail HTTP request header
  *
  * Takes IP v4 or v6.
  *
