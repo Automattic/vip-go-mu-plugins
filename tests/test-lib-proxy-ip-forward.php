@@ -8,8 +8,11 @@ use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 use function Automattic\VIP\Proxy\get_proxy_verification_key;
+use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
+use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
+use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
 
-abstract class IP_Foward_Test_Base extends \PHPUnit_Framework_TestCase {
+abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
 	public function setUp() {
@@ -30,7 +33,86 @@ abstract class IP_Foward_Test_Base extends \PHPUnit_Framework_TestCase {
 	}
 }
 
-class IP_Foward_Tests extends IP_Foward_Test_Base {
+class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_Base {
+
+	// fix_remote_address_from_ip_trail
+	public function test__get_ip_addresses_from_ip_trail__no_forwarded_for() {
+		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__get_ip_addresses_from_ip_trail__ip_trail_has_lt_2_ips() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4';
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__get_ip_addresses_from_ip_trail__ip_trail_has_gt_2_ips() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 9.0.21.0, 5.6.7.8';
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__get_ip_addresses_from_ip_trail__proxy_doesnt_match_forwarded_for() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.5.5.5';
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__fix_remote_address_from_ip_trail__invalid_remote_ip() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 123456789';
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__fix_remote_address_from_ip_trail__invalid_user_ip() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = 'bad_ip, 5.6.7.8';
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__fix_remote_address_from_ip_trail__valid_ip_trail_ipv4() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+		$expected_ip_addresses = [ '1.2.3.4', '5.6.7.8' ];
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertEquals( $expected_ip_addresses, $result );
+	}
+
+	public function test__fix_remote_address_from_ip_trail__valid_ip_trail_ipv6() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '2001:db8::1234:ace:6006:1e, 5.6.7.8';
+		$expected_ip_addresses = [ '2001:db8::1234:ace:6006:1e', '5.6.7.8' ];
+
+		$result = get_ip_addresses_from_ip_trail( $ip_trail );
+
+		$this->assertEquals( $expected_ip_addresses, $result );
+	}
+}
+
+
+class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	// is_valid_ip
 	public function test__is_valid_ip__invalid() {
@@ -111,73 +193,6 @@ class IP_Foward_Tests extends IP_Foward_Test_Base {
 		$this->assertEquals( '2001:db8::1234:ace:6006:1e', $_SERVER['REMOTE_ADDR'] );
 	}
 
-	// fix_remote_address_from_ip_trail
-	public function test__fix_remote_address_from_ip_trail__no_forwarded_for() {
-		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
-		$ip_trail = '1.2.3.4, 5.6.7.8';
-		$whitelist = [ '5.6.7.8' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertFalse( $result );
-		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__fix_remote_address_from_ip_trail__ip_trail_has_lt_2_ips() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4';
-		$whitelist = [ '5.6.7.8' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertFalse( $result );
-		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__fix_remote_address_from_ip_trail__ip_trail_has_gt_2_ips() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 9.0.21.0, 5.6.7.8';
-		$whitelist = [ '5.6.7.8' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertFalse( $result );
-		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__fix_remote_address_from_ip_trail__proxy_doesnt_match_forwarded_for() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.5.5.5';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
-		$whitelist = [ '0.0.0.0' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertFalse( $result );
-		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__fix_remote_address_from_ip_trail__invalid_remote_ip() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 123456789';
-		$whitelist = [ '5.6.7.8' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertFalse( $result );
-		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__fix_remote_address_from_ip_trail__invalid_user_ip() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = 'bad_ip, 5.6.7.8';
-		$whitelist = [ '5.6.7.8' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertFalse( $result );
-		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
 	public function test__fix_remote_address_from_ip_trail__ip_not_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
 		$ip_trail = '1.2.3.4, 5.6.7.8';
@@ -189,7 +204,7 @@ class IP_Foward_Tests extends IP_Foward_Test_Base {
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
-	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist_ipv4() {
+	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
 		$ip_trail = '1.2.3.4, 5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
@@ -198,17 +213,6 @@ class IP_Foward_Tests extends IP_Foward_Test_Base {
 
 		$this->assertTrue( $result );
 		$this->assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist_ipv6() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '2001:db8::1234:ace:6006:1e, 5.6.7.8';
-		$whitelist = [ '5.6.7.8' ];
-
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
-
-		$this->assertTrue( $result );
-		$this->assertEquals( '2001:db8::1234:ace:6006:1e', $_SERVER['REMOTE_ADDR'] );
 	}
 }
 
@@ -251,6 +255,34 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 	}
 }
 
+class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__invalid_key() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'not-a-valid-key';
+
+		$result = is_valid_proxy_verification_key( $key );
+
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__valid_key() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'valid-key';
+
+		$result = is_valid_proxy_verification_key( $key );
+
+		$this->assertTrue( $result );
+	}
+}
+
 class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
@@ -271,11 +303,12 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		}
 	}
 
-	public static function setUpBeforeClass() {
-		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
-	}
-
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__invalid_ip() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 		$user_ip = 'bad_ip';
 
@@ -285,7 +318,12 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__invalid_key() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'not-a-valid-key';
 		$user_ip = '5.6.7.8';
 
@@ -295,7 +333,12 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
 	}
 
-	public function test__valid_ip4() {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__all_valid() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 		$user_ip = '5.6.7.8';
 
@@ -305,3 +348,54 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		$this->assertEquals( '5.6.7.8', $_SERVER['REMOTE_ADDR'] );
 	}
 }
+
+class IP_Forward__Fix_Remote_Address_From_Ip_Trail_With_Verification_Key__Test extends IP_Forward_Test_Base {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__all_valid() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'valid-key';
+
+		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
+
+		$this->assertTrue( $result );
+		$this->assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__invalid_key() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.8';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'invalid-key';
+
+		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__invalid_ip_trail() {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
+		$ip_trail = '1.2.3.4, 5.6.7.eight';
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+		$key = 'valid-key';
+
+		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
+
+		$this->assertFalse( $result );
+		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+	}
+}
+
