@@ -64,7 +64,7 @@ if [ ! -z "$SITE_URL" ]; then
 fi
 
 # silently ensure Jetpack is active
-wp plugin activate jetpack $ADDITIONAL_ARGS >/dev/null 2>&1
+wp --allow-root plugin activate jetpack $ADDITIONAL_ARGS >/dev/null 2>&1
 
 # add extra args if available
 if [ ! -z "$WP_USER" ]; then
@@ -84,4 +84,4 @@ if [ ! -z "$WPCOM_USER_ID" ]; then
 fi 
 
 # provision the partner plan
-wp jetpack partner_provision "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
+wp --allow-root jetpack partner_provision "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
