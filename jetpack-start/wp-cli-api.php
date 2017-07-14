@@ -179,14 +179,19 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	private function run_jetpack_bin( $script, $args = array() ) {
 		$script_path = JETPACK__PLUGIN_DIR . 'bin/' . $script;
 
-		$cmd = sprintf( '%s --partner_id=%d --partner_secret=%s', $script_path, WPCOM_VIP_JP_START_API_CLIENT_ID, WPCOM_VIP_JP_START_API_CLIENT_SECRET );
+		$cmd = sprintf(
+			'%s --partner_id=%d --partner_secret=%s',
+			$script_path,
+			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_ID ),
+			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_SECRET )
+		);
 
 		if ( isset( $args['user_id'] ) ) {
 			$cmd .= ' --user_id=' . (int) $args['user_id'];
 		}
 
 		if ( isset( $args['plan'] ) ) {
-			$cmd .= ' --plan=' . $args['plan'];
+			$cmd .= ' --plan=' . escapeshellarg( $args['plan'] );
 		}
 
 		if ( isset( $args['wpcom_user_id'] ) ) {
@@ -196,9 +201,6 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		if ( isset( $args['url'] ) ) {
 			$cmd .= ' --url=' . $args['url'];
 		}
-
-		// TODO: escape arguments instead?
-		$cmd = escapeshellcmd( $cmd );
 
 		exec( $cmd, $script_output, $script_result );
 		$script_output_json = json_decode( end( $script_output ) );
