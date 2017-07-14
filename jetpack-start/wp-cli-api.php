@@ -121,7 +121,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		}
 
 		WP_CLI::line( '-- Provisioning via Jetpack Start API' );
-		$data = $this->run_jetpack_bin( 'partner-provision.sh', array( 'user_id' => $user->ID, 'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID, 'plan' => 'professional' ) );
+		$data = $this->run_jetpack_bin( 'partner-provision.sh', array(
+			'user_id' => $user->ID,
+			'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID,
+			'plan' => 'professional',
+		) );
 
 		if ( is_wp_error( $data ) ) {
 			WP_CLI::warning( $data->get_error_message() );
