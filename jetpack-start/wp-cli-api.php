@@ -5,9 +5,6 @@
  */
 
 class Jetpack_Start_CLI_Command extends WP_CLI_Command {
-	const API_ERROR_EXISTING_SUBSCRIPTION = 'Failed to provision WPCOM store subscription';
-	const API_ERROR_USER_PERMISSIONS = 'User does not have permission to administer the given site.';
-
 	/**
 	 * Cancel a Jetpack Start subscription for the current site
 	 *
