@@ -16,11 +16,12 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 *
 	 */
 	public function cancel( $args, $assoc_args ) {
+		$this->validate_constants_or_die();
 
 		$data = $this->run_jetpack_bin( 'partner-cancel.sh' );
 
 		if ( is_wp_error( $data ) ) {
-			WP_CLI::error( $data->get_error_message() );
+			WP_CLI::error( sprintf( 'Failed to cancel plan: %s', $data->get_error_message() ) );
 		}
 
 		WP_CLI::success( sprintf( 'Cancelled subscription for site_id = %s (body: %s)', $site_id, var_export( $data, true ) ) );
@@ -48,9 +49,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
-		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
-			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_CLIENT_ID` and/or `WPCOM_VIP_JP_START_API_CLIENT_SECRET`) are not defined. Please check the `vip-secrets` file to confirm they\'re there, accessible, and valid.' );
-		}
+		$this->validate_constants_or_die();
 
 		if ( defined( 'JETPACK_DEV_DEBUG' ) && true === JETPACK_DEV_DEBUG ) {
 			WP_CLI::warning( 'JETPACK_DEV_DEBUG mode is enabled. Please remove the constant after connection.' );
@@ -210,9 +209,16 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			return new WP_Error( 'invalid_output', 'Could not parse script output: ' . $script_output );
 		} elseif ( isset( $script_output_json->error_code ) ) {
 			return new WP_Error( $script_output_json->error_code, $script_output_json->error_message );
-		} else {
-			return $script_output_json;
 		}
+
+		return $script_output_json;
+	}
+
+	private function validate_constants_or_die() {
+		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
+			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_CLIENT_ID` and/or `WPCOM_VIP_JP_START_API_CLIENT_SECRET`) are not defined. Please check the `vip-secrets` file to confirm they\'re there, accessible, and valid.' );
+		}
+
 	}
 }
 
