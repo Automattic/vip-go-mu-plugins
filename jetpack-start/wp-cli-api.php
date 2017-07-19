@@ -285,8 +285,6 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 * : Slug of the requested plan, e.g. premium
 	 * [--wpcom_user_id=<user_id>]
 	 * : WordPress.com ID of user to connect as (must be whitelisted against partner key)
-	 * [--force_register=<register>]
-	 * : Whether to force a site to register
 	 * [--onboarding=<onboarding>]
 	 * : Guide the user through an onboarding wizard
 	 * [--force_register=<register>]
