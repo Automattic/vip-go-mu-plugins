@@ -283,13 +283,17 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 * : Whether to force a site to register
 	 * [--onboarding=<onboarding>]
 	 * : Guide the user through an onboarding wizard
+	 * [--force_register=<register>]
+	 * : Whether to force a site to register
+	 * [--force_connect=<force_connect>]
+	 * : Force JPS to not reuse existing credentials
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     $ wp jetpack-start partner_provision '{ some: "json" }' premium 1
 	 *     { success: true }
 	 *
-	 * @synopsis <token_json> [--wpcom_user_id=<user_id>] [--plan=<plan_name>] [--force_register=<register>] [--onboarding=<onboarding>]
+	 * @synopsis <token_json> [--wpcom_user_id=<user_id>] [--plan=<plan_name>] [--onboarding=<onboarding>] [--force_register=<register>] [--force_connect=<force_connect>]
 	 */
 	public function partner_provision( $args, $named_args ) {
 		list( $token_json ) = $args;
@@ -384,6 +388,10 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		if ( isset( $named_args['onboarding'] ) && ! empty( $named_args['onboarding'] ) ) {
 			$request_body['onboarding'] = intval( $named_args['onboarding'] );
+		}
+
+		if ( isset( $named_args['force_connect'] ) && ! empty( $named_args['force_connect'] ) ) {
+			$request_body['force_connect'] = intval( $named_args['force_connect'] );
 		}
 
 		$request = array(
