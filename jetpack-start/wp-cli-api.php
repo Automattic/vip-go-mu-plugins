@@ -192,20 +192,12 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_SECRET )
 		);
 
-		if ( isset( $args['user_id'] ) ) {
-			$cmd .= ' --user_id=' . (int) $args['user_id'];
-		}
-
-		if ( isset( $args['plan'] ) ) {
-			$cmd .= ' --plan=' . escapeshellarg( $args['plan'] );
-		}
-
-		if ( isset( $args['wpcom_user_id'] ) ) {
-			$cmd .= ' --wpcom_user_id=' . (int) $args['wpcom_user_id'];
-		}
-
-		if ( isset( $args['url'] ) ) {
-			$cmd .= ' --url=' . $args['url'];
+		foreach ( $args as $arg => $value ) {
+			$cmd .= sprintf(
+				' --%s=%s',
+				$arg,
+				is_numeric( $value ) ? intval( $value ) : escapeshellarg( $value )
+			);
 		}
 
 		exec( $cmd, $script_output, $script_result );
