@@ -212,7 +212,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$script_output_json = json_decode( end( $script_output ) );
 
 		if ( ! $script_output_json ) {
-			return new WP_Error( 'invalid_output', 'Could not parse script output: ' . $script_output );
+			return new WP_Error( 'invalid_output', 'Could not parse script output: ' . var_export( $script_output, true ) );
 		} elseif ( isset( $script_output_json->error ) ) {
 			return new WP_Error( $script_output_json->error, $script_output );
 		}
