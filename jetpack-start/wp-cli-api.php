@@ -127,7 +127,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		) );
 
 		if ( is_wp_error( $data ) ) {
-			WP_CLI::warning( $data->get_error_message() );
+			WP_CLI::warning( sprintf( 'Failed to provision Jetpack connection with error: (%s) %s', $data->get_error_code(), $data->get_error_message() ) );
 			return false;
 		}
 
@@ -207,8 +207,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		if ( ! $script_output_json ) {
 			return new WP_Error( 'invalid_output', 'Could not parse script output: ' . $script_output );
-		} elseif ( isset( $script_output_json->error_code ) ) {
-			return new WP_Error( $script_output_json->error_code, $script_output_json->error_message );
+		} elseif ( isset( $script_output_json->error ) ) {
+			return new WP_Error( $script_output_json->error, $script_output );
 		}
 
 		return $script_output_json;
