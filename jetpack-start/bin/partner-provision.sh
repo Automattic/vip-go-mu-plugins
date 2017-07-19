@@ -95,4 +95,4 @@ if [ ! -z "$FORCE_CONNECT" ]; then
 fi
 
 # provision the partner plan
-wp --allow-root jetpack-start partner_provision "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
+wp --allow-root jetpack-start-provision partner_provision "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS

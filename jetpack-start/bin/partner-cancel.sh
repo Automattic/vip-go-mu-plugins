@@ -51,4 +51,4 @@ fi
 wp --allow-root plugin activate jetpack $ADDITIONAL_ARGS >/dev/null 2>&1
 
 # cancel the partner plan
-wp --allow-root jetpack-start partner_cancel "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
+wp --allow-root jetpack-start-provision partner_cancel "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
