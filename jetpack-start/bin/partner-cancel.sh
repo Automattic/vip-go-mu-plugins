@@ -37,7 +37,7 @@ fi
 # default API host that can be overridden
 if [ -z "$JETPACK_START_API_HOST" ]; then
     JETPACK_START_API_HOST='public-api.wordpress.com'
-fi 
+fi
 
 # fetch an access token using our client ID/secret
 ACCESS_TOKEN_JSON=$(curl https://$JETPACK_START_API_HOST/oauth2/token --silent --header "Host: public-api.wordpress.com" -d "grant_type=client_credentials&client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&scope=jetpack-partner")
@@ -51,5 +51,4 @@ fi
 wp --allow-root plugin activate jetpack $ADDITIONAL_ARGS >/dev/null 2>&1
 
 # cancel the partner plan
-wp --allow-root jetpack partner_cancel "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
-
+wp --allow-root jetpack-start partner_cancel "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS

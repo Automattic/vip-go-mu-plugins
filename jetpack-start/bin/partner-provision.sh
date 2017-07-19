@@ -73,15 +73,15 @@ fi
 
 if [ ! -z "$ONBOARDING" ]; then
   ADDITIONAL_ARGS="$ADDITIONAL_ARGS --onboarding=$ONBOARDING"
-fi 
+fi
 
 if [ ! -z "$PLAN_NAME" ]; then
   ADDITIONAL_ARGS="$ADDITIONAL_ARGS --plan=$PLAN_NAME"
-fi 
+fi
 
 if [ ! -z "$WPCOM_USER_ID" ]; then
   ADDITIONAL_ARGS="$ADDITIONAL_ARGS --wpcom_user_id=$WPCOM_USER_ID"
-fi 
+fi
 
 # provision the partner plan
-wp --allow-root jetpack partner_provision "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
+wp --allow-root jetpack-start partner_provision "$ACCESS_TOKEN_JSON" $ADDITIONAL_ARGS
