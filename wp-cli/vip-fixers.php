@@ -28,7 +28,8 @@ class VIP_Go_OneTimeFixers_Command extends WPCOM_VIP_CLI_Command {
 				restore_current_blog();
 			}
 
-			$this->flush_cache();
+			// Flush the cache one more time just to be safe
+			wp_cache_flush();
 		} else {
 			$old_home_url = home_url();
 
@@ -67,7 +68,7 @@ class VIP_Go_OneTimeFixers_Command extends WPCOM_VIP_CLI_Command {
 		$updated_siteurl = $this->enforce_govip_ssl_for_option_url( 'siteurl' );
 
 		if ( $updated_home || $updated_siteurl ) {
-			$this->flush_cache( get_site_url() );
+			wp_cache_flush();
 		}
 
 		return [ $updated_home, $updated_siteurl ];
@@ -94,17 +95,6 @@ class VIP_Go_OneTimeFixers_Command extends WPCOM_VIP_CLI_Command {
 	private function get_raw_option_value( $option ) {
 		global $wpdb;
 		return $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s", $option ) );
-	}
-
-	private function flush_cache( $url = false ) {
-		$cmd = 'cache flush';
-		if ( $url ) {
-			$cmd .= ' --url=' . $url;
-		}
-
-		return WP_CLI::runcommand( $cmd, [
-			'return' => true,
-		] );
 	}
 }
 
