@@ -79,6 +79,41 @@ function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
 }
 
 /**
+ * Log details of fatal error in callback that Cron Control caught
+ *
+ * @param $event object
+ * @param $error \Throwable
+ */
+function wpcom_vip_log_cron_control_caught_error( $event, $error ) {
+	$message = sprintf( __( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d', 'automattic-cron-control' ), $error->getMessage(), $error->getFile(), $error->getLine() );
+	error_log( $message );
+
+	wpcom_vip_log_event_object( $event, 'Caught' );
+}
+
+/**
+ * Log details of event that threw uncatchable error
+ *
+ * Includes timeouts and memory exhaustion
+ *
+ * @param $event object
+ */
+function wpcom_vip_log_cron_control_uncaught_error( $event ) {
+	wpcom_vip_log_event_object( $event );
+}
+
+/**
+ * Convert event object to log entry
+ *
+ * @param $event object
+ * @param $type string
+ */
+function wpcom_vip_log_event_object( $event, $type = 'Uncaught' ) {
+	$message = sprintf( 'PHP Fatal error:  %1$s Error: Cron Control event failed - ID: %2$d | timestamp: %3$s | action: %4$s | action_hashed: %5$s | instance: %6$s | home: %7$s', $type, $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
+	error_log( $message );
+}
+
+/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
@@ -98,6 +133,12 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 * Don't trigger Jetpack Sync on shutdown for cron requests
 	 */
 	add_filter( 'jetpack_sync_sender_should_load', 'wpcom_vip_disable_jetpack_sync_on_cron_shutdown' );
+
+	/**
+	 * Log details of events that fail
+	 */
+	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_caught_error', 10, 2 );
+	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_uncaught_error' );
 
 	require_once __DIR__ . '/cron-control/cron-control.php';
 }
