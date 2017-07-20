@@ -85,7 +85,7 @@ function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
  * @param $error \Throwable
  */
 function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
-	$message = sprintf( __( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d', 'automattic-cron-control' ), $error->getMessage(), $error->getFile(), $error->getLine() );
+	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d', $error->getMessage(), $error->getFile(), $error->getLine() );
 	error_log( $message );
 
 	wpcom_vip_log_event_object( $event, 'Caught' );
