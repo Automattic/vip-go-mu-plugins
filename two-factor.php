@@ -23,7 +23,11 @@ function wpcom_vip_have_twilio_keys() {
 }
 
 function wpcom_vip_is_jetpack_sso_enabled() {
-	return class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'sso' );
+	return class_exists( 'Jetpack' )
+		&& Jetpack::is_active()
+		&& Jetpack::is_module_active( 'sso' )
+		// SSO does not work for staging sites
+		&& ! Jetpack::is_staging_site();
 }
 
 function wpcom_vip_force_two_factor() {
