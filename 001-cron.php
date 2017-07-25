@@ -88,7 +88,7 @@ function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
 	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d%4$sStack trace:%4$s%5$s', $error->getMessage(), $error->getFile(), $error->getLine(), PHP_EOL, $error->getTraceAsString() );
 	error_log( $message );
 
-	wpcom_vip_log_event_object( $event, 'Caught' );
+	wpcom_vip_log_cron_control_event_object( $event, 'Caught' );
 }
 
 /**
@@ -97,7 +97,7 @@ function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
  * @param $event object
  * @param $type string
  */
-function wpcom_vip_log_event_object( $event, $type = 'Uncaught' ) {
+function wpcom_vip_log_cron_control_event_object( $event, $type = 'Uncaught' ) {
 	$message = sprintf( 'PHP Fatal error:  %1$s Error: Cron Control event failed - ID: %2$d | timestamp: %3$s | action: %4$s | action_hashed: %5$s | instance: %6$s | home: %7$s', $type, $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
 	error_log( $message );
 }
@@ -127,7 +127,7 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 * Log details of events that fail
 	 */
 	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
-	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_event_object' );
+	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 
 	require_once __DIR__ . '/cron-control/cron-control.php';
 }
