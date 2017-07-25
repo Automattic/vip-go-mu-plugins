@@ -85,21 +85,36 @@ function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
  * @param $error \Throwable
  */
 function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
-	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d%4$sStack trace:%4$s%5$s', $error->getMessage(), $error->getFile(), $error->getLine(), PHP_EOL, $error->getTraceAsString() );
+	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d%4$sStack trace:%4$s# %5$s%4$s%6$s',
+		$error->getMessage(),
+		$error->getFile(),
+		$error->getLine(),
+		PHP_EOL,
+		wpcom_vip_cron_control_event_object_to_string( $event ),
+		$error->getTraceAsString()
+	);
 	error_log( $message );
-
-	wpcom_vip_log_cron_control_event_object( $event, 'Caught' );
 }
 
 /**
  * Convert event object to log entry
  *
  * @param $event object
- * @param $type string
  */
-function wpcom_vip_log_cron_control_event_object( $event, $type = 'Uncaught' ) {
-	$message = sprintf( 'PHP Fatal error:  %1$s Error: Cron Control event failed - ID: %2$d | timestamp: %3$s | action: %4$s | action_hashed: %5$s | instance: %6$s | home: %7$s', $type, $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
+function wpcom_vip_log_cron_control_event_object( $event ) {
+	$message  = 'Cron Control Uncaught Error - ';
+	$message .= wpcom_vip_cron_control_event_object_to_string( $event );
 	error_log( $message );
+}
+
+/**
+ * Convert event object to string suitable for logging
+ *
+ * @param $event object
+ * @return string
+ */
+function wpcom_vip_cron_control_event_object_to_string( $event ) {
+	return sprintf( 'ID: %1$d | timestamp: %2$s | action: %3$s | action_hashed: %4$s | instance: %5$s | home: %6$s', $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
 }
 
 /**
