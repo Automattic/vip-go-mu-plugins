@@ -202,10 +202,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		foreach ( new \WP_CLI\Iterators\CSV( $filename ) as $user_data ) {
 			$user_data = array_values( $user_data ); // Strip useless array keys.
-			$user_value = $user_data[0];
-			$meta_key = $user_data[1];
-
 			list( $user_value, $meta_key, $meta_value ) = $user_data;
+
 			$meta_value = json_decode( $meta_value, true );
 
 			switch ( $user_key ) {
