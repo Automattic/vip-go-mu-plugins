@@ -150,13 +150,51 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 	/**
 	 * Import user meta attributes from a CSV file.
+	 * 
+	 * The CSV file is headerless with the following structure:
+	 * 
+	 * ```
+	 * user_key,meta_key,meta_value stored in JSON
+	 * ```
+	 * 
+	 * Example:
+	 * 
+	 * ```
+	 * jsmith,user_profile,"{""title"":""editorial assistant"",""bio"":""John Smith is an editorial assistant at BigNewsCo.""}"
+	 * ```
+	 * 
+	 * ## OPTIONS
+	 * 
+	 * <file>
+	 * : The CSV file to import from.
+	 * 
+	 * [--user_key=<userlogin>]
+	 * : The `user_key` is the "key" used to uniquely identify a user, a property of the `WP_User` object.  Can be one of the following: ID, user_nicename, user_email, user_login. Defaults to user_login.
+	 * 
+	 * [--dry-run=<true>]
+	 * : Do a "dry run" and no data modification will be done.  Defaults to true.
+	 * 
+	 * ## EXAMPLES
+	 *
+	 *     # Imports user meta from the example "usermeta.csv" file with the default user key.
+	 *     $ wp vip migration import-user-meta usermeta.csv --dry-run=false
+	 * 
+	 *     # Does a "dry run" import from "usermeta.csv" with the "user_email" user key.
+	 *     $ wp vip migration import-user-meta usermeta.csv --user_key=user_email
 	 *
 	 * @subcommand import-user-meta
-	 * @synopsis <file> [--user_key=<userlogin>]
 	 */
 	function import_user_meta( $args, $assoc_args ) {
 		$filename = $args[0];
 		$user_key = $assoc_args['user_key'] ?? 'user_login';
+		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run', true );
+
+		// Force a boolean, always default to true.
+		$dry_run = filter_var( $dry_run, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ?? true;
+
+		if ( $dry_run ) {
+			WP_CLI::log( 'Performing a dry run, with no database modification.' );
+		}
 
 		if ( ! file_exists( $filename ) ) {
 			WP_CLI::error( sprintf( 'Missing file: %s', $filename ) );
@@ -166,7 +204,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			$user_data = array_values( $user_data ); // Strip useless array keys.
 			$user_value = $user_data[0];
 			$meta_key = $user_data[1];
-			$meta_value = json_decode( $user_data[2] );
+
+			list( $user_value, $meta_key, $meta_value ) = $user_data;
+			$meta_value = json_decode( $meta_value, true );
 
 			switch ( $user_key ) {
 				case 'ID':
@@ -182,17 +222,21 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					$user = get_user_by( 'login', $user_value );
 					break;
 				default:
-					WP_CLI::error( 'Error getting user ' . $user_value );
+					WP_CLI::warning( 'Error getting user ' . $user_value );
 			}
 
-			$add_meta = update_user_meta( $user->ID, $meta_key, $meta_value );
-
-			if ( false !== $add_meta ) {
-				WP_CLI::line( 'Meta ' . $meta_key . ' added to user ' . $user_value );
+			if ( ! $dry_run ) {
+				// Live run
+				$add_meta = update_user_meta( $user->ID, $meta_key, $meta_value );
+				if ( false !== $add_meta ) {
+					WP_CLI::line( 'Meta ' . $meta_key . ' added to user ' . $user_value );
+				} else {
+					WP_CLI::warning( 'Meta ' . $meta_key . ' NOT added to user ' . $user_value );
+				}
 			} else {
-				WP_CLI::warning( 'Meta ' . $meta_key . ' NOT added to user ' . $user_value );
+				// Dry Run
+				WP_CLI::line( '[DRY-RUN] Meta ' . $meta_key . ' added to user ' . $user_value );
 			}
-
 		}
 	}
 }
