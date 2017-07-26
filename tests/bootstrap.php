@@ -7,6 +7,11 @@ if ( ! $_tests_dir ) {
 
 require_once $_tests_dir . '/includes/functions.php';
 
+// Constant configs
+// Ideally we'd have a way to mock these
+define( 'FILES_CLIENT_SITE_ID', 123 );
+define( 'WPCOM_VIP_MAIL_TRACKING_KEY', 'key' );
+
 function _manually_load_plugin() {
 	require_once( __DIR__ . '/../000-vip-init.php' );
 	require_once( __DIR__ . '/../001-core.php' );
@@ -19,6 +24,8 @@ function _manually_load_plugin() {
 	require_once( __DIR__ . '/../lib/proxy/ip-forward.php' );
 	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
 
+	require_once( __DIR__ . '/../vip-cache-manager.php' );
+	require_once( __DIR__ . '/../vip-mail.php' );
 	require_once( __DIR__ . '/../vip-rest-api.php' );
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
