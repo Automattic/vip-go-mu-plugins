@@ -6,8 +6,6 @@ if ( ! defined( 'ABSPATH' ) || defined( 'WPINC' ) ) {
 	return;
 }
 
-define( 'WPCOM_ERROR_HANDLER', true );
-
 function wpcom_error_shutdown() {
 	if ( ! $last = error_get_last() )
 		return;
