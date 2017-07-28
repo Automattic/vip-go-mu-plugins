@@ -47,6 +47,10 @@ defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAM
 defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
+// Interaction with the filesystem will always be direct.
+// Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
+define( 'FS_METHOD', 'direct' );
+
 $hostname = gethostname();
 define( 'WPCOM_SANDBOXED', false !== strpos( $hostname, '_web_dev_' ) );
 
