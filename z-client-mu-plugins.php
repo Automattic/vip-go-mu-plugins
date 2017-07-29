@@ -46,33 +46,36 @@ function wpcom_vip_get_client_mu_plugins() {
 }
 
 function wpcom_vip_get_client_mu_plugins_data() {
-	$plugin_files = wpcom_vip_get_client_mu_plugins();
+	$client_mu_plugins_files = wpcom_vip_get_client_mu_plugins();
 
-	if ( empty( $plugin_files ) ) {
-		return $plugin_files;
+	if ( empty( $client_mu_plugins_files ) ) {
+		return [];
 	}
 
-	foreach ( $plugin_files as $plugin_file ) {
-		if ( ! is_readable( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . "/$plugin_file" ) ) {
+	$client_mu_plugins_data = [];
+
+	foreach ( $client_mu_plugins_files as $plugin_file ) {
+		if ( ! is_readable( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/' . $plugin_file ) ) {
 			continue;
 		}
 
-		$plugin_data = get_plugin_data( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . "/$plugin_file", false, false ); //Do not apply markup/translate as it'll be cached.
+		$plugin_data = get_plugin_data( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/' . $plugin_file, false, false ); // Do not apply markup/translate as it'll be cached.
 
 		if ( empty( $plugin_data['Name'] ) ) {
 			$plugin_data['Name'] = $plugin_file;
 		}
 
-		$wp_plugins[ $plugin_file ] = $plugin_data;
+		$client_mu_plugins_data[ $plugin_file ] = $plugin_data;
 	}
 
-	if ( isset( $wp_plugins['index.php'] ) && filesize( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/index.php' ) <= 30 ) { // silence is golden
-		unset( $wp_plugins['index.php'] );
+	// Don't include "// silence is golden" index file
+	if ( isset( $client_mu_plugins_data['index.php'] ) && filesize( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/index.php' ) <= 30 ) {
+		unset( $client_mu_plugins_data['index.php'] );
 	}
 
-	uasort( $wp_plugins, '_sort_uname_callback' );
+	uasort( $client_mu_plugins_data, '_sort_uname_callback' );
 
-	return $wp_plugins;
+	return $client_mu_plugins_data;
 }
 
 // Let's load the plugins
