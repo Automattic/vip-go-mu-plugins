@@ -55,14 +55,14 @@ function wpcom_vip_get_client_mu_plugins_data() {
 	$client_mu_plugins_data = [];
 
 	foreach ( $client_mu_plugins_files as $plugin_file ) {
-		if ( ! is_readable( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/' . $plugin_file ) ) {
+		if ( ! is_readable( $plugin_file ) ) {
 			continue;
 		}
 
-		$plugin_data = get_plugin_data( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/' . $plugin_file, false, false ); // Do not apply markup/translate as it'll be cached.
+		$plugin_data = get_plugin_data( $plugin_file, false, false ); // Do not apply markup/translate as it'll be cached.
 
 		if ( empty( $plugin_data['Name'] ) ) {
-			$plugin_data['Name'] = $plugin_file;
+			$plugin_data['Name'] = basename( $plugin_file );
 		}
 
 		$client_mu_plugins_data[ $plugin_file ] = $plugin_data;
