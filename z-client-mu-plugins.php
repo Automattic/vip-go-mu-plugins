@@ -17,12 +17,12 @@ function wpcom_vip_get_client_mu_plugins() {
 	$client_mu_plugins = [];
 
 	if ( ! is_dir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) ) {
-		return;
+		return $client_mu_plugins;
 	}
 
 	$dir_handle = opendir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR );
 	if ( ! $dir_handle ) {
-		return;
+		return $client_mu_plugins;
 	}
 
 	do {
