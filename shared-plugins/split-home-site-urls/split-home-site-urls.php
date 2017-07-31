@@ -30,7 +30,7 @@ namespace Automattic\VIP\Split_Home_Site_URLs;
  *
  * URLs must differ by more than just protocol for this plugin to be useful
  */
-if ( preg_replace( '#https?://#i', '', home_url( '/' ) ) === preg_replace( '#https?://#i', '', site_url( '/' ) ) ) {
+if ( str_replace( array( 'http://', 'https://', ), '', home_url( '/' ) ) === str_replace( array( 'http://', 'https://', ), '', site_url( '/' ) ) ) {
 	_doing_it_wrong( __NAMESPACE__, 'Called with identical site and home URls. Plugin functionality not loaded.', '1.0' );
 	return;
 }
