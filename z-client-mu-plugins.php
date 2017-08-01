@@ -1,107 +1,88 @@
 <?php
 
+/**
+ * Plugin Name: VIP Client mu-plugins
+ * Description: Helper plugin to load custom mu-plugins in the `client-mu-plugins` dir.
+ * Author: Automattic
+ */
+
 // Note: This file is prefixed with `z-` for load order
 
-function wpcom_vip_load_client_mu_plugins() {
-	static $loaded = false;
+/**
+ * Gets PHP files in the client-mu-plugins folder.
+ *
+ * The code for this function is adapted from `wp_get_mu_plugins()`
+ */
+function wpcom_vip_get_client_mu_plugins( $directory = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) {
+	$directory = untrailingslashit( $directory );
 
-	// Prevent running this multiple times
-	if ( $loaded ) {
-		return;
-	}
-
-	$loaded = true;
-
-	// Code below is adapted from wp_get_mu_plugins()
 	$client_mu_plugins = [];
 
-	if ( ! is_dir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) ) {
-		return;
+	if ( ! is_dir( $directory ) ) {
+		return $client_mu_plugins;
 	}
 
-	$dh = opendir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR );
-	if ( ! $dh ) {
-		return;
+	$dir_handle = opendir( $directory );
+	if ( ! $dir_handle ) {
+		return $client_mu_plugins;
 	}
 
 	do {
-		$plugin = readdir( $dh );
+		$plugin = readdir( $dir_handle );
 		if ( false === $plugin ) {
 			break;
 		}
 
-		if ( substr( $plugin, -4 ) === '.php' ) {
-			$client_mu_plugins[] = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/' . $plugin;
+		$is_php_file = substr( $plugin, -4 ) === '.php';
+		if ( $is_php_file ) {
+			$client_mu_plugins[] = $directory . '/' . $plugin;
 		}
 	} while ( false !== $plugin );
 
-	closedir( $dh );
+	closedir( $dir_handle );
 
 	// Make sure plugins load in a consistent, predictable order
 	sort( $client_mu_plugins );
 
-	foreach ( $client_mu_plugins as $plugin ) {
-		include_once( $plugin );
-	}
+	return $client_mu_plugins;
 }
 
-// Load the plugins
-// TODO: move out of function scope to avoid issues with globals not being properly set
-wpcom_vip_load_client_mu_plugins();
+function wpcom_vip_get_client_mu_plugins_data( $directory = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) {
+	$client_mu_plugins_files = wpcom_vip_get_client_mu_plugins( $directory );
 
-function wpcom_vip_get_client_mu_plugins() {
-	$wp_plugins = array();
-	$plugin_files = array();
-
-	if ( ! is_dir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) ) {
-		return $wp_plugins;
+	if ( empty( $client_mu_plugins_files ) ) {
+		return [];
 	}
 
-	if ( $plugins_dir = @opendir( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR ) ) {
-		while ( ( $file = readdir( $plugins_dir ) ) !== false ) {
-			if ( substr( $file, -4 ) === '.php' ) {
-				$plugin_files[] = $file;
-			}
-		}
-	} else {
-		return $wp_plugins;
-	}
+	$client_mu_plugins_data = [];
 
-	@closedir( $plugins_dir );
-
-	if ( empty( $plugin_files ) ) {
-		return $wp_plugins;
-	}
-
-	return $plugin_files;
-}
-
-function wpcom_vip_get_client_mu_plugins_data() {
-	$plugin_files = wpcom_vip_get_client_mu_plugins();
-
-	if ( empty( $plugin_files ) ) {
-		return $plugin_files;
-	}
-
-	foreach ( $plugin_files as $plugin_file ) {
-		if ( ! is_readable( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . "/$plugin_file" ) ) {
+	foreach ( $client_mu_plugins_files as $plugin_path ) {
+		if ( ! is_readable( $plugin_path ) ) {
 			continue;
 		}
 
-		$plugin_data = get_plugin_data( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . "/$plugin_file", false, false ); //Do not apply markup/translate as it'll be cached.
+		$plugin_filename = basename( $plugin_path );
+		$plugin_data = get_plugin_data( $plugin_path, false, false ); // Do not apply markup/translate as it'll be cached.
 
 		if ( empty( $plugin_data['Name'] ) ) {
-			$plugin_data['Name'] = $plugin_file;
+			$plugin_data['Name'] = $plugin_filename;
 		}
 
-		$wp_plugins[ $plugin_file ] = $plugin_data;
+		$client_mu_plugins_data[ $plugin_filename ] = $plugin_data;
 	}
 
-	if ( isset( $wp_plugins['index.php'] ) && filesize( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/index.php' ) <= 30 ) { // silence is golden
-		unset( $wp_plugins['index.php'] );
+	// Don't include "// silence is golden" index file
+	if ( isset( $client_mu_plugins_data['index.php'] ) && filesize( $directory . '/index.php' ) <= 30 ) {
+		unset( $client_mu_plugins_data['index.php'] );
 	}
 
-	uasort( $wp_plugins, '_sort_uname_callback' );
+	uasort( $client_mu_plugins_data, '_sort_uname_callback' );
 
-	return $wp_plugins;
+	return $client_mu_plugins_data;
 }
+
+// Let's load the plugins
+foreach ( wpcom_vip_get_client_mu_plugins() as $client_mu_plugin ) {
+	include_once( $client_mu_plugin );
+}
+unset( $client_mu_plugin );

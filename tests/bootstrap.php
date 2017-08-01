@@ -29,6 +29,8 @@ function _manually_load_plugin() {
 	require_once( __DIR__ . '/../vip-rest-api.php' );
 
 	require_once( __DIR__ . '/../wp-cli.php' );
+
+	require_once( __DIR__ . '/../z-client-mu-plugins.php' );
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
