@@ -40,3 +40,6 @@
 [submodule "shared-plugins/two-factor"]
 	path = shared-plugins/two-factor
 	url = https://github.com/georgestephanis/two-factor.git
+[submodule "drop-ins/object-cache"]
+	path = drop-ins/object-cache
+	url = git@github.com:Automattic/wp-memcached.git
