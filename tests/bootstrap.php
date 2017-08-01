@@ -27,6 +27,8 @@ function _manually_load_plugin() {
 	require_once( __DIR__ . '/../vip-cache-manager.php' );
 	require_once( __DIR__ . '/../vip-mail.php' );
 	require_once( __DIR__ . '/../vip-rest-api.php' );
+
+	require_once( __DIR__ . '/../wp-cli.php' );
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
