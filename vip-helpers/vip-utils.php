@@ -1245,11 +1245,11 @@ add_action( 'plugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 );
  */
 function wpcom_vip_wpcli_for_newrelic(){
 	if ( defined( 'WP_CLI' ) && WP_CLI && ( ! defined( 'DOING_CRON' ) || ! DOING_CRON ) && function_exists( 'newrelic_ignore_apdex' ) && function_exists( 'newrelic_name_transaction' ) ){
-		newrelic_name_transaction( 'wp-cron' );
+		newrelic_name_transaction( 'wp-c;i' );
 		newrelic_ignore_apdex();
 	}
 }
-add_action( 'plugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 );
+add_action( 'plugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 );
 
 
 /**
