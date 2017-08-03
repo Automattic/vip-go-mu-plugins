@@ -32,6 +32,8 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
+define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
+
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 	define( 'WPCOM_VIP_MAIL_TRACKING_KEY', false );
@@ -39,7 +41,7 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
-define( 'WPCOM_VIP_PRIVATE_DIR', '/private' );
+define( 'WPCOM_VIP_PRIVATE_DIR', WPCOM_SANDBOXED ? '/chroot/private' : '/private' );
 
 // Define these values just in case
 defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
@@ -50,9 +52,6 @@ defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROL
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
 define( 'FS_METHOD', 'direct' );
-
-$hostname = gethostname();
-define( 'WPCOM_SANDBOXED', false !== strpos( $hostname, '_web_dev_' ) );
 
 if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
