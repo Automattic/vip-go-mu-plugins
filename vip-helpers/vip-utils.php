@@ -1234,7 +1234,7 @@ add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
  */
 function wpcom_vip_cron_for_newrelic(){
 	if ( defined( 'DOING_CRON' ) && DOING_CRON && function_exists( 'newrelic_ignore_apdex' ) && function_exists( 'newrelic_name_transaction' ) ){
-		newrelic_name_transaction( 'cron-control' );
+		newrelic_name_transaction( 'wp-cron' );
 		newrelic_ignore_apdex();
 	}
 }
