@@ -1230,6 +1230,29 @@ function wpcom_vip_add_URI_to_newrelic(){
 add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
 
 /**
+ * Name cron correctly in New Relic and do not count it as part of the Apdex score
+ */
+function wpcom_vip_cron_for_newrelic(){
+	if ( defined( 'DOING_CRON' ) && DOING_CRON && function_exists( 'newrelic_ignore_apdex' ) && function_exists( 'newrelic_name_transaction' ) ){
+		newrelic_name_transaction( 'wp-cron' );
+		newrelic_ignore_apdex();
+	}
+}
+add_action( 'plugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 );
+
+/**
+ * Name wp-cli correctly in New Relic and do not count it as part of the Apdex score
+ */
+function wpcom_vip_wpcli_for_newrelic(){
+	if ( defined( 'WP_CLI' ) && WP_CLI && ( ! defined( 'DOING_CRON' ) || ! DOING_CRON ) && function_exists( 'newrelic_ignore_apdex' ) && function_exists( 'newrelic_name_transaction' ) ){
+		newrelic_name_transaction( 'wp-cli' );
+		newrelic_ignore_apdex();
+	}
+}
+add_action( 'plugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 );
+
+
+/**
  * Send a message to IRC
  *
  * $level can be an int of one of the following
