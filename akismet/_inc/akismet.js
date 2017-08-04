@@ -3,6 +3,8 @@ jQuery( function ( $ ) {
 	var mshotSecondTryTimer = null
 	var mshotThirdTryTimer = null
 	
+	var mshotEnabledLinkSelector = 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a';
+	
 	$('.akismet-status').each(function () {
 		var thisId = $(this).attr('commentid');
 		$(this).prependTo('#comment-' + thisId + ' .column-comment');
@@ -82,7 +84,7 @@ jQuery( function ( $ ) {
 	});
 
 	// Show a preview image of the hovered URL. Applies to author URLs and URLs inside the comments.
-	$( '#the-comment-list' ).on( 'mouseover', 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a', function () {
+	$( '#the-comment-list' ).on( 'mouseover', mshotEnabledLinkSelector, function () {
 		clearTimeout( mshotRemovalTimer );
 
 		if ( $( '.akismet-mshot' ).length > 0 ) {
@@ -99,9 +101,9 @@ jQuery( function ( $ ) {
 		clearTimeout( mshotSecondTryTimer );
 		clearTimeout( mshotThirdTryTimer );
 
-		var thisHref = encodeURIComponent( $( this ).attr( 'href' ) );
+		var thisHref = $( this ).attr( 'href' );
 
-		var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="//s0.wordpress.com/mshots/v1/' + thisHref + '?w=900" width="450" height="338" class="mshot-image" /></div>' );
+		var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="' + akismet_mshot_url( thisHref ) + '" width="450" height="338" class="mshot-image" /></div>' );
 		mShot.data( 'link', this );
 
 		var offset = $( this ).offset();
@@ -115,11 +117,11 @@ jQuery( function ( $ ) {
 		// can return a "Generating thumbnail..." image if it doesn't have a thumbnail ready, so we need
 		// to retry to see if we can get the newly generated thumbnail.
 		mshotSecondTryTimer = setTimeout( function () {
-			mShot.find( '.mshot-image' ).attr( 'src', '//s0.wordpress.com/mshots/v1/'+thisHref+'?w=900&r=2' );
+			mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 2 ) );
 		}, 6000 );
 
 		mshotThirdTryTimer = setTimeout( function () {
-			mShot.find( '.mshot-image' ).attr( 'src', '//s0.wordpress.com/mshots/v1/'+thisHref+'?w=900&r=3' );
+			mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 3 ) );
 		}, 12000 );
 
 		$( 'body' ).append( mShot );
@@ -130,6 +132,18 @@ jQuery( function ( $ ) {
 
 			$( '.akismet-mshot' ).remove();
 		}, 200 );
+	} ).on( 'mouseover', 'tr', function () {
+		// When the mouse hovers over a comment row, begin preloading mshots for any links in the comment or the comment author.
+		var linksToPreloadMshotsFor = $( this ).find( mshotEnabledLinkSelector );
+		
+		linksToPreloadMshotsFor.each( function () {
+			// Don't attempt to preload an mshot for a single link twice. Browser caching should cover this, but in case of
+			// race conditions, save a flag locally when we've begun trying to preload one.
+			if ( ! $( this ).data( 'akismet-mshot-preloaded' ) ) {
+				akismet_preload_mshot( $( this ).attr( 'href' ) );
+				$( this ).data( 'akismet-mshot-preloaded', true );
+			}
+		} );
 	} );
 
 	$('.checkforspam:not(.button-disabled)').click( function(e) {
@@ -225,5 +239,32 @@ jQuery( function ( $ ) {
 					);
 			}
 		});
+	}
+	
+	/**
+	 * Generate an mShot URL if given a link URL.
+	 *
+	 * @param string linkUrl
+	 * @param int retry If retrying a request, the number of the retry.
+	 * @return string The mShot URL;
+	 */
+	function akismet_mshot_url( linkUrl, retry ) {
+		var mshotUrl = '//s0.wordpress.com/mshots/v1/' + encodeURIComponent( linkUrl ) + '?w=900';
+		
+		if ( retry ) {
+			mshotUrl += '&r=' + encodeURIComponent( retry );
+		}
+		
+		return mshotUrl;
+	}
+	
+	/**
+	 * Begin loading an mShot preview of a link.
+	 *
+	 * @param string linkUrl
+	 */
+	function akismet_preload_mshot( linkUrl ) {
+		var img = new Image();
+		img.src = akismet_mshot_url( linkUrl );
 	}
 });
