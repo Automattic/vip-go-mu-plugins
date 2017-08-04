@@ -1019,7 +1019,7 @@ class Akismet_Admin {
 
 	public static function display_status() {
 		if ( ! self::get_server_connectivity() ) {
-			Akismet::view( 'notice', compact( 'servers-be-down' ) );
+			Akismet::view( 'notice', array( 'type' => 'servers-be-down' ) );
 		}
 		else if ( ! empty( self::$notices ) ) {
 			foreach ( self::$notices as $index => $type ) {
