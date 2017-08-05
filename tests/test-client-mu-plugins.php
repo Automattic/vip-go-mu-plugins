@@ -75,3 +75,46 @@ class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 'The Plugin', $actual['with-headers.php']['Name'], 'Name of plugin without headers was not the filename' );
 	}
 }
+
+/**
+ * Tests for `plugins_url` override
+ */
+class Client_Mu_Plugins__Plugins_Url__Tests extends \WP_UnitTestCase {
+	public function get_test_data() {
+		return [
+			'not-client-mu-plugins-path' => [
+				'script.js',
+				WP_PLUGIN_DIR . '/file.php',
+				WP_CONTENT_URL . '/plugins/script.js',
+			],
+
+			'client-mu-plugins-path_root' => [
+				'script.js',
+				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/file.php',
+				WP_CONTENT_URL . '/client-mu-plugins/script.js'
+			],
+
+			'client-mu-plugins-path_subpath' => [
+				'script.js',
+				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/plugin/file.php',
+				WP_CONTENT_URL . '/client-mu-plugins/plugin/script.js',
+			],
+
+			// No double-slash for url-path
+			'client-mu-plugins-path_with_leading-slash-in-url' => [
+				'/script.js',
+				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/plugin/file.php',
+				WP_CONTENT_URL . '/client-mu-plugins/plugin/script.js',
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data
+	 */
+	function test__client_mu_plugins_url( $url_path, $plugin_path, $expected_url ) {
+		$actual_url = plugins_url( $url_path, $plugin_path );
+
+		$this->assertEquals( $expected_url, $actual_url );
+	}
+}
