@@ -1,6 +1,6 @@
 <?php
 
-class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
+class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Command arguments
 	 */
@@ -12,7 +12,7 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	private $tables = array();
 
 	/**
-	 * Convert site using `utf8` to use `utf8mb4`
+	 * Convert site using `utf8` or `latin1` to use `utf8mb4`
 	 *
 	 * @subcommand convert
 	 */
@@ -35,8 +35,8 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 		// Validate starting charset to avoid catastrophe
 		WP_CLI::line( 'PREFLIGHT CHECKS' );
-		if ( 'utf8' === $wpdb->charset ) {
-			WP_CLI::line( '* Expected charset (`utf8`) found.' );
+		if ( in_array( $wpdb->charset, array( 'latin1', 'utf8', ), true ) ) {
+			WP_CLI::line( "* Expected charset (`{$wpdb->charset}`) found." );
 		} elseif ( 'utf8mb4' === $wpdb->charset ) {
 			WP_CLI::error( 'Site is already using `utf8mb4`. Aborting!' );
 			return;
@@ -61,7 +61,7 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 
 		// Provide an opportunity to abort
-		WP_CLI::confirm( "Proceed with " . ( $this->dry_run ? 'DRY' : 'LIVE' ) . " RUN and " . ( $this->dry_run ? 'test converting' : 'potentially convert' ) . " {$tables_count} tables from `utf8` to `utf8mb4`?" );
+		WP_CLI::confirm( "Proceed with " . ( $this->dry_run ? 'DRY' : 'LIVE' ) . " RUN and " . ( $this->dry_run ? 'test converting' : 'potentially convert' ) . " {$tables_count} tables from `{$wpdb->charset}` to `utf8mb4`?" );
 		if ( ! $this->dry_run ) {
 			WP_CLI::confirm( 'ARE YOU REALLY SURE?' );
 		}
@@ -145,7 +145,7 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	}
 
 	/**
-	 * If a table only contains utf8 or utf8mb4 columns, convert it to utf8mb4.
+	 * If a table only contains latin1, utf8, or utf8mb4 columns, convert it to utf8mb4.
 	 *
 	 * Copied from wp-admin/includes/upgrade.php, with modifications for CLI usage
 	 */
@@ -161,8 +161,8 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			if ( $column->Collation ) {
 				list( $charset ) = explode( '_', $column->Collation );
 				$charset = strtolower( $charset );
-				if ( 'utf8' !== $charset && 'utf8mb4' !== $charset ) {
-					// Don't upgrade tables that have non-utf8 columns.
+				if ( ! in_array( $charset, array( 'latin1', 'utf8', 'utf8mb4', ), true ) ) {
+					// Don't upgrade tables that have columns we can't convert.
 					return false;
 				}
 			}
@@ -189,4 +189,4 @@ class VIP_Go_Convert_utf8_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip utf8mb4', 'VIP_Go_Convert_utf8_utf8mb4' );
+WP_CLI::add_command( 'vip utf8mb4', 'VIP_Go_Convert_To_utf8mb4' );
