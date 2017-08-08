@@ -63,7 +63,7 @@ class WPCOM_VIP_Cache_Manager {
 		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
 		$button_html .= esc_html__( 'Purge Page Cache' );
 		$button_html .= '</strong></a></span>';
-		
+
 		echo "<p>$button_html</p>\n";
 	}
 
@@ -267,11 +267,6 @@ class WPCOM_VIP_Cache_Manager {
 	public function queue_post_purge( $post_id ) {
 		if ( $this->site_cache_purged )
 			return false;
-
-		if ( defined( 'WP_IMPORTING' ) ) {
-			$this->purge_site_cache();
-			return false;
-		}
 
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
