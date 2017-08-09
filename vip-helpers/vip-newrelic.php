@@ -41,7 +41,7 @@ function wpcom_vip_cron_for_newrelic(){
 		newrelic_ignore_apdex();
 	}
 }
-add_action( 'plugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 ); //We are attaching this at plugins_loaded because it's possible for Cron-Control to trigger at plugins_loaded priority 10 (at the latest)
+add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 ); //We are attaching this at plugins_loaded because it's possible for Cron-Control to trigger at plugins_loaded priority 10 (at the latest)
 
 /**
  * Name wp-cli correctly in New Relic and do not count it as part of the Apdex score
@@ -58,4 +58,4 @@ function wpcom_vip_wpcli_for_newrelic(){
 		newrelic_ignore_apdex();
 	}
 }
-add_action( 'plugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 ); //We are attaching this at plugins_loaded because it's possible for Cron-Control to trigger at plugins_loaded priority 10 (at the latest), we therefore can't tell until then if this is a WP-CLI request that is also a cron request.
+add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 ); //We are attaching this at plugins_loaded because it's possible for Cron-Control to trigger at plugins_loaded priority 10 (at the latest), we therefore can't tell until then if this is a WP-CLI request that is also a cron request.
