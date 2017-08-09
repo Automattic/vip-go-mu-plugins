@@ -66,7 +66,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( in_array( $args[1], array( '', 'all', 'blog', 'global', 'ms_global' ), true ) ) {
 			$changes = dbDelta( $args[1], ! $dry_run );
 		} else {
-			$changes = dbDelta( null, ! $dry_run );
+			$changes = dbDelta( '', ! $dry_run );
 		}
 
 		if ( empty( $changes ) ) {
