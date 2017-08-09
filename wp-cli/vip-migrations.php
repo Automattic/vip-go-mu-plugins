@@ -30,13 +30,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		global $wpdb;
 
 		$tables =  $args[1];
-		$valid_tables = array( '', 'all', 'blog', 'global', 'ms_global' );
-
-		if ( empty( $tables ) ) {
-			$tables = '';
-		} else if ( ! in_array( $tables, $valid_tables, true ) ) {
-			WP_CLI::error( sprintf( '%s is not a valid entry. Valid entries are: %s', $tables, implode('", "', $valid_tables ) ) );
-		}
 
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
 		if ( $network && ! is_multisite() ) {
