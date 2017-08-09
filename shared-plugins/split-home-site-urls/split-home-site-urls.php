@@ -26,6 +26,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 namespace Automattic\VIP\Split_Home_Site_URLs;
 
 /**
+ * Disable when plugin's conditions aren't met
+ *
+ * URLs must differ by more than just protocol for this plugin to be useful
+ */
+if ( str_replace( array( 'http://', 'https://', ), '', home_url( '/' ) ) === str_replace( array( 'http://', 'https://', ), '', site_url( '/' ) ) ) {
+	_doing_it_wrong( __NAMESPACE__, 'Called with identical site and home URLs. Plugin functionality not loaded.', '1.0' );
+	return;
+}
+
+/**
  * Generic utilities
  */
 require_once __DIR__ . '/inc/utils.php';
