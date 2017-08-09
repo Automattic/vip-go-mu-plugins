@@ -16,7 +16,15 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * [<tables>]
-	 * : Which tables to update (all, blog, global, ms_global)
+	 * : Which tables to update (all, blog, global, ms_global, "")
+	 * ---
+	 * default: ""
+	 * options:
+	 *   - all
+	 *   - blog
+	 *   - global
+	 *   - ms_global
+	 *   - ""
 	 */
 	function dbdelta( $args, $assoc_args ) {
 		global $wpdb;
