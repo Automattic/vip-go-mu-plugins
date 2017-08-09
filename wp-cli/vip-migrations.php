@@ -20,7 +20,15 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 */
 	function dbdelta( $args, $assoc_args ) {
 		global $wpdb;
-
+		
+		$tables =  $args[1];
+		
+		if ( empty( $tables ) ){
+			$tables = '';
+		} else if ( ! in_array( $args[1], array( '', 'all', 'blog', 'global', 'ms_global' ), true ) ) {
+			WP_CLI::error( sprintf( '%s is not a valid entry. Valid entries are: "all", "blog", "global", "ms_global", "" (blank string)', $tables ) );
+		}
+			
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
 		if ( $network && ! is_multisite() ) {
 			WP_CLI::warning( 'This is not a multisite install. Proceeding as single site.' );
@@ -63,12 +71,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
-		if ( in_array( $args[1], array( '', 'all', 'blog', 'global', 'ms_global' ), true ) ) {
-			$changes = dbDelta( $args[1], ! $dry_run );
-		} else {
-			$changes = dbDelta( '', ! $dry_run );
-		}
-
+		$changes = dbDelta( $tables, ! $dry_run );
+		
 		if ( empty( $changes ) ) {
 			WP_CLI::success( 'No changes.' );
 			return;
