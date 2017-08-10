@@ -29,7 +29,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	function dbdelta( $args, $assoc_args ) {
 		global $wpdb;
 
-		$tables =  $args[1];
+		$tables = isset( $args[1] ) ? $args[1] : '';
 
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
 		if ( $network && ! is_multisite() ) {
