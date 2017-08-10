@@ -11,6 +11,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	 */
 	private $tables = array();
 
+	private $protect_masquerading_utf8 = false;
+
 	/**
 	 * Convert site using `utf8` or `latin1` to use `utf8mb4`
 	 *
@@ -22,15 +24,20 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'CONVERSION TO `utf8mb4` REQUESTED' );
 
 		// Parse arguments
-		if ( is_array( $assoc_args ) && ! empty( $assoc_args ) ) {
-			if ( isset( $assoc_args['dry-run'] ) && 'false' === $assoc_args['dry-run'] ) {
-				$this->dry_run = false;
-			}
+		$_dry_run = WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', true );
+		if ( 'false' === $_dry_run ) {
+			$this->dry_run = false;
+		}
+
+		$_protect_columns = WP_CLI\Utils\get_flag_value( $assoc_args, 'protect-latin1', false );
+		if ( false !== $_protect_columns ) {
+			$this->protect_masquerading_utf8 = true;
 		}
 
 		WP_CLI::line( '' );
 		WP_CLI::line( 'ARGUMENTS' );
 		WP_CLI::line( '* dry run: ' . ( $this->dry_run ? 'yes' : 'no' ) );
+		WP_CLI::line( '* protecting utf8 masquerading as latin1: ' . ( $this->protect_masquerading_utf8 ? 'yes' : 'no' ) );
 		WP_CLI::line( '' );
 
 		// Validate starting charset to avoid catastrophe
@@ -182,7 +189,15 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		if ( $this->dry_run ) {
 			return false;
 		} else {
+			if ( $this->protect_masquerading_utf8 ) {
+				// TODO: conditionally convert columns to protect `utf8` content in `latin1` columns
+			}
+
 			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+
+			if ( $this->protect_masquerading_utf8 ) {
+				// TODO: restore columns' original types
+			}
 
 			return is_int( $convert ) ? true : $convert;
 		}
