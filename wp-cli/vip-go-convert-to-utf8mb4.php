@@ -13,6 +13,15 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 	private $protect_masquerading_utf8 = false;
 
+	const TYPE_MAPPING = array(
+		'char'       => 'binary',
+		'text'       => 'blob',
+		'tinytext'   => 'tinyblob',
+		'mediumtext' => 'mediumblob',
+		'longtext'   => 'longblob',
+		'varchar'    => 'varbinary', // length handled in maybe_protect_column()
+	);
+
 	/**
 	 * Convert site using `utf8` or `latin1` to use `utf8mb4`
 	 *
@@ -77,6 +86,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 
 		unset( $tables_count, $tables_string );
+
+		// TODO: convert DB first
 
 		// Do the work we came here for
 		foreach ( $this->tables as $table ) {
@@ -189,21 +200,13 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		if ( $this->dry_run ) {
 			return false;
 		} else {
-			if ( $this->protect_masquerading_utf8 ) {
-				$protected_columns = $this->convert_columns_to_protected_type( $table );
-
-				if ( ! $protected_columns ) {
-					return false;
-				}
-			}
-
-//			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+			// $convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
 			$convert  = false;
 
 			if ( $this->protect_masquerading_utf8 ) {
-				$restored_columns = $this->restore_original_column_types( $table );
+				$protected_columns = $this->convert_masquerading_columns( $table );
 
-				if ( ! $restored_columns ) {
+				if ( ! $protected_columns ) {
 					return false;
 				}
 			}
@@ -213,16 +216,18 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * When requested, convert columns that contain utf8 data but are encoded as latin1
 	 *
+	 * @param string $table
+	 * @return bool
 	 */
-	private function convert_columns_to_protected_type( $table ) {
+	private function convert_masquerading_columns( $table ) {
 		global $wpdb;
 
 		$columns = $wpdb->get_results( "SHOW COLUMNS FROM $table;" );
 
 		foreach ( $columns as $col ) {
-			// TODO: compare type against what it should be converted to
-			var_export( $col );
+			$this->maybe_convert_column( $col, $table );
 		}
 
 		return false;
@@ -231,8 +236,51 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	/**
 	 *
 	 */
-	private function restore_original_column_types( $table ) {
-		return false;
+	private function maybe_convert_column( $col, $table ) {
+		$from_type = $to_type = null;
+
+		foreach ( self::TYPE_MAPPING as $from => $to ) {
+			// All will be exact matches, except for varchar(\d+)
+			if ( $col->Type === $from || ( 'varchar' === $from && 0 === stripos( $col->Type, $from ) ) ) {
+				$from_type = $from;
+				$to_type = $to;
+				break;
+			}
+		}
+
+		unset( $from, $to );
+
+		// Carry on, we don't care about this column
+		if ( is_null( $from_type ) || is_null( $to_type ) ) {
+			return false;
+		}
+
+		// Maintain varchar length
+		if ( 0 === stripos( $from_type, 'varchar' ) ) {
+			// If we can't find the length, something is very wrong
+			if ( ! preg_match( '#' . preg_quote( $from_type ) . '\(([\d]+)\)#i', $col->Type, $length ) ) {
+				return false;
+			}
+
+			$length = array_pop( $length );
+
+			if ( ! is_numeric( $length ) ) {
+				return false;
+			}
+
+			$from_type .= "({$length})";
+			$to_type   .= "({$length})";
+		}
+
+		// TODO: anything with enums?
+
+		$convert = "ALTER TABLE {$table} CHANGE {$col->Field} {$col->Field} {$to_type};";
+		$restore = "ALTER TABLE {$table} CHANGE {$col->Field} {$col->Field} {$from_type};";
+
+		WP_CLI::log( $convert );
+		WP_CLI::log( $restore );
+
+		return true;
 	}
 }
 
