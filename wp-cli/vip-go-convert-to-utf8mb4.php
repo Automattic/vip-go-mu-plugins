@@ -94,15 +94,15 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			$converted = $this->maybe_convert_table_to_utf8mb4( $table );
 
 			if ( true === $converted ) {
-				WP_CLI::line( "Done with {$table}." );
+				WP_CLI::success( "Done with {$table}." );
 			} elseif ( false === $converted ) {
 				if ( $this->dry_run ) {
 					WP_CLI::line( "Table {$table} not converted during dry run." );
 				} else {
-					WP_CLI::line( "Table {$table} not converted because it doesn't exist or doesn't contain convertible columns." );
+					WP_CLI::warning( "Table {$table} not converted because it doesn't exist or doesn't contain convertible columns." );
 				}
 			} else {
-				WP_CLI::line( 'Unknown response: ' . var_export( $converted, true ) );
+				WP_CLI::warning( 'Unknown response: ' . var_export( $converted, true ) );
 			}
 
 			WP_CLI::line( '' );
@@ -221,8 +221,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
 
-			if ( is_int( $convert ) ) {
-				WP_CLI::success( "Converted table {$table}" );
+			if ( is_int( $convert ) || $convert ) {
+				WP_CLI::line( "Converted table {$table}" );
 
 				$convert = true;
 			}
