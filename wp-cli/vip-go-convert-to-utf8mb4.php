@@ -87,8 +87,6 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 		unset( $tables_count, $tables_string );
 
-		// TODO: convert DB first
-
 		// Do the work we came here for
 		foreach ( $this->tables as $table ) {
 			WP_CLI::line( "Converting {$table}..." );
@@ -109,6 +107,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 			WP_CLI::line( '' );
 		}
+
+		// TODO: convert DB
 
 		// Wrap up
 		WP_CLI::line( '' );
@@ -200,18 +200,38 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		if ( $this->dry_run ) {
 			return false;
 		} else {
-			// $convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
-			$convert  = false;
+			$column_convert_error = null;
 
 			if ( $this->protect_masquerading_utf8 ) {
+				$column_convert_error = false;
 				$protected_columns = $this->convert_masquerading_columns( $table );
 
-				if ( ! $protected_columns ) {
-					return false;
+				// Exclude columns that didn't need conversion
+				$protected_columns = array_filter( $protected_columns );
+
+				// Alert to any columns that encountered errors
+				foreach ( $protected_columns as $col => $statuses ) {
+					if ( in_array( false, $statuses, true ) ) {
+						$column_convert_error = true;
+
+						WP_CLI::warning( "Problem converting {$col}" );
+					}
 				}
 			}
 
-			return is_int( $convert ) ? true : $convert;
+			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+
+			if ( is_int( $convert ) ) {
+				WP_CLI::success( "Converted table {$table}" );
+
+				$convert = true;
+			}
+
+			if ( true === $column_convert_error ) {
+				$convert = false;
+			}
+
+			return $convert;
 		}
 	}
 
@@ -219,24 +239,29 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	 * When requested, convert columns that contain utf8 data but are encoded as latin1
 	 *
 	 * @param string $table
-	 * @return bool
+	 * @return array
 	 */
 	private function convert_masquerading_columns( $table ) {
 		global $wpdb;
 
 		$columns = $wpdb->get_results( "SHOW COLUMNS FROM $table;" );
 
+		$cols_converted = array();
+
 		foreach ( $columns as $col ) {
-			$this->maybe_convert_column( $col, $table );
+			$cols_converted[ $col->Field ] = $this->maybe_convert_column( $col, $table );
 		}
 
-		return false;
+		return $cols_converted;
 	}
 
 	/**
+	 * Convert latin1 columns that actually contain utf8
 	 *
+	 * @return mixed
 	 */
 	private function maybe_convert_column( $col, $table ) {
+		global $wpdb;
 		$from_type = $to_type = null;
 
 		foreach ( self::TYPE_MAPPING as $from => $to ) {
@@ -272,15 +297,20 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			$to_type   .= "({$length})";
 		}
 
+		$from_type .= ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+
 		// TODO: anything with enums?
 
-		$convert = "ALTER TABLE {$table} CHANGE {$col->Field} {$col->Field} {$to_type};";
-		$restore = "ALTER TABLE {$table} CHANGE {$col->Field} {$col->Field} {$from_type};";
+		// On with it!
+		WP_CLI::line( "Converting column {$col->Field}" );
 
-		WP_CLI::log( $convert );
-		WP_CLI::log( $restore );
+		$pattern = 'ALTER TABLE %1$s CHANGE %2$s %2$s %3$s';
+		$convert = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $to_type ) );
+		$restore = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $from_type ) );
 
-		return true;
+		WP_CLI::line( "Finished converting column {$col->Field}" );
+
+		return compact( 'convert', 'restore' );
 	}
 }
 
