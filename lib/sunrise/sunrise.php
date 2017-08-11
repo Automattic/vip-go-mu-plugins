@@ -22,9 +22,9 @@ function network_not_found( $domain, $path ) {
 	];
 	$data = json_encode( $data );
 
-	error_log( 'Network Not Found! ' . $data );
+	trigger_error( 'Network Not Found! ' . $data, E_USER_WARNING );
 }
-add_action( 'ms_network_not_found', __NAMESPACE__ . '\network_not_found', 9, 2 );
+add_action( 'ms_network_not_found', __NAMESPACE__ . '\network_not_found', 9, 2 ); // Priority 9 to log before WP_CLI kills execution
 
 /**
  * Log errors retrieving a site for a given request
@@ -41,9 +41,9 @@ function site_not_found( $network, $domain, $path ) {
 	];
 	$data = json_encode( $data );
 
-	error_log( 'Site Not Found! ' . $data );
+	trigger_error( 'Site Not Found! ' . $data, E_USER_WARNING );
 }
-add_action( 'ms_site_not_found', __NAMESPACE__ . '\site_not_found', 9, 3 );
+add_action( 'ms_site_not_found', __NAMESPACE__ . '\site_not_found', 9, 3 ); // Priority 9 to log before WP_CLI kills execution
 
 /**
  * When provided, load a client's sunrise too
