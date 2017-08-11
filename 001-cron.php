@@ -23,7 +23,9 @@ function wpcom_vip_use_core_cron() {
 
 	// Basic Auth sites are unreachable
 	if ( defined( 'WPCOM_VIP_BASIC_AUTH' ) && WPCOM_VIP_BASIC_AUTH ) {
-		define( 'ALTERNATE_WP_CRON', true );
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			define( 'ALTERNATE_WP_CRON', true );
+		}
 		return true;
 	}
 

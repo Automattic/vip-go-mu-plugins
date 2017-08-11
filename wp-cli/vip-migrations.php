@@ -16,10 +16,20 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * [<tables>]
-	 * : Which tables to update (all, blog, global, ms_global)
+	 * : Which tables to update (all, blog, global, ms_global, "")
+	 * ---
+	 * default: ""
+	 * options:
+	 *   - all
+	 *   - blog
+	 *   - global
+	 *   - ms_global
+	 *   - ""
 	 */
 	function dbdelta( $args, $assoc_args ) {
 		global $wpdb;
+
+		$tables = isset( $args[1] ) ? $args[1] : '';
 
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
 		if ( $network && ! is_multisite() ) {
@@ -63,12 +73,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
-		if ( in_array( $args[1], array( '', 'all', 'blog', 'global', 'ms_global' ), true ) ) {
-			$changes = dbDelta( $args[1], ! $dry_run );
-		} else {
-			$changes = dbDelta( null, ! $dry_run );
-		}
-
+		$changes = dbDelta( $tables, ! $dry_run );
+		
 		if ( empty( $changes ) ) {
 			WP_CLI::success( 'No changes.' );
 			return;

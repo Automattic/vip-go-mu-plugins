@@ -49,7 +49,7 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
 
 		$path = '';
 		if ( ! $for_irc ) {
-			$path = isset( $call['file'] ) ? str_replace( array( WP_CONTENT_DIR, ABSPATH ) , '', $call['file'] ) : '';
+			$path = isset( $call['file'] ) ? str_replace( ABSPATH, '', $call['file'] ) : '';
 			$path .= isset( $call['line'] ) ? ':' . $call['line'] : '';
 		}
 
@@ -61,7 +61,7 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
 			}
 		} elseif ( in_array( $call['function'], array( 'include', 'include_once', 'require', 'require_once' ) ) ) {
 			$file = 0 == $bt_key ? $last_error_file : $call['args'][0];
-			$path .= " {$call['function']}('" . str_replace( array( WP_CONTENT_DIR, ABSPATH ) , '', $file ) . "')";
+			$path .= " {$call['function']}('" . str_replace( ABSPATH, '', $file ) . "')";
 		} else {
 			$path .= " {$call['function']}()";
 		}
