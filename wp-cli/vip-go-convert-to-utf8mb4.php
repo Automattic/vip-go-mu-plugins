@@ -190,17 +190,49 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			return false;
 		} else {
 			if ( $this->protect_masquerading_utf8 ) {
-				// TODO: conditionally convert columns to protect `utf8` content in `latin1` columns
+				$protected_columns = $this->convert_columns_to_protected_type( $table );
+
+				if ( ! $protected_columns ) {
+					return false;
+				}
 			}
 
-			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+//			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
+			$convert  = false;
 
 			if ( $this->protect_masquerading_utf8 ) {
-				// TODO: restore columns' original types
+				$restored_columns = $this->restore_original_column_types( $table );
+
+				if ( ! $restored_columns ) {
+					return false;
+				}
 			}
 
 			return is_int( $convert ) ? true : $convert;
 		}
+	}
+
+	/**
+	 *
+	 */
+	private function convert_columns_to_protected_type( $table ) {
+		global $wpdb;
+
+		$columns = $wpdb->get_results( "SHOW COLUMNS FROM $table;" );
+
+		foreach ( $columns as $col ) {
+			// TODO: compare type against what it should be converted to
+			var_export( $col );
+		}
+
+		return false;
+	}
+
+	/**
+	 *
+	 */
+	private function restore_original_column_types( $table ) {
+		return false;
 	}
 }
 
