@@ -40,29 +40,12 @@ function wpcom_vip_bust_media_months_cache( $post_id ) {
 		return;
 	}
 
-	// What month/year is the most recent attachment?
-	global $wpdb;
-	$months = $wpdb->get_results( $wpdb->prepare( "
-			SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
-			FROM $wpdb->posts
-			WHERE post_type = %s
-			ORDER BY post_date DESC
-			LIMIT 1
-		", 'attachment' ) );
-
-	// Storing months values to $tmpmonths
-	$tmpmonths = array_values( $months );
-
-	// Simplify by assigning the object to $months
-	$months = array_shift( $tmpmonths );
-
-	// Compare the dates of the new, and most recent, attachment
-	if (
-		! $months->year == get_the_time( 'Y', $post_id ) &&
-		! $months->month == get_the_time( 'm', $post_id )
-	) {
-		// the new attachment is not in the same month/year as the
-		// most recent attachment, so we need to refresh the transient
+	// Grab the transient to see if it needs updating
+	$media_months = get_transient( 'wpcom_media_months_array' );
+	
+    	// If the transient exists, and the attachment uploaded doesn't match the first (latest) month or year in the transient, lets clear it.
+    	if ( false !== $media_months && ( $media_months[0]->year !== get_the_time( 'Y', $post_id ) || $media_months[0]->month !== get_the_time( 'm', $post_id ) ) ) {
+        	// the new attachment is not in the same month/year as the data in our transient
 		delete_transient( 'wpcom_media_months_array' );
 	}
 
