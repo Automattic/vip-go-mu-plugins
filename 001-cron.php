@@ -11,21 +11,13 @@
 /**
  * Determine if Cron Control is called for
  *
- * Inactive multisite subsites, sites using Basic Auth, and local environments are generally unavailable
+ * Inactive multisite subsites and local environments are generally unavailable
  *
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
 	// Do not load outside of VIP environments, unless explicitly requested
 	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
-		return true;
-	}
-
-	// Basic Auth sites are unreachable
-	if ( defined( 'WPCOM_VIP_BASIC_AUTH' ) && WPCOM_VIP_BASIC_AUTH ) {
-		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
-			define( 'ALTERNATE_WP_CRON', true );
-		}
 		return true;
 	}
 
