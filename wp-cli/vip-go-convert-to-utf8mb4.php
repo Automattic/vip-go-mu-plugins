@@ -20,6 +20,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		'mediumtext' => 'mediumblob',
 		'longtext'   => 'longblob',
 		'varchar'    => 'varbinary', // length handled in maybe_protect_column()
+		'enum'       => 'enum',
 	);
 
 	/**
@@ -271,8 +272,12 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		$from_type = $to_type = null;
 
 		foreach ( self::TYPE_MAPPING as $from => $to ) {
-			// All will be exact matches, except for varchar(\d+)
-			if ( $col->Type === $from || ( 'varchar' === $from && 0 === stripos( $col->Type, $from ) ) ) {
+			// Most will be exact matches, except for varchar and enum
+			if (
+				$col->Type === $from ||
+				( 'enum' === $from && 0 === stripos( $col->Type, $from ) ) ||
+				( 'varchar' === $from && 0 === stripos( $col->Type, $from ) )
+			) {
 				$from_type = $from;
 				$to_type = $to;
 				break;
@@ -284,6 +289,28 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		// Carry on, we don't care about this column
 		if ( is_null( $from_type ) || is_null( $to_type ) ) {
 			return false;
+		}
+
+		// enums are special
+		if ( 0 === stripos( $from_type, 'enum' ) ) {
+			// If we can't find the options, something is very wrong
+			if ( ! preg_match( '#' . preg_quote( $from_type ) . '\(([^\)]+)\)#i', $col->Type, $options ) ) {
+				return false;
+			}
+
+			$options       = array_pop( $options );
+			$null_not_null = 'yes' === strtolower( $col->Null ) ? 'NULL' : 'NOT NULL';
+
+			WP_CLI::line( "Converting column {$col->Field}" );
+
+			$convert = $wpdb->query( $wpdb->prepare( 'ALTER TABLE %1$s CHANGE %2$s %2$s ENUM(' . $options . ') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci %3$s DEFAULT "%4$s"', $table, $col->Field, $null_not_null, $col->Default ) );
+
+			WP_CLI::line( "Finished converting column {$col->Field}" );
+
+			return array(
+				'convert' => $convert,
+				'restore' => $convert,
+			);
 		}
 
 		// Maintain varchar length
@@ -304,8 +331,6 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		}
 
 		$from_type .= ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
-
-		// TODO: anything with enums?
 
 		// On with it!
 		WP_CLI::line( "Converting column {$col->Field}" );
