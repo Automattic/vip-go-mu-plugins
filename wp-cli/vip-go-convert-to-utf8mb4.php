@@ -330,14 +330,14 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			$to_type   .= "({$length})";
 		}
 
-		$from_type .= ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$null_not_null = 'yes' === strtolower( $col->Null ) ? ' NULL' : ' NOT NULL';
 
 		// On with it!
 		WP_CLI::line( "Converting column {$col->Field}" );
 
-		$pattern = 'ALTER TABLE %1$s CHANGE %2$s %2$s %3$s';
-		$convert = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $to_type ) );
-		$restore = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $from_type ) );
+		$pattern = 'ALTER TABLE %1$s CHANGE %2$s %2$s %3$s %4$s %5$s DEFAULT "%6$s"';
+		$convert = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $to_type, '', $null_not_null, $col->Default ) );
+		$restore = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $from_type, 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', $null_not_null, $col->Default ) );
 
 		WP_CLI::line( "Finished converting column {$col->Field}" );
 
