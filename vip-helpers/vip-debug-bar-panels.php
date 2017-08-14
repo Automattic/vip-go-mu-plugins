@@ -66,8 +66,12 @@ class WPCOM_VIP_Debug_Bar_Queries extends Debug_Bar_Panel {
 		$query_time = '<h2><span>Total query time:</span>' . number_format( sprintf( '%0.1f', $total_time * 1000 ), 1 ) . "ms</h2>\n";
 
 		$memory_usage  = '<h2><span>Peak Memory Used:</span>' . number_format( memory_get_peak_usage( ) ) . " bytes</h2>\n";
-		$memcache_time = '<h2><span>Total memcache query time:</span>' .
-			number_format( sprintf( '%0.1f', $wp_object_cache->time_total * 1000 ), 1, '.', ',' ) . "ms</h2>\n";
+
+		$memcache_time = '';
+		if ( property_exists( $wp_object_cache, 'time_total' ) ) {
+			$memcache_time = number_format( sprintf( '%0.1f', $wp_object_cache->time_total * 1000 ), 1, '.', ',' );
+			$memcache_time = '<h2><span>Total memcache query time:</span>' . $memcache_time . "ms</h2>\n";
+		}
 
 		$out = $num_queries . $query_time . $memory_usage . $memcache_time . $out;
 
@@ -123,18 +127,22 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 			$count = count( $wpdb->queries );
 
 			for ( $i = 0; $i < $count; ++$i ) {
-				$query = $wpdb->queries[ $i ]['query'];
-				$query = preg_replace( "#\s+#", ' ', $query );
-				$query = str_replace( '\"', '', $query );
-				$query = str_replace( "\'", '', $query );
-				$query = preg_replace( '#wp_\d+_#', 'wp_?_', $query );
-				$query = preg_replace( "#'[^']*'#", "'?'", $query );
-				$query = preg_replace( '#"[^"]*"#', "'?'", $query );
-				$query = preg_replace( "#in ?\([^)]*\)#i", 'in(?)', $query);
-				$query = preg_replace( "#= ?\d+ ?#", "= ? ", $query );
-				$query = preg_replace( "#\d+(, ?)?#", '?\1', $query);
+				$query = '';
 
-				$query = preg_replace( "#\s+#", ' ', $query );
+				if ( array_key_exists( 'query', $wpdb->queries[ $i ] ) ) {
+					$query = $wpdb->queries[$i]['query'];
+					$query = preg_replace( "#\s+#", ' ', $query );
+					$query = str_replace( '\"', '', $query );
+					$query = str_replace( "\'", '', $query );
+					$query = preg_replace( '#wp_\d+_#', 'wp_?_', $query );
+					$query = preg_replace( "#'[^']*'#", "'?'", $query );
+					$query = preg_replace( '#"[^"]*"#', "'?'", $query );
+					$query = preg_replace( "#in ?\([^)]*\)#i", 'in(?)', $query );
+					$query = preg_replace( "#= ?\d+ ?#", "= ? ", $query );
+					$query = preg_replace( "#\d+(, ?)?#", '?\1', $query );
+
+					$query = preg_replace( "#\s+#", ' ', $query );
+				}
 
 				if ( !isset( $query_types[ $query ] ) ) {
 					$query_types[ $query ] = 0;
@@ -146,7 +154,9 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 
 				$query_type_counts[ $query ]++;
 
-				$query_types[ $query ] += $wpdb->queries[ $i ]['elapsed'];
+				if ( array_key_exists( 'elapsed', $wpdb->queries[ $i ] ) ) {
+					$query_types[$query] += $wpdb->queries[$i]['elapsed'];
+				}
 			}
 		}
 
@@ -162,6 +172,7 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 		foreach( $query_types as $q => $t ) {
 			$count++;
 
+			$query_time_pct = 0;
 			if ( $query_time ) {
 				$query_time_pct = ( $t / $query_time );
 			}
