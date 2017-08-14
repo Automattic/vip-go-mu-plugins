@@ -66,8 +66,12 @@ class WPCOM_VIP_Debug_Bar_Queries extends Debug_Bar_Panel {
 		$query_time = '<h2><span>Total query time:</span>' . number_format( sprintf( '%0.1f', $total_time * 1000 ), 1 ) . "ms</h2>\n";
 
 		$memory_usage  = '<h2><span>Peak Memory Used:</span>' . number_format( memory_get_peak_usage( ) ) . " bytes</h2>\n";
-		$memcache_time = property_exists( $wp_object_cache, 'time_total' ) ? number_format( sprintf( '%0.1f', $wp_object_cache->time_total * 1000 ), 1, '.', ',' ) : '?';
-		$memcache_time = '<h2><span>Total memcache query time:</span>' . $memcache_time . "ms</h2>\n";
+
+		$memcache_time = '';
+		if ( property_exists( $wp_object_cache, 'time_total' ) ) {
+			$memcache_time = number_format( sprintf( '%0.1f', $wp_object_cache->time_total * 1000 ), 1, '.', ',' );
+			$memcache_time = '<h2><span>Total memcache query time:</span>' . $memcache_time . "ms</h2>\n";
+		}
 
 		$out = $num_queries . $query_time . $memory_usage . $memcache_time . $out;
 
