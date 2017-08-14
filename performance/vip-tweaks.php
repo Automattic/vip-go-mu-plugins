@@ -48,7 +48,7 @@ function wpcom_vip_bust_media_months_cache( $post_id ) {
 	$cached_latest_month = ( ! empty( $media_months[0]->month ) ) ? $media_months[0]->month : '';
 	
     	// If the transient exists, and the attachment uploaded doesn't match the first (latest) month or year in the transient, lets clear it.
-    	if ( false !== $media_months && ( $cached_latest_year !== get_the_time( 'Y', $post_id ) || $cached_latest_month !== get_the_time( 'm', $post_id ) ) ) {
+    	if ( false !== $media_months && ( $cached_latest_year !== get_the_time( 'Y', $post_id ) || $cached_latest_month !== get_the_time( 'n', $post_id ) ) ) {
         	// the new attachment is not in the same month/year as the data in our transient
 		delete_transient( 'wpcom_media_months_array' );
 	}
