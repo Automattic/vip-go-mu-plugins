@@ -213,6 +213,46 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		return $script_output_json;
 	}
 
+	/**
+	 * Verifies that the connection is owned by the VIP machine user
+	 */
+	private function is_vip_connection() {
+		$master_user_email = Jetpack::get_master_user_email();
+		return $master_user_email === WPCOM_VIP_MACHINE_USER_EMAIL;
+	}
+
+	/**
+	 * Tests the active connection
+	 *
+	 * Does a two-way test to verify that the local site can communicate with remote Jetpack/WP.com servers and that Jetpack/WP.com servers can talk to the local site.
+	 *
+	 * This is a local copy until it lands upstream: https://github.com/Automattic/jetpack/pull/7636
+	 */
+	private function test_connection() {
+		if ( ! Jetpack::is_active() ) {
+			return new WP_Error( 'jps-test-no-connection', __( 'Jetpack is not currently connected to WordPress.com', 'jetpack' ) );
+		}
+
+		$response = Jetpack_Client::wpcom_json_api_request_as_blog(
+			sprintf( '/jetpack-blogs/%d/test-connection', Jetpack_Options::get_option( 'id' ) ),
+			Jetpack_Client::WPCOM_JSON_API_VERSION
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'jps-test-fail', sprintf( 'Failed to test connection (#%s: %s)', $response->get_error_code(), $response->get_error_message() ) );
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		if ( ! $body ) {
+			return new WP_Error( 'jps-test-fail-empty-body', 'Failed to test connection (empty response body)' );
+		}
+
+		$result = json_decode( $body );
+		$is_connected = (bool) $result->connected;
+
+		return $is_connected;
+	}
+
 	private function validate_constants_or_die() {
 		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
 			WP_CLI::error( 'Jetpack Start API constants (`WPCOM_VIP_JP_START_API_CLIENT_ID` and/or `WPCOM_VIP_JP_START_API_CLIENT_SECRET`) are not defined. Please check the `vip-secrets` file to confirm they\'re there, accessible, and valid.' );
