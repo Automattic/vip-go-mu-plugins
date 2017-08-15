@@ -26,7 +26,28 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Convert site using `utf8` or `latin1` to use `utf8mb4`
 	 *
+	 * Adapted from https://codex.wordpress.org/Converting_Database_Character_Sets, particularly the method for protecting `utf8` masquerading as `latin1`
+	 *
+	 * Use `--protect-latin-one` when table contains `utf8` characters in `latin1`-encoded columns
+	 *
+	 * ## OPTIONS
+	 *
+	 * <protect-latin-one>
+	 * : If passed, script assumes that `latin1` columns contain `utf8` content that
+	 *   should not be converted directly to `utf8mb4`. Required when migrating
+	 *   from WordPress.com.
+	 *
+	 * <dry-run>
+	 * : Whether or not to modify the database, or simply inspect it.
+	 * ---
+	 * default: false
+	 * options:
+	 *   - true
+	 *   - false
+	 * ---
+	 *
 	 * @subcommand convert
+	 * @synopsis [--dry-run=<dry-run>] [--protect-latin-one]
 	 */
 	public function convert( $args, $assoc_args ) {
 		global $wpdb;
@@ -39,7 +60,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			$this->dry_run = false;
 		}
 
-		$_protect_columns = WP_CLI\Utils\get_flag_value( $assoc_args, 'protect-latin1', false );
+		$_protect_columns = WP_CLI\Utils\get_flag_value( $assoc_args, 'protect-latin-one', false );
 		if ( false !== $_protect_columns ) {
 			$this->protect_masquerading_utf8 = true;
 		}
@@ -121,7 +142,9 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 		WP_CLI::line( '' );
 		WP_CLI::line( 'DONE!' );
-		WP_CLI::line( 'Time to update sitemeta and reload web configs.' );
+		WP_CLI::line( 'Time to update the `db_charset` and `db_collate` sitemeta, and reload web configs.' );
+		WP_CLI::line( 'DB_CHARSET: `utf8mb4`' );
+		WP_CLI::line( 'DB_COLLATE: `utf8mb4_unicode_ci`' );
 	}
 
 	/**
@@ -335,6 +358,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		// On with it!
 		WP_CLI::line( "Converting column {$col->Field}" );
 
+		// Double conversion corrects column charset without changing its content, as the types converted to do not use charsets
+		// See https://codex.wordpress.org/Converting_Database_Character_Sets
 		$pattern = 'ALTER TABLE %1$s CHANGE %2$s %2$s %3$s %4$s %5$s DEFAULT "%6$s"';
 		$convert = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $to_type, '', $null_not_null, $col->Default ) );
 		$restore = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $from_type, 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', $null_not_null, $col->Default ) );
