@@ -18,19 +18,17 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	public function cancel( $args, $assoc_args ) {
 		$this->validate_constants_or_die();
 
+		WP_CLI::line( '- Cancelling Jetpack plan for site' );
+
 		$data = $this->run_jetpack_bin( 'partner-cancel.sh' );
 
 		if ( is_wp_error( $data ) ) {
-			WP_CLI::error( sprintf( 'Failed to cancel plan: %s', $data->get_error_message() ) );
+			WP_CLI::error( sprintf( '-- Failed to cancel plan: %s', $data->get_error_message() ) );
 		}
 
-		WP_CLI::line( sprintf( 'Cancelled subscription for site_id = %s (body: %s)', $site_id, var_export( $data, true ) ) );
+		WP_CLI::line( sprintf( '-- Cancelled subscription for site_id = %s (body: %s)', $site_id, var_export( $data, true ) ) );
 
-		WP_CLI::line( 'Disconnecting Jetpack…' );
-		WP_CLI::runcommand( sprintf(
-			'jetpack disconnect blog --url=%s',
-			escapeshellarg( get_site_url() )
-		) );
+		$this->disconnect_site();
 	}
 
 	/**
@@ -39,9 +37,6 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 * Creates a machine user (if needed) and then uses the Jetpack Start API to initialize a connection and sets up the necessary local bits.
 	 *
 	 * ## OPTIONS
-	 *
-	 * [--force]
-	 * : Provision even if Jetpack is already connected.
 	 *
 	 * [--network]
 	 * : Connect all subsites of this multisite network
@@ -105,27 +100,35 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function connect_site( $assoc_args ) {
-		$force_connection = WP_CLI\Utils\get_flag_value( $assoc_args, 'force', false );
-		if ( ! $force_connection && Jetpack::is_active() ) {
-			$master_user_id = Jetpack_Options::get_option( 'master_user' );
-			if ( empty( $master_user_id ) ) {
-				WP_CLI::warning( 'Jetpack is already active (connected), but we could not determine the master user; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.' );
-				return false;
+		if ( Jetpack::is_active() ) {
+			WP_CLI::line( '- Jetpack is already connected' );
+
+			$is_vip_connection = $this->is_vip_connection();
+			if ( ! $is_vip_connection ) {
+				WP_CLI::line( sprintf( '-- The connection is not owned by `%s`; fixing.', WPCOM_VIP_MACHINE_USER_LOGIN ) );
+				return $this->disconnect_and_reconnect_site();
 			}
 
-			$master_user_login = get_userdata( $master_user_id )->user_login;
-			WP_CLI::warning( sprintf( 'Jetpack is already active (connected) and the master user is "%s"; bailing. Run this command with `--force` to bypass this check or disconnect Jetpack before continuing.', $master_user_login ) );
-			return false;
+			$is_connected = $this->test_connection();
+			if ( is_wp_error( $is_connected ) ) {
+				WP_CLI::line( sprintf( '-- The connection looks broken (%s | %s); fixing.', $is_connected->get_error_code(), $is_connected->get_error_message() ) );
+				return $this->disconnect_and_reconnect_site();
+			}
+
+			// TODO: verify plan?
+
+			WP_CLI::line( '-- Everything looks good!' );
+			return true;
 		}
 
-		WP_CLI::line( '-- Verifying VIP machine user exists (or creating one, if not)' );
+		WP_CLI::line( '- Verifying VIP machine user exists (or creating one, if not)' );
 		$user = $this->maybe_create_user();
 		if ( is_wp_error( $user ) ) {
 			WP_CLI::warning( $user->get_error_message() );
 			return false;
 		}
 
-		WP_CLI::line( '-- Provisioning via Jetpack Start API' );
+		WP_CLI::line( '- Provisioning via Jetpack Start API' );
 		$data = $this->run_jetpack_bin( 'partner-provision.sh', array(
 			'user_id' => $user->ID,
 			'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID,
@@ -133,13 +136,51 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		) );
 
 		if ( is_wp_error( $data ) ) {
-			WP_CLI::warning( sprintf( 'Failed to provision Jetpack connection with error: (%s) %s', $data->get_error_code(), $data->get_error_message() ) );
+			// TODO: if connection exists, re-run with force_connect and no plan?
+			// TODO: if plan exists, do (???)
+			WP_CLI::warning( sprintf( '-- Failed to provision Jetpack connection with error: (%s) %s', $data->get_error_code(), $data->get_error_message() ) );
 			return false;
 		}
+
+		WP_CLI::line( sprintf( '-- Completed provisioning: %s', var_export( $data, true ) ) );
 
 		update_option( 'vip_jetpack_start_connected_on', time(), false );
 
 		return true;
+	}
+
+	private function disconnect_site() {
+		$args = [
+			'return' => 'all',
+			'exit_error' => false,
+		];
+		$cmd = sprintf(
+			'jetpack disconnect blog --url=%s',
+			escapeshellarg( get_site_url() )
+		);
+
+		WP_CLI::line( '- Disconnecting Jetpack' );
+		$result = WP_CLI::runcommand( $cmd, $args );
+
+		$is_success = 0 === $result['return_code'];
+
+		if ( $is_success ) {
+			WP_CLI::line( '-- ' . $result['stdout'] );
+		} else {
+			WP_CLI::warning( '-- ' . $result['stderr'] );
+		}
+
+		return $is_success;
+	}
+
+	private function disconnect_and_reconnect_site() {
+		$is_disconnected = $this->disconnect_site();
+		if ( ! $is_disconnected ) {
+			return false;
+		}
+
+		WP_CLI::line( '- Reconnecting Jetpack' );
+		return $this->connect_site();
 	}
 
 	private function maybe_create_user() {
