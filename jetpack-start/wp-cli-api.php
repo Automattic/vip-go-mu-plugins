@@ -186,10 +186,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$script_path = __DIR__ . '/bin/' . $script;
 
 		$cmd = sprintf(
-			'%s --partner_id=%s --partner_secret=%s',
+			'%s --partner_id=%s --partner_secret=%s --url=%s',
 			$script_path,
 			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_ID ),
-			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_SECRET )
+			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_SECRET ),
+			escapeshellarg( get_site_url() )
 		);
 
 		foreach ( $args as $arg => $value ) {
