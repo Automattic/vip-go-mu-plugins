@@ -39,6 +39,7 @@ add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
 function wpcom_vip_cron_for_newrelic(){
 	if ( wp_doing_cron() && function_exists( 'newrelic_ignore_apdex' ) && function_exists( 'newrelic_name_transaction' ) ){
 		newrelic_name_transaction( 'wp-cron' );
+		newrelic_add_custom_parameter( 'wp-cron', 'true' );
 		newrelic_ignore_apdex();
 	}
 }
@@ -56,6 +57,7 @@ function wpcom_vip_wpcli_for_newrelic(){
 	     && function_exists( 'newrelic_ignore_apdex' )
 	     && function_exists( 'newrelic_name_transaction' ) ){
 		newrelic_name_transaction( 'wp-cli' );
+		newrelic_add_custom_parameter( 'wp-cli', 'true' );
 		newrelic_ignore_apdex();
 	}
 }
