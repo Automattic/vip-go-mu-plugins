@@ -37,7 +37,10 @@ add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
  * We don't want to count cron as part of the apdex because it is not a user facing function and if cron tasks are slow it doesn't imply that the site's performance is impacted. Without removing these, long running cron tasks could flag the site as having performance problems, which would cause false positives in the monitoring.
  */
 function wpcom_vip_cron_for_newrelic() {
-	if ( wp_doing_cron() && function_exists( 'newrelic_ignore_apdex' ) && function_exists( 'newrelic_name_transaction' ) ) {
+	if ( wp_doing_cron()
+		&& function_exists( 'newrelic_ignore_apdex' )
+		&& function_exists( 'newrelic_add_custom_parameter' )
+		&& function_exists( 'newrelic_name_transaction' ) ) {
 		newrelic_name_transaction( 'wp-cron' );
 		newrelic_add_custom_parameter( 'wp-cron', 'true' );
 		newrelic_ignore_apdex();
@@ -55,6 +58,7 @@ function wpcom_vip_wpcli_for_newrelic() {
 	     && WP_CLI
 	     && ! wp_doing_cron()  // Cron is going to be run via WP-CLI in the near term. We want to keep Cron and WP-CLI separated for better monitoring so we're not going to flag WP_CLI requests that are actually cron requests as WP-CLI.
 	     && function_exists( 'newrelic_ignore_apdex' )
+	     && function_exists( 'newrelic_add_custom_parameter' )
 	     && function_exists( 'newrelic_name_transaction' ) ) {
 		newrelic_name_transaction( 'wp-cli' );
 		newrelic_add_custom_parameter( 'wp-cli', 'true' );
