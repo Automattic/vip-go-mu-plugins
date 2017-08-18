@@ -31,6 +31,7 @@ if ( extension_loaded( 'newrelic' ) ){
 	add_action( 'muplugins_loaded', 'wpcom_vip_add_uri_to_newrelic' );
 	add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 ); //We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
 	add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 );  //We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+	add_action( 'rest_dispatch_request', 'wpcom_vip_rest_routes_for_newrelic', 10,4);
 }
 
 
@@ -78,4 +79,21 @@ function wpcom_vip_wpcli_for_newrelic() {
 		newrelic_add_custom_parameter( 'wp-cli', 'true' );
 		newrelic_ignore_apdex();
 	}
+}
+
+/**
+ * Name wp-api requests correctly in New Relic
+ *
+ * By default wp-api requests are tagged under index.php
+ * We'd want to have them tagged with the proper rest route used.
+ * While we are using the rest_dispatch_request filter, we're using it as an action without modifying the results.
+ */
+function wpcom_vip_rest_routes_for_newrelic( $dispatch_results, $request, $route, $handler ) {
+	if ( function_exists( 'newrelic_add_custom_parameter' )
+	     && function_exists( 'newrelic_name_transaction' ) ) {
+		newrelic_name_transaction( $route );
+		newrelic_add_custom_parameter( 'wp-api', 'true' );
+		newrelic_add_custom_parameter( 'wp-api-route', $route );
+	}
+	return null; // Anything that's not null would be used as a response to the rest request which we don't want.
 }
