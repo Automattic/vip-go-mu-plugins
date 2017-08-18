@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * These helper functions can be used inside your VIP code to modify how New Relic works on your site.
+ */
+
+/**
  * Disable New Relic's browser metrics
  *
  * Removes NR's JavaScript for tracking browser metrics, including page load times, Apdex score, and more.
@@ -17,6 +21,11 @@ function wpcom_vip_disable_new_relic_js() {
 		newrelic_disable_autorum();
 	}
 }
+
+
+/**
+ * The following functions are for platform level changes and should only be changed after consulting with WordPress.com VIP
+ */
 
 /**
  * Add the exact URI to NewRelic tracking but only if we're not in the admin
