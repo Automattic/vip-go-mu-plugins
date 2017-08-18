@@ -27,6 +27,13 @@ function wpcom_vip_disable_new_relic_js() {
  * The following functions are for platform level changes and should only be changed after consulting with WordPress.com VIP
  */
 
+if ( extension_loaded( 'newrelic' ) ){
+	add_action( 'muplugins_loaded', 'wpcom_vip_add_uri_to_newrelic' );
+	add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 ); //We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+	add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 );  //We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+}
+
+
 /**
  * Add the exact URI to NewRelic tracking but only if we're not in the admin
  */
@@ -38,7 +45,6 @@ function wpcom_vip_add_uri_to_newrelic() {
 		newrelic_add_custom_parameter( 'HTTPS', is_ssl() );
 	}
 }
-add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
 
 /**
  * Name cron correctly in New Relic and do not count it as part of the Apdex score.
@@ -55,7 +61,6 @@ function wpcom_vip_cron_for_newrelic() {
 		newrelic_ignore_apdex();
 	}
 }
-add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 ); // We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
 
 /**
  * Name wp-cli correctly in New Relic and do not count it as part of the Apdex score
@@ -74,4 +79,3 @@ function wpcom_vip_wpcli_for_newrelic() {
 		newrelic_ignore_apdex();
 	}
 }
-add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 );  // We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
