@@ -128,6 +128,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			return false;
 		}
 
+		// Put the machine user in charge of things now
+		wp_set_current_user( $user->ID );
+
 		WP_CLI::line( '- Provisioning via Jetpack Start API' );
 		$data = $this->run_jetpack_bin( 'partner-provision.sh', array(
 			'user_id' => $user->ID,
