@@ -163,6 +163,13 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		// HACK: Jetpack options can get stuck in notoptions, which can lead to a broken state.
 		wp_cache_delete( 'notoptions', 'options' );
 
+		WP_CLI::line( '- Checking Jetpack status' );
+
+		$status_cmd = 'jetpack status';
+		WP_CLI::runcommand( $status_cmd, [
+			'exit_error' => false,
+		] );
+
 		update_option( 'vip_jetpack_start_connected_on', time(), false );
 
 		return true;
@@ -180,6 +187,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::line( '- Disconnecting Jetpack' );
 		$result = WP_CLI::runcommand( $cmd, $args );
+		$result = is_object( $result ) ? (array) $result : $result;
 
 		$is_success = 0 === $result['return_code'];
 
@@ -260,6 +268,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 				is_numeric( $value ) ? intval( $value ) : escapeshellarg( $value )
 			);
 		}
+
+		WP_CLI::line( sprintf( '-- Running bin script `%s` with args (%s)', $script, var_export( $args, true ) ) );
 
 		exec( $cmd, $script_output, $script_result );
 		$script_output_json = json_decode( end( $script_output ) );
