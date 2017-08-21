@@ -132,11 +132,20 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		wp_set_current_user( $user->ID );
 
 		WP_CLI::line( '- Provisioning via Jetpack Start API' );
-		$data = $this->run_jetpack_bin( 'partner-provision.sh', array(
+
+		$provision_args = array(
 			'user_id' => $user->ID,
 			'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID,
-			'plan' => 'professional',
-		) );
+		);
+
+		// If we're force connecting, we're assuming we already have the plan.
+		if ( isset( $assoc_args[ 'force_connect' ] ) ) {
+			$provision_args['force_connect'] = 1;
+		} else {
+			$provision_args['plan'] = 'professional';
+		}
+
+		$data = $this->run_jetpack_bin( 'partner-provision.sh', $provision_args );
 
 		if ( is_wp_error( $data ) ) {
 			// TODO: if connection exists, re-run with force_connect and no plan?
