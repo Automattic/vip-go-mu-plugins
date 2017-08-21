@@ -160,6 +160,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::line( sprintf( '-- Completed provisioning: %s', var_export( $data, true ) ) );
 
+		// HACK: Jetpack options can get stuck in notoptions, which can lead to a broken state.
+		wp_cache_delete( 'notoptions', 'options' );
+
 		update_option( 'vip_jetpack_start_connected_on', time(), false );
 
 		return true;
