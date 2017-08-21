@@ -148,8 +148,12 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$data = $this->run_jetpack_bin( 'partner-provision.sh', $provision_args );
 
 		if ( is_wp_error( $data ) ) {
-			// TODO: if connection exists, re-run with force_connect and no plan?
-			// TODO: if plan exists, do (???)
+			// If connection exists, re-run with force_connect and no plan?
+			// TODO: get better error code from API
+			if ( 'You already have this plan from this partner.' === $data->get_error_message() ) {
+				return $this->connect_site( [ 'force_connect' => true ] );
+			}
+
 			WP_CLI::warning( sprintf( '-- Failed to provision Jetpack connection with error: (%s) %s', $data->get_error_code(), $data->get_error_message() ) );
 			return false;
 		}
