@@ -34,7 +34,7 @@ if ( true === WPCOM_SANDBOXED ) {
 			return;
 		}
 
-		wp_die( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack. This is probably not a good idea. As a precaution, we\'re killing this request to prevent this from happening (this === 💥💥💥). Please run `vip stacks update` on your sandbox before doing anything else.', 400 );
+		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
 	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
 }
 
