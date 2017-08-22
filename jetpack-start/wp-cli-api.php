@@ -318,6 +318,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 		$result = json_decode( $body );
 		$is_connected = (bool) $result->connected;
+		if ( ! $is_connected ) {
+			return new WP_Error( 'jps-not-connected', 'Connection test failed (WP.com does not think this site is connected or there are authentication or other issues.)' );
+		}
 
 		return $is_connected;
 	}
