@@ -44,9 +44,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 * ## EXAMPLES
 	 *
 	 *     wp jetpack-start api connect
-	 *     wp jetpack-start api connect --force
 	 *     wp jetpack-start api connect --network
-	 *     wp jetpack-start api connect --force --network
 	 *
 	 */
 	public function connect( $args, $assoc_args ) {
@@ -151,6 +149,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			// If connection exists, re-run with force_connect and no plan?
 			// TODO: get better error code from API
 			if ( 'You already have this plan from this partner.' === $data->get_error_message() ) {
+				WP_CLI::line( '-- Looks like this site was previously connected; fetching auth details.' );
 				return $this->connect_site( [ 'force_connect' => true ] );
 			}
 
@@ -269,7 +268,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			);
 		}
 
-		WP_CLI::line( sprintf( '-- Running bin script `%s` with args (%s)', $script, var_export( $args, true ) ) );
+		WP_CLI::line( sprintf( '-- Running bin script: `%s` with args (%s)', $script, var_export( $args, true ) ) );
 
 		exec( $cmd, $script_output, $script_result );
 		$script_output_json = json_decode( end( $script_output ) );
