@@ -74,7 +74,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
 		$changes = dbDelta( $tables, ! $dry_run );
-		
+
 		if ( empty( $changes ) ) {
 			WP_CLI::success( 'No changes.' );
 			return;
@@ -244,6 +244,129 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				WP_CLI::line( '[DRY-RUN] Meta ' . $meta_key . ' added to user ' . $user_value );
 			}
 		}
+	}
+
+	/**
+	 * Move images previously uploaded to another environment
+	 *
+	 * @subcommand image-delta
+	 * @synopsis --delta-from=<url> [--uploaded-after-id=<ID>] [--uploaded-after-date=<date>]
+	 */
+	function image_delta( $args, $assoc_args ) {
+		global $wpdb;
+
+		$delta_from = $assoc_args['delta-from'];
+
+		if ( true === array_key_exists( 'uploaded-after-id', $assoc_args ) && 0 !== intval( $assoc_args['uploaded-after-id'] ) ) {
+			$uploaded_after_id = intval( $assoc_args['uploaded-after-id'] );
+		} else if ( true === array_key_exists( 'uploaded-after-date', $assoc_args ) ) {
+			$uploaded_after_date = strtotime( $assoc_args['uploaded-after-date'] );
+		} else {
+			WP_CLI::error( 'You have to specify either valid post ID or date' );
+		}
+
+		if ( true === isset( $uploaded_after_id ) ) {
+			$where = sprintf( "{$wpdb->posts}.ID >= %d", intval( $uploaded_after_id ) );
+		} else {
+			$where = $wpdb->prepare( "{$wpdb->posts}.post_date_gmt >= %s", date( 'Y-m-d H:i:s', $uploaded_after_date ) );
+		}
+
+		$guids = $wpdb->get_results( "SELECT guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND {$where}" );
+
+		foreach( $guids as $guid ) {
+			$image_url_path = parse_url( $guid->guid, PHP_URL_PATH );
+			$file = download_url( 'https://' . $delta_from . $image_url_path );
+			if ( false === is_wp_error( $file ) && true === file_exists( $file ) ) {
+				$wp_filetype = wp_check_filetype_and_ext( $file, basename( $image_url_path ) );
+				$details = array(
+					'file' => $file,
+					'path' => $image_url_path,
+					'post_url' => 'https://' . FILE_SERVICE_ENDPOINT . $image_url_path,
+					'type' => $wp_filetype['type'],
+				);
+				WP_CLI::line( $this->_upload_file( $details ) );
+				unlink( $file );
+			}
+			//exit;
+		}
+	}
+
+	private function _upload_file( $details, $force = false ) {
+
+		if ( false === $force && true === $this->_attachment_file_exists( $details['post_url'] ) ) {
+			WP_CLI::line( sprintf( 'File %s already exists, skipping...', $details['post_url'] ) );
+			return;
+		}
+
+		$headers = array(
+			'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
+			'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
+			'Content-Type: ' . $details['type'],
+			'Content-Length: ' . filesize( $details['file'] ),
+			'Connection: Keep-Alive',
+		);
+
+		$stream = fopen( $details['file'], 'r' );
+		$ch = curl_init( $details['post_url'] );
+
+		curl_setopt( $ch, CURLOPT_PUT, true );
+		curl_setopt( $ch, CURLOPT_INFILE, $stream );
+		curl_setopt( $ch, CURLOPT_INFILESIZE, filesize( $details['file'] ) );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_HEADER, false );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 + (int)( filesize( $details['file'] ) / 512000 ) ); // 10 plus 1 second per 500k
+
+		curl_setopt( $ch, CURLOPT_READFUNCTION,
+			function( $ch, $fd, $length ) use( $stream ) {
+				$data = fread( $stream, $length );
+				if ( null == $data )
+					return 0;
+				else
+					return $data;
+			});
+
+		$ret_data = curl_exec( $ch );
+		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		curl_close( $ch );
+
+		switch ( $http_code ) {
+			case 200:
+				$return = sprintf( 'The file ( %s ) has been successfully uploaded.', $details['path'] );
+				break;
+			case 204:
+				$return = 'You have exceeded your file space quota.';
+				break;
+			default:
+				$return = sprintf( 'Error uploading the file to the remote servers: Code %d', $http_code );
+				break;
+		}
+		return $return;
+	}
+
+	private function _attachment_file_exists( $file_url ) {
+		$url_parts = parse_url( $file_url );
+		$post_url = 'https://' . FILE_SERVICE_ENDPOINT . $url_parts['path'];
+
+		$headers = array(
+			'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
+			'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
+			'X-Action: file_exists',
+		);
+
+		$ch = curl_init( $post_url );
+
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
+		curl_setopt( $ch, CURLOPT_HEADER, false );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
+		curl_setopt( $ch, CURLOPT_VERBOSE, true );
+
+		curl_exec( $ch );
+		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		curl_close( $ch );
+
+		return ( 200 == $http_code );
 	}
 }
 
