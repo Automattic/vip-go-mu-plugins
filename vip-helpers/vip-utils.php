@@ -120,7 +120,7 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  * @return string
  */
 function vip_powered_wpcom_url() {
-	return 'https://vip.wordpress.com/';
+	return 'https://vip.wordpress.com/?utm_source=vip_powered_wpcom&utm_medium=web&utm_campaign=VIP%20Footer%20Credit&utm_term=' . $_SERVER['HTTP_HOST'];
 }
 
 /**
