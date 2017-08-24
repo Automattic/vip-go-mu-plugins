@@ -120,7 +120,14 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  * @return string
  */
 function vip_powered_wpcom_url() {
-	return 'https://vip.wordpress.com/';
+	$args = array(
+		'utm_source' => 'vip_powered_wpcom',
+		'utm_medium' => 'web',
+		'utm_campaign' => 'VIP Footer Credit',
+		'utm_term' => sanitize_text_field( $_SERVER['HTTP_HOST'] ),
+	);
+
+	return add_query_arg( $args, 'https://vip.wordpress.com/' );
 }
 
 /**
