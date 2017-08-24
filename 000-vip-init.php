@@ -33,7 +33,7 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 }
 
 define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_JOBS_HOST', false !== strpos( gethostname(), '_wpcli_' ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
@@ -42,7 +42,7 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
-define( 'WPCOM_VIP_PRIVATE_DIR', WPCOM_SANDBOXED || VIP_GO_IS_JOBS_HOST ? '/chroot/private' : '/private' );
+define( 'WPCOM_VIP_PRIVATE_DIR', WPCOM_SANDBOXED || VIP_GO_IS_CLI_CONTAINER ? '/chroot/private' : '/private' );
 
 // Define these values just in case
 defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
