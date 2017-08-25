@@ -223,7 +223,20 @@ class A8C_Files_Image_Srcset_Meta {
 	}
 }
 
-// Generate/fix the image meta.
-if ( defined( 'CALCULATE_IMAGE_SRCSET_META' ) && true === CALCULATE_IMAGE_SRCSET_META ) {
+/*
+ * Hook the A8C_Files_Image_Srcset_Meta class on init.
+ *
+ * To disable srcset and sizes return `false` for the `wpcom_enable_srcset_and_sizes` filter.
+ */
+add_action( 'init', 'a8c_files_make_images_responsive' );
+
+function a8c_files_make_images_responsive() {
+	if ( ! apply_filters( 'wpcom_enable_srcset_and_sizes', true ) ) {
+		return;
+	}
+	// Generate/fix the image meta.
 	add_filter( 'wp_calculate_image_srcset_meta', array( 'A8C_Files_Image_Srcset_Meta', 'generate_image_meta' ), 9, 4 );
 }
+
+// Disable the VIP Go file service srcset by default for now.
+add_filter( 'wpcom_enable_srcset_and_sizes', '__return_false' );
