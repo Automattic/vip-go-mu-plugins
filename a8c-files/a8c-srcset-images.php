@@ -225,5 +225,5 @@ class A8C_Files_Image_Srcset_Meta {
 
 // Generate/fix the image meta.
 if ( defined( 'CALCULATE_IMAGE_SRCSET_META' ) && true === CALCULATE_IMAGE_SRCSET_META ) {
-	add_filter( 'wp_calculate_image_srcset_meta', array( 'A8C_Files_Image_Srcset_Meta', 'generate_image_meta' ), 10, 4 );
+	add_filter( 'wp_calculate_image_srcset_meta', array( 'A8C_Files_Image_Srcset_Meta', 'generate_image_meta' ), 9, 4 );
 }
