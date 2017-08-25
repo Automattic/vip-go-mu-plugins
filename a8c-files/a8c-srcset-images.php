@@ -15,9 +15,24 @@ class A8C_Files_Image_Srcset_Meta {
 		// Reset $image_meta['sizes'] if not empty. Need to build it again matching the current img src.
 		$image_meta['sizes'] = array();
 
+		$image_src_host = parse_url( $image_src, PHP_URL_HOST );
+		$valid_image_hosts = array(
+			parse_url( home_url(), PHP_URL_HOST ),
+			parse_url( site_url(), PHP_URL_HOST ),
+		);
+
+		/*
+		 * Let plugins filter the list of valid image hosts which should be served from the VIP Go file service.
+		 *
+		 * @param array  $valid_image_hosts The list of valid image hosts. Contains host of home_url() and site_url().
+		 * @param string $image_src        The 'src' of the image.
+		 * @param int    $attachment_id    The image attachment ID or 0 if not supplied.
+		 */
+		$valid_image_hosts = apply_filters( 'wpcom_vip_responsive_images_valid_hosts', $valid_image_hosts, $image_src, $attachment_id );
+
 		// Bail out early if the image is not hosted on the site, missing image meta or original image is too small.
-		// This will disable the generation of srcset.
-		if ( strpos( $image_src, home_url() ) === false ||
+        // This will disable the generation of srcset.
+		if ( false === in_array ( $image_src_host, $valid_image_hosts )  ||
 			empty( $image_meta['width'] ) ||
 			empty( $image_meta['height'] ) ||
 			( $image_meta['width'] < 100 && $image_meta['height'] < 100 ) ) {
