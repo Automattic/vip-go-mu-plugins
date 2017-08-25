@@ -111,7 +111,7 @@ class A8C_Files_Image_Srcset_Meta {
 
 		// Add the current size and 2x current size. That should be the largest available size.
 		// The current "retina" browsers don't show images larger than 2x even on displays with 3.5x or 4.0x pixel density.
-		// Prepend wpcom-current. Fixes iOS8 bug.
+		// Prepend wpcom-current. Fixes iOS8 bug. See #35030-core.
 		$_sizes = array(
 				'vipgo-current' => array(
 					'width' => $image_width,
