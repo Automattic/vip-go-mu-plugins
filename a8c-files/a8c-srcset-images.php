@@ -77,7 +77,6 @@ class A8C_Files_Image_Srcset_Meta {
 			}
 
 			if ( ! empty( $photon_args['resize'] ) ) {
-				// TODO: maybe see if there is a discrepancy between the width/height from the img tag and the values in 'resize'
 				// Assuming the image must have the width/height set in the 'resize' query arg.
 				$resize = explode( ',', $photon_args['resize'] );
 				if ( count( $resize ) === 2 ) {
