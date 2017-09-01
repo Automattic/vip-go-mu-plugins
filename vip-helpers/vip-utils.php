@@ -990,29 +990,11 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	// Array of directories to check for the above files in, in priority order
 	$test_directories = array();
 
-	// Array of shared plugins we are not deprecating
-	$protected_shared_plugins = array(
-		'two-factor',
-		'jetpack-force-2fa',
-	);
-
-	// Array of shared plugins that we cannot move
-	$retired_shared_plugins = array(
-		'vip-go-elasticsearch',
-	);
-
 	if ( $folder ) {
 		$test_directories[] = WP_PLUGIN_DIR . '/' . $folder;
 	} else {
 		$test_directories[] = WP_PLUGIN_DIR;
-		if ( defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
-			if ( in_array( $plugin, $protected_shared_plugins, true ) ) {
-				$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
-			}
-			if ( in_array( $plugin, $retired_shared_plugins, true ) ) {
-				return;
-			}
-		} else {
+		if ( wpcom_vip_can_use_shared_plugin( $plugin ) ) {
 			$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
 		}
 	}
@@ -1056,6 +1038,31 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
 		}
 	}
+}
+
+/**
+ * Determine if a plugin can be used or not
+ *
+ * @param  string $plugin plugin name
+ * @return bool
+ */
+function wpcom_vip_can_use_shared_plugin( $plugin ) {
+	// Array of shared plugins we are not deprecating
+	$protected_shared_plugins = array(
+		'two-factor',
+		'jetpack-force-2fa',
+		'vip-go-elasticsearch',
+	);
+
+	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
+		return true;
+	}
+
+	if ( true !== WPCOM_VIP_DISABLE_SHARED_PLUGINS ) {
+		return true;
+	}
+
+	return in_array( $plugin, $protected_shared_plugins, true );
 }
 
 /**
