@@ -58,7 +58,8 @@ function wpcom_vip_cron_for_newrelic() {
 		&& function_exists( 'newrelic_add_custom_parameter' )
 		&& function_exists( 'newrelic_name_transaction' ) ) {
 		newrelic_name_transaction( 'wp-cron' );
-		newrelic_add_custom_parameter( 'wp-cron', 'true' );
+		// N.B. VIP Go sites execute cron events through WP CLI, so the event
+		// can be determined in the New Relic 'wp-cli-cmd-args' custom parameter
 		newrelic_ignore_apdex();
 	}
 }
