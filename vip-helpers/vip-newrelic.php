@@ -75,8 +75,30 @@ function wpcom_vip_wpcli_for_newrelic() {
 	     && function_exists( 'newrelic_ignore_apdex' )
 	     && function_exists( 'newrelic_add_custom_parameter' )
 	     && function_exists( 'newrelic_name_transaction' ) ) {
+
 		newrelic_name_transaction( 'wp-cli' );
-		newrelic_add_custom_parameter( 'wp-cli', 'true' );
+
+		$cmd = 'wp ' . implode( ' ', \WP_CLI::get_runner()->arguments );
+		// e.g. `wp option get siteurl`
+		newrelic_add_custom_parameter( 'wp-cli-cmd', $cmd );
+
+		$assoc_args = \WP_CLI::get_runner()->assoc_args;
+		$config = \WP_CLI::get_runner()->config;
+		// Empty values clutter the result
+		foreach ( $config as $config_arg => $config_value ) {
+			if ( empty( $config_value ) ) {
+				unset( $config[$config_arg] );
+			}
+		}
+		$all_config = array_merge( $assoc_args, $config );
+		// Key sorting normalises the resultant string
+		ksort( $all_config );
+		// e.g. `allow-root=1&color=auto&format=json&skip-plugins=1` which is
+		// equivalent to `--allow-root --color=auto --format=json --skip-plugins`
+		// We have this format because building a query string is easy and understandable
+		// (and a hack) whereas rebuilding a WP CLI style command parameters is harder
+		newrelic_add_custom_parameter( 'wp-cli-cmd-args', urldecode(http_build_query( $all_config ) ) );
+
 		newrelic_ignore_apdex();
 	}
 }
