@@ -529,12 +529,15 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return bool True on success
 	 */
 	public function queue_purge_url( $url ) {
-		$url = esc_url_raw( $url );
-		$url = wp_http_validate_url( $url );
-		if ( false === $url ) {
+		$normalized_url = $this->normalize_purge_url( $url );
+		$is_valid_url = $this->is_valid_purge_url( $normalized_url );
+
+		if ( false === $is_valid_url ) {
+			trigger_error( sprintf( 'vip-cache-manager: Tried to PURGE invalid URL: %s', $url ), E_USER_WARNING );
 			return false;
 		}
-		$this->purge_urls[] = $url;
+
+		$this->purge_urls[] = $normalized_url;
 		return true;
 	}
 
@@ -554,6 +557,23 @@ class WPCOM_VIP_Cache_Manager {
 		) {
 			$this->queue_purge_url( get_permalink( $post_before ) );
 		}
+	}
+
+	protected function normalize_purge_url( $url ) {
+		$url = esc_url_raw( $url );
+
+		$parsed_url = parse_url( $url );
+
+		// Strip off any URL fragments (i.e. `#search=xyz`) since that is ignored by the cache
+		if ( isset( $parsed_url['fragment'] ) ) {
+			unset( $parsed_url['fragment'] );
+		}
+
+		return http_build_url( $parsed_url );
+	}
+
+	protected function is_valid_purge_url( $url ) {
+		return wp_http_validate_url( $url );
 	}
 
 	private function can_purge_cache() {
