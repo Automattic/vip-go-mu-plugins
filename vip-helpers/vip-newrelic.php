@@ -29,8 +29,11 @@ function wpcom_vip_disable_new_relic_js() {
 
 if ( extension_loaded( 'newrelic' ) ){
 	add_action( 'muplugins_loaded', 'wpcom_vip_add_uri_to_newrelic' );
-	add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 ); //We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
-	add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 11 );  //We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+	// We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+	add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 );
+	// We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+	// This must be hooked later than wpcom_vip_cron_for_newrelic to allow values to be overwritten
+	add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 12 );
 	add_action( 'rest_dispatch_request', 'wpcom_vip_rest_routes_for_newrelic', 10,4);
 }
 
