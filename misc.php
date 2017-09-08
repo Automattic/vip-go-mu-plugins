@@ -148,6 +148,4 @@ add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
 /**
  * Stop Woocommerce from trying to create files on read-only filesystem
  */
-if ( false !== VIP_GO_ENV ) {
-	add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
-}
+add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
