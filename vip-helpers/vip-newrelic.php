@@ -82,7 +82,16 @@ function wpcom_vip_wpcli_for_newrelic() {
 
 		newrelic_name_transaction( 'wp-cli' );
 
-		$cmd = 'wp ' . implode( ' ', \WP_CLI::get_runner()->arguments );
+		$wp_cli_arguments = \WP_CLI::get_runner()->arguments;
+		if ( empty( $wp_cli_arguments ) ) {
+			// Not much to do at this point
+			return;
+		}
+		if ( ! is_array( $wp_cli_arguments ) ) {
+			$wp_cli_arguments = [ $wp_cli_arguments ];
+		}
+		array_unshift( $wp_cli_arguments, 'wp' );
+		$cmd = implode( ' ', $wp_cli_arguments );
 		// e.g. `wp option get siteurl`
 		newrelic_add_custom_parameter( 'wp-cli-cmd', $cmd );
 
