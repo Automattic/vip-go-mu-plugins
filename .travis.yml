@@ -30,6 +30,8 @@ before_script:
   # Travis ships phpunit6 which no longer supports `PHPUnit_Framework_TestCase`, see https://core.trac.wordpress.org/ticket/39822
   - composer global require "phpunit/phpunit=5.7.*"
   - phpunit --version
+  - composer global require wp-coding-standards/wpcs
+  - phpcs --version
 
 script:
   # Linting and unit tests
