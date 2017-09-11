@@ -136,10 +136,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID,
 		);
 
-		// If we're force connecting, we're assuming we already have the plan.
-		if ( isset( $assoc_args[ 'force_connect' ] ) ) {
-			$provision_args['force_connect'] = 1;
-		} else {
+		// Always force connect; if we have a remote connection, just force JPS to reuse it
+		$provision_args['force_connect'] = 1;
+
+		// Don't bother provisioning the plan
+		if ( ! isset( $assoc_args['skip_plan'] ) ) {
 			$provision_args['plan'] = 'professional';
 		}
 
