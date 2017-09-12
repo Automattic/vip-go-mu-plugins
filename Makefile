@@ -10,3 +10,6 @@ phpunit:
 
 phpdoc:
 	phpdoc run --no-interaction
+
+phpcs:
+	phpcs

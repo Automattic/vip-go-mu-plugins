@@ -13,6 +13,7 @@ env:
   matrix:
     - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
     - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
+    - WP_TRAVISCI=phpcs WP_MULTISITE=1 DEPLOY_BRANCH=master
 
 addons:
   apt:
@@ -30,10 +31,21 @@ before_script:
   # Travis ships phpunit6 which no longer supports `PHPUnit_Framework_TestCase`, see https://core.trac.wordpress.org/ticket/39822
   - composer global require "phpunit/phpunit=5.7.*"
   - phpunit --version
+  - composer global require wp-coding-standards/wpcs
+  - phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
+  - phpcs --version
 
 script:
   # Linting and unit tests
-  - make test
+  - |
+    if [[ ! -z "$WP_VERSION" ]] ; then
+      make test
+    fi
+  # PHPCS
+  - |
+    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      make phpcs
+    fi
 
 notifications:
   slack:
