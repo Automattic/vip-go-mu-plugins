@@ -15,9 +15,12 @@ require( __DIR__ . '/wordpress-importer/wordpress-importer.php' );
 
 add_action( 'import_start', function() {
 	wp_suspend_cache_addition( true );
+	wp_suspend_cache_invalidation( true );
 	wp_cache_flush();
 });
 
 add_action( 'import_end', function() {
+	wp_suspend_cache_addition( false );
+	wp_suspend_cache_invalidation( false );
 	wp_cache_flush();
 });
