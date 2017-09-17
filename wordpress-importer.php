@@ -12,3 +12,12 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 */
 
 require( __DIR__ . '/wordpress-importer/wordpress-importer.php' );
+
+add_action( 'import_start', function() {
+	wp_suspend_cache_addition( true );
+	wp_cache_flush();
+});
+
+add_action( 'import_end', function() {
+	wp_cache_flush();
+});
