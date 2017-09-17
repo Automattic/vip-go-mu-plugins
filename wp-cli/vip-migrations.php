@@ -245,6 +245,180 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 		}
 	}
+	
+	/**
+	 * Clones a multisite to another multisite.
+	 *
+	 * "Cloning" is a misleading term here.  All of the actual cloning needs to be done outside this program
+	 * by copying the SQL from one site to another.  For VIP Go, this can be done using the `vip-cli` tool.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <old-domain>
+	 * : The old domain.
+	 *
+	 * <new-domain>
+	 * : The new domain.
+	 *
+	 * [--dry-run=<true>]
+	 * : Do a "dry run" and no data modification will be done.  Defaults to true.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Converts the data from the parent site test-subdir-ms-01.go-vip.co data to the child site test-subdir-ms-01-preprod.go-vip.co
+	 *     $ wp vip migration clone-ms test-subdir-ms-01.go-vip.co test-subdir-ms-01-preprod.go-vip.co --url=test-subdir-ms-01.go-vip.co --dry-run=false
+	 *
+	 *     # Does a "dry run" convert from "www.example.com" to "preprod.example.com"
+	 *     $ wp --allow-root vip migration clone-ms www.example.com preprod.example.com --url=www.example.com
+	 *
+	 * @subcommand clone-ms
+	*/
+	public function clone_ms( $args, $assoc_args ) {
+		$old_domain = $args[0];
+		$new_domain = $args[1];
+		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run', true );
+
+		// Force a boolean, always default to true.
+		$dry_run = filter_var( $dry_run, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ?? true;
+
+		// Disable object caching.  It can get really messed up with all of this.
+		if ( ! $dry_run ) {
+			// Make sure we start with a clean cache.
+			wp_cache_flush();
+			wp_suspend_cache_addition( true );
+			WP_CLI::log( 'Cleared cache and Disabled object caching' );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have cleared cache and disabled object caching' );
+		}
+
+		// Delete JPOP options
+		if ( ! $dry_run ) {
+			WP_CLI::log( 'Deleting JPOP options' );
+			delete_option( 'jetpack_options' );
+			delete_option( 'jetpack_private_options' );
+			delete_option( 'vaultpress' );
+			delete_option( 'vaultpress_auto_register' );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have deleted JPOP options' );
+		}
+
+		// Get a list of Blog IDs from the database.
+		global $wpdb;
+		$sites = $wpdb->get_results( 'SELECT blog_id FROM ' . $wpdb->blogs, ARRAY_A );
+
+		// Change site domains in database.
+		foreach ( $sites as $site ) {
+			$site_id = (int) $site['blog_id'];
+			if ( ! $dry_run ) {
+				WP_CLI::log( 'Running ' . sprintf( 'UPDATE ' . $wpdb->blogs . ' SET domain = %s WHERE blog_id = %d', $new_domain, $site_id ) );
+				if ( false !== $wpdb->query( $wpdb->prepare( 'UPDATE ' . $wpdb->blogs . ' SET domain = %s WHERE blog_id = %d', $new_domain, $site_id ) ) ) {
+					WP_CLI::log( 'Site ' . $site_id . ' updated to ' . $new_domain );
+				} else {
+					WP_CLI::warning( 'Site ' . $site_id . ' NOT updated to ' . $new_domain );
+				}
+			} else {
+				WP_CLI::log( '[DRY-RUN] Would have ran: ' . sprintf( 'UPDATE ' . $wpdb->blogs . ' SET domain = %s WHERE blog_id = %d', $new_domain, $site_id ) );
+			}
+		}
+
+		// Change network domains in database.
+		// TODO: Iterate over multiple networks.  It's rare, but possible there will be multiple networks.
+		if ( ! $dry_run ) {
+			if ( false !== $wpdb->query( $wpdb->prepare( 'UPDATE ' . $wpdb->site . ' SET domain = %s WHERE id = %d', $new_domain, 1 ) ) ) {
+				WP_CLI::log( 'Network ' . 1 . ' updated to ' . $new_domain );
+			} else {
+				WP_CLI::warning( 'Network ' . 1 . ' NOT updated to ' . $new_domain );
+			}
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have ran: ' . sprintf( 'UPDATE ' . $wpdb->site . ' SET domain = %s WHERE id = %d', $new_domain, 1 ) );
+		}
+
+		// I don't remember why this is here?  I'll need to test removing it.
+		wp_cache_flush();
+
+		// Do the search-replace on site content.
+		foreach ( $sites as $site ) {
+			$site_id = (int) $site['blog_id'];
+
+			$options = array(
+				'verbose',
+				'allow-root',
+			);
+			$command = sprintf( 'search-replace %s %s "wp_%d_*" --url=%s', $old_domain, $new_domain, $site_id, $new_domain );
+			if ( ! $dry_run ) {
+				// We don't need this for site 1.
+				if ( 1 !== $site_id ) {
+					WP_CLI::log( 'Running ' . $command );
+					$search_replace = WP_CLI::runcommand( $command, $options );
+					WP_CLI::log( $search_replace );
+				}
+			} else {
+				WP_CLI::log( '[DRY-RUN] Would have ran: ' . $command );
+			}
+		}
+
+		// Do the search-replace for the network.
+		$options = array(
+			'verbose',
+			'allow-root',
+		);
+		$command = sprintf( 'search-replace %s %s "wp_*" --url=%s', $old_domain, $new_domain, $new_domain );
+		if ( ! $dry_run ) {
+			WP_CLI::log( 'Running ' . $command );
+			$search_replace = WP_CLI::runcommand( $command, $options );
+			WP_CLI::log( $search_replace );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have ran: ' . $command );
+		}
+
+		// Re-enable object caching
+		if ( ! $dry_run ) {
+				WP_CLI::log( 'Re-enabled object caching' );
+				wp_suspend_cache_addition( false );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have re-enabled object caching' );
+		}
+
+		// Flush the cache.
+		$options = array(
+			'allow-root',
+		);
+		if ( ! $dry_run ) {
+			wp_cache_flush();
+			WP_CLI::log( 'Flushing cache' );
+			$cache_flush = WP_CLI::runcommand( 'cache flush --url=' . $new_domain, $options );
+			WP_CLI::log( $cache_flush );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have flushed cache' );
+		}
+
+		// Delete any transients that may have happened while objecg caching was off.
+		$options = array(
+			'allow-root',
+		);
+		if ( ! $dry_run ) {
+			$transient_delete = WP_CLI::runcommand( 'transient delete-all --url=' . $new_domain, $options );
+			WP_CLI::log( $transient_delete );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have delete transients' );
+		}
+
+		// Connect Jetpack.
+		foreach ( $sites as $site ) {
+			$site_id = (int) $site['blog_id'];
+			$options = array(
+				'allow-root',
+			);
+			if ( ! $dry_run ) {
+				WP_CLI::log( 'Running Jetpack Start for ' . get_site_url( $site_id ) );
+				$jetpack_start = WP_CLI::runcommand( 'jetpack-start connect --url=' . get_site_url( $site_id ) , $options );
+				WP_CLI::log( $jetpack_start );
+			} else {
+				WP_CLI::log( '[DRY-RUN] Would have ran Jetpack Start for ' . get_site_url( $site_id ) );
+			}
+		}
+	}
+
 }
 
 WP_CLI::add_command( 'vip migration', 'VIP_Go_Migrations_Command' );
