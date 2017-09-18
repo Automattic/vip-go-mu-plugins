@@ -2,10 +2,12 @@
 
 namespace Automattic\VIP\Performance;
 
-const ASYNC_PUBLISH_EVENT = 'wpcom_async_publish_post';
+const ASYNC_PUBLISH_EVENT = 'wpcom_vip_async_publish_post';
 
 /**
  * Perform asynchronous tasks for a published post
+ *
+ * @access private
  *
  * @param int $post_id Post ID.
  */
@@ -14,7 +16,6 @@ function _wpcom_do_async_publish_post( $post_id ) {
 
 	do_action( 'async_publish_post', $post_id, $post_object );
 }
-
 add_action( ASYNC_PUBLISH_EVENT, __NAMESPACE__ . '\_wpcom_do_async_publish_post' );
 
 /**
@@ -39,6 +40,8 @@ if (
 /**
  * Queue async event when status was or is `publish`
  *
+ * @access private
+ *
  * @param string $new_status New post status.
  * @param string $old_status Old post status.
  * @param object $post \WP_Post object.
@@ -56,7 +59,6 @@ function _queue_async_publish_post( $new_status, $old_status, $post ) {
 		wp_schedule_single_event( time(), ASYNC_PUBLISH_EVENT, $args );
 	}
 }
-
 add_action( 'transition_post_status', __NAMESPACE__ . '\_queue_async_publish_post', 10, 3 );
 
 /**
