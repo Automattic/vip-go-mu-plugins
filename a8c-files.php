@@ -22,27 +22,18 @@ define( 'ALLOW_UNFILTERED_UPLOADS', false );
 class A8C_Files {
 
 	function __construct() {
-		
+
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
 			return 1073741824; // pow( 2, 30 )
 		});
-		
+
 		// Hooks for the mu-plugin WordPress Importer
 		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
 		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
 
-		// WP 4.5 introduced a new filter, which simplifies how we generate unique filenames
-		// We retain test sites on the version that precedes the current stable release, making this necessary
-		global $wp_version;
-
-		if ( version_compare( $wp_version, '4.5', '>=' ) ) {
-			add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
-			add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
-		} else {
-			add_filter( 'wp_handle_upload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
-			add_filter( 'wp_handle_sideload_prefilter', array( &$this, 'get_unique_filename' ), 10, 1 );
-		}
+		add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
+		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
 
 		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
 
@@ -52,7 +43,14 @@ class A8C_Files {
 		add_filter( 'wp_save_image_file',        array( &$this, 'save_image_file' ), 10, 5 );
 		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 
-		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
+		// Limit to certain contexts for the initial testing and roll-out.
+		// This will be phased out and become the default eventually.
+		$use_jetpack_photon = $this->use_jetpack_photon();
+		if ( $use_jetpack_photon ) {
+			$this->init_jetpack_photon_filters();
+		} else {
+			$this->init_vip_photon_filters();
+		}
 
 		// Automatic creation of intermediate image sizes is disabled via `wpcom_intermediate_sizes()`
 
@@ -61,6 +59,64 @@ class A8C_Files {
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+	}
+
+	private function init_jetpack_photon_filters() {
+		// The files service has Photon capabilities, but is served from the same domain.
+		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
+		// Externally hosted files continue to use the remot Photon service.
+		add_filter( 'jetpack_photon_domain', [ 'A8C_Files_Utils', 'filter_photon_domain' ], 10, 2 );
+
+		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
+		// This results in all images being full size (which is not ideal)
+		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
+
+		// The sizes metadata is not used and mostly useless on Go so let's empty it out.
+		// This may need some revisiting for `srcset` handling.
+		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
+			if ( isset( $data['sizes'] ) ) {
+				$data['sizes'] = array();
+			}
+			return $data;
+		}, 10, 2 );
+
+		// This is our catch-all to strip dimensions from intermediate images in content.
+		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
+		add_filter( 'the_content', function( $content ) {
+			add_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
+			return $content;
+		}, 0 );
+
+		add_filter( 'the_content', function( $content ) {
+			remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
+			return $content;
+		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
+
+		// If Photon isn't active, we need to init the necessary filters.
+		// This takes care of rewriting intermediate images for us.
+		Jetpack_Photon::instance();
+
+		// Jetpack_Photon's downsize filter doesn't run when is_admin(), so we need to fallback to the Go filters.
+		// This is temporary until Jetpack allows more easily running these filters for is_admin().
+		if ( is_admin() ) {
+			$this->init_vip_photon_filters();
+		}
+	}
+
+	private function init_vip_photon_filters() {
+		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
+	}
+
+	private function use_jetpack_photon() {
+		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
+			return true;
+		}
+
+		if ( isset( $_GET['jetpack-photon'] ) && 'yes' === $_GET['jetpack-photon'] ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	function check_to_upload_file( $data, $postarr ) {
@@ -241,40 +297,6 @@ class A8C_Files {
 		}
 
 		return $filetype_data;
-	}
-
-	/**
-	 * Ensure filename uniqueness prior to WP 4.5's wp_unique_filename filter
-	 */
-	function get_unique_filename( $file ) {
-		$filename = strtolower( $file['name'] );
-		$info = pathinfo( $filename );
-		$ext = $info['extension'];
-		$name = basename( $filename, ".{$ext}" );
-
-		if( $name === ".$ext" )
-			$name = '';
-		$number = '';
-		if ( empty( $ext ) )
-			$ext = '';
-		else
-			$ext = strtolower( ".$ext" );
-
-		$filename = $this->_sanitize_filename( $filename, $ext );
-
-		$check = $this->_check_uniqueness_with_backend( $filename );
-
-		if ( 200 == $check['http_code'] ) {
-			$obj = json_decode( $check['content'] );
-			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) )
-				$file['name'] = $obj->filename;
-		} else if ( 406 == $check['http_code'] ) {
-			$file['error'] = __( 'The file type you uploaded is not supported.' );
-		} else {
-			$file['error'] = sprintf( __( 'Error getting the file name from the remote servers: Code %d' ), $check['http_code'] );
-		}
-
-		return $file;
 	}
 
 	/**
@@ -547,7 +569,7 @@ class A8C_Files {
 		// Change the upload url path to site's URL + wp-content/uploads without trailing slash
 		// Related core code: https://core.trac.wordpress.org/browser/tags/4.6.1/src/wp-includes/functions.php#L1929
 		$upload_url_path = untrailingslashit( get_site_url( null, 'wp-content/uploads' ) );
-		
+
 		return $upload_url_path;
 	}
 
@@ -562,6 +584,13 @@ class A8C_Files {
 	 */
 	function image_resize( $ignore, $id, $size ) {
 		global $_wp_additional_image_sizes, $post;
+
+		// Don't bother resizing non-image (and non-existent) attachment.
+		// We fallthrough to core's image_downsize but that bails as well.
+		$is_img = wp_attachment_is_image( $id );
+		if ( ! $is_img ) {
+			return false;
+		}
 
 		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
 		$crop = false;
@@ -624,7 +653,7 @@ class A8C_Files {
 		$img_url = wp_get_attachment_url( $id );
 
 		/**
-		 * Filter the original image Photon-compatible parameters before changes are 
+		 * Filter the original image Photon-compatible parameters before changes are
 		 *
 		 * @param array|string $args Array of Photon-compatible arguments.
 		 * @param string $img_url Image URL.
@@ -706,6 +735,41 @@ class A8C_Files {
 		return array( $img_url, $w, $h, $resized );
 	}
 
+}
+
+class A8C_Files_Utils {
+	public static function filter_photon_domain( $photon_url, $image_url ) {
+			$home_url = home_url();
+			if ( wp_startswith( $image_url, $home_url ) ) {
+				return $home_url;
+			}
+
+			$image_url_parsed = parse_url( $image_url );
+			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) ) {
+				return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
+			}
+
+			return $photon_url;
+	}
+
+	public static function strip_dimensions_from_url_path( $url ) {
+		$path = parse_url( $url, PHP_URL_PATH );
+
+		if ( ! $path ) {
+			return $url;
+		}
+
+		// Look for images ending with something like `-100x100.jpg`.
+		// We include the period in the dimensions match to avoid double string replacing when the file looks something like `image-100x100-100x100.png` (we only catch the latter dimensions).
+		$matched = preg_match( '#(-\d+x\d+\.)(jpg|jpeg|png|gif)$#i', $path, $parts );
+		if ( $matched ) {
+			// Strip off the dimensions and return the image
+			$updated_url = str_replace( $parts[1], '.', $url );
+			return $updated_url;
+		}
+
+		return $url;
+	}	
 }
 
 function a8c_files_init() {

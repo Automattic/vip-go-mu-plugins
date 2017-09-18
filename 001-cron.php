@@ -1,20 +1,27 @@
 <?php
 /*
- Plugin Name: WP-Cron Control
- Plugin URI: https://wordpress.org/plugins/wp-cron-control/
- Description: Take control of wp-cron execution.
- Author: Thorsten Ott, Erick Hitter, Automattic
- Version: 0.7.1
- Text Domain: wp-cron-control
+ Plugin Name: Cron Control
+ Plugin URI:
+ Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
+ Author: Erick Hitter, Automattic
+ Version: 1.5
+ Text Domain: automattic-cron-control
  */
 
 /**
- * Non-public multisite subsites can't be reached by our cron runners, so should use Core's native approach
+ * Determine if Cron Control is called for
+ *
+ * Inactive multisite subsites and local environments are generally unavailable
  *
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	// Bail early for anything that isn't a multisite subsite
+	// Do not load outside of VIP environments, unless explicitly requested
+	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
+		return true;
+	}
+
+	// Bail early for anything else that isn't a multisite subsite
 	if ( ! is_multisite() || is_main_site() ) {
 		return false;
 	}
@@ -22,78 +29,114 @@ function wpcom_vip_use_core_cron() {
 	$details = get_blog_details( get_current_blog_id(), false );
 
 	// get_blog_details() uses numeric strings for backcompat
-	if ( '1' !== $details->public || in_array( '1', array( $details->archived, $details->spam, $details->deleted ), true ) ) {
+	if ( in_array( '1', array( $details->archived, $details->spam, $details->deleted ), true ) ) {
 		return true;
 	}
 
 	return false;
 }
 
-if ( wpcom_vip_use_core_cron() ) {
-	return;
+/**
+ * Ensure sites don't block the Cron Control endpoints
+ *
+ * Cron Control handles authentication itself
+ */
+function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
+	if ( ! class_exists( '\Automattic\WP\Cron_Control\REST_API' ) ) {
+		return $allowed;
+	}
+
+	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+		return true;
+	}
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN ) && 'PUT' === $_SERVER['REQUEST_METHOD'] ) {
+		return true;
+	}
+
+	return $allowed;
 }
 
 /**
- * Platform-wide settings for WP-Cron Control
+ * Don't trigger Jetpack Sync's shutdown actions for cron requests
+ *
+ * Cron runs sync itself, and running sync on shutdown slows the endpoint response, sometimes beyond the 10-second timeout
  */
-class WPCOM_VIP_Cron_Control {
-	/**
-	 * Register hooks
-	 */
-	public function __construct() {
-		add_filter( 'pre_option_wpcroncontrol_settings', array( $this, 'set_options' ) );
-		add_action( 'admin_menu', array( $this, 'remove_menu_page' ), 99 );
-		add_action( 'admin_init', array( $this, 'block_admin_page' ) );
-
-		// Load plugin
-		require_once( __DIR__ . '/wp-cron-control/wp-cron-control.php' );
+function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
+	if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+		return false;
 	}
 
+	return $load_sync;
+}
+
+/**
+ * Log details of fatal error in callback that Cron Control caught
+ *
+ * @param $event object
+ * @param $error \Throwable
+ */
+function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
+	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d%4$sStack trace:%4$s# %5$s%4$s%6$s',
+		$error->getMessage(),
+		$error->getFile(),
+		$error->getLine(),
+		PHP_EOL,
+		wpcom_vip_cron_control_event_object_to_string( $event ),
+		$error->getTraceAsString()
+	);
+	error_log( $message );
+}
+
+/**
+ * Convert event object to log entry
+ *
+ * @param $event object
+ */
+function wpcom_vip_log_cron_control_event_object( $event ) {
+	$message  = 'Cron Control Uncaught Error - ';
+	$message .= wpcom_vip_cron_control_event_object_to_string( $event );
+	error_log( $message );
+}
+
+/**
+ * Convert event object to string suitable for logging
+ *
+ * @param $event object
+ * @return string
+ */
+function wpcom_vip_cron_control_event_object_to_string( $event ) {
+	return sprintf( 'ID: %1$d | timestamp: %2$s | action: %3$s | action_hashed: %4$s | instance: %5$s | home: %6$s', $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
+}
+
+/**
+ * Should Cron Control load
+ */
+if ( ! wpcom_vip_use_core_cron() ) {
 	/**
-	 * Enforce Platform-wide use of WP-Cron Control
+	 * Don't skip empty events, as it causes them to be rescheduled infinitely
 	 *
-	 * wpcroncontrol_settings: a:2:{s:6:"enable";s:1:"1";s:32:"enable_scheduled_post_validation";s:1:"1";}
+	 * Functionality will be fixed or removed, but this stops the runaway event creation in the meantime
 	 */
-	public function set_options( $options ) {
-		return array(
-			'enable' =>                           '1',
-			'enable_scheduled_post_validation' => '1',
-
-		);
-	}
+	add_filter( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
 
 	/**
-	 * Remove the menu page
+	 * Prevent plugins/themes from blocking access to our routes
 	 */
-	public function remove_menu_page() {
-		remove_submenu_page( 'options-general.php', 'wp-cron-control' ); // WP_Cron_Control::instance()->dashed_name
-	}
+	add_filter( 'rest_authentication_errors', 'wpcom_vip_permit_cron_control_rest_access', 999 ); // hook in late to bypass any others that override our auth requirements
 
 	/**
-	 * Block access to the plugin's options page; everything is hardcoded
+	 * Don't trigger Jetpack Sync on shutdown for cron requests
 	 */
-	public function block_admin_page() {
-		global $plugin_page;
+	add_filter( 'jetpack_sync_sender_should_load', 'wpcom_vip_disable_jetpack_sync_on_cron_shutdown' );
 
-		if ( false !== stripos( $plugin_page, 'wp-cron-control' ) ) {
-			wp_die( 'This plugin\'s options are unavailable.<br /><br />Please open a support ticket with any questions.', 'Unauthorized', array(
-				'response' => 401,
-				'back_link' => true,
-			) );
-		}
-	}
-}
+	/**
+	 * Log details of events that fail
+	 */
+	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
+	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 
-// Allow testing of new approach to cron execution
-$whitelisted_sites = array();
-if ( true === WPCOM_IS_VIP_ENV && in_array( FILES_CLIENT_SITE_ID, $whitelisted_sites ) ) {
-	add_filter( 'wpcom_vip_go_enable_new_cron_control', '__return_true' );
-}
-
-unset( $whitelisted_sites );
-
-if ( apply_filters( 'wpcom_vip_go_enable_new_cron_control', false ) ) {
 	require_once __DIR__ . '/cron-control/cron-control.php';
-} else {
-	new WPCOM_VIP_Cron_Control;
 }

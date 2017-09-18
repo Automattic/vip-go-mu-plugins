@@ -2,15 +2,15 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs
 Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 3.7
-Tested up to: 4.7
-Stable tag: 3.2
+Tested up to: 4.8.1
+Stable tag: 3.3.4
 License: GPLv2 or later
 
-Akismet checks your comments against the Akismet Web service to see if they look like spam or not.
+Akismet checks your comments and contact form submissions against our global database of spam to protect you and your site from malicious content.
 
 == Description ==
 
-Akismet checks your comments against the Akismet Web service to see if they look like spam or not and lets you review the spam it catches under your blog's "Comments" admin screen.
+Akismet checks your comments and contact form submissions against our global database of spam to prevent your site from publishing malicious content. You can review the comment spam it catches on your blog's "Comments" admin screen.
 
 Major features in Akismet include:
 
@@ -29,6 +29,44 @@ Upload the Akismet plugin to your blog, Activate it, then enter your [Akismet.co
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 3.3.4 =
+
+* Disabled Akismet's debug log output by default unless AKISMET_DEBUG is defined.
+* URL previews now begin preloading when the mouse moves near them in the comments section of wp-admin.
+* When a comment is caught by the Comment Blacklist, Akismet will always allow it to stay in the trash even if it is spam as well.
+* Fixed a bug that was preventing an error from being shown when a site can't reach Akismet's servers.
+
+= 3.3.3 =
+*Release Date - 13 July 2017*
+
+* Reduced amount of bandwidth used by the URL Preview feature.
+* Improved the admin UI when the API key is manually pre-defined for the site.
+* Removed a workaround for WordPress installations older than 3.3 that will improve Akismet's compatibility with other plugins.
+* The number of spam blocked that is displayed on the WordPress dashboard will now be more accurate and updated more frequently.
+* Fixed a bug in the Akismet widget that could cause PHP warnings.
+
+= 3.3.2 =
+*Release Date - 10 May 2017*
+
+* Fixed a bug causing JavaScript errors in some browsers.
+ 
+= 3.3.1 =
+*Release Date - 2 May 2017*
+
+* Improve performance by only requesting the akismet_comment_nonce option when absolutely necessary.
+* Fixed two bugs that could cause PHP warnings.
+* Fixed a bug that was preventing the "Remove author URL" feature from working after a comment was edited using "Quick Edit."
+* Fixed a bug that was preventing the URL preview feature from working after a comment was edited using "Quick Edit."
+
+= 3.3 =
+*Release Date - 23 February 2017*
+
+* Updated the Akismet admin pages with a new clean design.
+* Fixed bugs preventing the `akismet_add_comment_nonce` and `akismet_update_alert` wrapper functions from working properly.
+* Fixed bug preventing the loading indicator from appearing when re-checking all comments for spam.
+* Added a progress indicator to the "Check for Spam" button.
+* Added a success message after manually rechecking the Pending queue for spam.
 
 = 3.2 =
 *Release Date - 6 September 2016*

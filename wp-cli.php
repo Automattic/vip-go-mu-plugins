@@ -1,9 +1,54 @@
 <?php
 
-if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
-	return;
+/**
+ * Plugin Name: WP-CLI for VIP Go
+ * Description: Scripts for VIP Go
+ * Author: Automattic
+ */
+
+namespace Automattic\VIP\WP_CLI;
+
+function init_is_ssl_toggle() {
+	maybe_toggle_is_ssl();
+
+	if ( is_multisite() ) {
+		init_is_ssl_toggle_for_multisite();
+	}
 }
 
-require __DIR__ . '/wp-cli/alloptions.php';
-require __DIR__ . '/wp-cli/vip-fixers.php';
-require __DIR__ . '/wp-cli/vip-utf8-to-utf8mb4.php';
+// Any time a blog is switched, we should toggle is_ssl() based on their preferred scheme.
+function init_is_ssl_toggle_for_multisite() {
+	add_action( 'switch_blog', function( $new_blog_id, $prev_blog_id ) {
+		// Not a strict equality check to match core
+		if ( $new_blog_id == $prev_blog_id ) {
+			return;
+		}
+
+		maybe_toggle_is_ssl();
+	}, 0, 2 ); // run early since this could impact other filters
+}
+
+/**
+ * Fixes is_ssl() for wp-cli requests.
+ *
+ * `get_site_url()` will force the scheme to `http` when `$_SEVER['HTTPS']` is not set.
+ * This can be problematic if the site is always using SSL (i.e. home/siteurl have `https` URLs).
+ * This function toggles the setting so we get correct URLs generated in the wp-cli context.
+ */
+function maybe_toggle_is_ssl() {
+	$is_ssl_siteurl = wp_startswith( get_option( 'siteurl' ), 'https:' );
+
+	if ( $is_ssl_siteurl && ! is_ssl() ) {
+		$_SERVER['HTTPS'] = 'on';
+	} elseif ( ! $is_ssl_siteurl && is_ssl() ) {
+		unset( $_SERVER['HTTPS'] );
+	}
+}
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	init_is_ssl_toggle();
+
+	foreach ( glob( __DIR__ . '/wp-cli/*.php' ) as $command ) {
+		require( $command );
+	}
+}

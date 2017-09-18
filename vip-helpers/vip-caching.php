@@ -644,6 +644,9 @@ function wpcom_vip_enable_cache_full_comment_counts() {
 
 function wpcom_vip_enable_old_slug_redirect_caching() {
 	add_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
+	// Hook the following actions to after the core's wp_check_for_changed_slugs - it's being hooke at prio 12
+	add_action( 'post_updated', 'wpcom_vip_flush_wp_old_slug_redirect_cache', 13, 3 );
+	add_action( 'attachment_updated', 'wpcom_vip_flush_wp_old_slug_redirect_cache', 13, 3 );
 }
 
 /**
@@ -657,7 +660,8 @@ function wpcom_vip_wp_old_slug_redirect() {
 		$redirect = wp_cache_get( 'old_slug' . $wp_query->query_vars['name'] );
 
 		if ( false === $redirect ) {
-			add_filter( 'old_slug_redirect_url', 'wpcom_vip_set_old_slug_redirect_cache' );
+			// Run the caching callback as the very firts one in order to capture the value returned by WordPress from database. This allows devs from using `old_slug_redirect_url` filter w/o polluting the cache
+			add_filter( 'old_slug_redirect_url', 'wpcom_vip_set_old_slug_redirect_cache', -9999, 1 );
 			// If an old slug is not found the function returns early and does not apply the old_slug_redirect_url filter. so we will set the cache for not found and if it is found it will be overwritten later in wpcom_vip_set_old_slug_redirect_cache()
 			wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		} elseif ( 'not_found' === $redirect ) {
@@ -665,6 +669,8 @@ function wpcom_vip_wp_old_slug_redirect() {
 			remove_action( 'template_redirect', 'wp_old_slug_redirect' );
 			return;
 		} else {
+			/** This filter is documented in wp-includes/query.php. */
+			$redirect = apply_filters( 'old_slug_redirect_url', $redirect );
 			wp_redirect( $redirect, 301 ); // this is kept to not safe_redirect to match the functionality of wp_old_slug_redirect
 			exit;
 		}
@@ -677,7 +683,27 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	}
 	return $link;
 }
+function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
+	// Don't bother if slug hasn't changed.
+	if ( $post->post_name == $post_before->post_name ) {
+		return;
+	}
 
+	// We're only concerned with published, non-hierarchical objects.
+	if ( ! ( 'publish' === $post->post_status || ( 'attachment' === get_post_type( $post ) && 'inherit' === $post->post_status ) ) || is_post_type_hierarchical( $post->post_type ) ) {
+		return;
+	}
+
+	// Flush cache for all old slugs.
+	$old_slugs = (array) get_post_meta( $post_id, '_wp_old_slug' );
+
+	foreach ( $old_slugs as $old_slug ) {
+		wp_cache_delete( 'old_slug' . $old_slug, 'default' );
+	}
+
+	// FLush cache for new post_name since it could had been among old slugs before this update.
+	wp_cache_delete( 'old_slug' . $post->post_name, 'default' );
+}
 
 /**
  * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text
@@ -695,3 +721,11 @@ function wpcom_vip_maybe_skip_old_slug_redirect(){
 function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 	add_action( 'template_redirect', 'wpcom_vip_maybe_skip_old_slug_redirect', 7 ); //Run this before wpcom_vip_wp_old_slug_redirect so we can also remove our caching helper
 }
+
+/**
+* Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
+*
+* This cannot be included inside Jetpack because it ships with caching disabled by default.
+* By enabling caching it's possible to save time in uncached page renders.
+**/
+add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );

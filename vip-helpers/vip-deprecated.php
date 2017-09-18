@@ -1154,35 +1154,6 @@ function _wpcom_vip_load_plugin_sanitizer( $folder ) {
 }
 
 /**
- * Store the name of a VIP plugin that will be loaded
- *
- * @param string $plugin Plugin name and folder
- * @see wpcom_vip_load_plugin()
- */
-function wpcom_vip_add_loaded_plugin( $plugin ) {
-	global $vip_loaded_plugins;
-
-	if ( ! isset( $vip_loaded_plugins ) )
-		$vip_loaded_plugins = array();
-
-	array_push( $vip_loaded_plugins, $plugin );
-}
-
-/**
- * Get the names of VIP plugins that have been loaded
- *
- * @return array
- */
-function wpcom_vip_get_loaded_plugins() {
-	global $vip_loaded_plugins;
-
-	if ( ! isset( $vip_loaded_plugins ) )
-		$vip_loaded_plugins = array();
-
-	return $vip_loaded_plugins;
-}
-
-/**
  * Require a library in the VIP shared code library.
  *
  * @deprecated Since 2.0.0 - not yet fully supported
@@ -1327,4 +1298,31 @@ function wpcom_vip_get_stats_array( $table = 'views', $end_date = false, $num_da
  */
 function wpcom_vip_load_custom_cdn( $args ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Dequeue wp-mediaelement.css for sites which don't use the playlist shortcode and thus don't need the stylesheet
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_remove_playlist_styles() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Conditionally dequeues the geo-location-flair.css
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_load_geolocation_styles_only_when_needed() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * Diables Instapost functionality
+ *
+ * @deprecated Not applicable since VIP 2.0.0
+ */
+function wpcom_vip_disable_instapost() {
+	_deprecated_function( __FUNCTION__, '2.0.0' );
 }

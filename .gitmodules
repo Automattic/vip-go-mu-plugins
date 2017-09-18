@@ -4,9 +4,6 @@
 [submodule "vip-support"]
 	path = vip-support
 	url = git@github.com:Automattic/vip-support.git
-[submodule "vip-jetpack"]
-	path = vip-jetpack
-	url = git@github.com:Automattic/vip-jetpack.git
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
 	url = git@github.com:Automattic/advanced-post-cache.git
@@ -22,15 +19,9 @@
 [submodule "shared-plugins/fieldmanager"]
 	path = shared-plugins/fieldmanager
 	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
-[submodule "shared-plugins/livefyre-apps"]
-	path = shared-plugins/livefyre-apps
-	url = git@github.com:Livefyre/Livefyre-Apps-Wordpress-Plugin.git
 [submodule "query-monitor"]
 	path = query-monitor
 	url = git@github.com:johnbillion/query-monitor.git
-[submodule "wp-cron-control"]
-	path = wp-cron-control
-	url = https://github.com/Automattic/WP-Cron-Control.git
 [submodule "shared-plugins/msm-sitemap"]
 	path = shared-plugins/msm-sitemap
 	url = git@github.com:Automattic/msm-sitemap.git
@@ -40,3 +31,12 @@
 [submodule "debug-bar-cron"]
 	path = debug-bar-cron
 	url = https://github.com/tollmanz/debug-bar-cron.git
+[submodule "shared-plugins/jetpack-force-2fa"]
+	path = shared-plugins/jetpack-force-2fa
+	url = https://github.com/Automattic/jetpack-force-2fa.git
+[submodule "shared-plugins/two-factor"]
+	path = shared-plugins/two-factor
+	url = https://github.com/georgestephanis/two-factor.git
+[submodule "drop-ins/object-cache"]
+	path = drop-ins/object-cache
+	url = git@github.com:Automattic/wp-memcached.git

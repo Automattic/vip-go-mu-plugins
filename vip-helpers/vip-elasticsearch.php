@@ -62,16 +62,41 @@ function es_api_search_index( $args ) {
 
     $args['blog_id'] = absint( $args['blog_id'] );
 
-    $service_url = 'https://public-api.wordpress.com/rest/v1/sites/' . $args['blog_id'] . '/search';
+    $endpoint = sprintf( '/sites/%s/search', $args['blog_id'] );
+    $service_url = 'https://public-api.wordpress.com/rest/v1' . $endpoint;
+
+    $do_authenticated_request = false;
+    if ( class_exists( 'Jetpack_Client' )
+            && isset( $args['authenticated_request'] )
+	    && true === $args['authenticated_request'] ) {
+        $do_authenticated_request = true;
+    }
 
     unset( $args['blog_id'] );
+    unset( $args['authenticated_request'] );
 
-    $request = wp_remote_post( $service_url, array(
+    $request_args = array(
         'headers' => array(
             'Content-Type' => 'application/json',
         ),
-        'body' => json_encode( $args ),
-    ) );
+    );
+    $request_body = json_encode( $args );
+
+    $start_time = microtime( true );
+
+    if ( $do_authenticated_request ) {
+      $request_args['method'] = 'POST';
+
+      $request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
+    } else {
+      $request_args = array_merge( $request_args, array(
+        'body' => $request_body,
+	    ) );
+
+      $request = wp_remote_post( $service_url, $request_args );
+    }
+
+    $end_time = microtime( true );
 
     if ( is_wp_error( $request ) )
         return false;
@@ -88,8 +113,40 @@ function es_api_search_index( $args ) {
         }
     }
 
+    $took = $response && $response['took'] ? $response['took'] : null;
+
+    $queried = array(
+        'args'          => $args,
+        'response'      => $response,
+        'response_code' => wp_remote_retrieve_response_code( $request ),
+        'elapsed_time'  => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
+        'es_time'       => $took,
+        'url'           => $service_url,
+	);
+
+	do_action( 'did_vip_elasticsearch_query', $queried );
+
     return $response;
 }
+
+// Log all ES queries
+function wpcom_vip_did_elasticsearch_query( $query ) {
+	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
+		return;
+	}
+
+	global $wp_elasticsearch_queries_log;
+
+	if ( ! $wp_elasticsearch_queries_log ) {
+		$wp_elasticsearch_queries_log = array();
+	}
+
+	$query['backtrace'] = wp_debug_backtrace_summary();
+
+	$wp_elasticsearch_queries_log[] = $query;
+}
+
+add_action( 'did_vip_elasticsearch_query', 'wpcom_vip_did_elasticsearch_query' );
 
 /**
  * A wrapper for es_api_search_index() that accepts WP-style args

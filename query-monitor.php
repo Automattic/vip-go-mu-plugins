@@ -2,7 +2,7 @@
 /*
 Plugin Name: Query Monitor
 Description: Monitoring of database queries, hooks, conditionals and more (including VIP Go tweaks).
-Version:     2.9.1
+Version:     2.14.0
 Plugin URI:  https://querymonitor.com/
 Author:      John Blackbourn
 Author URI:  https://johnblackbourn.com/
@@ -72,12 +72,18 @@ function wpcom_vip_qm_require() {
 	$wpcom_vip_qm_file = __DIR__ . '/query-monitor/query-monitor.php';
 
 	require_once( $wpcom_vip_qm_file );
+
+	// Something stopped QueryMonitor from loading; bail.
+	if ( ! class_exists( 'QueryMonitor' ) ) {
+		return;
+	}
+
 	require_once( __DIR__ . '/vip-helpers/vip-query-monitor.php' );
 
 	// Because we're including Query Monitor as an MU plugin, we need to
 	// manually call the `activate` method on `activation`.
 	if ( 0 === get_option( 'wpcom_vip_qm_activated', 0 ) ) {
-		QueryMonitor::init( $wpcom_vip_qm_file )->activate( true );
+		QM_Activation::init( $wpcom_vip_qm_file )->activate( true );
 		update_option( 'wpcom_vip_qm_activated', 1, true );
 	}
 

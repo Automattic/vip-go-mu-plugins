@@ -29,18 +29,7 @@ class Akismet {
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments_meta' ) );
 		add_action( 'akismet_schedule_cron_recheck', array( 'Akismet', 'cron_recheck' ) );
 
-		/**
-		 * To disable the Akismet comment nonce, add a filter for the 'akismet_comment_nonce' tag
-		 * and return any string value that is not 'true' or '' (empty string).
-		 *
-		 * Don't return boolean false, because that implies that the 'akismet_comment_nonce' option
-		 * has not been set and that Akismet should just choose the default behavior for that
-		 * situation.
-		 */
-		$akismet_comment_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
-
-		if ( $akismet_comment_nonce_option == 'true' || $akismet_comment_nonce_option == '' )
-			add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
+		add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
 
 		add_action( 'admin_head-edit-comments.php', array( 'Akismet', 'load_form_js' ) );
 		add_action( 'comment_form', array( 'Akismet', 'load_form_js' ) );
@@ -129,8 +118,9 @@ class Akismet {
 		$comment['blog_charset'] = get_option('blog_charset');
 		$comment['permalink']    = get_permalink( $comment['comment_post_ID'] );
 
-		if ( !empty( $comment['user_ID'] ) )
+		if ( ! empty( $comment['user_ID'] ) ) {
 			$comment['user_role'] = Akismet::get_user_roles( $comment['user_ID'] );
+		}
 
 		/** See filter documentation in init_hooks(). */
 		$akismet_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
@@ -170,7 +160,11 @@ class Akismet {
 		}
 
 		$post = get_post( $comment['comment_post_ID'] );
-		$comment[ 'comment_post_modified_gmt' ] = $post->post_modified_gmt;
+
+		if ( ! is_null( $post ) ) {
+			// $post can technically be null, although in the past, it's always been an indicator of another plugin interfering.
+			$comment[ 'comment_post_modified_gmt' ] = $post->post_modified_gmt;
+		}
 
 		$response = self::http_post( Akismet::build_query( $comment ), 'comment-check' );
 
@@ -199,7 +193,9 @@ class Akismet {
 				// akismet_result_spam() won't be called so bump the counter here
 				if ( $incr = apply_filters('akismet_spam_count_incr', 1) )
 					update_option( 'akismet_spam_count', get_option('akismet_spam_count') + $incr );
-				$redirect_to = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : get_permalink( $post );
+				// The spam is obvious, so we're bailing out early. Redirect back to the previous page,
+				// or failing that, the post permalink, or failing that, the homepage of the blog.
+				$redirect_to = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : ( $post ? get_permalink( $post ) : home_url() );
 				wp_safe_redirect( esc_url_raw( $redirect_to ) );
 				die();
 			}
@@ -264,9 +260,6 @@ class Akismet {
 		// failsafe for old WP versions
 		if ( !function_exists('add_comment_meta') )
 			return false;
-
-		if ( !isset( self::$last_comment['comment_author_email'] ) )
-			self::$last_comment['comment_author_email'] = '';
 
 		// wp_insert_comment() might be called in other contexts, so make sure this is the same comment
 		// as was checked by auto_check_comment
@@ -354,6 +347,7 @@ class Akismet {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 
 			clean_comment_cache( $comment_ids );
+			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->comments ) ) // lucky number
@@ -381,6 +375,8 @@ class Akismet {
 			foreach ( $comment_ids as $comment_id ) {
 				delete_comment_meta( $comment_id, 'akismet_as_submitted' );
 			}
+
+			do_action( 'akismet_delete_commentmeta_batch', count( $comment_ids ) );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->commentmeta ) ) // lucky number
@@ -465,8 +461,9 @@ class Akismet {
 		$c['recheck_reason'] = $recheck_reason;
 
 		$c['user_role'] = '';
-		if ( isset( $c['user_ID'] ) )
-			$c['user_role'] = Akismet::get_user_roles($c['user_ID']);
+		if ( ! empty( $c['user_ID'] ) ) {
+			$c['user_role'] = Akismet::get_user_roles( $c['user_ID'] );
+		}
 
 		if ( self::is_test_mode() )
 			$c['is_test'] = 'true';
@@ -596,14 +593,18 @@ class Akismet {
 			$comment->site_domain = $current_site->domain;
 
 		$comment->user_role = '';
-		if ( isset( $comment->user_ID ) )
+		if ( ! empty( $comment->user_ID ) ) {
 			$comment->user_role = Akismet::get_user_roles( $comment->user_ID );
+		}
 
 		if ( self::is_test_mode() )
 			$comment->is_test = 'true';
 
 		$post = get_post( $comment->comment_post_ID );
-		$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+
+		if ( ! is_null( $post ) ) {
+			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+		}
 
 		$response = Akismet::http_post( Akismet::build_query( $comment ), 'submit-spam' );
 		if ( $comment->reporter ) {
@@ -642,14 +643,18 @@ class Akismet {
 		if ( is_object($current_site) )
 			$comment->site_domain = $current_site->domain;
 
-		if ( isset( $comment->user_ID ) )
-			$comment->user_role = Akismet::get_user_roles($comment->user_ID);
+		if ( ! empty( $comment->user_ID ) ) {
+			$comment->user_role = Akismet::get_user_roles( $comment->user_ID );
+		}
 
 		if ( Akismet::is_test_mode() )
 			$comment->is_test = 'true';
 
 		$post = get_post( $comment->comment_post_ID );
-		$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+
+		if ( ! is_null( $post ) ) {
+			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
+		}
 
 		$response = self::http_post( Akismet::build_query( $comment ), 'submit-ham' );
 		if ( $comment->reporter ) {
@@ -764,9 +769,21 @@ class Akismet {
 	}
 
 	public static function add_comment_nonce( $post_id ) {
-		echo '<p style="display: none;">';
-		wp_nonce_field( 'akismet_comment_nonce_' . $post_id, 'akismet_comment_nonce', FALSE );
-		echo '</p>';
+		/**
+		 * To disable the Akismet comment nonce, add a filter for the 'akismet_comment_nonce' tag
+		 * and return any string value that is not 'true' or '' (empty string).
+		 *
+		 * Don't return boolean false, because that implies that the 'akismet_comment_nonce' option
+		 * has not been set and that Akismet should just choose the default behavior for that
+		 * situation.
+		 */
+		$akismet_comment_nonce_option = apply_filters( 'akismet_comment_nonce', get_option( 'akismet_comment_nonce' ) );
+
+		if ( $akismet_comment_nonce_option == 'true' || $akismet_comment_nonce_option == '' ) {
+			echo '<p style="display: none;">';
+			wp_nonce_field( 'akismet_comment_nonce_' . $post_id, 'akismet_comment_nonce', FALSE );
+			echo '</p>';
+		}
 	}
 
 	public static function is_test_mode() {
@@ -796,7 +813,25 @@ class Akismet {
 	private static function comments_match( $comment1, $comment2 ) {
 		$comment1 = (array) $comment1;
 		$comment2 = (array) $comment2;
-		
+
+		// Set default values for these strings that we check in order to simplify
+		// the checks and avoid PHP warnings.
+		if ( ! isset( $comment1['comment_author'] ) ) {
+			$comment1['comment_author'] = '';
+		}
+
+		if ( ! isset( $comment2['comment_author'] ) ) {
+			$comment2['comment_author'] = '';
+		}
+
+		if ( ! isset( $comment1['comment_author_email'] ) ) {
+			$comment1['comment_author_email'] = '';
+		}
+
+		if ( ! isset( $comment2['comment_author_email'] ) ) {
+			$comment2['comment_author_email'] = '';
+		}
+
 		$comments_match = (
 			   isset( $comment1['comment_post_ID'], $comment2['comment_post_ID'] )
 			&& intval( $comment1['comment_post_ID'] ) == intval( $comment2['comment_post_ID'] )
@@ -830,9 +865,6 @@ class Akismet {
 	
 	// Does the supplied comment match the details of the one most recently stored in self::$last_comment?
 	public static function matches_last_comment( $comment ) {
-		if ( is_object( $comment ) )
-			$comment = (array) $comment;
-
 		return self::comments_match( self::$last_comment, $comment );
 	}
 
@@ -879,6 +911,15 @@ class Akismet {
 		// Only do this if it's the correct comment
 		if ( ! self::matches_last_comment( $comment ) ) {
 			self::log( "comment_is_spam mismatched comment, returning unaltered $approved" );
+			return $approved;
+		}
+
+		if ( 'trash' === $approved ) {
+			// If the last comment we checked has had its approval set to 'trash',
+			// then it failed the comment blacklist check. Let that blacklist override
+			// the spam check, since users have the (valid) expectation that when
+			// they fill out their blacklists, comments that match it will always
+			// end up in the trash.
 			return $approved;
 		}
 
@@ -1038,7 +1079,7 @@ class Akismet {
 	}
 
 	// given a response from an API call like check_key_status(), update the alert code options if an alert is present.
-	private static function update_alert( $response ) {
+	public static function update_alert( $response ) {
 		$code = $msg = null;
 		if ( isset( $response[0]['x-akismet-alert-code'] ) ) {
 			$code = $response[0]['x-akismet-alert-code'];
@@ -1059,17 +1100,10 @@ class Akismet {
 	}
 
 	public static function load_form_js() {
-		// WP < 3.3 can't enqueue a script this late in the game and still have it appear in the footer.
-		// Once we drop support for everything pre-3.3, this can change back to a single enqueue call.
 		wp_register_script( 'akismet-form', plugin_dir_url( __FILE__ ) . '_inc/form.js', array(), AKISMET_VERSION, true );
-		add_action( 'wp_footer', array( 'Akismet', 'print_form_js' ) );
-		add_action( 'admin_footer', array( 'Akismet', 'print_form_js' ) );
+		wp_enqueue_script( 'akismet-form' );
 	}
 	
-	public static function print_form_js() {
-		wp_print_scripts( 'akismet-form' );
-	}
-
 	public static function inject_ak_js( $fields ) {
 		echo '<p style="display: none;">';
 		echo '<input type="hidden" id="ak_js" name="ak_js" value="' . mt_rand( 0, 250 ) . '"/>';
@@ -1173,7 +1207,7 @@ p {
 	 * @param mixed $akismet_debug The data to log.
 	 */
 	public static function log( $akismet_debug ) {
-		if ( apply_filters( 'akismet_debug_log', defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) ) {
+		if ( apply_filters( 'akismet_debug_log', defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG && defined( 'AKISMET_DEBUG' ) && AKISMET_DEBUG ) ) {
 			error_log( print_r( compact( 'akismet_debug' ), true ) );
 		}
 	}
@@ -1259,5 +1293,13 @@ p {
 		}
 
 		return $meta_value;
+	}
+	
+	public static function predefined_api_key() {
+		if ( defined( 'WPCOM_API_KEY' ) ) {
+			return true;
+		}
+		
+		return apply_filters( 'akismet_predefined_api_key', false );
 	}
 }

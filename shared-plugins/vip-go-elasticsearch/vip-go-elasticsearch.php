@@ -126,8 +126,12 @@ class WPCOM_elasticsearch {
 		if ( ! $query->is_main_query() || ! $query->is_search() )
 			return $posts;
 
-		if ( ! is_array( $this->search_result ) )
+		if ( ! is_array( $this->search_result ) ||
+			empty( $this->search_result['results'] ) ||
+			! array_key_exists( 'hits', $this->search_result['results'] ) ||
+			! is_array( $this->search_result['results']['hits'] ) ) {
 			return $posts;
+		}
 
 		// This class handles the heavy lifting of transparently switching blogs and inflating posts
 		$this->posts_iterator = new ES_WPCOM_SearchResult_Posts_Iterator();
@@ -430,7 +434,7 @@ class WPCOM_elasticsearch {
 	 *
 	 * This method accepts an array of additional blog names, in the format of vip.wordpress.com,
 	 * that should be queried.
-	 * 
+	 *
 	 * @param array $domains The additional blogs to query
 	 */
 	public function set_additional_blogs( $domains = array() ) {
@@ -438,7 +442,7 @@ class WPCOM_elasticsearch {
 
 		foreach( $domains as $domain ) {
 			$blog_id = (int) get_blog_id_from_url( $domain );
-			
+
 			if ( $blog_id ) {
 				$name = es_api_get_index_name_by_blog_id( $blog_id );
 				if ( !is_wp_error( $name ) )
@@ -458,7 +462,7 @@ class WPCOM_elasticsearch {
 	 * Return a string representing a search suggestion for the given query
 	 *
 	 * Useful for retrieving the text for a 'Did You Mean...' style link
-	 * 
+	 *
 	 * @return string The suggested query string
 	 */
 	public function get_search_suggestion() {
@@ -499,7 +503,7 @@ class WPCOM_elasticsearch {
 	 *
 	 * A query suggestion is a similar, more common phrase meant for typo conversion,
 	 * much like Google's 'Did you mean...'
-	 * 
+	 *
 	 * @return boolean Boolean indicating if a suggestion is present
 	 */
 	public function has_search_suggestion() {
@@ -522,6 +526,9 @@ class WPCOM_elasticsearch {
 			return false;
 
 		$facet_data = array();
+
+		// Remove any backslash from the GET parameters
+		$_GET = stripslashes_deep( $_GET );
 
 		foreach ( $facets as $label => $facet ) {
 			if ( empty( $this->facets[ $label ] ) )
@@ -634,9 +641,6 @@ class WPCOM_elasticsearch {
 					default:
 						//continue 2; // switch() is considered a looping structure
 				}
-
-				// Remove any backslash from the GET parameters
-				$_GET = array_map( "stripslashes", $_GET );
 
 				// Need to urlencode param values since add_query_arg doesn't
 				$url_params = urlencode_deep( array_merge( $_GET, $query_vars ) );

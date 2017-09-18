@@ -120,7 +120,14 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  * @return string
  */
 function vip_powered_wpcom_url() {
-	return 'https://vip.wordpress.com/';
+	$args = array(
+		'utm_source' => 'vip_powered_wpcom',
+		'utm_medium' => 'web',
+		'utm_campaign' => 'VIP Footer Credit',
+		'utm_term' => sanitize_text_field( $_SERVER['HTTP_HOST'] ),
+	);
+
+	return add_query_arg( $args, 'https://vip.wordpress.com/' );
 }
 
 /**
@@ -994,7 +1001,9 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		$test_directories[] = WP_PLUGIN_DIR . '/' . $folder;
 	} else {
 		$test_directories[] = WP_PLUGIN_DIR;
-		$test_directories[] = WP_CONTENT_DIR . '/mu-plugins/shared-plugins';
+		if ( wpcom_vip_can_use_shared_plugin( $plugin ) ) {
+			$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
+		}
 	}
 
 	$includepath = null;
@@ -1038,6 +1047,105 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	}
 }
 
+/**
+ * Determine if a plugin can be used or not
+ *
+ * @param  string $plugin plugin name
+ * @return bool
+ */
+function wpcom_vip_can_use_shared_plugin( $plugin ) {
+	// Array of shared plugins we are not deprecating
+	$protected_shared_plugins = array(
+		'two-factor',
+		'jetpack-force-2fa',
+		'vip-go-elasticsearch',
+	);
+
+	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
+		return true;
+	}
+
+	if ( true !== WPCOM_VIP_DISABLE_SHARED_PLUGINS ) {
+		return true;
+	}
+
+	return in_array( $plugin, $protected_shared_plugins, true );
+}
+
+/**
+ * Store the name of a VIP plugin that will be loaded
+ *
+ * @param string $plugin Plugin name and folder
+ * @see wpcom_vip_load_plugin()
+ */
+function wpcom_vip_add_loaded_plugin( $plugin ) {
+	global $vip_loaded_plugins;
+
+	if ( ! isset( $vip_loaded_plugins ) )
+		$vip_loaded_plugins = array();
+
+	array_push( $vip_loaded_plugins, $plugin );
+}
+
+/**
+ * Get the names of VIP plugins that have been loaded
+ *
+ * @return array
+ */
+function wpcom_vip_get_loaded_plugins() {
+	global $vip_loaded_plugins;
+
+	if ( ! isset( $vip_loaded_plugins ) )
+		$vip_loaded_plugins = array();
+
+	return $vip_loaded_plugins;
+}
+
+/**
+ * Check if plugin is loaded
+ *
+ * @param string $plugin Plugin name and folder
+ * @return bool
+ */
+function wpcom_vip_plugin_is_loaded( $plugin ) {
+	return in_array( $plugin, wpcom_vip_get_loaded_plugins() );
+}
+
+/**
+ * Load `vipgo-helper.php` if it exists for a network-activated plugin
+ *
+ * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
+ */
+function wpcom_vip_load_helpers_for_network_active_plugins() {
+	// wp_get_active_network_plugins() won't exist otherwise
+	if ( ! is_multisite() ) {
+		return;
+	}
+
+	foreach ( wp_get_active_network_plugins() as $plugin ) {
+		_wpcom_vip_include_plugin( $plugin );
+	}
+}
+add_action( 'muplugins_loaded', 'wpcom_vip_load_helpers_for_network_active_plugins' );
+
+/**
+ * Load `vipgo-helper.php` if it exists for a plugin loaded outside of our custom UI and helpers
+ *
+ * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
+ */
+function wpcom_vip_load_helpers_for_sites_core_plugins() {
+	foreach ( wp_get_active_and_valid_plugins() as $plugin ) {
+		_wpcom_vip_include_plugin( $plugin );
+	}
+}
+add_action( 'plugins_loaded', 'wpcom_vip_load_helpers_for_sites_core_plugins', 6 ); // Loaded at priority 6 because all plugins are typically loaded before 'plugins_loaded', and the UI-enabled plugins use priority 5
+
+/**
+ * Include a plugin and its helper, handling variable scope in the process
+ *
+ * @param string $file Plugin file to load
+ * @return true
+ */
 function _wpcom_vip_include_plugin( $file ) {
 	// Since we're going to be include()'ing inside of a function,
 	// we need to do some hackery to get the variable scope we want.
@@ -1158,36 +1266,45 @@ add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
 /**
  * Send a message to IRC
  *
+ * $level can be an int of one of the following
+ * NONE = 0
+ * WARNING = 1
+ * ALERT = 2
+ * CRITICAL = 3
+ * RECOVERY = 4
+ * INFORMATION = 5
+ * SCALE = 6
+ *
  * Example Usage
  *
  * wpcom_vip_irc( '@testuser', 'test message' );				// send testuser a pm on IRC from "a8c"
- * wpcom_vip_irc( '@testuser', 'test message', 'a8c-test' );	// send testuser a pm on IRC from "a8c-test"
+ * wpcom_vip_irc( '@testuser', 'test message', 3 );	// send testuser a pm on IRC with level 'critical'
  * wpcom_vip_irc( 'testing', 'test message' );					// have "a8c" join #testing and say something
- * wpcom_vip_irc( 'testing', 'test message', 'a8c-test' );		// have "a8c-test" join #testing and say something
+ * wpcom_vip_irc( 'testing', 'test message', 4 );		// have "a8c-test" join #testing and say something with level 'recovery'
  *
  * @param $target (string) Channel or Username.  Usernames prefixed with an @, channel optionally prefixed by #.
  * @param $message (string) Message
- * @param $botname (string) Optional botname to use on IRC.  This can be any valid unused nickname, defaults to a8c.
- * @param $type string Cache slug
+ * @param $level (int) Level The severity level of the message
+ * @param $kind string Cache slug
  * @param $interval integer Interval in seconds between two messages sent from one DC
  */
-function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '', $interval = 0 ) {
-	if ( $type && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
+function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
+	if ( $kind && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
 		wp_cache_add_global_groups( array( 'irc-ratelimit' ) );
 
-		if ( ! wp_cache_add( $type, 1, 'irc-ratelimit', $interval ) ) {
+		if ( ! wp_cache_add( $kind, 1, 'irc-ratelimit', $interval ) ) {
 			return false;
 		}
 	}
 
-	if ( ! defined( 'VIP_IRC_HOSTNAME' ) || ! VIP_IRC_HOSTNAME ) {
-		error_log( 'Missing IRC host configuration in VIP_IRC_HOSTNAME constant' );
+	if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
+		error_log( 'Missing IRC host configuration in ALERT_SERVICE_ADDRESS constant' );
 
 		return false;
 	}
 
-	if ( ! defined( 'VIP_IRC_PORT' ) || ! VIP_IRC_PORT ) {
-		error_log( 'Missing IRC port configuration in VIP_IRC_PORT constant' );
+	if ( ! defined( 'ALERT_SERVICE_PORT' ) || ! ALERT_SERVICE_PORT ) {
+		error_log( 'Missing IRC port configuration in ALERT_SERVICE_PORT constant' );
 
 		return false;
 	}
@@ -1214,67 +1331,24 @@ function wpcom_vip_irc( $channel_or_user, $message, $botname = null, $type = '',
 		return false;
 	}
 
-	if ( ! empty( $botname ) ) {
-		$botname = preg_replace( '/(\s*|[^0-9a-z_-])/', '', $botname );
-	}
+	$url = 'http://' . ALERT_SERVICE_ADDRESS . ':' . ALERT_SERVICE_PORT . '/v1.0/alert';
 
-	if ( empty( $botname ) ) {
-		$botname = 'a8c';
-	}
+	$body = array(
+		'channel' => $channel_or_user,
+		'type'    => $level,
+		'text'    => $message,
+	);
 
-	$bot = fsockopen( VIP_IRC_HOSTNAME, VIP_IRC_PORT, $errno, $errst, 0.1 );
+	$response = wp_remote_post( $url, array(
+		'timeout' => 0.1,
+		'body' => json_encode( $body ),
+	) );
 
-	if ( ! $bot ) {
-		error_log( "fsockopen() failed: wpcom_vip_irc( '$channel_or_user', '$message' );" );
+	if ( is_wp_error( $response ) ) {
+		error_log( 'Error sending IRC message (' . $message . '): ' . $response->get_error_message() );
 
 		return false;
 	}
 
-	fputs( $bot, "!$botname $channel_or_user $message" );
-
-	if ( ! @feof( $bot ) ) {
-		@fclose( $bot );
-	}
-
 	return true;
-}
-
-/**
- * Colour a message to be sent to IRC.
- *
- * Example Usage
- *
- * wpcom_vip_irc_color('WARNING', 'red', 'black');
- *
- * @param string $message Message to be coloured
- * @param string $foreground Foreground colour to be used - see code for list of colours
- * @param string $background Background colour to be used (default is black)
- */
-function wpcom_vip_irc_color( $message, $foreground, $background = 'black' ) {
-	static $colour_map = array (
-		'white' => '00',
-		'black' => '01',
-		'blue'  => '02',
-		'green' => '03',
-		'red'   => '04',
-		'brown' => '05',
-		'purple' => '06',
-		'orange' => '07',
-		'yellow' => '08',
-		'lime'   => '09',
-		'teal'   => '10',
-		'aqua'   => '11',
-		'lightblue' => '12',
-		'pink' => '13',
-		'grey' => '14',
-		'silver' => '15',
-	);
-
-	static $ctrl_c = "\x03";
-
-	if ( isset( $colour_map[ $foreground ] ) && $colour_map[ $background ] ) {
-		return $ctrl_c . $colour_map[ $foreground ] . ',' . $colour_map[ $background ] . $message . $ctrl_c;
-	}
-
-	return $message;
 }

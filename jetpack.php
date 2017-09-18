@@ -1,11 +1,11 @@
 <?php
 
 /*
- * Plugin Name: MU Jetpack by WordPress.com
+ * Plugin Name: Jetpack by WordPress.com
  * Plugin URI: http://jetpack.com
  * Description: Bring the power of the WordPress.com cloud to your self-hosted WordPress. Jetpack enables you to connect your blog to a WordPress.com account to use the powerful features normally only available to WordPress.com users.
  * Author: Automattic
- * Version: 4.6
+ * Version: 5.1
  * Author URI: http://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
