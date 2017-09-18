@@ -18,6 +18,20 @@ function _wpcom_do_async_publish_post( $post_id ) {
 add_action( ASYNC_PUBLISH_EVENT, __NAMESPACE__ . '\_wpcom_do_async_publish_post' );
 
 /**
+ * Skip offloading in certain contexts
+ */
+if (
+	wp_doing_cron() ||
+	( defined( 'WP_CLI' ) && \WP_CLI ) ||
+	( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) ||
+	( defined( 'WP_IMPORTING' ) && \WP_IMPORTING )
+) {
+	if ( ! apply_filters( 'wpcom_async_publish_post_force_queue', false ) ) {
+		return;
+	}
+}
+
+/**
  * Queue async event when status was or is `publish`
  *
  * @param string $new_status New post status.
