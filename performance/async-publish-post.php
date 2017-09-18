@@ -26,6 +26,11 @@ if (
 	( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) ||
 	( defined( 'WP_IMPORTING' ) && \WP_IMPORTING )
 ) {
+	/**
+	 * Bypass offloading to the async hook, unless specifically requested
+	 *
+	 * @param bool $bypass Whether or not to bypass async offloading.
+	 */
 	if ( ! apply_filters( 'wpcom_async_publish_post_force_queue', false ) ) {
 		return;
 	}
