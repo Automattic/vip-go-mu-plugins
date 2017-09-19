@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Performance;
 
-class async_publish_post_Test extends \WP_UnitTestCase {
+class async_publish_actions_Test extends \WP_UnitTestCase {
 	/**
 	 * Prepare test environment
 	 */
@@ -38,18 +38,28 @@ class async_publish_post_Test extends \WP_UnitTestCase {
 		// Insert succeeded.
 		$this->assertFalse( is_wp_error( $pid ) );
 
-		$args = [ 'post_id' => (int) $pid ];
-		$next = wp_next_scheduled( ASYNC_PUBLISH_EVENT, $args );
+		$args = [
+			'post_id'    => (int) $pid,
+			'new_status' => 'draft',
+			'old_status' => 'new',
+		];
+
+		$next_transition    = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
 
 		// No async event for a draft post.
-		$this->assertFalse( $next );
+		$this->assertFalse( $next_transition );
 
 		wp_publish_post( $pid );
 
-		$args = [ 'post_id' => (int) $pid ];
-		$next = wp_next_scheduled( ASYNC_PUBLISH_EVENT, $args );
+		$args = [
+			'post_id'    => (int) $pid,
+			'new_status' => 'publish',
+			'old_status' => 'draft',
+		];
+
+		$next_transition    = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
 
 		// Event scheduled after publish.
-		$this->assertTrue( is_int( $next ) );
+		$this->assertTrue( is_int( $next_transition ) );
 	}
 }
