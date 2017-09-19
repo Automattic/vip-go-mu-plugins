@@ -33,6 +33,24 @@ if ( true === WPCOM_SANDBOXED ) {
 	}, 0 ); // No need to wait till priority 10 since we're going to die anyway
 }
 
+// On production servers, only our machine user can manage the Jetpack connection
+if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
+	add_filter( 'map_meta_cap', function( $caps, $cap, $user_id, $args ) {
+		switch ( $cap ) {
+			case 'jetpack_connect':
+			case 'jetpack_reconnect':
+			case 'jetpack_disconnect':
+				$user = get_userdata( $user_id );
+				if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
+					return [ 'do_not_allow' ];
+				}
+				break;
+		}
+
+		return $caps;
+	}, 10, 4 );
+}
+
 function wpcom_vip_did_jetpack_search_query( $query ) {
 	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
 		return;
