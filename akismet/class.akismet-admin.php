@@ -91,12 +91,14 @@ class Akismet_Admin {
 	}
 
 	public static function load_menu() {
-		if ( class_exists( 'Jetpack' ) )
+		if ( class_exists( 'Jetpack' ) ) {
 			$hook = add_submenu_page( 'jetpack', __( 'Akismet' , 'akismet'), __( 'Akismet' , 'akismet'), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
-		else
+		}
+		else {
 			$hook = add_options_page( __('Akismet', 'akismet'), __('Akismet', 'akismet'), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
-
-		if ( version_compare( $GLOBALS['wp_version'], '3.3', '>=' ) ) {
+		}
+		
+		if ( $hook ) {
 			add_action( "load-$hook", array( 'Akismet_Admin', 'admin_help' ) );
 		}
 	}
@@ -248,8 +250,9 @@ class Akismet_Admin {
 	}
 
 	public static function enter_api_key() {
-		if ( function_exists('current_user_can') && !current_user_can('manage_options') )
-			die(__('Cheatin&#8217; uh?', 'akismet'));
+		if ( ! current_user_can( 'manage_options' ) ) {
+			die( __( 'Cheatin&#8217; uh?', 'akismet' ) );
+		}
 
 		if ( !wp_verify_nonce( $_POST['_wpnonce'], self::NONCE ) )
 			return false;
@@ -303,8 +306,9 @@ class Akismet_Admin {
 	}
 
 	public static function dashboard_stats() {
-		if ( !function_exists('did_action') || did_action( 'rightnow_end' ) )
+		if ( did_action( 'rightnow_end' ) ) {
 			return; // We already displayed this info in the "Right Now" section
+		}
 
 		if ( !$count = get_option('akismet_spam_count') )
 			return;
@@ -356,19 +360,19 @@ class Akismet_Admin {
 			return;
 		}
 
-		if ( function_exists('plugins_url') )
-			$link = add_query_arg( array( 'action' => 'akismet_recheck_queue' ), admin_url( 'admin.php' ) );
-		else
-			$link = add_query_arg( array( 'page' => 'akismet-admin', 'recheckqueue' => 'true', 'noheader' => 'true' ), admin_url( 'edit-comments.php' ) );
+		$link = add_query_arg( array( 'action' => 'akismet_recheck_queue' ), admin_url( 'admin.php' ) );
 
+		$comments_count = wp_count_comments();
+		
 		echo '</div>';
 		echo '<div class="alignleft">';
 		echo '<a
 				class="button-secondary checkforspam"
 				href="' . esc_url( $link ) . '"
 				data-active-label="' . esc_attr( __( 'Checking for Spam', 'akismet' ) ) . '"
-				data-progress-label-format="' . esc_attr( __( '(%1$s...)', 'akismet' ) ) . '"
+				data-progress-label-format="' . esc_attr( __( '(%1$s%)', 'akismet' ) ) . '"
 				data-success-url="' . esc_attr( remove_query_arg( 'akismet_recheck', add_query_arg( array( 'akismet_recheck_complete' => 1, 'recheck_count' => urlencode( '__recheck_count__' ), 'spam_count' => urlencode( '__spam_count__' ) ) ) ) ) . '"
+				data-pending-comment-count="' . esc_attr( $comments_count->moderated ) . '"
 				>';
 			echo '<span class="akismet-label">' . esc_html__('Check for Spam', 'akismet') . '</span>';
 			echo '<span class="checkforspam-progress"></span>';
@@ -467,11 +471,6 @@ class Akismet_Admin {
 	}
 
 	public static function comment_row_action( $a, $comment ) {
-
-		// failsafe for old WP versions
-		if ( !function_exists('add_comment_meta') )
-			return $a;
-
 		$akismet_result = get_comment_meta( $comment->comment_ID, 'akismet_result', true );
 		$akismet_error  = get_comment_meta( $comment->comment_ID, 'akismet_error', true );
 		$user_result    = get_comment_meta( $comment->comment_ID, 'akismet_user_result', true);
@@ -500,7 +499,7 @@ class Akismet_Admin {
 				$b[ $k ] = $item;
 				if (
 					$k == 'edit'
-					|| ( $k == 'unspam' && $GLOBALS['wp_version'] >= 3.4 )
+					|| $k == 'unspam'
 				) {
 					$b['history'] = '<a href="comment.php?action=editcomment&amp;c='.$comment->comment_ID.'#akismet-status" title="'. esc_attr__( 'View comment history' , 'akismet') . '"> '. esc_html__('History', 'akismet') . '</a>';
 				}
@@ -645,12 +644,8 @@ class Akismet_Admin {
 		if ( !$type ) { // total
 			$count = wp_cache_get( 'akismet_spam_count', 'widget' );
 			if ( false === $count ) {
-				if ( function_exists('wp_count_comments') ) {
-					$count = wp_count_comments();
-					$count = $count->spam;
-				} else {
-					$count = (int) $wpdb->get_var("SELECT COUNT(comment_ID) FROM {$wpdb->comments} WHERE comment_approved = 'spam'");
-				}
+				$count = wp_count_comments();
+				$count = $count->spam;
 				wp_cache_set( 'akismet_spam_count', $count, 'widget', 3600 );
 			}
 			return $count;
@@ -706,7 +701,7 @@ class Akismet_Admin {
 			update_option('akismet_connectivity_time', time());
 		}
 
-		if ( function_exists( 'wp_http_supports' ) && ( wp_http_supports( array( 'ssl' ) ) ) ) {
+		if ( wp_http_supports( array( 'ssl' ) ) ) {
 			$response = wp_remote_get( 'https://rest.akismet.com/1.1/test' );
 		}
 		else {

@@ -82,10 +82,7 @@
 											<p>
 												<?php
 
-												if ( ! function_exists( 'wp_http_supports' ) ) {
-													?><b><?php esc_html_e( 'Disabled.', 'akismet' ); ?></b> <?php printf( esc_html( 'Your WordPress installation does not include the function %s; upgrade to the latest version of WordPress.', 'akismet' ), '<code>wp_http_supports</code>' ); ?><?php
-												}
-												else if ( ! wp_http_supports( array( 'ssl' ) ) ) {
+												if ( ! wp_http_supports( array( 'ssl' ) ) ) {
 													?><b><?php esc_html_e( 'Disabled.', 'akismet' ); ?></b> <?php esc_html_e( 'Your Web server cannot make SSL requests; contact your Web host and ask them to add support for SSL requests.', 'akismet' ); ?><?php
 												}
 												else {

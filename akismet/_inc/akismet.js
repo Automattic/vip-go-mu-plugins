@@ -162,8 +162,14 @@ jQuery( function ( $ ) {
 	var recheck_count = 0;
 
 	function akismet_check_for_spam(offset, limit) {
+		var check_for_spam_buttons = $( '.checkforspam' );
+		
+		// We show the percentage complete down to one decimal point so even queues with 100k
+		// pending comments will show some progress pretty quickly.
+		var percentage_complete = Math.round( ( recheck_count / check_for_spam_buttons.data( 'pending-comment-count' ) ) * 1000 ) / 10;
+		
 		// Update the progress counter on the "Check for Spam" button.
-		$( '.checkforspam-progress' ).text( $( '.checkforspam' ).data( 'progress-label-format' ).replace( '%1$s', offset ) );
+		$( '.checkforspam-progress' ).text( check_for_spam_buttons.data( 'progress-label-format' ).replace( '%1$s', percentage_complete ) );
 
 		$.post(
 			ajaxurl,
@@ -177,7 +183,7 @@ jQuery( function ( $ ) {
 				spam_count += result.counts.spam;
 				
 				if (result.counts.processed < limit) {
-					window.location.href = $( '.checkforspam' ).data( 'success-url' ).replace( '__recheck_count__', recheck_count ).replace( '__spam_count__', spam_count );
+					window.location.href = check_for_spam_buttons.data( 'success-url' ).replace( '__recheck_count__', recheck_count ).replace( '__spam_count__', spam_count );
 				}
 				else {
 					// Account for comments that were caught as spam and moved out of the queue.
