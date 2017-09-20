@@ -97,7 +97,11 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 		'old_status' => $old_status,
 	];
 
-	if ( $new_status !== $old_status && in_array( 'publish', [ $new_status, $old_status ], true ) && false === wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args ) ) {
+	if ( false !== wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args ) ) {
+		return;
+	}
+
+	if ( $new_status !== $old_status && in_array( 'publish', [ $new_status, $old_status ], true ) ) {
 		wp_schedule_single_event( time(), ASYNC_TRANSITION_EVENT, $args );
 	}
 }
