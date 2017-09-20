@@ -326,7 +326,14 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 			WP_CLI::line( "Converting column {$col->Field}" );
 
-			$convert = $wpdb->query( $wpdb->prepare( 'ALTER TABLE %1$s CHANGE %2$s %2$s ENUM(' . $options . ') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci %3$s DEFAULT "%4$s"', $table, $col->Field, $null_not_null, $col->Default ) );
+			$convert = $wpdb->query( $wpdb->prepare(
+				'ALTER TABLE %s CHANGE %s %s ENUM(' . $options . ') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci %s DEFAULT "%s"',
+				$table,
+				$col->Field,
+				$col->Field,
+				$null_not_null,
+				$col->Default
+			) );
 
 			WP_CLI::line( "Finished converting column {$col->Field}" );
 
