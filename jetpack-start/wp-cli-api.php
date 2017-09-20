@@ -26,7 +26,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( '-- Failed to cancel plan: %s', $data->get_error_message() ) );
 		}
 
-		WP_CLI::line( sprintf( '-- Cancelled subscription for site_id = %s (body: %s)', $site_id, var_export( $data, true ) ) );
+		WP_CLI::line( sprintf( '-- Cancelled subscription for site (API response: %s)', var_export( $data, true ) ) );
 
 		$this->disconnect_site();
 	}
