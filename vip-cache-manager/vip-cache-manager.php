@@ -52,6 +52,10 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
 	}
 
+	public function get_queued_purge_urls() {
+		return $this->purge_urls;
+	}
+
 	public function get_manual_purge_link() {
 		if ( ! $this->can_purge_cache() ) {
 			return;
