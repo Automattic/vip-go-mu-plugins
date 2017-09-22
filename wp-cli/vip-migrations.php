@@ -63,85 +63,133 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			return;
 		}
 
-		// TODO: should we have a flag to exclude home/siteurl option?
-
-		$tables_and_columns = [
-			'wp_commentmeta' => [
-				'meta_key',
-				'meta_value',
+		$ignored_tables_and_columns = [
+			'commentmeta' => [
+				'meta_id',
+				'comment_id',
 			],
 
-			'wp_comments' => [
-				'comment_author',
-				'comment_author_url',
-				'comment_content',
-				'comment_agent',
+			'comments' => [
+				'comment_ID',
+				'comment_post_ID',
+				'comment_author_IP',
+				'comment_date',
+				'comment_date_gmt',
+				'comment_karma',
+				'comment_approved',
+				'comment_type',
+				'comment_parent',
+				'user_id',
 			],
 
-			'wp_links' => [
-				'link_url',
-				'link_name',
-				'link_image',
-				'link_description',
-				'link_notes',
-				'link_rss',
+			'links' => [
+				'link_id',
+				'link_target',
+				'link_visible',
+				'link_owner',
+				'link_rating',
+				'link_updated',
 			],
 
-			'wp_options' => [
-				'option_name',
-				'option_value',
+			'options' => [
+				'option_id',
+				'autoload',
 			],
 
-			'wp_postmeta' => [
-				'meta_key',
-				'meta_value',
+			'postmeta' => [
+				'meta_id',
+				'post_id',
 			],
 
-			'wp_posts' => [
-				'post_content',
-				'post_title',
-				'post_excerpt',
-				'post_name',
-				'post_content_filtered',
-				'guid',
+			'posts' => [
+				'ID',
+				'post_author',
+				'post_date',
+				'post_date_gmt',
+				'comment_status',
+				'ping_status',
+				'post_password',
+				'to_ping',
+				'pinged',
+				'post_modified',
+				'post_modified_gmt',
+				'post_parent',
+				'menu_order',
+				'post_type',
+				'post_mime_type',
+				'comment_count',
 			],
 
-			'wp_term_taxonomy' => [
+			'term_taxonomy' => [
+				'term_taxonomy_id',
+				'term_id',
 				'taxonomy',
-				'description',
+				'parent',
+				'count',
 			],
 
-			'wp_termmeta' => [
-				'meta_key',
-				'meta_value',
+			'wp_term_relationships' => [
+				'object_id',
+				'term_taxonomy_id',
+				'term_order',
 			],
 
-			'wp_terms' => [
-				'name',
+			'termmeta' => [
+				'meta_id',
+				'term_id',
 			],
 
-			'wp_usermeta' => [
-				'meta_key',
-				'meta_value',
+			'terms' => [
+				'term_id',
+				'slug',
+				'term_group',
 			],
 
-			'wp_users' => [
-				'user_url',
-				'display_name',
+			'usermeta' => [
+				'umeta_id',
+				'user_id',
 			],
+
+			'users' => [
+				'ID',
+				'user_login',
+				'user_pass',
+				'user_nicename',
+				'user_email',
+				'user_registered',
+				'user_activation_key',
+				'user_status',
+			],
+
+			// TODO: multisite tables https://codex.wordpress.org/Database_Description#Multisite_Table_Details
 		];
 
 		$runcommand_args = [
 			'exit_error' => false,
 		];
 
-		foreach ( $tables_and_columns as $table => $columns ) {
+		$all_tables = \WP_CLI\Utils\wp_get_table_names( null, [ 'all-tables' ] );
+
+		foreach ( $all_tables as $table ) {
+			$table_type = false;
+			foreach ( array_keys( $ignored_tables_and_columns ) as $type ) {
+				if ( wp_endswith( $table, $type ) ) {
+					$table_type = $type;
+					break;
+				}
+			}
+
+			$skip_columns = false;
+			if ( isset( $ignored_tables_and_columns[ $table_type ] ) ) {
+				$skip_columns = $ignored_tables_and_columns[ $table_type ];
+			}
+
 			$command = sprintf(
-				'vip search-replace %1$s %2$s %3$s --include-columns=%4$s --verbose',
+				'vip search-replace %1$s %2$s %3$s --skip-columns=%4$s --verbose',
 				escapeshellarg( $from_url ),
 				escapeshellarg( $to_url ),
 				escapeshellarg( $table ),
-				escapeshellarg( implode( ',', $columns ) )
+				escapeshellarg( implode( ',', $skip_columns ) )
 			);
 
 			WP_CLI::log( 'Running command: ' . $command );
