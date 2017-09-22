@@ -217,6 +217,10 @@ class WPCOM_VIP_Debug_Bar_DB_Connections extends Debug_Bar_Panel {
 				continue;
 			}
 
+			if ( ! property_exists( $global, 'db_connections' ) ) {
+				break;
+			}
+
 			if ( is_array( $global->db_connections ) && count( $global->db_connections ) ) {
 				$elapsed = 0;
 
