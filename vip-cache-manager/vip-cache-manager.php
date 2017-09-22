@@ -56,6 +56,10 @@ class WPCOM_VIP_Cache_Manager {
 		return $this->purge_urls;
 	}
 
+	public function clear_queued_purge_urls() {
+		$this->purge_urls = [];
+	}
+
 	public function get_manual_purge_link() {
 		if ( ! $this->can_purge_cache() ) {
 			return;
