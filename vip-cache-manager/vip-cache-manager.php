@@ -564,16 +564,15 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	protected function normalize_purge_url( $url ) {
-		$url = esc_url_raw( $url );
+		$normalized_url = esc_url_raw( $url );
 
-		$parsed_url = parse_url( $url );
-
-		// Strip off any URL fragments (i.e. `#search=xyz`) since that is ignored by the cache
-		if ( isset( $parsed_url['fragment'] ) ) {
-			unset( $parsed_url['fragment'] );
+		// Easy way to strip off any fragments since we don't have access to `http_build_url`.
+		$fragment_index = mb_strpos( $normalized_url, '#' );
+		if ( false !== $fragment_index ) {
+			$normalized_url = mb_substr( $normalized_url, 0, $fragment_index );
 		}
 
-		return http_build_url( $parsed_url );
+		return $normalized_url;
 	}
 
 	protected function is_valid_purge_url( $url ) {
