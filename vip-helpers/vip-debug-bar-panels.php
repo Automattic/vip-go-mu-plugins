@@ -213,8 +213,12 @@ class WPCOM_VIP_Debug_Bar_DB_Connections extends Debug_Bar_Panel {
 
 	function render() {
 		foreach ( $GLOBALS as $var => $global ) {
-			if ( ! is_object( $global ) || ! get_class( $global ) || ! is_a( $global, 'wpdb' ) || ! property_exists( $global, 'db_connections' ) ) {
+			if ( ! is_object( $global ) || ! get_class( $global ) || ! is_a( $global, 'wpdb' ) ) {
 				continue;
+			}
+
+			if ( ! property_exists( $global, 'db_connections' ) ) {
+				break;
 			}
 
 			if ( is_array( $global->db_connections ) && count( $global->db_connections ) ) {
