@@ -53,11 +53,11 @@ function wpcom_vip_force_two_factor() {
 	return apply_filters( 'wpcom_vip_force_two_factor', false );
 }
 
-function wpcom_vip_load_two_factor_plugin() {
-	wpcom_vip_load_plugin( 'two-factor' );
-
-	add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
-	add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps' );
+function wpcom_vip_enforce_two_factor_plugin() {
+	if ( is_user_logged_in() ) {
+		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
+		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps' );
+	}
 }
 
 function wpcom_enable_two_factor_plugin() {
@@ -71,10 +71,11 @@ function wpcom_enable_two_factor_plugin() {
 			remove_action( 'wp_login', array( 'Two_Factor_Core', 'wp_login' ) );
 		}
 	} else {
-		wpcom_vip_load_two_factor_plugin();
+		wpcom_vip_load_plugin( 'two-factor' );
+		add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 	}
 }
-add_action( 'setup_theme', 'wpcom_enable_two_factor_plugin' );
+add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
 
 /**
  * Filter Caps
