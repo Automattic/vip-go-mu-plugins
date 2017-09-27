@@ -65,11 +65,32 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 
 	/**
-	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
+	 * Ensure `/vip/` endpoints are accessible to authenticated requests
+	 *
+	 * Circumvents any other authentication blocks and gives our method preference
 	 */
 	public function force_authorized_access( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
-			return true;
+		global $wp_rewrite;
+
+		if ( $wp_rewrite->using_permalinks() ) {
+			$rest_relative = get_rest_url( null, $this->namespace );
+			$rest_relative = parse_url( $rest_relative, PHP_URL_PATH );
+
+			if ( 0 === strpos( $_SERVER['REQUEST_URI'], $rest_relative ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
+				return true;
+			}
+		} else {
+			$query_args   = array();
+			$query_string = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_QUERY );
+			wp_parse_str( $query_string, $query_args );
+
+			if ( ! isset( $query_args['rest_route'] ) ) {
+				return $result;
+			}
+
+			if ( 0 === strpos( $query_args['rest_route'], '/' . $this->namespace ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
+				return true;
+			}
 		}
 
 		return $result;
