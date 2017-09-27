@@ -50,6 +50,16 @@ defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAM
 defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
+// Support a limited number of additional "Internal Events" in Cron Control.
+// These events run regardless of the number of pending events, and they cannot be deleted.
+define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
+	array(
+		'schedule' => 'hourly',
+		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Automattic\VIP\Support_User\User::CRON_ACTION
+		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
+	),
+) );
+
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
 define( 'FS_METHOD', 'direct' );
