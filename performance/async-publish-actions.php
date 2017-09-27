@@ -5,7 +5,32 @@ namespace Automattic\VIP\Performance;
 const ASYNC_TRANSITION_EVENT = 'wpcom_vip_async_transition_post_status';
 
 /**
- * Perform asynchronous tasks for a published post
+ * Check if the current context is suitable for offloading
+ *
+ * @return bool
+ */
+function should_offload() {
+	$offload = true;
+
+	if (
+		wp_doing_cron() ||
+		( defined( 'WP_CLI' ) && \WP_CLI ) ||
+		( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) ||
+		( defined( 'WP_IMPORTING' ) && \WP_IMPORTING )
+	) {
+		$offload = false;
+	}
+
+	/**
+	 * Filter if the current request is suitable for offloading
+	 *
+	 * @param bool $bypass Whether or not to offload.
+	 */
+	return apply_filters( 'wpcom_async_transition_post_status_should_offload', $offload );
+}
+
+/**
+ * Cron callback to perform asynchronous tasks for a published post
  *
  * @access private
  *
@@ -54,26 +79,6 @@ function _wpcom_do_async_transition_post_status( $post_id, $new_status, $old_sta
 	 */
 	do_action( "async_{$new_status}_{$post->post_type}", $post->ID, $post );
 }
-add_action( ASYNC_TRANSITION_EVENT, __NAMESPACE__ . '\_wpcom_do_async_transition_post_status', 10, 3 );
-
-/**
- * Skip offloading in certain contexts
- */
-if (
-	wp_doing_cron() ||
-	( defined( 'WP_CLI' ) && \WP_CLI ) ||
-	( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) ||
-	( defined( 'WP_IMPORTING' ) && \WP_IMPORTING )
-) {
-	/**
-	 * Bypass offloading to the async hook, unless specifically requested
-	 *
-	 * @param bool $bypass Whether or not to bypass async offloading.
-	 */
-	if ( ! apply_filters( 'wpcom_async_transition_post_status_force_queue_event', false ) ) {
-		return;
-	}
-}
 
 /**
  * Queue async event when status was or is `publish`
@@ -105,10 +110,22 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 		wp_schedule_single_event( time(), ASYNC_TRANSITION_EVENT, $args );
 	}
 }
-add_action( 'transition_post_status', __NAMESPACE__ . '\_queue_async_hooks', 10, 3 );
 
 /**
- * Offload ping- and enclosure-related events
+ * Maybe schedule offloading.
  */
-remove_action( 'publish_post', '\_publish_post_hook', 5 );
-add_action( 'async_publish_post', '\_publish_post_hook', 5, 1 );
+if ( should_offload() ) {
+	// Trigger offloading.
+	add_action( 'transition_post_status', __NAMESPACE__ . '\_queue_async_hooks', 10, 3 );
+
+	/**
+	 * Offload ping- and enclosure-related events
+	 */
+	remove_action( 'publish_post', '\_publish_post_hook', 5 );
+	add_action( 'async_publish_post', '\_publish_post_hook', 5, 1 );
+}
+
+/**
+ * Hook regardless `should_offload()`, lest unrelated requests be impacted
+ */
+add_action( ASYNC_TRANSITION_EVENT, __NAMESPACE__ . '\_wpcom_do_async_transition_post_status', 10, 3 );
