@@ -10,23 +10,37 @@ const ASYNC_TRANSITION_EVENT = 'wpcom_vip_async_transition_post_status';
  * @return bool
  */
 function should_offload() {
+	// Offload by default.
+	$context = null;
 	$offload = true;
 
-	if (
-		wp_doing_cron() ||
-		( defined( 'WP_CLI' ) && \WP_CLI ) ||
-		( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) ||
-		( defined( 'WP_IMPORTING' ) && \WP_IMPORTING )
-	) {
+	if ( wp_doing_cron() ) {
+		$context = 'cron';
+		$offload = false;
+	}
+
+	if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+		$context = 'wp-cli';
+		$offload = false;
+	}
+
+	if ( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) {
+		$context = 'xml-rpc';
+		$offload = false;
+	}
+
+	if ( defined( 'WP_IMPORTING' ) && \WP_IMPORTING ) {
+		$context = 'importing';
 		$offload = false;
 	}
 
 	/**
 	 * Filter if the current request is suitable for offloading
 	 *
-	 * @param bool $bypass Whether or not to offload.
+	 * @param bool   $bypass Whether or not to offload.
+	 * @param string $context Request context that blocked offloading.
 	 */
-	return apply_filters( 'wpcom_async_transition_post_status_should_offload', $offload );
+	return apply_filters( 'wpcom_async_transition_post_status_should_offload', $offload, $context );
 }
 
 /**
