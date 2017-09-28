@@ -1,6 +1,9 @@
 <?php
+/**
+ * Allow for async processing of tasks normally hooked to certain `transition_post_status` calls.
+ */
 
-namespace Automattic\VIP\Performance;
+namespace Automattic\VIP\Async_Publish_Actions;
 
 const ASYNC_TRANSITION_EVENT = 'wpcom_vip_async_transition_post_status';
 

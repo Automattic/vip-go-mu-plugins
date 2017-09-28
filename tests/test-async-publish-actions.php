@@ -3,7 +3,8 @@
  * Test async publish actions
  */
 
-namespace Automattic\VIP\Performance;
+namespace Automattic\VIP\Async_Publish_Actions\Tests;
+use Automattic\VIP\Async_Publish_Actions;
 use WP_UnitTestCase;
 
 /**
@@ -48,7 +49,7 @@ class async_publish_actions_Test extends WP_UnitTestCase {
 			'old_status' => 'new',
 		];
 
-		$next = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertFalse( $next );
 
@@ -72,7 +73,7 @@ class async_publish_actions_Test extends WP_UnitTestCase {
 			'old_status' => 'new',
 		];
 
-		$next = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertFalse( $next );
 
@@ -97,7 +98,7 @@ class async_publish_actions_Test extends WP_UnitTestCase {
 			'old_status' => 'draft',
 		];
 
-		$next = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertInternalType( 'int',  $next );
 	}
@@ -125,7 +126,7 @@ class async_publish_actions_Test extends WP_UnitTestCase {
 			'old_status' => 'publish',
 		];
 
-		$next = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertFalse( $next );
 	}
@@ -153,7 +154,7 @@ class async_publish_actions_Test extends WP_UnitTestCase {
 			'old_status' => 'publish',
 		];
 
-		$next = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertInternalType( 'int',  $next );
 	}
@@ -184,11 +185,11 @@ class async_publish_actions_Test extends WP_UnitTestCase {
 			'old_status' => 'new',
 		];
 
-		$scheduled_for_first = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$scheduled_for_first = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$args['post_id'] = (int) $second_pid;
 
-		$scheduled_for_second = wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args );
+		$scheduled_for_second = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertInternalType( 'int', $scheduled_for_first, 'No event for first post' );
 		$this->assertInternalType( 'int', $scheduled_for_second, 'No event for second post' );
