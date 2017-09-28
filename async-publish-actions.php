@@ -20,19 +20,13 @@ function should_offload() {
 	if ( wp_doing_cron() ) {
 		$context = 'cron';
 		$offload = false;
-	}
-
-	if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+	} elseif ( defined( 'WP_CLI' ) && \WP_CLI ) {
 		$context = 'wp-cli';
 		$offload = false;
-	}
-
-	if ( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) {
+	} elseif ( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) {
 		$context = 'xml-rpc';
 		$offload = false;
-	}
-
-	if ( defined( 'WP_IMPORTING' ) && \WP_IMPORTING ) {
+	} elseif ( defined( 'WP_IMPORTING' ) && \WP_IMPORTING ) {
 		$context = 'importing';
 		$offload = false;
 	}

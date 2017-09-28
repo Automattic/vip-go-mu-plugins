@@ -10,7 +10,7 @@ use WP_UnitTestCase;
 /**
  * @group async-publish-actions
  */
-class async_publish_actions_Test extends WP_UnitTestCase {
+class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Prepare test environment
 	 */
