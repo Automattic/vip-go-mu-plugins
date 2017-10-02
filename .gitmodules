@@ -19,9 +19,6 @@
 [submodule "query-monitor"]
 	path = query-monitor
 	url = git@github.com:johnbillion/query-monitor.git
-[submodule "shared-plugins/msm-sitemap"]
-	path = shared-plugins/msm-sitemap
-	url = git@github.com:Automattic/msm-sitemap.git
 [submodule "cron-control"]
 	path = cron-control
 	url = git@github.com:Automattic/Cron-Control.git
