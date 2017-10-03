@@ -570,7 +570,12 @@ class WPCOM_VIP_Cache_Manager {
 	protected function normalize_purge_url( $url ) {
 		$normalized_url = esc_url_raw( $url );
 
-		// Easy way to strip off any fragments since we don't have access to `http_build_url`.
+		// Easy way to strip off query params and fragments since we don't have access to `http_build_url`.
+		$query_index = mb_strpos( $normalized_url, '?' );
+		if ( false !== $query_index ) {
+			$normalized_url = mb_substr( $normalized_url, 0, $query_index );
+		}
+
 		$fragment_index = mb_strpos( $normalized_url, '#' );
 		if ( false !== $fragment_index ) {
 			$normalized_url = mb_substr( $normalized_url, 0, $fragment_index );

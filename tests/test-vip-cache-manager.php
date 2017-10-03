@@ -16,12 +16,22 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 			// 2: array of expected purge_urls list
 
 			'normal_url' => [
-				'https://example.com/path/to/file?query',
-				[ 'https://example.com/path/to/file?query' ],
+				'http://example.com/path/to/files',
+				[ 'http://example.com/path/to/files' ],
 			],
 
-			'strip_fragment_from_url' => [
+			'strip_querystring' => [
+				'https://example.com/path/to/file?query',
+				[ 'https://example.com/path/to/file' ],
+			],
+
+			'strip_fragment' => [
 				'https://example.com/post#fragment',
+				[ 'https://example.com/post' ],
+			],
+
+			'strip_querystring_and_fragment' => [
+				'https://example.com/post?query#fragment',
 				[ 'https://example.com/post' ],
 			],
 		];
