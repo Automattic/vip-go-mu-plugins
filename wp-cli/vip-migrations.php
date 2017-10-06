@@ -247,6 +247,121 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	}
 	
 	/**
+	 * Clones a site to another site.
+	 *
+	 * "Cloning" is a misleading term here.  All of the actual cloning needs to be done outside this program
+	 * by copying the SQL from one site to another.  For VIP Go, this can be done using the `vip-cli` tool.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <old-domain>
+	 * : The old domain.
+	 *
+	 * <new-domain>
+	 * : The new domain.
+	 *
+	 * [--dry-run=<true>]
+	 * : Do a "dry run" and no data modification will be done.  Defaults to true.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Converts the data from the parent site www.example.com to the child site preprod.example.com
+	 *     $ wp vip migration clone www.example.com preprod.example.com --dry-run=false
+	 *
+	 *     # Does a "dry run" convert from "www.example.com" to "preprod.example.com"
+	 *     $ wp --allow-root vip migration clone www.example.com preprod.example.com
+	 *
+	 * @subcommand clone
+	*/
+	public function clone( $args, $assoc_args ) {
+		$old_domain = $args[0];
+		$new_domain = $args[1];
+		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run', true );
+
+		// Force a boolean, always default to true.
+		$dry_run = filter_var( $dry_run, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ?? true;
+
+		// Disable object caching.  It can get really messed up with all of this.
+		if ( ! $dry_run ) {
+			// Make sure we start with a clean cache.
+			wp_cache_flush();
+			wp_suspend_cache_addition( true );
+			WP_CLI::log( 'Cleared cache and Disabled object caching' );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have cleared cache and disabled object caching' );
+		}
+
+		// Delete JPOP options
+		if ( ! $dry_run ) {
+			WP_CLI::log( 'Deleting JPOP options' );
+			delete_option( 'jetpack_options' );
+			delete_option( 'jetpack_private_options' );
+			delete_option( 'vaultpress' );
+			delete_option( 'vaultpress_auto_register' );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have deleted JPOP options' );
+		}
+
+		// Do the search-replace
+		$options = array(
+			'verbose',
+			'allow-root',
+		);
+		$command = sprintf( 'search-replace %s %s "wp_*" --url=%s', $old_domain, $new_domain, $new_domain );
+		if ( ! $dry_run ) {
+			WP_CLI::log( 'Running ' . $command );
+			$search_replace = WP_CLI::runcommand( $command, $options );
+			WP_CLI::log( $search_replace );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have ran: ' . $command );
+		}
+
+		// Re-enable object caching
+		if ( ! $dry_run ) {
+				WP_CLI::log( 'Re-enabled object caching' );
+				wp_suspend_cache_addition( false );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have re-enabled object caching' );
+		}
+
+		// Flush the cache.
+		$options = array(
+			'allow-root',
+		);
+		if ( ! $dry_run ) {
+			wp_cache_flush();
+			WP_CLI::log( 'Flushing cache' );
+			$cache_flush = WP_CLI::runcommand( 'cache flush --url=' . $new_domain, $options );
+			WP_CLI::log( $cache_flush );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have flushed cache' );
+		}
+
+		// Delete any transients that may have happened while objecg caching was off.
+		$options = array(
+			'allow-root',
+		);
+		if ( ! $dry_run ) {
+			$transient_delete = WP_CLI::runcommand( 'transient delete-all --url=' . $new_domain, $options );
+			WP_CLI::log( $transient_delete );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have delete transients' );
+		}
+
+		// Connect Jetpack.
+		$options = array(
+			'allow-root',
+		);
+		if ( ! $dry_run ) {
+			WP_CLI::log( 'Running Jetpack Start for ' . get_site_url() );
+			$jetpack_start = WP_CLI::runcommand( 'jetpack-start connect --url=' . get_site_url() , $options );
+			WP_CLI::log( $jetpack_start );
+		} else {
+			WP_CLI::log( '[DRY-RUN] Would have ran Jetpack Start for ' . get_site_url() );
+		}
+	}
+
+	/**
 	 * Clones a multisite to another multisite.
 	 *
 	 * "Cloning" is a misleading term here.  All of the actual cloning needs to be done outside this program
