@@ -52,6 +52,11 @@ function should_offload() {
 function _wpcom_do_async_transition_post_status( $post_id, $new_status, $old_status ) {
 	$post = get_post( $post_id );
 
+	// If post status has changed since this was queued, abort and let the next event handle this post.
+	if ( $new_status !== get_post_status( $post ) ) {
+		return;
+	}
+
 	/**
 	 * Fires when a post is transitioned from one status to another.
 	 *
