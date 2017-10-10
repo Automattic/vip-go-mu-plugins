@@ -75,7 +75,8 @@ function wpcom_enable_two_factor_plugin() {
 		add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 	}
 }
-add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
+// TODO: Enable this :)
+//add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
 
 /**
  * Filter Caps
