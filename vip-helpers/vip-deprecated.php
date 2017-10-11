@@ -249,12 +249,12 @@ function wpcom_vip_disable_postpost() {
 /**
  * Outputs Open Graph tags to various pages on the site
  *
- * @deprecated Deprecated since VIP 2.0.0 - Use jetpack_enable_open_graph()
+ * @deprecated Deprecated since VIP 2.0.0 - Use the `jetpack_enable_open_graph` filter
  * @link http://vip.wordpress.com/documentation/open-graph/ Adding Open Graph Tags
  * @see http://developers.facebook.com/docs/opengraph/ Open Graph
  */
 function wpcom_vip_enable_opengraph() {
-    _deprecated_function( __FUNCTION__, '2.0.0', 'jetpack_enable_open_graph' );
+	_deprecated_function( __FUNCTION__, '2.0.0', '`jetpack_enable_open_graph` filter' );
 }
 
 /**
