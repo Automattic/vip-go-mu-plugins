@@ -49,6 +49,14 @@ class WPCOM_VIP_REST_API_Endpoints {
 			},
 		) );
 
+		register_rest_route( $this->namespace, '/plugins/', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'list_plugins' ),
+			'permission_callback' => function() {
+				return wpcom_vip_go_rest_api_request_allowed( $this->namespace );
+			},
+		) );
+
 		add_filter( 'rest_authentication_errors', array( $this, 'force_authorized_access' ), 999 ); // hook in late to bypass any others that override our auth requirements
 	}
 
@@ -122,6 +130,130 @@ class WPCOM_VIP_REST_API_Endpoints {
 		}
 
 		return new WP_REST_Response( $sites );
+	}
+
+	/**
+	 * Endpoint to return active plugins on site
+	 */
+	public function list_plugins() {
+		$plugins = $this->get_all_plugins();
+
+		return new WP_REST_Response( $plugins );
+	}
+
+	/**
+	 * Get all the plugins
+	 */
+	protected function get_all_plugins() {
+		global $vip_loaded_plugins;
+		$all_plugins = array();
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		// array of all standard plugins
+		$standard_plugins = get_plugins();
+		$tmp_plugins = array();
+		foreach ( $standard_plugins as $key => $plugin ) {
+			$vip_plugin_slug = 'plugins/' . dirname( $key );
+			if ( is_plugin_active( $key ) ) {
+				$tmp_plugins[ $key ] = array(
+					'name' => $plugin['Name'],
+					'version' => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type' => 'standard',
+					'active' => true,
+				);
+			} elseif ( ! in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
+				$tmp_plugins[ $key ] = array(
+					'name' => $plugin['Name'],
+					'version' => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type' => 'standard',
+					'active' => false,
+				);
+			}
+		}
+		$all_plugins['standard'] = $tmp_plugins;
+
+		// array of all code activated standard plugins
+		$tmp_plugins = array();
+		foreach ( $standard_plugins as $key => $plugin ) {
+			$vip_plugin_slug = 'plugins/' . dirname( $key );
+			if ( in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
+				$tmp_plugins[ $key ] = array(
+					'name' => $plugin['Name'],
+					'version' => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type' => 'standard-code',
+					'active' => true,
+				);
+			}
+		}
+		$all_plugins['standard-code'] = $tmp_plugins;
+
+		// array of all mu plugins
+		$mu_plugins = get_mu_plugins();
+		$tmp_plugins = array();
+		foreach ( $mu_plugins as $key => $plugin ) {
+			$tmp_plugins[ $key ] = array(
+				'name' => $plugin['Name'],
+				'version' => $plugin['Version'],
+				'description' => $plugin['Description'],
+				'type' => 'mu-plugin',
+				'active' => true,
+			);
+		}
+		$all_plugins['mu-plugin'] = $tmp_plugins;
+
+		// array of all client mu plugins
+		$client_mu_plugins = wpcom_vip_get_client_mu_plugins_data();
+		$tmp_plugins = array();
+		foreach ( $client_mu_plugins as $key => $plugin ) {
+			$tmp_plugins[ $key ] = array(
+				'name' => $plugin['Name'],
+				'version' => $plugin['Version'],
+				'description' => $plugin['Description'],
+				'type' => 'client-mu-plugin',
+				'active' => true,
+			);
+		}
+		$all_plugins['client-mu-plugin'] = $tmp_plugins;
+
+		// array of all shared plugins (activated via code and via UI)
+		if ( class_exists( 'WPCOM_VIP_Plugins_UI' ) ) {
+			$tmp_ui_plugins = array();
+			$tmp_code_plugins = array();
+			$vip_plugins = WPCOM_VIP_Plugins_UI::instance();
+			$shared_plugins = $vip_plugins->get_shared_plugins();
+
+			foreach ( $vip_plugins->get_shared_plugins() as $key => $plugin ) {
+				if ( $active_plugin_type = $vip_plugins->is_plugin_active( basename( dirname( $key ) ) ) ) {
+					if ( 'manual' === $active_plugin_type ) {
+						$tmp_code_plugins[ $key ] = array(
+							'name' => $plugin['Name'],
+							'version' => $plugin['Version'],
+							'description' => $plugin['Description'],
+							'type' => 'vip-shared-code',
+							'active' => true,
+						);
+					} else {
+						$tmp_ui_plugins[ $key ] = array(
+							'name' => $plugin['Name'],
+							'version' => $plugin['Version'],
+							'description' => $plugin['Description'],
+							'type' => 'vip-shared-ui',
+							'active' => true,
+						);
+					}
+				}
+			}
+			$all_plugins['vip-shared-code'] = $tmp_code_plugins;
+			$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
+		}
+
+		return $all_plugins;
 	}
 }
 

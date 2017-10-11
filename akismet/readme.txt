@@ -1,9 +1,9 @@
 === Akismet ===
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs
 Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
-Requires at least: 3.7
-Tested up to: 4.7.4
-Stable tag: 3.3.2
+Requires at least: 4.0
+Tested up to: 4.8.1
+Stable tag: 4.0
 License: GPLv2 or later
 
 Akismet checks your comments and contact form submissions against our global database of spam to protect you and your site from malicious content.
@@ -29,6 +29,31 @@ Upload the Akismet plugin to your blog, Activate it, then enter your [Akismet.co
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 4.0 =
+*Release Date - 19 September 2017*
+
+* Added REST API endpoints for configuring Akismet and retrieving stats.
+* Increased the minimum supported WordPress version to 4.0.
+* Added compatibility with comments submitted via the REST API.
+* Improved the progress indicator on the "Check for Spam" button.
+
+= 3.3.4 =
+*Release Date - 3 August 2017*
+
+* Disabled Akismet's debug log output by default unless AKISMET_DEBUG is defined.
+* URL previews now begin preloading when the mouse moves near them in the comments section of wp-admin.
+* When a comment is caught by the Comment Blacklist, Akismet will always allow it to stay in the trash even if it is spam as well.
+* Fixed a bug that was preventing an error from being shown when a site can't reach Akismet's servers.
+
+= 3.3.3 =
+*Release Date - 13 July 2017*
+
+* Reduced amount of bandwidth used by the URL Preview feature.
+* Improved the admin UI when the API key is manually pre-defined for the site.
+* Removed a workaround for WordPress installations older than 3.3 that will improve Akismet's compatibility with other plugins.
+* The number of spam blocked that is displayed on the WordPress dashboard will now be more accurate and updated more frequently.
+* Fixed a bug in the Akismet widget that could cause PHP warnings.
 
 = 3.3.2 =
 *Release Date - 10 May 2017*

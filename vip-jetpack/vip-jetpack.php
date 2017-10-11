@@ -28,9 +28,32 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
-	add_action( 'updating_jetpack_version', function() {
-		wp_die( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack. This is probably not a good idea. As a precaution, we\'re killing this request to prevent this from happening (this === 💥💥💥). Please run `vip stacks update` on your sandbox before doing anything else.', 400 );
-	}, 0 ); // No need to wait till priority 10 since we're going to die anyway
+	add_action( 'updating_jetpack_version', function( $new_version, $old_version ) {
+		// This is a brand new site with no Jetpack data
+		if ( empty( $old_version ) ) {
+			return;
+		}
+
+		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
+	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
+}
+
+// On production servers, only our machine user can manage the Jetpack connection
+if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
+	add_filter( 'map_meta_cap', function( $caps, $cap, $user_id, $args ) {
+		switch ( $cap ) {
+			case 'jetpack_connect':
+			case 'jetpack_reconnect':
+			case 'jetpack_disconnect':
+				$user = get_userdata( $user_id );
+				if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
+					return [ 'do_not_allow' ];
+				}
+				break;
+		}
+
+		return $caps;
+	}, 10, 4 );
 }
 
 function wpcom_vip_did_jetpack_search_query( $query ) {
@@ -50,3 +73,33 @@ function wpcom_vip_did_jetpack_search_query( $query ) {
 }
 
 add_action( 'did_jetpack_search_query', 'wpcom_vip_did_jetpack_search_query' );
+
+/**
+ * Decide when Jetpack's Sync Listener should be loaded.
+ *
+ * Sync Listener looks for events that need to be added to the sync queue. On
+ * many requests, such as frontend views, we wouldn't expect there to be any DB
+ * writes so there should be nothing for Jetpack to listen for.
+ *
+ * @param  bool $should_load Current value.
+ * @return bool              Whether (true) or not (false) Listener should load.
+ */
+function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load ) {
+	// Don't run listener for frontend, non-cron GET requests
+
+	if ( is_admin() ) {
+		return $should_load;
+	}
+
+	if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+		return $should_load;
+	}
+
+	if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) {
+		$should_load = false;
+	}
+
+	return $should_load;
+
+}
+add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_disable_jetpack_sync_for_frontend_get_requests' );

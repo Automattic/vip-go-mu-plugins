@@ -19,9 +19,6 @@
 [submodule "shared-plugins/fieldmanager"]
 	path = shared-plugins/fieldmanager
 	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
-[submodule "shared-plugins/livefyre-apps"]
-	path = shared-plugins/livefyre-apps
-	url = git@github.com:Livefyre/Livefyre-Apps-Wordpress-Plugin.git
 [submodule "query-monitor"]
 	path = query-monitor
 	url = git@github.com:johnbillion/query-monitor.git
@@ -40,3 +37,6 @@
 [submodule "shared-plugins/two-factor"]
 	path = shared-plugins/two-factor
 	url = https://github.com/georgestephanis/two-factor.git
+[submodule "drop-ins/object-cache"]
+	path = drop-ins/object-cache
+	url = git@github.com:Automattic/wp-memcached.git

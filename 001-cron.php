@@ -9,17 +9,19 @@
  */
 
 /**
- * Inactive multisite subsites can't be reached by our cron runners, so should use Core's native approach
+ * Determine if Cron Control is called for
+ *
+ * Inactive multisite subsites and local environments are generally unavailable
  *
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	if ( defined( 'WPCOM_VIP_BASIC_AUTH' ) && WPCOM_VIP_BASIC_AUTH ) {
-		define( 'ALTERNATE_WP_CRON', true );
+	// Do not load outside of VIP environments, unless explicitly requested
+	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
 		return true;
 	}
-	
-	// Bail early for anything that isn't a multisite subsite
+
+	// Bail early for anything else that isn't a multisite subsite
 	if ( ! is_multisite() || is_main_site() ) {
 		return false;
 	}
@@ -40,6 +42,10 @@ function wpcom_vip_use_core_cron() {
  * Cron Control handles authentication itself
  */
 function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
+	if ( ! class_exists( '\Automattic\WP\Cron_Control\REST_API' ) ) {
+		return $allowed;
+	}
+
 	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
 
 	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
@@ -67,6 +73,45 @@ function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
 }
 
 /**
+ * Log details of fatal error in callback that Cron Control caught
+ *
+ * @param $event object
+ * @param $error \Throwable
+ */
+function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
+	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d%4$sStack trace:%4$s# %5$s%4$s%6$s',
+		$error->getMessage(),
+		$error->getFile(),
+		$error->getLine(),
+		PHP_EOL,
+		wpcom_vip_cron_control_event_object_to_string( $event ),
+		$error->getTraceAsString()
+	);
+	error_log( $message );
+}
+
+/**
+ * Convert event object to log entry
+ *
+ * @param $event object
+ */
+function wpcom_vip_log_cron_control_event_object( $event ) {
+	$message  = 'Cron Control Uncaught Error - ';
+	$message .= wpcom_vip_cron_control_event_object_to_string( $event );
+	error_log( $message );
+}
+
+/**
+ * Convert event object to string suitable for logging
+ *
+ * @param $event object
+ * @return string
+ */
+function wpcom_vip_cron_control_event_object_to_string( $event ) {
+	return sprintf( 'ID: %1$d | timestamp: %2$s | action: %3$s | action_hashed: %4$s | instance: %5$s | home: %6$s', $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
+}
+
+/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
@@ -86,6 +131,12 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 * Don't trigger Jetpack Sync on shutdown for cron requests
 	 */
 	add_filter( 'jetpack_sync_sender_should_load', 'wpcom_vip_disable_jetpack_sync_on_cron_shutdown' );
+
+	/**
+	 * Log details of events that fail
+	 */
+	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
+	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 
 	require_once __DIR__ . '/cron-control/cron-control.php';
 }
