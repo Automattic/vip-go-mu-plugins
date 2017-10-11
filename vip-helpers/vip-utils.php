@@ -472,7 +472,7 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
  *
  * We strongly recommend not using a $timeout value of more than 3 seconds as this
  * function makes blocking requests (stops page generation and waits for the response).
- *
+ * 
  * The $extra_args are:
  *  * obey_cache_control_header: uses the "cache-control" "max-age" value if greater than $cache_time.
  *  * http_api_args: see http://codex.wordpress.org/Function_API/wp_remote_get
@@ -495,28 +495,19 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 	$extra_args = wp_parse_args( $extra_args, $extra_args_defaults );
 
 	$cache_key       = md5( serialize( array_merge( $extra_args, array( 'url' => $url ) ) ) );
-	$backup_key      = $cache_key . '_backup';
-	$disable_get_key = $cache_key . '_disable';
+	$backup_key      = md5( $cache_key . '_backup' );
+	$disable_get_key = md5( $cache_key . '_disable' );
 	$cache_group     = 'wpcom_vip_file_get_contents';
-
-	// Temporary legacy keys to prevent mass cache misses during our key switch
-	$old_cache_key       = md5( $url );
-	$old_backup_key      = 'backup:' . $old_cache_key;
-	$old_disable_get_key = 'disable:' . $old_cache_key;
 
 	// Let's see if we have an existing cache already
 	// Empty strings are okay, false means no cache
 	if ( false !== $cache = wp_cache_get( $cache_key, $cache_group) )
 		return $cache;
 
-	// Legacy
-	if ( false !== $cache = wp_cache_get( $old_cache_key, $cache_group) )
-		return $cache;
-
 	// The timeout can be 1 to 10 seconds, we strongly recommend no more than 3 seconds
 	$timeout = min( 10, max( 1, (int) $timeout ) );
 
-	if ( $timeout > 3 )
+	if ( $timeout > 3 && ! is_admin() )
 		_doing_it_wrong( __FUNCTION__, 'Using a timeout value of over 3 seconds is strongly discouraged because users have to wait for the remote request to finish before the rest of their page loads.', null );
 
 	$server_up = true;
@@ -525,10 +516,6 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 
 	// Check to see if previous attempts have failed
 	if ( false !== wp_cache_get( $disable_get_key, $cache_group ) ) {
-		$server_up = false;
-	}
-	// Legacy
-	elseif ( false !== wp_cache_get( $old_disable_get_key, $cache_group ) ) {
 		$server_up = false;
 	}
 	// Otherwise make the remote request
@@ -569,46 +556,41 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 			$cache_time = 60;
 
 		// Cache the result
-		wp_cache_set( $cache_key, $content, $cache_group, $cache_time );
+		wp_cache_add( $cache_key, $content, $cache_group, $cache_time );
 
 		// Additionally cache the result with no expiry as a backup content source
-		wp_cache_set( $backup_key, $content, $cache_group );
+		wp_cache_add( $backup_key, $content, $cache_group );
 
 		// So we can hook in other places and do stuff
 		do_action( 'wpcom_vip_remote_request_success', $url, $response );
 	}
 	// Okay, it wasn't successful. Perhaps we have a backup result from earlier.
 	elseif ( $content = wp_cache_get( $backup_key, $cache_group ) ) {
-		// If a remote request failed, log why it did
-		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			if ( $response && ! is_wp_error( $response ) ) {
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-			} elseif ( $response ) { // is WP_Error object
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-			}
-		}
-	}
-	// Legacy
-	elseif ( $content = wp_cache_get( $old_backup_key, $cache_group ) ) {
-		// If a remote request failed, log why it did
-		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			if ( $response && ! is_wp_error( $response ) ) {
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-			} elseif ( $response ) { // is WP_Error object
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-			}
-		}
-	}
-	// We were unable to fetch any content, so don't try again for another 60 seconds
-	elseif ( $response ) {
-		wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
+        //We found a backup copy,
+        if ( $server_up ){ //If we thought the server was up, let's store that it's not up for 60 seconds. We only do this if we thought the server was up so that we do retry every 1 minute.
+	        wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
+        }
 
 		// If a remote request failed, log why it did
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
 			if ( $response && ! is_wp_error( $response ) ) {
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
+				trigger_error ( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] . ' Backup content was found.', E_USER_WARNING );
+
 			} elseif ( $response ) { // is WP_Error object
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
+				trigger_error( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url  The result was: " . $response->get_error_message() . ' Backup content was found.' , E_USER_WARNING );
+			}
+		}
+	}
+	// We were unable to fetch any content AND we didn't find any backup cache key. Don't try again for another 60 seconds
+	elseif ( $response ) {
+		wp_cache_add( $disable_get_key, 1, $cache_group, 60 );
+
+		// If a remote request failed, log why it did
+		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
+			if ( $response && ! is_wp_error( $response ) ) {
+				trigger_error( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url Result was: " . $response['response']['code'] . ' ' . $response['response']['message']. ' Backup content was NOT found.', E_USER_WARNING );
+			} elseif ( $response ) { // is WP_Error object
+				trigger_error( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url Result was: " . $response->get_error_message() . ' Backup content was NOT found.', E_USER_WARNING );
 			}
 		}
 		// So we can hook in other places and do stuff
