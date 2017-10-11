@@ -27,7 +27,7 @@ if ( ! defined( 'VIP_GO_ENV' ) ) {
 	define( 'VIP_GO_ENV', false );
 }
 
-// For backwards compatibility - always true.
+// For backwards compatibility - always true on a VIP Go environment.
 if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
