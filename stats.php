@@ -4,7 +4,7 @@ namespace Automattic\VIP\Stats;
 
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
-	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
+	add_action( 'async_transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
 }
 
 /**
