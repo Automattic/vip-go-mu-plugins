@@ -1207,11 +1207,11 @@ function is_automattician( $user_id = false ) {
 	}
 
 	// Check that their address is an a8c one, *and* they have validated that address
-	if ( ! class_exists( 'WPCOM_VIP_Support_User' ) ) {
+	if ( ! class_exists( 'Automattic\VIP\Support_User\User' ) ) {
 		return false;
 	}
 
-	if ( WPCOM_VIP_Support_User::is_verified_automattician( $user->ID ) ) {
+	if ( \Automattic\VIP\Support_User\User::is_verified_automattician( $user->ID ) ) {
 		return true;
 	}
 
