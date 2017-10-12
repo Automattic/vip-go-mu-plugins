@@ -112,6 +112,13 @@ function wpcom_vip_cron_control_event_object_to_string( $event ) {
 }
 
 /**
+ * When Cron Control's Internal Event force-publishes posts that missed their scheduled time, enable async transitions
+ */
+function wpcom_vip_enable_async_actions_for_forced_posts( $pid ) {
+	Automattic\VIP\Async_Publish_Actions\_queue_async_hooks( 'publish', 'future', get_post( $pid ) );
+}
+
+/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
@@ -137,6 +144,11 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 */
 	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
 	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
+
+	/**
+	 * Queue async transition actions for force-published posts
+	 */
+	add_action( 'a8c_cron_control_published_post_that_missed_schedule', 'wpcom_vip_enable_async_actions_for_forced_posts' );
 
 	require_once __DIR__ . '/cron-control/cron-control.php';
 }
