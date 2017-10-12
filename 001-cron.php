@@ -4,7 +4,7 @@
  Plugin URI:
  Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
  Author: Erick Hitter, Automattic
- Version: 1.5
+ Version: 2.0
  Text Domain: automattic-cron-control
  */
 

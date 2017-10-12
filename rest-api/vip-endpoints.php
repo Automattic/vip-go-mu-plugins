@@ -65,11 +65,64 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 
 	/**
-	 * Some `/vip/` endpoints need to be accessible to requests from WordPress.com
+	 * Ensure `/vip/` endpoints are accessible to authenticated requests
+	 *
+	 * Circumvents any other authentication blocks and gives our method preference
 	 */
 	public function force_authorized_access( $result ) {
-		if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/wp-json/vip/v1/sites' ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
-			return true;
+		global $wp_rewrite;
+
+		if ( $wp_rewrite->using_permalinks() ) {
+			$rest_prefix = rest_get_url_prefix();
+
+			// Expected request.
+			$expected_namespace = get_rest_url( null, $this->namespace );
+			$expected_namespace = trailingslashit( $expected_namespace );
+			$expected_namespace = parse_url( $expected_namespace, PHP_URL_PATH );
+
+			// Actual request.
+			$request_parts = explode( '/', $_SERVER['REQUEST_URI'] );
+
+			// Drop undesirable leading bits to rebuild namespace from request.
+			foreach ( $request_parts as $key => $part ) {
+				if ( empty( $part ) || $rest_prefix === $part ) {
+					unset( $request_parts[ $key ] );
+				}
+			}
+
+			$request_parts = array_values( $request_parts );
+
+			// Rebuild namespace from request as a basic check.
+			$namespace = '';
+			if ( isset( $request_parts[0] ) && isset( $request_parts[1] ) ) {
+				$namespace = sprintf( '%1$s/%2$s', $request_parts[0], $request_parts[1] );
+			}
+
+			// Don't intercept requests not for our namespace.
+			if ( $namespace !== $this->namespace ) {
+				return $result;
+			}
+
+			$slashed_request = trailingslashit( $_SERVER['REQUEST_URI'] );
+
+			if ( 0 === strpos( $slashed_request, $expected_namespace ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
+				return true;
+			}
+		} else {
+			$query_args   = array();
+			$query_string = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_QUERY );
+			wp_parse_str( $query_string, $query_args );
+
+			if ( ! isset( $query_args['rest_route'] ) ) {
+				return $result;
+			}
+
+			$requested_route    = trailingslashit( $query_args['rest_route'] );
+			$expected_namespace = sprintf( '/%s/', $this->namespace );
+
+			if ( 0 === strpos( $requested_route, $expected_namespace ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
+				return true;
+			}
 		}
 
 		return $result;
