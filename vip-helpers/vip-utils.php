@@ -1234,36 +1234,6 @@ function is_proxied_automattician() {
 }
 
 /**
- * Disable New Relic's browser metrics
- *
- * Removes NR's JavaScript for tracking browser metrics, including page load times, Apdex score, and more.
- *
- * Must be called at or before the `template_redirect` action.
- */
-function wpcom_vip_disable_new_relic_js() {
-	if ( did_action( 'template_redirect' ) && ! doing_action( 'template_redirect' ) ) {
-		_doing_it_wrong( __FUNCTION__, 'New Relic&#8217;s browser tracking can only be disabled at or before the `template_redirect` action.', '1.0' );
-		return;
-	}
-
-	if ( function_exists( 'newrelic_disable_autorum' ) ) {
-		newrelic_disable_autorum();
-	}
-}
-
-/**
- * Add the exact URI to NewRelic tracking but only if we're not in the admin
- */
-function wpcom_vip_add_URI_to_newrelic(){
-	if ( ! is_admin() && function_exists( 'newrelic_add_custom_parameter' ) ){
-		newrelic_add_custom_parameter( 'REQUEST_URI', isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '' );
-		newrelic_add_custom_parameter( 'HTTP_REFERER', isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : '' );
-		newrelic_add_custom_parameter( 'HTTP_USER_AGENT', isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '' );
-	}
-}
-add_action( 'muplugins_loaded', 'wpcom_vip_add_URI_to_newrelic' );
-
-/**
  * Send a message to IRC
  *
  * $level can be an int of one of the following

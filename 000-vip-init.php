@@ -63,6 +63,7 @@ require_once( __DIR__ . '/000-debug/0-load.php' );
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
+require_once( __DIR__ . '/vip-helpers/vip-newrelic.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
 require_once( __DIR__ . '/vip-helpers/vip-roles.php' );
 require_once( __DIR__ . '/vip-helpers/vip-permastructs.php' );
