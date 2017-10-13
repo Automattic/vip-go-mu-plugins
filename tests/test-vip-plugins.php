@@ -51,6 +51,16 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		$this->assertEmpty( get_option( 'active_plugins' ) );
 
 		/**
+		 * Check that option is not empty
+		 */
+		update_option( 'active_plugins' , $this->option_active_plugins );
+
+		/**
+		 * Check that option is not empty
+		 */
+		$this->assertNotEmpty( get_option( 'active_plugins' ) );
+
+		/**
 		 * Setup the code activated plugins
 		 */
 		foreach ( $this->code_activated_plugins as $plugin ) {
@@ -63,23 +73,9 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $this->code_activated_plugins, wpcom_vip_get_loaded_plugins() );
 
 		/**
-		 * Check that option is not empty
-		 */
-		update_option( 'active_plugins' , $this->option_active_plugins );
-
-		/**
-		 * Check that option is not empty
-		 */
-		$this->assertNotEmpty( get_option( 'active_plugins' ) );
-
-		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
 		$merged_plugins = array_merge( wpcom_vip_get_filtered_loaded_plugins(), $this->option_active_plugins );
-		$merged_plugins_diff = array_diff( $merged_plugins, $this->code_activated_plugins );
-		print_r( $merged_plugins );
-		print_r( $merged_plugins_diff );
-		print_r( get_option( 'active_plugins' ) );
 		$this->assertEquals( $merged_plugins, get_option( 'active_plugins' ) );
 	}
 
