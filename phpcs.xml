@@ -10,6 +10,7 @@
 	<exclude-pattern>cron-control/*</exclude-pattern>
 	<exclude-pattern>debug-bar-cron/*</exclude-pattern>
 	<exclude-pattern>debug-bar/*</exclude-pattern>
+	<exclude-pattern>drop-ins/*</exclude-pattern>
 	<exclude-pattern>http-concat/*</exclude-pattern>
 	<exclude-pattern>jetpack/*</exclude-pattern>
 	<exclude-pattern>query-monitor/*</exclude-pattern>
