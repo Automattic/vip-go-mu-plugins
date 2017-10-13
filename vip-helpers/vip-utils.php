@@ -910,15 +910,25 @@ function wpcom_vip_bulk_user_management_whitelist( $users ) {
  *
  * @param string $url The URL that should be embedded
  * @param array $args Addtional arguments and parameters the embed
+ * @param int $ttl How long to cache for in seconds , minimum 18000 (5 Hours)
  * @return string
  */
-function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
+function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
+
+	//Set a Minimum of 5H (1800seconds)
+	//let's get a bit of variation in here to prevent stampedes.
+	//Set a max of 30 days after which memcache thinks you're giving it a timestamp.
+	if ( $ttl && $ttl > 5 * HOUR_IN_SECONDS && ( $ttl < (30 * MONTH_IN_MINUTES * 60) ) ){
+		$ttl = $ttl + rand( 0, HOUR_IN_SECONDS );
+	}else{
+		$ttl = rand( 5 * HOUR_IN_SECONDS, 6 * HOUR_IN_SECONDS );
+	}
+
 	$cache_key = md5( $url . '||' . serialize( $args ) );
 
 	if ( false === $html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' ) ) {
 		$html = wp_oembed_get( $url, $args );
-
-		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', 6 * HOUR_IN_SECONDS );
+		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', $ttl );
 	}
 
 	return $html;
