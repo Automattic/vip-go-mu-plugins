@@ -51,7 +51,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		$this->assertEmpty( get_option( 'active_plugins' ) );
 
 		/**
-		 * Check that option is not empty
+		 * Update the option with our list of active plugins
 		 */
 		update_option( 'active_plugins' , $this->option_active_plugins );
 
@@ -77,6 +77,22 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		 */
 		$merged_plugins = array_merge( wpcom_vip_get_filtered_loaded_plugins(), $this->option_active_plugins );
 		$this->assertEquals( $merged_plugins, get_option( 'active_plugins' ) );
+
+		/**
+		 * Check that updating the option is OK, add an extra plugin
+		 */
+		$plugin_change = array_merge( $this->option_active_plugins, array( 'amp-wp/amp.php' ) );
+		$option_update = update_option( 'active_plugins', $plugin_change );
+		$this->assertTrue( $option_update );
+
+		/**
+		 * Check that the option still makes sense again
+		 */
+		// emulates update
+		$track_plugin_change = array_diff( $plugin_change, wpcom_vip_get_filtered_loaded_plugins() );
+		// emulates get
+		$saved_plugins = array_merge( wpcom_vip_get_filtered_loaded_plugins(), $track_plugin_change );
+		$this->assertEquals( $saved_plugins, get_option( 'active_plugins' ) );
 	}
 
 	public function test__modify_network_active_plugins() {
