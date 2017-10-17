@@ -52,6 +52,14 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
 	}
 
+	public function get_queued_purge_urls() {
+		return $this->purge_urls;
+	}
+
+	public function clear_queued_purge_urls() {
+		$this->purge_urls = [];
+	}
+
 	public function get_manual_purge_link() {
 		if ( ! $this->can_purge_cache() ) {
 			return;
@@ -529,12 +537,15 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return bool True on success
 	 */
 	public function queue_purge_url( $url ) {
-		$url = esc_url_raw( $url );
-		$url = wp_http_validate_url( $url );
-		if ( false === $url ) {
+		$normalized_url = $this->normalize_purge_url( $url );
+		$is_valid_url = $this->is_valid_purge_url( $normalized_url );
+
+		if ( false === $is_valid_url ) {
+			trigger_error( sprintf( 'vip-cache-manager: Tried to PURGE invalid URL: %s', $url ), E_USER_WARNING );
 			return false;
 		}
-		$this->purge_urls[] = $url;
+
+		$this->purge_urls[] = $normalized_url;
 		return true;
 	}
 
@@ -554,6 +565,27 @@ class WPCOM_VIP_Cache_Manager {
 		) {
 			$this->queue_purge_url( get_permalink( $post_before ) );
 		}
+	}
+
+	protected function normalize_purge_url( $url ) {
+		$normalized_url = esc_url_raw( $url );
+
+		// Easy way to strip off query params and fragments since we don't have access to `http_build_url`.
+		$query_index = mb_strpos( $normalized_url, '?' );
+		if ( false !== $query_index ) {
+			$normalized_url = mb_substr( $normalized_url, 0, $query_index );
+		}
+
+		$fragment_index = mb_strpos( $normalized_url, '#' );
+		if ( false !== $fragment_index ) {
+			$normalized_url = mb_substr( $normalized_url, 0, $fragment_index );
+		}
+
+		return $normalized_url;
+	}
+
+	protected function is_valid_purge_url( $url ) {
+		return wp_http_validate_url( $url );
 	}
 
 	private function can_purge_cache() {
