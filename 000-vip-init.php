@@ -27,7 +27,8 @@ if ( ! defined( 'VIP_GO_ENV' ) ) {
 	define( 'VIP_GO_ENV', false );
 }
 
-// For backwards compatibility - always true.
+// On VIP Go environments this will already be set to true in wp-config.php
+// Default to false for other environments, e.g. local development
 if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
