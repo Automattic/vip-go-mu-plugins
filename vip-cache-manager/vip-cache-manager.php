@@ -11,6 +11,9 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 require_once( __DIR__ . '/api.php' );
 
 class WPCOM_VIP_Cache_Manager {
+	const MAX_PURGE_URLS = 100;
+	const MAX_BAN_URLS   = 10;
+
 	private $ban_urls = array();
 	private $purge_urls = array();
 	private $site_cache_purged = false;
@@ -246,6 +249,18 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 */
 		do_action( 'wpcom_vip_cache_pre_execute_bans', $this->ban_urls );
+
+		$num_ban_urls = count( $this->ban_urls );
+		$num_purge_urls = count( $this->purge_urls );
+		if ( $num_ban_urls > self::MAX_BAN_URLS ) {
+			trigger_error( sprintf( 'vip-cache-manager: Trying to BAN too many URLs (total count %s); limiting count to %d', number_format( $num_ban_urls ), self::MAX_BAN_URLS ), E_USER_WARNING );
+			array_splice( $this->ban_urls, self::MAX_BAN_URLS );
+		}
+
+		if ( $num_purge_urls > self::MAX_PURGE_URLS ) {
+			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), self::MAX_PURGE_URLS ), E_USER_WARNING );
+			array_splice( $this->purge_urls, self::MAX_PURGE_URLS );
+		}
 
 		$requests = array();
 		foreach( (array) $this->ban_urls as $url )
