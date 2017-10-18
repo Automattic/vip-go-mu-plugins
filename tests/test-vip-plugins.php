@@ -22,6 +22,8 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 			'shortcake/shortcode-ui.php',
 		];
 
+		sort( $this->option_active_plugins );
+
 		// emulate the network active plugins option
 		$this->option_active_sitewide_plugins = [
 			'hello.php' => 1507904134,
@@ -30,6 +32,8 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 			'shortcake/shortcode-ui.php' => 1507904134,
 		];
 
+		ksort( $this->option_active_sitewide_plugins );
+
 		// emulate the code activated plugins array
 		$this->code_activated_plugins = [
 			'shared-plugins/two-factor/two-factor.php',
@@ -37,13 +41,26 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 			'plugins/msm-sitemap/msm-sitemap.php',
 			'shared-plugins/vip-go-elasticsearch/vip-go-elasticsearch.php',
 		];
-	}
 
-	public function test__modify_active_plugins() {
+		/**
+		 * Clear global of code activated plugins from previous test
+		 */
+		global $vip_loaded_plugins;
+		$vip_loaded_plugins = array();
+
 		/**
 		 * Set active_plugins to empty to start the test
 		 */
 		update_option( 'active_plugins', [] );
+
+		/**
+		 * Set active_sitewide_plugins to empty to start the test
+		 */
+		update_site_option( 'active_sitewide_plugins', [] );
+	}
+
+	public function test__modify_active_plugins() {
+		global $wpdb;
 
 		/**
 		 * Ensure the values are indeed empty
@@ -56,9 +73,9 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		update_option( 'active_plugins' , $this->option_active_plugins );
 
 		/**
-		 * Check that option is not empty
+		 * Check that option matches what we started with
 		 */
-		$this->assertNotEmpty( get_option( 'active_plugins' ) );
+		$this->assertEquals( $this->option_active_plugins, get_option( 'active_plugins' ), 'The value of `$option_active_plugins` does not match the returned value of `get_option( \'active_plugins\')`.' );
 
 		/**
 		 * Setup the code activated plugins
@@ -70,47 +87,47 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that list of code activated plugins matches the mocked data
 		 */
-		$this->assertEquals( $this->code_activated_plugins, wpcom_vip_get_loaded_plugins() );
+		$this->assertEquals( $this->code_activated_plugins, wpcom_vip_get_loaded_plugins(), 'The value of `$code_activated_plugins` does not match the returned value of `wpcom_vip_get_loaded_plugins()`.' );
 
 		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
-		$merged_plugins = array_merge( wpcom_vip_get_filtered_loaded_plugins(), $this->option_active_plugins );
-		$this->assertEquals( $merged_plugins, get_option( 'active_plugins' ) );
+		$merged_plugins = array_merge( $this->option_active_plugins, wpcom_vip_get_filtered_loaded_plugins() );
+		sort( $merged_plugins );
+		$this->assertEquals( $merged_plugins, get_option( 'active_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_option( \'active_plugins\')`.' );
 
 		/**
 		 * Check that updating the option is OK, add an extra plugin
 		 */
-		$plugin_change = array_merge( $this->option_active_plugins, array( 'amp-wp/amp.php' ) );
+		$plugin_change = array_merge( get_option( 'active_plugins' ) , array( 'amp-wp/amp.php' ) );
 		$option_update = update_option( 'active_plugins', $plugin_change );
 		$this->assertTrue( $option_update );
 
 		/**
+		 * Check the raw value in the DB matches what we sent above - skips any filters
+		 */
+		$option_db = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", 'active_plugins' ) );
+		if ( is_object( $option_db ) ) {
+			$option_db = maybe_unserialize( $option_db->option_value );
+		}
+		sort( $plugin_change );
+		$this->assertEquals( $plugin_change, $option_db, 'The database value `$option_db` does not match `$plugin_change`.' );
+
+		/**
 		 * Check that the option still makes sense again
 		 */
-		// emulates update
-		$track_plugin_change = array_diff( $plugin_change, wpcom_vip_get_filtered_loaded_plugins() );
-		// emulates get
-		$saved_plugins = array_merge( wpcom_vip_get_filtered_loaded_plugins(), $track_plugin_change );
-		$this->assertEquals( $saved_plugins, get_option( 'active_plugins' ) );
+		$saved_plugins = array_merge( $plugin_change, wpcom_vip_get_filtered_loaded_plugins() );
+		sort( $saved_plugins );
+		$this->assertEquals( $saved_plugins, get_option( 'active_plugins' ), 'The value of `$saved_plugins` does not match the returned value of `get_option( \'active_plugins\')`.' );
 	}
 
 	public function test__modify_network_active_plugins() {
+		global $wpdb;
+
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Not relevant on single-site' );
 			return;
 		}
-
-		/**
-		 * Clear global of code activated plugins from previous test
-		 */
-		global $vip_loaded_plugins;
-		$vip_loaded_plugins = array();
-
-		/**
-		 * Set active_sitewide_plugins to empty to start the test
-		 */
-		update_site_option( 'active_sitewide_plugins', [] );
 
 		/**
 		 * Ensure the values are indeed empty
@@ -125,7 +142,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that option is not empty
 		 */
-		$this->assertNotEmpty( get_site_option( 'active_sitewide_plugins' ) );
+		$this->assertEquals( $this->option_active_sitewide_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$option_active_sidewide_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 
 		/**
 		 * Setup the code activated plugins
@@ -137,13 +154,14 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that list of code activated plugins matches the mocked data
 		 */
-		$this->assertEquals( $this->code_activated_plugins, wpcom_vip_get_loaded_plugins() );
+		$this->assertEquals( $this->code_activated_plugins, wpcom_vip_get_loaded_plugins(), 'The value of `$code_activated_plugins` does not match the returned value of `wpcom_vip_get_loaded_plugins()`.' );
 
 		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
 		$merged_plugins = array_merge( wpcom_vip_get_network_filtered_loaded_plugins(), $this->option_active_sitewide_plugins );
-		$this->assertEquals( $merged_plugins, get_site_option( 'active_sitewide_plugins' ) );
+		ksort( $merged_plugins );
+		$this->assertEquals( $merged_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 
 		/**
 		 * Check that updating the option is OK, add an extra plugin
@@ -153,12 +171,20 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		$this->assertTrue( $option_update );
 
 		/**
+		 * Check the raw value in the DB matches what we sent above - skips any filters
+		 */
+		$option_db = $wpdb->get_row( $wpdb->prepare( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = %s LIMIT 1", 'active_sitewide_plugins' ) );
+		if ( is_object( $option_db ) ) {
+			$option_db = maybe_unserialize( $option_db->meta_value );
+		}
+		ksort( $plugin_change );
+		$this->assertEquals( $plugin_change, $option_db, 'The database value `$option_db` does not match `$plugin_change`.' );
+
+		/**
 		 * Check that the option still makes sense again
 		 */
-		// emulates update
-		$track_plugin_change = array_diff( $plugin_change, wpcom_vip_get_network_filtered_loaded_plugins() );
-		// emulates get
-		$saved_plugins = array_merge( wpcom_vip_get_network_filtered_loaded_plugins(), $track_plugin_change );
-		$this->assertEquals( $saved_plugins, get_site_option( 'active_sitewide_plugins' ) );
+		$saved_plugins = array_merge( wpcom_vip_get_network_filtered_loaded_plugins(), $plugin_change );
+		ksort( $saved_plugins );
+		$this->assertEquals( $saved_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 	}
 }

@@ -13,18 +13,26 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 		$url_for_featured_plugins = 'https://vip.wordpress.com/wp-json/vip/v1/plugins?type=technology';
 		$response = vip_safe_wp_remote_get( $url_for_featured_plugins, false, 3, 5 );
 
+		if ( ! $response ) {
+			trigger_error( 'The API on vip.wordpress.com is not responding (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
+		}
+
+		if ( is_wp_error( $response ) ) {
+			trigger_error( 'The API on vip.wordpress.com is not responding (' . esc_url( $url_for_featured_plugins ) . '): ' . esc_html( $response->get_error_message() ), E_USER_WARNING );
+		}
+
 		if ( ! $response || is_wp_error( $response ) ) {
-			trigger_error( 'The API on vip.wordpress.com is not responding (' . esc_url( $url_for_featured_plugins ) . ')' );
-			return false;
+			wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', MINUTE_IN_SECONDS );
+		} else {
+			$plugins = json_decode( $response['body'] );
+
+			if ( empty( $plugins ) ) {
+				trigger_error( 'The API on vip.wordpress.com returned empty data (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
+				wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', MINUTE_IN_SECONDS );
+			} else {
+				wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', HOUR_IN_SECONDS * 4 );
+			}
 		}
-
-		$plugins = json_decode( $response['body'] );
-
-		if ( empty( $plugins ) ) {
-			return false;
-		}
-
-		wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', HOUR_IN_SECONDS * 4 );
 	}
 
 	return $plugins;
@@ -32,7 +40,8 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 
 /**
  * Render the featured partner plugins to the plugins screenReaderText
- * Uses the notice hooks as that is all we have on these pages
+ * Uses the admin_notice hooks as that is all we have on these pages
+ * Priority set to 99 to push further down the page
  *
  * @return null
  */
@@ -45,13 +54,18 @@ function wpcom_vip_render_vip_featured_plugins() {
 
 	$plugins = wpcom_vip_fetch_vip_featured_plugins();
 
-	if ( ! $plugins ) {
+	if ( empty( $plugins ) ) {
+		?>
+		<div class="notice notice-error">
+			<p><?php _e( 'Unable to load VIP featured plugins.', 'vip-plugins-dashboard' ); ?></p>
+		</div>
+		<?php
 		return;
 	}
 
 	?>
 	<div class="featured-plugins notice">
-		<h3><?php _e( 'VIP Featured Plugins', 'vip-dashboard' ); ?></h3>
+		<h3><?php _e( 'VIP Featured Plugins', 'vip-plugins-dashboard' ); ?></h3>
 		<?php
 		foreach ( $plugins as $key => $plugin ) {
 			?>
@@ -65,7 +79,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 					<div class="fp-overlay-inner">
 						<div class="fp-overlay-cell">
 							<span>	
-								<?php _e( 'More Information', 'vip-dashboard' ); ?>
+								<?php _e( 'More Information', 'vip-plugins-dashboard' ); ?>
 							</span>
 						</div>
 					</div>
@@ -81,7 +95,7 @@ add_action( 'admin_notices', 'wpcom_vip_render_vip_featured_plugins', 99 );
 add_action( 'network_admin_notices', 'wpcom_vip_render_vip_featured_plugins', 99 );
 
 /**
- * Returns a filtered list of code activated plugins similar to core plugins Option
+ * Returns a filtered list of code activated plugins similar to core plugins option
  *
  * @return array list of filtered plugins
  */
@@ -89,6 +103,7 @@ function wpcom_vip_get_filtered_loaded_plugins() {
 	$code_plugins = wpcom_vip_get_loaded_plugins();
 	foreach ( $code_plugins as $key => $plugin ) {
 		if ( substr( $plugin, 0, 8 ) === 'plugins/' ) {
+			// /plugins removed from each $plugin to match core active_plugins option
 			$code_plugins[ $key ] = preg_replace( '/^(plugins\/)/i', '', $plugin );
 		} else {
 			unset( $code_plugins[ $key ] );
@@ -107,6 +122,7 @@ function wpcom_vip_get_network_filtered_loaded_plugins() {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
 	foreach ( $code_plugins as $key => $plugin ) {
 		unset( $code_plugins[ $key ] );
+		// added stable timestamp, ensures this returns a similar array to the site option: active_sitewide_plugins
 		$code_plugins[ $plugin ] = filemtime( __FILE__ );
 	}
 
@@ -131,7 +147,7 @@ function wpcom_vip_plugin_action_links( $actions, $plugin_file, $plugin_data, $c
 		if ( array_key_exists( 'deactivate', $actions ) ) {
 			unset( $actions['deactivate'] );
 		}
-		$actions['vip-code-activated-plugin'] = __( 'Enabled via code', 'vip-dashboard' );
+		$actions['vip-code-activated-plugin'] = __( 'Enabled via code', 'vip-plugins-dashboard' );
 
 		if ( 'plugins' === $screen->id ) {
 			unset( $actions['network_active'] );
@@ -152,7 +168,12 @@ add_filter( 'network_admin_plugin_action_links', 'wpcom_vip_plugin_action_links'
  */
 function wpcom_vip_option_active_plugins( $value, $option ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
-	$value = array_merge( $code_plugins, $value );
+
+	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
+		$value = array_merge( $value, $code_plugins );
+	}
+
+	sort( $value );
 
 	return $value;
 }
@@ -167,7 +188,19 @@ add_filter( 'option_active_plugins', 'wpcom_vip_option_active_plugins', 10, 2 );
  */
 function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 	$code_plugins = wpcom_vip_get_network_filtered_loaded_plugins();
-	$value = array_merge( $code_plugins, $value );
+
+	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
+		// removes duplicates
+		foreach ( $code_plugins as $key => $plugin ) {
+			if ( array_key_exists( $key, $value ) ) {
+				unset( $code_plugins[ $key ] );
+			}
+		}
+
+		$value = array_merge( $value, $code_plugins );
+	}
+
+	ksort( $value );
 
 	return $value;
 
@@ -184,7 +217,19 @@ add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active
  */
 function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
-	$value = array_diff( $value, $code_plugins );
+
+	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
+		// removes duplicates
+		foreach ( $code_plugins as $key => $plugin ) {
+			if ( in_array( $plugin, $value, true ) ) {
+				unset( $code_plugins[ $key ] );
+			}
+		}
+
+		$value = array_diff( $value, $code_plugins );
+	}
+
+	sort( $value );
 
 	return $value;
 }
@@ -201,7 +246,19 @@ add_filter( 'pre_update_option_active_plugins', 'wpcom_vip_pre_update_option_act
  */
 function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_value, $option, $network_id ) {
 	$code_plugins = wpcom_vip_get_network_filtered_loaded_plugins();
-	$value = array_diff( $value, $code_plugins );
+
+	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
+		// removes duplicates
+		foreach ( $code_plugins as $key => $plugin ) {
+			if ( array_key_exists( $key, $value ) ) {
+				unset( $code_plugins[ $key ] );
+			}
+		}
+
+		$value = array_diff( $value, $code_plugins );
+	}
+
+	ksort( $value );
 
 	return $value;
 }
@@ -215,8 +272,8 @@ add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_upd
 function wpcom_vip_plugins_ui_admin_enqueue_scripts() {
 	$screen = get_current_screen();
 	if ( 'plugins' === $screen->id || 'plugins-network' === $screen->id ) {
-		wp_enqueue_style( 'vip-plugins-style', WP_CONTENT_URL . '/mu-plugins/' . basename( __DIR__ ) . '/css/plugins-ui.css' , '3.0' );
-		wp_enqueue_script( 'vip-plugins-script', WP_CONTENT_URL . '/mu-plugins/' . basename( __DIR__ ) . '/js/plugins-ui.js', array( 'jquery' ), '3.0', true );
+		wp_enqueue_style( 'vip-plugins-style', plugins_url( '/css/plugins-ui.css', __FILE__ ) , array(), '3.0' );
+		wp_enqueue_script( 'vip-plugins-script', plugins_url( '/js/plugins-ui.js', __FILE__ ), array( 'jquery' ), '3.0', true );
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wpcom_vip_plugins_ui_admin_enqueue_scripts' );
