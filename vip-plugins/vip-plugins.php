@@ -173,7 +173,9 @@ function wpcom_vip_option_active_plugins( $value, $option ) {
 		$value = array_merge( $value, $code_plugins );
 	}
 
-	sort( $value );
+	if ( ! empty( $value ) ) {
+		sort( $value );
+	}
 
 	return $value;
 }
@@ -200,7 +202,9 @@ function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 		$value = array_merge( $value, $code_plugins );
 	}
 
-	ksort( $value );
+	if ( ! empty( $value ) ) {
+		ksort( $value );
+	}
 
 	return $value;
 
