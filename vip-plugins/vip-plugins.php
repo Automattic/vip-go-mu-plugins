@@ -47,7 +47,7 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 function wpcom_vip_render_vip_featured_plugins() {
 	$screen = get_current_screen();
 
-	if ( ! ( 'plugins' === $screen->id || 'plugins-network' === $screen->id ) ) {
+	if ( 'plugins' !== $screen->id && 'plugins-network' !== $screen->id ) {
 		return;
 	}
 
