@@ -41,7 +41,6 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 /**
  * Render the featured partner plugins to the plugins screenReaderText
  * Uses the admin_notice hooks as that is all we have on these pages
- * Priority set to 99 to push further down the page
  *
  * @return null
  */
@@ -91,6 +90,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 	</div>
 	<?php
 }
+// Priority set to 99 to push further down the page and to the bottom of other notices
 add_action( 'admin_notices', 'wpcom_vip_render_vip_featured_plugins', 99 );
 add_action( 'network_admin_notices', 'wpcom_vip_render_vip_featured_plugins', 99 );
 
@@ -233,7 +233,9 @@ function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option
 		$value = array_diff( $value, $code_plugins );
 	}
 
-	sort( $value );
+	if ( ! empty( $value ) ) {
+		sort( $value );
+	}
 
 	return $value;
 }
@@ -262,7 +264,9 @@ function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_
 		$value = array_diff( $value, $code_plugins );
 	}
 
-	ksort( $value );
+	if ( ! empty( $value ) ) {
+		ksort( $value );
+	}
 
 	return $value;
 }
