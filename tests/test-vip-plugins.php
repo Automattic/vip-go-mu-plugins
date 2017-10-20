@@ -106,10 +106,8 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check the raw value in the DB matches what we sent above - skips any filters
 		 */
-		$option_db = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", 'active_plugins' ) );
-		if ( is_object( $option_db ) ) {
-			$option_db = maybe_unserialize( $option_db->option_value );
-		}
+		$option_db = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'active_plugins' LIMIT 1" );
+		$option_db = maybe_unserialize( $option_db );
 		sort( $plugin_change );
 		$this->assertEquals( $plugin_change, $option_db, 'The database value `$option_db` does not match `$plugin_change`.' );
 
@@ -173,10 +171,8 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check the raw value in the DB matches what we sent above - skips any filters
 		 */
-		$option_db = $wpdb->get_row( $wpdb->prepare( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = %s LIMIT 1", 'active_sitewide_plugins' ) );
-		if ( is_object( $option_db ) ) {
-			$option_db = maybe_unserialize( $option_db->meta_value );
-		}
+		$option_db = $wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'active_sitewide_plugins' LIMIT 1" );
+		$option_db = maybe_unserialize( $option_db );
 		ksort( $plugin_change );
 		$this->assertEquals( $plugin_change, $option_db, 'The database value `$option_db` does not match `$plugin_change`.' );
 
