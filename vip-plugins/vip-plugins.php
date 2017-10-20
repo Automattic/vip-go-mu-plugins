@@ -285,3 +285,17 @@ function wpcom_vip_plugins_ui_admin_enqueue_scripts() {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wpcom_vip_plugins_ui_admin_enqueue_scripts' );
+
+/**
+ * Restore shared plugin loading - this function was brought over from vip-dashboard
+ * Until our protected plugins are moved/retired we will need to keep this in place
+ * See wpcom_vip_load_plugin / wpcom_vip_can_use_shared_plugin for more context
+ */
+function wpcom_vip_include_active_plugins() {
+	$retired_plugins_option = get_option( 'wpcom_vip_active_plugins', array() );
+
+	foreach ( $retired_plugins_option as $plugin ) {
+		 wpcom_vip_load_plugin( $plugin );
+	}
+}
+add_action( 'plugins_loaded', 'wpcom_vip_include_active_plugins', 5 );
