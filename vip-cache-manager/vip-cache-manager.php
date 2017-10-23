@@ -428,6 +428,17 @@ class WPCOM_VIP_Cache_Manager {
 	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
 	 */
 	public function queue_terms_purges( $ids, $taxonomy ) {
+		$taxonomy_object = get_taxonomy( $taxonomy );
+		if ( ! $taxonomy_object ) {
+			return;
+		}
+
+		if ( false === $taxonomy_object->public
+			&& false === $taxonomy_object->publicly_queryable
+			&& false === $taxonomy_object->show_in_rest ) {
+			return;
+		}
+
 		$get_term_args = array(
 			'taxonomy'    => $taxonomy,
 			'include'     => $ids,
