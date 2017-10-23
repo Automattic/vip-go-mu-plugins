@@ -306,6 +306,9 @@ class WPCOM_VIP_REST_API_Endpoints {
 			$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
 		}
 
+		// add constant to endpoint
+		$all_plugins['disable-shared-plugins'] = ( defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) && true === WPCOM_VIP_DISABLE_SHARED_PLUGINS ) ? true : false;
+
 		return $all_plugins;
 	}
 }
