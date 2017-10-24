@@ -1043,7 +1043,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	}
 
 	if ( $includepath && file_exists( $includepath ) ) {
-		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}" );
+		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}/{$file}" );
 
 		return _wpcom_vip_include_plugin( $includepath );
 	} else {

@@ -16,15 +16,9 @@
 [submodule "http-concat"]
 	path = http-concat
 	url = git@github.com:Automattic/nginx-http-concat.git
-[submodule "shared-plugins/fieldmanager"]
-	path = shared-plugins/fieldmanager
-	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
 [submodule "query-monitor"]
 	path = query-monitor
 	url = git@github.com:johnbillion/query-monitor.git
-[submodule "shared-plugins/msm-sitemap"]
-	path = shared-plugins/msm-sitemap
-	url = git@github.com:Automattic/msm-sitemap.git
 [submodule "cron-control"]
 	path = cron-control
 	url = git@github.com:Automattic/Cron-Control.git
