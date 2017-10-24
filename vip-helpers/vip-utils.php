@@ -917,7 +917,9 @@ function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 	// We want a min ttl of 5 hours (1800s).
 	// And a max of 30 days (after which memcache thinks you're giving it a timestamp).
 	// Let's also add a bit of variation to prevent stampedes.
-	if ( $ttl && $ttl > 5 * HOUR_IN_SECONDS && ( $ttl < MONTH_IN_SECONDS ) ) {
+	if ( $ttl
+		&& $ttl > ( 5 * HOUR_IN_SECONDS )
+		&& $ttl < ( MONTH_IN_SECONDS - HOUR_IN_SECONDS ) ) {
 		$ttl = $ttl + rand( 0, HOUR_IN_SECONDS );
 	} else {
 		$ttl = rand( 5 * HOUR_IN_SECONDS, 6 * HOUR_IN_SECONDS );
