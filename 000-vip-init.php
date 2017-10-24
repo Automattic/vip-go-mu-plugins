@@ -95,11 +95,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
-// Add Automattic's custom header
-add_action( 'send_headers', function() {
-	if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
-		header( "X-hacker: If you're reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header." );
-	}
+// Add custom header for VIP
+add_filter( 'wp_headers', function( $headers ) {
+	$headers['X-hacker'] = 'If you\'re reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header.';
+	$headers['X-Powered-By'] = 'WordPress.com VIP <https://vip.wordpress.com>';
+
+	return $headers;
 } );
 
 do_action( 'vip_loaded' );
