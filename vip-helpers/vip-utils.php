@@ -925,12 +925,11 @@ function wpcom_vip_wp_oembed_get( $url, $args = array() ) {
 }
 
 /**
- * Loads a plugin out of our shared plugins directory.
+ * Loads a plugin from your plugins folder.
  *
  * Note - This function does not trigger plugin activation / deactivation hooks.
  * As such, it may not be compatible with all plugins
  *
- * @link http://lobby.vip.wordpress.com/plugins/ VIP Shared Plugins
  * @param string $plugin Optional. Plugin folder name of the plugin, or the folder and
  * plugin file name (such as wp-api/plugin.php), relative to either the VIP shared-plugins folder, or WP_PLUGIN_DIR
  * @param string $folder Subdirectory of WP_PLUGIN_DIR to load plugin from
@@ -943,6 +942,13 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		if ( ! WPCOM_IS_VIP_ENV ) {
 			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
 		}
+	}
+
+	// Shared plugins are being deprecated.
+	// This can be removed once shared plugins have all been removed.
+	// https://vip.wordpress.com/documentation/vip-go/deprecating-shared-plugins-on-vip-go/
+	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
+		define( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS', true );
 	}
 
 	// Is it a plugin file with multiple directories? Not supported. _could_ be supported
