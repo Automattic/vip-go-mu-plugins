@@ -1061,8 +1061,8 @@ class Akismet_Admin {
 		if ( !$xml->isError() ) {
 			$responses = $xml->getResponse();
 			if ( count( $responses ) > 1 ) {
-				$api_key = array_shift( $responses[0] );
-				$user_id = (int) array_shift( $responses[1] );
+				$user_id = (int) array_shift( $responses[0] );
+				$api_key = array_shift( $responses[1] );
 				return compact( 'api_key', 'user_id' );
 			}
 		}
