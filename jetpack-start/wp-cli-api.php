@@ -10,6 +10,9 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
+	 * [--confirm]
+	 * : Flag to confirm that we really do want to cancel
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp jetpack-start api cancel
@@ -19,6 +22,11 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$this->validate_constants_or_die();
 
 		WP_CLI::line( '- Cancelling Jetpack plan for site' );
+
+		$confirm = WP_CLI\Utils\get_flag_value( $assoc_args, 'confirm', false );
+		if ( ! $confirm ) {
+			return WP_CLI::error( 'Are you really sure you want to cancel? This should only be done if you are having issues connecting to Jetpack and need a nuclear option. If you\'re really sure, please re-run this command with the `--confirm` flag.' );
+		}
 
 		$data = $this->run_jetpack_bin( 'partner-cancel.sh' );
 
