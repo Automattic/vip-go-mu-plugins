@@ -1062,8 +1062,6 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 function wpcom_vip_can_use_shared_plugin( $plugin ) {
 	// Array of shared plugins we are not deprecating
 	$protected_shared_plugins = array(
-		'two-factor',
-		'jetpack-force-2fa',
 		'vip-go-elasticsearch',
 	);
 
