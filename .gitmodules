@@ -28,3 +28,9 @@
 [submodule "drop-ins/object-cache"]
 	path = drop-ins/object-cache
 	url = git@github.com:Automattic/wp-memcached.git
+[submodule "wpcom-vip-two-factor/two-factor"]
+	path = wpcom-vip-two-factor/two-factor
+	url = git@github.com:georgestephanis/two-factor.git
+[submodule "wpcom-vip-two-factor/jetpack-force-2fa"]
+	path = wpcom-vip-two-factor/jetpack-force-2fa
+	url = git@github.com:Automattic/jetpack-force-2fa.git
