@@ -534,7 +534,9 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		/**
-		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd
+		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd.
+		 *
+		 * This is the taxonomy-agnostic version of the filter.
 		 *
 		 * Developers can hook this filter and check the term being purged in order
 		 * to also purge related URLs, e.g. feeds.
@@ -545,10 +547,31 @@ class WPCOM_VIP_Cache_Manager {
 		 * during initial code review and pre-deployment review where we
 		 * see issues.
 		 *
-		 * @param array $this->purge_urls {
+		 * @param array $term_purge_urls {
 		 *     An array of URLs for you to add to
 		 * }
-		 * @param type  $term_id The ID of the term which is the primary reason for the purge
+		 * @param int    $term_id The ID of the term
+		 */
+		$term_purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $term_purge_urls, $term->term_id );
+
+		/**
+		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd
+		 *
+		 * This is the taxonomy-specific version of the filter.
+		 *
+		 * Developers can hook this filter and check the term being purged in order
+		 * to also purge related URLs, e.g. feeds.
+		 *
+		 * PLEASE NOTE: Your site benefits from the performance that our HTTP
+		 * Reverse Proxy Caching provides, and purging URLs from that cache
+		 * should be done cautiously. VIP may push back on use of this filter
+		 * during initial code review and pre-deployment review where we
+		 * see issues.
+		 *
+		 * @param array $term_purge_urls {
+		 *     An array of URLs for you to add to
+		 * }
+		 * @param int  $term_id The ID of the term which is the primary reason for the purge
 		 */
 		$term_purge_urls = apply_filters( "wpcom_vip_cache_purge_{$taxonomy_name}_term_urls", $term_purge_urls, $term->term_id );
 
