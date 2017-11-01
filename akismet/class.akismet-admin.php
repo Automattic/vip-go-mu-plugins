@@ -1061,8 +1061,22 @@ class Akismet_Admin {
 		if ( !$xml->isError() ) {
 			$responses = $xml->getResponse();
 			if ( count( $responses ) > 1 ) {
-				$user_id = (int) array_shift( $responses[0] );
-				$api_key = array_shift( $responses[1] );
+				// Due to a quirk in how Jetpack does multi-calls, the response order
+				// can't be trusted to match the call order. It's a good thing our
+				// return values can be mostly differentiated from each other.
+				$first_response_value = array_shift( $responses[0] );
+				$second_response_value = array_shift( $responses[1] );
+
+				// If WPCOM ever reaches 100 billion users, this will fail. :-)
+				if ( preg_match( '/^[a-f0-9]{12}$/i', $first_response_value ) ) {
+					$api_key = $first_response_value;
+					$user_id = (int) $second_response_value;
+				}
+				else {
+					$api_key = $second_response_value;
+					$user_id = (int) $first_response_value;
+				}
+
 				return compact( 'api_key', 'user_id' );
 			}
 		}
