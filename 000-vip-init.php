@@ -22,6 +22,8 @@ if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 	die( 'ok' );
 }
 
+// Sites can be blocked for various reasons - usually maintenance, so exit
+// early if the constant has been set (defined by VIP Go in config/wp-config.php)
 if ( defined( 'VIP_GO_SITE_BLOCKED' ) && VIP_GO_SITE_BLOCKED ) {
 	http_response_code( 503 );
 
