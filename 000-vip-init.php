@@ -24,7 +24,9 @@ if ( defined( 'VIP_GO_SITE_BLOCKED' ) && VIP_GO_SITE_BLOCKED ) {
 
 	http_response_code( 503 );
 
-	die( 'Site is currently under maintenance' );
+	echo file_get_contents( __DIR__ . '/errors/site-blocked.html' );
+
+	exit;
 }
 
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
