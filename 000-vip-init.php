@@ -9,19 +9,20 @@
  * good reason not to.
  */
 
-if ( defined( 'VIP_GO_SITE_BLOCKED' ) && VIP_GO_SITE_BLOCKED ) {
-	if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
-		if ( function_exists( 'newrelic_end_transaction' ) ) {
-			// Discard the transaction (the `true` param)
-			// See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
-			newrelic_end_transaction( true );
-		}
-
-		http_response_code( 200 );
-
-		die( 'ok (site blocked)' );
+// Execute the healthcheck as quickly as possible
+if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+	if ( function_exists( 'newrelic_end_transaction' ) ) {
+		// Discard the transaction (the `true` param)
+		// See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
+		newrelic_end_transaction( true );
 	}
 
+	http_response_code( 200 );
+
+	die( 'ok' );
+}
+
+if ( defined( 'VIP_GO_SITE_BLOCKED' ) && VIP_GO_SITE_BLOCKED ) {
 	http_response_code( 503 );
 
 	echo file_get_contents( __DIR__ . '/errors/site-blocked.html' );
