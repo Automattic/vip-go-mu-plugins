@@ -9,6 +9,24 @@
  * good reason not to.
  */
 
+if ( defined( 'VIP_GO_SITE_BLOCKED' ) && VIP_GO_SITE_BLOCKED ) {
+	if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+		if ( function_exists( 'newrelic_end_transaction' ) ) {
+			// Discard the transaction (the `true` param)
+			// See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
+			newrelic_end_transaction( true );
+		}
+
+		http_response_code( 200 );
+
+		die( 'ok (site blocked)' );
+	}
+
+	http_response_code( 503 );
+
+	die( 'Site is currently under maintenance' );
+}
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
