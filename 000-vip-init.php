@@ -24,13 +24,19 @@ if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 
 // Sites can be blocked for various reasons - usually maintenance, so exit
 // early if the constant has been set (defined by VIP Go in config/wp-config.php)
-if ( ( defined( 'WPCOM_VIP_SITE_BLOCKED' ) && WPCOM_VIP_SITE_BLOCKED ) &&
-	( ! defined( 'WP_CLI' ) || ! WP_CLI ) ) {
-	http_response_code( 503 );
+if ( defined( 'WPCOM_VIP_SITE_BLOCKED' ) && WPCOM_VIP_SITE_BLOCKED ) {
+	// WP CLI is allowed, but disable cron
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
+			return 1;
+		});
+	} else {
+		http_response_code( 503 );
 
-	echo file_get_contents( __DIR__ . '/errors/site-blocked.html' );
+		echo file_get_contents( __DIR__ . '/errors/site-blocked.html' );
 
-	exit;
+		exit;
+	}
 }
 
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
