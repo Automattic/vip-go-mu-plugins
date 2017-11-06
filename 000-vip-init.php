@@ -33,7 +33,7 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 	} else {
 		http_response_code( 503 );
 
-		echo file_get_contents( __DIR__ . '/errors/site-blocked.html' );
+		echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
 
 		exit;
 	}
