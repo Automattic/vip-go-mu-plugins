@@ -29,7 +29,7 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
 			return 1;
-		});
+		}, 9999 );
 	} else {
 		http_response_code( 503 );
 
