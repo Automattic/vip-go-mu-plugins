@@ -55,6 +55,3 @@ function enforce_rest_api_read_ttl( $response, $rest_server, $request ) {
 function set_rest_response_ttl( \WP_REST_Response $response, $ttl ) {
 	$response->header( 'Cache-Control', sprintf( 'max-age=%d', $ttl ) );
 }
-
-// Let's do it!
-init();
