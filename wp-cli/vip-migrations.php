@@ -5,6 +5,21 @@ use \WP_CLI\Utils;
 class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 	/**
+	 * Run cleanup on the current site database.
+	 *
+	 * [--dry-run]
+	 * : Show changes without updating
+	 */
+	function cleanup( $args, $assoc_args ) {
+		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
+		if ( $dry_run ) {
+			WP_CLI::log( 'Performing a dry run, with no database modification.' );
+		}
+
+		do_action( 'vip_go_migration_cleanup', $dry_run );
+	}
+
+	/**
 	 * Run dbDelta() for the current site.
 	 *
 	 * [--network]
