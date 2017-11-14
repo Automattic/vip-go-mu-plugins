@@ -13,21 +13,21 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 
 		// emulate the active plugins option
 		$this->option_active_plugins = [
-			'hello.php',
 			'airplane-mode/airplane-mode.php',
-			'msm-sitemap/msm-sitemap.php',
 			'gutenberg/gutenberg.php',
+			'hello.php',
 			'liveblog/liveblog.php',
-			'wp-instagram-widget/wp-instagram-widget.php',
+			'msm-sitemap/msm-sitemap.php',
 			'shortcake/shortcode-ui.php',
+			'wp-instagram-widget/wp-instagram-widget.php',
 		];
 
 		sort( $this->option_active_plugins );
 
 		// emulate the network active plugins option
 		$this->option_active_sitewide_plugins = [
-			'hello.php' => 1507904134,
 			'akismet/akismet.php' => 1507904154,
+			'hello.php' => 1507904134,
 			'msm-sitemap/msm-sitemap.php' => 1507904154,
 			'shortcake/shortcode-ui.php' => 1507904134,
 		];
