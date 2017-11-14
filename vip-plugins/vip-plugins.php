@@ -195,7 +195,7 @@ function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 		$value = array();
 	}
 
-	$value = array_unique( array_merge( $value, $code_plugins ) );
+	$value = array_merge( $value, $code_plugins );
 
 	ksort( $value );
 

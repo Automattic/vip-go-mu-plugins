@@ -92,7 +92,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
-		$merged_plugins = array_merge( $this->option_active_plugins, wpcom_vip_get_filtered_loaded_plugins() );
+		$merged_plugins = array_unique( array_merge( $this->option_active_plugins, wpcom_vip_get_filtered_loaded_plugins() ) );
 		sort( $merged_plugins );
 		$this->assertEquals( $merged_plugins, get_option( 'active_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_option( \'active_plugins\')`.' );
 
@@ -108,6 +108,11 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		 */
 		$option_db = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'active_plugins' LIMIT 1" );
 		$option_db = maybe_unserialize( $option_db );
+		$plugin_change = array_merge( $this->option_active_plugins, array( 'amp-wp/amp.php' ) );
+		// because this was a dupe plugin we will be smart enough to remove it from the option
+		if ( ( $key = array_search( 'msm-sitemap/msm-sitemap.php', $plugin_change, true ) ) !== false ) {
+			unset( $plugin_change[ $key ] );
+		}
 		sort( $plugin_change );
 		$this->assertEquals( $plugin_change, $option_db, 'The database value `$option_db` does not match `$plugin_change`.' );
 
@@ -157,7 +162,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
-		$merged_plugins = array_merge( wpcom_vip_get_network_filtered_loaded_plugins(), $this->option_active_sitewide_plugins );
+		$merged_plugins = array_merge( $this->option_active_sitewide_plugins, wpcom_vip_get_network_filtered_loaded_plugins() );
 		ksort( $merged_plugins );
 		$this->assertEquals( $merged_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 
@@ -179,7 +184,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that the option still makes sense again
 		 */
-		$saved_plugins = array_merge( wpcom_vip_get_network_filtered_loaded_plugins(), $plugin_change );
+		$saved_plugins = array_merge( $plugin_change, wpcom_vip_get_network_filtered_loaded_plugins() );
 		ksort( $saved_plugins );
 		$this->assertEquals( $saved_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 	}
