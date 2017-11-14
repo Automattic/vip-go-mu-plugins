@@ -173,7 +173,7 @@ function wpcom_vip_option_active_plugins( $value, $option ) {
 		$value = array();
 	}
 
-	$value = array_merge( $value, $code_plugins );
+	$value = array_unique( array_merge( $value, $code_plugins ) );
 
 	sort( $value );
 
@@ -195,14 +195,7 @@ function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 		$value = array();
 	}
 
-	// removes duplicates
-	foreach ( $code_plugins as $key => $plugin ) {
-		if ( array_key_exists( $key, $value ) ) {
-			unset( $code_plugins[ $key ] );
-		}
-	}
-
-	$value = array_merge( $value, $code_plugins );
+	$value = array_unique( array_merge( $value, $code_plugins ) );
 
 	ksort( $value );
 
@@ -224,13 +217,6 @@ function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option
 
 	if ( false === is_array( $value ) ) {
 		$value = array();
-	}
-
-	// removes duplicates
-	foreach ( $code_plugins as $key => $plugin ) {
-		if ( in_array( $plugin, $value, true ) ) {
-			unset( $code_plugins[ $key ] );
-		}
 	}
 
 	$value = array_diff( $value, $code_plugins );
@@ -255,13 +241,6 @@ function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_
 
 	if ( false === is_array( $value ) ) {
 		$value = array();
-	}
-
-	// removes duplicates
-	foreach ( $code_plugins as $key => $plugin ) {
-		if ( array_key_exists( $key, $value ) ) {
-			unset( $code_plugins[ $key ] );
-		}
 	}
 
 	$value = array_diff( $value, $code_plugins );
