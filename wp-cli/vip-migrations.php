@@ -7,6 +7,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Run cleanup on the current site database.
 	 *
+	 * [--network]
+	 * : Cleanup all sites on the network
+	 *
 	 * [--dry-run]
 	 * : Show changes without updating
 	 */
@@ -15,9 +18,39 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
 		}
+
+		$network = Utils\get_flag_value( $assoc_args, 'network' );
+		if ( $network && ! is_multisite() ) {
+			WP_CLI::warning( 'This is not a multisite install. Proceeding as single site.' );
+			$network = false;
+		}
 		
+		if ( $network ) {
+			$iterator_args = array(
+				'table' => $wpdb->blogs,
+				'where' => array( 'spam' => 0, 'deleted' => 0, 'archived' => 0 ),
+			);
+			$it = new \WP_CLI\Iterators\Table( $iterator_args );
+			foreach ( $it as $blog ) {
+				$url = $blog->domain . $blog->path;
+				$cmd = "--url={$url} vip migration cleanup";
+
+				if ( $dry_run ) {
+					$cmd .= ' --dry-run';
+				}
+
+				WP_CLI::line();
+				WP_CLI::runcommand( $cmd );
+			}
+
+			if ( ! $dry_run ) {
+				wp_cache_flush();
+			}
+
+			return;
+		}
+
 		// Cleanup options
-		
 		if ( ! $dry_run ) {
 			delete_option( 'jetpack_options' );
 			delete_option( 'jetpack_private_options' );
@@ -27,9 +60,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
-		if ( ! $dry_run ) {
+		if ( ! $network && ! $dry_run ) {
+			// Flush the cache unless we're cleaning up the entire network
 			wp_cache_flush();
-			
+		}
+
+		if ( ! $dry_run ) {
 			// Reconnect Jetpack and related services
 			\WP_CLI::runcommand( 'jetpack-start connect' );
 			\WP_CLI::runcommand( 'vaultpress register_via_jetpack' );
