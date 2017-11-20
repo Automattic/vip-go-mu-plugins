@@ -15,6 +15,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
 		}
+		
+		// Cleanup options
+		delete_option( 'jetpack_options' );
+		delete_option( 'jetpack_private_options' );
+		delete_option( 'vaultpress' );
+		delete_option( 'wordpress_api_key' );
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
