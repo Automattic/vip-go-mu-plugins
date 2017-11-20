@@ -17,6 +17,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
+
+		wp_cache_flush();
 	}
 
 	/**
