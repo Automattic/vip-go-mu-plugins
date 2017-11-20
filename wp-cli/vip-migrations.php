@@ -17,18 +17,23 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 		
 		// Cleanup options
-		delete_option( 'jetpack_options' );
-		delete_option( 'jetpack_private_options' );
-		delete_option( 'vaultpress' );
-		delete_option( 'wordpress_api_key' );
+		
+		if ( ! $dry_run ) {
+			delete_option( 'jetpack_options' );
+			delete_option( 'jetpack_private_options' );
+			delete_option( 'vaultpress' );
+			delete_option( 'wordpress_api_key' );
+		}
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
-		wp_cache_flush();
-		
-		// Reconnect Jetpack and related services
-		\WP_CLI::runcommand( 'jetpack-start connect' );
-		\WP_CLI::runcommand( 'vaultpress register_via_jetpack' );
+		if ( ! $dry_run ) {
+			wp_cache_flush();
+			
+			// Reconnect Jetpack and related services
+			\WP_CLI::runcommand( 'jetpack-start connect' );
+			\WP_CLI::runcommand( 'vaultpress register_via_jetpack' );
+		}
 	}
 
 	/**
