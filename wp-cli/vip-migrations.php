@@ -25,6 +25,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
 		wp_cache_flush();
+		
+		// Reconnect Jetpack and related services
+		\WP_CLI::runcommand( 'jetpack-start connect' );
+		\WP_CLI::runcommand( 'vaultpress register_via_jetpack' );
 	}
 
 	/**
