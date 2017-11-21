@@ -14,6 +14,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * : Show changes without updating
 	 */
 	function cleanup( $args, $assoc_args ) {
+		global $wpdb;
+		
 		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
@@ -56,6 +58,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			delete_option( 'jetpack_private_options' );
 			delete_option( 'vaultpress' );
 			delete_option( 'wordpress_api_key' );
+			
+			// Cleanup transients
+			$wpdb->query(
+				"DELETE FROM $wpdb->options
+				WHERE option_name LIKE '\_transient\_%'
+				OR option_name LIKE '\_site\_transient\_%'"
+			);
 		}
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
