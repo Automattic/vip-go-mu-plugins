@@ -76,8 +76,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		if ( ! $dry_run ) {
 			// Reconnect Jetpack and related services
-			\WP_CLI::runcommand( 'jetpack-start connect' );
-			\WP_CLI::runcommand( 'vaultpress register_via_jetpack' );
+			\WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
+			\WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
 		}
 	}
 
