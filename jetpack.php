@@ -79,6 +79,19 @@ if ( defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && WPCOM_VIP_JETPACK_LOCAL ) {
 	}
 }
 
+// JP should always be marked as active, even if WPCOM_VIP_JETPACK_LOCAL is not set, b/c site could have it in /plugins
+// but not have it enabled via WPCOM_VIP_JETPACK_LOCAL, which would leave it open to manual activation/deactivation
+global $vip_loaded_plugins;
+
+if ( ! is_array( $vip_loaded_plugins ) ) {
+	$vip_loaded_plugins = array();
+}
+
+// Must include `plugins/` on it here, b/c wpcom_vip_get_filtered_loaded_plugins() filters out without it
+if ( ! in_array( 'plugins/jetpack/jetpack.php', $vip_loaded_plugins, true ) ) {
+	$vip_loaded_plugins[] = 'plugins/jetpack/jetpack.php';
+}
+
 require_once( $jetpack_to_load );
 
 require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );
