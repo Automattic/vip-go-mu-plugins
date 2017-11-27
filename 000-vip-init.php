@@ -9,6 +9,36 @@
  * good reason not to.
  */
 
+// Execute the healthcheck as quickly as possible
+if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+	if ( function_exists( 'newrelic_end_transaction' ) ) {
+		// Discard the transaction (the `true` param)
+		// See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
+		newrelic_end_transaction( true );
+	}
+
+	http_response_code( 200 );
+
+	die( 'ok' );
+}
+
+// Sites can be blocked for various reasons - usually maintenance, so exit
+// early if the constant has been set (defined by VIP Go in config/wp-config.php)
+if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
+	// WP CLI is allowed, but disable cron
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
+			return 1;
+		}, 9999 );
+	} else {
+		http_response_code( 503 );
+
+		echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
+
+		exit;
+	}
+}
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
