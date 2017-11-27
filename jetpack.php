@@ -16,6 +16,20 @@ add_action( 'plugins_loaded', function() {
 	// Suppress Jetpack activation & deactivation hooks
 	remove_all_actions( 'activate_jetpack/jetpack.php' );
 	remove_all_actions( 'deactivate_jetpack/jetpack.php' );
+
+	// Disable jetpack connection management outside WP-CLI (jetpack-start)
+	add_action( 'map_meta_cap', function( $caps, $cap ) {
+		switch( $cap ) {
+		case 'jetpack_connect':
+		case 'jetpack_reconnect':
+		case 'jetpack_disconnect':
+			if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+				return array( 'do_not_allow' );
+			}
+		}
+
+		return $caps;
+	}, 9999, 2 );
 });
 
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
