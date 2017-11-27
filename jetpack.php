@@ -12,6 +12,12 @@
  * Domain Path: /languages/
  */
 
+add_action( 'plugins_loaded', function() {
+	// Suppress Jetpack activation & deactivation hooks
+	remove_all_actions( 'activate_jetpack/jetpack.php' );
+	remove_all_actions( 'deactivate_jetpack/jetpack.php' );
+});
+
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
 /**
