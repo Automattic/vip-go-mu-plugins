@@ -275,41 +275,48 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$all_plugins['client-mu-plugin'] = $tmp_plugins;
 
 		// array of all shared plugins (activated via code and via UI)
-		if ( class_exists( 'WPCOM_VIP_Plugins_UI' ) ) {
-			$tmp_ui_plugins = array();
-			$tmp_code_plugins = array();
-			$vip_plugins = WPCOM_VIP_Plugins_UI::instance();
-			$shared_plugins = $vip_plugins->get_shared_plugins();
-
-			foreach ( $vip_plugins->get_shared_plugins() as $key => $plugin ) {
-				if ( $active_plugin_type = $vip_plugins->is_plugin_active( basename( dirname( $key ) ) ) ) {
-					if ( 'manual' === $active_plugin_type ) {
-						$tmp_code_plugins[ $key ] = array(
-							'name' => $plugin['Name'],
-							'version' => $plugin['Version'],
-							'description' => $plugin['Description'],
-							'type' => 'vip-shared-code',
-							'active' => true,
-						);
-					} else {
-						$tmp_ui_plugins[ $key ] = array(
-							'name' => $plugin['Name'],
-							'version' => $plugin['Version'],
-							'description' => $plugin['Description'],
-							'type' => 'vip-shared-ui',
-							'active' => true,
-						);
-					}
+		// once the remaining shared plugins are retired we can remove this section
+		$tmp_ui_plugins = array();
+		$tmp_code_plugins = array();
+		foreach ( get_plugins( '/../mu-plugins/shared-plugins' ) as $key => $plugin ) {
+			if ( $active_plugin_type = $this->legacy_is_plugin_active( basename( dirname( $key ) ) ) ) {
+				if ( 'manual' === $active_plugin_type ) {
+					$tmp_code_plugins[ $key ] = array(
+						'name' => $plugin['Name'],
+						'version' => $plugin['Version'],
+						'description' => $plugin['Description'],
+						'type' => 'vip-shared-code',
+						'active' => true,
+					);
+				} else {
+					$tmp_ui_plugins[ $key ] = array(
+						'name' => $plugin['Name'],
+						'version' => $plugin['Version'],
+						'description' => $plugin['Description'],
+						'type' => 'vip-shared-ui',
+						'active' => true,
+					);
 				}
 			}
-			$all_plugins['vip-shared-code'] = $tmp_code_plugins;
-			$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
 		}
+		$all_plugins['vip-shared-code'] = $tmp_code_plugins;
+		$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
 
 		// add constant to endpoint
 		$all_plugins['disable-shared-plugins'] = ( defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) && true === WPCOM_VIP_DISABLE_SHARED_PLUGINS ) ? true : false;
 
 		return $all_plugins;
+	}
+
+	protected function legacy_is_plugin_active( $plugin ) {
+		$option = get_option( 'wpcom_vip_active_plugins', array() );
+		if ( in_array( $plugin, $option, true ) ) {
+			return 'option';
+		} elseif ( in_array( 'shared-plugins/' . $plugin . '/' . $plugin . '.php', wpcom_vip_get_loaded_plugins(), true ) ) {
+			return 'manual';
+		} else {
+			return false;
+		}
 	}
 }
 
