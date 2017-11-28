@@ -12,6 +12,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * [--dry-run]
 	 * : Show changes without updating
+	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt
 	 */
 	function cleanup( $args, $assoc_args ) {
 		global $wpdb;
@@ -19,6 +22,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
+		} else {
+			$env = defined( 'VIP_GO_ENV' ) ? VIP_GO_ENV : 'unknown';
+			WP_CLI::confirm( sprintf( 'Are you sure you want to run cleanup on the %s environment?', $env ) , $assoc_args );
 		}
 
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
