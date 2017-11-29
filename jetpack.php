@@ -71,7 +71,7 @@ $jetpack_to_load = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
 
 if ( defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && WPCOM_VIP_JETPACK_LOCAL ) {
 	// Set a specific alternative Jetpack
-	$jetpack_to_test = WP_PLUGIN_DIR . '/jetpack/jetpack.php';
+	$jetpack_to_test = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 
 	// Test that our proposed Jetpack exists, otherwise do not use it
 	if ( file_exists( $jetpack_to_test ) ) {
