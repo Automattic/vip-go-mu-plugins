@@ -5,8 +5,8 @@
  * Plugin URI: http://jetpack.com
  * Description: Bring the power of the WordPress.com cloud to your self-hosted WordPress. Jetpack enables you to connect your blog to a WordPress.com account to use the powerful features normally only available to WordPress.com users.
  * Author: Automattic
- * Version: 5.4
- * Author URI: http://jetpack.com
+ * Version: 5.5.1
+ * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
  * Domain Path: /languages/
@@ -30,14 +30,7 @@ function wpcom_vip_log_updating_jetpack_version() {
 			break;
 		}
 	}
-	error_log( sprintf(
-		"updating_jetpack_version from %s | %s  (action: %s)  by %s: %s",
-		$jetpack_version,
-		$_SERVER['REQUEST_URI'],
-		isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '',
-		$caller,
-		print_r( func_get_args(), 1 )
-	) );
+	error_log('updating_jetpack_version from ' . $jetpack_version  . ' | ' . $_SERVER['REQUEST_URI'] . '  (action: ' . $_REQUEST['action'] . ') ' . ' by ' . $caller . ': ' . print_r( func_get_args(), 1 ) );
 }
 if ( defined( 'WPCOM_VIP_JETPACK_LOG' ) && WPCOM_VIP_JETPACK_LOG ) {
 	add_action( 'updating_jetpack_version', 'wpcom_vip_log_updating_jetpack_version', 10, 2 );
