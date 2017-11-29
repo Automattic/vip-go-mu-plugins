@@ -52,11 +52,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				WP_CLI::runcommand( $cmd );
 			}
 
-			WP_CLI::line( 'Flushing object cache' );
-			if ( ! $dry_run ) {
-				wp_cache_flush();
-			}
-
 			return;
 		}
 
@@ -95,12 +90,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
-		// Flush the cache unless we're cleaning up the entire network
-		if ( ! $network ) {
-			WP_CLI::line( 'Flushing object cache' );
-			if ( ! $dry_run ) {
-				wp_cache_flush();
-			}
+		WP_CLI::line( 'Flushing object cache' );
+		if ( ! $dry_run ) {
+			wp_cache_flush();
 		}
 
 		WP_CLI::line( 'Connecting Jetpack' );
