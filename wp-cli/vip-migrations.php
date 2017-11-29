@@ -51,6 +51,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				WP_CLI::runcommand( $cmd );
 			}
 
+			WP_CLI::line( 'Flushing object cache' );
 			if ( ! $dry_run ) {
 				wp_cache_flush();
 			}
@@ -59,13 +60,31 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		// Cleanup options
+		$options = [
+			'jetpack_options',
+			'jetpack_private_options',
+			'vaultpress',
+			'wordpress_api_key',
+		];
+
+		foreach ( $options as $option ) {
+			WP_CLI::line( 'Deleting option: ' . $option );
+
+			if ( ! $dry_run ) {
+				delete_option( $option );
+			}
+		}
+
+		// Cleanup transients
+		$transients = $wpdb->get_col(
+			"SELECT option_name FROM $wpdb->options
+			WHERE option_name LIKE '\_transient\_%'
+			OR option_name LIKE '\_site\_transient\_%'"
+		);
+
+		WP_CLI::line( 'Deleting transients: ' . implode( ', ', $transients ) );
+
 		if ( ! $dry_run ) {
-			delete_option( 'jetpack_options' );
-			delete_option( 'jetpack_private_options' );
-			delete_option( 'vaultpress' );
-			delete_option( 'wordpress_api_key' );
-			
-			// Cleanup transients
 			$wpdb->query(
 				"DELETE FROM $wpdb->options
 				WHERE option_name LIKE '\_transient\_%'
@@ -75,11 +94,15 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
-		if ( ! $network && ! $dry_run ) {
-			// Flush the cache unless we're cleaning up the entire network
-			wp_cache_flush();
+		// Flush the cache unless we're cleaning up the entire network
+		if ( ! $network ) {
+			WP_CLI::line( 'Flushing object cache' );
+			if ( ! $dry_run ) {
+				wp_cache_flush();
+			}
 		}
 
+		WP_CLI::line( 'Connecting Jetpack' );
 		if ( ! $dry_run ) {
 			// Reconnect Jetpack and related services
 			\WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
