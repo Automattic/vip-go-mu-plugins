@@ -65,13 +65,11 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		foreach ( $options as $option ) {
 			WP_CLI::line( 'Deleting option: ' . $option );
-
 			if ( ! $dry_run ) {
 				delete_option( $option );
 			}
 		}
 
-		// Cleanup transients
 		$transients = $wpdb->get_col(
 			"SELECT option_name FROM $wpdb->options
 			WHERE option_name LIKE '\_transient\_%'
@@ -88,6 +86,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			);
 		}
 
+		/**
+		 * Fires on migration cleanup
+		 *
+		 * Migration cleanup runs on VIP Go during the initial site setup
+		 * and after database imports. This hook can be used to add additional
+		 * cleanup for a given site.
+		 */
 		do_action( 'vip_go_migration_cleanup', $dry_run );
 
 		WP_CLI::line( 'Flushing object cache' );
@@ -97,7 +102,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		WP_CLI::line( 'Connecting Jetpack' );
 		if ( ! $dry_run ) {
-			// Reconnect Jetpack and related services
 			\WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
 			\WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
 		}
