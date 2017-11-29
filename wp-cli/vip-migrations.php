@@ -48,6 +48,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				}
 
 				WP_CLI::line();
+				WP_CLI::line( 'Cleaning: ' . $url );
 				WP_CLI::runcommand( $cmd );
 			}
 
