@@ -52,6 +52,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				WP_CLI::runcommand( $cmd );
 			}
 
+			// Apply
 			return;
 		}
 
@@ -85,6 +86,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				OR option_name LIKE '\_site\_transient\_%'"
 			);
 		}
+		
+		// Apply any necessary database schema changes
+		dbDelta( 'all', true );
 
 		/**
 		 * Fires on migration cleanup
