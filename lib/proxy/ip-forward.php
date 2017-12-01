@@ -43,13 +43,12 @@ function fix_remote_address( $user_ip, $proxy_ip_whitelist ) {
  *
  * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
  *
- * @param (string) $ip_trail Comma-separated list of IPs (something like `user_ip, proxy_ip`)
  * @param (string|array) $proxy_ip_whitelist Whitelisted IP addresses for the remote proxy. Supports IPv4 and IPv6, including CIDR format.
  *
  * @return (bool) true, if REMOTE_ADDR updated; false, if not.
  */
-function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
-	$ip_addresses = get_ip_addresses_from_ip_trail( $ip_trail );
+function fix_remote_address_from_ip_trail( $proxy_ip_whitelist ) {
+	$ip_addresses = get_ip_addresses_from_ip_trail( $_SERVER['HTTP_X_IP_TRAIL'] );
 	if ( false === $ip_addresses ) {
 		return false;
 	}

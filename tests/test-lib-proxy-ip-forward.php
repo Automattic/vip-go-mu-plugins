@@ -195,10 +195,10 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	public function test__fix_remote_address_from_ip_trail__ip_not_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
+		$_SERVER['HTTP_X_IP_TRAIL'] = '1.2.3.4, 5.6.7.8';
 		$whitelist = [ '0.0.0.0' ];
 
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
+		$result = fix_remote_address_from_ip_trail( $whitelist );
 
 		$this->assertFalse( $result );
 		$this->assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
@@ -206,10 +206,10 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
+		$_SERVER['HTTP_X_IP_TRAIL'] = '1.2.3.4, 5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
 
-		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
+		$result = fix_remote_address_from_ip_trail( $whitelist );
 
 		$this->assertTrue( $result );
 		$this->assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
