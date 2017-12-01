@@ -567,7 +567,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 	// Okay, it wasn't successful. Perhaps we have a backup result from earlier.
 	elseif ( $content = wp_cache_get( $backup_key, $cache_group ) ) {
         //We found a backup copy,
-        if ( $server_up ){ //If we thought the server was up, let's store that it's not up for 60 seconds. We only do this if we thought the server was up so that we do retry every 1 minute.
+        if ( $server_up ) { //If we thought the server was up, let's store that it's not up for 60 seconds. We only do this if we thought the server was up so that we do retry every 1 minute.
 	        wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
         }
 
