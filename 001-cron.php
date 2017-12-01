@@ -115,7 +115,9 @@ function wpcom_vip_cron_control_event_object_to_string( $event ) {
  * When Cron Control's Internal Event force-publishes posts that missed their scheduled time, enable async transitions
  */
 function wpcom_vip_enable_async_actions_for_forced_posts( $pid ) {
-	Automattic\VIP\Async_Publish_Actions\_queue_async_hooks( 'publish', 'future', get_post( $pid ) );
+	if ( function_exists( 'Automattic\VIP\Async_Publish_Actions\_queue_async_hooks' ) ) {
+		Automattic\VIP\Async_Publish_Actions\_queue_async_hooks( 'publish', 'future', get_post( $pid ) );
+	}
 }
 
 /**
