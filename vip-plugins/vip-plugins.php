@@ -169,13 +169,13 @@ add_filter( 'network_admin_plugin_action_links', 'wpcom_vip_plugin_action_links'
 function wpcom_vip_option_active_plugins( $value, $option ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
 
-	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
-		$value = array_merge( $value, $code_plugins );
+	if ( false === is_array( $value ) ) {
+		$value = array();
 	}
 
-	if ( ! empty( $value ) ) {
-		sort( $value );
-	}
+	$value = array_unique( array_merge( $value, $code_plugins ) );
+
+	sort( $value );
 
 	return $value;
 }
@@ -191,20 +191,13 @@ add_filter( 'option_active_plugins', 'wpcom_vip_option_active_plugins', 10, 2 );
 function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 	$code_plugins = wpcom_vip_get_network_filtered_loaded_plugins();
 
-	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
-		// removes duplicates
-		foreach ( $code_plugins as $key => $plugin ) {
-			if ( array_key_exists( $key, $value ) ) {
-				unset( $code_plugins[ $key ] );
-			}
-		}
-
-		$value = array_merge( $value, $code_plugins );
+	if ( false === is_array( $value ) ) {
+		$value = array();
 	}
 
-	if ( ! empty( $value ) ) {
-		ksort( $value );
-	}
+	$value = array_merge( $value, $code_plugins );
+
+	ksort( $value );
 
 	return $value;
 
@@ -222,20 +215,13 @@ add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active
 function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
 
-	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
-		// removes duplicates
-		foreach ( $code_plugins as $key => $plugin ) {
-			if ( in_array( $plugin, $value, true ) ) {
-				unset( $code_plugins[ $key ] );
-			}
-		}
-
-		$value = array_diff( $value, $code_plugins );
+	if ( false === is_array( $value ) ) {
+		$value = array();
 	}
 
-	if ( ! empty( $value ) ) {
-		sort( $value );
-	}
+	$value = array_diff( $value, $code_plugins );
+
+	sort( $value );
 
 	return $value;
 }
@@ -253,20 +239,13 @@ add_filter( 'pre_update_option_active_plugins', 'wpcom_vip_pre_update_option_act
 function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_value, $option, $network_id ) {
 	$code_plugins = wpcom_vip_get_network_filtered_loaded_plugins();
 
-	if ( ! empty( $value ) && ! empty( $code_plugins ) ) {
-		// removes duplicates
-		foreach ( $code_plugins as $key => $plugin ) {
-			if ( array_key_exists( $key, $value ) ) {
-				unset( $code_plugins[ $key ] );
-			}
-		}
-
-		$value = array_diff( $value, $code_plugins );
+	if ( false === is_array( $value ) ) {
+		$value = array();
 	}
 
-	if ( ! empty( $value ) ) {
-		ksort( $value );
-	}
+	$value = array_diff( $value, $code_plugins );
+
+	ksort( $value );
 
 	return $value;
 }
