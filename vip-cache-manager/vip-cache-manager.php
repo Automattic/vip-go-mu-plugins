@@ -212,6 +212,10 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
+		if ( defined( 'VIP_GO_PHPUNIT_RUNNING' ) && VIP_GO_PHPUNIT_RUNNING ) {
+			return;
+		}
+
 		$this->ban_urls = array_unique( $this->ban_urls );
 		$this->purge_urls = array_unique( $this->purge_urls );
 
