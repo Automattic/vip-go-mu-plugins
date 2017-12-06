@@ -34,3 +34,6 @@
 [submodule "drop-ins/object-cache"]
 	path = drop-ins/object-cache
 	url = git@github.com:Automattic/wp-memcached.git
+[submodule "lightweight-term-count-update"]
+	path = lightweight-term-count-update
+	url = https://github.com/Automattic/lightweight-term-count-update
