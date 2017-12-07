@@ -8,8 +8,6 @@ Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-require_once( __DIR__ . '/api.php' );
-
 class WPCOM_VIP_Cache_Manager {
 	const MAX_PURGE_URLS = 100;
 	const MAX_BAN_URLS   = 10;
@@ -637,5 +635,3 @@ class WPCOM_VIP_Cache_Manager {
 		return is_proxied_automattician();
 	}
 }
-
-WPCOM_VIP_Cache_Manager::instance();
