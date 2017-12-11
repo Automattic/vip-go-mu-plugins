@@ -7,7 +7,7 @@ if ( ! $_tests_dir ) {
 
 require_once $_tests_dir . '/includes/functions.php';
 
-define( 'VIP_GO_PHPUNIT_RUNNING', true );
+remove_action( 'init', array( 'VIP_Cache_Manager', 'init' ) );
 
 // Constant configs
 // Ideally we'd have a way to mock these
