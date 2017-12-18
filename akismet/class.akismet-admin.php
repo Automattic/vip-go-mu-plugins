@@ -92,10 +92,10 @@ class Akismet_Admin {
 
 	public static function load_menu() {
 		if ( class_exists( 'Jetpack' ) ) {
-			$hook = add_submenu_page( 'jetpack', __( 'Akismet' , 'akismet'), __( 'Akismet' , 'akismet'), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
+			$hook = add_submenu_page( 'jetpack', __( 'Akismet Anti-Spam' , 'akismet'), __( 'Akismet Anti-Spam' , 'akismet'), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
 		}
 		else {
-			$hook = add_options_page( __('Akismet', 'akismet'), __('Akismet', 'akismet'), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
+			$hook = add_options_page( __('Akismet Anti-Spam', 'akismet'), __('Akismet Anti-Spam', 'akismet'), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
 		}
 		
 		if ( $hook ) {
@@ -725,9 +725,23 @@ class Akismet_Admin {
 		return self::check_server_connectivity( $cache_timeout );
 	}
 
-	public static function get_number_spam_waiting() {
-		global $wpdb;
-		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->commentmeta} WHERE meta_key = 'akismet_error'" );
+	/**
+	 * Find out whether any comments in the Pending queue have not yet been checked by Akismet.
+	 *
+	 * @return bool
+	 */
+	public static function are_any_comments_waiting_to_be_checked() {
+		return !! get_comments( array(
+			// Exclude comments that are not pending. This would happen if someone manually approved or spammed a comment
+			// that was waiting to be checked. The akismet_error meta entry will eventually be removed by the cron recheck job.
+			'status' => 'hold',
+			
+			// This is the commentmeta that is saved when a comment couldn't be checked.
+			'meta_key' => 'akismet_error',
+			
+			// We only need to know whether at least one comment is waiting for a check.
+			'number' => 1,
+		) );
 	}
 
 	public static function get_page_url( $page = 'config' ) {
@@ -814,7 +828,7 @@ class Akismet_Admin {
 	public static function display_spam_check_warning() {
 		Akismet::fix_scheduled_recheck();
 
-		if ( wp_next_scheduled('akismet_schedule_cron_recheck') > time() && self::get_number_spam_waiting() > 0 ) {
+		if ( wp_next_scheduled('akismet_schedule_cron_recheck') > time() && self::are_any_comments_waiting_to_be_checked() ) {
 			$link_text = apply_filters( 'akismet_spam_check_warning_link_text', sprintf( __( 'Please check your <a href="%s">Akismet configuration</a> and contact your web host if problems persist.', 'akismet'), esc_url( self::get_page_url() ) ) );
 			Akismet::view( 'notice', array( 'type' => 'spam-check', 'link_text' => $link_text ) );
 		}
@@ -1066,7 +1080,7 @@ class Akismet_Admin {
 				// return values can be mostly differentiated from each other.
 				$first_response_value = array_shift( $responses[0] );
 				$second_response_value = array_shift( $responses[1] );
-
+				
 				// If WPCOM ever reaches 100 billion users, this will fail. :-)
 				if ( preg_match( '/^[a-f0-9]{12}$/i', $first_response_value ) ) {
 					$api_key = $first_response_value;
@@ -1076,7 +1090,7 @@ class Akismet_Admin {
 					$api_key = $second_response_value;
 					$user_id = (int) $first_response_value;
 				}
-
+				
 				return compact( 'api_key', 'user_id' );
 			}
 		}
