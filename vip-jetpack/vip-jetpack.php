@@ -34,6 +34,13 @@ if ( true === WPCOM_SANDBOXED ) {
 			return;
 		}
 
+		// If we're upgrading, then it's fine. We only want to prevent accidental downgrades
+		// Jetpack::maybe_set_version_option() already does this check, but other spots
+		// in JP can trigger this, without the check
+		if ( version_compare( $new_version, $old_version, '>' ) ) {
+			return;
+		}
+
 		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
 	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
 }
