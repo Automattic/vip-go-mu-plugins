@@ -99,6 +99,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( ! $dry_run ) {
 			wp_cache_flush();
 		}
+		
+		WP_CLI::line( 'Flushing page cache' );
+		if ( ! $dry_run ) {
+			$cache = WPCOM_VIP_Cache_Manager::instance();
+			$cache->purge_site_cache();
+		}
 
 		WP_CLI::line( 'Connecting Jetpack' );
 		if ( ! $dry_run ) {
