@@ -20,8 +20,13 @@ define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
 class A8C_Files {
+	
+	/**
+	 * @object A8C_Files singleton instance
+	 */
+	private static $instance;
 
-	function __construct() {
+	private function __construct() {
 
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
@@ -59,6 +64,13 @@ class A8C_Files {
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+	}
+	
+	public static function get_instance(){
+		if ( ! is_a( A8C_Files::$instance, 'A8C_Files' ) ){
+			A8C_Files::$instance = new static;
+		}
+		return A8C_Files::$instance;
 	}
 
 	private function init_jetpack_photon_filters() {
@@ -769,11 +781,11 @@ class A8C_Files_Utils {
 		}
 
 		return $url;
-	}	
+	}
 }
 
 function a8c_files_init() {
-	new A8C_Files();
+	A8C_Files::get_instance();
 }
 
 /**
