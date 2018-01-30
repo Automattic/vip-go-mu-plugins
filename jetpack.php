@@ -62,6 +62,16 @@ if ( defined( 'WPCOM_VIP_JETPACK_LOG' ) && WPCOM_VIP_JETPACK_LOG ) {
 	add_action( 'pre_update_jetpack_option_version', 'wpcom_vip_log_updating_jetpack_version_option', 10, 2 );
 }
 
+/**
+ * Ensure some Jetpack modules are always enabled.
+ */
+function wpcom_vip_jetpack_active_modules( $active_modules ) {
+    return array_merge( $active_modules, [
+        'vaultpress',
+    ] );
+}
+add_filter( 'jetpack_active_modules', 'wpcom_vip_jetpack_active_modules' );
+
 
 if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
 	add_filter( 'jetpack_is_staging_site', '__return_true' );
