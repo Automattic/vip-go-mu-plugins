@@ -9,7 +9,7 @@
  Text Domain: debug-bar
  */
 add_filter( 'debug_bar_enable', function( $enable ) {
-	$enable = is_automattician();
+	$enable = is_automattician() || WPCOM_SANDBOXED;
 
 	return $enable;
 }, 99 );
