@@ -8,21 +8,13 @@ Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-class WPCOM_VIP_Cache_Manager {
+class WPCOM_VIP_Cache_Manager extends Singleton {
 	const MAX_PURGE_URLS = 100;
 	const MAX_BAN_URLS   = 10;
 
 	private $ban_urls = array();
 	private $purge_urls = array();
 	private $site_cache_purged = false;
-
-	static public function instance() {
-		static $instance = false;
-		if ( ! $instance ) {
-			$instance = new WPCOM_VIP_Cache_Manager();
-		}
-		return $instance;
-	}
 
 	public function __construct() {
 		add_action( 'init', array( $this, 'init' ) );
