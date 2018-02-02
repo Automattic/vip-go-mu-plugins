@@ -1,9 +1,9 @@
 <?php
 
  /***************************************************************************************************
- *																									*
+ *                                                                                                  *
  * This IS NOT ready for client use. If you are interested in learning, please contact VIP Support. *
- *																									*
+ *                                                                                                  *
  ***************************************************************************************************/
 
 /**
@@ -20,6 +20,9 @@
 function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$args_string = '';
 
+	$command = sanitize_key( $command );
+	$subcommand = sanitize_key( $subcommand );
+
 	// Optional arguments.
 	foreach ( $args as $arg => $value ) {
 		if ( 'wpcom-vip-output-mail' === $arg ) {
@@ -34,6 +37,17 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 			$value = maybe_serialize( $value );
 			$args_string .= sprintf( ' --%s=%s', sanitize_key( $arg ), escapeshellarg( $value ) );
 		}
+	}
+
+	$whitelisted_commands = array();
+	if ( true === function_exists( 'wpcom_vip_is_allowed_cli_passthrough' ) ) {
+		$whitelisted_commands = wpcom_vip_is_allowed_cli_passthrough();
+	}
+	if ( false === array_key_exists( $command, $whitelisted_commands ) || false === in_array( $subcommand, $whitelisted_commands[ $command ], true ) ) {
+		if ( false !== is_email( $args['wpcom-vip-output-mail'] ) ) {
+			wp_mail( $args['wpcom-vip-output-mail'], sprintf( 'Command %s %s is not whitelisted.', $command, $subcommand ), sprintf( 'Command %s %s is not whitelisted on %s.', $command, $subcommand, home_url() ) );
+		}
+		return; // Bail as the command is not whitelisted.
 	}
 
 	$cli_command = sprintf( 'wp --allow-root %s %s %s',
