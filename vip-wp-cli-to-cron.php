@@ -86,7 +86,6 @@ add_filter( 'schedule_event', function( $event ) {
 		if ( false === defined( 'WPCOM_SANDBOXED' ) || true !== constant( 'WPCOM_SANDBOXED' ) ) {
 			$event = false;
 		}
-		var_dump( $event );
 		if ( false === is_array( $event->args[2] ) || false === array_key_exists( 'wpcom-vip-output-mail', $event->args[2] ) || false === is_email( $event->args[2]['wpcom-vip-output-mail'] ) ) {
 			if ( true === defined( 'WP_CLI' ) && WP_CLI ) {
 				WP_CLI::line( 'Error: No, or invalid email provided. Please, specify valid email address in command args array via wpcom-vip-output-mail key' );
