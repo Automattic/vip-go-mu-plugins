@@ -82,8 +82,18 @@ add_action( 'wpcom_vip_wp_cli_command_to_cron', 'wpcom_vip_wp_cli_command_to_cro
 
 // This is not ready for client use. If you are interested in learning, please contact VIP Support.
 add_filter( 'schedule_event', function( $event ) {
-	if ( is_object( $event ) && 'wpcom_vip_wp_cli_command_to_cron' === $event->hook && ( false === defined( 'WPCOM_SANDBOXED' ) || true !== constant( 'WPCOM_SANDBOXED' ) ) ) {
-		$event = false;
+	if ( is_object( $event ) && 'wpcom_vip_wp_cli_command_to_cron' === $event->hook ) {
+		if ( false === defined( 'WPCOM_SANDBOXED' ) || true !== constant( 'WPCOM_SANDBOXED' ) ) {
+			$event = false;
+		}
+		var_dump( $event );
+		if ( false === is_array( $event->args[2] ) || false === array_key_exists( 'wpcom-vip-output-mail', $event->args[2] ) || false === is_email( $event->args[2]['wpcom-vip-output-mail'] ) ) {
+			if ( true === defined( 'WP_CLI' ) && WP_CLI ) {
+				WP_CLI::line( 'Error: No, or invalid email provided. Please, specify valid email address in command args array via wpcom-vip-output-mail key' );
+			}
+			$event = false;
+		}
+		WP_CLI::line( 'Success: WP CLI command was scheduled.' );
 	}
 	return $event;
 }, PHP_INT_MAX, 1 );
