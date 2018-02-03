@@ -100,7 +100,7 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		unset( $_SERVER['HTTP_AUTHORIZATION'] );
 
-		$this->assertEquals( 403, $response->get_status() );
+		$this->assertEquals( 401, $response->get_status() );
 	}
 
 	/**
@@ -116,7 +116,7 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		unset( $_SERVER['HTTP_AUTHORIZATION'] );
 
-		$this->assertEquals( 403, $response->get_status() );
+		$this->assertEquals( 401, $response->get_status() );
 	}
 
 	/**
@@ -127,6 +127,6 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		$response = $this->server->dispatch( $request );
 
-		$this->assertEquals( 403, $response->get_status() );
+		$this->assertEquals( 401, $response->get_status() );
 	}
 }
