@@ -16,8 +16,8 @@ class REST_API extends Singleton {
 	 * API SETUP
 	 */
 	const API_NAMESPACE = 'cache-manager/v1';
-	const ENDPOINT_PURGE = 'purge'; // purge sites
-	const ENDPOINT_BAN = 'ban'; // ban resources
+	const ENDPOINT_PURGE = 'purge'; // purge URL(s)
+	const ENDPOINT_BAN = 'ban'; // ban URL(s)
 
 	/**
 	 * PLUGIN SETUP
@@ -80,10 +80,14 @@ class REST_API extends Singleton {
 		//   To be defined. If we really really wants to pursue this.
 		//
 		// Check and sanitize input before doing anything!
+		//
+		// And what about returning some meaningful REST response?
+		// perhaps containing list of URLs we could not purge, if any?
 		$urls_to_purge = $json_params = $request->get_json_params()['urls'];
 
 		foreach ($urls_to_purge as $url) {
-			wpcom_vip_purge_edge_cache_for_url($url);
+			// We may also invoke API function here
+			WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( esc_url( $url ) );
 		}
 
 		//return rest_ensure_response( $response_array );
