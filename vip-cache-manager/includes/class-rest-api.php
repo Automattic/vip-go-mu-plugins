@@ -15,9 +15,10 @@ class REST_API extends Singleton {
 	/**
 	 * API SETUP
 	 */
-	const API_NAMESPACE = 'cache-manager/v1';
+	const API_NAMESPACE  = 'cache-manager/v1';
 	const ENDPOINT_PURGE = 'purge'; // purge URL(s)
-	const ENDPOINT_BAN = 'ban'; // ban URL(s)
+	const ENDPOINT_BAN   = 'ban'; // ban URL(s)
+	const URLS_KEY       = 'urls';
 
 	/**
 	 * PLUGIN SETUP
@@ -71,26 +72,39 @@ class REST_API extends Singleton {
 	 *
 	 * @param request JSON, must contain an array url
 	 */
-	public function purge_urls( $request ) {
+	public function purge_urls( WP_REST_Request $request ) {
 
-		// MEGATODO: here we will call either:
-		// - To purge:
-		//   WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $url );
-		// - To ban:
-		//   To be defined. If we really really wants to pursue this.
-		//
-		// Check and sanitize input before doing anything!
-		//
-		// And what about returning some meaningful REST response?
-		// perhaps containing list of URLs we could not purge, if any?
-		$urls_to_purge = $json_params = $request->get_json_params()['urls'];
+		// Set up response_array with defaults
+		$response_array = array(
+			'purged_urls'	=> array(),
+			'response'		=> false
+		);
 
-		foreach ($urls_to_purge as $url) {
-			// We may also invoke API function here
-			WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( esc_url( $url ) );
+		$json_params = $request->get_json_params();
+
+		// Checks for existence of mandatory urls key
+		if (array_key_exists( self::URLS_KEY, $json_params )) {
+			$urls_to_purge = $json_params = $request->get_json_params()[ self::URLS_KEY ];
+		} else {
+			array_push( $response_array[ 'purged_urls' ], 'ERROR: Missing urls array' );
+			return rest_ensure_response( $response_array );
 		}
 
-		//return rest_ensure_response( $response_array );
+		// Actual purging process
+		foreach ($urls_to_purge as $url) {
+			$url = esc_url( $url );
+			// We may also invoke API function here
+			WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $url );
+			array_push( $response_array['purged_urls'], $url );
+		}
+
+		// As queue_purge_url returns always true, there is no way
+		// to know whether purging has been successful or not
+		// So we assume it's been successful if we have made it so far
+		$response_array['response'] = true;
+
+		// Returns a REST response for sake of consistency
+		return rest_ensure_response( $response_array );
 	}
 
 	/**
