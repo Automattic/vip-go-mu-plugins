@@ -1181,7 +1181,7 @@ function _wpcom_vip_include_plugin( $file ) {
 	}
 
 	// Blacklist out some variables
-	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0 );
+	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0, 'helper_file' => 0 );
 
 	// Let's find out what's new by comparing the current variables to the previous ones
 	$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
