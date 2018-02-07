@@ -49,13 +49,6 @@ class REST_API extends Singleton {
 			'show_in_index'       => false
 		) );
 
-		register_rest_route( self::API_NAMESPACE, '/' . self::ENDPOINT_BAN, array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'debug_request' ),
-			'permission_callback' => array( $this, 'check_secret' ),
-			'show_in_index'       => false
-		) );
-
 	}
 
 	/**
