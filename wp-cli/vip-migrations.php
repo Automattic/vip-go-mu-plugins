@@ -18,7 +18,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 */
 	function cleanup( $args, $assoc_args ) {
 		global $wpdb;
-		
+
 		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
@@ -32,7 +32,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			WP_CLI::warning( 'This is not a multisite install. Proceeding as single site.' );
 			$network = false;
 		}
-		
+
 		if ( $network ) {
 			$iterator_args = array(
 				'table' => $wpdb->blogs,
@@ -79,21 +79,19 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'Deleting transients: ' . implode( ', ', $transients ) );
 
 		if ( ! $dry_run ) {
-			$wpdb->query(
-				"DELETE FROM $wpdb->options
-				WHERE option_name LIKE '\_transient\_%'
-				OR option_name LIKE '\_site\_transient\_%'"
-			);
+			vip_delete_db_transients();
 		}
 
-		/**
-		 * Fires on migration cleanup
-		 *
-		 * Migration cleanup runs on VIP Go during the initial site setup
-		 * and after database imports. This hook can be used to add additional
-		 * cleanup for a given site.
-		 */
-		do_action( 'vip_go_migration_cleanup', $dry_run );
+		if ( ! $dry_run ) {
+			/**
+	 		 * Fires on migration cleanup
+	 		 *
+	 		 * Migration cleanup runs on VIP Go during the initial site setup
+	 		 * and after database imports. This hook can be used to add additional
+	 		 * cleanup for a given site.
+	 		 */
+			 do_action( 'vip_go_migration_cleanup' );
+		}
 
 		WP_CLI::line( 'Flushing object cache' );
 		if ( ! $dry_run ) {
@@ -102,8 +100,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		WP_CLI::line( 'Connecting Jetpack' );
 		if ( ! $dry_run ) {
-			\WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
-			\WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
+			vip_connect_jetpack();
+			vip_connect_vaultpress();
 		}
 	}
 
@@ -177,7 +175,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
 		$changes = dbDelta( $tables, ! $dry_run );
-		
+
 		if ( empty( $changes ) ) {
 			WP_CLI::success( 'No changes.' );
 			return;
