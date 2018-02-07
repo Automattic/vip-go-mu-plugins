@@ -43,15 +43,17 @@ class REST_API extends Singleton {
 		register_rest_route( self::API_NAMESPACE, '/' . self::ENDPOINT_PURGE, array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'purge_urls' ),
-			'permission_callback' => array( $this, 'check_secret' ),
-			'show_in_index'       => false,
+			'permission_callback' => function() {
+				return wpcom_vip_go_rest_api_request_allowed( self::API_NAMESPACE );
+			},
+			'show_in_index'       => false
 		) );
 
 		register_rest_route( self::API_NAMESPACE, '/' . self::ENDPOINT_BAN, array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'debug_request' ),
 			'permission_callback' => array( $this, 'check_secret' ),
-			'show_in_index'       => false,
+			'show_in_index'       => false
 		) );
 
 	}
