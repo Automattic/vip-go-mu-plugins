@@ -258,6 +258,12 @@ class A8C_Files {
 	 * Filter's the return value of `wp_unique_filename()`
 	 */
 	public function filter_unique_filename( $filename, $ext, $dir, $unique_filename_callback ) {
+		// If a unique filename callback was used, let's just use its results.
+		// `wp_unique_filename` has fired this already so we don't need to actually call it.
+		if ( $unique_filename_callback && is_callable( $unique_filename_callback ) ) {
+			return $filename;
+		}
+
 		if ( '.tmp' === $ext || '/tmp/' === $dir ) {
 			return $filename;
 		}
