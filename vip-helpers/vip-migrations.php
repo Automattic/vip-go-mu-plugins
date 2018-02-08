@@ -1,26 +1,26 @@
 <?php
 
-add_action( 'vip_post_migration', 'vip_post_migration' );
+add_action( 'vip_after_data_migration', 'vip_after_data_migration' );
 
-function vip_post_migration() {
+function vip_after_data_migration() {
 	if ( is_multisite() ) {
 		$sites = get_sites();
 
 		foreach( $sites as $site ) {
 			switch_to_blog( $site['blog_id'] );
 
-			vip_run_post_migration_cleanup();
+			vip_run_after_data_migration_cleanup();
 
 			restore_current_blog();
 		}
 
 		return true;
 	} else {
-		return vip_run_post_migration_cleanup();
+		return vip_run_after_data_migration_cleanup();
 	}
 }
 
-function vip_run_post_migration_cleanup() {
+function vip_run_after_data_migration_cleanup() {
 	/**
 	 * Fires on migration cleanup
 	 *
