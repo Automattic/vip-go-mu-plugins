@@ -79,7 +79,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'Deleting transients: ' . implode( ', ', $transients ) );
 
 		if ( ! $dry_run ) {
-			vip_delete_db_transients();
+			Automattic\VIP\Migration\delete_db_transients();
 		}
 
 		if ( ! $dry_run ) {
@@ -100,12 +100,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		WP_CLI::line( 'Connecting Jetpack' );
 		if ( ! $dry_run ) {
-			vip_connect_jetpack();
+			Automattic\VIP\Migration\connect_jetpack();
 		}
 
 		WP_CLI::line( 'Connecting VaultPress' );
 		if ( ! $dry_run ) {
-			vip_connect_vaultpress();
+			Automattic\VIP\Migration\connect_vaultpress();
 		}
 	}
 
