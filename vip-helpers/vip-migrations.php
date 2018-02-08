@@ -53,11 +53,15 @@ function delete_db_transients() {
 function connect_jetpack() {
 	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 		\WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
+	} else {
+		trigger_error( 'Cannot connect JP outside of a WP_CLI context, skipping', E_USER_WARNING );
 	}
 }
 
 function connect_vaultpress() {
 	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 		\WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
+	} else {
+		trigger_error( 'Cannot connect VaultPress outside of a WP_CLI context, skipping', E_USER_WARNING );
 	}
 }
