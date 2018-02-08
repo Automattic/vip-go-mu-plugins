@@ -51,9 +51,17 @@ function vip_delete_db_transients() {
 }
 
 function vip_connect_jetpack() {
-	return \WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
+	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+		return \WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
+	}
+
+	return false;
 }
 
 function vip_connect_vaultpress() {
-	return \WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
+	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+		return \WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
+	}
+
+	return false;
 }
