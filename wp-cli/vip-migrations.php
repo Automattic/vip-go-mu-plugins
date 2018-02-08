@@ -101,6 +101,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'Connecting Jetpack' );
 		if ( ! $dry_run ) {
 			vip_connect_jetpack();
+		}
+
+		WP_CLI::line( 'Connecting VaultPress' );
+		if ( ! $dry_run ) {
 			vip_connect_vaultpress();
 		}
 	}
