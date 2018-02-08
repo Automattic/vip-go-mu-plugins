@@ -7,7 +7,7 @@ function vip_after_data_migration() {
 		$sites = get_sites();
 
 		foreach( $sites as $site ) {
-			switch_to_blog( $site['blog_id'] );
+			switch_to_blog( $site->blog_id );
 
 			vip_run_after_data_migration_cleanup();
 
