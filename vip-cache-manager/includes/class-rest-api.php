@@ -93,9 +93,10 @@ class REST_API extends Singleton {
 			array_push( $response_array['purged_urls'], $url );
 		}
 
-		// As queue_purge_url returns always true, there is no way
-		// to know whether purging has been successful or not
-		// So we assume it's been successful if we have made it so far
+		// As purges have not been executed yet
+		// and there is no way to know whether purging
+		// will be successful or not,
+		// we assume all is OK if we have made it so far
 		$response_array['response'] = true;
 
 		// Returns a REST response for sake of consistency
