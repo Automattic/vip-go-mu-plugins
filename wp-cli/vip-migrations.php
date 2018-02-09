@@ -70,13 +70,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 		}
 
-		$transients = $wpdb->get_col(
-			"SELECT option_name FROM $wpdb->options
-			WHERE option_name LIKE '\_transient\_%'
-			OR option_name LIKE '\_site\_transient\_%'"
-		);
-
-		WP_CLI::line( 'Deleting transients: ' . implode( ', ', $transients ) );
+		WP_CLI::line( 'Calling Automattic\VIP\Migration\run_after_data_migration_cleanup()' );
 
 		if ( ! $dry_run ) {
 			Automattic\VIP\Migration\run_after_data_migration_cleanup();
