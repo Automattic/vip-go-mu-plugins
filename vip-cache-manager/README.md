@@ -10,17 +10,37 @@ Provides interfaces, including REST API, to purge resources from Varnish cache.
 
 ## Description ##
 
-Allows purges and bans on Varnish page caches. Needs to be hooked on GitHub commits.
-On each commit it will then either purge or ban all pushed assets.
+Allows purges and bans on Varnish page caches.
+Can to be hooked on GitHub commits to either purge or ban all pushed assets.
 
-Exposed methods whose use is detailed here: https://vip.wordpress.com/documentation/vip-go/controlling-vip-go-page-cache/#clearing-caches-for-post-term-or-a-specific-url .
+Exposes methods whose use is detailed here: https://vip.wordpress.com/documentation/vip-go/controlling-vip-go-page-cache/#clearing-caches-for-post-term-or-a-specific-url .
 
-Also provides two REST routes for purges and bans: cache-manager/v1/purge and cache-manager/v1/ban, respectively.
+Also provides two REST route for purges: cache-manager/v1/purge.
 
 ## Installation ##
 
 1. Define `WP_CACHE_MANAGER_SECRET` in `wp-config.php`
 2. Upload the `vip-cache-manager` directory to the `/wp-content/mu-plugins/` directory
+
+## REST API usage ##
+
+### URL list as JSON parameters ###
+
+REST endpoint for purges requires passing an array of URLs to be purged as JSON data along with each POST request.
+Example:
+
+```json
+{ "urls":
+  [
+    "http://www.example.org/someasset.css",
+    "https://www.example.org/subdir/someotherasset.js"
+  ]
+}
+```
+
+### Authentication ###
+
+Authentication is managed by `wpcom_vip_go_rest_api_request_allowed()`; it will check for valid authentication headers on request.
 
 ## Frequently Asked Questions ##
 
