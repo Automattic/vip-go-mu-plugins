@@ -79,33 +79,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'Deleting transients: ' . implode( ', ', $transients ) );
 
 		if ( ! $dry_run ) {
-			Automattic\VIP\Migration\delete_db_transients();
-		}
-
-		if ( ! $dry_run ) {
-			/**
-	 		 * Fires on migration cleanup
-	 		 *
-	 		 * Migration cleanup runs on VIP Go during the initial site setup
-	 		 * and after database imports. This hook can be used to add additional
-	 		 * cleanup for a given site.
-	 		 */
-			 do_action( 'vip_go_migration_cleanup' );
-		}
-
-		WP_CLI::line( 'Flushing object cache' );
-		if ( ! $dry_run ) {
-			wp_cache_flush();
-		}
-
-		WP_CLI::line( 'Connecting Jetpack' );
-		if ( ! $dry_run ) {
-			Automattic\VIP\Migration\connect_jetpack();
-		}
-
-		WP_CLI::line( 'Connecting VaultPress' );
-		if ( ! $dry_run ) {
-			Automattic\VIP\Migration\connect_vaultpress();
+			Automattic\VIP\Migration\run_after_data_migration_cleanup();
 		}
 	}
 
