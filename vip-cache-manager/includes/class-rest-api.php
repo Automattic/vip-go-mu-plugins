@@ -52,16 +52,6 @@ class REST_API extends Singleton {
 	}
 
 	/**
-	 * Testing function
-	 */
-	public function debug_request( $request ) {
-
-		$json_params = $request->get_json_params()['urls'];
-
-		var_dump($json_params);
-	}
-
-	/**
 	 *
 	 * Executes purge on all provided URLs
 	 *
