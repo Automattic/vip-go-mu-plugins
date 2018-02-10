@@ -92,25 +92,7 @@ class REST_API extends Singleton {
 		// Returns a REST response for sake of consistency
 		return rest_ensure_response( $response_array );
 	}
-
-	/**
-	 * Check if request is authorized
-	 *
-	 * @param object $request REST API request object.
-	 * @return bool|\WP_Error
-	 */
-	public function check_secret( $request ) {
-		$body = $request->get_json_params();
-
-		// For now, mimic original plugin's "authentication" method. This needs to be better.
-		if ( ! isset( $body['secret'] ) || ! hash_equals( \WP_CACHE_MANAGER_SECRET, $body['secret'] ) ) {
-			return new \WP_Error( 'no-secret', __( 'Secret must be specified with all requests', 'automattic-cache-manager' ), array(
-				'status' => 400,
-			) );
-		}
-
-		return true;
-	}
+	
 }
 
 REST_API::instance();
