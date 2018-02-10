@@ -46,6 +46,7 @@ class REST_API extends Singleton {
 			'permission_callback' => function() {
 				return wpcom_vip_go_rest_api_request_allowed( self::API_NAMESPACE );
 			},
+			'exoskeleton' 				=> [ 'window' => 10, 'limit'	=> 3, 'lockout' => 10 ],
 			'show_in_index'       => false
 		) );
 
