@@ -17,7 +17,6 @@ class REST_API extends Singleton {
 	 */
 	const API_NAMESPACE  = 'cache-manager/v1';
 	const ENDPOINT_PURGE = 'purge'; // purge URL(s)
-	const ENDPOINT_BAN   = 'ban'; // ban URL(s)
 	const URLS_KEY       = 'urls';
 
 	/**
