@@ -514,8 +514,7 @@ class WPCOM_VIP_Cache_Manager {
 			$term_purge_urls[] = $maybe_purge_url;
 			// Now add the pages for the archive we're clearing
 			for( $i = 2; $i <= $max_pages; $i++ ) {
-				$maybe_purge_url_page = rtrim( $maybe_purge_url, '/' ) . '/' . ltrim( $paging_endpoint, '/' );
-				$maybe_purge_url_page = sprintf( $maybe_purge_url_page, $i );
+				$maybe_purge_url_page = rtrim( $maybe_purge_url, '/' ) . '/' . ltrim( sprintf( $paging_endpoint, $i ), '/' );
 				$term_purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
 			}
 		}
