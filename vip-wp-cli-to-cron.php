@@ -2,7 +2,7 @@
 
  /***************************************************************************************************
  *                                                                                                  *
- * This IS NOT ready for client use. If you are interested in learning, please contact VIP Support. *
+ * This IS NOT ready for client use. If you are interested in learning more, please contact VIP Support. *
  *                                                                                                  *
  ***************************************************************************************************/
 
@@ -23,9 +23,10 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$command = sanitize_key( $command );
 	$subcommand = sanitize_key( $subcommand );
 
-	$url = ( isset( $args['url'] ) ) ? esc_url( $args['url'] ) : home_url();
+	$url = isset( $args['url'] ) ? esc_url_raw( $args['url'] ) : home_url();
+	$hostname = gethostname();
 
-	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s called for `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
+	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s called for `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, $hostname ) );
 
 	// Optional arguments.
 	foreach ( $args as $arg => $value ) {
@@ -52,7 +53,7 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 			wp_mail( $args['wpcom-vip-output-mail'], sprintf( 'Command %s %s is not whitelisted.', $command, $subcommand ), sprintf( 'Command %s %s is not whitelisted on %s.', $command, $subcommand, $url ) );
 		}
 
-		wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s exiting; command `wp %s %s` not whitelisted on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
+		wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s exiting; command `wp %s %s` not whitelisted on %s (%s)', __FUNCTION__, $command, $subcommand, $url, $hostname ) );
 
 		return; // Bail as the command is not whitelisted.
 	}
@@ -73,13 +74,13 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	// Temporary fix to allow WP-CLI to work outside the root of the WP install and set max execution time limit.
 	$cli_command = sprintf( 'cd %s; export WPCOM_VIP_WP_CLI_LIMIT=%d; %s 2>&1; unset WPCOM_VIP_WP_CLI_LIMIT;', ABSPATH, $limit, $cli_command );
 
-	wp_mail( $args['wpcom-vip-output-mail'], 'Running ' . join( ' ' , [ $command, $subcommand ] ), $cli_command );
-	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
+	wp_mail( $args['wpcom-vip-output-mail'], sprintf( 'Running `wp %s %s` on %s (%s)', $command, $subcommand, $url, $hostname ), $cli_command );
+	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, $hostname ) );
 
 	$output = shell_exec( $cli_command );
 
-	wp_mail( $args['wpcom-vip-output-mail'], 'Output for ' . join( ' ' , [ $command, $subcommand ] ), $output );
-	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
+	wp_mail( $args['wpcom-vip-output-mail'], sprintf( 'Output for `wp %s %s` on %s (%s)', $command, $subcommand, $url, $hostname ), $output );
+	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, $hostname ) );
 
 	return $output;
 }
