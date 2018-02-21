@@ -30,6 +30,7 @@ class Akismet {
 
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments' ) );
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments_meta' ) );
+		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_orphaned_commentmeta' ) );
 		add_action( 'akismet_schedule_cron_recheck', array( 'Akismet', 'cron_recheck' ) );
 
 		add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
@@ -348,6 +349,7 @@ class Akismet {
 
 			foreach ( $comment_ids as $comment_id ) {
 				do_action( 'delete_comment', $comment_id );
+				do_action( 'akismet_batch_delete_count', __FUNCTION__ );
 			}
 
 			// Prepared as strings since comment_id is an unsigned BIGINT, and using %d will constrain the value to the maximum signed BIGINT.
@@ -369,7 +371,7 @@ class Akismet {
 
 		$interval = apply_filters( 'akismet_delete_commentmeta_interval', 15 );
 
-		# enfore a minimum of 1 day
+		# enforce a minimum of 1 day
 		$interval = absint( $interval );
 		if ( $interval < 1 )
 			$interval = 1;
@@ -384,9 +386,47 @@ class Akismet {
 
 			foreach ( $comment_ids as $comment_id ) {
 				delete_comment_meta( $comment_id, 'akismet_as_submitted' );
+				do_action( 'akismet_batch_delete_count', __FUNCTION__ );
 			}
 
 			do_action( 'akismet_delete_commentmeta_batch', count( $comment_ids ) );
+		}
+
+		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->commentmeta ) ) // lucky number
+			$wpdb->query("OPTIMIZE TABLE {$wpdb->commentmeta}");
+	}
+
+	// Clear out comments meta that no longer have corresponding comments in the database
+	public static function delete_orphaned_commentmeta() {
+		global $wpdb;
+
+		$last_meta_id = 0;
+		$start_time = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? $_SERVER['REQUEST_TIME_FLOAT'] : microtime( true );
+		$max_exec_time = max( ini_get('max_execution_time') - 5, 3 );
+
+		while ( $commentmeta_results = $wpdb->get_results( $wpdb->prepare( "SELECT m.meta_id, m.comment_id, m.meta_key FROM {$wpdb->commentmeta} as m LEFT JOIN {$wpdb->comments} as c USING(comment_id) WHERE c.comment_id IS NULL AND m.meta_id > %d ORDER BY m.meta_id LIMIT 1000", $last_meta_id ) ) ) {
+			if ( empty( $commentmeta_results ) )
+				return;
+
+			$wpdb->queries = array();
+
+			$commentmeta_deleted = 0;
+
+			foreach ( $commentmeta_results as $commentmeta ) {
+				if ( 'akismet_' == substr( $commentmeta->meta_key, 0, 8 ) ) {
+					delete_comment_meta( $commentmeta->comment_id, $commentmeta->meta_key );
+					do_action( 'akismet_batch_delete_count', __FUNCTION__ );
+					$commentmeta_deleted++;
+				}
+
+				$last_meta_id = $commentmeta->meta_id;
+			}
+
+			do_action( 'akismet_delete_commentmeta_batch', $commentmeta_deleted );
+
+			// If we're getting close to max_execution_time, quit for this round.
+			if ( microtime(true) - $start_time > $max_exec_time )
+				return;
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->commentmeta ) ) // lucky number
