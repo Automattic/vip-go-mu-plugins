@@ -79,6 +79,7 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$output = shell_exec( $cli_command );
 
 	wp_mail( $args['wpcom-vip-output-mail'], 'Output for ' . join( ' ' , [ $command, $subcommand ] ), $output );
+    wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, home_url(), gethostname() ) );
 
 	return $output;
 }
