@@ -49,10 +49,10 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	}
 	if ( false === array_key_exists( $command, $whitelisted_commands ) || false === in_array( $subcommand, $whitelisted_commands[ $command ], true ) ) {
 		if ( false !== is_email( $args['wpcom-vip-output-mail'] ) ) {
-			wp_mail( $args['wpcom-vip-output-mail'], sprintf( 'Command %s %s is not whitelisted.', $command, $subcommand ), sprintf( 'Command %s %s is not whitelisted on %s.', $command, $subcommand, home_url() ) );
+			wp_mail( $args['wpcom-vip-output-mail'], sprintf( 'Command %s %s is not whitelisted.', $command, $subcommand ), sprintf( 'Command %s %s is not whitelisted on %s.', $command, $subcommand, $url ) );
 		}
 
-		wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s exiting; command `wp %s %s` not whitelisted on %s (%s)', __FUNCTION__, $command, $subcommand, home_url(), gethostname() ) );
+		wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s exiting; command `wp %s %s` not whitelisted on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
 
 		return; // Bail as the command is not whitelisted.
 	}
@@ -74,12 +74,12 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$cli_command = sprintf( 'cd %s; export WPCOM_VIP_WP_CLI_LIMIT=%d; %s 2>&1; unset WPCOM_VIP_WP_CLI_LIMIT;', ABSPATH, $limit, $cli_command );
 
 	wp_mail( $args['wpcom-vip-output-mail'], 'Running ' . join( ' ' , [ $command, $subcommand ] ), $cli_command );
-	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, home_url(), gethostname() ) );
+	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
 
 	$output = shell_exec( $cli_command );
 
 	wp_mail( $args['wpcom-vip-output-mail'], 'Output for ' . join( ' ' , [ $command, $subcommand ] ), $output );
-    wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, home_url(), gethostname() ) );
+    wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
 
 	return $output;
 }
