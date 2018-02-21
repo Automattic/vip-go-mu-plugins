@@ -23,7 +23,7 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$command = sanitize_key( $command );
 	$subcommand = sanitize_key( $subcommand );
 
-    $url = ( isset( $args['url'] ) ) ? esc_url( $args['url'] ) : home_url();
+	$url = ( isset( $args['url'] ) ) ? esc_url( $args['url'] ) : home_url();
 
 	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s called for `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
 
@@ -79,7 +79,7 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$output = shell_exec( $cli_command );
 
 	wp_mail( $args['wpcom-vip-output-mail'], 'Output for ' . join( ' ' , [ $command, $subcommand ] ), $output );
-    wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
+	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s finished running `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
 
 	return $output;
 }
