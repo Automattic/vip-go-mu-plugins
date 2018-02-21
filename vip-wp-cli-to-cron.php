@@ -23,7 +23,9 @@ function wpj_run_wpcli_command( $command, $subcommand, $args = array() ) {
 	$command = sanitize_key( $command );
 	$subcommand = sanitize_key( $subcommand );
 
-	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s called for `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, home_url(), gethostname() ) );
+    $url = ( isset( $args['url'] ) ) ? esc_url( $args['url'] ) : home_url();
+
+	wpcom_vip_irc( '#vip-go-wp-cli', sprintf( '%s called for `wp %s %s` on %s (%s)', __FUNCTION__, $command, $subcommand, $url, gethostname() ) );
 
 	// Optional arguments.
 	foreach ( $args as $arg => $value ) {
@@ -102,4 +104,3 @@ add_filter( 'schedule_event', function( $event ) {
 	}
 	return $event;
 }, PHP_INT_MAX, 1 );
-
