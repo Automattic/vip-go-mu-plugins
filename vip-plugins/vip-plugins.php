@@ -259,26 +259,8 @@ add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_upd
 function wpcom_vip_plugins_ui_admin_enqueue_scripts() {
 	$screen = get_current_screen();
 	if ( 'plugins' === $screen->id || 'plugins-network' === $screen->id ) {
-		wp_enqueue_style( 'vip-plugins-style', plugins_url( '/css/plugins-ui.css', __FILE__ ) , array(), '3.0' );
+		wp_enqueue_style( 'vip-plugins-style', plugins_url( '/css/plugins-ui.css', __FILE__ ), array(), '3.0' );
 		wp_enqueue_script( 'vip-plugins-script', plugins_url( '/js/plugins-ui.js', __FILE__ ), array( 'jquery' ), '3.0', true );
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wpcom_vip_plugins_ui_admin_enqueue_scripts' );
-
-/**
- * Restore shared plugin loading - this function was brought over from vip-dashboard
- * Until our protected plugins are moved/retired we will need to keep this in place
- * See wpcom_vip_load_plugin / wpcom_vip_can_use_shared_plugin for more context
- */
-function wpcom_vip_include_active_plugins() {
-	$retired_plugins_option = get_option( 'wpcom_vip_active_plugins', array() );
-
-	if ( ! is_array( $retired_plugins_option ) ) {
-		return;
-	}
-
-	foreach ( $retired_plugins_option as $plugin ) {
-		 wpcom_vip_load_plugin( $plugin );
-	}
-}
-add_action( 'plugins_loaded', 'wpcom_vip_include_active_plugins', 5 );
