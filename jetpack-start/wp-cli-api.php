@@ -106,6 +106,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function connect_site( $assoc_args = [] ) {
+		WP_CLI::line( 'Connecting Jetpack!' );
+
 		if ( Jetpack::is_active() ) {
 			WP_CLI::line( '- Jetpack is already connected' );
 
@@ -184,37 +186,12 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function disconnect_site() {
-		$args = [
-			'return' => 'all',
-			'exit_error' => false,
-		];
-		$cmd = sprintf(
-			'jetpack disconnect blog --url=%s',
-			escapeshellarg( get_site_url() )
-		);
-
 		WP_CLI::line( '- Disconnecting Jetpack' );
-		$result = WP_CLI::runcommand( $cmd, $args );
-		$result = is_object( $result ) ? (array) $result : $result;
-
-		$is_success = 0 === $result['return_code'];
-
-		if ( $is_success ) {
-			WP_CLI::line( '-- ' . $result['stdout'] );
-		} else {
-			WP_CLI::warning( '-- ' . $result['stderr'] );
-		}
-
-		return $is_success;
+		Jetpack::disconnect();
 	}
 
 	private function disconnect_and_reconnect_site() {
-		$is_disconnected = $this->disconnect_site();
-		if ( ! $is_disconnected ) {
-			return false;
-		}
-
-		WP_CLI::line( '- Reconnecting Jetpack' );
+		$this->disconnect_site();
 		return $this->connect_site();
 	}
 
