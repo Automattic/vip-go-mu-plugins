@@ -105,7 +105,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		}
 	}
 
-	private function connect_site( $assoc_args ) {
+	private function connect_site( $assoc_args = [] ) {
 		if ( Jetpack::is_active() ) {
 			WP_CLI::line( '- Jetpack is already connected' );
 
