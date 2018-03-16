@@ -149,3 +149,10 @@ add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
  * Stop Woocommerce from trying to create files on read-only filesystem
  */
 add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
+
+/**
+ * Record WordPress pageviews for VIP Go
+ */
+add_action( 'wp_footer', function() {
+	echo '<img src="//pixel.wp.com/g.gif?v=wpcom-no-pv&x_vip-go-stats/wordpress" />';
+} );
