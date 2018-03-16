@@ -154,5 +154,10 @@ add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
  * Record WordPress pageviews for VIP Go
  */
 add_action( 'wp_footer', function() {
+	// Don't track logged in views
+	if ( is_user_logged_in() ) {
+		return;
+	}
+	
 	echo '<img id="vip-go-stats-pixel" src="//pixel.wp.com/g.gif?v=wpcom-no-pv&x_vip-go-stats/wordpress" />';
 } );
