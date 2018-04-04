@@ -71,15 +71,6 @@ class A8C_Files {
 		// This results in all images being full size (which is not ideal)
 		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
 
-		// The sizes metadata is not used and mostly useless on Go so let's empty it out.
-		// This may need some revisiting for `srcset` handling.
-		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
-			if ( isset( $data['sizes'] ) ) {
-				$data['sizes'] = array();
-			}
-			return $data;
-		}, 10, 2 );
-
 		// This is our catch-all to strip dimensions from intermediate images in content.
 		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
 		add_filter( 'the_content', function( $content ) {
@@ -795,4 +786,16 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	add_action( 'init', 'a8c_files_init' );
 	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+
+	/**
+	 * Load the VIP Go File Service compatible srcset solution only on VIP Go.
+	 */
+	add_action( 'init', function() {
+		// And only if the feature is enabled. Defaults to non-production environments only.
+		$is_srcset_enabled = ( defined( 'VIP_GO_ENV' ) && 'production' !== constant( 'VIP_GO_ENV' ) );
+		if ( true === apply_filters( 'vip_go_srcset_enabled', $is_srcset_enabled ) ) {
+			require_once( __DIR__ . '/a8c-files/Image.php' );
+			require_once( __DIR__ . '/a8c-files/ImageSizes.php' );
+		}
+	}, 10, 0 );
 }
