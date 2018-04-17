@@ -126,10 +126,10 @@ class Image {
 	 */
 	protected function get_resized_filename() {
 		$query_args = [
-			'resize' => join( ',', array_map( 'rawurlencode', [
-				$this->width,
-				$this->height,
-			] ) )
+			'resize' => join( ',', [
+				$this->get_width(),
+				$this->get_height(),
+			] )
 		];
 
 		return add_query_arg( $query_args, $this->filename );
@@ -195,8 +195,8 @@ class Image {
 	 * @return void
 	 */
 	protected function set_width_height( $dimensions ) {
-		$this->width = $dimensions['dst_w'];
-		$this->height = $dimensions['dst_h'];
+		$this->width = (int) $dimensions['dst_w'];
+		$this->height = (int) $dimensions['dst_h'];
 	}
 
 }
