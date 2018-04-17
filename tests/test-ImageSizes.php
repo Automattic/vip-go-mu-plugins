@@ -169,7 +169,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		$generate_sizes = self::getMethod( 'generate_sizes' );
 		$generated_sizes = $generate_sizes->invokeArgs( $imageSizes, [] );
 
-		$this->assertEquals( $expected_sizes, $generated_sizes );
+		$this->assertEquals( $expected_sizes, $generated_sizes, 'Mismatching arrayof generated sizes meta.' );
 	}
 
 	/**
@@ -212,7 +212,6 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 			'height' => intval( $data['height'] ),
 			'mime-type' => 'image/jpeg',
 		];
-
 		$this->assertEquals( $expected_resize, $generate_sizes->invokeArgs( $imageSizes, [ $data ] ) );
 	}
 
@@ -416,13 +415,12 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		// This means no intermediate image sizes were physically created.
-		$this->assertEmpty( $postmeta['sizes'] );
+
+		$this->assertEmpty( $postmeta['sizes'], 'Intermediate image sizes has been physically created.' );
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		// This means the sizes are not being created via any filters.
-		$this->assertEmpty( $metadata['sizes'] );
+		$this->assertEmpty( $metadata['sizes'], 'Some filter must be filtering sizes key of image metadata.' );
 	}
 
 	/**
@@ -440,13 +438,11 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		// This means that no intermediate image sizes were physically created.
-		$this->assertEmpty( $postmeta['sizes'] );
+		$this->assertEmpty( $postmeta['sizes'], 'Intermediate image sizes has been physically created.' );
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		// This means that some virtual copies were successfully created.
-		$this->assertNotEmpty( $metadata['sizes'] );
+		$this->assertNotEmpty( $metadata['sizes'], 'Virtual copies were not created.' );
 	}
 
 	/**
@@ -463,13 +459,12 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		// Has all sizes?
-		$this->assertEquals( array_keys( $this->default_sizes() ), array_keys( $metadata['sizes'] ) );
+		$this->assertEquals( array_keys( $this->default_sizes() ), array_keys( $metadata['sizes'] ), 'Some registered sizes have not been created.' );
 
 		// Have all sizes have the right dimensions?
 		foreach( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'] );
-			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'] );
+			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
+			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
 		}
 	}
 
@@ -489,18 +484,17 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		// Has all sizes, including the new one?
-		$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ) );
+		$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'The newly registered image size has not been created.' );
 
 		// Has all the sizes, including the new one, have correct dimensions?
 		foreach( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'] );
-			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'] );
+			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
+			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
 		}
 
 		// Does the custom size have the correct dimensions?
-		$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'] );
-		$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'] );
+		$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
+		$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
 	}
 
 	/**
@@ -523,11 +517,11 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		// Check the default sizes.
 		foreach( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'] );
+			$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'], sprintf( 'Incorrect file or query params for %s size.', $size ) );
 		}
 
 		// Check the custom size.
-		$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][$custom_size_name]['file'] );
+		$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][$custom_size_name]['file'], 'Incorrect file for custom size.' );
 	}
 
 	/**
@@ -554,6 +548,6 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		$expected_srcset = 'http://example.org/wp-content/uploads/' . __DIR__ . '/fixtures/image.jpg 5472w'
 		                   . ", {$expected_srcset}";
 
-		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id, [ 400, 200 ] ) );
+		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id, [ 400, 200 ] ), 'Incorrectly generated srcset.' );
 	}
 }
