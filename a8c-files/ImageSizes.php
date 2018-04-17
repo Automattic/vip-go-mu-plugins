@@ -114,7 +114,7 @@ class ImageSizes {
 	 *
 	 * @return array Array with populated width, height and crop keys; empty array if no width and height are provided.
 	 */
-	public function standardise_size_data( $size_data ) {
+	public function standardize_size_data( $size_data ) {
 		$has_at_least_width_or_height = ( isset( $size_data['width'] ) || isset( $size_data['height'] ) );
 		if ( ! $has_at_least_width_or_height ) {
 			return [];
@@ -140,7 +140,7 @@ class ImageSizes {
 
 		foreach ( $this->filtered_sizes() as $size => $size_data ) {
 
-			$size_data = $this->standardise_size_data( $size_data );
+			$size_data = $this->standardize_size_data( $size_data );
 
 			if ( true === empty( $size_data ) ) {
 				continue;

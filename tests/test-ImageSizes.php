@@ -282,7 +282,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	}
 
 
-	public function get_size_data_for_standardise_size_data() {
+	public function get_size_data_for_standardize_size_data() {
 		return [
 			[
 				[
@@ -329,10 +329,10 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	/**
 	 * Test the size_data validation and standardisation.
 	 *
-	 * @covers A8C_Files\ImageSizes::standardise_size_data
-	 * @dataProvider get_size_data_for_standardise_size_data
+	 * @covers A8C_Files\ImageSizes::standardize_size_data
+	 * @dataProvider get_size_data_for_standardize_size_data
 	 */
-	public function test__standardise_size_data( $size_data, $expected ) {
+	public function test__standardize_size_data( $size_data, $expected ) {
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
@@ -346,7 +346,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
 
-		$standardised_size_data = $imageSizes->standardise_size_data( $size_data );
+		$standardised_size_data = $imageSizes->standardize_size_data( $size_data );
 
 		$this->assertEquals( $expected, $standardised_size_data );
 	}
