@@ -1,13 +1,13 @@
 <?php
 
-namespace A8C_Files;
+namespace Automattic\VIP\Files;
 
 /**
  * Class Image
  *
  * Represents a resizable image, exposing properties necessary for properly generating srcset.
  *
- * @package A8C_Files
+ * @package Automattic\VIP\Files
  */
 class Image {
 

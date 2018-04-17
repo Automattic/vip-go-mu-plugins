@@ -15,7 +15,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	public $test_image = __DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
-	 * Load the A8C_Files\ImageSizes class.
+	 * Load the Automattic\VIP\Files\ImageSizes class.
 	 */
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
@@ -63,7 +63,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @return ReflectionMethod
 	 */
 	protected static function getMethod( $name ) {
-		$class = new ReflectionClass( 'A8C_Files\\Image' );
+		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible(true);
 		return $method;
@@ -77,7 +77,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @return ReflectionProperty
 	 */
 	protected function getProperty( $name ) {
-		$class = new ReflectionClass( 'A8C_Files\\Image' );
+		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
 		$property = $class->getProperty( $name );
 		$property->setAccessible(true);
 		return $property;
@@ -86,7 +86,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	/**
 	 * Unit test covering the object initialisation.
 	 *
-	 * @covers A8C_Files\Image::__construct
+	 * @covers Automattic\VIP\Files\Image::__construct
 	 *
 	 * @param array $expected_sizes Array of expected sizes.
 	 */
@@ -103,7 +103,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new A8C_Files\Image( $postmeta, $attachment_id );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
 
 		$this->assertEquals( $postmeta['width'], $image->get_width() );
 		$this->assertEquals( $postmeta['height'], $image->get_height() );
@@ -112,7 +112,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Data provider for testing the A8C_Files\ImageSizes::generate_sizes.
+	 * Data provider for testing the Automattic\VIP\Files\ImageSizes::generate_sizes.
 	 *
 	 * @return array Array of Arrays of Arrays in order to provide input and expected output.
 	 */
@@ -180,7 +180,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	/**
 	 * Unit test covering the object initialisation.
 	 *
-	 * @covers A8C_Files\Image::resize
+	 * @covers Automattic\VIP\Files\Image::resize
 	 * @dataProvider get_data_for_generate_sizes
 	 *
 	 * @param array $expected_sizes Array of requested size dimensions.
@@ -198,7 +198,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new A8C_Files\Image( $postmeta, $attachment_id );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
 
 		$image->resize( $size );
 
@@ -217,7 +217,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	/**
 	 * Unit test covering the get_filename method
 	 *
-	 * @covers A8C_Files\Image::get_filename
+	 * @covers Automattic\VIP\Files\Image::get_filename
 	 */
 	public function test__get_filename() {
 		$attachment_id = self::factory()->attachment->create_object(
@@ -231,7 +231,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new A8C_Files\Image( $postmeta, $attachment_id );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
 
 		// Test getting original filename before the image is resized
 		$this->assertEquals( wp_basename( $this->test_image ), $image->get_filename() );
@@ -244,7 +244,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	/**
 	 * Test get_resized_filename
 	 *
-	 * @covers A8C_Files\Image::get_resized_filename
+	 * @covers Automattic\VIP\Files\Image::get_resized_filename
 	 */
 	public function test__get_resized_filename() {
 		$attachment_id = self::factory()->attachment->create_object(
@@ -258,7 +258,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new A8C_Files\Image( $postmeta, $attachment_id );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
 
 		$width = $this->getProperty( 'width' );
 		$width->setValue( $image, 150 );

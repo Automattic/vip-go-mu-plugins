@@ -21,7 +21,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	public $test_image = __DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
-	 * Load the A8C_Files\ImageSizes class.
+	 * Load the Automattic\VIP\Files\ImageSizes class.
 	 */
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
@@ -57,7 +57,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		 * `Exception: Serialization of 'Closure' is not allowed`
 		 * Thus resetting the static property manually after each test.
 		 */
-		A8C_Files\ImageSizes::$sizes = null;
+		Automattic\VIP\Files\ImageSizes::$sizes = null;
 
 		parent::tearDown();
 	}
@@ -70,7 +70,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * @return ReflectionMethod
 	 */
 	protected static function getMethod( $name ) {
-		$class = new ReflectionClass( 'A8C_Files\\ImageSizes' );
+		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible(true);
 		return $method;
@@ -80,14 +80,14 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * Helper function for turning the srcset implementation off.
 	 */
 	public function disable_image_sizes() {
-		remove_filter( 'wp_get_attachment_metadata', 'A8C_Files\\maybe_inject_image_sizes', 20, 2 );
+		remove_filter( 'wp_get_attachment_metadata', 'Automattic\\VIP\\Files\\maybe_inject_image_sizes', 20, 2 );
 	}
 
 	/**
 	 * Helper function for turning the srcset implementation on.
 	 */
 	public function enable_image_sizes() {
-		add_filter( 'wp_get_attachment_metadata', 'A8C_Files\\maybe_inject_image_sizes', 20, 2 );
+		add_filter( 'wp_get_attachment_metadata', 'Automattic\\VIP\\Files\\maybe_inject_image_sizes', 20, 2 );
 	}
 
 	/**
@@ -109,7 +109,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Data provider for testing the A8C_Files\ImageSizes::generate_sizes.
+	 * Data provider for testing the Automattic\VIP\Files\ImageSizes::generate_sizes.
 	 *
 	 * Provides WordPress default sizes set
 	 *
@@ -147,7 +147,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	/**
 	 * Unit test covering the generate_sizes method.
 	 *
-	 * @covers A8C_Files\ImageSizes::generate_sizes
+	 * @covers Automattic\VIP\Files\ImageSizes::generate_sizes
 	 * @dataProvider get_data_for_generate_sizes
 	 *
 	 * @param array $expected_sizes Array of expected sizes.
@@ -162,7 +162,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
+		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 		// Disable the static property generated during construction.
 		$imageSizes::$sizes = null;
 
@@ -173,7 +173,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Data Provider for testing the A8C_Files\ImageSizes::resize
+	 * Data Provider for testing the Automattic\VIP\Files\ImageSizes::resize
 	 *
 	 * @return mixed
 	 */
@@ -186,7 +186,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	/**
 	 * Unit test covering the resize method.
 	 *
-	 * @covers A8C_Files/ImageSizes::resize
+	 * @covers Automattic\VIP\Files/ImageSizes::resize
 	 * @dataProvider get_data_for_resize
 	 *
 	 * @param array $data Expected resize array.
@@ -202,7 +202,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
+		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 
 		$generate_sizes = self::getMethod( 'resize' );
 
@@ -257,7 +257,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	/**
 	 * Unit test covering the generate_sizes_meta method.
 	 *
-	 * @covers A8C_Files/ImageSizes::generate_sizes_meta
+	 * @covers Automattic\VIP\Files/ImageSizes::generate_sizes_meta
 	 * @dataProvider get_expected_sizes_meta
 	 */
 	public function test__generate_sizes_meta( $expected_sizes_meta ) {
@@ -270,7 +270,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
+		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 		$image_sizes_meta = $imageSizes->generate_sizes_meta();
 
 		$this->assertEquals( $expected_sizes_meta, $image_sizes_meta );
@@ -324,7 +324,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	/**
 	 * Test the size_data validation and standardisation.
 	 *
-	 * @covers A8C_Files\ImageSizes::standardize_size_data
+	 * @covers Automattic\VIP\Files\ImageSizes::standardize_size_data
 	 * @dataProvider get_size_data_for_standardize_size_data
 	 */
 	public function test__standardize_size_data( $size_data, $expected ) {
@@ -337,7 +337,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
+		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 		$standardised_size_data = $imageSizes->standardize_size_data( $size_data );
 
 		$this->assertEquals( $expected, $standardised_size_data );

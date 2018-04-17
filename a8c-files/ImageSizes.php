@@ -1,13 +1,13 @@
 <?php
 
-namespace A8C_Files;
+namespace Automattic\VIP\Files;
 
 /**
  * Class ImageSizes
  *
  * Manages image resizing via VIP Go File Service.
  *
- * @package A8C_Files
+ * @package Automattic\VIP\Files
  */
 class ImageSizes {
 
