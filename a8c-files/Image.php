@@ -146,7 +146,7 @@ class Image {
 	public function get_attachment_mime_type() {
 
 		if ( null === $this->attachment_id ) {
-			return new \WP_Error( 'error_getting_mimetype', esc_html__( 'Could not determine mime type from attachment post. Missing attachment ID' ), $this->filename );
+			return new \WP_Error( 'missing_attachment_id', esc_html__( 'Could not determine mime type from attachment post. Missing attachment ID' ), $this->filename );
 		}
 
 		$mime_type = get_post_mime_type( $this->attachment_id );
