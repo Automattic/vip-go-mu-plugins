@@ -153,26 +153,23 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * @param array $expected_sizes Array of expected sizes.
 	 */
 	public function test__generate_sizes( $expected_sizes ) {
-
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
 		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
-
 		// Disable the static property generated during construction.
 		$imageSizes::$sizes = null;
 
 		$generate_sizes = self::getMethod( 'generate_sizes' );
+		$generated_sizes = $generate_sizes->invokeArgs( $imageSizes, [] );
 
-		$this->assertEquals( $expected_sizes, $generate_sizes->invokeArgs( $imageSizes, [] ) );
+		$this->assertEquals( $expected_sizes, $generated_sizes );
 	}
 
 	/**
@@ -201,7 +198,6 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
@@ -271,14 +267,13 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
 		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
+		$image_sizes_meta = $imageSizes->generate_sizes_meta();
 
-		$this->assertEquals( $expected_sizes_meta, $imageSizes->generate_sizes_meta() );
+		$this->assertEquals( $expected_sizes_meta, $image_sizes_meta );
 	}
 
 
@@ -339,13 +334,10 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
 		$imageSizes = new A8C_Files\ImageSizes( $attachment_id, $postmeta );
-
 		$standardised_size_data = $imageSizes->standardize_size_data( $size_data );
 
 		$this->assertEquals( $expected, $standardised_size_data );
@@ -421,11 +413,9 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
 		// This means no intermediate image sizes were physically created.
 		$this->assertEmpty( $postmeta['sizes'] );
 
@@ -440,14 +430,12 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * No physical copies are being created.
 	 */
 	public function test__inject_image_sizes() {
-
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
@@ -465,14 +453,12 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * Integration test for checking whether all sizes are properly generated.
 	 */
 	public function test__correct_sizes_are_created() {
-
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
@@ -491,17 +477,14 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * Integration test for properly generated dimensions of a custom size.
 	 */
 	public function test__custom_size() {
-
 		// Register the custom size.
 		add_image_size( $custom_size_name = 'custom_size', $width = 200, $height = 180, $crop = true );
-
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
@@ -524,17 +507,14 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * Integration test of properly generated URLs to VIP Go File Service.
 	 */
 	public function test__correctness_of_the_urls() {
-
 		// Register the custom size.
 		add_image_size( $custom_size_name = 'custom_size', $width = 200, $height = 180, $crop = true );
-
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
@@ -554,14 +534,12 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * Integration test for wp_get_attachment_image_srcset
 	 */
 	public function test__generated_srcset() {
-
 		$attachment_id = self::factory()->attachment->create_object(
 			$this->test_image, 0, [
 				'post_mime_type' => 'image/jpeg',
 				'post_type'      => 'attachment',
 			]
 		);
-
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		// Test medium size.
