@@ -146,12 +146,12 @@ class Image {
 	public function get_attachment_mime_type() {
 
 		if ( null === $this->attachment_id ) {
-			return new \WP_Error( 'missing_attachment_id', esc_html__( 'Could not determine mime type from attachment post. Missing attachment ID' ), $this->filename );
+			return new \WP_Error( 'missing_attachment_id', __( 'Could not determine mime type from attachment post. Missing attachment ID' ), $this->filename );
 		}
 
 		$mime_type = get_post_mime_type( $this->attachment_id );
 		if ( false === $mime_type ) {
-			return new \WP_Error( 'error_getting_mimetype', esc_html__( 'Could not determine mime type from attachment post.' ), $this->filename );
+			return new \WP_Error( 'error_getting_mimetype', __( 'Could not determine mime type from attachment post.' ), $this->filename );
 		}
 
 		return $mime_type;
@@ -174,7 +174,7 @@ class Image {
 		// Uses original width and height stored in $this->data.
 		$dimensions = image_resize_dimensions( $this->data['width'], $this->data['height'], $max_width, $max_height, $crop );
 		if ( ! $dimensions ) {
-			return new \WP_Error( 'error_getting_dimensions', esc_html__( 'Could not calculate resized image dimensions' ), $this->filename );
+			return new \WP_Error( 'error_getting_dimensions', __( 'Could not calculate resized image dimensions' ), $this->filename );
 		}
 
 		return array_combine( [
