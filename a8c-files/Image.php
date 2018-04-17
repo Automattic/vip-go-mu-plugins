@@ -20,7 +20,7 @@ class Image {
 	/** @var array $data Attachment metadata. */
 	private $data;
 
-	/** @var string $mime_type Attachment's mime-type. */
+	/** @var string/WP_Erorr $mime_type Attachment's mime-type, WP_Error on failure when recalculating the dimensions. */
 	private $mime_type;
 
 	/** @var int $width Current attachment's width. */
