@@ -13,7 +13,7 @@ class WP_Filesystem_VIP_Compatability_Layer extends \WP_Filesystem_Base {
 		$this->errors = new \WP_Error();
 
 
-		$this->api = new_api_instance( ); //this might change
+		$this->api = new WP_Filesystem_VIP_GO();
 		$this->direct = new \WP_Filesystem_Direct( null );
 
 	}

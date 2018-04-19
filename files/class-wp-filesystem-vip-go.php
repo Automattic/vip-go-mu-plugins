@@ -4,10 +4,12 @@ namespace Automattic\VIP\Files;
 
 class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 
+	private $api;
 
 	public function __construct( ) {
 		$this->method = 'vip_go';
 		$this->errors = new \WP_Error();
+		$this->api = new_api_instance();
 	}
 
 	/**
@@ -18,6 +20,7 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 */
 	public function get_contents( $file ) {
 		//TODO: Caching for remote gets? Static single request cache vs memcache?
+		return $this->api->get_contents( $file );
 	}
 
 	/**
@@ -35,24 +38,20 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 *
 	 * @param string $file     Remote path to the file where to write the data.
 	 * @param string $contents The data to write.
-	 * @param int    $mode     Optional. The file permissions as octal number, usually 0644.
-	 *                         Default false. - Unimplemented
 	 * @return bool False upon failure, true otherwise.
 	 */
-	public function put_contents( $file, $contents, $mode = false ) {
-
+	public function put_contents( $file, $contents ) {
+		return $this->api->put_contents( $file );
 	}
 
 
 
 	/**
 	 * @param string $file
-	 * @param bool $recursive - Unimplemented
-	 * @param string $type - Unimplemented
 	 * @return bool
 	 */
-	public function delete( $file, $recursive = false, $type = false ) {
-
+	public function delete( $file ) {
+		return $this->api->delete( $file );
 	}
 
 	/**
@@ -60,7 +59,7 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function size( $file ) {
-
+		return $this->api->size( $file );
 	}
 
 	/**
@@ -68,21 +67,21 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function exists( $file ) {
-
+		return $this->api->exists( $file );
 	}
 	/**
 	 * @param string $file
 	 * @return bool
 	 */
 	public function is_file( $file ) {
-
+		return $this->api->is_file( $file );
 	}
 	/**
 	 * @param string $path
 	 * @return bool
 	 */
 	public function is_dir( $path ) {
-
+		return $this->api->is_dir( $path );
 	}
 
 	/**
@@ -90,7 +89,7 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_readable( $file ) {
-
+		return $this->api->is_readable( $file );
 	}
 
 	/**
@@ -98,7 +97,7 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_writable( $file ) {
-
+		return $this->api->is_writable( $file );
 	}
 
 	/**
