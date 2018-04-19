@@ -286,19 +286,4 @@ class WP_Filesystem_VIP_GO extends WP_Filesystem_Base {
 		trigger_error('This function is currently unimplemented', E_USER_ERROR );
 	}
 
-
-
-	// get_contents
-	// move (files only)
-	// unlink (files only)
-	// exists (files only)
-	// size
-
-	// TODO: caching for remote GETs?
-
-	// TODO: how is BB using these and how do we handle them?
-	// mkdir
-	// rmdir
-	// is_dir
-	// dirlist
 }
