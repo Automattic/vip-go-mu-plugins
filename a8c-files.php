@@ -63,8 +63,8 @@ class A8C_Files {
 
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
-			return 1073741824; // pow( 2, 30 )
-		});
+			return GB_IN_BYTES;
+		} );
 
 		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
 		// The old school implementation will be phased out soon.
