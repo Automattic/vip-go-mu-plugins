@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Files;
 
-class WP_Filesystem_VIP_GO extends WP_Filesystem_Base {
+class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 
 
 	public function __construct( ) {
 		$this->method = 'vip_go';
-		$this->errors = new WP_Error();
+		$this->errors = new \WP_Error();
 	}
 
 	/**
