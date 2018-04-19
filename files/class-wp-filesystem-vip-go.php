@@ -1,5 +1,7 @@
 <?php
 
+namespace Automattic\VIP\Files;
+
 class WP_Filesystem_VIP_GO extends WP_Filesystem_Base {
 
 

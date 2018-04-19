@@ -1,5 +1,7 @@
 <?php
 
+namespace Automattic\VIP\Files;
+
 class WP_Filesystem_VIP_Compatability_Layer extends WP_Filesystem_Base {
 
 	private $api;
