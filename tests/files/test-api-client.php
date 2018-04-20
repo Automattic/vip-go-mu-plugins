@@ -41,6 +41,41 @@ class API_Client_Test extends \WP_UnitTestCase {
 		}, 10, 3 );
 	}
 
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function getMethod( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
+	}
+
+	public function test__call_api() {
+		$this->mock_http_response( [] ); // don't care about the response
+
+		$call_api_method = self::getMethod( 'call_api' );
+
+		$call_api_method->invokeArgs( $this->api_client, [
+			'/path/to/image.jpg',
+			'POST',
+			[
+				'Another-Header' => 'Yay!',
+			]
+		] );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		$this->assertEquals( 'https://files.go-vip.co/path/to/image.jpg', $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertEquals( 'POST', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
+		$this->assertEquals( 10, $actual_http_request['args']['timeout'], 'Incorrect timeout' );
+		$this->assertEquals( [
+			'X-Client-Site-ID' => 123456,
+			'X-Access-Token' => 'super-sekret-token',
+			'Another-Header' => 'Yay!',
+		], $actual_http_request['args']['headers'], 'Incorrect headers' );
+	}
+
 	public function get_test_data__get_api_url() {
 		return [
 			'path_with_leadingslash' => [
