@@ -35,8 +35,8 @@ class API_Client {
 		$request_url = $this->get_api_url( $path );
 
 		$headers = array_merge( [
-			'X-Client-Site-ID' => $this->client_site_id,
-			'X-Access-Token' => $this->token,
+			'X-Client-Site-ID' => $this->files_site_id,
+			'X-Access-Token' => $this->files_token,
 		], $headers );
 
 		$request_args = [
