@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Files;
 
+use WP_Error;
+
 function new_api_client() {
 	return new API(
 		constant( 'FILE_SERVICE_ENDPOINT' ),
@@ -31,7 +33,7 @@ class API_Client {
 		return $this->api_base . '/' . $path;
 	}
 
-	private function call_api( $path, $method, $headers ) {
+	private function call_api( $path, $method, $headers = [] ) {
 		$request_url = $this->get_api_url( $path );
 
 		$headers = array_merge( [
@@ -54,7 +56,21 @@ class API_Client {
 	// TODO: is_unique_filename()
 	// TODO: get_file()
 	// TODO: upload_file()
-	// TODO: delete_file()
+
+	public function delete_file( $file_path ) {
+		$response = $this->call_api( $file_path, 'DELETE' );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'delete_file-failed', sprintf( __( 'Failed to delete file `%1$s` (response code: %2$d)' ), esc_html( $file_path ), $response_code ) );
+		}
+
+		return true;
+	}
 
 	public function is_file( $file_path ) {
 		$response = $this->call_api( $file_path, 'GET', [
