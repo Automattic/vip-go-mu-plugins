@@ -159,4 +159,54 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'https://files.go-vip.co/delete/this/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
 		$this->assertEquals( 'DELETE', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
 	}
+
+	public function get_test_data__get_file() {
+		return [
+			'WP_Error' => [
+				new WP_Error( 'oh-no', 'Oh no!' ),
+				new WP_Error( 'oh-no', 'Oh no!' ),
+			],
+
+			'file-does-not-exist' => [
+				[
+					'response' => [
+						'code' => 404,
+					],
+					'body' => null,
+				],
+				new WP_Error( 'get_file-failed', 'Failed to get file `/file.jpg` (response code: 404)' ),
+			],
+
+			'file-exists' => [
+				[
+					'response' => [
+						'code' => 200,
+					],
+					'body' => 'these-are-my-file-contents',
+				],
+				'these-are-my-file-contents',
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_file
+	 */
+	public function test__get_file( $mocked_response, $expected_result ) {
+		$this->mock_http_response( $mocked_response );
+
+		$actual_result = $this->api_client->get_file( '/file.jpg' );
+		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	public function test__get_file__validate_request() {
+		$this->mock_http_response( [] ); // don't care about the response
+
+		$this->api_client->get_file( '/get/this/file.jpg' );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		$this->assertEquals( 'https://files.go-vip.co/get/this/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
+	}
 }

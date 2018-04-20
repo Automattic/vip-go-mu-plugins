@@ -53,9 +53,23 @@ class API_Client {
 		return $response;
 	}
 
-	// TODO: is_unique_filename()
-	// TODO: get_file()
+	// TODO: get_unique_filename()
 	// TODO: upload_file()
+
+	public function get_file( $file_path ) {
+		$response = $this->call_api( $file_path, 'GET' );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), esc_html( $file_path ), $response_code ) );
+		}
+
+		return wp_remote_retrieve_body( $response );
+	}
 
 	public function delete_file( $file_path ) {
 		$response = $this->call_api( $file_path, 'DELETE' );
