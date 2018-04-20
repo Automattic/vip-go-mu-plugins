@@ -20,7 +20,12 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 */
 	public function get_contents( $file ) {
 		//TODO: Caching for remote gets? Static single request cache vs memcache?
-		return $this->api->get_contents( $file );
+		$file = $this->api->get_file( $file );
+		if ( is_wp_error( $file ) ){
+			$this->errors = $file;
+			return false;
+		}
+		return $file;
 	}
 
 	/**
@@ -30,6 +35,15 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return array|bool the file contents in an array or false on failure.
 	 */
 	public function get_contents_array( $file ) {
+		$file = $this->get_contents( $file );
+		if ( false === $file ){
+			return false;
+		}
+		//We're going to explode the array based on the EOL character and then re-add the EOL character to the end of the Array item to replicate the behaviour of file() which this function uses when it's "direct" http://php.net/manual/en/function.file.php
+		$array = explode(PHP_EOL, $file );
+		array_map( function( $array_item ){
+			return $array_item . PHP_EOL;
+		}, $array );
 
 	}
 
@@ -51,15 +65,27 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function delete( $file ) {
-		return $this->api->delete( $file );
+		$response = $this->api->delete_file( $file );
+		if ( is_wp_error( $response ) ){
+			$this->errors = $response;
+			return false;
+		}
+		return true;
 	}
 
 	/**
+	 *
+	 * This is currently really not efficient as we're fetching the whole file remotely to determine it's size. We might want to optimize this in the future.
+	 *
 	 * @param string $file
 	 * @return int
 	 */
 	public function size( $file ) {
-		return $this->api->size( $file );
+		$file = $this->get_contents( $this );
+		if ( false === $file ){
+			return false; //We don't need to set the errors as that's already done by get_contents
+		}
+		return sizeof( $file );
 	}
 
 	/**
@@ -67,7 +93,7 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function exists( $file ) {
-		return $this->api->exists( $file );
+		return $this->api->is_file( $file );
 	}
 	/**
 	 * @param string $file
@@ -76,20 +102,14 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	public function is_file( $file ) {
 		return $this->api->is_file( $file );
 	}
-	/**
-	 * @param string $path
-	 * @return bool
-	 */
-	public function is_dir( $path ) {
-		return $this->api->is_dir( $path );
-	}
 
 	/**
 	 * @param string $file
 	 * @return bool
 	 */
 	public function is_readable( $file ) {
-		return $this->api->is_readable( $file );
+		// Right now if we get that the file exists then we can read it. There's no circumstance under which we should have access to knowing a file exists but not being able to read it.
+		return $this->api->is_file( $file );
 	}
 
 	/**
@@ -126,6 +146,15 @@ class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
 	public function move( $source, $destination, $overwrite = false ) {
 		trigger_error('This function is currently unimplemented', E_USER_ERROR );
 	}
+
+	/**
+	 * @param string $path
+	 * @return bool
+	 */
+	public function is_dir( $path ) {
+		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+	}
+
 
 	/**
 	 * Unimplemented
