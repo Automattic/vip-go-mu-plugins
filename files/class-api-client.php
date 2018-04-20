@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
-function new_api_instance() {
+function new_api_client() {
 	return new API(
 		constant( 'FILE_SERVICE_ENDPOINT' ),
 		constant( 'FILES_CLIENT_SITE_ID' ),
@@ -10,7 +10,7 @@ function new_api_instance() {
 	);
 }
 
-class API {
+class API_Client {
 	const DEFAULT_REQUEST_TIMEOUT = 10;
 
 	private $api_base;
@@ -18,29 +18,32 @@ class API {
 	private $files_token;
 
 	public function __construct( $api_base, $files_site_id, $files_token ) {
-		// TODO: user agent?
-		$this->api_base = esc_url_raw( $api_base, [ 'https' ] );
+		$api_base = esc_url_raw( $api_base, [ 'https', 'http' ] );
+		$api_base = untrailingslashit( $api_base );
+		$this->api_base = $api_base;
+
 		$this->files_site_id = $files_site_id;
 		$this->files_token = $files_token;
 	}
 
-	private function get_api_url( $path ) {
-		// TODO: slashes
-		return $this->api_base . $path;
+	public function get_api_url( $path ) {
+		$path = ltrim( $path, '/\\' );
+		return $this->api_base . '/' . $path;
 	}
 
 	private function call_api( $path, $method, $headers ) {
-		$request_headers = array_merge( [
+		$request_url = $this->get_api_url( $path );
+
+		$headers = array_merge( [
 			'X-Client-Site-ID' => $this->client_site_id,
 			'X-Access-Token' => $this->token,
 		], $headers );
 
-		$request_url = $this->get_api_url( $path );
-
 		$request_args = [
 			'method' => $method,
-			'headers' => $request_headers,
-			'timeout' => self::DEFAULT_REQUEST_TIMEOUT, // TODO: will need a custom timeout for upload
+			'headers' => $headers,
+			'timeout' => self::DEFAULT_REQUEST_TIMEOUT,
+			// TODO: will need a custom timeout for upload
 		];
 
 		$response = wp_remote_request( $request_url, $request_args );
