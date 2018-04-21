@@ -5,7 +5,7 @@ namespace Automattic\VIP\Files;
 use WP_Error;
 
 function new_api_client() {
-	return new API(
+	return new API_Client(
 		constant( 'FILE_SERVICE_ENDPOINT' ),
 		constant( 'FILES_CLIENT_SITE_ID' ),
 		constant( 'FILES_ACCESS_TOKEN' )
