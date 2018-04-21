@@ -104,6 +104,14 @@ class API_Client_Test extends \WP_UnitTestCase {
 				new WP_Error( 'oh-no', 'Oh no!' ),
 				new WP_Error( 'oh-no', 'Oh no!' ),
 			],
+			'other-status' => [
+				[
+					'response' => [
+						'code' => 401,
+					]
+				],
+				new WP_Error( 'is_file-failed', 'Failed to check if file `/file.jpg` exists (response code: 401)' ),
+			],
 			'invalid-file' => [
 				[
 					'response' => [

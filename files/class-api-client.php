@@ -97,6 +97,12 @@ class API_Client {
 
 		$response_code = wp_remote_retrieve_response_code( $response );
 
-		return 200 === $response_code;
+		if ( 200 === $response_code ) {
+			return true;
+		} elseif ( 404 === $response_code ) {
+			return false;
+		}
+
+		return new WP_Error( 'is_file-failed', sprintf( __( 'Failed to check if file `%1$s` exists (response code: %2$d)' ), esc_html( $file_path ), $response_code ) );
 	}
 }
