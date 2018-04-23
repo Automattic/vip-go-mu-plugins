@@ -6,8 +6,6 @@ git:
   submodules: false
 
 php:
-  - 7
-  - 7.1
   - 7.2
 
 env:
