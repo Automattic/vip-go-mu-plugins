@@ -43,11 +43,17 @@ class API_Client {
 			'X-Access-Token' => $this->files_token,
 		];
 
-		$request_args = array_merge_recursive( [
+		if ( isset( $request_args['headers'] ) ) {
+			$headers = array_merge( $headers, $request_args['headers'] );
+		}
+
+		$timeout = $request_args['timeout'] ?? self::DEFAULT_REQUEST_TIMEOUT;
+
+		$request_args = [
 			'method' => $method,
 			'headers' => $headers,
-			'timeout' => self::DEFAULT_REQUEST_TIMEOUT,
-		], $request_args );
+			'timeout' => $timeout,
+		];
 
 		$response = wp_remote_request( $request_url, $request_args );
 
@@ -56,19 +62,21 @@ class API_Client {
 
 	// TODO: implement get_unique_filename()
 
-	public function upload_file( $file_path ) {
-		$file_size = filesize( $file_path );
-		$file_name = basename( $file_path );
-		$file_mime = wp_check_filetype( $file_name );
+	public function upload_file( $local_path, $upload_path ) {
+		if ( ! file_exists( $local_path ) ) {
+			return new WP_Error( 'upload_file-failed-invalid_path', __( 'Failed to upload file `%1$s` to `%2$s`; the file does not exist.' ), $local_path, $upload_path );
+		}
 
-		// Uploads take longer so we need a custom timeout.
-		// Use default timeout plus 1 second per 500kb.
-		$request_timeout = self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) );
+		$file_size = filesize( $local_path );
+		$file_name = basename( $local_path );
+		[ 'type' => $file_mime ] = wp_check_filetype( $file_name );
 
-		$curl_streamer = new Curl_Streamer( $file_path );
+		$request_timeout = $this->calculate_upload_timeout( $file_size );
+
+		$curl_streamer = new Curl_Streamer( $local_path );
 		$curl_streamer->init();
 
-		$response = $this->call_api( $file_path, 'PUT', [
+		$response = $this->call_api( $upload_path, 'PUT', [
 			'headers' => [
 				'Content-Type' => $file_mime,
 				'Content-Length' => $file_size,
@@ -86,20 +94,26 @@ class API_Client {
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 204 === $response_code ) {
-			return new WP_Error( 'upload_file-quota-reached', __( 'Failed to upload file; file space quota has been exceeded.' ) );
+			return new WP_Error( 'upload_file-quota-reached', __( 'Failed to upload file `%1$s` to `%2$s`; file space quota has been exceeded.' ), $local_path, $upload_path );
 		} elseif ( 200 !== $response_code ) {
-			return new WP_Error( 'upload_file-failed', sprintf( __( 'Failed to upload file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
+			return new WP_Error( 'upload_file-failed', sprintf( __( 'Failed to upload file `%1$s` to `%2$s` (response code: %3$d)' ), $local_path, $upload_path, $response_code ) );
 		}
 
 		$response_body = wp_remote_retrieve_body( $response );
 		$response_data = json_decode( $response_body );
 
 		if ( ! $response_data ) {
-			return new WP_Error( 'upload_file-json_decode-error', sprintf( __( 'Failed to process response data after file upload (body: %s)' ), $response_body ) );
+			return new WP_Error( 'upload_file-json_decode-error', sprintf( __( 'Failed to process response data after file upload for `%1$s` to `%2$s` (body: %3$s)' ), $local_path, $upload_path, $response_body ) );
 		}
 
 		// response looks like {"filename":"/wp-content/uploads/path/to/file.ext"}
 		return $response_data->filename;
+	}
+
+	private function calculate_upload_timeout( $file_size ) {
+		// Uploads take longer so we need a custom timeout.
+		// Use default timeout plus 1 second per 500kb.
+		return self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) );
 	}
 
 	public function get_file( $file_path ) {

@@ -254,4 +254,73 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'https://files.go-vip.co/get/this/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
 		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
 	}
+
+	public function get_test_data__upload_timeout() {
+		return [
+			'empty-file' => [
+				0,
+				10,
+			],
+
+			'1kb' => [
+				1024,
+				10,
+			],
+
+			'500kb' => [
+				512000,
+				11,
+			],
+
+			'1GB' => [
+				1073741824,
+				2107,
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__upload_timeout
+	 */
+	public function test__calculate_upload_timeout( $file_size, $expected_timeout ) {
+		$calculate_upload_timeout_method = self::getMethod( 'calculate_upload_timeout' );
+
+		$actual_timeout = $calculate_upload_timeout_method->invokeArgs( $this->api_client, [
+			$file_size,
+		] );
+
+		$this->assertEquals( $expected_timeout, $actual_timeout );
+	}
+
+	public function test__upload_file__invalid_file() {
+		$file_path = '/path/to/invalid/file.txt';
+		$upload_path = '/wp-content/uploads/file.txt';
+		$expected_error_code = 'upload_file-failed-invalid_path';
+
+		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
+
+		$this->assertWPError( $actual_result, 'WP_Error not returned' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Unexpected error code' );
+	}
+
+	public function test__upload_file__validate_request() {
+		$this->mock_http_response( [] ); // don't care about the response
+
+		$file_path = __DIR__ . '/../fixtures/files/upload.txt';
+		$upload_path = '/wp-content/uploads/file.txt';
+
+		$this->api_client->upload_file( $file_path, $upload_path );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.txt', $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertArraySubset( [
+			'Content-Type' => 'text/plain',
+			'Content-Length' => 13,
+			'Connection' => 'Keep-Alive',
+		], $actual_http_request['args']['headers'], 'Missing `Content-*` headers' );
+		$this->assertEquals( 10, $actual_http_request['args']['timeout'], 'Incorrect timeout' );
+	}
 }
