@@ -70,9 +70,7 @@ class API_Client {
 
 		$file_size = filesize( $local_path );
 		$file_name = basename( $local_path );
-		[
-			'type' => $file_mime,
-		] = wp_check_filetype( $file_name );
+		[ 'type' => $file_mime ] = wp_check_filetype( $file_name );
 
 		$request_timeout = $this->calculate_upload_timeout( $file_size );
 
