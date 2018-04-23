@@ -15,7 +15,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$this->direct = new \WP_Filesystem_Direct( null );
 	}
 
-	private function get_appropriate_transport( $filename ) {
+	private function get_transport_for_path( $filename ) {
 		if ( $this->is_file_in_valid_vip_go_uploads_folder( $filename ) ) {
 			return $this->api;
 		} elseif ( $this->is_temporary_folder( $filename ) ) {
@@ -57,7 +57,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool The function returns the read data or false on failure.
 	 */
 	public function get_contents( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->get_contents( $file );
 	}
 
@@ -68,7 +68,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return array|bool the file contents in an array or false on failure.
 	 */
 	public function get_contents_array( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->get_contents_array( $file );
 	}
 
@@ -82,7 +82,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool False upon failure, true otherwise.
 	 */
 	public function put_contents( $file, $contents, $mode = false ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		$transport->put_contents( $file, $contents, $mode );
 		return true;
 	}
@@ -95,8 +95,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
-		$source_transport = $this->get_appropriate_transport( $source );
-		$destination_transport = $this->get_appropriate_transport( $destination );
+		$source_transport = $this->get_transport_for_path( $source );
+		$destination_transport = $this->get_transport_for_path( $destination );
 
 		if ( ! $overwrite && $destination_transport->exists( $destination ) ) {
 			return false;
@@ -130,7 +130,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->delete( $file );
 	}
 
@@ -139,7 +139,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function size( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->size( $file );
 	}
 
@@ -148,7 +148,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function exists( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->exists( $file );
 	}
 	/**
@@ -156,7 +156,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_file( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->is_file( $file );
 	}
 	/**
@@ -164,7 +164,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_dir( $path ) {
-		$transport = $this->get_appropriate_transport( $path );
+		$transport = $this->get_transport_for_path( $path );
 		return $transport->is_dir( $path );
 	}
 
@@ -173,7 +173,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_readable( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->is_readable( $file );
 	}
 
@@ -182,7 +182,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_writable( $file ) {
-		$transport = $this->get_appropriate_transport( $file );
+		$transport = $this->get_transport_for_path( $file );
 		return $transport->is_writable( $file );
 	}
 
