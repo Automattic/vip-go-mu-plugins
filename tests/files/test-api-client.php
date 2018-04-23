@@ -44,7 +44,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	/**
 	 * Helper function for accessing protected methods.
 	 */
-	protected static function getMethod( $name ) {
+	protected static function get_method( $name ) {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
@@ -54,7 +54,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function test__call_api() {
 		$this->mock_http_response( [] ); // don't care about the response
 
-		$call_api_method = self::getMethod( 'call_api' );
+		$call_api_method = self::get_method( 'call_api' );
 
 		$call_api_method->invokeArgs( $this->api_client, [
 			'/path/to/image.jpg',
@@ -283,7 +283,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__upload_timeout
 	 */
 	public function test__calculate_upload_timeout( $file_size, $expected_timeout ) {
-		$calculate_upload_timeout_method = self::getMethod( 'calculate_upload_timeout' );
+		$calculate_upload_timeout_method = self::get_method( 'calculate_upload_timeout' );
 
 		$actual_timeout = $calculate_upload_timeout_method->invokeArgs( $this->api_client, [
 			$file_size,
