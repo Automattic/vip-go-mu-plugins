@@ -2,18 +2,18 @@
 
 namespace Automattic\VIP\Files;
 
-class WP_Filesystem_VIP_Compatability_Layer extends \WP_Filesystem_Base {
+class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 	private $api;
 	private $direct;
 
 	public function __construct( ) {
 
-		$this->method = 'vip_compatability_layer';
+		$this->method = 'vip';
 		$this->errors = new \WP_Error();
 
 
-		$this->api = new WP_Filesystem_VIP_GO();
+		$this->api = new WP_Filesystem_Uploads();
 		$this->direct = new \WP_Filesystem_Direct( null );
 
 	}

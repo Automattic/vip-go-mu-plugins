@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Files;
 
-class WP_Filesystem_VIP_GO extends \WP_Filesystem_Base {
+class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 	private $api;
 
 	public function __construct( ) {
-		$this->method = 'vip_go';
+		$this->method = 'vip-uploads';
 		$this->errors = new \WP_Error();
 		$this->api = new_api_instance();
 	}
