@@ -20,6 +20,12 @@ class Image {
 	/** @var string/WP_Erorr $mime_type Attachment's mime-type, WP_Error on failure when recalculating the dimensions. */
 	private $mime_type;
 
+	/** @var int $original_width Image original width. */
+	private $original_width;
+
+	/** @var int $original_width Image original height. */
+	private $original_height;
+
 	/** @var int $width Current attachment's width. */
 	private $width;
 
@@ -42,8 +48,8 @@ class Image {
 	 */
 	public function __construct( $data, $mime_type ) {
 		$this->filename = $data['file'];
-		$this->width = $data['width'];
-		$this->height = $data['height'];
+		$this->width = $this->original_width = $data['width'];
+		$this->height = $this->original_height = $data['height'];
 		$this->mime_type = $this->$mime_type;
 		$this->data = $data;
 	}
@@ -155,8 +161,7 @@ class Image {
 	 * @return array|\WP_Error Array of dimensions matching the parameters to imagecopyresampled. WP_Error on failure.
 	 */
 	protected function image_resize_dimensions( $max_width, $max_height, $crop ) {
-		// Uses original width and height stored in $this->data.
-		$dimensions = image_resize_dimensions( $this->data['width'], $this->data['height'], $max_width, $max_height, $crop );
+		$dimensions = image_resize_dimensions( $this->original_width, $this->original_height, $max_width, $max_height, $crop );
 		if ( ! $dimensions ) {
 			return new \WP_Error( 'error_getting_dimensions', __( 'Could not calculate resized image dimensions' ), $this->filename );
 		}
