@@ -1,5 +1,7 @@
 <?php
 
+namespace Automattic\VIP\Files;
+
 class Curl_Streamer {
 	private $file_path;
 
