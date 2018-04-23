@@ -323,4 +323,75 @@ class API_Client_Test extends \WP_UnitTestCase {
 		], $actual_http_request['args']['headers'], 'Missing `Content-*` headers' );
 		$this->assertEquals( 10, $actual_http_request['args']['timeout'], 'Incorrect timeout' );
 	}
+
+	public function get_test_data__upload_file__errors() {
+		return [
+			'return-WP_Error' => [
+				new WP_Error( 'oh-no', 'Oh no!' ),
+				'oh-no',
+			],
+
+			'status-204' => [
+				[
+					'response' => [
+						'code' => 204,
+					],
+				],
+				'upload_file-failed-quota_reached'
+			],
+
+			'status-non-200' => [
+				[
+					'response' => [
+						'code' => 400,
+					],
+				],
+				'upload_file-failed'
+			],
+
+			'invalid-json' => [
+				[
+					'response' => [
+						'code' => 200,
+					],
+					'body' => '{{{',
+				],
+				'upload_file-failed-json_decode-error'
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__upload_file__errors
+	 */
+	public function test__upload_file__error( $mocked_response, $expected_error_code ) {
+		$this->mock_http_response( $mocked_response );
+
+		$file_path = __DIR__ . '/../fixtures/files/upload.txt';
+		$upload_path = '/wp-content/uploads/file.txt';
+
+		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+	}
+
+	public function test__upload_file__success() {
+		$this->mock_http_response( [
+			'response' => [
+				'code' => 200,
+			],
+			'body' => '{"filename":"/wp-content/uploads/file.txt"}',
+		] );
+
+		$file_path = __DIR__ . '/../fixtures/files/upload.txt';
+		$upload_path = '/wp-content/uploads/file.txt';
+
+		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
+
+		$this->assertEquals( $upload_path, $actual_result );
+	}
+
 }

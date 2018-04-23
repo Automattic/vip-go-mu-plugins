@@ -94,7 +94,7 @@ class API_Client {
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 204 === $response_code ) {
-			return new WP_Error( 'upload_file-quota-reached', __( 'Failed to upload file `%1$s` to `%2$s`; file space quota has been exceeded.' ), $local_path, $upload_path );
+			return new WP_Error( 'upload_file-failed-quota_reached', __( 'Failed to upload file `%1$s` to `%2$s`; file space quota has been exceeded.' ), $local_path, $upload_path );
 		} elseif ( 200 !== $response_code ) {
 			return new WP_Error( 'upload_file-failed', sprintf( __( 'Failed to upload file `%1$s` to `%2$s` (response code: %3$d)' ), $local_path, $upload_path, $response_code ) );
 		}
@@ -103,7 +103,7 @@ class API_Client {
 		$response_data = json_decode( $response_body );
 
 		if ( ! $response_data ) {
-			return new WP_Error( 'upload_file-json_decode-error', sprintf( __( 'Failed to process response data after file upload for `%1$s` to `%2$s` (body: %3$s)' ), $local_path, $upload_path, $response_body ) );
+			return new WP_Error( 'upload_file-failed-json_decode-error', sprintf( __( 'Failed to process response data after file upload for `%1$s` to `%2$s` (body: %3$s)' ), $local_path, $upload_path, $response_body ) );
 		}
 
 		// response looks like {"filename":"/wp-content/uploads/path/to/file.ext"}
