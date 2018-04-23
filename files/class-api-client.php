@@ -61,8 +61,9 @@ class API_Client {
 		$file_name = basename( $file_path );
 		$file_mime = wp_check_filetype( $file_name );
 
-		// TODO: need to pass to API call
-		$request_timeout = self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) ); // default plus 1 second per 500k
+		// Uploads take longer so we need a custom timeout.
+		// Use default timeout plus 1 second per 500kb.
+		$request_timeout = self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) );
 
 		$curl_streamer = new Curl_Streamer( $file_path );
 		$curl_streamer->init();
@@ -73,6 +74,7 @@ class API_Client {
 				'Content-Length' => $file_size,
 				'Connection' => 'Keep-Alive',
 			],
+			'timeout' => $request_timeout,
 		] );
 
 		$curl_streamer->deinit();
