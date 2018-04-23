@@ -308,7 +308,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function test__upload_file__validate_request() {
 		$this->mock_http_response( [] ); // don't care about the response
 
-		$file_path = __DIR__ . '/../fixtures/files/upload.txt';
+		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
 		$upload_path = '/wp-content/uploads/file.txt';
 
 		$this->api_client->upload_file( $file_path, $upload_path );
@@ -316,11 +316,13 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$actual_http_request = reset( $this->http_requests );
 
 		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.txt', $actual_http_request['url'], 'Incorrect API URL' );
+
 		$this->assertArraySubset( [
-			'Content-Type' => 'text/plain',
+			'Content-Type' => 'image/jpeg',
 			'Content-Length' => 13,
 			'Connection' => 'Keep-Alive',
 		], $actual_http_request['args']['headers'], 'Missing `Content-*` headers' );
+
 		$this->assertEquals( 10, $actual_http_request['args']['timeout'], 'Incorrect timeout' );
 	}
 
@@ -367,7 +369,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function test__upload_file__error( $mocked_response, $expected_error_code ) {
 		$this->mock_http_response( $mocked_response );
 
-		$file_path = __DIR__ . '/../fixtures/files/upload.txt';
+		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
 		$upload_path = '/wp-content/uploads/file.txt';
 
 		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
@@ -386,7 +388,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 			'body' => '{"filename":"/wp-content/uploads/file.txt"}',
 		] );
 
-		$file_path = __DIR__ . '/../fixtures/files/upload.txt';
+		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
 		$upload_path = '/wp-content/uploads/file.txt';
 
 		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
