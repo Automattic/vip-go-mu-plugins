@@ -11,9 +11,6 @@ namespace Automattic\VIP\Files;
  */
 class Image {
 
-	/** @var int $attachment_id Attachment post ID. */
-	public $attachment_id;
-
 	/** @var string $filename Attachment's Filename. */
 	public $filename;
 
@@ -32,12 +29,22 @@ class Image {
 	/** @var bool $is_resized Whether the attachment has been resized yet, or not. */
 	private $is_resized = false;
 
-	public function __construct( $data, $attachment_id = null ) {
+	/**
+	 * Constructs the image object.
+	 *
+	 * The $data array should provide at least
+	 *  file   : string Image file path
+	 *  width  : int    Image width
+	 *  height : int    Image height
+	 *
+	 * @param array $data                 Array of attachment metadata, typically value of _wp_attachment_metadata postmeta
+	 * @param string|\WP_Error $mime_type Typically value returned from get_post_mime_type function.
+	 */
+	public function __construct( $data, $mime_type ) {
 		$this->filename = $data['file'];
 		$this->width = $data['width'];
 		$this->height = $data['height'];
-		$this->attachment_id = $attachment_id;
-		$this->mime_type = $this->get_attachment_mime_type();
+		$this->mime_type = $this->$mime_type;
 		$this->data = $data;
 	}
 
@@ -56,7 +63,6 @@ class Image {
 			return $dimensions; // Returns \WP_Error.
 		}
 
-		$this->mime_type = $this->get_attachment_mime_type();
 		if ( true === is_wp_error( $this->mime_type ) ) {
 			return $this->mime_type; // Returns \WP_Error.
 		}
@@ -133,28 +139,6 @@ class Image {
 		];
 
 		return add_query_arg( $query_args, $this->filename );
-	}
-
-	/**
-	 * Get post mime type.
-	 *
-	 * Since the attachment had been already fetched from database,
-	 * using the get_post_mime_type function should be efficient enough.
-	 *
-	 * @return string|\WP_Error Attachment mime type or WP_Error on failure.
-	 */
-	public function get_attachment_mime_type() {
-
-		if ( null === $this->attachment_id ) {
-			return new \WP_Error( 'missing_attachment_id', __( 'Could not determine mime type from attachment post. Missing attachment ID' ), $this->filename );
-		}
-
-		$mime_type = get_post_mime_type( $this->attachment_id );
-		if ( false === $mime_type ) {
-			return new \WP_Error( 'error_getting_mimetype', __( 'Could not determine mime type from attachment post.' ), $this->filename );
-		}
-
-		return $mime_type;
 	}
 
 	/**

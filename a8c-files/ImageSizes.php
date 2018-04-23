@@ -28,7 +28,7 @@ class ImageSizes {
 	 */
 	public function __construct( $attachment_id, $data ) {
 		$this->data = $data;
-		$this->image = new Image( $data, $attachment_id );
+		$this->image = new Image( $data, get_post_mime_type( $attachment_id ) );
 		$this->generate_sizes();
 	}
 
