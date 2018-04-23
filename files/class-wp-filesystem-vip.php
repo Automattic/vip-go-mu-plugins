@@ -16,9 +16,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	private function get_transport_for_path( $filename ) {
-		if ( $this->is_file_in_valid_vip_go_uploads_folder( $filename ) ) {
+		if ( $this->is_uploads_path( $filename ) ) {
 			return $this->api;
-		} elseif ( $this->is_temporary_folder( $filename ) ) {
+		} elseif ( $this->is_tmp_path( $filename ) ) {
 			return $this->direct;
 		}
 
@@ -29,7 +29,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		trigger_error( 'Files can only be modified either in the temporary folder or in the uploads folder. Please see our documentation here:', E_USER_ERROR );
 	}
 
-	private function is_temporary_folder( $filename ) {
+	private function is_tmp_path( $filename ) {
 		// TODO: Should we check against sys_get_temp_dir()?
 		if ( strpos( $filename, '/tmp' ) ) {
 			return true;
@@ -37,7 +37,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		return false;
 	}
 
-	private function is_file_in_valid_vip_go_uploads_folder( $filename ) {
+	private function is_uploads_path( $filename ) {
 		$upload_path = trim( get_option( 'upload_path' ) );
 		if ( empty( $upload_path ) ) {
 			$upload_path = 'wp-content/uploads';
