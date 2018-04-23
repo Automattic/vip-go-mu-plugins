@@ -7,44 +7,43 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	private $api;
 	private $direct;
 
-	public function __construct( ) {
-
+	public function __construct() {
 		$this->method = 'vip';
 		$this->errors = new \WP_Error();
 
-
 		$this->api = new WP_Filesystem_Uploads();
 		$this->direct = new \WP_Filesystem_Direct( null );
-
 	}
 
-	private function get_appropriate_transport( $filename ){
-		if ( $this->is_file_in_valid_vip_go_uploads_folder( $filename ) ){
+	private function get_appropriate_transport( $filename ) {
+		if ( $this->is_file_in_valid_vip_go_uploads_folder( $filename ) ) {
 			return $this->api;
-		}else if( $this->is_temporary_folder( $filename ) ){
+		} elseif ( $this->is_temporary_folder( $filename ) ) {
 			return $this->direct;
 		}
+
 		//This is the usual way to do errors, we'll use it but also trigger a PHP E_USER_ERROR to ensure users see this.
-		$this->errors->add( 'filepath_not_supported', 'No appropriate transport found for filename: '. $filename );
+		$this->errors->add( 'filepath_not_supported', 'No appropriate transport found for filename: ' . $filename );
+
 		//TODO: Do we want to just trigger_error in some circumstances? maybe only when environement != production?
-		trigger_error('Files can only be modified either in the temporary folder or in the uploads folder. Please see our documentation here:', E_USER_ERROR );
+		trigger_error( 'Files can only be modified either in the temporary folder or in the uploads folder. Please see our documentation here:', E_USER_ERROR );
 	}
 
-	private function is_temporary_folder( $filename ){
+	private function is_temporary_folder( $filename ) {
 		// TODO: Should we check against sys_get_temp_dir()?
-		if ( strpos( $filename, '/tmp' ) ){
+		if ( strpos( $filename, '/tmp' ) ) {
 			return true;
 		}
 		return false;
 	}
 
-	private function is_file_in_valid_vip_go_uploads_folder( $filename ){
+	private function is_file_in_valid_vip_go_uploads_folder( $filename ) {
 		$upload_path = trim( get_option( 'upload_path' ) );
-		if ( empty( $upload_path ) ){
+		if ( empty( $upload_path ) ) {
 			$upload_path = 'wp-content/uploads';
 		}
 		//TODO: Do we want to ensure the folder exists? This could flag false positives.
-		if ( false === strpos( $filename, $upload_path ) ){
+		if ( false === strpos( $filename, $upload_path ) ) {
 			return false;
 		}
 		return true;
@@ -98,7 +97,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$source_transport = $this->get_appropriate_transport( $source );
 		$destination_transport = $this->get_appropriate_transport( $destination );
 
-		if ( ! $overwrite && $destination_transport->exists( $destination ) ){
+		if ( ! $overwrite && $destination_transport->exists( $destination ) ) {
 			return false;
 		}
 
@@ -114,7 +113,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function move( $source, $destination, $overwrite = false ) {
 		$copy_results = $this->copy( $source, $destination, $overwrite );
-		if ( false == $copy_results ){
+		if ( false == $copy_results ) {
 			return false;
 		}
 
@@ -193,7 +192,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function atime( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -203,7 +202,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function mtime( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 
@@ -217,7 +216,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -230,7 +229,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -241,7 +240,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function rmdir( $path, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -253,7 +252,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool|array
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 
@@ -263,7 +262,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool the current working directory on success, or false on failure.
 	 */
 	public function cwd() {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -273,7 +272,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chdir( $dir ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -285,7 +284,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -298,7 +297,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -311,7 +310,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -321,7 +320,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool Username of the user or false on error.
 	 */
 	public function owner( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -333,7 +332,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string Mode of the file (last 3 digits).
 	 */
 	public function getchmod( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -343,7 +342,6 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|false
 	 */
 	public function group( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
-
 }

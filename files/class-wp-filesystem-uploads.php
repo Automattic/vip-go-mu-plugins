@@ -6,7 +6,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 	private $api;
 
-	public function __construct( ) {
+	public function __construct() {
 		$this->method = 'vip-uploads';
 		$this->errors = new \WP_Error();
 		$this->api = new_api_instance();
@@ -21,7 +21,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	public function get_contents( $file ) {
 		//TODO: Caching for remote gets? Static single request cache vs memcache?
 		$file = $this->api->get_file( $file );
-		if ( is_wp_error( $file ) ){
+		if ( is_wp_error( $file ) ) {
 			$this->errors = $file;
 			return false;
 		}
@@ -36,12 +36,12 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function get_contents_array( $file ) {
 		$file = $this->get_contents( $file );
-		if ( false === $file ){
+		if ( false === $file ) {
 			return false;
 		}
 		//We're going to explode the array based on the EOL character and then re-add the EOL character to the end of the Array item to replicate the behaviour of file() which this function uses when it's "direct" http://php.net/manual/en/function.file.php
-		$array = explode(PHP_EOL, $file );
-		array_map( function( $array_item ){
+		$array = explode( PHP_EOL, $file );
+		array_map( function( $array_item ) {
 			return $array_item . PHP_EOL;
 		}, $array );
 
@@ -66,7 +66,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function delete( $file ) {
 		$response = $this->api->delete_file( $file );
-		if ( is_wp_error( $response ) ){
+		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;
 			return false;
 		}
@@ -82,8 +82,8 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function size( $file ) {
 		$file = $this->get_contents( $this );
-		if ( false === $file ){
-			return false; //We don't need to set the errors as that's already done by get_contents
+		if ( false === $file ) {
+			return false; // We don't need to set the errors as that's already done by `get_contents`
 		}
 		return sizeof( $file );
 	}
@@ -131,7 +131,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -144,7 +144,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function move( $source, $destination, $overwrite = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -152,7 +152,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_dir( $path ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 
@@ -163,7 +163,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function atime( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -173,7 +173,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function mtime( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 
@@ -187,7 +187,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -200,7 +200,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -211,7 +211,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function rmdir( $path, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -223,7 +223,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool|array
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 
@@ -233,7 +233,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return string|bool the current working directory on success, or false on failure.
 	 */
 	public function cwd() {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -243,7 +243,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chdir( $dir ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -255,7 +255,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -268,7 +268,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -281,7 +281,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -291,7 +291,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return string|bool Username of the user or false on error.
 	 */
 	public function owner( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -303,7 +303,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return string Mode of the file (last 3 digits).
 	 */
 	public function getchmod( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 	/**
@@ -313,7 +313,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return string|false
 	 */
 	public function group( $file ) {
-		trigger_error('This function is currently unimplemented', E_USER_ERROR );
+		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
 	}
 
 }
