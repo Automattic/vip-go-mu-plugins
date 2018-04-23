@@ -44,22 +44,16 @@ class WP_Filesystem_VIP extends WP_Filesystem_Base {
 		trigger_error( 'Files can only be modified either in the temporary folder or in the uploads folder. Please see our documentation here:', E_USER_ERROR );
 	}
 
-	private function is_tmp_path( $filename ) {
+	private function is_tmp_path( $file_path ) {
 		$tmp_dir = get_temp_dir();
-		return 0 === strpos( $filename, $tmp_dir );
+		return 0 === strpos( $file_path, $tmp_dir );
 	}
 
-	private function is_uploads_path( $filename ) {
-		$upload_path = trim( get_option( 'upload_path' ) );
-		if ( empty( $upload_path ) ) {
-			$upload_path = 'wp-content/uploads';
-		}
+	private function is_uploads_path( $file_path ) {
+		$upload_dir = wp_get_upload_dir();
+		$upload_base = $upload_dir['basedir'];
 
-		// TODO: Do we want to ensure the folder exists? This could flag false positives.
-		if ( false === strpos( $filename, $upload_path ) ) {
-			return false;
-		}
-		return true;
+		return 0 === strpos( $file_path, $upload_base );
 	}
 
 	/**
