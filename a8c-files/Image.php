@@ -14,9 +14,6 @@ class Image {
 	/** @var string $filename Attachment's Filename. */
 	public $filename;
 
-	/** @var array $data Attachment metadata. */
-	private $data;
-
 	/** @var string/WP_Erorr $mime_type Attachment's mime-type, WP_Error on failure when recalculating the dimensions. */
 	private $mime_type;
 
@@ -51,7 +48,6 @@ class Image {
 		$this->width = $this->original_width = $data['width'];
 		$this->height = $this->original_height = $data['height'];
 		$this->mime_type = $this->$mime_type;
-		$this->data = $data;
 	}
 
 	/**
