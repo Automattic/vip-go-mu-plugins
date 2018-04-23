@@ -18,17 +18,28 @@ class Curl_Streamer_Test extends \WP_UnitTestCase {
 
 		$this->file_stream = fopen( self::TEST_FILE_PATH, 'r' );
 		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );
+		$this->curl_streamer->init();
 	}
 
 	public function tearDown() {
+		$this->curl_streamer->deinit();
 		fclose( $this->file_stream );
 
 		$this->file_stream = null;
 		$this->curl_streamer = null;
 	}
 
+	public function test__init() {
+		$expected_transport = 'WP_Http_Curl';
+
+		$wp_http = new \WP_Http();
+		$actual_transport = $wp_http->_get_first_available_transport( [] );
+
+		$this->assertEquals( $expected_transport, $actual_transport );
+	}
+
 	public function test__init_upload() {
-		$this->markTestSkipped( 'Cannot get `curl` opts, making this hard to test.' );
+		$this->markTestSkipped( 'Cannot get `curl` opts, making this hard to test. We can look into using a test webserver in the future.' );
 	}
 
 	public function test__handle_upload() {
