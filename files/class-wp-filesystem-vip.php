@@ -82,7 +82,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function put_contents( $file, $contents, $mode = false ) {
 		$transport = $this->get_appropriate_transport( $file );
-		$transport->put_contents( $file, $contents, $mode = false );
+		$transport->put_contents( $file, $contents, $mode );
 		return true;
 	}
 
