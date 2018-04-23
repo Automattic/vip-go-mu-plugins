@@ -22,10 +22,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return $this->direct;
 		}
 
-		//This is the usual way to do errors, we'll use it but also trigger a PHP E_USER_ERROR to ensure users see this.
+		// This is the usual way to do errors, we'll use it but also trigger a PHP E_USER_ERROR to ensure users see this.
 		$this->errors->add( 'filepath_not_supported', 'No appropriate transport found for filename: ' . $filename );
 
-		//TODO: Do we want to just trigger_error in some circumstances? maybe only when environement != production?
+		// TODO: Do we want to just trigger_error in some circumstances? maybe only when environement != production?
 		trigger_error( 'Files can only be modified either in the temporary folder or in the uploads folder. Please see our documentation here:', E_USER_ERROR );
 	}
 
@@ -42,7 +42,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		if ( empty( $upload_path ) ) {
 			$upload_path = 'wp-content/uploads';
 		}
-		//TODO: Do we want to ensure the folder exists? This could flag false positives.
+
+		// TODO: Do we want to ensure the folder exists? This could flag false positives.
 		if ( false === strpos( $filename, $upload_path ) ) {
 			return false;
 		}
@@ -113,13 +114,13 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function move( $source, $destination, $overwrite = false ) {
 		$copy_results = $this->copy( $source, $destination, $overwrite );
-		if ( false == $copy_results ) {
+		if ( false === $copy_results ) {
 			return false;
 		}
 
 		$this->delete( $source );
 
-		return true;//TODO: What if delete fails?
+		return true; // TODO: What if delete fails?
 	}
 
 	/**
