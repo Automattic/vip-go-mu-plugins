@@ -64,12 +64,15 @@ class API_Client {
 
 	public function upload_file( $local_path, $upload_path ) {
 		if ( ! file_exists( $local_path ) ) {
+			/* translators: 1: local file path 2: remote upload path */
 			return new WP_Error( 'upload_file-failed-invalid_path', __( 'Failed to upload file `%1$s` to `%2$s`; the file does not exist.' ), $local_path, $upload_path );
 		}
 
 		$file_size = filesize( $local_path );
 		$file_name = basename( $local_path );
-		[ 'type' => $file_mime ] = wp_check_filetype( $file_name );
+		[
+			'type' => $file_mime,
+		] = wp_check_filetype( $file_name );
 
 		$request_timeout = $this->calculate_upload_timeout( $file_size );
 
@@ -94,8 +97,10 @@ class API_Client {
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 204 === $response_code ) {
+			/* translators: 1: local file path 2: remote upload path */
 			return new WP_Error( 'upload_file-failed-quota_reached', __( 'Failed to upload file `%1$s` to `%2$s`; file space quota has been exceeded.' ), $local_path, $upload_path );
 		} elseif ( 200 !== $response_code ) {
+			/* translators: 1: local file path 2: remote upload path 3: HTTP status code */
 			return new WP_Error( 'upload_file-failed', sprintf( __( 'Failed to upload file `%1$s` to `%2$s` (response code: %3$d)' ), $local_path, $upload_path, $response_code ) );
 		}
 
@@ -103,6 +108,7 @@ class API_Client {
 		$response_data = json_decode( $response_body );
 
 		if ( ! $response_data ) {
+			/* translators: 1: local file path 2: remote upload path 3: response body */
 			return new WP_Error( 'upload_file-failed-json_decode-error', sprintf( __( 'Failed to process response data after file upload for `%1$s` to `%2$s` (body: %3$s)' ), $local_path, $upload_path, $response_body ) );
 		}
 
@@ -125,6 +131,7 @@ class API_Client {
 
 		$response_code = wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $response_code ) {
+			/* translators: 1: file path 2: HTTP status code */
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
@@ -140,6 +147,7 @@ class API_Client {
 
 		$response_code = wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $response_code ) {
+			/* translators: 1: file path 2: HTTP status code */
 			return new WP_Error( 'delete_file-failed', sprintf( __( 'Failed to delete file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
@@ -165,6 +173,7 @@ class API_Client {
 			return false;
 		}
 
+		/* translators: 1: file path 2: HTTP status code */
 		return new WP_Error( 'is_file-failed', sprintf( __( 'Failed to check if file `%1$s` exists (response code: %2$d)' ), $file_path, $response_code ) );
 	}
 }
