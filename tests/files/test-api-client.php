@@ -60,7 +60,9 @@ class API_Client_Test extends \WP_UnitTestCase {
 			'/path/to/image.jpg',
 			'POST',
 			[
-				'Another-Header' => 'Yay!',
+				'headers' => [
+					'Another-Header' => 'Yay!',
+				],
 			]
 		] );
 

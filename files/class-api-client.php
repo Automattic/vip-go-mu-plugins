@@ -35,19 +35,19 @@ class API_Client {
 		return $this->api_base . '/' . $path;
 	}
 
-	private function call_api( $path, $method, $headers = [] ) {
+	private function call_api( $path, $method, $request_args = [] ) {
 		$request_url = $this->get_api_url( $path );
 
-		$headers = array_merge( [
+		$headers = [
 			'X-Client-Site-ID' => $this->files_site_id,
 			'X-Access-Token' => $this->files_token,
-		], $headers );
+		];
 
-		$request_args = [
+		$request_args = array_merge_recursive( [
 			'method' => $method,
 			'headers' => $headers,
 			'timeout' => self::DEFAULT_REQUEST_TIMEOUT,
-		];
+		], $request_args );
 
 		$response = wp_remote_request( $request_url, $request_args );
 
@@ -68,9 +68,11 @@ class API_Client {
 		$curl_streamer->init();
 
 		$response = $this->call_api( $file_path, 'PUT', [
-			'Content-Type' => $file_mime,
-			'Content-Length' => $file_size,
-			'Connection' => 'Keep-Alive',
+			'headers' => [
+				'Content-Type' => $file_mime,
+				'Content-Length' => $file_size,
+				'Connection' => 'Keep-Alive',
+			],
 		] );
 
 		$curl_streamer->deinit();
@@ -130,7 +132,9 @@ class API_Client {
 
 	public function is_file( $file_path ) {
 		$response = $this->call_api( $file_path, 'GET', [
-			'X-Action' => 'file_exists',
+			'headers' => [
+				'X-Action' => 'file_exists',
+			],
 		] );
 
 		if ( is_wp_error( $response ) ) {
