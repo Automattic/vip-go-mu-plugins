@@ -45,11 +45,8 @@ class WP_Filesystem_VIP extends WP_Filesystem_Base {
 	}
 
 	private function is_tmp_path( $filename ) {
-		// TODO: Should we check against sys_get_temp_dir()?
-		if ( strpos( $filename, '/tmp' ) ) {
-			return true;
-		}
-		return false;
+		$tmp_dir = get_temp_dir();
+		return 0 === strpos( $filename, $tmp_dir );
 	}
 
 	private function is_uploads_path( $filename ) {
