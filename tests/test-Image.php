@@ -13,7 +13,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @var string
 	 */
 	public $test_image = __DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
-
+	
 	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.
 	 */
@@ -222,8 +222,8 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 		$image->reset_to_original();
 
 		$this->assertFalse( $image->is_resized(), 'Image is not marked as NOT resized.' );
-		$this->assertEquals( $size['width'], $image->get_width(), 'Width has not been properly reset.' );
-		$this->assertEquals( $size['height'], $image->get_height(), 'Height has not been properly reset.' );
+		$this->assertEquals( $postmeta['width'], $image->get_width(), 'Width has not been properly reset.' );
+		$this->assertEquals( $postmeta['height'], $image->get_height(), 'Height has not been properly reset.' );
 		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Mime-type has not been properly reset' );
 		$this->assertEquals( 'image.jpg', $image->get_filename(), 'Image after reset does not point to appropriate file.' );
 	}
