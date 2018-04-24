@@ -19,7 +19,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @return string|bool The function returns the read data or false on failure.
 	 */
 	public function get_contents( $file ) {
-		//TODO: Caching for remote gets? Static single request cache vs memcache?
+		// TODO: Caching for remote gets? Static single request cache vs memcache?
 		$file = $this->api->get_file( $file );
 		if ( is_wp_error( $file ) ) {
 			$this->errors = $file;
@@ -40,11 +40,16 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		//We're going to explode the array based on the EOL character and then re-add the EOL character to the end of the Array item to replicate the behaviour of file() which this function uses when it's "direct" http://php.net/manual/en/function.file.php
-		$array = explode( PHP_EOL, $file );
-		array_map( function( $array_item ) {
-			return $array_item . PHP_EOL;
-		}, $array );
+		if ( empty( $file ) ) {
+			return [];
+		}
+
+		// Replicate the behaviour of `WP_Filesystem_Direct::get_contents_array` which uses `file`.
+		// This adds the PHP_EOL character to the end of each array item.
+		$lines = explode( PHP_EOL, $file );
+		return array_map( function( $line ) {
+			return $line . PHP_EOL;
+		}, $lines );
 	}
 
 	/**
