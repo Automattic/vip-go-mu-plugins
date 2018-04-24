@@ -13,7 +13,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @var string
 	 */
 	public $test_image = __DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
-	
+
 	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.
 	 */
@@ -198,6 +198,35 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_resize['height'], $image->get_height(), 'Resized image does not have expected height.' );
 		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Resized image does not have appropriate mime type.' );
 		$this->assertEquals( add_query_arg( $expected_resize['params'], 'image.jpg' ), $image->get_filename(), 'Resized image does not point to appropriate file.' );
+	}
+
+	/**
+	 * Test size array generation.
+	 *
+	 * @covers Automattic\VIP\Files\Image::get_size
+	 * @dataProvider get_data_for_generate_sizes
+	 *
+	 * @return array
+	 */
+	public function test__get_size( $size, $expected_resize ) {
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
+		$new_size_array = $image->get_size( $size );
+
+		$expected_size_array = [
+			'file' => add_query_arg( $expected_resize['params'], 'image.jpg' ),
+			'width' => $expected_resize['width'],
+			'height' => $expected_resize['height'],
+			'mime-type' => 'image/jpeg',
+		];
+		$this->assertEquals( $expected_size_array, $new_size_array, 'The size array does not match the expected one.' );
 	}
 
 	/**
