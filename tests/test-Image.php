@@ -201,6 +201,34 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the reset of dimensions to original.
+	 *
+	 * @covers Automattic\VIP\Files\Image::reset_to_original
+	 * @dataProvider get_data_for_generate_sizes
+	 *
+	 * @param array $expected_sizes Array of requested size dimensions.
+	 */
+	public function test__reset_to_original( $size ) {
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
+		$image->resize( $size );
+		$image->reset_to_original();
+
+		$this->assertFalse( $image->is_resized(), 'Image is not marked as NOT resized.' );
+		$this->assertEquals( $size['width'], $image->get_width(), 'Width has not been properly reset.' );
+		$this->assertEquals( $size['height'], $image->get_height(), 'Height has not been properly reset.' );
+		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Mime-type has not been properly reset' );
+		$this->assertEquals( 'image.jpg', $image->get_filename(), 'Image after reset does not point to appropriate file.' );
+	}
+
+	/**
 	 * Unit test covering the get_filename method
 	 *
 	 * @covers Automattic\VIP\Files\Image::get_filename
