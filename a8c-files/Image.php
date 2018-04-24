@@ -47,7 +47,7 @@ class Image {
 		$this->filename = $data['file'];
 		$this->width = $this->original_width = $data['width'];
 		$this->height = $this->original_height = $data['height'];
-		$this->mime_type = $this->$mime_type;
+		$this->mime_type = $mime_type;
 	}
 
 	/**
