@@ -9,7 +9,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	public function __construct() {
 		$this->method = 'vip-uploads';
 		$this->errors = new \WP_Error();
-		$this->api = new_api_instance();
+		$this->api = new_api_client();
 	}
 
 	/**
@@ -54,17 +54,15 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @param string $contents The data to write.
 	 * @return bool False upon failure, true otherwise.
 	 */
-	public function put_contents( $file, $contents ) {
+	public function put_contents( $file, $contents, $mode = false ) {
 		return $this->api->put_contents( $file );
 	}
-
-
 
 	/**
 	 * @param string $file
 	 * @return bool
 	 */
-	public function delete( $file ) {
+	public function delete( $file, $recursive = false, $type = false ) {
 		$response = $this->api->delete_file( $file );
 		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;
