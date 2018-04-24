@@ -21,6 +21,13 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	public $test_image = __DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
+	 * The test PDF file.
+	 *
+	 * @var string
+	 */
+	public $test_pdf = __DIR__ . '/fixtures/pdf.pdf';
+
+	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.
 	 */
 	public static function setUpBeforeClass() {
@@ -97,6 +104,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		remove_action( 'init', 'a8c_files_init' );
 		remove_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 		remove_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+		remove_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	}
 
 	/**
@@ -106,6 +114,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		add_action( 'init', 'a8c_files_init' );
 		add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 		add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+		add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	}
 
 	/**
@@ -443,6 +452,31 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 
 		$this->assertNotEmpty( $metadata['sizes'], 'Virtual copies were not created.' );
+	}
+
+	/**
+	 * Integration test of the virtual creation of intermediate sizes for non-image files.
+	 * No physical copies are being created.
+	 *
+	 * @group srcset-pdf
+	 */
+	public function test__inject_image_sizes_for_pdf() {
+		$attachment_id = self::factory()->attachment->create_object(
+			$this->test_pdf, 0, [
+				'post_mime_type' => 'application/pdf',
+				'post_type'      => 'attachment',
+			]
+		);
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_pdf ) );
+
+		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+
+		$this->assertEmpty( $postmeta, 'Intermediate image sizes has been physically created.' );
+
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+
+		$this->assertEmpty( $metadata, 'Virtual copies were created.' );
+
 	}
 
 	/**
