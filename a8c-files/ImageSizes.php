@@ -167,35 +167,3 @@ class ImageSizes {
 
 	}
 }
-
-/**
- * Inject image sizes to attachment metadata.
- *
- * @param array $data          Attachment metadata.
- * @param int   $attachment_id Attachment's post ID.
- *
- * @return array Attachment metadata.
- */
-function maybe_inject_image_sizes( $data, $attachment_id ) {
-
-	$sizes_already_exist = (
-		true === array_key_exists( 'sizes', $data )
-		&& true === is_array( $data['sizes'] )
-		&& false === empty( $data['sizes'] )
-	);
-	if ( $sizes_already_exist ) {
-		return $data;
-	}
-
-	$mime_type = get_post_mime_type( $attachment_id );
-	$attachment_is_image = preg_match( '!^image/!', $mime_type );
-	if ( false !== $attachment_is_image ) {
-		$image_sizes = new ImageSizes( $attachment_id, $data );
-		$data['sizes'] = $image_sizes->generate_sizes_meta();
-	}
-
-	return $data;
-}
-
-// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
-add_filter( 'wp_get_attachment_metadata', __NAMESPACE__ . '\\maybe_inject_image_sizes', 20, 2 );

@@ -80,14 +80,14 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * Helper function for turning the srcset implementation off.
 	 */
 	public function disable_image_sizes() {
-		remove_filter( 'wp_get_attachment_metadata', 'Automattic\\VIP\\Files\\maybe_inject_image_sizes', 20, 2 );
+		remove_filter( 'wp_get_attachment_metadata', '\\a8c_files_maybe_inject_image_sizes', 20, 2 );
 	}
 
 	/**
 	 * Helper function for turning the srcset implementation on.
 	 */
 	public function enable_image_sizes() {
-		add_filter( 'wp_get_attachment_metadata', 'Automattic\\VIP\\Files\\maybe_inject_image_sizes', 20, 2 );
+		add_filter( 'wp_get_attachment_metadata', '\\a8c_files_maybe_inject_image_sizes', 20, 2 );
 	}
 
 	/**
