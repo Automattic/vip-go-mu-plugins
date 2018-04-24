@@ -832,7 +832,7 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 	$mime_type = get_post_mime_type( $attachment_id );
 	$attachment_is_image = preg_match( '!^image/!', $mime_type );
 	if ( false !== $attachment_is_image ) {
-		$image_sizes = new ImageSizes( $attachment_id, $data );
+		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
 		$data['sizes'] = $image_sizes->generate_sizes_meta();
 	}
 
