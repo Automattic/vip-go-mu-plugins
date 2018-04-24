@@ -98,6 +98,19 @@ class Image {
 	}
 
 	/**
+	 * Resets the image to it's original dimensions.
+	 *
+	 * @return bool True on successful reset to original dimensions.
+	 */
+	public function reset_to_original() {
+		$this->width = $this->original_width;
+		$this->height = $this->original_height;
+		$this->is_resized = false;
+
+		return true;
+	}
+
+	/**
 	 * Return the basename filename. If the image has been resized, including
 	 * the resizing params for VIP Go File Service.
 	 *
