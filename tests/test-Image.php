@@ -91,19 +91,15 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @param array $expected_sizes Array of expected sizes.
 	 */
 	public function test__object_construction() {
-
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 
 		$this->assertEquals( $postmeta['width'], $image->get_width(), 'Wrong image width.' );
 		$this->assertEquals( $postmeta['height'], $image->get_height(), 'Wrong image height.' );
@@ -186,20 +182,15 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @param array $expected_sizes Array of requested size dimensions.
 	 */
 	public function test__image_resize( $size, $expected_resize ) {
-
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
-
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 		$image->resize( $size );
 
 		$this->assertTrue( $image->is_resized(), 'Resized image is not marked as resized.' );
@@ -215,22 +206,36 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @covers Automattic\VIP\Files\Image::get_filename
 	 */
 	public function test__get_filename() {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 
 		$this->assertEquals( wp_basename( $this->test_image ), $image->get_filename(), 'Wrong original filename before image resize.' );
+	}
 
+	/**
+	 * Test get_filename method after image resize.
+	 *
+	 * @covers Automattic\VIP\Files\Image::get_filename
+	 */
+	public function test__get_filename_after_resize() {
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 		$image->resize( array( 'width' => 150, 'height' => 150, 'crop' => true ) );
+
 		$this->assertEquals( wp_basename( $this->test_image ) . '?resize=150,150', $image->get_filename(), 'Wrong filename after image resize.' );
 	}
 
@@ -240,25 +245,19 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 * @covers Automattic\VIP\Files\Image::get_resized_filename
 	 */
 	public function test__get_resized_filename() {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-
+		$attachment_post_data = [
+			'post_mime_type' => 'image/jpeg',
+			'post_type'      => 'attachment',
+		];
+		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_id );
-
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 		$width = $this->getProperty( 'width' );
 		$width->setValue( $image, 150 );
-
 		$height = $this->getProperty( 'height' );
 		$height->setValue( $image, 150 );
-
 		$get_resized_filename = $this->getMethod( 'get_resized_filename' );
 
 		$this->assertEquals( $this->test_image . '?resize=150,150', $get_resized_filename->invokeArgs( $image, [] ) );
