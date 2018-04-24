@@ -821,7 +821,8 @@ function is_vip_go_srcset_enabled() {
 function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 
 	$sizes_already_exist = (
-		true === array_key_exists( 'sizes', $data )
+		true === is_array( $data )
+		&& true === array_key_exists( 'sizes', $data )
 		&& true === is_array( $data['sizes'] )
 		&& false === empty( $data['sizes'] )
 	);
@@ -831,7 +832,8 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 
 	$mime_type = get_post_mime_type( $attachment_id );
 	$attachment_is_image = preg_match( '!^image/!', $mime_type );
-	if ( false !== $attachment_is_image ) {
+
+	if ( 1 === $attachment_is_image ) {
 		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
 		$data['sizes'] = $image_sizes->generate_sizes_meta();
 	}
@@ -843,6 +845,7 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	add_action( 'init', 'a8c_files_init' );
 	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+	add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 
 	/**
 	 * Conditionally load the VIP Go File Service compatible srcset solution.
