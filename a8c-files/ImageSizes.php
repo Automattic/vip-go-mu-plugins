@@ -163,18 +163,8 @@ class ImageSizes {
 	 */
 	protected function resize( $size_data ) {
 
-		$resized_image = $this->image->resize( $size_data );
+		return $this->image->get_size( $size_data );
 
-		if ( is_wp_error( $resized_image ) ) {
-			return $resized_image;
-		}
-
-		return [
-			'file' => $this->image->get_filename(),
-			'width' => $this->image->get_width(),
-			'height' => $this->image->get_height(),
-			'mime-type' => $this->image->get_mime_type(),
-		];
 	}
 }
 

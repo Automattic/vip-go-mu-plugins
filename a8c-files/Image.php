@@ -51,7 +51,7 @@ class Image {
 	}
 
 	/**
-	 * Handles the image resize.
+	 * Resizes the image to given size.
 	 *
 	 * @param array $size_data Array of width, height, and crop properties of a size.
 	 *
@@ -72,6 +72,29 @@ class Image {
 		$this->set_width_height( $dimensions );
 
 		return $this->is_resized = true;
+	}
+
+	/**
+	 * Generates size data for usage in $metadata['sizes'];.
+	 *
+	 * @param array $size_data Array of width, height, and crop properties of a size.
+	 *
+	 * @return array|\WP_Error An array containing file, width, height, and mime-type keys and it's values. WP_Error on failure.
+	 */
+	public function get_size( $size_data ) {
+
+		$is_resized = $this->resize( $size_data );
+
+		if ( true === is_wp_error( $is_resized ) ) {
+			return $is_resized;
+		}
+
+		return [
+			'file' => $this->get_filename(),
+			'width' => $this->get_width(),
+			'height' => $this->get_height(),
+			'mime-type' => $this->get_mime_type(),
+		];
 	}
 
 	/**
