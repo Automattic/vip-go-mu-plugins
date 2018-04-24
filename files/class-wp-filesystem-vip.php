@@ -26,7 +26,8 @@ class WP_Filesystem_VIP extends WP_Filesystem_Base {
 		$this->method = 'vip';
 		$this->errors = new WP_Error();
 
-		$this->api = new WP_Filesystem_Uploads();
+		$api_client = new_api_client();
+		$this->api = new WP_Filesystem_Uploads( $api_client );
 		$this->direct = new WP_Filesystem_Direct( null );
 	}
 

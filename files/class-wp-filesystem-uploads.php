@@ -6,10 +6,10 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 	private $api;
 
-	public function __construct() {
+	public function __construct( $api_client ) {
 		$this->method = 'vip-uploads';
 		$this->errors = new \WP_Error();
-		$this->api = new_api_client();
+		$this->api = $api_client;
 	}
 
 	/**
@@ -39,12 +39,12 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 		if ( false === $file ) {
 			return false;
 		}
+
 		//We're going to explode the array based on the EOL character and then re-add the EOL character to the end of the Array item to replicate the behaviour of file() which this function uses when it's "direct" http://php.net/manual/en/function.file.php
 		$array = explode( PHP_EOL, $file );
 		array_map( function( $array_item ) {
 			return $array_item . PHP_EOL;
 		}, $array );
-
 	}
 
 	/**
@@ -72,7 +72,6 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 *
 	 * This is currently really not efficient as we're fetching the whole file remotely to determine it's size. We might want to optimize this in the future.
 	 *
 	 * @param string $file
