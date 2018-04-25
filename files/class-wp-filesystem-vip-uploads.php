@@ -147,8 +147,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file is writable.
 	 */
 	public function is_writable( $file ) {
-		// If the file exists, we can write to it.
-		return $this->exists( $file );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
