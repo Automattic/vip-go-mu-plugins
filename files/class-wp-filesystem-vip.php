@@ -16,12 +16,17 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	private $api;
 	private $direct;
 
-	public function __construct( Api_Client $api_client ) {
+	/**
+	 * @param array $dependencies Array that contains an instance of `WP_Filesystem_Uploads` and `WP_Filesystem_Direct`.
+	 */
+	public function __construct( $dependencies ) {
 		$this->method = 'vip';
 		$this->errors = new WP_Error();
 
-		$this->api = new WP_Filesystem_Uploads( $api_client );
-		$this->direct = new WP_Filesystem_Direct( null );
+		list( $filesystem_uploads, $filesystem_direct ) = $dependencies;
+
+		$this->api = $filesystem_uploads;
+		$this->direct = $filesystem_direct;
 	}
 
 	private function get_transport_for_path( $filename ) {
@@ -107,7 +112,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		$file_content = $source_transport->get_contents( $source );
-		$destination_transport->put_contents( $destination, $file_content );
+		$destination_transport->put_contents( $destination, $file_content, $mode );
 	}
 
 	/**
