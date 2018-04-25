@@ -102,35 +102,47 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * @param string $file
-	 * @return bool
+	 * Check if a file exists.
+	 *
+	 * @param string $file Path to file.
+	 * @return bool Whether $file exists or not.
 	 */
 	public function exists( $file ) {
+		// TODO: should we return false for directories?
 		return $this->api->is_file( $file );
 	}
+
 	/**
-	 * @param string $file
-	 * @return bool
+	 * Check if resource is a file.
+	 *
+	 * @param string $file File path.
+	 * @return bool Whether $file is a file.
 	 */
 	public function is_file( $file ) {
-		return $this->api->is_file( $file );
+		// The API only deals with files, so we can just check for existence.
+		return $this->exists( $file );
 	}
 
 	/**
-	 * @param string $file
-	 * @return bool
+	 * Check if a file is readable.
+	 *
+	 * @param string $file Path to file.
+	 * @return bool Whether $file is readable.
 	 */
 	public function is_readable( $file ) {
-		// Right now if we get that the file exists then we can read it. There's no circumstance under which we should have access to knowing a file exists but not being able to read it.
-		return $this->api->is_file( $file );
+		// If the file exists, we can read it.
+		return $this->exists( $file );
 	}
 
 	/**
-	 * @param string $file
-	 * @return bool
+	 * Check if a file or directory is writable.
+	 *
+	 * @param string $file Path to file.
+	 * @return bool Whether $file is writable.
 	 */
 	public function is_writable( $file ) {
-		return $this->api->is_writable( $file );
+		// If the file exists, we can write to it.
+		return $this->exists( $file );
 	}
 
 	/**
