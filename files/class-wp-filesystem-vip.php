@@ -31,11 +31,15 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return $this->direct;
 		}
 
-		// This is the usual way to do errors, we'll use it but also trigger a PHP E_USER_ERROR to ensure users see this.
-		$this->errors->add( 'filepath_not_supported', 'No appropriate transport found for filename: ' . $filename );
+		/* Translators: 1) file name 2) class name */
+		$error_msg = sprintf( __( 'The `%1$s` file cannot be managed by the `%2$s` class. Writes are only allowed for the `/uploads` and `/tmp` directories and reads can be performed everywhere.' ), $filename, __CLASS__ );
 
-		// TODO: Do we want to just trigger_error in some circumstances? maybe only when environement != production?
-		trigger_error( 'Files can only be modified either in the temporary folder or in the uploads folder. Please see our documentation here:', E_USER_ERROR );
+		$this->errors->add( 'unsupported-filepath', $error_msg );
+
+		// TODO: Do we want to trigger_error in all environments? (Or just a small batch to start).
+		trigger_error( $error_msg, E_USER_ERROR );
+
+		return false;
 	}
 
 	private function is_tmp_path( $file_path ) {
