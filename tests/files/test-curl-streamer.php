@@ -27,6 +27,8 @@ class Curl_Streamer_Test extends \WP_UnitTestCase {
 
 		$this->file_stream = null;
 		$this->curl_streamer = null;
+
+		parent::tearDown();
 	}
 
 	public function test__init() {
