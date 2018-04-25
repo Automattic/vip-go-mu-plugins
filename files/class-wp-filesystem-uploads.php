@@ -4,6 +4,7 @@ namespace Automattic\VIP\Files;
 
 class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
+	/** @var API_Client */
 	private $api;
 
 	public function __construct( $api_client ) {
@@ -55,12 +56,22 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	/**
 	 * Write a string to a file
 	 *
-	 * @param string $file     Remote path to the file where to write the data.
+	 * Since the API expects a file we'll copy the content to a local temporary file first.
+	 *
+	 * @param string $filename     Remote path to the file where to write the data.
 	 * @param string $contents The data to write.
 	 * @return bool False upon failure, true otherwise.
 	 */
-	public function put_contents( $file, $contents, $mode = false ) {
-		return $this->api->put_contents( $file );
+	public function put_contents( $filename, $contents ) {
+		$temp_file = tempnam( sys_get_temp_dir(), 'uploads' );
+		file_put_contents( $temp_file, $contents );
+		$response = $this->api->upload_file( $temp_file, $filename );
+		unlink( $temp_file );
+		if ( is_wp_error( $response ) ){
+			$this->errors = $response;
+			return false;
+		}
+		return true;
 	}
 
 	/**
