@@ -191,17 +191,6 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * Unimplemented - Check if resource is a directory.
-	 *
-	 * @param string $path Directory path.
-	 * @return bool Whether $path is a directory.
-	 */
-	public function is_dir( $path ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
-	}
-
-
-	/**
 	 * Unimplemented - Gets the file's last access time.
 	 *
 	 * @param string $file Path to file.
