@@ -187,73 +187,105 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * Unimplemented
+	 * Unimplemented - Check if resource is a directory.
 	 *
-	 * @param string $file
-	 * @return int
+	 * @param string $path Directory path.
+	 * @return bool Whether $path is a directory.
+	 */
+	public function is_dir( $path ) {
+		return $this->handle_unimplemented_method( __METHOD__ );
+	}
+
+
+	/**
+	 * Unimplemented - Gets the file's last access time.
+	 *
+	 * @param string $file Path to file.
+	 * @return int|bool Unix timestamp representing last access time.
 	 */
 	public function atime( $file ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
-	 * Unimplemented
+	 * Unimplemented - Gets the file modification time.
 	 *
-	 * @param string $file
-	 * @return int
+	 * @param string $file Path to file.
+	 * @return int|bool Unix timestamp representing modification time.
 	 */
 	public function mtime( $file ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
-
-
 	/**
-	 * Unimplemented
+	 * Unimplemented - Set the access and modification times of a file.
 	 *
-	 * @param string $file
-	 * @param int $time
-	 * @param int $atime
-	 * @return bool
+	 * Note: If $file doesn't exist, it will be created.
+	 *
+	 * @param string $file  Path to file.
+	 * @param int    $time  Optional. Modified time to set for file.
+	 *                      Default 0.
+	 * @param int    $atime Optional. Access time to set for file.
+	 *                      Default 0.
+	 * @return bool Whether operation was successful or not.
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
-	 * Unimplemented
+	 * Unimplemented - Create a directory.
 	 *
-	 * @param string $path
-	 * @param mixed  $chmod
-	 * @param mixed  $chown
-	 * @param mixed  $chgrp
-	 * @return bool
+	 * @param string $path  Path for new directory.
+	 * @param mixed  $chmod Optional. The permissions as octal number, (or False to skip chmod)
+	 *                      Default false.
+	 * @param mixed  $chown Optional. A user name or number (or False to skip chown)
+	 *                      Default false.
+	 * @param mixed  $chgrp Optional. A group name or number (or False to skip chgrp).
+	 *                      Default false.
+	 * @return bool False if directory cannot be created, true otherwise.
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
-	 * Unimplemented
+	 * Unimplemented - Delete a directory.
 	 *
-	 * @param string $path
-	 * @param bool $recursive
-	 * @return bool
+	 * @param string $path      Path to directory.
+	 * @param bool   $recursive Optional. Whether to recursively remove files/directories.
+	 *                          Default false.
+	 * @return bool Whether directory is deleted successfully or not.
 	 */
 	public function rmdir( $path, $recursive = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
-	 * Unimplemented
+	 * Unimplemented - Get details for files in a directory or a specific file.
 	 *
-	 * @param string $path
-	 * @param bool $include_hidden
-	 * @param bool $recursive
-	 * @return bool|array
+	 * @param string $path           Path to directory or file.
+	 * @param bool   $include_hidden Optional. Whether to include details of hidden ("." prefixed) files.
+	 *                               Default true.
+	 * @param bool   $recursive      Optional. Whether to recursively include file details in nested directories.
+	 *                               Default false.
+	 * @return array|bool {
+	 *     Array of files. False if unable to list directory contents.
+	 *
+	 *     @type string $name        Name of the file/directory.
+	 *     @type string $perms       *nix representation of permissions.
+	 *     @type int    $permsn      Octal representation of permissions.
+	 *     @type string $owner       Owner name or ID.
+	 *     @type int    $size        Size of file in bytes.
+	 *     @type int    $lastmodunix Last modified unix timestamp.
+	 *     @type mixed  $lastmod     Last modified month (3 letter) and day (without leading 0).
+	 *     @type int    $time        Last modified time.
+	 *     @type string $type        Type of resource. 'f' for file, 'd' for directory.
+	 *     @type mixed  $files       If a directory and $recursive is true, contains another array of files.
+	 * }
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 
@@ -263,7 +295,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool the current working directory on success, or false on failure.
 	 */
 	public function cwd() {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
@@ -273,7 +305,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chdir( $dir ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
@@ -285,7 +317,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
@@ -298,7 +330,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
@@ -311,7 +343,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
@@ -321,28 +353,37 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool Username of the user or false on error.
 	 */
 	public function owner( $file ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
 	 * Unimplemented - Gets file permissions
 	 *
-	 * FIXME does not handle errors in fileperms()
-	 *
 	 * @param string $file Path to the file.
 	 * @return string Mode of the file (last 3 digits).
 	 */
 	public function getchmod( $file ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__, '' );
 	}
 
 	/**
-	 * Unimplemented
+	 * Unimplemented - Get the file's group.
 	 *
-	 * @param string $file
-	 * @return string|false
+	 * @param string $file Path to the file.
+	 * @return string|bool The group or false on error.
 	 */
 	public function group( $file ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		return $this->handle_unimplemented_method( __METHOD__ );
+	}
+
+	protected function handle_unimplemented_method( $method, $return_value = false ) {
+		/* Translators: unsupported method name */
+		$error_msg = sprintf( __( 'The `%s` method is not implemented and/or not supported.' ), $method );
+
+		$this->errors->add( 'unimplemented-method', $error_msg );
+
+		trigger_error( $error_msg, E_USER_ERROR );
+
+		return $return_value;
 	}
 }
