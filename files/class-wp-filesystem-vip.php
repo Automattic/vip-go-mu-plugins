@@ -31,10 +31,21 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$this->direct = $filesystem_direct;
 	}
 
-	private function get_transport_for_path( $filename ) {
+	/**
+	 * Try to find the right class to handle the file.
+	 * If this is a 'read' context we'll default to passing it to WP_Filesystem_Direct
+	 *
+	 * @param $filename
+	 * @param $context string "read" or "write"
+	 *
+	 * @return WP_Filesystem_VIP_Uploads|bool|mixed|WP_Filesystem_Direct
+	 */
+	private function get_transport_for_path( $filename, $context = 'read' ) {
 		if ( $this->is_uploads_path( $filename ) ) {
 			return $this->api;
 		} elseif ( $this->is_tmp_path( $filename ) ) {
+			return $this->direct;
+		} elseif ( $context === 'read' ){
 			return $this->direct;
 		}
 
@@ -93,7 +104,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool False upon failure, true otherwise.
 	 */
 	public function put_contents( $file, $contents, $mode = false ) {
-		$transport = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file, 'write' );
 		return $transport->put_contents( $file, $contents, $mode );
 	}
 
@@ -106,7 +117,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
 		$source_transport = $this->get_transport_for_path( $source );
-		$destination_transport = $this->get_transport_for_path( $destination );
+		$destination_transport = $this->get_transport_for_path( $destination, 'write' );
 
 		if ( ! $overwrite && $destination_transport->exists( $destination ) ) {
 			return false;
@@ -140,7 +151,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
-		$transport = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file, 'write' );
 		return $transport->delete( $file );
 	}
 
@@ -192,7 +203,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_writable( $file ) {
-		$transport = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file, 'write' );
 		return $transport->is_writable( $file );
 	}
 
