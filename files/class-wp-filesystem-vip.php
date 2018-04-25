@@ -13,13 +13,13 @@ use WP_Filesystem_Direct;
 
 class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
-	/** @var WP_Filesystem_Uploads */
+	/** @var WP_Filesystem_VIP_Uploads */
 	private $api;
 	/** @var WP_Filesystem_Direct */
 	private $direct;
 
 	/**
-	 * @param array $dependencies Array that contains an instance of `WP_Filesystem_Uploads` and `WP_Filesystem_Direct`.
+	 * @param array $dependencies Array that contains an instance of `WP_Filesystem_VIP_Uploads` and `WP_Filesystem_Direct`.
 	 */
 	public function __construct( $dependencies ) {
 		$this->method = 'vip';

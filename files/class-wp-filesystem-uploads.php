@@ -6,7 +6,7 @@ require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
 
 require_once( __DIR__ . '/class-api-client.php' );
 
-class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
+class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 
 	/** @var API_Client */
 	private $api;

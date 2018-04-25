@@ -16,7 +16,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 
-		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_Uploads::class );
+		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
 		$this->fs_direct_mock = $this->createMock( \WP_Filesystem_Direct::class );
 
 		$this->filesystem = new WP_Filesystem_VIP( [

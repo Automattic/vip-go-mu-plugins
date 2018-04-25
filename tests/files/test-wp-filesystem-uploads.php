@@ -4,7 +4,7 @@ namespace Automattic\VIP\Files;
 
 use \WP_Error;
 
-class WP_Filesystem_Uploads_Test extends \WP_UnitTestCase {
+class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	private $api_client_mock;
 	private $filesystem;
 
@@ -19,7 +19,7 @@ class WP_Filesystem_Uploads_Test extends \WP_UnitTestCase {
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
-		$this->filesystem = new WP_Filesystem_Uploads( $this->api_client_mock );
+		$this->filesystem = new WP_Filesystem_VIP_Uploads( $this->api_client_mock );
 	}
 
 	public function tearDown() {
