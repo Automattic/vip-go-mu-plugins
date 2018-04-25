@@ -152,30 +152,47 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Unimplemented - Copy a file.
 	 *
-	 * Unimplemented, this is handled at the WP_Filesystem_VIP_Compatability_Layer layer so that we can do from /tmp/ to uploads and vice versa
+	 * This method should not be called directly and instead should be triggered via `WP_Filesystem_VIP`.
 	 *
-	 * @param string $source
-	 * @param string $destination
-	 * @param bool   $overwrite
-	 * @param int    $mode -
-	 * @return bool
+	 * @param string $source      Path to the source file.
+	 * @param string $destination Path to the destination file.
+	 * @param bool   $overwrite   Optional. Whether to overwrite the destination file if it exists.
+	 *                            Default false.
+	 * @param int    $mode        Optional. The permissions as octal number, usually 0644 for files, 0755 for dirs.
+	 *                            Default false.
+	 * @return bool True if file copied successfully, False otherwise.
 	 */
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		$error_msg = sprintf( __( 'The `%s` method cannot be called directly. Please use `WP_Filesystem_VIP::copy` instead' ), __METHOD__ );
+
+		$this->errors->add( 'incorrect-usage', $error_msg );
+
+		trigger_error( $error_msg, E_USER_ERROR );
+
+		return false;
 	}
 
-	/**
+	 /**
+	 * Move a file.
 	 *
-	 * Unimplemented, this is handled at the WP_Filesystem_VIP_Compatability_Layer layer so that we can do from /tmp/ to uploads and vice versa
+	 * This method should not be called directly and instead should be triggered via `WP_Filesystem_VIP`.
 	 *
-	 * @param string $source
-	 * @param string $destination
-	 * @param bool $overwrite
-	 * @return bool
+	 * @param string $source      Path to the source file.
+	 * @param string $destination Path to the destination file.
+	 * @param bool   $overwrite   Optional. Whether to overwrite the destination file if it exists.
+	 *                            Default false.
+	 * @return bool True if file copied successfully, False otherwise.
 	 */
 	public function move( $source, $destination, $overwrite = false ) {
-		trigger_error( 'This function is currently unimplemented', E_USER_ERROR );
+		$error_msg = sprintf( __( 'The `%s` method cannot be called directly. Please use `WP_Filesystem_VIP::move` instead' ), __METHOD__ );
+
+		$this->errors->add( 'incorrect-usage', $error_msg );
+
+		trigger_error( $error_msg, E_USER_ERROR );
+
+		return false;
 	}
 
 	/**
