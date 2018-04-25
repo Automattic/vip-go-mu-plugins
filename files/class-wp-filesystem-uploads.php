@@ -92,17 +92,19 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * This is currently really not efficient as we're fetching the whole file remotely to determine it's size. We might want to optimize this in the future.
+	 * Gets the file size (in bytes).
 	 *
-	 * @param string $file
-	 * @return int
+	 * @param string $file Path to file.
+	 * @return int|bool Size of the file in bytes.
 	 */
 	public function size( $file ) {
 		$file = $this->get_contents( $this );
 		if ( false === $file ) {
 			return false; // We don't need to set the errors as that's already done by `get_contents`
 		}
-		return sizeof( $file );
+
+		// TODO: switch to HEAD request and check the Content-Length header
+		return mb_strlen( $file );
 	}
 
 	/**
