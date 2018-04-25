@@ -2,31 +2,24 @@
 
 namespace Automattic\VIP\Files;
 
-if ( ! class_exists( '\WP_Filesystem_Base' ) ) {
-	require( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
-}
-
-if ( ! class_exists( '\WP_Filesystem_Direct' ) ) {
-	require( ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php' );
-}
+require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
+require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php' );
 
 require_once( __DIR__ . '/class-wp-filesystem-uploads.php' );
 require_once( __DIR__ . '/class-api-client.php' );
 
 use WP_Error;
-use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
 
-class WP_Filesystem_VIP extends WP_Filesystem_Base {
+class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 	private $api;
 	private $direct;
 
-	public function __construct() {
+	public function __construct( Api_Client $api_client ) {
 		$this->method = 'vip';
 		$this->errors = new WP_Error();
 
-		$api_client = new_api_client();
 		$this->api = new WP_Filesystem_Uploads( $api_client );
 		$this->direct = new WP_Filesystem_Direct( null );
 	}

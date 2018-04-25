@@ -2,12 +2,16 @@
 
 namespace Automattic\VIP\Files;
 
+require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
+
+require_once( __DIR__ . '/class-api-client.php' );
+
 class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 	/** @var API_Client */
 	private $api;
 
-	public function __construct( $api_client ) {
+	public function __construct( Api_Client $api_client ) {
 		$this->method = 'vip-uploads';
 		$this->errors = new \WP_Error();
 		$this->api = $api_client;
