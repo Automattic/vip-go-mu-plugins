@@ -139,9 +139,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$this->delete( $source );
-
-		return true; // TODO: What if delete fails?
+		return $this->delete( $source );
 	}
 
 	/**
