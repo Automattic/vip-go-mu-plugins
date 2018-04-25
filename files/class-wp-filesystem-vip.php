@@ -13,7 +13,9 @@ use WP_Filesystem_Direct;
 
 class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
+	/** @var WP_Filesystem_Uploads */
 	private $api;
+	/** @var WP_Filesystem_Direct */
 	private $direct;
 
 	/**
