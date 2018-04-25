@@ -124,7 +124,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		$file_content = $source_transport->get_contents( $source );
-		$destination_transport->put_contents( $destination, $file_content, $mode );
+		return $destination_transport->put_contents( $destination, $file_content, $mode );
 	}
 
 	/**
