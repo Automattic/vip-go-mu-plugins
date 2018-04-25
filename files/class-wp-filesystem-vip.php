@@ -5,7 +5,7 @@ namespace Automattic\VIP\Files;
 require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
 require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php' );
 
-require_once( __DIR__ . '/class-wp-filesystem-uploads.php' );
+require_once( __DIR__ . '/class-wp-filesystem-vip-uploads.php' );
 require_once( __DIR__ . '/class-api-client.php' );
 
 use WP_Error;

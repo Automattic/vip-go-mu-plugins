@@ -11,7 +11,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../files/class-wp-filesystem-uploads.php' );
+		require_once( __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php' );
 	}
 
 	public function setUp() {
