@@ -100,7 +100,6 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @param string $file     Remote path to the file where to write the data.
 	 * @param string $contents The data to write.
 	 * @param int    $mode     Optional. The file permissions as octal number, usually 0644.
-	 *                         Default false. - Unimplemented
 	 * @return bool False upon failure, true otherwise.
 	 */
 	public function put_contents( $file, $contents, $mode = false ) {
@@ -112,7 +111,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @param string $source
 	 * @param string $destination
 	 * @param bool   $overwrite
-	 * @param int    $mode - Unimplemented
+	 * @param int    $mode
 	 * @return bool
 	 */
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
@@ -144,8 +143,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 	/**
 	 * @param string $file
-	 * @param bool $recursive - Unimplemented
-	 * @param string $type - Unimplemented
+	 * @param bool $recursive
+	 * @param string $type
 	 * @return bool
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
@@ -206,28 +205,24 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * Unimplemented - Gets the file's last access time.
-	 *
 	 * @param string $file Path to file.
 	 * @return int|bool Unix timestamp representing last access time.
 	 */
 	public function atime( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file );
+		return $transport->atime( $file );
 	}
 
 	/**
-	 * Unimplemented - Gets the file modification time.
-	 *
 	 * @param string $file Path to file.
 	 * @return int|bool Unix timestamp representing modification time.
 	 */
 	public function mtime( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file );
+		return $transport->mtime( $file );
 	}
 
 	/**
-	 * Unimplemented - Set the access and modification times of a file.
-	 *
 	 * Note: If $file doesn't exist, it will be created.
 	 *
 	 * @param string $file  Path to file.
@@ -238,12 +233,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Whether operation was successful or not.
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		return $transport->touch( $file, $time = 0, $atime = 0 );
 	}
 
 	/**
-	 * Unimplemented - Create a directory.
-	 *
 	 * @param string $path  Path for new directory.
 	 * @param mixed  $chmod Optional. The permissions as octal number, (or False to skip chmod)
 	 *                      Default false.
@@ -254,24 +248,22 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool False if directory cannot be created, true otherwise.
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $path, 'write' );
+		return $transport->mkdir( $path, $chmod = false, $chown = false, $chgrp = false );
 	}
 
 	/**
-	 * Unimplemented - Delete a directory.
-	 *
 	 * @param string $path      Path to directory.
 	 * @param bool   $recursive Optional. Whether to recursively remove files/directories.
 	 *                          Default false.
 	 * @return bool Whether directory is deleted successfully or not.
 	 */
 	public function rmdir( $path, $recursive = false ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $path, 'write' );
+		return $transport->rmdir( $path, $recursive = false );
 	}
 
 	/**
-	 * Unimplemented - Get details for files in a directory or a specific file.
-	 *
 	 * @param string $path           Path to directory or file.
 	 * @param bool   $include_hidden Optional. Whether to include details of hidden ("." prefixed) files.
 	 *                               Default true.
@@ -293,44 +285,40 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * }
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $path );
+		return $transport->dirlist( $path, $include_hidden = true, $recursive = false );
 	}
 
 
 	/**
-	 * Unimplemented - Gets the current working directory
-	 *
 	 * @return string|bool the current working directory on success, or false on failure.
 	 */
 	public function cwd() {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( '' );
+		return $transport->cwd();
 	}
 
 	/**
-	 * Unimplemented - Change directory
-	 *
 	 * @param string $dir The new current directory.
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chdir( $dir ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $dir );
+		return $transport->chdir( $dir );
 	}
 
 	/**
-	 * Unimplemented - Changes file group
-	 *
 	 * @param string $file      Path to the file.
 	 * @param mixed  $group     A group name or number.
 	 * @param bool   $recursive Optional. If set True changes file group recursively. Default false.
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		return $transport->chgrp( $file, $group, $recursive = false );
 	}
 
 	/**
-	 * Unimplemented - Changes filesystem permissions
-	 *
 	 * @param string $file      Path to the file.
 	 * @param int    $mode      Optional. The permissions as octal number, usually 0644 for files,
 	 *                          0755 for dirs. Default false.
@@ -338,12 +326,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		return $transport->chmod( $file, $mode, $recursive = false );
 	}
 
 	/**
-	 * Unimplemented - Changes file owner
-	 *
 	 * @param string $file      Path to the file.
 	 * @param mixed  $owner     A user name or number.
 	 * @param bool   $recursive Optional. If set True changes file owner recursively.
@@ -351,47 +338,35 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file,'write' );
+		return $transport->chown( $file, $owner, $recursive = false );
 	}
 
 	/**
-	 * Unimplemented - Gets file owner
-	 *
 	 * @param string $file Path to the file.
 	 * @return string|bool Username of the user or false on error.
 	 */
 	public function owner( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file );
+		return $transport->owner( $file );
 	}
 
 	/**
-	 * Unimplemented - Gets file permissions
-	 *
 	 * @param string $file Path to the file.
 	 * @return string Mode of the file (last 3 digits).
 	 */
 	public function getchmod( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__, '' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		return $transport->gethchmod( $file );
 	}
 
 	/**
-	 * Unimplemented - Get the file's group.
-	 *
 	 * @param string $file Path to the file.
 	 * @return string|bool The group or false on error.
 	 */
 	public function group( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$transport = $this->get_transport_for_path( $file );
+		return $transport->group( $file );
 	}
 
-	protected function handle_unimplemented_method( $method, $return_value = false ) {
-		/* Translators: unsupported method name */
-		$error_msg = sprintf( __( 'The `%s` method is not implemented and/or not supported.' ), $method );
-
-		$this->errors->add( 'unimplemented-method', $error_msg );
-
-		trigger_error( $error_msg, E_USER_WARNING );
-
-		return $return_value;
-	}
 }
