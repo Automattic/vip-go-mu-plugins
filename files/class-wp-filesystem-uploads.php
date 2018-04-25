@@ -66,7 +66,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	 * @param string $contents The data to write.
 	 * @return bool False upon failure, true otherwise.
 	 */
-	public function put_contents( $filename, $contents ) {
+	public function put_contents( $filename, $contents, $mode = false ) {
 		$temp_file = tempnam( sys_get_temp_dir(), 'uploads' );
 		file_put_contents( $temp_file, $contents );
 		$response = $this->api->upload_file( $temp_file, $filename );
