@@ -169,7 +169,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 		$this->errors->add( 'incorrect-usage', $error_msg );
 
-		trigger_error( $error_msg, E_USER_ERROR );
+		trigger_error( $error_msg, E_USER_WARNING );
 
 		return false;
 	}
@@ -190,7 +190,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 		$this->errors->add( 'incorrect-usage', $error_msg );
 
-		trigger_error( $error_msg, E_USER_ERROR );
+		trigger_error( $error_msg, E_USER_WARNING );
 
 		return false;
 	}
@@ -204,7 +204,6 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 	public function is_dir( $path ) {
 		return $this->handle_unimplemented_method( __METHOD__ );
 	}
-
 
 	/**
 	 * Unimplemented - Gets the file's last access time.
@@ -391,7 +390,7 @@ class WP_Filesystem_Uploads extends \WP_Filesystem_Base {
 
 		$this->errors->add( 'unimplemented-method', $error_msg );
 
-		trigger_error( $error_msg, E_USER_ERROR );
+		trigger_error( $error_msg, E_USER_WARNING );
 
 		return $return_value;
 	}

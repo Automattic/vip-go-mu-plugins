@@ -37,7 +37,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$this->errors->add( 'unsupported-filepath', $error_msg );
 
 		// TODO: Do we want to trigger_error in all environments? (Or just a small batch to start).
-		trigger_error( $error_msg, E_USER_ERROR );
+		trigger_error( $error_msg, E_USER_WARNING );
 
 		return false;
 	}
@@ -386,7 +386,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 		$this->errors->add( 'unimplemented-method', $error_msg );
 
-		trigger_error( $error_msg, E_USER_ERROR );
+		trigger_error( $error_msg, E_USER_WARNING );
 
 		return $return_value;
 	}
