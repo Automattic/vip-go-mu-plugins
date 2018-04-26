@@ -163,7 +163,8 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file is writable.
 	 */
 	public function is_writable( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		//This method is technically not implemented but we're returning true since we think most use cases would be to check if a file is writeable and then write to it. Given that most of the times the write will be successful there's not much to gain by implementing logic here.
+		return true;
 	}
 
 	/**
