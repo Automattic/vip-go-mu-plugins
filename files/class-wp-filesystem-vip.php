@@ -263,6 +263,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Gets the file's last access time.
+	 *
 	 * @param string $file Path to file.
 	 *
 	 * @return int|bool Unix timestamp representing last access time.
@@ -276,6 +278,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Gets the file modification time.
+	 *
 	 * @param string $file Path to file.
 	 *
 	 * @return int|bool Unix timestamp representing modification time.
@@ -289,6 +293,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Set the access and modification times of a file.
+	 *
 	 * Note: If $file doesn't exist, it will be created.
 	 *
 	 * @param string $file Path to file.
@@ -308,6 +314,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Create a directory.
+	 *
 	 * @param string $path Path for new directory.
 	 * @param mixed $chmod Optional. The permissions as octal number, (or False to skip chmod)
 	 *                      Default false.
@@ -327,6 +335,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Delete a directory.
+	 *
 	 * @param string $path Path to directory.
 	 * @param bool $recursive Optional. Whether to recursively remove files/directories.
 	 *                          Default false.
@@ -342,6 +352,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Get details for files in a directory or a specific file.
+	 *
 	 * @param string $path Path to directory or file.
 	 * @param bool $include_hidden Optional. Whether to include details of hidden ("." prefixed) files.
 	 *                               Default true.
@@ -373,6 +385,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 
 	/**
+	 * Gets the current working directory
+	 *
 	 * @return string|bool the current working directory on success, or false on failure.
 	 */
 	public function cwd() {
@@ -384,6 +398,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Change directory
+	 *
 	 * @param string $dir The new current directory.
 	 *
 	 * @return bool Returns true on success or false on failure.
@@ -397,6 +413,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Changes file group
+	 *
 	 * @param string $file Path to the file.
 	 * @param mixed $group A group name or number.
 	 * @param bool $recursive Optional. If set True changes file group recursively. Default false.
@@ -412,6 +430,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Changes filesystem permissions
+	 *
 	 * @param string $file Path to the file.
 	 * @param int $mode Optional. The permissions as octal number, usually 0644 for files,
 	 *                          0755 for dirs. Default false.
@@ -428,6 +448,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Changes file owner
+	 *
 	 * @param string $file Path to the file.
 	 * @param mixed $owner A user name or number.
 	 * @param bool $recursive Optional. If set True changes file owner recursively.
@@ -444,6 +466,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Gets file owner
+	 *
 	 * @param string $file Path to the file.
 	 *
 	 * @return string|bool Username of the user or false on error.
@@ -457,6 +481,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Gets file permissions
+	 *
 	 * @param string $file Path to the file.
 	 *
 	 * @return string Mode of the file (last 3 digits).
@@ -470,6 +496,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Get the file's group.
+	 * 
 	 * @param string $file Path to the file.
 	 *
 	 * @return string|bool The group or false on error.
