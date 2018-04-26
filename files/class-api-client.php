@@ -30,12 +30,23 @@ class API_Client {
 		$this->files_token = $files_token;
 	}
 
+	protected function is_valid_path( $path ) {
+		$path = ltrim( $path, '/\\' );
+		return 0 === strpos( $path, 'wp-content/uploads/' );
+	}
+
 	public function get_api_url( $path ) {
 		$path = ltrim( $path, '/\\' );
 		return $this->api_base . '/' . $path;
 	}
 
 	private function call_api( $path, $method, $request_args = [] ) {
+		$is_valid_path = $this->is_valid_path( $path );
+		if ( ! $is_valid_path ) {
+			/* translators 1: file path */
+			return new WP_Error( 'invalid-path', sprintf( __( 'The specified file path (`%s`) does not begin with `/wp-content/uploads/`.' ), $path ) );
+		}
+
 		$request_url = $this->get_api_url( $path );
 
 		$headers = [
