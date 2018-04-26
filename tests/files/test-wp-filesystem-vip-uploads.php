@@ -20,9 +20,13 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
 		$this->filesystem = new WP_Filesystem_VIP_Uploads( $this->api_client_mock );
+
+		add_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 	}
 
 	public function tearDown() {
+		remove_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
+
 		$this->api_client_mock = null;
 		$this->filesystem = null;
 
@@ -39,13 +43,12 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		return $method;
 	}
 
-	public function test__sanitize_uploads_path__upload_basedir() {
-		$basedir_filter = function( $upload_dir ) {
-			$upload_dir['basedir'] = '/tmp/uploads';
-			return $upload_dir;
-		};
-		add_filter( 'upload_dir', $basedir_filter );
+	public function filter_uploads_basedir( $upload_dir ) {
+		$upload_dir['basedir'] = '/tmp/uploads';
+		return $upload_dir;
+	}
 
+	public function test__sanitize_uploads_path__upload_basedir() {
 		$test_path = '/tmp/uploads/file/to/path.txt';
 		$expected_sanitized_path = '/wp-content/uploads/file/to/path.txt';
 
@@ -56,8 +59,6 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		] );
 
 		$this->assertEquals( $expected_sanitized_path, $actual_sanitized_path );
-
-		remove_filter( 'upload_dir', $basedir_filter );
 	}
 
 	public function test__sanitize_uploads_path__WP_CONTENT_DIR() {
@@ -91,11 +92,12 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	public function test__get_contents__success() {
 		$this->api_client_mock
 			->method( 'get_file' )
+			->with( '/wp-content/uploads/file.txt' )
 			->willReturn( 'Hello World!' );
 
 		$expected_contents = 'Hello World!';
 
-		$actual_contents = $this->filesystem->get_contents( 'file.txt' );
+		$actual_contents = $this->filesystem->get_contents( '/tmp/uploads/file.txt' );
 
 		$this->assertEquals( $expected_contents, $actual_contents );
 	}
@@ -147,9 +149,10 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	public function test__get_contents_array__success( $api_response, $expected_contents ) {
 		$this->api_client_mock
 			->method( 'get_file' )
+			->with( '/wp-content/uploads/file.txt' )
 			->willReturn( $api_response );
 
-		$actual_contents = $this->filesystem->get_contents_array( 'file.txt' );
+		$actual_contents = $this->filesystem->get_contents_array( '/tmp/uploads/file.txt' );
 
 		$this->assertEquals( $expected_contents, $actual_contents );
 	}
