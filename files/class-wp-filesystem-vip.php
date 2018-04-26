@@ -80,7 +80,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function get_contents( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->get_contents( $file );
+
+		$return = $transport->get_contents( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -91,7 +94,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function get_contents_array( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->get_contents_array( $file );
+		$return = $transport->get_contents_array( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -104,7 +109,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function put_contents( $file, $contents, $mode = false ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->put_contents( $file, $contents, $mode );
+		$return = $transport->put_contents( $file, $contents, $mode );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -123,7 +130,17 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		$file_content = $source_transport->get_contents( $source );
-		return $destination_transport->put_contents( $destination, $file_content, $mode );
+		$return = $destination_transport->put_contents( $destination, $file_content, $mode );
+
+		//It doesn't matter if both are WP_Filesystem_VIP_Uploads since all errors are stored in the object.
+		if ( is_a( $source_transport, 'WP_Filesystem_VIP_Uploads' ) ) {
+			$this->errors = $source_transport->errors;
+		} elseif ( is_a( $destination_transport, 'WP_Filesystem_VIP_Uploads' ) ) {
+			$this->errors = $destination_transport->errors;
+		}
+
+		return $return;
+
 	}
 
 	/**
@@ -138,9 +155,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
+		//We don't need to set the errors here since delete() will take care of it
 		return $this->delete( $source );
 	}
-
 	/**
 	 * @param string $file
 	 * @param bool $recursive
@@ -149,7 +166,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->delete( $file );
+
+		$return = $transport->delete( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -158,7 +178,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function size( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->size( $file );
+		$return = $transport->size( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -167,7 +189,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function exists( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->exists( $file );
+		$return = $transport->exists( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 	/**
 	 * @param string $file
@@ -175,7 +199,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function is_file( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->is_file( $file );
+		$return = $transport->is_file( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 	/**
 	 * @param string $path
@@ -183,7 +209,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function is_dir( $path ) {
 		$transport = $this->get_transport_for_path( $path );
-		return $transport->is_dir( $path );
+		$return = $transport->is_dir( $path );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -192,7 +220,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function is_readable( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->is_readable( $file );
+		$return = $transport->is_readable( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -201,7 +231,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function is_writable( $file ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->is_writable( $file );
+		$return = $transport->is_writable( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -210,7 +242,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function atime( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->atime( $file );
+		$return = $transport->atime( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -219,7 +253,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function mtime( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->mtime( $file );
+		$return = $transport->mtime( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -234,7 +270,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->touch( $file, $time = 0, $atime = 0 );
+		$return = $transport->touch( $file, $time = 0, $atime = 0 );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -249,7 +287,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
 		$transport = $this->get_transport_for_path( $path, 'write' );
-		return $transport->mkdir( $path, $chmod = false, $chown = false, $chgrp = false );
+		$return = $transport->mkdir( $path, $chmod = false, $chown = false, $chgrp = false );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -260,7 +300,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function rmdir( $path, $recursive = false ) {
 		$transport = $this->get_transport_for_path( $path, 'write' );
-		return $transport->rmdir( $path, $recursive = false );
+		$return = $transport->rmdir( $path, $recursive = false );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -286,7 +328,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
 		$transport = $this->get_transport_for_path( $path );
-		return $transport->dirlist( $path, $include_hidden = true, $recursive = false );
+		$return = $transport->dirlist( $path, $include_hidden = true, $recursive = false );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 
@@ -295,7 +339,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function cwd() {
 		$transport = $this->get_transport_for_path( '' );
-		return $transport->cwd();
+		$return = $transport->cwd();
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -304,7 +350,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chdir( $dir ) {
 		$transport = $this->get_transport_for_path( $dir );
-		return $transport->chdir( $dir );
+		$return = $transport->chdir( $dir );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -315,7 +363,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->chgrp( $file, $group, $recursive = false );
+		$return = $transport->chgrp( $file, $group, $recursive = false );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -327,7 +377,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->chmod( $file, $mode, $recursive = false );
+		$return = $transport->chmod( $file, $mode, $recursive = false );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -339,7 +391,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
 		$transport = $this->get_transport_for_path( $file,'write' );
-		return $transport->chown( $file, $owner, $recursive = false );
+		$return = $transport->chown( $file, $owner, $recursive = false );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -348,7 +402,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function owner( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->owner( $file );
+		$return = $transport->owner( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -357,7 +413,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function getchmod( $file ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
-		return $transport->gethchmod( $file );
+		$return = $transport->gethchmod( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 	/**
@@ -366,7 +424,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function group( $file ) {
 		$transport = $this->get_transport_for_path( $file );
-		return $transport->group( $file );
+		$return = $transport->group( $file );
+		$this->errors = $transport->errors;
+		return $return;
 	}
 
 }
