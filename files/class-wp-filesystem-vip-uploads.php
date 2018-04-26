@@ -26,14 +26,14 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function get_contents( $file ) {
 		// TODO: Caching for remote gets? Static single request cache vs memcache?
-		$file = $this->api->get_file( $file );
-		if ( is_wp_error( $file ) ) {
-			$this->errors = $file;
+		$contents = $this->api->get_file( $file );
+		if ( is_wp_error( $contents ) ) {
+			$this->errors = $contents;
 
 			return false;
 		}
 
-		return $file;
+		return $contents;
 	}
 
 	/**
@@ -44,18 +44,18 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return array|bool the file contents in an array or false on failure.
 	 */
 	public function get_contents_array( $file ) {
-		$file = $this->get_contents( $file );
-		if ( false === $file ) {
+		$contents = $this->get_contents( $file );
+		if ( false === $contents ) {
 			return false;
 		}
 
-		if ( empty( $file ) ) {
+		if ( empty( $contents ) ) {
 			return [];
 		}
 
 		// Replicate the behaviour of `WP_Filesystem_Direct::get_contents_array` which uses `file`.
 		// This adds the PHP_EOL character to the end of each array item.
-		$lines = explode( PHP_EOL, $file );
+		$lines = explode( PHP_EOL, $contents );
 
 		return array_map( function ( $line ) {
 			return $line . PHP_EOL;
@@ -75,8 +75,11 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function put_contents( $filename, $contents, $mode = false ) {
 		$temp_file = tempnam( sys_get_temp_dir(), 'uploads' );
 		file_put_contents( $temp_file, $contents );
+
 		$response = $this->api->upload_file( $temp_file, $filename );
+
 		unlink( $temp_file );
+
 		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;
 
@@ -110,13 +113,13 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return int|bool Size of the file in bytes.
 	 */
 	public function size( $file ) {
-		$file = $this->get_contents( $this );
-		if ( false === $file ) {
+		$contents = $this->get_contents( $file );
+		if ( false === $contents ) {
 			return false; // We don't need to set the errors as that's already done by `get_contents`
 		}
 
 		// TODO: switch to HEAD request and check the Content-Length header
-		return mb_strlen( $file );
+		return mb_strlen( $contents );
 	}
 
 	/**
@@ -163,7 +166,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file is writable.
 	 */
 	public function is_writable( $file ) {
-		//This method is technically not implemented but we're returning true since we think most use cases would be to check if a file is writeable and then write to it. Given that most of the times the write will be successful there's not much to gain by implementing logic here.
+		// This method is technically not implemented but we're returning true since we think most use cases would be to check if a file is writeable and then write to it. Given that most of the times the write will be successful there's not much to gain by implementing logic here.
 		return true;
 	}
 
