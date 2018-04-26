@@ -335,7 +335,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function rmdir( $path, $recursive = false ) {
 		$transport    = $this->get_transport_for_path( $path, 'write' );
-		$return       = $transport->rmdir( $path, $recursive = false );
+		$return       = $transport->rmdir( $path, $recursive );
 		$this->errors = $transport->errors;
 
 		return $return;
@@ -365,7 +365,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
 		$transport    = $this->get_transport_for_path( $path );
-		$return       = $transport->dirlist( $path, $include_hidden = true, $recursive = false );
+		$return       = $transport->dirlist( $path, $include_hidden, $recursive );
 		$this->errors = $transport->errors;
 
 		return $return;
@@ -405,7 +405,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
 		$transport    = $this->get_transport_for_path( $file, 'write' );
-		$return       = $transport->chgrp( $file, $group, $recursive = false );
+		$return       = $transport->chgrp( $file, $group, $recursive );
 		$this->errors = $transport->errors;
 
 		return $return;
@@ -421,7 +421,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
 		$transport    = $this->get_transport_for_path( $file, 'write' );
-		$return       = $transport->chmod( $file, $mode, $recursive = false );
+		$return       = $transport->chmod( $file, $mode, $recursive );
 		$this->errors = $transport->errors;
 
 		return $return;
@@ -437,7 +437,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
 		$transport    = $this->get_transport_for_path( $file, 'write' );
-		$return       = $transport->chown( $file, $owner, $recursive = false );
+		$return       = $transport->chown( $file, $owner, $recursive );
 		$this->errors = $transport->errors;
 
 		return $return;
