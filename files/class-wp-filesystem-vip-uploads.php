@@ -53,8 +53,10 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return string|bool The function returns the read data or false on failure.
 	 */
 	public function get_contents( $file ) {
+		$uploads_path = $this->sanitize_uploads_path( $file );
+
 		// TODO: Caching for remote gets? Static single request cache vs memcache?
-		$contents = $this->api->get_file( $file );
+		$contents = $this->api->get_file( $uploads_path );
 		if ( is_wp_error( $contents ) ) {
 			$this->errors = $contents;
 
@@ -101,10 +103,12 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool False upon failure, true otherwise.
 	 */
 	public function put_contents( $filename, $contents, $mode = false ) {
+		$uploads_path = $this->sanitize_uploads_path( $filename );
+
 		$temp_file = tempnam( sys_get_temp_dir(), 'uploads' );
 		file_put_contents( $temp_file, $contents );
 
-		$response = $this->api->upload_file( $temp_file, $filename );
+		$response = $this->api->upload_file( $temp_file, $uploads_path );
 
 		unlink( $temp_file );
 
@@ -123,7 +127,9 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
-		$response = $this->api->delete_file( $file );
+		$uploads_path = $this->sanitize_uploads_path( $file );
+
+		$response = $this->api->delete_file( $uploads_path );
 		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;
 
@@ -141,7 +147,9 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return int|bool Size of the file in bytes.
 	 */
 	public function size( $file ) {
-		$contents = $this->get_contents( $file );
+		$uploads_path = $this->sanitize_uploads_path( $file );
+
+		$contents = $this->get_contents( $uploads_path );
 		if ( false === $contents ) {
 			return false; // We don't need to set the errors as that's already done by `get_contents`
 		}
@@ -158,8 +166,10 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file exists or not.
 	 */
 	public function exists( $file ) {
+		$uploads_path = $this->sanitize_uploads_path( $file );
+
 		// TODO: should we return false for directories?
-		return $this->api->is_file( $file );
+		return $this->api->is_file( $uploads_path );
 	}
 
 	/**
