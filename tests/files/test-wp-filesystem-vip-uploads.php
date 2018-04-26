@@ -29,6 +29,50 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_method( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP_Uploads' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
+	}
+
+	public function test__sanitize_uploads_path__upload_basedir() {
+		$basedir_filter = function( $upload_dir ) {
+			$upload_dir['basedir'] = '/tmp/uploads';
+			return $upload_dir;
+		};
+		add_filter( 'upload_dir', $basedir_filter );
+
+		$test_path = '/tmp/uploads/file/to/path.txt';
+		$expected_sanitized_path = '/wp-content/uploads/file/to/path.txt';
+
+		$test_method = $this->get_method( 'sanitize_uploads_path' );
+
+		$actual_sanitized_path = $test_method->invokeArgs( $this->filesystem, [
+			$test_path,
+		] );
+
+		$this->assertEquals( $expected_sanitized_path, $actual_sanitized_path );
+
+		remove_filter( 'upload_dir', $basedir_filter );
+	}
+
+	public function test__sanitize_uploads_path__WP_CONTENT_DIR() {
+		$test_path = WP_CONTENT_DIR . '/uploads/path/to/file.jpg';
+		$expected_sanitized_path = '/wp-content/uploads/path/to/file.jpg';
+
+		$test_method = $this->get_method( 'sanitize_uploads_path' );
+
+		$actual_sanitized_path = $test_method->invokeArgs( $this->filesystem, [
+			$test_path,
+		] );
+
+		$this->assertEquals( $expected_sanitized_path, $actual_sanitized_path );
+	}
+
 	public function test__get_contents__error() {
 		$this->api_client_mock
 			->method( 'get_file' )

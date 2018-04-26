@@ -18,6 +18,34 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
+	 * Gets the relative path for a file starting from `/wp-content/`.
+	 *
+	 * Which is the path that the Files Api_Client expects.
+	 */
+	protected function sanitize_uploads_path( $path ) {
+		$sanitized_path = $path;
+
+		$wp_content_dir = WP_CONTENT_DIR;
+		$upload_dir = wp_get_upload_dir();
+		$upload_basedir = $upload_dir['basedir'];
+
+		// WP_CONTENT_DIR and wp_get_upload_dir() may not be the same.
+		// So we handle them separately.
+		if ( 0 === stripos( $sanitized_path, $upload_basedir ) ) {
+			$sanitized_path = str_ireplace( $upload_basedir, '', $sanitized_path );
+			$sanitized_path = '/wp-content/uploads' . $sanitized_path;
+		} elseif ( 0 === stripos( $sanitized_path, $wp_content_dir ) ) {
+			$sanitized_path = str_ireplace( $wp_content_dir, '', $sanitized_path );
+			$sanitized_path = '/wp-content' . $sanitized_path;
+		}
+
+		$file_name = basename( $sanitized_path );
+		$file_path = dirname( $sanitized_path );
+
+		return sprintf( '%s/%s', $file_path, $file_name );
+	}
+
+	/**
 	 * Reads entire file into a string
 	 *
 	 * @param string $file Name of the file to read.
