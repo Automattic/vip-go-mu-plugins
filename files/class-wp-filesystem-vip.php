@@ -132,22 +132,31 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
 		$source_transport      = $this->get_transport_for_path( $source );
 		$destination_transport = $this->get_transport_for_path( $destination, 'write' );
+		if ( ! $destination_transport ) {
+			return false;
+		}
 
-		if ( ! $overwrite && $destination_transport->exists( $destination ) ) {
+		$destination_exists = $destination_transport->exists( $destination );
+		if ( ! $overwrite && $destination_exists ) {
+			/* translators 1: destination file path 2: overwrite param 3: `true` boolean value */
+			$this->errors->add( 'destination-exists', sprintf( __( 'The destination path (`%1$s`) already exists and `%2$s` was not not set to `%3$s`.' ), $destination, '$overwrite', 'true' ) );
 			return false;
 		}
 
 		$file_content = $source_transport->get_contents( $source );
-		$return       = $destination_transport->put_contents( $destination, $file_content, $mode );
-
-		//It doesn't matter if both are WP_Filesystem_VIP_Uploads since all errors are stored in the object.
-		if ( is_a( $source_transport, 'WP_Filesystem_VIP_Uploads' ) ) {
+		if ( false === $file_content ) {
 			$this->errors = $source_transport->errors;
-		} elseif ( is_a( $destination_transport, 'WP_Filesystem_VIP_Uploads' ) ) {
-			$this->errors = $destination_transport->errors;
+			return false;
 		}
 
-		return $return;
+		$put_results = $destination_transport->put_contents( $destination, $file_content, $mode );
+
+		if ( false === $put_results ) {
+			$this->errors = $destination_transport->errors;
+			return false;
+		}
+
+		return $put_results;
 
 	}
 
@@ -164,7 +173,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		//We don't need to set the errors here since delete() will take care of it
+		// We don't need to set the errors here since delete() will take care of it
 		return $this->delete( $source );
 	}
 
@@ -497,7 +506,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 	/**
 	 * Get the file's group.
-	 * 
+	 *
 	 * @param string $file Path to the file.
 	 *
 	 * @return string|bool The group or false on error.
