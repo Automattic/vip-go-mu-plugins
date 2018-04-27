@@ -171,7 +171,12 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function exists( $file ) {
 		$uploads_path = $this->sanitize_uploads_path( $file );
 
-		// TODO: should we return false for directories?
+		// We don't have an API for managing directories.
+		// Let's just assume we can create files on all paths.
+		if ( $this->is_dir( $file ) ) {
+			return true;
+		}
+
 		return $this->api->is_file( $uploads_path );
 	}
 
@@ -184,7 +189,24 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function is_file( $file ) {
 		// The API only deals with files, so we can just check for existence.
-		return $this->exists( $file );
+		return $this->exists( $uploads_path );
+	}
+
+	/**
+	 * Check if resource is a directory.
+	 *
+	 * We just naively check to see if the path has an extension.
+	 *
+	 * @param string $path Directory path.
+	 *
+	 * @return bool Whether $path is a directory.
+	 */
+	public function is_dir( $path ) {
+		$uploads_path = $this->sanitize_uploads_path( $path );
+
+		$pathinfo = pathinfo( $path );
+
+		return false === isset( $pathinfo['extension'] );
 	}
 
 	/**
@@ -195,6 +217,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file is readable.
 	 */
 	public function is_readable( $file ) {
+
 		// If the file exists, we can read it.
 		return $this->exists( $file );
 	}
@@ -255,17 +278,6 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 		trigger_error( $error_msg, E_USER_WARNING );
 
 		return false;
-	}
-
-	/**
-	 * Unimplemented - Check if resource is a directory.
-	 *
-	 * @param string $path Directory path.
-	 *
-	 * @return bool Whether $path is a directory.
-	 */
-	public function is_dir( $path ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
 	/**
