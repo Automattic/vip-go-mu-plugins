@@ -11,7 +11,7 @@ class Curl_Streamer {
 
 	public function init() {
 		add_filter( 'http_api_transports', [ $this, 'enforce_curl_transport' ] );
-		add_action( 'http_api_curl', [ $this, 'init_upload' ] );
+		add_action( 'http_api_curl', [ $this, 'init_upload' ], 10, 3 );
 	}
 
 	public function deinit() {
@@ -31,6 +31,8 @@ class Curl_Streamer {
 		}
 
 		$file_size = filesize( $this->file_path );
+
+		curl_setopt( $curl_handle, CURLOPT_PUT, true ); // The Requests lib only sets `CURLOPT_CUSTOMREQUEST`; we need to explicitly set `CURLOPT_PUT` as well.
 
 		curl_setopt( $curl_handle, CURLOPT_INFILE, $file_stream );
 		curl_setopt( $curl_handle, CURLOPT_INFILESIZE, $file_size );

@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
+require_once( ABSPATH . 'wp-admin/includes/file.php' );
 require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
 
 require_once( __DIR__ . '/class-api-client.php' );

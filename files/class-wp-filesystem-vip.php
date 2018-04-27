@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
+require_once( ABSPATH . 'wp-admin/includes/file.php' );
 require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
 require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php' );
 
@@ -27,8 +28,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 		list( $filesystem_uploads, $filesystem_direct ) = $dependencies;
 
-		$this->api    = $filesystem_uploads;
-		$this->direct = $filesystem_direct;
+		$this->uploads = $filesystem_uploads;
+		$this->direct  = $filesystem_direct;
 	}
 
 	/**
@@ -42,7 +43,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	private function get_transport_for_path( $filename, $context = 'read' ) {
 		if ( $this->is_uploads_path( $filename ) ) {
-			return $this->api;
+			return $this->uploads;
 		} elseif ( $this->is_tmp_path( $filename ) ) {
 			return $this->direct;
 		} elseif ( 'read' === $context ) {

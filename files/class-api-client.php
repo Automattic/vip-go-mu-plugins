@@ -8,7 +8,7 @@ require( __DIR__ . '/class-curl-streamer.php' );
 
 function new_api_client() {
 	return new API_Client(
-		constant( 'FILE_SERVICE_ENDPOINT' ),
+		'https://' . constant( 'FILE_SERVICE_ENDPOINT' ),
 		constant( 'FILES_CLIENT_SITE_ID' ),
 		constant( 'FILES_ACCESS_TOKEN' )
 	);
@@ -22,7 +22,6 @@ class API_Client {
 	private $files_token;
 
 	public function __construct( $api_base, $files_site_id, $files_token ) {
-		$api_base = esc_url_raw( $api_base, [ 'https', 'http' ] );
 		$api_base = untrailingslashit( $api_base );
 		$this->api_base = $api_base;
 
