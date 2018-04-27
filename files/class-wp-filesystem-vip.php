@@ -82,6 +82,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function get_contents( $file ) {
 		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
 
 		$return       = $transport->get_contents( $file );
 		$this->errors = $transport->errors;
@@ -97,7 +100,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return array|bool the file contents in an array or false on failure.
 	 */
 	public function get_contents_array( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->get_contents_array( $file );
 		$this->errors = $transport->errors;
 
@@ -114,7 +121,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool False upon failure, true otherwise.
 	 */
 	public function put_contents( $file, $contents, $mode = false ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->put_contents( $file, $contents, $mode );
 		$this->errors = $transport->errors;
 
@@ -130,7 +141,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function copy( $source, $destination, $overwrite = false, $mode = false ) {
-		$source_transport      = $this->get_transport_for_path( $source );
+		$source_transport = $this->get_transport_for_path( $source );
+		if ( ! $source_transport ) {
+			return false;
+		}
+
 		$destination_transport = $this->get_transport_for_path( $destination, 'write' );
 		if ( ! $destination_transport ) {
 			return false;
@@ -150,7 +165,6 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		$put_results = $destination_transport->put_contents( $destination, $file_content, $mode );
-
 		if ( false === $put_results ) {
 			$this->errors = $destination_transport->errors;
 			return false;
@@ -186,6 +200,9 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
 		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
 
 		$return       = $transport->delete( $file );
 		$this->errors = $transport->errors;
@@ -199,7 +216,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return int
 	 */
 	public function size( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->size( $file );
 		$this->errors = $transport->errors;
 
@@ -212,7 +233,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function exists( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->exists( $file );
 		$this->errors = $transport->errors;
 
@@ -225,7 +250,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_file( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->is_file( $file );
 		$this->errors = $transport->errors;
 
@@ -238,7 +267,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_dir( $path ) {
-		$transport    = $this->get_transport_for_path( $path );
+		$transport = $this->get_transport_for_path( $path );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->is_dir( $path );
 		$this->errors = $transport->errors;
 
@@ -251,7 +284,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_readable( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->is_readable( $file );
 		$this->errors = $transport->errors;
 
@@ -264,7 +301,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_writable( $file ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->is_writable( $file );
 		$this->errors = $transport->errors;
 
@@ -279,7 +320,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return int|bool Unix timestamp representing last access time.
 	 */
 	public function atime( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->atime( $file );
 		$this->errors = $transport->errors;
 
@@ -294,7 +339,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return int|bool Unix timestamp representing modification time.
 	 */
 	public function mtime( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->mtime( $file );
 		$this->errors = $transport->errors;
 
@@ -315,7 +364,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Whether operation was successful or not.
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->touch( $file, $time, $atime );
 		$this->errors = $transport->errors;
 
@@ -336,7 +389,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool False if directory cannot be created, true otherwise.
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
-		$transport    = $this->get_transport_for_path( $path, 'write' );
+		$transport = $this->get_transport_for_path( $path, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->mkdir( $path, $chmod, $chown, $chgrp );
 		$this->errors = $transport->errors;
 
@@ -353,7 +410,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Whether directory is deleted successfully or not.
 	 */
 	public function rmdir( $path, $recursive = false ) {
-		$transport    = $this->get_transport_for_path( $path, 'write' );
+		$transport = $this->get_transport_for_path( $path, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->rmdir( $path, $recursive );
 		$this->errors = $transport->errors;
 
@@ -385,7 +446,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * }
 	 */
 	public function dirlist( $path, $include_hidden = true, $recursive = false ) {
-		$transport    = $this->get_transport_for_path( $path );
+		$transport = $this->get_transport_for_path( $path );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->dirlist( $path, $include_hidden, $recursive );
 		$this->errors = $transport->errors;
 
@@ -399,7 +464,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool the current working directory on success, or false on failure.
 	 */
 	public function cwd() {
-		$transport    = $this->get_transport_for_path( '' );
+		$transport = $this->get_transport_for_path( '' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->cwd();
 		$this->errors = $transport->errors;
 
@@ -414,7 +483,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chdir( $dir ) {
-		$transport    = $this->get_transport_for_path( $dir );
+		$transport = $this->get_transport_for_path( $dir );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->chdir( $dir );
 		$this->errors = $transport->errors;
 
@@ -431,7 +504,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chgrp( $file, $group, $recursive = false ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->chgrp( $file, $group, $recursive );
 		$this->errors = $transport->errors;
 
@@ -449,7 +526,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chmod( $file, $mode = false, $recursive = false ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->chmod( $file, $mode, $recursive );
 		$this->errors = $transport->errors;
 
@@ -467,7 +548,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool Returns true on success or false on failure.
 	 */
 	public function chown( $file, $owner, $recursive = false ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->chown( $file, $owner, $recursive );
 		$this->errors = $transport->errors;
 
@@ -482,7 +567,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool Username of the user or false on error.
 	 */
 	public function owner( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->owner( $file );
 		$this->errors = $transport->errors;
 
@@ -497,7 +586,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string Mode of the file (last 3 digits).
 	 */
 	public function getchmod( $file ) {
-		$transport    = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write' );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->gethchmod( $file );
 		$this->errors = $transport->errors;
 
@@ -512,7 +605,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return string|bool The group or false on error.
 	 */
 	public function group( $file ) {
-		$transport    = $this->get_transport_for_path( $file );
+		$transport = $this->get_transport_for_path( $file );
+		if ( ! $transport ) {
+			return false;
+		}
+
 		$return       = $transport->group( $file );
 		$this->errors = $transport->errors;
 
