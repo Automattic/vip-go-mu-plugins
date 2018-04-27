@@ -173,7 +173,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 
 		// We don't have an API for managing directories.
 		// Let's just assume we can create files on all paths.
-		if ( $this->is_dir( $file ) ) {
+		if ( $this->is_dir( $uploads_path ) ) {
 			return true;
 		}
 
@@ -189,7 +189,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function is_file( $file ) {
 		// The API only deals with files, so we can just check for existence.
-		return $this->exists( $uploads_path );
+		return $this->exists( $file );
 	}
 
 	/**
@@ -204,7 +204,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function is_dir( $path ) {
 		$uploads_path = $this->sanitize_uploads_path( $path );
 
-		$pathinfo = pathinfo( $path );
+		$pathinfo = pathinfo( $uploads_path );
 
 		return false === isset( $pathinfo['extension'] );
 	}
