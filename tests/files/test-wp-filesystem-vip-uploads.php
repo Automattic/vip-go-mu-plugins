@@ -205,6 +205,11 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 				'/wp-content/uploads/folder',
 				true,
 			],
+
+			'directory with trailing slash' => [
+				'/wp-content/uploads/folder/',
+				true,
+			],
 		];
 	}
 
