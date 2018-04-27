@@ -86,8 +86,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->get_contents( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->get_contents( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -105,8 +108,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->get_contents_array( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->get_contents_array( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -126,8 +132,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->put_contents( $file, $contents, $mode );
-		$this->errors = $transport->errors;
+		$return = $transport->put_contents( $file, $contents, $mode );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -204,8 +213,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->delete( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->delete( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -221,8 +233,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->size( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->size( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -238,8 +253,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->exists( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->exists( $file );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -255,8 +274,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->is_file( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->is_file( $file );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -272,8 +295,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->is_dir( $path );
-		$this->errors = $transport->errors;
+		$return = $transport->is_dir( $path );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -289,8 +316,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->is_readable( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->is_readable( $file );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -306,8 +337,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->is_writable( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->is_writable( $file );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -325,8 +360,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->atime( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->atime( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -344,8 +382,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->mtime( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->mtime( $file );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -369,8 +411,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->touch( $file, $time, $atime );
-		$this->errors = $transport->errors;
+		$return = $transport->touch( $file, $time, $atime );
+		if ( false === $return
+			&& $transport->errors->get_error_code() ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -394,8 +440,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->mkdir( $path, $chmod, $chown, $chgrp );
-		$this->errors = $transport->errors;
+		$return = $transport->mkdir( $path, $chmod, $chown, $chgrp );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -415,8 +464,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->rmdir( $path, $recursive );
-		$this->errors = $transport->errors;
+		$return = $transport->rmdir( $path, $recursive );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -451,8 +503,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->dirlist( $path, $include_hidden, $recursive );
-		$this->errors = $transport->errors;
+		$return = $transport->dirlist( $path, $include_hidden, $recursive );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -469,8 +524,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->cwd();
-		$this->errors = $transport->errors;
+		$return = $transport->cwd();
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -488,8 +546,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->chdir( $dir );
-		$this->errors = $transport->errors;
+		$return = $transport->chdir( $dir );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -509,8 +570,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->chgrp( $file, $group, $recursive );
-		$this->errors = $transport->errors;
+		$return = $transport->chgrp( $file, $group, $recursive );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -531,8 +595,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->chmod( $file, $mode, $recursive );
-		$this->errors = $transport->errors;
+		$return = $transport->chmod( $file, $mode, $recursive );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -553,8 +620,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->chown( $file, $owner, $recursive );
-		$this->errors = $transport->errors;
+		$return = $transport->chown( $file, $owner, $recursive );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -572,8 +642,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->owner( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->owner( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -591,8 +664,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->gethchmod( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->gethchmod( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
@@ -610,10 +686,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return       = $transport->group( $file );
-		$this->errors = $transport->errors;
+		$return = $transport->group( $file );
+		if ( false === $return ) {
+			$this->errors = $transport->errors;
+			return false;
+		}
 
 		return $return;
 	}
-
 }
