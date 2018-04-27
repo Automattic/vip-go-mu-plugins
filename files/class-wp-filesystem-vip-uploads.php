@@ -2,7 +2,6 @@
 
 namespace Automattic\VIP\Files;
 
-require_once( ABSPATH . 'wp-admin/includes/file.php' );
 require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
 
 require_once( __DIR__ . '/class-api-client.php' );
@@ -100,20 +99,21 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 *
 	 * Since the API expects a file we'll copy the content to a local temporary file first.
 	 *
-	 * @param string $filename Remote path to the file where to write the data.
+	 * @param string $file_path Remote path to the file where to write the data.
 	 * @param string $contents The data to write.
 	 *
 	 * @return bool False upon failure, true otherwise.
 	 */
-	public function put_contents( $filename, $contents, $mode = false ) {
-		$uploads_path = $this->sanitize_uploads_path( $filename );
+	public function put_contents( $file_path, $contents, $mode = false ) {
+		$uploads_path = $this->sanitize_uploads_path( $file_path );
 
-		$tmp_filename = wp_tempnam( $filename );
-		file_put_contents( $tmp_filename, $contents );
+		$file_name = basename( $file_path );
+		$tmp_file_path = tempnam( get_temp_dir(), 'uploads-' . $file_name );
+		file_put_contents( $tmp_file_path, $contents );
 
-		$response = $this->api->upload_file( $tmp_filename, $uploads_path );
+		$response = $this->api->upload_file( $tmp_file_path, $uploads_path );
 
-		unlink( $tmp_filename );
+		unlink( $tmp_file_path );
 
 		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;
