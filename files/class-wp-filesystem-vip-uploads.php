@@ -39,6 +39,8 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 			$sanitized_path = '/wp-content' . $sanitized_path;
 		}
 
+		// TODO: Should we fail for other paths?
+
 		$file_name = basename( $sanitized_path );
 		$file_path = dirname( $sanitized_path );
 
@@ -105,12 +107,12 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function put_contents( $filename, $contents, $mode = false ) {
 		$uploads_path = $this->sanitize_uploads_path( $filename );
 
-		$temp_file = tempnam( sys_get_temp_dir(), 'uploads' );
-		file_put_contents( $temp_file, $contents );
+		$tmp_filename = wp_tempnam( $filename );
+		file_put_contents( $tmp_filename, $contents );
 
-		$response = $this->api->upload_file( $temp_file, $uploads_path );
+		$response = $this->api->upload_file( $tmp_filename, $uploads_path );
 
-		unlink( $temp_file );
+		unlink( $tmp_filename );
 
 		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;

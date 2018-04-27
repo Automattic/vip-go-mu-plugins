@@ -156,4 +156,31 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_contents, $actual_contents );
 	}
+
+	public function test__put_contents__params() {
+		$test_content = 'Howdy';
+		$test_file = '/tmp/uploads/file.txt';
+
+		$tmp_file = false;
+
+		$this->api_client_mock
+			->method( 'upload_file' )
+			->with(
+				$this->callback( function( $local_path ) use ( $test_content, $tmp_file ) {
+					// Store a local reference so we can verify deletion after
+					$tmp_file = $local_path;
+
+					// Verify contents of the file
+					$tmp_file_contents = file_get_contents( $local_path );
+					return $test_content === $tmp_file_contents;
+				} ),
+				$this->equalTo( '/wp-content/uploads/file.txt' )
+			)
+			->willReturn( true );
+
+		$this->filesystem->put_contents( $test_file, $test_content );
+
+		$tmp_file_exists = file_exists( $tmp_file );
+		$this->assertFalse( $tmp_file_exists, 'Temp file was not deleted' );
+	}
 }
