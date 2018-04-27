@@ -45,7 +45,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return $this->api;
 		} elseif ( $this->is_tmp_path( $filename ) ) {
 			return $this->direct;
-		} elseif ( $context === 'read' ) {
+		} elseif ( 'read' === $context ) {
 			return $this->direct;
 		}
 
