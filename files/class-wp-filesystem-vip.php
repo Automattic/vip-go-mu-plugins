@@ -316,7 +316,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
 		$transport    = $this->get_transport_for_path( $file, 'write' );
-		$return       = $transport->touch( $file, $time = 0, $atime = 0 );
+		$return       = $transport->touch( $file, $time, $atime );
 		$this->errors = $transport->errors;
 
 		return $return;
@@ -337,7 +337,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
 		$transport    = $this->get_transport_for_path( $path, 'write' );
-		$return       = $transport->mkdir( $path, $chmod = false, $chown = false, $chgrp = false );
+		$return       = $transport->mkdir( $path, $chmod, $chown, $chgrp );
 		$this->errors = $transport->errors;
 
 		return $return;
