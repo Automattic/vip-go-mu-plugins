@@ -217,7 +217,6 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file is readable.
 	 */
 	public function is_readable( $file ) {
-
 		// If the file exists, we can read it.
 		return $this->exists( $file );
 	}
@@ -231,6 +230,26 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function is_writable( $file ) {
 		// This method is technically not implemented but we're returning true since we think most use cases would be to check if a file is writeable and then write to it. Given that most of the times the write will be successful there's not much to gain by implementing logic here.
+		return true;
+	}
+
+	/**
+	 * Create a directory.
+	 *
+	 * @param string $path Path for new directory.
+	 * @param mixed $chmod Optional. The permissions as octal number, (or False to skip chmod)
+	 *                      Default false.
+	 * @param mixed $chown Optional. A user name or number (or False to skip chown)
+	 *                      Default false.
+	 * @param mixed $chgrp Optional. A group name or number (or False to skip chgrp).
+	 *                      Default false.
+	 *
+	 * @return bool False if directory cannot be created, true otherwise.
+	 */
+	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
+		// We don't have an API for managing directories.
+		// Let's just assume we can create files on all paths.
+		// And pretend that this dir was created.
 		return true;
 	}
 
@@ -316,23 +335,6 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether operation was successful or not.
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
-	}
-
-	/**
-	 * Unimplemented - Create a directory.
-	 *
-	 * @param string $path Path for new directory.
-	 * @param mixed $chmod Optional. The permissions as octal number, (or False to skip chmod)
-	 *                      Default false.
-	 * @param mixed $chown Optional. A user name or number (or False to skip chown)
-	 *                      Default false.
-	 * @param mixed $chgrp Optional. A group name or number (or False to skip chgrp).
-	 *                      Default false.
-	 *
-	 * @return bool False if directory cannot be created, true otherwise.
-	 */
-	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
 		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 
