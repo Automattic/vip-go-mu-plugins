@@ -32,6 +32,8 @@ class Curl_Streamer {
 
 		$file_size = filesize( $this->file_path );
 
+		curl_setopt( $curl_handle, CURLOPT_PUT, true ); // The Requests lib only sets `CURLOPT_CUSTOMREQUEST`; we need to explicitly set `CURLOPT_PUT` as well.
+
 		curl_setopt( $curl_handle, CURLOPT_INFILE, $file_stream );
 		curl_setopt( $curl_handle, CURLOPT_INFILESIZE, $file_size );
 
