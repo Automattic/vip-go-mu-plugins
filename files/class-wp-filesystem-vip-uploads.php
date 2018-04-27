@@ -171,7 +171,12 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function exists( $file ) {
 		$uploads_path = $this->sanitize_uploads_path( $file );
 
-		// TODO: should we return false for directories?
+		// We don't have an API for managing directories.
+		// Let's just assume we can create files on all paths.
+		if ( $this->is_dir( $uploads_path ) ) {
+			return true;
+		}
+
 		return $this->api->is_file( $uploads_path );
 	}
 
@@ -185,6 +190,23 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function is_file( $file ) {
 		// The API only deals with files, so we can just check for existence.
 		return $this->exists( $file );
+	}
+
+	/**
+	 * Check if resource is a directory.
+	 *
+	 * We just naively check to see if the path has an extension.
+	 *
+	 * @param string $path Directory path.
+	 *
+	 * @return bool Whether $path is a directory.
+	 */
+	public function is_dir( $path ) {
+		$uploads_path = $this->sanitize_uploads_path( $path );
+
+		$pathinfo = pathinfo( $uploads_path );
+
+		return false === isset( $pathinfo['extension'] );
 	}
 
 	/**
@@ -208,6 +230,26 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function is_writable( $file ) {
 		// This method is technically not implemented but we're returning true since we think most use cases would be to check if a file is writeable and then write to it. Given that most of the times the write will be successful there's not much to gain by implementing logic here.
+		return true;
+	}
+
+	/**
+	 * Create a directory.
+	 *
+	 * @param string $path Path for new directory.
+	 * @param mixed $chmod Optional. The permissions as octal number, (or False to skip chmod)
+	 *                      Default false.
+	 * @param mixed $chown Optional. A user name or number (or False to skip chown)
+	 *                      Default false.
+	 * @param mixed $chgrp Optional. A group name or number (or False to skip chgrp).
+	 *                      Default false.
+	 *
+	 * @return bool False if directory cannot be created, true otherwise.
+	 */
+	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
+		// We don't have an API for managing directories.
+		// Let's just assume we can create files on all paths.
+		// And pretend that this dir was created.
 		return true;
 	}
 
@@ -258,17 +300,6 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * Unimplemented - Check if resource is a directory.
-	 *
-	 * @param string $path Directory path.
-	 *
-	 * @return bool Whether $path is a directory.
-	 */
-	public function is_dir( $path ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
-	}
-
-	/**
 	 * Unimplemented - Gets the file's last access time.
 	 *
 	 * @param string $file Path to file.
@@ -304,23 +335,6 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether operation was successful or not.
 	 */
 	public function touch( $file, $time = 0, $atime = 0 ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
-	}
-
-	/**
-	 * Unimplemented - Create a directory.
-	 *
-	 * @param string $path Path for new directory.
-	 * @param mixed $chmod Optional. The permissions as octal number, (or False to skip chmod)
-	 *                      Default false.
-	 * @param mixed $chown Optional. A user name or number (or False to skip chown)
-	 *                      Default false.
-	 * @param mixed $chgrp Optional. A group name or number (or False to skip chgrp).
-	 *                      Default false.
-	 *
-	 * @return bool False if directory cannot be created, true otherwise.
-	 */
-	public function mkdir( $path, $chmod = false, $chown = false, $chgrp = false ) {
 		return $this->handle_unimplemented_method( __METHOD__ );
 	}
 

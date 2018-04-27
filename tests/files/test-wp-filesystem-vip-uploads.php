@@ -183,4 +183,42 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		$tmp_file_exists = file_exists( $tmp_file );
 		$this->assertFalse( $tmp_file_exists, 'Temp file was not deleted' );
 	}
+
+	public function get_test_data__is_dir() {
+		return [
+			'file' => [
+				'/wp-content/uploads/file.jpg',
+				false,
+			],
+
+			'file with trailing period' => [
+				'/wp-content/uploads/file.',
+				false,
+			],
+
+			'file with leading period' => [
+				'/wp-content/uploads/.file',
+				false,
+			],
+
+			'directory' => [
+				'/wp-content/uploads/folder',
+				true,
+			],
+
+			'directory with trailing slash' => [
+				'/wp-content/uploads/folder/',
+				true,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__is_dir
+	 */
+	public function test__is_dir( $test_path, $expected_result ) {
+		$actual_result = $this->filesystem->is_dir( $test_path );
+
+		$this->assertEquals( $expected_result, $actual_result );
+	}
 }
