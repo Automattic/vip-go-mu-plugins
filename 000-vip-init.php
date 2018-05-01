@@ -82,7 +82,7 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
-define( 'WPCOM_VIP_PRIVATE_DIR', WPCOM_SANDBOXED || VIP_GO_IS_CLI_CONTAINER ? '/chroot/private' : '/private' );
+define( 'WPCOM_VIP_PRIVATE_DIR', '/private' );
 
 // Define these values just in case
 defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
