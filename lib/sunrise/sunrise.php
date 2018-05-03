@@ -42,6 +42,10 @@ function site_not_found( $network, $domain, $path ) {
 	$data = json_encode( $data );
 
 	trigger_error( 'Site Not Found! ' . $data, E_USER_WARNING );
+
+	http_response_code( 404 );
+	echo file_get_contents( WPMU_PLUGIN_DIR . '/errors/site-not-found.html' );
+	exit;
 }
 add_action( 'ms_site_not_found', __NAMESPACE__ . '\site_not_found', 9, 3 ); // Priority 9 to log before WP_CLI kills execution
 
