@@ -121,7 +121,7 @@ add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_disable_jetpack_sync
  */
 function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 	if ( ! $is_enabled ) {
-			return $is_enabled;
+		return $is_enabled;
 	}
 
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
