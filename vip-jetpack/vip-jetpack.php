@@ -114,8 +114,9 @@ add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_disable_jetpack_sync
 /**
  * Disable Email Sharing if Recaptcha is not setup.
  *
- * To prevent spam and abuse, we should only allow sharing via e-mail when Recaptcha is enabled.
- * @see https://jetpack.com/support/sharing/#captcha Instructions on how to set up reCaptcha for your site
+ * To prevent spam and abuse, we should only allow sharing via e-mail when reCAPTCHA is enabled.
+ *
+ * @see https://jetpack.com/support/sharing/#captcha Instructions on how to set up reCAPTCHA for your site
  *
  * @param  bool $is_enabled Current value.
  * @return bool              Whether (true) or not (false) email sharing is enabled.
@@ -126,6 +127,5 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 	}
 
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
-
 }
 add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha' );
