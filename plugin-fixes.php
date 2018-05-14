@@ -11,7 +11,11 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 // Avoids issues when filtering the deprecated `query_string` hook.
 // Copy of upstream fix: https://github.com/Automattic/amp-wp/pull/910
 function vip_go_amp_force_query_var_value( $query_vars ) {
-
+	// Don't bother if AMP is not active
+	if ( ! defined( 'AMP_QUERY_VAR' ) ) {
+		return $query_vars;	
+	}
+	
 	if ( isset( $query_vars[ AMP_QUERY_VAR ] ) ) {
 		if ( '' === $query_vars[ AMP_QUERY_VAR ] ) {
 			$query_vars[ AMP_QUERY_VAR ] = 1;
