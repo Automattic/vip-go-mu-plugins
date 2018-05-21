@@ -23,7 +23,7 @@ add_action( 'plugins_loaded', function() {
 } );
 
 /** Loading helper **/
-function wpcom_vip_load_gutenberg( $criteria ) {
+function wpcom_vip_load_gutenberg( $criteria = false ) {
 	if ( ! function_exists( 'ramp_for_gutenberg_load_gutenberg' ) ) {
 		return;
 	}
