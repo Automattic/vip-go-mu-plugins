@@ -43,6 +43,9 @@ function site_not_found( $network, $domain, $path ) {
 
 	trigger_error( 'Site Not Found! ' . $data, E_USER_WARNING );
 
+	// TODO: CLI, REST, other contexts?
+	// TODO: healthcheck path?
+
 	http_response_code( 404 );
 	echo file_get_contents( WPMU_PLUGIN_DIR . '/errors/site-not-found.html' );
 	exit;
