@@ -60,6 +60,10 @@ function connect_jetpack() {
 
 function connect_vaultpress() {
 	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+		// Remove the VaultPress option from the db to prevent site registration from failing
+		delete_option( 'vaultpress' );
+
+		// Register VaultPress
 		\WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
 	} else {
 		trigger_error( 'Cannot connect VaultPress outside of a WP_CLI context, skipping', E_USER_WARNING );
