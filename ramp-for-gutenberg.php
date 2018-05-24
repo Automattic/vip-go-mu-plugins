@@ -12,7 +12,7 @@
 
 // This file loads Ramp, and modifies behaviors for Gutenberg on VIP Go
 
-if ( defined( 'VIP_GO_DISABLE_RAMP' ) && VIP_GO_DISABLE_RAMP ) {
+if ( defined( 'VIP_GO_DISABLE_RAMP' ) && true === VIP_GO_DISABLE_RAMP ) {
 	return;
 }
 
