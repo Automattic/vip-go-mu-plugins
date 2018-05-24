@@ -28,8 +28,6 @@ add_action( 'plugins_loaded', function() {
 
 /**
  * Load Gutenberg via the Gutenberg Ramp plugin.
- *
- * @param array|false $criteria Use `false` or [ 'load' => 1 ] to always load, [ 'load' => 0 ] to never load, [ 'post_ids' => [] ] to load for particular posts, and [ 'post_types' => [] ] to load for particular post types.
  */
 function wpcom_vip_load_gutenberg( $criteria = false ) {
 	if ( ! function_exists( 'ramp_for_gutenberg_load_gutenberg' ) ) {
