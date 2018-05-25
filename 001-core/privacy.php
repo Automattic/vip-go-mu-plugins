@@ -176,20 +176,20 @@ function generate_personal_data_export_file( $request_id ) {
 		$zip_result = _pclzip_create_file( $archive_pathname, $html_report_pathname );
 	}
 
+	// Remove the HTML file since it's not needed anymore.
+	unlink( $html_report_pathname );
+
 	if ( is_wp_error( $zip_result ) ) {
 		/* translators: %s: error message */
 		$error = sprintf( __( 'Unable to generate export file (archive) for writing: %s' ), $zip_result->get_error_message() );
 	} else {
 		/** This filter is documented in wp-admin/includes/file.php */
 		do_action( 'wp_privacy_personal_data_export_file_created', $archive_pathname, $archive_url, $html_report_pathname, $request_id );
-	}
 
-	// And remove the HTML file.
-	unlink( $html_report_pathname );
-
-	$upload_result = _upload_archive_file( $archive_pathname );
-	if ( is_wp_error( $upload_result ) ) {
-		$error = sprintf( __( 'Failed to upload archive: %s' ), $upload_result->get_error_message() );
+		$upload_result = _upload_archive_file( $archive_pathname );
+		if ( is_wp_error( $upload_result ) ) {
+			$error = sprintf( __( 'Failed to upload export file (archive): %s' ), $upload_result->get_error_message() );
+		}
 	}
 
 	if ( $error ) {
