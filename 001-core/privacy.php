@@ -15,10 +15,6 @@ function init_privacy_compat() {
 }
 
 function generate_personal_data_export_file( $request_id ) {
-	if ( ! class_exists( 'ZipArchive' ) ) {
-		wp_send_json_error( __( 'Unable to generate export file. ZipArchive not available.' ) );
-	}
-
 	// Get the request data.
 	$request = wp_get_user_request_data( $request_id );
 
