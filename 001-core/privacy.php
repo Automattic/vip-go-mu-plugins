@@ -177,9 +177,44 @@ function generate_personal_data_export_file( $request_id ) {
 	// And remove the HTML file.
 	unlink( $html_report_pathname );
 
+	$upload_result = _upload_archive( $archive_pathname );
+	if ( is_wp_error( $upload_result ) ) {
+		$error = sprintf( __( 'Failed to upload archive: %s' ), $upload_result->get_error_message() );
+	}
+
+	// Delete the local copy of the archive since it's been uploaded.
+	unlink( $archive_pathname );
+
 	if ( $error ) {
 		wp_send_json_error( $error );
 	}
+}
+
+function _upload_archive( $archive_path ) {
+	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
+		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+	}
+
+	// Build the `/wp-content/` version of the exports path since `LOCAL_UPLOADS` gives us a `/tmp` path.
+	// Hard-coded and full of assumptions for now.
+	// TODO: need a cleaner approach for this. Can probably borrow `WP_Filesystem_VIP_Uploads::sanitize_uploads_path()`.
+	$archive_file = basename( $archive_path );
+	$exports_folder = basename( wp_privacy_exports_dir() );
+	$upload_path = sprintf( '/wp-content/uploads/%s/%s', $exports_folder, $archive_file );
+
+	$api_client = \Automattic\VIP\Files\new_api_client();
+	return $api_client->upload_file( $archive_path, $upload_path );
+}
+
+function _delete_archive( $archive_url ) {
+	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
+		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+	}
+
+	$archive_path = parse_url( $archive_url, PHP_URL_PATH );
+
+	$api_client = \Automattic\VIP\Files\new_api_client();
+	return $api_client->delete_file( $archive_path );
 }
 
 function _ziparchive_create_file( $archive_path, $html_report_path ) {
@@ -217,29 +252,34 @@ function _pclzip_create_file( $archive_path, $html_report_path ) {
 	return true;
 }
 
+/**
+ * This is very different from the core implementation.
+ *
+ * Rather than filesystem time stamps, we store the time in meta, and query against that to find old, expired requests.
+ */
 function delete_old_export_files() {
-	require_once( ABSPATH . 'wp-admin/includes/file.php' );
+	global $wpdb;
 
-	$exports_dir  = wp_privacy_exports_dir();
-	$export_files = list_files( $exports_dir, 100, array( 'index.html' ) );
-
-	/**
-	 * Filters the lifetime, in seconds, of a personal data export file.
-	 *
-	 * By default, the lifetime is 3 days. Once the file reaches that age, it will automatically
-	 * be deleted by a cron job.
-	 *
-	 * @since 4.9.6
-	 *
-	 * @param int $expiration The expiration age of the export, in seconds.
-	 */
+	/** This filter is documented in wp-includes/functions.php */
 	$expiration = apply_filters( 'wp_privacy_export_expiration', 3 * DAY_IN_SECONDS );
+	$expiration_timestamp = time() - $expiration;
 
-	foreach ( (array) $export_files as $export_file ) {
-		$file_age_in_seconds = time() - filemtime( $export_file );
+	// Direct query to avoid the unnecessary overhead of WP_Query.
+	$sql = $wpdb->prepare( "SELECT pm.meta_value FROM $wpdb->postmeta AS pm
+	INNER JOIN $wpdb->postmeta AS expiry
+		ON expiry.post_id = pm.post_id
+		AND expiry.meta_key = '_vip_export_generated_time'
+		AND expiry.meta_value <= %d
+	WHERE pm.meta_key = '_export_file_url'
+	LIMIT 100", $expiration_timestamp );
 
-		if ( $expiration < $file_age_in_seconds ) {
-			unlink( $export_file );
-		}
+	$file_urls = $wpdb->get_col( $sql );
+
+	if ( empty( $file_urls ) ) {
+		return;
+	}
+
+	foreach ( $file_urls as $file_url ) {
+		_delete_archive( $file_url );
 	}
 }
