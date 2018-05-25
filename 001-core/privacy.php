@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Core\Privacy;
 
+use WP_Error;
+
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_privacy_compat' );
 
 function init_privacy_compat() {
@@ -61,6 +63,7 @@ function generate_personal_data_export_file( $request_id ) {
 	$file_basename        = 'wp-personal-data-file-' . $stripped_email . '-' . $obscura;
 	$html_report_filename = $file_basename . '.html';
 	$html_report_pathname = wp_normalize_path( $exports_dir . $html_report_filename );
+
 	$file = fopen( $html_report_pathname, 'w' );
 	if ( false === $file ) {
 		wp_send_json_error( __( 'Unable to open export file (HTML report) for writing.' ) );
@@ -163,11 +166,11 @@ function generate_personal_data_export_file( $request_id ) {
 	// We can't currently iterate through files in the Files Service so we need a way to query exports by date.
 	update_post_meta( $request_id, '_vip_export_generated_time', time() );
 
-	// Note: core deletes the file, but we can just overwrite it when we upload.
+	// Note: core deletes the file if it exists, but we can just overwrite it when we upload.
 
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
-	if ( class_exists( 'ZipArchive' ) ) {
+	if ( class_exists( '\ZipArchive' ) ) {
 		$zip_result = _ziparchive_create_file( $archive_pathname, $html_report_pathname );
 	} else {
 		$zip_result = _pclzip_create_file( $archive_pathname, $html_report_pathname );
@@ -189,9 +192,9 @@ function generate_personal_data_export_file( $request_id ) {
 }
 
 function _ziparchive_create_file( $archive_path, $html_report_path ) {
-	$archive = new ZipArchive;
+	$archive = new \ZipArchive;
 
-	$archive_created = $archive->open( $archive_path, ZipArchive::CREATE );
+	$archive_created = $archive->open( $archive_path, \ZipArchive::CREATE );
 	if ( true !== $archive_created ) {
 		return new WP_Error( 'ziparchive-open-failed', __( 'Failed to create a `zip` file using `ZipArchive`' ) );
 	}
@@ -213,7 +216,7 @@ function _pclzip_create_file( $archive_path, $html_report_path ) {
 		require_once( ABSPATH . 'wp-admin/includes/class-pclzip.php' );
 	}
 
-	$archive = new PclZip( $archive_path );
+	$archive = new \PclZip( $archive_path );
 
 	$result = $archive->create( [ $html_report_path ] );
 	if ( 0 === $result ) {
