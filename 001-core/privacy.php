@@ -4,6 +4,15 @@ namespace Automattic\VIP\Core\Privacy;
 
 use WP_Error;
 
+/**
+ * Core privacy data export handler doesn't work by default on Go.
+ *
+ * It expects the `zip` module and `ZipArchive` to be available, which has to be explicitly enabled for apps.
+ *
+ * It also attempts to write/delete files directly in the `uploads` folder, which doesn't work because Files are hosted in our remote Files Service.
+ *
+ * The code here replaces the core handlers with our own implementation, which does work on Go sites.
+ */
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_privacy_compat' );
 
 function init_privacy_compat() {
