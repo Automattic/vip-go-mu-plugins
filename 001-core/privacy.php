@@ -15,7 +15,6 @@ function init_privacy_compat() {
 }
 
 function generate_personal_data_export_file( $request_id ) {
-	// Get the request data.
 	$request = wp_get_user_request_data( $request_id );
 
 	if ( ! $request || 'export_personal_data' !== $request->action_name ) {
@@ -156,29 +155,19 @@ function generate_personal_data_export_file( $request_id ) {
 		wp_delete_file( $archive_pathname );
 	}
 
-	$zip = new ZipArchive;
-	if ( true === $zip->open( $archive_pathname, ZipArchive::CREATE ) ) {
-		if ( ! $zip->addFile( $html_report_pathname, 'index.html' ) ) {
-			$error = __( 'Unable to add data to export file.' );
-		}
-
-		$zip->close();
-
-		if ( ! $error ) {
-			/**
-			 * Fires right after all personal data has been written to the export file.
-			 *
-			 * @since 4.9.6
-			 *
-			 * @param string $archive_pathname     The full path to the export file on the filesystem.
-			 * @param string $archive_url          The URL of the archive file.
-			 * @param string $html_report_pathname The full path to the personal data report on the filesystem.
-			 * @param string $request_id           The export request ID.
-			 */
-			do_action( 'wp_privacy_personal_data_export_file_created', $archive_pathname, $archive_url, $html_report_pathname, $request_id );
-		}
+	// ZipArchive may not be available across all applications.
+	// Use it if it exists, otherwise fallback to PclZip.
+	if ( class_exists( 'ZipArchive' ) ) {
+		$zip_result = _ziparchive_create_file( $archive_pathname, $html_report_pathname );
 	} else {
-		$error = __( 'Unable to open export file (archive) for writing.' );
+		$zip_result = _pclzip_create_file( $archive_pathname, $html_report_pathname );
+	}
+
+	if ( is_wp_error( $zip_result ) ) {
+		$error = sprintf( __( 'Unable to generate export file (archive) for writing: %s' ), $zip_result->get_error_message() );
+	} else {
+		/** This filter is documented in wp-admin/includes/file.php */
+		do_action( 'wp_privacy_personal_data_export_file_created', $archive_pathname, $archive_url, $html_report_pathname, $request_id );
 	}
 
 	// And remove the HTML file.
@@ -187,6 +176,41 @@ function generate_personal_data_export_file( $request_id ) {
 	if ( $error ) {
 		wp_send_json_error( $error );
 	}
+}
+
+function _ziparchive_create_file( $archive_path, $html_report_path ) {
+	$archive = new ZipArchive;
+
+	$archive_created = $archive->open( $archive_path, ZipArchive::CREATE );
+	if ( true !== $archive_created ) {
+		return new WP_Error( 'ziparchive-open-failed', __( 'Failed to create a `zip` file using `ZipArchive`' ) );
+	}
+
+	$file_added = $archive->addFile( $html_report_path, 'index.html' );
+	if ( ! $file_added ) {
+		$archive->close();
+
+		return new WP_Error( 'ziparchive-add-failed', __( 'Unable to add data to export file.' ) );
+	}
+
+	$archive->close();
+
+	return true;
+}
+
+function _pclzip_create_file( $archive_path, $html_report_path ) {
+	if ( ! class_exists( 'PclZip' ) ) {
+		require_once( ABSPATH . 'wp-admin/includes/class-pclzip.php' );
+	}
+
+	$archive = new PclZip( $archive_path );
+
+	$result = $archive->create( [ $html_report_path ] );
+	if ( 0 === $result ) {
+		return new WP_Error( 'pclzip-create-failed', __( 'Failed to create a `zip` file using `PclZip`' ) );
+	}
+
+	return true;
 }
 
 function delete_old_export_files() {
