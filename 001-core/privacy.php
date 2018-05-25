@@ -13,7 +13,7 @@ use WP_Error;
  *
  * The code here replaces the core handlers with our own implementation, which does work on Go sites.
  */
-add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_privacy_compat' );
+add_action( 'admin_init', __NAMESPACE__ . '\init_privacy_compat' );
 
 function init_privacy_compat() {
 	// Replace core's privacy data export handler with a custom one.
