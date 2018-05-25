@@ -14,6 +14,14 @@ function init_privacy_compat() {
 	add_action( 'wp_privacy_delete_old_export_files', __NAMESPACE__ . '\delete_old_export_files' );
 }
 
+/**
+ * This is largely a copy of core's `wp_privacy_generate_personal_data_export_file`
+ *
+ * And has been adapted to work with on Go:
+ *  - It falls back to PclZip if ZipArchive is not available.
+ *  - It tracks the generated date for an export in meta (which is then used for removal).
+ *  - It uploads the generated zip to the Go Files Service.
+ */
 function generate_personal_data_export_file( $request_id ) {
 	$request = wp_get_user_request_data( $request_id );
 
