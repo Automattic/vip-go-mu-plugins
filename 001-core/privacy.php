@@ -168,6 +168,7 @@ function generate_personal_data_export_file( $request_id ) {
 	}
 
 	if ( is_wp_error( $zip_result ) ) {
+		/* translators: %s: error message */
 		$error = sprintf( __( 'Unable to generate export file (archive) for writing: %s' ), $zip_result->get_error_message() );
 	} else {
 		/** This filter is documented in wp-admin/includes/file.php */
@@ -177,20 +178,23 @@ function generate_personal_data_export_file( $request_id ) {
 	// And remove the HTML file.
 	unlink( $html_report_pathname );
 
-	$upload_result = _upload_archive( $archive_pathname );
+	$upload_result = _upload_archive_file( $archive_pathname );
 	if ( is_wp_error( $upload_result ) ) {
 		$error = sprintf( __( 'Failed to upload archive: %s' ), $upload_result->get_error_message() );
 	}
-
-	// Delete the local copy of the archive since it's been uploaded.
-	unlink( $archive_pathname );
 
 	if ( $error ) {
 		wp_send_json_error( $error );
 	}
 }
 
-function _upload_archive( $archive_path ) {
+function _upload_archive_file( $archive_path ) {
+	// For local usage, skip the remote upload.
+	// The file is already in the uploads folder.
+	if ( true !== WPCOM_IS_VIP_ENV ) {
+		return true;
+	}
+
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
 		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
 	}
@@ -203,15 +207,26 @@ function _upload_archive( $archive_path ) {
 	$upload_path = sprintf( '/wp-content/uploads/%s/%s', $exports_folder, $archive_file );
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
-	return $api_client->upload_file( $archive_path, $upload_path );
+	$upload_result = $api_client->upload_file( $archive_path, $upload_path );
+
+	// Delete the local copy of the archive since it's been uploaded.
+	unlink( $archive_path );
+
+	return $upload_result;
 }
 
-function _delete_archive( $archive_url ) {
+function _delete_archive_file( $archive_url ) {
+	$archive_path = parse_url( $archive_url, PHP_URL_PATH );
+
+	// For local usage, just delete locally.
+	if ( true !== WPCOM_IS_VIP_ENV ) {
+		unlink( WP_CONTENT_DIR . $archive_path );
+		return true;
+	}
+
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
 		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
 	}
-
-	$archive_path = parse_url( $archive_url, PHP_URL_PATH );
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
 	return $api_client->delete_file( $archive_path );
@@ -280,6 +295,12 @@ function delete_old_export_files() {
 	}
 
 	foreach ( $file_urls as $file_url ) {
-		_delete_archive( $file_url );
+		$delete_result = _delete_archive_file( $file_url );
+		if ( is_wp_error( $delete_result ) ) {
+			/** translators: 1: archive file URL 2: error message */
+			$message = sprintf( __( 'Failed to delete expired personal data export (%1$s): %2$s' ), $file_url, $delete_result->get_error_message() );
+
+			trigger_error( $message, E_USER_WARNING );
+		}
 	}
 }
