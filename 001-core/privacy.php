@@ -268,7 +268,12 @@ function _pclzip_create_file( $archive_path, $html_report_path ) {
 
 	$archive = new \PclZip( $archive_path );
 
-	$result = $archive->create( [ $html_report_path ] );
+	$result = $archive->create( [
+		[
+			PCLZIP_ATT_FILE_NAME => $html_report_path,
+			PCLZIP_ATT_FILE_NEW_SHORT_NAME => 'index.html',
+		]
+	], PCLZIP_OPT_REMOVE_ALL_PATH );
 	if ( 0 === $result ) {
 		return new WP_Error( 'pclzip-create-failed', __( 'Failed to create a `zip` file using `PclZip`' ) );
 	}
