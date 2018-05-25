@@ -46,16 +46,7 @@ function generate_personal_data_export_file( $request_id ) {
 		wp_send_json_error( $result->get_error_message() );
 	}
 
-	// Protect export folder from browsing.
-	$index_pathname = $exports_dir . 'index.html';
-	if ( ! file_exists( $index_pathname ) ) {
-		$file = fopen( $index_pathname, 'w' );
-		if ( false === $file ) {
-			wp_send_json_error( __( 'Unable to protect export folder from browsing.' ) );
-		}
-		fwrite( $file, 'Silence is golden.' );
-		fclose( $file );
-	}
+	// We don't care about the extrenuous index.html file.
 
 	$stripped_email       = str_replace( '@', '-at-', $email_address );
 	$stripped_email       = sanitize_title( $stripped_email ); // slugify the email address
