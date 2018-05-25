@@ -151,9 +151,7 @@ function generate_personal_data_export_file( $request_id ) {
 		update_post_meta( $request_id, '_export_file_path', wp_normalize_path( $archive_pathname ) );
 	}
 
-	if ( ! empty( $archive_pathname ) && file_exists( $archive_pathname ) ) {
-		wp_delete_file( $archive_pathname );
-	}
+	// Note: core deletes the file, but we can just overwrite it when we upload.
 
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
