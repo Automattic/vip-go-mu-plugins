@@ -75,7 +75,7 @@ class API_Client {
 	public function upload_file( $local_path, $upload_path ) {
 		if ( ! file_exists( $local_path ) ) {
 			/* translators: 1: local file path 2: remote upload path */
-			return new WP_Error( 'upload_file-failed-invalid_path', sprintf( __( 'Failed to upload file `%1$s` to `%2$s`; the file does not exist.' ) ), $local_path, $upload_path );
+			return new WP_Error( 'upload_file-failed-invalid_path', sprintf( __( 'Failed to upload file `%1$s` to `%2$s`; the file does not exist.' ), $local_path, $upload_path ) );
 		}
 
 		$file_size = filesize( $local_path );
