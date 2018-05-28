@@ -62,16 +62,7 @@ class A8C_Files {
 	function __construct() {
 
 		// Upload size limit is 1GB
-		add_filter( 'upload_size_limit', function( $limit ) {
-			$max_limit = GB_IN_BYTES;
-
-			$upload_space_check_disabled = get_site_option( 'upload_space_check_disabled' );
-			if ( ! $upload_space_check_disabled ) {
-				return min( $current_limit, $max_limit );
-			}
-
-			return $max_limit;
-		}, 9999 ); // Run much later than core's callback since we want to override it
+		add_filter( 'upload_size_limit', array( $this, 'set_upload_size_limit' ), 9999 ); // Run much later than core's callback since we want to override it
 
 		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
 		// The old school implementation will be phased out soon.
@@ -202,6 +193,19 @@ class A8C_Files {
 		}
 
 		return false;
+	}
+
+	public function set_upload_size_limit( $current_limit ) {
+		$max_limit = GB_IN_BYTES;
+
+		if ( is_multisite() ) {
+			$upload_space_check_disabled = get_site_option( 'upload_space_check_disabled' );
+			if ( ! $upload_space_check_disabled ) {
+				$max_limit = min( $current_limit, $max_limit );
+			}
+		}
+
+		return $max_limit;
 	}
 
 	function check_to_upload_file( $data, $postarr ) {
