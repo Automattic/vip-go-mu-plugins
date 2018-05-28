@@ -51,6 +51,9 @@ class Akismet {
 		// Jetpack compatibility
 		add_filter( 'jetpack_options_whitelist', array( 'Akismet', 'add_to_jetpack_options_whitelist' ) );
 		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
+		add_action( 'add_option_wordpress_api_key', array( 'Akismet', 'added_option' ), 10, 2 );
+
+		add_action( 'comment_form_after',  array( 'Akismet',  'display_comment_form_privacy_notice' ) );
 	}
 
 	public static function get_api_key() {
@@ -107,6 +110,18 @@ class Akismet {
 		// Only run the registration if the old key is different.
 		if ( $old_value !== $value ) {
 			self::verify_key( $value );
+		}
+	}
+	
+	/**
+	 * Treat the creation of an API key the same as updating the API key to a new value.
+	 *
+	 * @param mixed  $option_name   Will always be "wordpress_api_key", until something else hooks in here.
+	 * @param mixed  $value         The option value.
+	 */
+	public static function added_option( $option_name, $value ) {
+		if ( 'wordpress_api_key' === $option_name ) {
+			return self::updated_option( '', $value );
 		}
 	}
 	
@@ -1187,7 +1202,7 @@ class Akismet {
 <!doctype html>
 <html>
 <head>
-<meta charset="<?php bloginfo( 'charset' ); ?>">
+<meta charset="<?php bloginfo( 'charset' ); ?>" />
 <style>
 * {
 	text-align: center;
@@ -1200,6 +1215,7 @@ p {
 	font-size: 18px;
 }
 </style>
+</head>
 <body>
 <p><?php echo esc_html( $message ); ?></p>
 </body>
@@ -1387,5 +1403,22 @@ p {
 		}
 		
 		return apply_filters( 'akismet_predefined_api_key', false );
+	}
+
+	/**
+	 * Controls the display of a privacy related notice underneath the comment form using the `akismet_comment_form_privacy_notice` option and filter respectively.
+	 * Default is top not display the notice, leaving the choice to site admins, or integrators.
+	 */
+	public static function display_comment_form_privacy_notice() {
+		if ( 'display' !== apply_filters( 'akismet_comment_form_privacy_notice', get_option( 'akismet_comment_form_privacy_notice', 'hide' ) ) ) {
+			return;
+		}
+		echo apply_filters(
+			'akismet_comment_form_privacy_notice_markup',
+			'<p class="akismet_comment_form_privacy_notice">' . sprintf(
+				__( 'This site uses Akismet to reduce spam. <a href="%s" target="_blank">Learn how your comment data is processed</a>.', 'akismet' ),
+				'https://akismet.com/privacy/'
+			) . '</p>'
+		);
 	}
 }
