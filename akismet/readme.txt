@@ -2,8 +2,8 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau
 Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 4.0
-Tested up to: 4.9.1
-Stable tag: 4.0.3
+Tested up to: 4.9.6
+Stable tag: 4.0.7
 License: GPLv2 or later
 
 Akismet checks your comments and contact form submissions against our global database of spam to protect you and your site from malicious content.
@@ -29,6 +29,31 @@ Upload the Akismet plugin to your blog, Activate it, then enter your [Akismet.co
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 4.0.7 =
+*Release Date - 28 May 2018*
+
+* Based on user feedback, the link on "Learn how your comment data is processed." in the optional privacy notice now has a `target` of `_blank` and opens in a new tab/window.
+* Updated the in-admin privacy notice to use the term "comment" instead of "contact" in "Akismet can display a notice to your users under your comment forms."
+* Only show in-admin privacy notice if Akismet has an API Key configured
+
+= 4.0.6 =
+*Release Date - 26 May 2018*
+
+* Moved away from using `empty( get_option() )` to instantiating a variable to be compatible with older versions of PHP (5.3, 5.4, etc).  
+
+= 4.0.5 =
+*Release Date - 26 May 2018*
+
+* Corrected version number after tagging. Sorry...
+
+= 4.0.4 =
+*Release Date - 26 May 2018*
+
+* Added a hook to provide Akismet-specific privacy information for a site's privacy policy.
+* Added tools to control the display of a privacy related notice under comment forms.
+* Fixed HTML in activation failure message to close META and HEAD tag properly.
+* Fixed a bug that would sometimes prevent Akismet from being correctly auto-configured.
 
 = 4.0.3 =
 *Release Date - 19 February 2018*
