@@ -782,6 +782,9 @@ function a8c_files_init() {
 	new A8C_Files();
 }
 
+// Include srcset images class
+require_once __DIR__ . '/a8c-files/a8c-srcset-images.php';
+
 /**
  * Prevent WP from creating intermediate image sizes
  *
