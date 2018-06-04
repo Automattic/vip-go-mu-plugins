@@ -270,7 +270,7 @@ class A8C_Files {
 
 		$ext = strtolower( $ext );
 
-		$filename = $this->_sanitize_filename( $filename, $ext );
+		$filename = $this->_sanitize_filename( $filename );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
@@ -290,7 +290,7 @@ class A8C_Files {
 	 * Leverages Mogile backend, which will return a 406 or other non-200 code if the filetype is unsupported
 	 */
 	public function filter_filetype_check( $filetype_data, $file, $filename, $mimes ) {
-		$filename = $this->_sanitize_filename( $filename, '.' . pathinfo( $filename, PATHINFO_EXTENSION ) );
+		$filename = $this->_sanitize_filename( $filename );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
@@ -307,14 +307,9 @@ class A8C_Files {
 
 	/**
 	 * Ensure consistent filename sanitization
-	 *
-	 * Eventually, this should be `sanitize_file_name()` instead, but for legacy reasons, we go through this process
 	 */
-	private function _sanitize_filename( $filename, $ext ) {
-		$filename = str_replace( $ext, '', $filename );
-		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
-
-		return $filename;
+	private function _sanitize_filename( $filename ) {
+		return sanitize_file_name( $filename );
 	}
 
 	/**
