@@ -18,7 +18,7 @@ class VaultPress_CLI extends WP_CLI_Command {
 	public function register_via_jetpack() {
 		$result = VaultPress::init()->register_via_jetpack( true );
 		if ( is_wp_error( $result ) ) {
-			WP_CLI::error( 'Failed to register VaultPress: ' . $result->get_error_message() );
+			WP_CLI::line( 'Failed to register VaultPress: ' . $result->get_error_message() );
 		} else {
 			WP_CLI::line( 'Successfully registered VaultPress via Jetpack.' );
 		}
