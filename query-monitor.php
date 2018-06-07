@@ -1,16 +1,34 @@
 <?php
-/*
-Plugin Name: Query Monitor
-Description: Monitoring of database queries, hooks, conditionals and more (including VIP Go tweaks).
-Version:     2.14.0
-Plugin URI:  https://querymonitor.com/
-Author:      John Blackbourn
-Author URI:  https://johnblackbourn.com/
-Text Domain: query-monitor
-Domain Path: /languages/
-License:     GPL v2 or later
 
-*/
+/**
+ * Query Monitor plugin for WordPress
+ *
+ * @package   query-monitor
+ * @link      https://github.com/johnbillion/query-monitor
+ * @author    John Blackbourn <john@johnblackbourn.com>
+ * @copyright 2009-2018 John Blackbourn
+ * @license   GPL v2 or later
+ *
+ * Plugin Name:  Query Monitor
+ * Description:  The Developer Tools panel for WordPress.
+ * Version:      3.0.1
+ * Plugin URI:   https://github.com/johnbillion/query-monitor
+ * Author:       John Blackbourn & contributors
+ * Author URI:   https://github.com/johnbillion/query-monitor/graphs/contributors
+ * Text Domain:  query-monitor
+ * Domain Path:  /languages/
+ * Requires PHP: 5.3.6
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 /**
  * Determines if Query Monitor should be enabled. We don't
