@@ -131,6 +131,12 @@ add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress.com VIP <https://vip.wordpress.com>';
 
+	// All non-production domains should not be indexed.
+	// This should not apply only to *.vip-go.co
+	if ( 'production' !== VIP_GO_ENV ) {
+		$headers['X-Robots-Tag'] = 'noindex, nofollow';
+	}
+
 	return $headers;
 } );
 
