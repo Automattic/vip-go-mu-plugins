@@ -39,6 +39,18 @@ function wpcom_vip_login_limiter_on_success( $username, $user ) {
 }
 add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10, 2 );
 
+/**
+ * Limits logins of usernames that are not allowed to be used on VIP environments.
+ *
+ * If a user attempts to login using one of the restricted usernames, this filter
+ * returns a WP_Error and prevents the login entirely.
+ *
+ * @param null|\WP_User|\WP_Error $user     WP_User if the user is authenticated.
+ *                                          WP_Error or null otherwise.
+ * @param string                  $username Username or email address.
+ * @param string                  $password User password
+ * @return \WP_Error|\WP_User
+ */
 function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $password ) {
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 	if (
