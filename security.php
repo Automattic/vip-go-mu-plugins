@@ -41,7 +41,10 @@ add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10, 2 );
 
 function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $password ) {
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
-	if ( $is_restricted_username ) {
+	if (
+		( defined( 'WPCOM_IS_VIP_ENV' ) && WPCOM_IS_VIP_ENV )
+		&& $is_restricted_username
+	) {
 		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
 	}
 
