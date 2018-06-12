@@ -1058,8 +1058,16 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 
 		return _wpcom_vip_include_plugin( $includepath );
 	} else {
+		$error_msg = sprint( 'wpcom_vip_load_plugin: Unable to load plugin `%s`; the path `%s` does not exist.', $plugin, $includepath );
 		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( "Unable to load $plugin using wpcom_vip_load_plugin()!" );
+			die( $error_msg );
+		} else {
+			// On VIP we try to both notify the user...
+			trigger_error( $error_msg, E_USER_WARNING );
+			// ...And trigger a New Relic notice, if the extension is available
+			if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_notice_error' ) ) {
+				newrelic_notice_error( $error_msg );
+			}
 		}
 	}
 }
