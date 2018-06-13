@@ -39,4 +39,4 @@
 	url = https://github.com/Automattic/lightweight-term-count-update
 [submodule "ramp-for-gutenberg"]
 	path = gutenberg-ramp
-	url = https://github.com/Automattic/ramp-for-gutenberg.git
+	url = https://github.com/Automattic/gutenberg-ramp.git
