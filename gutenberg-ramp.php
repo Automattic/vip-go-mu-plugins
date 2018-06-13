@@ -7,7 +7,7 @@
  * Author:      Automattic, Inc.
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- * Text Domain: ramp-for-gutenberg
+ * Text Domain: gutenberg-ramp
  */
 
 // This file loads Ramp, and modifies behaviors for Gutenberg on VIP Go
@@ -17,21 +17,21 @@ if ( defined( 'VIP_GO_DISABLE_RAMP' ) && true === VIP_GO_DISABLE_RAMP ) {
 }
 
 /** load Gutenberg Ramp **/
-if ( file_exists( __DIR__ . '/ramp-for-gutenberg/ramp-for-gutenberg.php' ) ) {
-	require_once( __DIR__ . '/ramp-for-gutenberg/ramp-for-gutenberg.php' );
+if ( file_exists( __DIR__ . '/gutenberg-ramp/gutenberg-ramp.php' ) ) {
+	require_once( __DIR__ . '/gutenberg-ramp/gutenberg-ramp.php' );
 }
 
 /** Turn off the UI for Ramp **/
 add_action( 'plugins_loaded', function() {
-	remove_action( 'admin_init', 'ramp_for_gutenberg_initialize_admin_ui' );
+	remove_action( 'admin_init', 'gutenberg_ramp_initialize_admin_ui' );
 } );
 
 /**
  * Load Gutenberg via the Gutenberg Ramp plugin.
  */
 function wpcom_vip_load_gutenberg( $criteria = false ) {
-	if ( ! function_exists( 'ramp_for_gutenberg_load_gutenberg' ) ) {
+	if ( ! function_exists( 'gutenberg_ramp_load_gutenberg' ) ) {
 		return;
 	}
-	ramp_for_gutenberg_load_gutenberg( $criteria );
+	gutenberg_ramp_load_gutenberg( $criteria );
 }

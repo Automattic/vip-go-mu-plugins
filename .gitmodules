@@ -38,5 +38,5 @@
 	path = lightweight-term-count-update
 	url = https://github.com/Automattic/lightweight-term-count-update
 [submodule "ramp-for-gutenberg"]
-	path = ramp-for-gutenberg
+	path = gutenberg-ramp
 	url = https://github.com/Automattic/ramp-for-gutenberg.git
