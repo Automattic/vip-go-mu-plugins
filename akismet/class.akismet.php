@@ -1416,7 +1416,7 @@ p {
 		echo apply_filters(
 			'akismet_comment_form_privacy_notice_markup',
 			'<p class="akismet_comment_form_privacy_notice">' . sprintf(
-				__( 'This site uses Akismet to reduce spam. <a href="%s" target="_blank">Learn how your comment data is processed</a>.', 'akismet' ),
+				__( 'This site uses Akismet to reduce spam. <a href="%s" target="_blank" rel="nofollow noopener">Learn how your comment data is processed</a>.', 'akismet' ),
 				'https://akismet.com/privacy/'
 			) . '</p>'
 		);
