@@ -276,7 +276,7 @@ class A8C_Files {
 
 		if ( 200 == $check['http_code'] ) {
 			$obj = json_decode( $check['content'] );
-			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) ) {
+			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $filename ) ) {
 				$filename = $obj->filename;
 			}
 		}
