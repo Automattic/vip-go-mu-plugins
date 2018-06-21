@@ -28,7 +28,7 @@ class Context {
 		return false === Context::is_wp_cli()
 			&& false === Context::is_rest_api()
 			&& false === Context::is_cron()
-			&& false === Context::is_xml_rpc();
+			&& false === Context::is_xmlrpc_api();
 	}
 
 	public static function is_wp_cli() {
@@ -43,7 +43,7 @@ class Context {
 		return defined( 'DOING_CRON' ) && true === DOING_CRON;
 	}
 
-	public static function is_xmlrpc() {
+	public static function is_xmlrpc_api() {
 		return defined( 'XMLRPC_REQUEST' ) && true === XMLRPC_REQUEST;
 	}
 }
