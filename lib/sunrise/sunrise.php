@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Sunrise;
 
-require_once( WPMU_PLUGIN_DIR . '/lib/utils/context.php' );
+require_once( WP_CONTENT_DIR . '/mu-plugins/lib/utils/context.php' );
 
 use Automattic\VIP\Utils\Context;
 
@@ -65,7 +65,7 @@ function handle_not_found_error( $error_type ) {
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
 		http_response_code( 404 );
-		echo file_get_contents( sprintf( '%s/errors/%s-not-found.html', WPMU_PLUGIN_DIR, $error_type ) );
+		echo file_get_contents( sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type ) );
 		exit;
 	}
 }
