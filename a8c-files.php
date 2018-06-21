@@ -777,7 +777,7 @@ class A8C_Files_Utils {
 		}
 
 		return $url;
-	}	
+	}
 }
 
 function a8c_files_init() {
