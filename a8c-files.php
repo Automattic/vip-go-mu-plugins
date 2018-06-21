@@ -329,9 +329,12 @@ class A8C_Files {
 
 		$url_parts = parse_url( $uploads['url'] . '/' . $filename );
 		$file_path = $url_parts['path'];
-		if ( is_multisite() &&
-			preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-			$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+		if ( is_multisite() ) {
+			if ( preg_match( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
+				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+/', '', $file_path );
+			} elseif ( preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
+				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+			}
 		}
 
 		$post_url = $this->get_files_service_hostname() . $file_path;
@@ -362,10 +365,14 @@ class A8C_Files {
 		} else {
 			$url_parts = parse_url( $details['url'] );
 			$file_path = $url_parts['path'];
-			if ( is_multisite() &&
-				preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
-				$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
+			if ( is_multisite() ) {
++				if ( preg_match( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
++					$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+/', '', $file_path );
++					$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
++				} elseif ( preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
++					$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
++					$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
++				}
 			}
 			$post_url = $this->get_files_service_hostname() . $file_path;
 		}
