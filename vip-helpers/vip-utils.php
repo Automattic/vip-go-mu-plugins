@@ -1058,7 +1058,13 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 
 		return _wpcom_vip_include_plugin( $includepath );
 	} else {
-		$error_msg = sprintf( 'wpcom_vip_load_plugin: Unable to load plugin `%s`; the path `%s` does not exist.', $plugin, $includepath );
+		$error_msg = sprintf( 'wpcom_vip_load_plugin: Unable to load plugin `%s`', $plugin );
+		if ( $includepath ) {
+			$error_msg .= sprintf( '; the path `%s` does not exist.', $includepath );
+		} else {
+			$error_msg .= sprintf( '; the plugin was not found in the plugin directories (%s)', implode( '; ', $test_directories ) );
+		}
+
 		if ( ! WPCOM_IS_VIP_ENV ) {
 			die( $error_msg );
 		} else {
