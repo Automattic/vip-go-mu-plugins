@@ -2,14 +2,24 @@
 
 namespace Automattic\VIP\Utils;
 
+/**
+ * WARNING: This class cannot use WordPress-specific functions
+ *
+ * It's loaded and used very early and should rely only on constants and server context.
+ */
 class Context {
 	/**
 	 * Begin: VIP-specific contexts
 	 */
 	public static function is_vip_env() {
 		// VIP_GO_ENV will have a string value with the environment on Go servers.
-		// Will be `false` or undefined otherwise.
+		// Will be `false` or undefined on non-Go servers.
 		return defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV;
+	}
+
+	public static function is_maintenance_mode() {
+		return defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' )
+			&& true === WPCOM_VIP_SITE_MAINTENANCE_MODE;
 	}
 
 	public static function is_healthcheck() {
@@ -25,10 +35,10 @@ class Context {
 
 	// A non-API, non-CLI, non-system request
 	public static function is_web_request() {
-		return false === Context::is_wp_cli()
-			&& false === Context::is_rest_api()
-			&& false === Context::is_cron()
-			&& false === Context::is_xmlrpc_api();
+		return false === self::is_wp_cli()
+			&& false === self::is_rest_api()
+			&& false === self::is_cron()
+			&& false === self::is_xmlrpc_api();
 	}
 
 	public static function is_wp_cli() {

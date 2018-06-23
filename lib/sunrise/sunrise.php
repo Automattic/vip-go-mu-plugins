@@ -2,16 +2,16 @@
 
 namespace Automattic\VIP\Sunrise;
 
-require_once( WP_CONTENT_DIR . '/mu-plugins/lib/utils/context.php' );
-
-use Automattic\VIP\Utils\Context;
-
 /**
  * Nothing to see here for single sites
  */
 if ( ! is_multisite() ) {
 	return;
 }
+
+require_once( WP_CONTENT_DIR . '/mu-plugins/lib/utils/context.php' );
+
+use Automattic\VIP\Utils\Context;
 
 /**
  * Log errors retrieving network for a given request
@@ -64,8 +64,17 @@ function handle_not_found_error( $error_type ) {
 
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
-		http_response_code( 404 );
-		echo file_get_contents( sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type ) );
+		$is_maintenance_mode = Context::is_maintenance_mode();
+		if ( $is_maintenance_mode ) {
+			$status_code = 200;
+			$error_doc = sprintf( '%s/mu-plugins/errors/site-maintenance.html', WP_CONTENT_DIR );
+		} else {
+			$status_code = 404;
+			$error_doc = sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type );
+		}
+
+		http_response_code( $status_code );
+		echo file_get_contents( $error_doc );
 		exit;
 	}
 }
