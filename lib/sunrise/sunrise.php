@@ -66,7 +66,10 @@ function handle_not_found_error( $error_type ) {
 	if ( $is_web_request ) {
 		$is_maintenance_mode = Context::is_maintenance_mode();
 		if ( $is_maintenance_mode ) {
-			$status_code = 200;
+			// 503 prevents page from being cached.
+			// We handle healthchecks earlier and don't have to worry about them.
+			$status_code = 503;
+			header( 'X-VIP-Go-Maintenance: true' );
 			$error_doc = sprintf( '%s/mu-plugins/errors/site-maintenance.html', WP_CONTENT_DIR );
 		} else {
 			$status_code = 404;
