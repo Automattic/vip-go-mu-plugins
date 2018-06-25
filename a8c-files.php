@@ -19,6 +19,10 @@ define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
 define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
+require_once( __DIR__ . '/files/class-path-utils.php' );
+
+use Automattic\VIP\Files\Path_Utils;
+
 class A8C_Files {
 
 	function __construct() {
@@ -330,10 +334,10 @@ class A8C_Files {
 		$url_parts = parse_url( $uploads['url'] . '/' . $filename );
 		$file_path = $url_parts['path'];
 		if ( is_multisite() ) {
-			if ( preg_match( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+/', '', $file_path );
-			} elseif ( preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+			$sanitized_file_path = Path_Utils::trim_leading_multisite_directory( $file_path, $this->get_upload_path() );
+			if ( false !== $sanitized_file_path ) {
+				$file_path = $sanitized_file_path;
+				unset( $sanitized_file_path );
 			}
 		}
 
@@ -366,11 +370,11 @@ class A8C_Files {
 			$url_parts = parse_url( $details['url'] );
 			$file_path = $url_parts['path'];
 			if ( is_multisite() ) {
-				if ( preg_match( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-					$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+\/[_0-9a-zA-Z-]+/', '', $file_path );
-					$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
-				} elseif ( preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-					$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+				$sanitized_file_path = Path_Utils::trim_leading_multisite_directory( $file_path, $this->get_upload_path() );
+				if ( false !== $sanitized_file_path ) {
+					$file_path = $sanitized_file_path;
+					unset( $sanitized_file_path );
+
 					$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
 				}
 			}
