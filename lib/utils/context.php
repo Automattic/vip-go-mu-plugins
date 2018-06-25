@@ -36,9 +36,11 @@ class Context {
 	// A non-API, non-CLI, non-system request
 	public static function is_web_request() {
 		return false === self::is_wp_cli()
+			&& false === self::is_ajax()
+			&& false === self::is_installing()
 			&& false === self::is_rest_api()
-			&& false === self::is_cron()
-			&& false === self::is_xmlrpc_api();
+			&& false === self::is_xmlrpc_api()
+			&& false === self::is_cron();
 	}
 
 	public static function is_wp_cli() {
@@ -55,5 +57,13 @@ class Context {
 
 	public static function is_xmlrpc_api() {
 		return defined( 'XMLRPC_REQUEST' ) && true === XMLRPC_REQUEST;
+	}
+
+	public static function is_ajax() {
+		return defined( 'DOING_AJAX' ) && true === DOING_AJAX;
+	}
+
+	public static function is_installing() {
+		return defined( 'WP_INSTALLING' ) && true === WP_INSTALLING;
 	}
 }
