@@ -26,18 +26,21 @@ function bulk_editing_is_limited() {
 	$per_page = get_query_var( 'posts_per_page' );
 
 	// Get total number of entries
-	$post_type = get_query_var( 'post_type' );
-	$num_posts = wp_count_posts( $post_type, 'readable' );
-	$total_posts = array_sum( (array) $num_posts );
+	$total_posts = $GLOBALS['wp_query']->found_posts;
 
 	// Core defaults to 20 posts per page
-	// If requesting more--or all--entries, hide bulk actions
-	// Except, do not hide bulk actions if less than 20 total entries
+	// Do no hide bulk edit actions if number of total entries is less than 20
 	if ( BULK_EDIT_LIMIT > $total_posts ) {
 		return false;
-	} else {
-		return $per_page > BULK_EDIT_LIMIT || -1 === $per_page;
 	}
+
+	// If requesting all entries, or more than 20, hide bulk actions
+	if ( -1 === $per_page ) {
+		return true;
+	}
+
+	return $per_page > BULK_EDIT_LIMIT;
+
 }
 
 /**
