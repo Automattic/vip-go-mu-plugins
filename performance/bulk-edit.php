@@ -25,9 +25,19 @@ add_action( 'load-edit.php', __NAMESPACE__ . '\defer_term_counting' );
 function bulk_editing_is_limited() {
 	$per_page = get_query_var( 'posts_per_page' );
 
+	// Get total number of entries
+	$post_type = get_query_var( 'post_type' );
+	$num_posts = wp_count_posts( $post_type, 'readable' );
+	$total_posts = array_sum( (array) $num_posts );
+
 	// Core defaults to 20 posts per page
 	// If requesting more--or all--entries, hide bulk actions
-	return $per_page > BULK_EDIT_LIMIT || -1 === $per_page;
+	// Except, do not hide bulk actions if less than 20 total entries
+	if ( BULK_EDIT_LIMIT > $total_posts ) {
+		return false;
+	} else {
+		return $per_page > BULK_EDIT_LIMIT || -1 === $per_page;
+	}
 }
 
 /**
