@@ -26,11 +26,13 @@ function bulk_editing_is_limited() {
 	$per_page = get_query_var( 'posts_per_page' );
 
 	// Get total number of entries
-	$total_posts = $GLOBALS['wp_query']->found_posts;
+	if ( is_a( $GLOBALS['wp_query'], 'WP_Query' ) ) {
+		$total_posts = $GLOBALS['wp_query']->found_posts;
+	}
 
 	// Core defaults to 20 posts per page
 	// Do no hide bulk edit actions if number of total entries is less than 20
-	if ( BULK_EDIT_LIMIT > $total_posts ) {
+	if ( isset( $total_posts ) && BULK_EDIT_LIMIT > $total_posts ) {
 		return false;
 	}
 
