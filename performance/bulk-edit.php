@@ -26,7 +26,7 @@ function bulk_editing_is_limited() {
 	$per_page = get_query_var( 'posts_per_page' );
 
 	// Get total number of entries
-	if ( is_a( $GLOBALS['wp_query'], 'WP_Query' ) ) {
+	if ( isset( $GLOBALS['wp_query'] ) && is_a( $GLOBALS['wp_query'], 'WP_Query' ) ) {
 		$total_posts = $GLOBALS['wp_query']->found_posts;
 	}
 
