@@ -24,8 +24,30 @@ require_once( __DIR__ . '/files/class-path-utils.php' );
 use Automattic\VIP\Files\Path_Utils;
 
 class A8C_Files {
-
-	function __construct() {
+	/**
+	 * Existing instance.
+	 *
+	 * @var array
+	 */
+	protected static $instance;
+	
+	/**
+	 * Get class instance.
+	 *
+	 * @return object
+	 */
+	public static function instance() {
+		if ( ! isset( static::$instance ) ) {
+			static::$instance = new static();
+			static::$instance->setup();
+		}
+		return static::$instance;
+	}
+	
+	/**
+	 * Setup the singleton.
+	 */
+	public function setup() {
 
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
@@ -785,7 +807,7 @@ class A8C_Files_Utils {
 }
 
 function a8c_files_init() {
-	new A8C_Files();
+	A8C_Files::instance();
 }
 
 /**
