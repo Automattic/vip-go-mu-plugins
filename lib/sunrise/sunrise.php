@@ -58,7 +58,7 @@ function handle_not_found_error( $error_type ) {
 	if ( $is_healthcheck ) {
 		http_response_code( 200 );
 		header( 'Content-type: text/plain' );
-		echo sprintf( '%s not found; but still OK', esc_html( $error_type ) );
+		echo sprintf( '%s not found; but still OK', htmlspecialchars( $error_type ) );
 		exit;
 	}
 
