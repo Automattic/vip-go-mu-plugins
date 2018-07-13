@@ -73,7 +73,7 @@ class WPCOM_VIP_QM_Collector_DB_Queries extends QM_Collector_DB_Queries
 
 
 			$is_main_query = ( $request === $sql && ( false !== strpos( $stack, ' WP->main,' ) ) );
-			$row = compact('caller', 'caller_name', 'stack', 'sql', 'ltime', 'result', 'type', 'component', 'trace', 'has_main_query', 'is_main_query');
+			$row = compact('caller', 'caller_name', 'stack', 'sql', 'ltime', 'result', 'type', 'component', 'trace', 'is_main_query' );
 
 			if (is_wp_error($result)) {
 				$this->data['errors'][] = $row;
