@@ -52,18 +52,22 @@ if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	define( 'A8C_PROXIED_REQUEST', false );
 }
 
-if ( ! defined( 'VIP_GO_ENV' ) ) {
-	/**
-	 * @constant VIP_GO_ENV The name of the current VIP Go environment. Falls back to `false`.
-	 */
-	define( 'VIP_GO_ENV', false );
-}
-
 // On VIP Go environments this will already be set to true in wp-config.php
 // Default to false for other environments, e.g. local development
 if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
+
+// @var constant VIP_GO_APP_ID A numeric identifier for the current application.
+defined( 'VIP_GO_APP_ID' ) || define( 'VIP_GO_APP_ID', false );
+// @var constant VIP_GO_APP_NAME A friendly, alphanumeric slug for the current application.
+defined( 'VIP_GO_APP_NAME' ) || define( 'VIP_GO_APP_NAME', false );
+// @var constant VIP_GO_APP_BRANCH The deployment branch for the current application.
+defined( 'VIP_GO_APP_BRANCH' ) || define( 'VIP_GO_APP_BRANCH', false );
+// @var constant VIP_GO_APP_ENVIRONMENT The environment type for this application (production, preprod, develop, etc.).
+defined( 'VIP_GO_APP_ENVIRONMENT' ) || define( 'VIP_GO_APP_ENVIRONMENT', false );
+// @var constant VIP_GO_ENV (Deprecated) The environment type for this application (production, preprod, develop, etc.). Please use `VIP_GO_APP_ENVIRONMENT` instead.
+defined( 'VIP_GO_ENV' ) || define( 'VIP_GO_ENV', VIP_GO_APP_ENVIRONMENT );
 
 define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
 define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) );
