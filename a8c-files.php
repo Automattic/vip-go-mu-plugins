@@ -237,25 +237,9 @@ class A8C_Files {
 		$url_parts = parse_url( $file_url );
 		$post_url = $this->get_files_service_hostname() . $url_parts['path'];
 
-		$headers = array(
-					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
-					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
-					'X-Action: file_exists',
-				);
+		$api_client = \Automattic\VIP\Files\new_api_client();
 
-		$ch = curl_init( $post_url );
-
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
-		curl_setopt( $ch, CURLOPT_VERBOSE, true );
-
-		curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-
-		return ( 200 == $http_code );
+		return ( $api_client->is_file( $file_url ) );
 	}
 
 	/**
@@ -341,21 +325,10 @@ class A8C_Files {
 			}
 		}
 
-		$post_url = $this->get_files_service_hostname() . $file_path;
+		$api_client = \Automattic\VIP\Files\new_api_client();
+		$unique_result = $api_client->unique_filename( $file_path );
 
-		$ch = curl_init( $post_url );
-
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
-		curl_setopt( $ch, CURLOPT_VERBOSE, true );
-
-		$content = curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-
-		return compact( 'http_code', 'content' );
+		return $unique_result;
 	}
 
 	function upload_file( $details, $upload_type ) {
@@ -381,60 +354,15 @@ class A8C_Files {
 			$post_url = $this->get_files_service_hostname() . $file_path;
 		}
 
-		$headers = array(
-					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
-					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
-					'Content-Type: ' . $details['type'],
-					'Content-Length: ' . filesize( $details['file'] ),
-					'Connection: Keep-Alive',
-				);
+		$api_client = \Automattic\VIP\Files\new_api_client();
+		$upload_result = $api_client->upload_file( $details['file'], $post_url );
 
-		$stream = fopen( $details['file'], 'r' );
-		$ch = curl_init( $post_url );
-
-		curl_setopt( $ch, CURLOPT_PUT, true );
-		curl_setopt( $ch, CURLOPT_INFILE, $stream );
-		curl_setopt( $ch, CURLOPT_INFILESIZE, filesize( $details['file'] ) );
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 + (int)( filesize( $details['file'] ) / 512000 ) ); // 10 plus 1 second per 500k
-
-		curl_setopt( $ch, CURLOPT_READFUNCTION,
-					function( $ch, $fd, $length ) use( $stream ) {
-						$data = fread( $stream, $length );
-						if ( null == $data )
-							return 0;
-						else
-							return $data;
-					});
-
-		$ret_data = curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-		fclose( $stream );
 		register_shutdown_function( 'unlink', $details['file'] );
 
-		switch ( $http_code ) {
-			case 200:
-				if ( 0 < strlen( $ret_data ) ) {
-					$obj = json_decode( $ret_data );
-					if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) ) {
-						$uploads = wp_upload_dir();
-						if ( false === $uploads['error'] ) {
-							@copy( $details['file'], $uploads['path'] . '/' . $obj->filename );
-							register_shutdown_function( 'unlink', $uploads['path'] . '/' . $obj->filename );
-						}
-						$details['file'] = str_replace( basename( $post_url ), basename( $obj->filename ), $details['file'] );
-					}
-				}
-				break;
-			case 204:
-				$details['error'] = sprintf( __( 'You have exceeded your file space quota.' ) );
-				break;
-			default:
-				$details['error'] = sprintf( __( 'Error uploading the file to the remote servers: Code %d' ), $http_code );
-				break;
+		if ( is_wp_error( $upload_result ) ) {
+			$details['error'] = $upload_result->get_error_message();
+		} else {
+			$details['file'] = $upload_result['filename'];
 		}
 
 		return $details;
@@ -447,30 +375,16 @@ class A8C_Files {
 		else
 			$file_uri = '/' . $url_parts['path'];
 
-		$headers = array(
-					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
-					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
-				);
-
 		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$service_url .= '/sites/' . get_current_blog_id();
 		}
 
-		$ch = curl_init( $service_url . $file_uri );
+		$api_client = \Automattic\VIP\Files\new_api_client();
+		$delete_result = $api_client->upload_file( $service_url . $file_uri );
 
-		curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'DELETE' );
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
-
-		curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-
-		if ( 200 != $http_code ) {
-			error_log( sprintf( __( 'Error deleting the file from the remote servers: Code %d' ), $http_code ) );
+		if ( is_wp_error( $delete_result ) ) {
+			error_log( $delete_result->get_error_message() );
 			return;
 		}
 

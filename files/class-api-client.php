@@ -70,7 +70,22 @@ class API_Client {
 		return $response;
 	}
 
-	// TODO: implement get_unique_filename()
+	public function unique_filename( $file_path ) {
+		$response = $this->call_api( $file_path, 'GET', [
+			'headers' => [
+				'X-Action' => 'unique_filename',
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_content   = wp_remote_retrieve_body( $response );
+
+		return ['http_code' => $response_code, 'content' => $response_content ];
+	}
 
 	public function upload_file( $local_path, $upload_path ) {
 		if ( ! file_exists( $local_path ) ) {

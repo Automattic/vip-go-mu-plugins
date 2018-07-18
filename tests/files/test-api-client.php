@@ -454,4 +454,33 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $upload_path, $actual_result );
 	}
 
+	public function test__unique_filename__error() {
+		$this->mock_http_response( new WP_Error( 'oh-no-unique', 'Oh no!' ) );
+
+		$upload_path = '/wp-content/uploads/file.txt';
+		$actual_result = $this->api_client->unique_filename( $upload_path );
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( 'oh-no-unique', $actual_error_code, 'Incorrect error code' );
+	}
+
+	public function test__unique_filename__success() {
+		$upload_path = '/wp-content/uploads/file.txt';
+		$body = '{"filename":"' . $upload_path . '"}';
+
+		$this->mock_http_response( [
+			'response' => [
+				'code' => 200,
+			],
+			'body' => $body,
+		] );
+
+		$actual_result = $this->api_client->unique_filename( $upload_path );
+
+		$this->assertEquals( 200, $actual_result['http_code'] );
+		$this->assertEquals( $body, $actual_result['content'] );
+	}
+
 }
