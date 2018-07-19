@@ -699,6 +699,11 @@ class A8C_Files_Utils {
 }
 
 function a8c_files_init() {
+
+	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
+		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+	}
+
 	new A8C_Files();
 }
 
