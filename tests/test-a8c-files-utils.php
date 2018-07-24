@@ -143,15 +143,14 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data_for_test_attachment_file_exists() {
 		return [
-			'Invalid-path' => [
+			'Invalid-path'  => [
 				'/wp-content/uploads/file-invalid-path.jpg',
 				new WP_Error( 'invalid-path' ),
 			],
-			'valid-image'  => [
+			'valid-image'   => [
 				'/wp-content/uploads/file-exists.jpg',
 				true,
 			],
-
 			'invalid-image' => [
 				'/wp-content/uploads/file-notexists.jpg',
 				false,
