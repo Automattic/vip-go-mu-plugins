@@ -25,7 +25,9 @@ use Automattic\VIP\Files\Path_Utils;
 
 class A8C_Files {
 
-	function __construct() {
+	private $api_client;
+
+	function __construct($api_client = null) {
 
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
@@ -63,6 +65,16 @@ class A8C_Files {
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+
+		if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
+			require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+		}
+
+		if ( isset( $api_client ) ) {
+			$this->api_client = $api_client;
+		} else {
+			$this->api_client = \Automattic\VIP\Files\new_api_client();
+		}
 	}
 
 	private function init_jetpack_photon_filters() {
@@ -237,9 +249,8 @@ class A8C_Files {
 		$url_parts = parse_url( $file_url );
 		$post_url = $this->get_files_service_hostname() . $url_parts['path'];
 
-		$api_client = \Automattic\VIP\Files\new_api_client();
 
-		return ( $api_client->is_file( $file_url ) );
+		return ( $this->api_client->is_file( $file_url ) );
 	}
 
 	/**
@@ -262,9 +273,13 @@ class A8C_Files {
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
+		if ( is_wp_error( $check ) ) {
+			return $filename;
+		}
+
 		if ( 200 == $check['http_code'] ) {
 			$obj = json_decode( $check['content'] );
-			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $filename ) ) {
+			if ( isset( $obj->filename ) && basename( $obj->filename ) != basename( $filename ) ) {
 				$filename = $obj->filename;
 			}
 		}
@@ -281,6 +296,10 @@ class A8C_Files {
 		$filename = $this->_sanitize_filename( $filename );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
+
+		if ( is_wp_error( $check ) ) {
+			return $filetype_data;
+		}
 
 		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
 		// See `_wp_handle_upload()`
@@ -304,11 +323,6 @@ class A8C_Files {
 	 * Common method to check Mogile backend for filename uniqueness
 	 */
 	private function _check_uniqueness_with_backend( $filename ) {
-		$headers = array(
-			'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
-			'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
-			'X-Action: unique_filename',
-		);
 
 		if ( ! ( ( $uploads = wp_upload_dir() ) && false === $uploads['error'] ) ) {
 			$file['error'] = $uploads['error'];
@@ -325,8 +339,7 @@ class A8C_Files {
 			}
 		}
 
-		$api_client = \Automattic\VIP\Files\new_api_client();
-		$unique_result = $api_client->unique_filename( $file_path );
+		$unique_result = $this->api_client->unique_filename( $file_path );
 
 		return $unique_result;
 	}
@@ -354,15 +367,23 @@ class A8C_Files {
 			$post_url = $this->get_files_service_hostname() . $file_path;
 		}
 
-		$api_client = \Automattic\VIP\Files\new_api_client();
-		$upload_result = $api_client->upload_file( $details['file'], $post_url );
+		$upload_result = $this->api_client->upload_file( $details['file'], $file_path );
 
 		register_shutdown_function( 'unlink', $details['file'] );
 
 		if ( is_wp_error( $upload_result ) ) {
 			$details['error'] = $upload_result->get_error_message();
 		} else {
-			$details['file'] = $upload_result['filename'];
+			$result_filename = $upload_result;
+			if ( isset( $result_filename ) && basename( $result_filename ) != basename( $post_url ) ) {
+				$uploads = wp_upload_dir();
+				if ( false === $uploads['error'] ) {
+					@copy( $details['file'], $uploads['path'] . '/' . $result_filename );
+					register_shutdown_function( 'unlink', $uploads['path'] . '/' . $result_filename );
+				}
+				$details['file'] = str_replace( basename( $post_url ), basename( $result_filename ), $details['file'] );
+			}
+			$details['file'] = $result_filename;
 		}
 
 		return $details;
@@ -380,8 +401,7 @@ class A8C_Files {
 			$service_url .= '/sites/' . get_current_blog_id();
 		}
 
-		$api_client = \Automattic\VIP\Files\new_api_client();
-		$delete_result = $api_client->upload_file( $service_url . $file_uri );
+		$delete_result = $this->api_client->delete_file( $service_url . $file_uri );
 
 		if ( is_wp_error( $delete_result ) ) {
 			error_log( $delete_result->get_error_message() );
@@ -699,10 +719,6 @@ class A8C_Files_Utils {
 }
 
 function a8c_files_init() {
-
-	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
-	}
 
 	new A8C_Files();
 }
