@@ -76,6 +76,10 @@ class API_Client {
 				'X-Action' => 'unique_filename',
 			],
 		] );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
 		
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_content   = wp_remote_retrieve_body( $response );
