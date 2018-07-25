@@ -151,6 +151,17 @@
 										?>
 									</td>
 								</tr>
+								<tr>
+									<th class="comment-form-privacy-notice" align="left" scope="row"><?php esc_html_e('Privacy', 'akismet'); ?></th>
+									<td></td>
+									<td align="left">
+										<fieldset><legend class="screen-reader-text"><span><?php esc_html_e('Akismet privacy notice', 'akismet'); ?></span></legend>
+										<p><label for="akismet_comment_form_privacy_notice_display"><input type="radio" name="akismet_comment_form_privacy_notice" id="akismet_comment_form_privacy_notice_display" value="display" <?php checked('display', get_option('akismet_comment_form_privacy_notice')); ?> /> <?php esc_html_e('Display a privacy notice under your comment forms.', 'akismet'); ?></label></p>
+										<p><label for="akismet_comment_form_privacy_notice_hide"><input type="radio" name="akismet_comment_form_privacy_notice" id="akismet_comment_form_privacy_notice_hide" value="hide" <?php echo in_array( get_option('akismet_comment_form_privacy_notice'), array('display', 'hide') ) ? checked('hide', get_option('akismet_comment_form_privacy_notice'), false) : 'checked="checked"'; ?> /> <?php esc_html_e('Do not display privacy notice.', 'akismet'); ?></label></p>
+										</fieldset>
+										<span class="akismet-note"><?php esc_html_e( 'To help your site with transparency under privacy laws like the GDPR, Akismet can display a notice to your users under your comment forms. This feature is disabled by default, however, you can turn it on above.', 'akismet' );?></span>
+									</td>
+								</tr>
 							</tbody>
 						</table>
 						<div class="akismet-card-actions">

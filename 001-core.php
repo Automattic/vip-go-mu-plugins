@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Plugin Name: VIP Go Core Modifications
+ * Description: Changes to make WordPress core work better on VIP Go.
+ */
+
+require_once( __DIR__ . '/001-core/privacy.php' );
+
 if ( false !== WPCOM_IS_VIP_ENV ) {
 	add_action( 'muplugins_loaded', 'wpcom_vip_init_core_restrictions' );
 }
