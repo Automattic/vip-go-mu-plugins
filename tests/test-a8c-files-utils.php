@@ -13,15 +13,10 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$handle = fopen( '/tmp/file-valid.txt', 'w' );
-		fwrite( $handle, 'testdata' );
-		fclose( $handle );
 	}
 
 	public function tearDown() {
 		$this->api_client = null;
-		unlink( '/tmp/file-valid.txt' );
-
 		parent::tearDown();
 	}
 
@@ -219,7 +214,12 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	public function test_attachment_upload_file( $details, $upload_type, $mock_result, $expected ) {
 		$this->setup_mock_a8c_files( 'upload_file', $mock_result );
 
+		$handle = fopen( '/tmp/file-valid.txt', 'w' );
+		fwrite( $handle, 'testdata' );
+		fclose( $handle );
 		$actual = $this->a8c_files->upload_file( $details, $upload_type );
+		unlink( '/tmp/file-valid.txt' );
+
 		$this->assertEquals( $expected, $actual );
 	}
 
@@ -271,9 +271,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 		$this->setup_mock_a8c_files( 'unique_filename', $expected );
 
 		$call_api_method = self::get_method( '_check_uniqueness_with_backend' );
-		$actual          = $call_api_method->invokeArgs( $this->a8c_files, [
-			$file_path
-		] );
+		$actual = $call_api_method->invokeArgs( $this->a8c_files, [ $file_path ] );
 
 		$this->assertEquals( $expected['http_code'], $actual['http_code'] );
 		$this->assertContains( $expected['content'], $actual['content'] );
