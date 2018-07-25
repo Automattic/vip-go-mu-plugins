@@ -339,7 +339,8 @@ function wpcom_search_api_wp_to_es_args( $args ) {
     if ( empty( $es_query_args['sort'] ) )
         unset( $es_query_args['sort'] );
 
-    // Facets
+	// Facets. Deprecated in favor of Aggregations. Code is very similar, but left in place for backwards compatibility
+	// while things are migrated over. Should be removed once everything is running > 2.x
     if ( ! empty( $args['facets'] ) ) {
         foreach ( (array) $args['facets'] as $label => $facet ) {
             switch ( $facet['type'] ) {
@@ -392,6 +393,61 @@ function wpcom_search_api_wp_to_es_args( $args ) {
             }
         }
     }
+
+	// Aggregations
+	if ( ! empty( $args['aggregations'] ) ) {
+		$max_aggregations_count = 100;
+
+		foreach ( (array) $args['aggregations'] as $label => $aggregation ) {
+			switch ( $aggregation['type'] ) {
+
+				case 'taxonomy':
+					switch ( $aggregation['taxonomy'] ) {
+
+						case 'post_tag':
+							$field = 'tag';
+							break;
+
+						case 'category':
+							$field = 'category';
+							break;
+
+						default:
+							$field = 'taxonomy.' . $aggregation['taxonomy'];
+							break;
+					} // switch $aggregation['taxonomy']
+
+					$es_query_args['aggregations'][ $label ] = array(
+						'terms' => array(
+							'field' => $field . '.slug',
+							'size' => min( (int) $aggregation['count'], $max_aggregations_count ),
+						),
+					);
+
+					break;
+
+				case 'post_type':
+					$es_query_args['aggregations'][ $label ] = array(
+						'terms' => array(
+							'field' => 'post_type',
+							'size' => min( (int) $aggregation['count'], $max_aggregations_count ),
+						),
+					);
+
+					break;
+
+				case 'date_histogram':
+					$es_query_args['aggregations'][ $label ] = array(
+						'date_histogram' => array(
+							'interval' => $aggregation['interval'],
+							'field'    => ( ! empty( $aggregation['field'] ) && 'post_date_gmt' == $aggregation['field'] ) ? 'date_gmt' : 'date',
+						),
+					);
+
+					break;
+			}
+		}
+	}
 
     return $es_query_args;
 }
