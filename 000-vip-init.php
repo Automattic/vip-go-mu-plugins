@@ -33,6 +33,8 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 	} else {
 		http_response_code( 503 );
 
+		header( 'X-VIP-Go-Maintenance: true' );
+
 		echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
 
 		exit;
@@ -130,6 +132,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress.com VIP <https://vip.wordpress.com>';
+
+	// All non-production domains should not be indexed.
+	// This should not apply only to *.vip-go.co
+	if ( 'production' !== VIP_GO_ENV ) {
+		$headers['X-Robots-Tag'] = 'noindex, nofollow';
+	}
 
 	return $headers;
 } );

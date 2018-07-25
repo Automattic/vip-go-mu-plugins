@@ -417,6 +417,10 @@ table.comments td.comment p a:after {
 	padding: 1.5rem;
 }
 
+.akismet-lower .notice {
+	margin-bottom: 2rem;
+}
+
 .akismet-card {
 	margin-top: 1rem;
 	margin-bottom: 0;

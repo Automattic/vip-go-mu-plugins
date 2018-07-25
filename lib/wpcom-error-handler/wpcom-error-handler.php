@@ -53,9 +53,14 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
 			$path .= isset( $call['line'] ) ? ':' . $call['line'] : '';
 		}
 
-		if ( in_array( $call['function'], array( 'do_action', 'apply_filters' ) ) ) {
+		if ( isset( $call['class'] ) ) {
+			$call_type = $call['type'] ?? '???';
+			$path .= " {$call['class']}{$call_type}{$call['function']}()";
+		} elseif ( in_array( $call['function'], array( 'do_action', 'apply_filters' ) ) ) {
 			if ( is_object( $call['args'][0] ) && ! method_exists( $call['args'][0], '__toString' ) ) {
 				$path .= " {$call['function']}(Object)";
+			} elseif ( is_array( $call['args'][0] ) ) {
+				$path .= " {$call['function']}(Array)";
 			} else {
 				$path .= " {$call['function']}('{$call['args'][0]}')";
 			}
