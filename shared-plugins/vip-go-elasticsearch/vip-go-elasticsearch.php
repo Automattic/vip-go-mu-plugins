@@ -114,7 +114,7 @@ class WPCOM_elasticsearch {
 	}
 
 	public function admin_notice_no_index() {
-		echo '<div class="error"><p>' . __( 'WordPress.com VIP Search Add-On needs a little extra configuration behind the scenes. Please contact support to make it happen.' ) . '</p></div>';
+		echo '<div class="error"><p>' . __( 'VIP Go Search Add-On needs a little extra configuration behind the scenes. Please contact support to make it happen.' ) . '</p></div>';
 	}
 
 	public function filter__post_limits_request( $limits, $query ) {
