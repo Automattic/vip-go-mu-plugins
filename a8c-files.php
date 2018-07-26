@@ -404,7 +404,7 @@ class A8C_Files {
 		$delete_result = $this->api_client->delete_file( $service_url . $file_uri );
 
 		if ( is_wp_error( $delete_result ) ) {
-			error_log( $delete_result->get_error_message() );
+			$this->process_error( $delete_result->get_error_message() );
 			return;
 		}
 
@@ -418,7 +418,7 @@ class A8C_Files {
 		$this->purge_file_cache( $invalidation_url, 'PURGE' );
 	}
 
-	private function purge_file_cache( $url, $method ) {
+	protected function purge_file_cache( $url, $method ) {
 		global $file_cache_servers;
 
 		$requests = array();
@@ -679,6 +679,10 @@ class A8C_Files {
 		$img_url = add_query_arg( $args, $img_url );
 
 		return array( $img_url, $w, $h, $resized );
+	}
+
+	protected function process_error($msg) {
+		error_log( $msg );
 	}
 
 }

@@ -28,6 +28,8 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 		     ->willReturn( $expected );
 
 		$this->a8c_files = new A8C_Files( $mock );
+
+		return $mock;
 	}
 
 	/**
@@ -226,17 +228,9 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data_for_test_delete_file() {
 		return [
-			'Invalid-path' => [
-				'https://files.go-vip.co/wp-content/invalid-delete-filepath.txt',
-				null,
-			],
 			'valid-image'  => [
-				'/wp-content/uploads/file-exists.jpg',
-				null,
-			],
-			'WP-Error'     => [
-				'/wp-content/uploads/file-delete-wperror.jpg',
-				null,
+				'wp-content/uploads/file-exists.jpg',
+				'https://files.vipv2.net/wp-content/uploads/wp-content/uploads/file-exists.jpg',
 			],
 		];
 	}
@@ -244,11 +238,57 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_data_for_test_delete_file
 	 */
-	public function test_attachment_delete_file( $file_path, $expected ) {
-		$this->setup_mock_a8c_files( 'delete_file', $expected );
+	public function test_delete_file( $file_path, $expected ) {
+		$mock = $this->setup_mock_a8c_files( 'delete_file', null );
 
-		$actual = $this->a8c_files->delete_file( $file_path );
-		$this->assertEquals( $expected, $actual );
+		$mock->expects( $this->once() )
+		     ->method( 'delete_file' )
+		     ->with( $expected );
+
+		$this->a8c_files->delete_file( $file_path );
+	}
+
+	public function test_delete_file_wp_error() {
+		$api_client_mock = $this->setup_mock_a8c_files( 'delete_file', new WP_Error( 'invalid-path', 'invalid-path' ) );
+
+		$mock_files = $this->getMockBuilder( 'A8C_Files' )
+		                   ->setMethods( array( 'process_error' ) )
+		                   ->setConstructorArgs( array( $api_client_mock ) )
+		                   ->getMock();
+
+		$mock_files->expects( $this->once() )
+		           ->method( 'process_error' )
+		           ->with( 'invalid-path' );
+
+		$mock_files->delete_file( 'path' );
+	}
+
+	public function get_data_for_test_delete_file_purge_cache() {
+
+		return [
+			'valid-image' => [
+				'file-exists.jpg',
+				'/wp-content/uploads/file-exists.jpg',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_test_delete_file_purge_cache
+	 */
+	public function test_delete_file_purge_cache( $file_path, $expected ) {
+		$api_client_mock = $this->setup_mock_a8c_files( 'delete_file', null );
+
+		$mock = $this->getMockBuilder( 'A8C_Files' )
+		             ->setMethods( array( 'purge_file_cache' ) )
+		             ->setConstructorArgs( array( $api_client_mock ) )
+		             ->getMock();
+
+		$mock->expects( $this->once() )
+		     ->method( 'purge_file_cache' )
+		     ->with( get_site_url() . $expected, 'PURGE' );
+
+		$mock->delete_file( $file_path );
 	}
 
 	public function get_data_for_test_check_uniqueness_with_backend() {
@@ -276,5 +316,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected['http_code'], $actual['http_code'] );
 		$this->assertContains( $expected['content'], $actual['content'] );
 	}
+
+
 }
 
