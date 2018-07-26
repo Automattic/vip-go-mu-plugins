@@ -300,7 +300,7 @@ class WPCOM_elasticsearch {
 		// This filter is harder to use if you're unfamiliar with ES but it allows complete control over the query
 		$es_query_args = apply_filters( 'wpcom_elasticsearch_query_args', $es_query_args, $query );
 
-		$es_query_args['name'] = es_api_get_index_name_by_blog_id( $es_query_args['blog_id'] );
+		$es_query_args['name'] = function_exists( 'es_api_get_index_name_by_blog_id' ) ? es_api_get_index_name_by_blog_id( $es_query_args['blog_id'] ) : false;
 		if ( is_wp_error( $es_query_args['name'] ) ) {
 			$this->search_result = $es_query_args['name'];
 		} else {
@@ -898,3 +898,5 @@ function WPCOM_elasticsearch() {
 }
 
 WPCOM_elasticsearch();
+
+
