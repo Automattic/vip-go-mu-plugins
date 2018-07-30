@@ -96,6 +96,24 @@ class A8C_Files {
 			return $content;
 		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
 
+		// See https://vipsupportp2.wordpress.com/2018/06/27/intermediate-images-on-vip-go-sites/
+		if ( defined( 'VIP_GO_USE_JETPACK_PHOTON_BACKEND' ) && true === VIP_GO_USE_JETPACK_PHOTON_BACKEND ) {
+
+			//Photon wouldn't run in the backend editor by default, need to enable it first
+			add_filter( 'the_editor_content', array( 'Jetpack_Photon', 'filter_the_content' ) );
+
+			add_filter( 'the_editor_content', function( $content ) {
+			  add_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
+			  return $content;
+			}, 0 );
+
+			add_filter( 'the_editor_content', function( $content ) {
+			  remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
+			  return $content;
+			}, 9999999 );
+
+		}
+
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
 		Jetpack_Photon::instance();
