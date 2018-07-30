@@ -149,7 +149,9 @@ function wpcom_vip_plugin_action_links( $actions, $plugin_file, $plugin_data, $c
 		}
 		$actions['vip-code-activated-plugin'] = __( 'Enabled via code', 'vip-plugins-dashboard' );
 
-		unset( $actions['network_active'] );
+		if ( is_a( $screen, 'WP_Screen' ) && 'plugins' === $screen->id ) {
+			unset( $actions['network_active'] );
+		}
 	}
 
 	return $actions;
