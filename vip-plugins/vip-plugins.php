@@ -284,7 +284,7 @@ function wpcom_vip_plugins_list_add_must_use( $all_plugins ) {
 	}
 
 	$all_plugins = array_merge( (array) $all_plugins, $mu_plugins );
-var_dump($all_plugins);
+
 	asort( $all_plugins );
 
 	return $all_plugins;
