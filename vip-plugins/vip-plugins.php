@@ -189,7 +189,7 @@ function wpcom_vip_option_active_plugins( $value, $option ) {
 	}
 	
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
-	$mu_plugins = wp_get_mu_plugins();
+	$mu_plugins = array_diff( wp_get_mu_plugins(), wpcom_vip_get_mu_plugins_to_hide() );
 
 	$value = array_unique( array_merge( (array) $value, $code_plugins, $mu_plugins ) );
 
@@ -273,11 +273,18 @@ add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_upd
  * @return array Filtered plugins list
  */
 function wpcom_vip_plugins_list_add_must_use( $all_plugins ) {
-	$mu_plugins = get_mu_plugins();
-	$mu_plugins_paths = wp_get_mu_plugins();
+	$mu_plugins_data = get_mu_plugins();
+	$mu_plugins_to_hide = wpcom_vip_get_mu_plugins_to_hide();
+	$mu_plugins = array();
 
-	$all_plugins = array_merge( (array) $all_plugins, array_combine( $mu_plugins_paths, array_values( $mu_plugins ) ) );
+	foreach( $mu_plugins_data as $filename => $plugin_info ) {
+		if ( ! in_array( $filename, $mu_plugins_to_hide, true ) ) {
+			$mu_plugins[ WPMU_PLUGIN_DIR . '/' . $filename ] = $plugin_info; // Using the full path is needed for the MU plugins to be displayed as active
+		}
+	}
 
+	$all_plugins = array_merge( (array) $all_plugins, $mu_plugins );
+var_dump($all_plugins);
 	asort( $all_plugins );
 
 	return $all_plugins;
@@ -311,3 +318,26 @@ function wpcom_vip_include_active_plugins() {
 	}
 }
 add_action( 'plugins_loaded', 'wpcom_vip_include_active_plugins', 5 );
+
+/**
+ * Filter MU plugins and exclude some we wouldn't want to show (those for internal use).
+ *
+ * @return array MU plugins paths
+ */
+function wpcom_vip_get_mu_plugins_to_hide() {
+	$mu_plugins_to_hide = array(
+		'000-vip-init.php',
+		'001-core.php',
+		'alloptions-limit.php',
+		'schema.php',
+		'stats.php',
+		'vip-feed-cache.php',
+		'vip-light-term-count.php',
+		'vip-rest-api.php',
+		'vip-wp-cli-to-cron.php',
+		'wp-cli.php',
+		'z-client-mu-plugins.php',
+	);
+
+	return apply_filters( 'wpcom_vip_mu_plugins_to_hide', $mu_plugins_to_hide );
+}
