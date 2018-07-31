@@ -130,7 +130,7 @@ function wpcom_vip_get_network_filtered_loaded_plugins() {
 }
 
 /**
- * Ensure code activated plugins are shown as such on core plugins screens
+ * Ensure code activated and Must Use plugins are shown as such on core plugins screens.
  *
  * @param  array $actions
  * @param  string $plugin_file
@@ -140,18 +140,29 @@ function wpcom_vip_get_network_filtered_loaded_plugins() {
  */
 function wpcom_vip_plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
 	$screen = get_current_screen();
-	if ( in_array( $plugin_file, wpcom_vip_get_filtered_loaded_plugins(), true ) ) {
+
+	$filtered_loaded_plugins = wpcom_vip_get_filtered_loaded_plugins();
+	$mu_plugins = wp_get_mu_plugins();
+
+	if ( in_array( $plugin_file, array_merge( $filtered_loaded_plugins, $mu_plugins ), true ) ) {
 		if ( array_key_exists( 'activate', $actions ) ) {
 			unset( $actions['activate'] );
 		}
 		if ( array_key_exists( 'deactivate', $actions ) ) {
 			unset( $actions['deactivate'] );
 		}
-		$actions['vip-code-activated-plugin'] = __( 'Enabled via code', 'vip-plugins-dashboard' );
 
 		if ( 'plugins' === $screen->id ) {
 			unset( $actions['network_active'] );
 		}
+	}
+
+	if ( in_array( $plugin_file, $filtered_loaded_plugins, true ) ) {
+		$actions['vip-code-activated-plugin'] = __( 'Enabled via code', 'vip-plugins-dashboard' );
+	}
+	
+	if ( in_array( $plugin_file, $mu_plugins, true ) ) {
+		$actions['vip-must-use-plugin'] = __( 'Must Use', 'vip-plugins-dashboard' );
 	}
 
 	return $actions;
@@ -160,20 +171,27 @@ add_filter( 'plugin_action_links', 'wpcom_vip_plugin_action_links', 10, 4 );
 add_filter( 'network_admin_plugin_action_links', 'wpcom_vip_plugin_action_links', 10, 4 );
 
 /**
- * Merge code activated plugins with database option for better UI experience
+ * Merge code activated and Must Use plugins with database option for better UI experience.
  *
  * @param  array $value
  * @param  string $option
  * @return array
  */
 function wpcom_vip_option_active_plugins( $value, $option ) {
-	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
 
-	if ( false === is_array( $value ) ) {
-		$value = array();
+	// validate_plugin() would return errors for mu-plugins because they can't be located in the /plugins folder.
+	// We look at the call backtrace and bail early if called from validation function.
+	$backtrace = debug_backtrace( 2 ); // Exclude ['object'] and ['args']
+	foreach( $backtrace as $frame ) {
+		if( $frame['function'] === 'validate_active_plugins' ) {
+			return $value;
+		}
 	}
+	
+	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
+	$mu_plugins = wp_get_mu_plugins();
 
-	$value = array_unique( array_merge( $value, $code_plugins ) );
+	$value = array_unique( array_merge( (array) $value, $code_plugins, $mu_plugins ) );
 
 	sort( $value );
 
@@ -205,7 +223,7 @@ function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active_sitewide_plugins', 10, 2 );
 
 /**
- * Unmerge code activated plugins from active plugins option (reverse of the above)
+ * Unmerge code activated and Must Use plugins from active plugins option (reverse of the above).
  *
  * @param  array $value
  * @param  array $old_value
@@ -214,12 +232,9 @@ add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active
  */
 function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
-
-	if ( false === is_array( $value ) ) {
-		$value = array();
-	}
-
-	$value = array_diff( $value, $code_plugins );
+	$mu_plugins = wp_get_mu_plugins();
+	
+	$value = array_diff( (array) $value, $code_plugins, $mu_plugins );
 
 	sort( $value );
 
@@ -250,6 +265,24 @@ function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_
 	return $value;
 }
 add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_update_site_option_active_sitewide_plugins', 10, 4 );
+
+/**
+ * Merge Must-Use plugins with normal ones in display table.
+ *
+ * @param  array $plugins All plugins list
+ * @return array Filtered plugins list
+ */
+function wpcom_vip_plugins_list_add_must_use( $all_plugins ) {
+	$mu_plugins = get_mu_plugins();
+	$mu_plugins_paths = wp_get_mu_plugins();
+
+	$all_plugins = array_merge( (array) $all_plugins, array_combine( $mu_plugins_paths, array_values( $mu_plugins ) ) );
+
+	asort( $all_plugins );
+
+	return $all_plugins;
+}
+add_filter( 'all_plugins', 'wpcom_vip_plugins_list_add_must_use' );
 
 /**
  * Custom CSS and JS for the plugins UIs
