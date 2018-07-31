@@ -66,14 +66,8 @@ class A8C_Files {
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
 
-		if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-			require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
-		}
-
 		if ( isset( $api_client ) ) {
 			$this->api_client = $api_client;
-		} else {
-			$this->api_client = \Automattic\VIP\Files\new_api_client();
 		}
 	}
 
@@ -274,7 +268,7 @@ class A8C_Files {
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
 		if ( is_wp_error( $check ) ) {
-			return $filename;
+			return $check;
 		}
 
 		if ( 200 == $check['http_code'] ) {
@@ -298,12 +292,6 @@ class A8C_Files {
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
 		if ( is_wp_error( $check ) ) {
-			return $filetype_data;
-		}
-
-		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
-		// See `_wp_handle_upload()`
-		if ( 200 != $check['http_code'] ) {
 			$filetype_data['ext']             = '';
 			$filetype_data['type']            = '';
 			$filetype_data['proper_filename'] = false; // Never set this true, which leaves filename changing to dedicated methods in this class
@@ -373,18 +361,10 @@ class A8C_Files {
 
 		if ( is_wp_error( $upload_result ) ) {
 			$details['error'] = $upload_result->get_error_message();
-		} else {
-			$result_filename = $upload_result;
-			if ( isset( $result_filename ) && basename( $result_filename ) != basename( $post_url ) ) {
-				$uploads = wp_upload_dir();
-				if ( false === $uploads['error'] ) {
-					@copy( $details['file'], $uploads['path'] . '/' . $result_filename );
-					register_shutdown_function( 'unlink', $uploads['path'] . '/' . $result_filename );
-				}
-				$details['file'] = str_replace( basename( $post_url ), basename( $result_filename ), $details['file'] );
-			}
-			$details['file'] = $result_filename;
-		}
+			return $details;
+		} 
+		
+		$details['file'] = $upload_result;
 
 		return $details;
 	}
@@ -723,8 +703,11 @@ class A8C_Files_Utils {
 }
 
 function a8c_files_init() {
+	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
+		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+	}
 
-	new A8C_Files();
+	new A8C_Files(\Automattic\VIP\Files\new_api_client());
 }
 
 /**

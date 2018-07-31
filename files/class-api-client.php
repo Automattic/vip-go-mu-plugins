@@ -80,11 +80,15 @@ class API_Client {
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
-		
+
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_content   = wp_remote_retrieve_body( $response );
-
-		return ['http_code' => $response_code, 'content' => $response_content ];
+		
+		if( $response_code != 200 ) {
+			return new WP_Error( 'unique-filename-error', $response_content );
+		}
+		
+		return $response_content ;
 	}
 
 	public function upload_file( $local_path, $upload_path ) {

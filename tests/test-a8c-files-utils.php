@@ -20,7 +20,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	private function setup_mock_a8c_files( $method_name, $expected ) {
+	private function setup_a8c_files_and_mock_client( $method_name, $expected ) {
 		$mock = $this->getMockBuilder( 'Automattic\VIP\Files\API_Client' )
 		             ->setConstructorArgs( array( 'https://files.go-vip.co', 123456, 'super-sekret-token' ) )
 		             ->getMock();
@@ -140,7 +140,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data_for_test_attachment_file_exists() {
 		return [
-			'Invalid-path'  => [
+			'invalid-path'  => [
 				'/wp-content/uploads/file-invalid-path.jpg',
 				new WP_Error( 'invalid-path' ),
 			],
@@ -163,7 +163,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_test_attachment_file_exists
 	 */
 	public function test_attachment_file_exists( $source, $expected ) {
-		$this->setup_mock_a8c_files( 'is_file', $expected );
+		$this->setup_a8c_files_and_mock_client( 'is_file', $expected );
 
 		$actual = $this->a8c_files->attachment_file_exists( $source );
 		$this->assertEquals( $expected, $actual );
@@ -214,8 +214,9 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_test_upload_file
 	 */
 	public function test_attachment_upload_file( $details, $upload_type, $mock_result, $expected ) {
-		$this->setup_mock_a8c_files( 'upload_file', $mock_result );
+		$this->setup_a8c_files_and_mock_client( 'upload_file', $mock_result );
 
+		//create a physical file that upload_file will validate against 
 		$handle = fopen( '/tmp/file-valid.txt', 'w' );
 		fwrite( $handle, 'testdata' );
 		fclose( $handle );
@@ -239,7 +240,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_test_delete_file
 	 */
 	public function test_delete_file( $file_path, $expected ) {
-		$mock = $this->setup_mock_a8c_files( 'delete_file', null );
+		$mock = $this->setup_a8c_files_and_mock_client( 'delete_file', null );
 
 		$mock->expects( $this->once() )
 		     ->method( 'delete_file' )
@@ -249,7 +250,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	}
 
 	public function test_delete_file_wp_error() {
-		$api_client_mock = $this->setup_mock_a8c_files( 'delete_file', new WP_Error( 'invalid-path', 'invalid-path' ) );
+		$api_client_mock = $this->setup_a8c_files_and_mock_client( 'delete_file', new WP_Error( 'invalid-path', 'invalid-path' ) );
 
 		$mock_files = $this->getMockBuilder( 'A8C_Files' )
 		                   ->setMethods( array( 'process_error' ) )
@@ -277,7 +278,7 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_test_delete_file_purge_cache
 	 */
 	public function test_delete_file_purge_cache( $file_path, $expected ) {
-		$api_client_mock = $this->setup_mock_a8c_files( 'delete_file', null );
+		$api_client_mock = $this->setup_a8c_files_and_mock_client( 'delete_file', null );
 
 		$mock = $this->getMockBuilder( 'A8C_Files' )
 		             ->setMethods( array( 'purge_file_cache' ) )
@@ -295,11 +296,11 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 		return [
 			'unique-filename' => [
 				'filename-valid.txt',
-				[ 'http_code' => 200, 'content' => 'filename-valid.txt-unique' ],
+				[ 'filename-valid.txt-unique' ],
 			],
 			'server-error'    => [
 				'server-error.txt',
-				[ 'http_code' => 500, 'content' => 'server-error.txt' ],
+				[ new  WP_Error('server-error.txt') ],
 			],
 		];
 	}
@@ -308,13 +309,12 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_test_check_uniqueness_with_backend
 	 */
 	public function test_attachment_filter__check_uniqueness_with_backend( $file_path, $expected ) {
-		$this->setup_mock_a8c_files( 'unique_filename', $expected );
+		$this->setup_a8c_files_and_mock_client( 'unique_filename', $expected );
 
 		$call_api_method = self::get_method( '_check_uniqueness_with_backend' );
 		$actual = $call_api_method->invokeArgs( $this->a8c_files, [ $file_path ] );
 
-		$this->assertEquals( $expected['http_code'], $actual['http_code'] );
-		$this->assertContains( $expected['content'], $actual['content'] );
+		$this->assertEquals( $expected, $actual);
 	}
 
 

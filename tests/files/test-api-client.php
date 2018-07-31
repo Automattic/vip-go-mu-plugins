@@ -466,6 +466,25 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'oh-no-unique', $actual_error_code, 'Incorrect error code' );
 	}
 
+	public function test__unique_filename__error_403() {
+		$upload_path = '/wp-content/uploads/file.txt';
+		$body        = '{"filename":"' . $upload_path . '"}';
+
+		$this->mock_http_response( [
+			'response' => [
+				'code' => 403,
+			],
+			'body'     => $body,
+		] );
+
+		$actual_result = $this->api_client->unique_filename( $upload_path );
+
+		$this->assertWPError( $actual_result, $body );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( 'unique-filename-error', $actual_error_code, 'Incorrect error code' );
+	}
+
 	public function test__unique_filename__success() {
 		$upload_path = '/wp-content/uploads/file.txt';
 		$body        = '{"filename":"' . $upload_path . '"}';
@@ -479,8 +498,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		$actual_result = $this->api_client->unique_filename( $upload_path );
 
-		$this->assertEquals( 200, $actual_result['http_code'] );
-		$this->assertEquals( $body, $actual_result['content'] );
+		$this->assertEquals( $body, $actual_result );
 	}
 
 }
