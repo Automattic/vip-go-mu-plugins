@@ -320,7 +320,7 @@ function wpcom_vip_include_active_plugins() {
 add_action( 'plugins_loaded', 'wpcom_vip_include_active_plugins', 5 );
 
 /**
- * Filter MU plugins and exclude some we wouldn't want to show (those for internal use).
+ * Filter MU plugins and exclude some that are not important to show.
  *
  * @return array MU plugins paths
  */
@@ -331,6 +331,7 @@ function wpcom_vip_get_mu_plugins_to_hide() {
 		'alloptions-limit.php',
 		'schema.php',
 		'stats.php',
+		'vip-cache-manager.php',
 		'vip-feed-cache.php',
 		'vip-light-term-count.php',
 		'vip-rest-api.php',
