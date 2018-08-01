@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: VIP Force Two Factor
- * Description: Force Two Factor Auth
+ * Description: Force Two Factor Authentication for stronger security.
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */

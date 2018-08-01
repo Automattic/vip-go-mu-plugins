@@ -1,8 +1,13 @@
 <?php
 
 /**
- * Initialisation for various VIP functionality
- *
+ * Plugin Name: VIP Init
+ * Description: Initialisation for various VIP functionality.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ */
+
+/**
  * By virtue of the filename, this file is included first of
  * all the files in the VIP Go MU plugins directory. All
  * VIP code should be initialised here, unless there's a

@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Plugin Name: VIP Stats
+ * Description: Basic VIP stats functions.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ */
+
 namespace Automattic\VIP\Stats;
 
 // Limit tracking to production

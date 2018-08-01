@@ -1,7 +1,11 @@
 <?php
-/**
- * Allow for async processing of tasks normally hooked to certain `transition_post_status` calls.
- */
+
+/*
+Plugin Name: Async Publish Actions
+Description: Allow for async processing of tasks normally hooked to certain `transition_post_status` calls.
+Author: Automattic
+Author URI: http://automattic.com/
+*/
 
 namespace Automattic\VIP\Async_Publish_Actions;
 
