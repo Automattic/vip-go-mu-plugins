@@ -35,3 +35,9 @@ function wpcom_vip_load_gutenberg( $criteria = false ) {
 	}
 	gutenberg_ramp_load_gutenberg( $criteria );
 }
+
+// Link "Try Gutenberg" banner to VIP docs.
+// See https://make.wordpress.org/core/2018/08/02/try-gutenberg-callout-in-wordpress-4-9-8/
+add_filter( 'try_gutenberg_learn_more_link', function( $link ) {
+	return '<a href="https://vip.wordpress.com/documentation/gutenberg-at-vip/">Learn more about Gutenberg on VIP</a>';
+} );
