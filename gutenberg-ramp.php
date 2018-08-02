@@ -27,6 +27,11 @@ add_action( 'plugins_loaded', function() {
 } );
 
 /**
+ * Remove Try Gutenberg callout introduced as part of 4.9.8
+ */
+remove_action( 'try_gutenberg_panel', 'wp_try_gutenberg_panel' );
+
+/**
  * Load Gutenberg via the Gutenberg Ramp plugin.
  */
 function wpcom_vip_load_gutenberg( $criteria = false ) {
