@@ -34,7 +34,7 @@ remove_action( 'try_gutenberg_panel', 'wp_try_gutenberg_panel' );
 /**
  * Load Gutenberg via the Gutenberg Ramp plugin.
  */
-function wpcom_vip_load_gutenberg( $criteria = false ) {
+function wpcom_vip_load_gutenberg( $criteria = true ) {
 	if ( ! function_exists( 'gutenberg_ramp_load_gutenberg' ) ) {
 		return;
 	}
