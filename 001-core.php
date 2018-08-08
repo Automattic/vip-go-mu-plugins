@@ -3,6 +3,8 @@
 /**
  * Plugin Name: VIP Go Core Modifications
  * Description: Changes to make WordPress core work better on VIP Go.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
 require_once( __DIR__ . '/001-core/privacy.php' );

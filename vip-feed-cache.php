@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * Plugin Name: VIP Feed Cache
+ * Description: Sets VIP Go Cache Class.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ */
+ 
 /**
  * Sets the SimplePie Cache Class to our custom VIP Go Class.
  *

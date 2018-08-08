@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Plugin Name: VIP All Options Limit
+ * Description: Provides warnings and notifications for wp_options exceeding limits.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ */
+
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
 
 function wpcom_vip_sanity_check_alloptions() {
