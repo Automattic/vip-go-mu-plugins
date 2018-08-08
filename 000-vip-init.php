@@ -2,9 +2,11 @@
 
 /**
  * Plugin Name: VIP Init
- * Description: Initialisation for various VIP functionality.
+ * Description: Initializes critical elements of the VIP environment.
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ *
+ * Remember vip-init.php? This is like that, but better! 
  */
 
 /**
