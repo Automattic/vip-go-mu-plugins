@@ -271,7 +271,8 @@ function vp_scan_file( $file, $tmp_file = null, $use_parser = false ) {
 			if ( is_array( $file_content ) && ( $signature->patterns ) && is_array( $signature->patterns ) ) {
 				if ( ! $use_parser ) {
 					reset( $signature->patterns );
-					while ( $is_vulnerable && list( , $pattern ) = each( $signature->patterns ) ) {
+					while ( $is_vulnerable && current( $signature->patterns ) ) {
+						next( $signature->patterns );
 						if ( ! $match = preg_grep( '#' . addcslashes( $pattern, '#' ) . '#im', $file_content ) ) {
 							$is_vulnerable = false;
 							break;
@@ -287,7 +288,8 @@ function vp_scan_file( $file, $tmp_file = null, $use_parser = false ) {
 					}
 					// same code as the '! $use_parser' branch above
 					reset( $signature->patterns );
-					while ( $is_vulnerable && list( , $pattern ) = each( $signature->patterns ) ) {
+					while ( $is_vulnerable && current( $signature->patterns ) ) {
+						next( $signature->patterns );
 						if ( ! $match = preg_grep( '#' . addcslashes( $pattern, '#' ) . '#im', $code ) ) {
 							$is_vulnerable = false;
 							break;

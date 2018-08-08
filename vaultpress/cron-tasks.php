@@ -108,7 +108,9 @@ class VP_Site_Scanner {
 			return false;
 
 		reset( $paths );
-		list( $type, $current ) = each( $paths );
+		$type    = key( $paths );
+		$current = current( $paths );
+		next( $paths );
 		if ( !is_object( $current ) || empty( $current->last_dir ) )
 			return $this->_scan_clean_up( $paths, $type );
 
