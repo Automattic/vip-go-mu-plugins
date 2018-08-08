@@ -106,7 +106,7 @@ class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
 		$this->assertArrayNotHasKey( 'Cache-Control', $response_headers );
 	}
 
-	public function test__skip_ttl_if_already_set() {
+	public function test__skip_ttl_if_already_set_via_rest_response() {
 		$request = new \WP_REST_Request( 'GET', '/tests/v1/endpoint' );
 		$response = $this->server->dispatch( $request );
 		$response->header( 'Cache-Control', 'max-age=666' );
@@ -114,6 +114,12 @@ class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
 
 		$response_headers = $dispatched_response->get_headers();
 
-		$this->assertArraySubset( [ 'Cache-Control' => 'max-age=666' ], $response_headers );
+		$this->assertArraySubset( [
+			'Cache-Control' => 'max-age=666',
+		], $response_headers );
+	}
+
+	public function test__skip_ttl_if_already_set_via_php_header() {
+		$this->markTestSkipped( 'Cannot test since we cannot simulate `header()` or `header_list()` in PHPUnit.' );
 	}
 }
