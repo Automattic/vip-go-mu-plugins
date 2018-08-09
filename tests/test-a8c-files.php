@@ -4,6 +4,8 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 
 	private $a8c_files;
 
+	const FILE_SERVICE_ENDPOINT = 'https://files.go-vip.co';
+
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
@@ -22,7 +24,7 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 
 	private function setup_a8c_files_and_mock_client( $method_name, $expected ) {
 		$mock = $this->getMockBuilder( 'Automattic\VIP\Files\API_Client' )
-		             ->setConstructorArgs( array( 'https://files.go-vip.co', 123456, 'super-sekret-token' ) )
+		             ->setConstructorArgs( array( FILE_SERVICE_ENDPOINT, 123456, 'super-sekret-token' ) )
 		             ->getMock();
 		$mock->method( $method_name )
 		     ->willReturn( $expected );
@@ -51,7 +53,7 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 				new WP_Error( 'invalid-path' ),
 			],
 			'valid-image'   => [
-				'/wp-content/uploads/file-exists.jpg',
+				'file-valid.jpg',
 				true,
 			],
 			'invalid-image' => [
@@ -89,27 +91,27 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 			],
 			'invalid-upload-filepath' => [
 				[
-					'file' => '/tmp/file-valid.txt',
-					'url'  => 'https://files.go-vip.co/wp-content/invalid-upload-filepath.txt'
+					'file' => '/tmp/uploads/2018/07/file-valid.txt',
+					'url'  => FILE_SERVICE_ENDPOINT . '/wp-content/invalid-upload-filepath.txt'
 				],
 				'',
 				new WP_Error( 'invalid file path', 'invalid file path' ),
 				[
 					'error' => 'invalid file path',
-					'url'   => 'https://files.go-vip.co/wp-content/invalid-upload-filepath.txt',
-					'file'  => '/tmp/file-valid.txt'
+					'url'   => FILE_SERVICE_ENDPOINT .'/wp-content/invalid-upload-filepath.txt',
+					'file'  => '/tmp/uploads/2018/07/file-valid.txt'
 				]
 			],
 			'valid-local-filepath'    => [
 				[
-					'file' => '/tmp/file-valid.txt',
-					'url'  => '/wp-content/file-valid.txt'
+					'file' => '/tmp/uploads/2018/07/file-valid.txt',
+					'url'  => FILE_SERVICE_ENDPOINT . '/wp-content/uploads/2018/07/file-valid.txt'
 				],
 				'',
-				'/wp-content/file-valid.txt',
+				'/wp-content/uploads/2018/07/file-valid.txt',
 				[
-					'file' => '/wp-content/file-valid.txt',
-					'url'  => '/wp-content/file-valid.txt'
+					'file' => '/tmp/uploads/2018/07/file-valid.txt',
+					'url'  => FILE_SERVICE_ENDPOINT . '/wp-content/uploads/2018/07/file-valid.txt'
 				],
 			],
 
@@ -119,15 +121,18 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_data_for_test_upload_file
 	 */
-	public function test_attachment_upload_file( $details, $upload_type, $mock_result, $expected ) {
+	public function test_upload_file( $details, $upload_type, $mock_result, $expected ) {
 		$this->setup_a8c_files_and_mock_client( 'upload_file', $mock_result );
 
-		//create a physical file that upload_file will validate against 
-		$handle = fopen( '/tmp/file-valid.txt', 'w' );
+		//create a physical file that upload_file will validate against
+		if( ! is_dir( '/tmp/uploads/2018/07/' ) ) {
+			mkdir( '/tmp/uploads/2018/07/' );
+		}
+		$handle = fopen( '/tmp/uploads/2018/07/file-valid.txt', 'w' );
 		fwrite( $handle, 'testdata' );
 		fclose( $handle );
 		$actual = $this->a8c_files->upload_file( $details, $upload_type );
-		unlink( '/tmp/file-valid.txt' );
+		unlink( '/tmp/uploads/2018/07/file-valid.txt' );
 
 		$this->assertEquals( $expected, $actual );
 	}
@@ -136,8 +141,8 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 	public function get_data_for_test_delete_file() {
 		return [
 			'valid-image'  => [
-				'wp-content/uploads/file-exists.jpg',
-				'https://files.vipv2.net/wp-content/uploads/wp-content/uploads/file-exists.jpg',
+				'/tmp/uploads/2018/07/file-valid.txt',
+				'wp-content/uploads/2018/07/file-valid.txt',
 			],
 		];
 	}
@@ -174,8 +179,8 @@ class VIP_Go_A8C_Files_Test extends WP_UnitTestCase {
 
 		return [
 			'valid-image' => [
-				'file-exists.jpg',
-				'/wp-content/uploads/file-exists.jpg',
+				'file-valid.jpg',
+				'/wp-content/uploads/file-valid.jpg',
 			],
 		];
 	}

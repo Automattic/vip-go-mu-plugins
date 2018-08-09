@@ -27,7 +27,7 @@ class A8C_Files {
 
 	private $api_client;
 
-	function __construct($api_client = null) {
+	function __construct( $api_client ) {
 
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
@@ -271,11 +271,9 @@ class A8C_Files {
 			return $check;
 		}
 
-		if ( 200 == $check['http_code'] ) {
-			$obj = json_decode( $check['content'] );
-			if ( isset( $obj->filename ) && basename( $obj->filename ) != basename( $filename ) ) {
-				$filename = $obj->filename;
-			}
+		$obj = json_decode( $check );
+		if ( isset( $obj->filename ) && basename( $obj->filename ) != basename( $filename ) ) {
+			$filename = $obj->filename;
 		}
 
 		return $filename;
@@ -362,9 +360,18 @@ class A8C_Files {
 		if ( is_wp_error( $upload_result ) ) {
 			$details['error'] = $upload_result->get_error_message();
 			return $details;
-		} 
-		
-		$details['file'] = $upload_result;
+		}
+
+		if ( 0 < strlen( $upload_result ) ) {
+			if ( isset(  $upload_result ) && basename( $upload_result ) != basename( $post_url ) ) {
+				$uploads = wp_upload_dir();
+				if ( false === $uploads['error'] ) {
+					@copy( $details['file'], $uploads['path'] . '/' . $upload_result );
+					register_shutdown_function( 'unlink', $uploads['path'] . '/' . $upload_result );
+				}
+				$details['file'] = str_replace( basename( $post_url ), basename( $upload_result ), $details['file'] );
+			}
+		}
 
 		return $details;
 	}
@@ -376,12 +383,12 @@ class A8C_Files {
 		else
 			$file_uri = '/' . $url_parts['path'];
 
-		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
+		$upload_path =  $this->get_upload_path();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
-			$service_url .= '/sites/' . get_current_blog_id();
+			$upload_path .= '/sites/' . get_current_blog_id();
 		}
 
-		$delete_result = $this->api_client->delete_file( $service_url . $file_uri );
+		$delete_result = $this->api_client->delete_file( $upload_path . $file_uri );
 
 		if ( is_wp_error( $delete_result ) ) {
 			$this->process_error( $delete_result->get_error_message() );
