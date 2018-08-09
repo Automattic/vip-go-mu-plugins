@@ -21,6 +21,8 @@ define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
 require_once( __DIR__ . '/files/class-path-utils.php' );
 
+require_once( __DIR__ . '/files/init-filesystem.php' );
+
 use Automattic\VIP\Files\Path_Utils;
 
 class A8C_Files {
