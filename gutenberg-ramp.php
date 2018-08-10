@@ -61,6 +61,6 @@ function wpcom_vip_disable_gutenberg_concat() {
 
 	// Disable HTTP Concat plugin when Gutenberg will load
 	if ( $gutenberg_will_load ) {
-		add_filter( 'js_do_concat', '__return_false', 10, 0 );
+		add_filter( 'js_do_concat', '__return_false' );
 	}
 }
