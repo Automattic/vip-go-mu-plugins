@@ -40,3 +40,19 @@ function wpcom_vip_load_gutenberg( $criteria = true ) {
 	}
 	gutenberg_ramp_load_gutenberg( $criteria );
 }
+
+/**
+ * Disable HTTP Concat plugin in admin
+ */
+function wpcom_vip_disable_gutenberg_concat() {
+
+	// Only disable when ramp has decided to load Gutenberg
+	$gutenberg_ramp = Gutenberg_Ramp::get_instance();
+	if ( true !== $gutenberg_ramp->load_gutenberg ) {
+		return;
+	}
+
+	// Disable HTTP Concat plugin
+	add_filter('js_do_concat', '__return_false', 10, 0);
+}
+add_action( 'admin_init', 'wpcom_vip_disable_gutenberg_concat' );
