@@ -41,7 +41,7 @@ function wpcom_vip_load_gutenberg( $criteria = true ) {
 
 	gutenberg_ramp_load_gutenberg( $criteria );
 
-	add_action( 'admin_init', 'wpcom_vip_disable_gutenberg_concat', 10, 0 );	
+	add_action( 'admin_init', 'wpcom_vip_disable_gutenberg_concat' );	
 }
 
 /**
