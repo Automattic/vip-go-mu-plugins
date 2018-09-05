@@ -122,6 +122,16 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 		'old_status' => $old_status,
 	];
 
+	/**
+	 * Filter whether or not a cron event should be scheduled when the post transitions status.
+	 *
+	 * @param bool  $true Whether or not to schedule the cron event.
+	 * @param array $args Array of arguments containing the post_id, new_status, and old_status.
+	 */
+	if ( false === apply_filters( 'wpcom_async_transition_post_status_schedule_async', true, $args ) ) {
+		return;
+	}
+
 	if ( false !== wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args ) ) {
 		return;
 	}
