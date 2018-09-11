@@ -143,6 +143,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group = 'login_limit' 
 		switch( $cache_group ) {
 
 			case 'lost_password_limit':
+				do_action( 'password_reset_limit_exceeded', $username );
 				return new WP_Error( 'lost_password_limit_exceeded', __( 'You have exceeded the password reset limit.  Please wait a few minutes and try again.' ) );
 				break;
 			case 'login_limit':
