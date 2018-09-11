@@ -64,7 +64,7 @@ function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) )
 		return $user;
 
-	$is_login_limited = wpcom_vip_login_is_limited( $username );
+	$is_login_limited = wpcom_vip_username_is_limited( $username );
 	if ( is_wp_error( $is_login_limited ) ) {
 		return $is_login_limited;
 	}
@@ -79,7 +79,7 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 	}
 
 	$username = sanitize_user( $_POST['log'] );
-	if ( $error = wpcom_vip_login_is_limited( $username ) ) {
+	if ( $error = wpcom_vip_username_is_limited( $username ) ) {
 		login_header( __( 'Error' ), '', $error );
 		login_footer();
 		exit;
@@ -109,7 +109,7 @@ function wpcom_vip_lost_password_limit( $errors ) {
 	} else {
 		$username = sanitize_user( $username );
 	}
-	$is_login_limited = wpcom_vip_login_is_limited( $username, $cache_group );
+	$is_login_limited = wpcom_vip_username_is_limited( $username, $cache_group );
 
 	if ( is_wp_error( $is_login_limited ) ) {
 		$errors->add( $is_login_limited->get_error_code(), $is_login_limited->get_error_message() );
@@ -121,7 +121,7 @@ function wpcom_vip_lost_password_limit( $errors ) {
 }
 add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit' );
 
-function wpcom_vip_login_is_limited( $username, $cache_group = 'login_limit' ) {
+function wpcom_vip_username_is_limited( $username, $cache_group = 'login_limit' ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 
 	$key1 = $ip . '|' . $username;
