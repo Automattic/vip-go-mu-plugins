@@ -29,7 +29,6 @@ function wpcom_vip_login_limiter( $username ) {
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
 function wpcom_vip_login_limiter_on_success( $username, $user ) {
-
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
 	$key2 = $ip; // IP only
@@ -84,6 +83,29 @@ function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
 }
 add_filter( 'xmlrpc_login_error', 'wpcom_vip_login_limit_xmlrpc_error', 10, 2 );
 
+function wpcom_vip_login_limit_lost_password( $errors ) {
+	// Don't bother checking if we're already error-ing out
+	if ( $errors->get_error_code() ) {
+		return $errors;
+	}
+
+	$username = trim( wp_unslash( $_POST['user_login'] ) );
+	if ( is_email( $username ) ) {
+		$username = sanitize_email( $username );
+	} else {
+		$username = sanitize_user( $username );
+	}
+
+	$is_login_limited = wpcom_vip_login_is_limited( $username );
+	if ( is_wp_error( $is_login_limited ) ) {
+		// TODO: maybe return an error specific to lostpassword?
+		return $is_login_limited;
+	}
+
+	return $errors;
+}
+add_action( 'lostpassword_post', 'wpcom_vip_login_limit_lost_password' );
+
 function wpcom_vip_login_is_limited( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 
@@ -104,7 +126,7 @@ function wpcom_vip_login_is_limited( $username ) {
 	if ( $count1 >= $threshold1 || $count2 >= $threshold2 ) {
 		do_action( 'login_limit_exceeded', $username );
 
-		return new WP_Error('login_limit_exceeded', __( 'You have exceeded the login limit.  Please wait a few minutes and try again.' ) );
+		return new WP_Error( 'login_limit_exceeded', __( 'You have exceeded the login limit.  Please wait a few minutes and try again.' ) );
 	}
 
 	return false;
