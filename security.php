@@ -27,7 +27,14 @@ function wpcom_vip_limiter( $username, $cache_group ) {
 
 	// Longer TTL when logging in as admin, which we don't allow on WP.com
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
-	wp_cache_add( $key1, 0, $cache_group, $is_restricted_username ? HOUR_IN_SECONDS : ( MINUTE_IN_SECONDS * 5 ) );
+
+	if ( 'lost_password_limit' === $cache_group ) {
+		$unrestricted_username_lockout_multiplier = 30;
+	} else {
+		$unrestricted_username_lockout_multiplier = 5;
+	}
+
+	wp_cache_add( $key1, 0, $cache_group, $is_restricted_username ? HOUR_IN_SECONDS : ( MINUTE_IN_SECONDS * $unrestricted_username_lockout_multiplier ) );
 	wp_cache_add( $key2, 0, $cache_group,  HOUR_IN_SECONDS );
 	wp_cache_incr( $key1, 1, $cache_group );
 	wp_cache_incr( $key2, 1, $cache_group );
@@ -129,14 +136,18 @@ function wpcom_vip_username_is_limited( $username, $cache_group = 'login_limit' 
 	$count1 = wp_cache_get( $key1, $cache_group );
 
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+
 	if ( $is_restricted_username ) {
 		$threshold1 = 2;
+	} elseif ( 'lost_password_limit' === $cache_group ) {
+		$threshold1 = 3;
+		$threshold2 = 3;
 	} else {
 		$threshold1 = 5;
+		$threshold2 = 50;
 	}
 
 	$count2 = wp_cache_get( $key2, $cache_group );
-	$threshold2 = 50;
 
 	if ( $count1 >= $threshold1 || $count2 >= $threshold2 ) {
 
