@@ -71,7 +71,7 @@ class A8C_Files {
 		// This results in all images being full size (which is not ideal)
 		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
 
-		if ( false === is_vip_go_srcset_enabled() || ! isset( $_GET['enable_vip_srcset'] ) || '1' !== $_GET['enable_vip_srcset'] ) {
+		if ( false === is_vip_go_srcset_enabled() ) {
 			add_filter( 'wp_get_attachment_metadata', function ( $data, $post_id ) {
 				if ( isset( $data['sizes'] ) ) {
 					$data['sizes'] = array();
@@ -802,6 +802,13 @@ function is_vip_go_srcset_enabled() {
 	// Defaults to non-production environments only.
 	$enabled = ( defined( 'VIP_GO_ENV' ) && 'production' !== constant( 'VIP_GO_ENV' ) );
 
+	if ( isset( $_GET['enable_vip_srcset'] ) ) {
+		if ( '1' === $_GET['enable_vip_srcset'] ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 	/**
 	 * Filters the default state of VIP Go File Service compatible srcset solution.
 	 *
@@ -851,7 +858,7 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	 * Conditionally load the VIP Go File Service compatible srcset solution.
 	 */
 	add_action( 'init', function() {
-		if ( true !== is_vip_go_srcset_enabled() || ! isset( $_GET['enable_vip_srcset'] ) || '1' !== $_GET['enable_vip_srcset'] ) {
+		if ( true !== is_vip_go_srcset_enabled() ) {
 			return;
 		}
 
