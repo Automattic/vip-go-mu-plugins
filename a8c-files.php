@@ -799,16 +799,14 @@ function wpcom_intermediate_sizes( $sizes ) {
  * @return bool True if VIP Go File Service compatibile srcset solution is enabled.
  */
 function is_vip_go_srcset_enabled() {
-	// Defaults to non-production environments only.
+	// Allow override via querystring for easy testing
+	if ( isset( $_GET['enable_vip_srcset'] ) ) {
+		return '1' === $_GET['enable_vip_srcset'];
+	}
+
+	// For now, default to enabled on non-production environments only.
 	$enabled = ( defined( 'VIP_GO_ENV' ) && 'production' !== constant( 'VIP_GO_ENV' ) );
 
-	if ( isset( $_GET['enable_vip_srcset'] ) ) {
-		if ( '1' === $_GET['enable_vip_srcset'] ) {
-			return true;
-		} else {
-			return false;
-		}
-	}
 	/**
 	 * Filters the default state of VIP Go File Service compatible srcset solution.
 	 *
