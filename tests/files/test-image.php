@@ -12,7 +12,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 *
 	 * @var string
 	 */
-	public $test_image = __DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
+	public $test_image = __DIR__ . '/../fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.
@@ -20,7 +20,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../a8c-files/Image.php' );
+		require_once( __DIR__ . '/../../files/class-image.php' );
 	}
 
 	/**

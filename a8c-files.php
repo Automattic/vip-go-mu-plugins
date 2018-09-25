@@ -866,8 +866,8 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 			return;
 		}
 
-		require_once( __DIR__ . '/a8c-files/Image.php' );
-		require_once( __DIR__ . '/a8c-files/ImageSizes.php' );
+		require_once( __DIR__ . '/files/class-image.php' );
+		require_once( __DIR__ . '/files/class-image-sizes.php' );
 
 		// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
 		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
