@@ -12,7 +12,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 *
 	 * @var string
 	 */
-	public $test_image = __DIR__ . '/../fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
+	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.

@@ -18,14 +18,14 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 *
 	 * @var string
 	 */
-	public $test_image = __DIR__ . '/../fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
+	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
 	 * The test PDF file.
 	 *
 	 * @var string
 	 */
-	public $test_pdf = __DIR__ . '/../fixtures/pdf.pdf';
+	public $test_pdf = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/pdf.pdf';
 
 	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.
@@ -572,14 +572,14 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		// Test medium size.
 		$expected_srcset =
-			'http://example.org/wp-content/uploads/' . __DIR__ .  '/fixtures/image.jpg?resize=300,169 300w'
-			.', http://example.org/wp-content/uploads/' . __DIR__ .  '/fixtures/image.jpg?resize=768,432 768w'
-			.', http://example.org/wp-content/uploads/' . __DIR__ .  '/fixtures/image.jpg?resize=1024,576 1024w';
+			'http://example.org/wp-content/uploads/' . $this->test_image . '?resize=300,169 300w'
+			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=768,432 768w'
+			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1024,576 1024w';
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id ) );
 
 		// Test custom size passed by dimensions.
-		$expected_srcset = 'http://example.org/wp-content/uploads/' . __DIR__ . '/fixtures/image.jpg 5472w'
+		$expected_srcset = 'http://example.org/wp-content/uploads/' . $this->test_image . ' 5472w'
 		                   . ", {$expected_srcset}";
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id, [ 400, 200 ] ), 'Incorrectly generated srcset.' );
