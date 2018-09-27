@@ -19,14 +19,27 @@ make lint
 
 **To set up PHPUnit locally** (requires a working WordPress development environment, specifically PHP and MySQL):
 
-Notes:
-
-* You need to replace the `%placeholder%` strings below with sensible values
-* You DO need an empty DB, because the contents of this DB WILL get trashed during testing
+Using [VVV](https://varyingvagrantvagrants.org/):
 
 ```bash
-./bin/install-wp-tests.sh %empty_DB_name% %db_user% %db_name%
+vagrant ssh
 ```
+
+Navigate to your `wp-content` folder and clone this repo into `mu-plugins`
+
+```bash
+vagrant@vvv:/wp-content$ git clone https://github.com/Automattic/vip-go-mu-plugins.git mu-plugins
+```
+
+Setup the WordPress tests
+```bash
+vagrant@vvv:/wp-content$ mu-plugins/bin/install-wp-tests.sh %empty_DB_name% %db_user% %db_name%
+```
+
+Notes:
+
+* You need to replace the `%placeholder%` strings above with sensible values
+* You DO need an empty DB, because the contents of this DB WILL get trashed during testing
 
 **To run PHPUnit tests locally**:
 
