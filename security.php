@@ -21,7 +21,7 @@ function wpcom_vip_is_restricted_username( $username ) {
  * @param string $cache_group The cache group to track the $username to.
  */
 function wpcom_vip_limiter( $username, $cache_group ) {
-	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
+	$ip   = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
 	$key2 = $ip; // IP only
 
@@ -35,7 +35,7 @@ function wpcom_vip_limiter( $username, $cache_group ) {
 	}
 
 	wp_cache_add( $key1, 0, $cache_group, $is_restricted_username ? HOUR_IN_SECONDS : ( MINUTE_IN_SECONDS * $unrestricted_username_lockout_multiplier ) );
-	wp_cache_add( $key2, 0, $cache_group,  HOUR_IN_SECONDS );
+	wp_cache_add( $key2, 0, $cache_group, HOUR_IN_SECONDS );
 	wp_cache_incr( $key1, 1, $cache_group );
 	wp_cache_incr( $key2, 1, $cache_group );
 }
@@ -151,7 +151,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group = 'login_limit' 
 
 	if ( $count1 >= $threshold1 || $count2 >= $threshold2 ) {
 
-		switch( $cache_group ) {
+		switch ( $cache_group ) {
 
 			case 'lost_password_limit':
 				do_action( 'password_reset_limit_exceeded', $username );
