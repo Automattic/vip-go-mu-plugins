@@ -32,11 +32,19 @@ add_filter( 'filesystem_method', function( $method, $args, $context, $allow_rela
 add_filter( 'request_filesystem_credentials', function( $credentials, $form_post, $type, $error, $context, $extra_fields, $allow_relaxed_file_ownership ) {
 	// Handle the default `''` case which we'll override thanks to the `filesystem_method` filter.
 	if ( '' === $type || VIP_FILESYSTEM_METHOD === $type ) {
-		$api_client = Automattic\VIP\Files\new_api_client();
-		$credentials = [
-			new Automattic\VIP\Files\WP_Filesystem_VIP_Uploads( $api_client ),
-			new WP_Filesystem_Direct( null ),
-		];
+		if ( true === WPCOM_IS_VIP_ENV ){
+			$api_client = Automattic\VIP\Files\new_api_client();
+			$credentials = [
+				new Automattic\VIP\Files\WP_Filesystem_VIP_Uploads( $api_client ),
+				new WP_Filesystem_Direct( null ),
+			];
+		} else {
+			// When not on VIP we'll pass direct to both. This means we'll still get the errors thrown when writes are done outside the /tmp and the uploads folder
+			$credentials = [
+				new WP_Filesystem_Direct( null ),
+				new WP_Filesystem_Direct( null ),
+			];
+		}
 	}
 	return $credentials;
 }, PHP_INT_MAX, 7 );
