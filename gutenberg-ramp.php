@@ -34,9 +34,33 @@ remove_action( 'try_gutenberg_panel', 'wp_try_gutenberg_panel' );
 /**
  * Load Gutenberg via the Gutenberg Ramp plugin.
  */
-function wpcom_vip_load_gutenberg( $criteria = false ) {
+function wpcom_vip_load_gutenberg( $criteria = true ) {
 	if ( ! function_exists( 'gutenberg_ramp_load_gutenberg' ) ) {
 		return;
 	}
+
 	gutenberg_ramp_load_gutenberg( $criteria );
+
+	add_action( 'admin_init', 'wpcom_vip_disable_gutenberg_concat' );	
+}
+
+/**
+ * Disable HTTP Concat plugin in admin
+ */
+function wpcom_vip_disable_gutenberg_concat() {
+
+	$gutenberg_ramp = Gutenberg_Ramp::get_instance();
+
+	$gutenberg_will_load = (
+		// Ramp has decided to load Gutenberg
+		true === $gutenberg_ramp->load_gutenberg
+		||
+		// or Ramp will allow Gutenberg to load, and Gutenberg is about to be loaded (probably because the plugin is active)
+		( $gutenberg_ramp->gutenberg_should_load() && $gutenberg_ramp->gutenberg_will_load() )
+	);
+
+	// Disable HTTP Concat plugin when Gutenberg will load
+	if ( $gutenberg_will_load ) {
+		add_filter( 'js_do_concat', '__return_false' );
+	}
 }

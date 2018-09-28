@@ -77,14 +77,15 @@ class A8C_Files {
 		// This results in all images being full size (which is not ideal)
 		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
 
-		// The sizes metadata is not used and mostly useless on Go so let's empty it out.
-		// This may need some revisiting for `srcset` handling.
-		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
-			if ( isset( $data['sizes'] ) ) {
-				$data['sizes'] = array();
-			}
-			return $data;
-		}, 10, 2 );
+		if ( false === is_vip_go_srcset_enabled() ) {
+			add_filter( 'wp_get_attachment_metadata', function ( $data, $post_id ) {
+				if ( isset( $data['sizes'] ) ) {
+					$data['sizes'] = array();
+				}
+
+				return $data;
+			}, 10, 2 );
+		}
 
 		// This is our catch-all to strip dimensions from intermediate images in content.
 		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
@@ -799,8 +800,78 @@ function wpcom_intermediate_sizes( $sizes ) {
 	return __return_empty_array();
 }
 
+/**
+ * Figure out whether srcset is enabled or not. Should be run on init action
+ * earliest in order to allow clients to override this via theme's functions.php
+ *
+ * @return bool True if VIP Go File Service compatibile srcset solution is enabled.
+ */
+function is_vip_go_srcset_enabled() {
+	// Allow override via querystring for easy testing
+	if ( isset( $_GET['enable_vip_srcset'] ) ) {
+		return '1' === $_GET['enable_vip_srcset'];
+	}
+
+	// For now, default to enabled on non-production environments only.
+	$enabled = ( defined( 'VIP_GO_ENV' ) && 'production' !== constant( 'VIP_GO_ENV' ) );
+
+	/**
+	 * Filters the default state of VIP Go File Service compatible srcset solution.
+	 *
+	 * @param bool True if the srcset solution is turned on, False otherwise.
+	 */
+	return (bool) apply_filters( 'vip_go_srcset_enabled', $enabled );
+}
+
+/**
+ * Inject image sizes to attachment metadata.
+ *
+ * @param array $data          Attachment metadata.
+ * @param int   $attachment_id Attachment's post ID.
+ *
+ * @return array Attachment metadata.
+ */
+function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
+
+	$sizes_already_exist = (
+		true === is_array( $data )
+		&& true === array_key_exists( 'sizes', $data )
+		&& true === is_array( $data['sizes'] )
+		&& false === empty( $data['sizes'] )
+	);
+	if ( $sizes_already_exist ) {
+		return $data;
+	}
+
+	$mime_type = get_post_mime_type( $attachment_id );
+	$attachment_is_image = preg_match( '!^image/!', $mime_type );
+
+	if ( 1 === $attachment_is_image ) {
+		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
+		$data['sizes'] = $image_sizes->generate_sizes_meta();
+	}
+
+	return $data;
+}
+
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	add_action( 'init', 'a8c_files_init' );
 	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+	add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
+
+	/**
+	 * Conditionally load the VIP Go File Service compatible srcset solution.
+	 */
+	add_action( 'init', function() {
+		if ( true !== is_vip_go_srcset_enabled() ) {
+			return;
+		}
+
+		require_once( __DIR__ . '/files/class-image.php' );
+		require_once( __DIR__ . '/files/class-image-sizes.php' );
+
+		// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
+		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
+	}, 10, 0 );
 }

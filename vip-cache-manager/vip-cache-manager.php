@@ -59,9 +59,12 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
+		echo "<hr>";
+
 		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
 
-		$button_html =  esc_html__( 'Press the button below to force a purge of your entire page cache.' );
+		$button_html =  esc_html__( 'Press the button below to force a purge of the entire page cache. If you are sandboxed, it will purge the sandbox cache by default. ' );
+		$button_html .= '<strong>' . esc_html__( 'This button is visible to Automatticans only.' ) . '</strong>';
 		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
 		$button_html .= esc_html__( 'Purge Page Cache' );
 		$button_html .= '</strong></a></span>';

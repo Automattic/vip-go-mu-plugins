@@ -122,6 +122,16 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 		'old_status' => $old_status,
 	];
 
+	/**
+	 * Filter whether or not a cron event should be scheduled when the post transitions status.
+	 *
+	 * @param bool  $true Whether or not to schedule the cron event.
+	 * @param array $args Array of arguments containing the post_id, new_status, and old_status.
+	 */
+	if ( false === apply_filters( 'wpcom_async_transition_post_status_schedule_async', true, $args ) ) {
+		return;
+	}
+
 	if ( false !== wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args ) ) {
 		return;
 	}
@@ -149,3 +159,22 @@ if ( should_offload() ) {
  * Hook regardless `should_offload()`, lest unrelated requests be impacted
  */
 add_action( ASYNC_TRANSITION_EVENT, __NAMESPACE__ . '\_wpcom_do_async_transition_post_status', 10, 3 );
+
+/**
+ * Bump concurrency of the transition events.
+ *
+ * With lots of publishing activity on a site, we can end up with a backlog.
+ * Enabling some concurrency allows that to be cleared a bit faster.
+ *
+ * One downside is that the events are no longer atomic and anything relying
+ *   on post state should check the current value in the event callback.
+ *
+ * For example, with a trash and untrash, the `untrash` event may fire first (or
+ *   at the same time and `get_post( $post->ID )->post_status` should be used to
+ *   verify what state the post is in, if needed).
+ */
+add_filter( 'a8c_cron_control_concurrent_event_whitelist', function( $whitelist ) {
+	$whitelist[ ASYNC_TRANSITION_EVENT ] = 5; // safe, low number to start
+
+	return $whitelist;
+} );

@@ -27,6 +27,15 @@ function enforce_rest_api_read_ttl( $response, $rest_server, $request ) {
 		return $response;
 	}
 
+	// Don't override existing Cache-Control headers sent via PHP
+	$php_headers = headers_list();
+	foreach ( $php_headers as $header ) {
+		if ( 0 === stripos( $header, 'Cache-Control:' ) ) {
+			return $response;
+		}
+	}
+
+	// Don't override existing Cache-Control headers set via REST Response
 	$response_headers = $response->get_headers();
 	if ( isset( $response_headers['Cache-Control'] ) ) {
 		return $response;
