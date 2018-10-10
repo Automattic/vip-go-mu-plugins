@@ -227,6 +227,7 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 		$actual_key = get_proxy_verification_key();
 
 		$this->assertNotEmpty( $actual_key );
+		$this->assertTrue( is_string( $actual_key ) );
 	}
 
 	/**
@@ -239,6 +240,7 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 		$actual_key = get_proxy_verification_key();
 
 		$this->assertNotEmpty( $actual_key );
+		$this->assertTrue( is_string( $actual_key ) );
 	}
 
 	/**
