@@ -15,7 +15,9 @@ add_filter( 'upload_mimes', function( $mimes ) {
 // Ensure we do not send the cache headers through to Varnish,
 // so responses obey the cache settings we have configured.
 function wpcom_vip_check_for_404_and_remove_cache_headers( $headers ) {
-	if ( is_404() ) {
+	global $wp_query;
+
+	if ( isset( $wp_query ) && is_404() ) {
 		unset( $headers['Expires'] );
 		unset( $headers['Cache-Control'] );
 		unset( $headers['Pragma'] );
