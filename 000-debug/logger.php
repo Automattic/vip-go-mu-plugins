@@ -178,13 +178,13 @@ function l_json_encode_pretty( $data ) {
 
 /**
  * A timer. Call once to start, call again to stop. Returns a float.
- * Calling e($name) with different names permits simultaneous timers.
+ * Calling vip_timer($name) with different names permits simultaneous timers.
  *
- * e('stuff');
+ * vip_timer('stuff');
  * do_stuff();
- * $elapsed = e('stuff');
+ * $elapsed = vip_timer('stuff');
  */
-function e($name = '') {
+function vip_timer($name = '') {
 	static $times = array();
 	if ( !array_key_exists($name, $times ) ) {
 		$times[$name] = microtime( true );
@@ -196,18 +196,18 @@ function e($name = '') {
 }
 
 /**
- * A wrapper for e() which also logs the result with l().
+ * A wrapper for vip_timer() which also logs the result with l().
  * Each log entry begins with a tag common to that pageload.
- * You can save a keystroke by calling e() then el().
+ * You can save a keystroke by calling vip_timer() then vip_timer_l().
  *
- * e($name);
+ * vip_timer($name);
  * do_stuff();
- * el($name);
+ * vip_timer_l($name);
  */
-function el($name = '') {
-	$elapsed = e( $name );
+function vip_timer_l($name = '') {
+	$elapsed = vip_timer( $name );
 	if ( $elapsed !== null )
-		l( sprintf( "%9.6f e('%s')", $elapsed, $name ) );
+		l( sprintf( "%9.6f vip_timer('%s')", $elapsed, $name ) );
 	return $elapsed;
 }
 
