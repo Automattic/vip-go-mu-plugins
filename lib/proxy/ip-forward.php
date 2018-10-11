@@ -159,8 +159,8 @@ function get_proxy_verification_key() {
 		return (string) WPCOM_VIP_PROXY_VERIFICATION;
 	}
 
-	// If not properly defined for some reason, return a string of random numbers to avoid guessing the key.
-	return (string) rand();
+	// If not properly defined for some reason, return a string of random chars to avoid guessing the key.
+	return bin2hex( random_bytes( 32 ) );
 }
 
 /**
