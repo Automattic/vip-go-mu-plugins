@@ -152,15 +152,15 @@ function set_remote_address( $ip ) {
 /**
  * Return the defined verification key for a site
  *
- * @return string|int The verification key if available, or a random integer if no key is configured.
+ * @return string The verification key if available, or a string of random numbers if no key is configured.
  */
 function get_proxy_verification_key() {
 	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
-		return WPCOM_VIP_PROXY_VERIFICATION;
+		return (string) WPCOM_VIP_PROXY_VERIFICATION;
 	}
 
-	// If not properly defined for some reason, return a random number to avoid guessing the key.
-	return rand();
+	// If not properly defined for some reason, return a string of random chars to avoid guessing the key.
+	return bin2hex( random_bytes( 32 ) );
 }
 
 /**
