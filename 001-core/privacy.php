@@ -12,14 +12,25 @@ use WP_Error;
  * It also attempts to write/delete files directly in the `uploads` folder, which doesn't work because Files are hosted in our remote Files Service.
  *
  * The code here replaces the core handlers with our own implementation, which does work on Go sites.
+ *
+ * Note that we use `admin_init` to run late enough to remove the core action.
  */
-add_action( 'init', __NAMESPACE__ . '\init_privacy_compat' );
+add_action( 'admin_init', __NAMESPACE__ . '\init_privacy_compat' );
+
+/**
+ * Override the cron handler.
+ *
+ * Hook on `init` separately since cron context doesn't fire `admin_init` and we need a separate event.
+ */
+add_action( 'init', __NAMESPACE__ . '\init_privacy_compat_cleanup' );
 
 function init_privacy_compat() {
 	// Replace core's privacy data export handler with a custom one.
 	remove_action( 'wp_privacy_personal_data_export_file', 'wp_privacy_generate_personal_data_export_file', 10 );
 	add_action( 'wp_privacy_personal_data_export_file', __NAMESPACE__ . '\generate_personal_data_export_file' );
+}
 
+function init_privacy_compat_cleanup() {
 	// Replace core's privacy data delete handler with a custom one.
 	remove_action( 'wp_privacy_delete_old_export_files', 'wp_privacy_delete_old_export_files' );
 	add_action( 'wp_privacy_delete_old_export_files', __NAMESPACE__ . '\delete_old_export_files' );
