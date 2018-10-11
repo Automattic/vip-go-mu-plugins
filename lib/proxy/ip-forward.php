@@ -156,7 +156,7 @@ function set_remote_address( $ip ) {
  */
 function get_proxy_verification_key() {
 	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
-		return WPCOM_VIP_PROXY_VERIFICATION;
+		return (string) WPCOM_VIP_PROXY_VERIFICATION;
 	}
 
 	// If not properly defined for some reason, return a string of random numbers to avoid guessing the key.

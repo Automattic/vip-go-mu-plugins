@@ -226,8 +226,8 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 
 		$actual_key = get_proxy_verification_key();
 
-		$this->assertNotEmpty( $actual_key );
-		$this->assertTrue( is_string( $actual_key ) );
+		$this->assertNotEmpty( $actual_key, 'The Proxy Verification Key is empty' );
+		$this->assertTrue( is_string( $actual_key ), 'The Proxy Verification Key is not a string' );
 	}
 
 	/**
@@ -239,7 +239,19 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 
 		$actual_key = get_proxy_verification_key();
 
-		$this->assertNotEmpty( $actual_key );
+		$this->assertNotEmpty( $actual_key, 'The Proxy Verification Key is empty' );
+		$this->assertTrue( is_string( $actual_key ), 'The Proxy Verification Key is not a string' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__defined_but_integer() {
+		define( 'WPCOM_VIP_PROXY_VERIFICATION', 1234 );
+
+		$actual_key = get_proxy_verification_key();
+
 		$this->assertTrue( is_string( $actual_key ) );
 	}
 
