@@ -45,7 +45,29 @@ function maybe_toggle_is_ssl() {
 	}
 }
 
+/**
+ * Disable `display_errors` for all wp-cli interactions on production servers.
+ *
+ * Warnings and notices can break things like JSON output,
+ * especially for critical plugins like cron-control.
+ *
+ * Only do this on production servers to allow local and sandbox debugging.
+ */
+function disable_display_errors() {
+	if ( true !== WPCOM_IS_VIP_ENV ) {
+		return;
+	}
+
+	if ( true === WPCOM_SANDBOXED ) {
+		return;
+	}
+
+	ini_set( 'display_errors', 0 );
+}
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	disable_display_errors();
+
 	init_is_ssl_toggle();
 
 	foreach ( glob( __DIR__ . '/wp-cli/*.php' ) as $command ) {
