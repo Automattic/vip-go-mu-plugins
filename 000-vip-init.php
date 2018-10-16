@@ -6,7 +6,7 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * Remember vip-init.php? This is like that, but better! 
+ * Remember vip-init.php? This is like that, but better!
  */
 
 /**
@@ -124,6 +124,7 @@ require_once( __DIR__ . '/vip-helpers/vip-stats.php' );
 require_once( __DIR__ . '/vip-helpers/vip-deprecated.php' );
 require_once( __DIR__ . '/vip-helpers/vip-syndication-cache.php' );
 require_once( __DIR__ . '/vip-helpers/vip-migrations.php' );
+require_once( __DIR__ . '/vip-helpers/vip-liveblog.php' );
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
