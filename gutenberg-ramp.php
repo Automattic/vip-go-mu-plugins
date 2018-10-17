@@ -59,13 +59,14 @@ function wpcom_vip_disable_gutenberg_concat() {
 		( $gutenberg_ramp->gutenberg_should_load() && $gutenberg_ramp->gutenberg_will_load() )
 	);
 
-	// Disable HTTP Concat plugin when Gutenberg will load
+
 	if ( $gutenberg_will_load ) {
-		add_filter( 'js_do_concat', gutenberg_concat_filter() );
+		add_filter( 'js_do_concat', 'gutenberg_concat_filter', 10, 2 );
 	}
 
 }
 
+// skip concatenation for these whitelisted files since they may break Gutenberg if concatenated
 function gutenberg_concat_filter( $do_concat, $handle ) {
     switch ( $handle ) {
         case 'lodash':
