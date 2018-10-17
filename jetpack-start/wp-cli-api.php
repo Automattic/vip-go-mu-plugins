@@ -235,8 +235,8 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function run_jetpack_bin( $script, $args = array() ) {
-		// Running local versions for now until https://github.com/Automattic/jetpack/pull/7294 lands
-		$script_path = __DIR__ . '/bin/' . $script;
+		// Use Jetpack's bin scripts
+		$script_path = WPMU_PLUGIN_DIR . '/jetpack/bin/' . $script;
 
 		$cmd = sprintf(
 			'%s --partner_id=%s --partner_secret=%s --url=%s',
