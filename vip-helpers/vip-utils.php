@@ -955,6 +955,17 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		}
 	}
 
+	/**
+	 * wpcom compat
+	 *
+	 * Lots of themes set $folder to the default location so they can
+	 * load a release candidate. We should interpret 'plugins' to mean
+	 * the plugin is in the default place.
+	 */
+	if ( $folder === 'plugins' ) {
+		$folder = false;
+	}
+
 	// Shared plugins are being deprecated.
 	// This can be removed once shared plugins have all been removed.
 	// https://vip.wordpress.com/documentation/vip-go/deprecating-shared-plugins-on-vip-go/
