@@ -964,6 +964,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	 */
 	if ( $folder === 'plugins' ) {
 		$folder = false;
+		_doing_it_wrong( __FUNCTION__, 'The specified $folder should not be "plugins", which is the default location', '2.0.0' );
 	}
 
 	// Shared plugins are being deprecated.
