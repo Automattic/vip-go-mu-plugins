@@ -53,7 +53,7 @@ class ImageSizes {
 
 		/*
 		 * Remove filter preventing WordPress from reading the sizes, it's meant
-		 * to prevent creation of intermediate files, which are no really being used.
+		 * to prevent creation of intermediate files, which are not really being used.
 		 */
 		remove_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 		$intermediate_image_sizes = get_intermediate_image_sizes();
