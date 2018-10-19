@@ -65,4 +65,71 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertEquals( $user_id, $result->ID );
 	}
+
+	public function test__lostpassword_post_unmodified_errors() {
+
+		$original_error_code = 'original-error-code';
+		$original_error_text = 'Original Error Code';
+		$errors              = new WP_Error();
+		$errors->add( $original_error_code, $original_error_text );
+
+		do_action( 'lostpassword_post', $errors );
+
+		$actual_error_codes = $errors;
+
+		$this->assertEquals( $actual_error_codes->get_error_code(), $original_error_code );
+
+	}
+
+	public function test__lost_password_limit() {
+
+		// Set our login.
+		$_POST = [
+			'user_login' => 'taylorswift',
+		];
+
+		$errors = new WP_Error();
+
+		/**
+		 * This should match the $threshold set in wpcom_vip_username_is_limited()
+		 * for the lost_password_limit cache group Currently, the $threshold is the
+		 * same for restricted and unrestricted usernames, if that changes this test
+		 * will need to be updated.
+		 */
+		$threshold            = 3;
+		$just_under_threshold = $threshold - 1;
+
+		for ( $i = 0; $i <= $just_under_threshold; $i++ ) {
+
+			do_action( 'lostpassword_post', $errors );
+
+			// Make sure we haven't received an error yet
+			$this->assertEquals( $errors->get_error_code(), false );
+
+		}
+
+		// Do the lostpassword_post one more time to reach our threshold.
+		do_action( 'lostpassword_post', $errors );
+
+		// Now we should have an error.
+		$this->assertEquals( $errors->get_error_code(), 'lost_password_limit_exceeded' );
+
+	}
+
+	public function setUp() {
+
+		parent::setUp();
+
+		$this->original_POST = $_POST;
+
+	}
+
+	public function tearDown() {
+
+		$_POST = $this->original_POST;
+
+		parent::tearDown();
+
+	}
+
 }
