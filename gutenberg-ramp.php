@@ -41,7 +41,7 @@ function wpcom_vip_load_gutenberg( $criteria = true ) {
 
 	gutenberg_ramp_load_gutenberg( $criteria );
 
-	add_action( 'admin_init', 'wpcom_vip_disable_gutenberg_concat' );
+	add_action( 'admin_init', 'wpcom_vip_disable_gutenberg_concat' );	
 }
 
 /**
@@ -59,23 +59,8 @@ function wpcom_vip_disable_gutenberg_concat() {
 		( $gutenberg_ramp->gutenberg_should_load() && $gutenberg_ramp->gutenberg_will_load() )
 	);
 
-
+	// Disable HTTP Concat plugin when Gutenberg will load
 	if ( $gutenberg_will_load ) {
-		add_filter( 'js_do_concat', 'gutenberg_concat_filter', 10, 2 );
+		add_filter( 'js_do_concat', '__return_false' );
 	}
-
-}
-
-// skip concatenation for these whitelisted files since they may break Gutenberg if concatenated
-function gutenberg_concat_filter( $do_concat, $handle ) {
-    switch ( $handle ) {
-        case 'lodash':
-        case 'editor':
-        case 'wp-api-fetch':
-        case 'wp-data':
-        case 'wp-element':
-            return false;
-        default:
-            return $do_concat;
-    }
 }
