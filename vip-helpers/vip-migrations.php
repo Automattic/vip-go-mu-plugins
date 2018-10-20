@@ -7,6 +7,9 @@ add_action( 'vip_after_data_migration', 'Automattic\VIP\Migration\after_data_mig
 function after_data_migration() {
 	if ( is_multisite() ) {
 		$sites = get_sites();
+		
+		// Update global tables
+		dbDelta( 'global' );
 
 		foreach( $sites as $site ) {
 			switch_to_blog( $site->blog_id );
@@ -33,6 +36,8 @@ function run_after_data_migration_cleanup() {
 	do_action( 'vip_go_migration_cleanup' );
 
 	delete_db_transients();
+	
+	dbDelta( 'blog' );
 
 	wp_cache_flush();
 
