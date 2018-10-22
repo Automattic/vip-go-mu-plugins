@@ -8,6 +8,19 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+/**
+ * No-Op wp_mail
+ *
+ * If VIP_BLOCK_WP_MAIL is set, we want to ensure wp_mail is not
+ * sending any emails. Since wp_mail is a pluggable function, we
+ * can redefine it here to do nothing.
+ */
+if ( defined( 'VIP_BLOCK_WP_MAIL' ) && VIP_BLOCK_WP_MAIL && ! function_exists( 'wp_mail' ) ) {
+	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
+		// no-op
+	}
+}
+
 class VIP_SMTP {
 	function init() {
 		add_action( 'phpmailer_init',    array( $this, 'phpmailer_init' ) );
