@@ -9,7 +9,7 @@
  * @param  int $comment_id ID of the comment for this new entry.
  * @param  int $post_id    ID for this liveblog post.
  */
-function wpcom_vip_liveblog_purge_on_new_entries( $comment_id, $post_id ){
+function wpcom_vip_liveblog_purge_on_new_entries( int $comment_id, int $post_id ){
 
 	// Get the URL for this Liveblog post.
 	$permalink = get_permalink( absint( $post_id ) );
