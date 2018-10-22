@@ -38,7 +38,10 @@ function run_after_data_migration_cleanup() {
 
 	connect_jetpack();
 	connect_vaultpress();
-	Akismet_Admin::connect_jetpack_user();
+	
+	if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
+		Akismet_Admin::connect_jetpack_user();
+	}
 }
 
 function delete_db_transients() {
