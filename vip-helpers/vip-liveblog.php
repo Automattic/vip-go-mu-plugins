@@ -3,7 +3,7 @@
 /**
  * Purge the Varnish cache for a liveblog on each new entry.
  *
- * Ensures that a Liveblog page isn't cached with stale mete data during an
+ * Ensures that a Liveblog page isn't cached with stale meta data during an
  * active liveblog.
  *
  * @param  int $comment_id ID of the comment for this new entry.
