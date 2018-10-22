@@ -11,13 +11,13 @@
  */
 function wpcom_vip_liveblog_purge_on_new_entries( int $comment_id, int $post_id ){
 
-	// Get the URL for this Liveblog post.
-	$permalink = get_permalink( absint( $post_id ) );
-	if ( ! $permalink ) {
+	if ( ! function_exists( 'wpcom_vip_purge_edge_cache_for_url' ) ) {
 		return;
 	}
 
-	if ( ! function_exists( 'wpcom_vip_purge_edge_cache_for_url' ) ) {
+	// Get the URL for this Liveblog post.
+	$permalink = get_permalink( absint( $post_id ) );
+	if ( ! $permalink ) {
 		return;
 	}
 
