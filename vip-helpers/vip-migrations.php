@@ -7,8 +7,11 @@ add_action( 'vip_after_data_migration', 'Automattic\VIP\Migration\after_data_mig
 function after_data_migration() {
 	if ( is_multisite() ) {
 		$sites = get_sites();
-		
-		// Update global tables
+
+		// Update schema for global tables
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . '/wp-admin/includes/upgrade.php';
+		}
 		dbDelta( 'global' );
 
 		foreach( $sites as $site ) {
@@ -36,7 +39,11 @@ function run_after_data_migration_cleanup() {
 	do_action( 'vip_go_migration_cleanup' );
 
 	delete_db_transients();
-	
+
+	// Update schema for blog tables
+	if ( ! function_exists( 'dbDelta' ) ) {
+		require_once ABSPATH . '/wp-admin/includes/upgrade.php';
+	}
 	dbDelta( 'blog' );
 
 	wp_cache_flush();
