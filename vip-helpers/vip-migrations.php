@@ -41,6 +41,8 @@ function run_after_data_migration_cleanup() {
 	
 	if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
 		Akismet_Admin::connect_jetpack_user();
+	} else {
+		trigger_error( sprintf( '%s: Failed to call `Akismet_Admin::connect_jetpack_user` as it does not exist; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
 	}
 }
 
