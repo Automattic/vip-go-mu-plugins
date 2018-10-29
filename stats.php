@@ -38,64 +38,78 @@ function track_publish_post( $new_status, $old_status ) {
 }
 
 class Concat_Metrics {
-	private $javascripts;
+	private $javascripts = [];
 
-	function __construct( ) {
-
-		nocache_headers();
-		add_action('js_concat_did_items', function( $scripts) {
-			if (! isset ( $this->javascripts ) ) {
-				$this->javascripts = [];
-			}
-			$this->javascripts = array_merge( $this->javascripts, $scripts );
-		} );
-
-		add_action( 'shutdown', function() {
-			if( isset( $this->javascripts ) ) {
-				$ratio = $this->calculate_efficiency_ratio( $this->javascripts );
-				$this->send_efficiency_stat( $ratio );
-			}
-		} );
+	function __construct() {
+		add_action( 'js_concat_did_items', [ $this, 'add_scripts' ] );
+		add_action( 'shutdown', [ $this, 'do_stats_on_shutdown' ] );
 	}
 
+	public function add_scripts( $scripts ) {
+		if ( empty( $scripts ) ) {
+			return;
+		}
 
-	function calculate_efficiency_ratio( $scripts ) {
-		$concats = array_filter( $scripts, function ( $var ) {
-			return ( 'concat' === $var[ 'type' ] );
+		$this->javascripts = array_merge( $this->javascripts, $scripts );
+	}
+
+	public function do_stats_on_shutdown() {
+		if ( ! empty( $this->javascripts ) ) {
+			$ratio = $this->calculate_efficiency_ratio( $this->javascripts );
+			$this->send_efficiency_stat( $ratio );
+		}
+	}
+
+	private function calculate_efficiency_ratio( $scripts ) {
+		$total_scripts = count( $scripts );
+
+		$concats_multiple = array_filter( $scripts, function ( $var ) {
+			if ( 'concat' === $var['type'] ) {
+				return count( $var['paths'] ) > 1;
+			}
+
+			return false;
 		});
-		$total_concats = count( $concats );
-		$concats_multiple = array_filter( $concats, function ( $var ) {
-			return ( count( $var[ 'paths' ] ) > 1 );
-		});
+
 		$total_concats_multiple = count( $concats_multiple );
-		return ( $total_concats_multiple / $total_concats );
+
+		return ( $total_concats_multiple / $total_scripts );
 	}
 
-
-	function send_efficiency_stat( $ratio ) {
-
+	private function send_efficiency_stat( $ratio ) {
 		// Figure out the range
 		$ranges = array(
 			'10' => '0 to 10 percent',
-			'20' => '10 to 20 percent',
-			'30' => '20 to 30 percent',
-			'40' => '30 to 40 percent',
-			'50' => '40 to 50 percent',
-			'60' => '50 to 60 percent',
-			'70' => '60 to 70 percent',
-			'80' => '70 to 80 percent',
-			'90' => '80 to 90 percent',
-			'100' => '90 to 100 percent',
-			'1000' => '100 percent',
+			'20' => '11 to 20 percent',
+			'30' => '21 to 30 percent',
+			'40' => '31 to 40 percent',
+			'50' => '41 to 50 percent',
+			'60' => '51 to 60 percent',
+			'70' => '61 to 70 percent',
+			'80' => '71 to 80 percent',
+			'90' => '81 to 90 percent',
+			'100' => '91 to 100 percent',
+			'1000' => '101 percent',
 		);
 
 		foreach ( $ranges as $range_limit => $range ) {
-			if ( ( $ratio * 100 ) < $range_limit ) {
+			if ( ( $ratio * 100 ) <= $range_limit ) {
 				$ratio_range = $range;
 				break;
 			}
 		}
-		// \bump_stats_extras( 'vip-concat-efficiency', $ratio_range );
+
+		$pixel = add_query_arg( array(
+			'v' => 'wpcom-no-pv',
+			'x_vip-concat-efficiency' => $ratio_range,
+		), 'http://pixel.wp.com/b.gif' );
+
+		// phpcs:disable WordPress.VIP.RestrictedFunctions
+		wp_remote_get( $pixel, array(
+			'blocking' => false,
+			'timeout'  => 1,
+		) );
+		// phpcs:enable WordPress.VIP.RestrictedFunctions
 	}
 }
 
