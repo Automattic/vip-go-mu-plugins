@@ -99,9 +99,17 @@ class Concat_Metrics {
 			}
 		}
 
+		$main_stat_name = 'vip-go-concat-efficiency';
+		if ( is_user_logged_in() ) {
+			$split_stat_name = $main_stat_name . '-login';
+		} else {
+			$split_stat_name = $main_stat_name . '-logout';
+		}
+
 		$pixel = add_query_arg( array(
 			'v' => 'wpcom-no-pv',
-			'x_vip-concat-efficiency' => $ratio_range,
+			'x_' . $main_stat_name => $ratio_range,
+			'x_' . $split_stat_name => $ratio_range,
 		), 'http://pixel.wp.com/b.gif' );
 
 		// phpcs:disable WordPress.VIP.RestrictedFunctions
