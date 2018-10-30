@@ -61,19 +61,18 @@ class Concat_Metrics {
 	}
 
 	private function calculate_efficiency_ratio( $scripts ) {
-		$total_scripts = count( $scripts );
 
-		$concats_multiple = array_filter( $scripts, function ( $var ) {
+		$groups = array_reduce( $scripts, function ( $groups, $var ) {
 			if ( 'concat' === $var['type'] ) {
-				return count( $var['paths'] ) > 1;
+				$num_scripts = count( $var['paths'] );
+				$groups['total'] += $num_scripts;
+				array_push( $groups['size'],  $num_scripts );
 			}
+			return $groups;
+		}, ['total' => 0, 'size' => []] );
 
-			return false;
-		});
 
-		$total_concats_multiple = count( $concats_multiple );
-
-		return ( $total_concats_multiple / $total_scripts );
+		return ( array_sum( $groups['size'] ) / count( $groups['size'] ) ) / $groups['total'];
 	}
 
 	private function send_efficiency_stat( $ratio ) {
