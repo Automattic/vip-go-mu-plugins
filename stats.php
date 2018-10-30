@@ -67,7 +67,7 @@ class Concat_Metrics {
 				$num_scripts = count( $var['paths'] );
 				$groups['total'] += $num_scripts;
 				array_push( $groups['size'], $num_scripts );
-			} elseif ( 'do_item' === $var['do_item'] ) {
+			} elseif ( 'do_item' === $var['type'] ) {
 				// do_item are individual scripts
 				$groups['total'] += 1;
 				array_push( $groups['size'], 1 );
