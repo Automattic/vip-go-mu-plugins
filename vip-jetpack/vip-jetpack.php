@@ -21,7 +21,6 @@ require_once( __DIR__ . '/jetpack-mandatory.php' );
 add_filter( 'jetpack_get_available_modules', function( $modules ) {
 	unset( $modules['photon'] );
 	unset( $modules['site-icon'] );
-	unset( $modules['protect'] );
 
 	return $modules;
 }, 999 );

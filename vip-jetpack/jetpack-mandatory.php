@@ -20,6 +20,7 @@ class WPCOM_VIP_Jetpack_Mandatory {
 		'manage',
 		'stats',
 		'vaultpress',
+		'protect',
 	);
 
 	/**
