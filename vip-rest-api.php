@@ -68,7 +68,7 @@ function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_h
  * @param  string $namespace RESET API route's namespace
  * @return bool
  */
-function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'manage_options' ) {
+function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow' ) {
 	if ( get_current_user_id() > 0 && ( current_user_can( 'vip_support' ) || current_user_can( $cap ) ) ) {
 		return true;
 	}
