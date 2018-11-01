@@ -179,7 +179,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 		} else {
 			// Provided for consistency, even though this provides no insightful response
 			$sites[] = array(
-				'ID' => null,
+				'ID' => 1,
 				'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
 			);
 		}
