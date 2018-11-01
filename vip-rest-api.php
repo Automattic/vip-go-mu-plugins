@@ -69,8 +69,15 @@ function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_h
  * @return bool
  */
 function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow' ) {
-	if ( get_current_user_id() > 0 && ( current_user_can( 'vip_support' ) || current_user_can( $cap ) ) ) {
-		return true;
+	// First check basic auth
+	$basic_auth_user = wpcom_vip_basic_auth_user();
+	if ( $basic_auth_user && ! is_wp_error( $basic_auth_user ) &&
+		$basic_auth_user->ID && $basic_auth_user->ID > 0 ) {
+			$user_id = $basic_auth_user->ID;
+
+			if ( user_can( $user_id, 'vip_support' ) || user_can( $user_id, $cap ) ) {
+				return true;
+			}
 	}
 
 	// Do we have a header to check?
@@ -81,54 +88,16 @@ function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow
 	return wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $_SERVER['HTTP_AUTHORIZATION'] );
 }
 
-// https://github.com/WP-API/Basic-Auth
-function json_basic_auth_handler( $user ) {
-	global $wp_json_basic_auth_error;
-	$wp_json_basic_auth_error = null;
-
-	// Don't authenticate twice
-	if ( ! empty( $user ) ) {
-		return $user;
-	}
-
-	// Check that we're trying to authenticate
+function wpcom_vip_basic_auth_user() {
 	if ( !isset( $_SERVER['PHP_AUTH_USER'] ) ) {
-		return $user;
+		return false;
 	}
 
 	$username = $_SERVER['PHP_AUTH_USER'];
 	$password = $_SERVER['PHP_AUTH_PW'];
 
-	/**
-	 * In multi-site, wp_authenticate_spam_check filter is run on authentication. This filter calls
-	 * get_currentuserinfo which in turn calls the determine_current_user filter. This leads to infinite
-	 * recursion and a stack overflow unless the current function is removed from the determine_current_user
-	 * filter during authentication.
-	 */
-	remove_filter( 'determine_current_user', 'json_basic_auth_handler', 20 );
-	$user = wp_authenticate( $username, $password );
-	add_filter( 'determine_current_user', 'json_basic_auth_handler', 20 );
-
-	if ( is_wp_error( $user ) ) {
-		$wp_json_basic_auth_error = $user;
-		return null;
-	}
-
-	$wp_json_basic_auth_error = true;
-	return $user->ID;
+	return wp_authenticate( $username, $password );
 }
-add_filter( 'determine_current_user', 'json_basic_auth_handler', 20 );
-
-function json_basic_auth_error( $error ) {
-	// Passthrough other errors
-	if ( ! empty( $error ) ) {
-		return $error;
-	}
-
-	global $wp_json_basic_auth_error;
-	return $wp_json_basic_auth_error;
-}
-add_filter( 'rest_authentication_errors', 'json_basic_auth_error' );
 
 /**
  * Include customizations
