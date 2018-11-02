@@ -129,4 +129,58 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 401, $response->get_status() );
 	}
+
+	public function test__invalid_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = '';
+		$_SERVER['PHP_AUTH_PW'] = '';
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 403, $response->get_status() );
+	}
+
+	public function test__insufficient_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		$random_username = wp_generate_password( 12 );
+		$random_password = wp_generate_password( 12 );
+		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = $random_username;
+		$_SERVER['PHP_AUTH_PW'] = $random_password;
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	public function test__valid_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		$random_username = wp_generate_password( 12 );
+		$random_password = wp_generate_password( 12 );
+		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+		grant_super_admin( $user_id );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = $random_username;
+		$_SERVER['PHP_AUTH_PW'] = $random_password;
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
 }
