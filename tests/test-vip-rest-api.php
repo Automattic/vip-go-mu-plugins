@@ -142,7 +142,7 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 		unset( $_SERVER['PHP_AUTH_USER'] );
 		unset( $_SERVER['PHP_AUTH_PW'] );
 
-		$this->assertEquals( 403, $response->get_status() );
+		$this->assertEquals( 401, $response->get_status() );
 	}
 
 	public function test__insufficient_basic_auth_credentials() {
@@ -161,7 +161,7 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 		unset( $_SERVER['PHP_AUTH_USER'] );
 		unset( $_SERVER['PHP_AUTH_PW'] );
 
-		$this->assertEquals( 200, $response->get_status() );
+		$this->assertEquals( 401, $response->get_status() );
 	}
 
 	public function test__valid_basic_auth_credentials() {
