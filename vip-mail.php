@@ -9,8 +9,12 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 */
 
 class VIP_NoOp_Mailer {
+	function __construct( $phpmailer ) {
+		$this->Subject = $phpmailer->Subject;
+	}
+
 	function send() {
-		trigger_error( sprintf( 'No-Op wp_mail: <%s> %s', $this->to ?? '', $this->Subject ?? ''), E_USER_NOTICE );
+		trigger_error( sprintf( 'No-Op wp_mail: %s', $this->Subject ?? '' ) );
 	}
 }
 
@@ -24,7 +28,7 @@ class VIP_SMTP {
 
 	function phpmailer_init( $phpmailer ) {
 		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && VIP_BLOCK_WP_MAIL ) {
-			$phpmailer = new VIP_NoOp_Mailer;
+			$phpmailer = new VIP_NoOp_Mailer( $phpmailer );
 			return;
 		}
 
