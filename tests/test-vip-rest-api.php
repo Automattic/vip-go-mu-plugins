@@ -170,7 +170,8 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 		$random_username = wp_generate_password( 12 );
 		$random_password = wp_generate_password( 12 );
 		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
-		grant_super_admin( $user_id );
+		$user = get_user_by( 'id', $user_id );
+		$user->add_cap( 'vip_support' );
 
 		// $request->add_header() doesn't populate the vars our endpoint checks
 		$_SERVER['PHP_AUTH_USER'] = $random_username;
