@@ -10,7 +10,7 @@ function cleanup() {
 trap cleanup EXIT
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-WP_VERSION=$($DIR/download-wp-tests.sh wordpress_test root $MYSQL_ROOT_PASSWORD 127.0.0.1 $WP_VERSION)
+WP_VERSION=$($DIR/download-wp-tests.sh wordpress_test root "$MYSQL_ROOT_PASSWORD" "127.0.0.1" "$WP_VERSION")
 
 ## Ensure there's a database connection for the rest of the steps
 until docker exec -it $db mysql -u root --password="wordpress" -e 'CREATE DATABASE wordpress_test' > /dev/null; do
