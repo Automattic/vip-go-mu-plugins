@@ -75,6 +75,10 @@ function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow
 		$basic_auth_user->ID && $basic_auth_user->ID > 0 ) {
 			$user_id = $basic_auth_user->ID;
 
+			// Check current user has `vip_support` or the required capability.
+			// VIP Support users should be able to do anything on the site, but
+			// this cap check runs before that plugin is loaded.
+			// https://github.com/Automattic/vip-support
 			if ( user_can( $user_id, 'vip_support' ) || user_can( $user_id, $cap ) ) {
 				return true;
 			}
