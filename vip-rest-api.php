@@ -89,7 +89,7 @@ function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow
 }
 
 function wpcom_vip_basic_auth_user() {
-	if ( !isset( $_SERVER['PHP_AUTH_USER'] ) ) {
+	if ( ! isset( $_SERVER['PHP_AUTH_USER'] ) || ! isset( $_SERVER['PHP_AUTH_PW'] ) ) {
 		return false;
 	}
 
