@@ -129,4 +129,84 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 401, $response->get_status() );
 	}
+
+	public function test__invalid_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = '';
+		$_SERVER['PHP_AUTH_PW'] = '';
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 401, $response->get_status() );
+	}
+
+	public function test__insufficient_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		list( $random_username, $random_password ) = self::get_test_username_password();
+		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = $random_username;
+		$_SERVER['PHP_AUTH_PW'] = $random_password;
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 401, $response->get_status() );
+	}
+
+	public function test__valid__vip_support_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		list( $random_username, $random_password ) = self::get_test_username_password();
+		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+		$user = get_user_by( 'id', $user_id );
+		$user->add_cap( 'vip_support' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = $random_username;
+		$_SERVER['PHP_AUTH_PW'] = $random_password;
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	public function test__valid_basic_auth_credentials() {
+		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+
+		list( $random_username, $random_password ) = self::get_test_username_password();
+		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+		$user = get_user_by( 'id', $user_id );
+		$user->add_cap( 'manage_sites' );
+
+		// $request->add_header() doesn't populate the vars our endpoint checks
+		$_SERVER['PHP_AUTH_USER'] = $random_username;
+		$_SERVER['PHP_AUTH_PW'] = $random_password;
+
+		$response = $this->server->dispatch( $request );
+
+		unset( $_SERVER['PHP_AUTH_USER'] );
+		unset( $_SERVER['PHP_AUTH_PW'] );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	// Helper function to generate random username and password
+	static function get_test_username_password() {
+		$username = 'testuser_' . mt_rand();
+		$password = wp_generate_password( 12 );
+		return array( $username, $password );
+	}
 }
