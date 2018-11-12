@@ -50,6 +50,7 @@ function run_after_data_migration_cleanup() {
 
 	connect_jetpack();
 	connect_vaultpress();
+	connect_akismet();
 }
 
 function delete_db_transients() {
@@ -80,4 +81,28 @@ function connect_vaultpress() {
 	} else {
 		trigger_error( 'Cannot connect VaultPress outside of a WP_CLI context, skipping', E_USER_WARNING );
 	}
+}
+
+function connect_akismet() {
+	$user = get_current_user_id();
+
+	// Switch to wpcomvip -- Akismet connects the current user
+	$wpcomvip = get_user_by( 'login', 'wpcomvip' );
+	if ( ! $wpcomvip ) {
+		trigger_error( sprintf( '%s: Failed to find wpcomvip user while attempting to connect Akismet; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
+	}
+
+	wp_set_current_user( $wpcomvip->ID );
+
+	if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
+		$connected = \Akismet_Admin::connect_jetpack_user();
+		if ( ! $connected ) {
+			trigger_error( sprintf( '%s: Failed to connect Akismet; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
+		}
+	} else {
+		trigger_error( sprintf( '%s: Failed to call `Akismet_Admin::connect_jetpack_user` as it does not exist; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
+	}
+
+	// Switch back to current user
+	wp_set_current_user( $user );
 }
