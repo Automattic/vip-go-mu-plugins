@@ -19,7 +19,11 @@ require_once( __DIR__ . '/jetpack-mandatory.php' );
  * Blocks access to certain functionality that isn't compatible with the platform.
  */
 add_filter( 'jetpack_get_available_modules', function( $modules ) {
+	// The Photon service is not necessary on VIP Go since the same features are built-in.
+	// Note that we do utilize some of the Photon module's code with our own Files Service.
 	unset( $modules['photon'] );
+	unset( $modules['photon-cdn'] );
+
 	unset( $modules['site-icon'] );
 	unset( $modules['protect'] );
 
