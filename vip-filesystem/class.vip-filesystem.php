@@ -86,7 +86,7 @@ class Vip_Filesystem {
 		/**
 		 * The class representing the VIP Files stream
 		 */
-		require_once __DIR__ . 'class.vip-filesystem-stream.php';
+		require_once __DIR__ . '/class.vip-filesystem-stream.php';
 
 		$this->loader = new Vip_Filesystem_Loader();
 	}
@@ -101,7 +101,8 @@ class Vip_Filesystem {
 		$this->loader->run();
 
 		// Create and register stream
-		$this->stream_wrapper = new Vip_Filesystem_Stream( new_api_client(), self::PROTOCOL );
+		$this->stream_wrapper = new Vip_Filesystem_Stream( new_api_client(),
+			self::PROTOCOL );
 		$this->stream_wrapper->register();
 	}
 
@@ -112,7 +113,10 @@ class Vip_Filesystem {
 	 * @access   private
 	 */
 	private function define_filters() {
-		$this->loader->add_filter( 'upload_dir', $this, 'filter_upload_dir' );
+		$this->loader->add_filter( 'upload_dir',
+			$this, 'filter_upload_dir' );
+//		$this->loader->add_filter( 'wp_delete_file',
+//			$this, 'filter_delete_file' );
 	}
 
 	/**
