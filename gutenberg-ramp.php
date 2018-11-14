@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Gutenberg Ramp
  * Description: Allows theme authors to control the circumstances under which the Gutenberg editor loads. Options include "load" (1 loads all the time, 0 loads never) "post_ids" (load for particular posts) "post_types" (load for particular posts types.)
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Automattic, Inc.
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
