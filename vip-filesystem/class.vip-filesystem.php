@@ -130,9 +130,10 @@ class Vip_Filesystem {
 	 */
 	public function filter_upload_dir( $params ) {
 		$params['path']    = str_replace(
-			WP_CONTENT_DIR, self::PROTOCOL . '://', $params['path'] );
+			WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['path'] );
 		$params['basedir'] = str_replace(
-			WP_CONTENT_DIR, self::PROTOCOL . '://', $params['basedir'] );
+			WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['basedir'] );
+		print_r( $params );
 
 		return $params;
 	}
