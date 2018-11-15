@@ -200,9 +200,11 @@ class Vip_Filesystem_Stream {
 	 *
 	 * @since   1.0.0
 	 * @access  public
+	 *
+	 * @return  bool    True on success. False on failure
 	 */
 	public function stream_flush() {
-
+		return fflush( $this->file );
 	}
 
 	/**
@@ -252,6 +254,7 @@ class Vip_Filesystem_Stream {
 			return FALSE;
 		}
 
+		// Upload to file service
 		$result = $this->client
 			->upload_file( $this->uri, $this->path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
@@ -381,6 +384,7 @@ class Vip_Filesystem_Stream {
 		// Create a temporary file in `tmp` directory using `tmpfile()`
 		$tmp_handler = tmpfile();
 		if (! fwrite( $tmp_handler, $data ) ) {
+			// TODO: Log this error
 			return FALSE;
 		}
 
@@ -401,6 +405,7 @@ class Vip_Filesystem_Stream {
 		if ( $result ) {
 			$this->file = null;
 			$this->path = null;
+			$this->uri  = null;
 		}
 
 		return $result;
