@@ -55,6 +55,24 @@ class Vip_Filesystem_Stream {
 	protected $path;
 
 	/**
+	 * The temp file URI
+	 *
+	 * @since   1.0.0
+	 * @access  protected
+	 * @var     string      The file URI
+	 */
+	protected $uri;
+
+	/**
+	 * Is file seekable
+	 *
+	 * @since   1.0.0
+	 * @access  protected
+	 * @var     bool        Is seekable
+	 */
+	protected $seekable;
+
+	/**
 	 * Protocol for the stream to register to
 	 *
 	 * @since   1.0.0
@@ -114,13 +132,20 @@ class Vip_Filesystem_Stream {
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$result = $this->client->get_file( $path );
 
+		print_r( 'Opening file: ' . $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			// TODO: Should log this error
+			print_r( 'Error opening stream: '. $path );
 			return false;
 		}
 
 		// Converts file contents into stream resource
 		$result = $this->string_to_resource( $result );
+
+		// Get meta data
+		$meta = stream_get_meta_data( $result );
+		$this->seekable = $meta['seekable'];
+		$this->uri = $meta['uri'];
 
 		$this->file = $result;
 		$this->path = $path;
@@ -161,7 +186,13 @@ class Vip_Filesystem_Stream {
 	 * @return  string  The file contents
 	 */
 	public function stream_read( $count ) {
-		return fread( $this->file, $count );
+		$string = fread( $this->file, $count );
+		if ( false === $string ) {
+			// TODO: Throw or log an error here
+			return '';
+		}
+
+		return $string;
 	}
 
 	/**
@@ -175,6 +206,35 @@ class Vip_Filesystem_Stream {
 	}
 
 	/**
+	 * Seek a pointer position on a file
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   int   $offset
+	 * @param   int   $whence
+	 *
+	 * @return  bool  True if position was updated, False if not
+	 */
+	public function stream_seek( $offset, $whence ) {
+		if ( ! $this->seekable ) {
+			// File not seekable
+			// TODO: Log an error?
+			return FALSE;
+		}
+
+		$result = fseek( $this->file, $offset, $whence );
+
+		if ( -1 === $result ) {
+			// Seek failed
+			// TODO: log error
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	/**
 	 * Write to a file
 	 *
 	 * @since   1.0.0
@@ -185,7 +245,22 @@ class Vip_Filesystem_Stream {
 	 * @return  int|bool    Number of bytes written or FALSE on error
 	 */
 	public function stream_write( $data ) {
-		return FALSE;
+		$length = fwrite( $this->file, $data );
+
+		if ( FALSE === $length ) {
+			// TODO: Log this error
+			return FALSE;
+		}
+
+		$result = $this->client
+			->upload_file( $this->uri, $this->path );
+		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+			// TODO: Log this error
+			print_r( 'Error uploading file: '. $this->path );
+			return FALSE;
+		}
+
+		return $length;
 	}
 
 	/**
@@ -202,6 +277,7 @@ class Vip_Filesystem_Stream {
 
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			// TODO: Log this error
+			print_r( 'Error deleting file: '. $path );
 			return FALSE;
 		}
 
@@ -282,6 +358,7 @@ class Vip_Filesystem_Stream {
 		$result = $this->client->get_file( $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			// TODO: Log this error
+			print_r( 'Error on url stat: '. $path );
 			return [];
 		}
 
@@ -301,10 +378,8 @@ class Vip_Filesystem_Stream {
 	 * @return  bool|resource   Returns resource or FALSE on write error
 	 */
 	protected function string_to_resource( $data ) {
-		// Can use `php://memory` or `php://temp`. memory is chosen here because
-		// temp will attempt to write to file if data strings exceeds a certain
-		// size.
-		$tmp_handler = fopen( 'php://memory', 'r+' );
+		// Create a temporary file in `tmp` directory using `tmpfile()`
+		$tmp_handler = tmpfile();
 		if (! fwrite( $tmp_handler, $data ) ) {
 			return FALSE;
 		}
