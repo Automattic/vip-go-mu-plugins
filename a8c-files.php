@@ -446,7 +446,7 @@ class A8C_Files {
 	function delete_file( $file_name ) {
 		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
 		// which all except the first result in 404's, keep accounting of what we've deleted.
-		static $deleted_uri;
+		static $deleted_uris = array();
 
 		$url_parts = parse_url( $file_name );
 		if ( false !== stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) )
@@ -454,7 +454,7 @@ class A8C_Files {
 		else
 			$file_uri = '/' . $url_parts['path'];
 
-		if ( isset( $deleted_uri ) && ( $deleted_uri == $file_uri ) ) {
+		if ( in_array( $file_uri, $deleted_uris ) ) {
 			// This file has already been successfully deleted from the file service in this request
 			return;
 		}
@@ -487,7 +487,7 @@ class A8C_Files {
 		}
 
 		// Set our static so we can later recall that this file has already been deleted and purged
-		$deleted_uri = $file_uri;
+		$deleted_uris[] = $file_uri;
 
 		// We successfully deleted the file, purge the file from the caches
 		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
