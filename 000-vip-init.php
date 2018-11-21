@@ -124,6 +124,7 @@ require_once( __DIR__ . '/vip-helpers/vip-stats.php' );
 require_once( __DIR__ . '/vip-helpers/vip-deprecated.php' );
 require_once( __DIR__ . '/vip-helpers/vip-syndication-cache.php' );
 require_once( __DIR__ . '/vip-helpers/vip-migrations.php' );
+require_once( __DIR__ . '/vip-helpers/debug-mode.php' );
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
@@ -148,5 +149,7 @@ add_filter( 'wp_headers', function( $headers ) {
 
 	return $headers;
 } );
+
+toggle_debug_mode();
 
 do_action( 'vip_loaded' );
