@@ -490,24 +490,53 @@ class A8C_Files {
 	private function purge_file_cache( $url, $method ) {
 		global $file_cache_servers;
 
+		$parsed = parse_url( $url );
+		if ( empty( $parsed['host'] ) ) {
+			return $requests;
+		}
+
+		$uri = '/';
+		if ( isset( $parsed['path'] ) )
+			$uri = $parsed['path'];
+		if ( isset( $parsed['query'] ) )
+			$uri .= $parsed['query'];
+
 		$requests = array();
+
+		if ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+			$data = array(
+				'group' => 'vip-go',
+				'scope' => 'global',
+				'type'  => $method,
+				'uri'   => $parsed['host'] . $uri,
+				'cb'    => 'nil',
+			);
+			$json = json_encode( $data );
+
+			$curl = curl_init();
+			curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
+			curl_setopt( $curl, CURLOPT_POST, true );
+			curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json',
+					'Content-Length: ' . strlen( $json )
+				) );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_exec( $curl );
+			$http_code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+			curl_close( $curl );
+
+			if ( 200 != $http_code ) {
+				error_log( sprintf( __( 'Error purging %s from the cache service: Code %d' ), $url, $http_code ) );
+			}
+			return;
+		}
 
 		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) )
 			return $requests;
 
-		$parsed = parse_url( $url );
-		if ( empty( $parsed['host'] ) )
-			return $requests;
-
 		foreach ( $file_cache_servers as $server  ) {
 			$server = explode( ':', $server[0] );
-
-			$uri = '/';
-			if ( isset( $parsed['path'] ) )
-				$uri = $parsed['path'];
-			if ( isset( $parsed['query'] ) )
-				$uri .= $parsed['query'];
-
 			$requests[] = array(
 				'ip'     => $server[0],
 				'port'   => $server[1],
