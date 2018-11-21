@@ -473,7 +473,7 @@ class A8C_Files {
 		curl_close( $ch );
 
 		if ( 200 != $http_code ) {
-			error_log( sprintf( __( 'Error deleting the file from the remote servers: Code %d' ), $http_code ) );
+			error_log( sprintf( __( 'Error deleting the file %s from the remote servers: Code %d' ), $file_uri, $http_code ) );
 			return;
 		}
 
