@@ -18,10 +18,10 @@ function toggle_debug_mode() {
 
 function debug_bar() {
     if ( ! is_user_logged_in()
-        && isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb']
+		&& isset( $_COOKIE['vip-go-cb'] )
+		&& '1' === $_COOKIE['vip-go-cb']
         && is_proxied_request() ) {
-
-            ?>
+			?>
 		    <div id="vip-go-debug-bar">
             </div>
             <style>
@@ -65,4 +65,4 @@ function debug_bar() {
         }
 
 }
-add_action( 'wp_footer', 'debug_bar', 100 );
+add_action( 'wp_footer', __NAMESPACE__ . '\debug_bar', 100 );
