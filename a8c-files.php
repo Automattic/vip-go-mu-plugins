@@ -546,8 +546,10 @@ class A8C_Files {
 			return;
 		}
 
-		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) )
+		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) ) {
+			error_log( sprintf( __( 'Error purging the file cache for %s: There are no file cache servers defined.' ), $url ) );
 			return $requests;
+		}
 
 		foreach ( $file_cache_servers as $server  ) {
 			$server = explode( ':', $server[0] );
