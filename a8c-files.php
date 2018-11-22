@@ -454,19 +454,21 @@ class A8C_Files {
 		else
 			$file_uri = '/' . $url_parts['path'];
 
-		if ( in_array( $file_uri, $deleted_uris ) ) {
-			// This file has already been successfully deleted from the file service in this request
-			return;
-		}
-
 		$headers = array(
 					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
 					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
 				);
 
+		$delete_uri = $file_uri;
 		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$service_url .= '/sites/' . get_current_blog_id();
+			$delete_uri = '/sites/' . get_current_blog_id() . $delete_uri;
+		}
+
+		if ( in_array( $delete_uri, $deleted_uris ) ) {
+			// This file has already been successfully deleted from the file service in this request
+			return;
 		}
 
 		$ch = curl_init( $service_url . $file_uri );
@@ -487,7 +489,7 @@ class A8C_Files {
 		}
 
 		// Set our static so we can later recall that this file has already been deleted and purged
-		$deleted_uris[] = $file_uri;
+		$deleted_uris[] = $delete_uri;
 
 		// We successfully deleted the file, purge the file from the caches
 		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
