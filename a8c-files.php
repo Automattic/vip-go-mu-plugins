@@ -230,8 +230,20 @@ class A8C_Files {
 	}
 
 	function get_upload_dir( $upload ) {
-		$upload['path'] = constant( 'LOCAL_UPLOADS' ) . $upload['subdir'];
-		$upload['basedir'] = constant( 'LOCAL_UPLOADS' );
+
+		// Maybe fix paths for multisite
+		if ( ! is_multisite() || ( is_main_network() && is_main_site() ) ) {
+			// If we're not on multisite, do nothing
+			$sites_path = '';
+		} elseif ( false !== stripos( $path, '/sites/' ) ) {
+			// If we maybe already have `/sites/` in the path, do nothing
+			$sites_path = '';
+		} else {
+			$sites_path = '/sites/' . get_current_blog_id();
+		}
+
+		$upload['path'] = constant( 'LOCAL_UPLOADS' ) . $sites_path . $upload['subdir'];
+		$upload['basedir'] = constant( 'LOCAL_UPLOADS' ) . $sites_path;
 
 		return $upload;
 	}
