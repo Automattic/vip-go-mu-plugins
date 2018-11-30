@@ -29,21 +29,20 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 		$upload_dir = wp_get_upload_dir();
 		$upload_basedir = $upload_dir['basedir'];
 
-		// If not multisite OR the $path already contains `/sites/` do nothing
-		if ( ! is_multisite() || ( is_main_network() && is_main_site() && false === stripos( $sanitized_path, '/sites/' ) ) ) {
-			$sites_path = '';
-		} else {
-			$sites_path = '/sites/' . get_current_blog_id();
+		// Leave everything alone if we're not on multisite or the $upload_basedir doesn't include '/sites/'
+		if ( is_multisite() && false !== stripos( $upload_basedir, '/sites/' ) ) {
+			// Strip the $upload_basedir back down to /tmp/uploads so we can write to any folder we'd like
+			$upload_basedir = implode( '/', array_slice( explode( '/', $upload_basedir ), 0, 3 ) );
 		}
 
 		// WP_CONTENT_DIR and wp_get_upload_dir() may not be the same.
 		// So we handle them separately.
 		if ( 0 === stripos( $sanitized_path, $upload_basedir ) ) {
 			$sanitized_path = str_ireplace( $upload_basedir, '', $sanitized_path );
-			$sanitized_path = '/wp-content/uploads' . $sites_path . $sanitized_path;
+			$sanitized_path = '/wp-content/uploads' . $sanitized_path;
 		} elseif ( 0 === stripos( $sanitized_path, $wp_content_dir ) ) {
 			$sanitized_path = str_ireplace( $wp_content_dir, '', $sanitized_path );
-			$sanitized_path = '/wp-content' . $sites_path . $sanitized_path;
+			$sanitized_path = '/wp-content' . $sanitized_path;
 		}
 
 		// TODO: Should we fail for other paths?
