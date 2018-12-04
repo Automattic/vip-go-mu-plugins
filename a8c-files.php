@@ -484,7 +484,7 @@ class A8C_Files {
 		curl_close( $ch );
 
 		if ( 200 != $http_code ) {
-			error_log( sprintf( __( 'Error deleting the file %s from the remote servers: Code %d' ), $file_uri, $http_code ) );
+			trigger_error( sprintf( __( 'Error deleting the file %s from the remote servers: Code %d' ), $file_uri, $http_code ), E_USER_WARNING );
 			return;
 		}
 
@@ -541,13 +541,13 @@ class A8C_Files {
 			curl_close( $curl );
 
 			if ( 200 != $http_code ) {
-				error_log( sprintf( __( 'Error purging %s from the cache service: Code %d' ), $url, $http_code ) );
+				trigger_error( sprintf( __( 'Error purging %s from the cache service: Code %d' ), $url, $http_code ), E_USER_WARNING );
 			}
 			return;
 		}
 
 		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) ) {
-			error_log( sprintf( __( 'Error purging the file cache for %s: There are no file cache servers defined.' ), $url ) );
+			trigger_error( sprintf( __( 'Error purging the file cache for %s: There are no file cache servers defined.' ), $url ), E_USER_WARNING );
 			return $requests;
 		}
 
