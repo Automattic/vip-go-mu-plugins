@@ -510,10 +510,12 @@ class A8C_Files {
 		}
 
 		$uri = '/';
-		if ( isset( $parsed['path'] ) )
+		if ( isset( $parsed['path'] ) ) {
 			$uri = $parsed['path'];
-		if ( isset( $parsed['query'] ) )
+		}
+		if ( isset( $parsed['query'] ) ) {
 			$uri .= $parsed['query'];
+		}
 
 		$requests = array();
 
