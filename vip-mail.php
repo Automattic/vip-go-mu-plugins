@@ -8,7 +8,7 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-class VIP_NoOp_Mailer {
+class VIP_Noop_Mailer {
 	function __construct( $phpmailer ) {
 		$this->Subject = $phpmailer->Subject;
 	}
@@ -28,7 +28,7 @@ class VIP_SMTP {
 
 	function phpmailer_init( &$phpmailer ) {
 		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && VIP_BLOCK_WP_MAIL ) {
-			$phpmailer = new VIP_NoOp_Mailer( $phpmailer );
+			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
 			return;
 		}
 
