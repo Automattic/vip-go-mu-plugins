@@ -28,7 +28,7 @@ class VIP_SMTP {
 	}
 
 	function phpmailer_init( &$phpmailer ) {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && VIP_BLOCK_WP_MAIL ) {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === VIP_BLOCK_WP_MAIL ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
 			return;
 		}
