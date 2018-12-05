@@ -4,7 +4,7 @@ WP_VERSION=${1-latest}
 
 MYSQL_ROOT_PASSWORD='wordpress'
 docker network create tests
-db=$(docker run -p 3306:3306 --network tests --name db -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -d mariadb)
+db=$(docker run --network tests --name db -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -d mariadb)
 function cleanup() {
 	docker rm -f $db
 	docker network rm tests
@@ -25,6 +25,5 @@ docker run \
 	-v $(pwd):/app \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
-	--network host \
 	--rm phpunit/phpunit \
 	--bootstrap /app/tests/bootstrap.php
