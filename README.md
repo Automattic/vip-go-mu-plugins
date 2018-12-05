@@ -48,10 +48,18 @@ vagrant@vvv:/wp-content/mu-plugins$ ./bin/install-wp-tests.sh %empty_DB_name% %d
 
 Note: you need to replace the `%placeholder%` strings above with the appropriate values. Use a separate test database for this as the contents will get trashed during testing.
 
-5. Run tests:
+5. Install dependencies
+
+Note: need to have composer pre-installed.
 
 ```bash
-vagrant@vvv:/wp-content/mu-plugins$ phpunit
+composer install
+```
+
+6. Run tests:
+
+```bash
+vagrant@vvv:/wp-content/mu-plugins$ vendor/bin/phpunit
 ```
 
 #### Travis

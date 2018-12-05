@@ -24,11 +24,8 @@ before_install:
 install: true
 
 before_script:
-  # Force Travis to use our global install than the system one
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
-  # Travis ships phpunit6 which no longer supports `PHPUnit_Framework_TestCase`, see https://core.trac.wordpress.org/ticket/39822
-  - composer global require "phpunit/phpunit=5.7.*"
-  - phpunit --version
+  - composer install -n
+  - vendor/bin/phpunit --version
 
 script:
   # Linting and unit tests
