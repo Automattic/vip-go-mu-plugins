@@ -10,11 +10,12 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 class VIP_Noop_Mailer {
 	function __construct( $phpmailer ) {
-		$this->Subject = $phpmailer->Subject;
+		$this->subject = $phpmailer->Subject ?? '[No Subject]';
+		$this->recipients = implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) );
 	}
 
 	function send() {
-		trigger_error( sprintf( 'No-Op wp_mail: %s', $this->Subject ?? '' ) );
+		trigger_error( sprintf( '%s: skipped sending email with subject `%s` to %s', __METHOD__, $this->subject, $this->recipients ), E_USER_NOTICE );
 	}
 }
 
