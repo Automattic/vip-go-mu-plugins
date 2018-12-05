@@ -84,15 +84,16 @@ function connect_vaultpress() {
 }
 
 function connect_akismet() {
-	$user = get_current_user_id();
+	$original_user = get_current_user_id();
 
 	// Switch to wpcomvip -- Akismet connects the current user
-	$wpcomvip = get_user_by( 'login', 'wpcomvip' );
-	if ( ! $wpcomvip ) {
+	$wpcomvip_user = get_user_by( 'login', 'wpcomvip' );
+	if ( ! $wpcomvip_user ) {
 		trigger_error( sprintf( '%s: Failed to find wpcomvip user while attempting to connect Akismet; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
+		return;
 	}
 
-	wp_set_current_user( $wpcomvip->ID );
+	wp_set_current_user( $wpcomvip_user->ID );
 
 	if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
 		$connected = \Akismet_Admin::connect_jetpack_user();
@@ -104,5 +105,5 @@ function connect_akismet() {
 	}
 
 	// Switch back to current user
-	wp_set_current_user( $user );
+	wp_set_current_user( $original_user );
 }
