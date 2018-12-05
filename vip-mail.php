@@ -26,7 +26,7 @@ class VIP_SMTP {
 		add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
 	}
 
-	function phpmailer_init( $phpmailer ) {
+	function phpmailer_init( &$phpmailer ) {
 		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && VIP_BLOCK_WP_MAIL ) {
 			$phpmailer = new VIP_NoOp_Mailer( $phpmailer );
 			return;
