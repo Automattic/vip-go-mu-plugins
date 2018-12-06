@@ -283,6 +283,7 @@ class Vip_Filesystem_Stream {
 	 * @return  bool    True if success. False on failure
 	 */
 	public function unlink( $path ) {
+		$path = $this->trim_path( $path );
 		$result = $this->client->delete_file( $path );
 
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
@@ -291,7 +292,7 @@ class Vip_Filesystem_Stream {
 			return FALSE;
 		}
 
-		$this->file = null;
+		$this->close_handler();
 
 		return TRUE;
 	}
@@ -410,6 +411,10 @@ class Vip_Filesystem_Stream {
 	 * @return  bool        True on success. False on failure.
 	 */
 	protected function close_handler() {
+		if (! $this->file ) {
+			return true;
+		}
+
 		$result = fclose( $this->file );
 
 		if ( $result ) {
