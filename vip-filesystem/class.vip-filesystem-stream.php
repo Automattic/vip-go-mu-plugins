@@ -130,12 +130,11 @@ class Vip_Filesystem_Stream {
 	 * @return  bool    True on success or FALSE on failure
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
+		$path = $this->trim_path( $path );
 		$result = $this->client->get_file( $path );
 
-		print_r( 'Opening file: ' . $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			// TODO: Should log this error
-			print_r( 'Error opening stream: '. $path );
 			return false;
 		}
 
@@ -381,12 +380,15 @@ class Vip_Filesystem_Stream {
 	 * @return  bool|resource   Returns resource or FALSE on write error
 	 */
 	protected function string_to_resource( $data ) {
-		// Create a temporary file in `tmp` directory using `tmpfile()`
-		$tmp_handler = tmpfile();
-		if (! fwrite( $tmp_handler, $data ) ) {
+		// Create a temporary using IO stream
+		// See: http://php.net/manual/en/wrappers.php.php#wrappers.php.memory
+		$tmp_handler = fopen( 'php://temp', 'w+' );
+		if (false === fwrite( $tmp_handler, $data ) ) {
 			// TODO: Log this error
 			return FALSE;
 		}
+		// Need to rewind file pointer as fwrite moves it to EOF
+		rewind( $tmp_handler );
 
 		return $tmp_handler;
 	}
@@ -409,5 +411,19 @@ class Vip_Filesystem_Stream {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Converted the protocol file path into something the File Service
+	 * API can use
+	 *
+	 * @since   1.0.0
+	 * @access  protected
+	 * @param   string      $path       Original protocol path
+	 *
+	 * @return  string      Modified path
+	 */
+	protected function trim_path( $path ) {
+		return ltrim( $path, 'vip:/\\' );
 	}
 }
