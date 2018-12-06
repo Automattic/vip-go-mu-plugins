@@ -324,6 +324,8 @@ class Vip_Filesystem_Stream {
 	 * @return  array   The file statistics
 	 */
 	public function url_stat( $path, $flags) {
+		$path = $this->trim_path( $path );
+
 		$extension = pathinfo( $path, PATHINFO_EXTENSION );
 		/**
 		 * If the file is actually just a path to a directory
@@ -370,12 +372,25 @@ class Vip_Filesystem_Stream {
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			// TODO: Log this error
 			print_r( 'Error on url stat: '. $path );
+			var_dump( $result );
 			return [];
 		}
 
 		$tmp_handler = $this->string_to_resource( $result );
 
 		return fstat( $tmp_handler );
+	}
+
+	/**
+	 * This method is called in response to fseek() to determine the current position.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return  bool|int    Returns current position or false on failure
+	 */
+	public function stream_tell() {
+		return $this->file ? ftell( $this->file ) : false;
 	}
 
 	/**
@@ -389,9 +404,8 @@ class Vip_Filesystem_Stream {
 	 * @return  bool|resource   Returns resource or FALSE on write error
 	 */
 	protected function string_to_resource( $data ) {
-		// Create a temporary using IO stream
-		// See: http://php.net/manual/en/wrappers.php.php#wrappers.php.memory
-		$tmp_handler = fopen( 'php://temp', 'w+' );
+		// Create a temporary file
+		$tmp_handler = tmpfile();
 		if (false === fwrite( $tmp_handler, $data ) ) {
 			// TODO: Log this error
 			return FALSE;
