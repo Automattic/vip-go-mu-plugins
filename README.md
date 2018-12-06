@@ -20,9 +20,17 @@ make lint
 
 #### PHPUnit
 
-Running automated tests requires a working WordPress development environment.
+##### Docker
 
-Here's how to do so using [VVV](https://varyingvagrantvagrants.org/):
+We have a script that runs unit tests in a self-contained Docker environment.
+
+```
+usage: ./bin/phpunit-docker.sh [wp-version]
+```
+
+You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
+
+##### VVV
 
 1. Set up VVV and your vagrant environment
 
