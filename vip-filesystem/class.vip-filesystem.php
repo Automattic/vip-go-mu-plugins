@@ -115,8 +115,8 @@ class Vip_Filesystem {
 	private function define_filters() {
 		$this->loader->add_filter( 'upload_dir',
 			$this, 'filter_upload_dir' );
-//		$this->loader->add_filter( 'wp_delete_file',
-//			$this, 'filter_delete_file' );
+		$this->loader->add_filter( 'get_attached_file',
+			$this, 'filter_get_attached_file' );
 	}
 
 	/**
@@ -136,5 +136,11 @@ class Vip_Filesystem {
 		print_r( $params );
 
 		return $params;
+	}
+
+	public function filter_get_attached_file( $param ) {
+		print_r( $param );
+
+		return $param;
 	}
 }
