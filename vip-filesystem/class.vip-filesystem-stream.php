@@ -131,15 +131,23 @@ class Vip_Filesystem_Stream {
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
-		$result = $this->client->get_file( $path );
 
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			// TODO: Should log this error
-			return false;
+		if ( $this->client->is_file( $path ) ) {
+			$result = $this->client->get_file( $path );
+
+			if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+				// TODO: Should log this error
+				var_dump( $result );
+				return false;
+			}
+
+			// Converts file contents into stream resource
+			$result = $this->string_to_resource( $result );
+		} else {
+			// File doesn't exist on File service so create new file
+			$result = $this->string_to_resource( '' );
 		}
 
-		// Converts file contents into stream resource
-		$result = $this->string_to_resource( $result );
 
 		// Get meta data
 		$meta = stream_get_meta_data( $result );
