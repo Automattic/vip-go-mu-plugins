@@ -1081,7 +1081,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		}
 
 		if ( $is_50_plus && ! $should_load_gutenberg ) {
-			trigger_error( 'wpcom_vip_load_plugin: Skipped loading Gutenberg plugin. Please add `define( \'GUTENBERG_USE_PLUGIN\', true );` if you would like to use the plugin over the Core Block Editor. For details, see https://wp.me/p9nvA-7Xk', E_USER_WARNING );
+			trigger_error( 'wpcom_vip_load_plugin: Skipped loading Gutenberg plugin. Please add `define( \'GUTENBERG_USE_PLUGIN\', true );` if you would like to use the plugin over the Core Block Editor. For details, see https://vip.wordpress.com/documentation/vip-go/loading-gutenberg/', E_USER_WARNING );
 
 			return;
 		}
