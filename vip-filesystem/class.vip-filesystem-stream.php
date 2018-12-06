@@ -87,7 +87,7 @@ class Vip_Filesystem_Stream {
 	 * @param API_Client $client
 	 * @param string $protocol
 	 */
-	public function __construct( API_Client $client, $protocol = null ) {
+	public function __construct( API_Client $client = null, $protocol = null ) {
 		if ( is_null( $client ) ) {
 			$this->client = new_api_client();
 		} else {
