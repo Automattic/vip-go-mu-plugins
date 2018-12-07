@@ -136,8 +136,7 @@ class Vip_Filesystem_Stream {
 			$result = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-				// TODO: Should log this error
-				var_dump( $result );
+				trigger_error( $result->get_error_message(), E_USER_ERROR );
 				return false;
 			}
 
@@ -195,7 +194,8 @@ class Vip_Filesystem_Stream {
 	public function stream_read( $count ) {
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
-			// TODO: Throw or log an error here
+			trigger_error( 'Error reading from file: ' . $this->path,
+				E_USER_ERROR );
 			return '';
 		}
 
@@ -228,7 +228,8 @@ class Vip_Filesystem_Stream {
 	public function stream_seek( $offset, $whence ) {
 		if ( ! $this->seekable ) {
 			// File not seekable
-			// TODO: Log an error?
+			trigger_error( 'File not seekable: ' . $this->path,
+				E_USER_NOTICE );
 			return FALSE;
 		}
 
@@ -236,7 +237,8 @@ class Vip_Filesystem_Stream {
 
 		if ( -1 === $result ) {
 			// Seek failed
-			// TODO: log error
+			trigger_error( 'Error seeking on file: ' . $this->path,
+				E_USER_ERROR );
 			return FALSE;
 		}
 
@@ -257,7 +259,8 @@ class Vip_Filesystem_Stream {
 		$length = fwrite( $this->file, $data );
 
 		if ( FALSE === $length ) {
-			// TODO: Log this error
+			trigger_error( 'Error writing to file: ' . $this->path,
+				E_USER_ERROR );
 			return FALSE;
 		}
 
@@ -265,8 +268,7 @@ class Vip_Filesystem_Stream {
 		$result = $this->client
 			->upload_file( $this->uri, $this->path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			// TODO: Log this error
-			print_r( 'Error uploading file: '. $this->path );
+			trigger_error( $result->get_error_message(), E_USER_ERROR );
 			return FALSE;
 		}
 
@@ -287,8 +289,7 @@ class Vip_Filesystem_Stream {
 		$result = $this->client->delete_file( $path );
 
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			// TODO: Log this error
-			print_r( 'Error deleting file: '. $path );
+			trigger_error( $result->get_error_message(), E_USER_ERROR );
 			return FALSE;
 		}
 
@@ -370,9 +371,7 @@ class Vip_Filesystem_Stream {
 
 		$result = $this->client->get_file( $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			// TODO: Log this error
-			print_r( 'Error on url stat: '. $path );
-			var_dump( $result );
+			trigger_error( $result->get_error_message(), E_USER_ERROR );
 			return [];
 		}
 
@@ -407,7 +406,9 @@ class Vip_Filesystem_Stream {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if (false === fwrite( $tmp_handler, $data ) ) {
-			// TODO: Log this error
+			trigger_error( "Error creating temporary resource for data:\n" . $data,
+				E_USER_ERROR );
+
 			return FALSE;
 		}
 		// Need to rewind file pointer as fwrite moves it to EOF
