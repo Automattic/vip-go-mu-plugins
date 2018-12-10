@@ -110,7 +110,6 @@ if ( WPCOM_SANDBOXED ) {
 
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
-Automattic\VIP\Debug\toggle_debug_mode();
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
@@ -149,5 +148,7 @@ add_filter( 'wp_headers', function( $headers ) {
 
 	return $headers;
 } );
+
+Automattic\VIP\Debug\toggle_debug_mode();
 
 do_action( 'vip_loaded' );
