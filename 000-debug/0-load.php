@@ -7,7 +7,7 @@ require_once( __DIR__ . '/logger.php' );
 function toggle_debug_mode() {
     if ( isset( $_GET['a8c-debug'] )
         && 'true' === $_GET['a8c-debug']
-        && is_proxied_request() ) {
+        && \is_proxied_request() ) {
             setcookie( 'vip-go-cb', '1', time() + 2 * HOUR_IN_SECONDS );
             nocache_headers();
     } elseif ( isset( $_GET['a8c-debug'] )
@@ -20,7 +20,7 @@ function debug_bar() {
     if ( ! is_user_logged_in()
 		&& isset( $_COOKIE['vip-go-cb'] )
 		&& '1' === $_COOKIE['vip-go-cb']
-        && is_proxied_request() ) {
+        && \is_proxied_request() ) {
 			?>
 		    <div id="vip-go-debug-bar">
             </div>
