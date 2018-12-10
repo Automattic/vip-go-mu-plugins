@@ -9,7 +9,11 @@ function toggle_debug_mode() {
         && 'true' === $_GET['a8c-debug']
         && \is_proxied_request() ) {
             setcookie( 'vip-go-cb', '1', time() + 2 * HOUR_IN_SECONDS );
-            nocache_headers();
+			nocache_headers();
+			// Redirect to the same page without the activation handler.
+			add_action( 'init', function(){
+				\wp_safe_redirect( remove_query_arg( 'a8c-debug' ) );
+			} );
     } elseif ( isset( $_GET['a8c-debug'] )
             && 'false' === $_GET['a8c-debug'] ) {
                 setcookie( 'vip-go-cb', '', time() - 2 * HOUR_IN_SECONDS );
