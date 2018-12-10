@@ -10,13 +10,18 @@ function toggle_debug_mode() {
         && \is_proxied_request() ) {
             setcookie( 'vip-go-cb', '1', time() + 2 * HOUR_IN_SECONDS );
 			nocache_headers();
-			// Redirect to the same page without the activation handler.
+			// Redirect to the same page without the Debug Mode activation handler.
 			add_action( 'init', function(){
 				\wp_safe_redirect( remove_query_arg( 'a8c-debug' ) );
 			} );
     } elseif ( isset( $_GET['a8c-debug'] )
             && 'false' === $_GET['a8c-debug'] ) {
-                setcookie( 'vip-go-cb', '', time() - 2 * HOUR_IN_SECONDS );
+				setcookie( 'vip-go-cb', '', time() - 2 * HOUR_IN_SECONDS );
+				add_action( 'init', function() {
+					// Redirect to the same page without the deactivation handler.
+					\wp_safe_redirect( remove_query_arg( 'a8c-debug' ) );
+					exit;
+				});
     }
 }
 
