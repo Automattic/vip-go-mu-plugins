@@ -13,6 +13,4 @@ phpdoc
 
 # Composer
 vendor
-composer.json
-composer.lock
 output

@@ -699,10 +699,11 @@ function _vip_crossdomain_redirect() {
  * @param int $number Optional. Amount of random posts to get. Default 1.
  * @param string $post_type Optional. Specify the post_type to use when randomizing posts. Default 'post'.
  * @param bool $return_ids Optional. To just get the IDs, set this to true, otherwise post objects are returned (the default).
+ * @param int $category_id Optional. Limit to a specific category
  * @return array
  */
-function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = false ) {
-	$query = new WP_Query( array( 'posts_per_page' => 100, 'fields' => 'ids', 'post_type' => $post_type ) );
+function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = false, $category_id = 0 ) {
+	$query = new WP_Query( array( 'posts_per_page' => 100, 'fields' => 'ids', 'post_type' => $post_type, 'no_found_rows' => true, 'post_status' => 'publish', 'ignore_sticky_posts' => true, 'category__in' => $category_id ) );
 
 	$post_ids = $query->posts;
 	shuffle( $post_ids );
@@ -1065,6 +1066,27 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		}
 	}
 
+	// For WordPress 5.0+, any environments that want to use the Gutenberg plugin need to define a specific constant.
+	// Without the constant in place, we skip loading the plugin and fallback to the core block editor.
+	// This will also facilitate the upgrade path where core disables the Gutenberg plugin as part of the upgrade.
+	if ( 'gutenberg' === $plugin ) {
+		$db_version = absint( get_option( 'db_version' ) );
+		$is_50_plus = $db_version >= 43764;
+
+		$should_load_gutenberg = true;
+		if ( ! defined( 'GUTENBERG_USE_PLUGIN' ) ) {
+			$should_load_gutenberg = false;
+		} elseif ( true !== GUTENBERG_USE_PLUGIN ) {
+			$should_load_gutenberg = false;
+		}
+
+		if ( $is_50_plus && ! $should_load_gutenberg ) {
+			trigger_error( 'wpcom_vip_load_plugin: Skipped loading Gutenberg plugin. Please add `define( \'GUTENBERG_USE_PLUGIN\', true );` if you would like to use the plugin over the Core Block Editor. For details, see https://vip.wordpress.com/documentation/vip-go/loading-gutenberg/', E_USER_WARNING );
+
+			return;
+		}
+	}
+	
 	if ( $includepath && file_exists( $includepath ) ) {
 		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}/{$file}" );
 

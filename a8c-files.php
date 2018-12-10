@@ -444,6 +444,10 @@ class A8C_Files {
 	}
 
 	function delete_file( $file_name ) {
+		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
+		// which all except the first result in 404's, keep accounting of what we've deleted.
+		static $deleted_uris = array();
+
 		$url_parts = parse_url( $file_name );
 		if ( false !== stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) )
 			$file_uri = substr( $url_parts['path'], stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) + strlen( constant( 'LOCAL_UPLOADS' ) ) );
@@ -455,9 +459,16 @@ class A8C_Files {
 					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
 				);
 
+		$delete_uri = $file_uri;
 		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$service_url .= '/sites/' . get_current_blog_id();
+			$delete_uri = '/sites/' . get_current_blog_id() . $delete_uri;
+		}
+
+		if ( in_array( $delete_uri, $deleted_uris ) ) {
+			// This file has already been successfully deleted from the file service in this request
+			return;
 		}
 
 		$ch = curl_init( $service_url . $file_uri );
@@ -473,9 +484,12 @@ class A8C_Files {
 		curl_close( $ch );
 
 		if ( 200 != $http_code ) {
-			error_log( sprintf( __( 'Error deleting the file from the remote servers: Code %d' ), $http_code ) );
+			trigger_error( sprintf( __( 'Error deleting the file %s from the remote servers: Code %d' ), $file_uri, $http_code ), E_USER_WARNING );
 			return;
 		}
+
+		// Set our static so we can later recall that this file has already been deleted and purged
+		$deleted_uris[] = $delete_uri;
 
 		// We successfully deleted the file, purge the file from the caches
 		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
@@ -490,24 +504,57 @@ class A8C_Files {
 	private function purge_file_cache( $url, $method ) {
 		global $file_cache_servers;
 
+		$parsed = parse_url( $url );
+		if ( empty( $parsed['host'] ) ) {
+			return $requests;
+		}
+
+		$uri = '/';
+		if ( isset( $parsed['path'] ) ) {
+			$uri = $parsed['path'];
+		}
+		if ( isset( $parsed['query'] ) ) {
+			$uri .= $parsed['query'];
+		}
+
 		$requests = array();
 
-		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) )
-			return $requests;
+		if ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+			$data = array(
+				'group' => 'vip-go',
+				'scope' => 'global',
+				'type'  => $method,
+				'uri'   => $parsed['host'] . $uri,
+				'cb'    => 'nil',
+			);
+			$json = json_encode( $data );
 
-		$parsed = parse_url( $url );
-		if ( empty( $parsed['host'] ) )
+			$curl = curl_init();
+			curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
+			curl_setopt( $curl, CURLOPT_POST, true );
+			curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json',
+					'Content-Length: ' . strlen( $json )
+				) );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_exec( $curl );
+			$http_code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+			curl_close( $curl );
+
+			if ( 200 != $http_code ) {
+				trigger_error( sprintf( __( 'Error purging %s from the cache service: Code %d' ), $url, $http_code ), E_USER_WARNING );
+			}
+			return;
+		}
+
+		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) ) {
+			trigger_error( sprintf( __( 'Error purging the file cache for %s: There are no file cache servers defined.' ), $url ), E_USER_WARNING );
 			return $requests;
+		}
 
 		foreach ( $file_cache_servers as $server  ) {
 			$server = explode( ':', $server[0] );
-
-			$uri = '/';
-			if ( isset( $parsed['path'] ) )
-				$uri = $parsed['path'];
-			if ( isset( $parsed['query'] ) )
-				$uri .= $parsed['query'];
-
 			$requests[] = array(
 				'ip'     => $server[0],
 				'port'   => $server[1],
