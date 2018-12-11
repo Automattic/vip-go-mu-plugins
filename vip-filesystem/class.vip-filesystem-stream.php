@@ -327,6 +327,36 @@ class Vip_Filesystem_Stream {
 	public function url_stat( $path, $flags) {
 		$path = $this->trim_path( $path );
 
+		// Default stats
+		$stats = array (
+			0         => 0,
+			'dev'     => 0,
+			1         => 0,
+			'ino'     => 0,
+			2         => 16895,
+			'mode'    => 16895,
+			3         => 0,
+			'nlink'   => 0,
+			4         => 0,
+			'uid'     => 0,
+			5         => 0,
+			'gid'     => 0,
+			6         => -1,
+			'rdev'    => -1,
+			7         => 0,
+			'size'    => 0,
+			8         => 0,
+			'atime'   => 0,
+			9         => 0,
+			'mtime'   => 0,
+			10        => 0,
+			'ctime'   => 0,
+			11        => -1,
+			'blksize' => -1,
+			12        => -1,
+			'blocks'  => -1,
+		);
+
 		$extension = pathinfo( $path, PATHINFO_EXTENSION );
 		/**
 		 * If the file is actually just a path to a directory
@@ -339,45 +369,22 @@ class Vip_Filesystem_Stream {
 		 * Hanif's note: Copied from humanmade's S3 plugin
 		 */
 		if ( ! $extension ) {
-			return array (
-				0         => 0,
-				'dev'     => 0,
-				1         => 0,
-				'ino'     => 0,
-				2         => 16895,
-				'mode'    => 16895,
-				3         => 0,
-				'nlink'   => 0,
-				4         => 0,
-				'uid'     => 0,
-				5         => 0,
-				'gid'     => 0,
-				6         => -1,
-				'rdev'    => -1,
-				7         => 0,
-				'size'    => 0,
-				8         => 0,
-				'atime'   => 0,
-				9         => 0,
-				'mtime'   => 0,
-				10        => 0,
-				'ctime'   => 0,
-				11        => -1,
-				'blksize' => -1,
-				12        => -1,
-				'blocks'  => -1,
-			);
+			return $stats;
 		}
 
-		$result = $this->client->get_file( $path );
+		$result = $this->client->is_file( $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
 
-		$tmp_handler = $this->string_to_resource( $result );
+		// Here we should parse the meta data into the statistics array
+		// and then combine with data from `is_file` API
+		// see: http://php.net/manual/en/function.stat.php
+		$stats[4] = $stats['uid'] = 1000;
+		$stats[5] = $stats['gid'] = 1000;
 
-		return fstat( $tmp_handler );
+		return $stats;
 	}
 
 	/**
