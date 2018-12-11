@@ -141,19 +141,19 @@ class Vip_Filesystem_Stream {
 			}
 
 			// Converts file contents into stream resource
-			$result = $this->string_to_resource( $result );
+			$file = $this->string_to_resource( $result );
 		} else {
 			// File doesn't exist on File service so create new file
-			$result = $this->string_to_resource( '' );
+			$file = $this->string_to_resource( '' );
 		}
 
 
 		// Get meta data
-		$meta = stream_get_meta_data( $result );
+		$meta = stream_get_meta_data( $file );
 		$this->seekable = $meta['seekable'];
 		$this->uri = $meta['uri'];
 
-		$this->file = $result;
+		$this->file = $file;
 		$this->path = $path;
 
 		return true;
