@@ -319,10 +319,10 @@ class Vip_Filesystem_Stream {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param   string  $path
-	 * @param   int     $flags
+	 * @param   string      $path
+	 * @param   int         $flags
 	 *
-	 * @return  array   The file statistics
+	 * @return  array|bool  The file statistics or false if failed
 	 */
 	public function url_stat( $path, $flags) {
 		$path = $this->trim_path( $path );
@@ -371,8 +371,8 @@ class Vip_Filesystem_Stream {
 
 		$result = $this->client->get_file( $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			return [];
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			return false;
 		}
 
 		$tmp_handler = $this->string_to_resource( $result );
