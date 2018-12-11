@@ -444,9 +444,9 @@ class Vip_Filesystem_Stream {
 	 * @since   1.0.0
 	 * @access  protected
 	 *
-	 * @param   string          $data   The file content to be written
+	 * @param   string     $data   The file content to be written
 	 *
-	 * @return  bool|resource   Returns resource or FALSE on write error
+	 * @return  resource   Returns resource or FALSE on write error
 	 */
 	protected function string_to_resource( $data ) {
 		// Create a temporary file
@@ -454,8 +454,6 @@ class Vip_Filesystem_Stream {
 		if (false === fwrite( $tmp_handler, $data ) ) {
 			trigger_error( "Error creating temporary resource for data:\n" . $data,
 				E_USER_ERROR );
-
-			return FALSE;
 		}
 		// Need to rewind file pointer as fwrite moves it to EOF
 		rewind( $tmp_handler );
