@@ -136,7 +136,7 @@ class Vip_Filesystem_Stream {
 			$result = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-				trigger_error( $result->get_error_message(), E_USER_ERROR );
+				trigger_error( $result->get_error_message(), E_USER_WARNING );
 				return false;
 			}
 
@@ -195,7 +195,7 @@ class Vip_Filesystem_Stream {
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
 			trigger_error( 'Error reading from file: ' . $this->path,
-				E_USER_ERROR );
+				E_USER_WARNING );
 			return '';
 		}
 
@@ -229,7 +229,7 @@ class Vip_Filesystem_Stream {
 		if ( ! $this->seekable ) {
 			// File not seekable
 			trigger_error( 'File not seekable: ' . $this->path,
-				E_USER_NOTICE );
+				E_USER_WARNING );
 			return FALSE;
 		}
 
@@ -238,7 +238,7 @@ class Vip_Filesystem_Stream {
 		if ( -1 === $result ) {
 			// Seek failed
 			trigger_error( 'Error seeking on file: ' . $this->path,
-				E_USER_ERROR );
+				E_USER_WARNING );
 			return FALSE;
 		}
 
@@ -260,7 +260,7 @@ class Vip_Filesystem_Stream {
 
 		if ( FALSE === $length ) {
 			trigger_error( 'Error writing to file: ' . $this->path,
-				E_USER_ERROR );
+				E_USER_WARNING );
 			return FALSE;
 		}
 
@@ -268,7 +268,7 @@ class Vip_Filesystem_Stream {
 		$result = $this->client
 			->upload_file( $this->uri, $this->path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			trigger_error( $result->get_error_message(), E_USER_ERROR );
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
 
@@ -289,7 +289,7 @@ class Vip_Filesystem_Stream {
 		$result = $this->client->delete_file( $path );
 
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			trigger_error( $result->get_error_message(), E_USER_ERROR );
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
 
@@ -371,8 +371,8 @@ class Vip_Filesystem_Stream {
 
 		$result = $this->client->get_file( $path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
-			trigger_error( $result->get_error_message(), E_USER_ERROR );
 			return [];
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
 		}
 
 		$tmp_handler = $this->string_to_resource( $result );
