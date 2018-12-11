@@ -393,6 +393,52 @@ class Vip_Filesystem_Stream {
 	}
 
 	/**
+	 * Called in response to rename() to rename a file or directory.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   string  $path_from  Path to file to rename
+	 * @param   string  $path_to    New path to the file
+	 *
+	 * @return  bool    True on successful rename
+	 */
+	public function rename($path_from, $path_to) {
+		$path_from = $this->trim_path( $path_from );
+		$path_to = $this->trim_path( $path_to );
+
+		// Get original file first
+		// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
+		//       get really inefficient with large files
+		$result = $this->client->get_file( $path_from );
+		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			return FALSE;
+		}
+
+		// Convert to actual file to upload to new path
+		$file = $this->string_to_resource( $result );
+		$meta = stream_get_meta_data( $file );
+		$filePath = $meta['uri'];
+
+		// Upload to file service
+		$result = $this->client->upload_file( $filePath, $path_to );
+		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			return FALSE;
+		}
+
+		// Delete old file
+		$result = $this->client->delete_file( $path_from );
+		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	/**
 	 * Write file to a temporary resource handler
 	 *
 	 * @since   1.0.0
