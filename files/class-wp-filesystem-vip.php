@@ -68,10 +68,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	private function is_uploads_path( $file_path ) {
-		$upload_dir  = wp_get_upload_dir();
-		$upload_base = $upload_dir['basedir'];
+		// This probably needs to be more robust as I'm not sure if there are ever scenarios where the uploads directory would _not_ be /tmp/uploads on VIP Go
+		// We just need to look for /tmp/uploads here - we don't really care about the /sites/{site_id} part to determine if it's an uploads path or not
+		$upload_path = trailingslashit( get_temp_dir() ) . 'uploads';
 
-		return 0 === strpos( $file_path, $upload_base );
+		return 0 === strpos( $file_path, $upload_path );
 	}
 
 	/**
