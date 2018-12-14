@@ -163,7 +163,7 @@ class API_Client {
 		return true;
 	}
 
-	public function is_file( $file_path ) {
+	public function is_file( $file_path, &$info = null ) {
 		$response = $this->call_api( $file_path, 'GET', [
 			'headers' => [
 				'X-Action' => 'file_exists',
@@ -177,6 +177,9 @@ class API_Client {
 		$response_code = wp_remote_retrieve_response_code( $response );
 
 		if ( 200 === $response_code ) {
+			$response_body = wp_remote_retrieve_body( $response );
+			$info = json_decode( $response_body, true );
+
 			return true;
 		} elseif ( 404 === $response_code ) {
 			return false;
