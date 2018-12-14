@@ -324,7 +324,7 @@ class Vip_Filesystem_Stream {
 	 *
 	 * @return  array|bool  The file statistics or false if failed
 	 */
-	public function url_stat( $path, $flags) {
+	public function url_stat( $path, $flags ) {
 		$path = $this->trim_path( $path );
 
 		// Default stats
@@ -410,7 +410,7 @@ class Vip_Filesystem_Stream {
 	 *
 	 * @return  bool    True on successful rename
 	 */
-	public function rename($path_from, $path_to) {
+	public function rename( $path_from, $path_to ) {
 		$path_from = $this->trim_path( $path_from );
 		$path_to = $this->trim_path( $path_to );
 
@@ -442,6 +442,23 @@ class Vip_Filesystem_Stream {
 			return FALSE;
 		}
 
+		return TRUE;
+	}
+
+	/**
+	 * Called in response to mkdir()
+	 * Currently, it will always return true as directories are automatically created on the Filesystem API
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   string  $path
+	 * @param   int     $mode
+	 * @param   in      $options
+	 *
+	 * @return  bool
+	 */
+	public function mkdir( $path, $mode, $options ) {
 		return TRUE;
 	}
 
