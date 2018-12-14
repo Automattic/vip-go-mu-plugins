@@ -471,6 +471,24 @@ class Vip_Filesystem_Stream {
 	}
 
 	/**
+	 * Set metadata on a stream
+	 *
+	 * @link http://php.net/manual/en/streamwrapper.stream-metadata.php
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   string  $path
+	 * @param   int     $option
+	 * @param   mixed   $value
+	 *
+	 * @return  bool
+	 */
+	public function stream_metadata($path, $option, $value) {
+		return false;
+	}
+
+	/**
 	 * Write file to a temporary resource handler
 	 *
 	 * @since   1.0.0
