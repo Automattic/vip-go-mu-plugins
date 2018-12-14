@@ -114,9 +114,7 @@ class Vip_Filesystem {
 	 */
 	private function define_filters() {
 		$this->loader->add_filter( 'upload_dir',
-			$this, 'filter_upload_dir' );
-		$this->loader->add_filter( 'get_attached_file',
-			$this, 'filter_get_attached_file' );
+			$this, 'filter_upload_dir', 20, 1 );
 	}
 
 	/**
@@ -129,18 +127,24 @@ class Vip_Filesystem {
 	 * @return array Modified output of `wp_upload_dir`
 	 */
 	public function filter_upload_dir( $params ) {
-		$params['path']    = str_replace(
-			WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['path'] );
-		$params['basedir'] = str_replace(
-			WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['basedir'] );
-		print_r( $params );
+		/**
+		 * This is to account for the a8c-files plugin and should be temporary.
+		 * Eventually, this plugin will replace a8c-files so this check can
+		 * then be removed.
+		 * - Hanif
+		 */
+		if ( 0 === stripos( $params['basedir'], '/tmp/uploads' ) ) {
+			$params['path']    = str_replace(
+				LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['path'] );
+			$params['basedir'] = str_replace(
+				LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['basedir'] );
+		} else {
+			$params['path']    = str_replace(
+				WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['path'] );
+			$params['basedir'] = str_replace(
+				WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['basedir'] );
+		}
 
 		return $params;
-	}
-
-	public function filter_get_attached_file( $param ) {
-		print_r( $param );
-
-		return $param;
 	}
 }
