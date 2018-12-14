@@ -70,12 +70,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 		}
 
-		// Cleanup roles
-		if ( get_role( 'administrator' ) === null ) {
-			// If the `administrator` role is not present, it's required to reset the default roles.
-			WP_CLI::runcommand( 'role reset --all' );
-		}
-
 		WP_CLI::line( 'Calling Automattic\VIP\Migration\run_after_data_migration_cleanup()' );
 
 		if ( ! $dry_run ) {

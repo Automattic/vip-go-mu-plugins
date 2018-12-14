@@ -46,6 +46,8 @@ function run_after_data_migration_cleanup() {
 	}
 	dbDelta( 'blog' );
 
+	maybe_reset_roles();
+
 	wp_cache_flush();
 
 	connect_jetpack();
@@ -61,6 +63,16 @@ function delete_db_transients() {
 		WHERE option_name LIKE '\_transient\_%'
 		OR option_name LIKE '\_site\_transient\_%'"
 	);
+}
+
+function maybe_reset_roles() {
+	// If the `administrator` role is not present, it's required to reset the default roles.
+	if ( get_role( 'administrator' ) === null ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+			\WP_CLI::line( "Resetting default roles" );
+		}
+		populate_roles();
+	}
 }
 
 function connect_jetpack() {
