@@ -372,7 +372,8 @@ class Vip_Filesystem_Stream {
 			return $stats;
 		}
 
-		$result = $this->client->is_file( $path );
+		$info = array();
+		$result = $this->client->is_file( $path, $info );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
@@ -381,8 +382,11 @@ class Vip_Filesystem_Stream {
 		// Here we should parse the meta data into the statistics array
 		// and then combine with data from `is_file` API
 		// see: http://php.net/manual/en/function.stat.php
-		$stats[4] = $stats['uid'] = 1000;
-		$stats[5] = $stats['gid'] = 1000;
+		$stats[2] = $stats['mode'] = 33206; // read+write permissions
+		$stats[7] = $stats['size'] = (int) $info['size'];
+		$stats[8] = $stats['atime'] = (int) $info['mtime'];
+		$stats[9] = $stats['mtime'] = (int) $info['mtime'];
+		$stats[10] = $stats['ctime'] = (int) $info['mtime'];
 
 		return $stats;
 	}
