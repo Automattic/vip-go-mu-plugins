@@ -378,6 +378,10 @@ class Vip_Filesystem_Stream {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
+		if ( ! $result ) {
+			// File not found
+			return false;
+		}
 
 		// Here we should parse the meta data into the statistics array
 		// and then combine with data from `is_file` API
