@@ -235,7 +235,7 @@ class A8C_Files {
 		if ( ! is_multisite() || ( is_main_network() && is_main_site() ) ) {
 			// If we're not on multisite, do nothing
 			$sites_path = '';
-		} elseif ( false !== stripos( $path, '/sites/' ) ) {
+		} elseif ( false !== stripos( $upload['subdir'], '/sites/' ) ) {
 			// If we maybe already have `/sites/` in the path, do nothing
 			$sites_path = '';
 		} else {
