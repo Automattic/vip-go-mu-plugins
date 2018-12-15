@@ -484,7 +484,23 @@ class Vip_Filesystem_Stream {
 	 *
 	 * @return  bool
 	 */
-	public function stream_metadata($path, $option, $value) {
+	public function stream_metadata( $path, $option, $value ) {
+		return false;
+	}
+
+	/**
+	 * Called in response to stream_select()
+	 *
+	 * @link http://php.net/manual/en/streamwrapper.stream-castt.php
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   int             $cast_as
+	 *
+	 * @return  resource|bool
+	 */
+	public function stream_cast( $cast_as ) {
 		return false;
 	}
 
