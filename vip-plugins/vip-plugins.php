@@ -56,7 +56,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 	if ( empty( $plugins ) ) {
 		?>
 		<div class="notice notice-error">
-			<p><?php _e( 'Unable to load VIP featured plugins; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
+			<p><?php _e( 'Unable to display VIP featured plugins; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
 		</div>
 		<?php
 		return;
