@@ -501,6 +501,10 @@ class Vip_Filesystem_Stream {
 	 * @return  resource|bool
 	 */
 	public function stream_cast( $cast_as ) {
+		if ( ! is_null( $this->file ) ) {
+			return $this->file;
+		}
+
 		return false;
 	}
 
