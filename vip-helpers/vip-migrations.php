@@ -66,12 +66,16 @@ function delete_db_transients() {
 }
 
 function maybe_reset_roles() {
-	// If the `administrator` role is not present, it's required to reset the default roles.
-	if ( get_role( 'administrator' ) === null ) {
-		if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
-			\WP_CLI::line( "Resetting default roles" );
-		}
-		populate_roles();
+	// If the core roles are not present, reset the default roles.
+	if ( get_role( 'administrator' ) === null ||
+		get_role( 'editor' ) === null ||
+		get_role( 'author' ) === null ||
+		get_role( 'contributor' ) === null ||
+		get_role( 'subscriber' ) === null ) {
+			if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+				\WP_CLI::line( "Resetting default roles" );
+			}
+			populate_roles();
 	}
 }
 
