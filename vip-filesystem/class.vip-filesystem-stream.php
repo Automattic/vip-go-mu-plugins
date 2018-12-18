@@ -135,7 +135,7 @@ class Vip_Filesystem_Stream {
 		if ( $this->client->is_file( $path ) ) {
 			$result = $this->client->get_file( $path );
 
-			if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+			if ( is_wp_error( $result ) ) {
 				trigger_error( $result->get_error_message(), E_USER_WARNING );
 				return false;
 			}
@@ -146,7 +146,6 @@ class Vip_Filesystem_Stream {
 			// File doesn't exist on File service so create new file
 			$file = $this->string_to_resource( '' );
 		}
-
 
 		// Get meta data
 		$meta = stream_get_meta_data( $file );
@@ -267,7 +266,7 @@ class Vip_Filesystem_Stream {
 		// Upload to file service
 		$result = $this->client
 			->upload_file( $this->uri, $this->path );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
@@ -288,7 +287,7 @@ class Vip_Filesystem_Stream {
 		$path = $this->trim_path( $path );
 		$result = $this->client->delete_file( $path );
 
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
@@ -374,7 +373,7 @@ class Vip_Filesystem_Stream {
 
 		$info = array();
 		$result = $this->client->is_file( $path, $info );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
@@ -426,7 +425,7 @@ class Vip_Filesystem_Stream {
 		// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
 		//       get really inefficient with large files
 		$result = $this->client->get_file( $path_from );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
@@ -438,14 +437,14 @@ class Vip_Filesystem_Stream {
 
 		// Upload to file service
 		$result = $this->client->upload_file( $filePath, $path_to );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
 
 		// Delete old file
 		$result = $this->client->delete_file( $path_from );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return FALSE;
 		}
