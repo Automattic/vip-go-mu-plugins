@@ -454,7 +454,6 @@ class Vip_Filesystem_Stream {
 
 	/**
 	 * Called in response to mkdir()
-	 * Currently, it will always return true as directories are automatically created on the Filesystem API
 	 *
 	 * @since   1.0.0
 	 * @access  public
@@ -466,6 +465,7 @@ class Vip_Filesystem_Stream {
 	 * @return  bool
 	 */
 	public function mkdir( $path, $mode, $options ) {
+		// Currently, it will always return true as directories are automatically created on the Filesystem API
 		return TRUE;
 	}
 
@@ -520,7 +520,7 @@ class Vip_Filesystem_Stream {
 	protected function string_to_resource( $data ) {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
-		if (false === fwrite( $tmp_handler, $data ) ) {
+		if ( false === fwrite( $tmp_handler, $data ) ) {
 			trigger_error( "Error creating temporary resource for data:\n" . $data,
 				E_USER_ERROR );
 		}
@@ -539,7 +539,7 @@ class Vip_Filesystem_Stream {
 	 * @return  bool        True on success. False on failure.
 	 */
 	protected function close_handler() {
-		if (! $this->file ) {
+		if ( ! $this->file ) {
 			return true;
 		}
 
@@ -556,7 +556,7 @@ class Vip_Filesystem_Stream {
 
 	/**
 	 * Converted the protocol file path into something the File Service
-	 * API can use
+	 * API client can use
 	 *
 	 * @since   1.0.0
 	 * @access  protected

@@ -133,7 +133,7 @@ class Vip_Filesystem {
 		 * then be removed.
 		 * - Hanif
 		 */
-		if ( 0 === stripos( $params['basedir'], '/tmp/uploads' ) ) {
+		if ( 0 === stripos( $params['basedir'], LOCAL_UPLOADS ) ) {
 			$params['path']    = str_replace(
 				LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['path'] );
 			$params['basedir'] = str_replace(
