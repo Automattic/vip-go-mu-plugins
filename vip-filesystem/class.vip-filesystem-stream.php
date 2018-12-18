@@ -5,7 +5,7 @@ namespace Automattic\VIP\Filesystem;
 use Automattic\VIP\Files\API_Client;
 use function Automattic\VIP\Files\new_api_client;
 
-class Vip_Filesystem_Stream {
+class VIP_Filesystem_Stream {
 
 	/**
 	 * Default protocol

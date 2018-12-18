@@ -4,7 +4,7 @@ namespace Automattic\VIP\Filesystem;
 
 use function Automattic\VIP\Files\new_api_client;
 
-class Vip_Filesystem {
+class VIP_Filesystem {
 
 	/**
 	 * The protocol defined for the  VIP Filesystem
@@ -17,7 +17,7 @@ class Vip_Filesystem {
 	 *
 	 * @since    1.0.0
 	 * @access   protected
-	 * @var      Vip_Filesystem_Loader    $loader    Maintains and registers all hooks for the plugin.
+	 * @var      VIP_Filesystem_Loader    $loader    Maintains and registers all hooks for the plugin.
 	 */
 	protected $loader;
 
@@ -44,7 +44,7 @@ class Vip_Filesystem {
 	 *
 	 * @since   1.0.0
 	 * @access  protected
-	 * @var     Vip_Filesystem_Stream
+	 * @var     VIP_Filesystem_Stream
 	 */
 	protected $stream_wrapper;
 
@@ -82,7 +82,7 @@ class Vip_Filesystem {
 		 */
 		require_once __DIR__ . '/class.vip-filesystem-stream.php';
 
-		$this->loader = new Vip_Filesystem_Loader();
+		$this->loader = new VIP_Filesystem_Loader();
 	}
 
 	/**
@@ -95,7 +95,7 @@ class Vip_Filesystem {
 		$this->loader->run();
 
 		// Create and register stream
-		$this->stream_wrapper = new Vip_Filesystem_Stream( new_api_client(),
+		$this->stream_wrapper = new VIP_Filesystem_Stream( new_api_client(),
 			self::PROTOCOL );
 		$this->stream_wrapper->register();
 	}

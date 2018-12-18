@@ -24,7 +24,7 @@ define( 'VIP_FILESYSTEM_VERSION', '1.0.0' );
  */
 require __DIR__ . '/vip-filesystem/class.vip-filesystem.php';
 
-use Automattic\VIP\Filesystem\Vip_Filesystem;
+use Automattic\VIP\Filesystem\VIP_Filesystem;
 
 /**
  * Begins execution of the plugin.
@@ -36,7 +36,7 @@ use Automattic\VIP\Filesystem\Vip_Filesystem;
  * @since    1.0.0
  */
 function run_vip_filesystem() {
-	$plugin = new Vip_Filesystem();
+	$plugin = new VIP_Filesystem();
 	$plugin->run();
 }
 
