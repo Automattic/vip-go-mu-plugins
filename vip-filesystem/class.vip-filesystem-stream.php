@@ -414,6 +414,11 @@ class VIP_Filesystem_Stream {
 	 * @return  bool    True on successful rename
 	 */
 	public function rename( $path_from, $path_to ) {
+		if ( $path_from === $path_to ) {
+			// from and to path are identical so do nothing
+			return true;
+		}
+
 		$path_from = $this->trim_path( $path_from );
 		$path_to = $this->trim_path( $path_to );
 
