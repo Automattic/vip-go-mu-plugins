@@ -129,7 +129,7 @@ class VIP_Filesystem_Stream {
 		if ( $this->client->is_file( $path ) ) {
 			$result = $this->client->get_file( $path );
 
-			if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+			if ( is_wp_error( $result ) ) {
 				trigger_error( $result->get_error_message(), E_USER_WARNING );
 				return false;
 			}
@@ -261,7 +261,7 @@ class VIP_Filesystem_Stream {
 		// Upload to file service
 		$result = $this->client
 			->upload_file( $this->uri, $this->path );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
@@ -282,7 +282,7 @@ class VIP_Filesystem_Stream {
 		$path = $this->trim_path( $path );
 		$result = $this->client->delete_file( $path );
 
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
@@ -369,7 +369,7 @@ class VIP_Filesystem_Stream {
 
 		$info = array();
 		$result = $this->client->is_file( $path, $info );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
@@ -426,7 +426,7 @@ class VIP_Filesystem_Stream {
 		// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
 		//       get really inefficient with large files
 		$result = $this->client->get_file( $path_from );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
@@ -438,14 +438,14 @@ class VIP_Filesystem_Stream {
 
 		// Upload to file service
 		$result = $this->client->upload_file( $filePath, $path_to );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
 
 		// Delete old file
 		$result = $this->client->delete_file( $path_from );
-		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
+		if ( is_wp_error( $result ) ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
