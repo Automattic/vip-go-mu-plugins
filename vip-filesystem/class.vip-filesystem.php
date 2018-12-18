@@ -129,16 +129,26 @@ class VIP_Filesystem {
 		 * then be removed.
 		 * - Hanif
 		 */
-		if ( 0 === stripos( $params['basedir'], LOCAL_UPLOADS ) ) {
-			$params['path']    = str_replace(
-				LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['path'] );
-			$params['basedir'] = str_replace(
-				LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['basedir'] );
+		$pos = stripos( $params['path'], LOCAL_UPLOADS );
+		if ( false !== $pos ) {
+			$params['path']    = substr_replace( $params['path'],
+				self::PROTOCOL . '://wp-content/uploads',
+				$pos,
+				strlen( LOCAL_UPLOADS ) );
+			$params['basedir']    = substr_replace( $params['basedir'],
+				self::PROTOCOL . '://wp-content/uploads',
+				$pos,
+				strlen( LOCAL_UPLOADS ) );
 		} else {
-			$params['path']    = str_replace(
-				WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['path'] );
-			$params['basedir'] = str_replace(
-				WP_CONTENT_DIR, self::PROTOCOL . '://wp-content', $params['basedir'] );
+			$pos = stripos( $params['path'], WP_CONTENT_DIR );
+			$params['path']    = substr_replace( $params['path'],
+				self::PROTOCOL . '://wp-content/uploads',
+				$pos,
+				strlen( WP_CONTENT_DIR ) );
+			$params['basedir']    = substr_replace( $params['basedir'],
+				self::PROTOCOL . '://wp-content/uploads',
+				$pos,
+				strlen( WP_CONTENT_DIR ) );
 		}
 
 		return $params;
