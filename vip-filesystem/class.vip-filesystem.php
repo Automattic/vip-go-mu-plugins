@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: hanifn
- * Date: 31/10/18
- * Time: 11:40 PM
- */
 
 namespace Automattic\VIP\Filesystem;
 
