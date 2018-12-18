@@ -99,7 +99,7 @@ class VIP_Filesystem_Stream {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @return  bool    TRUE if success, FALSE if failure
+	 * @return  bool    true if success, false if failure
 	 */
 	public function register() {
 		if ( in_array( $this->protocol, stream_get_wrappers(), true ) ) {
@@ -121,7 +121,7 @@ class VIP_Filesystem_Stream {
 	 * @param   $options
 	 * @param   string $opened_path
 	 *
-	 * @return  bool    True on success or FALSE on failure
+	 * @return  bool    True on success or false on failure
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
@@ -224,7 +224,7 @@ class VIP_Filesystem_Stream {
 			// File not seekable
 			trigger_error( 'File not seekable: ' . $this->path,
 				E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
 		$result = fseek( $this->file, $offset, $whence );
@@ -233,10 +233,10 @@ class VIP_Filesystem_Stream {
 			// Seek failed
 			trigger_error( 'Error seeking on file: ' . $this->path,
 				E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -247,15 +247,15 @@ class VIP_Filesystem_Stream {
 	 *
 	 * @param   string      $data   The data to be written
 	 *
-	 * @return  int|bool    Number of bytes written or FALSE on error
+	 * @return  int|bool    Number of bytes written or false on error
 	 */
 	public function stream_write( $data ) {
 		$length = fwrite( $this->file, $data );
 
-		if ( FALSE === $length ) {
+		if ( false === $length ) {
 			trigger_error( 'Error writing to file: ' . $this->path,
 				E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
 		// Upload to file service
@@ -263,7 +263,7 @@ class VIP_Filesystem_Stream {
 			->upload_file( $this->uri, $this->path );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
 		return $length;
@@ -284,12 +284,12 @@ class VIP_Filesystem_Stream {
 
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
 		$this->close_handler();
 
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -423,7 +423,7 @@ class VIP_Filesystem_Stream {
 		$result = $this->client->get_file( $path_from );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
 		// Convert to actual file to upload to new path
@@ -435,17 +435,17 @@ class VIP_Filesystem_Stream {
 		$result = $this->client->upload_file( $filePath, $path_to );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
 		// Delete old file
 		$result = $this->client->delete_file( $path_from );
 		if ( is_wp_error( $result ) || $result instanceof \WP_Error ) {
 			trigger_error( $result->get_error_message(), E_USER_WARNING );
-			return FALSE;
+			return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -462,7 +462,7 @@ class VIP_Filesystem_Stream {
 	 */
 	public function mkdir( $path, $mode, $options ) {
 		// Currently, it will always return true as directories are automatically created on the Filesystem API
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -511,7 +511,7 @@ class VIP_Filesystem_Stream {
 	 *
 	 * @param   string     $data   The file content to be written
 	 *
-	 * @return  resource   Returns resource or FALSE on write error
+	 * @return  resource   Returns resource or false on write error
 	 */
 	protected function string_to_resource( $data ) {
 		// Create a temporary file
