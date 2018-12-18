@@ -361,6 +361,7 @@ class Vip_Filesystem_Stream {
 		 * Added by Joe Hoyle
 		 *
 		 * Hanif's note: Copied from humanmade's S3 plugin
+		 *              https://github.com/humanmade/S3-Uploads
 		 */
 		if ( ! $extension ) {
 			return $stats;
