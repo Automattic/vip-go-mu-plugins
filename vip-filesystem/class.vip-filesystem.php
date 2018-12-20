@@ -142,11 +142,11 @@ class VIP_Filesystem {
 		} else {
 			$pos = stripos( $params['path'], WP_CONTENT_DIR );
 			$params['path']    = substr_replace( $params['path'],
-				self::PROTOCOL . '://wp-content/uploads',
+				self::PROTOCOL . '://wp-content',
 				$pos,
 				strlen( WP_CONTENT_DIR ) );
 			$params['basedir']    = substr_replace( $params['basedir'],
-				self::PROTOCOL . '://wp-content/uploads',
+				self::PROTOCOL . '://wp-content',
 				$pos,
 				strlen( WP_CONTENT_DIR ) );
 		}
