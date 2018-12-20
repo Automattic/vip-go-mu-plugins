@@ -88,4 +88,98 @@ class Akismet_CLI extends WP_CLI_Command {
 			WP_CLI::line( sprintf( _n( "%d comment could not be checked.", "%d comments could not be checked.", $total_counts['error'], 'akismet' ), number_format( $total_counts['error'] ) ) );
 		}
 	}
+	
+	/**
+	 * Fetches stats from the Akismet API.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<interval>]
+	 * : The time period for which to retrieve stats.
+	 * ---
+	 * default: all
+	 * options:
+	 *  - days
+	 *  - months
+	 *  - all
+	 * ---
+	 *
+	 * [--format=<format>]
+	 * : Allows overriding the output of the command when listing connections.
+	 * ---
+	 * default: table
+	 * options:
+	 *  - table
+	 *  - json
+	 *  - csv
+	 *  - yaml
+	 *  - count
+	 * ---
+	 *
+	 * [--summary]
+	 * : When set, will display a summary of the stats.
+	 *
+	 * ## EXAMPLES
+	 *
+	 * wp akismet stats
+	 * wp akismet stats all
+	 * wp akismet stats days
+	 * wp akismet stats months
+	 * wp akismet stats all --summary
+	 */
+	public function stats( $args, $assoc_args ) {
+		$api_key = Akismet::get_api_key();
+ 
+		if ( empty( $api_key ) ) {
+			WP_CLI::error( __( 'API key must be set to fetch stats.', 'akismet' ) );
+		}
+ 
+		switch ( $args[0] ) {
+			case 'days':
+				$interval = '60-days';
+				break;
+			case 'months':
+				$interval = '6-months';
+				break;
+			default:
+				$interval = 'all';
+				break;
+		}
+ 
+		$response = Akismet::http_post(
+			Akismet::build_query( array(
+				'blog' => get_option( 'home' ),
+				'key'  => $api_key,
+				'from' => $interval,
+			) ),
+			'get-stats'
+		);
+ 
+		if ( empty( $response[1] ) ) {
+			WP_CLI::error( __( 'Currently unable to fetch stats. Please try again.', 'akismet' ) );
+		}
+ 
+		$response_body = json_decode( $response[1], true );
+		
+		if ( is_null( $response_body ) ) {
+			WP_CLI::error( __( 'Stats response could not be decoded.', 'akismet' ) );
+		}
+ 
+		if ( isset( $assoc_args['summary'] ) ) {
+			$keys = array(
+				'spam',
+				'ham',
+				'missed_spam',
+				'false_positives',
+				'accuracy',
+				'time_saved',
+			);
+ 
+			WP_CLI\Utils\format_items( $assoc_args['format'], array( $response_body ), $keys );
+		}
+		else {
+			$stats = $response_body['breakdown'];
+			WP_CLI\Utils\format_items( $assoc_args['format'], $stats, array_keys( end( $stats ) ) );
+		}
+	}
 }
