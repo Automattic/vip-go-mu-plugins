@@ -74,6 +74,9 @@ class Akismet_Admin {
 			add_filter( 'akismet_comment_form_privacy_notice_url_display',  array( 'Akismet_Admin', 'jetpack_comment_form_privacy_notice_url' ) );
 			add_filter( 'akismet_comment_form_privacy_notice_url_hide',     array( 'Akismet_Admin', 'jetpack_comment_form_privacy_notice_url' ) );
 		}
+
+		// priority=1 because we need ours to run before core's comment anonymizer runs, and that's registered at priority=10
+		add_filter( 'wp_privacy_personal_data_erasers', array( 'Akismet_Admin', 'register_personal_data_eraser' ), 1 );
 	}
 
 	public static function admin_init() {
@@ -1049,7 +1052,7 @@ class Akismet_Admin {
 				$message .= ' ';
 			
 				if ( $spam_count === 0 ) {
-					$message .= __( 'No comments were caught as spam.' );
+					$message .= __( 'No comments were caught as spam.', 'akismet' );
 				}
 				else {
 					$message .= sprintf( _n( '%s comment was caught as spam.', '%s comments were caught as spam.', $spam_count, 'akismet' ), number_format( $spam_count ) );
@@ -1179,5 +1182,63 @@ class Akismet_Admin {
 
 	public static function jetpack_comment_form_privacy_notice_url( $url ) {
 		return str_replace( 'options-general.php', 'admin.php', $url );
+	}
+	
+	public static function register_personal_data_eraser( $erasers ) {
+		$erasers['akismet'] = array(
+			'eraser_friendly_name' => __( 'Akismet', 'akismet' ),
+			'callback' => array( 'Akismet_Admin', 'erase_personal_data' ),
+		);
+
+		return $erasers;
+	}
+	
+	/**
+	 * When a user requests that their personal data be removed, Akismet has a duty to discard
+	 * any personal data we store outside of the comment itself. Right now, that is limited
+	 * to the copy of the comment we store in the akismet_as_submitted commentmeta.
+	 *
+	 * FWIW, this information would be automatically deleted after 15 days.
+	 * 
+	 * @param $email_address string The email address of the user who has requested erasure.
+	 * @param $page int This function can (and will) be called multiple times to prevent timeouts,
+	 *                  so this argument is used for pagination.
+	 * @return array
+	 * @see https://developer.wordpress.org/plugins/privacy/adding-the-personal-data-eraser-to-your-plugin/
+	 */
+	public static function erase_personal_data( $email_address, $page = 1 ) {
+		$items_removed = false;
+		
+		$number = 50;
+		$page = (int) $page;
+
+		$comments = get_comments(
+			array(
+				'author_email' => $email_address,
+				'number'       => $number,
+				'paged'        => $page,
+				'order_by'     => 'comment_ID',
+				'order'        => 'ASC',
+			)
+		);
+
+		foreach ( (array) $comments as $comment ) {
+			$comment_as_submitted = get_comment_meta( $comment->comment_ID, 'akismet_as_submitted', true );
+			
+			if ( $comment_as_submitted ) {
+				delete_comment_meta( $comment->comment_ID, 'akismet_as_submitted' );
+				$items_removed = true;
+			}
+		}
+
+		// Tell core if we have more comments to work on still
+		$done = count( $comments ) < $number;
+		
+		return array(
+			'items_removed' => $items_removed,
+			'items_retained' => false, // always false in this example
+			'messages' => array(), // no messages in this example
+			'done' => $done,
+		);
 	}
 }
