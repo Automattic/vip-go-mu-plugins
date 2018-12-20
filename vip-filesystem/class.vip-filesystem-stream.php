@@ -205,6 +205,18 @@ class VIP_Filesystem_Stream {
 	 * @return  bool    True on success. False on failure
 	 */
 	public function stream_flush() {
+		if ( ! $this->file ) {
+			return false;
+		}
+
+		// Upload to file service
+		$result = $this->client
+			->upload_file( $this->uri, $this->path );
+		if ( is_wp_error( $result ) ) {
+			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			return false;
+		}
+
 		return fflush( $this->file );
 	}
 
@@ -255,14 +267,6 @@ class VIP_Filesystem_Stream {
 		if ( false === $length ) {
 			trigger_error( 'Error writing to file: ' . $this->path,
 				E_USER_WARNING );
-			return false;
-		}
-
-		// Upload to file service
-		$result = $this->client
-			->upload_file( $this->uri, $this->path );
-		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
 			return false;
 		}
 
