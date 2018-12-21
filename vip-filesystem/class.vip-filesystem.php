@@ -12,16 +12,6 @@ class VIP_Filesystem {
 	const PROTOCOL = 'vip';
 
 	/**
-	 * The loader that's responsible for maintaining and registering all hooks that power
-	 * the plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   protected
-	 * @var      VIP_Filesystem_Loader    $loader    Maintains and registers all hooks for the plugin.
-	 */
-	protected $loader;
-
-	/**
 	 * The unique identifier of this plugin.
 	 *
 	 * @since    1.0.0
@@ -60,7 +50,6 @@ class VIP_Filesystem {
 		$this->plugin_name = 'vip-filesystem';
 
 		$this->load_dependencies();
-		$this->define_filters();
 	}
 
 	/**
@@ -72,17 +61,9 @@ class VIP_Filesystem {
 	private function load_dependencies() {
 
 		/**
-		 * The class responsible for orchestrating the actions and filters of the
-		 * core plugin.
-		 */
-		require_once __DIR__ . '/class.vip-filesystem-loader.php';
-
-		/**
 		 * The class representing the VIP Files stream
 		 */
 		require_once __DIR__ . '/class.vip-filesystem-stream.php';
-
-		$this->loader = new VIP_Filesystem_Loader();
 	}
 
 	/**
@@ -91,8 +72,7 @@ class VIP_Filesystem {
 	 * @since    1.0.0
 	 */
 	public function run() {
-		// Loads all hooks
-		$this->loader->run();
+		$this->add_filters();
 
 		// Create and register stream
 		$this->stream_wrapper = new VIP_Filesystem_Stream( new_api_client(),
@@ -106,11 +86,9 @@ class VIP_Filesystem {
 	 * @since    1.0.0
 	 * @access   private
 	 */
-	private function define_filters() {
-//		$this->loader->add_filter( 'upload_dir',
-//			$this, 'filter_upload_dir', 20, 1 );
-//		$this->loader->add_filter( 'wp_handle_upload_prefilter',
-//			$this, 'prefilter_move_tmp_file', 10, 1 );
+	private function add_filters() {
+//		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 20, 1 );
+//		add_filter( 'wp_handle_upload_prefilter', [ $this, 'prefilter_move_tmp_file' ], 10, 1 );
 	}
 
 	/**
