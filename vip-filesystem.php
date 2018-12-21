@@ -7,6 +7,8 @@
  * Author URI:        http://automattic.com/
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ * Inspired by the S3 Uploads plugin from Human Made: https://github.com/humanmade/S3-Uploads
  */
 
 // If this file is called directly, abort.
