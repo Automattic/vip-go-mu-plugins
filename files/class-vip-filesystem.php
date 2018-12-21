@@ -1,8 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Filesystem;
-
-use function Automattic\VIP\Files\new_api_client;
+namespace Automattic\VIP\Files;
 
 class VIP_Filesystem {
 
@@ -63,7 +61,7 @@ class VIP_Filesystem {
 		/**
 		 * The class representing the VIP Files stream
 		 */
-		require_once __DIR__ . '/class.vip-filesystem-stream.php';
+		require_once __DIR__ . '/class-vip-filesystem-stream.php';
 	}
 
 	/**

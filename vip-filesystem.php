@@ -22,9 +22,9 @@ define( 'VIP_FILESYSTEM_VERSION', '1.0.0' );
 /**
  * The core plugin class
  */
-require __DIR__ . '/vip-filesystem/class.vip-filesystem.php';
+require __DIR__ . '/files/class-vip-filesystem.php';
 
-use Automattic\VIP\Filesystem\VIP_Filesystem;
+use Automattic\VIP\Files\VIP_Filesystem;
 
 /**
  * Begins execution of the plugin.

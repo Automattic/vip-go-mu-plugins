@@ -1,9 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Filesystem;
-
-use Automattic\VIP\Files\API_Client;
-use function Automattic\VIP\Files\new_api_client;
+namespace Automattic\VIP\Files;
 
 class VIP_Filesystem_Stream {
 
