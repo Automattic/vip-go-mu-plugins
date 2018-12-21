@@ -86,7 +86,6 @@ class VIP_Filesystem {
 	 */
 	private function add_filters() {
 //		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 20, 1 );
-//		add_filter( 'wp_handle_upload_prefilter', [ $this, 'prefilter_move_tmp_file' ], 10, 1 );
 	}
 
 	/**
@@ -128,16 +127,5 @@ class VIP_Filesystem {
 		}
 
 		return $params;
-	}
-
-	public function prefilter_move_tmp_file( $file ) {
-		$upload_dir = wp_upload_dir();
-		$new_path   = $upload_dir['basedir'] . '/tmp/' . basename( $file['tmp_name'] );
-
-		copy( $file['tmp_name'], $new_path );
-		unlink( $file['tmp_name'] );
-		$file['tmp_name'] = $new_path;
-
-		return $file;
 	}
 }
