@@ -107,10 +107,10 @@ class VIP_Filesystem {
 	 * @access   private
 	 */
 	private function define_filters() {
-		$this->loader->add_filter( 'upload_dir',
-			$this, 'filter_upload_dir', 20, 1 );
-		$this->loader->add_filter( 'wp_handle_upload_prefilter',
-			$this, 'prefilter_move_tmp_file', 10, 1 );
+//		$this->loader->add_filter( 'upload_dir',
+//			$this, 'filter_upload_dir', 20, 1 );
+//		$this->loader->add_filter( 'wp_handle_upload_prefilter',
+//			$this, 'prefilter_move_tmp_file', 10, 1 );
 	}
 
 	/**
