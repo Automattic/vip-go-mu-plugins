@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
-class VIP_Filesystem_Stream {
+class VIP_Filesystem_Stream_Wrapper {
 
 	/**
 	 * Default protocol

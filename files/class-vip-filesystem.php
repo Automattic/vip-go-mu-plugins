@@ -32,7 +32,7 @@ class VIP_Filesystem {
 	 *
 	 * @since   1.0.0
 	 * @access  protected
-	 * @var     VIP_Filesystem_Stream
+	 * @var     VIP_Filesystem_Stream_Wrapper
 	 */
 	protected $stream_wrapper;
 
@@ -61,7 +61,7 @@ class VIP_Filesystem {
 		/**
 		 * The class representing the VIP Files stream
 		 */
-		require_once __DIR__ . '/class-vip-filesystem-stream.php';
+		require_once __DIR__ . '/class-vip-filesystem-stream-wrapper.php';
 	}
 
 	/**
@@ -73,7 +73,7 @@ class VIP_Filesystem {
 		$this->add_filters();
 
 		// Create and register stream
-		$this->stream_wrapper = new VIP_Filesystem_Stream( new_api_client(),
+		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( new_api_client(),
 			self::PROTOCOL );
 		$this->stream_wrapper->register();
 	}
