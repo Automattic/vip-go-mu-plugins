@@ -1,5 +1,6 @@
 .deployignore
 
+.ackrc
 .codeclimate.yml
 .coveralls.yml
 .distignore
@@ -8,6 +9,7 @@
 .eslintrc
 .eslintrc.js
 .git
+.gitattributes
 .github
 .gitignore
 .gitmodules
@@ -39,6 +41,7 @@ phpunit.xml.dist
 phpunit-multisite.xml
 README.md
 readme.md
+readme.txt
 webpack.config.js
 wpcom-helper.php
 yarn.lock
