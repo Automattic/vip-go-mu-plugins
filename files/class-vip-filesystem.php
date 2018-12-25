@@ -85,7 +85,8 @@ class VIP_Filesystem {
 	 * @access   private
 	 */
 	private function add_filters() {
-//		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 20, 1 );
+
+		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
 	}
 
 	/**

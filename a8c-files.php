@@ -23,7 +23,10 @@ require_once( __DIR__ . '/files/class-path-utils.php' );
 
 require_once( __DIR__ . '/files/init-filesystem.php' );
 
+require_once( __DIR__ . '/files/class-vip-filesystem.php' );
+
 use Automattic\VIP\Files\Path_Utils;
+use Automattic\VIP\Files\VIP_Filesystem;
 
 class A8C_Files {
 
@@ -902,23 +905,30 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 }
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
-	add_action( 'init', 'a8c_files_init' );
-	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
-	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
-	add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
+	// Conditionally load either the new Stream Wrapper implementation or old school a8c-files
+	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
+		// Load Stream Wrapper plugin
+		$plugin = new VIP_Filesystem();
+		$plugin->run();
+	} else {
+		add_action( 'init', 'a8c_files_init' );
+		add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
+		add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+		add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 
-	/**
-	 * Conditionally load the VIP Go File Service compatible srcset solution.
-	 */
-	add_action( 'init', function() {
-		if ( true !== is_vip_go_srcset_enabled() ) {
-			return;
-		}
+		/**
+		 * Conditionally load the VIP Go File Service compatible srcset solution.
+		 */
+		add_action( 'init', function () {
+			if ( true !== is_vip_go_srcset_enabled() ) {
+				return;
+			}
 
-		require_once( __DIR__ . '/files/class-image.php' );
-		require_once( __DIR__ . '/files/class-image-sizes.php' );
+			require_once( __DIR__ . '/files/class-image.php' );
+			require_once( __DIR__ . '/files/class-image-sizes.php' );
 
-		// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
-		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
-	}, 10, 0 );
+			// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
+			add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
+		}, 10, 0 );
+	}
 }
