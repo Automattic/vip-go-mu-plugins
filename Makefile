@@ -1,4 +1,4 @@
-.PHONY: lint phpunit phpdoc phpcs phpcbf clean
+.PHONY: lint phpunit phpdoc initphpcs phpcs phpcbf clean
 
 test: lint phpunit phpcs
 
