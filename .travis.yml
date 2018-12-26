@@ -10,8 +10,8 @@ php:
 
 env:
   matrix:
-    - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
-    - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
+    - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master RUN_PHPCS=1
+    - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master RUN_PHPCS=0
 
 addons:
   apt:
@@ -29,7 +29,9 @@ before_script:
 
 script:
   # Linting and unit tests
-  - make test
+  - make lint
+  - if [[ "$RUN_PHPCS" == "1" ]]; then make sniff; fi
+  - make phpunit
 
 notifications:
   email: false
