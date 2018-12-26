@@ -38,8 +38,11 @@ use Automattic\VIP\Files\VIP_Filesystem;
  * @since    1.0.0
  */
 function run_vip_filesystem() {
-	$plugin = new VIP_Filesystem();
-	$plugin->run();
+	// Only init if we have the necessary constants
+	if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
+		$plugin = new VIP_Filesystem();
+		$plugin->run();
+	}
 }
 
 run_vip_filesystem();
