@@ -23,7 +23,10 @@ require_once( __DIR__ . '/files/class-path-utils.php' );
 
 require_once( __DIR__ . '/files/init-filesystem.php' );
 
+require_once( __DIR__ . '/files/class-vip-filesystem.php' );
+
 use Automattic\VIP\Files\Path_Utils;
+use Automattic\VIP\Files\VIP_Filesystem;
 
 class A8C_Files {
 
@@ -34,20 +37,13 @@ class A8C_Files {
 			return 1073741824; // pow( 2, 30 )
 		});
 
-		// Hooks for the mu-plugin WordPress Importer
-		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
-		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
-
-		add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
-		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
-
-		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
-
-		add_filter( 'wp_handle_upload', array( &$this, 'upload_file' ), 10, 2 );
-		add_filter( 'wp_delete_file',   array( &$this, 'delete_file' ), 20, 1 );
-
-		add_filter( 'wp_save_image_file',        array( &$this, 'save_image_file' ), 10, 5 );
-		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
+		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
+		// The old school implementation will be phased out soon.
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+			$this->init_vip_filesystem();
+		} else {
+			$this->init_legacy_filesystem();
+		}
 
 		// Limit to certain contexts for the initial testing and roll-out.
 		// This will be phased out and become the default eventually.
@@ -58,13 +54,39 @@ class A8C_Files {
 			$this->init_vip_photon_filters();
 		}
 
-		// Automatic creation of intermediate image sizes is disabled via `wpcom_intermediate_sizes()`
-
 		// ensure we always upload with year month folder layouts
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+	}
+
+	/**
+	 * Initializes and wires up Stream Wrapper plugin.
+	 */
+	private function init_vip_filesystem() {
+		$vip_filesystem = new VIP_Filesystem();
+		$vip_filesystem->run();
+	}
+
+	/**
+	 * Initializes our legacy filter-based approach to uploads.
+	 */
+	private function init_legacy_filesystem() {
+		// Hooks for the mu-plugin WordPress Importer
+		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
+		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
+
+		add_filter( 'wp_unique_filename', array( $this, 'filter_unique_filename' ), 10, 4 );
+		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
+
+		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
+
+		add_filter( 'wp_handle_upload', array( &$this, 'upload_file' ), 10, 2 );
+		add_filter( 'wp_delete_file', array( &$this, 'delete_file' ), 20, 1 );
+
+		add_filter( 'wp_save_image_file', array( &$this, 'save_image_file' ), 10, 5 );
+		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 	}
 
 	private function init_jetpack_photon_filters() {
@@ -902,15 +924,17 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 }
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
+	// Kick things off
 	add_action( 'init', 'a8c_files_init' );
+
+	// Disable automatic creation of intermediate image sizes.
+	// We generate them on-the-fly on VIP.
 	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
 	add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 
-	/**
-	 * Conditionally load the VIP Go File Service compatible srcset solution.
-	 */
-	add_action( 'init', function() {
+	// Conditionally load our srcset solution during our testing period.
+	add_action( 'init', function () {
 		if ( true !== is_vip_go_srcset_enabled() ) {
 			return;
 		}
