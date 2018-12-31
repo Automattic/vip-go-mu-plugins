@@ -22,10 +22,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * The VIP Files API Client
 	 *
 	 * @since   1.0.0
-	 * @access  protected
+	 * @access  public
 	 * @var     API_Client  VIP Files API Client
 	 */
-	protected $client;
+	public $client;
 
 	/**
 	 * The file resource fetched through the VIP Files API

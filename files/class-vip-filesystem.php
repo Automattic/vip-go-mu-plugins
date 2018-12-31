@@ -87,6 +87,7 @@ class VIP_Filesystem {
 	private function add_filters() {
 
 		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
+		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
 	}
 
 	/**
@@ -128,5 +129,56 @@ class VIP_Filesystem {
 		}
 
 		return $params;
+	}
+
+	/**
+	 * Check filetype support against Mogile
+	 *
+	 * Leverages Mogile backend, which will return a 406 or other non-200 code if the filetype is unsupported
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   array   $filetype_data
+	 * @param   string  $file
+	 * @param   string  $filename
+	 * @param   array   $mimes
+	 *
+	 * @return  array
+	 */
+	public function filter_filetype_check( $filetype_data, $file, $filename, $mimes ) {
+		$filename = sanitize_file_name( $filename );
+
+		$check = $this->check_uniqueness_with_backend( $filename );
+
+		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
+		// See `_wp_handle_upload()`
+		if ( 200 != $check['http_code'] ) {
+			$filetype_data['ext']             = '';
+			$filetype_data['type']            = '';
+			// Never set this true, which leaves filename changing to dedicated methods in this class
+			$filetype_data['proper_filename'] = false;
+		}
+
+		return $filetype_data;
+	}
+
+	private function check_uniqueness_with_backend( $filename ) {
+		if ( ! ( ( $uploads = wp_upload_dir() ) && false === $uploads['error'] ) ) {
+			$file['error'] = $uploads['error'];
+			return $file;
+		}
+
+		$url_parts = wp_parse_url( $uploads['url'] . '/' . $filename );
+		$file_path = $url_parts['path'];
+		if ( is_multisite() ) {
+			$sanitized_file_path = Path_Utils::trim_leading_multisite_directory( $file_path, $this->get_upload_path() );
+			if ( false !== $sanitized_file_path ) {
+				$file_path = $sanitized_file_path;
+				unset( $sanitized_file_path );
+			}
+		}
+
+		$result = $this->stream_wrapper->client->get_file( $file_path );
 	}
 }
