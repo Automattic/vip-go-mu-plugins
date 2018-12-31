@@ -342,7 +342,7 @@ class A8C_Files {
 	}
 
 	/**
-	 * Common method to check Mogile backend for filename uniqueness
+	 * Common method to return a unique filename from the VIP Go File Service using the provided filename as a starting point
 	 */
 	private function _check_uniqueness_with_backend( $filename ) {
 		$headers = array(
