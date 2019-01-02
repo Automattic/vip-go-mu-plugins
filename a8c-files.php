@@ -232,14 +232,14 @@ class A8C_Files {
 	function get_upload_dir( $upload ) {
 
 		// Maybe fix paths for multisite
-		if ( ! is_multisite() || ( is_main_network() && is_main_site() ) ) {
-			// If we're not on multisite, do nothing
-			$sites_path = '';
-		} elseif ( false !== stripos( $upload['subdir'], '/sites/' ) ) {
-			// If we maybe already have `/sites/` in the path, do nothing
-			$sites_path = '';
-		} else {
-			$sites_path = '/sites/' . get_current_blog_id();
+		$sites_path = '';
+		if (
+			// We only want to manipulate the paths if...
+			is_multisite() && // we're on multisite
+			1 !== get_current_blog_id() && // the blog ID is NOT 1, the uploads path for blog ID 1 doesn't need to include the site ID
+			false === stripos( $upload['subdir'], '/sites/' ) // the `subdir` hasn't already been updated to include /sites/{site_id}
+			) {
+				$sites_path = '/sites/' . get_current_blog_id();
 		}
 
 		$upload['path'] = constant( 'LOCAL_UPLOADS' ) . $sites_path . $upload['subdir'];
