@@ -877,12 +877,11 @@ function wpcom_intermediate_sizes( $sizes ) {
  */
 function is_vip_go_srcset_enabled() {
 	// Allow override via querystring for easy testing
-	if ( isset( $_GET['enable_vip_srcset'] ) ) {
-		return '1' === $_GET['enable_vip_srcset'];
+	if ( isset( $_GET['disable_vip_srcset'] ) ) {
+		return '0' === $_GET['disable_vip_srcset'];
 	}
 
-	// For now, default to enabled on non-production environments only.
-	$enabled = ( defined( 'VIP_GO_ENV' ) && 'production' !== constant( 'VIP_GO_ENV' ) );
+	$enabled = 1;
 
 	/**
 	 * Filters the default state of VIP Go File Service compatible srcset solution.
