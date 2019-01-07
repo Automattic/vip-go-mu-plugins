@@ -301,6 +301,11 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
+		// Skip purge if it is a new attachment
+		if ( 'attachment' === $post->post_type && $post->post_date === $post->post_modified ) {
+			return;
+		}
+
 		$post_purge_urls = array();
 		$post_purge_urls[] = get_permalink( $post_id );
 		$post_purge_urls[] = home_url( '/' );
