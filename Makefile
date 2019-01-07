@@ -20,7 +20,7 @@ initphpcs:
 	/tmp/phpcs --config-set installed_paths /tmp/wpcs,/tmp/vipcs
 
 phpcs: initphpcs
-	/tmp/phpcs -p . --severity=6 --standard=phpcs.xml --extensions=php --runtime-set ignore_warnings_on_exit true
+	/tmp/phpcs -p . --severity=6 --standard=phpcs.xml --extensions=php --runtime-set ignore_warnings_on_exit true --runtime-set ignore_errors_on_exit true
 
 phpcbf: initphpcs
 	/tmp/phpcbf -p . --standard=phpcs.xml --extensions=php
