@@ -881,7 +881,7 @@ function is_vip_go_srcset_enabled() {
 		return '0' === $_GET['disable_vip_srcset'];
 	}
 
-	$enabled = 1;
+	$enabled = true;
 
 	/**
 	 * Filters the default state of VIP Go File Service compatible srcset solution.
