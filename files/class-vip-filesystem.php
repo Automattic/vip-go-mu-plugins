@@ -132,9 +132,9 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * Check filetype support against Mogile
+	 * Check filetype support against VIP Filesystem API
 	 *
-	 * Leverages Mogile backend, which will return a 406 or other non-200 code if the filetype is unsupported
+	 * Leverages VIP Filesystem API, which will return a 406 or other non-200 code if the filetype is unsupported
 	 *
 	 * @since   1.0.0
 	 * @access  public
@@ -164,7 +164,8 @@ class VIP_Filesystem {
 	}
 
 	private function check_uniqueness_with_backend( $filename ) {
-		if ( ! ( ( $uploads = wp_upload_dir() ) && false === $uploads['error'] ) ) {
+		$uploads = wp_upload_dir();
+		if ( ! (  $uploads && false === $uploads['error'] ) ) {
 			$file['error'] = $uploads['error'];
 			return $file;
 		}
@@ -179,6 +180,8 @@ class VIP_Filesystem {
 			}
 		}
 
-		$result = $this->stream_wrapper->client->get_file( $file_path );
+		$result = $this->stream_wrapper->client->get_unique_name( $file_path );
+
+		return $result;
 	}
 }
