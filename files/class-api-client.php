@@ -188,4 +188,21 @@ class API_Client {
 		/* translators: 1: file path 2: HTTP status code */
 		return new WP_Error( 'is_file-failed', sprintf( __( 'Failed to check if file `%1$s` exists (response code: %2$d)' ), $file_path, $response_code ) );
 	}
+
+	public function get_unique_name( $file_path ) {
+		$response = $this->call_api( $file_path, 'get', [
+			'headers' => [
+				'x-action' => 'unique_filename',
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		$content = wp_remote_retrieve_body( $response );
+
+		return compact( 'response_code', 'content' );
+	}
 }
