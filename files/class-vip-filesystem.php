@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Files;
 
+use WP_Error;
+
 class VIP_Filesystem {
 
 	/**
@@ -149,11 +151,9 @@ class VIP_Filesystem {
 	public function filter_filetype_check( $filetype_data, $file, $filename, $mimes ) {
 		$filename = sanitize_file_name( $filename );
 
-		$check = $this->check_uniqueness_with_backend( $filename );
-
 		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
 		// See `_wp_handle_upload()`
-		if ( 200 != $check['http_code'] ) {
+		if ( $this->check_filetype_with_backend( $filename ) ) {
 			$filetype_data['ext']             = '';
 			$filetype_data['type']            = '';
 			// Never set this true, which leaves filename changing to dedicated methods in this class
@@ -163,11 +163,24 @@ class VIP_Filesystem {
 		return $filetype_data;
 	}
 
-	private function check_uniqueness_with_backend( $filename ) {
+	/**
+	 * Use the VIP Filesystem API to check for filename uniqueness
+	 *
+	 * The `unique_filename` API will return an error if file type is not supported
+	 * by the VIP Filesystem.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string      $filename
+	 *
+	 * @return  bool        True if filetype is supported. Else false
+	 */
+	private function check_filetype_with_backend( $filename ) {
 		$uploads = wp_upload_dir();
-		if ( ! (  $uploads && false === $uploads['error'] ) ) {
-			$file['error'] = $uploads['error'];
-			return $file;
+		if ( ! (  $uploads && false === $uploads[ 'error' ] ) ) {
+			trigger_error( $uploads[ 'error' ], E_USER_WARNINNG );
+			return false;
 		}
 
 		$url_parts = wp_parse_url( $uploads['url'] . '/' . $filename );
@@ -180,8 +193,23 @@ class VIP_Filesystem {
 			}
 		}
 
-		$result = $this->stream_wrapper->client->get_unique_name( $file_path );
+		$result = $this->stream_wrapper->client->get_unique_filename( $file_path );
 
-		return $result;
+		if ( is_wp_error( $result ) ) {
+			if ( 'invalid-file-type' !== $result->get_error_code() ) {
+				trigger_error( $result->get_error_message(), E_USER_WARNING );
+			}
+			return false;
+		}
+
+		return true;
+	}
+
+	private function get_upload_path() {
+		$upload_path = trim( get_option( 'upload_path' ) );
+		if ( empty( $upload_path ) )
+			return 'wp-content/uploads';
+		else
+			return $upload_path;
 	}
 }
