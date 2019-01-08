@@ -198,9 +198,9 @@ class API_Client {
 	 * @return string|WP_Error New unique filename
 	 */
 	public function get_unique_filename( $file_path ) {
-		$response = $this->call_api( $file_path, 'get', [
+		$response = $this->call_api( $file_path, 'GET', [
 			'headers' => [
-				'x-action' => 'unique_filename',
+				'X-Action' => 'unique_filename',
 			],
 		] );
 

@@ -491,4 +491,18 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_result, $actual_result );
 	}
+
+	public function test__get_unique_filename__validate_request() {
+		$this->mock_http_response( [] ); // don't care about the response
+
+		$this->api_client->get_unique_filename( '/wp-content/uploads/file.jpg' );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
+		$this->assertArraySubset( [
+			'X-Action' => 'unique_filename'
+		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
+	}
 }
