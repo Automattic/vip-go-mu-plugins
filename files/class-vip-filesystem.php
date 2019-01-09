@@ -90,6 +90,7 @@ class VIP_Filesystem {
 
 		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
 		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
+		add_filter( 'wp_delete_file', array( &$this, 'filter_delete_file' ), 20, 1 );
 	}
 
 	/**
@@ -205,8 +206,73 @@ class VIP_Filesystem {
 		return true;
 	}
 
+	/**
+	 * Return uploads path
+	 *
+	 * Different from wp_uploads_dir() as that will return the `vip://` protocol too
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @return  string The uploads path
+	 */
 	private function get_upload_path() {
 		$upload_dir_path = wp_get_upload_dir()['path'];
 		return substr( $upload_dir_path, strlen( self::PROTOCOL . '://' ) );
+	}
+
+	/**
+	 * Deletes the file and purge the cache
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   string      $file_path
+	 */
+	public function filter_delete_file( $file_path ) {
+		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
+		// which all except the first result in 404's, keep accounting of what we've deleted.
+		static $deleted_uris = array();
+
+		// Some of the intermediate file paths have the uploads `basedir` occur twice so we will need to
+		// check for that.
+		$upload_path = wp_get_upload_dir();
+		// Find 2nd occurrence of `basedir`
+		$pos = strpos( $file_path, $upload_path[ 'basedir' ], strlen( $upload_path[ 'basedir' ] ) );
+		if ( false !== $pos ) {
+			// +1 to account far trailing slash
+			$file_path = substr( $file_path, strlen( $upload_path[ 'basedir' ] ) + 1 );
+		}
+
+		// Strip query string to avoid attempting to delete the aforementioned image sizes
+		$url       = wp_parse_url( $file_path );
+		$file_uri = sprintf('/%s%s', $url[ 'host' ], $url[ 'path' ] );
+
+		if ( in_array( $file_uri, $deleted_uris, true ) ) {
+			// This file has already been successfully deleted from the file service in this request
+			return;
+		}
+
+		if (! unlink( $file_path ) ) {
+			// failed deleting
+			return;
+		}
+
+		// Set our static so we can later recall that this file has already been deleted and purged
+		$deleted_uris[] = $file_uri;
+
+		// We successfully deleted the file, purge the file from the caches
+		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
+			$invalidation_url .= '/sites/' . get_current_blog_id();
+		}
+		$invalidation_url .= $file_uri;
+
+		if (! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
+			trigger_error( sprintf( __( 'Error purging %s from the cache service' ), $invalidation_url ),
+				E_USER_WARNING );
+		}
+
+		// Don't return anything so that `wp_delete_file()` won't try to `unlink` again
 	}
 }
