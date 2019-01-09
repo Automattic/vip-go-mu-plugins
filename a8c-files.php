@@ -900,6 +900,10 @@ function is_vip_go_srcset_enabled() {
  * @return array Attachment metadata.
  */
 function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
+	// Can't do much if data is empty
+	if ( empty( $data ) ) {
+		return $data;
+	}
 
 	$sizes_already_exist = (
 		true === is_array( $data )
