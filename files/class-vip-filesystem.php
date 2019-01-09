@@ -178,10 +178,6 @@ class VIP_Filesystem {
 	 */
 	private function check_filetype_with_backend( $filename ) {
 		$uploads = wp_upload_dir();
-		if ( ! (  $uploads && false === $uploads[ 'error' ] ) ) {
-			trigger_error( $uploads[ 'error' ], E_USER_WARNINNG );
-			return false;
-		}
 
 		$url_parts = wp_parse_url( $uploads['url'] . '/' . $filename );
 		$file_path = $url_parts['path'];
