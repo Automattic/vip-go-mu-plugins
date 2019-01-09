@@ -177,17 +177,9 @@ class VIP_Filesystem {
 	 * @return  bool        True if filetype is supported. Else false
 	 */
 	private function check_filetype_with_backend( $filename ) {
-		$uploads = wp_upload_dir();
+		$upload_path = $this->get_upload_path();
 
-		$url_parts = wp_parse_url( $uploads['url'] . '/' . $filename );
-		$file_path = $url_parts['path'];
-		if ( is_multisite() ) {
-			$sanitized_file_path = Path_Utils::trim_leading_multisite_directory( $file_path, $this->get_upload_path() );
-			if ( false !== $sanitized_file_path ) {
-				$file_path = $sanitized_file_path;
-				unset( $sanitized_file_path );
-			}
-		}
+		$file_path = $upload_path . $filename;
 
 		$result = $this->stream_wrapper->client->get_unique_filename( $file_path );
 
@@ -202,10 +194,7 @@ class VIP_Filesystem {
 	}
 
 	private function get_upload_path() {
-		$upload_path = trim( get_option( 'upload_path' ) );
-		if ( empty( $upload_path ) )
-			return 'wp-content/uploads';
-		else
-			return $upload_path;
+		$upload_dir_path = wp_get_upload_dir()['path'];
+		return ltrim( $upload_dir_path. self::PROTOCOL . '://' );
 	}
 }
