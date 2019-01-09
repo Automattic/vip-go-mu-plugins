@@ -195,6 +195,6 @@ class VIP_Filesystem {
 
 	private function get_upload_path() {
 		$upload_dir_path = wp_get_upload_dir()['path'];
-		return ltrim( $upload_dir_path. self::PROTOCOL . '://' );
+		return substr( $upload_dir_path, strlen( self::PROTOCOL . '://' ) );
 	}
 }
