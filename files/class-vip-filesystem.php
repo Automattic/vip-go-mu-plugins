@@ -262,7 +262,7 @@ class VIP_Filesystem {
 		$deleted_uris[] = $file_uri;
 
 		// We successfully deleted the file, purge the file from the caches
-		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
+		$invalidation_url = get_site_url();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$invalidation_url .= '/sites/' . get_current_blog_id();
 		}
