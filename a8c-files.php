@@ -911,6 +911,13 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		return $data;
 	}
 
+	// Missing some critical data we need to determine sizes, so bail
+	if ( ! isset( $data['file'] )
+	    || ! isset( $data['width'] )
+	    || ! isset( $data['height'] ) {
+		return $data;    
+	}
+	
 	$mime_type = get_post_mime_type( $attachment_id );
 	$attachment_is_image = preg_match( '!^image/!', $mime_type );
 
