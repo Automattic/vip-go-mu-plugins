@@ -12,6 +12,11 @@
  * Domain Path: /languages/
  */
 
+// Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
+if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
+	define( 'JP_SITEMAP_BATCH_SIZE', 200 );	
+}
+
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
 if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
