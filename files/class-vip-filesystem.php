@@ -153,7 +153,7 @@ class VIP_Filesystem {
 
 		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
 		// See `_wp_handle_upload()`
-		if ( $this->check_filetype_with_backend( $filename ) ) {
+		if ( ! $this->check_filetype_with_backend( $filename ) ) {
 			$filetype_data['ext']             = '';
 			$filetype_data['type']            = '';
 			// Never set this true, which leaves filename changing to dedicated methods in this class
