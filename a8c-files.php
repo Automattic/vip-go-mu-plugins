@@ -914,7 +914,7 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 	// Missing some critical data we need to determine sizes, so bail
 	if ( ! isset( $data['file'] )
 	    || ! isset( $data['width'] )
-	    || ! isset( $data['height'] ) {
+	    || ! isset( $data['height'] ) ) {
 		return $data;    
 	}
 	
