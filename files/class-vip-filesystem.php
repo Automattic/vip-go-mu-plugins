@@ -234,19 +234,9 @@ class VIP_Filesystem {
 		// which all except the first result in 404's, keep accounting of what we've deleted.
 		static $deleted_uris = array();
 
-		// Some of the intermediate file paths have the uploads `basedir` occur twice so we will need to
-		// check for that.
-		$upload_path = wp_get_upload_dir();
-		// Find 2nd occurrence of `basedir`
-		$pos = strpos( $file_path, $upload_path[ 'basedir' ], strlen( $upload_path[ 'basedir' ] ) );
-		if ( false !== $pos ) {
-			// +1 to account far trailing slash
-			$file_path = substr( $file_path, strlen( $upload_path[ 'basedir' ] ) + 1 );
-		}
+		$file_path = $this->clean_file_path( $file_path );
 
-		// Strip query string to avoid attempting to delete the aforementioned image sizes
-		$url       = wp_parse_url( $file_path );
-		$file_uri = sprintf('/%s%s', $url[ 'host' ], $url[ 'path' ] );
+		$file_uri  = $this->strip_query_args( $file_path );
 
 		if ( in_array( $file_uri, $deleted_uris, true ) ) {
 			// This file has already been successfully deleted from the file service in this request
@@ -262,17 +252,72 @@ class VIP_Filesystem {
 		$deleted_uris[] = $file_uri;
 
 		// We successfully deleted the file, purge the file from the caches
+		$this->purge_file_cache( $file_uri );
+
+		// Don't return anything so that `wp_delete_file()` won't try to `unlink` again
+	}
+
+	/**
+	 * Remove duplicate uploads base directory from file path
+	 *
+	 * Some of the intermediate file paths have the uploads `basedir` occur twice so we will need to
+	 * check for that.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string  $file_path
+	 *
+	 * @return  string
+	 */
+	private function clean_file_path( $file_path ) {
+		$upload_path = wp_get_upload_dir();
+
+		// Find 2nd occurrence of `basedir`
+		$pos = strpos( $file_path, $upload_path['basedir'], strlen( $upload_path['basedir'] ) );
+		if ( false !== $pos ) {
+			// +1 to account far trailing slash
+			$file_path = substr( $file_path, strlen( $upload_path['basedir'] ) + 1 );
+		}
+
+		return $file_path;
+}
+
+	/**
+	 * Strip query string to avoid attempting to delete the aforementioned image sizes
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string      $file_path
+	 *
+	 * @return  string
+	 */
+	private function strip_query_args( $file_path ) {
+		$url      = wp_parse_url( $file_path );
+		$file_uri = sprintf( '/%s%s', $url['host'], $url['path'] );
+
+		return $file_uri;
+	}
+
+	/**
+	 * Purge file from cache
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string  $file_uri
+	 */
+	private function purge_file_cache( $file_uri ) {
 		$invalidation_url = get_site_url();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$invalidation_url .= '/sites/' . get_current_blog_id();
 		}
 		$invalidation_url .= $file_uri;
 
-		if (! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
+		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
 			trigger_error( sprintf( __( 'Error purging %s from the cache service' ), $invalidation_url ),
 				E_USER_WARNING );
 		}
-
-		// Don't return anything so that `wp_delete_file()` won't try to `unlink` again
 	}
 }
