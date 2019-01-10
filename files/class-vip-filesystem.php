@@ -243,8 +243,7 @@ class VIP_Filesystem {
 			return;
 		}
 
-		if (! unlink( $file_path ) ) {
-			// failed deleting
+		if ( ! unlink( $file_path ) ) {
 			return;
 		}
 
@@ -254,7 +253,8 @@ class VIP_Filesystem {
 		// We successfully deleted the file, purge the file from the caches
 		$this->purge_file_cache( $file_uri );
 
-		// Don't return anything so that `wp_delete_file()` won't try to `unlink` again
+		// Return empty value so that `wp_delete_file()` won't try to `unlink` again
+		return false;
 	}
 
 	/**
