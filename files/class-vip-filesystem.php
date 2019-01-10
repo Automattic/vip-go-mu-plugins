@@ -93,6 +93,18 @@ class VIP_Filesystem {
 	}
 
 	/**
+	 * Remove the registered filters.
+	 *
+	 * @since    1.0.0
+	 * @access   private
+	 */
+	private function remove_filters() {
+
+		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10 );
+		remove_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10 );
+	}
+
+	/**
 	 * Filter the result of `wp_upload_dir` function
 	 *
 	 * @since 1.0.0
@@ -170,13 +182,13 @@ class VIP_Filesystem {
 	 * by the VIP Filesystem.
 	 *
 	 * @since   1.0.0
-	 * @access  private
+	 * @access  protected
 	 *
 	 * @param   string      $filename
 	 *
 	 * @return  bool        True if filetype is supported. Else false
 	 */
-	private function check_filetype_with_backend( $filename ) {
+	protected function check_filetype_with_backend( $filename ) {
 		$upload_path = $this->get_upload_path();
 
 		$file_path = $upload_path . $filename;
