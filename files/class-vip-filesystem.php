@@ -286,7 +286,9 @@ class VIP_Filesystem {
 }
 
 	/**
-	 * Strip query string to avoid attempting to delete the aforementioned image sizes
+	 * Get the file path URI
+	 *
+	 * Strip query string and `vip` protocol to avoid attempting to delete the aforementioned image sizes
 	 *
 	 * @since   1.0.0
 	 * @access  private
@@ -296,7 +298,7 @@ class VIP_Filesystem {
 	 * @return  string
 	 */
 	private function get_file_uri_path( $file_path ) {
-		$url      = wp_parse_url( $file_path );
+		$url = wp_parse_url( $file_path );
 
 		// Adding the leading slash because `wp_parse_url` reads the `wp-content` part
 		// of the path as `host` without any slashes
