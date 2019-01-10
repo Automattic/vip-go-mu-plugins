@@ -227,7 +227,9 @@ class VIP_Filesystem {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param   string      $file_path
+	 * @param   string $file_path
+	 *
+	 * @return  string
 	 */
 	public function filter_delete_file( $file_path ) {
 		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
@@ -240,11 +242,11 @@ class VIP_Filesystem {
 
 		if ( in_array( $file_uri, $deleted_uris, true ) ) {
 			// This file has already been successfully deleted from the file service in this request
-			return;
+			return '';
 		}
 
 		if ( ! unlink( $file_path ) ) {
-			return;
+			return '';
 		}
 
 		// Set our static so we can later recall that this file has already been deleted and purged
@@ -254,7 +256,7 @@ class VIP_Filesystem {
 		$this->purge_file_cache( $file_uri );
 
 		// Return empty value so that `wp_delete_file()` won't try to `unlink` again
-		return false;
+		return '';
 	}
 
 	/**
