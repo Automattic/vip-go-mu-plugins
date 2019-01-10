@@ -311,11 +311,7 @@ class VIP_Filesystem {
 	 * @param   string  $file_uri
 	 */
 	private function purge_file_cache( $file_uri ) {
-		$invalidation_url = get_site_url();
-		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
-			$invalidation_url .= '/sites/' . get_current_blog_id();
-		}
-		$invalidation_url .= $file_uri;
+		$invalidation_url = get_site_url() . $file_uri;
 
 		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
 			trigger_error( sprintf( __( 'Error purging %s from the cache service' ), $invalidation_url ),
