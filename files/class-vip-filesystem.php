@@ -89,8 +89,8 @@ class VIP_Filesystem {
 	private function add_filters() {
 
 		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
-		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
-		add_filter( 'wp_delete_file', array( &$this, 'filter_delete_file' ), 20, 1 );
+		add_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10, 4 );
+		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
 	}
 
 	/**
