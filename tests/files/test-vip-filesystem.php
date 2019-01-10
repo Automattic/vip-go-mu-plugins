@@ -150,4 +150,52 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 		$this->assertNotContains( 'vip://', $actual );
 	}
+
+	public function get_test_data__clean_file_path() {
+		return [
+			'dirty path' => [
+				'vip://wp-content/uploads/vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768'
+			],
+			'clean path' => [
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768'
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__clean_file_path
+	 */
+	public function test__clean_file_path( $file_path, $expected ) {
+		$clean_file_path = self::get_method( 'clean_file_path' );
+
+		$actual = $clean_file_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
+
+		$this->assertEquals( $expected, $actual );
+	}
+
+	public function get_test_data__get_file_uri_path() {
+		return [
+			'with query args' => [
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
+				'/wp-content/uploads/2019/01/IMG_4115.jpg'
+			],
+			'clean path' => [
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'/wp-content/uploads/2019/01/IMG_4115.jpg'
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_file_uri_path
+	 */
+	public function test__get_file_uri_path( $file_path, $expected ) {
+		$get_file_uri_path = self::get_method( 'get_file_uri_path' );
+
+		$actual = $get_file_uri_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
+
+		$this->assertEquals( $expected, $actual );
+	}
 }
