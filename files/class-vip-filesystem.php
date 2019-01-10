@@ -238,7 +238,7 @@ class VIP_Filesystem {
 
 		$file_path = $this->clean_file_path( $file_path );
 
-		$file_uri  = $this->strip_query_args( $file_path );
+		$file_uri  = $this->get_file_uri_path( $file_path );
 
 		if ( in_array( $file_uri, $deleted_uris, true ) ) {
 			// This file has already been successfully deleted from the file service in this request
@@ -295,8 +295,11 @@ class VIP_Filesystem {
 	 *
 	 * @return  string
 	 */
-	private function strip_query_args( $file_path ) {
+	private function get_file_uri_path( $file_path ) {
 		$url      = wp_parse_url( $file_path );
+
+		// Adding the leading slash because `wp_parse_url` reads the `wp-content` part
+		// of the path as `host` without any slashes
 		$file_uri = sprintf( '/%s%s', $url['host'], $url['path'] );
 
 		return $file_uri;
