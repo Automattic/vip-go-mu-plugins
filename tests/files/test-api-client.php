@@ -454,4 +454,55 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $upload_path, $actual_result );
 	}
 
+	public function get_test_data__get_unique_filename() {
+		return [
+			'new-unique-filename' => [
+				[
+					'response' => [
+						'code' => 200,
+					],
+					'body' => '{"filename":"uniquename.jpg"}',
+				],
+				'uniquename.jpg'
+			],
+			'invalid-type' => [
+				[
+					'response' => [
+						'code' => 406,
+					]
+				],
+				new WP_Error('invalid-file-type',
+					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'),
+			],
+			'WP_Error' => [
+				new WP_Error( 'oh-no', 'Oh no!' ),
+				new WP_Error( 'oh-no', 'Oh no!' ),
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_unique_filename
+	 */
+	public function test__get_unique_filename( $mocked_response, $expected_result ) {
+		$this->mock_http_response( $mocked_response );
+
+		$actual_result = $this->api_client->get_unique_filename( '/wp-content/uploads/file.jpg' );
+
+		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	public function test__get_unique_filename__validate_request() {
+		$this->mock_http_response( [] ); // don't care about the response
+
+		$this->api_client->get_unique_filename( '/wp-content/uploads/file.jpg' );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
+		$this->assertArraySubset( [
+			'X-Action' => 'unique_filename'
+		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
+	}
 }

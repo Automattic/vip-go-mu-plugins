@@ -188,4 +188,36 @@ class API_Client {
 		/* translators: 1: file path 2: HTTP status code */
 		return new WP_Error( 'is_file-failed', sprintf( __( 'Failed to check if file `%1$s` exists (response code: %2$d)' ), $file_path, $response_code ) );
 	}
+
+	/**
+	 * Use the filesystem API to generate a unique filename based on
+	 * provided file path
+	 *
+	 * @param string    $file_path
+	 *
+	 * @return string|WP_Error New unique filename
+	 */
+	public function get_unique_filename( $file_path ) {
+		$response = $this->call_api( $file_path, 'GET', [
+			'headers' => [
+				'X-Action' => 'unique_filename',
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'invalid-file-type',
+				sprintf( __( 'Failed to generate new unique file name `%1$s` (response code: %2$d)' ), $file_path, $response_code )
+			);
+		}
+
+		$content = wp_remote_retrieve_body( $response );
+		$obj = json_decode( $content );
+
+		return $obj->filename;
+	}
 }
