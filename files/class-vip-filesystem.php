@@ -89,7 +89,8 @@ class VIP_Filesystem {
 	private function add_filters() {
 
 		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
-		add_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10, 4 );
+		add_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10, 4 );
+		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
 	}
 
 	/**
@@ -101,7 +102,8 @@ class VIP_Filesystem {
 	private function remove_filters() {
 
 		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10 );
-		remove_filter( 'wp_check_filetype_and_ext', array( $this, 'filter_filetype_check' ), 10 );
+		remove_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10 );
+		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20 );
 	}
 
 	/**
@@ -205,8 +207,121 @@ class VIP_Filesystem {
 		return true;
 	}
 
+	/**
+	 * Return uploads path
+	 *
+	 * Different from wp_uploads_dir() as that will return the `vip://` protocol too
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @return  string The uploads path
+	 */
 	private function get_upload_path() {
 		$upload_dir_path = wp_get_upload_dir()['path'];
 		return substr( $upload_dir_path, strlen( self::PROTOCOL . '://' ) );
+	}
+
+	/**
+	 * Deletes the file and purge the cache
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   string $file_path
+	 *
+	 * @return  string
+	 */
+	public function filter_delete_file( $file_path ) {
+		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
+		// which all except the first result in 404's, keep accounting of what we've deleted.
+		static $deleted_uris = array();
+
+		$file_path = $this->clean_file_path( $file_path );
+
+		$file_uri  = $this->get_file_uri_path( $file_path );
+
+		if ( in_array( $file_uri, $deleted_uris, true ) ) {
+			// This file has already been successfully deleted from the file service in this request
+			return '';
+		}
+
+		if ( ! unlink( $file_path ) ) {
+			return '';
+		}
+
+		// Set our static so we can later recall that this file has already been deleted and purged
+		$deleted_uris[] = $file_uri;
+
+		// We successfully deleted the file, purge the file from the caches
+		$this->purge_file_cache( $file_uri );
+
+		// Return empty value so that `wp_delete_file()` won't try to `unlink` again
+		return '';
+	}
+
+	/**
+	 * Remove duplicate uploads base directory from file path
+	 *
+	 * Some of the intermediate file paths have the uploads `basedir` occur twice so we will need to
+	 * check for that.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string  $file_path
+	 *
+	 * @return  string
+	 */
+	private function clean_file_path( $file_path ) {
+		$upload_path = wp_get_upload_dir();
+
+		// Find 2nd occurrence of `basedir`
+		$pos = strpos( $file_path, $upload_path['basedir'], strlen( $upload_path['basedir'] ) );
+		if ( false !== $pos ) {
+			// +1 to account far trailing slash
+			$file_path = substr( $file_path, strlen( $upload_path['basedir'] ) + 1 );
+		}
+
+		return $file_path;
+}
+
+	/**
+	 * Get the file path URI
+	 *
+	 * Strip query string and `vip` protocol to avoid attempting to delete the aforementioned image sizes
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string      $file_path
+	 *
+	 * @return  string
+	 */
+	private function get_file_uri_path( $file_path ) {
+		$url = wp_parse_url( $file_path );
+
+		// Adding the leading slash because `wp_parse_url` reads the `wp-content` part
+		// of the path as `host` without any slashes
+		$file_uri = sprintf( '/%s%s', $url['host'], $url['path'] );
+
+		return $file_uri;
+	}
+
+	/**
+	 * Purge file from cache
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 *
+	 * @param   string  $file_uri
+	 */
+	private function purge_file_cache( $file_uri ) {
+		$invalidation_url = get_site_url() . $file_uri;
+
+		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
+			trigger_error( sprintf( __( 'Error purging %s from the cache service' ), $invalidation_url ),
+				E_USER_WARNING );
+		}
 	}
 }
