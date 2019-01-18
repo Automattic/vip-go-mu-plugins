@@ -127,7 +127,10 @@ class VIP_Filesystem_Stream_Wrapper {
 			$result = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) ) {
-				trigger_error( $result->get_error_message(), E_USER_WARNING );
+				trigger_error(
+					sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+					E_USER_WARNING
+				);
 				return false;
 			}
 
@@ -185,8 +188,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_read( $count ) {
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
-			trigger_error( 'Error reading from file: ' . $this->path,
-				E_USER_WARNING );
+			trigger_error(
+				sprintf( 'Error reading from file: %s #vip-go-streams', $this->path ),
+				E_USER_WARNING
+			);
 			return '';
 		}
 
@@ -210,7 +215,10 @@ class VIP_Filesystem_Stream_Wrapper {
 		$result = $this->client
 			->upload_file( $this->uri, $this->path );
 		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			trigger_error(
+				sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -231,8 +239,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_seek( $offset, $whence ) {
 		if ( ! $this->seekable ) {
 			// File not seekable
-			trigger_error( 'File not seekable: ' . $this->path,
-				E_USER_WARNING );
+			trigger_error(
+				sprintf( 'File not seekable: %s #vip-go-streams', $this->path ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -240,8 +250,10 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		if ( -1 === $result ) {
 			// Seek failed
-			trigger_error( 'Error seeking on file: ' . $this->path,
-				E_USER_WARNING );
+			trigger_error(
+				sprintf( 'Error seeking on file: %s #vip-go-streams', $this->path),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -262,8 +274,10 @@ class VIP_Filesystem_Stream_Wrapper {
 		$length = fwrite( $this->file, $data );
 
 		if ( false === $length ) {
-			trigger_error( 'Error writing to file: ' . $this->path,
-				E_USER_WARNING );
+			trigger_error(
+				sprintf( 'Error writing to file: %s #vip-go-stream' . $this->path ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -284,7 +298,10 @@ class VIP_Filesystem_Stream_Wrapper {
 		$result = $this->client->delete_file( $path );
 
 		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			trigger_error(
+				sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -371,7 +388,10 @@ class VIP_Filesystem_Stream_Wrapper {
 		$info = array();
 		$result = $this->client->is_file( $path, $info );
 		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			trigger_error(
+				sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 		if ( ! $result ) {
@@ -428,7 +448,10 @@ class VIP_Filesystem_Stream_Wrapper {
 		//       get really inefficient with large files
 		$result = $this->client->get_file( $path_from );
 		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			trigger_error(
+				sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -440,14 +463,20 @@ class VIP_Filesystem_Stream_Wrapper {
 		// Upload to file service
 		$result = $this->client->upload_file( $filePath, $path_to );
 		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			trigger_error(
+				sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
 		// Delete old file
 		$result = $this->client->delete_file( $path_from );
 		if ( is_wp_error( $result ) ) {
-			trigger_error( $result->get_error_message(), E_USER_WARNING );
+			trigger_error(
+				sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+				E_USER_WARNING
+			);
 			return false;
 		}
 
@@ -523,8 +552,10 @@ class VIP_Filesystem_Stream_Wrapper {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if ( false === fwrite( $tmp_handler, $data ) ) {
-			trigger_error( "Error creating temporary resource for data:\n" . $data,
-				E_USER_ERROR );
+			trigger_error(
+				sprintf( "Error creating temporary resource for data:\n%s\n#vip-go-streams", $data ),
+				E_USER_ERROR
+			);
 		}
 		// Need to rewind file pointer as fwrite moves it to EOF
 		rewind( $tmp_handler );
