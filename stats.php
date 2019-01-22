@@ -13,7 +13,9 @@ namespace Automattic\VIP\Stats;
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'async_transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
 	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999, 2 );
-	add_filter( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', 9999, 1 );
+	// Hook early because overrides in a8c-files and stream wrapper return empty.
+	// Which makes it hard to differentiate between full size and thumbs.
+	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
 }
 
 /**
@@ -56,21 +58,32 @@ function track_file_upload() {
 
 	$stat_group = $using_streams ? 'stream' : 'a8c-files';
 
-	$pixel = add_query_arg( array(
-		'v' => 'wpcom-no-pv',
-		'x_vip-go-file-upload-via' => $stat_group,
-		'x_vip-go-file-upload' => FILES_CLIENT_SITE_ID,
-		'x_vip-go-file-action' => 'upload',
-	), 'http://pixel.wp.com/b.gif' );
-
-	wp_remote_get( $pixel, array(
-		'blocking' => false,
-		'timeout'  => 1,
-	) );
+	send_pixel( [
+		'vip-go-file-upload-via' => $stat_group,
+		'vip-go-file-upload-by-site' => FILES_CLIENT_SITE_ID,
+		'vip-go-file-upload-by-site-via' => sprintf( '%s_%s', FILES_CLIENT_SITE_ID, $stat_group ),
+		'vip-go-file-action' => 'upload',
+	] );
 }
 
 function handle_file_delete( $file ) {
-	track_file_delete();
+	if ( empty( $file ) ) {
+		return $file;
+	}
+
+	// TODO: We can replace most of this with a custom action once we've transitioned over to streams.
+	// Hack: Don't bother tracking for thumbs and other sizes since those don't actually get deleted.
+	// Thumbs will have the form `/path/to/file.jpg?w=123` (i.e. with a query string).
+	if ( false !== strpos( $file, '?' ) ) {
+		return $file;
+	}
+
+	// Only track once for each deleted file since this might fire multiple times per file.
+	static $deleted_uris = [];
+	if ( ! in_array( $file, $deleted_uris, true ) ) {
+		track_file_delete();
+		$deleted_uris[] = $file;
+	}
 
 	return $file;
 }
@@ -86,12 +99,27 @@ function track_file_delete() {
 
 	$stat_group = $using_streams ? 'stream' : 'a8c-files';
 
-	$pixel = add_query_arg( array(
+	send_pixel( [
+		'vip-go-file-delete-via' => $stat_group,
+		'vip-go-file-delete-by-site' => FILES_CLIENT_SITE_ID,
+		'vip-go-file-delete-by-site-via' => sprintf( '%s_%s', FILES_CLIENT_SITE_ID, $stat_group ),
+		'vip-go-file-action' => 'delete',
+	] );
+}
+
+function send_pixel( $stats ) {
+	$query_args = [
 		'v' => 'wpcom-no-pv',
-		'x_vip-go-file-delete-via' => $stat_group,
-		'x_vip-go-file-delete' => FILES_CLIENT_SITE_ID,
-		'x_vip-go-file-action' => 'delete',
-	), 'http://pixel.wp.com/b.gif' );
+	];
+
+	foreach ( $stats as $name => $group ) {
+		$query_param = rawurlencode( 'x_' . $name );
+		$query_value = rawurlencode( $group );
+
+		$query_args[ $query_param ] = $query_value;
+	}
+
+	$pixel = add_query_arg( $query_args, 'http://pixel.wp.com/b.gif' );
 
 	wp_remote_get( $pixel, array(
 		'blocking' => false,
