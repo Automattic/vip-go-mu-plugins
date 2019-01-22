@@ -552,10 +552,8 @@ class VIP_Filesystem_Stream_Wrapper {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if ( false === fwrite( $tmp_handler, $data ) ) {
-			trigger_error(
-				sprintf( "Error creating temporary resource for data:\n%s\n#vip-go-streams", $data ),
-				E_USER_ERROR
-			);
+			trigger_error( "Error creating temporary resource #vip-go-streams",
+				E_USER_ERROR );
 		}
 		// Need to rewind file pointer as fwrite moves it to EOF
 		rewind( $tmp_handler );
