@@ -96,7 +96,7 @@ class A8C_Files {
 			return $content;
 		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
 
-		// See https://vipsupportp2.wordpress.com/2018/06/27/intermediate-images-on-vip-go-sites/
+		// See https://github.com/Automattic/vip-go-mu-plugins/pull/944
 		if ( defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
 
 			//Photon wouldn't run in the backend editor by default, need to enable it first
@@ -110,7 +110,7 @@ class A8C_Files {
 			add_filter( 'the_editor_content', function( $content ) {
 			  remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
 			  return $content;
-			}, 9999999 );
+			}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
 
 		}
 
