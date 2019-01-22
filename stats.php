@@ -57,9 +57,10 @@ function track_file_upload() {
 	$stat_group = $using_streams ? 'stream' : 'a8c-files';
 
 	$pixel = add_query_arg( array(
-		'v'                     => 'wpcom-no-pv',
-		'x_vip-go-upload-via' => $stat_group,
-		'x_vip-go-upload-site' => FILES_CLIENT_SITE_ID,
+		'v' => 'wpcom-no-pv',
+		'x_vip-go-file-upload-via' => $stat_group,
+		'x_vip-go-file-upload' => FILES_CLIENT_SITE_ID,
+		'x_vip-go-file-action' => 'upload',
 	), 'http://pixel.wp.com/b.gif' );
 
 	wp_remote_get( $pixel, array(
@@ -86,9 +87,10 @@ function track_file_delete() {
 	$stat_group = $using_streams ? 'stream' : 'a8c-files';
 
 	$pixel = add_query_arg( array(
-		'v'                     => 'wpcom-no-pv',
-		'x_vip-go-delete-via' => $stat_group,
-		'x_vip-go-delete-site' => FILES_CLIENT_SITE_ID,
+		'v' => 'wpcom-no-pv',
+		'x_vip-go-file-delete-via' => $stat_group,
+		'x_vip-go-file-delete' => FILES_CLIENT_SITE_ID,
+		'x_vip-go-file-action' => 'delete',
 	), 'http://pixel.wp.com/b.gif' );
 
 	wp_remote_get( $pixel, array(
