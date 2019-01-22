@@ -12,6 +12,8 @@ namespace Automattic\VIP\Stats;
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'async_transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
+	add_action( 'wp_handle_upload', __NAMESPACE__ . '\track_file_upload', 9999, 2 );
+	add_action( 'wp_delete_file', __NAMESPACE__ . '\track_file_delete', 9999, 1 );
 }
 
 /**
@@ -29,6 +31,52 @@ function track_publish_post( $new_status, $old_status ) {
 	$pixel = add_query_arg( array(
 		'v'                     => 'wpcom-no-pv',
 		'x_vip-go-publish-post' => FILES_CLIENT_SITE_ID,
+	), 'http://pixel.wp.com/b.gif' );
+
+	wp_remote_get( $pixel, array(
+		'blocking' => false,
+		'timeout'  => 1,
+	) );
+}
+
+/**
+ * Count uploaded files
+ */
+function track_file_upload( $upload, $context ) {
+	$using_streams = false;
+	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
+		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
+	}
+
+	$stat_group = $using_streams ? 'stream' : 'a8c-files';
+
+	$pixel = add_query_arg( array(
+		'v'                     => 'wpcom-no-pv',
+		'x_vip-go-upload-via' => $stat_group,
+		'x_vip-go-upload-site' => FILES_CLIENT_SITE_ID,
+	), 'http://pixel.wp.com/b.gif' );
+
+	wp_remote_get( $pixel, array(
+		'blocking' => false,
+		'timeout'  => 1,
+	) );
+}
+
+/**
+ * Count deleted files
+ */
+function track_file_delete( $file ) {
+	$using_streams = false;
+	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
+		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
+	}
+
+	$stat_group = $using_streams ? 'stream' : 'a8c-files';
+
+	$pixel = add_query_arg( array(
+		'v'                     => 'wpcom-no-pv',
+		'x_vip-go-delete-via' => $stat_group,
+		'x_vip-go-delete-site' => FILES_CLIENT_SITE_ID,
 	), 'http://pixel.wp.com/b.gif' );
 
 	wp_remote_get( $pixel, array(
