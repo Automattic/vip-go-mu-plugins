@@ -199,7 +199,10 @@ class VIP_Filesystem {
 
 		if ( is_wp_error( $result ) ) {
 			if ( 'invalid-file-type' !== $result->get_error_code() ) {
-				trigger_error( $result->get_error_message(), E_USER_WARNING );
+				trigger_error(
+					sprintf( '%s #vip-go-streams', $result->get_error_message() ),
+					E_USER_WARNING
+				);
 			}
 			return false;
 		}
@@ -320,8 +323,10 @@ class VIP_Filesystem {
 		$invalidation_url = get_site_url() . $file_uri;
 
 		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
-			trigger_error( sprintf( __( 'Error purging %s from the cache service' ), $invalidation_url ),
-				E_USER_WARNING );
+			trigger_error(
+				sprintf( __( 'Error purging %s from the cache service #vip-go-streams' ), $invalidation_url ),
+				E_USER_WARNING
+			);
 		}
 	}
 }
