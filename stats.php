@@ -12,8 +12,8 @@ namespace Automattic\VIP\Stats;
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'async_transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
-	add_action( 'wp_handle_upload', __NAMESPACE__ . '\track_file_upload', 9999, 2 );
-	add_action( 'wp_delete_file', __NAMESPACE__ . '\track_file_delete', 9999, 1 );
+	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999, 2 );
+	add_filter( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', 9999, 1 );
 }
 
 /**
@@ -42,7 +42,13 @@ function track_publish_post( $new_status, $old_status ) {
 /**
  * Count uploaded files
  */
-function track_file_upload( $upload, $context ) {
+function handle_file_upload( $upload, $context ) {
+	track_file_upload();
+
+	return $upload;
+}
+
+function track_file_upload() {
 	$using_streams = false;
 	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
@@ -62,10 +68,16 @@ function track_file_upload( $upload, $context ) {
 	) );
 }
 
+function handle_file_delete( $file ) {
+	track_file_delete();
+
+	return $file;
+}
+
 /**
  * Count deleted files
  */
-function track_file_delete( $file ) {
+function track_file_delete() {
 	$using_streams = false;
 	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
