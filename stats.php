@@ -51,6 +51,10 @@ function handle_file_upload( $upload, $context ) {
 }
 
 function track_file_upload() {
+	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+		return;
+	}
+
 	$using_streams = false;
 	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
@@ -92,6 +96,10 @@ function handle_file_delete( $file ) {
  * Count deleted files
  */
 function track_file_delete() {
+	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+		return;
+	}
+
 	$using_streams = false;
 	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
