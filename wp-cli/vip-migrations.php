@@ -42,7 +42,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			$it = new \WP_CLI\Iterators\Table( $iterator_args );
 			foreach ( $it as $blog ) {
 				$url = $blog->domain . $blog->path;
-				$cmd = "--url={$url} vip migration cleanup";
+				$cmd = "--url={$url} vip migration cleanup --skip-confirm";
 
 				if ( $dry_run ) {
 					$cmd .= ' --dry-run';
