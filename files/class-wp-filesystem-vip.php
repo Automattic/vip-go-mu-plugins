@@ -42,7 +42,13 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return WP_Filesystem_VIP_Uploads|bool|mixed|WP_Filesystem_Direct
 	 */
 	private function get_transport_for_path( $filename, $context = 'read' ) {
+		// Uploads paths can just use PHP functions when stream wrapper is enabled.
+		// This is because wp_upload_dir will return a vip:// path.
 		if ( $this->is_uploads_path( $filename ) ) {
+			if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+				return $this->direct;
+			}
+
 			return $this->uploads;
 		} elseif ( $this->is_tmp_path( $filename ) ) {
 			return $this->direct;
