@@ -199,12 +199,13 @@ class WPCOM_elasticsearch {
 					}
 
 					if ( $query->get( $query_var ) ) {
-						$es_wp_query_args['terms'][ $this->facets[ $label ]['taxonomy'] ] = explode( ',', $query->get( $query_var ) );
+						$_query_vars = ! is_array( $query->get( $query_var ) ) ? explode( ',', $query->get( $query_var ) ) : $query->get( $query_var );
+						$es_wp_query_args['terms'][ $this->facets[ $label ]['taxonomy'] ] = $_query_vars;
 					}
 
 					// This plugon's custom "categery" isn't a real query_var, so manually handle it
 					if ( 'category' == $query_var && ! empty( $_GET[ $query_var ] ) ) {
-						$slugs = explode( ',', $_GET[ $query_var ] );
+						$slugs = ! is_array( $_GET[ $query_var ] ) ? explode( ',', $_GET[ $query_var ] ) : $_GET[ $query_var ];
 
 						foreach ( $slugs as $slug ) {
 							$es_wp_query_args['terms'][ $this->facets[ $label ]['taxonomy'] ][] = $slug;
@@ -597,11 +598,12 @@ class WPCOM_elasticsearch {
 					continue;
 				}
 
-				$existing_term_slugs = ( get_query_var( $tax_query_var ) ) ? explode( ',', get_query_var( $tax_query_var ) ) : array();
+				$existing_term_slugs = ( get_query_var( $tax_query_var ) ) ? get_query_var( $tax_query_var ) : array();
+				$existing_term_slugs = ! is_array( $existing_term_slugs ) ? explode( ',', $existing_term_slugs ) : $existing_term_slugs;
 
 				// This plugon's custom "categery" isn't a real query_var, so manually handle it
 				if ( 'category' == $tax_query_var && ! empty( $_GET[ $tax_query_var ] ) ) {
-					$slugs = explode( ',', $_GET[ $tax_query_var ] );
+					$slugs = ! is_array( $_GET[ $tax_query_var ] ) ? explode( ',', $_GET[ $tax_query_var ] ) : $_GET[ $tax_query_var ];
 
 					foreach ( $slugs as $slug ) {
 						$existing_term_slugs[] = $slug;
