@@ -64,13 +64,18 @@ class API_Cache {
 	public function cache_file( $filepath, $data ) {
 		$file_name = basename( $filepath );
 
+		// create file with unique filename
+		$tmp_file = tempnam( $this->tmp_dir, 'vip' );
+
 		if ( ! isset( $this->files[ $file_name ])) {
-			// create file with unique filename
-			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
-
-			file_put_contents( $tmp_file, $data );
-
 			$this->files[ $file_name ] = $tmp_file;
+		} else {
+			// update cache; delete old file
+			unlink( $this->files[ $file_name ] );
 		}
+
+		file_put_contents( $tmp_file, $data );
+
+		$this->files[ $file_name ] = $tmp_file;
 	}
 }
