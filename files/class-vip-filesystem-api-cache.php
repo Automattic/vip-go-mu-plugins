@@ -29,12 +29,12 @@ class API_Cache {
 		// sys_get_temp_dir is pretty inconsistent regarding trailing slashes
 		$this->tmp_dir = rtrim( sys_get_temp_dir(), '/' );
 
-		add_action( 'shutdown', [ self::$instance, 'clear_tmp_files' ]);
+		add_action( 'shutdown', [ $this, 'clear_tmp_files' ] );
 	}
 
 	public static function get_instance() {
 		if ( null === self::$instance ) {
-			self::$instance = new self;
+			self::$instance = new self();
 		}
 
 		return self::$instance;
