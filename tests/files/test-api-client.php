@@ -31,6 +31,8 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 
+		API_Cache::get_instance()->clear_tmp_files();
+
 		parent::tearDown();
 	}
 
