@@ -179,6 +179,8 @@ class API_Client {
 			return new WP_Error( 'delete_file-failed', sprintf( __( 'Failed to delete file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
+		$this->cache->remove_file( $file_path );
+
 		return true;
 	}
 
