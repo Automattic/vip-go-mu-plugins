@@ -16,7 +16,11 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 
-		$this->api_client = new API_Client( 'https://files.go-vip.co', 123456, 'super-sekret-token' );
+		$this->api_client = new API_Client(
+			'https://files.go-vip.co',
+			123456,
+			'super-sekret-token',
+			API_Cache::get_instance() );
 
 		$this->http_requests = [];
 	}
@@ -26,6 +30,8 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->http_requests = null;
 
 		remove_all_filters( 'pre_http_request' );
+
+		API_Cache::get_instance()->clear_tmp_files();
 
 		parent::tearDown();
 	}

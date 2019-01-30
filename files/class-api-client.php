@@ -5,12 +5,14 @@ namespace Automattic\VIP\Files;
 use WP_Error;
 
 require( __DIR__ . '/class-curl-streamer.php' );
+require( __DIR__ . '/class-api-cache.php' );
 
 function new_api_client() {
 	return new API_Client(
 		'https://' . constant( 'FILE_SERVICE_ENDPOINT' ),
 		constant( 'FILES_CLIENT_SITE_ID' ),
-		constant( 'FILES_ACCESS_TOKEN' )
+		constant( 'FILES_ACCESS_TOKEN' ),
+		API_Cache::get_instance()
 	);
 }
 
@@ -21,12 +23,19 @@ class API_Client {
 	private $files_site_id;
 	private $files_token;
 
-	public function __construct( $api_base, $files_site_id, $files_token ) {
+	/**
+	 * @var API_Cache
+	 */
+	private $cache;
+
+	public function __construct( $api_base, $files_site_id, $files_token, $cache ) {
 		$api_base = untrailingslashit( $api_base );
 		$this->api_base = $api_base;
 
 		$this->files_site_id = $files_site_id;
 		$this->files_token = $files_token;
+
+		$this->cache = $cache;
 	}
 
 	protected function is_valid_path( $path ) {
@@ -122,6 +131,9 @@ class API_Client {
 		}
 
 		// response looks like {"filename":"/wp-content/uploads/path/to/file.ext"}
+		// save to cache
+		$this->cache->cache_file( $response_data->filename, file_get_contents( $local_path ) );
+
 		return $response_data->filename;
 	}
 
@@ -132,6 +144,13 @@ class API_Client {
 	}
 
 	public function get_file( $file_path ) {
+		// check in cache first
+		$file_content = $this->cache->get_file( $file_path );
+		if ( $file_content ) {
+			return $file_content;
+		}
+
+		// not in cache so get from API
 		$response = $this->call_api( $file_path, 'GET' );
 
 		if ( is_wp_error( $response ) ) {
@@ -159,6 +178,8 @@ class API_Client {
 			/* translators: 1: file path 2: HTTP status code */
 			return new WP_Error( 'delete_file-failed', sprintf( __( 'Failed to delete file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
+
+		$this->cache->remove_file( $file_path );
 
 		return true;
 	}
