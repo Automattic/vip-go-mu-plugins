@@ -26,7 +26,6 @@ class API_Cache {
 	 * API_Cache constructor.
 	 */
 	protected function __construct() {
-		// sys_get_temp_dir is pretty inconsistent regarding trailing slashes
 		$this->tmp_dir = get_temp_dir();
 
 		add_action( 'shutdown', [ $this, 'clear_tmp_files' ] );
@@ -77,5 +76,14 @@ class API_Cache {
 		file_put_contents( $tmp_file, $data );
 
 		$this->files[ $file_name ] = $tmp_file;
+	}
+
+	public function remove_file( $filepath ) {
+		$file_name = basename( $filepath );
+
+		if ( isset( $this->files[ $file_name ] ) ) {
+			unlink( $this->files[ $file_name ] );
+			unset( $this->files[ $file_name ] );
+		}
 	}
 }

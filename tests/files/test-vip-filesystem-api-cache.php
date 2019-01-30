@@ -50,6 +50,8 @@ class API_Cache_Test extends \WP_UnitTestCase {
 		$this->cache->clear_tmp_files();
 
 		$this->assertEmpty( $prop->getValue( $this->cache ) );
+		$this->assertFalse( file_exists( $file1 ) );
+		$this->assertFalse( file_exists( $file2 ) );
 	}
 
 	public function test__get_file() {
@@ -98,5 +100,21 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$this->assertTrue( isset( $files[ 'test.jpg' ] ) );
 		$this->assertEquals( $expected, file_get_contents( $files[ 'test.jpg' ] ) );
+	}
+
+	public function test__remove_file() {
+		$test_file = tempnam( sys_get_temp_dir(), 'test' );
+
+		file_put_contents( $test_file, 'test data' );
+
+		$prop = self::get_property( $this->cache, 'files' );
+		$prop->setValue( $this->cache, [ 'test.jpg' => $test_file ] );
+
+		$this->cache->remove_file( 'test.jpg' );
+
+		$files = $prop->getValue( $this->cache );
+
+		$this->assertEmpty( $files );
+		$this->assertFalse( file_exists( $test_file ) );
 	}
 }
