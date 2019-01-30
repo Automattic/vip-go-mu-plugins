@@ -20,6 +20,7 @@ class Vary_Cache
 	/* nocache */
 	static function set_no_cache_for_user( ) {
 		setcookie(static::$PREFIX_NO_CACHE, 1);
+		self::trackAction( 'no_cache' );
 	}
 
 	static function remove_no_cache_for_user( ) {
@@ -30,12 +31,16 @@ class Vary_Cache
 
 	/* Grouping */
 	static function set_group_for_user( $group ) {
+
 		// validate, process $group, etc.
 		if ( self::is_encryption_enabled() ) {
 			self::set_group_cookie_encrypted( $group );
+			self::trackAction( 'set_user_group' );
 		} else {
 			self::set_group_cookie_plaintext( $group );
+			self::trackAction( 'set_user_group_encrypted' );
 		}
+
 	}
 
 	static function is_user_in_group( $group ) {
@@ -71,6 +76,13 @@ class Vary_Cache
 		setcookie(static::$PREFIX_SEGMENT, $value);
 	}
 
+	//send action for tracking purposes
+	static private function trackAction( $action )
+	{
+		if ( defined( 'VIP_GO_APP_ID' ) ){
+			add_action('vipgo_did_vary_cache', $action, constant( 'VIP_GO_APP_ID') );
+		}
+	}
 
 }
 
