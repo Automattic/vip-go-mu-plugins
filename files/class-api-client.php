@@ -5,7 +5,7 @@ namespace Automattic\VIP\Files;
 use WP_Error;
 
 require( __DIR__ . '/class-curl-streamer.php' );
-require( __DIR__ . '/class-vip-filesystem-api-cache.php' );
+require( __DIR__ . '/class-api-cache.php' );
 
 function new_api_client() {
 	return new API_Client(

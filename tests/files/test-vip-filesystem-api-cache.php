@@ -13,7 +13,7 @@ class API_Cache_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../files/class-vip-filesystem-api-cache.php' );
+		require_once( __DIR__ . '/../../files/class-api-cache.php' );
 	}
 
 	public function setUp() {
