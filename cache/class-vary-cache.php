@@ -30,8 +30,11 @@ class Vary_Cache
 	}
 
 	/* Grouping */
+	// will set the group cookie to the added group to indicate Varnish to cache it for those groups
 	static function set_group_for_user( $group ) {
-
+		//TODO: make sure headers aren't already sent
+		//TODO: only send header if we added or changed things
+		//TODO: don't set the cookie if was already set on the request
 		// validate, process $group, etc.
 		if ( self::is_encryption_enabled() ) {
 			self::set_group_cookie_encrypted( $group );
@@ -40,24 +43,24 @@ class Vary_Cache
 			self::set_group_cookie_plaintext( $group );
 			self::trackAction( 'set_user_group_encrypted' );
 		}
-
 	}
 
-	static function is_user_in_group( $group ) {
 
+	static function is_user_in_group( $group ) {
+		return (isset($_COOKIE[ static::$PREFIX_SEGMENT ] ) && $_COOKIE[ static::$PREFIX_SEGMENT ] === $group );
 	}
 
 	static function get_user_groups( $group ) {
 	}
 
-	static function enable_encryption() {
-		//check if there's meta values set for the the IV & key
-		static::$encryption_enabled = true;
+	static function set_encryption($value = true) {
+		static::$encryption_enabled = $value;
 	}
 
 	static function is_encryption_enabled() {
 		return static::$encryption_enabled;
 	}
+
 
 	static private function set_group_cookie_encrypted( $value, $ttl = null ) {
 		//validate that we have the secret values
@@ -84,5 +87,16 @@ class Vary_Cache
 		}
 	}
 
+	//Hook to send the Vary header
+	static function add_vary_headers() {
+		if( ! headers_sent() ) {
+			header( 'X-Vary2: abc' );
+		}
+	}
+
+
 }
+
+
+add_action( 'send_headers', 'Automattic\Vip\Cache\Vary_Cache::add_vary_headers' );
 
