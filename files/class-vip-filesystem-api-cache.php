@@ -27,7 +27,7 @@ class API_Cache {
 	 */
 	protected function __construct() {
 		// sys_get_temp_dir is pretty inconsistent regarding trailing slashes
-		$this->tmp_dir = rtrim( sys_get_temp_dir(), '/' );
+		$this->tmp_dir = get_temp_dir();
 
 		add_action( 'shutdown', [ $this, 'clear_tmp_files' ] );
 	}
