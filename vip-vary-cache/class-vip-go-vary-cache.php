@@ -51,7 +51,7 @@ class Vary_Cache
 	}
 
 	static function enable_encryption() {
-		//check if there's meta values et for the the IV & key
+		//check if there's meta values set for the the IV & key
 		static::$encryption_enabled = true;
 	}
 
@@ -61,7 +61,7 @@ class Vary_Cache
 
 	static private function set_group_cookie_encrypted( $value, $ttl = null ) {
 		//validate that we have the secret values
-		if ( ! defined( '' ) || ! defined( 'FILES_ACCESS_TOKEN' ) ) {
+		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
 			error_log('Secrets not defined for encrypted vary cookies ');
 			return;
 		}
