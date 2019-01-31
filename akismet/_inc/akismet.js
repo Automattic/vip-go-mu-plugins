@@ -282,4 +282,22 @@ jQuery( function ( $ ) {
                         url: './options-general.php?page=akismet-key-config&akismet_comment_form_privacy_notice=hide',
 		});
 	});
+
+	$( ".akismet-could-be-primary" ).each( function () {
+		var form = $( this ).closest( 'form' );
+
+		form.data( 'initial-state', form.serialize() );
+
+		form.on( 'change keyup', function () {
+			var self = $( this );
+			var submit_button = self.find( ".akismet-could-be-primary" );
+
+			if ( self.serialize() != self.data( 'initial-state' ) ) {
+				submit_button.addClass( "akismet-is-primary" );
+			}
+			else {
+				submit_button.removeClass( "akismet-is-primary" );
+			}
+		} );
+	} );
 });
