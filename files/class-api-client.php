@@ -167,7 +167,9 @@ class API_Client {
 	}
 
 	public function delete_file( $file_path ) {
-		$response = $this->call_api( $file_path, 'DELETE' );
+		$response = $this->call_api( $file_path, 'DELETE', [
+			'timeout' => 2,
+		] );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -186,6 +188,7 @@ class API_Client {
 
 	public function is_file( $file_path, &$info = null ) {
 		$response = $this->call_api( $file_path, 'GET', [
+			'timeout' => 2,
 			'headers' => [
 				'X-Action' => 'file_exists',
 			],
@@ -220,6 +223,7 @@ class API_Client {
 	 */
 	public function get_unique_filename( $file_path ) {
 		$response = $this->call_api( $file_path, 'GET', [
+			'timeout' => 2,
 			'headers' => [
 				'X-Action' => 'unique_filename',
 			],
