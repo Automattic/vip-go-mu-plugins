@@ -1139,21 +1139,6 @@ function wpcom_vip_get_resized_remote_image_url( $url, $width, $height, $escape 
 }
 
 /**
- * Helper function for wpcom_vip_load_plugin(); sanitizes plugin folder name.
- *
- * You shouldn't use this function.
- *
- * @param string $folder Folder name
- * @return string Sanitized folder name
- */
-function _wpcom_vip_load_plugin_sanitizer( $folder ) {
-	$folder = preg_replace( '#([^a-zA-Z0-9-_.]+)#', '', $folder );
-	$folder = str_replace( '..', '', $folder ); // To prevent going up directories
-
-	return $folder;
-}
-
-/**
  * Require a library in the VIP shared code library.
  *
  * @deprecated Since 2.0.0 - not yet fully supported
