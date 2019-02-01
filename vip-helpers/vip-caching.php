@@ -259,8 +259,13 @@ function wpcom_vip_url_to_postid( $url ) {
 		return 0;
 	}
 
+	static $home_host;
+	if ( ! isset( $home_host ) ) {
+		$home_host = parse_url( home_url(), PHP_URL_HOST );
+	}
+
 	// Sanity check; no URLs not from this site
-	if ( parse_url( $url, PHP_URL_HOST ) !== wpcom_vip_get_home_host() ) {
+	if ( parse_url( $url, PHP_URL_HOST ) !== $home_host ) {
 		return 0;
 	}
 
