@@ -5,23 +5,23 @@ namespace Automattic\VIP\Cache;
 use WP_Error;
 
 class Vary_Cache {
-	private const PREFIX_NO_CACHE = 'vip-go-cb';
-	private const PREFIX_SEGMENT = 'vip-go-seg';
-	private const PREFIX_AUTH = 'vip-go-auth';
+	private const COOKIE_NO_CACHE = 'vip-go-cb';
+	private const COOKIE_SEGMENT = 'vip-go-seg';
+	private const COOKIE_AUTH = 'vip-go-auth';
 
 	private static $encryption_enabled = false;
 
 	/* nocache */
 	static function set_no_cache_for_user() {
 		// TODO: need to scope cookie domain/path + TTL
-		setcookie( self::PREFIX_NO_CACHE, 1 );
+		setcookie( self::COOKIE_NO_CACHE, 1 );
 
 		self::track_action( 'no_cache' );
 	}
 
 	static function remove_no_cache_for_user() {
-		if ( isset( $_COOKIE[ self::PREFIX_NO_CACHE ] ) ) {
-			setcookie( self::PREFIX_NO_CACHE, '', time() - 3600 );
+		if ( isset( $_COOKIE[ self::COOKIE_NO_CACHE ] ) ) {
+			setcookie( self::COOKIE_NO_CACHE, '', time() - 3600 );
 		}
 	}
 
@@ -46,7 +46,7 @@ class Vary_Cache {
 
 
 	static function is_user_in_group( $group ) {
-		return isset( $_COOKIE[ self::PREFIX_SEGMENT ] ) && $_COOKIE[ self::PREFIX_SEGMENT ] === $group;
+		return isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) && $_COOKIE[ self::COOKIE_SEGMENT ] === $group;
 	}
 
 	static function get_user_groups() {
@@ -75,12 +75,12 @@ class Vary_Cache {
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
 		// TODO: need to scope cookie domain/path + TTL
-		setcookie( self::PREFIX_AUTH, $cipher_cookie );
+		setcookie( self::COOKIE_AUTH, $cipher_cookie );
 	}
 
 	static private function set_group_cookie_plaintext( $value, $ttl = null ) {
 		// TODO: need to scope cookie domain/path + TTL
-		setcookie( self::PREFIX_SEGMENT, $value );
+		setcookie( self::COOKIE_SEGMENT, $value );
 	}
 
 	// Send action for tracking purposes
