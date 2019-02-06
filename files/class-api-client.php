@@ -163,7 +163,12 @@ class API_Client {
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
-		return wp_remote_retrieve_body( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		// save to cache
+		$this->cache->cache_file( $file_path, $body );
+
+		return $body;
 	}
 
 	public function delete_file( $file_path ) {
