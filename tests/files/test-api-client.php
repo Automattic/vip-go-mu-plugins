@@ -283,7 +283,17 @@ class API_Client_Test extends \WP_UnitTestCase {
 					],
 					'body' => null,
 				],
-				new WP_Error( 'get_file-failed', 'Failed to get file `/wp-content/uploads/file.jpg` (response code: 404)' ),
+				new WP_Error( 'file-not-found', 'The requested file `/wp-content/uploads/file.jpg` does not exist (response code: 404)' ),
+			],
+
+			'other-bad-status' => [
+				[
+					'response' => [
+						'code' => 500,
+					],
+					'body' => null,
+				],
+				new WP_Error( 'get_file-failed', 'Failed to get file `/wp-content/uploads/file.jpg` (response code: 500)' ),
 			],
 
 			'file-exists' => [
