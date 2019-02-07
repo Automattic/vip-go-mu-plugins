@@ -158,7 +158,10 @@ class API_Client {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
+		if ( 404 === $response_code ) {
+			/* translators: 1: file path */
+			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
+		} elseif ( 200 !== $response_code ) {
 			/* translators: 1: file path 2: HTTP status code */
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
