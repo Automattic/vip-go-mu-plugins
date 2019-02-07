@@ -123,10 +123,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
 
-		if ( $this->client->is_file( $path ) ) {
-			$result = $this->client->get_file( $path );
+		$result = $this->client->get_file( $path );
 
-			if ( is_wp_error( $result ) ) {
+		if ( is_wp_error( $result ) ) {
+			if ( 'file-not-found' !== $result->get_error_code() ) {
 				trigger_error(
 					sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
 					E_USER_WARNING
@@ -134,13 +134,12 @@ class VIP_Filesystem_Stream_Wrapper {
 				return false;
 			}
 
-			// Converts file contents into stream resource
-			$file = $this->string_to_resource( $result );
-		} else {
 			// File doesn't exist on File service so create new file
-			$file = $this->string_to_resource( '' );
+			$result = '';
 		}
 
+		// Converts file contents into stream resource
+		$file = $this->string_to_resource( $result );
 
 		// Get meta data
 		$meta = stream_get_meta_data( $file );
