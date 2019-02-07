@@ -198,4 +198,33 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $actual );
 	}
+
+	public function get_test_data__filter_get_attached_file() {
+		$uploads = wp_get_upload_dir();
+		return [
+			'proper file path' => [
+				[
+					'file' => 'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+					'attachment_id' => 1
+				],
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg'
+			],
+			'corrupted file path' => [
+				[
+					'file' => 'vip://wp-content/uploads/' . $uploads[ 'baseurl' ] . '/2019/01/IMG_4115.jpg',
+					'attachment_id' => 1
+				],
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg'
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__filter_get_attached_file
+	 */
+	public function test__filter_get_attached_file( $args, $expected ) {
+		$actual = $this->vip_filesystem->filter_get_attached_file( $args[ 'file' ], $args[ 'attachment_id' ] );
+
+		$this->assertEquals( $expected, $actual );
+	}
 }

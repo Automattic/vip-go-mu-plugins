@@ -91,6 +91,7 @@ class VIP_Filesystem {
 		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
 		add_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10, 4 );
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
+		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
 	}
 
 	/**
@@ -104,6 +105,7 @@ class VIP_Filesystem {
 		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10 );
 		remove_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10 );
 		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20 );
+		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 	}
 
 	/**
@@ -328,5 +330,29 @@ class VIP_Filesystem {
 				E_USER_WARNING
 			);
 		}
+	}
+
+	/**
+	 * Filter `get_attached_file` output
+	 *
+	 * Fixes incorrect attachment post meta data where `_wp_attached_file` is a
+	 * URL instead of a file path relative to the uploads directory
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param   string  $file           Path to file
+	 * @param   int     $attachment_id  Attachment post ID
+	 *
+	 * @return  string  Path to file
+	 */
+	public function filter_get_attached_file( $file, $attachment_id ) {
+		$uploads = wp_get_upload_dir();
+
+		if ( $file && false !== strpos( $file, $uploads[ 'baseurl' ] ) ) {
+			$file = str_replace( $uploads[ 'baseurl' ] . '/', '', $file );
+		}
+
+		return $file;
 	}
 }
