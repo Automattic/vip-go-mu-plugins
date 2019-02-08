@@ -956,6 +956,10 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		}
 	}
 
+	if ( ! wpcom_vip_should_load_plugins() ) {
+		return;
+	}
+
 	/**
 	 * wpcom compat
 	 *
