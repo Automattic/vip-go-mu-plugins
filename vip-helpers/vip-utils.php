@@ -1138,6 +1138,29 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 }
 
 /**
+ * Helper function to check if we can load plugins or not.
+ */
+function wpcom_vip_should_load_plugins() {
+	static $should_load_plugins;
+
+	if ( isset( $should_load_plugins ) ) {
+		return $should_load_plugins;
+	}
+
+	$should_load_plugins = true;
+
+	// WP-CLI loaded with --skip-plugins flag
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		$skipped_plugins = \WP_CLI::get_runner()->config['skip-plugins'];
+		if ( $skipped_plugins ) {
+			$should_load_plugins = false;
+		}
+	}
+
+	return $should_load_plugins;
+}
+
+/**
  * Store the name of a VIP plugin that will be loaded
  *
  * @param string $plugin Plugin name and folder
@@ -1187,6 +1210,10 @@ function wpcom_vip_load_helpers_for_network_active_plugins() {
 		return;
 	}
 
+	if ( ! wpcom_vip_should_load_plugins() ) {
+		return;
+	}
+
 	foreach ( wp_get_active_network_plugins() as $plugin ) {
 		_wpcom_vip_include_plugin( $plugin );
 	}
@@ -1199,6 +1226,10 @@ add_action( 'muplugins_loaded', 'wpcom_vip_load_helpers_for_network_active_plugi
  * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
  */
 function wpcom_vip_load_helpers_for_sites_core_plugins() {
+	if ( ! wpcom_vip_should_load_plugins() ) {
+		return;
+	}
+
 	foreach ( wp_get_active_and_valid_plugins() as $plugin ) {
 		_wpcom_vip_include_plugin( $plugin );
 	}
