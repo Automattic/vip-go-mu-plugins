@@ -2,8 +2,8 @@
 Contributors: automattic, apokalyptik, briancolinger, josephscott, shaunandrews, xknown, thingalon, annezazu, rachelsquirrel
 Tags: security, malware, virus, archive, back up, back ups, backup, backups, scanning, restore, wordpress backup, site backup, website backup
 Requires at least: 3.2
-Tested up to: 4.9
-Stable tag: 1.9.6
+Tested up to: 5.0
+Stable tag: 1.9.8
 License: GPLv2
 
 VaultPress is a subscription service offering real-time backup, automated security scanning, and support from WordPress experts.
@@ -30,11 +30,11 @@ View our full list of FAQs at [http://help.vaultpress.com/faq/](http://help.vaul
 
 = What’s included in each plan? =
 
-All plans include automated daily backups (unlimited storage space) of your entire site, 1-click restores, stats, priority support, brute force attack protection, uptime monitoring, spam protection, site migration, and an activity log. 
+All plans include automated daily backups (unlimited storage space) of your entire site, 1-click restores, stats, priority support, brute force attack protection, uptime monitoring, spam protection, site migration, and an activity log.
 
 The Personal and Premium plans are limited to a 30-day backup archive while Professional is unlimited.
 
-The Premium and Professional plans also offer automated security scanning against malware and infiltrations with the Professional plan also offering automated threat resolution. 
+The Premium and Professional plans also offer automated security scanning against malware and infiltrations with the Professional plan also offering automated threat resolution.
 
 [Visit our site](https://vaultpress.com/contact/) for more detail and up-to-date information.
 
@@ -47,17 +47,22 @@ A VaultPress subscription is for a single WordPress site. You can purchase addit
 Yes, VaultPress supports Multisite installs. Each site will require its own subscription.
 
 == Changelog ==
-= 1.9.6 - 17 August 2018
+= 1.9.8 - 7 February 2019 =
+* Limit the size of _vp_ai_ping_% entries when a site gets disconnected from VaultPress.com
+
+= 1.9.7 - 11 December 2018 =
+* Update firewall IP detection rules to autodetect various reverse proxy setups
+
+= 1.9.6 - 17 August 2018 =
 * Limit _vp_ai_ping_% entries to improve stability when a site gets disconnected from VaultPress.com
 
-== Changelog ==
-= 1.9.5 - 2 February 2018
+= 1.9.5 - 2 February 2018 =
 * Removing activation notice
 
-= 1.9.4 - 15 November 2017
+= 1.9.4 - 15 November 2017 =
 * Error handling improvements in the scanner
 
-= 1.9.3 - 9 November 2017
+= 1.9.3 - 9 November 2017 =
 * Compatibility update
 * Send a better user-agent string to VaultPress servers
 
@@ -105,7 +110,7 @@ Yes, VaultPress supports Multisite installs. Each site will require its own subs
 = 1.7.9 - 24 Feb 2016 =
 * PHP 7 support. Drop support for PHP 4 and versions of WordPress older than 3.2.
 * Silence PHP errors when attempting to change the execution time limit when PHP is running in safe mode.
-* Prevent database update pings from being stored when not connected to a paid VaultPress account. 
+* Prevent database update pings from being stored when not connected to a paid VaultPress account.
 
 = 1.7.8 - 15 Oct 2015 =
 * Security: Hotfix for Akismet < 3.1.5.
