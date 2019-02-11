@@ -935,7 +935,7 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	// Kick things off
-	add_action( 'init', 'a8c_files_init' );
+	add_action( 'muplugins_loaded', 'a8c_files_init' );
 
 	// Disable automatic creation of intermediate image sizes.
 	// We generate them on-the-fly on VIP.
