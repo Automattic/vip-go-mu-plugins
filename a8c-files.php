@@ -47,14 +47,9 @@ class A8C_Files {
 			$this->init_legacy_filesystem();
 		}
 
-		// Limit to certain contexts for the initial testing and roll-out.
-		// This will be phased out and become the default eventually.
-		$use_jetpack_photon = $this->use_jetpack_photon();
-		if ( $use_jetpack_photon ) {
-			$this->init_jetpack_photon_filters();
-		} else {
-			$this->init_vip_photon_filters();
-		}
+		// Initialize Photon-specific filters.
+		// Wait till `init` to make sure Jetpack and the Photon module are ready.
+		add_action( 'init', array( $this, 'init_photon' ) );
 
 		// ensure we always upload with year month folder layouts
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
@@ -91,7 +86,23 @@ class A8C_Files {
 		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 	}
 
+	function init_photon() {
+		// Limit to certain contexts for the initial testing and roll-out.
+		// This will be phased out and become the default eventually.
+		$use_jetpack_photon = $this->use_jetpack_photon();
+		if ( $use_jetpack_photon ) {
+			$this->init_jetpack_photon_filters();
+		} else {
+			$this->init_vip_photon_filters();
+		}
+	}
+
 	private function init_jetpack_photon_filters() {
+		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
+			return;
+		}
+
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
 		// Externally hosted files continue to use the remot Photon service.
