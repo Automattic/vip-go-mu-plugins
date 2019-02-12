@@ -261,7 +261,7 @@ class API_Client {
 		return $obj->filename;
 	}
 
-	private function log_request( $path, $method, $rquest_args ): void {
+	private function log_request( $path, $method, $request_args ) {
 		$x_action = '';
 
 		if ( isset( $request_args['headers'] ) && isset( $request_args['headers']['X-Action'] ) ) {
