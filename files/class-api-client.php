@@ -76,6 +76,13 @@ class API_Client {
 
 		$response = wp_remote_request( $request_url, $request_args );
 
+		// Debug log
+		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) &&
+		     true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) )
+		{
+			$this->log_request( $path, $method, $request_args );
+		}
+
 		return $response;
 	}
 
@@ -252,5 +259,21 @@ class API_Client {
 		$obj = json_decode( $content );
 
 		return $obj->filename;
+	}
+
+	private function log_request( $path, $method, $request_args ) {
+		$x_action = '';
+
+		if ( isset( $request_args['headers'] ) && isset( $request_args['headers']['X-Action'] ) ) {
+			$x_action = $request_args['headers']['X-Action'];
+		}
+
+		trigger_error(
+			sprintf( 'method:%s, path:%s, X-Action:%s #vip-go-streams-debug',
+				$method,
+				$path,
+				$x_action
+			), E_USER_NOTICE
+		);
 	}
 }
