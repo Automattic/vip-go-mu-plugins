@@ -98,6 +98,11 @@ class A8C_Files {
 	}
 
 	private function init_jetpack_photon_filters() {
+		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
+			return;
+		}
+
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
 		// Externally hosted files continue to use the remot Photon service.
