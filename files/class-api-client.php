@@ -264,8 +264,8 @@ class API_Client {
 	private function log_request( $path, $method, $rquest_args ): void {
 		$x_action = '';
 
-		if ( isset( $rquest_args['headers'] ) && isset( $rquest_args['headers']['X-Action'] ) ) {
-			$x_action = $rquest_args['headers']['X-Action'];
+		if ( isset( $request_args['headers'] ) && isset( $request_args['headers']['X-Action'] ) ) {
+			$x_action = $request_args['headers']['X-Action'];
 		}
 
 		trigger_error(
