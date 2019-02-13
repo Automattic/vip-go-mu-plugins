@@ -15,8 +15,6 @@ class Vary_Cache {
 	static function set_no_cache_for_user() {
 		// TODO: need to scope cookie domain/path + TTL
 		setcookie( self::COOKIE_NO_CACHE, 1 );
-
-		self::track_action( 'no_cache' );
 	}
 
 	static function remove_no_cache_for_user() {
@@ -35,12 +33,8 @@ class Vary_Cache {
 		// validate, process $group, etc.
 		if ( self::is_encryption_enabled() ) {
 			self::set_group_cookie_encrypted( $group );
-
-			self::track_action( 'set_user_group_encrypted' );
 		} else {
 			self::set_group_cookie_plaintext( $group );
-
-			self::track_action( 'set_user_group' );
 		}
 	}
 
@@ -83,12 +77,6 @@ class Vary_Cache {
 		setcookie( self::COOKIE_SEGMENT, $value );
 	}
 
-	// Send action for tracking purposes
-	static private function track_action( $action ) {
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			add_action( 'vipgo_did_vary_cache', $action, constant( 'VIP_GO_APP_ID' ) );
-		}
-	}
 
 	// Hook to send the Vary header
 	static function add_vary_headers() {
