@@ -261,7 +261,19 @@ class API_Client {
 		return $obj->filename;
 	}
 
+	// Allow E_USER_NOTICE to be logged since WP blocks it by default.
+	private function allow_E_USER_NOTICE() {
+		static $updated_error_reporting = false;
+		if ( ! $updated_error_reporting ) {
+			$current_reporting_level = error_reporting();
+			error_reporting( $current_reporting_level | E_USER_NOTICE );
+			$updated_error_reporting = true;
+		}
+	}
+
 	private function log_request( $path, $method, $request_args ) {
+		$this->allow_E_USER_NOTICE();
+
 		$x_action = '';
 
 		if ( isset( $request_args['headers'] ) && isset( $request_args['headers']['X-Action'] ) ) {
