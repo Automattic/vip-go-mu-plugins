@@ -15,7 +15,7 @@ class VIP_Lockout {
 	    add_action( 'admin_notices', [ $this, 'add_admin_notice' ], 1 );
 		add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
 
-		add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], 1, 4 );
+		add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
 	}
 
 	public function add_admin_notice() {
@@ -40,9 +40,9 @@ class VIP_Lockout {
 		}
 
 		?>
-		<div id="lockout-warning" class="vp-notice notice-warning wrap clearfix" style="border-left-width:4px;border-left-style:solid;" >
+		<div id="lockout-warning" class="notice-warning wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;" >
             <div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
-            <div class="vp-message" style="display: flex;lign-items: center;" >
+            <div class="vp-message" style="display: flex;align-items: center;" >
                 <h3><?php _e( VIP_LOCKOUT_MESSAGE ); ?></h3>
             </div>
 		</div>
@@ -51,9 +51,9 @@ class VIP_Lockout {
 
 	protected function render_locked_notice() {
 		?>
-        <div id="lockout-warning" class="vp-notice notice-error wrap clearfix" style="border-left-width:4px;border-left-style:solid;" >
+        <div id="lockout-warning" class="notice-error wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;" >
             <div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#dc3232;"></div>
-            <div class="vp-message" style="display: flex;lign-items: center;" >
+            <div class="vp-message" style="display: flex;align-items: center;" >
                 <h3><?php _e( VIP_LOCKOUT_MESSAGE ); ?></h3>
             </div>
         </div>
