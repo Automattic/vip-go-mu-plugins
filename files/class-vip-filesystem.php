@@ -302,14 +302,23 @@ class VIP_Filesystem {
 		// Append the filesize if not already set to avoid continued dynamic API calls.
 		// The filesize doesn't change so it's okay to store it in meta.
 		if ( ! isset( $metadata['filesize'] ) ) {
-			$file = get_attached_file( $attachment_id );
-
-			if ( file_exists( $file ) ) {
-				$metadata['filesize'] = filesize( $file );
+			$filesize = $this->get_filesize_from_file( $attachment_id );
+			if ( false !== $filesize ) {
+				$metadata['filesize'] = $filesize;
 			}
 		}
 
 		return $metadata;
+	}
+
+	private function get_filesize_from_file( $attachment_id ) {
+		$file = get_attached_file( $attachment_id );
+
+		if ( ! file_exists( $file ) ) {
+			return false;
+		}
+
+		return filesize( $file );
 	}
 
 	/**
