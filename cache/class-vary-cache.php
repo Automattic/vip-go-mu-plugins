@@ -9,8 +9,8 @@ class Vary_Cache {
 	private const COOKIE_SEGMENT = 'vip-go-seg';
 	private const COOKIE_AUTH = 'vip-go-auth';
 
-	private static $GROUP_SEPERATOR = "__";
-	private static $VALUE_SEPERATOR = "_--_";
+	private const GROUP_SEPARATOR = "__";
+	private const VALUE_SEPARATOR = "_--_";
 
 	private static $encryption_enabled = false;
 	private static $groups = [ ];
@@ -29,9 +29,15 @@ class Vary_Cache {
 
 	/* Grouping */
 
-	static function register_group( $group ) {
+	static function register_groups( $groups ) {
 		self::parseGroupCookie();
-		self::$groups[ $group ] = '';
+		if( is_array( $groups ) ) {
+			foreach( $groups as $group){
+				self::$groups[ $group ] = '';
+			}
+		} else {
+			self::$groups[ $groups ] = '';
+		}
 	}
 
 	// will set the group cookie to the added group to indicate Varnish to cache it for those groups
@@ -92,9 +98,9 @@ class Vary_Cache {
 
 
 	static private function parseGroupCookie() {
-		if( isset( $_COOKIE[ static::$PREFIX_SEGMENT ] ) ){
+		if( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ){
 			//TODO: 2nd iteration to handle multiple array values
-			self::$groups = explode( self::$GROUP_SEPERATOR, $_COOKIE[ static::$PREFIX_SEGMENT ] );
+			self::$groups = explode( self::GROUP_SEPARATOR, $_COOKIE[ self::COOKIE_SEGMENT ] );
 		}
 	}
 
@@ -102,7 +108,7 @@ class Vary_Cache {
 	{
 		ksort( self::$groups ); //make sure the string order is the same every time
 		//TODO: 2nd iteration to handle multiple array values
-		return implode( self::$GROUP_SEPERATOR , self::$groups);
+		return implode( self::GROUP_SEPARATOR , self::$groups);
 	}
 
 	//Hook to send the Vary header
