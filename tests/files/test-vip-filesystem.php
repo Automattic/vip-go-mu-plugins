@@ -6,6 +6,7 @@ use WP_Error;
 use WP_UnitTestCase;
 
 class VIP_Filesystem_Test extends WP_UnitTestCase {
+	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
 	/**
 	 * @var     VIP_Filesystem
@@ -226,5 +227,41 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$actual = $this->vip_filesystem->filter_get_attached_file( $args[ 'file' ], $args[ 'attachment_id' ] );
 
 		$this->assertEquals( $expected, $actual );
+	}
+
+	public function get_test_data__filter_wp_generate_attachment_metadata() {
+		return [
+			'filesize-not-set' => [
+				[],
+				[
+					'filesize' => 6941712,
+				],
+			],
+
+			'filesize-already-set' => [
+				[
+					'filesize' => 1234,
+				],
+				[
+					'filesize' => 1234,
+				],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__filter_wp_generate_attachment_metadata
+	 */
+	public function test__filter_wp_generate_attachment_metadata( $initial_metadata, $expected_metadata ) {
+		// Remove filters as they conflict with the logic in our filter function below.
+		// We don't have a test-specific wrapper that we can fall back to.
+		$remove_filters = self::get_method( 'remove_filters' );
+		$remove_filters->invoke( $this->vip_filesystem );
+
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+
+		$actual_metadata = $this->vip_filesystem->filter_wp_generate_attachment_metadata( $initial_metadata, $attachment_id );
+
+		$this->assertEquals( $expected_metadata, $actual_metadata );
 	}
 }
