@@ -9,7 +9,11 @@ class Vary_Cache {
 	private const COOKIE_SEGMENT = 'vip-go-seg';
 	private const COOKIE_AUTH = 'vip-go-auth';
 
+	private static $GROUP_SEPERATOR = "__";
+	private static $VALUE_SEPERATOR = "_--_";
+
 	private static $encryption_enabled = false;
+	private static $groups = [ ];
 
 	/* nocache */
 	static function set_no_cache_for_user() {
@@ -24,27 +28,36 @@ class Vary_Cache {
 	}
 
 	/* Grouping */
+
+	static function register_group( $group ) {
+		self::parseGroupCookie();
+		self::$groups[ $group ] = '';
+	}
+
 	// will set the group cookie to the added group to indicate Varnish to cache it for those groups
-	// TODO: group + value to allow multiple groups
-	static function set_group_for_user( $group ) {
+	static function set_group_for_user( $group, $value ) {
 		//TODO: make sure headers aren't already sent
 		//TODO: only send header if we added or changed things
 		//TODO: don't set the cookie if was already set on the request
 		// validate, process $group, etc.
+		self::$group[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
-			self::set_group_cookie_encrypted( $group );
+
+			self::set_group_cookie_encrypted( self::stringifyGroups() );
 		} else {
-			self::set_group_cookie_plaintext( $group );
+			self::set_group_cookie_plaintext( self::stringifyGroups() );
 		}
 	}
 
 
-	static function is_user_in_group( $group ) {
-		return isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) && $_COOKIE[ self::COOKIE_SEGMENT ] === $group;
+	static function is_user_in_group( $group, $value ) {
+		self::parseGroupCookie();
+		return (self::$groups[ $group ] === $value );
 	}
 
-	static function get_user_groups() {
-		// TODO
+	static function get_user_groups( ) {
+		self::parseGroupCookie();
+		return self::$groups;
 	}
 
 	static function set_encryption( $value = true ) {
@@ -78,12 +91,27 @@ class Vary_Cache {
 	}
 
 
-	// Hook to send the Vary header
-	static function add_vary_headers() {
-		if( ! headers_sent() ) {
-			header( 'X-Vary2: abc' );
+	static private function parseGroupCookie() {
+		if( isset( $_COOKIE[ static::$PREFIX_SEGMENT ] ) ){
+			//TODO: 2nd iteration to handle multiple array values
+			self::$groups = explode( self::$GROUP_SEPERATOR, $_COOKIE[ static::$PREFIX_SEGMENT ] );
 		}
 	}
+
+	static private function stringifyGroups()
+	{
+		ksort( self::$groups ); //make sure the string order is the same every time
+		//TODO: 2nd iteration to handle multiple array values
+		return implode( self::$GROUP_SEPERATOR , self::$groups);
+	}
+
+	//Hook to send the Vary header
+	static function add_vary_headers() {
+		if( ! headers_sent() ) {
+			header( 'X-VIP-Go-Segmentation: ' . self::stringifyGroups() );
+		}
+	}
+
 }
 
 // TODO: move
