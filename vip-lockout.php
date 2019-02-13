@@ -14,14 +14,16 @@ class VIP_Lockout {
 	public function __construct() {
 	    add_action( 'admin_notices', [ $this, 'add_admin_notice' ], 1 );
 		add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
+
+		add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], 1, 4 );
 	}
 
 	public function add_admin_notice() {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) ) {
-			$user = wp_get_current_user();
-
 			switch ( VIP_LOCKOUT_STATE ) {
 				case 'warning':
+					$user = wp_get_current_user();
+
                     $this->render_warning_notice( $user );
                     break;
 
@@ -57,6 +59,16 @@ class VIP_Lockout {
         </div>
 		<?php
 	}
+
+	public function filter_user_has_cap( array $user_caps, array $caps, array $args, WP_User $user ) {
+        if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+            $subscriber = get_role( 'subscriber' );
+
+            return array_intersect_key( $user_caps, (array) $subscriber->capabilities );
+        }
+
+        return $user_caps;
+    }
 }
 
 new VIP_Lockout();
