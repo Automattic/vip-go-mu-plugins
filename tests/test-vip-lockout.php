@@ -107,4 +107,24 @@ class VIP_Lockout_Test extends WP_UnitTestCase {
 
 		$this->assertEqualSets( $user_cap, $actual_cap );
 	}
+
+	public function test__filter_user_has_cap__locked_vip_support() {
+		require_once __DIR__ . '/../vip-support/class-vip-support-user.php';
+		require_once __DIR__ . '/../vip-support/class-vip-support-role.php';
+
+		define( 'VIP_LOCKOUT_STATE', 'locked' );
+
+		$email = 'user@automattic.com';
+		$user = $this->factory->user->create_and_get( [
+			'role' => 'administrator',
+			'user_email' => $email,
+		] );
+		add_user_meta( $user->ID, \Automattic\VIP\Support_User\User::META_EMAIL_VERIFIED, $email );
+
+		$user_cap = $user->get_role_caps();
+
+		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
+
+		$this->assertEqualSets( $user_cap, $actual_cap );
+	}
 }

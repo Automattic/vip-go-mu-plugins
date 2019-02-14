@@ -96,6 +96,10 @@ class VIP_Lockout {
 	 * @return array
 	 */
 	public function filter_user_has_cap( array $user_caps, array $caps, array $args, WP_User $user ) {
+		if ( is_automattician( $user->ID ) ) {
+			return $user_caps;
+		}
+
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
 			$subscriber = get_role( 'subscriber' );
 
