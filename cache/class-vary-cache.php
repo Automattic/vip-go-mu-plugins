@@ -9,11 +9,12 @@ class Vary_Cache {
 	private const COOKIE_SEGMENT = 'vip-go-seg';
 	private const COOKIE_AUTH = 'vip-go-auth';
 
+	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-)
 	private const GROUP_SEPARATOR = "__";
 	private const VALUE_SEPARATOR = "_--_";
 
 	private static $encryption_enabled = false;
-	private static $groups = [ ];
+	private static $groups = [];
 
 	/* nocache */
 	static function set_no_cache_for_user() {
@@ -30,7 +31,6 @@ class Vary_Cache {
 	/* Grouping */
 
 	static function register_groups( $groups ) {
-		self::parseGroupCookie();
 		if( is_array( $groups ) ) {
 			foreach( $groups as $group){
 				self::$groups[ $group ] = '';
@@ -38,6 +38,8 @@ class Vary_Cache {
 		} else {
 			self::$groups[ $groups ] = '';
 		}
+
+		self::parseGroupCookie();
 	}
 
 	// will set the group cookie to the added group to indicate Varnish to cache it for those groups
@@ -103,12 +105,12 @@ class Vary_Cache {
 
 
 	static private function parseGroupCookie() {
-		if( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ){
-			$groupArray = explode( self::GROUP_SEPARATOR, $_COOKIE[ self::COOKIE_SEGMENT ] );
-			foreach( $groupArray as $group )
-			{
-				$groupArray = explode( self::VALUE_SEPARATOR,$group );
-				self::$groups[ $groupArray[ 0 ] ] = $groupArray[ 1 ] ?? '';
+		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+			$groups = explode( self::GROUP_SEPARATOR, $_COOKIE[ self::COOKIE_SEGMENT ] );
+			foreach( $groups as $group ) {
+				// TODO: error handling (what if it's not in the right format?)
+				list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
+				self::$groups[ $group_name ] = $group_value ?? '';
 			}
 		}
 	}
