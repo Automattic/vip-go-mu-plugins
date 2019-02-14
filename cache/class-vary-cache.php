@@ -185,7 +185,7 @@ class Vary_Cache {
 	 * @throws string If credentials ENV Variables aren't defined.
 	 * @return string decrypted version of string
 	 */
-	private function decrypt_cookie_value( $cookie_value ) {
+	private static function decrypt_cookie_value( $cookie_value ) {
 		// Validate that we have the secret values.
 		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
 			// TODO: check that values are not empty.
@@ -201,7 +201,7 @@ class Vary_Cache {
 		if ( count( $cookie_array ) < 2 ) {
 			return null;
 		}
-		return $cookie_value [1];
+		return $cookie_array [1];
 	}
 
 	/**
