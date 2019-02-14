@@ -16,15 +16,16 @@ class Vary_Cache {
 	private static $encryption_enabled = false;
 	private static $groups = [];
 
+	private static $cookie_expiry = MONTH_IN_SECONDS;
+
 	/* nocache */
 	static function set_no_cache_for_user() {
-		// TODO: need to scope cookie domain/path + TTL
-		setcookie( self::COOKIE_NO_CACHE, 1 );
+		self::set_cookie( self::COOKIE_NO_CACHE, 1 );
 	}
 
 	static function remove_no_cache_for_user() {
 		if ( isset( $_COOKIE[ self::COOKIE_NO_CACHE ] ) ) {
-			setcookie( self::COOKIE_NO_CACHE, '', time() - 3600 );
+			self::unset_cookie( self::COOKIE_NO_CACHE );
 		}
 	}
 
@@ -95,12 +96,12 @@ class Vary_Cache {
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
 		// TODO: need to scope cookie domain/path + TTL
-		setcookie( self::COOKIE_AUTH, $cipher_cookie );
+		self::set_cookie( self::COOKIE_AUTH, $cipher_cookie );
 	}
 
 	static private function set_group_cookie_plaintext( $value, $ttl = null ) {
 		// TODO: need to scope cookie domain/path + TTL
-		setcookie( self::COOKIE_SEGMENT, $value );
+		self::set_cookie( self::COOKIE_SEGMENT, $value );
 	}
 
 
@@ -128,7 +129,20 @@ class Vary_Cache {
 		return implode(self::GROUP_SEPARATOR, $flattened );
 	}
 
-	//Hook to send the Vary header
+	/**
+	 * Adjust the default cookie expiry
+	 *
+	 * @param int $expiry Seconds in the future when the cookie should expire (e.g. MONTH_IN_SECONDS). Must be more than 1 hour.
+	 */
+	static function set_cookie_expiry( int $expiry ) {
+		if ( $expiry < HOUR_IN_SECONDS ) {
+			trigger_error( sprintf( '%s: cookie expiry must be greater than or equal to 1 hour (%d)', __METHOD__, HOUR_IN_SECONDS ), E_USER_WARNING );
+			return;
+		}
+		self::$cookie_expiry = $expiry;
+	}
+
+	// Hook to send the Vary header
 	static function add_vary_headers() {
 		if ( ! empty( self::$groups ) ) {
 			header( 'Vary: X-VIP-Go-Segmentation' );
@@ -136,6 +150,14 @@ class Vary_Cache {
 		}
 	}
 
+	static private function set_cookie( $name, $value ) {
+		$expiry = time() + self::$cookie_expiry;
+		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+	}
+
+	static private function unset_cookie( $name ) {
+		setcookie( $name, '', time() - 3600 );
+	}
 }
 
 // TODO: move
