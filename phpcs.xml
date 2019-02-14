@@ -24,5 +24,5 @@
 	<exclude-pattern>wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>wp-cron-control/*</exclude-pattern>
 
-	<rule ref="WordPress-VIP-Go"/>
+	<rule ref="WordPress-VIP"/>
 </ruleset>
