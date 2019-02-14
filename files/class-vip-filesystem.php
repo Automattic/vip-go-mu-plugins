@@ -92,6 +92,7 @@ class VIP_Filesystem {
 		add_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10, 4 );
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
 		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
+		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
 	}
 
 	/**
@@ -106,6 +107,7 @@ class VIP_Filesystem {
 		remove_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10 );
 		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20 );
 		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
+		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ] );
 	}
 
 	/**
@@ -289,7 +291,35 @@ class VIP_Filesystem {
 		}
 
 		return $file_path;
-}
+	}
+
+	/**
+	 * Filters the generated attachment metdata
+	 *
+	 * @return array
+	 */
+	public function filter_wp_generate_attachment_metadata( $metadata, $attachment_id ) {
+		// Append the filesize if not already set to avoid continued dynamic API calls.
+		// The filesize doesn't change so it's okay to store it in meta.
+		if ( ! isset( $metadata['filesize'] ) ) {
+			$filesize = $this->get_filesize_from_file( $attachment_id );
+			if ( false !== $filesize ) {
+				$metadata['filesize'] = $filesize;
+			}
+		}
+
+		return $metadata;
+	}
+
+	private function get_filesize_from_file( $attachment_id ) {
+		$file = get_attached_file( $attachment_id );
+
+		if ( ! file_exists( $file ) ) {
+			return false;
+		}
+
+		return filesize( $file );
+	}
 
 	/**
 	 * Get the file path URI
