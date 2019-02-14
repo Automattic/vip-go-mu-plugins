@@ -9,16 +9,16 @@ class Vary_Cache {
 	private const COOKIE_SEGMENT = 'vip-go-seg';
 	private const COOKIE_AUTH = 'vip-go-auth';
 
-	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-)
-	private const GROUP_SEPARATOR = "__";
-	private const VALUE_SEPARATOR = "_--_";
+	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
+	private const GROUP_SEPARATOR = '__';
+	private const VALUE_SEPARATOR = '_--_';
 
 	private static $encryption_enabled = false;
 	private static $groups = [];
 
 	private static $cookie_expiry = MONTH_IN_SECONDS;
 
-	/* nocache */
+	/** nocache */
 	static function set_no_cache_for_user() {
 		self::set_cookie( self::COOKIE_NO_CACHE, 1 );
 	}
@@ -29,48 +29,46 @@ class Vary_Cache {
 		}
 	}
 
-	/* Grouping */
-
+	/** Grouping */
 	static function register_groups( $groups ) {
-		if( is_array( $groups ) ) {
-			foreach( $groups as $group){
+		if ( is_array( $groups ) ) {
+			foreach ( $groups as $group ) {
 				self::$groups[ $group ] = '';
 			}
 		} else {
 			self::$groups[ $groups ] = '';
 		}
 
-		self::parseGroupCookie();
+		self::parse_group_cookie();
 	}
 
-	// will set the group cookie to the added group to indicate Varnish to cache it for those groups
+	/** will set the group cookie to the added group to indicate Varnish to cache it for those groups */
 	static function set_group_for_user( $group, $value ) {
-		//TODO: make sure headers aren't already sent
-		//TODO: only send header if we added or changed things
-		//TODO: don't set the cookie if was already set on the request
+		// TODO: make sure headers aren't already sent
+		// TODO: only send header if we added or changed things
+		// TODO: don't set the cookie if was already set on the request
 		// validate, process $group, etc.
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
-
-			self::set_group_cookie_encrypted( self::stringifyGroups() );
+			self::set_group_cookie_encrypted( self::stringify_groups() );
 		} else {
-			self::set_group_cookie_plaintext( self::stringifyGroups() );
+			self::set_group_cookie_plaintext( self::stringify_groups() );
 		}
 	}
 
 
-	/* check if the user has a group set and optionally that the group value matches */
+	/** check if the user has a group set and optionally that the group value matches */
 	static function is_user_in_group( $group, $value ) {
-		self::parseGroupCookie();
-		if( ! isset ( self::$groups[ $group ] ) ) {
+		self::parse_group_cookie();
+		if ( ! isset( self::$groups[ $group ] ) ) {
 			return false;
 		}
 
 		return ( null === $value ) || ( self::$groups[ $group ] === $value );
 	}
 
-	static function get_user_groups( ) {
-		self::parseGroupCookie();
+	static function get_user_groups() {
+		self::parse_group_cookie();
 		return self::$groups;
 	}
 
@@ -82,7 +80,7 @@ class Vary_Cache {
 		return static::$encryption_enabled;
 	}
 
-	static private function set_group_cookie_encrypted( $value, $ttl = null ) {
+	private static function set_group_cookie_encrypted( $value, $ttl = null ) {
 		// Validate that we have the secret values
 		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
 			// TODO: check that values are not empty
@@ -92,23 +90,23 @@ class Vary_Cache {
 
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
-		$cookie_value = random_bytpes( 32 ) + '|' . $value . '|' . time() + $ttl;
+		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . time() . $ttl;
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
 		// TODO: need to scope cookie domain/path + TTL
 		self::set_cookie( self::COOKIE_AUTH, $cipher_cookie );
 	}
 
-	static private function set_group_cookie_plaintext( $value, $ttl = null ) {
+	private static function set_group_cookie_plaintext( $value ) {
 		// TODO: need to scope cookie domain/path + TTL
 		self::set_cookie( self::COOKIE_SEGMENT, $value );
 	}
 
 
-	static private function parseGroupCookie() {
+	private static function parse_group_cookie() {
 		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$groups = explode( self::GROUP_SEPARATOR, $_COOKIE[ self::COOKIE_SEGMENT ] );
-			foreach( $groups as $group ) {
+			foreach ( $groups as $group ) {
 				// TODO: error handling (what if it's not in the right format?)
 				list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 				self::$groups[ $group_name ] = $group_value ?? '';
@@ -117,16 +115,15 @@ class Vary_Cache {
 	}
 
 
-	/*flatten the 2D array into a serialzied string compatible with the cookie format */
-	static private function stringifyGroups()
-	{
-		ksort( self::$groups ); //make sure the string order is the same every time
+	/** flatten the 2D array into a serialized string compatible with the cookie format */
+	private static function stringify_groups() {
+		ksort( self::$groups ); // make sure the string order is the same every time
 		$flatten = function ( $key, $value ) {
 			return $key . self::VALUE_SEPARATOR . $value;
 		};
 		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
 
-		return implode(self::GROUP_SEPARATOR, $flattened );
+		return implode( self::GROUP_SEPARATOR, $flattened );
 	}
 
 	/**
@@ -146,16 +143,16 @@ class Vary_Cache {
 	static function add_vary_headers() {
 		if ( ! empty( self::$groups ) ) {
 			header( 'Vary: X-VIP-Go-Segmentation' );
-			header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringifyGroups() );
+			header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
 		}
 	}
 
-	static private function set_cookie( $name, $value ) {
+	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
 		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
-	static private function unset_cookie( $name ) {
+	private static function unset_cookie( $name ) {
 		setcookie( $name, '', time() - 3600 );
 	}
 }
