@@ -128,8 +128,9 @@ class Vary_Cache {
 
 	//Hook to send the Vary header
 	static function add_vary_headers() {
-		if( ! headers_sent() ) {
-			header( 'X-VIP-Go-Segmentation: ' . self::stringifyGroups() );
+		if ( ! empty( self::$groups ) ) {
+			header( 'Vary: X-VIP-Go-Segmentation' );
+			header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringifyGroups() );
 		}
 	}
 
