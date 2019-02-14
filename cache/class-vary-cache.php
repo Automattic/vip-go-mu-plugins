@@ -88,9 +88,10 @@ class Vary_Cache {
 		// validate, process $group, etc.
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
-			self::set_group_cookie_encrypted( self::stringify_groups() );
+			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
+			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
 		} else {
-			self::set_group_cookie_plaintext( self::stringify_groups() );
+			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
 		}
 	}
 
@@ -137,27 +138,28 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Returns the associated groups for the request.
+	 * Returns the encryption flag
 	 *
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @return array  user's group-value pairs
+	 * @return bool true if encryption is set for this request
 	 */
 	public static function is_encryption_enabled() {
 		return static::$encryption_enabled;
 	}
 
 	/**
-	 * Encrypts and stores a cookie string using the auth credentials for the site.
+	 * Encrypts a string using the auth credentials for the site.
 	 *
 	 * @since   1.0.0
 	 * @access  private
 	 *
 	 * @param string $value cookie text value.
 	 * @throws string If credentials ENV Variables aren't defined.
+	 * @return string encrypted version of string
 	 */
-	private static function set_group_cookie_encrypted( $value ) {
+	private static function encrypt_cookie_value( $value ) {
 		// Validate that we have the secret values.
 		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
 			// TODO: check that values are not empty.
@@ -170,21 +172,36 @@ class Vary_Cache {
 		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
-		// TODO: need to scope cookie domain/path + TTL.
-		self::set_cookie( self::COOKIE_AUTH, $cipher_cookie );
+		return $cipher_cookie;
 	}
 
 	/**
-	 * Wrapper function to store an unencrypted cookie value for a group variation.
+	 * Decrypts a string using the auth credentials for the site.
 	 *
 	 * @since   1.0.0
 	 * @access  private
 	 *
-	 * @param string $value cookie text value.
+	 * @param string $cookie_value the encrypted string.
+	 * @throws string If credentials ENV Variables aren't defined.
+	 * @return string decrypted version of string
 	 */
-	private static function set_group_cookie_plaintext( $value ) {
-		// TODO: need to scope cookie domain/path + TTL.
-		self::set_cookie( self::COOKIE_SEGMENT, $value );
+	private function decrypt_cookie_value( $cookie_value ) {
+		// Validate that we have the secret values.
+		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
+			// TODO: check that values are not empty.
+			trigger_error( 'Secrets not defined for encrypted vary cookies', E_USER_WARNING );
+			return;
+		}
+
+		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
+		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
+		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
+		$cookie_array = explode( '|', $cipher_cookie );
+		// Parse out the group payload (2nd item).
+		if ( count( $cookie_array ) < 2 ) {
+			return null;
+		}
+		return $cookie_value [1];
 	}
 
 	/**
@@ -195,7 +212,11 @@ class Vary_Cache {
 	 */
 	private static function parse_group_cookie() {
 		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
-			$groups = explode( self::GROUP_SEPARATOR, sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) );
+			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_SEGMENT ] ) );
+			if ( self::is_encryption_enabled() ) {
+				$cookie_value = self::decrypt_cookie_value( $cookie_value );
+			}
+			$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
 			foreach ( $groups as $group ) {
 				// TODO: error handling (what if it's not in the right format?)?
 				list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
