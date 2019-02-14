@@ -46,7 +46,7 @@ class Vary_Cache {
 		//TODO: only send header if we added or changed things
 		//TODO: don't set the cookie if was already set on the request
 		// validate, process $group, etc.
-		self::$group[ $group ] = $value;
+		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
 
 			self::set_group_cookie_encrypted( self::stringifyGroups() );
@@ -56,9 +56,14 @@ class Vary_Cache {
 	}
 
 
+	/* check if the user has a group set and optionally that the group value matches */
 	static function is_user_in_group( $group, $value ) {
 		self::parseGroupCookie();
-		return (self::$groups[ $group ] === $value );
+		if( ! isset ( self::$groups[ $group ] ) ) {
+			return false;
+		}
+
+		return ( null === $value ) || ( self::$groups[ $group ] === $value );
 	}
 
 	static function get_user_groups( ) {
@@ -99,16 +104,26 @@ class Vary_Cache {
 
 	static private function parseGroupCookie() {
 		if( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ){
-			//TODO: 2nd iteration to handle multiple array values
-			self::$groups = explode( self::GROUP_SEPARATOR, $_COOKIE[ self::COOKIE_SEGMENT ] );
+			$groupArray = explode( self::GROUP_SEPARATOR, $_COOKIE[ self::COOKIE_SEGMENT ] );
+			foreach( $groupArray as $group )
+			{
+				$groupArray = explode( self::VALUE_SEPARATOR,$group );
+				self::$groups[ $groupArray[ 0 ] ] = $groupArray[ 1 ] ?? '';
+			}
 		}
 	}
 
+
+	/*flatten the 2D array into a serialzied string compatible with the cookie format */
 	static private function stringifyGroups()
 	{
 		ksort( self::$groups ); //make sure the string order is the same every time
-		//TODO: 2nd iteration to handle multiple array values
-		return implode( self::GROUP_SEPARATOR , self::$groups);
+		$flatten = function ( $key, $value ) {
+			return $key . self::VALUE_SEPARATOR . $value;
+		};
+		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
+
+		return implode(self::GROUP_SEPARATOR, $flattened );
 	}
 
 	//Hook to send the Vary header
