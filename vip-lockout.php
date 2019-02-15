@@ -95,7 +95,7 @@ class VIP_Lockout {
 	 *
 	 * @return array
 	 */
-	public function filter_user_has_cap( array $user_caps, array $caps, array $args, WP_User $user ) {
+	public function filter_user_has_cap( $user_caps, $caps, $args, $user ) {
 		if ( is_automattician( $user->ID ) ) {
 			return $user_caps;
 		}
