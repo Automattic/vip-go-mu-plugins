@@ -8,7 +8,7 @@ class VIP_Lockout_Test extends WP_UnitTestCase {
 	private $lockout;
 
 	/**
-	 * Make tests run in separate processes and don't reserve global state so
+	 * Make tests run in separate processes and don't preserve global state so
 	 * that constants set in tests won't affect one another.
 	 */
 	protected $preserveGlobalState = FALSE;
