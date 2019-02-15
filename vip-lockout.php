@@ -13,6 +13,14 @@ class VIP_Lockout {
 	const USER_SEEN_WARNING_TIME_KEY = 'seen_lockout_warning_time';
 
 	/**
+	 * @var array Default user capabilities for locked state
+	 */
+	public $locked_cap = [
+		'read' => true,
+		'level_0' => true,
+	];
+
+	/**
 	 * VIP_Lockout constructor.
 	 */
 	public function __construct() {
@@ -107,8 +115,11 @@ class VIP_Lockout {
 
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
 			$subscriber = get_role( 'subscriber' );
+			if ( null !== $subscriber ) {
+				$this->locked_cap = $subscriber->capabilities;
+			}
 
-			return array_intersect_key( $user_caps, (array) $subscriber->capabilities );
+			return array_intersect_key( $user_caps, (array) $this->locked_cap );
 		}
 
 		return $user_caps;
