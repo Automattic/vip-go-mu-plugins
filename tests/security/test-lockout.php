@@ -19,7 +19,7 @@ class Lockout_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once __DIR__ . '/../vip-lockout.php';
+		require_once __DIR__ . '/../../security/class-lockout.php';
 	}
 
 	public function setUp() {
@@ -32,7 +32,7 @@ class Lockout_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass(  'Lockout' );
+		$class = new \ReflectionClass( 'Automattic\VIP\Security\Lockout' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
