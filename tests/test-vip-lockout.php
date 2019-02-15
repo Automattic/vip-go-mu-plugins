@@ -36,34 +36,55 @@ class VIP_Lockout_Test extends WP_UnitTestCase {
 		return $method;
 	}
 
-	public function test__user_seen_warning() {
+	public function test__user_seen_notice__warning() {
+		define( 'VIP_LOCKOUT_STATE', 'warning' );
+
 		$user = $this->factory->user->create_and_get();
 
-		$user_seen_warning = self::get_method( 'user_seen_warning' );
-		$user_seen_warning->invokeArgs( $this->lockout, [ $user ] );
+		$user_seen_notice = self::get_method( 'user_seen_notice' );
+		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
 
 		$this->assertEquals(
 			get_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_KEY , true ),
-			1
+			VIP_LOCKOUT_STATE
 		);
 		$this->assertNotEmpty(
 			get_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_TIME_KEY, true )
 		);
 	}
 
-	public function test__user_seen_warning__already_seen() {
+	public function test__user_seen_notice__locked() {
+		define( 'VIP_LOCKOUT_STATE', 'locked' );
+
 		$user = $this->factory->user->create_and_get();
 
-		$date_str = date('Y-m-d H:i:s');
-		add_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_KEY, true, true );
-		add_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_TIME_KEY, $date_str, true );
-
-		$user_seen_warning = self::get_method( 'user_seen_warning' );
-		$user_seen_warning->invokeArgs( $this->lockout, [ $user ] );
+		$user_seen_notice = self::get_method( 'user_seen_notice' );
+		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
 
 		$this->assertEquals(
 			get_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_KEY , true ),
-			1
+			VIP_LOCKOUT_STATE
+		);
+		$this->assertNotEmpty(
+			get_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_TIME_KEY, true )
+		);
+	}
+
+	public function test__user_seen_notice__already_seen() {
+		define( 'VIP_LOCKOUT_STATE', 'locked' );
+
+		$user = $this->factory->user->create_and_get();
+
+		$date_str = date('Y-m-d H:i:s');
+		add_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_KEY, 'warning', true );
+		add_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_TIME_KEY, $date_str, true );
+
+		$user_seen_notice = self::get_method( 'user_seen_notice' );
+		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
+
+		$this->assertEquals(
+			get_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_KEY , true ),
+			'warning'
 		);
 		$this->assertEquals(
 			get_user_meta( $user->ID, VIP_Lockout::USER_SEEN_WARNING_TIME_KEY, true ),

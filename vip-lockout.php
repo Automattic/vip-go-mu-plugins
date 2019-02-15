@@ -27,17 +27,19 @@ class VIP_Lockout {
 	 */
 	public function add_admin_notice() {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) ) {
+			$user = wp_get_current_user();
+
 			switch ( VIP_LOCKOUT_STATE ) {
 				case 'warning':
-					$user = wp_get_current_user();
-
 					$this->render_warning_notice( $user );
 
-					$this->user_seen_warning( $user );
+					$this->user_seen_notice( $user );
 					break;
 
 				case 'locked':
 					$this->render_locked_notice();
+
+					$this->user_seen_notice( $user );
 					break;
 			}
 		}
@@ -48,11 +50,11 @@ class VIP_Lockout {
      *
 	 * @param WP_User $user
 	 */
-	protected function user_seen_warning( WP_User $user ) {
+	protected function user_seen_notice( WP_User $user ) {
 		$seen_warning = get_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, true );
 
 		if ( ! $seen_warning ) {
-			add_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, true, true );
+			add_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, VIP_LOCKOUT_STATE, true );
 			add_user_meta( $user->ID, self::USER_SEEN_WARNING_TIME_KEY, date('Y-m-d H:i:s'), true );
 		}
 	}
