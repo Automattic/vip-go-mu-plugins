@@ -114,12 +114,13 @@ class VIP_Lockout_Test extends WP_UnitTestCase {
 
 		define( 'VIP_LOCKOUT_STATE', 'locked' );
 
-		$email = 'user@automattic.com';
-		$user = $this->factory->user->create_and_get( [
-			'role' => 'administrator',
-			'user_email' => $email,
+		$user_id = \Automattic\VIP\Support_User\User::add( [
+			'user_email' => 'user@automattic.com',
+			'user_login' => 'vip-support',
+			'user_pass' => 'password',
 		] );
-		add_user_meta( $user->ID, \Automattic\VIP\Support_User\User::META_EMAIL_VERIFIED, $email );
+
+		$user = wp_set_current_user( $user_id );
 
 		$user_cap = $user->get_role_caps();
 
