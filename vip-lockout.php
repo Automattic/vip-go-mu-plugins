@@ -40,9 +40,14 @@ class VIP_Lockout {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) ) {
 			$user = wp_get_current_user();
 
+			$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
+			if ( ! $show_notice ) {
+				return;
+			}
+
 			switch ( VIP_LOCKOUT_STATE ) {
 				case 'warning':
-					$this->render_warning_notice( $user );
+					$this->render_warning_notice();
 
 					$this->user_seen_notice( $user );
 					break;
@@ -70,11 +75,7 @@ class VIP_Lockout {
 		}
 	}
 
-	protected function render_warning_notice( WP_User $user ) {
-		if ( ! $user->has_cap( 'manage_options' ) ) {
-			return;
-		}
-
+	protected function render_warning_notice() {
 		?>
 		<div id="lockout-warning" class="notice-warning wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
