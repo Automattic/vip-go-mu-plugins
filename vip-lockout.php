@@ -76,9 +76,9 @@ class VIP_Lockout {
 		}
 
 		?>
-		<div id="lockout-warning" class="notice-warning wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;" >
+		<div id="lockout-warning" class="notice-warning wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
-			<div class="vp-message" style="display: flex;align-items: center;" >
+			<div style="display: flex;align-items: center;" >
 				<h3><?php echo wp_kses_post( VIP_LOCKOUT_MESSAGE ); ?></h3>
 			</div>
 		</div>
@@ -87,9 +87,9 @@ class VIP_Lockout {
 
 	protected function render_locked_notice() {
 		?>
-		<div id="lockout-warning" class="notice-error wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;" >
+		<div id="lockout-warning" class="notice-error wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#dc3232;"></div>
-			<div class="vp-message" style="display: flex;align-items: center;" >
+			<div style="display: flex;align-items: center;" >
 				<h3><?php echo wp_kses_post( VIP_LOCKOUT_MESSAGE ); ?></h3>
 			</div>
 		</div>
