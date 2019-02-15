@@ -21,6 +21,7 @@ class VIP_Lockout {
 			add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
 
 			add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
+			add_filter( 'pre_site_option_site_admins', [ $this, 'filter_site_admin_option' ], PHP_INT_MAX, 4 );
 		}
 	}
 
@@ -111,6 +112,26 @@ class VIP_Lockout {
 		}
 
 		return $user_caps;
+	}
+
+	/**
+	 * Filter site admin options
+	 *
+	 * Ensure that site admin is empty if site is in `locked` state
+	 *
+	 * @param   mixed   $pre_option
+	 * @param   string  $option
+	 * @param   int     $network_id
+	 * @param   mixed   $default
+	 *
+	 * @return  array
+	 */
+	public function filter_site_admin_option( $pre_option, $option, $network_id, $default ) {
+		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			return [];
+		}
+
+		return $pre_option;
 	}
 }
 

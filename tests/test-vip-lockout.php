@@ -153,4 +153,24 @@ class VIP_Lockout_Test extends WP_UnitTestCase {
 
 		$this->assertEqualSets( $user_cap, $actual_cap );
 	}
+
+	public function test__filter_site_admin_option__locked() {
+		define( 'VIP_LOCKOUT_STATE', 'locked' );
+
+		$pre_option = [ 'test1', 'test2' ];
+
+		$actual = $this->lockout->filter_site_admin_option( $pre_option, 'site_admin', 1, '' );
+
+		$this->assertEmpty( $actual );
+	}
+
+	public function test__filter_site_admin_option__warning() {
+		define( 'VIP_LOCKOUT_STATE', 'warning' );
+
+		$pre_option = [ 'test1', 'test2' ];
+
+		$actual = $this->lockout->filter_site_admin_option( $pre_option, 'site_admin', 1, '' );
+
+		$this->assertEqualSets( $pre_option, $actual );
+	}
 }
