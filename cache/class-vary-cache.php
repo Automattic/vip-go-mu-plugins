@@ -98,18 +98,26 @@ class Vary_Cache {
 	/**
 	 * Checks if the request has some in with agroup cookie matching a given group and optionally a value
 	 *
-	 * @param  string $group  Group name.
-	 * @param  string $value Optional - A value for the group.
+	 * @param  string $group Group name.
+	 * @param  string $value (optional) Which segment within the group to check? Omit to check if the user is in the group at all.
 	 *
 	 * @return bool   True on success. False on failure.
 	 */
-	public static function is_user_in_group( $group, $value ) {
+	public static function is_user_in_group( $group, $value = null ) {
 		self::parse_group_cookie();
-		if ( ! isset( self::$groups[ $group ] ) ) {
+
+		// The group isn't defined, or the user isn't in it.
+		if ( empty( self::$groups[ $group ] ) ) {
 			return false;
 		}
 
-		return ( null === $value ) || ( self::$groups[ $group ] === $value );
+		// The user is the group, and we don't care about the specific segment.
+		if ( null === $value ) {
+			return true;
+		}
+
+		// Check for a specific group segment.
+		return self::$groups[ $group ] === $value;
 	}
 
 	/**
