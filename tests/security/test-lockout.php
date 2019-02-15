@@ -136,8 +136,8 @@ class Lockout_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter_user_has_cap__locked_vip_support() {
-		require_once __DIR__ . '/../vip-support/class-vip-support-user.php';
-		require_once __DIR__ . '/../vip-support/class-vip-support-role.php';
+		require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
+		require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
 
 		define( 'VIP_LOCKOUT_STATE', 'locked' );
 
