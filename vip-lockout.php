@@ -16,10 +16,12 @@ class VIP_Lockout {
 	 * VIP_Lockout constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_notices', [ $this, 'add_admin_notice' ], 1 );
-		add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
+		if ( defined( 'VIP_LOCKOUT_STATE' ) && defined( 'VIP_LOCKOUT_MESSAGE' ) ) {
+			add_action( 'admin_notices', [ $this, 'add_admin_notice' ], 1 );
+			add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
 
-		add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
+			add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
+		}
 	}
 
 	/**
