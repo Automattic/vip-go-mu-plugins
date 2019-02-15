@@ -6,7 +6,9 @@
  * Author URI: http://automattic.com/
  */
 
-class VIP_Lockout {
+namespace Automattic\VIP\Security;
+
+class Lockout {
 
 	const USER_SEEN_WARNING_KEY = 'seen_lockout_warning';
 
@@ -21,7 +23,7 @@ class VIP_Lockout {
 	];
 
 	/**
-	 * VIP_Lockout constructor.
+	 * Lockout constructor.
 	 */
 	public function __construct() {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && defined( 'VIP_LOCKOUT_MESSAGE' ) ) {
@@ -64,9 +66,9 @@ class VIP_Lockout {
 	/**
      * Mark that user has seen warning
      *
-	 * @param WP_User $user
+	 * @param \WP_User $user
 	 */
-	protected function user_seen_notice( WP_User $user ) {
+	protected function user_seen_notice( \WP_User $user ) {
 		$seen_warning = get_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, true );
 
 		if ( ! $seen_warning ) {
@@ -105,7 +107,7 @@ class VIP_Lockout {
 	 * @param array $user_caps
 	 * @param array $caps
 	 * @param array $args
-	 * @param WP_User $user
+	 * @param \WP_User $user
 	 *
 	 * @return array
 	 */
@@ -147,4 +149,4 @@ class VIP_Lockout {
 	}
 }
 
-new VIP_Lockout();
+new Lockout();
