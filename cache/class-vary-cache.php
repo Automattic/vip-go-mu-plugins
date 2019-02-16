@@ -211,14 +211,17 @@ class Vary_Cache {
 	 * @access  private
 	 */
 	private static function parse_group_cookie() {
-		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
-			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_SEGMENT ] ) );
+		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) || isset( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
+
 			if ( self::is_encryption_enabled() ) {
+				$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_AUTH ] ) );
 				$cookie_value = self::decrypt_cookie_value( $cookie_value );
+			} else {
+				$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_SEGMENT ] ) );
 			}
+
 			$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
 			foreach ( $groups as $group ) {
-				// TODO: error handling (what if it's not in the right format?)?
 				list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 				self::$groups[ $group_name ] = $group_value ?? '';
 			}
@@ -262,8 +265,11 @@ class Vary_Cache {
 	 */
 	public static function add_vary_headers() {
 		if ( ! empty( self::$groups ) ) {
-			header( 'Vary: X-VIP-Go-Segmentation' );
-			header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
+			if ( self::is_encryption_enabled() ) {
+				header( 'Vary: X-VIP-Go-Auth' );
+			} else {
+				header( 'Vary: X-VIP-Go-Segmentation' );
+			}
 		}
 	}
 
