@@ -214,10 +214,10 @@ class Vary_Cache {
 		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) || isset( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
 
 			if ( self::is_encryption_enabled() ) {
-				$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_AUTH ] ) );
+				$cookie_value = $_COOKIE[ self::COOKIE_AUTH ];
 				$cookie_value = self::decrypt_cookie_value( $cookie_value );
 			} else {
-				$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_SEGMENT ] ) );
+				$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 			}
 
 			$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
