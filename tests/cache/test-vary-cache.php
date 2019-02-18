@@ -191,17 +191,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function get_test_data__register_groups_valid() {
-		return [
-			'valid-group-array' => [
-				[ 'dev-group', 'design-group' ],
-			],
-			'valid-group' => [
-				'dev-group',
-			],
-		];
-	}
-
 	public function get_test_data__register_groups_invalid() {
 		return [
 			'invalid-group-array' => [
@@ -215,13 +204,30 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		];
 	}
 
-	/**
-	 * @dataProvider get_test_data__register_groups_valid
-	 */
-	public function test__register_groups_valid( $valid_groups ) {
-		$actual_result = Vary_Cache::register_groups( $valid_groups );
+	public function test__register_group_valid() {
+		$expected_groups = [
+			'dev-group' => '',
+		];
 
-		$this->assertTrue( $actual_result );
+		$actual_result = Vary_Cache::register_group( 'dev-group' );
+
+		$this->assertTrue( $actual_result, 'register_group returned false' );
+		$this->assertEquals( $expected_groups, $this->get_groups() );
+	}
+
+	public function test__register_groups_valid() {
+		$expected_groups = [
+			'dev-group' => '',
+			'design-group' => '',
+		];
+
+		$actual_result = Vary_Cache::register_groups( [
+			'dev-group',
+			'design-group',
+		] );
+
+		$this->assertTrue( $actual_result, 'register_groups returned false' );
+		$this->assertEquals( $expected_groups, $this->get_groups() );
 	}
 
 	/**
@@ -232,6 +238,12 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
 		
 		$this->assertFalse( $actual_result );
+	}
+
+	public function test__register_group() {
+		$actual_result = Vary_Cache::register_groups( $valid_groups );
+
+		$this->assertTrue( $actual_result );
 	}
 
 	public function get_test_data__set_group_for_user_valid() {

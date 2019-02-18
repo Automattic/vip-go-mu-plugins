@@ -54,7 +54,7 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Set request to indicate the request will vary on a group
+	 * Set request to indicate the request will vary on one or more groups.
 	 *
 	 * @since   1.0.0
 	 * @access  public
@@ -62,27 +62,34 @@ class Vary_Cache {
 	 * @param  array $groups  One or more groups to vary on.
 	 * @return boolean
 	 */
-	public static function register_groups( $groups ) {
-		if ( is_array( $groups ) ) {
-			foreach ( $groups as $group ) {
-				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
-					return false;
-				}
-
-				self::$groups[ $group ] = '';
-			}
-		} else {
-			if ( strpos( $groups, self::GROUP_SEPARATOR ) !== false || strpos( $groups, self::VALUE_SEPARATOR ) !== false ) {
-				trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
-				return false;
+	public static function register_groups( array $groups ) {
+		foreach ( $groups as $group ) {
+			if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+				trigger_error( sprintf( 'Failed to register group (%s); cannot use the delimiter values (`%s` or `%s`) in the group name', $group, self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+				continue;
 			}
 
-			self::$groups[ $groups ] = '';
+			self::$groups[ $group ] = '';
 		}
 
 		self::parse_group_cookie();
+
 		return true;
+	}
+
+	/**
+	 * Set request to indicate the request will vary on a group.
+	 *
+	 * Convenience version of `register_groups`.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param  string $groups A group to vary on.
+	 * @return boolean
+	 */
+	public static function register_group( string $group ) {
+		return self::register_groups( [ $group ] );
 	}
 
 	/**
