@@ -61,6 +61,7 @@ class Vary_Cache {
 	 * @param  array $groups  One or more groups to vary on.
 	 */
 	public static function register_groups( $groups ) {
+		self::$groups = [];
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
 				self::$groups[ $group ] = '';
@@ -70,6 +71,16 @@ class Vary_Cache {
 		}
 
 		self::parse_group_cookie();
+	}
+
+	/**
+	 * Clears out the groups and values
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 */
+	public static function clear_groups() {
+		self::$groups = [];
 	}
 
 	/**
@@ -105,6 +116,7 @@ class Vary_Cache {
 	public static function is_user_in_group( $group ) {
 		self::parse_group_cookie();
 
+		//var_dump( $group, self::$groups );
 		// The group isn't defined, or the user isn't in it.
 		if ( ! array_key_exists( $group, self::$groups ) ) {
 			return false;
