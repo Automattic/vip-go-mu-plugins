@@ -107,7 +107,7 @@ class Vary_Cache {
 		self::parse_group_cookie();
 
 		// The group isn't defined, or the user isn't in it.
-		if ( empty( self::$groups[ $group ] ) ) {
+		if ( ! isset( self::$groups[ $group ] ) || null === self::$groups[ $group ] ) {
 			return false;
 		}
 
