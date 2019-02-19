@@ -11,7 +11,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-
+		Vary_Cache::clear_groups();
 		$this->original_COOKIE = $_COOKIE;
 	}
 
@@ -116,6 +116,12 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__is_user_in_group() {
 		return [
+			'group-not-defined' => [
+				[],
+				[],
+				'dev-group',
+				false,
+			],
 			'user-not-in-group' => [
 				[
 					'vip-go-seg' => 'design-group_--_yes',
