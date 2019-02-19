@@ -10,7 +10,7 @@ class Vary_Cache {
 	private const COOKIE_AUTH = 'vip-go-auth';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
-	private const GROUP_SEPARATOR = '__';
+	private const GROUP_SEPARATOR = '---__';
 	private const VALUE_SEPARATOR = '_--_';
 
 	/**
@@ -63,6 +63,10 @@ class Vary_Cache {
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
+				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+					trigger_error( 'Cannot use the group separator text in the group name', E_USER_WARNING );
+					return;
+				}
 				self::$groups[ $group ] = '';
 			}
 		} else {
@@ -86,6 +90,11 @@ class Vary_Cache {
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
 		// validate, process $group, etc.
+		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ||
+			strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
+				trigger_error( 'Cannot use the group or value separator text in the group/value name', E_USER_WARNING );
+			return;
+		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
