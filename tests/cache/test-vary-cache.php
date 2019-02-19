@@ -126,7 +126,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				'dev-group',
 				false,
 			],
-			'user-not-in-group' => [
+			'user-in-group' => [
 				[
 					'vip-go-seg' => 'dev-group_--_yes',
 				],
