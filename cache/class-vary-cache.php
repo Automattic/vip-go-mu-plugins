@@ -12,6 +12,7 @@ class Vary_Cache {
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
 	private const GROUP_SEPARATOR = '__';
 	private const VALUE_SEPARATOR = '_--_';
+	private const VERSION_PREFIX = 'vc-v1__';
 
 	/**
 	 * Flag to indicate if this an encrypted group request
@@ -214,10 +215,10 @@ class Vary_Cache {
 		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) || isset( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
 
 			if ( self::is_encryption_enabled() ) {
-				$cookie_value = $_COOKIE[ self::COOKIE_AUTH ];
+				$cookie_value = str_replace( self::VERSION_PREFIX, '', $_COOKIE[ self::COOKIE_AUTH ] );
 				$cookie_value = self::decrypt_cookie_value( $cookie_value );
 			} else {
-				$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
+				$cookie_value = str_replace( self::VERSION_PREFIX, '', $_COOKIE[ self::COOKIE_SEGMENT ] );
 			}
 
 			$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
@@ -281,7 +282,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		setcookie( $name, self::VERSION_PREFIX . $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
