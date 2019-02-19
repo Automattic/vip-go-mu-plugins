@@ -30,7 +30,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		return $method;
 	}
 
-	public function get_test_data__is_user_in_group() {
+	public function get_test_data__is_user_in_group_segment() {
 		return [
 			'group-not-defined' => [
 				[],
@@ -45,14 +45,26 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 					'vip-go-seg' => 'design-group_--_yes',
 				],
 				[
-					'dev-group'
+					'dev-group',
 				],
 				'dev-group',
 				'yes',
 				false,
 			],
 
-			'user-in-group-and-any-segment' => [
+			'user-in-group-with-empty-segment' => [
+				[
+					'vip-go-seg' => 'dev-group_--_',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				'',
+				true,
+			],
+
+			'user-in-group-segment-but-searching-for-null' => [
 				[
 					'vip-go-seg' => 'dev-group_--_maybe',
 				],
@@ -61,7 +73,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				],
 				'dev-group',
 				null,
-				true,
+				false,
 			],
 
 			'user-in-group-but-different-segment' => [
@@ -102,14 +114,61 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		];
 	}
 
+	public function get_test_data__is_user_in_group() {
+		return [
+			'user-not-in-group' => [
+				[
+					'vip-go-seg' => 'design-group_--_yes',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				false,
+			],
+			'user-not-in-group' => [
+				[
+					'vip-go-seg' => 'dev-group_--_yes',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				true,
+			],
+			'user-in-group-and-empty-segment' => [
+				[
+					'vip-go-seg' => 'dev-group_--_',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				true,
+			],
+		];
+	}
+
 	/**
- 	 * @dataProvider get_test_data__is_user_in_group
+ 	 * @dataProvider get_test_data__is_user_in_group_segment
  	 */
-	public function test__is_user_in_group( $initial_cookie, $initial_groups, $test_group, $test_value, $expected_result ) {
+	public function test__is_user_in_group_segment( $initial_cookie, $initial_groups, $test_group, $test_value, $expected_result ) {
 		$_COOKIE = $initial_cookie;
 		Vary_Cache::register_groups( $initial_groups );
 
-		$actual_result = Vary_Cache::is_user_in_group( $test_group, $test_value );
+		$actual_result = Vary_Cache::is_user_in_group_segment( $test_group, $test_value );
+
+		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	/**
+	 * @dataProvider get_test_data__is_user_in_group
+	 */
+	public function test__is_user_in_group( $initial_cookie, $initial_groups, $test_group, $expected_result ) {
+		$_COOKIE = $initial_cookie;
+		Vary_Cache::register_groups( $initial_groups );
+
+		$actual_result = Vary_Cache::is_user_in_group( $test_group );
 
 		$this->assertEquals( $expected_result, $actual_result );
 	}
