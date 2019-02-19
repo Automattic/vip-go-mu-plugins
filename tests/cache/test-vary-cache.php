@@ -45,7 +45,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 					'vip-go-seg' => 'design-group_--_yes',
 				],
 				[
-					'dev-group',
+					'design-group',
 				],
 				'dev-group',
 				'yes',
@@ -127,7 +127,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 					'vip-go-seg' => 'design-group_--_yes',
 				],
 				[
-					'dev-group',
+					'design-group',
 				],
 				'dev-group',
 				false,
@@ -160,6 +160,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
  	 */
 	public function test__is_user_in_group_segment( $initial_cookie, $initial_groups, $test_group, $test_value, $expected_result ) {
 		$_COOKIE = $initial_cookie;
+		Vary_Cache::clear_groups();
 		Vary_Cache::register_groups( $initial_groups );
 
 		$actual_result = Vary_Cache::is_user_in_group_segment( $test_group, $test_value );
@@ -172,6 +173,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_user_in_group( $initial_cookie, $initial_groups, $test_group, $expected_result ) {
 		$_COOKIE = $initial_cookie;
+		Vary_Cache::clear_groups();
 		Vary_Cache::register_groups( $initial_groups );
 
 		$actual_result = Vary_Cache::is_user_in_group( $test_group );
