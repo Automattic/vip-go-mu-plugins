@@ -243,21 +243,23 @@ class Vary_Cache {
 	 * @access  private
 	 */
 	private static function parse_group_cookie() {
-		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) || isset( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
-
-			if ( self::is_encryption_enabled() ) {
-				$cookie_value = str_replace( self::VERSION_PREFIX, '', $_COOKIE[ self::COOKIE_AUTH ] );
-				$cookie_value = self::decrypt_cookie_value( $cookie_value );
-			} else {
-				$cookie_value = str_replace( self::VERSION_PREFIX, '', $_COOKIE[ self::COOKIE_SEGMENT ] );
-			}
-
-			$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
-			foreach ( $groups as $group ) {
-				list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
-				self::$groups[ $group_name ] = $group_value ?? '';
-			}
+		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
+			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
+		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
+
+		if ( empty( $cookie_value ) ) {
+			return;
+		}
+
+		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
+		$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
+		foreach ( $groups as $group ) {
+			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
+			self::$groups[ $group_name ] = $group_value ?? '';
+		}
+
 	}
 
 
