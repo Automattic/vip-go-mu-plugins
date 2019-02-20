@@ -165,6 +165,12 @@ class Vary_Cache {
 	 * @param bool $value true for encrypted requests.
 	 */
 	public static function set_encryption( $value = true ) {
+		// Validate that we have the secret values.
+		if ( true === $value && ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
+			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) {
+			return new WP_Error( 'vary-cache-secrets-not-defined', sprintf( 'Constants not defined for encrypted vary cache cookies (%s and %s)', 'VIP_GO_AUTH_COOKIE_KEY', 'VIP_GO_AUTH_COOKIE_IV' ) );
+		}
+
 		static::$encryption_enabled = $value;
 	}
 
@@ -191,13 +197,6 @@ class Vary_Cache {
 	 * @return string encrypted version of string
 	 */
 	private static function encrypt_cookie_value( $value ) {
-		// Validate that we have the secret values.
-		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
-			// TODO: check that values are not empty.
-			trigger_error( 'Secrets not defined for encrypted vary cookies', E_USER_WARNING );
-			return;
-		}
-
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
@@ -217,13 +216,6 @@ class Vary_Cache {
 	 * @return string decrypted version of string
 	 */
 	private static function decrypt_cookie_value( $cookie_value ) {
-		// Validate that we have the secret values.
-		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
-			// TODO: check that values are not empty.
-			trigger_error( 'Secrets not defined for encrypted vary cookies', E_USER_WARNING );
-			return;
-		}
-
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );

@@ -180,4 +180,33 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_result, $actual_result );
 	}
+
+
+	public function test__set_encryption_false_valid() {
+
+		$actual_result = Vary_Cache::set_encryption( false );
+		$this->assertNull( $actual_result );
+
+	}
+
+	public function test__set_encryption_true_invalid() {
+
+		$actual_result = Vary_Cache::set_encryption( true );
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( 'vary-cache-secrets-not-defined', $actual_error_code, 'Incorrect error code' );
+
+	}
+
+	public function test__set_encryption_true_valid() {
+
+		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
+		define( 'VIP_GO_AUTH_COOKIE_IV', '123');
+
+		$actual_result = Vary_Cache::set_encryption( true );
+		$this->assertNull( $actual_result );
+
+	}
+
 }
