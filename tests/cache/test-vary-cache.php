@@ -224,12 +224,8 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 */
 	public function test__register_groups_invalid( $invalid_groups, $expected_error_code ) {
 		Vary_Cache::clear_groups();
-		$actual_result  = Vary_Cache::register_groups( $invalid_groups );
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-
-		$actual_error_code = $actual_result->get_error_code();
-		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+		$this->expectException( \PHPUnit_Framework_Error_Warning::class );
+		Vary_Cache::register_groups( $invalid_groups );
 	}
 
 	public function get_test_data__set_group_for_user_valid() {
