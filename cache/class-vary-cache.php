@@ -59,21 +59,25 @@ class Vary_Cache {
 	 * @access  public
 	 *
 	 * @param  array $groups  One or more groups to vary on.
+	 * @return WP_error|boolean
 	 */
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
 				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
-					return;
+					return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 				}
 				self::$groups[ $group ] = '';
 			}
 		} else {
+			if ( strpos( $groups, self::GROUP_SEPARATOR ) !== false || strpos( $groups, self::VALUE_SEPARATOR ) !== false ) {
+				return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+			}
 			self::$groups[ $groups ] = '';
 		}
 
 		self::parse_group_cookie();
+		return true;
 	}
 
 	/**
@@ -101,10 +105,10 @@ class Vary_Cache {
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
 		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
 		if ( strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
