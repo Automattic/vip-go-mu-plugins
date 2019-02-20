@@ -64,7 +64,7 @@ class Vary_Cache {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
 				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-					trigger_error( 'Cannot use the group separator text in the group name', E_USER_WARNING );
+					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
 					return;
 				}
 				self::$groups[ $group ] = '';
