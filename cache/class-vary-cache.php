@@ -61,7 +61,6 @@ class Vary_Cache {
 	 * @param  array $groups  One or more groups to vary on.
 	 */
 	public static function register_groups( $groups ) {
-		self::$groups = [];
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
 				self::$groups[ $group ] = '';
