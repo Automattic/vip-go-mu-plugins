@@ -77,6 +77,16 @@ class Vary_Cache {
 	}
 
 	/**
+	 * Clears out the groups and values
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 */
+	public static function clear_groups() {
+		self::$groups = [];
+	}
+
+	/**
 	 * Assigns the user to given group and optionally a value for that group. E.g. location=US
 	 *
 	 * @since   1.0.0
@@ -105,21 +115,42 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Checks if the request has some in with agroup cookie matching a given group and optionally a value
+	 * Checks if the request has a group cookie matching a given group, regardless of segment value.
 	 *
-	 * @param  string $group  Group name.
-	 * @param  string $value Optional - A value for the group.
+	 * @param  string $group Group name.
 	 *
 	 * @return bool   True on success. False on failure.
 	 */
-	public static function is_user_in_group( $group, $value ) {
+	public static function is_user_in_group( $group ) {
 		self::parse_group_cookie();
-		if ( ! isset( self::$groups[ $group ] ) ) {
+
+		// The group isn't defined, or the user isn't in it.
+		if ( ! array_key_exists( $group, self::$groups ) ) {
 			return false;
 		}
 
-		return ( null === $value ) || ( self::$groups[ $group ] === $value );
+		return true;
 	}
+
+	/**
+	 * Checks if the request has a group cookie matching a given group and segment. e.g. 'dev-group', 'yes'
+	 *
+	 * @param  string $group Group name.
+	 * @param  string $segment Which segment within the group to check.
+	 *
+	 * @return bool   True on success. False on failure.
+	 */
+	public static function is_user_in_group_segment( $group, $segment ) {
+		self::parse_group_cookie();
+
+		if ( ! self::is_user_in_group( $group ) ) {
+			return false;
+		}
+
+		// Check for a specific group segment.
+		return self::$groups[ $group ] === $segment;
+	}
+
 
 	/**
 	 * Returns the associated groups for the request.

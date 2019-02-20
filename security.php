@@ -8,6 +8,8 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+require_once( __DIR__ . '/security/class-lockout.php' );
+
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'login_limit' );
 define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'lost_password_limit' );
 define( 'ERROR_CODE_LOGIN_LIMIT_EXCEEDED', 'login_limit_exceeded' );
