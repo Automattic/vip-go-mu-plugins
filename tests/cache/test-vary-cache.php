@@ -266,6 +266,17 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				'yes_--_',
 				'invalid_vary_group_segment',
 			],
+			'invalid-group-name-value-character' => [
+				'dev-group%',
+				'yes',
+				'invalid_vary_group_name',
+			],
+			'invalid-group-segment-value-character' => [
+				'dev-group',
+				'yes%',
+				'invalid_vary_group_segment',
+			],
+
 		];
 	}
 
@@ -283,6 +294,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__set_group_for_user_invalid
 	 */
 	public function test__set_group_for_user_invalid( $group, $value, $expected_error_code ) {
+		//$this->markTestSkipped('Skip for now until cookie is set in hook');
 		$actual_result  = Vary_Cache::set_group_for_user( $group, $value );
 
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );

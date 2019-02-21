@@ -65,16 +65,18 @@ class Vary_Cache {
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
-				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+				$validate_group = self::validate_cookie_values( $group );
+				if ( true !== $validate_group ) {
+					trigger_error( sprintf( 'Failed to register group; ', $validate_group ), E_USER_WARNING );
 					return false;
 				}
 
 				self::$groups[ $group ] = '';
 			}
 		} else {
-			if ( strpos( $groups, self::GROUP_SEPARATOR ) !== false || strpos( $groups, self::VALUE_SEPARATOR ) !== false ) {
-				trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+			$validate_group = self::validate_cookie_values( $groups );
+			if ( true !== $validate_group ) {
+				trigger_error( sprintf( 'Failed to register group; ', $validate_group ), E_USER_WARNING );
 				return false;
 			}
 
@@ -109,11 +111,13 @@ class Vary_Cache {
 		// TODO: make sure headers aren't already sent
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
-		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		$validate_group = self::validate_cookie_values( $group );
+		if ( true !== $validate_group ) {
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; ', $validate_group ) );
 		}
-		if ( strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		$validate_value = self::validate_cookie_values( $value );
+		if ( true !== $validate_value ) {
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment; ', $validate_group ) );
 		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
@@ -182,11 +186,12 @@ class Vary_Cache {
 	 * @access  public
 	 *
 	 * @param bool $value true for encrypted requests.
+	 * @return WP_Error|null
 	 */
 	public static function set_encryption( $value = true ) {
 		// Validate that we have the secret values.
-		if ( true === $value && ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
-			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) {
+		if ( true === $value && ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
+			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
 			return new WP_Error( 'vary-cache-secrets-not-defined', sprintf( 'Constants not defined for encrypted vary cache cookies (%s and %s)', 'VIP_GO_AUTH_COOKIE_KEY', 'VIP_GO_AUTH_COOKIE_IV' ) );
 		}
 
@@ -279,7 +284,7 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  private
 	 *
-	 * @returns string A string representation of the groups
+	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
 		ksort( self::$groups ); // make sure the string order is the same every time.
@@ -335,6 +340,21 @@ class Vary_Cache {
 	 */
 	private static function unset_cookie( $name ) {
 		setcookie( $name, '', time() - 3600 );
+	}
+	/**
+	 * Only allow alphanumerics, dash and underscore
+	 *
+	 * @param string $value The string you want to test on.
+	 * @return boolean
+	 */
+	private static function validate_cookie_values( $value ) {
+		if ( preg_match( '/[^_0-9a-zA-Z-]+/', $value ) > 0 ) {
+			return 'Invalid character(s). Can only use alphanumerics, dash and underscore';
+		}
+		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
+			return sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR );
+		}
+		return true;
 	}
 }
 
