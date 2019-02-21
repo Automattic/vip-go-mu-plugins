@@ -59,20 +59,24 @@ class Vary_Cache {
 	 * @access  public
 	 *
 	 * @param  array $groups  One or more groups to vary on.
-	 * @return WP_error|boolean
+	 * @return boolean
 	 */
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
 				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
 					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+					return false;
 				}
+
 				self::$groups[ $group ] = '';
 			}
 		} else {
 			if ( strpos( $groups, self::GROUP_SEPARATOR ) !== false || strpos( $groups, self::VALUE_SEPARATOR ) !== false ) {
 				trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+				return false;
 			}
+
 			self::$groups[ $groups ] = '';
 		}
 
