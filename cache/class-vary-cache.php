@@ -177,7 +177,7 @@ class Vary_Cache {
 	 *
 	 * @return array  user's group-value pairs
 	 */
-	public static function get_user_groups() {
+	public static function get_groups() {
 		self::parse_group_cookie();
 		return self::$groups;
 	}
