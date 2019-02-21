@@ -48,9 +48,29 @@ class Vary_Cache {
 
 	/** Clears the cache-busting flag */
 	public static function remove_no_cache_for_user() {
-		if ( isset( $_COOKIE[   self::COOKIE_NO_CACHE ] ) ) {
+		if ( isset( $_COOKIE[ self::COOKIE_NO_CACHE ] ) ) {
 			self::unset_cookie( self::COOKIE_NO_CACHE );
 		}
+	}
+
+	public static function load() {
+		self::clear_groups();
+		self::add_filters();
+	}
+
+	public static function unload() {
+		self::clear_groups();
+		self::remove_filters();
+	}
+
+	protected static function add_filters() {
+		add_action( 'init', [ Vary_Cache::class, 'parse_group_cookie' ] );
+		add_action( 'send_headers', [ Vary_Cache::class, 'add_vary_headers' ] );
+	}
+
+	protected static function remove_filters() {
+		remove_action( 'init', [ Vary_Cache::class, 'parse_group_cookie' ] );
+		remove_action( 'send_headers', [ Vary_Cache::class, 'add_vary_headers' ] );
 	}
 
 	/**
@@ -81,7 +101,6 @@ class Vary_Cache {
 			self::$groups[ $groups ] = '';
 		}
 
-		self::parse_group_cookie();
 		return true;
 	}
 
@@ -112,10 +131,13 @@ class Vary_Cache {
 		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
 			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
+
 		if ( strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
 			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
+
 		self::$groups[ $group ] = $value;
+
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
 			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
@@ -133,7 +155,6 @@ class Vary_Cache {
 	 * @return bool   True on success. False on failure.
 	 */
 	public static function is_user_in_group( $group ) {
-		self::parse_group_cookie();
 		// The group isn't defined, or the user isn't in it.
 		if ( ! array_key_exists( $group, self::$groups ) || '' === trim( self::$groups[ $group ] ) ) {
 			return false;
@@ -151,8 +172,6 @@ class Vary_Cache {
 	 * @return bool   True on success. False on failure.
 	 */
 	public static function is_user_in_group_segment( $group, $segment ) {
-		self::parse_group_cookie();
-
 		if ( ! self::is_user_in_group( $group ) ) {
 			return false;
 		}
@@ -171,7 +190,6 @@ class Vary_Cache {
 	 * @return array  user's group-value pairs
 	 */
 	public static function get_user_groups() {
-		self::parse_group_cookie();
 		return self::$groups;
 	}
 
@@ -260,7 +278,7 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  private
 	 */
-	private static function parse_group_cookie() {
+	public static function parse_group_cookie() {
 		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
 			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
@@ -277,7 +295,6 @@ class Vary_Cache {
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 			self::$groups[ $group_name ] = $group_value ?? '';
 		}
-
 	}
 
 
@@ -309,6 +326,7 @@ class Vary_Cache {
 			trigger_error( sprintf( '%s: cookie expiry must be greater than or equal to 1 hour (%d)', __METHOD__, HOUR_IN_SECONDS ), E_USER_WARNING );
 			return;
 		}
+
 		self::$cookie_expiry = $expiry;
 	}
 
@@ -346,5 +364,4 @@ class Vary_Cache {
 	}
 }
 
-// TODO: move?
-add_action( 'send_headers', 'Automattic\Vip\Cache\Vary_Cache::add_vary_headers' );
+Vary_Cache::load();
