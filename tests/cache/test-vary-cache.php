@@ -13,8 +13,10 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		Vary_Cache::clear_groups();
+
 		$this->original_COOKIE = $_COOKIE;
+
+		Vary_Cache::clear_groups();
 	}
 
 	public function tearDown() {
@@ -162,7 +164,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
  	 */
 	public function test__is_user_in_group_segment( $initial_cookie, $initial_groups, $test_group, $test_value, $expected_result ) {
 		$_COOKIE = $initial_cookie;
-		Vary_Cache::clear_groups();
 		Vary_Cache::register_groups( $initial_groups );
 
 		$actual_result = Vary_Cache::is_user_in_group_segment( $test_group, $test_value );
@@ -175,7 +176,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_user_in_group( $initial_cookie, $initial_groups, $test_group, $expected_result ) {
 		$_COOKIE = $initial_cookie;
-		Vary_Cache::clear_groups();
 		Vary_Cache::register_groups( $initial_groups );
 
 		$actual_result = Vary_Cache::is_user_in_group( $test_group );
@@ -211,7 +211,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__register_groups_valid
 	 */
 	public function test__register_groups_valid( $valid_groups ) {
-		Vary_Cache::clear_groups();
 		$actual_result = Vary_Cache::register_groups( $valid_groups );
 
 		$this->assertTrue( $actual_result );
@@ -221,8 +220,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
 	public function test__register_groups_invalid( $invalid_groups, $expected_error_code ) {
-		Vary_Cache::clear_groups();
-
 		$this->expectException( \PHPUnit_Framework_Error_Warning::class );
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
 		
