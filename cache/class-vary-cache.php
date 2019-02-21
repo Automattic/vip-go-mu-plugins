@@ -296,7 +296,7 @@ class Vary_Cache {
 		};
 		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
 
-		return implode( self::GROUP_SEPARATOR, $flattened );
+		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
 
 	/**
@@ -333,7 +333,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, self::VERSION_PREFIX . $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
