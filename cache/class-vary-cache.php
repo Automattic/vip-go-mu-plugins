@@ -10,8 +10,9 @@ class Vary_Cache {
 	private const COOKIE_AUTH = 'vip-go-auth';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
-	private const GROUP_SEPARATOR = '__';
+	private const GROUP_SEPARATOR = '---__';
 	private const VALUE_SEPARATOR = '_--_';
+	private const VERSION_PREFIX = 'vc-v1__';
 
 	/**
 	 * Flag to indicate if this an encrypted group request
@@ -59,17 +60,29 @@ class Vary_Cache {
 	 * @access  public
 	 *
 	 * @param  array $groups  One or more groups to vary on.
+	 * @return boolean
 	 */
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
+				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+					return false;
+				}
+
 				self::$groups[ $group ] = '';
 			}
 		} else {
+			if ( strpos( $groups, self::GROUP_SEPARATOR ) !== false || strpos( $groups, self::VALUE_SEPARATOR ) !== false ) {
+				trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+				return false;
+			}
+
 			self::$groups[ $groups ] = '';
 		}
 
 		self::parse_group_cookie();
+		return true;
 	}
 
 	/**
@@ -90,12 +103,18 @@ class Vary_Cache {
 	 *
 	 * @param  string $group  Group name to vary the request on.
 	 * @param  string $value A value for the group.
+	 * @return WP_Error|boolean
 	 */
 	public static function set_group_for_user( $group, $value ) {
 		// TODO: make sure headers aren't already sent
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
-		// validate, process $group, etc.
+		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		}
+		if ( strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
@@ -103,6 +122,7 @@ class Vary_Cache {
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
 		}
+		return true;
 	}
 
 	/**
@@ -114,9 +134,8 @@ class Vary_Cache {
 	 */
 	public static function is_user_in_group( $group ) {
 		self::parse_group_cookie();
-
 		// The group isn't defined, or the user isn't in it.
-		if ( ! array_key_exists( $group, self::$groups ) ) {
+		if ( ! array_key_exists( $group, self::$groups ) || '' === trim( self::$groups[ $group ] ) ) {
 			return false;
 		}
 
@@ -234,18 +253,23 @@ class Vary_Cache {
 	 * @access  private
 	 */
 	private static function parse_group_cookie() {
-		if ( isset( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
-			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_SEGMENT ] ) );
-			if ( self::is_encryption_enabled() ) {
-				$cookie_value = self::decrypt_cookie_value( $cookie_value );
-			}
-			$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
-			foreach ( $groups as $group ) {
-				// TODO: error handling (what if it's not in the right format?)?
-				list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
-				self::$groups[ $group_name ] = $group_value ?? '';
-			}
+		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
+			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
+		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
+
+		if ( empty( $cookie_value ) ) {
+			return;
+		}
+
+		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
+		$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
+		foreach ( $groups as $group ) {
+			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
+			self::$groups[ $group_name ] = $group_value ?? '';
+		}
+
 	}
 
 
@@ -285,8 +309,11 @@ class Vary_Cache {
 	 */
 	public static function add_vary_headers() {
 		if ( ! empty( self::$groups ) ) {
-			header( 'Vary: X-VIP-Go-Segmentation' );
-			header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
+			if ( self::is_encryption_enabled() ) {
+				header( 'Vary: X-VIP-Go-Auth' );
+			} else {
+				header( 'Vary: X-VIP-Go-Segmentation' );
+			}
 		}
 	}
 
@@ -298,7 +325,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		setcookie( $name, self::VERSION_PREFIX . $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
