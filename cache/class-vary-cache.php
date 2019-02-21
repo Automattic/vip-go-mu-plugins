@@ -10,7 +10,7 @@ class Vary_Cache {
 	private const COOKIE_AUTH = 'vip-go-auth';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
-	private const GROUP_SEPARATOR = '__';
+	private const GROUP_SEPARATOR = '---__';
 	private const VALUE_SEPARATOR = '_--_';
 	private const VERSION_PREFIX = 'vc-v1__';
 
@@ -60,17 +60,29 @@ class Vary_Cache {
 	 * @access  public
 	 *
 	 * @param  array $groups  One or more groups to vary on.
+	 * @return boolean
 	 */
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
+				if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+					trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+					return false;
+				}
+
 				self::$groups[ $group ] = '';
 			}
 		} else {
+			if ( strpos( $groups, self::GROUP_SEPARATOR ) !== false || strpos( $groups, self::VALUE_SEPARATOR ) !== false ) {
+				trigger_error( sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+				return false;
+			}
+
 			self::$groups[ $groups ] = '';
 		}
 
 		self::parse_group_cookie();
+		return true;
 	}
 
 	/**
@@ -91,12 +103,18 @@ class Vary_Cache {
 	 *
 	 * @param  string $group  Group name to vary the request on.
 	 * @param  string $value A value for the group.
+	 * @return WP_Error|boolean
 	 */
 	public static function set_group_for_user( $group, $value ) {
 		// TODO: make sure headers aren't already sent
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
-		// validate, process $group, etc.
+		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		}
+		if ( strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
@@ -104,6 +122,7 @@ class Vary_Cache {
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
 		}
+		return true;
 	}
 
 	/**
