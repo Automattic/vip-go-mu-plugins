@@ -61,7 +61,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				],
 				'dev-group',
 				'',
-				true,
+				false,
 			],
 
 			'user-in-group-segment-but-searching-for-null' => [
@@ -150,7 +150,15 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 					'dev-group',
 				],
 				'dev-group',
-				true,
+				false,
+			],
+			'user-not-yet-assigned' => [
+				[],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				false,
 			],
 		];
 	}
