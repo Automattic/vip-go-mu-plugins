@@ -187,11 +187,9 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		return [
 			'valid-group-array' => [
 				[ 'dev-group', 'design-group' ],
-				true,
 			],
 			'valid-group' => [
 				'dev-group',
-				true,
 			],
 		];
 	}
@@ -212,11 +210,11 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data__register_groups_valid
 	 */
-	public function test__register_groups_valid( $valid_groups, $expected_result ) {
+	public function test__register_groups_valid( $valid_groups ) {
 		Vary_Cache::clear_groups();
-		$actual_result  = Vary_Cache::register_groups( $valid_groups );
+		$actual_result = Vary_Cache::register_groups( $valid_groups );
 
-		$this->assertEquals( $expected_result, $actual_result );
+		$this->assertTrue( $actual_result );
 	}
 
 	/**
@@ -224,8 +222,11 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 */
 	public function test__register_groups_invalid( $invalid_groups, $expected_error_code ) {
 		Vary_Cache::clear_groups();
+
 		$this->expectException( \PHPUnit_Framework_Error_Warning::class );
-		Vary_Cache::register_groups( $invalid_groups );
+		$actual_result = Vary_Cache::register_groups( $invalid_groups );
+		
+		$this->assertFalse( $actual_result );
 	}
 
 	public function get_test_data__set_group_for_user_valid() {
