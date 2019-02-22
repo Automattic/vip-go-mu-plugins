@@ -54,7 +54,7 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Set request to indicate the request will vary on a group
+	 * Set request to indicate the request will vary on one or more groups.
 	 *
 	 * @since   1.0.0
 	 * @access  public
@@ -62,29 +62,34 @@ class Vary_Cache {
 	 * @param  array $groups  One or more groups to vary on.
 	 * @return boolean
 	 */
-	public static function register_groups( $groups ) {
-		if ( is_array( $groups ) ) {
-			foreach ( $groups as $group ) {
-				$validate_result = self::validate_cookie_values( $group );
-				if ( is_wp_error( $validate_result ) ) {
-					trigger_error( sprintf( 'Failed to register group; ', $validate_result->get_error_message() ), E_USER_WARNING );
-					return false;
-				}
-
-				self::$groups[ $group ] = '';
-			}
-		} else {
-			$validate_result = self::validate_cookie_values( $groups );
-			if ( is_wp_error( $validate_result ) ) {
-				trigger_error( sprintf( 'Failed to register group; ', $validate_result->get_error_message() ), E_USER_WARNING );
-				return false;
+	public static function register_groups( array $groups ) {
+		foreach ( $groups as $group ) {
+			if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
+				trigger_error( sprintf( 'Failed to register group (%s); cannot use the delimiter values (`%s` or `%s`) in the group name', $group, self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+				continue;
 			}
 
-			self::$groups[ $groups ] = '';
+			self::$groups[ $group ] = '';
 		}
 
 		self::parse_group_cookie();
+
 		return true;
+	}
+
+	/**
+	 * Set request to indicate the request will vary on a group.
+	 *
+	 * Convenience version of `register_groups`.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @param  string $groups A group to vary on.
+	 * @return boolean
+	 */
+	public static function register_group( string $group ) {
+		return self::register_groups( [ $group ] );
 	}
 
 	/**
@@ -174,7 +179,7 @@ class Vary_Cache {
 	 *
 	 * @return array  user's group-value pairs
 	 */
-	public static function get_user_groups() {
+	public static function get_groups() {
 		self::parse_group_cookie();
 		return self::$groups;
 	}
@@ -293,7 +298,7 @@ class Vary_Cache {
 		};
 		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
 
-		return implode( self::GROUP_SEPARATOR, $flattened );
+		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
 
 	/**
@@ -319,6 +324,10 @@ class Vary_Cache {
 			} else {
 				header( 'Vary: X-VIP-Go-Segmentation' );
 			}
+
+			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
+				header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
+			}
 		}
 	}
 
@@ -330,7 +339,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, self::VERSION_PREFIX . $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
