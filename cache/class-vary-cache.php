@@ -322,6 +322,10 @@ class Vary_Cache {
 			} else {
 				header( 'Vary: X-VIP-Go-Segmentation' );
 			}
+
+			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
+				header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
+			}
 		}
 	}
 
