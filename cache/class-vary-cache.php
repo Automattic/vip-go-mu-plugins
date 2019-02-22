@@ -64,8 +64,9 @@ class Vary_Cache {
 	 */
 	public static function register_groups( array $groups ) {
 		foreach ( $groups as $group ) {
-			if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-				trigger_error( sprintf( 'Failed to register group (%s); cannot use the delimiter values (`%s` or `%s`) in the group name', $group, self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+			$validate_result = self::validate_cookie_value( $group );
+			if ( is_wp_error( $validate_result ) ) {
+				trigger_error( sprintf( 'Failed to register group (%s); %s', $group, $validate_result->get_error_message() ), E_USER_WARNING );
 				continue;
 			}
 
@@ -116,11 +117,13 @@ class Vary_Cache {
 		// TODO: make sure headers aren't already sent
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
-		if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group name', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		$validate_group_result = self::validate_cookie_value( $group );
+		if ( is_wp_error( $validate_group_result ) ) {
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
-		if ( strpos( $value, self::GROUP_SEPARATOR ) !== false || strpos( $value, self::VALUE_SEPARATOR ) !== false ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group; cannot use the delimiter values (`%s` or `%s`) in the group segment', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		$validate_value_result = self::validate_cookie_value( $value );
+		if ( is_wp_error( $validate_value_result ) ) {
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
 		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
@@ -188,10 +191,17 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param bool $value true for encrypted requests.
+	 * @return WP_Error|null
 	 */
-	public static function set_encryption( $value = true ) {
-		static::$encryption_enabled = $value;
+	public static function enable_encryption() {
+
+		// Validate that we have the secret values.
+		if ( ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
+			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
+			trigger_error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.', E_USER_ERROR );
+		}
+
+		static::$encryption_enabled = true;
 	}
 
 	/**
@@ -217,13 +227,6 @@ class Vary_Cache {
 	 * @return string encrypted version of string
 	 */
 	private static function encrypt_cookie_value( $value ) {
-		// Validate that we have the secret values.
-		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
-			// TODO: check that values are not empty.
-			trigger_error( 'Secrets not defined for encrypted vary cookies', E_USER_WARNING );
-			return;
-		}
-
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
@@ -243,13 +246,6 @@ class Vary_Cache {
 	 * @return string decrypted version of string
 	 */
 	private static function decrypt_cookie_value( $cookie_value ) {
-		// Validate that we have the secret values.
-		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ) {
-			// TODO: check that values are not empty.
-			trigger_error( 'Secrets not defined for encrypted vary cookies', E_USER_WARNING );
-			return;
-		}
-
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
@@ -294,7 +290,7 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  private
 	 *
-	 * @returns string A string representation of the groups
+	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
 		ksort( self::$groups ); // make sure the string order is the same every time.
@@ -348,12 +344,27 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Wrapper for the set cookie function to slear out the cookie
+	 * Wrapper for the set cookie function to clear out the cookie
 	 *
 	 * @param string $name  Cookie Name.
 	 */
 	private static function unset_cookie( $name ) {
 		setcookie( $name, '', time() - 3600 );
+	}
+	/**
+	 * Only allow alphanumerics, dash and underscore
+	 *
+	 * @param string $value The string you want to test on.
+	 * @return WP_Error|boolean
+	 */
+	private static function validate_cookie_value( $value ) {
+		if ( preg_match( '/[^_0-9a-zA-Z-]+/', $value ) > 0 ) {
+			return new WP_Error( 'vary_cache_group_invalid_chars', 'Invalid character(s). Can only use alphanumerics, dash and underscore' );
+		}
+		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
+			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		}
+		return true;
 	}
 }
 
