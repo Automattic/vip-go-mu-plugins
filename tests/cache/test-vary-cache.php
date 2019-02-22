@@ -31,7 +31,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -250,7 +250,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
-	public function test__register_groups__invalid( $invalid_groups, $expected_error_code ) {
+	public function test__register_groups__invalid( $invalid_groups ) {
 		$this->expectException( \PHPUnit_Framework_Error_Warning::class );
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
 
@@ -290,6 +290,17 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				'yes_--_',
 				'invalid_vary_group_segment',
 			],
+			'invalid-group-name-value-character' => [
+				'dev-group%',
+				'yes',
+				'invalid_vary_group_name',
+			],
+			'invalid-group-segment-value-character' => [
+				'dev-group',
+				'yes%',
+				'invalid_vary_group_segment',
+			],
+
 		];
 	}
 
@@ -314,4 +325,88 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$actual_error_code = $actual_result->get_error_code();
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
+
+	/**
+	 */
+	public function test__enable_encryption_invalid() {
+		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
+		$this->expectException( \PHPUnit_Framework_Error_Error::class );
+		$actual_result = Vary_Cache::enable_encryption( );
+		$this->assertNull( $actual_result );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__enable_encryption_invalid_empty_constants() {
+		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
+		$this->expectException( \PHPUnit_Framework_Error_Error::class );
+
+		define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
+		define( 'VIP_GO_AUTH_COOKIE_IV', '');
+
+		$actual_result = Vary_Cache::enable_encryption( );
+		$this->assertNull( $actual_result );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__enable_encryption_true_valid() {
+
+		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
+		define( 'VIP_GO_AUTH_COOKIE_IV', '123');
+
+		$actual_result = Vary_Cache::enable_encryption( );
+		$this->assertNull( $actual_result );
+
+	}
+
+	public function get_test_data__validate_cookie_value_invalid() {
+		return [
+			'invalid-group-name-group-separator' => [
+				'dev-group---__',
+				'vary_cache_group_cannot_use_delimiter',
+			],
+			'invalid-group-name-value-separator' => [
+				'dev-group_--_',
+				'vary_cache_group_cannot_use_delimiter',
+			],
+			'invalid-group-name-value-character' => [
+				'dev-group%',
+				'vary_cache_group_invalid_chars',
+			],
+
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__validate_cookie_value_invalid
+	 */
+	public function test__validate_cookie_values_invalid( $value, $expected_error_code ) {
+		$get_validate_cookie_value_method = self::get_method( 'validate_cookie_value' );
+
+		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
+			$value
+		] );
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+	}
+
+	public function test__validate_cookie_value_valid( ) {
+
+		$get_validate_cookie_value_method = self::get_method( 'validate_cookie_value' );
+
+		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
+			'dev-group'
+		] );
+		$this->assertTrue( $actual_result );
+
+	}
+
+
 }
