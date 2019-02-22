@@ -16,11 +16,14 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		$this->original_COOKIE = $_COOKIE;
 
-		Vary_Cache::clear_groups();
+		Vary_Cache::load();
 	}
 
 	public function tearDown() {
+		Vary_Cache::unload();
+
 		$_COOKIE = $this->original_COOKIE;
+
 		parent::tearDown();
 	}
 
@@ -173,6 +176,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	public function test__is_user_in_group_segment( $initial_cookie, $initial_groups, $test_group, $test_value, $expected_result ) {
 		$_COOKIE = $initial_cookie;
 		Vary_Cache::register_groups( $initial_groups );
+		Vary_Cache::parse_group_cookie();
 
 		$actual_result = Vary_Cache::is_user_in_group_segment( $test_group, $test_value );
 
@@ -185,6 +189,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	public function test__is_user_in_group( $initial_cookie, $initial_groups, $test_group, $expected_result ) {
 		$_COOKIE = $initial_cookie;
 		Vary_Cache::register_groups( $initial_groups );
+		Vary_Cache::parse_group_cookie();
 
 		$actual_result = Vary_Cache::is_user_in_group( $test_group );
 
