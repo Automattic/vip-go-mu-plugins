@@ -66,7 +66,7 @@ class Vary_Cache {
 		foreach ( $groups as $group ) {
 			$validate_result = self::validate_cookie_values( $group );
 			if ( is_wp_error( $validate_result ) ) {
-				trigger_error( sprintf( 'Failed to register group (%s) ; ', $group, $validate_result->get_error_message() ), E_USER_WARNING );
+				trigger_error( sprintf( 'Failed to register group (%s); ', $group, $validate_result->get_error_message() ), E_USER_WARNING );
 				continue;
 			}
 
@@ -123,7 +123,7 @@ class Vary_Cache {
 		}
 		$validate_value_result = self::validate_cookie_values( $value );
 		if ( is_wp_error( $validate_value_result ) ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s); %s ', $group, $validate_value_result->get_error_message() ) );
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s): %s ', $group, $validate_value_result->get_error_message() ) );
 		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
@@ -198,7 +198,7 @@ class Vary_Cache {
 		// Validate that we have the secret values.
 		if ( ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
-			return new WP_Error( 'vary-cache-secrets-not-defined', sprintf( 'Constants not defined for encrypted vary cache cookies (%s and %s)', 'VIP_GO_AUTH_COOKIE_KEY', 'VIP_GO_AUTH_COOKIE_IV' ) );
+			trigger_error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.', E_USER_ERROR );
 		}
 
 		static::$encryption_enabled = true;

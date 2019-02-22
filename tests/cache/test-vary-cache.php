@@ -244,9 +244,9 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	/**
 	 * @dataProvider get_test_data__register_groups_invalid
+	 * @expectedException PHPUnit\Framework\Error\Warning
 	 */
 	public function test__register_groups__invalid( $invalid_groups, $expected_error_code ) {
-		$this->expectException( \PHPUnit_Framework_Error_Warning::class );
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
 
 		$this->assertFalse( $actual_result, 'Invalid register_groups call did not return false' );
@@ -321,14 +321,13 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
-	public function test__enable_encryption_true_invalid() {
-
+	/**
+	 * @expectedException PHPUnit\Framework\Error\Error
+	 */
+	public function test__enable_encryption_invalid() {
 		$actual_result = Vary_Cache::enable_encryption( );
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-		$actual_error_code = $actual_result->get_error_code();
-		$this->assertEquals( 'vary-cache-secrets-not-defined', $actual_error_code, 'Incorrect error code' );
-
+		var_dump($actual_result);
+		$this->assertNull( $actual_result );
 	}
 
 	public function test__enable_encryption_true_valid() {
