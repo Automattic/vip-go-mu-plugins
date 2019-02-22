@@ -196,15 +196,42 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function get_test_data__register_groups_valid() {
-		return [
-			'valid-group-array' => [
-				[ 'dev-group', 'design-group' ],
-			],
-			'valid-group' => [
-				'dev-group',
-			],
+	public function test__register_group() {
+		$expected_groups = [
+			'dev-group' => '',
 		];
+
+		$actual_result = Vary_Cache::register_group( 'dev-group' );
+
+		$this->assertTrue( $actual_result, 'register_group returned false' );
+		$this->assertEquals( $expected_groups, Vary_Cache::get_groups() );
+	}
+
+	public function test__register_groups__valid() {
+		$expected_groups = [
+			'dev-group' => '',
+			'design-group' => '',
+		];
+
+		$actual_result = Vary_Cache::register_groups( [
+			'dev-group',
+			'design-group',
+		] );
+
+		$this->assertTrue( $actual_result, 'Valid register_groups call did not return true' );
+		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Registered groups do not match expected.' );
+	}
+
+	public function test__register_groups__multiple_calls() {
+		$expected_groups = [
+			'dev-group' => '',
+			'design-group' => '',
+		];
+
+		Vary_Cache::register_groups( [ 'dev-group' ] );
+		Vary_Cache::register_groups( [ 'design-group' ] );
+
+		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Multiple register_groups did not result in expected groups' );
 	}
 
 	public function get_test_data__register_groups_invalid() {
@@ -221,22 +248,14 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_test_data__register_groups_valid
-	 */
-	public function test__register_groups_valid( $valid_groups ) {
-		$actual_result = Vary_Cache::register_groups( $valid_groups );
-
-		$this->assertTrue( $actual_result );
-	}
-
-	/**
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
-	public function test__register_groups_invalid( $invalid_groups, $expected_error_code ) {
+	public function test__register_groups__invalid( $invalid_groups, $expected_error_code ) {
 		$this->expectException( \PHPUnit_Framework_Error_Warning::class );
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
-		
-		$this->assertFalse( $actual_result );
+
+		$this->assertFalse( $actual_result, 'Invalid register_groups call did not return false' );
+		$this->assertEquals( [], Vary_Cache::get_groups(), 'Registered groups was not empty.' );
 	}
 
 	public function get_test_data__set_group_for_user_valid() {
