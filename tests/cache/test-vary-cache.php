@@ -244,7 +244,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	/**
 	 * @dataProvider get_test_data__register_groups_invalid
-	 * @expectedException PHPUnit\Framework\Error\Warning
+	 * @expectedException \PHPUnit\Framework\Error\Warning
 	 */
 	public function test__register_groups__invalid( $invalid_groups, $expected_error_code ) {
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
@@ -322,14 +322,31 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @expectedException PHPUnit\Framework\Error\Error
+	 * @expectedException \PHPUnit\Framework\Error\Error
 	 */
 	public function test__enable_encryption_invalid() {
 		$actual_result = Vary_Cache::enable_encryption( );
-		var_dump($actual_result);
 		$this->assertNull( $actual_result );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @expectedException \PHPUnit\Framework\Error\Error
+	 */
+	public function test__enable_encryption_invalid_empty_constants() {
+
+		define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
+		define( 'VIP_GO_AUTH_COOKIE_IV', '');
+
+		$actual_result = Vary_Cache::enable_encryption( );
+		$this->assertNull( $actual_result );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__enable_encryption_true_valid() {
 
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
@@ -340,7 +357,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	}
 
-	public function get_test_data__validate_cookie_values_invalid() {
+	public function get_test_data__validate_cookie_value_invalid() {
 		return [
 			'invalid-group-name-group-separator' => [
 				'dev-group---__',
@@ -359,12 +376,12 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_test_data__validate_cookie_values_invalid
+	 * @dataProvider get_test_data__validate_cookie_value_invalid
 	 */
 	public function test__validate_cookie_values_invalid( $value, $expected_error_code ) {
-		$get_validate_cookie_values_method = self::get_method( 'validate_cookie_values' );
+		$get_validate_cookie_value_method = self::get_method( 'validate_cookie_value' );
 
-		$actual_result = $get_validate_cookie_values_method->invokeArgs(null, [
+		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			$value
 		] );
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
@@ -373,11 +390,11 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
-	public function test__validate_cookie_values_valid( ) {
+	public function test__validate_cookie_value_valid( ) {
 
-		$get_validate_cookie_values_method = self::get_method( 'validate_cookie_values' );
+		$get_validate_cookie_value_method = self::get_method( 'validate_cookie_value' );
 
-		$actual_result = $get_validate_cookie_values_method->invokeArgs(null, [
+		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			'dev-group'
 		] );
 		$this->assertTrue( $actual_result );
