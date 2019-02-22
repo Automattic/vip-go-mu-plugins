@@ -234,6 +234,20 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Multiple register_groups did not result in expected groups' );
 	}
 
+	public function test__register_groups__did_send_headers() {
+		do_action( 'send_headers' );
+
+		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+
+		$actual_result = Vary_Cache::register_groups( [
+			'dev-group',
+			'design-group',
+		] );
+
+		$this->assertFalse( $actual_result, 'register_groups after send_headers did not return false' );
+		$this->assertEquals( [], Vary_Cache::get_groups(), 'Registered groups are not empty.' );
+	}
+
 	public function get_test_data__register_groups_invalid() {
 		return [
 			'invalid-group-array' => [
@@ -326,8 +340,19 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
-	/**
-	 */
+	public function test__set_group_for_user__did_send_headers() {
+		do_action( 'send_headers' );
+
+		$expected_error_code = 'did_send_headers';
+
+		$actual_result = Vary_Cache::set_group_for_user( 'group', 'segment' );
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+	}
+
 	public function test__enable_encryption_invalid() {
 		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
 		$this->expectException( \PHPUnit_Framework_Error_Error::class );
@@ -398,7 +423,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__validate_cookie_value_valid( ) {
-
 		$get_validate_cookie_value_method = self::get_method( 'validate_cookie_value' );
 
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
