@@ -185,21 +185,17 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param bool $value true for encrypted requests.
 	 * @return WP_Error|null
 	 */
-	public static function set_encryption( $value = true ) {
-		if ( false === $value && true === static::$encryption_enabled ) {
-			return new WP_Error( 'vary-cache-disable-encryption-mode', 'Cannot disable encryption setting if it\'s already been enabled' );
-		}
+	public static function enable_encryption() {
 
 		// Validate that we have the secret values.
-		if ( true === $value && ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
+		if ( ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
 			return new WP_Error( 'vary-cache-secrets-not-defined', sprintf( 'Constants not defined for encrypted vary cache cookies (%s and %s)', 'VIP_GO_AUTH_COOKIE_KEY', 'VIP_GO_AUTH_COOKIE_IV' ) );
 		}
 
-		static::$encryption_enabled = $value;
+		static::$encryption_enabled = true;
 	}
 
 	/**
