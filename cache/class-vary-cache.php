@@ -64,8 +64,9 @@ class Vary_Cache {
 	 */
 	public static function register_groups( array $groups ) {
 		foreach ( $groups as $group ) {
-			if ( strpos( $group, self::GROUP_SEPARATOR ) !== false || strpos( $group, self::VALUE_SEPARATOR ) !== false ) {
-				trigger_error( sprintf( 'Failed to register group (%s); cannot use the delimiter values (`%s` or `%s`) in the group name', $group, self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ), E_USER_WARNING );
+			$validate_result = self::validate_cookie_values( $group );
+			if ( is_wp_error( $validate_result ) ) {
+				trigger_error( sprintf( 'Failed to register group (%s) ; ', $group, $validate_result->get_error_message() ), E_USER_WARNING );
 				continue;
 			}
 
@@ -116,13 +117,13 @@ class Vary_Cache {
 		// TODO: make sure headers aren't already sent
 		// TODO: only send header if we added or changed things
 		// TODO: don't set the cookie if was already set on the request
-		$validate_group = self::validate_cookie_values( $group );
-		if ( true !== $validate_group ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group; ', $validate_group ) );
+		$validate_group_result = self::validate_cookie_values( $group );
+		if ( is_wp_error( $validate_group_result ) ) {
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
-		$validate_value = self::validate_cookie_values( $value );
-		if ( true !== $validate_value ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment; ', $validate_group ) );
+		$validate_value_result = self::validate_cookie_values( $value );
+		if ( is_wp_error( $validate_value_result ) ) {
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s); %s ', $group, $validate_value_result->get_error_message() ) );
 		}
 		self::$groups[ $group ] = $value;
 		if ( self::is_encryption_enabled() ) {
@@ -343,7 +344,7 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Wrapper for the set cookie function to slear out the cookie
+	 * Wrapper for the set cookie function to clear out the cookie
 	 *
 	 * @param string $name  Cookie Name.
 	 */
