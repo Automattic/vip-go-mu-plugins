@@ -234,6 +234,10 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Multiple register_groups did not result in expected groups' );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__register_groups__did_send_headers() {
 		do_action( 'send_headers' );
 
@@ -340,6 +344,10 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__set_group_for_user__did_send_headers() {
 		do_action( 'send_headers' );
 
@@ -369,7 +377,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->expectException( \PHPUnit_Framework_Error_Error::class );
 
 		define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
-		define( 'VIP_GO_AUTH_COOKIE_IV', '');
+		define( 'VIP_GO_AUTH_COOKIE_IV', '' );
 
 		$actual_result = Vary_Cache::enable_encryption( );
 		$this->assertNull( $actual_result );
@@ -380,9 +388,8 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__enable_encryption_true_valid() {
-
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
-		define( 'VIP_GO_AUTH_COOKIE_IV', '123');
+		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
 
 		$actual_result = Vary_Cache::enable_encryption( );
 		$this->assertNull( $actual_result );
@@ -403,7 +410,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				'dev-group%',
 				'vary_cache_group_invalid_chars',
 			],
-
 		];
 	}
 
@@ -416,6 +422,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			$value
 		] );
+
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
 
 		$actual_error_code = $actual_result->get_error_code();
@@ -428,9 +435,45 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			'dev-group'
 		] );
-		$this->assertTrue( $actual_result );
 
+		$this->assertTrue( $actual_result );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__send_vary_headers__sent_for_group() {
+		Vary_Cache::register_group( 'dev-group' );
 
+		do_action( 'send_headers' );
+
+		$this->assertContains( 'Vary: X-VIP-Go-Segmentation', xdebug_get_headers() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__send_vary_headers__sent_for_group_with_encryption() {
+		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
+		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::enable_encryption();
+
+		do_action( 'send_headers' );
+
+		$this->assertContains( 'Vary: X-VIP-Go-Auth', xdebug_get_headers() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__send_vary_headers__not_sent_with_no_groups() {
+		do_action( 'send_headers' );
+
+		$this->assertNotContains( 'Vary: X-VIP-Go-Segmentation', xdebug_get_headers(), 'Response should not include Vary: X-VIP-Go-Segmentation header' );
+		$this->assertNotContains( 'Vary: X-VIP-Go-Auth', xdebug_get_headers(), 'Response should not include Vary: X-VIP-Go-Auth header' );
+	}
 }

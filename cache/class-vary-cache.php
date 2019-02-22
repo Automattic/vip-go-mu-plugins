@@ -408,9 +408,11 @@ class Vary_Cache {
 		if ( preg_match( '/[^_0-9a-zA-Z-]+/', $value ) > 0 ) {
 			return new WP_Error( 'vary_cache_group_invalid_chars', 'Invalid character(s). Can only use alphanumerics, dash and underscore' );
 		}
+
 		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
 			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
+
 		return true;
 	}
 }
