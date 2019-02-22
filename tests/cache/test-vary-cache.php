@@ -31,7 +31,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
+		$class = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
