@@ -65,18 +65,18 @@ class Vary_Cache {
 	public static function register_groups( $groups ) {
 		if ( is_array( $groups ) ) {
 			foreach ( $groups as $group ) {
-				$validate_group = self::validate_cookie_values( $group );
-				if ( true !== $validate_group ) {
-					trigger_error( sprintf( 'Failed to register group; ', $validate_group ), E_USER_WARNING );
+				$validate_result = self::validate_cookie_values( $group );
+				if ( is_wp_error( $validate_result ) ) {
+					trigger_error( sprintf( 'Failed to register group; ', $validate_result->get_error_message() ), E_USER_WARNING );
 					return false;
 				}
 
 				self::$groups[ $group ] = '';
 			}
 		} else {
-			$validate_group = self::validate_cookie_values( $groups );
-			if ( true !== $validate_group ) {
-				trigger_error( sprintf( 'Failed to register group; ', $validate_group ), E_USER_WARNING );
+			$validate_result = self::validate_cookie_values( $groups );
+			if ( is_wp_error( $validate_result ) ) {
+				trigger_error( sprintf( 'Failed to register group; ', $validate_result->get_error_message() ), E_USER_WARNING );
 				return false;
 			}
 
@@ -189,6 +189,10 @@ class Vary_Cache {
 	 * @return WP_Error|null
 	 */
 	public static function set_encryption( $value = true ) {
+		if ( false === $value && true === static::$encryption_enabled ) {
+			return new WP_Error( 'vary-cache-disable-encryption-mode', 'Cannot disable encryption setting if it\'s already been enabled' );
+		}
+
 		// Validate that we have the secret values.
 		if ( true === $value && ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
@@ -345,14 +349,14 @@ class Vary_Cache {
 	 * Only allow alphanumerics, dash and underscore
 	 *
 	 * @param string $value The string you want to test on.
-	 * @return boolean
+	 * @return WP_Error|boolean
 	 */
 	private static function validate_cookie_values( $value ) {
 		if ( preg_match( '/[^_0-9a-zA-Z-]+/', $value ) > 0 ) {
-			return 'Invalid character(s). Can only use alphanumerics, dash and underscore';
+			return new WP_Error( 'vary_cache_group_invalid_chars', 'Invalid character(s). Can only use alphanumerics, dash and underscore' );
 		}
 		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
-			return sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR );
+			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
 		return true;
 	}

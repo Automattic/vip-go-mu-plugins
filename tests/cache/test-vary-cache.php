@@ -28,7 +28,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -330,5 +330,66 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertNull( $actual_result );
 
 	}
+
+	public function test__set_encryption_disable_adfter_enabolng() {
+
+		//should work the first time
+		$actual_result = Vary_Cache::set_encryption( true );
+		$this->assertNull( $actual_result );
+
+		//should fail if we try setting it back to false
+		$actual_result = Vary_Cache::set_encryption( false );
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( 'vary-cache-disable-encryption-mode', $actual_error_code, 'Incorrect error code' );
+
+
+
+	}
+
+	public function get_test_data__validate_cookie_values_invalid() {
+		return [
+			'invalid-group-name-group-separator' => [
+				'dev-group---__',
+				'vary_cache_group_cannot_use_delimiter',
+			],
+			'invalid-group-name-value-separator' => [
+				'dev-group_--_',
+				'vary_cache_group_cannot_use_delimiter',
+			],
+			'invalid-group-name-value-character' => [
+				'dev-group%',
+				'vary_cache_group_invalid_chars',
+			],
+
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__validate_cookie_values_invalid
+	 */
+	public function test__validate_cookie_values_invalid( $value, $expected_error_code ) {
+		$get_validate_cookie_values_method = self::get_method( 'validate_cookie_values' );
+
+		$actual_result = $get_validate_cookie_values_method->invokeArgs(null, [
+			$value
+		] );
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+	}
+
+	public function test__validate_cookie_values_valid( ) {
+
+		$get_validate_cookie_values_method = self::get_method( 'validate_cookie_values' );
+
+		$actual_result = $get_validate_cookie_values_method->invokeArgs(null, [
+			'dev-group'
+		] );
+		$this->assertTrue( $actual_result );
+
+	}
+
 
 }
