@@ -5,7 +5,7 @@ namespace Automattic\VIP\Cache;
 use WP_Error;
 
 class Vary_Cache {
-	private const COOKIE_NO_CACHE = 'vip-go-cb';
+	private const COOKIE_NOCACHE = 'vip-go-cb';
 	private const COOKIE_SEGMENT = 'vip-go-seg';
 	private const COOKIE_AUTH = 'vip-go-auth';
 
@@ -50,16 +50,34 @@ class Vary_Cache {
 	 */
 	private static $cookie_expiry = MONTH_IN_SECONDS;
 
-	/** Nocache */
-	public static function set_no_cache_for_user() {
-		self::set_cookie( self::COOKIE_NO_CACHE, 1 );
+	/**
+	 * Add nocache cookie for the user.
+	 *
+	 * This bypasses all requests from the VIP Cache.
+	 */
+	public static function set_nocache_for_user() {
+		if ( self::did_send_headers() ) {
+			return new WP_Error( 'did_send_headers', 'Failed to set nocache cookie; cannot be called after the `send_headers` hook has fired.' );
+		}
+
+		self::set_cookie( self::COOKIE_NOCACHE, 1 );
+
+		return true;
 	}
 
-	/** Clears the cache-busting flag */
-	public static function remove_no_cache_for_user() {
-		if ( isset( $_COOKIE[ self::COOKIE_NO_CACHE ] ) ) {
-			self::unset_cookie( self::COOKIE_NO_CACHE );
+	/**
+	 * Clears the nocache cookie for the user.
+	 *
+	 * Restores caching behaviour for all future requests.
+	 */
+	public static function remove_nocache_for_user() {
+		if ( self::did_send_headers() ) {
+			return new WP_Error( 'did_send_headers', 'Failed to remove nocache cookie; cannot be called after the `send_headers` hook has fired.' );
 		}
+
+		self::unset_cookie( self::COOKIE_NOCACHE );
+
+		return true;
 	}
 
 	public static function load() {

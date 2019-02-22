@@ -476,4 +476,54 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$this->assertNotContains( 'Vary: X-VIP-Go-Segmentation', xdebug_get_headers(), 'Response should not include Vary: X-VIP-Go-Segmentation header' );
 		$this->assertNotContains( 'Vary: X-VIP-Go-Auth', xdebug_get_headers(), 'Response should not include Vary: X-VIP-Go-Auth header' );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__set_nocache_for_user__did_send_headers() {
+		do_action( 'send_headers' );
+
+		$actual_result = Vary_Cache::set_nocache_for_user();
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__set_nocache_for_user() {
+		$actual_result = Vary_Cache::set_nocache_for_user();
+
+		$this->assertTrue( $actual_result, 'Result was not true' );
+
+		// TODO: verify cookie was set
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__remove_nocache_for_user__did_send_headers() {
+		do_action( 'send_headers' );
+
+		$actual_result = Vary_Cache::remove_nocache_for_user();
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__remove_nocache_for_user() {
+		$actual_result = Vary_Cache::set_nocache_for_user();
+
+		$this->assertTrue( $actual_result, 'Result was not true' );
+
+		// TODO: verify cookie was removed
+	}
 }

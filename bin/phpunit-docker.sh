@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Note: you can pass in additional phpunit args
+# Test a specific file: ./bin/phpunit-docker.sh tests/path/to/test.php
+# Stop on failures: ./bin/phpunit-docker.sh --stop-on-failure
+# etc.
+
 WP_VERSION=${1-latest}
 
 MYSQL_ROOT_PASSWORD='wordpress'
@@ -26,4 +31,4 @@ docker run \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
 	--rm phpunit/phpunit \
-	--bootstrap /app/tests/bootstrap.php
+	--bootstrap /app/tests/bootstrap.php "$@"
