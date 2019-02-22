@@ -65,7 +65,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		$this->expectException( PHPUnit_Framework_Error_Warning::class );
+		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
 
 		$actual_output = $this->cache_manager->queue_purge_url( $queue_url );
 
