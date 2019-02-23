@@ -5,7 +5,7 @@ namespace Automattic\VIP\Cache;
 use WP_Error;
 
 class Vary_Cache {
-	private const COOKIE_NO_CACHE = 'vip-go-cb';
+	private const COOKIE_NOCACHE = 'vip-go-cb';
 	private const COOKIE_SEGMENT = 'vip-go-seg';
 	private const COOKIE_AUTH = 'vip-go-auth';
 
@@ -22,6 +22,15 @@ class Vary_Cache {
 	 * @var     bool  true if encrypted
 	 */
 	private static $encryption_enabled = false;
+
+	/**
+	 * Flag to indicate if the send_headers action was triggered
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 * @var     bool  true if headers were sent
+	 */
+	private static $did_send_headers = false;
 
 	/**
 	 * Member variable to store the parsed group values.
@@ -41,16 +50,34 @@ class Vary_Cache {
 	 */
 	private static $cookie_expiry = MONTH_IN_SECONDS;
 
-	/** Nocache */
-	public static function set_no_cache_for_user() {
-		self::set_cookie( self::COOKIE_NO_CACHE, 1 );
+	/**
+	 * Add nocache cookie for the user.
+	 *
+	 * This bypasses all requests from the VIP Cache.
+	 */
+	public static function set_nocache_for_user() {
+		if ( self::did_send_headers() ) {
+			return new WP_Error( 'did_send_headers', 'Failed to set nocache cookie; cannot be called after the `send_headers` hook has fired.' );
+		}
+
+		self::set_cookie( self::COOKIE_NOCACHE, 1 );
+
+		return true;
 	}
 
-	/** Clears the cache-busting flag */
-	public static function remove_no_cache_for_user() {
-		if ( isset( $_COOKIE[ self::COOKIE_NO_CACHE ] ) ) {
-			self::unset_cookie( self::COOKIE_NO_CACHE );
+	/**
+	 * Clears the nocache cookie for the user.
+	 *
+	 * Restores caching behaviour for all future requests.
+	 */
+	public static function remove_nocache_for_user() {
+		if ( self::did_send_headers() ) {
+			return new WP_Error( 'did_send_headers', 'Failed to remove nocache cookie; cannot be called after the `send_headers` hook has fired.' );
 		}
+
+		self::unset_cookie( self::COOKIE_NOCACHE );
+
+		return true;
 	}
 
 	public static function load() {
@@ -58,19 +85,24 @@ class Vary_Cache {
 		self::add_filters();
 	}
 
+	/**
+	 * Convenience function for resetting state in tests
+	 */
 	public static function unload() {
-		self::clear_groups();
 		self::remove_filters();
+
+		self::clear_groups();
+		self::$did_send_headers = false;
 	}
 
 	protected static function add_filters() {
 		add_action( 'init', [ Vary_Cache::class, 'parse_group_cookie' ] );
-		add_action( 'send_headers', [ Vary_Cache::class, 'add_vary_headers' ] );
+		add_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
 	}
 
 	protected static function remove_filters() {
 		remove_action( 'init', [ Vary_Cache::class, 'parse_group_cookie' ] );
-		remove_action( 'send_headers', [ Vary_Cache::class, 'add_vary_headers' ] );
+		remove_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX );
 	}
 
 	/**
@@ -83,6 +115,11 @@ class Vary_Cache {
 	 * @return boolean
 	 */
 	public static function register_groups( array $groups ) {
+		if ( self::did_send_headers() ) {
+			trigger_error( sprintf( 'Failed to register_groups (%s); cannot be called after the `send_headers` hook has fired.', implode( ', ', $groups ) ), E_USER_WARNING );
+			return false;
+		}
+
 		foreach ( $groups as $group ) {
 			$validate_result = self::validate_cookie_value( $group );
 			if ( is_wp_error( $validate_result ) ) {
@@ -132,13 +169,15 @@ class Vary_Cache {
 	 * @return WP_Error|boolean
 	 */
 	public static function set_group_for_user( $group, $value ) {
-		// TODO: make sure headers aren't already sent
-		// TODO: only send header if we added or changed things
-		// TODO: don't set the cookie if was already set on the request
+		if ( self::did_send_headers() ) {
+			return new WP_Error( 'did_send_headers', sprintf( 'Failed to set group (%s => %s) for user; cannot be called after the `send_headers` hook has fired.', $group, $value ) );
+		}
+
 		$validate_group_result = self::validate_cookie_value( $group );
 		if ( is_wp_error( $validate_group_result ) ) {
 			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
+
 		$validate_value_result = self::validate_cookie_value( $value );
 		if ( is_wp_error( $validate_value_result ) ) {
 			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
@@ -331,10 +370,16 @@ class Vary_Cache {
 		self::$cookie_expiry = $expiry;
 	}
 
+	public static function send_headers() {
+		self::$did_send_headers = true;
+
+		self::send_vary_headers();
+	}
+
 	/**
 	 * Add the vary cache headers to indicate that the response should be cached
 	 */
-	public static function add_vary_headers() {
+	private static function send_vary_headers() {
 		if ( ! empty( self::$groups ) ) {
 			if ( self::is_encryption_enabled() ) {
 				header( 'Vary: X-VIP-Go-Auth' );
@@ -346,6 +391,10 @@ class Vary_Cache {
 				header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
 			}
 		}
+	}
+
+	private static function did_send_headers() {
+		return self::$did_send_headers;
 	}
 
 	/**
@@ -377,9 +426,11 @@ class Vary_Cache {
 		if ( preg_match( '/[^_0-9a-zA-Z-]+/', $value ) > 0 ) {
 			return new WP_Error( 'vary_cache_group_invalid_chars', 'Invalid character(s). Can only use alphanumerics, dash and underscore' );
 		}
+
 		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
 			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
+
 		return true;
 	}
 }
