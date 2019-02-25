@@ -9,7 +9,7 @@ use \WP_CLI;
  */
 class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 
-	private $dry_run = true;
+	private $dry_run = false;
 
 	private $progress;
 
@@ -18,7 +18,7 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * <dry-run>
+	 * [--dry-run=<dry-run>]
 	 * : Wether or not to update to database, or simply inspect it.
 	 * ---
 	 * default: false
@@ -27,7 +27,7 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 	 *   - false
 	 * ---
 	 *
-	 * <batch>
+	 * [--batch=<batch>]
 	 * : Batch size to process attachments in.
 	 * ---
 	 * default: 1000
