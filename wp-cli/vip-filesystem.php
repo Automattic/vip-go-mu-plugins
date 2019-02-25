@@ -53,8 +53,8 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 		}
 
 		$batch_size = (int) WP_CLI\Utils\get_flag_value( $assoc_args, 'batch', 1000 );
-		if ( 0 <= $batch_size ) {
-			WP_CLI::error( 'Invalid batch size: ' . $assoc_args[ 'batch' ] );
+		if ( 0 >= $batch_size ) {
+			WP_CLI::error( 'Invalid batch size: ' . $batch_size );
 			WP_CLI::halt( 1 );
 		}
 
@@ -65,7 +65,7 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 
 		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
-		if ( 0 <= $attachment_count ) {
+		if ( 0 >= $attachment_count ) {
 			WP_CLI::error( 'No attachments found' );
 			WP_CLI::halt( 1 );
 		}
@@ -116,7 +116,7 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 		if ( ! isset( $meta['filesize'] ) ) {
 			$filesize = $this->get_filesize_from_file( $attachment_id );
 
-			if ( 0 > $filesize ) {
+			if ( 0 < $filesize ) {
 				$meta['filesize'] = $filesize;
 
 				if ( ! $this->dry_run ) {
