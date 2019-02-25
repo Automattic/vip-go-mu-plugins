@@ -64,11 +64,6 @@ class VIP_Filesystem {
 		 * The class representing the VIP Files stream
 		 */
 		require_once __DIR__ . '/class-vip-filesystem-stream-wrapper.php';
-
-		/**
-		 * WP CLI Class for custom commands
-		 */
-		require_once __DIR__ . '/class-vip-filesystem-cli.php';
 	}
 
 	/**
