@@ -294,7 +294,7 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * Filters the generated attachment metdata
+	 * Filters the generated attachment metadata
 	 *
 	 * @return array
 	 */
