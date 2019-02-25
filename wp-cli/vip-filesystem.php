@@ -1,9 +1,5 @@
 <?php
 
-namespace Automattic\VIP\Files;
-
-require_once __DIR__ . '/../vip-helpers/vip-wp-cli.php';
-
 use \WP_CLI;
 
 /**
