@@ -33,6 +33,33 @@ class Vary_Cache {
 	private static $did_send_headers = false;
 
 	/**
+	 * Flag to indicate if we're in nocache mode.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 * @var     bool  true if nocache enabled
+	 */
+	private static $is_user_in_nocache = false;
+
+	/**
+	 * Flag to indicate if we should update the nocache cookie.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 * @var     bool
+	 */
+	private static $should_update_nocache_cookie = false;
+
+	/**
+	 * Flag to indicate if we should update the group/segment cookie
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 * @var     bool
+	 */
+	private static $should_update_group_cookie = false;
+
+	/**
 	 * Member variable to store the parsed group values.
 	 *
 	 * @since   1.0.0
@@ -51,16 +78,31 @@ class Vary_Cache {
 	private static $cookie_expiry = MONTH_IN_SECONDS;
 
 	/**
+	 * Check if the user is in nocache mode.
+	 *
+	 * Should only be used after the `init` hook.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return boolean
+	 */
+	public static function is_user_in_nocache() {
+		return (bool) self::$is_user_in_nocache;
+	}
+
+	/**
 	 * Add nocache cookie for the user.
 	 *
 	 * This bypasses all requests from the VIP Cache.
 	 */
 	public static function set_nocache_for_user() {
-		if ( self::did_send_headers() ) {
+		if ( self::$did_send_headers ) {
 			return new WP_Error( 'did_send_headers', 'Failed to set nocache cookie; cannot be called after the `send_headers` hook has fired.' );
 		}
 
-		self::set_cookie( self::COOKIE_NOCACHE, 1 );
+		self::$is_user_in_nocache = true;
+		self::$should_update_nocache_cookie = true;
 
 		return true;
 	}
@@ -71,37 +113,49 @@ class Vary_Cache {
 	 * Restores caching behaviour for all future requests.
 	 */
 	public static function remove_nocache_for_user() {
-		if ( self::did_send_headers() ) {
+		if ( self::$did_send_headers ) {
 			return new WP_Error( 'did_send_headers', 'Failed to remove nocache cookie; cannot be called after the `send_headers` hook has fired.' );
 		}
 
-		self::unset_cookie( self::COOKIE_NOCACHE );
+		self::$is_user_in_nocache = false;
+		self::$should_update_nocache_cookie = true;
 
 		return true;
 	}
 
+	/**
+	 * Convenience function to init the class.
+	 */
 	public static function load() {
 		self::clear_groups();
 		self::add_filters();
 	}
 
 	/**
-	 * Convenience function for resetting state in tests
+	 * Convenience function to reset the class.
+	 *
+	 * Primarily used to unit tests.
 	 */
 	public static function unload() {
 		self::remove_filters();
 
 		self::clear_groups();
+
 		self::$did_send_headers = false;
+		self::$encryption_enabled = false;
+		self::$is_user_in_nocache = false;
+		self::$should_update_nocache_cookie = false;
+		self::$should_update_group_cookie = false;
+		self::$cookie_expiry = MONTH_IN_SECONDS;
 	}
 
 	protected static function add_filters() {
-		add_action( 'init', [ Vary_Cache::class, 'parse_group_cookie' ] );
+		add_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		add_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
 	}
 
 	protected static function remove_filters() {
-		remove_action( 'init', [ Vary_Cache::class, 'parse_group_cookie' ] );
+		remove_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		remove_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX );
 	}
 
@@ -115,7 +169,7 @@ class Vary_Cache {
 	 * @return boolean
 	 */
 	public static function register_groups( array $groups ) {
-		if ( self::did_send_headers() ) {
+		if ( self::$did_send_headers ) {
 			trigger_error( sprintf( 'Failed to register_groups (%s); cannot be called after the `send_headers` hook has fired.', implode( ', ', $groups ) ), E_USER_WARNING );
 			return false;
 		}
@@ -169,7 +223,7 @@ class Vary_Cache {
 	 * @return WP_Error|boolean
 	 */
 	public static function set_group_for_user( $group, $value ) {
-		if ( self::did_send_headers() ) {
+		if ( self::$did_send_headers ) {
 			return new WP_Error( 'did_send_headers', sprintf( 'Failed to set group (%s => %s) for user; cannot be called after the `send_headers` hook has fired.', $group, $value ) );
 		}
 
@@ -185,12 +239,8 @@ class Vary_Cache {
 
 		self::$groups[ $group ] = $value;
 
-		if ( self::is_encryption_enabled() ) {
-			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
-			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
-		} else {
-			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
-		}
+		self::$should_update_group_cookie = true;
+
 		return true;
 	}
 
@@ -313,12 +363,38 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Parses the text cookie into the local groups array of key-values.
+	 * Parses our nocache and group cookies.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 */
+	public static function parse_cookies() {
+		self::parse_nocache_cookie();
+
+		self::parse_group_cookie();
+	}
+
+	/**
+	 * Parses the nocache cookie to see if nocache mode is enabled.
 	 *
 	 * @since   1.0.0
 	 * @access  private
 	 */
-	public static function parse_group_cookie() {
+	private static function parse_nocache_cookie() {
+		if ( isset( $_COOKIE[ self::COOKIE_NOCACHE ] ) ) {
+			self::$is_user_in_nocache = true;
+		} else {
+			self::$is_user_in_nocache = false;
+		}
+	}
+
+	/**
+	 * Parses the group/segment cookie into the local groups array of key-values.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 */
+	private static function parse_group_cookie() {
 		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
 			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
@@ -336,7 +412,6 @@ class Vary_Cache {
 			self::$groups[ $group_name ] = $group_value ?? '';
 		}
 	}
-
 
 	/**
 	 * Flattens the 2D array into a serialized string compatible with the cookie format.
@@ -370,17 +445,104 @@ class Vary_Cache {
 		self::$cookie_expiry = $expiry;
 	}
 
+	/**
+	 * Sends headers (if needed).
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 */
 	public static function send_headers() {
-		self::$did_send_headers = true;
+		if ( ! self::$did_send_headers ) {
+			self::$did_send_headers = true;
 
-		self::send_vary_headers();
+			$sent_vary = self::send_vary_headers();
+			$sent_cookie = self::set_cookies();
+
+			if ( $sent_vary || $sent_cookie ) {
+				/**
+				 * Vary or Set-Cookie header were sent.
+				 *
+				 * Can be used to handle things like early redirects after a user action and group assignment.
+				 *
+				 * @since 1.0.0
+				 *
+				 * @param boolean $sent_vary Was a Vary header sent?
+				 * @param boolean $sent_cookie Was a Set-Cookie header sent?
+				 */
+				do_action( 'vip_vary_cache_did_send_headers', $sent_vary, $sent_cookie );
+			}
+		}
+	}
+
+	/**
+	 * Determines if cookies need to be set and then sets them.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return boolean Was at least one cookie set?
+	 */
+	private static function set_cookies() {
+		$sent_cookie = false;
+
+		if ( self::$should_update_group_cookie ) {
+			$sent_cookie = true;
+
+			self::set_group_cookie();
+		}
+
+		if ( self::$should_update_nocache_cookie ) {
+			$sent_cookie = true;
+
+			self::set_nocache_cookie();
+		}
+
+		return $sent_cookie;
+	}
+
+	/**
+	 * Sets the group/segment cookie based on the user's current groupings.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 */
+	private static function set_group_cookie() {
+		if ( self::is_encryption_enabled() ) {
+			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
+			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
+		} else {
+			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
+		}
+	}
+
+	/**
+	 * Sets (or unsets) the group/segment cookie.
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 */
+	private static function set_nocache_cookie() {
+		if ( self::$is_user_in_nocache ) {
+			self::set_cookie( self::COOKIE_NOCACHE, 1 );
+		} else {
+			self::unset_cookie( self::COOKIE_NOCACHE );
+		}
 	}
 
 	/**
 	 * Add the vary cache headers to indicate that the response should be cached
+	 *
+	 * @since 1.0.0
+	 * @access private
+	 *
+	 * @return boolean Was at least one cookie set?
 	 */
 	private static function send_vary_headers() {
+		$sent_vary = false;
+
 		if ( ! empty( self::$groups ) ) {
+			$sent_vary = true;
+
 			if ( self::is_encryption_enabled() ) {
 				header( 'Vary: X-VIP-Go-Auth' );
 			} else {
@@ -391,10 +553,8 @@ class Vary_Cache {
 				header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
 			}
 		}
-	}
 
-	private static function did_send_headers() {
-		return self::$did_send_headers;
+		return $sent_vary;
 	}
 
 	/**
