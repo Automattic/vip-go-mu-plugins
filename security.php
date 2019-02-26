@@ -97,9 +97,13 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 }
 add_action( 'login_form_login', 'wpcom_vip_login_limit_dont_show_login_form' );
 
+
 function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
-	if ( is_wp_error( $user ) && ERROR_CODE_LOGIN_LIMIT_EXCEEDED == $user->get_error_code() )
+	static $login_limit_error;
+	if ( ( is_wp_error( $user ) && ERROR_CODE_LOGIN_LIMIT_EXCEEDED === $user->get_error_code() ) || ERROR_CODE_LOGIN_LIMIT_EXCEEDED === $login_limit_error ) {
+		$login_limit_error = ERROR_CODE_LOGIN_LIMIT_EXCEEDED;
 		return new IXR_Error( 503, $user->get_error_message() );
+	}
 
 	return $error;
 }
