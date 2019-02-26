@@ -343,6 +343,8 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		// Trigger headers to verify assertions
 		do_action( 'send_headers' );
+
+		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
 	}
 
 	/**
@@ -523,6 +525,8 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		// Trigger headers to verify assertions
 		do_action( 'send_headers' );
+
+		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
 	}
 
 	/**
@@ -558,5 +562,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		// Trigger headers to verify assertions
 		do_action( 'send_headers' );
+
+		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
 	}
 }
