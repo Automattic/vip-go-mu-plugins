@@ -100,9 +100,10 @@ add_action( 'login_form_login', 'wpcom_vip_login_limit_dont_show_login_form' );
 
 function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
 	static $login_limit_error;
-	if ( ( is_wp_error( $user ) && ERROR_CODE_LOGIN_LIMIT_EXCEEDED === $user->get_error_code() ) ) {
+
+	if ( is_wp_error( $user ) && ERROR_CODE_LOGIN_LIMIT_EXCEEDED === $user->get_error_code() ) {
 		// We need to set a persistent error here, as once there is an auth error in a system.multicall, core will no longer trigger any of the rate limit filters for further login attempts in the set.
-			$login_limit_error = $user;
+		$login_limit_error = $user;
 	}
 
 	if ( is_wp_error( $login_limit_error ) ) {
