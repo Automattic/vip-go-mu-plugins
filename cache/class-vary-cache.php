@@ -229,12 +229,16 @@ class Vary_Cache {
 
 		$validate_group_result = self::validate_cookie_value( $group );
 		if ( is_wp_error( $validate_group_result ) ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group (%s): %s', $group, $validate_group_result->get_error_message() ) );
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to set group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
 
 		$validate_value_result = self::validate_cookie_value( $value );
 		if ( is_wp_error( $validate_value_result ) ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to set group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
+		}
+
+		if ( ! array_key_exists( $group, self::$groups ) ) {
+			return new WP_Error( 'invalid_vary_group_notregistered', sprintf( 'Failed to set group (%s): Must register the group with register_group( <groupname> ) first. ', $group ) );
 		}
 
 		self::$groups[ $group ] = $value;

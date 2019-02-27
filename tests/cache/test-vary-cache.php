@@ -327,6 +327,9 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__set_group_for_user__valid() {
+
+		Vary_Cache::register_group( 'dev-group' );
+
 		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
 
 		$this->assertTrue( $actual_result, 'Return value was not true' );
@@ -345,6 +348,18 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		do_action( 'send_headers' );
 
 		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
+	}
+
+	public function test__set_group_for_user_group_not_registered( ) {
+
+		$expected_error_code = 'invalid_vary_group_notregistered';
+
+		$actual_result  = Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
 	/**
