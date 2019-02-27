@@ -107,7 +107,7 @@ function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
 	}
 
 	if ( is_wp_error( $login_limit_error ) ) {
-		return new IXR_Error( 503, $login_limit_error->get_error_message() );
+		return new IXR_Error( 429, $login_limit_error->get_error_message() );
 	}
 
 	return $error;
