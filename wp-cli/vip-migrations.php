@@ -241,6 +241,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					$log_request = false;
 
 					$response_code = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+					$url = curl_getinfo( $handle, CURLINFO_EFFECTIVE_URL );
+					
 					curl_multi_remove_handle( $mh, $handle );
 
 					if ( 200 === $response_code ) {
