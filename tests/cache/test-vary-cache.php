@@ -580,4 +580,50 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
 	}
+
+
+
+	public function get_test_data__stringify_groups() {
+		return [
+			'values_for_all_groups' => [
+				[
+					'dev-group',
+					'design-group',
+				],
+				[
+					'dev-group' => 'yes',
+					'design-group' => 'no',
+				],
+				'vc-v1__design-group_--_no---__dev-group_--_yes'
+			],
+			'values_for_only_nonempty_groups' => [
+				[
+					'dev-group',
+					'design-group'
+				],
+				[
+					'dev-group' => 'yes',
+				],
+				'vc-v1__dev-group_--_yes'
+			],
+
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__stringify_groups
+	 */
+	public function test__validate_stringify_groups_valid( $groups, $group_values, $expected_result ) {
+		$get_stringify_groups_method = self::get_vary_cache_method( 'stringify_groups' );
+		Vary_Cache::register_groups( $groups );
+		foreach($group_values as $key => $value) {
+			Vary_Cache::set_group_for_user($key, $value);
+		}
+
+		$actual_result = $get_stringify_groups_method->invokeArgs(null, [ ] );
+
+		$this->assertEquals( $expected_result, $actual_result );
+		Vary_Cache::unload();
+	}
+
 }

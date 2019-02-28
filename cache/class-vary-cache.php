@@ -426,11 +426,17 @@ class Vary_Cache {
 	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
-		ksort( self::$groups ); // make sure the string order is the same every time.
+		$groups = array_filter(
+			self::$groups,
+			function( $value ) {
+				return '' !== $value;
+			}
+		);
+		ksort( $groups ); // make sure the string order is the same every time.
 		$flatten = function ( $key, $value ) {
 			return $key . self::VALUE_SEPARATOR . $value;
 		};
-		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
+		$flattened = array_map( $flatten, array_keys( $groups ), $groups );
 
 		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
@@ -597,6 +603,9 @@ class Vary_Cache {
 
 		return true;
 	}
+
+
+
 }
 
 Vary_Cache::load();
