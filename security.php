@@ -50,7 +50,7 @@ function wpcom_vip_login_limiter( $username ) {
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
-function wpcom_vip_login_limiter_on_success( $username, $user ) {
+function wpcom_vip_login_limiter_on_success( $username ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$key1 = $ip . '|' . $username; // IP + username
 	$key2 = $ip; // IP only
@@ -58,9 +58,9 @@ function wpcom_vip_login_limiter_on_success( $username, $user ) {
 	wp_cache_decr( $key1, 1, CACHE_GROUP_LOGIN_LIMIT );
 	wp_cache_decr( $key2, 1, CACHE_GROUP_LOGIN_LIMIT );
 }
-add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10, 2 );
+add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success', 10 );
 
-function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $password ) {
+function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username ) {
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 	if ( $is_restricted_username ) {
 		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
@@ -68,7 +68,7 @@ function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $pas
 
 	return $user;
 }
-add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 30, 3 ); // core authenticates on 20
+add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 30, 2 ); // core authenticates on 20
 
 function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) )
