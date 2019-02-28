@@ -335,7 +335,7 @@ class Vary_Cache {
 	 * @throws string If credentials ENV Variables aren't defined.
 	 * @return string encrypted version of string
 	 */
-	private static function encrypt_cookie_value( $value ) {
+	public static function encrypt_cookie_value( $value ) {
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
@@ -412,6 +412,9 @@ class Vary_Cache {
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
 		$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
 		foreach ( $groups as $group ) {
+			if ( empty( $group ) ) {
+				continue;
+			}
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 			self::$groups[ $group_name ] = $group_value ?? '';
 		}

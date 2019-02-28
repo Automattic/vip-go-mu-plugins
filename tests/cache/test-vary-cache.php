@@ -606,6 +606,13 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				],
 				'vc-v1__dev-group_--_yes'
 			],
+			'values_for_all_empty_groups' => [
+				[
+				],
+				[
+				],
+				'vc-v1__'
+			],
 
 		];
 	}
@@ -613,7 +620,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data__stringify_groups
 	 */
-	public function test__validate_stringify_groups_valid( $groups, $group_values, $expected_result ) {
+	public function test__stringify_groups_valid( $groups, $group_values, $expected_result ) {
 		$get_stringify_groups_method = self::get_vary_cache_method( 'stringify_groups' );
 		Vary_Cache::register_groups( $groups );
 		foreach($group_values as $key => $value) {
@@ -624,6 +631,70 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_result, $actual_result );
 		Vary_Cache::unload();
+	}
+
+	public function get_test_data__parse_group_cookies() {
+		return [
+			'values_regular_group' => [
+				[],
+				[
+					'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
+				],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_encrypted_group' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+				],
+				[
+					'vip-go-auth' => 'VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
+				],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_regular_nogroup' => [
+				[],
+				[
+					'vip-go-seg' => 'vc-v1__',
+				],
+				[
+				],
+			],
+			'values_encrypted_nogroup' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+				],
+				[
+					'vip-go-auth' => 'qSME2LdfVuNvZa0GfeUJ45/uHCu7Auqj3iesSL4CITteGfva/N0wQ5TCIzcyeBImeTf3On2P4f7EtQyviw2ooA==',
+				],
+				[
+				],
+			],
+		];
+
+	}
+
+	/**
+	 * @dataProvider get_test_data__parse_group_cookies
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $expected_result )
+	{
+		$_COOKIE = $initial_cookie;
+		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
+		if ( ! empty( $secrets ) ) {
+			define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets[ 'key' ] );
+			define( 'VIP_GO_AUTH_COOKIE_IV', $secrets[ 'iv' ] );
+			Vary_Cache::enable_encryption();
+		}
+		$get_parse_group_cookie_method->invokeArgs(null, [ ] );
+		$this->assertEquals( $expected_result, Vary_Cache::get_groups() );
 	}
 
 }
