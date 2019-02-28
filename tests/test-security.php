@@ -1,5 +1,8 @@
 <?php
 
+include_once( ABSPATH . WPINC . '/class-IXR.php' );
+include_once( ABSPATH . WPINC . '/class-wp-xmlrpc-server.php' );
+
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function test__admin_username_restricted() {
 		$this->factory->user->create( [
@@ -115,6 +118,41 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertEquals( $errors->get_error_code(), 'lost_password_limit_exceeded' );
 
 	}
+
+	public function test__login_system_multicall_rate_limit() {
+		$this->markTestSkipped( 'Not tracking failed attempts against rate limit in test' );
+		add_filter( 'pre_option_enable_xmlrpc', '__return_true' );
+		$myxmlrpcserver = new wp_xmlrpc_server();
+
+		$method = array(
+			'methodName' => 'wp.getUsersBlogs',
+			'params'     => array(
+				0,
+				'admin20',
+				'password',
+			),
+		);
+
+		$method_calls = array();
+
+		$limit_threshold = 50;
+		$last_threshold_index = $limit_threshold - 1;
+
+		for ( $i = 1; $i <= $limit_threshold + 2; $i++ ) {
+			array_push( $method_calls, $method );
+		}
+
+		$myxmlrpcserver->callbacks = $myxmlrpcserver->methods;
+
+		$result = $myxmlrpcserver->multiCall( $method_calls );
+
+		$this->assertEquals( 403, $result[ $last_threshold_index ]['faultCode'] );
+		$this->assertEquals( 429, $result[ $last_threshold_index + 1 ]['faultCode'] );
+		$this->assertNotEmpty( $result[ $last_threshold_index + 1 ]['faultString'] );
+		$this->assertEquals( 429, $result[ $last_threshold_index + 2 ]['faultCode'] );
+		$this->assertNotEmpty( $result[ $last_threshold_index + 2 ]['faultString'] );
+	}
+
 
 	public function setUp() {
 
