@@ -149,4 +149,6 @@ add_filter( 'wp_headers', function( $headers ) {
 	return $headers;
 } );
 
+Automattic\VIP\Debug\toggle_debug_mode();
+
 do_action( 'vip_loaded' );

@@ -1334,6 +1334,14 @@ function is_proxied_automattician() {
 }
 
 /**
+ * Is the current request made using the Automattic proxy.
+ *
+ * @return bool True if the current request is made using the Automattic proxy
+ */
+function is_proxied_request() {
+	return defined( 'A8C_PROXIED_REQUEST' ) && true === A8C_PROXIED_REQUEST;
+}
+/**
  * Send a message to IRC
  *
  * $level can be an int of one of the following
