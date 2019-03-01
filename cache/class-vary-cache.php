@@ -429,17 +429,14 @@ class Vary_Cache {
 	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
-		$groups = array_filter(
-			self::$groups,
-			function( $value ) {
-				return '' !== $value;
+		ksort( self::$groups ); // make sure the string order is the same every time.
+		$flattened = [];
+		foreach ( self::$groups as $key => $value ) {
+			if ( '' === trim( $value ) ) {
+				continue;
 			}
-		);
-		ksort( $groups ); // make sure the string order is the same every time.
-		$flatten = function ( $key, $value ) {
-			return $key . self::VALUE_SEPARATOR . $value;
-		};
-		$flattened = array_map( $flatten, array_keys( $groups ), $groups );
+			$flattened[] = $key . self::VALUE_SEPARATOR . $value;
+		}
 
 		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
