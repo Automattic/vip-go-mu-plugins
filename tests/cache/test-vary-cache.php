@@ -630,7 +630,6 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		$actual_result = $get_stringify_groups_method->invokeArgs(null, [ ] );
 
 		$this->assertEquals( $expected_result, $actual_result );
-		Vary_Cache::unload();
 	}
 
 	public function get_test_data__parse_group_cookies() {
