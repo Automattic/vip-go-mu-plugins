@@ -429,6 +429,10 @@ class Vary_Cache {
 	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
+		if ( empty( self::$groups ) ) {
+			return;
+		}
+
 		ksort( self::$groups ); // make sure the string order is the same every time.
 		$flattened = [];
 		foreach ( self::$groups as $key => $value ) {
@@ -517,11 +521,16 @@ class Vary_Cache {
 	 * @access  private
 	 */
 	private static function set_group_cookie() {
+		$group_string = self::stringify_groups();
+		if ( empty( $group_string ) ) {
+			return;
+		}
+
 		if ( self::is_encryption_enabled() ) {
-			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
+			$cookie_value = self::encrypt_cookie_value( $group_string );
 			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
 		} else {
-			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
+			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
 	}
 

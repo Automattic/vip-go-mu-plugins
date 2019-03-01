@@ -611,7 +611,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				],
 				[
 				],
-				'vc-v1__'
+				null
 			],
 
 		];
