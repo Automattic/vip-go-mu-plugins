@@ -442,6 +442,10 @@ class Vary_Cache {
 			$flattened[] = $key . self::VALUE_SEPARATOR . $value;
 		}
 
+		if ( empty( $flattened ) ) {
+			return;
+		}
+
 		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
 
