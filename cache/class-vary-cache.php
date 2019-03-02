@@ -335,7 +335,7 @@ class Vary_Cache {
 	 * @throws string If credentials ENV Variables aren't defined.
 	 * @return string encrypted version of string
 	 */
-	public static function encrypt_cookie_value( $value ) {
+	private static function encrypt_cookie_value( $value ) {
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
