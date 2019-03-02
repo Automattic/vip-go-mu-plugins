@@ -53,11 +53,11 @@ function redirect_back() {
 }
 
 function enable_debug_mode() {
-	if ( ! \is_proxied_request() ) {
-		return;
-	}
-
 	nocache_headers();
+
+	if ( ! \is_proxied_request() ) {
+		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
+	}
 
 	$ttl = time() + COOKIE_TTL;
 	setcookie( 'vip-go-cb', '1', $ttl );
