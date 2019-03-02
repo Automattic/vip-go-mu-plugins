@@ -412,6 +412,9 @@ class Vary_Cache {
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
 		$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
 		foreach ( $groups as $group ) {
+			if ( empty( $group ) ) {
+				continue;
+			}
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 			self::$groups[ $group_name ] = $group_value ?? '';
 		}
@@ -426,11 +429,22 @@ class Vary_Cache {
 	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
+		if ( empty( self::$groups ) ) {
+			return;
+		}
+
 		ksort( self::$groups ); // make sure the string order is the same every time.
-		$flatten = function ( $key, $value ) {
-			return $key . self::VALUE_SEPARATOR . $value;
-		};
-		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
+		$flattened = [];
+		foreach ( self::$groups as $key => $value ) {
+			if ( '' === trim( $value ) ) {
+				continue;
+			}
+			$flattened[] = $key . self::VALUE_SEPARATOR . $value;
+		}
+
+		if ( empty( $flattened ) ) {
+			return;
+		}
 
 		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
@@ -511,11 +525,16 @@ class Vary_Cache {
 	 * @access  private
 	 */
 	private static function set_group_cookie() {
+		$group_string = self::stringify_groups();
+		if ( empty( $group_string ) ) {
+			return;
+		}
+
 		if ( self::is_encryption_enabled() ) {
-			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
+			$cookie_value = self::encrypt_cookie_value( $group_string );
 			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
 		} else {
-			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
+			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
 	}
 
@@ -597,6 +616,9 @@ class Vary_Cache {
 
 		return true;
 	}
+
+
+
 }
 
 Vary_Cache::load();
