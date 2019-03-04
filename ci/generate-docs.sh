@@ -51,7 +51,8 @@ mkdir -p $VIP_PHPDOC_DIR
 cd $VIP_PHPDOC_DIR
 # Using Composer to install PHPDoc is slower than other methods, but installs
 # a more up to date version.
-composer --quiet require phpdocumentor/phpdocumentor
+composer --quiet require jms/serializer:1.7.*
+composer --quiet require phpdocumentor/phpdocumentor:^2.9
 PATH="$PATH:${VIP_PHPDOC_DIR}/vendor/phpdocumentor/phpdocumentor/bin/"
 echo $PATH
 
