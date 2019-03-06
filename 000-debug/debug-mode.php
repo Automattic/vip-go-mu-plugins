@@ -78,9 +78,11 @@ function disable_debug_mode() {
 
 function toggle_debug_mode() {
 	if ( 'true' === $_GET['a8c-debug'] ) {
-		return enable_debug_mode();
+		enable_debug_mode();
+		return;
     } elseif ( 'false' === $_GET['a8c-debug'] ) {
-		return disable_debug_mode();
+		disable_debug_mode();
+		return;
 	}
 }
 
