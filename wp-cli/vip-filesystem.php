@@ -74,7 +74,7 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 			'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
 
 		do {
-			$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type= "attachment" limit %d, %d',
+			$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" LIMIT %d, %d',
 				$offset, $batch_size );
 			$attachments = $wpdb->get_results( $sql );
 
