@@ -48,7 +48,8 @@ function is_debug_mode_enabled() {
 function redirect_back() {
 	// Redirect to the same page without the activation handler.
 	$redirect_to = remove_query_arg( 'a8c-debug' );
-	header( sprintf( 'Location: %s', $redirect_to ) );
+	// Note: this is called early so we can't use wp_safe_redirect
+	header( sprintf( 'Location: %s', esc_url_raw( $redirect_to ) ) );
 	exit;
 }
 
