@@ -85,6 +85,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			}
 
 			// Pause.
+			$this->stop_the_insanity();
 			sleep( 1 );
 
 			$offset += $batch_size;
