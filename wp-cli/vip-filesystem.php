@@ -1,5 +1,7 @@
 <?php
 
+namespace Automattic\VIP\CLI;
+
 use \WP_CLI;
 
 /**
@@ -7,7 +9,7 @@ use \WP_CLI;
  *
  * @package Automattic\VIP\Files
  */
-class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
+class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 	private $dry_run = true;
 
@@ -146,4 +148,4 @@ class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip files', 'VIP_Files_CLI' );
+WP_CLI::add_command( 'vip files', __NAMESPACE__ . '\VIP_Files_CLI_Command' );
