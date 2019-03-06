@@ -9,7 +9,7 @@ use \WP_CLI;
  */
 class VIP_Files_CLI extends \WPCOM_VIP_CLI_Command {
 
-	private $dry_run = false;
+	private $dry_run = true;
 
 	private $progress;
 
