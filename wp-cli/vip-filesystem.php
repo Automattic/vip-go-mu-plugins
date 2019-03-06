@@ -116,7 +116,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	private function update_attachment_filesize( $attachment_id ): void {
 		$meta = wp_get_attachment_metadata( $attachment_id );
 
-		if ( false !== $meta && ! isset( $meta['filesize'] ) ) {
+		if ( is_array( $meta ) && ! isset( $meta['filesize'] ) ) {
 			$filesize = $this->get_filesize_from_file( $attachment_id );
 
 			if ( 0 < $filesize ) {
