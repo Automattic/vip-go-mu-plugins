@@ -46,8 +46,14 @@ function is_debug_mode_enabled() {
 }
 
 function redirect_back() {
-	// Redirect to the same page without the activation handler.
-	$redirect_to = remove_query_arg( 'a8c-debug' );
+	$redirect_to = add_query_arg( [
+		// Redirect to the same page without the activation handler.
+		'a8c-debug' => false,
+
+		// Redirect with a cache buster on the URL to avoid browser-based caches.
+		'random' => time(),
+	] );
+
 	// Note: this is called early so we can't use wp_safe_redirect
 	header( sprintf( 'Location: %s', esc_url_raw( $redirect_to ) ) );
 	exit;
@@ -101,9 +107,15 @@ function enable_debug_tools() {
 }
 
 function show_debug_flag() {
+	$disable_url = add_query_arg( [
+		'a8c-debug' => 'false',
+		// Remove the cache-buster, if set.
+		'random' => false,
+	] );
+
 	?>
 	<div id="a8c-debug-flag">
-		<a href="<?php echo esc_url( add_query_arg( 'a8c-debug', 'false' ) ); ?>">A8C Debug</a>
+		<a href="<?php echo esc_url( $disable_url ); ?>" title="Click to disable Debug Mode">A8C Debug</a>
 	</div>
 	<style>
 	#a8c-debug-flag {
