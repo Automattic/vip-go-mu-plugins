@@ -15,6 +15,8 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 	private $progress;
 
+	private $log_file;
+
 	/**
 	 * Update file attachment metadata
 	 *
@@ -47,6 +49,9 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		$offset = 0;
 
 		WP_CLI::line( 'Updating attachment filesize metadata...' );
+
+		$log_file_name = sprintf( '%svip-files-update-filesizes-%s%s.csv', get_temp_dir(), $this->dry_run ? 'dry-run-' : '', date( 'YmdHi' ) );
+		$this->log_file = fopen( $log_file_name, 'w' );
 
 		// Parse arguments
 		$_dry_run = WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', true );
@@ -94,7 +99,10 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		$this->progress->finish();
 
+		fclose( $this->log_file );
+
 		WP_CLI::success( 'Attachments metadata update complete!' );
+		WP_CLI::success( 'Log file can be found at: ' . $log_file_name );
 	}
 
 	/**
@@ -104,7 +112,13 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	private function update_attachments( array $attachments ): void {
 		foreach ( $attachments as $attachment ) {
-			$this->update_attachment_filesize( $attachment->ID );
+			list( $did_update, $result ) = $this->update_attachment_filesize( $attachment->ID );
+
+			fputcsv( $this->log_file, [
+				$attachment->ID,
+				$did_update ? 'updated' : 'skipped',
+				$result,
+			] );
 		}
 	}
 
@@ -113,22 +127,33 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * @param int $attachment_id
 	 */
-	private function update_attachment_filesize( $attachment_id ): void {
+	private function update_attachment_filesize( $attachment_id ): array {
+		$this->progress->tick();
+
 		$meta = wp_get_attachment_metadata( $attachment_id );
 
-		if ( is_array( $meta ) && ! isset( $meta['filesize'] ) ) {
-			$filesize = $this->get_filesize_from_file( $attachment_id );
-
-			if ( 0 < $filesize ) {
-				$meta['filesize'] = $filesize;
-
-				if ( ! $this->dry_run ) {
-					wp_update_attachment_metadata( $attachment_id, $meta );
-				}
-			}
+		if ( ! is_array( $meta ) ) {
+			return [ false, 'does not have valid metadata' ];
 		}
 
-		$this->progress->tick();
+		if ( isset( $meta['filesize'] ) ) {
+			return [ false, 'already has filesize' ];
+		}
+
+		$filesize = $this->get_filesize_from_file( $attachment_id );
+
+		if ( 0 >= $filesize ) {
+			return [ false, 'failed to get filesize' ];
+		}
+
+		$meta['filesize'] = $filesize;
+
+		if ( $this->dry_run ) {
+			return [ false, 'dry-run; would have updated filesize to ' . $filesize ];
+		}
+
+		wp_update_attachment_metadata( $attachment_id, $meta );
+		return [ true, 'updated filesize to ' . $filesize ];
 	}
 
 	/**
