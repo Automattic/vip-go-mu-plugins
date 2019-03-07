@@ -13,8 +13,6 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 	private $dry_run = true;
 
-	private $progress;
-
 	private $log_file;
 
 	/**
@@ -87,16 +85,19 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::confirm( sprintf( 'Should we start processing %s attachments?', number_format( $attachment_count ) ), $assoc_args );
 
-		$this->progress = \WP_CLI\Utils\make_progress_bar(
-			'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		$max_id = $wpdb->get_var( 'SELECT ID FROM ' . $wpdb->posts . ' ORDER BY ID DESC LIMIT 1' );
 
 		$start_index = 0;
 		$end_index = $start_index + $batch_size;
 
 		do {
+			WP_CLI::line( sprintf( 'Processing IDs %s => %s (MAX ID: %s)', number_format( $start_index ), number_format( $end_index ), number_format( $max_id ) ) );
+
 			$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" AND ID BETWEEN %d AND %d',
 				$start_index, $end_index );
 			$attachments = $wpdb->get_results( $sql );
+
+			WP_CLI::line( sprintf( '-- found %s attachments', number_format( count( $attachments ) ) ) );
 
 			if ( $attachments ) {
 				$this->update_attachments( $attachments );
@@ -109,9 +110,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			$start_index = $end_index + 1;
 			$end_index = $start_index + $batch_size;
 
-		} while ( count( $attachments ) );
-
-		$this->progress->finish();
+		} while ( $start_index <= $max_id );
 
 		fclose( $this->log_file );
 
@@ -142,8 +141,6 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 * @param int $attachment_id
 	 */
 	private function update_attachment_filesize( $attachment_id ): array {
-		$this->progress->tick();
-
 		$meta = wp_get_attachment_metadata( $attachment_id );
 
 		// If the meta doesn't exist at all, it's worth still storing the filesize
