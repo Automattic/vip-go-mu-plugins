@@ -20,8 +20,14 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
+	 * [--start-index=<start-index>]
+	 * : Which ID to start from
+	 * ---
+	 * default: 0
+	 * ---
+	 *
 	 * [--dry-run=<dry-run>]
-	 * : Wether or not to update to database, or simply inspect it.
+	 * : Whether or not to update to database, or simply inspect it.
 	 * ---
 	 * default: false
 	 * options:
@@ -64,6 +70,12 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			$this->dry_run = false;
 		}
 
+		$start_index = (int) WP_CLI\Utils\get_flag_value( $assoc_args, 'start-index', 0 );
+		if ( 0 > $start_index ) {
+			WP_CLI::error( 'Invalid start index: ' . $start_index );
+			WP_CLI::halt( 1 );
+		}
+
 		$batch_size = (int) WP_CLI\Utils\get_flag_value( $assoc_args, 'batch', 1000 );
 		if ( 0 >= $batch_size ) {
 			WP_CLI::error( 'Invalid batch size: ' . $batch_size );
@@ -73,6 +85,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 		WP_CLI::line( 'ARGUMENTS' );
 		WP_CLI::line( '* dry run: ' . ( $this->dry_run ? 'yes' : 'no' ) );
+		WP_CLI::line( '* start index: ' . $start_index );
 		WP_CLI::line( '* batch size: ' . $batch_size );
 		WP_CLI::line( '* log file: ' . $log_file_name );
 		WP_CLI::line( '' );
@@ -87,7 +100,6 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		$max_id = $wpdb->get_var( 'SELECT ID FROM ' . $wpdb->posts . ' ORDER BY ID DESC LIMIT 1' );
 
-		$start_index = 0;
 		$end_index = $start_index + $batch_size;
 
 		do {
