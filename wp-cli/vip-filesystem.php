@@ -46,8 +46,6 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	public function update_filesizes( $args, $assoc_args ) {
 		global $wpdb;
 
-		$offset = 0;
-
 		if ( ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) || true !== VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
 			WP_CLI::error( 'This script only works when the VIP Stream Wrapper is enabled. Please add `define( \'VIP_FILESYSTEM_USE_STREAM_WRAPPER\', true );` to vip-config.php and try again.' );
 			return;
@@ -88,9 +86,12 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		$this->progress = \WP_CLI\Utils\make_progress_bar(
 			'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
 
+		$start_index = 0;
+		$end_index = $start_index + $batch_size;
+
 		do {
-			$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" LIMIT %d, %d',
-				$offset, $batch_size );
+			$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" AND ID BETWEEN %d AND %d',
+				$start_index, $end_index );
 			$attachments = $wpdb->get_results( $sql );
 
 			if ( $attachments ) {
@@ -101,7 +102,8 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			$this->stop_the_insanity();
 			sleep( 1 );
 
-			$offset += $batch_size;
+			$start_index = $end_index + 1;
+			$end_index = $start_index + $batch_size;
 
 		} while ( count( $attachments ) );
 
