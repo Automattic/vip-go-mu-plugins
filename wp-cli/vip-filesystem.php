@@ -78,6 +78,8 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::halt( 1 );
 		}
 
+		WP_CLI::confirm( sprintf( 'Should we start processing %s attachments?', number_format( $attachment_count ) ), $assoc_args );
+
 		$this->progress = \WP_CLI\Utils\make_progress_bar(
 			'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
 
