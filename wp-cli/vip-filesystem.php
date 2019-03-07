@@ -37,6 +37,10 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 * default: 1000
 	 * ---
 	 *
+	 * [--yes]
+	 * : Skip confirmation step
+	 * ---
+	 *
 	 * ## EXAMPLES
 	 *     wp vip files update-filesizes
 	 *
