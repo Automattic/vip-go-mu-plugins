@@ -133,6 +133,11 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		$meta = wp_get_attachment_metadata( $attachment_id );
 
+		// If the meta doesn't exist at all, it's worth still storing the filesize
+		if ( empty( $meta ) ) {
+			$meta = [];
+		}
+
 		if ( ! is_array( $meta ) ) {
 			return [ false, 'does not have valid metadata' ];
 		}
