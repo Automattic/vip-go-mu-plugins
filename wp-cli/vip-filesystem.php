@@ -69,6 +69,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'ARGUMENTS' );
 		WP_CLI::line( '* dry run: ' . ( $this->dry_run ? 'yes' : 'no' ) );
 		WP_CLI::line( '* batch size: ' . $batch_size );
+		WP_CLI::line( '* log file: ' . $log_file_name );
 		WP_CLI::line( '' );
 
 		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
