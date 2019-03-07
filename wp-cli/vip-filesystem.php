@@ -48,6 +48,11 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		$offset = 0;
 
+		if ( ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) || true !== VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+			WP_CLI::error( 'This script only works when the VIP Stream Wrapper is enabled. Please add `define( \'VIP_FILESYSTEM_USE_STREAM_WRAPPER\', true );` to vip-config.php and try again.' );
+			return;
+		}
+
 		WP_CLI::line( 'Updating attachment filesize metadata...' );
 
 		$log_file_name = sprintf( '%svip-files-update-filesizes-%s%s.csv', get_temp_dir(), $this->dry_run ? 'dry-run-' : '', date( 'YmdHi' ) );
