@@ -5,14 +5,14 @@ namespace Automattic\VIP\Cache;
 use WP_Error;
 
 class Vary_Cache {
-	private const COOKIE_NOCACHE = 'vip-go-cb';
-	private const COOKIE_SEGMENT = 'vip-go-seg';
-	private const COOKIE_AUTH = 'vip-go-auth';
+	const COOKIE_NOCACHE = 'vip-go-cb';
+	const COOKIE_SEGMENT = 'vip-go-seg';
+	const COOKIE_AUTH = 'vip-go-auth';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
-	private const GROUP_SEPARATOR = '---__';
-	private const VALUE_SEPARATOR = '_--_';
-	private const VERSION_PREFIX = 'vc-v1__';
+	const GROUP_SEPARATOR = '---__';
+	const VALUE_SEPARATOR = '_--_';
+	const VERSION_PREFIX = 'vc-v1__';
 
 	/**
 	 * Flag to indicate if this an encrypted group request
@@ -195,7 +195,7 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param  string $groups A group to vary on.
+	 * @param  string $group A group to vary on.
 	 * @return boolean
 	 */
 	public static function register_group( string $group ) {
