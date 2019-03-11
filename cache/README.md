@@ -11,57 +11,161 @@ There are three different approaches you can take to customize the caching depen
 3. Cache by authorization. This is like the above option except the group details are encrypted. This is useful if you are trying implement a paywall or authenticated content
 
 
-## Segmentation Example: A new beta feature on a post
-In this example we will show how to display a like button below each post for users who have opted into the beta site.
+## Tutorial (Cache Segmentation): Beta Opt-in
 
+In this example, we're going to implement a Beta Opt-in for our site.
 
-### Step 1: Register Groups
-The first step is to indicate to the caching system what groups you want to vary on. You can have multiple groups and multiple values within those groups, but for this example we'll just have a beta group:
-`Vary_Cache::register_group( 'beta' );`
+We've built a new Like button for posts that we want to test out with a small group of users. To do so, we'll allow users to optionally enable the new Like button (and any other beta features we add in the future).
 
+### Step 0: Planning
 
-### Step 2: Assign the user into a the beta group when they opt-in
+Let's get a clear idea of our requirements:
 
-The next step is to assign the segment within a group. This currently must be done via a user-initiated action like a POST so that it is run on an uncached resource  
+1. We'll have two segments:
+ 1. Users that **have** opted in to the Beta; and
+ 1. Users that **have not** opted in to the Beta. (By default, all users will be in this group.)
+1. We'll group them in a cache group called `beta`.
+1. For users not in the beta, we'll show a floating button at the bottom of the page, which allows them to opt in.
+1. For users in the beta, we'll show the new Like button at the bottom of all posts.
+
+### Step 1: Prepare the code
+
+Let's add this to a new file in `client-mu-plugins` called `beta.php` where we'll put all our code. We'll need to include the PHP library to make it easier to integrate:
+
+```php
+<?php
+
+// Load the VIP Vary_Cache class
+require_once( WPMU_PLUGIN_DIR . '/cache/class-vary-cache.php' );
+
+use Automattic\VIP\Cache\Vary_Cache;
 ```
-$beta = sanitize_key( $_POST['beta'] );
-if ( 'yes' === $beta )  {
-    Vary_Cache::set_group_for_user( 'beta', 'yes' );
-}
+
+You're not required to put the code in `client-mu-plugins` or structure it way suggested here. Feel free to follow the organizational / structural approaches that your team prefers.
+
+### Step 2: Register Group
+
+For this implementation, we just need one group: `beta`. The API provides a simple function to register a group via `Vary_Cache::register_group`. Let's add this to our `beta.php` file:
+
+```php
+Vary_Cache::register_group( 'beta' );
 ```
 
+This sends a hint to our caching backend (via a `Vary` header) that this and future requests may need to be varied by our segmentation cookie.
 
-### Step 3: Show the custom beta feature 
-The last step is to chck if the user is in the group and show them the custom content if so
+### Step 2: Display the Opt-in Button 
+
+We need a implement a call-to-action for our Beta; a simple floating button at the bottom of the page will do. We'll user the `wp_footer` action to render it for users not already in the beta (we can use the `Vary_Cache::is_user_in_group_segment` helper to verify that.)
+
+```php
+add_filter( 'wp_footer', function () {
+	// If the user is already in the beta group, don't show the opt-in.
+	$is_user_in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
+	if ( $is_user_in_beta ) {
+		return;
+	}
+
+	// If the user isn't in the beta group, let's show the opt-in button.
+	?>
+	<div style="position:fixed; bottom:0; left:0; right:0; padding:20px; background:#333; color:#e5e5e5;">
+		<form method="POST">
+			We have some new features that we need your help testing!
+
+			<button name="beta-optin" value="yes">Enable them!</button>
+		</form>
+	</div>
+	<?php
+} );
 ```
-if( Vary_Cache::is_user_in_group_segment( 'beta', 'yes' ) ) {
-    echo '<p><small><a href="#"❤️ Like this post</small></p>';
-}
+
+### Step 3: Handle the Opt-in
+
+When a user clicks on our "Enable Beta" button, they submit a POST request to the same page. We need to intercept that request and assign the user into the beta group. We'll hook into `init` and use the `Vary_Cache::set_group_for_user` helper to assign the user to that group and segment. Note that `yes` is just a simple identifier for users in the beta segment. 
+  
 ```
-Obviously there will be much more logic behind what happens when the user likes a post, but that's out of the scope of the caching functionality
+add_action( 'init', function() {
+	$beta = sanitize_key( $_POST['beta-optin'] );
+	if ( 'yes' === $beta )  {
+    	Vary_Cache::set_group_for_user( 'beta', 'yes' );
+	}
+} );
+```
 
+To avoid issues with duplicate submissions, we're going to use the [POST-REDIRECT-GET pattern](https://en.wikipedia.org/wiki/Post/Redirect/Get) to send the user back to the page they came from. We'll hook into the VIP action `vip_vary_cache_did_send_headers` and trigger the redirect there. This action is fired after the appropriate cache-related cookies and headers have been set and it's safe to redirect.
 
+```php
+// Redirect back to the same page
+add_action( 'vip_vary_cache_did_send_headers', function() {
+	wp_safe_redirect( add_query_arg( '' ) );
+	exit;
+} );
+```
+
+### Step 3: Enable Beta Features 
+
+Now that users can opt-in to the beta, we need to actually enable the beta features for them. In our case, we want to display a Like button to all posts. We'll use the `the_content` filter, and the `Vary_Cache::is_user_in_group_segment` helper to verify if they are a beta user.
+
+```
+add_filter( 'the_content', function( $content ) {
+	$is_user_in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
+
+	if ( $is_user_in_beta ) {
+		$like_button = '<p><a href="#" class="like-button">❤️ Like this post</a></p>';
+		$content .= $like_button;
+	}
+
+	return $content;
+} );
+```
+
+Note: For the purpose of this exercise, we've kept things pretty simple and the Like button isn't actually wired up. There would be more code behind the scenes if we were actually implement it.
 
 ## Complete Segmentation example
+
+TODO: move this to examples/beta.php
+
 ```
 <?php
 
 namespace My\Application;
 
+// Load the VIP Vary_Cache class
 require_once( WP_CONTENT_DIR . '/mu-plugins/cache/class-vary-cache.php' );
 
 use Automattic\VIP\Cache\Vary_Cache;
 
-Vary_Cache::register_groups( [ 'beta' ] );
+// Register the `beta` group
+Vary_Cache::register_group( 'beta' );
 
+// Display the opt-in banner / button.
+add_filter( 'wp_footer', function () {
+	// If the user is already in the beta group, don't show the opt-in.
+	$is_user_in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
+	if ( $is_user_in_beta ) {
+		return;
+	}
+
+	// If the user isn't in the beta group, let's show the opt-in button.
+	?>
+	<div style="position:fixed; bottom:0; left:0; right:0; padding:20px; background:#333; color:#e5e5e5;">
+		<form method="POST">
+			We have some new features that we need your help testing!
+
+			<button name="beta-optin" value="yes">Enable them!</button>
+		</form>
+	</div>
+	<?php
+} );
+
+// Handle the opt-in request.
 add_action( 'init', function() {
-	if ( isset( $_POST['beta'] ) ) {
-		$beta = sanitize_key( $_POST['beta'] );
+	if ( isset( $_POST['beta-optin'] ) ) {
+		$beta = sanitize_key( $_POST['beta-optin'] );
 		if ( 'yes' === $beta )  {
 			Vary_Cache::set_group_for_user( 'beta', 'yes' );
 		}
 
-		// Redirect back to the same page
+		// Redirect back to the same page (per the POST-REDIRECT-GET pattern)
 		add_action( 'vip_vary_cache_did_send_headers', function() {
 			wp_safe_redirect( add_query_arg( '' ) );
 			exit;
@@ -69,50 +173,15 @@ add_action( 'init', function() {
 	}
 } );
 
-
-
-add_filter( 'body_class', function( $classes ) {
-	$in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
-
-	if( $in_beta ) {
-		return array_merge( $classes, array( 'beta' ) );
-	}
-
-	return $classes;
-} );
-
+// Display the Like button for beta users.
 add_filter( 'the_content', function( $content ) {
-	$in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
+	$is_user_in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
 
-	if( ! $in_beta ) {
-		return $content;
+	if ( $is_user_in_beta ) {
+		$like_button = '<p><a href="#" class="like-button">❤️ Like this post</a></p>';
+		$content .= $like_button;
 	}
 
-	$like_option = '<p><small><a href="#"❤️ Like this post</small></p>';
-
-	return $content  . $like_option;
-} );
-
-add_filter( 'wp_footer', function () {
-	$in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
-
-	if( $in_beta ) {
-		?>
-		<style>
-			body h1 {
-				background-color: darkgoldenrod;
-			}
-		</style>
-		<?php
-		return;
-	}
-	?>
-	<div style="position:fixed; bottom:0; left:0; right:0; padding:20px; background:#333; color:#e5e5e5;">
-		<form method="POST">
-			We have a new site you can try out
-			<button name="beta" value="yes">Try it out</button>
-		</form>
-	</div>
-	<?php
+	return $content;
 } );
 ```
