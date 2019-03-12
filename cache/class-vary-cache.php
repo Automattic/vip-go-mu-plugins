@@ -149,11 +149,19 @@ class Vary_Cache {
 		self::$cookie_expiry = MONTH_IN_SECONDS;
 	}
 
+	/**
+	 * Adds custom filters required at the beginning and end of the plugin lifecycle
+	 * @access private
+	 */
 	protected static function add_filters() {
 		add_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		add_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
 	}
 
+	/**
+	 * Removes the custom filters
+	 * @access private
+	 */
 	protected static function remove_filters() {
 		remove_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		remove_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX );
@@ -467,7 +475,7 @@ class Vary_Cache {
 	 * Sends headers (if needed).
 	 *
 	 * @since   1.0.0
-	 * @access  public
+	 * @access  private
 	 */
 	public static function send_headers() {
 		if ( ! self::$did_send_headers ) {
