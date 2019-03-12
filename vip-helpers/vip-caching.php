@@ -250,20 +250,6 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 
  * @return int Post ID, or 0 on failure.
  */
 function wpcom_vip_url_to_postid( $url ) {
-	// Can only run after init, since home_url() has not been filtered to the mapped domain prior to that,
-	// which will cause url_to_postid to fail
-	// @see https://vip.wordpress.com/documentation/vip-development-tips-tricks/home_url-vs-site_url/
-	if ( ! did_action( 'init' ) ) {
-		_doing_it_wrong( 'wpcom_vip_url_to_postid', 'wpcom_vip_url_to_postid must be called after the init action, as home_url() has not yet been filtered', '' );
-
-		return 0;
-	}
-
-	// Sanity check; no URLs not from this site
-	if ( parse_url( $url, PHP_URL_HOST ) !== wpcom_vip_get_home_host() ) {
-		return 0;
-	}
-
 	$cache_key = md5( $url );
 	$post_id = wp_cache_get( $cache_key, 'url_to_postid' );
 
