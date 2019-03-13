@@ -18,12 +18,12 @@ We've built a new Like button for posts that we want to test out with a small gr
 
 Let's get a clear idea of our requirements:
 
-1. We'll have two segments:
- 1. Users that **have** opted in to the Beta; and
- 1. Users that **have not** opted in to the Beta. (By default, all users will be in this group.)
-1. We'll group them in a cache group called `beta`.
-1. For users not in the beta, we'll show a floating button at the bottom of the page, which allows them to opt in.
-1. For users in the beta, we'll show the new Like button at the bottom of all posts.
+- We'll have two segments:
+  - Users that **have** opted in to the Beta; and
+  - Users that **have not** opted in to the Beta. (By default, all users will be in this group.)
+- We'll group them in a cache group called `beta`.
+- For users not in the beta, we'll show a floating button at the bottom of the page, which allows them to opt in.
+- For users in the beta, we'll show the new Like button at the bottom of all posts.
 
 ### Step 1: Prepare the code
 
@@ -98,7 +98,7 @@ add_action( 'vip_vary_cache_did_send_headers', function() {
 } );
 ```
 
-### Step 3: Enable Beta Features
+### Step 4: Enable Beta Features
 
 Now that users can opt-in to the beta, we need to actually enable the beta features for them. In our case, we want to display a Like button to all posts. We'll use the `the_content` filter, and the `Vary_Cache::is_user_in_group_segment` helper to verify if they are a beta user.
 
@@ -124,3 +124,124 @@ You can see the completed, working example here: https://github.com/Automattic/v
 ### Detailed API Documentation
 For the complete list of the API methods and their functionality, see the [Vary_Cache API documentation](https://automattic.github.io/vip-go-mu-plugins/classes/Automattic.VIP.Cache.Vary_Cache.html)
 
+---
+
+## Tutorial (Cache Segmentation): Maintenance Mode & Automated Scans
+
+In this example, we have an application in pre-launch stage and access is restricted using [the Maintenance Mode plugin](https://github.com/Automattic/maintenance-mode-wp). We're working an external provider to run automated scans on our environment (e.g. Load Testing, Content Analysis, etc.). However, the service is currently blocked since the Maintenance Mode plugin only allows authenticated requests to the environment.
+
+If the service provider can send a specific cookie header along with their requests, we can use Cache Segmentation to allow the service to bypass the Maintenance Mode requirement.
+
+**Note:** This cannot be used alongside the `Vary_Cache` helper library and may result unexpected results.
+
+(If you'd prefer to just go straight to the code, you can find the complete example here: https://github.com/Automattic/vip-go-mu-plugins/blob/master/cache/examples/segmentation-maintenance-mode-bypass/vip-config.php)
+
+### Step 0: Planning
+
+Let's understand our requirements:
+
+- We want the environment restricted using the Maintenance Mode plugin:
+ - Unauthenticated users and users without the correct permissions should see the Maintenance Mode page.
+ - Authenticated users with the correct permissions should be able to access the environment.
+ - Requests from our service provider with the correct secret should be able to access the environment.
+
+ ### Step 1: Generate a Secret
+
+ We'll need to generate a secret value that we share with our service provider to allow the bypass. Note that this shouldn't be shared with anyone else.
+
+ Using the `openssl` tool, we can generate a random secret:
+
+ ```
+ openssl rand -hex 40
+ ```
+
+ Feel free to adjust the length and strength of the secret based on your needs.
+
+### Step 2: Prepare the code
+
+Note that because the Maintenance Mode constant is set super early in the WordPress boot process (usually `vip-config/vip-config.php`), we can't use the `Vary_Cache` helper class as it relies on WordPress hooks that are run much later in the lifecycle.
+
+Instead, we'll add our code to `vip-config/vip-config.php`. Let's find the line where our constant is set and work from there:
+
+```
+define( 'VIP_MAINTENANCE_MODE', true );
+```
+
+### Step 3: Add a wrapper function
+
+To keep things clean we'll use a wrapper function to encapsulate variables and our logic:
+
+```
+function x_maybe_enable_maintenance_mode() {
+
+}
+
+x_maybe_enable_maintenance_mode();
+```
+
+We'll execute the function right away as well. Feel free to rename it to suit your naming conventions.
+
+### Step 4: Add the secret
+
+Let's add the the secret we generated earlier to a variable within the function:
+
+```
+// Generate using something like `openssl rand -hex 40`.
+// This is a secret value shared with our test provider.
+$maintenance_bypass_secret = 'this-is-a-secret-value';
+```
+
+The example above uses a placeholder value; please update to the value you generated.
+
+### Step 5: Verify and act on incoming requests
+
+Let's implement the remaining code.
+
+Because we have a few conditions to check, we'll need a logic block to verify incoming requests. By default, we want Maintenance Mode to always be on:
+
+```
+// Enabled by default but disabled conditionally below.
+$enable_maintenance_mode = true;
+```
+
+Now, if the cookie is set and includes the correct secret, we can skip enabling Maintenance Mode:
+
+```
+if ( isset( $_COOKIE['vip-go-seg'] )
+	&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
+	// Don't enable if the request has our secret key.
+	$enable_maintenance_mode = false;
+}
+```
+
+Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack).
+
+Now, we can set our constant based on the outcome of the tests:
+
+```
+// Enable maintenance mode if needed.
+define( 'VIP_MAINTENANCE_MODE', $enable_maintenance_mode );
+```
+
+And finally, we need to send a signal to the VIP CDN that this request should be varied by segment:
+
+```
+// Make sure our reverse proxy respects the cookie.
+header( 'Vary: X-VIP-Go-Segmentation' );
+```
+
+### Step 6: Run the scans
+
+With our code in place, we can now make requests that bypass Maintenance Mode. To do so, we can include a Cookie header with the secret:
+
+```
+curl https://example.com -H 'Cookie: vip-go-seg=this-is-a-secret-value'
+```
+
+`this-is-a-secret-value` should match the secret (and the value of `$maintenance_bypass_secret` variable).
+
+Requests with the correct cookie will bypass Maintenance Mode and still benefit from cached requests. Requests without an incorrect secret in the cookie or unprivileged users will hit the Maintenance Mode page.
+
+### The Final Result
+
+You can see the completed, working example here: https://github.com/Automattic/vip-go-mu-plugins/blob/master/cache/examples/segmentation-maintenance-mode-bypass/vip-config.php
