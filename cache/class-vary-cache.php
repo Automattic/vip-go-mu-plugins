@@ -95,6 +95,11 @@ class Vary_Cache {
 	 * Add nocache cookie for the user.
 	 *
 	 * This bypasses all requests from the VIP Cache.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return boolean|WP_Error
 	 */
 	public static function set_nocache_for_user() {
 		if ( self::$did_send_headers ) {
@@ -111,6 +116,11 @@ class Vary_Cache {
 	 * Clears the nocache cookie for the user.
 	 *
 	 * Restores caching behaviour for all future requests.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return boolean|WP_Error
 	 */
 	public static function remove_nocache_for_user() {
 		if ( self::$did_send_headers ) {
@@ -125,6 +135,8 @@ class Vary_Cache {
 
 	/**
 	 * Convenience function to init the class.
+	 *
+	 * @access private
 	 */
 	public static function load() {
 		self::clear_groups();
@@ -135,6 +147,8 @@ class Vary_Cache {
 	 * Convenience function to reset the class.
 	 *
 	 * Primarily used to unit tests.
+	 *
+	 * @access private
 	 */
 	public static function unload() {
 		self::remove_filters();
@@ -149,11 +163,21 @@ class Vary_Cache {
 		self::$cookie_expiry = MONTH_IN_SECONDS;
 	}
 
+	/**
+	 * Adds custom filters required at the beginning and end of the plugin lifecycle
+	 *
+	 * @access private
+	 */
 	protected static function add_filters() {
 		add_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		add_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
 	}
 
+	/**
+	 * Removes the custom filters
+	 *
+	 * @access private
+	 */
 	protected static function remove_filters() {
 		remove_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		remove_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX );
@@ -203,12 +227,9 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Clears out the groups and values
-	 *
-	 * @since   1.0.0
-	 * @access  public
+	 * Clears out the groups and values.
 	 */
-	public static function clear_groups() {
+	private static function clear_groups() {
 		self::$groups = [];
 	}
 
@@ -251,6 +272,9 @@ class Vary_Cache {
 	/**
 	 * Checks if the request has a group cookie matching a given group, regardless of segment value.
 	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
 	 * @param  string $group Group name.
 	 *
 	 * @return bool   True on success. False on failure.
@@ -266,6 +290,9 @@ class Vary_Cache {
 
 	/**
 	 * Checks if the request has a group cookie matching a given group and segment. e.g. 'dev-group', 'yes'
+	 *
+	 * @since   1.0.0
+	 * @access  public
 	 *
 	 * @param  string $group Group name.
 	 * @param  string $segment Which segment within the group to check.
@@ -303,7 +330,6 @@ class Vary_Cache {
 	 * @return WP_Error|null
 	 */
 	public static function enable_encryption() {
-
 		// Validate that we have the secret values.
 		if ( ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
@@ -328,9 +354,6 @@ class Vary_Cache {
 	/**
 	 * Encrypts a string using the auth credentials for the site.
 	 *
-	 * @since   1.0.0
-	 * @access  private
-	 *
 	 * @param string $value cookie text value.
 	 * @throws string If credentials ENV Variables aren't defined.
 	 * @return string encrypted version of string
@@ -346,9 +369,6 @@ class Vary_Cache {
 
 	/**
 	 * Decrypts a string using the auth credentials for the site.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 *
 	 * @param string $cookie_value the encrypted string.
 	 * @throws string If credentials ENV Variables aren't defined.
@@ -370,7 +390,7 @@ class Vary_Cache {
 	 * Parses our nocache and group cookies.
 	 *
 	 * @since   1.0.0
-	 * @access  public
+	 * @access  private
 	 */
 	public static function parse_cookies() {
 		self::parse_nocache_cookie();
@@ -380,9 +400,6 @@ class Vary_Cache {
 
 	/**
 	 * Parses the nocache cookie to see if nocache mode is enabled.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function parse_nocache_cookie() {
 		if ( isset( $_COOKIE[ self::COOKIE_NOCACHE ] ) ) {
@@ -394,9 +411,6 @@ class Vary_Cache {
 
 	/**
 	 * Parses the group/segment cookie into the local groups array of key-values.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function parse_group_cookie() {
 		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
@@ -423,10 +437,7 @@ class Vary_Cache {
 	/**
 	 * Flattens the 2D array into a serialized string compatible with the cookie format.
 	 *
-	 * @since   1.0.0
-	 * @access  private
-	 *
-	 * @return string A string representation of the groups
+	 * @return null|string A string representation of the groups
 	 */
 	private static function stringify_groups() {
 		if ( empty( self::$groups ) ) {
@@ -450,7 +461,10 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Adjust the default cookie expiry
+	 * Adjust the default cookie expiry.
+	 *
+	 * @since   1.0.0
+	 * @access  public
 	 *
 	 * @param int $expiry Seconds in the future when the cookie should expire (e.g. MONTH_IN_SECONDS). Must be more than 1 hour.
 	 */
@@ -467,7 +481,7 @@ class Vary_Cache {
 	 * Sends headers (if needed).
 	 *
 	 * @since   1.0.0
-	 * @access  public
+	 * @access  private
 	 */
 	public static function send_headers() {
 		if ( ! self::$did_send_headers ) {
@@ -495,9 +509,6 @@ class Vary_Cache {
 	/**
 	 * Determines if cookies need to be set and then sets them.
 	 *
-	 * @since   1.0.0
-	 * @access  public
-	 *
 	 * @return boolean Was at least one cookie set?
 	 */
 	private static function set_cookies() {
@@ -520,9 +531,6 @@ class Vary_Cache {
 
 	/**
 	 * Sets the group/segment cookie based on the user's current groupings.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function set_group_cookie() {
 		$group_string = self::stringify_groups();
@@ -540,9 +548,6 @@ class Vary_Cache {
 
 	/**
 	 * Sets (or unsets) the group/segment cookie.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function set_nocache_cookie() {
 		if ( self::$is_user_in_nocache ) {
@@ -554,9 +559,6 @@ class Vary_Cache {
 
 	/**
 	 * Add the vary cache headers to indicate that the response should be cached
-	 *
-	 * @since 1.0.0
-	 * @access private
 	 *
 	 * @return boolean Was at least one cookie set?
 	 */
