@@ -16,8 +16,6 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 	private $dry_run = true;
 
-	private $log_file;
-
 	/**
 	 * @var Meta_Updater
 	 */
