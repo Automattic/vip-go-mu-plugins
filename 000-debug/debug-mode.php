@@ -53,7 +53,7 @@ function redirect_back() {
 		'a8c-debug' => false,
 
 		// Redirect with a cache buster on the URL to avoid browser-based caches.
-		'random' => time(),
+		'_cachebuster' => time(),
 	] );
 
 	// Note: this is called early so we can't use wp_safe_redirect
