@@ -1,5 +1,7 @@
 <?php
 
+use function Automattic\VIP\Stats\send_pixel;
+
 /**
  * Logged out Debug Mode for VIP
  *
@@ -63,12 +65,16 @@ function enable_debug_mode() {
 	nocache_headers();
 
 	if ( ! \is_proxied_request() ) {
+		send_pixel( [ 'vip-go-a8c-debug' => 'fail-noproxy' ] );
+
 		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
 	}
 
 	$ttl = time() + COOKIE_TTL;
 	setcookie( 'vip-go-cb', '1', $ttl );
 	setcookie( 'a8c-debug', '1', $ttl );
+
+	send_pixel( [ 'vip-go-a8c-debug' => 'enable' ] );
 
 	redirect_back();
 }
@@ -79,6 +85,8 @@ function disable_debug_mode() {
 	$ttl = time() - COOKIE_TTL;
 	setcookie( 'vip-go-cb', '', $ttl );
 	setcookie( 'a8c-debug', '', $ttl );
+
+	send_pixel( [ 'vip-go-a8c-debug' => 'disable' ] );
 
 	redirect_back();
 }
