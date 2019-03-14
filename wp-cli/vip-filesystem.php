@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\CLI;
 
-require __DIR__ . '/../files/class-meta-updater.php';
-
 use \WP_CLI;
 use Automattic\VIP\Files\Meta_Updater;
 
