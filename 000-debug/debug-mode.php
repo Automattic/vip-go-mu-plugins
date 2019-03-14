@@ -21,8 +21,8 @@ use function Automattic\VIP\Stats\send_pixel;
 // How long should we enable Debug mode for?
 const COOKIE_TTL = 2 * HOUR_IN_SECONDS;
 
-// Wait till our VIP context is loaded so we can use som internal functions.
-add_action( 'vip_loaded', __NAMESPACE__ . '\init_debug_mode' );
+// Wait till our VIP context is loaded so we can use some internal functions.
+add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_debug_mode' );
 
 function init_debug_mode() {
 	if ( isset( $_GET['a8c-debug'] ) ) {
