@@ -447,8 +447,14 @@ class VIP_Filesystem {
 	 * Cron job to update attachment metadata with file size
 	 */
 	public function update_attachment_meta() {
+		trigger_error(
+			sprintf( 'Starting %s... $vip-go-streams-debug', self::CRON_EVENT_NAME ),
+			E_USER_NOTICE );
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			// already done. Nothing to update
+			trigger_error(
+				sprintf( 'Already completed. Exiting %s... $vip-go-streams-debug', self::CRON_EVENT_NAME ),
+				E_USER_NOTICE );
 			return;
 		}
 
@@ -471,6 +477,10 @@ class VIP_Filesystem {
 		}
 
 		// All done, update next index option
+		trigger_error(
+			sprintf( 'Batch %d to %d completed. Updating options... $vip-go-streams-debug',
+				$start_index, $end_index ),
+			E_USER_NOTICE );
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1 );
 	}
 }
