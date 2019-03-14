@@ -42,6 +42,13 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return WP_Filesystem_VIP_Uploads|bool|mixed|WP_Filesystem_Direct
 	 */
 	private function get_transport_for_path( $filename, $context = 'read' ) {
+		// If we're not in a VIP environment, allow core upgrades to work.
+		// Note: WP_CLI doesn't set WP_INSTALLING so we fallback to checking for the upgrade lock instead.
+		if ( true !== VIP_GO_ENV &&
+		       ( wp_installing() || get_option( 'core_updater.lock' ) ) ) {
+			return $this->direct;
+		}
+
 		// Uploads paths can just use PHP functions when stream wrapper is enabled.
 		// This is because wp_upload_dir will return a vip:// path.
 		if ( $this->is_uploads_path( $filename ) ) {
