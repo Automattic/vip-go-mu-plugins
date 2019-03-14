@@ -40,3 +40,6 @@
 [submodule "gutenberg-ramp"]
 	path = gutenberg-ramp
 	url = https://github.com/Automattic/gutenberg-ramp.git
+[submodule "cache-nav-menus"]
+	path = cache-nav-menus
+	url = https://github.com/Automattic/cache-nav-menus.git
