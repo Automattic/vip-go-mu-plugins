@@ -56,8 +56,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return $this->direct;
 		}
 
-		/* Translators: 1) file name 2) class name */
-		$error_msg = sprintf( __( 'The `%1$s` file cannot be managed by the `%2$s` class. Writes are only allowed for the `/uploads` and `/tmp` directories and reads can be performed everywhere.' ), $filename, __CLASS__ );
+		$upload_dir = wp_get_upload_dir()['basedir'];
+		$temp_dir = get_temp_dir();
+
+		/* Translators: 1) file name 2) class name 3) tmp dir path 4) uploads dir path */
+		$error_msg = sprintf( __( 'The `%1$s` file cannot be managed by the `%2$s` class. Writes are only allowed for the `%3$s` and `%4$s` directories and reads can be performed everywhere.' ), $filename, __CLASS__, $temp_dir, $upload_dir );
 
 		$this->errors->add( 'unsupported-filepath', $error_msg );
 
