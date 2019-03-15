@@ -14,7 +14,7 @@ class VIP_Filesystem {
 	/**
 	 * The name of the scheduled cron event to update attachment metadata
 	 */
-	const CRON_EVENT_NAME = 'update_attachment_filesizes';
+	const CRON_EVENT_NAME = 'vip_update_attachment_filesizes';
 
 	/**
 	 * Option name to mark all attachment filesize update completed
