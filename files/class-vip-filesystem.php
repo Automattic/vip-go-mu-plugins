@@ -27,6 +27,14 @@ class VIP_Filesystem {
 	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index';
 
 	/**
+	 * Option name for storing Max ID.
+	 *
+	 * We do not need to keep this updated as new attachments will already have file sizes
+	 * included in their meta.
+	 */
+	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id';
+
+	/**
 	 * The unique identifier of this plugin.
 	 *
 	 * @since    1.0.0
@@ -465,7 +473,13 @@ class VIP_Filesystem {
 		}
 
 		$updater = new Meta_Updater( 1000 );
-		$max_id = $updater->get_max_id();
+
+		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
+		if ( ! $max_id ) {
+			$max_id = $updater->get_max_id();
+			update_option( self::OPT_MAX_POST_ID, $max_id, false );
+		}
+
 		$start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
 		$end_index = $start_index + $updater->get_batch_size();
 
