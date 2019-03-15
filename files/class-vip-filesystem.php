@@ -461,14 +461,20 @@ class VIP_Filesystem {
 	 * Cron job to update attachment metadata with file size
 	 */
 	public function update_attachment_meta() {
-		trigger_error(
-			sprintf( 'Starting %s... $vip-go-streams-debug', self::CRON_EVENT_NAME ),
-			E_USER_NOTICE );
+		wpcom_vip_irc(
+			'vip-go-filesize-updates',
+			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
+				self::CRON_EVENT_NAME,
+				home_url() ),
+			5 );
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			// already done. Nothing to update
-			trigger_error(
-				sprintf( 'Already completed. Exiting %s... $vip-go-streams-debug', self::CRON_EVENT_NAME ),
-				E_USER_NOTICE );
+			wpcom_vip_irc(
+				'vip-go-filesize-updates',
+				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
+					home_url(),
+					self::CRON_EVENT_NAME ),
+				5 );
 			return;
 		}
 
@@ -480,7 +486,7 @@ class VIP_Filesystem {
 			update_option( self::OPT_MAX_POST_ID, $max_id, false );
 		}
 
-		$start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
+		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
 		$end_index = $start_index + $updater->get_batch_size();
 
 		do {
@@ -502,10 +508,12 @@ class VIP_Filesystem {
 		}
 
 		// All done, update next index option
-		trigger_error(
-			sprintf( 'Batch %d to %d completed. Updating options... $vip-go-streams-debug',
-				$start_index, $end_index ),
-			E_USER_NOTICE );
+		wpcom_vip_irc(
+			'vip-go-filesize-updates',
+			sprintf( 'Batch %d to %d completed on %s. Updating options... $vip-go-streams-debug',
+				$orig_start_index, $end_index, home_url() ),
+			5
+		);
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
 	}
 }
