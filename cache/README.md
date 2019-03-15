@@ -128,9 +128,9 @@ For the complete list of the API methods and their functionality, see the [Vary_
 
 ## Tutorial (Cache Segmentation): Maintenance Mode & Automated Scans
 
-In this example, we have an application in pre-launch stage and access is restricted using [the Maintenance Mode plugin](https://github.com/Automattic/maintenance-mode-wp). We're working an external provider to run automated scans on our environment (e.g. Load Testing, Content Analysis, etc.). However, the service is currently blocked since the Maintenance Mode plugin only allows authenticated requests to the environment.
+In this example, we have an application in pre-launch stage and access is restricted using [the Maintenance Mode plugin](https://github.com/Automattic/maintenance-mode-wp). We're working with an external provider to run automated scans on our environment (e.g. Load Testing, Content Analysis, etc.). However, the service is currently blocked since the Maintenance Mode plugin only allows authenticated requests to the environment.
 
-If the service provider can send a specific cookie header along with their requests, we can use Cache Segmentation to allow the service to bypass the Maintenance Mode requirement.
+If the service provider can send a specific cookie header along with their requests, we can use Cache Segmentation to allow them to bypass the Maintenance Mode requirement.
 
 **Note:** This cannot be used alongside the `Vary_Cache` helper library and may result unexpected results.
 
@@ -145,17 +145,17 @@ Let's understand our requirements:
  - Authenticated users with the correct permissions should be able to access the environment.
  - Requests from our service provider with the correct secret should be able to access the environment.
 
- ### Step 1: Generate a Secret
+### Step 1: Generate a Secret
 
- We'll need to generate a secret value that we share with our service provider to allow the bypass. Note that this shouldn't be shared with anyone else.
+We'll need to generate a secret value to share with our service provider to allow the bypass. Note that this shouldn't be shared with anyone else.
 
- Using the `openssl` tool, we can generate a random secret:
+Using the `openssl` tool, we can generate a random secret:
 
- ```
- openssl rand -hex 40
- ```
+```
+openssl rand -hex 40
+```
 
- Feel free to adjust the length and strength of the secret based on your needs.
+Feel free to adjust the length and strength of the secret based on your needs.
 
 ### Step 2: Prepare the code
 
@@ -169,7 +169,7 @@ define( 'VIP_MAINTENANCE_MODE', true );
 
 ### Step 3: Add a wrapper function
 
-To keep things clean we'll use a wrapper function to encapsulate variables and our logic:
+To keep things clean, we'll use a wrapper function to encapsulate variables and our logic:
 
 ```
 function x_maybe_enable_maintenance_mode() {
@@ -187,7 +187,7 @@ Let's add the the secret we generated earlier to a variable within the function:
 
 ```
 // Generate using something like `openssl rand -hex 40`.
-// This is a secret value shared with our test provider.
+// This is a secret value shared with our service provider.
 $maintenance_bypass_secret = 'this-is-a-secret-value';
 ```
 
