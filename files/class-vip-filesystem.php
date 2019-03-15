@@ -469,6 +469,8 @@ class VIP_Filesystem {
 			5 );
 
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+
 			// already done. Nothing to update
 			wpcom_vip_irc(
 				'#vip-go-filesize-updates',
@@ -494,6 +496,8 @@ class VIP_Filesystem {
 			if ( $start_index > $max_id ) {
 				// This means all attachments have been processed so marking as done
 				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
 
 				wpcom_vip_irc(
 					'#vip-go-filesize-updates',
