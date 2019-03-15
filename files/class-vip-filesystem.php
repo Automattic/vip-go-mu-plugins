@@ -435,7 +435,9 @@ class VIP_Filesystem {
 
 	public function schedule_update_job() {
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
-			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
 
 			return;
 		}
