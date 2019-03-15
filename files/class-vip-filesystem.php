@@ -483,14 +483,14 @@ class VIP_Filesystem {
 		$start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
 		$end_index = $start_index + $updater->get_batch_size();
 
-		if ( $start_index > $max_id ) {
-			// This means all attachments have been processed so marking as done
-			update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
-
-			return;
-		}
-
 		do {
+			if ( $start_index > $max_id ) {
+				// This means all attachments have been processed so marking as done
+				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				return;
+			}
+
 			$attachments = $updater->get_attachments( $start_index, $end_index );
 
 			$start_index = $end_index + 1;
