@@ -521,8 +521,8 @@ class VIP_Filesystem {
 		// All done, update next index option
 		wpcom_vip_irc(
 			'#vip-go-filesize-updates',
-			sprintf( 'Batch %d to %d completed on %s. Updating options... $vip-go-streams-debug',
-				$orig_start_index, $end_index, home_url() ),
+			sprintf( 'Batch %d to %d (of %d) completed on %s. Updating options... $vip-go-streams-debug',
+				$orig_start_index, $end_index, $max_id, home_url() ),
 			5
 		);
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
