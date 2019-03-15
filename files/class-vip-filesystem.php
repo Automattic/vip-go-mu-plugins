@@ -462,7 +462,7 @@ class VIP_Filesystem {
 	 */
 	public function update_attachment_meta() {
 		wpcom_vip_irc(
-			'vip-go-filesize-updates',
+			'#vip-go-filesize-updates',
 			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
 				self::CRON_EVENT_NAME,
 				home_url() ),
@@ -470,7 +470,7 @@ class VIP_Filesystem {
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			// already done. Nothing to update
 			wpcom_vip_irc(
-				'vip-go-filesize-updates',
+				'#vip-go-filesize-updates',
 				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
 					home_url(),
 					self::CRON_EVENT_NAME ),
@@ -509,7 +509,7 @@ class VIP_Filesystem {
 
 		// All done, update next index option
 		wpcom_vip_irc(
-			'vip-go-filesize-updates',
+			'#vip-go-filesize-updates',
 			sprintf( 'Batch %d to %d completed on %s. Updating options... $vip-go-streams-debug',
 				$orig_start_index, $end_index, home_url() ),
 			5
