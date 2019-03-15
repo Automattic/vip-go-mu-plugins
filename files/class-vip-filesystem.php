@@ -467,6 +467,7 @@ class VIP_Filesystem {
 				self::CRON_EVENT_NAME,
 				home_url() ),
 			5 );
+
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			// already done. Nothing to update
 			wpcom_vip_irc(
@@ -493,6 +494,16 @@ class VIP_Filesystem {
 			if ( $start_index > $max_id ) {
 				// This means all attachments have been processed so marking as done
 				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				wpcom_vip_irc(
+					'#vip-go-filesize-updates',
+					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
+						$max_id
+						home_url(),
+						self::CRON_EVENT_NAME
+					),
+					5
+				);
 
 				return;
 			}
