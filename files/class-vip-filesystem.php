@@ -451,7 +451,7 @@ class VIP_Filesystem {
 		}
 
 		if (! wp_next_scheduled ( self::CRON_EVENT_NAME )) {
-			wp_schedule_event(time(), 'five_minutes', self::CRON_EVENT_NAME );
+			wp_schedule_event(time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
 		}
 
 		add_action( self::CRON_EVENT_NAME, [ $this, 'update_attachment_meta' ] );
@@ -490,7 +490,12 @@ class VIP_Filesystem {
 			return;
 		}
 
-		$attachments = $updater->get_attachments( $start_index, $end_index );
+		do {
+			$attachments = $updater->get_attachments( $start_index, $end_index );
+
+			$start_index = $end_index + 1;
+			$end_index = $start_index + $updater->get_batch_size();
+		} while ( empty( $attachments ) );
 
 		if ( $attachments ) {
 			$updater->update_attachments( $attachments );
