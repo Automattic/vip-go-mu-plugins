@@ -421,7 +421,11 @@ class VIP_Filesystem {
 	 * @return  mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		$schedule['five_minutes'] = [
+		if ( isset( $schedule[ 'vip_five_minutes' ] ) ) {
+			return $schedule;
+		}
+
+		$schedule['vip_five_minutes'] = [
 			'interval' => 300,
 			'display' => __( 'Once every 5 minutes' ),
 		];
