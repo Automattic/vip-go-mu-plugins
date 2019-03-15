@@ -498,7 +498,7 @@ class VIP_Filesystem {
 				wpcom_vip_irc(
 					'#vip-go-filesize-updates',
 					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
-						$max_id
+						$max_id,
 						home_url(),
 						self::CRON_EVENT_NAME
 					),
