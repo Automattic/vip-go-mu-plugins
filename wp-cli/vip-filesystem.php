@@ -110,7 +110,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::line( sprintf( '-- found %s attachments', number_format( count( $attachments ) ) ) );
 
 			if ( $attachments ) {
-				$this->meta_updater->update_attachments( $attachments );
+				$this->meta_updater->update_attachments( $attachments, $this->dry_run );
 			}
 
 			// Pause.

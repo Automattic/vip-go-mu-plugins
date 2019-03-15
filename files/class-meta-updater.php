@@ -7,6 +7,11 @@ class Meta_Updater {
 	const DEFAULT_BATCH_SIZE = 1000;
 
 	/**
+	 * @var bool
+	 */
+	protected $dry_run;
+
+	/**
 	 * @var int
 	 */
 	protected $batch_size;
@@ -104,8 +109,11 @@ class Meta_Updater {
 	 * Update attachments' metadata
 	 *
 	 * @param array $attachments
+	 * @param bool $dry_run
 	 */
-	public function update_attachments( array $attachments ): void {
+	public function update_attachments( array $attachments, bool $dry_run = false ): void {
+		$this->dry_run = $dry_run;
+
 		foreach ( $attachments as $attachment ) {
 			list( $did_update, $result ) = $this->update_attachment_filesize( $attachment->ID );
 
