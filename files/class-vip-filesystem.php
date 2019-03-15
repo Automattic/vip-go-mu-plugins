@@ -12,6 +12,29 @@ class VIP_Filesystem {
 	const PROTOCOL = 'vip';
 
 	/**
+	 * The name of the scheduled cron event to update attachment metadata
+	 */
+	const CRON_EVENT_NAME = 'vip_update_attachment_filesizes';
+
+	/**
+	 * Option name to mark all attachment filesize update completed
+	 */
+	const OPT_ALL_FILESIZE_PROCESSED = 'vip_all_attachment_filesize_processed';
+
+	/**
+	 * Option name to mark next index for starting the next batch of filesize updates
+	 */
+	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index';
+
+	/**
+	 * Option name for storing Max ID.
+	 *
+	 * We do not need to keep this updated as new attachments will already have file sizes
+	 * included in their meta.
+	 */
+	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id';
+
+	/**
 	 * The unique identifier of this plugin.
 	 *
 	 * @since    1.0.0
@@ -64,6 +87,11 @@ class VIP_Filesystem {
 		 * The class representing the VIP Files stream
 		 */
 		require_once __DIR__ . '/class-vip-filesystem-stream-wrapper.php';
+
+		/**
+		 * The class use to update attachment meta data
+		 */
+		require_once __DIR__ . '/class-meta-updater.php';
 	}
 
 	/**
@@ -78,6 +106,9 @@ class VIP_Filesystem {
 		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( new_api_client(),
 			self::PROTOCOL );
 		$this->stream_wrapper->register();
+
+		// Schedule meta update job
+		$this->schedule_update_job();
 	}
 
 	/**
@@ -93,6 +124,7 @@ class VIP_Filesystem {
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
 		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
+		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 	}
 
 	/**
@@ -108,6 +140,7 @@ class VIP_Filesystem {
 		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20 );
 		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ] );
+		remove_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10 );
 	}
 
 	/**
@@ -384,5 +417,114 @@ class VIP_Filesystem {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Filter `cron_schedules` output
+	 *
+	 * Add a custom schedule for a 5 minute interval
+	 *
+	 * @param   array   $schedule
+	 *
+	 * @return  mixed
+	 */
+	public function filter_cron_schedules( $schedule ) {
+		if ( isset( $schedule[ 'vip_five_minutes' ] ) ) {
+			return $schedule;
+		}
+
+		$schedule['vip_five_minutes'] = [
+			'interval' => 300,
+			'display' => __( 'Once every 5 minutes' ),
+		];
+
+		return $schedule;
+	}
+
+	public function schedule_update_job() {
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
+
+			return;
+		}
+
+		if (! wp_next_scheduled ( self::CRON_EVENT_NAME )) {
+			wp_schedule_event(time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
+		}
+
+		add_action( self::CRON_EVENT_NAME, [ $this, 'update_attachment_meta' ] );
+	}
+
+	/**
+	 * Cron job to update attachment metadata with file size
+	 */
+	public function update_attachment_meta() {
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
+				self::CRON_EVENT_NAME,
+				home_url() ),
+			5 );
+
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			// already done. Nothing to update
+			wpcom_vip_irc(
+				'#vip-go-filesize-updates',
+				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
+					home_url(),
+					self::CRON_EVENT_NAME ),
+				5 );
+			return;
+		}
+
+		$updater = new Meta_Updater( 1000 );
+
+		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
+		if ( ! $max_id ) {
+			$max_id = $updater->get_max_id();
+			update_option( self::OPT_MAX_POST_ID, $max_id, false );
+		}
+
+		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
+		$end_index = $start_index + $updater->get_batch_size();
+
+		do {
+			if ( $start_index > $max_id ) {
+				// This means all attachments have been processed so marking as done
+				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				wpcom_vip_irc(
+					'#vip-go-filesize-updates',
+					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
+						$max_id,
+						home_url(),
+						self::CRON_EVENT_NAME
+					),
+					5
+				);
+
+				return;
+			}
+
+			$attachments = $updater->get_attachments( $start_index, $end_index );
+
+			$start_index = $end_index + 1;
+			$end_index = $start_index + $updater->get_batch_size();
+		} while ( empty( $attachments ) );
+
+		if ( $attachments ) {
+			$updater->update_attachments( $attachments );
+		}
+
+		// All done, update next index option
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Batch %d to %d completed on %s. Updating options... $vip-go-streams-debug',
+				$orig_start_index, $end_index, home_url() ),
+			5
+		);
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
 	}
 }

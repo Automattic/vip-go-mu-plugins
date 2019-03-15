@@ -3,6 +3,7 @@
 namespace Automattic\VIP\CLI;
 
 use \WP_CLI;
+use Automattic\VIP\Files\Meta_Updater;
 
 /**
  * Helper command to manage VIP Go Filesystem
@@ -13,7 +14,10 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 	private $dry_run = true;
 
-	private $log_file;
+	/**
+	 * @var Meta_Updater
+	 */
+	private $meta_updater;
 
 	/**
 	 * Update file attachment metadata
@@ -52,17 +56,12 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 * @sypnosis [--dry-run=<dry-run>] [--batch=<batch>]
 	 */
 	public function update_filesizes( $args, $assoc_args ) {
-		global $wpdb;
-
 		if ( ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) || true !== VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
 			WP_CLI::error( 'This script only works when the VIP Stream Wrapper is enabled. Please add `define( \'VIP_FILESYSTEM_USE_STREAM_WRAPPER\', true );` to vip-config.php and try again.' );
 			return;
 		}
 
 		WP_CLI::line( 'Updating attachment filesize metadata...' );
-
-		$log_file_name = sprintf( '%svip-files-update-filesizes-%s%s.csv', get_temp_dir(), $this->dry_run ? 'dry-run-' : '', date( 'YmdHi' ) );
-		$this->log_file = fopen( $log_file_name, 'w' );
 
 		// Parse arguments
 		$_dry_run = WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', true );
@@ -82,6 +81,9 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::halt( 1 );
 		}
 
+		$log_file_name = sprintf( '%svip-files-update-filesizes-%s%s.csv', get_temp_dir(),
+			$this->dry_run ? 'dry-run-' : '', date( 'YmdHi' ) );
+
 		WP_CLI::line( '' );
 		WP_CLI::line( 'ARGUMENTS' );
 		WP_CLI::line( '* dry run: ' . ( $this->dry_run ? 'yes' : 'no' ) );
@@ -90,29 +92,25 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '* log file: ' . $log_file_name );
 		WP_CLI::line( '' );
 
-		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
-		if ( 0 >= $attachment_count ) {
-			WP_CLI::error( 'No attachments found' );
-			WP_CLI::halt( 1 );
-		}
+		$this->meta_updater = new Meta_Updater( $batch_size, $log_file_name );
+
+		$attachment_count = $this->meta_updater->get_count();
 
 		WP_CLI::confirm( sprintf( 'Should we start processing %s attachments?', number_format( $attachment_count ) ), $assoc_args );
 
-		$max_id = $wpdb->get_var( 'SELECT ID FROM ' . $wpdb->posts . ' ORDER BY ID DESC LIMIT 1' );
+		$max_id = $this->meta_updater->get_max_id();
 
 		$end_index = $start_index + $batch_size;
 
 		do {
 			WP_CLI::line( sprintf( 'Processing IDs %s => %s (MAX ID: %s)', number_format( $start_index ), number_format( $end_index ), number_format( $max_id ) ) );
 
-			$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" AND ID BETWEEN %d AND %d',
-				$start_index, $end_index );
-			$attachments = $wpdb->get_results( $sql );
+			$attachments = $this->meta_updater->get_attachments( $start_index, $end_index );
 
 			WP_CLI::line( sprintf( '-- found %s attachments', number_format( count( $attachments ) ) ) );
 
 			if ( $attachments ) {
-				$this->update_attachments( $attachments );
+				$this->meta_updater->update_attachments( $attachments, $this->dry_run );
 			}
 
 			// Pause.
@@ -124,81 +122,10 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		} while ( $start_index <= $max_id );
 
-		fclose( $this->log_file );
+		$this->meta_updater->finish_update();
 
 		WP_CLI::success( 'Attachments metadata update complete!' );
 		WP_CLI::success( 'Log file can be found at: ' . $log_file_name );
-	}
-
-	/**
-	 * Update attachments' metadata
-	 *
-	 * @param array $attachments
-	 */
-	private function update_attachments( array $attachments ): void {
-		foreach ( $attachments as $attachment ) {
-			list( $did_update, $result ) = $this->update_attachment_filesize( $attachment->ID );
-
-			fputcsv( $this->log_file, [
-				$attachment->ID,
-				$did_update ? 'updated' : 'skipped',
-				$result,
-			] );
-		}
-	}
-
-	/**
-	 * Update attachment's filesize metadata
-	 *
-	 * @param int $attachment_id
-	 */
-	private function update_attachment_filesize( $attachment_id ): array {
-		$meta = wp_get_attachment_metadata( $attachment_id );
-
-		// If the meta doesn't exist at all, it's worth still storing the filesize
-		if ( empty( $meta ) ) {
-			$meta = [];
-		}
-
-		if ( ! is_array( $meta ) ) {
-			return [ false, 'does not have valid metadata' ];
-		}
-
-		if ( isset( $meta['filesize'] ) ) {
-			return [ false, 'already has filesize' ];
-		}
-
-		$filesize = $this->get_filesize_from_file( $attachment_id );
-
-		if ( 0 >= $filesize ) {
-			return [ false, 'failed to get filesize' ];
-		}
-
-		$meta['filesize'] = $filesize;
-
-		if ( $this->dry_run ) {
-			return [ false, 'dry-run; would have updated filesize to ' . $filesize ];
-		}
-
-		wp_update_attachment_metadata( $attachment_id, $meta );
-		return [ true, 'updated filesize to ' . $filesize ];
-	}
-
-	/**
-	 * Get file size from attachment ID
-	 *
-	 * @param int $attachment_id
-	 *
-	 * @return int
-	 */
-	private function get_filesize_from_file( $attachment_id ) {
-		$file = get_attached_file( $attachment_id );
-
-		if ( ! file_exists( $file ) ) {
-			return 0;
-		}
-
-		return filesize( $file );
 	}
 }
 
