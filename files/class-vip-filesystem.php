@@ -481,6 +481,6 @@ class VIP_Filesystem {
 			sprintf( 'Batch %d to %d completed. Updating options... $vip-go-streams-debug',
 				$start_index, $end_index ),
 			E_USER_NOTICE );
-		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1 );
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
 	}
 }
