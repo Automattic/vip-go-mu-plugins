@@ -442,6 +442,16 @@ class VIP_Filesystem {
 	}
 
 	public function schedule_update_job() {
+		// Only schedule meta update job on production
+		if ( 'production' !== VIP_GO_ENV ) {
+			// Remove any existing meta update jobs from non-production
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
+
+			return;
+		}
+
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
