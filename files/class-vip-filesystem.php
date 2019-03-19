@@ -471,6 +471,11 @@ class VIP_Filesystem {
 	 * Cron job to update attachment metadata with file size
 	 */
 	public function update_attachment_meta() {
+		if ( 'production' !== VIP_GO_ENV ) {
+			// Don't run on non-production env
+			return;
+		}
+
 		wpcom_vip_irc(
 			'#vip-go-filesize-updates',
 			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
