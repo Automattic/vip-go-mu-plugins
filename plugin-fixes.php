@@ -14,7 +14,9 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
  * These files are transient and only meant to be included as attachment,
  * so let's just tell CF7 to put them in `/tmp/`.
  */
-define( 'WPCF7_UPLOADS_TMP_DIR', get_temp_dir() );
+if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
+	define( 'WPCF7_UPLOADS_TMP_DIR', get_temp_dir() );
+}
 
 /**
  * AMP for WordPress (https://github.com/ampproject/amp-wp)
