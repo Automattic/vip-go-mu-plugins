@@ -115,11 +115,11 @@ class Lockout {
 	 * @return array
 	 */
 	public function filter_user_has_cap( $user_caps, $caps, $args, $user ) {
-		if ( is_automattician( $user->ID ) ) {
-			return $user_caps;
-		}
-
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			if ( is_automattician( $user->ID ) ) {
+				return $user_caps;
+			}
+
 			$subscriber = get_role( 'subscriber' );
 			if ( null !== $subscriber ) {
 				$this->locked_cap = $subscriber->capabilities;
