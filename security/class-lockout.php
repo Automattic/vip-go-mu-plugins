@@ -42,22 +42,25 @@ class Lockout {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) ) {
 			$user = wp_get_current_user();
 
-			$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
-			if ( ! $show_notice ) {
-				return;
-			}
-
 			switch ( VIP_LOCKOUT_STATE ) {
 				case 'warning':
-					$this->render_warning_notice();
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
+					if ( $show_notice ) {
+						$this->render_warning_notice();
 
-					$this->user_seen_notice( $user );
+						$this->user_seen_notice( $user );
+					}
+
 					break;
 
 				case 'locked':
-					$this->render_locked_notice();
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'read' ), VIP_LOCKOUT_STATE, $user );
+					if ( $show_notice ) {
+						$this->render_locked_notice();
 
-					$this->user_seen_notice( $user );
+						$this->user_seen_notice( $user );
+					}
+
 					break;
 			}
 		}
