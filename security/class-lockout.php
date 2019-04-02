@@ -145,6 +145,10 @@ class Lockout {
 	 */
 	public function filter_site_admin_option( $pre_option, $option, $network_id, $default ) {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			if ( is_automattician() ) {
+				return $pre_option;
+			}
+
 			return [];
 		}
 
