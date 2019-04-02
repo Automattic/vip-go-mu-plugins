@@ -42,22 +42,25 @@ class Lockout {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) ) {
 			$user = wp_get_current_user();
 
-			$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
-			if ( ! $show_notice ) {
-				return;
-			}
-
 			switch ( VIP_LOCKOUT_STATE ) {
 				case 'warning':
-					$this->render_warning_notice();
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
+					if ( $show_notice ) {
+						$this->render_warning_notice();
 
-					$this->user_seen_notice( $user );
+						$this->user_seen_notice( $user );
+					}
+
 					break;
 
 				case 'locked':
-					$this->render_locked_notice();
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'read' ), VIP_LOCKOUT_STATE, $user );
+					if ( $show_notice ) {
+						$this->render_locked_notice();
 
-					$this->user_seen_notice( $user );
+						$this->user_seen_notice( $user );
+					}
+
 					break;
 			}
 		}
@@ -112,11 +115,11 @@ class Lockout {
 	 * @return array
 	 */
 	public function filter_user_has_cap( $user_caps, $caps, $args, $user ) {
-		if ( is_automattician( $user->ID ) ) {
-			return $user_caps;
-		}
-
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			if ( is_automattician( $user->ID ) ) {
+				return $user_caps;
+			}
+
 			$subscriber = get_role( 'subscriber' );
 			if ( null !== $subscriber ) {
 				$this->locked_cap = $subscriber->capabilities;
@@ -142,6 +145,10 @@ class Lockout {
 	 */
 	public function filter_site_admin_option( $pre_option, $option, $network_id, $default ) {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			if ( is_automattician() ) {
+				return $pre_option;
+			}
+
 			return [];
 		}
 
