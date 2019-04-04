@@ -202,13 +202,6 @@ class Meta_Updater {
 		}
 
 		return (int) wp_remote_retrieve_header( $response, 'Content-Length' );
-		$file = get_attached_file( $attachment_id );
-
-		if ( ! file_exists( $file ) ) {
-			return 0;
-		}
-
-		return filesize( $file );
 	}
 
 	/**
