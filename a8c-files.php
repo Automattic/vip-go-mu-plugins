@@ -25,10 +25,39 @@ require_once( __DIR__ . '/files/init-filesystem.php' );
 
 require_once( __DIR__ . '/files/class-vip-filesystem.php' );
 
+/**
+ * The class use to update attachment meta data
+ */
+require_once __DIR__ . '/files/class-meta-updater.php';
+
 use Automattic\VIP\Files\Path_Utils;
 use Automattic\VIP\Files\VIP_Filesystem;
+use Automattic\VIP\Files\Meta_Updater;
 
 class A8C_Files {
+
+	/**
+	 * The name of the scheduled cron event to update attachment metadata
+	 */
+	const CRON_EVENT_NAME = 'vip_update_attachment_filesizes';
+
+	/**
+	 * Option name to mark all attachment filesize update completed
+	 */
+	const OPT_ALL_FILESIZE_PROCESSED = 'vip_all_attachment_filesize_processed_v2';
+
+	/**
+	 * Option name to mark next index for starting the next batch of filesize updates.
+	 */
+	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index_v2';
+
+	/**
+	 * Option name for storing Max ID.
+	 *
+	 * We do not need to keep this updated as new attachments will already have file sizes
+	 * included in their meta.
+	 */
+	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id_v2';
 
 	function __construct() {
 
@@ -56,6 +85,12 @@ class A8C_Files {
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+
+		// add new cron schedule for filesize update
+		add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 );
+
+		// Schedule meta update job
+		$this->schedule_update_job();
 	}
 
 	/**
@@ -832,6 +867,131 @@ class A8C_Files {
 		return array( $img_url, $w, $h, $resized );
 	}
 
+	/**
+	 * Filter `cron_schedules` output
+	 *
+	 * Add a custom schedule for a 5 minute interval
+	 *
+	 * @param   array   $schedule
+	 *
+	 * @return  mixed
+	 */
+	public function filter_cron_schedules( $schedule ) {
+		if ( isset( $schedule[ 'vip_five_minutes' ] ) ) {
+			return $schedule;
+		}
+
+		// Not actually five minutes; we want it to run faster though to get through everything.
+		$schedule['vip_five_minutes'] = [
+			'interval' => 180,
+			'display' => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
+		];
+
+		return $schedule;
+	}
+
+	public function schedule_update_job() {
+		// Only schedule meta update job on production
+		if ( 'production' !== VIP_GO_ENV ) {
+			// Remove any existing meta update jobs from non-production
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
+
+			return;
+		}
+
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
+
+			return;
+		}
+
+		if (! wp_next_scheduled ( self::CRON_EVENT_NAME )) {
+			wp_schedule_event(time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
+		}
+
+		add_action( self::CRON_EVENT_NAME, [ $this, 'update_attachment_meta' ] );
+	}
+
+	/**
+	 * Cron job to update attachment metadata with file size
+	 */
+	public function update_attachment_meta() {
+		if ( 'production' !== VIP_GO_ENV ) {
+			// Don't run on non-production env
+			return;
+		}
+
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
+				self::CRON_EVENT_NAME,
+				home_url() ),
+			5 );
+
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			// already done. Nothing to update
+			wpcom_vip_irc(
+				'#vip-go-filesize-updates',
+				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
+					home_url(),
+					self::CRON_EVENT_NAME ),
+				5 );
+			return;
+		}
+
+		$updater = new Meta_Updater( 1000 );
+
+		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
+		if ( ! $max_id ) {
+			$max_id = $updater->get_max_id();
+			update_option( self::OPT_MAX_POST_ID, $max_id, false );
+		}
+
+		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
+		$end_index = $start_index + $updater->get_batch_size();
+
+		do {
+			if ( $start_index > $max_id ) {
+				// This means all attachments have been processed so marking as done
+				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				wpcom_vip_irc(
+					'#vip-go-filesize-updates',
+					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
+						$max_id,
+						home_url(),
+						self::CRON_EVENT_NAME
+					),
+					5
+				);
+
+				return;
+			}
+
+			$attachments = $updater->get_attachments( $start_index, $end_index );
+
+			$start_index = $end_index + 1;
+			$end_index = $start_index + $updater->get_batch_size();
+		} while ( empty( $attachments ) );
+
+		if ( $attachments ) {
+			$updater->update_attachments( $attachments );
+		}
+
+		// All done, update next index option
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Batch %d to %d (of %d) completed on %s. Updating options... $vip-go-streams-debug',
+				$orig_start_index, $end_index, $max_id, home_url() ),
+			5
+		);
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
+	}
+
 }
 
 class A8C_Files_Utils {
@@ -932,9 +1092,9 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 	if ( ! isset( $data['file'] )
 	    || ! isset( $data['width'] )
 	    || ! isset( $data['height'] ) ) {
-		return $data;    
+		return $data;
 	}
-	
+
 	$mime_type = get_post_mime_type( $attachment_id );
 	$attachment_is_image = preg_match( '!^image/!', $mime_type );
 
