@@ -82,7 +82,7 @@ class Meta_Updater {
 
 		global $wpdb;
 
-		$this->max_id = $wpdb->get_var( 'SELECT ID FROM ' . $wpdb->posts . ' ORDER BY ID DESC LIMIT 1' );
+		$this->max_id = (int) $wpdb->get_var( 'SELECT ID FROM ' . $wpdb->posts . ' ORDER BY ID DESC LIMIT 1' );
 
 		return $this->max_id;
 	}
