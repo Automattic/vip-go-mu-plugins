@@ -437,7 +437,16 @@ class WXR_Parser_Regex {
 	}
 
 	function parse( $file ) {
-		$wxr_version = $in_post = false;
+		$wxr_version = $in_multiline = false;
+
+		$multiline_content = '';
+
+		$multiline_tags = array(
+			'item'        => array( 'posts', array( $this, 'process_post' ) ),
+			'wp:category' => array( 'categories', array( $this, 'process_category' ) ),
+			'wp:tag'      => array( 'tags', array( $this, 'process_tag' ) ),
+			'wp:term'     => array( 'terms', array( $this, 'process_term' ) ),
+		);
 
 		$fp = $this->fopen( $file, 'r' );
 		if ( $fp ) {
@@ -452,39 +461,37 @@ class WXR_Parser_Regex {
 					$this->base_url = $url[1];
 					continue;
 				}
-				if ( false !== strpos( $importline, '<wp:category>' ) ) {
-					preg_match( '|<wp:category>(.*?)</wp:category>|is', $importline, $category );
-					$this->categories[] = $this->process_category( $category[1] );
-					continue;
-				}
-				if ( false !== strpos( $importline, '<wp:tag>' ) ) {
-					preg_match( '|<wp:tag>(.*?)</wp:tag>|is', $importline, $tag );
-					$this->tags[] = $this->process_tag( $tag[1] );
-					continue;
-				}
-				if ( false !== strpos( $importline, '<wp:term>' ) ) {
-					preg_match( '|<wp:term>(.*?)</wp:term>|is', $importline, $term );
-					$this->terms[] = $this->process_term( $term[1] );
-					continue;
-				}
+
 				if ( false !== strpos( $importline, '<wp:author>' ) ) {
 					preg_match( '|<wp:author>(.*?)</wp:author>|is', $importline, $author );
 					$a = $this->process_author( $author[1] );
 					$this->authors[$a['author_login']] = $a;
 					continue;
 				}
-				if ( false !== strpos( $importline, '<item>' ) ) {
-					$post = '';
-					$in_post = true;
-					continue;
+
+				foreach ( $multiline_tags as $tag => $handler ) {
+					// Handle multi-line tags on a singular line
+					if ( preg_match( '|<' . $tag . '>(.*?)</' . $tag . '>|is', $importline, $matches ) ) {
+						$this->{$handler[0]}[] = call_user_func( $handler[1], $matches[1] );
+
+					} elseif ( false !== ( $pos = strpos( $importline, "<$tag>" ) ) ) {
+						// Take note of any content after the opening tag
+						$multiline_content = trim( substr( $importline, $pos + strlen( $tag ) + 2 ) );
+
+						// We don't want to have this line added to `$is_multiline` below.
+						$importline        = '';
+						$in_multiline      = $tag;
+
+					} elseif ( false !== ( $pos = strpos( $importline, "</$tag>" ) ) ) {
+						$in_multiline          = false;
+						$multiline_content    .= trim( substr( $importline, 0, $pos ) );
+
+						$this->{$handler[0]}[] = call_user_func( $handler[1], $multiline_content );
+					}
 				}
-				if ( false !== strpos( $importline, '</item>' ) ) {
-					$in_post = false;
-					$this->posts[] = $this->process_post( $post );
-					continue;
-				}
-				if ( $in_post ) {
-					$post .= $importline . "\n";
+
+				if ( $in_multiline && $importline ) {
+					$multiline_content .= $importline . "\n";
 				}
 			}
 
