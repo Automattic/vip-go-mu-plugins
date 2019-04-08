@@ -436,7 +436,7 @@ class VIP_Filesystem {
 		// Not actually five minutes; we want it to run faster though to get through everything.
 		$schedule['vip_five_minutes'] = [
 			'interval' => 180,
-			'display' => __( 'Once every 5 minutes' ),
+			'display' => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
 		];
 
 		return $schedule;
