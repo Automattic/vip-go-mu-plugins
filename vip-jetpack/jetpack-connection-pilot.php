@@ -34,7 +34,10 @@ class WPCOM_VIP_JETPACK_CONNECTION_PILOT {
 			return;
 		}
 
-		self::maybe_update_cron_schedule();
+		// Avoid the overhead on frontend requests.
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			self::maybe_update_cron_schedule();
+		}
 	}
 
 	/**
