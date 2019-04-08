@@ -98,6 +98,11 @@ define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
 		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Automattic\VIP\Support_User\User::CRON_ACTION
 		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
 	),
+	array(
+		'schedule' => 'hourly',
+		'action'   => 'wpcom_vip_run_jetpack_connection_pilot',
+		'callback' => array( 'WPCOM_VIP_JETPACK_CONNECTION_PILOT', 'run_cron_check' ),
+	),
 ) );
 
 // Interaction with the filesystem will always be direct.

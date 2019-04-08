@@ -10,6 +10,11 @@
  */
 
 /**
+ * Add the Connection Pilot to ensure Jetpack stays connected.
+ */
+require_once( __DIR__ . '/jetpack-connection-pilot.php' );
+
+/**
  * Enable VIP modules required as part of the platform
  */
 require_once( __DIR__ . '/jetpack-mandatory.php' );
