@@ -5,7 +5,13 @@
 # Stop on failures: ./bin/phpunit-docker.sh --stop-on-failure
 # etc.
 
-WP_VERSION=${1-latest}
+WP_VERSION=${2-latest}
+WP_MULTISITE=${3-0}
+
+echo "--------------"
+echo "Will test with WP_VERSION=$WP_VERSION and WP_MULTISITE=$WP_MULTISITE"
+echo "--------------"
+echo
 
 MYSQL_ROOT_PASSWORD='wordpress'
 docker network create tests
@@ -27,6 +33,7 @@ done
 
 docker run \
  	--network tests \
+	-e WP_MULTISITE="$WP_MULTISITE" \
 	-v $(pwd):/app \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
