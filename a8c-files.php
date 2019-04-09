@@ -943,7 +943,8 @@ class A8C_Files {
 			return;
 		}
 
-		$updater = new Meta_Updater( 1000 );
+		$batch_size = 3000;
+		$updater = new Meta_Updater( $batch_size );
 
 		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
 		if ( ! $max_id ) {
@@ -951,8 +952,11 @@ class A8C_Files {
 			update_option( self::OPT_MAX_POST_ID, $max_id, false );
 		}
 
+		$num_lookups = 0;
+		$max_lookups = 10;
+
 		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
-		$end_index = $start_index + $updater->get_batch_size();
+		$end_index = $start_index + $batch_size;
 
 		do {
 			if ( $start_index > $max_id ) {
@@ -974,22 +978,32 @@ class A8C_Files {
 
 			$attachments = $updater->get_attachments( $start_index, $end_index );
 
+			// Bump the next index in case the cron job dies before we've processed everything
+			update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+
 			$start_index = $end_index + 1;
-			$end_index = $start_index + $updater->get_batch_size();
+			$end_index = $start_index + $batch_size;
+
+			// Avoid infinite loops
+			$num_lookups++;
+			if ( $num_lookups >= $max_lookups ) {
+				break;
+			}
 		} while ( empty( $attachments ) );
 
 		if ( $attachments ) {
-			$updater->update_attachments( $attachments );
+			$counts = $updater->update_attachments( $attachments );
 		}
 
 		// All done, update next index option
 		wpcom_vip_irc(
 			'#vip-go-filesize-updates',
-			sprintf( 'Batch %d to %d (of %d) completed on %s. Updating options... $vip-go-streams-debug',
-				$orig_start_index, $end_index, $max_id, home_url() ),
+			sprintf( 'Batch %d to %d (of %d) completed on %s. Processed %d attachments (%s) $vip-go-streams-debug',
+				$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), json_encode( $counts ) ),
 			5
 		);
-		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
+
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 	}
 
 }
