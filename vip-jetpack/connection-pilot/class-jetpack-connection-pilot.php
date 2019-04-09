@@ -1,6 +1,6 @@
 <?php
 
-class WPCOM_VIP_JETPACK_CONNECTION_PILOT {
+class WPCOM_VIP_Jetpack_Connection_Pilot {
 
 	/**
 	 * Cron action that runs the connection pilot checks.
@@ -19,7 +19,7 @@ class WPCOM_VIP_JETPACK_CONNECTION_PILOT {
 		static $instance = false;
 
 		if ( ! $instance ) {
-			$instance = new WPCOM_VIP_JETPACK_CONNECTION_PILOT;
+			$instance = new WPCOM_VIP_Jetpack_Connection_Pilot;
 		}
 
 		return $instance;
@@ -42,13 +42,21 @@ class WPCOM_VIP_JETPACK_CONNECTION_PILOT {
 
 	/**
 	 * The main cron job callback.
+	 * Checks the JP connection and alerts/auto-resolves when there are problems.
+	 * 
+	 * Needs to be static due to how it is added to cron control.
 	 */
 	public static function run_cron_check() {
 		if ( ! self::should_run_connection_pilot() ) {
 			return;
 		}
 
-		error_log( 'Running Jetpack Connection Pilot' );
+		$connection_test = WPCOM_VIP_Jetpack_Connection_Controls::jetpack_is_connected();
+		if ( true === $connection_test ) {
+			// Everything checks out. Update the healthcheck option and move one.
+		}
+
+		// Something is wrong.
 	}
 
 	/**
@@ -94,4 +102,4 @@ class WPCOM_VIP_JETPACK_CONNECTION_PILOT {
 	}
 }
 
-WPCOM_VIP_JETPACK_CONNECTION_PILOT::init();
+WPCOM_VIP_Jetpack_Connection_Pilot::init();
