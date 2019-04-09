@@ -19,12 +19,12 @@ class VIP_Filesystem {
 	/**
 	 * Option name to mark all attachment filesize update completed
 	 */
-	const OPT_ALL_FILESIZE_PROCESSED = 'vip_all_attachment_filesize_processed';
+	const OPT_ALL_FILESIZE_PROCESSED = 'vip_all_attachment_filesize_processed_v2';
 
 	/**
 	 * Option name to mark next index for starting the next batch of filesize updates
 	 */
-	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index';
+	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index_v2';
 
 	/**
 	 * Option name for storing Max ID.
@@ -32,7 +32,7 @@ class VIP_Filesystem {
 	 * We do not need to keep this updated as new attachments will already have file sizes
 	 * included in their meta.
 	 */
-	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id';
+	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id_v2';
 
 	/**
 	 * The unique identifier of this plugin.
@@ -433,9 +433,10 @@ class VIP_Filesystem {
 			return $schedule;
 		}
 
+		// Not actually five minutes; we want it to run faster though to get through everything.
 		$schedule['vip_five_minutes'] = [
-			'interval' => 300,
-			'display' => __( 'Once every 5 minutes' ),
+			'interval' => 180,
+			'display' => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
 		];
 
 		return $schedule;
@@ -494,7 +495,8 @@ class VIP_Filesystem {
 			return;
 		}
 
-		$updater = new Meta_Updater( 1000 );
+		$batch_size = 3000;
+		$updater = new Meta_Updater( $batch_size );
 
 		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
 		if ( ! $max_id ) {
@@ -502,8 +504,11 @@ class VIP_Filesystem {
 			update_option( self::OPT_MAX_POST_ID, $max_id, false );
 		}
 
+		$num_lookups = 0;
+		$max_lookups = 10;
+
 		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
-		$end_index = $start_index + $updater->get_batch_size();
+		$end_index = $start_index + $batch_size;
 
 		do {
 			if ( $start_index > $max_id ) {
@@ -525,21 +530,31 @@ class VIP_Filesystem {
 
 			$attachments = $updater->get_attachments( $start_index, $end_index );
 
+			// Bump the next index in case the cron job dies before we've processed everything
+			update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+
 			$start_index = $end_index + 1;
-			$end_index = $start_index + $updater->get_batch_size();
+			$end_index = $start_index + $batch_size;
+
+			// Avoid infinite loops
+			$num_lookups++;
+			if ( $num_lookups >= $max_lookups ) {
+				break;
+			}
 		} while ( empty( $attachments ) );
 
 		if ( $attachments ) {
-			$updater->update_attachments( $attachments );
+			$counts = $updater->update_attachments( $attachments );
 		}
 
 		// All done, update next index option
 		wpcom_vip_irc(
 			'#vip-go-filesize-updates',
-			sprintf( 'Batch %d to %d (of %d) completed on %s. Updating options... $vip-go-streams-debug',
-				$orig_start_index, $end_index, $max_id, home_url() ),
+			sprintf( 'Batch %d to %d (of %d) completed on %s. Processed %d attachments (%s) $vip-go-streams-debug',
+				$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), json_encode( $counts ) ),
 			5
 		);
-		update_option( self::OPT_NEXT_FILESIZE_INDEX, $end_index + 1, false );
+
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 	}
 }

@@ -100,9 +100,18 @@ class Meta_Updater {
 
 		$sql = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" AND ID BETWEEN %d AND %d',
 			$start_index, $end_index );
-		$attachments = $wpdb->get_results( $sql );
+		$attachments = $wpdb->get_col( $sql );
 
-		return $attachments;
+		// Only return attachments without filesize
+		$filtered = [];
+		foreach ( $attachments as $attachment_id ) {
+			$meta = wp_get_attachment_metadata( $attachment_id );
+			if ( is_array( $meta ) && ! isset( $meta['filesize'] ) ) {
+				$filtered[] = $attachment_id;
+			}
+		}
+
+		return $filtered;
 	}
 
 	/**
@@ -111,20 +120,30 @@ class Meta_Updater {
 	 * @param array $attachments
 	 * @param bool $dry_run
 	 */
-	public function update_attachments( array $attachments, bool $dry_run = false ): void {
+	public function update_attachments( array $attachments, bool $dry_run = false ): array {
 		$this->dry_run = $dry_run;
 
-		foreach ( $attachments as $attachment ) {
-			list( $did_update, $result ) = $this->update_attachment_filesize( $attachment->ID );
+		$counts = [];
+
+		foreach ( $attachments as $attachment_id ) {
+			list( $result, $details ) = $this->update_attachment_filesize( $attachment_id );
+
+			if ( ! isset( $counts[ $result ] ) ) {
+				$counts[ $result ] = 0;
+			}
+			$counts[ $result ]++;
 
 			if ( $this->log_file ) {
 				fputcsv( $this->log_file, [
-					$attachment->ID,
-					$did_update ? 'updated' : 'skipped',
+					date( 'c' ),
+					$attachment_id,
 					$result,
+					$details,
 				] );
 			}
 		}
+
+		return $counts;
 	}
 
 	/**
@@ -143,27 +162,27 @@ class Meta_Updater {
 		}
 
 		if ( ! is_array( $meta ) ) {
-			return [ false, 'does not have valid metadata' ];
+			return [ 'skip-invalid-metadata', 'does not have valid metadata' ];
 		}
 
 		if ( isset( $meta['filesize'] ) ) {
-			return [ false, 'already has filesize' ];
+			return [ 'skip-has-filesize', 'already has filesize' ];
 		}
 
 		$filesize = $this->get_filesize_from_file( $attachment_id );
 
 		if ( 0 >= $filesize ) {
-			return [ false, 'failed to get filesize' ];
+			return [ 'fail-get-filesize', 'failed to get filesize' ];
 		}
 
 		$meta['filesize'] = $filesize;
 
 		if ( $this->dry_run ) {
-			return [ false, 'dry-run; would have updated filesize to ' . $filesize ];
+			return [ 'skip-dry-run', 'dry-run; would have updated filesize to ' . $filesize ];
 		}
 
 		wp_update_attachment_metadata( $attachment_id, $meta );
-		return [ true, 'updated filesize to ' . $filesize ];
+		return [ 'updated', 'updated filesize to ' . $filesize ];
 	}
 
 	/**
@@ -174,6 +193,15 @@ class Meta_Updater {
 	 * @return int
 	 */
 	private function get_filesize_from_file( $attachment_id ) {
+		$attachment_url = wp_get_attachment_url( $attachment_id );
+
+		$response = wp_remote_head( $attachment_url );
+		if ( is_wp_error( $response ) ) {
+			trigger_error( sprintf( '%s: failed to HEAD attachment %s because %s', __METHOD__, $attachment_url, $response->get_error_message() ), E_USER_WARNING );
+			return 0;
+		}
+
+		return (int) wp_remote_retrieve_header( $response, 'Content-Length' );
 		$file = get_attached_file( $attachment_id );
 
 		if ( ! file_exists( $file ) ) {
