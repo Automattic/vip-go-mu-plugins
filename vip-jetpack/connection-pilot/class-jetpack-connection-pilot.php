@@ -13,6 +13,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	const CRON_SCHEDULE = 'hourly';
 
 	/**
+	 * The option name used for keeping track of successful connection checks.
+	 */
+	const HEALTHCHECK_OPTION = 'vip_jetpack_connection_pilot_healthcheck';
+
+	/**
 	 * Initiate an instance of this class if one doesn't exist already.
 	 */
 	public static function init() {
@@ -54,9 +59,58 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		$connection_test = WPCOM_VIP_Jetpack_Connection_Controls::jetpack_is_connected();
 		if ( true === $connection_test ) {
 			// Everything checks out. Update the healthcheck option and move one.
+			return update_option( self::HEALTHCHECK_OPTION, array(
+				'site_url'         => get_site_url(),
+				'cache_site_id'    => (int) Jetpack_Options::get_option( 'id' ),
+				'last_healthcheck' => time(),
+			), false );
 		}
 
-		// Something is wrong.
+		// Something is wrong. Let's handle it.
+		self::handle_connection_issues( $connection_test );
+	}
+
+	/**
+	* The connection checks failed and returned a WP_Error.
+	* Here we will try to reconnect when possible, else send out alerts.
+	*
+	* @param WP_Error object
+	*/
+	private static function handle_connection_issues( $wp_error ) {
+		if ( ! is_wp_error( $wp_error ) ) {
+			// Not currently possible, but future-proofing just in case.
+			return;
+		}
+
+		// 1) It is connected but not under the right account.
+		if ( 'jp-cxn-pilot-not-vip-owned' === $wp_error->get_error_code() ) {
+			// 1.1 🔆
+		}
+
+		$last_healthcheck = get_option( self::HEALTHCHECK_OPTION );
+		$current_site_url = get_site_url();
+
+		// 2) Check the last healthcheck to see if the URLs match.
+		if ( ! empty( $last_healthcheck['site_url'] ) ) {
+			if ( $last_healthcheck['site_url'] === $current_site_url ) {
+				// 2.1 ✅
+			} else {
+				// 2.2 🔆
+			}
+		}
+
+		// 3) The healthcheck option doesn’t exist. Either it's a new site, or an unkown connection error.
+		$site_parsed = wp_parse_url( $current_site_url );
+		if ( wp_endswith( $site_parsed['host'], '.go-vip.co' ) || wp_endswith( $site_parsed['host'], '.go-vip.net' ) ) {
+			// 3.1 A ✅
+		}
+
+		// TODO: Add this option when a new multi-site is created.
+		if ( is_multisite() && get_option( 'vip_jetpack_connection_pilot_new_site' ) ) {
+			// 3.1 B ✅
+		}
+
+		// 3.2 🔴
 	}
 
 	/**
