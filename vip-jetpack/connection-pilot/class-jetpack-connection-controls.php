@@ -4,10 +4,16 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 
 	/**
 	 * Get the current status of the Jetpack connection.
+	 * 
+	 * There is potential here to replace most of this with Jetpack_Cxn_Test_Base().
 	 *
 	 * @return mixed bool|WP_Error True if JP is properly connected, WP_Error otherwise.
 	 */
 	public static function jetpack_is_connected() {
+		if ( Jetpack::is_development_mode() ) {
+			return new WP_Error( 'jp-cxn-pilot-development-mode', 'Jetpack is in development mode.' );
+		}
+
 		// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
 		if ( ! Jetpack::is_active() || ! Jetpack_Options::get_option( 'id' ) ) {
 			return new WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
@@ -16,6 +22,13 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 		$is_vip_connection = WPCOM_VIP_MACHINE_USER_EMAIL === Jetpack::get_master_user_email();
 		if ( ! $is_vip_connection ) {
 			return new WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s".', WPCOM_VIP_MACHINE_USER_LOGIN ) );
+		}
+
+		$vip_machine_user = new WP_User( Jetpack_Options::get_option( 'master_user' ) );
+		if ( ! $vip_machine_user->exists() ) {
+			return new WP_Error( 'jp-cxn-pilot-vip-user-missing', sprintf( 'The "%s" VIP user is missing.', WPCOM_VIP_MACHINE_USER_LOGIN ) );
+		} elseif ( ! user_can( $vip_machine_user, 'manage_options' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-vip-user-caps', sprintf( 'The "%s" VIP user does not have admin capabilities.', WPCOM_VIP_MACHINE_USER_LOGIN ) );
 		}
 
 		$is_connected = self::test_jetpack_connection();
