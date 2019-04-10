@@ -79,12 +79,13 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	private static function handle_connection_issues( $wp_error ) {
 		if ( ! is_wp_error( $wp_error ) ) {
 			// Not currently possible, but future-proofing just in case.
-			return;
+			return self::send_alert( 'Jetpack is disconnected, unknown error.' );
 		}
 
 		// 1) It is connected but not under the right account.
 		if ( 'jp-cxn-pilot-not-vip-owned' === $wp_error->get_error_code() ) {
 			// 1.1 🔆
+			return self::send_alert( 'Jetpack is connected to a non-VIP account.', $wp_error );
 		}
 
 		$last_healthcheck = get_option( self::HEALTHCHECK_OPTION );
@@ -94,8 +95,10 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		if ( ! empty( $last_healthcheck['site_url'] ) ) {
 			if ( $last_healthcheck['site_url'] === $current_site_url ) {
 				// 2.1 ✅
+				return self::send_alert( 'Jetpack is disconnected, but was previously connected under the same domain.', $wp_error );
 			} else {
 				// 2.2 🔆
+				return self::send_alert( 'Jetpack is disconnected, and it appears the domain has changed.', $wp_error );
 			}
 		}
 
@@ -103,14 +106,44 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		$site_parsed = wp_parse_url( $current_site_url );
 		if ( wp_endswith( $site_parsed['host'], '.go-vip.co' ) || wp_endswith( $site_parsed['host'], '.go-vip.net' ) ) {
 			// 3.1 A ✅
+			// return self::send_alert( 'Jetpack is disconnected, though it appears this is a new site.', $wp_error );
+			return true; // Leaving this alert disabled for now.
 		}
 
 		// TODO: Add this option when a new multi-site is created.
 		if ( is_multisite() && get_option( 'vip_jetpack_connection_pilot_new_site' ) ) {
 			// 3.1 B ✅
+			return self::send_alert( 'Jetpack is disconnected, though it appears this is a new site on a MS network.', $wp_error );
 		}
 
 		// 3.2 🔴
+		return self::send_alert( 'Jetpack is disconnected.', $wp_error );
+	}
+
+	/**
+	 * Send an alert to IRC and Slack.
+	 * 
+	 * Example message:
+	 * Jetpack is disconnected, but was previously connected under the same domain.
+	 * Site: example.vip-go.co (ID 123). The last known connection was on March 10, 17:16:18 UTC to Cache ID 65432.
+	 * The Jetpack connection tests failed due to error code: jp-cxn-pilot-not-active.
+	 *
+	 * @param string $message optional
+	 * @param WP_Error optional
+	 */
+	private static function send_alert( $message = '', $error = null ) {
+		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), VIP_GO_APP_ID );
+
+		$last_healthcheck = get_option( self::HEALTHCHECK_OPTION );
+		if ( ! empty( $last_healthcheck['site_url'] ) && isset( $last_healthcheck['cache_site_id'] ) ) {
+			$message .= sprintf( ' The last known connection was on %s to Cache ID %d.', $last_healthcheck['site_url'], $last_healthcheck['cache_site_id'] );
+		}
+
+		if ( is_wp_error( $error ) ) {
+			$message .= sprintf( ' The Jetpack connection tests failed due to error code: %s.', $error->get_error_code() );
+		}
+
+		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
 	}
 
 	/**
