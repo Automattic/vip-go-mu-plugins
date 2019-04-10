@@ -67,7 +67,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		// Something is wrong. Let's handle it.
-		self::handle_connection_issues( $connection_test );
+		return self::handle_connection_issues( $connection_test );
 	}
 
 	/**
@@ -125,22 +125,28 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * 
 	 * Example message:
 	 * Jetpack is disconnected, but was previously connected under the same domain.
-	 * Site: example.vip-go.co (ID 123). The last known connection was on March 10, 17:16:18 UTC to Cache ID 65432.
+	 * Site: example.go-vip.co (ID 123). The last known connection was on August 25, 12:11:14 UTC to Cache ID 65432 (example.go-vip.co).
 	 * The Jetpack connection tests failed due to error code: jp-cxn-pilot-not-active.
 	 *
 	 * @param string $message optional
 	 * @param WP_Error optional
+	 * 
+	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
 	 */
 	private static function send_alert( $message = '', $error = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), VIP_GO_APP_ID );
 
 		$last_healthcheck = get_option( self::HEALTHCHECK_OPTION );
-		if ( ! empty( $last_healthcheck['site_url'] ) && isset( $last_healthcheck['cache_site_id'] ) ) {
-			$message .= sprintf( ' The last known connection was on %s to Cache ID %d.', $last_healthcheck['site_url'], $last_healthcheck['cache_site_id'] );
+		if ( ! empty( $last_healthcheck['last_healthcheck'] ) && isset( $last_healthcheck['cache_site_id'] ) ) {
+			$message .= sprintf( ' The last known connection was on %s UTC to Cache ID %d (%s).', date( 'F j, H:i', $last_healthcheck['last_healthcheck'] ), $last_healthcheck['cache_site_id'], $last_healthcheck['site_url'] );
 		}
 
 		if ( is_wp_error( $error ) ) {
 			$message .= sprintf( ' The Jetpack connection tests failed due to error code: %s.', $error->get_error_code() );
+		}
+
+		if ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) {
+			return $message; // Just return the message, as posting to IRC won't work.
 		}
 
 		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
