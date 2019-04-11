@@ -10,6 +10,10 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 * @return mixed bool|WP_Error True if JP is properly connected, WP_Error otherwise.
 	 */
 	public static function jetpack_is_connected() {
+		if ( ! self::validate_constants() ) {
+			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP GO environment.' );
+		}
+
 		if ( Jetpack::is_development_mode() ) {
 			return new WP_Error( 'jp-cxn-pilot-development-mode', 'Jetpack is in development mode.' );
 		}
@@ -66,6 +70,205 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 		$is_connected = isset( $result->connected ) ? (bool) $result->connected : false;
 		if ( ! $is_connected ) {
 			return new WP_Error( 'jp-cxn-pilot-not-connected', 'Connection test failed (WP.com does not think this site is connected or there are authentication or other issues).' );
+		}
+
+		return true;
+	}
+
+	/**
+	 * (Re)connect a site to Jetpack.
+	 *
+	 * Creates the VIP user if needed, provisions the plan with WP.com, and re-runs the connection checks to ensure it all worked.
+	 * 
+	 * @param bool $skip_active_checks Skip if we've already run the checks before this point.
+	 * @param bool $disconnect Set to true if it should disconnect Jetpack at the start.
+	 *
+	 * @return mixed bool|WP_Error True if JP was (re)connected, WP_Error otherwise.
+	 */
+	public static function connect_site( $skip_active_checks = false, $disconnect = false ) {
+		if ( ! self::validate_constants() ) {
+			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP GO environment.' );
+		}
+
+		if ( ! $skip_active_checks && ! $disconnect ) {
+			$connection_test = self::jetpack_is_connected();
+
+			if ( true === $connection_test ) {
+				// Abort since the site is already connected to JP, and we aren't okay with disconnecting.
+				return new WP_Error( 'jp-cxn-pilot-already-connected', 'Jetpack is already properly connected.' );
+			}
+		}
+
+		if ( $disconnect ) {
+			Jetpack::disconnect();
+		}
+
+		$user = self::maybe_create_user();
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
+
+		// Put the machine user in charge of things now.
+		wp_set_current_user( $user->ID );
+
+		// Register/connect the site to WP.com.
+		$provision_result = self::provision_site( $user->ID );
+		if ( is_wp_error( $provision_result ) ) {
+			return $provision_result;
+		}
+
+		// Without this, Jetpack will think it's still disconnected.
+		self::refresh_options_cache();
+
+		// Run the tests again 🤞.
+		$connection_test = self::jetpack_is_connected();
+		if ( true === $connection_test ) {
+			return $connection_test;
+		}
+
+		return $connection_test;
+	}
+
+	/**
+	 * Provision the site with WP.com.
+	 * @see https://github.com/Automattic/host-partner-documentation/blob/master/jetpack/plan-provisioning.md
+	 * 
+	 * @param int $user_id The VIP machine user ID.
+	 *
+	 * @return mixed bool|WP_Error True if provisioning worked, WP_Error otherwise.
+	 */
+	private static function provision_site( $user_id ) {
+		// TODO: This is a high-risk possible problem on the CLI/CRON containers. Needs testing.
+		$script_path = WPMU_PLUGIN_DIR . '/jetpack/bin/partner-provision.sh';
+
+		$cmd = sprintf(
+			'%s --partner_id=%s --partner_secret=%s --url=%s --user=%s --wpcom_user_id=%s --plan="professional" --force_connect=1 --allow-root',
+			$script_path,
+			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_ID ),
+			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_SECRET ),
+			escapeshellarg( get_site_url() ),
+			escapeshellarg( $user_id ),
+			escapeshellarg( WPCOM_VIP_JP_START_WPCOM_USER_ID )
+		);
+
+		exec( $cmd, $script_output );
+		$script_output_json = json_decode( end( $script_output ) );
+
+		if ( ! $script_output_json ) {
+			return new WP_Error( 'jp-cxn-pilot-provision-invalid-output', 'Could not parse script output.' );
+		} elseif ( isset( $script_output_json->error_code ) ) {
+			return new WP_Error( 'jp-cxn-pilot-provision-error', sprintf( 'Failed to provision site. Error (%s): %s', $script_output_json->error_code, $script_output_json->error_message ) );
+		}
+
+		if ( ! isset( $script_output_json->success ) || true !== $script_output_json->success ) {
+			return new WP_Error( 'jp-cxn-pilot-provision-error-unknown', 'Failed to provision site. Unknown Error.' );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Maybe add our machine user to the site. Also sanity checks the user's permissions.
+	 *
+	 * @return object WP_User if successful, WP_Error otherwise.
+	 */
+	private static function maybe_create_user() {
+		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
+
+		if ( ! $user ) {
+			$user_id = wp_insert_user( array(
+				'user_login'   => WPCOM_VIP_MACHINE_USER_LOGIN,
+				'user_email'   => WPCOM_VIP_MACHINE_USER_EMAIL,
+				'display_name' => WPCOM_VIP_MACHINE_USER_NAME,
+				'role'         => WPCOM_VIP_MACHINE_USER_ROLE,
+				'user_pass'    => wp_generate_password( 36 ), // This account can't be logged into, but just in case.
+			) );
+
+			$user = get_userdata( $user_id );
+			if ( is_wp_error( $user_id ) || ! $user ) {
+				return new WP_Error( 'jp-cxn-pilot-user-create-failed', 'Failed to create new user.' );
+			}
+		}
+
+		$user_id = $user->ID;
+
+		// Add user to blog if needed, and ensure they are a super admin.
+		if ( is_multisite() ) {
+			$blog_id = get_current_blog_id();
+
+			if ( ! is_user_member_of_blog( $user_id, $blog_id ) ) {
+				$added_to_blog = add_user_to_blog( $blog_id, $user_id, WPCOM_VIP_MACHINE_USER_ROLE );
+
+				if ( is_wp_error( $added_to_blog ) ) {
+					return new WP_Error( 'jp-cxn-pilot-user-ms-create-failed', 'Failed to add user to blog.' );
+				}
+			}
+
+			if ( ! is_super_admin( $user_id ) ) {
+				// Will also return false if user already is SA.
+				grant_super_admin( $user_id );
+			}
+
+			return $user;
+		}
+
+		// Ensure the correct role is applied.
+		$user_roles = (array) $user->roles;
+		if ( ! in_array( WPCOM_VIP_MACHINE_USER_ROLE, $user_roles ) ) {
+			$user->set_role( WPCOM_VIP_MACHINE_USER_ROLE );
+		}
+
+		return $user;
+	}
+
+	/**
+	 * Refresh the options cache for the two main JP options.
+	 * 
+	 * Without this, the site won't be aware of changes done during provisioning until
+	 * the next request, which is too late for us.
+	 */
+	private static function refresh_options_cache() {
+		// Jetpack options can get stuck in notoptions, causing broken states.
+		$notoptions = wp_cache_get( 'notoptions', 'options' );
+		if ( is_array( $notoptions ) ) {
+			if ( isset( $notoptions['jetpack_options'] ) ) {
+				unset( $notoptions['jetpack_options'] );
+			}
+
+			if ( isset( $notoptions['jetpack_private_options'] ) ) {
+				unset( $notoptions['jetpack_private_options'] );
+			}
+
+			wp_cache_set( 'notoptions', $notoptions, 'options' );
+		}
+
+		// Or, the pre-existing  options will be stale.
+		$alloptions = wp_load_alloptions();
+		if ( is_array( $alloptions ) ) {
+			if ( isset( $alloptions['jetpack_options'] ) ) {
+				unset( $alloptions['jetpack_options'] );
+			}
+
+			if ( isset( $alloptions['jetpack_private_options'] ) ) {
+				unset( $alloptions['jetpack_private_options'] );
+			}
+
+			wp_cache_set( 'alloptions', $alloptions, 'options' );
+		}
+	}
+
+	/**
+	 * Ensures we have all the needed constants available.
+	 *
+	 * @return bool True if we have all the needed constants.
+	 */
+	private static function validate_constants() {
+		if ( ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_NAME' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) ) {
+			return false;
+		}
+
+		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
+			return false;
 		}
 
 		return true;
