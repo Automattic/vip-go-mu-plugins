@@ -927,11 +927,11 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		&& false === empty( $data['sizes'] )
 	);
 
-	if ( $sizes_already_exist ) {
-		$available_sizes = array_keys( $_wp_additional_image_sizes );
-		$known_sizes     = array_keys( $data['sizes'] );
-		$missing_sizes   = array_diff( $available_sizes, $known_sizes );
+	$available_sizes = array_keys( $_wp_additional_image_sizes );
+	$known_sizes     = array_keys( $data['sizes'] );
+	$missing_sizes   = array_diff( $available_sizes, $known_sizes );
 
+	if ( $sizes_already_exist ) {
 		if ( empty( $missing_sizes ) ) {
 			return $data;
 		}
