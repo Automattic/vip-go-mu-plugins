@@ -82,6 +82,10 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 			return self::send_alert( 'Jetpack is disconnected, unknown error.' );
 		}
 
+		if ( in_array( $wp_error->get_error_code(), array( 'jp-cxn-pilot-missing-constants', 'jp-cxn-pilot-development-mode' ), true ) ) {
+			return self::send_alert( 'Jetpack cannot currently be connected on this site.', $wp_error );
+		}
+
 		// 1) It is connected but not under the right account.
 		if ( 'jp-cxn-pilot-not-vip-owned' === $wp_error->get_error_code() ) {
 			// 1.1 🔆
@@ -95,7 +99,12 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		if ( ! empty( $last_healthcheck['site_url'] ) ) {
 			if ( $last_healthcheck['site_url'] === $current_site_url ) {
 				// 2.1 ✅
-				return self::send_alert( 'Jetpack is disconnected, but was previously connected under the same domain.', $wp_error );
+				$reconnection_attempt = self::reconnect_site();
+				if ( is_wp_error( $reconnection_attempt ) ) {
+					return self::send_alert( 'Re-connection attempt failed. Jetpack is still disconnected, but was previously connected under the same domain.', $reconnection_attempt );
+				}
+
+				return self::send_alert( $reconnection_attempt );
 			} else {
 				// 2.2 🔆
 				return self::send_alert( 'Jetpack is disconnected, and it appears the domain has changed.', $wp_error );
@@ -118,6 +127,27 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 
 		// 3.2 🔴
 		return self::send_alert( 'Jetpack is disconnected.', $wp_error );
+	}
+
+	/**
+	* Try to re(connect) the site.
+	*
+	* @return mixed Message string if successfull, WP_Error object otherwise.
+	*/
+	private static function reconnect_site() {
+		// Skip the JP connection since we've already run them.
+		$reconnect = WPCOM_VIP_Jetpack_Connection_Controls::connect_site( 'skip_active_checks' );
+
+		if ( true === $reconnect ) {
+			if ( ! empty( $last_healthcheck['cache_site_id'] ) ) {
+				if ( (int) $last_healthcheck['cache_site_id'] !== (int) Jetpack_Options::get_option( 'id' ) ) {
+					return 'Alert: Jetpack was automatically re-connected, but the connection changed cache sites. Needs manual inspection.';
+				}
+			}
+			return 'Jetpack was successfully reconnected!';
+		}
+
+		return $reconnect;
 	}
 
 	/**

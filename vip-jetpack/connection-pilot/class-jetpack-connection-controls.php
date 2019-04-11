@@ -113,6 +113,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 
 		// Register/connect the site to WP.com.
 		$provision_result = self::provision_site( $user->ID );
+
 		if ( is_wp_error( $provision_result ) ) {
 			return $provision_result;
 		}
@@ -139,7 +140,10 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 */
 	private static function provision_site( $user_id ) {
 		// TODO: This is a high-risk possible problem on the CLI/CRON containers. Needs testing.
-		$script_path = WPMU_PLUGIN_DIR . '/jetpack/bin/partner-provision.sh';
+		$script_path = __DIR__ . '/bin/partner-provision.sh' . $script;
+
+		// Can use JP core's script once the changes here are made: https://github.com/Automattic/vip-go-mu-plugins/pull/986
+		// $script_path = WPMU_PLUGIN_DIR . '/jetpack/bin/partner-provision.sh';
 
 		$cmd = sprintf(
 			'%s --partner_id=%s --partner_secret=%s --url=%s --user=%s --wpcom_user_id=%s --plan="professional" --force_connect=1 --allow-root',
@@ -228,33 +232,44 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 * the next request, which is too late for us.
 	 */
 	private static function refresh_options_cache() {
+		$update_cache = false;
+
 		// Jetpack options can get stuck in notoptions, causing broken states.
 		$notoptions = wp_cache_get( 'notoptions', 'options' );
-		if ( is_array( $notoptions ) ) {
-			if ( isset( $notoptions['jetpack_options'] ) ) {
-				unset( $notoptions['jetpack_options'] );
-			}
+		if ( isset( $notoptions['jetpack_options'] ) ) {
+			$update_cache = true;
+			unset( $notoptions['jetpack_options'] );
+		}
 
-			if ( isset( $notoptions['jetpack_private_options'] ) ) {
-				unset( $notoptions['jetpack_private_options'] );
-			}
+		if ( isset( $notoptions['jetpack_private_options'] ) ) {
+			$update_cache = true;
+			unset( $notoptions['jetpack_private_options'] );
+		}
 
+		if ( $update_cache ) {
 			wp_cache_set( 'notoptions', $notoptions, 'options' );
 		}
 
+		$update_cache = false;
+
 		// Or, the pre-existing  options will be stale.
 		$alloptions = wp_load_alloptions();
-		if ( is_array( $alloptions ) ) {
-			if ( isset( $alloptions['jetpack_options'] ) ) {
-				unset( $alloptions['jetpack_options'] );
-			}
+		if ( isset( $alloptions['jetpack_options'] ) ) {
+			$update_cache = true;
+			unset( $alloptions['jetpack_options'] );
+		}
 
-			if ( isset( $alloptions['jetpack_private_options'] ) ) {
-				unset( $alloptions['jetpack_private_options'] );
-			}
+		if ( isset( $alloptions['jetpack_private_options'] ) ) {
+			$update_cache = true;
+			unset( $alloptions['jetpack_private_options'] );
+		}
 
+		if ( $update_cache ) {
 			wp_cache_set( 'alloptions', $alloptions, 'options' );
 		}
+
+		wp_cache_delete( 'jetpack_private_options', 'options' );
+		wp_cache_delete( 'jetpack_options', 'options' );
 	}
 
 	/**
