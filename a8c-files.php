@@ -918,8 +918,6 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		return $data;
 	}
 
-	global $_wp_additional_image_sizes;
-
 	$sizes_already_exist = (
 		true === is_array( $data )
 		&& true === array_key_exists( 'sizes', $data )
@@ -927,14 +925,14 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		&& false === empty( $data['sizes'] )
 	);
 
+	global $_wp_additional_image_sizes;
+
 	$available_sizes = array_keys( $_wp_additional_image_sizes );
 	$known_sizes     = array_keys( $data['sizes'] );
 	$missing_sizes   = array_diff( $available_sizes, $known_sizes );
 
-	if ( $sizes_already_exist ) {
-		if ( empty( $missing_sizes ) ) {
-			return $data;
-		}
+	if ( $sizes_already_exist && empty( $missing_sizes )) {
+		return $data;
 	}
 
 	// Missing some critical data we need to determine sizes, so bail
