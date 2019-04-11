@@ -4,7 +4,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 
 	/**
 	 * Get the current status of the Jetpack connection.
-	 * 
+	 *
 	 * There is potential here to replace most of this with Jetpack_Cxn_Test_Base().
 	 *
 	 * @return mixed bool|WP_Error True if JP is properly connected, WP_Error otherwise.
@@ -66,7 +66,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 			return new WP_Error( 'jp-cxn-pilot-empty-body', 'Failed to test connection (empty response body).' );
 		}
 
-		$result = json_decode( $body );
+		$result       = json_decode( $body );
 		$is_connected = isset( $result->connected ) ? (bool) $result->connected : false;
 		if ( ! $is_connected ) {
 			return new WP_Error( 'jp-cxn-pilot-not-connected', 'Connection test failed (WP.com does not think this site is connected or there are authentication or other issues).' );
@@ -79,7 +79,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 * (Re)connect a site to Jetpack.
 	 *
 	 * Creates the VIP user if needed, provisions the plan with WP.com, and re-runs the connection checks to ensure it all worked.
-	 * 
+	 *
 	 * @param bool $skip_active_checks Skip if we've already run the checks before this point.
 	 * @param bool $disconnect Set to true if it should disconnect Jetpack at the start.
 	 *
@@ -132,17 +132,18 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 
 	/**
 	 * Provision the site with WP.com.
+	 *
 	 * @see https://github.com/Automattic/host-partner-documentation/blob/master/jetpack/plan-provisioning.md
-	 * 
+	 *
 	 * @param int $user_id The VIP machine user ID.
 	 *
 	 * @return mixed bool|WP_Error True if provisioning worked, WP_Error otherwise.
 	 */
 	private static function provision_site( $user_id ) {
 		// TODO: This is a high-risk possible problem on the CLI/CRON containers. Needs testing.
-		$script_path = __DIR__ . '/bin/partner-provision.sh' . $script;
+		$script_path = __DIR__ . '/bin/partner-provision.sh';
 
-		// Can use JP core's script once the changes here are made: https://github.com/Automattic/vip-go-mu-plugins/pull/986
+		// Can use JP core's script once the changes here are made: https://github.com/Automattic/vip-go-mu-plugins/pull/986.
 		// $script_path = WPMU_PLUGIN_DIR . '/jetpack/bin/partner-provision.sh';
 
 		$cmd = sprintf(
@@ -218,7 +219,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 
 		// Ensure the correct role is applied.
 		$user_roles = (array) $user->roles;
-		if ( ! in_array( WPCOM_VIP_MACHINE_USER_ROLE, $user_roles ) ) {
+		if ( ! in_array( WPCOM_VIP_MACHINE_USER_ROLE, $user_roles, true ) ) {
 			$user->set_role( WPCOM_VIP_MACHINE_USER_ROLE );
 		}
 
@@ -227,7 +228,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 
 	/**
 	 * Refresh the options cache for the two main JP options.
-	 * 
+	 *
 	 * Without this, the site won't be aware of changes done during provisioning until
 	 * the next request, which is too late for us.
 	 */

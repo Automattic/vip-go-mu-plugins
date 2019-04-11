@@ -24,7 +24,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		static $instance = false;
 
 		if ( ! $instance ) {
-			$instance = new WPCOM_VIP_Jetpack_Connection_Pilot;
+			$instance = new WPCOM_VIP_Jetpack_Connection_Pilot();
 		}
 
 		return $instance;
@@ -48,7 +48,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	/**
 	 * The main cron job callback.
 	 * Checks the JP connection and alerts/auto-resolves when there are problems.
-	 * 
+	 *
 	 * Needs to be static due to how it is added to cron control.
 	 */
 	public static function run_cron_check() {
@@ -71,11 +71,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	}
 
 	/**
-	* The connection checks failed and returned a WP_Error.
-	* Here we will try to reconnect when possible, else send out alerts.
-	*
-	* @param WP_Error object
-	*/
+	 * The connection checks failed and returned a WP_Error.
+	 * Here we will try to reconnect when possible, else send out alerts.
+	 *
+	 * @param WP_Error $wp_error object.
+	 */
 	private static function handle_connection_issues( $wp_error ) {
 		if ( ! is_wp_error( $wp_error ) ) {
 			// Not currently possible, but future-proofing just in case.
@@ -130,17 +130,19 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	}
 
 	/**
-	* Try to re(connect) the site.
-	*
-	* @return mixed Message string if successfull, WP_Error object otherwise.
-	*/
+	 * Try to re(connect) the site.
+	 *
+	 * @return mixed Message string if successfull, WP_Error object otherwise.
+	 */
 	private static function reconnect_site() {
 		// Skip the JP connection since we've already run them.
 		$reconnect = WPCOM_VIP_Jetpack_Connection_Controls::connect_site( 'skip_active_checks' );
 
 		if ( true === $reconnect ) {
+			$last_healthcheck = get_option( self::HEALTHCHECK_OPTION );
+
 			if ( ! empty( $last_healthcheck['cache_site_id'] ) ) {
-				if ( (int) $last_healthcheck['cache_site_id'] !== (int) Jetpack_Options::get_option( 'id' ) ) {
+				if ( (int) Jetpack_Options::get_option( 'id' ) !== (int) $last_healthcheck['cache_site_id'] ) {
 					return 'Alert: Jetpack was automatically re-connected, but the connection changed cache sites. Needs manual inspection.';
 				}
 			}
@@ -152,15 +154,15 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 
 	/**
 	 * Send an alert to IRC and Slack.
-	 * 
+	 *
 	 * Example message:
 	 * Jetpack is disconnected, but was previously connected under the same domain.
 	 * Site: example.go-vip.co (ID 123). The last known connection was on August 25, 12:11:14 UTC to Cache ID 65432 (example.go-vip.co).
 	 * Jetpack connection error: jp-cxn-pilot-not-active.
 	 *
-	 * @param string $message optional
-	 * @param WP_Error optional
-	 * 
+	 * @param string   $message optional.
+	 * @param WP_Error $error optional.
+	 *
 	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
 	 */
 	private static function send_alert( $message = '', $error = null ) {
@@ -190,7 +192,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * Will only run if we are on a live VIP environment,
 	 * or if specifically told otherwise via a special constant.
-	 * 
+	 *
 	 * @return bool True if the connection pilot should run.
 	 */
 	private static function should_run_connection_pilot() {
