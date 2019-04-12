@@ -12,7 +12,7 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 function wpcom_vip_force_two_factor() {
 	// The proxy is the second factor for VIP Support users
 	if ( true === A8C_PROXIED_REQUEST ) {
-		//return false;
+		return false;
 	}
 
 	// The Two Factor plugin wasn't loaded for some reason.
@@ -24,13 +24,16 @@ function wpcom_vip_force_two_factor() {
 		return false;
 	}
 
-	return apply_filters( 'wpcom_vip_force_two_factor', true );
+	// We can't use current_user_can because it calls map_meta_cap which creates an infinite loop
+	$user = wp_get_current_user();
+	$caps = array_keys( $user->allcaps );
+	return apply_filters( 'wpcom_vip_force_two_factor', in_array( 'edit_posts', $caps ) );
 }
 
 function wpcom_vip_enforce_two_factor_plugin() {
 	if ( is_user_logged_in() ) {
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
-		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 2 );
+		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
 	}
 }
 
@@ -45,18 +48,17 @@ function wpcom_enable_two_factor_plugin() {
  *
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
-function wpcom_vip_two_factor_filter_caps( $caps, $cap ) {
+function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 	if ( wpcom_vip_force_two_factor() ) {
-		// Use a hard-coded list of caps that closely match a Contributor role.
-		// The hard-coded list avoids issues if the Contributor role doesn't exist or is modified.
+		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$contributor_caps = [
-			'edit_user',
-			'edit_posts',
 			'read',
-			'level_1',
-			'level_0',
-			'delete_posts',
 		];
+
+		// You can edit your own user account (required to set up 2FA)
+		if ( $cap === 'edit_user' && ! empty( $args ) && $user_id === $args[ 0 ] ) {
+			$contributor_caps[] = 'edit_user';
+		}
 
 		if ( ! in_array( $cap, $contributor_caps ) ) {
 			return array( 'do_not_allow' );
@@ -75,4 +77,3 @@ function wpcom_vip_two_factor_admin_notice() {
 		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> is required to publish to this site.</p>
 	</div>
 	<?php
-}
