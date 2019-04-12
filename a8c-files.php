@@ -959,7 +959,7 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 			);
 		}
 
-		if ( ! empty( $new_size ) ) {
+		if ( ! empty( $new_sizes ) ) {
 			$data['sizes'] = array_merge( $data['sizes'], $new_sizes );
 		}
 
