@@ -126,8 +126,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 			return true; // Leaving this alert disabled for now.
 		}
 
-		// TODO: Add this option when a new multi-site is created.
-		if ( is_multisite() && get_option( 'vip_jetpack_connection_pilot_new_site' ) ) {
+		if ( self::is_new_multisite_site() ) {
 			// 3.1 B ✅
 			return self::send_alert( 'Jetpack is disconnected, though it appears this is a new site on a MS network.', $wp_error );
 		}
@@ -192,6 +191,30 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
+	}
+
+	/**
+	 * Check if the current site is on a MS install and was recently added.
+	 *
+	 * @return bool True if this is a newly created site.
+	 */
+	private static function is_new_multisite_site() {
+		if ( ! is_multisite() ) {
+			return false;
+		}
+
+		$current_site = get_blog_details();
+		if ( empty( $current_site->registered ) ) {
+			return false;
+		}
+
+		$time_diff = time() - strtotime( $current_site->registered );
+		if ( 2 > ( $time_diff / 3600 ) ) {
+			// The site was created in the last 2 hours.
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
