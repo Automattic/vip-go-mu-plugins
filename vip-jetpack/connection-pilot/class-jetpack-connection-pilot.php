@@ -9,6 +9,9 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 
 	/**
 	 * The schedule the cron job runs on. Update in 000-vip-init.php as well.
+	 * 
+	 * Schedule changes can take up to 24 hours to take effect.
+	 * See the a8c_cron_control_clean_legacy_data event for more details.
 	 */
 	const CRON_SCHEDULE = 'hourly';
 
@@ -39,9 +42,13 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 			return;
 		}
 
-		// Avoid the overhead on frontend requests.
-		if ( is_admin() && ! wp_doing_ajax() ) {
-			self::maybe_update_cron_schedule();
+		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
+		if ( ! has_action( self::CRON_ACTION ) ) {
+			add_action( self::CRON_ACTION, array( __CLASS__, 'run_cron_check' ) );
+
+			if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
+				wp_schedule_event( time(), self::CRON_SCHEDULE, self::CRON_ACTION );
+			}
 		}
 	}
 
@@ -205,28 +212,6 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Sanity checks on the cron job. Ensure it is set up and with the right schedule.
-	 */
-	private function maybe_update_cron_schedule() {
-		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
-		if ( ! has_action( self::CRON_ACTION ) ) {
-			add_action( self::CRON_ACTION, array( __CLASS__, 'run_cron_check' ) );
-
-			if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-				wp_schedule_event( time(), self::CRON_SCHEDULE, self::CRON_ACTION );
-			}
-		}
-
-		// Next, check that the schedule is correct. If not, update it.
-		$event = wp_get_scheduled_event( self::CRON_ACTION );
-		if ( is_object( $event ) && self::CRON_SCHEDULE !== $event->schedule ) {
-			// Cron Control is picky about adding/updating existing events, so just going to remove and add back with new schedule.
-			wp_clear_scheduled_hook( self::CRON_ACTION );
-			wp_schedule_event( $event->timestamp, self::CRON_SCHEDULE, self::CRON_ACTION );
-		}
 	}
 }
 
