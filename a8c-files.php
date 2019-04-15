@@ -86,11 +86,14 @@ class A8C_Files {
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
 
-		// add new cron schedule for filesize update
-		add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 );
+		// Conditionally schedule the attachment filesize metaata update job
+		if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
+			// add new cron schedule for filesize update
+			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 );
 
-		// Schedule meta update job
-		$this->schedule_update_job();
+			// Schedule meta update job
+			$this->schedule_update_job();
+		}
 	}
 
 	/**
@@ -944,6 +947,9 @@ class A8C_Files {
 		}
 
 		$batch_size = 3000;
+		if ( defined( 'VIP_FILESYSTEM_FILESIZE_UPDATE_BATCH_SIZE' ) ) {
+			$batch_size = (int) VIP_FILESYSTEM_FILESIZE_UPDATE_BATCH_SIZE;
+		}
 		$updater = new Meta_Updater( $batch_size );
 
 		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
