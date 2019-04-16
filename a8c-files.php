@@ -894,16 +894,6 @@ class A8C_Files {
 	}
 
 	public function schedule_update_job() {
-		// Only schedule meta update job on production
-		if ( 'production' !== VIP_GO_ENV ) {
-			// Remove any existing meta update jobs from non-production
-			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
-			}
-
-			return;
-		}
-
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
@@ -923,11 +913,6 @@ class A8C_Files {
 	 * Cron job to update attachment metadata with file size
 	 */
 	public function update_attachment_meta() {
-		if ( 'production' !== VIP_GO_ENV ) {
-			// Don't run on non-production env
-			return;
-		}
-
 		wpcom_vip_irc(
 			'#vip-go-filesize-updates',
 			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
