@@ -1083,6 +1083,28 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		return $data;
 	}
 
+	// Missing some critical data we need to determine sizes, so bail.
+	if ( ! isset( $data['file'] )
+		|| ! isset( $data['width'] )
+		|| ! isset( $data['height'] ) ) {
+		return $data;
+	}
+
+	static $cached_sizes = [];
+
+	// Don't process image sizes that we already processed.
+	if ( isset( $cached_sizes[ $attachment_id ] ) ) {
+		$data['sizes'] = $cached_sizes[ $attachment_id ];
+		return $data;
+	}
+
+	// Skip non-image attachments
+	$mime_type = get_post_mime_type( $attachment_id );
+	$attachment_is_image = preg_match( '!^image/!', $mime_type );
+	if ( 1 !== $attachment_is_image ) {
+		return $data;
+	}
+
 	$sizes_already_exist = (
 		true === is_array( $data )
 		&& true === array_key_exists( 'sizes', $data )
@@ -1096,41 +1118,31 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 	$known_sizes     = array_keys( $data['sizes'] );
 	$missing_sizes   = array_diff( $available_sizes, $known_sizes );
 
-	if ( $sizes_already_exist && empty( $missing_sizes )) {
+	if ( $sizes_already_exist && empty( $missing_sizes ) ) {
 		return $data;
 	}
 
-	// Missing some critical data we need to determine sizes, so bail
-	if ( ! isset( $data['file'] )
-	    || ! isset( $data['width'] )
-	    || ! isset( $data['height'] ) ) {
-		return $data;
+	$new_sizes = array();
+
+	foreach ( $missing_sizes as $size ) {
+		$new_width          = (int) $_wp_additional_image_sizes[ $size ]['width'];
+		$new_height         = (int) $_wp_additional_image_sizes[ $size ]['height'];
+		$new_sizes[ $size ] = array(
+			'file'      => basename( $data['file'] ),
+			'width'     => $new_width,
+			'height'    => $new_height,
+			'mime_type' => $mime_type,
+		);
 	}
 
-	$mime_type           = get_post_mime_type( $attachment_id );
-	$attachment_is_image = preg_match( '!^image/!', $mime_type );
-
-	if ( 1 === $attachment_is_image ) {
-		$new_sizes = array();
-
-		foreach ( $missing_sizes as $size ) {
-			$new_width          = (int) $_wp_additional_image_sizes[ $size ]['width'];
-			$new_height         = (int) $_wp_additional_image_sizes[ $size ]['height'];
-			$new_sizes[ $size ] = array(
-				'file'      => basename( $data['file'] ),
-				'width'     => $new_width,
-				'height'    => $new_height,
-				'mime_type' => $mime_type,
-			);
-		}
-
-		if ( ! empty( $new_sizes ) ) {
-			$data['sizes'] = array_merge( $data['sizes'], $new_sizes );
-		}
-
-		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
-		$data['sizes'] = $image_sizes->generate_sizes_meta();
+	if ( ! empty( $new_sizes ) ) {
+		$data['sizes'] = array_merge( $data['sizes'], $new_sizes );
 	}
+
+	$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
+	$data['sizes'] = $image_sizes->generate_sizes_meta();
+
+	$cached_sizes[ $attachment_id ] = $data['sizes'];
 
 	return $data;
 }
