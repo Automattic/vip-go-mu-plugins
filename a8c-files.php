@@ -940,12 +940,11 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		return $data;
 	}
 
-	$sizes_already_exist = (
-		true === is_array( $data )
-		&& true === array_key_exists( 'sizes', $data )
-		&& true === is_array( $data['sizes'] )
-		&& false === empty( $data['sizes'] )
-	);
+	if ( ! isset( $data['sizes'] ) || ! is_array( $data['sizes'] ) ) {
+		$data['sizes'] = [];
+	}
+
+	$sizes_already_exist = false === empty( $data['sizes'] );
 
 	global $_wp_additional_image_sizes;
 
