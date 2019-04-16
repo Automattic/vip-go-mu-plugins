@@ -80,17 +80,17 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 *
 	 * Creates the VIP user if needed, provisions the plan with WP.com, and re-runs the connection checks to ensure it all worked.
 	 *
-	 * @param bool $skip_active_checks Skip if we've already run the checks before this point.
+	 * @param bool $skip_connection_tests Skip if we've already run the checks before this point.
 	 * @param bool $disconnect Set to true if it should disconnect Jetpack at the start.
 	 *
 	 * @return mixed bool|WP_Error True if JP was (re)connected, WP_Error otherwise.
 	 */
-	public static function connect_site( $skip_active_checks = false, $disconnect = false ) {
+	public static function connect_site( $skip_connection_tests = false, $disconnect = false ) {
 		if ( ! self::validate_constants() ) {
 			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP GO environment.' );
 		}
 
-		if ( ! $skip_active_checks && ! $disconnect ) {
+		if ( ! $skip_connection_tests && ! $disconnect ) {
 			$connection_test = self::jetpack_is_connected();
 
 			if ( true === $connection_test ) {

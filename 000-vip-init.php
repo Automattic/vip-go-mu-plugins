@@ -101,7 +101,7 @@ define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
 	array(
 		'schedule' => 'hourly',
 		'action'   => 'wpcom_vip_run_jetpack_connection_pilot',
-		'callback' => array( 'WPCOM_VIP_Jetpack_Connection_Pilot', 'run_cron_check' ),
+		'callback' => array( 'WPCOM_VIP_Jetpack_Connection_Pilot', 'run_connection_pilot' ),
 	),
 ) );
 
