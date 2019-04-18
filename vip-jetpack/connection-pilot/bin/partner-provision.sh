@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+# Duplicate of JP core's script, except for the two changes marked below by "EDIT" comments.
+
 # accepts: partner client ID and secret key, and some site info
 # executes wp-cli command to provision Jetpack site for given partner
 
@@ -25,6 +27,7 @@ usage () {
 WP_CLI_COMMAND="wp"
 WP_CLI_ARGS=""
 
+# EDIT: Added this block for VIP GO compatability
 if [ "$WP_CLI_COMMAND" = "wp" ]; then
     # change to script directory so that wp finds the wordpress install part for this Jetpack instance
     SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
@@ -86,7 +89,7 @@ for i in "$@"; do
 			shift
 			;;
 		--partner-tracking-id=* )
-			PROVISION_REQUEST_URL="$PROVISION_REQUEST_URL?partner-tracking-id=${i#*=}"
+			PROVISION_REQUEST_URL="$PROVISION_REQUEST_URL?partner_tracking_id=${i#*=}" # EDIT: Changed partner-tracking-id to partner_tracking_id
 			shift
 			;;
 		--allow-root )

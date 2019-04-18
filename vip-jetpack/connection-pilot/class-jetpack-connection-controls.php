@@ -147,13 +147,14 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 		// $script_path = WPMU_PLUGIN_DIR . '/jetpack/bin/partner-provision.sh';
 
 		$cmd = sprintf(
-			'%s --partner_id=%s --partner_secret=%s --url=%s --user=%s --wpcom_user_id=%s --plan="professional" --force_connect=1 --allow-root',
+			'%s --partner_id=%s --partner_secret=%s --url=%s --user=%s --wpcom_user_id=%s --partner-tracking-id=%s --plan="professional" --force_connect=1 --allow-root',
 			$script_path,
 			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_ID ),
 			escapeshellarg( WPCOM_VIP_JP_START_API_CLIENT_SECRET ),
 			escapeshellarg( get_site_url() ),
 			escapeshellarg( $user_id ),
-			escapeshellarg( WPCOM_VIP_JP_START_WPCOM_USER_ID )
+			escapeshellarg( WPCOM_VIP_JP_START_WPCOM_USER_ID ),
+			escapeshellarg( VIP_GO_APP_ID )
 		);
 
 		exec( $cmd, $script_output );
@@ -283,7 +284,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 			return false;
 		}
 
-		if ( ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
+		if ( ! defined( 'VIP_GO_APP_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
 			return false;
 		}
 
