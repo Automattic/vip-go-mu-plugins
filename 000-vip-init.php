@@ -99,9 +99,10 @@ define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
 		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
 	),
 	array(
-		'schedule' => 'hourly',
-		'action'   => 'wpcom_vip_run_jetpack_connection_pilot',
-		'callback' => array( 'WPCOM_VIP_Jetpack_Connection_Pilot', 'run_connection_pilot' ),
+		'schedule'  => 'hourly',
+		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
+		'callback'  => array( 'WPCOM_VIP_Jetpack_Connection_Pilot', 'run_connection_pilot' ),
+		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ),
 	),
 ) );
 

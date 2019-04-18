@@ -42,7 +42,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 			add_action( self::CRON_ACTION, array( __CLASS__, 'run_connection_pilot' ) );
 
 			if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-				wp_schedule_event( time(), self::CRON_SCHEDULE, self::CRON_ACTION );
+				wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 			}
 		}
 	}
@@ -108,19 +108,12 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	}
 
 	/**
-	 * Ensures the connection pilot should run.
-	 *
-	 * Will only run if we are on a live VIP environment,
-	 * or if specifically told otherwise via a special constant.
+	 * Checks if the connection pilot should run.
 	 *
 	 * @return bool True if the connection pilot should run.
 	 */
 	private static function should_run_connection_pilot() {
-		if ( defined( 'WPCOM_IS_VIP_ENV' ) && WPCOM_IS_VIP_ENV ) {
-			return true;
-		}
-
-		if ( defined( 'WPCOM_VIP_RUN_CONNECTION_PILOT_LOCALLY' ) && WPCOM_VIP_RUN_CONNECTION_PILOT_LOCALLY ) {
+		if ( defined( 'WPCOM_VIP_RUN_CONNECTION_PILOT' ) && WPCOM_VIP_RUN_CONNECTION_PILOT ) {
 			return true;
 		}
 
