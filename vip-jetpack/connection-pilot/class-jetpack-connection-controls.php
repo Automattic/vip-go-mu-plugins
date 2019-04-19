@@ -118,16 +118,11 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 			return $provision_result;
 		}
 
-		// Without this, Jetpack will think it's still disconnected.
+		// Without this, Jetpack can incorrectly think it's still disconnected.
 		self::refresh_options_cache();
 
-		// Run the tests again 🤞.
-		$connection_test = self::jetpack_is_connected();
-		if ( true === $connection_test ) {
-			return $connection_test;
-		}
-
-		return $connection_test;
+		// Run the tests again and return the result 🤞.
+		return self::jetpack_is_connected();
 	}
 
 	/**
@@ -164,9 +159,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 			return new WP_Error( 'jp-cxn-pilot-provision-invalid-output', 'Could not parse script output.' );
 		} elseif ( isset( $script_output_json->error_code ) ) {
 			return new WP_Error( 'jp-cxn-pilot-provision-error', sprintf( 'Failed to provision site. Error (%s): %s', $script_output_json->error_code, $script_output_json->error_message ) );
-		}
-
-		if ( ! isset( $script_output_json->success ) || true !== $script_output_json->success ) {
+		} elseif ( ! isset( $script_output_json->success ) || true !== $script_output_json->success ) {
 			return new WP_Error( 'jp-cxn-pilot-provision-error-unknown', 'Failed to provision site. Unknown Error.' );
 		}
 
@@ -228,50 +221,39 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	}
 
 	/**
-	 * Refresh the options cache for the two main JP options.
+	 * Refresh the options cache.
 	 *
-	 * Without this, the site won't be aware of changes done during provisioning until
-	 * the next request, which is too late for us.
+	 * This helps prevent cache issues for times where the database was directly updated.
 	 */
 	private static function refresh_options_cache() {
-		$update_cache = false;
+		$update_notoptions = false;
+		$update_alloptions = false;
 
-		// Jetpack options can get stuck in notoptions, causing broken states.
 		$notoptions = wp_cache_get( 'notoptions', 'options' );
-		if ( isset( $notoptions['jetpack_options'] ) ) {
-			$update_cache = true;
-			unset( $notoptions['jetpack_options'] );
+		$alloptions = wp_load_alloptions();
+
+		$options_to_refresh = array( 'jetpack_options', 'jetpack_private_options' );
+		foreach ( $options_to_refresh as $option_name ) {
+			wp_cache_delete( $option_name, 'options' );
+
+			if ( isset( $notoptions[ $option_name ] ) ) {
+				$update_notoptions = true;
+				unset( $notoptions[ $option_name ] );
+			}
+
+			if ( isset( $alloptions[ $option_name ] ) ) {
+				$update_alloptions = true;
+				unset( $alloptions[ $option_name ] );
+			}
 		}
 
-		if ( isset( $notoptions['jetpack_private_options'] ) ) {
-			$update_cache = true;
-			unset( $notoptions['jetpack_private_options'] );
-		}
-
-		if ( $update_cache ) {
+		if ( $update_notoptions ) {
 			wp_cache_set( 'notoptions', $notoptions, 'options' );
 		}
 
-		$update_cache = false;
-
-		// Or, the pre-existing  options will be stale.
-		$alloptions = wp_load_alloptions();
-		if ( isset( $alloptions['jetpack_options'] ) ) {
-			$update_cache = true;
-			unset( $alloptions['jetpack_options'] );
-		}
-
-		if ( isset( $alloptions['jetpack_private_options'] ) ) {
-			$update_cache = true;
-			unset( $alloptions['jetpack_private_options'] );
-		}
-
-		if ( $update_cache ) {
+		if ( $update_alloptions ) {
 			wp_cache_set( 'alloptions', $alloptions, 'options' );
 		}
-
-		wp_cache_delete( 'jetpack_private_options', 'options' );
-		wp_cache_delete( 'jetpack_options', 'options' );
 	}
 
 	/**
