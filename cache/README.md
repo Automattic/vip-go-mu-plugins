@@ -83,7 +83,7 @@ When a user clicks on our "Enable Beta" button, they submit a POST request to th
 add_action( 'init', function() {
 	$beta = sanitize_key( $_POST['beta-optin'] );
 	if ( 'yes' === $beta )  {
-    		Vary_Cache::set_group_for_user( 'beta', 'yes' );
+		Vary_Cache::set_group_for_user( 'beta', 'yes' );
 	}
 } );
 ```
