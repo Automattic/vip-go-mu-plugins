@@ -13,7 +13,6 @@
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
 require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );
-require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-controls.php' );
 
 /**
  * Enable VIP modules required as part of the platform
