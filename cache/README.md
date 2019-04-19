@@ -52,7 +52,7 @@ This sends a hint to our caching backend (via a `Vary` header) that this and fut
 
 ### Step 2: Display the Opt-in Button
 
-We need a implement a call-to-action for our Beta; a simple floating button at the bottom of the page will do. We'll user the `wp_footer` action to render it for users not already in the beta (we can use the `Vary_Cache::is_user_in_group_segment` helper to verify that.)
+We need to implement a call-to-action for our Beta; a simple floating button at the bottom of the page will do. We'll user the `wp_footer` action to render it for users not already in the beta (we can use the `Vary_Cache::is_user_in_group_segment` helper to verify that.)
 
 ```php
 add_filter( 'wp_footer', function () {
@@ -83,7 +83,7 @@ When a user clicks on our "Enable Beta" button, they submit a POST request to th
 add_action( 'init', function() {
 	$beta = sanitize_key( $_POST['beta-optin'] );
 	if ( 'yes' === $beta )  {
-    	Vary_Cache::set_group_for_user( 'beta', 'yes' );
+    		Vary_Cache::set_group_for_user( 'beta', 'yes' );
 	}
 } );
 ```
