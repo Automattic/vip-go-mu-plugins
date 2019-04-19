@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * The Status Check is responsible for checking on the JP connection and handling the various disconnected scenarios.
+ * It stores a list notifications/errors that can be retrieved by the calling class and utilized however needed.
+ */
 class WPCOM_VIP_Jetpack_Connection_Status_Check {
 
 	/**
@@ -57,7 +61,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 		$is_connected = WPCOM_VIP_Jetpack_Connection_Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
-			// Everything checks out. Update the healthcheck option and move one.
+			// Everything checks out. Update the healthcheck option and move on.
 			return update_option( self::HEALTHCHECK_OPTION_NAME, array(
 				'site_url'         => $this->site_url,
 				'cache_site_id'    => (int) Jetpack_Options::get_option( 'id' ),

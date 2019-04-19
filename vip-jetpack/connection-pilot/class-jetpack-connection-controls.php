@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * These are the re-usable methods for testing JP connections and (re)connecting sites.
+ */
 class WPCOM_VIP_Jetpack_Connection_Controls {
 
 	/**
