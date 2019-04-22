@@ -77,3 +77,4 @@ function wpcom_vip_two_factor_admin_notice() {
 		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> is required to publish to this site.</p>
 	</div>
 	<?php
+}
