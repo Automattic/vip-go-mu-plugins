@@ -9,6 +9,9 @@
 // Custom list of providers
 require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 
+define( 'VIP_2FA_TIME_GATE', strtotime( '2019-05-23 18:00:00' ) );
+define( 'VIP_IS_AFTER_2FA_TIME_GATE', time() > VIP_2FA_TIME_GATE );
+
 function wpcom_vip_is_two_factor_forced() {
 	// The proxy is the second factor for VIP Support users
 	if ( true === A8C_PROXIED_REQUEST ) {
@@ -52,6 +55,11 @@ function wpcom_enable_two_factor_plugin() {
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
+	if ( ! VIP_IS_AFTER_2FA_TIME_GATE ) {
+		// TODO: Remove this after May 23 2019
+		return $caps;
+	}
+
 	if ( wpcom_vip_is_two_factor_forced() ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
@@ -75,9 +83,21 @@ function wpcom_vip_two_factor_admin_notice() {
 	if ( ! wpcom_vip_is_two_factor_forced() ) {
 		return;
 	}
+
+	// TODO: Remove this after May 23 2019
+	if ( VIP_IS_AFTER_2FA_TIME_GATE ) {
+		$message = 'is required to publish to this site.';
+	} else {
+		$timezone = get_option( 'timezone_string' );
+		$date = new DateTime( "now", new DateTimeZone( $timezone ) );
+		$date->setTimestamp( VIP_2FA_TIME_GATE );
+		$date = $date->format( 'M d, Y \a\t g:i a T' );
+		$message = "will be required to publish to this site after {$date}.";
+	}
+
 	?>
 	<div class="error">
-		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> is required to publish to this site.</p>
+		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> <?php echo $message; ?></p>
 	</div>
 	<?php
 }
