@@ -6,6 +6,8 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+add_filter( 'two_factor_user_api_login_enable', '__return_true' );
+
 add_filter( 'two_factor_providers', function( $p ) {
 	if ( wpcom_vip_have_twilio_keys() ) {
 		$p['Two_Factor_SMS'] = __DIR__ . '/wpcom-vip-two-factor/sms-provider.php';
