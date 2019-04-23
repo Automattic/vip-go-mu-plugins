@@ -51,16 +51,16 @@ function wpcom_enable_two_factor_plugin() {
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 	if ( wpcom_vip_force_two_factor() ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
-		$contributor_caps = [
+		$subscriber_caps = [
 			'read',
 		];
 
 		// You can edit your own user account (required to set up 2FA)
 		if ( $cap === 'edit_user' && ! empty( $args ) && $user_id === $args[ 0 ] ) {
-			$contributor_caps[] = 'edit_user';
+			$subscriber_caps[] = 'edit_user';
 		}
 
-		if ( ! in_array( $cap, $contributor_caps ) ) {
+		if ( ! in_array( $cap, $subscriber_caps, true ) ) {
 			return array( 'do_not_allow' );
 		}
 	}
