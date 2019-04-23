@@ -24,14 +24,17 @@ function wpcom_vip_is_two_factor_forced() {
 		return false;
 	}
 
-	// We can't use current_user_can because it calls map_meta_cap which creates an infinite loop
-	$user = wp_get_current_user();
-	$caps = array_keys( $user->allcaps );
-	return apply_filters( 'wpcom_vip_is_two_factor_forced', in_array( 'edit_posts', $caps ) );
+	return apply_filters( 'wpcom_vip_is_two_factor_forced', false );
 }
 
 function wpcom_vip_enforce_two_factor_plugin() {
 	if ( is_user_logged_in() ) {
+		// Calculate current_user_can outside map_meta_cap to avoid callback loop
+		$limited = current_user_can( 'edit_posts' );
+		add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
+			return $limited;
+		} );
+
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
 	}
