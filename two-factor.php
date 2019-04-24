@@ -97,6 +97,10 @@ function wpcom_vip_two_factor_prep_admin_notice() {
 	}
 
 	$timezone = get_option( 'timezone_string' );
+	if ( ! $timezone || $timezone === '' ) {
+		$timezone = 'UTC';
+	}
+
 	$date = new DateTime( "now", new DateTimeZone( $timezone ) );
 	$date->setTimestamp( VIP_2FA_TIME_GATE );
 	$date = $date->format( 'M d, Y \a\t g:i a T' );
