@@ -32,11 +32,16 @@ function wpcom_vip_is_two_factor_forced() {
 
 function wpcom_vip_enforce_two_factor_plugin() {
 	if ( is_user_logged_in() ) {
-		// Calculate current_user_can outside map_meta_cap to avoid callback loop
 		$limited = current_user_can( 'edit_posts' );
-		add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
-			return $limited;
-		} );
+
+		if ( VIP_IS_AFTER_2FA_TIME_GATE ) {
+			// Calculate current_user_can outside map_meta_cap to avoid callback loop
+			add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
+				return $limited;
+			} );
+		} else if ( $limited && ! Two_Factor_Core::is_user_using_two_factor() ) {
+			add_action( 'admin_notices', 'wpcom_vip_two_factor_prep_admin_notice' );
+		}
 
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
@@ -55,11 +60,6 @@ function wpcom_enable_two_factor_plugin() {
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
-	if ( ! VIP_IS_AFTER_2FA_TIME_GATE ) {
-		// TODO: Remove this after May 23 2019
-		return $caps;
-	}
-
 	if ( wpcom_vip_is_two_factor_forced() ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
@@ -84,20 +84,27 @@ function wpcom_vip_two_factor_admin_notice() {
 		return;
 	}
 
-	// TODO: Remove this after May 23 2019
-	if ( VIP_IS_AFTER_2FA_TIME_GATE ) {
-		$message = 'is required to publish to this site.';
-	} else {
-		$timezone = get_option( 'timezone_string' );
-		$date = new DateTime( "now", new DateTimeZone( $timezone ) );
-		$date->setTimestamp( VIP_2FA_TIME_GATE );
-		$date = $date->format( 'M d, Y \a\t g:i a T' );
-		$message = "will be required to publish to this site after {$date}.";
+	?>
+	<div class="error">
+		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> is required to publish to this site.</p>
+	</div>
+	<?php
+}
+
+function wpcom_vip_two_factor_prep_admin_notice() {
+	if ( wpcom_vip_is_two_factor_forced() ) {
+		return;
 	}
+
+	$timezone = get_option( 'timezone_string' );
+	$date = new DateTime( "now", new DateTimeZone( $timezone ) );
+	$date->setTimestamp( VIP_2FA_TIME_GATE );
+	$date = $date->format( 'M d, Y \a\t g:i a T' );
+	$message = "will be required to publish to this site after {$date}.";
 
 	?>
 	<div class="error">
-		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> <?php echo $message; ?></p>
+	<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> will be required to publish to this site on <?php echo $date ?>.</p>
 	</div>
 	<?php
 }
