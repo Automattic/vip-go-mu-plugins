@@ -10,7 +10,7 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 
 	if ( false === $plugins ) {
 		$plugins = array();
-		$url_for_featured_plugins = 'https://wpvip.com/wp-json/vip/v1/plugins?type=technology';
+		$url_for_featured_plugins = 'https://wpvip.com/wp-json/vip/v0/plugins?type=technology';
 		$response = vip_safe_wp_remote_get( $url_for_featured_plugins, false, 3, 5 );
 
 		if ( ! $response ) {
