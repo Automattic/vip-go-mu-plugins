@@ -86,8 +86,23 @@ function wpcom_vip_two_factor_admin_notice() {
 	}
 
 	?>
-	<div class="error">
-		<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> is required to publish to this site.</p>
+	<div id="vip-2fa-error" class="notice-error wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
+			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
+			<div>
+				<p style="font-weight:bold; font-size:16px;">
+					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/">Two Factor Authentication</a> is required to edit content on this site.
+				</p>
+
+				<p>For the safety and security of this site, your account access has been downgraded. Please enable two-factor authentication to restore your access.</p>
+
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>" class="button button-primary">
+						Enable Two-factor Authentication
+					</a>
+
+					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/" class="button" target="_blank">Learn More</a>
+				</p> 
+			</div>
 	</div>
 	<?php
 }
@@ -104,12 +119,24 @@ function wpcom_vip_two_factor_prep_admin_notice() {
 
 	$date = new DateTime( "now", new DateTimeZone( $timezone ) );
 	$date->setTimestamp( VIP_2FA_TIME_GATE );
-	$date = $date->format( 'M d, Y \a\t g:i a T' );
-	$message = "will be required to publish to this site after {$date}.";
 
 	?>
-	<div class="error">
-	<p><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>">Two Factor Authentication</a> will be required to publish to this site on <?php echo $date ?>.</p>
+	<div id="vip-2fa-warning" class="notice-warning wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
+			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
+			<div>
+				<p style="font-weight:bold; font-size:16px;">
+					Starting on <em><?php echo $date->format( 'M d, Y \a\t g:i a T' ) ?></em>, <a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/">Two Factor Authentication</a> will be required to edit content on this site.
+				</p>
+
+				<p>To avoid any disruption in access, please enable two-factor authentication on your account as soon as possible. Thank you for keeping your account safe and secure!</p>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>" class="button button-primary">
+						Enable Two-factor Authentication
+					</a>
+
+					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/" class="button" target="_blank">Learn More</a>
+				</p> 
+			</div>
 	</div>
 	<?php
 }
