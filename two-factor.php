@@ -64,6 +64,7 @@ function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
 			'read',
+			'level_0',
 		];
 
 		// You can edit your own user account (required to set up 2FA)
