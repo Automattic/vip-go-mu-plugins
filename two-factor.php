@@ -96,7 +96,7 @@ function wpcom_vip_two_factor_admin_notice() {
 				<p>For the safety and security of this site, your account access has been downgraded. Please enable two-factor authentication to restore your access.</p>
 
 				<p>
-					<a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>" class="button button-primary">
+					<a href="<?php echo esc_url( admin_url( 'profile.php#two-factor-options' ) ); ?>" class="button button-primary">
 						Enable Two-factor Authentication
 					</a>
 
@@ -130,7 +130,7 @@ function wpcom_vip_two_factor_prep_admin_notice() {
 
 				<p>To avoid any disruption in access, please enable two-factor authentication on your account as soon as possible. Thank you for keeping your account safe and secure!</p>
 				<p>
-					<a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>" class="button button-primary">
+					<a href="<?php echo esc_url( admin_url( 'profile.php#two-factor-options' ) ); ?>" class="button button-primary">
 						Enable Two-factor Authentication
 					</a>
 
