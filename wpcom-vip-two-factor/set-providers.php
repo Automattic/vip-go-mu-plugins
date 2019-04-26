@@ -9,7 +9,8 @@ add_filter( 'two_factor_providers', function( $p ) {
 	if ( wpcom_vip_have_twilio_keys() ) {
 		$p['Two_Factor_SMS'] = __DIR__ . '/sms-provider.php';
 	}
-	
+
+	unset( $p[ 'Two_Factor_FIDO_U2F' ] );
 	unset( $p[ 'Two_Factor_Dummy' ] );
 	return $p;
 } );
