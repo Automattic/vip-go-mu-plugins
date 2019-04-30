@@ -12,7 +12,7 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 define( 'VIP_2FA_TIME_GATE', strtotime( '2019-05-23 18:00:00' ) );
 define( 'VIP_IS_AFTER_2FA_TIME_GATE', time() > VIP_2FA_TIME_GATE );
 
-function wpcom_vip_is_two_factor_forced() {
+function wpcom_vip_should_force_two_factor() {
 	// The proxy is the second factor for VIP Support users
 	if ( true === A8C_PROXIED_REQUEST ) {
 		return false;
@@ -24,6 +24,24 @@ function wpcom_vip_is_two_factor_forced() {
 	}
 
 	if ( Two_Factor_Core::is_user_using_two_factor() ) {
+		return false;
+	}
+
+	// Don't force 2FA for OneLogin SSO
+	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
+		return false;
+	}
+
+	// Don't force 2FA for SimpleSaml
+	if ( function_exists( '\HumanMade\SimpleSaml\instance()' ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+function wpcom_vip_is_two_factor_forced() {
+	if ( ! wpcom_vip_should_force_two_factor() ) {
 		return false;
 	}
 
@@ -39,7 +57,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
 				return $limited;
 			} );
-		} else if ( $limited && ! Two_Factor_Core::is_user_using_two_factor() ) {
+		} else if ( $limited && wpcom_vip_should_force_two_factor() ) {
 			add_action( 'admin_notices', 'wpcom_vip_two_factor_prep_admin_notice' );
 		}
 
