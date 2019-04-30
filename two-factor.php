@@ -9,7 +9,7 @@
 // Custom list of providers
 require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 
-define( 'VIP_2FA_TIME_GATE', strtotime( '2019-05-23 18:00:00' ) );
+define( 'VIP_2FA_TIME_GATE', strtotime( '2019-05-29 18:00:00' ) );
 define( 'VIP_IS_AFTER_2FA_TIME_GATE', time() > VIP_2FA_TIME_GATE );
 
 function wpcom_vip_is_two_factor_forced() {
