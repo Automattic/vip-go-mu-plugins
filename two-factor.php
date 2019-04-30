@@ -33,7 +33,7 @@ function wpcom_vip_should_force_two_factor() {
 	}
 
 	// Don't force 2FA for SimpleSaml
-	if ( function_exists( '\HumanMade\SimpleSaml\instance()' ) ) {
+	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
 		return false;
 	}
 
