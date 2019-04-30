@@ -129,6 +129,11 @@ function wpcom_vip_two_factor_prep_admin_notice() {
 	if ( wpcom_vip_is_two_factor_forced() ) {
 		return;
 	}
+	
+	// Allow site owners to hide the preparatory notice if this doesn't apply to their site
+	if ( apply_filters( 'wpcom_vip_two_factor_prep_hide_admin_notice', false ) ) {
+		return;
+	}
 
 	$timezone = get_option( 'timezone_string' );
 	if ( ! $timezone || $timezone === '' ) {
