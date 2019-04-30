@@ -127,7 +127,7 @@ function vip_powered_wpcom_url() {
 		'utm_term' => sanitize_text_field( $_SERVER['HTTP_HOST'] ),
 	);
 
-	return add_query_arg( $args, 'https://vip.wordpress.com/' );
+	return add_query_arg( $args, 'https://wpvip.com/' );
 }
 
 /**
