@@ -14,6 +14,9 @@
  */
 require_once( __DIR__ . '/jetpack-mandatory.php' );
 
+// Only load jetpack CSS for active modules
+add_filter( 'jetpack_implode_frontend_css', '__return_false' );
+
 /**
  * Remove certain modules from the list of those that can be activated
  * Blocks access to certain functionality that isn't compatible with the platform.
