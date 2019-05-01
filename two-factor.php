@@ -98,8 +98,23 @@ function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 	return $caps;
 }
 
+function wpcom_vip_should_show_notice_on_current_screen() {
+	$screen = get_current_screen();
+
+	// Don't show on the "Edit Post" screen as it interferes with the Block Editor.
+	if ( 'post' === $screen->id ) {
+		return false;
+	}
+
+	return true;
+}
+
 function wpcom_vip_two_factor_admin_notice() {
 	if ( ! wpcom_vip_is_two_factor_forced() ) {
+		return;
+	}
+
+	if ( ! wpcom_vip_should_show_notice_on_current_screen() ) {
 		return;
 	}
 
@@ -127,6 +142,10 @@ function wpcom_vip_two_factor_admin_notice() {
 
 function wpcom_vip_two_factor_prep_admin_notice() {
 	if ( wpcom_vip_is_two_factor_forced() ) {
+		return;
+	}
+
+	if ( ! wpcom_vip_should_show_notice_on_current_screen() ) {
 		return;
 	}
 	
