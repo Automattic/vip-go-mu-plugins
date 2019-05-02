@@ -68,6 +68,11 @@ function wpcom_vip_enforce_two_factor_plugin() {
 
 add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
 function wpcom_enable_two_factor_plugin() {
+	$enable_two_factor = apply_filters( 'wpcom_vip_enable_two_factor', true );
+	if ( true !== $enable_two_factor ) {
+		return;	
+	}
+
 	wpcom_vip_load_plugin( 'two-factor' );
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
