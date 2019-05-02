@@ -102,7 +102,7 @@ function wpcom_vip_should_show_notice_on_current_screen() {
 	$screen = get_current_screen();
 
 	// Don't show on the "Edit Post" screen as it interferes with the Block Editor.
-	if ( 'post' === $screen->id ) {
+	if ( $screen->is_block_editor() ) {
 		return false;
 	}
 
