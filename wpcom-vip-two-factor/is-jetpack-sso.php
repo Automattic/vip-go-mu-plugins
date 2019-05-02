@@ -49,8 +49,6 @@ function vip_is_jetpack_sso_two_step() {
 function create_twostep_cookie( $user_id, $expiration, $scheme ) {
 	$user = get_userdata( $user_id );
 
-	$secure = apply_filters( 'secure_auth_cookie', is_ssl(), $user_id );
-
 	$key = wp_hash( $user->user_login . '|' . $expiration, $scheme );
 	$hash = hash_hmac( 'md5', $user->user_login . '|' . $expiration, $key );
 
@@ -67,17 +65,21 @@ function verify_twostep_cookie( $cookie ) {
 	$elements = explode( '|', $cookie );
 
 	// Expired
-	if ( ! ctype_digit( $elements[ 1 ] ) || $elements[ 1 ] < time() )
+	if ( ! ctype_digit( $elements[ 1 ] ) || $elements[ 1 ] < time() ) {
 		return false;
+	}
 
 	$user = get_user_by( 'login', $elements[0] );
+
 	// Bad username
-	if ( empty( $user ) )
+	if ( empty( $user ) ) {
 		return false;
+	}
 
 	// Cookie user doesn't match current user
-	if ( $user->ID !== $current_user->ID )
+	if ( $user->ID !== $current_user->ID ) {
 		return false;
+	}
 
 	$key = wp_hash( $user->user_login . '|' . $elements[1], $scheme );
 	$hash = hash_hmac( 'md5', $user->user_login . '|' . $elements[1], $key );
