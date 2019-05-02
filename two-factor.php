@@ -50,7 +50,8 @@ function wpcom_vip_is_two_factor_forced() {
 
 function wpcom_vip_enforce_two_factor_plugin() {
 	if ( is_user_logged_in() ) {
-		$limited = current_user_can( 'edit_posts' );
+		$cap = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'edit_posts' );
+		$limited = current_user_can( $cap );
 
 		if ( VIP_IS_AFTER_2FA_TIME_GATE ) {
 			// Calculate current_user_can outside map_meta_cap to avoid callback loop
