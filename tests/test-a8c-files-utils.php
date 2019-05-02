@@ -8,9 +8,19 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 				'http://example.com',
 			],
 
-			'image_on_go-vip_url' => [
+			'image_on_site_url' => [
+				'http://subdomain.example.com/image.jpg',
+				'http://subdomain.example.com',
+			],
+
+			'image_on_go-vip-co_url' => [
 				'http://example.go-vip.co/image.jpg',
 				'http://example.go-vip.co',
+			],
+
+			'image_on_go-vip-net_url' => [
+				'http://example.go-vip.net/image.jpg',
+				'http://example.go-vip.net',
 			],
 
 			'image_on_external_url' => [
@@ -26,6 +36,10 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	public function test__filter_photon_domain( $image_url, $expected_photon_url ) {
 		add_filter( 'home_url', function() {
 			return 'http://example.com';
+		} );
+
+		add_filter( 'site_url', function() {
+			return 'http://subdomain.example.com';
 		} );
 
 		$actual_photon_url = A8C_Files_Utils::filter_photon_domain( 'http://i0.wp.com', $image_url );
