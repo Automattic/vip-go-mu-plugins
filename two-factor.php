@@ -31,7 +31,7 @@ function wpcom_vip_should_force_two_factor() {
 	}
 
 	// Don't force 2FA for Jetpack SSO users that have Two-step enabled
-	if ( vip_is_jetpack_sso_two_step() ) {
+	if ( \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step() ) {
 		return false;
 	}
 
