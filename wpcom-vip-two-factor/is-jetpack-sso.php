@@ -83,8 +83,9 @@ function verify_twostep_cookie( $cookie ) {
 	$hash = hash_hmac( 'md5', $user->user_login . '|' . $elements[1], $key );
 
 	// Bad hash
-	if ( $elements[2] !== $hash )
+	if ( ! hash_equals( $hash, $elements[2] ) ) {
 		return false;
+	}
 
 	return true;
 }
