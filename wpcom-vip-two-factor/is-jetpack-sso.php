@@ -1,22 +1,25 @@
 <?php
 
+define( 'VIP_IS_JETPACK_SSO_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso' );
+define( 'VIP_IS_JETPACK_SSO_2SA_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso_2sa' );
+
 add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 	add_action( 'set_auth_cookie', function( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
 		$secure = is_ssl();
 
-		$sso_cookie = create_twostep_cookie( $user_id, $expire, 'sso_cookie' );
-		setcookie( 'vip-is-jetpack-sso', $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
+		$sso_cookie = create_twostep_cookie( $user_id, $expire, VIP_IS_JETPACK_SSO_COOKIE );
+		setcookie( VIP_IS_JETPACK_SSO_COOKIE, $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 
 		if ( $user_data->two_step_enabled ) {
-			$sso_2sa_cookie = create_twostep_cookie( $user_id, $expire, 'sso_2sa_cookie' );
-			setcookie( 'vip-is-jetpack-sso-two-step', $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
+			$sso_2sa_cookie = create_twostep_cookie( $user_id, $expire, VIP_IS_JETPACK_2SA_COOKIE );
+			setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 		}
 	}, 10, 6 );
 }, 10, 2 );
 
 add_action( 'clear_auth_cookie', function() {
-	setcookie( 'vip-is-jetpack-sso', ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
-	setcookie( 'vip-is-jetpack-sso-two-step', ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
+	setcookie( VIP_IS_JETPACK_SSO_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
+	setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
 } );
 
 function vip_is_jetpack_sso() {
@@ -24,11 +27,11 @@ function vip_is_jetpack_sso() {
 		return false;
 	}
 
-	if ( ! isset( $_COOKIE[ 'vip-is-jetpack-sso' ] ) ) {
+	if ( ! isset( $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ] ) ) {
 		return false;
 	}
 
-	$cookie = $_COOKIE[ 'vip-is-jetpack-sso' ];
+	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ];
 	return verify_twostep_cookie( $cookie );
 }
 
@@ -37,15 +40,14 @@ function vip_is_jetpack_sso_two_step() {
 		return false;
 	}
 
-	if ( ! isset( $_COOKIE[ 'vip-is-jetpack-sso-two-step' ] ) ) {
+	if ( ! isset( $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ] ) ) {
 		return false;
 	}
 
-	$cookie = $_COOKIE[ 'vip-is-jetpack-sso-two-step' ];
+	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ];
 	return verify_twostep_cookie( $cookie );
 }
 
-// If a user has two step enabled and is not logging in with an app password set the two step cookie
 function create_twostep_cookie( $user_id, $expiration, $scheme ) {
 	$user = get_userdata( $user_id );
 
