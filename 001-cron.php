@@ -140,7 +140,7 @@ if ( ! wpcom_vip_use_core_cron() ) {
 
 	$cron_control_next_version = __DIR__ . '/cron-control-next/cron-control.php';
 
-	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
+	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
 		// Use latest version for testing
 		require_once $cron_control_next_version;
 	} else {
