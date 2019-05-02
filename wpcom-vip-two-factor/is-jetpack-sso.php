@@ -2,6 +2,9 @@
 
 namespace Automattic\VIP\TwoFactor;
 
+// muplugins_loaded fires before cookie constants are set
+wp_cookie_constants();
+
 define( 'VIP_IS_JETPACK_SSO_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso' );
 define( 'VIP_IS_JETPACK_SSO_2SA_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso_2sa' );
 
@@ -34,7 +37,7 @@ function is_jetpack_sso() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ];
-	return verify_cookie( $cookie );
+	return verify_cookie( $cookie, VIP_IS_JETPACK_SSO_COOKIE );
 }
 
 function is_jetpack_sso_two_step() {
@@ -47,7 +50,7 @@ function is_jetpack_sso_two_step() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ];
-	return verify_cookie( $cookie );
+	return verify_cookie( $cookie, VIP_IS_JETPACK_SSO_2SA_COOKIE );
 }
 
 function create_cookie( $user_id, $expiration, $scheme ) {
@@ -60,7 +63,7 @@ function create_cookie( $user_id, $expiration, $scheme ) {
 	return $cookie;
 }
 
-function verify_cookie( $cookie ) {
+function verify_cookie( $cookie, $scheme ) {
 	global $current_user;
 
 	// 0: user_login
