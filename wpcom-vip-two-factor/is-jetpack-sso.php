@@ -12,11 +12,11 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 	add_action( 'set_auth_cookie', function( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
 		$secure = is_ssl();
 
-		$sso_cookie = create_cookie( $user_id, $expire, $scheme );
+		$sso_cookie = create_cookie( $user_id, $expire, 'auth' );
 		setcookie( VIP_IS_JETPACK_SSO_COOKIE, $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 
 		if ( $user_data->two_step_enabled ) {
-			$sso_2sa_cookie = create_cookie( $user_id, $expire, $scheme );
+			$sso_2sa_cookie = create_cookie( $user_id, $expire, 'auth' );
 			setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 		}
 	}, 10, 6 );
@@ -37,7 +37,7 @@ function is_jetpack_sso() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ];
-	return verify_cookie( $cookie, VIP_IS_JETPACK_SSO_COOKIE );
+	return verify_cookie( $cookie, 'auth' );
 }
 
 function is_jetpack_sso_two_step() {
@@ -50,7 +50,7 @@ function is_jetpack_sso_two_step() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ];
-	return verify_cookie( $cookie, VIP_IS_JETPACK_SSO_2SA_COOKIE );
+	return verify_cookie( $cookie, 'auth' );
 }
 
 function create_cookie( $user_id, $expiration, $scheme ) {
@@ -62,7 +62,8 @@ function create_cookie( $user_id, $expiration, $scheme ) {
 	}
 
 	$key = wp_hash( $user->user_login . '|' . $expiration, $scheme );
-	$hash = hash_hmac( 'md5', $user->user_login . '|' . $expiration, $key );
+	$algo = function_exists( 'hash' ) ? 'sha256' : 'sha1';
+	$hash = hash_hmac( $algo, $user->user_login . '|' . $expiration, $key );
 
 	$cookie = $user->user_login . '|' . $expiration . '|' . $hash;
 	return $cookie;
@@ -98,7 +99,8 @@ function verify_cookie( $cookie, $scheme ) {
 	}
 
 	$key = wp_hash( $user->user_login . '|' . $elements[1], $scheme );
-	$hash = hash_hmac( 'md5', $user->user_login . '|' . $elements[1], $key );
+	$algo = function_exists( 'hash' ) ? 'sha256' : 'sha1';
+	$hash = hash_hmac( $algo, $user->user_login . '|' . $elements[1], $key );
 
 	// Bad hash
 	if ( ! hash_equals( $hash, $elements[2] ) ) {
