@@ -76,6 +76,10 @@ function verify_cookie( $cookie, $scheme ) {
 	// 2: hmac
 	$elements = explode( '|', $cookie );
 
+	if ( count( $elements ) < 3 ) {
+		return false;
+	}
+
 	// Expired
 	if ( ! ctype_digit( $elements[ 1 ] ) || $elements[ 1 ] < time() ) {
 		return false;
