@@ -9,6 +9,9 @@
 // Custom list of providers
 require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 
+// Detect if the current user is logged in via Jetpack SSO
+require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
+
 define( 'VIP_2FA_TIME_GATE', strtotime( '2019-05-29 18:00:00' ) );
 define( 'VIP_IS_AFTER_2FA_TIME_GATE', time() > VIP_2FA_TIME_GATE );
 
@@ -24,6 +27,11 @@ function wpcom_vip_should_force_two_factor() {
 	}
 
 	if ( Two_Factor_Core::is_user_using_two_factor() ) {
+		return false;
+	}
+
+	// Don't force 2FA for Jetpack SSO users that have Two-step enabled
+	if ( \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step() ) {
 		return false;
 	}
 
