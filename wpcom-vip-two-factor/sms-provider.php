@@ -153,6 +153,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			<label>Phone Number
 				<input name="vip-two-factor-phone" type="tel" placeholder="+14158675309" value="<?php echo esc_attr( $sms );?>" />
 			</label>
+			<p><strong>Note:</strong> Please include your country calling code (e.g. +44, +1, +61, etc.) to ensure SMS messages are correctly sent.</p>
 		</div>
 		<?php
 	}
