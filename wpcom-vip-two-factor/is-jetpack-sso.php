@@ -56,6 +56,11 @@ function is_jetpack_sso_two_step() {
 function create_cookie( $user_id, $expiration, $scheme ) {
 	$user = get_userdata( $user_id );
 
+	if ( ! $user ) {
+		// Invalid user
+		return;
+	}
+
 	$key = wp_hash( $user->user_login . '|' . $expiration, $scheme );
 	$hash = hash_hmac( 'md5', $user->user_login . '|' . $expiration, $key );
 
