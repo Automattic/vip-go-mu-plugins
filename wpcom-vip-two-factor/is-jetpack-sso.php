@@ -12,11 +12,11 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 	add_action( 'set_auth_cookie', function( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
 		$secure = is_ssl();
 
-		$sso_cookie = create_cookie( $user_id, $expire, VIP_IS_JETPACK_SSO_COOKIE );
+		$sso_cookie = create_cookie( $user_id, $expire, $scheme );
 		setcookie( VIP_IS_JETPACK_SSO_COOKIE, $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 
 		if ( $user_data->two_step_enabled ) {
-			$sso_2sa_cookie = create_cookie( $user_id, $expire, VIP_IS_JETPACK_SSO_2SA_COOKIE );
+			$sso_2sa_cookie = create_cookie( $user_id, $expire, $scheme );
 			setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 		}
 	}, 10, 6 );
