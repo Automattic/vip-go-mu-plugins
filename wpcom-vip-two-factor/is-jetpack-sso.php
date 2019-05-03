@@ -16,7 +16,7 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 		setcookie( VIP_IS_JETPACK_SSO_COOKIE, $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 
 		if ( $user_data->two_step_enabled ) {
-			$sso_2sa_cookie = create_cookie( $user_id, $expire, VIP_IS_JETPACK_2SA_COOKIE );
+			$sso_2sa_cookie = create_cookie( $user_id, $expire, VIP_IS_JETPACK_SSO_2SA_COOKIE );
 			setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 		}
 	}, 10, 6 );
