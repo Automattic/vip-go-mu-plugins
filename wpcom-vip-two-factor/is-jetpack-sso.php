@@ -12,11 +12,11 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 	add_action( 'set_auth_cookie', function( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
 		$secure = is_ssl();
 
-		$sso_cookie = wp_generate_auth_cookie( $user_id, $expire, 'auth', $token );
+		$sso_cookie = wp_generate_auth_cookie( $user_id, $expire, 'secure_auth', $token );
 		setcookie( VIP_IS_JETPACK_SSO_COOKIE, $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 
 		if ( $user_data->two_step_enabled ) {
-			$sso_2sa_cookie = wp_generate_auth_cookie( $user_id, $expire, 'auth', $token );
+			$sso_2sa_cookie = wp_generate_auth_cookie( $user_id, $expire, 'secure_auth', $token );
 			setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 		}
 	}, 10, 6 );
@@ -37,7 +37,7 @@ function is_jetpack_sso() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ];
-	return wp_validate_auth_cookie( $cookie, 'auth' );
+	return wp_validate_auth_cookie( $cookie, 'secure_auth' );
 }
 
 function is_jetpack_sso_two_step() {
@@ -50,5 +50,5 @@ function is_jetpack_sso_two_step() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ];
-	return wp_validate_auth_cookie( $cookie, 'auth' );
+	return wp_validate_auth_cookie( $cookie, 'secure_auth' );
 }
