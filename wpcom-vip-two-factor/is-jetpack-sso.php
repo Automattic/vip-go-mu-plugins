@@ -12,11 +12,11 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 	add_action( 'set_auth_cookie', function( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
 		$secure = is_ssl();
 
-		$sso_cookie = create_cookie( $user_id, $expire, 'auth' );
+		$sso_cookie = wp_generate_auth_cookie( $user_id, $expire, 'auth', $token );
 		setcookie( VIP_IS_JETPACK_SSO_COOKIE, $sso_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 
 		if ( $user_data->two_step_enabled ) {
-			$sso_2sa_cookie = create_cookie( $user_id, $expire, 'auth' );
+			$sso_2sa_cookie = wp_generate_auth_cookie( $user_id, $expire, 'auth', $token );
 			setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, $sso_2sa_cookie, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true );
 		}
 	}, 10, 6 );
@@ -37,7 +37,7 @@ function is_jetpack_sso() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ];
-	return verify_cookie( $cookie, 'auth' );
+	return wp_validate_auth_cookie( $cookie, 'auth' );
 }
 
 function is_jetpack_sso_two_step() {
@@ -50,62 +50,5 @@ function is_jetpack_sso_two_step() {
 	}
 
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ];
-	return verify_cookie( $cookie, 'auth' );
-}
-
-function create_cookie( $user_id, $expiration, $scheme ) {
-	$user = get_userdata( $user_id );
-
-	if ( ! $user ) {
-		// Invalid user
-		return;
-	}
-
-	$key = wp_hash( $user->user_login . '|' . $expiration, $scheme );
-	$algo = function_exists( 'hash' ) ? 'sha256' : 'sha1';
-	$hash = hash_hmac( $algo, $user->user_login . '|' . $expiration, $key );
-
-	$cookie = $user->user_login . '|' . $expiration . '|' . $hash;
-	return $cookie;
-}
-
-function verify_cookie( $cookie, $scheme ) {
-	global $current_user;
-
-	// 0: user_login
-	// 1: expiration
-	// 2: hmac
-	$elements = explode( '|', $cookie );
-
-	if ( count( $elements ) < 3 ) {
-		return false;
-	}
-
-	// Expired
-	if ( ! ctype_digit( $elements[ 1 ] ) || $elements[ 1 ] < time() ) {
-		return false;
-	}
-
-	$user = get_user_by( 'login', $elements[0] );
-
-	// Bad username
-	if ( empty( $user ) ) {
-		return false;
-	}
-
-	// Cookie user doesn't match current user
-	if ( $user->ID !== $current_user->ID ) {
-		return false;
-	}
-
-	$key = wp_hash( $user->user_login . '|' . $elements[1], $scheme );
-	$algo = function_exists( 'hash' ) ? 'sha256' : 'sha1';
-	$hash = hash_hmac( $algo, $user->user_login . '|' . $elements[1], $key );
-
-	// Bad hash
-	if ( ! hash_equals( $hash, $elements[2] ) ) {
-		return false;
-	}
-
-	return true;
+	return wp_validate_auth_cookie( $cookie, 'auth' );
 }
