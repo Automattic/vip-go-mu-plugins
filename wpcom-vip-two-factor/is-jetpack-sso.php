@@ -2,13 +2,6 @@
 
 namespace Automattic\VIP\TwoFactor;
 
-// muplugins_loaded fires before cookie constants are set
-if ( is_multisite() ) {
-	ms_cookie_constants();
-}
-
-wp_cookie_constants();
-
 define( 'VIP_IS_JETPACK_SSO_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso' );
 define( 'VIP_IS_JETPACK_SSO_2SA_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso_2sa' );
 
