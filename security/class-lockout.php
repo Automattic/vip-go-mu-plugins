@@ -54,7 +54,7 @@ class Lockout {
 					break;
 
 				case 'locked':
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'read' ), VIP_LOCKOUT_STATE, $user );
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'edit_posts' ), VIP_LOCKOUT_STATE, $user );
 					if ( $show_notice ) {
 						$this->render_locked_notice();
 
