@@ -132,4 +132,4 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
 }
-add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha' );
+add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
