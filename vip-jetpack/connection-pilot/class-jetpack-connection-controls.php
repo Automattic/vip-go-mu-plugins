@@ -90,7 +90,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 */
 	public static function connect_site( $skip_connection_tests = false, $disconnect = false ) {
 		if ( ! self::validate_constants() ) {
-			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP GO environment.' );
+			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some constants are missing.' );
 		}
 
 		if ( ! $skip_connection_tests && ! $disconnect ) {
