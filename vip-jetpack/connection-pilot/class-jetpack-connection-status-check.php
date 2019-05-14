@@ -156,7 +156,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	}
 
 	/**
-	 * Check if the current site is using a default VIP GO domain name.
+	 * Check if the current site is using a default VIP Go domain name.
 	 *
 	 * @return bool True if this is a default URL.
 	 */
