@@ -27,7 +27,7 @@ usage () {
 WP_CLI_COMMAND="wp"
 WP_CLI_ARGS=""
 
-# EDIT: Added this block for VIP GO compatability
+# EDIT: Added this block for VIP Go compatability
 if [ "$WP_CLI_COMMAND" = "wp" ]; then
     # change to script directory so that wp finds the wordpress install part for this Jetpack instance
     SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
