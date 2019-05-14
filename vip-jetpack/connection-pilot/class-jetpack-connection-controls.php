@@ -14,7 +14,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 */
 	public static function jetpack_is_connected() {
 		if ( ! self::validate_constants() ) {
-			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP GO environment.' );
+			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some required constants are missing.' );
 		}
 
 		if ( Jetpack::is_development_mode() ) {
