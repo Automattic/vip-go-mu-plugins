@@ -50,7 +50,7 @@ function send_sms( $to, $message ) {
 			$result = send_single_sms_via_rest( $body );
 			if ( is_wp_error( $result ) ) {
 				$masked_number = substr( $to_number, 0, ( (int) strlen( $to_number ) / 1.5 ) ) . 'xxx';
-				trigger_error( sprintf( 'Failed to send SMS to %s: %s', $masked_number, $result->get_error_message() ), E_USER_WARNING );
+				trigger_error( sprintf( 'Failed to send SMS to %s: %s #vip-go-sms-error', $masked_number, $result->get_error_message() ), E_USER_WARNING );
 			}
 		}
 	}
