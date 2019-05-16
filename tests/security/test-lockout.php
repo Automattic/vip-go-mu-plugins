@@ -175,4 +175,76 @@ class Lockout_Test extends \WP_UnitTestCase {
 
 		$this->assertEqualSets( $pre_option, $actual );
 	}
+
+	/**
+	 * When locked, super admin changes should be blocked.
+	 */
+	public function test__filter_prevent_site_admin_option_updates__locked() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite' );
+		}
+
+		global $wpdb;
+
+		// Arrange: Have an existing user that's a super admin
+		$user = $this->factory->user->create_and_get();
+		grant_super_admin( $user->ID );
+
+		define( 'VIP_LOCKOUT_STATE', 'locked' );
+		define( 'VIP_LOCKOUT_MESSAGE', 'Oh no!' );
+
+		// Recreate Lockout to re-init filters
+		$this->lockout = new Lockout();
+
+		$expected_site_admins = maybe_unserialize(
+			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
+		);
+
+		// Act: Try granting another user super admin
+		$user2 = $this->factory->user->create_and_get();
+		grant_super_admin( $user2->ID );
+
+		// Assert: Check the raw value to avoid conflicts with the filter
+		$actual_site_admins = maybe_unserialize(
+			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
+		);
+
+		$this->assertEquals( $expected_site_admins, $actual_site_admins );
+	}
+
+	/**
+	 * When not locked, super admin changes should work fine.
+	 */
+	public function test__filter_prevent_site_admin_option_updates__not_locked() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite' );
+		}
+
+		global $wpdb;
+
+		// Arrange: Have an existing user that's a super admin
+		$user = $this->factory->user->create_and_get();
+		grant_super_admin( $user->ID );
+
+		// No lockout enabled
+
+		// Recreate Lockout to re-init filters
+		$this->lockout = new Lockout();
+
+		$original_site_admins = maybe_unserialize(
+			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
+		);
+
+		// Act: Try granting another user super admin
+		$user2 = $this->factory->user->create_and_get();
+		grant_super_admin( $user2->ID );
+
+		// Assert: Check the raw value to avoid conflicts with the filter
+		$actual_site_admins = maybe_unserialize(
+			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
+		);
+
+		$this->assertNotEquals( $original_site_admins, $actual_site_admins, 'Before and after site_admins options were the same' );
+		$this->assertContains( $user2->user_login, $actual_site_admins );
+	}
 }
