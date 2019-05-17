@@ -80,8 +80,10 @@ table.comments td.comment p a:after {
     display: inline-block !important;
 }
 .checkforspam-progress {
-	padding-left: 1ex;
 	display: none;
+}
+.checkforspam.checking .checkforspam-progress {
+	padding-left: 1ex;
 }
 .checkforspam.button-disabled .checkforspam-progress {
 	display: inline;
@@ -246,7 +248,6 @@ table.comments td.comment p a:after {
 	font-size: 140px;
 	color: #769F33;
 	font-family: Georgia, "Times New Roman", Times, serif;
-	z-index: 1;
 }
 
 .akismet_activate .aa_button {
@@ -312,7 +313,6 @@ table.comments td.comment p a:after {
 	margin-left: 25px;
 	color: #E5F2B1;
 	font-size: 15px;
-	z-index: 1000;
 }
 
 .akismet_activate .aa_description strong {
