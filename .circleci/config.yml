@@ -23,6 +23,7 @@ job-references:
       sudo -E docker-php-ext-install mysqli
       sudo sh -c "printf '\ndeb http://ftp.us.debian.org/debian sid main\n' >> /etc/apt/sources.list"
       sudo apt-get update && sudo apt-get install mysql-client-5.7
+      composer install -n
 
   prepare_repo: &prepare_repo
     name: "Prepare Repo"
@@ -44,8 +45,8 @@ job-references:
           command: |
             rm -rf $WP_TESTS_DIR $WP_CORE_DIR
             bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
-            phpunit
-            WP_MULTISITE=1 phpunit
+            vendor/bin/phpunit --version
+            WP_MULTISITE=1 vendor/bin/phpunit
 
 jobs:
   php72-build:
