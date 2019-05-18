@@ -2,7 +2,8 @@ workflows:
   version: 2
   main:
     jobs:
-      - php73-build
+      - php73-build-multisite
+      - php73-build-singlesite
 
 version: 2
 
