@@ -2,7 +2,7 @@ workflows:
   version: 2
   main:
     jobs:
-      - php72-build
+      - php73-build
 
 version: 2
 
@@ -49,12 +49,6 @@ job-references:
             WP_MULTISITE=1 vendor/bin/phpunit
 
 jobs:
-  php72-build:
-    <<: *php_job
-    docker:
-      - image: circleci/php:7.2
-      - image: *mysql_image
-
   php73-build:
     <<: *php_job
     docker:
