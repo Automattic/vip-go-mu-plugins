@@ -49,8 +49,18 @@ job-references:
             WP_MULTISITE=1 vendor/bin/phpunit
 
 jobs:
-  php73-build:
+  php73-build-multisite:
     <<: *php_job
+    environment:
+      - WP_MULTISITE=1
+    docker:
+      - image: circleci/php:7.3
+      - image: *mysql_image
+
+  php73-build-singlesite:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE=0
     docker:
       - image: circleci/php:7.3
       - image: *mysql_image
