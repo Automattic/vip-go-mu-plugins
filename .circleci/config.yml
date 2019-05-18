@@ -8,8 +8,8 @@ workflows:
 version: 2
 
 job-references:
-  mysql_image: &mysql_image
-    circleci/mysql:5.6
+  db_image: &db_image
+    circleci/mariadb:10.2
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
@@ -23,7 +23,7 @@ job-references:
       sudo apt-get update && sudo apt-get install subversion
       sudo -E docker-php-ext-install mysqli
       sudo sh -c "printf '\ndeb http://ftp.us.debian.org/debian sid main\n' >> /etc/apt/sources.list"
-      sudo apt-get update && sudo apt-get install mysql-client-5.7
+      sudo apt-get update && sudo apt-get install mysql-client
       composer install -n
 
   prepare_repo: &prepare_repo
@@ -56,7 +56,7 @@ jobs:
       - WP_MULTISITE=1
     docker:
       - image: circleci/php:7.3
-      - image: *mysql_image
+      - image: *db_image
 
   php73-build-singlesite:
     <<: *php_job
@@ -64,4 +64,4 @@ jobs:
       - WP_MULTISITE=0
     docker:
       - image: circleci/php:7.3
-      - image: *mysql_image
+      - image: *db_image
