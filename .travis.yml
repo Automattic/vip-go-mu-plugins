@@ -8,6 +8,10 @@ git:
 php:
   - 7.3
 
+branches:
+  only:
+  - master
+
 addons:
   apt:
     packages:
@@ -16,7 +20,9 @@ addons:
 before_install:
   - ./ci/prepare.sh
 
-install: true
+install: echo "Skipping install"
+
+script: echo "Skipping script"
 
 after_success:
   # Push the aggregated code, including submodules, to the public repo
