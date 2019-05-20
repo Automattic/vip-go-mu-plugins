@@ -96,7 +96,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 		}
 
 		// 3) The healthcheck option doesn’t exist. Either it's a new site, or an unknown connection error.
-		if ( $this->is_default_vip_domain() || $this->is_new_multisite_site() ) {
+		if ( $this->is_placeholder_domain() || $this->is_new_multisite_site() ) {
 			return $this->handle_new_sites();
 		} else {
 			return $this->notify_pilot( 'Jetpack is disconnected.' );
@@ -120,11 +120,10 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	/**
 	 * Connection issue handler for new sites.
 	 *
-	 * This includes either a default go-vip domain
-	 * or a recently created multi-site site.
+	 * This includes either a placeholder go-vip domain or a recently created multi-site site.
 	 */
 	private function handle_new_sites() {
-		if ( $this->is_default_vip_domain() ) {
+		if ( $this->is_placeholder_domain() ) {
 			return $this->notify_pilot( 'Jetpack is disconnected, though it appears this is a new site.' );
 		}
 
@@ -156,11 +155,11 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	}
 
 	/**
-	 * Check if the current site is using a default VIP Go domain name.
+	 * Check if the current site is using a placeholder VIP Go domain name.
 	 *
-	 * @return bool True if this is a default URL.
+	 * @return bool True if this is a placeholder URL.
 	 */
-	private function is_default_vip_domain() {
+	private function is_placeholder_domain() {
 		$site_parsed = wp_parse_url( $this->site_url );
 		return wp_endswith( $site_parsed['host'], '.go-vip.co' ) || wp_endswith( $site_parsed['host'], '.go-vip.net' );
 	}
