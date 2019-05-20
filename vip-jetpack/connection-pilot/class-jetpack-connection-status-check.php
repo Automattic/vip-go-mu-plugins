@@ -82,7 +82,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	 */
 	private function handle_connection_issues() {
 		if ( in_array( $this->connection_error->get_error_code(), array( 'jp-cxn-pilot-missing-constants', 'jp-cxn-pilot-development-mode' ), true ) ) {
-			return $this->notify_pilot( 'Jetpack cannot currently be connected on this site.' );
+			return $this->notify_pilot( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.' );
 		}
 
 		// 1) It is connected but not under the right account.
@@ -181,7 +181,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 
 		$time_diff = time() - strtotime( $current_site->registered );
 		if ( 2 >= ( $time_diff / 3600 ) ) {
-			// The site was created in the last 2 hours.
+			// The site was created in the last 2 hours. The cron job will run hourly, so this should catch most cases.
 			return true;
 		}
 
