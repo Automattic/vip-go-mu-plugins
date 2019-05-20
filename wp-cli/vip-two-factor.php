@@ -2,7 +2,7 @@
 
 class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 	function report() {
-		$fields = array( 'ID', 'display_name' );
+		$fields = array( 'ID', 'display_name', 'roles' );
 		$users = get_users();
 		$providers = Two_Factor_Core::get_providers();
 
