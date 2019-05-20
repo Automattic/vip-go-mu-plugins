@@ -117,7 +117,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * @return bool True if the connection pilot should run.
 	 */
 	private static function should_run_connection_pilot() {
-		if ( defined( 'WPCOM_VIP_RUN_CONNECTION_PILOT' ) && WPCOM_VIP_RUN_CONNECTION_PILOT ) {
+		if ( defined( 'WPCOM_VIP_RUN_CONNECTION_PILOT' ) && true === WPCOM_VIP_RUN_CONNECTION_PILOT ) {
 			return true;
 		}
 
