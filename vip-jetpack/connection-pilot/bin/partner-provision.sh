@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-# Duplicate of JP core's script, except for the two changes marked below by "EDIT" comments.
+# Duplicate of JP core's script: https://github.com/Automattic/jetpack/blob/ed89a18f91c4a8915c36d63267e0610bda1f515e/bin/partner-provision.sh
+# Except for the two changes marked below by "EDIT" comments.
 
 # accepts: partner client ID and secret key, and some site info
 # executes wp-cli command to provision Jetpack site for given partner
