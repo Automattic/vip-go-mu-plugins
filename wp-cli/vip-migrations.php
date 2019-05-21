@@ -165,12 +165,29 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Iterate over attachments and check to see if they actually exist.
 	 *
+	 * ## OPTIONS
+	 *
+	 * <csv-filename>
+	 * : The CSV file for output.  The CSV file has a header with the following structure: `"url", "status"`
+	 *
+	 * [--extra-check]
+	 * : Checks the attachment's `_wp_attached_image` post meta for an edited image filename with a new URL.  This will be slower as it adds additional SQL queries.
+	 *
+	 * [--log-found-files]
+	 * : By default, only URLs with a status other than "200" are logged.  This will log found files as well.
+	 *
+	 * [--start_date=<start_date>]
+	 * : The date to start the query from.
+	 *
+	 * [--end_date=<end_date>]
+	 * : The date to end the query with.
+	 *
 	 * @subcommand validate-attachments
-	 * @synopsis <csv-filename> [--log-found-files] [--start_date=<start_date>] [--end_date=<end_date>]
 	 */
 	public function validate_attachments( $args, $assoc_args ) {
 		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
 		$output_file = $args[0];
+		$extra_check = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
 
 		$offset = 0;
 		$limit = 500;
@@ -202,6 +219,23 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query . ' LIMIT %d,%d', $offset, $limit );
 			$attachments = $wpdb->get_results( $sql );
 
+			if ( $extra_check ) {
+				$extra_attachments = [];
+				foreach( $attachments as $attachment ) {
+					$attachment_ids = $wpdb->get_results( $wpdb->prepare( 'SELECT ID from ' . $wpdb->posts . ' WHERE guid=%s', $attachment->guid ) );
+					foreach( $attachment_ids as $attachment_id ) {
+						$attached_file = $wpdb->get_results( $wpdb->prepare( 'SELECT meta_value from ' . $wpdb->postmeta . ' WHERE post_id=%d AND meta_key="_wp_attached_file"', $attachment_id->ID ) );
+						if ( ! empty( $attached_file ) ) {
+							$extra_guid = substr( $attachment->guid, 0, strpos( $attachment->guid, '/wp-content/uploads/' ) + strlen( '/wp-content/uploads/' ) ) . $attached_file[0]->meta_value;
+							if ( $extra_guid !== $attachment->guid ) {
+								$extra_attachments[] = (object) [ 'guid' => $extra_guid ];
+							}
+						}
+					}
+				}
+				$attachments = array_merge( $attachments, $extra_attachments );
+			}
+			
 			// Break the attachments into groups of maxiumum 10 elements
 			$attachments_arrays = array_chunk( $attachments , $threads );
 

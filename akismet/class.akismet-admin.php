@@ -390,9 +390,9 @@ class Akismet_Admin {
 		$comments_count = wp_count_comments();
 		
 		echo '</div>';
-		echo '<div class="alignleft">';
+		echo '<div class="alignleft actions">';
 		echo '<a
-				class="button-secondary checkforspam"
+				class="button-secondary checkforspam' . ( $comments_count->moderated == 0 ? ' button-disabled' : '' ) . '"
 				href="' . esc_url( $link ) . '"
 				data-active-label="' . esc_attr( __( 'Checking for Spam', 'akismet' ) ) . '"
 				data-progress-label-format="' . esc_attr( __( '(%1$s%)', 'akismet' ) ) . '"
