@@ -2,6 +2,10 @@
 
 class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 	function report() {
+		if ( ! apply_filters( 'wpcom_vip_enable_two_factor', true ) ) {
+			WP_CLI::error( 'This site has disabled Two Factor.' );
+		}
+		
 		$fields = array( 'ID', 'display_name', 'roles' );
 		$users = get_users();
 		$providers = Two_Factor_Core::get_providers();
