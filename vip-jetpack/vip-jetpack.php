@@ -139,8 +139,6 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
 
 // Disable Jetpack sync when user is added to blog.
-if ( defined( 'VIP_GO_APP_ID' ) && ( 1398 === VIP_GO_APP_ID || 1420 === VIP_GO_APP_ID ) ) {
-	add_action( 'init', function() {
-		remove_action( 'jetpack_user_authorized', [ 'Jetpack_Sync_Actions', 'do_initial_sync' ] );
-	} );
-}
+add_action( 'init', function() {
+	remove_action( 'jetpack_user_authorized', [ 'Jetpack_Sync_Actions', 'do_initial_sync' ] );
+} );
