@@ -26,20 +26,6 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * Initiate an instance of this class if one doesn't exist already.
 	 */
 	public static function init() {
-		static $instance = false;
-
-		if ( ! $instance ) {
-			$instance = new WPCOM_VIP_Jetpack_Connection_Pilot();
-		}
-
-		return $instance;
-	}
-
-	/**
-	 * Class constructor.
-	 * Ensures the cron job is set up correctly and ready.
-	 */
-	private function __construct() {
 		if ( ! self::should_run_connection_pilot() ) {
 			return;
 		}
