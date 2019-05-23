@@ -33,7 +33,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	 *
 	 * @var WP_Error A WP_Error object.
 	 */
-	private $connection_error;
+	private $connection_error = null;
 
 	/**
 	 * An list of notifications that need to be sent out by the Pilot.
@@ -49,7 +49,6 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	public function __construct() {
 		$this->healthcheck_option = get_option( self::HEALTHCHECK_OPTION_NAME );
 		$this->site_url           = get_site_url();
-		$this->connection_error   = new WP_Error( 'jp-cxn-pilot-default-error', 'The Jetpack connection is in an unknown state.' );
 	}
 
 	/**
@@ -81,12 +80,12 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	 * Handle connection issues. (Re)connect when possible, else add a notification.
 	 */
 	private function handle_connection_issues() {
-		if ( in_array( $this->connection_error->get_error_code(), array( 'jp-cxn-pilot-missing-constants', 'jp-cxn-pilot-development-mode' ), true ) ) {
+		if ( $this->connection_error && in_array( $this->connection_error->get_error_code(), array( 'jp-cxn-pilot-missing-constants', 'jp-cxn-pilot-development-mode' ), true ) ) {
 			return $this->notify_pilot( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.' );
 		}
 
 		// 1) It is connected but not under the right account.
-		if ( 'jp-cxn-pilot-not-vip-owned' === $this->connection_error->get_error_code() ) {
+		if ( $this->connection_error && 'jp-cxn-pilot-not-vip-owned' === $this->connection_error->get_error_code() ) {
 			return $this->notify_pilot( 'Jetpack is connected to a non-VIP account.' );
 		}
 
