@@ -229,33 +229,15 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 	 * This helps prevent cache issues for times where the database was directly updated.
 	 */
 	private static function refresh_options_cache() {
-		$update_notoptions = false;
-		$update_alloptions = false;
+		$options_to_refresh = array( 
+			'jetpack_options',
+			'jetpack_private_options',
+			'alloptions',
+			'notoptions',
+		);
 
-		$notoptions = wp_cache_get( 'notoptions', 'options' );
-		$alloptions = wp_load_alloptions();
-
-		$options_to_refresh = array( 'jetpack_options', 'jetpack_private_options' );
 		foreach ( $options_to_refresh as $option_name ) {
 			wp_cache_delete( $option_name, 'options' );
-
-			if ( isset( $notoptions[ $option_name ] ) ) {
-				$update_notoptions = true;
-				unset( $notoptions[ $option_name ] );
-			}
-
-			if ( isset( $alloptions[ $option_name ] ) ) {
-				$update_alloptions = true;
-				unset( $alloptions[ $option_name ] );
-			}
-		}
-
-		if ( $update_notoptions ) {
-			wp_cache_set( 'notoptions', $notoptions, 'options' );
-		}
-
-		if ( $update_alloptions ) {
-			wp_cache_set( 'alloptions', $alloptions, 'options' );
 		}
 	}
 
