@@ -1,12 +1,14 @@
 <?php
 
 class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
-	function report() {
+	function report( $args, $assoc_args ) {
 		if ( ! apply_filters( 'wpcom_vip_enable_two_factor', true ) ) {
 			WP_CLI::error( 'This site has disabled Two Factor.' );
 		}
-		
+
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 		$fields = array( 'ID', 'display_name', 'roles' );
+
 		$users = get_users();
 		$providers = Two_Factor_Core::get_providers();
 
@@ -30,7 +32,7 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 
 		$fields[] = 'two_factor_enabled';
 		$fields[] = 'two_factor_providers';
-		WP_CLI\Utils\format_items( 'table', $users, $fields );
+		WP_CLI\Utils\format_items( $format, $users, $fields );
 	}
 }
 
