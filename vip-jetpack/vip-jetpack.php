@@ -106,6 +106,10 @@ function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load 
 		return $should_load;
 	}
 
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		return $should_load;
+	}
+
 	if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) {
 		$should_load = false;
 	}
