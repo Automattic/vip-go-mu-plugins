@@ -95,7 +95,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 
 		if ( isset( $last_healthcheck['site_url'], $last_healthcheck['cache_site_id'], $last_healthcheck['last_healthcheck'] ) ) {
 			$message .= sprintf(
-				' The last known connection was on %s UTC to Cache ID %d (%s).',
+				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
 				date( 'F j, H:i', $last_healthcheck['last_healthcheck'] ), $last_healthcheck['cache_site_id'], $last_healthcheck['site_url']
 			);
 		}
