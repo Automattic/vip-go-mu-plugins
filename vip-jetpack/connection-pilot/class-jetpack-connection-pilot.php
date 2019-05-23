@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/class-jetpack-connection-controls.php';
+require_once __DIR__ . '/class-jetpack-connection-status-check.php';
+
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
  * Will only run if the `WPCOM_VIP_RUN_CONNECTION_PILOT` constant is defined and set to true.
@@ -61,9 +64,6 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		if ( ! self::should_run_connection_pilot() ) {
 			return;
 		}
-
-		require_once __DIR__ . '/class-jetpack-connection-controls.php';
-		require_once __DIR__ . '/class-jetpack-connection-status-check.php';
 
 		$status_check = new WPCOM_VIP_Jetpack_Connection_Status_Check();
 		$status_check->launch();
