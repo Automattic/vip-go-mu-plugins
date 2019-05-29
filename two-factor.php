@@ -12,7 +12,7 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
-define( 'VIP_2FA_TIME_GATE', strtotime( '2019-05-29 18:00:00' ) );
+define( 'VIP_2FA_TIME_GATE', strtotime( '2019-07-17 18:00:00' ) );
 define( 'VIP_IS_AFTER_2FA_TIME_GATE', time() > VIP_2FA_TIME_GATE );
 
 function wpcom_vip_should_force_two_factor() {
@@ -58,7 +58,7 @@ function wpcom_vip_is_two_factor_forced() {
 
 function wpcom_vip_enforce_two_factor_plugin() {
 	if ( is_user_logged_in() ) {
-		$cap = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'edit_posts' );
+		$cap = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' );
 		$limited = current_user_can( $cap );
 
 		if ( VIP_IS_AFTER_2FA_TIME_GATE ) {
