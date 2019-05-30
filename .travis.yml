@@ -12,6 +12,9 @@ branches:
   only:
   - master
 
+env:
+ - DEPLOY_BRANCH=master
+
 addons:
   apt:
     packages:
