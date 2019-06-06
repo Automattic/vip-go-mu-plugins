@@ -39,6 +39,12 @@ function wpcom_vip_should_force_two_factor() {
 	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
 		return false;
 	}
+	
+	// Don't force 2FA for older versions of OneLogin SSO
+	$user_id = get_current_user_id();
+	if ( function_exists( 'is_sso_user' ) && is_sso_user( $user_id ) ) {
+		return false;
+	}
 
 	// Don't force 2FA for SimpleSaml
 	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
