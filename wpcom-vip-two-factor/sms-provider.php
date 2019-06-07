@@ -91,30 +91,30 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			return \Automattic\VIP\SMS\send_sms( $sms, $code );
 		}
 
-    /**
-     * Prints the form that prompts the user to authenticate.
-     *
-     * @param WP_User $user WP_User object of the logged-in user.
-     */
-    public function authentication_page( $user ) {
-        if ( ! $user ) {
-            return;
-        }
+	/**
+	 * Prints the form that prompts the user to authenticate.
+	 *
+	 * @param WP_User $user WP_User object of the logged-in user.
+	 */
+	public function authentication_page( $user ) {
+		if ( ! $user ) {
+			return;
+		}
 
-        if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
-            $this->generate_and_send_token( $user );
-        }
+		if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
+			$this->generate_and_send_token( $user );
+		}
 
-        // Including template.php for submit_button()
-        require_once( ABSPATH .  '/wp-admin/includes/template.php' );
-        ?>
-        <p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
-    <p>
-        <label for="authcode"><?php esc_html_e( 'Verification Code:', 'two-factor' ); ?></label>
-        <input type="tel" name="two-factor-sms-code" id="authcode" class="input" value="" size="20" pattern="[0-9]*" />
-    </p>
-    <?php
-    submit_button( __( 'Log In', 'two-factor' ) );
+		// Including template.php for submit_button()
+		require_once( ABSPATH .  '/wp-admin/includes/template.php' );
+		?>
+		<p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
+	<p>
+		<label for="authcode"><?php esc_html_e( 'Verification Code:', 'two-factor' ); ?></label>
+		<input type="tel" name="two-factor-sms-code" id="authcode" class="input" value="" size="20" pattern="[0-9]*" />
+	</p>
+	<?php
+	submit_button( __( 'Log In', 'two-factor' ) );
 	}
 
 	/**
