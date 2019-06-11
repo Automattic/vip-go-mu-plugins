@@ -86,9 +86,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 */
 	public function generate_and_send_token( $user ) {
 		require_once( WPMU_PLUGIN_DIR . '/lib/sms.php' );
-		$code = $this->generate_token( $user->ID );
+		$message = 'The WordPress VIP security code you requested is: ' . $this->generate_token( $user->ID );
 		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
-			return \Automattic\VIP\SMS\send_sms( $sms, $code );
+			return \Automattic\VIP\SMS\send_sms( $sms, $message );
 		}
 
 	/**
