@@ -86,7 +86,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 */
 	public function generate_and_send_token( $user ) {
 		require_once( WPMU_PLUGIN_DIR . '/lib/sms.php' );
-		$message = 'The WordPress VIP security code you requested is: ' . $this->generate_token( $user->ID );
+		$message = 'The verification code you requested is: ' . $this->generate_token( $user->ID );
 		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
 			return \Automattic\VIP\SMS\send_sms( $sms, $message );
 		}
@@ -195,7 +195,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			$user = get_userdata( $user_id ) ;
 			if ( $this->validate_authentication( $user ) ) {
 				update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, 1 );
-			}
+			} else {
+
+            }
 		}
 
 		if ( isset( $_POST['vip-two-factor-phone-delete'] ) ) {
