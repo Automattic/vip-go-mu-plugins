@@ -158,7 +158,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 				Correctly configured for <?php echo esc_attr( $sms ); ?>.
 				<input type="submit" class="button" name="vip-two-factor-phone-delete"
 					   value="<?php esc_attr_e( 'Delete', 'two-factor' ); ?>"/>
-			<?php elseif ( !empty( $hashed_token ) ) : ?>
+			<?php elseif ( ! empty( $hashed_token ) ) : ?>
 				<p>
 					Verification code has been sent to <?php echo esc_attr( $sms ); ?>
 					<input type="submit" class="button" name="vip-two-factor-phone-send-code"
