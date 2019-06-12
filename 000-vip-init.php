@@ -73,7 +73,7 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 }
 
 define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
