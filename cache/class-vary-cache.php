@@ -540,7 +540,8 @@ class Vary_Cache {
 
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( $group_string );
-			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
+			$base_64 = base64_encode( $cookie_value ) ;
+			self::set_cookie( self::COOKIE_AUTH, VIP_GO_APP_ID . '.' . $base_64 );
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
