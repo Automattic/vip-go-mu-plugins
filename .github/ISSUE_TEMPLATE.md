@@ -4,7 +4,7 @@
 
 If you're not an Automattician, welcome! We look forward to your contribution! :heart:
 
-Please remove this section before submitting the PR.
+Please remove this section before submitting the issue.
 
 ---
 
