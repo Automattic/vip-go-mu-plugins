@@ -593,6 +593,16 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 }
 
 /**
+ * Remove cached post ID when attachment post deleted
+ *
+ * @see wpcom_vip_attachment_url_to_postid()
+ */
+add_action( 'delete_attachment', function ( $post_id ) {
+	$url = wp_get_attachment_url( $post_id );
+	wp_cache_delete( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) );
+} );
+
+/**
  * Use this function to cache the comment counting in the wp menu that can be slow on sites with lots of comments
  * use like this:
  *
