@@ -8,6 +8,7 @@ class Vary_Cache {
 	const COOKIE_NOCACHE = 'vip-go-cb';
 	const COOKIE_SEGMENT = 'vip-go-seg';
 	const COOKIE_AUTH = 'vip-go-auth';
+	const HEADER_AUTH = 'HTTP_X_VIP_GO_AUTH';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
 	const GROUP_SEPARATOR = '---__';
@@ -395,7 +396,6 @@ class Vary_Cache {
 	 */
 	public static function parse_cookies() {
 		self::parse_nocache_cookie();
-
 		self::parse_group_cookie();
 	}
 
@@ -414,8 +414,9 @@ class Vary_Cache {
 	 * Parses the group/segment cookie into the local groups array of key-values.
 	 */
 	private static function parse_group_cookie() {
-		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
-			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
+		//use the decrypted value provided from the cache layer
+		if ( self::is_encryption_enabled() && isset( $_SERVER[ self::HEADER_AUTH ] ) &&  ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
+			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
@@ -541,8 +542,7 @@ class Vary_Cache {
 
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( $group_string );
-			$base_64 = base64_encode( $cookie_value ) ;
-			self::set_cookie( self::COOKIE_AUTH, VIP_GO_APP_ID . '.' . $base_64 );
+			self::set_cookie( self::COOKIE_AUTH, VIP_GO_APP_ID . '.' . $cookie_value );
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
@@ -570,10 +570,13 @@ class Vary_Cache {
 		if ( ! empty( self::$groups ) ) {
 			$sent_vary = true;
 
+			$group_string = self::stringify_groups();
+
+
 			if ( self::is_encryption_enabled() ) {
 				header( 'Vary: X-VIP-Go-Auth' );
 			} else {
-				header( 'Vary: X-VIP-Go-Segmentation' );
+				header( 'Vary: X-VIP-Go-Segmentation: '. $group_string );
 			}
 
 			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
