@@ -570,9 +570,6 @@ class Vary_Cache {
 		if ( ! empty( self::$groups ) ) {
 			$sent_vary = true;
 
-			$group_string = self::stringify_groups();
-
-
 			if ( self::is_encryption_enabled() ) {
 				header( 'Vary: X-VIP-Go-Auth' );
 			} else {
@@ -595,6 +592,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
+		//need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
 		setrawcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
