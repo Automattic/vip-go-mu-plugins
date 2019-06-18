@@ -576,7 +576,7 @@ class Vary_Cache {
 			if ( self::is_encryption_enabled() ) {
 				header( 'Vary: X-VIP-Go-Auth' );
 			} else {
-				header( 'Vary: X-VIP-Go-Segmentation: '. $group_string );
+				header( 'Vary: X-VIP-Go-Segmentation' );
 			}
 
 			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
