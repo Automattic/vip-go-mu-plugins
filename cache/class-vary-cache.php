@@ -591,7 +591,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		setrawcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
