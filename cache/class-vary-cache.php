@@ -417,7 +417,24 @@ class Vary_Cache {
 		//use the decrypted value provided from the cache layer
 		if ( self::is_encryption_enabled() && isset( $_SERVER[ self::HEADER_AUTH ] ) &&  ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
-		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
+			// if the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
+
+			$auth_cookie = null;
+			//$_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
+			foreach(explode('; ',$_SERVER['HTTP_COOKIE']) as $rawcookie)
+			{
+				list($k,$v) = explode('=',$rawcookie, 2);
+				if( self::COOKIE_AUTH === $k) {
+					$auth_cookie = $v;
+					break;
+				}
+			}
+
+			$value = ltrim( $auth_cookie, VIP_GO_APP_ID . '.' ); // remove the site prefix
+			$cookie_value = self::decrypt_cookie_value( $value );
+
+		}elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
 
