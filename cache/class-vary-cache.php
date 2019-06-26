@@ -414,14 +414,14 @@ class Vary_Cache {
 	 * Parses the group/segment cookie into the local groups array of key-values.
 	 */
 	private static function parse_group_cookie() {
-		//use the decrypted value provided from the cache layer
+		// Use the decrypted value provided from the cache layer.
 		if ( self::is_encryption_enabled() && isset( $_SERVER[ self::HEADER_AUTH ] ) &&  ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
-			// if the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
+			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
 
 			$auth_cookie = null;
-			//$_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
+			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			foreach(explode('; ',$_SERVER['HTTP_COOKIE']) as $rawcookie)
 			{
 				list($k,$v) = explode('=',$rawcookie, 2);
@@ -434,7 +434,7 @@ class Vary_Cache {
 			$value = ltrim( $auth_cookie, VIP_GO_APP_ID . '.' ); // remove the site prefix
 			$cookie_value = self::decrypt_cookie_value( $value );
 
-		}elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
 
@@ -609,7 +609,7 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		//need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
+		// Need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
 		setrawcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
