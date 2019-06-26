@@ -414,18 +414,16 @@ class Vary_Cache {
 	 * Parses the group/segment cookie into the local groups array of key-values.
 	 */
 	private static function parse_group_cookie() {
-		// Use the decrypted value provided from the cache layer.
+		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && isset( $_SERVER[ self::HEADER_AUTH ] ) &&  ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
 			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
-
 			$auth_cookie = null;
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
-			foreach(explode('; ',$_SERVER['HTTP_COOKIE']) as $rawcookie)
-			{
-				list($k,$v) = explode('=',$rawcookie, 2);
-				if( self::COOKIE_AUTH === $k) {
+			foreach( explode('; ',$_SERVER[ 'HTTP_COOKIE' ] ) as $rawcookie ) {
+				list( $k, $v ) = explode('=', $rawcookie,2 );
+				if( self::COOKIE_AUTH === $k ) {
 					$auth_cookie = $v;
 					break;
 				}

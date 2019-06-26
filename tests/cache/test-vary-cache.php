@@ -647,7 +647,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 					'dev-group' => 'yes'
 				],
 			],
-			'values_encrypted_group' => [
+			'values_encrypted_group_header' => [
 				[	'key' => 'abc',
 					'iv' => '1231231231231234',
 				],
@@ -655,6 +655,20 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				],
 				[
 					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes'
+				],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_encrypted_group_no_header' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+				],
+				[
+					'vip-go-auth' => 'VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
+				],
+				[
 				],
 				[
 					'design-group' => 'no' ,
