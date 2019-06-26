@@ -362,8 +362,7 @@ class Vary_Cache {
 	private static function encrypt_cookie_value( $value ) {
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
-		$random = random_int( 0,  PHP_INT_MAX ) . random_int( 0,  PHP_INT_MAX );
-		$cookie_value = $random . '|' . $value . '|' . ( time() + self::$cookie_expiry );
+		$cookie_value = random_int( 0,  PHP_INT_MAX ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
 		return $cipher_cookie;
