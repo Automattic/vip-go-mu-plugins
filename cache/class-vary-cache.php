@@ -420,8 +420,8 @@ class Vary_Cache {
 			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
 			$auth_cookie = null;
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
-			foreach( explode('; ',$_SERVER[ 'HTTP_COOKIE' ] ) as $rawcookie ) {
-				list( $k, $v ) = explode('=', $rawcookie,2 );
+			foreach( explode( '; ', $_SERVER[ 'HTTP_COOKIE' ] ) as $rawcookie ) {
+				list( $k, $v ) = explode( '=', $rawcookie, 2 );
 				if( self::COOKIE_AUTH === $k ) {
 					$auth_cookie = $v;
 					break;
