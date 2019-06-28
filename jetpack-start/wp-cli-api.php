@@ -65,6 +65,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		$network = WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
 		if ( $network && is_multisite() ) {
 			$sites = get_sites( [
+				'number'   => 0,
 				'public'   => null,
 				'archived' => 0,
 				'spam'     => 0,
