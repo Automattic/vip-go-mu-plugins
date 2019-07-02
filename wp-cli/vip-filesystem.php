@@ -107,10 +107,11 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 			$attachments = $this->meta_updater->get_attachments( $start_index, $end_index );
 
-			WP_CLI::line( sprintf( '-- found %s attachments', number_format( count( $attachments ) ) ) );
+			WP_CLI::line( sprintf( '-- found %s attachments without a filesize', number_format( count( $attachments ) ) ) );
 
 			if ( $attachments ) {
-				$this->meta_updater->update_attachments( $attachments, $this->dry_run );
+				$counts = $this->meta_updater->update_attachments( $attachments, $this->dry_run );
+				WP_CLI::line( sprintf( '-- results: %s', json_encode( $counts ) ) );
 			}
 
 			// Pause.

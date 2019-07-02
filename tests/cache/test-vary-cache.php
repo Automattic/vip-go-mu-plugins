@@ -15,6 +15,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_COOKIE = $_COOKIE;
+		$this->original_SERVER = $_SERVER;
 
 		Vary_Cache::load();
 	}
@@ -23,6 +24,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_COOKIE;
+		$_SERVER = $this->original_SERVER;
 
 		parent::tearDown();
 	}
@@ -639,17 +641,37 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				[
 					'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
 				],
+				[],
 				[
 					'design-group' => 'no' ,
 					'dev-group' => 'yes'
 				],
 			],
-			'values_encrypted_group' => [
+			'values_encrypted_group_header' => [
 				[	'key' => 'abc',
 					'iv' => '1231231231231234',
+					'siteid' => 123,
 				],
 				[
-					'vip-go-auth' => 'VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
+				],
+				[
+					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes'
+				],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_encrypted_group_no_header' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+					'siteid' => 123,
+				],
+				[
+					'vip-go-auth' => '123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
+				],
+				[
+					'HTTP_COOKIE' => 'vip-go-auth=123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I;',
 				],
 				[
 					'design-group' => 'no' ,
@@ -661,17 +683,23 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 				[
 					'vip-go-seg' => 'vc-v1__',
 				],
+				[],
 				[
 				],
 			],
 			'values_encrypted_nogroup' => [
 				[	'key' => 'abc',
 					'iv' => '1231231231231234',
+					'siteid' => 123,
 				],
 				[
-					'vip-go-auth' => 'qSME2LdfVuNvZa0GfeUJ45/uHCu7Auqj3iesSL4CITteGfva/N0wQ5TCIzcyeBImeTf3On2P4f7EtQyviw2ooA==',
 				],
 				[
+					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_yes---__dev-group_--_no'
+				],
+				[
+					'design-group' => 'yes' ,
+					'dev-group' => 'no'
 				],
 			],
 		];
@@ -683,13 +711,15 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $expected_result )
+	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result )
 	{
+		$_SERVER = array_merge( $_SERVER, $headers );
 		$_COOKIE = $initial_cookie;
 		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
 		if ( ! empty( $secrets ) ) {
 			define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets[ 'key' ] );
 			define( 'VIP_GO_AUTH_COOKIE_IV', $secrets[ 'iv' ] );
+			define( 'VIP_GO_APP_ID', $secrets[ 'siteid' ]);
 			Vary_Cache::enable_encryption();
 		}
 		$get_parse_group_cookie_method->invokeArgs(null, [ ] );

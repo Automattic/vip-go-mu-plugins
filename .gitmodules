@@ -40,3 +40,6 @@
 [submodule "gutenberg-ramp"]
 	path = gutenberg-ramp
 	url = https://github.com/Automattic/gutenberg-ramp.git
+[submodule "cron-control-next"]
+	path = cron-control-next
+	url = git@github.com:Automattic/Cron-Control.git
