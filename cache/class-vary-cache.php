@@ -8,6 +8,7 @@ class Vary_Cache {
 	const COOKIE_NOCACHE = 'vip-go-cb';
 	const COOKIE_SEGMENT = 'vip-go-seg';
 	const COOKIE_AUTH = 'vip-go-auth';
+	const HEADER_AUTH = 'HTTP_X_VIP_GO_AUTH';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
 	const GROUP_SEPARATOR = '---__';
@@ -361,7 +362,7 @@ class Vary_Cache {
 	private static function encrypt_cookie_value( $value ) {
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
-		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
+		$cookie_value = random_int( 0,  PHP_INT_MAX ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
 		return $cipher_cookie;
@@ -394,7 +395,6 @@ class Vary_Cache {
 	 */
 	public static function parse_cookies() {
 		self::parse_nocache_cookie();
-
 		self::parse_group_cookie();
 	}
 
@@ -413,8 +413,24 @@ class Vary_Cache {
 	 * Parses the group/segment cookie into the local groups array of key-values.
 	 */
 	private static function parse_group_cookie() {
-		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
-			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
+		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
+		if ( self::is_encryption_enabled() && isset( $_SERVER[ self::HEADER_AUTH ] ) &&  ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
+			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
+		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
+			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
+			$auth_cookie = null;
+			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
+			foreach( explode( '; ', $_SERVER[ 'HTTP_COOKIE' ] ) as $rawcookie ) {
+				list( $k, $v ) = explode( '=', $rawcookie, 2 );
+				if( self::COOKIE_AUTH === $k ) {
+					$auth_cookie = $v;
+					break;
+				}
+			}
+
+			$value = ltrim( $auth_cookie, VIP_GO_APP_ID . '.' ); // remove the site prefix
+			$cookie_value = self::decrypt_cookie_value( $value );
+
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
@@ -540,7 +556,7 @@ class Vary_Cache {
 
 		if ( self::is_encryption_enabled() ) {
 			$cookie_value = self::encrypt_cookie_value( $group_string );
-			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
+			self::set_cookie( self::COOKIE_AUTH, VIP_GO_APP_ID . '.' . $cookie_value );
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
@@ -590,7 +606,8 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		// Need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
+		setrawcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
