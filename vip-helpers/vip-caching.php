@@ -569,11 +569,11 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 
 	// If the post isn't found lets cache a value we'll check against. Add some variation in the caching so if a site is being crawled all the caches don't get created all the time.
 	if ( empty( $found_post ) ) {
-		wp_cache_set( $query_key, 'not found', 'default', 15 * MINUTE_IN_SECONDS + rand( 0, 15 * MINUTE_IN_SECONDS ) );
+		wp_cache_set( $query_key, 'not found', 'default', 15 * MINUTE_IN_SECONDS + wp_rand( 0, 15 * MINUTE_IN_SECONDS ) );
 		return false;
 	}
 
-	wp_cache_set( $query_key, $found_post, 'default', 6 * HOUR_IN_SECONDS + rand( 0, 2 * HOUR_IN_SECONDS ) );
+	wp_cache_set( $query_key, $found_post, 'default', 6 * HOUR_IN_SECONDS + wp_rand( 0, 2 * HOUR_IN_SECONDS ) );
 	$found_post = get_post( $found_post );
 
 	return $found_post;
