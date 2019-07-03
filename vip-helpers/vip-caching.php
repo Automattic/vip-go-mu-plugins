@@ -196,7 +196,7 @@ function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 
 		$page    = get_page_by_path( $page_path, $output, $post_type );
 		$page_id = $page ? $page->ID : 0;
 		if ( 0 === $page_id ) {
-			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
+			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', ( 1 * HOUR_IN_SECONDS + wp_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
 		} else {
 			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', 0 ); // We only store the ID to keep our footprint small
 		}
@@ -589,9 +589,9 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 	if ( false === $id ) {
 		$id = attachment_url_to_postid( $url );
 		if ( empty( $id ) ) {
-			wp_cache_set( $cache_key, 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key, 'not_found', 'default', 12 * HOUR_IN_SECONDS + wp_rand( 0, 4 * HOUR_IN_SECONDS ) );
 		} else {
-			wp_cache_set( $cache_key, $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key, $id, 'default', 24 * HOUR_IN_SECONDS + wp_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		}
 	} elseif ( 'not_found' === $id ) {
 		return false;
@@ -670,7 +670,7 @@ function wpcom_vip_wp_old_slug_redirect() {
 			// Run the caching callback as the very firts one in order to capture the value returned by WordPress from database. This allows devs from using `old_slug_redirect_url` filter w/o polluting the cache
 			add_filter( 'old_slug_redirect_url', 'wpcom_vip_set_old_slug_redirect_cache', -9999, 1 );
 			// If an old slug is not found the function returns early and does not apply the old_slug_redirect_url filter. so we will set the cache for not found and if it is found it will be overwritten later in wpcom_vip_set_old_slug_redirect_cache()
-			wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], 'not_found', 'default', 12 * HOUR_IN_SECONDS + wp_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		} elseif ( 'not_found' === $redirect ) {
 			// wpcom_vip_set_old_slug_redirect_cache() will cache 'not_found' when a url is not found so we don't keep hammering the database
 			remove_action( 'template_redirect', 'wp_old_slug_redirect' );
