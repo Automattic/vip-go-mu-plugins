@@ -35,7 +35,7 @@ function wpcom_vip_get_term_by( $field, $value, $taxonomy, $output = OBJECT, $fi
 	}
 
 	$cache_key = $field . '|' . $taxonomy . '|' . md5( $value );
-	$term_id = wp_cache_get( $cache_key, 'get_term_by' );
+	$term_id   = wp_cache_get( $cache_key, 'get_term_by' );
 
 	if ( false === $term_id ) {
 		$term = get_term_by( $field, $value, $taxonomy );
@@ -65,8 +65,8 @@ function wp_flush_get_term_by_cache( $term_id, $taxonomy ) {
 	if ( ! $term ) {
 		return;
 	}
-	foreach ( array( 'name', 'slug' ) as $field ) {
-		$cache_key = $field . '|' . $taxonomy . '|' . md5( $term->$field );
+	foreach ( [ 'name', 'slug' ] as $field ) {
+		$cache_key   = $field . '|' . $taxonomy . '|' . md5( $term->$field );
 		$cache_group = 'get_term_by';
 		wp_cache_delete( $cache_key, $cache_group );
 	}
@@ -121,8 +121,8 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
  */
 add_action( 'delete_term', 'wp_flush_term_exists', 10, 4 );
 function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ) {
-	foreach ( array( 'term_id', 'name', 'slug' ) as $field ) {
-		$cache_key = $deleted_term->$field . '|' . $taxonomy ;
+	foreach ( [ 'term_id', 'name', 'slug' ] as $field ) {
+		$cache_key   = $deleted_term->$field . '|' . $taxonomy;
 		$cache_group = 'term_exists';
 		wp_cache_delete( $cache_key, $cache_group );
 	}
@@ -159,10 +159,10 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
  */
 function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
 	$cache_key = $post_type . '_' . sanitize_key( $title );
-	$page_id = wp_cache_get( $cache_key, 'get_page_by_title' );
+	$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
 
 	if ( false === $page_id ) {
-		$page = get_page_by_title( $title, OBJECT, $post_type );
+		$page    = get_page_by_title( $title, OBJECT, $post_type );
 		$page_id = $page ? $page->ID : 0;
 		wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
 	}
@@ -193,7 +193,7 @@ function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 
 	$page_id = wp_cache_get( $cache_key, 'get_page_by_path' );
 
 	if ( false === $page_id ) {
-		$page = get_page_by_path( $page_path, $output, $post_type );
+		$page    = get_page_by_path( $page_path, $output, $post_type );
 		$page_id = $page ? $page->ID : 0;
 		if ( 0 === $page_id ) {
 			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
@@ -251,7 +251,7 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 
  */
 function wpcom_vip_url_to_postid( $url ) {
 	$cache_key = md5( $url );
-	$post_id = wp_cache_get( $cache_key, 'url_to_postid' );
+	$post_id   = wp_cache_get( $cache_key, 'url_to_postid' );
 
 	if ( false === $post_id ) {
 		$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
@@ -261,14 +261,19 @@ function wpcom_vip_url_to_postid( $url ) {
 	return $post_id;
 }
 
-add_action( 'transition_post_status', function( $new_status, $old_status, $post ) {
-	if ( 'publish' !== $new_status && 'publish' !== $old_status ) {
-		return;
-	}
+add_action(
+	'transition_post_status',
+	function( $new_status, $old_status, $post ) {
+		if ( 'publish' !== $new_status && 'publish' !== $old_status ) {
+			return;
+		}
 
-	$url = get_permalink( $post->ID );
-	wp_cache_delete( md5( $url ), 'url_to_postid' );
-}, 10, 3 );
+		$url = get_permalink( $post->ID );
+		wp_cache_delete( md5( $url ), 'url_to_postid' );
+	},
+	10,
+	3
+);
 
 /**
  * Cached version of wp_old_slug_redirect.
@@ -353,7 +358,7 @@ function wpcom_vip_count_user_posts( $user_id ) {
 		return 0;
 	}
 
-	$cache_key = 'vip_' . (int) $user_id;
+	$cache_key   = 'vip_' . (int) $user_id;
 	$cache_group = 'user_posts_count';
 
 	if ( false === ( $count = wp_cache_get( $cache_key, $cache_group ) ) ) {
@@ -492,8 +497,8 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	if ( ( ! $post = get_post() ) || ! taxonomy_exists( $taxonomy ) ) {
 		return null;
 	}
-	$join = '';
-	$where = '';
+	$join              = '';
+	$where             = '';
 	$current_post_date = $post->post_date;
 
 	if ( $in_same_term ) {
@@ -507,7 +512,7 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 					$term_array_ids = array_diff( $term_array_ids, (array) $excluded_terms );
 				}
 				if ( ! empty( $term_array_ids ) ) {
-					$term_array_ids = array_map( 'intval', $term_array_ids );
+					$term_array_ids    = array_map( 'intval', $term_array_ids );
 					$term_id_to_search = array_pop( $term_array_ids ); // only allow for a single term to be used. picked pseudo randomly
 				} else {
 					$term_id_to_search = false;
@@ -516,14 +521,14 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 				$term_id_to_search = apply_filters( 'wpcom_vip_limit_adjacent_post_term_id', $term_id_to_search, $term_array_ids, $excluded_terms, $taxonomy, $previous );
 
 				if ( ! empty( $term_id_to_search ) ) {  // allow filters to short circuit by returning a empty like value
-					$join = " INNER JOIN $wpdb->term_relationships AS tr ON p.ID = tr.object_id INNER JOIN $wpdb->term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id"; // Only join if we are sure there is a term
-					$where = $wpdb->prepare( 'AND tt.taxonomy = %s AND tt.term_id IN (%d)  ', $taxonomy,$term_id_to_search ); //
+					$join  = " INNER JOIN $wpdb->term_relationships AS tr ON p.ID = tr.object_id INNER JOIN $wpdb->term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id"; // Only join if we are sure there is a term
+					$where = $wpdb->prepare( 'AND tt.taxonomy = %s AND tt.term_id IN (%d)  ', $taxonomy, $term_id_to_search ); //
 				}
 			}
 		}
 	}
 
-	$op = $previous ? '<' : '>';
+	$op    = $previous ? '<' : '>';
 	$order = $previous ? 'DESC' : 'ASC';
 	$limit = 1;
 	// We need 5 posts so we can filter the excluded term later on
@@ -534,8 +539,8 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	$where = $wpdb->prepare( "WHERE p.post_date $op %s AND p.post_type = %s AND p.post_status = 'publish' $where", $current_post_date, $post->post_type );
 	$query = "SELECT p.ID FROM $wpdb->posts AS p $join $where $sort";
 
-	$found_post = ''; // blank instead of false so not found is cached.
-	$query_key = 'wpcom_vip_adjacent_post_' . md5( $query );
+	$found_post    = ''; // blank instead of false so not found is cached.
+	$query_key     = 'wpcom_vip_adjacent_post_' . md5( $query );
 	$cached_result = wp_cache_get( $query_key );
 
 	if ( 'not found' === $cached_result ) {
@@ -553,7 +558,7 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	// Find the first post which doesn't have an excluded term
 	if ( ! empty( $excluded_term ) ) {
 		foreach ( $result as $result_post ) {
-			$post_terms = get_the_terms( $result_post, $taxonomy );
+			$post_terms  = get_the_terms( $result_post, $taxonomy );
 			$terms_array = wp_list_pluck( $post_terms, 'term_id' );
 			if ( ! in_array( $excluded_term, $terms_array, true ) ) {
 				$found_post = $result_post->ID;
@@ -586,9 +591,9 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 	if ( false === $id ) {
 		$id = attachment_url_to_postid( $url );
 		if ( empty( $id ) ) {
-			wp_cache_set( $cache_key , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key, 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
 		} else {
-			wp_cache_set( $cache_key , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key, $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		}
 	} elseif ( 'not_found' === $id ) {
 		return false;
@@ -601,32 +606,35 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
  *
  * @see wpcom_vip_attachment_url_to_postid()
  */
-add_action( 'delete_attachment', function ( $post_id ) {
-	$url = wp_get_attachment_url( $post_id );
-	$cache_key = wpcom_vip_attachment_cache_key( $url );
-	wp_cache_delete( $cache_key );
-} );
+add_action(
+	'delete_attachment',
+	function ( $post_id ) {
+		$url       = wp_get_attachment_url( $post_id );
+		$cache_key = wpcom_vip_attachment_cache_key( $url );
+		wp_cache_delete( $cache_key );
+	}
+);
 
-/**
- * Use this function to cache the comment counting in the wp menu that can be slow on sites with lots of comments
- * use like this:
- *
- * @param $post_id
- *
- * @see wp_count_comments()
- * @return bool|false|mixed|string
- */
+	/**
+	 * Use this function to cache the comment counting in the wp menu that can be slow on sites with lots of comments
+	 * use like this:
+	 *
+	 * @param $post_id
+	 *
+	 * @see wp_count_comments()
+	 * @return bool|false|mixed|string
+	 */
 function wpcom_vip_cache_full_comment_counts( $counts = false, $post_id = 0 ) {
 	// We are only caching the global comment counts for now since those are often in the millions while the per page one is usually more reasonable.
 	if ( 0 !== $post_id ) {
 		return $counts;
 	}
-	$cache_key = "vip-comments-{$post_id}";
+	$cache_key    = "vip-comments-{$post_id}";
 	$stats_object = wp_cache_get( $cache_key );
 
 	// retrieve comments in the same way wp_count_comments() does
 	if ( false === $stats_object ) {
-		$stats = get_comment_count( $post_id );
+		$stats              = get_comment_count( $post_id );
 		$stats['moderated'] = $stats['awaiting_moderation'];
 		unset( $stats['awaiting_moderation'] );
 		$stats_object = (object) $stats;
@@ -650,10 +658,10 @@ function wpcom_vip_enable_old_slug_redirect_caching() {
 	add_action( 'attachment_updated', 'wpcom_vip_flush_wp_old_slug_redirect_cache', 13, 3 );
 }
 
-/**
- * This works by first looking in the cache to see if there is a value saved based on the name query var.
- * If one is found, redirect immediately. If nothing is found, including that there is no already cache "not_found" value we then add a hook to old_slug_redirect_url so that when the 'rea' wp_old_slug_redirect is run it will store the value in the cache @see wpcom_vip_set_old_slug_redirect_cache(). If we found a not_found we remove the template_redirect so the slow query is not run.
- */
+	/**
+	 * This works by first looking in the cache to see if there is a value saved based on the name query var.
+	 * If one is found, redirect immediately. If nothing is found, including that there is no already cache "not_found" value we then add a hook to old_slug_redirect_url so that when the 'rea' wp_old_slug_redirect is run it will store the value in the cache @see wpcom_vip_set_old_slug_redirect_cache(). If we found a not_found we remove the template_redirect so the slow query is not run.
+	 */
 function wpcom_vip_wp_old_slug_redirect() {
 	global $wp_query;
 	if ( is_404() && '' !== $wp_query->query_vars['name'] ) {
@@ -706,11 +714,11 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
 	wp_cache_delete( 'old_slug' . $post->post_name, 'default' );
 }
 
-/**
- * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text
- * These then cause really slow lookups inside of wp_old_slug_redirect, since wp_old_slug redirect does not match on full urls but rather former slugs it's safe to skip the lookup for these. (Most of the calls are from bad ad providers that generate random urls)
- */
-function wpcom_vip_maybe_skip_old_slug_redirect(){
+	/**
+	 * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text
+	 * These then cause really slow lookups inside of wp_old_slug_redirect, since wp_old_slug redirect does not match on full urls but rather former slugs it's safe to skip the lookup for these. (Most of the calls are from bad ad providers that generate random urls)
+	 */
+function wpcom_vip_maybe_skip_old_slug_redirect() {
 
 	//We look to see if a malformed url (represented by 'http:' ) is right after the starting / in DOCUMENT_URI hence position 1
 	if ( is_404() && ( 1 === strpos( $_SERVER['DOCUMENT_URI'], 'http:' ) || 1 === strpos( $_SERVER['DOCUMENT_URI'], 'https:' ) ) ) {
@@ -725,8 +733,7 @@ function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 
 /**
 * Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
-*
 * This cannot be included inside Jetpack because it ships with caching disabled by default.
 * By enabling caching it's possible to save time in uncached page renders.
-**/
+*/
 add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
