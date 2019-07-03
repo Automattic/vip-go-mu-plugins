@@ -11,7 +11,7 @@
  * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_category_by_slug( $slug ) {
-	return wpcom_vip_get_term_by( 'slug', $slug, 'category' );
+	return get_term_by( 'slug', $slug, 'category' );
 }
 
 /**
@@ -144,7 +144,7 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 		return get_term_link( $term, $taxonomy );
 	}
 
-	$term_object = wpcom_vip_get_term_by( 'slug', $term, $taxonomy );
+	$term_object = get_term_by( 'slug', $term, $taxonomy );
 	return get_term_link( $term_object );
 }
 
@@ -374,10 +374,8 @@ function wpcom_vip_count_user_posts( $user_id ) {
  * Cached version of wp_get_nav_menu_object
  *
  * Many calls to get_term_by (with name or slug lookup as used inside the wp_get_nav_menu_object) across on a single pageload can easily add up the query count.
- * This function helps prevent that by taking advantage of wpcom_vip_get_term_by function which adds a layer of caching.
  *
  * @param string $menu Menu ID, slug, or name.
- * @uses wpcom_vip_get_term_by
  * @return mixed false if $menu param isn't supplied or term does not exist, menu object if successful.
  */
 function wpcom_vip_get_nav_menu_object( $menu ) {
@@ -388,11 +386,11 @@ function wpcom_vip_get_nav_menu_object( $menu ) {
 	$menu_obj = get_term( $menu, 'nav_menu' );
 
 	if ( ! $menu_obj ) {
-		$menu_obj = wpcom_vip_get_term_by( 'slug', $menu, 'nav_menu' );
+		$menu_obj = get_term_by( 'slug', $menu, 'nav_menu' );
 	}
 
 	if ( ! $menu_obj ) {
-		$menu_obj = wpcom_vip_get_term_by( 'name', $menu, 'nav_menu' );
+		$menu_obj = get_term_by( 'name', $menu, 'nav_menu' );
 	}
 
 	if ( ! $menu_obj ) {
