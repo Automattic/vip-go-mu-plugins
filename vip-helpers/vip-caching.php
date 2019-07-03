@@ -605,7 +605,6 @@ add_action( 'delete_attachment', function ( $post_id ) {
 	$url = wp_get_attachment_url( $post_id );
 	$cache_key = wpcom_vip_attachment_cache_key( $url );
 	wp_cache_delete( $cache_key );
- );
 } );
 
 /**
