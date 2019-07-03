@@ -31,12 +31,10 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
-		if ( ! has_action( self::CRON_ACTION ) ) {
-			add_action( self::CRON_ACTION, array( __CLASS__, 'run_connection_pilot' ) );
+		add_action( self::CRON_ACTION, array( __CLASS__, 'run_connection_pilot' ) );
 
-			if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-				wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
-			}
+		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
+			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
 	}
 
