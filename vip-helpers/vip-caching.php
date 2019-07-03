@@ -340,7 +340,7 @@ function wpcom_vip_old_slug_redirect() {
 			return;
 		}
 
-		wp_redirect( $link, 301 ); // Permanent redirect
+		wp_safe_redirect( $link, 301 ); // Permanent redirect
 		exit;
 	}
 }
@@ -678,7 +678,7 @@ function wpcom_vip_wp_old_slug_redirect() {
 		} else {
 			/** This filter is documented in wp-includes/query.php. */
 			$redirect = apply_filters( 'old_slug_redirect_url', $redirect );
-			wp_redirect( $redirect, 301 ); // this is kept to not safe_redirect to match the functionality of wp_old_slug_redirect
+			wp_safe_redirect( $redirect, 301 ); // this is kept to not safe_redirect to match the functionality of wp_old_slug_redirect
 			exit;
 		}
 	}
