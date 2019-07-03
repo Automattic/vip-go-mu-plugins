@@ -692,7 +692,7 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 }
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
 	// Don't bother if slug hasn't changed.
-	if ( $post->post_name == $post_before->post_name ) {
+	if ( $post->post_name === $post_before->post_name ) {
 		return;
 	}
 
