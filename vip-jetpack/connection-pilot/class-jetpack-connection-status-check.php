@@ -28,14 +28,6 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	private $site_url;
 
 	/**
-	 * An error object describing the connection issue,
-	 * or why a (re)connection attempt failed.
-	 *
-	 * @var WP_Error A WP_Error object.
-	 */
-	private $connection_error = null;
-
-	/**
 	 * An list of notifications that need to be sent out by the Pilot.
 	 *
 	 * @var array Pilot notifications.
@@ -68,37 +60,51 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 			), false );
 		}
 
-		if ( is_wp_error( $is_connected ) ) {
-			$this->connection_error = $is_connected;
-		}
-
 		// The connection check failed, let's handle the problem the best we can.
-		$this->handle_connection_issues();
+		$this->handle_connection_issues( $is_connected );
 	}
 
 	/**
 	 * Handle connection issues. (Re)connect when possible, else add a notification.
 	 */
-	private function handle_connection_issues() {
-		if ( $this->connection_error && in_array( $this->connection_error->get_error_code(), array( 'jp-cxn-pilot-missing-constants', 'jp-cxn-pilot-development-mode' ), true ) ) {
-			return $this->notify_pilot( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.' );
+	private function handle_connection_issues( $error = null ) {
+		$error_code = null;
+
+		if ( $error && is_wp_error( $error ) ) {
+			$error_code = $error->get_error_code();
 		}
 
-		// 1) It is connected but not under the right account.
-		if ( $this->connection_error && 'jp-cxn-pilot-not-vip-owned' === $this->connection_error->get_error_code() ) {
-			return $this->notify_pilot( 'Jetpack is connected to a non-VIP account.' );
+		// 1) Had an error
+		switch( $error_code ) {
+			case 'jp-cxn-pilot-missing-constants':
+			case 'jp-cxn-pilot-development-mode':
+				$this->notify_pilot( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
+
+				return;
+
+			// It is connected but not under the right account.
+			case 'jp-cxn-pilot-not-vip-owned':
+				$this->notify_pilot( 'Jetpack is connected to a non-VIP account.', $error );
+
+				return;
 		}
 
 		// 2) Check the last healthcheck to see if the URLs match.
 		if ( ! empty( $this->healthcheck_option['site_url'] ) ) {
-			return $this->handle_disconnects_using_last_healthcheck();
+			$this->handle_disconnects_using_last_healthcheck();
+
+			return;
 		}
 
 		// 3) The healthcheck option doesn’t exist. Either it's a new site, or an unknown connection error.
 		if ( $this->is_placeholder_domain() || $this->is_new_multisite_site() ) {
-			return $this->handle_new_sites();
+			$this->handle_new_sites();
+
+			return;
 		} else {
-			return $this->notify_pilot( 'Jetpack is disconnected.' );
+			$this->notify_pilot( 'Jetpack is disconnected.' );
+
+			return;
 		}
 	}
 
@@ -109,11 +115,12 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	 */
 	private function handle_disconnects_using_last_healthcheck() {
 		if ( $this->healthcheck_option['site_url'] === $this->site_url ) {
-			$reconnection_attempt = $this->connect_site();
-			return $this->notify_pilot( $reconnection_attempt );
+			$this->connect_site();
+
+			return;
 		}
 
-		return $this->notify_pilot( 'Jetpack is disconnected, and it appears the domain has changed.' );
+		$this->notify_pilot( 'Jetpack is disconnected, and it appears the domain has changed.' );
 	}
 
 	/**
@@ -123,11 +130,13 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	 */
 	private function handle_new_sites() {
 		if ( $this->is_placeholder_domain() ) {
-			return $this->notify_pilot( 'Jetpack is disconnected, though it appears this is a new site.' );
+			$this->notify_pilot( 'Jetpack is disconnected, though it appears this is a new site.' );
+
+			return;
 		}
 
 		// Must be a new site on a MS.
-		return $this->notify_pilot( 'Jetpack is disconnected, though it appears this is a new site on a MS network.' );
+		$this->notify_pilot( 'Jetpack is disconnected, though it appears this is a new site on a MS network.' );
 	}
 
 	/**
@@ -141,16 +150,18 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->healthcheck_option['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->healthcheck_option['cache_site_id'] ) {
-				return 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.';
+				$this->notify_pilot( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
+
+				return;
 			}
-			return 'Jetpack was successfully (re)connected!';
+
+			$this->notify_pilot( 'Jetpack was successfully (re)connected!' );
+
+			return;
 		}
 
-		if ( is_wp_error( $connection_attempt ) ) {
-			$this->connection_error = $connection_attempt;
-		}
-
-		return 'Jetpack (re)connection attempt failed.';
+		// Reconnection failed
+		$this->notify_pilot( 'Jetpack (re)connection attempt failed.', $connection_attempt );
 	}
 
 	/**
@@ -192,7 +203,7 @@ class WPCOM_VIP_Jetpack_Connection_Status_Check {
 	 *
 	 * @param string $message The first line of the notification that will be sent.
 	 */
-	private function notify_pilot( $message ) {
-		$this->pilot_notifications[] = array( 'message' => $message, 'error' => $this->connection_error, 'healthcheck' => $this->healthcheck_option );
+	private function notify_pilot( $message, $error = null ) {
+		$this->pilot_notifications[] = array( 'message' => $message, 'error' => $error, 'healthcheck' => $this->healthcheck_option );
 	}
 }
