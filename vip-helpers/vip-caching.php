@@ -185,7 +185,7 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
 	if ( is_array( $post_type ) ) {
-		$cache_key = sanitize_key( $page_path ) . '_' . md5( serialize( $post_type ) );
+		$cache_key = sanitize_key( $page_path ) . '_' . md5( wp_json_encode( $post_type ) );
 	} else {
 		$cache_key = $post_type . '_' . sanitize_key( $page_path );
 	}
@@ -322,7 +322,7 @@ function wpcom_vip_old_slug_redirect() {
 			$query .= $wpdb->prepare( ' AND DAYOFMONTH(post_date) = %d', $wp_query->query_vars['day'] );
 		}
 
-		$cache_key = md5( serialize( $query ) );
+		$cache_key = md5( wp_json_encode( $query ) );
 
 		if ( false === $id = wp_cache_get( $cache_key, 'wp_old_slug_redirect' ) ) {
 			$id = (int) $wpdb->get_var( $query );
