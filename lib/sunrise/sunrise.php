@@ -73,7 +73,7 @@ function handle_not_found_error( $error_type ) {
 			$error_doc = sprintf( '%s/mu-plugins/errors/site-maintenance.html', WP_CONTENT_DIR );
 		} else {
 			$status_code = 404;
-			$error_doc = sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type );
+			$error_doc   = sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type );
 		}
 
 		http_response_code( $status_code );
@@ -85,7 +85,7 @@ function handle_not_found_error( $error_type ) {
 /**
  * When provided, load a client's sunrise too
  */
-$client_sunrise = ABSPATH . '/vip-config/client-sunrise.php';
+$client_sunrise = ABSPATH . 'wp-content/vip-config/client-sunrise.php';
 if ( file_exists( $client_sunrise ) ) {
 	require_once $client_sunrise;
 }
