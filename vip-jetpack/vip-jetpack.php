@@ -142,3 +142,50 @@ add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recapt
 add_action( 'init', function() {
 	remove_action( 'jetpack_user_authorized', [ 'Jetpack_Sync_Actions', 'do_initial_sync' ] );
 } );
+
+/**
+ * Add JP broken connection debug headers
+ * 
+ * NOTE - this is conditionally hooked based on whether or not the request
+ * is actually from JP
+ * 
+ * $error is a WP_Error (always) and contains a "signature_details" data property with this structure:
+ * The error_code has one of the following values:
+ * - malformed_token
+ * - malformed_user_id
+ * - unknown_token
+ * - could_not_sign
+ * - invalid_nonce
+ * - signature_mismatch
+ */
+function vip_jetpack_token_send_signature_error_headers( $error ) {
+	// Double checking...
+	if ( ! vip_is_jetpack_request() || headers_sent() || ! is_wp_error( $error ) ) {
+		return;
+	}
+
+	$error_data = $error->get_error_data();
+
+	if ( ! isset( $error_data['signature_details'] ) ) {
+		return;
+	}
+
+	header( sprintf(
+		'X-Jetpack-Signature-Error: %s',
+		$error->get_error_code()
+	) );
+
+	header( sprintf(
+		'X-Jetpack-Signature-Error-Message: %s',
+		$error->get_error_message()
+	) );
+
+	header( sprintf(
+		'X-Jetpack-Signature-Error-Details: %s',
+		base64_encode( json_encode( $error_data['signature_details'] ) )
+	) );
+}
+
+if ( vip_is_jetpack_request() ) {
+	add_action( 'jetpack_verify_signature_error', 'vip_jetpack_token_send_signature_error_headers' );
+}

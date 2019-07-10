@@ -1341,6 +1341,16 @@ function is_proxied_automattician() {
 function is_proxied_request() {
 	return defined( 'A8C_PROXIED_REQUEST' ) && true === A8C_PROXIED_REQUEST;
 }
+
+/**
+ * Is the current request being made from Jetpack servers?
+ * 
+ * @return bool Bool indicating if the current request came from JP servers
+ */
+function vip_is_jetpack_request() {
+	return defined( 'VIP_IS_JETPACK_REQUEST') && true === VIP_IS_JETPACK_REQUEST;
+}
+
 /**
  * Send a message to IRC
  *
