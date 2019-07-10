@@ -159,7 +159,6 @@ add_action( 'init', function() {
  * - signature_mismatch
  */
 function vip_jetpack_token_send_signature_error_headers( $error ) {
-	// Double checking...
 	if ( ! vip_is_jetpack_request() || headers_sent() || ! is_wp_error( $error ) ) {
 		return;
 	}
@@ -186,6 +185,4 @@ function vip_jetpack_token_send_signature_error_headers( $error ) {
 	) );
 }
 
-if ( vip_is_jetpack_request() ) {
-	add_action( 'jetpack_verify_signature_error', 'vip_jetpack_token_send_signature_error_headers' );
-}
+add_action( 'jetpack_verify_signature_error', 'vip_jetpack_token_send_signature_error_headers' );
