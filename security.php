@@ -178,3 +178,20 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 
 	return false;
 }
+
+/**
+ * On otherwise cacheable requests, we need to ensure we're varying on Origin
+ * so that the cache cannot be poisoned and prevent CORS requests
+ *
+ * NOTE - we hook into the `http_origin` filter instead of the `send_headers` action,
+ * because the REST API doesn't call send_headers
+ */
+function vip_maybe_vary_http_origin( $origin ) {
+	if ( ! headers_sent() && 'GET' === $_SERVER['REQUEST_METHOD'] && ! is_user_logged_in() ) {
+		header( 'Vary: Origin', false );
+	}
+
+	return $origin;
+}
+
+add_filter( 'http_origin', 'vip_maybe_vary_http_origin' );
