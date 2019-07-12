@@ -2,8 +2,7 @@
 
 namespace Automattic\VIP\Performance;
 
-// Core defaults to 20, so let's assume that's safe
-const BULK_EDIT_LIMIT = 20;
+const BULK_EDIT_LIMIT = 40;
 
 /**
  * Bulk edits of lots of posts can trigger slow term count queries for each post updated
