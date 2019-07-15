@@ -146,9 +146,6 @@ add_action( 'init', function() {
 /**
  * Add JP broken connection debug headers
  * 
- * NOTE - this is conditionally hooked based on whether or not the request
- * is actually from JP
- * 
  * $error is a WP_Error (always) and contains a "signature_details" data property with this structure:
  * The error_code has one of the following values:
  * - malformed_token
