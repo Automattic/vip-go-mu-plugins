@@ -1361,6 +1361,8 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
+	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
+
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
 	$jetpack_ips = array(
