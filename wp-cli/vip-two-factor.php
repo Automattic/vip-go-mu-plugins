@@ -12,7 +12,7 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 		$users = get_users();
 		$providers = Two_Factor_Core::get_providers();
 
-		$cap = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'edit_posts' );
+		$cap = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' );
 		foreach ( $users as $user ) {
 			$user->two_factor_enabled = 'false';
 			$user->two_factor_providers = '';
