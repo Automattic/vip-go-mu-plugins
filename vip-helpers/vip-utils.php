@@ -1373,7 +1373,7 @@ function vip_is_jetpack_request() {
 		'195.234.108.0/22',
 	);
 
-	return Automattic\VIP\Proxy\IpUtils\checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
 }
 
 /**
