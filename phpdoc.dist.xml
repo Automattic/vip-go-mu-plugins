@@ -29,6 +29,7 @@
 		<file>000-vip-init.php</file>
 		<file>lib/proxy/ip-forward.php</file>
 		<file>vip-cache-manager/api.php</file>
+		<file>cache/class-vary-cache.php</file>
 		<directory>vip-helpers</directory>
 	</files>
 </phpdoc>

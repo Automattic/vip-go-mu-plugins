@@ -49,6 +49,7 @@ yarn.lock
 /README-PUBLIC.md
 /bin/
 /ci/
+/cache/examples/
 /cron-control/bin/
 /cron-control/runner/
 /cron-control/tests/

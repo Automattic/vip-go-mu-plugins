@@ -44,7 +44,7 @@ function track_publish_post( $new_status, $old_status ) {
 /**
  * Count uploaded files
  */
-function handle_file_upload( $upload, $context ) {
+function handle_file_upload( $upload, $context = 'upload' ) {
 	track_file_upload();
 
 	return $upload;

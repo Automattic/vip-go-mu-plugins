@@ -9,6 +9,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 */
 
 require_once( __DIR__ . '/security/class-lockout.php' );
+require_once( __DIR__ . '/security/machine-user.php' );
 
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'login_limit' );
 define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'lost_password_limit' );
@@ -97,9 +98,18 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 }
 add_action( 'login_form_login', 'wpcom_vip_login_limit_dont_show_login_form' );
 
+
 function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
-	if ( is_wp_error( $user ) && ERROR_CODE_LOGIN_LIMIT_EXCEEDED == $user->get_error_code() )
-		return new IXR_Error( 503, $user->get_error_message() );
+	static $login_limit_error;
+
+	if ( is_wp_error( $user ) && ERROR_CODE_LOGIN_LIMIT_EXCEEDED === $user->get_error_code() ) {
+		// We need to set a persistent error here, as once there is an auth error in a system.multicall, core will no longer trigger any of the rate limit filters for further login attempts in the set.
+		$login_limit_error = $user;
+	}
+
+	if ( is_wp_error( $login_limit_error ) ) {
+		return new IXR_Error( 429, $login_limit_error->get_error_message() );
+	}
 
 	return $error;
 }
@@ -168,3 +178,20 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 
 	return false;
 }
+
+/**
+ * On otherwise cacheable requests, we need to ensure we're varying on Origin
+ * so that the cache cannot be poisoned and prevent CORS requests
+ *
+ * NOTE - we hook into the `http_origin` filter instead of the `send_headers` action,
+ * because the REST API doesn't call send_headers
+ */
+function vip_maybe_vary_http_origin( $origin ) {
+	if ( ! headers_sent() && 'GET' === $_SERVER['REQUEST_METHOD'] && ! is_user_logged_in() ) {
+		header( 'Vary: Origin', false );
+	}
+
+	return $origin;
+}
+
+add_filter( 'http_origin', 'vip_maybe_vary_http_origin' );

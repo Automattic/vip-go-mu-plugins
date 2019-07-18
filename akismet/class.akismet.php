@@ -65,6 +65,11 @@ class Akismet {
 	}
 
 	public static function verify_key( $key, $ip = null ) {
+		// Shortcut for obviously invalid keys.
+		if ( strlen( $key ) != 12 ) {
+			return 'invalid';
+		}
+		
 		$response = self::check_key_status( $key, $ip );
 
 		if ( $response[1] != 'valid' && $response[1] != 'invalid' )
@@ -1178,6 +1183,10 @@ class Akismet {
 	}
 
 	public static function load_form_js() {
+		if ( function_exists( 'is_amp_endpoint' ) && is_amp_endpoint() ) {
+			return;
+		}
+
 		wp_register_script( 'akismet-form', plugin_dir_url( __FILE__ ) . '_inc/form.js', array(), AKISMET_VERSION, true );
 		wp_enqueue_script( 'akismet-form' );
 	}
@@ -1333,9 +1342,16 @@ p {
 		if ( !empty( $args[1] ) ) {
 			$post_id = url_to_postid( $args[1] );
 
-			// If this gets through the pre-check, make sure we properly identify the outbound request as a pingback verification
-			Akismet::pingback_forwarded_for( null, $args[0] );
-			add_filter( 'http_request_args', array( 'Akismet', 'pingback_forwarded_for' ), 10, 2 );
+			// If pingbacks aren't open on this post, we'll still check whether this request is part of a potential DDOS,
+			// but indicate to the server that pingbacks are indeed closed so we don't include this request in the user's stats,
+			// since the user has already done their part by disabling pingbacks.
+			$pingbacks_closed = false;
+			
+			$post = get_post( $post_id );
+			
+			if ( ! $post || ! pings_open( $post ) ) {
+				$pingbacks_closed = true;
+			}
 
 			$comment = array(
 				'comment_author_url' => $args[0],
@@ -1346,6 +1362,7 @@ p {
 				'comment_type' => 'pingback',
 				'akismet_pre_check' => '1',
 				'comment_pingback_target' => $args[1],
+				'pingbacks_closed' => $pingbacks_closed ? '1' : '0',
 			);
 
 			$comment = Akismet::auto_check_comment( $comment );
@@ -1356,29 +1373,7 @@ p {
 			}
 		}
 	}
-	
-	public static function pingback_forwarded_for( $r, $url ) {
-		static $urls = array();
-	
-		// Call this with $r == null to prime the callback to add headers on a specific URL
-		if ( is_null( $r ) && !in_array( $url, $urls ) ) {
-			$urls[] = $url;
-		}
 
-		// Add X-Pingback-Forwarded-For header, but only for requests to a specific URL (the apparent pingback source)
-		if ( is_array( $r ) && is_array( $r['headers'] ) && !isset( $r['headers']['X-Pingback-Forwarded-For'] ) && in_array( $url, $urls ) ) {
-			$remote_ip = preg_replace( '/[^a-fx0-9:.,]/i', '', $_SERVER['REMOTE_ADDR'] );
-		
-			// Note: this assumes REMOTE_ADDR is correct, and it may not be if a reverse proxy or CDN is in use
-			$r['headers']['X-Pingback-Forwarded-For'] = $remote_ip;
-
-			// Also identify the request as a pingback verification in the UA string so it appears in logs
-			$r['user-agent'] .= '; verifying pingback from ' . $remote_ip;
-		}
-
-		return $r;
-	}
-	
 	/**
 	 * Ensure that we are loading expected scalar values from akismet_as_submitted commentmeta.
 	 *

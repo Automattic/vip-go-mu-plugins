@@ -93,6 +93,7 @@ class VIP_Filesystem {
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
 		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
+		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 	}
 
 	/**
@@ -108,6 +109,7 @@ class VIP_Filesystem {
 		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20 );
 		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ] );
+		remove_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 	}
 
 	/**
@@ -294,7 +296,7 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * Filters the generated attachment metdata
+	 * Filters the generated attachment metadata
 	 *
 	 * @return array
 	 */
@@ -384,5 +386,35 @@ class VIP_Filesystem {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Exif compat for Streams.
+	 *
+	 * The iptc and exif functions don't always work with streams.
+	 *
+	 * So, download a local copy of the file and use that to read the exif data instead.
+	 *
+	 * Props S3-Uploads and humanmade for the fix
+	 *
+	 * https://github.com/humanmade/S3-Uploads
+	 */
+	public function filter_wp_read_image_metadata( $meta, $file ) {
+		if ( ! wp_is_stream( $file ) ) {
+			return $meta;
+		}
+
+		remove_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10 );
+
+		// Save a local copy and read metadata from that
+		$temp_file = wp_tempnam();
+		file_put_contents( $temp_file, file_get_contents( $file ) );
+		$meta = wp_read_image_metadata( $temp_file );
+
+		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
+
+		unlink( $temp_file );
+
+		return $meta;
 	}
 }

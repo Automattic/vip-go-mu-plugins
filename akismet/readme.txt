@@ -2,8 +2,8 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau
 Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 4.0
-Tested up to: 5.0
-Stable tag: 4.1.1
+Tested up to: 5.2
+Stable tag: 4.1.2
 License: GPLv2 or later
 
 Akismet checks your comments and contact form submissions against our global database of spam to protect you and your site from malicious content.
@@ -29,6 +29,15 @@ Upload the Akismet plugin to your blog, Activate it, then enter your [Akismet.co
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 4.1.2 =
+*Release Date - 14 May 2019*
+
+* Fixed a conflict between the Akismet setup banner and other plugin notices.
+* Reduced the number of API requests made by the plugin when attempting to verify the API key.
+* Include additional data in the pingback pre-check API request to help make the stats more accurate.
+* Fixed a bug that was enabling the "Check for Spam" button when no comments were eligible to be checked.
+* Improved Akismet's AMP compatibility.
 
 = 4.1.1 =
 *Release Date - 31 January 2019*

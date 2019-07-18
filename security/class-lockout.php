@@ -32,6 +32,7 @@ class Lockout {
 
 			add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
 			add_filter( 'pre_site_option_site_admins', [ $this, 'filter_site_admin_option' ], PHP_INT_MAX, 4 );
+			add_filter( 'pre_update_site_option_site_admins', [ $this, 'filter_prevent_site_admin_option_updates' ], PHP_INT_MAX, 2 );
 		}
 	}
 
@@ -42,22 +43,25 @@ class Lockout {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) ) {
 			$user = wp_get_current_user();
 
-			$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
-			if ( ! $show_notice ) {
-				return;
-			}
-
 			switch ( VIP_LOCKOUT_STATE ) {
 				case 'warning':
-					$this->render_warning_notice();
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), VIP_LOCKOUT_STATE, $user );
+					if ( $show_notice ) {
+						$this->render_warning_notice();
 
-					$this->user_seen_notice( $user );
+						$this->user_seen_notice( $user );
+					}
+
 					break;
 
 				case 'locked':
-					$this->render_locked_notice();
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'edit_posts' ), VIP_LOCKOUT_STATE, $user );
+					if ( $show_notice ) {
+						$this->render_locked_notice();
 
-					$this->user_seen_notice( $user );
+						$this->user_seen_notice( $user );
+					}
+
 					break;
 			}
 		}
@@ -112,11 +116,11 @@ class Lockout {
 	 * @return array
 	 */
 	public function filter_user_has_cap( $user_caps, $caps, $args, $user ) {
-		if ( is_automattician( $user->ID ) ) {
-			return $user_caps;
-		}
-
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			if ( is_automattician( $user->ID ) ) {
+				return $user_caps;
+			}
+
 			$subscriber = get_role( 'subscriber' );
 			if ( null !== $subscriber ) {
 				$this->locked_cap = $subscriber->capabilities;
@@ -142,10 +146,31 @@ class Lockout {
 	 */
 	public function filter_site_admin_option( $pre_option, $option, $network_id, $default ) {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			if ( is_automattician() ) {
+				return $pre_option;
+			}
+
 			return [];
 		}
 
 		return $pre_option;
+	}
+
+	/**
+	 * Don't allow updates to the site_admins option.
+	 *
+	 * When a site is locked, we filter the site_admins list to limit super powers
+	 * to VIP Support users. However, if (grant|revoke)_super_admin are called, that
+	 * ends up clearing out the list, which is not ideal.
+	 *
+	 * Instead, just block updates to the option if a site is locked.
+	 */
+	public function filter_prevent_site_admin_option_updates( $value, $old_value ) {
+		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			return $old_value;
+		}
+
+		return $value;
 	}
 }
 

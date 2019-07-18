@@ -82,7 +82,17 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
-define( 'WPCOM_VIP_PRIVATE_DIR', WPCOM_SANDBOXED || VIP_GO_IS_CLI_CONTAINER ? '/chroot/private' : '/private' );
+
+$private_dir_path = WP_CONTENT_DIR . '/private'; // Local fallback
+if ( false !== VIP_GO_ENV ) {
+	if ( is_dir( '/private' ) ) {
+		$private_dir_path = '/private';
+	} elseif ( is_dir( '/chroot/private' ) ) {
+		$private_dir_path = '/chroot/private';
+	}
+}
+define( 'WPCOM_VIP_PRIVATE_DIR', $private_dir_path );
+unset( $private_dir_path );
 
 // Define these values just in case
 defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
@@ -137,8 +147,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
-	$headers['X-hacker'] = 'If you\'re reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header.';
-	$headers['X-Powered-By'] = 'WordPress.com VIP <https://vip.wordpress.com>';
+	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
+	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
 
 	// All non-production domains should not be indexed.
 	// This should not apply only to *.vip-go.co
