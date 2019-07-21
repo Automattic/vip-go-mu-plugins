@@ -1341,6 +1341,43 @@ function is_proxied_automattician() {
 function is_proxied_request() {
 	return defined( 'A8C_PROXIED_REQUEST' ) && true === A8C_PROXIED_REQUEST;
 }
+
+/**
+ * Is the current request being made from Jetpack servers?
+ * 
+ * NOTE - This checks the REMOTE_ADDR against known JP IPs. The IP can still be spoofed,
+ * (but usually an attacker cannot receive the response), so it is important to treat it accordingly
+ * 
+ * @return bool Bool indicating if the current request came from JP servers
+ */
+function vip_is_jetpack_request() {
+	// Filter by env
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		return false;
+	}
+
+	// Simple UA check to filter out most
+	if ( false === stripos( $_SERVER[ 'HTTP_USER_AGENT' ], 'jetpack' ) ) {
+		return false;
+	}
+
+	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
+
+	// If has a valid-looking UA, check the remote IP
+	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
+	$jetpack_ips = array(
+		'122.248.245.244',
+		'54.217.201.243',
+		'54.232.116.4',
+		'192.0.80.0/20',
+		'192.0.96.0/20',
+		'192.0.112.0/20',
+		'195.234.108.0/22',
+	);
+
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
+}
+
 /**
  * Send a message to IRC
  *
