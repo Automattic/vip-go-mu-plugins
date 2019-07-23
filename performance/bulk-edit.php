@@ -2,8 +2,7 @@
 
 namespace Automattic\VIP\Performance;
 
-// Core defaults to 20, so let's assume that's safe
-const BULK_EDIT_LIMIT = 20;
+const BULK_EDIT_LIMIT = 40;
 
 /**
  * Bulk edits of lots of posts can trigger slow term count queries for each post updated
@@ -23,17 +22,20 @@ add_action( 'load-edit.php', __NAMESPACE__ . '\defer_term_counting' );
  * Determine if bulk editing should be blocked
  */
 function bulk_editing_is_limited() {
-	$per_page = get_query_var( 'posts_per_page' );
-
-	// Get total number of entries
+	// Do not hide bulk edit actions if number of total entries is less than 20, core's default.
 	if ( isset( $GLOBALS['wp_query'] ) && is_a( $GLOBALS['wp_query'], 'WP_Query' ) ) {
 		$total_posts = $GLOBALS['wp_query']->found_posts;
+
+		if ( isset( $total_posts ) && BULK_EDIT_LIMIT > $total_posts ) {
+			return false;
+		}
 	}
 
-	// Core defaults to 20 posts per page
-	// Do no hide bulk edit actions if number of total entries is less than 20
-	if ( isset( $total_posts ) && BULK_EDIT_LIMIT > $total_posts ) {
-		return false;
+	$per_page = get_query_var( 'posts_per_page' );
+
+	// Hierarchical post types set `posts_per_page` to -1 during the original query, but they still respect the per_page value in the posts list table.
+	if ( isset( $GLOBALS['wp_list_table'] ) && is_a( $GLOBALS['wp_list_table'], 'WP_Posts_List_Table' ) ) {
+		$per_page = isset( $GLOBALS['wp_list_table']->_pagination_args['per_page'] ) ? $GLOBALS['wp_list_table']->_pagination_args['per_page'] : $per_page;
 	}
 
 	// If requesting all entries, or more than 20, hide bulk actions
@@ -42,7 +44,6 @@ function bulk_editing_is_limited() {
 	}
 
 	return $per_page > BULK_EDIT_LIMIT;
-
 }
 
 /**
