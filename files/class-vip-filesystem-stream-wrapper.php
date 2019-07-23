@@ -123,33 +123,43 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
 
-		$result = $this->client->get_file( $path );
+		try {
+			$result = $this->client->get_file( $path );
 
-		if ( is_wp_error( $result ) ) {
-			if ( 'file-not-found' !== $result->get_error_code() ) {
-				trigger_error(
-					sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
-					E_USER_WARNING
-				);
-				return false;
+			if ( is_wp_error( $result ) ) {
+				if ( 'file-not-found' !== $result->get_error_code() ) {
+					trigger_error(
+						sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+						E_USER_WARNING
+					);
+
+					return false;
+				}
+
+				// File doesn't exist on File service so create new file
+				$result = '';
 			}
 
-			// File doesn't exist on File service so create new file
-			$result = '';
+			// Converts file contents into stream resource
+			$file = $this->string_to_resource( $result );
+
+			// Get meta data
+			$meta           = stream_get_meta_data( $file );
+			$this->seekable = $meta['seekable'];
+			$this->uri      = $meta['uri'];
+
+			$this->file = $file;
+			$this->path = $path;
+
+			return true;
+		} catch ( \Exception $e ) {
+			trigger_error(
+				sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ),
+				E_USER_WARNING
+			);
+
+			return false;
 		}
-
-		// Converts file contents into stream resource
-		$file = $this->string_to_resource( $result );
-
-		// Get meta data
-		$meta = stream_get_meta_data( $file );
-		$this->seekable = $meta['seekable'];
-		$this->uri = $meta['uri'];
-
-		$this->file = $file;
-		$this->path = $path;
-
-		return true;
 	}
 
 	/**
@@ -210,18 +220,28 @@ class VIP_Filesystem_Stream_Wrapper {
 			return false;
 		}
 
-		// Upload to file service
-		$result = $this->client
-			->upload_file( $this->uri, $this->path );
-		if ( is_wp_error( $result ) ) {
+		try {
+			// Upload to file service
+			$result = $this->client
+				->upload_file( $this->uri, $this->path );
+			if ( is_wp_error( $result ) ) {
+				trigger_error(
+					sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $result->get_error_message() ),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+
+			return fflush( $this->file );
+		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $result->get_error_message() ),
+				sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $e->getMessage() ),
 				E_USER_WARNING
 			);
+
 			return false;
 		}
-
-		return fflush( $this->file );
 	}
 
 	/**
@@ -294,19 +314,30 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function unlink( $path ) {
 		$path = $this->trim_path( $path );
-		$result = $this->client->delete_file( $path );
 
-		if ( is_wp_error( $result ) ) {
+		try {
+			$result = $this->client->delete_file( $path );
+
+			if ( is_wp_error( $result ) ) {
+				trigger_error(
+					sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+
+			$this->close_handler();
+
+			return true;
+		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+				sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ),
 				E_USER_WARNING
 			);
+
 			return false;
 		}
-
-		$this->close_handler();
-
-		return true;
 	}
 
 	/**
@@ -384,30 +415,40 @@ class VIP_Filesystem_Stream_Wrapper {
 			return $stats;
 		}
 
-		$info = array();
-		$result = $this->client->is_file( $path, $info );
-		if ( is_wp_error( $result ) ) {
+		try {
+			$info   = array();
+			$result = $this->client->is_file( $path, $info );
+			if ( is_wp_error( $result ) ) {
+				trigger_error(
+					sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+			if ( ! $result ) {
+				// File not found
+				return false;
+			}
+
+			// Here we should parse the meta data into the statistics array
+			// and then combine with data from `is_file` API
+			// see: http://php.net/manual/en/function.stat.php
+			$stats[2]  = $stats['mode'] = 33206; // read+write permissions
+			$stats[7]  = $stats['size'] = (int) $info['size'];
+			$stats[8]  = $stats['atime'] = (int) $info['mtime'];
+			$stats[9]  = $stats['mtime'] = (int) $info['mtime'];
+			$stats[10] = $stats['ctime'] = (int) $info['mtime'];
+
+			return $stats;
+		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+				sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ),
 				E_USER_WARNING
 			);
+
 			return false;
 		}
-		if ( ! $result ) {
-			// File not found
-			return false;
-		}
-
-		// Here we should parse the meta data into the statistics array
-		// and then combine with data from `is_file` API
-		// see: http://php.net/manual/en/function.stat.php
-		$stats[2] = $stats['mode'] = 33206; // read+write permissions
-		$stats[7] = $stats['size'] = (int) $info['size'];
-		$stats[8] = $stats['atime'] = (int) $info['mtime'];
-		$stats[9] = $stats['mtime'] = (int) $info['mtime'];
-		$stats[10] = $stats['ctime'] = (int) $info['mtime'];
-
-		return $stats;
 	}
 
 	/**
@@ -442,44 +483,56 @@ class VIP_Filesystem_Stream_Wrapper {
 		$path_from = $this->trim_path( $path_from );
 		$path_to = $this->trim_path( $path_to );
 
-		// Get original file first
-		// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
-		//       get really inefficient with large files
-		$result = $this->client->get_file( $path_from );
-		if ( is_wp_error( $result ) ) {
+		try {
+			// Get original file first
+			// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
+			//       get really inefficient with large files
+			$result = $this->client->get_file( $path_from );
+			if ( is_wp_error( $result ) ) {
+				trigger_error(
+					sprintf( 'rename/get_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+
+			// Convert to actual file to upload to new path
+			$file     = $this->string_to_resource( $result );
+			$meta     = stream_get_meta_data( $file );
+			$filePath = $meta['uri'];
+
+			// Upload to file service
+			$result = $this->client->upload_file( $filePath, $path_to );
+			if ( is_wp_error( $result ) ) {
+				trigger_error(
+					sprintf( 'rename/upload_file/to failed for %s with error: %s #vip-go-streams', $filePath, $result->get_error_message() ),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+
+			// Delete old file
+			$result = $this->client->delete_file( $path_from );
+			if ( is_wp_error( $result ) ) {
+				trigger_error(
+					sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+
+			return true;
+		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'rename/get_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ),
+				sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $e->getMessage() ),
 				E_USER_WARNING
 			);
+
 			return false;
 		}
-
-		// Convert to actual file to upload to new path
-		$file = $this->string_to_resource( $result );
-		$meta = stream_get_meta_data( $file );
-		$filePath = $meta['uri'];
-
-		// Upload to file service
-		$result = $this->client->upload_file( $filePath, $path_to );
-		if ( is_wp_error( $result ) ) {
-			trigger_error(
-				sprintf( 'rename/upload_file/to failed for %s with error: %s #vip-go-streams', $filePath, $result->get_error_message() ),
-				E_USER_WARNING
-			);
-			return false;
-		}
-
-		// Delete old file
-		$result = $this->client->delete_file( $path_from );
-		if ( is_wp_error( $result ) ) {
-			trigger_error(
-				sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ),
-				E_USER_WARNING
-			);
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
