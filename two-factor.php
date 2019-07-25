@@ -71,7 +71,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			// Calculate current_user_can outside map_meta_cap to avoid callback loop
 			add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
 				return $limited;
-			} );
+			}, 9 );
 		} else if ( $limited && wpcom_vip_should_force_two_factor() ) {
 			add_action( 'admin_notices', 'wpcom_vip_two_factor_prep_admin_notice' );
 		}
