@@ -103,7 +103,7 @@ defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROL
 add_action( 'set_current_user', function() {
 	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 	define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
-}, 0 );
+}, PHP_INT_MIN );
 
 // Support a limited number of additional "Internal Events" in Cron Control.
 // These events run regardless of the number of pending events, and they cannot be deleted.
