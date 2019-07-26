@@ -26,6 +26,17 @@ function wpcom_vip_should_force_two_factor() {
 	if ( true === A8C_PROXIED_REQUEST ) {
 		return false;
 	}
+	
+	static $current_username;
+	if ( ! $current_username ) {
+		$user = wp_get_current_user();
+		$current_username = $user->user_login;
+	}
+	
+	// Don't restrict the wpcomvip user, for which logins are blocked anyway
+	if ( 'wpcomvip' === $current_username ) {
+		return false
+	}
 
 	// The Two Factor plugin wasn't loaded for some reason.
 	if ( ! class_exists( 'Two_Factor_Core' ) ) {
