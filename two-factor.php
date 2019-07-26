@@ -26,7 +26,7 @@ function wpcom_vip_should_force_two_factor() {
 	if ( true === A8C_PROXIED_REQUEST ) {
 		return false;
 	}
-	
+
 	// The Two Factor plugin wasn't loaded for some reason.
 	if ( ! class_exists( 'Two_Factor_Core' ) ) {
 		return false;
