@@ -27,17 +27,6 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 	
-	static $current_username;
-	if ( ! $current_username ) {
-		$user = wp_get_current_user();
-		$current_username = $user->user_login;
-	}
-	
-	// Don't restrict the wpcomvip user, for which logins are blocked anyway
-	if ( 'wpcomvip' === $current_username ) {
-		return false;
-	}
-
 	// The Two Factor plugin wasn't loaded for some reason.
 	if ( ! class_exists( 'Two_Factor_Core' ) ) {
 		return false;
@@ -109,7 +98,7 @@ function wpcom_enable_two_factor_plugin() {
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
-	if ( wpcom_vip_is_two_factor_forced() ) {
+	if ( wpcom_vip_is_two_factor_forced() && $user_id !== WPCOM_VIP_MACHINE_USER_ID ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
 			'read',
