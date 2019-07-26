@@ -100,6 +100,14 @@ defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAM
 defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
+add_action( 'set_current_user', function() {
+	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
+
+	if ( $user && $user->ID ) {
+		defined( 'WPCOM_VIP_MACHINE_USER_ID' ) or define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
+	}
+}, PHP_INT_MIN );
+
 // Support a limited number of additional "Internal Events" in Cron Control.
 // These events run regardless of the number of pending events, and they cannot be deleted.
 define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
