@@ -35,7 +35,7 @@ function wpcom_vip_should_force_two_factor() {
 	
 	// Don't restrict the wpcomvip user, for which logins are blocked anyway
 	if ( 'wpcomvip' === $current_username ) {
-		return false
+		return false;
 	}
 
 	// The Two Factor plugin wasn't loaded for some reason.
