@@ -103,7 +103,7 @@ defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROL
 add_action( 'set_current_user', function() {
 	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 
-	if ( ! user || ! $user->ID ) {
+	if ( ! $user || ! $user->ID ) {
 		define( 'WPCOM_VIP_MACHINE_USER_ID', 0 );
 	} else {
 		define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
