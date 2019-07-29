@@ -100,6 +100,14 @@ defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAM
 defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
+add_action( 'set_current_user', function() {
+	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
+
+	if ( $user && $user->ID ) {
+		defined( 'WPCOM_VIP_MACHINE_USER_ID' ) or define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
+	}
+}, PHP_INT_MIN );
+
 // Support a limited number of additional "Internal Events" in Cron Control.
 // These events run regardless of the number of pending events, and they cannot be deleted.
 $internal_cron_events = array(
@@ -158,8 +166,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
-	$headers['X-hacker'] = 'If you\'re reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header.';
-	$headers['X-Powered-By'] = 'WordPress.com VIP <https://vip.wordpress.com>';
+	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
+	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
 
 	// All non-production domains should not be indexed.
 	// This should not apply only to *.vip-go.co
