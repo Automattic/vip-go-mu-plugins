@@ -21,11 +21,22 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * See the a8c_cron_control_clean_legacy_data event for more details.
 	 */
 	const CRON_SCHEDULE = 'hourly';
+	
+	/**
+	 * The healtcheck option's current data.
+	 *
+	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'last_healthcheck' => 1555124370 ]
+	 *
+	 * @var mixed False if doesn't exist, else an array with the data shown above.
+	 */
+	private $healthcheck_option;
+
 	private static $instance = null;
 
 	private function __construct() {
 		$this->init_actions();
 		
+		$this->healthcheck_option = get_option( self::HEALTHCHECK_OPTION_NAME );
 	}
 
 	/**
