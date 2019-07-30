@@ -143,7 +143,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( $error = null ) {
-		$should = defined( 'VIP_JETPAC_CONNECTION_PILOT_SHOULD_RECONNECT' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT : false;
+		$should = defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT : false;
 		
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', $should, $error );
 	}
