@@ -102,12 +102,10 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * @return bool True if the connection pilot should run.
 	 */
-		if ( defined( 'WPCOM_VIP_RUN_CONNECTION_PILOT' ) && true === WPCOM_VIP_RUN_CONNECTION_PILOT ) {
-			return true;
-		}
-
-		return false;
 	public static function should_run_connection_pilot() {
+		$should = defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN : false;
+		
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', $should );
 	}
 
 	/**
