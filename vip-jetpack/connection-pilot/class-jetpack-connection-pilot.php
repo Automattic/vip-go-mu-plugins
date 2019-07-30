@@ -10,7 +10,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	/**
 	 * The option name used for keeping track of successful connection checks.
 	 */
-	const HEALTHCHECK_OPTION_NAME = 'vip_jetpack_connection_pilot_healthcheck';
+	const HEARTBEAT_OPTION_NAME = 'vip_jetpack_connection_pilot_heartbeat';
 
 	/**
 	 * Cron action that runs the connection pilot checks.
@@ -28,11 +28,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	/**
 	 * The healtcheck option's current data.
 	 *
-	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'last_healthcheck' => 1555124370 ]
+	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'last_heartbeat' => 1555124370 ]
 	 *
 	 * @var mixed False if doesn't exist, else an array with the data shown above.
 	 */
-	private $healthcheck_option;
+	private $heartbeat_option;
 
 	/**
 	 * Singleton
@@ -44,7 +44,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	private function __construct() {
 		$this->init_actions();
 		
-		$this->healthcheck_option = get_option( self::HEALTHCHECK_OPTION_NAME );
+		$this->heartbeat_option = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
 	/**
@@ -93,8 +93,8 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		$is_connected = WPCOM_VIP_Jetpack_Connection_Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
-			// Everything checks out. Update the healthcheck option and move on.
-			$this->update_healthcheck();
+			// Everything checks out. Update the heartbeat option and move on.
+			$this->update_heartbeat();
 
 			return;
 		}
@@ -118,7 +118,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		$connection_attempt = WPCOM_VIP_Jetpack_Connection_Controls::connect_site( 'skip_connection_tests' );
 
 		if ( true === $connection_attempt ) {
-			if ( ! empty( $this->healthcheck_option['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->healthcheck_option['cache_site_id'] ) {
+			if ( ! empty( $this->heartbeat_option['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->heartbeat_option['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
 
 				return;
@@ -133,12 +133,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
 	}
 
-	// TODO heartbeat?
-	public function update_healthcheck() {
-		return update_option( self::HEALTHCHECK_OPTION_NAME, array(
+	public function update_heartbeat() {
+		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
 			'cache_site_id'    => (int) Jetpack_Options::get_option( 'id' ),
-			'last_healthcheck' => time(),
+			'last_heartbeat' => time(),
 		), false );
 	}
 
@@ -164,9 +163,9 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 				return false;
 		}
 
-		// 2) Check the last healthcheck to see if the URLs match.
-		if ( ! empty( $this->healthcheck_option['site_url'] ) ) {
-			if ( $this->healthcheck_option['site_url'] === get_site_url() ) {
+		// 2) Check the last heartbeat to see if the URLs match.
+		if ( ! empty( $this->heartbeat_option['site_url'] ) ) {
+			if ( $this->heartbeat_option['site_url'] === get_site_url() ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
 	
 				return true;
@@ -191,17 +190,17 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * @param string   $message optional.
 	 * @param WP_Error $wp_error optional.
-	 * @param array    $last_healthcheck optional.
+	 * @param array    $last_heartbeat optional.
 	 *
 	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
 	 */
-	protected function send_alert( $message = '', $wp_error = null, $last_healthcheck = null ) {
+	protected function send_alert( $message = '', $wp_error = null, $last_heartbeat = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
-		if ( isset( $last_healthcheck['site_url'], $last_healthcheck['cache_site_id'], $last_healthcheck['last_healthcheck'] ) ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['last_heartbeat'] ) ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
-				date( 'F j, H:i', $last_healthcheck['last_healthcheck'] ), $last_healthcheck['cache_site_id'], $last_healthcheck['site_url']
+				date( 'F j, H:i', $last_heartbeat['last_heartbeat'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
 			);
 		}
 
