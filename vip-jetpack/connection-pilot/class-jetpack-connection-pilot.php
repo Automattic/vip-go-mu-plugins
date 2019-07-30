@@ -21,6 +21,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * See the a8c_cron_control_clean_legacy_data event for more details.
 	 */
 	const CRON_SCHEDULE = 'hourly';
+	private static $instance = null;
 
 	/**
 	 * Initiate an instance of this class if one doesn't exist already.
@@ -30,6 +31,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 			return;
 		}
 
+		if ( ! ( self::$instance instanceof WPCOM_VIP_Jetpack_Connection_Pilot ) ) {
+			self::$instance = new WPCOM_VIP_Jetpack_Connection_Pilot();
+		}
+
+		return self::$instance;
 		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
 		add_action( self::CRON_ACTION, array( __CLASS__, 'run_connection_pilot' ) );
 
