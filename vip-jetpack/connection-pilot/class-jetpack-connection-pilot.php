@@ -1,13 +1,16 @@
 <?php
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
-require_once __DIR__ . '/class-jetpack-connection-status-check.php';
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
  * Will only run if the `WPCOM_VIP_RUN_CONNECTION_PILOT` constant is defined and set to true.
  */
 class WPCOM_VIP_Jetpack_Connection_Pilot {
+	/**
+	 * The option name used for keeping track of successful connection checks.
+	 */
+	const HEALTHCHECK_OPTION_NAME = 'vip_jetpack_connection_pilot_healthcheck';
 
 	/**
 	 * Cron action that runs the connection pilot checks.
@@ -31,6 +34,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 */
 	private $healthcheck_option;
 
+	/**
+	 * Singleton
+	 * 
+	 * @var WPCOM_VIP_Jetpack_Connection_Pilot Singleton instance
+	 */
 	private static $instance = null;
 
 	private function __construct() {
@@ -54,10 +62,15 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		return self::$instance;
 	}
 
+	/**
+	 * Hook any relevant actions
+	 */
 	public function init_actions() {
 		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
 		add_action( 'init', array( $this, 'schedule_cron' ) );
 		add_action( self::CRON_ACTION, array( $this, 'run_connection_pilot' ) );
+
+		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
 	}
 
 	public function schedule_cron() {
@@ -72,20 +85,100 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * Needs to be static due to how it is added to cron control.
 	 */
-	public static function run_connection_pilot() {
+	public function run_connection_pilot() {
 		if ( ! self::should_run_connection_pilot() ) {
 			return;
 		}
 
-		$status_check = new WPCOM_VIP_Jetpack_Connection_Status_Check();
-		$status_check->launch();
+		$is_connected = WPCOM_VIP_Jetpack_Connection_Controls::jetpack_is_connected();
 
-		// Send out notifications.
-		if ( is_array( $status_check->pilot_notifications ) ) {
-			foreach ( $status_check->pilot_notifications as $notification ) {
-				self::send_alert( $notification['message'], $notification['error'], $notification['healthcheck'] );
-			}
+		if ( true === $is_connected ) {
+			// Everything checks out. Update the healthcheck option and move on.
+			$this->update_healthcheck();
+
+			return;
 		}
+
+		// Not connected, maybe reconnect
+		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
+			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
+
+			return;
+		}
+
+		// Got here, so we _should_ attempt a reconnection for this site
+		$this->reconnect();
+	}
+
+	/**
+	 * Perform a JP reconnection
+	 */
+	public function reconnect() {
+		// Attempt a reconnect
+		$connection_attempt = WPCOM_VIP_Jetpack_Connection_Controls::connect_site( 'skip_connection_tests' );
+
+		if ( true === $connection_attempt ) {
+			if ( ! empty( $this->healthcheck_option['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->healthcheck_option['cache_site_id'] ) {
+				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
+
+				return;
+			}
+
+			$this->send_alert( 'Jetpack was successfully (re)connected!' );
+
+			return;
+		}
+
+		// Reconnection failed
+		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
+	}
+
+	// TODO heartbeat?
+	public function update_healthcheck() {
+		return update_option( self::HEALTHCHECK_OPTION_NAME, array(
+			'site_url'         => get_site_url(),
+			'cache_site_id'    => (int) Jetpack_Options::get_option( 'id' ),
+			'last_healthcheck' => time(),
+		), false );
+	}
+
+	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
+		$error_code = null;
+
+		if ( $error && is_wp_error( $error ) ) {
+			$error_code = $error->get_error_code();
+		}
+
+		// 1) Had an error
+		switch( $error_code ) {
+			case 'jp-cxn-pilot-missing-constants':
+			case 'jp-cxn-pilot-development-mode':
+				$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
+
+				return false;
+
+			// It is connected but not under the right account.
+			case 'jp-cxn-pilot-not-vip-owned':
+				$this->send_alert( 'Jetpack is connected to a non-VIP account.', $error );
+
+				return false;
+		}
+
+		// 2) Check the last healthcheck to see if the URLs match.
+		if ( ! empty( $this->healthcheck_option['site_url'] ) ) {
+			if ( $this->healthcheck_option['site_url'] === get_site_url() ) {
+				// Not connected, but current url matches previous url, attempt a reconnect
+	
+				return true;
+			}
+
+			// Not connected and current url doesn't match previous url, don't attempt reconnection
+			$this->notify_pilot( 'Jetpack is disconnected, and it appears the domain has changed.' );
+
+			return false;
+		}
+
+		return $should;
 	}
 
 	/**
