@@ -51,7 +51,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * Initiate an instance of this class if one doesn't exist already.
 	 */
 	public static function init() {
-		if ( ! self::should_run_connection_pilot() ) {
+		if ( ! self::should_run() ) {
 			return;
 		}
 
@@ -222,7 +222,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * @return bool True if the connection pilot should run.
 	 */
-	public static function should_run_connection_pilot() {
+	public static function should_run() {
 		$should = defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN : false;
 		
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', $should );
