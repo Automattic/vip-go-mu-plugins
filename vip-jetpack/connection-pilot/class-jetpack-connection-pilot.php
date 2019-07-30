@@ -74,7 +74,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
 	 */
-	private static function send_alert( $message = '', $wp_error = null, $last_healthcheck = null ) {
+	protected function send_alert( $message = '', $wp_error = null, $last_healthcheck = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
 		if ( isset( $last_healthcheck['site_url'], $last_healthcheck['cache_site_id'], $last_healthcheck['last_healthcheck'] ) ) {
