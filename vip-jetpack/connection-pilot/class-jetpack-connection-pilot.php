@@ -28,7 +28,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	/**
 	 * The healtcheck option's current data.
 	 *
-	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'last_heartbeat' => 1555124370 ]
+	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
 	 *
 	 * @var mixed False if doesn't exist, else an array with the data shown above.
 	 */
@@ -137,7 +137,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
 			'cache_site_id'    => (int) Jetpack_Options::get_option( 'id' ),
-			'last_heartbeat' => time(),
+			'timestamp' => time(),
 		), false );
 	}
 
@@ -197,10 +197,10 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	protected function send_alert( $message = '', $wp_error = null, $last_heartbeat = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['last_heartbeat'] ) ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
-				date( 'F j, H:i', $last_heartbeat['last_heartbeat'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
+				date( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
 			);
 		}
 
