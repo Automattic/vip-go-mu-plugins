@@ -23,6 +23,11 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	const CRON_SCHEDULE = 'hourly';
 	private static $instance = null;
 
+	private function __construct() {
+		$this->init_actions();
+		
+	}
+
 	/**
 	 * Initiate an instance of this class if one doesn't exist already.
 	 */
@@ -36,9 +41,15 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		return self::$instance;
-		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
-		add_action( self::CRON_ACTION, array( __CLASS__, 'run_connection_pilot' ) );
+	}
 
+	public function init_actions() {
+		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
+		add_action( 'init', array( $this, 'schedule_cron' ) );
+		add_action( self::CRON_ACTION, array( $this, 'run_connection_pilot' ) );
+	}
+
+	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
 			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
