@@ -32,7 +32,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * @var mixed False if doesn't exist, else an array with the data shown above.
 	 */
-	private $heartbeat_option;
+	private $last_heartbeat;
 
 	/**
 	 * Singleton
@@ -44,7 +44,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	private function __construct() {
 		$this->init_actions();
 		
-		$this->heartbeat_option = get_option( self::HEARTBEAT_OPTION_NAME );
+		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
 	/**
@@ -118,7 +118,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		$connection_attempt = WPCOM_VIP_Jetpack_Connection_Controls::connect_site( 'skip_connection_tests' );
 
 		if ( true === $connection_attempt ) {
-			if ( ! empty( $this->heartbeat_option['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->heartbeat_option['cache_site_id'] ) {
+			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
 
 				return;
@@ -164,8 +164,8 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		// 2) Check the last heartbeat to see if the URLs match.
-		if ( ! empty( $this->heartbeat_option['site_url'] ) ) {
-			if ( $this->heartbeat_option['site_url'] === get_site_url() ) {
+		if ( ! empty( $this->last_heartbeat['site_url'] ) ) {
+			if ( $this->last_heartbeat['site_url'] === get_site_url() ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
 	
 				return true;
