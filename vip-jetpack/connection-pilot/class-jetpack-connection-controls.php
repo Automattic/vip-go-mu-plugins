@@ -159,7 +159,7 @@ class WPCOM_VIP_Jetpack_Connection_Controls {
 		$script_output_json = json_decode( end( $script_output ) );
 
 		if ( ! $script_output_json ) {
-			return new WP_Error( 'jp-cxn-pilot-provision-invalid-output', 'Could not parse script output.' );
+			return new WP_Error( 'jp-cxn-pilot-provision-invalid-output', 'Could not parse script output. - ' . $script_output );
 		} elseif ( isset( $script_output_json->error_code ) ) {
 			return new WP_Error( 'jp-cxn-pilot-provision-error', sprintf( 'Failed to provision site. Error (%s): %s', $script_output_json->error_code, $script_output_json->error_message ) );
 		} elseif ( ! isset( $script_output_json->success ) || true !== $script_output_json->success ) {
