@@ -89,6 +89,8 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 		}
 
 		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) || ( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) ) {
+			error_log( $message );
+
 			return $message; // Just return the message, as posting to IRC won't work.
 		}
 
