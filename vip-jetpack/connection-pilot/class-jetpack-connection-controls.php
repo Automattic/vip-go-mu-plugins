@@ -1,9 +1,13 @@
 <?php
 
+namespace Automattic\VIP\Jetpack\Connection_Pilot;
+
+use WP_Error;
+
 /**
  * These are the re-usable methods for testing JP connections and (re)connecting sites.
  */
-class WPCOM_VIP_Jetpack_Connection_Controls {
+class Controls {
 
 	/**
 	 * Get the current status of the Jetpack connection.

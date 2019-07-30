@@ -1,12 +1,17 @@
 <?php
 
+namespace Automattic\VIP\Jetpack;
+
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
+
+use WP_Error;
+use Automattic\VIP\Jetpack\Connection_Pilot;
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
  * Will only run if the `WPCOM_VIP_RUN_CONNECTION_PILOT` constant is defined and set to true.
  */
-class WPCOM_VIP_Jetpack_Connection_Pilot {
+class Connection_Pilot {
 	/**
 	 * The option name used for keeping track of successful connection checks.
 	 */
@@ -37,7 +42,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	/**
 	 * Singleton
 	 * 
-	 * @var WPCOM_VIP_Jetpack_Connection_Pilot Singleton instance
+	 * @var Connection_Pilot Singleton instance
 	 */
 	private static $instance = null;
 
@@ -51,12 +56,12 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 * Initiate an instance of this class if one doesn't exist already.
 	 */
 	public static function init() {
-		if ( ! self::should_run() ) {
+		if ( ! self::should_run_connection_pilot() ) {
 			return;
 		}
 
-		if ( ! ( self::$instance instanceof WPCOM_VIP_Jetpack_Connection_Pilot ) ) {
-			self::$instance = new WPCOM_VIP_Jetpack_Connection_Pilot();
+		if ( ! ( self::$instance instanceof self ) ) {
+			self::$instance = new self();
 		}
 
 		return self::$instance;
@@ -90,7 +95,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 			return;
 		}
 
-		$is_connected = WPCOM_VIP_Jetpack_Connection_Controls::jetpack_is_connected();
+		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
 			// Everything checks out. Update the heartbeat option and move on.
@@ -115,7 +120,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 */
 	public function reconnect() {
 		// Attempt a reconnect
-		$connection_attempt = WPCOM_VIP_Jetpack_Connection_Controls::connect_site( 'skip_connection_tests' );
+		$connection_attempt = Connection_Pilot\Controls::connect_site( 'skip_connection_tests' );
 
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
@@ -222,7 +227,7 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	 *
 	 * @return bool True if the connection pilot should run.
 	 */
-	public static function should_run() {
+	public static function should_run_connection_pilot() {
 		$should = defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN : false;
 		
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', $should );
@@ -241,4 +246,4 @@ class WPCOM_VIP_Jetpack_Connection_Pilot {
 	}
 }
 
-WPCOM_VIP_Jetpack_Connection_Pilot::init();
+Connection_Pilot::init();
