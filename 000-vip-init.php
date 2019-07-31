@@ -118,6 +118,16 @@ $internal_cron_events = array(
 	)
 );
 
+// JP Connection Pilot disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
+}
+
+// JP Connection Pilot auto-reconnect disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
+}
+
 if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
 	$internal_cron_events[] = array(
 		'schedule'  => 'hourly',
