@@ -122,7 +122,7 @@ if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPAC
 	$internal_cron_events[] = array(
 		'schedule'  => 'hourly',
 		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
-		'callback'  => array( 'WPCOM_VIP_Jetpack_Connection_Pilot', 'run_connection_pilot' ),
+		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
 		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ),
 	);
 }
