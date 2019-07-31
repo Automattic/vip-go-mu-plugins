@@ -235,9 +235,11 @@ class Connection_Pilot {
 	 * @return bool True if the connection pilot should run.
 	 */
 	public static function should_run_connection_pilot() {
-		$should = defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN : false;
+		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
+			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
+		}
 		
-		return apply_filters( 'vip_jetpack_connection_pilot_should_run', $should );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
 	}
 
 	/**
@@ -247,9 +249,11 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( $error = null ) {
-		$should = defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ? VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT : false;
+		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
+			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
+		}
 		
-		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', $should, $error );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
 	}
 }
 
