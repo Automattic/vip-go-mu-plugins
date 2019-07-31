@@ -4,8 +4,6 @@ namespace Automattic\VIP\Jetpack;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
-use WP_Error;
-
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
  * Will only run if the `VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN` constant is defined and set to true.
@@ -132,7 +130,7 @@ class Connection_Pilot {
 		$connection_attempt = Connection_Pilot\Controls::connect_site( 'skip_connection_tests' );
 
 		if ( true === $connection_attempt ) {
-			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
+			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
 
 				return;
@@ -150,7 +148,7 @@ class Connection_Pilot {
 	public function update_heartbeat() {
 		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
-			'cache_site_id'    => (int) Jetpack_Options::get_option( 'id' ),
+			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id' ),
 			'timestamp' => time(),
 		), false );
 	}
@@ -203,7 +201,7 @@ class Connection_Pilot {
 	 * Jetpack connection error: [jp-cxn-pilot-not-active] Jetpack is not currently active.
 	 *
 	 * @param string   $message optional.
-	 * @param WP_Error $wp_error optional.
+	 * @param \WP_Error $wp_error optional.
 	 * @param array    $last_heartbeat optional.
 	 *
 	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
@@ -245,7 +243,7 @@ class Connection_Pilot {
 	/**
 	 * Checks if a reconnection should be attempted
 	 * 
-	 * @param $error WP_Error Optional error thrown by the connection check
+	 * @param $error \WP_Error Optional error thrown by the connection check
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( $error = null ) {
