@@ -5,7 +5,6 @@ namespace Automattic\VIP\Jetpack;
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 use WP_Error;
-use Automattic\VIP\Jetpack\Connection_Pilot;
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
