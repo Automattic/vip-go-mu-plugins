@@ -47,6 +47,10 @@ class Connection_Pilot {
 	private static $instance = null;
 
 	private function __construct() {
+		if ( ! self::should_run_connection_pilot() ) {
+			return;
+		}
+
 		$this->init_actions();
 		
 		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
@@ -55,11 +59,7 @@ class Connection_Pilot {
 	/**
 	 * Initiate an instance of this class if one doesn't exist already.
 	 */
-	public static function init() {
-		if ( ! self::should_run_connection_pilot() ) {
-			return;
-		}
-
+	public static function instance() {
 		if ( ! ( self::$instance instanceof self ) ) {
 			self::$instance = new self();
 		}
@@ -246,4 +246,4 @@ class Connection_Pilot {
 	}
 }
 
-Connection_Pilot::init();
+Connection_Pilot::instance();
