@@ -118,7 +118,7 @@ $internal_cron_events = array(
 	)
 );
 
-if ( defined( 'WPCOM_VIP_RUN_CONNECTION_PILOT' ) && true === WPCOM_VIP_RUN_CONNECTION_PILOT ) {
+if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
 	$internal_cron_events[] = array(
 		'schedule'  => 'hourly',
 		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',

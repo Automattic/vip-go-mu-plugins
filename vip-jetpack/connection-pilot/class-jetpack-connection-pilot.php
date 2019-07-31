@@ -9,7 +9,7 @@ use Automattic\VIP\Jetpack\Connection_Pilot;
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
- * Will only run if the `WPCOM_VIP_RUN_CONNECTION_PILOT` constant is defined and set to true.
+ * Will only run if the `VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN` constant is defined and set to true.
  */
 class Connection_Pilot {
 	/**
