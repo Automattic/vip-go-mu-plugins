@@ -220,7 +220,9 @@ class Connection_Pilot {
 			$message .= sprintf( ' Jetpack connection error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
 		}
 
-		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) || ( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) ) {
+		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) || 
+			( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) || 
+			( defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS ) ) {
 			error_log( $message );
 
 			return $message; // Just return the message, as posting to IRC won't work.
