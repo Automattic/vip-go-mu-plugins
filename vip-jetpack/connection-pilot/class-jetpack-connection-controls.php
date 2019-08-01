@@ -249,11 +249,17 @@ class Controls {
 	 * @return bool True if we have all the needed constants.
 	 */
 	private static function validate_constants() {
-		if ( ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_NAME' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) ) {
+		if ( ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ||
+			! defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) ||
+			! defined( 'WPCOM_VIP_MACHINE_USER_NAME' ) ||
+			! defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) ) {
 			return false;
 		}
 
-		if ( ! defined( 'VIP_GO_APP_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) || ! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) || ! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
+		if ( ! defined( 'VIP_GO_APP_ID' ) ||
+			! defined( 'WPCOM_VIP_JP_START_API_CLIENT_ID' ) ||
+			! defined( 'WPCOM_VIP_JP_START_API_CLIENT_SECRET' ) ||
+			! defined( 'WPCOM_VIP_JP_START_WPCOM_USER_ID' ) ) {
 			return false;
 		}
 
