@@ -110,13 +110,34 @@ add_action( 'set_current_user', function() {
 
 // Support a limited number of additional "Internal Events" in Cron Control.
 // These events run regardless of the number of pending events, and they cannot be deleted.
-define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
+$internal_cron_events = array(
 	array(
 		'schedule' => 'hourly',
 		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Automattic\VIP\Support_User\User::CRON_ACTION
 		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
-	),
-) );
+	)
+);
+
+// JP Connection Pilot disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
+}
+
+// JP Connection Pilot auto-reconnect disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
+}
+
+if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
+	$internal_cron_events[] = array(
+		'schedule'  => 'hourly',
+		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
+		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
+		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ),
+	);
+}
+
+define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
