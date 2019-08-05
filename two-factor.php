@@ -57,6 +57,18 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
+	// If it's a request attempting to connect a local user to a
+	// WordPress.com user via REST, allow it through.
+	if (
+		defined( 'REST_REQUEST' ) && REST_REQUEST
+	&&
+		isset( $GLOBALS['wp_rest_server'] )
+	&&
+		wpcom_vip_is_jetpack_authorize_rest_request()
+	) {
+		return false;
+	}
+
 	// Don't force 2FA for OneLogin SSO
 	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
 		return false;
@@ -69,6 +81,35 @@ function wpcom_vip_should_force_two_factor() {
 
 	return true;
 }
+
+/**
+ * Setter/Getter to keep track of whether the current request is a REST
+ * API request for /jetpack/v4/remote_authorize request that connects a
+ * WordPress.com user to a local user.
+ */
+function wpcom_vip_is_jetpack_authorize_rest_request( $set = null ) {
+	static $is_jetpack_authorize_rest_request = false;
+	if ( ! is_null( $set ) ) {
+		$is_jetpack_authorize_rest_request = $set;
+	}
+
+	return $is_jetpack_authorize_rest_request;
+}
+
+/**
+ * Hooked to the `rest_request_before_callbacks` filter to keep track of
+ * whether the current request is a REST API request for
+ * /jetpack/v4/remote_authorize request that connects WordPress.com user
+ * to a local user.
+ * @return unmodified - it's attached to a filter.
+ */
+function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler ) {
+	if ( isset( $handler['callback'] ) && 'Jetpack_Core_Json_Api_Endpoints::remote_authorize' === $handler['callback'] ) {
+		wpcom_vip_is_jetpack_authorize_rest_request( true );
+	}
+	return $response;
+}
+add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 2 );
 
 function wpcom_vip_is_two_factor_forced() {
 	if ( ! wpcom_vip_should_force_two_factor() ) {
