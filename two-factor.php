@@ -41,6 +41,22 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
+	// If it's a request attempting to connect a local user to a
+	// WordPress.com user via XML-RPC, allow it through.
+	// This works with the classic core XML-RPC endpoint, but not
+	// Jetpack's alternate endpoint.
+	if (
+		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
+	&&
+		isset( $_GET['for'] ) && 'jetpack' === $_GET['for']
+	&&
+		isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message , $GLOBALS['wp_xmlrpc_server']->message->methodName )
+	&&
+		'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
+	) {
+		return false;
+	}
+
 	// Don't force 2FA for OneLogin SSO
 	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
 		return false;
