@@ -42,30 +42,8 @@ function wpcom_vip_should_force_two_factor() {
 	}
 
 	// If it's a request attempting to connect a local user to a
-	// WordPress.com user via XML-RPC, allow it through.
-	// This works with the classic core XML-RPC endpoint, but not
-	// Jetpack's alternate endpoint.
-	if (
-		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
-	&&
-		isset( $_GET['for'] ) && 'jetpack' === $_GET['for']
-	&&
-		isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message , $GLOBALS['wp_xmlrpc_server']->message->methodName )
-	&&
-		'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
-	) {
-		return false;
-	}
-
-	// If it's a request attempting to connect a local user to a
-	// WordPress.com user via REST, allow it through.
-	if (
-		defined( 'REST_REQUEST' ) && REST_REQUEST
-	&&
-		isset( $GLOBALS['wp_rest_server'] )
-	&&
-		wpcom_vip_is_jetpack_authorize_rest_request()
-	) {
+	// WordPress.com user via XML-RPC or REST, allow it through.
+	if ( wpcom_vip_is_jetpack_authorize_request() ) {
 		return false;
 	}
 
@@ -80,6 +58,23 @@ function wpcom_vip_should_force_two_factor() {
 	}
 
 	return true;
+}
+
+function wpcom_vip_is_jetpack_authorize_request() {
+	return (
+		// XML-RPC Jetpack authorize request
+		// This works with the classic core XML-RPC endpoint, but not
+		// Jetpack's alternate endpoint.
+		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
+		&& isset( $_GET['for'] ) && 'jetpack' === $_GET['for']
+		&& isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message , $GLOBALS['wp_xmlrpc_server']->message->methodName )
+		&& 'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
+	) || (
+		// REST Jetpack authorize request
+		defined( 'REST_REQUEST' ) && REST_REQUEST
+		&& isset( $GLOBALS['wp_rest_server'] )
+		&& wpcom_vip_is_jetpack_authorize_rest_request()
+	);
 }
 
 /**
