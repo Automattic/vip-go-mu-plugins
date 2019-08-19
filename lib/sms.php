@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\SMS;
 
+use WP_Error;
+
 define( 'MAX_SMS_LENGTH', 140 );
 define( 'SMS_FROM_NUMBER', '+14159695849' );
 define( 'TWILIO_BASE_URL', 'https://api.twilio.com/2010-04-01' );
@@ -15,7 +17,7 @@ define( 'TWILIO_ACCOUNT', 'ACe16d3eaebadd491f285297e03b4d3234' );
  *
  * @link http://www.twilio.com/docs/api/rest/sending-sms
  */
-function send_sms( $to, $message, $country_code = '+1' ) {
+function send_sms( $to, $message ) {
 
 	$counter_pattern = ' (%s of %s)';
 	$counter_length = strlen( $counter_pattern ); // (01 of 02)
@@ -45,19 +47,53 @@ function send_sms( $to, $message, $country_code = '+1' ) {
 				'Body' => $message_split,
 			);
 
-			send_single_sms_via_rest( $body );
+			$result = send_single_sms_via_rest( $body );
+			if ( is_wp_error( $result ) ) {
+				$masked_number = substr( $to_number, 0, ( (int) strlen( $to_number ) / 1.5 ) ) . 'xxx';
+				trigger_error( sprintf( 'Failed to send SMS to %s: %s #vip-go-sms-error', $masked_number, $result->get_error_message() ), E_USER_WARNING );
+			}
 		}
 	}
 }
 
 function send_single_sms_via_rest( $body ) {
 	$endpoint = get_rest_url( 'Messages.json' );
-	$sent = wp_remote_post( $endpoint, array(
+	$response = wp_remote_post( $endpoint, array(
 		'body' => $body,
 		'headers' => array(
 			'Authorization' => 'Basic ' . base64_encode( TWILIO_SID . ':' . TWILIO_SECRET ), // {AccountSid}:{AuthToken}
 		)
 	) );
+
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
+
+	$body_raw = wp_remote_retrieve_body( $response );
+	$body = json_decode( $body_raw );
+
+	$status_code = wp_remote_retrieve_response_code( $response );
+	if ( $status_code >= 300 ) {
+		if ( $body->code && $body->message ) {
+			$error_code =  'twilio-' . $body->code;
+			$error_message = sprintf( 'Twilio API responded with error (%d): %s (%s)', $body->code, $body->message, $body->more_info );
+		} else {
+			$error_code = 'http-' . $status_code;
+			$error_message = sprintf( 'Twilio API responded with HTTP response code: %d', $status_code );
+		}
+
+		return new WP_Error( $error_code, $error_message );
+	}
+
+	$delivery_status = $body->status;
+	if ( 'failed' === $delivery_status || 'undelivered' === $delivery_status ) {
+		$error_code =  'twilio-' . $body->error_code;
+		$error_message = sprintf( 'Twilio API responded with error (%d): %s', $body->error_code, $body->error_message );
+
+		return new WP_Error( $error_code, $error_message );
+	}
+
+	return true;
 }
 
 // action should be something like SMS/Messages.json or Calls.json

@@ -10,6 +10,11 @@
  */
 
 /**
+ * Add the Connection Pilot. Ensures Jetpack is consistently connected.
+ */
+require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );
+
+/**
  * Enable VIP modules required as part of the platform
  */
 require_once( __DIR__ . '/jetpack-mandatory.php' );
@@ -106,6 +111,10 @@ function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load 
 		return $should_load;
 	}
 
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		return $should_load;
+	}
+
 	if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) {
 		$should_load = false;
 	}
@@ -132,4 +141,9 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
 }
-add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha' );
+add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
+
+// Disable Jetpack sync when user is added to blog.
+add_action( 'init', function() {
+	remove_action( 'jetpack_user_authorized', [ 'Jetpack_Sync_Actions', 'do_initial_sync' ] );
+} );

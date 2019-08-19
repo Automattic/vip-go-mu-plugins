@@ -32,6 +32,7 @@ class Lockout {
 
 			add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
 			add_filter( 'pre_site_option_site_admins', [ $this, 'filter_site_admin_option' ], PHP_INT_MAX, 4 );
+			add_filter( 'pre_update_site_option_site_admins', [ $this, 'filter_prevent_site_admin_option_updates' ], PHP_INT_MAX, 2 );
 		}
 	}
 
@@ -54,7 +55,7 @@ class Lockout {
 					break;
 
 				case 'locked':
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'read' ), VIP_LOCKOUT_STATE, $user );
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'edit_posts' ), VIP_LOCKOUT_STATE, $user );
 					if ( $show_notice ) {
 						$this->render_locked_notice();
 
@@ -153,6 +154,23 @@ class Lockout {
 		}
 
 		return $pre_option;
+	}
+
+	/**
+	 * Don't allow updates to the site_admins option.
+	 *
+	 * When a site is locked, we filter the site_admins list to limit super powers
+	 * to VIP Support users. However, if (grant|revoke)_super_admin are called, that
+	 * ends up clearing out the list, which is not ideal.
+	 *
+	 * Instead, just block updates to the option if a site is locked.
+	 */
+	public function filter_prevent_site_admin_option_updates( $value, $old_value ) {
+		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
+			return $old_value;
+		}
+
+		return $value;
 	}
 }
 
