@@ -165,19 +165,34 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Iterate over attachments and check to see if they actually exist.
 	 *
+	 * ## OPTIONS
+	 *
+	 * <csv-filename>
+	 * : The CSV file for output.  The CSV file has a header with the following structure: `"url", "status"`
+	 *
+	 * [--extra-check]
+	 * : Checks the attachment's `_wp_attached_image` post meta for an edited image filename with a new URL.  This will be slower as it adds additional SQL queries.
+	 *
+	 * [--log-found-files]
+	 * : By default, only URLs with a status other than "200" are logged.  This will log found files as well.
+	 *
+	 * [--start_date=<start_date>]
+	 * : The date to start the query from.
+	 *
+	 * [--end_date=<end_date>]
+	 * : The date to end the query with.
+	 *
 	 * @subcommand validate-attachments
-	 * @synopsis <csv-filename> [--log-found-files]
 	 */
 	public function validate_attachments( $args, $assoc_args ) {
 		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
 		$output_file = $args[0];
+		$extra_check = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
 
 		$offset = 0;
 		$limit = 500;
-		$output = array();
-
-		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		$threads = 10;
+		$output = array( array('url', 'status' ) );
 
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
@@ -185,37 +200,101 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		global $wpdb;
+
+		$date_query = "";
+		if ( isset( $assoc_args['start_date'] ) ) {
+			$date_query .= $wpdb->prepare(" AND post_date > '%s' ", $assoc_args['start_date'] );
+		}
+
+		if ( isset( $assoc_args['end_date'] ) ) {
+			$date_query .= $wpdb->prepare(" AND post_date < '%s' ", $assoc_args['end_date'] );
+		}
+
+		$count_sql = 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query;
+		$attachment_count = $wpdb->get_row( $count_sql, ARRAY_N )[0];
+
+		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+
 		do {
-			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" LIMIT %d,%d', $offset, $limit );
+			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query . ' LIMIT %d,%d', $offset, $limit );
 			$attachments = $wpdb->get_results( $sql );
 
-			foreach ( $attachments as $attachment ) {
-				$log_request = false;
-				$url = $attachment->guid;
+			if ( $extra_check ) {
+				$extra_attachments = [];
+				foreach( $attachments as $attachment ) {
+					$attachment_ids = $wpdb->get_results( $wpdb->prepare( 'SELECT ID from ' . $wpdb->posts . ' WHERE guid=%s', $attachment->guid ) );
+					foreach( $attachment_ids as $attachment_id ) {
+						$attached_file = $wpdb->get_results( $wpdb->prepare( 'SELECT meta_value from ' . $wpdb->postmeta . ' WHERE post_id=%d AND meta_key="_wp_attached_file"', $attachment_id->ID ) );
+						if ( ! empty( $attached_file ) ) {
+							$extra_guid = substr( $attachment->guid, 0, strpos( $attachment->guid, '/wp-content/uploads/' ) + strlen( '/wp-content/uploads/' ) ) . $attached_file[0]->meta_value;
+							if ( $extra_guid !== $attachment->guid ) {
+								$extra_attachments[] = (object) [ 'guid' => $extra_guid ];
+							}
+						}
+					}
+				}
+				$attachments = array_merge( $attachments, $extra_attachments );
+			}
+			
+			// Break the attachments into groups of maxiumum 10 elements
+			$attachments_arrays = array_chunk( $attachments , $threads );
 
-				/*
-				 * TODO: Switch over to `curl_multi` to do lookups in parallel
-				 * if this turns out to be too slow for large media libraries.
-				 */
-				$request = wp_remote_head( $url );
-				$response_code = wp_remote_retrieve_response_code( $request );
-				$response_message = wp_remote_retrieve_response_message( $request );
+			$mh = curl_multi_init();
+			// Loop through each block of 10 attachments
+			foreach ( $attachments_arrays as $attachments_array ) {
 
-				if ( 200 === $response_code ) {
-					$log_request = $log_found_files;
-				} else {
-					$log_request = true;
+				$ch = array();
+				$index = 0;
+
+				foreach( $attachments_array as $attachment ) {
+					$url = $attachment->guid;
+
+					// By switching the URLs from http:// to https>// we save a request, since it will be redirected to the SSL url
+					if ( is_ssl() ) {
+						$url = str_replace( 'http://', 'https://', $url );
+					}
+
+					$ch[ $index ] = curl_init();
+					curl_setopt( $ch[ $index ], CURLOPT_RETURNTRANSFER, true );
+					curl_setopt( $ch[ $index ], CURLOPT_URL, $url );
+					curl_setopt( $ch[ $index ], CURLOPT_FOLLOWLOCATION, true );
+					curl_setopt( $ch[ $index ], CURLOPT_NOBODY, true );
+
+					curl_multi_add_handle( $mh, $ch[ $index ] );
+					$index++;
 				}
 
-				if ( $log_request ) {
-					$output[] = array(
-						$url,
-						$response_code,
-						$response_message,
-					);
+				// Exec the cURL requests
+				$curl_active = null;
+				do {
+					$mrc = curl_multi_exec( $mh, $curl_active );
+				} while ( $curl_active > 0 );
+
+				// Process the responses
+				foreach( $ch as $index => $handle ) {
+					$log_request = false;
+
+					$response_code = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+					$url = curl_getinfo( $handle, CURLINFO_EFFECTIVE_URL );
+					
+					curl_multi_remove_handle( $mh, $handle );
+
+					if ( 200 === $response_code ) {
+						$log_request = $log_found_files;
+					} else {
+						$log_request = true;
+					}
+
+					if ( $log_request ) {
+						$output[] = array(
+							$url,
+							$response_code,
+						);
+					}
+
+					$progress->tick();
 				}
 
-				$progress->tick();
 			}
 
 			// Pause.

@@ -1,15 +1,30 @@
 <?php
 /*
-Plugin Name: VIP Go Plugin Fixes
-Description: A collection of fixes for various plugins.
+Plugin Name: VIP Go Plugin Compat
+Description: A collection of compatibility fixes to make sure various plugins run smoothly on VIP Go.
 Author: Automattic
 Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-// Make sure the `amp` query var has an explicit value.
-// Avoids issues when filtering the deprecated `query_string` hook.
-// Copy of upstream fix: https://github.com/Automattic/amp-wp/pull/910
+/**
+ * Contact Form 7 (https://en-ca.wordpress.org/plugins/contact-form-7/)
+ * 
+ * The plugin attempts to write to a `wp-content` path which will fail.
+ * These files are transient and only meant to be included as attachment,
+ * so let's just tell CF7 to put them in `/tmp/`.
+ */
+if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
+	define( 'WPCF7_UPLOADS_TMP_DIR', get_temp_dir() );
+}
+
+/**
+ * AMP for WordPress (https://github.com/ampproject/amp-wp)
+ * Make sure the `amp` query var has an explicit value.
+ * Avoids issues when filtering the deprecated `query_string` hook.
+ *
+ * Copy of upstream fix: https://github.com/Automattic/amp-wp/pull/910
+ */
 function vip_go_amp_force_query_var_value( $query_vars ) {
 	// Don't bother if AMP is not active
 	if ( ! defined( 'AMP_QUERY_VAR' ) ) {

@@ -2,8 +2,8 @@
 Contributors: automattic, apokalyptik, briancolinger, josephscott, shaunandrews, xknown, thingalon, annezazu, rachelsquirrel
 Tags: security, malware, virus, archive, back up, back ups, backup, backups, scanning, restore, wordpress backup, site backup, website backup
 Requires at least: 3.2
-Tested up to: 4.9
-Stable tag: 1.9.6
+Tested up to: 5.1.1
+Stable tag: 1.9.10
 License: GPLv2
 
 VaultPress is a subscription service offering real-time backup, automated security scanning, and support from WordPress experts.
@@ -47,17 +47,29 @@ A VaultPress subscription is for a single WordPress site. You can purchase addit
 Yes, VaultPress supports Multisite installs. Each site will require its own subscription.
 
 == Changelog ==
-= 1.9.6 - 17 August 2018
+= 1.9.10 - 4 April 2019 =
+* Bugfix: Fix a PHP fatal error caused by passing an object to the current() function.
+
+= 1.9.9 - 28 March 2019 =
+* PHP 7.2.0 compatibility fix.
+* Adding button to delete all VaultPress settings
+
+= 1.9.8 - 7 February 2019 =
+* Limit the size of _vp_ai_ping_% entries when a site gets disconnected from VaultPress.com
+
+= 1.9.7 - 11 December 2018 =
+* Update firewall IP detection rules to autodetect various reverse proxy setups
+
+= 1.9.6 - 17 August 2018 =
 * Limit _vp_ai_ping_% entries to improve stability when a site gets disconnected from VaultPress.com
 
-== Changelog ==
-= 1.9.5 - 2 February 2018
+= 1.9.5 - 2 February 2018 =
 * Removing activation notice
 
-= 1.9.4 - 15 November 2017
+= 1.9.4 - 15 November 2017 =
 * Error handling improvements in the scanner
 
-= 1.9.3 - 9 November 2017
+= 1.9.3 - 9 November 2017 =
 * Compatibility update
 * Send a better user-agent string to VaultPress servers
 

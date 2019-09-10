@@ -3,7 +3,7 @@
  * Plugin Name: VaultPress
  * Plugin URI: http://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>. Activate, enter your registration key, and never worry again. <a href="http://vaultpress.com/help/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">Need some help?</a>
- * Version: 1.9.6
+ * Version: 1.9.10
  * Author: Automattic
  * Author URI: http://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
@@ -18,7 +18,7 @@ class VaultPress {
 	var $option_name          = 'vaultpress';
 	var $auto_register_option = 'vaultpress_auto_register';
 	var $db_version           = 4;
-	var $plugin_version       = '1.9.6';
+	var $plugin_version       = '1.9.10';
 
 	function __construct() {
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
@@ -182,6 +182,18 @@ class VaultPress {
 			return '';
 		}
 
+		// allow_forwarded_for can be overrided by config, or stored in or out of the vp option
+		if ( 'allow_forwarded_for' === $key ) {
+			if ( defined( 'ALLOW_FORWARDED_FOR' ) ) {
+				return ALLOW_FORWARDED_FOR;
+			}
+
+			$standalone_option = get_option( 'vaultpress_allow_forwarded_for' );
+			if ( ! empty( $standalone_option ) ) {
+				return $standalone_option;
+			}
+		}
+
 		if ( isset( $this->options[$key] ) )
 			return $this->options[$key];
 
@@ -189,11 +201,25 @@ class VaultPress {
 	}
 
 	function update_option( $key, $value ) {
+		if ( 'allow_forwarded_for' === $key ) {
+			update_option( 'vaultpress_allow_forwarded_for', $value );
+
+			if ( isset( $this->options[ $key ] ) ) {
+				unset( $this->options[ $key ] );
+				$this->update_options();
+			}
+			return;
+		}
+
 		$this->options[$key] = $value;
 		$this->update_options();
 	}
 
 	function delete_option( $key ) {
+		if ( 'allow_forwarded_for' === $key ) {
+			delete_option( 'vaultpress_allow_forwarded_for' );
+		}
+
 		unset( $this->options[$key] );
 		$this->update_options();
 	}
@@ -415,6 +441,27 @@ class VaultPress {
 		if ( !current_user_can( 'manage_options' ) )
 			return;
 
+		if ( isset( $_POST['action'] ) && 'delete-vp-settings' == $_POST['action'] ) {
+			check_admin_referer( 'delete_vp_settings' );
+
+			$ai_ping_queue_size = $this->ai_ping_queue_size();
+			if ( ! empty( $ai_ping_queue_size->option_count ) && $ai_ping_queue_size->option_count > 1 ) {
+				$this->ai_ping_queue_delete();
+			}
+
+			delete_option( $this->option_name );
+			delete_option( 'vaultpress_service_ips_external_cidr' );
+			delete_option( '_vp_signatures' );
+			delete_option( '_vp_config_option_name_ignore' );
+			delete_option( '_vp_config_post_meta_name_ignore' );
+			delete_option( '_vp_config_should_ignore_files' );
+			delete_option( '_vp_current_scan' );
+			delete_option( 'vaultpress_auto_register' );
+
+			wp_redirect( admin_url( 'admin.php?page=vaultpress&delete-vp-settings=1' ) );
+			exit();
+		}
+
 		// run code that might be updating the registration key
 		if ( isset( $_POST['action'] ) && 'register' == $_POST['action'] ) {
 			check_admin_referer( 'vaultpress_register' );
@@ -522,7 +569,9 @@ class VaultPress {
 		</div>
 			</div><!-- .card-grid -->
 		</div><!-- #vp_registration -->
-	</div><!-- #vp-head -->
+
+        <?php $this->ui_delete_vp_settings_button(); ?>
+    </div><!-- #vp-head -->
 <?php
 	}
 
@@ -533,6 +582,8 @@ class VaultPress {
 			$response = base64_decode( $this->contact_service( 'plugin_ui' ) );
 			echo $response;
 		?>
+
+		<?php $this->ui_delete_vp_settings_button(); ?>
 	</div>
 <?php
 	}
@@ -572,6 +623,32 @@ class VaultPress {
 			</div>
 		</div>
 <?php
+	}
+
+	function ui_delete_vp_settings_button() {
+		?>
+        <div class="grid" style="margin-top: 10px;">
+            <div class="vp_card half">
+				<?php
+				if ( isset( $_GET['delete-vp-settings'] ) && 1 == (int) $_GET['delete-vp-settings'] ) {
+					?>
+                    <p><?php _e( 'All VaultPress settings have been deleted.', 'vaultpress' ); ?></p>
+					<?php
+				} else {
+					?>
+                    <h2><?php _e( 'Delete VaultPress Settings', 'vaultpress' ); ?></h2>
+                    <p class="vp_card-description"><?php _e( 'Warning: Clicking this button will reset ALL VaultPress options in the database.', 'vaultpress' ); ?></p>
+                    <form method="post" action="">
+                        <button class="vp_button-secondary"><?php _e( 'Delete all VaultPress Settings', 'vaultpress' ); ?></button>
+                        <input type="hidden" name="action" value="delete-vp-settings"/>
+						<?php wp_nonce_field( 'delete_vp_settings' ); ?>
+                    </form>
+					<?php
+				}
+				?>
+            </div>
+        </div><!-- .card-grid -->
+		<?php
 	}
 
 	function get_config( $key ) {
@@ -953,7 +1030,7 @@ class VaultPress {
 	function ai_ping_next() {
 		global $wpdb;
 
-		if ( absint( $this->ai_ping_count() ) >= 100 ) {
+		if ( ! $this->allow_ai_pings() ) {
 			return false;
 		}
 
@@ -967,7 +1044,7 @@ class VaultPress {
 	}
 
 	function ai_ping_insert( $value ) {
-		if ( absint( $this->ai_ping_count() ) >= 100 ) {
+		if ( ! $this->allow_ai_pings() ) {
 			return false;
 		}
 
@@ -978,9 +1055,21 @@ class VaultPress {
 		add_option( '_vp_ai_ping_' . $new_id, $value, '', 'no' );
 	}
 
-	function ai_ping_count() {
+	function allow_ai_pings() {
+		static $allow_ai_pings = null;
+
+		if ( null === $allow_ai_pings ) {
+			$queue_size = $this->ai_ping_queue_size();
+			$size_limit = 50 * 1024 * 1024;
+			$allow_ai_pings = ( $queue_size->option_count < 100 && $queue_size->option_size < $size_limit );
+		}
+
+		return $allow_ai_pings;
+	}
+
+	function ai_ping_queue_size() {
 		global $wpdb;
-		return $wpdb->get_var( "SELECT COUNT(`option_id`) FROM $wpdb->options WHERE `option_name` LIKE '\_vp\_ai\_ping\_%'" );
+		return $wpdb->get_row( "SELECT COUNT(`option_id`) `option_count`, SUM(LENGTH(`option_value`)) `option_size` FROM $wpdb->options WHERE `option_name` LIKE '\_vp\_ai\_ping\_%'" );
 	}
 
 	function ai_ping_get( $num=1, $order='ASC' ) {
@@ -993,6 +1082,12 @@ class VaultPress {
 			"SELECT * FROM $wpdb->options WHERE `option_name` LIKE '\_vp\_ai\_ping\_%%' ORDER BY `option_id` $order LIMIT %d",
 			min( 10, max( 1, (int)$num ) )
 		) );
+	}
+
+	function ai_ping_queue_delete() {
+		global $wpdb;
+
+		return $wpdb->query( "DELETE FROM `$wpdb->options` WHERE `option_name` LIKE '\_vp\_ai\_ping%'" );
 	}
 
 	function request_firewall_update( $external_services = false ) {
@@ -1088,14 +1183,17 @@ class VaultPress {
 
 		// if we're running a connection test we don't want to run it a second time
 		$connection_test = $this->get_option( 'connection_test' );
-		if ( $connection_test )
+		if ( ! empty( $connection_test ) )
 			return true;
 
 		// force update firewall settings
 		$this->update_firewall();
 
+		// Generate a random string for ping-backs to use for identification
+		$connection_test_key = wp_generate_password( 32, false );
+		$this->update_option( 'connection_test', $connection_test_key );
+
 		// initial connection test to server
-		$this->update_option( 'connection_test', true );
 		$this->delete_option( 'allow_forwarded_for' );
 		$host = ( ! empty( $_SERVER['HTTP_HOST'] ) ) ? $_SERVER['HTTP_HOST'] : parse_url( $this->site_url(), PHP_URL_HOST );
 		$connect = $this->contact_service( 'test', array( 'host' => $host, 'uri' => $_SERVER['REQUEST_URI'], 'ssl' => is_ssl() ) );
@@ -1127,26 +1225,19 @@ class VaultPress {
 		}
 
 		// test connection between the site and the servers
-		$connect = (string)$this->contact_service( 'test', array( 'type' => 'connect' ) );
+		$connect = (string)$this->contact_service( 'test', array( 'type' => 'connect', 'test_key' => $connection_test_key ) );
 		if ( 'ok' != $connect ) {
-
-			// still not working so see if we're behind a load balancer
-			$this->update_option( 'allow_forwarded_for', true );
-			$connect = (string)$this->contact_service( 'test', array( 'type' => 'firewall-off' ) );
-
-			if ( 'ok' != $connect ) {
-				if ( 'error' == $connect ) {
-					$this->update_option( 'connection_error_code', -1 );
-					$this->update_option( 'connection_error_message', sprintf( __( 'The VaultPress servers cannot connect to your site. Please check that your site is visible over the Internet and there are no firewall or load balancer settings on your server that might be blocking the communication. If you&rsquo;re still having issues please <a href="%1$s">contact the VaultPress&nbsp;Safekeepers</a>.', 'vaultpress' ), 'http://vaultpress.com/contact/' ) );
-				} elseif ( !empty( $connect['faultCode'] ) ) {
-					$this->update_option( 'connection_error_code', $connect['faultCode'] );
-					$this->update_option( 'connection_error_message', $connect['faultString'] );
-				}
-
-				$this->update_option( 'connection', time() );
-				$this->delete_option( 'connection_test' );
-				return false;
+			if ( 'error' == $connect ) {
+				$this->update_option( 'connection_error_code', -1 );
+				$this->update_option( 'connection_error_message', sprintf( __( 'The VaultPress servers cannot connect to your site. Please check that your site is visible over the Internet and there are no firewall or load balancer settings on your server that might be blocking the communication. If you&rsquo;re still having issues please <a href="%1$s">contact the VaultPress&nbsp;Safekeepers</a>.', 'vaultpress' ), 'http://vaultpress.com/contact/' ) );
+			} elseif ( !empty( $connect['faultCode'] ) ) {
+				$this->update_option( 'connection_error_code', $connect['faultCode'] );
+				$this->update_option( 'connection_error_message', $connect['faultString'] );
 			}
+
+			$this->update_option( 'connection', time() );
+			$this->delete_option( 'connection_test' );
+			return false;
 		}
 
 		// successful connection established
@@ -1473,7 +1564,7 @@ JS;
 					$vaultpress_response_info                  = get_plugin_data( __FILE__ );
 				else
 					$vaultpress_response_info		   = array( 'Version' => $this->plugin_version );
-				$vaultpress_response_info['deferred_pings']        = (int)$this->ai_ping_count();
+				$vaultpress_response_info['deferred_pings']        = (int)$this->ai_ping_queue_size()->option_count;
 				$vaultpress_response_info['vaultpress_hostname']   = $this->get_option( 'hostname' );
 				$vaultpress_response_info['vaultpress_timeout']    = $this->get_option( 'timeout' );
 				$vaultpress_response_info['disable_firewall']      = $this->get_option( 'disable_firewall' );
@@ -1911,26 +2002,64 @@ JS;
 		}
 		
 		//	Figure out possible remote IPs		
-		if ( $this->get_option( 'allow_forwarded_for') && !empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) )
-			$remote_ips = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
-
+		$remote_ips = array();
 		if ( !empty( $_SERVER['REMOTE_ADDR'] ) )
-			$remote_ips[] = $_SERVER['REMOTE_ADDR'];
+			$remote_ips['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
+
+		// If this is a pingback during a connection test, search for valid-looking ips among headers
+		$connection_test_key = $this->get_option( 'connection_test' );
+		$testing_all_headers = ( ! empty( $_POST['test_key'] ) && $_POST['test_key'] === $connection_test_key );
+		if ( $testing_all_headers ) {
+			$remote_ips = array_filter( $_SERVER, array( $this, 'looks_like_ip_list' ) );
+		}
+
+		// If there is a pre-configured forwarding IP header, check that.
+		$forward_header = $this->get_option( 'allow_forwarded_for' );
+		if ( true === $forward_header || 1 == $forward_header ) {
+			$forward_header = 'HTTP_X_FORWARDED_FOR';
+		}
+		if ( ! empty( $forward_header ) && ! empty( $_SERVER[ $forward_header ] ) ) {
+			$remote_ips[ $forward_header ] = $_SERVER[ $forward_header ];
+		}
 
 		if ( empty( $remote_ips ) ) {
 			$__vp_validate_error = array( 'error' => 'no_remote_addr', 'detail' => (int) $this->get_option( 'allow_forwarded_for' ) ); // shouldn't happen
 			return false;
 		}
-		
-		foreach ( $remote_ips as $ip ) {
-			$ip = preg_replace( '#^::(ffff:)?#', '', $ip );
-			if ( $cidr = $this->ip_in_cidrs( $ip, $cidrs ) ) {
-				return true;
+
+		foreach ( $remote_ips as $header_name => $ip_list ) {
+			$ips = explode( ',', $ip_list );
+			foreach ( $ips as $ip ) {
+				$ip = preg_replace( '#^::(ffff:)?#', '', $ip );
+				if ( $cidr = $this->ip_in_cidrs( $ip, $cidrs ) ) {
+					// Successful match found. If testing all headers, note the successful header.
+					if ( $testing_all_headers && 'REMOTE_ADDR' !== $header_name ) {
+						$this->update_option( 'allow_forwarded_for', $header_name );
+					}
+
+					return true;
+				}
 			}
 		}
 		
 		$__vp_validate_error = array( 'error' => 'remote_addr_fail', 'detail' => $remote_ips );
 		return false;
+	}
+
+	// Returns true if $value looks like a comma-separated list of IPs
+	function looks_like_ip_list( $value ) {
+		if ( ! is_string( $value ) ) {
+			return false;
+		}
+
+		$items = explode( ',', $value );
+		foreach ( $items as $item ) {
+			if ( ip2long( $item ) === false ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 	
 	function do_c_block_firewall() {

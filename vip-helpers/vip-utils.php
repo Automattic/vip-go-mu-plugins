@@ -127,7 +127,7 @@ function vip_powered_wpcom_url() {
 		'utm_term' => sanitize_text_field( $_SERVER['HTTP_HOST'] ),
 	);
 
-	return add_query_arg( $args, 'https://vip.wordpress.com/' );
+	return add_query_arg( $args, 'https://wpvip.com/' );
 }
 
 /**
@@ -971,6 +971,10 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		}
 	}
 
+	if ( ! wpcom_vip_should_load_plugins() ) {
+		return;
+	}
+
 	/**
 	 * wpcom compat
 	 *
@@ -1153,6 +1157,29 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 }
 
 /**
+ * Helper function to check if we can load plugins or not.
+ */
+function wpcom_vip_should_load_plugins() {
+	static $should_load_plugins;
+
+	if ( isset( $should_load_plugins ) ) {
+		return $should_load_plugins;
+	}
+
+	$should_load_plugins = true;
+
+	// WP-CLI loaded with --skip-plugins flag
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		$skipped_plugins = \WP_CLI::get_runner()->config['skip-plugins'];
+		if ( $skipped_plugins ) {
+			$should_load_plugins = false;
+		}
+	}
+
+	return $should_load_plugins;
+}
+
+/**
  * Store the name of a VIP plugin that will be loaded
  *
  * @param string $plugin Plugin name and folder
@@ -1202,6 +1229,10 @@ function wpcom_vip_load_helpers_for_network_active_plugins() {
 		return;
 	}
 
+	if ( ! wpcom_vip_should_load_plugins() ) {
+		return;
+	}
+
 	foreach ( wp_get_active_network_plugins() as $plugin ) {
 		_wpcom_vip_include_plugin( $plugin );
 	}
@@ -1214,6 +1245,10 @@ add_action( 'muplugins_loaded', 'wpcom_vip_load_helpers_for_network_active_plugi
  * Technically tries to include the main plugin file again, but we don't care, because it uses `include_once()` and is called after Core loads the plugin
  */
 function wpcom_vip_load_helpers_for_sites_core_plugins() {
+	if ( ! wpcom_vip_should_load_plugins() ) {
+		return;
+	}
+
 	foreach ( wp_get_active_and_valid_plugins() as $plugin ) {
 		_wpcom_vip_include_plugin( $plugin );
 	}
@@ -1311,6 +1346,51 @@ function is_automattician( $user_id = false ) {
  */
 function is_proxied_automattician() {
 	return A8C_PROXIED_REQUEST && is_automattician();
+}
+
+/**
+ * Is the current request made using the Automattic proxy.
+ *
+ * @return bool True if the current request is made using the Automattic proxy
+ */
+function is_proxied_request() {
+	return defined( 'A8C_PROXIED_REQUEST' ) && true === A8C_PROXIED_REQUEST;
+}
+
+/**
+ * Is the current request being made from Jetpack servers?
+ * 
+ * NOTE - This checks the REMOTE_ADDR against known JP IPs. The IP can still be spoofed,
+ * (but usually an attacker cannot receive the response), so it is important to treat it accordingly
+ * 
+ * @return bool Bool indicating if the current request came from JP servers
+ */
+function vip_is_jetpack_request() {
+	// Filter by env
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		return false;
+	}
+
+	// Simple UA check to filter out most
+	if ( false === stripos( $_SERVER[ 'HTTP_USER_AGENT' ], 'jetpack' ) ) {
+		return false;
+	}
+
+	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
+
+	// If has a valid-looking UA, check the remote IP
+	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
+	$jetpack_ips = array(
+		'122.248.245.244',
+		'54.217.201.243',
+		'54.232.116.4',
+		'192.0.80.0/20',
+		'192.0.96.0/20',
+		'192.0.112.0/20',
+		'195.234.108.0/22',
+	);
+
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
 }
 
 /**

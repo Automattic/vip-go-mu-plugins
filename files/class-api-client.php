@@ -76,6 +76,13 @@ class API_Client {
 
 		$response = wp_remote_request( $request_url, $request_args );
 
+		// Debug log
+		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) &&
+		     true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) )
+		{
+			$this->log_request( $path, $method, $request_args );
+		}
+
 		return $response;
 	}
 
@@ -158,12 +165,20 @@ class API_Client {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
+		if ( 404 === $response_code ) {
+			/* translators: 1: file path */
+			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
+		} elseif ( 200 !== $response_code ) {
 			/* translators: 1: file path 2: HTTP status code */
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
-		return wp_remote_retrieve_body( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		// save to cache
+		$this->cache->cache_file( $file_path, $body );
+
+		return $body;
 	}
 
 	public function delete_file( $file_path ) {
@@ -244,5 +259,33 @@ class API_Client {
 		$obj = json_decode( $content );
 
 		return $obj->filename;
+	}
+
+	// Allow E_USER_NOTICE to be logged since WP blocks it by default.
+	private function allow_E_USER_NOTICE() {
+		static $updated_error_reporting = false;
+		if ( ! $updated_error_reporting ) {
+			$current_reporting_level = error_reporting();
+			error_reporting( $current_reporting_level | E_USER_NOTICE );
+			$updated_error_reporting = true;
+		}
+	}
+
+	private function log_request( $path, $method, $request_args ) {
+		$this->allow_E_USER_NOTICE();
+
+		$x_action = '';
+
+		if ( isset( $request_args['headers'] ) && isset( $request_args['headers']['X-Action'] ) ) {
+			$x_action = ' | X-Action:' . $request_args['headers']['X-Action'];
+		}
+
+		trigger_error(
+			sprintf( 'method:%s | path:%s%s #vip-go-streams-debug',
+				$method,
+				$path,
+				$x_action
+			), E_USER_NOTICE
+		);
 	}
 }
