@@ -937,6 +937,21 @@ function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 }
 
 /**
+ * Helper function for wpcom_vip_load_plugin(); sanitizes plugin folder name.
+ *
+ * You shouldn't use this function.
+ *
+ * @param string $folder Folder name
+ * @return string Sanitized folder name
+ */
+function _wpcom_vip_load_plugin_sanitizer( $folder ) {
+	$folder = preg_replace( '#([^a-zA-Z0-9-_.]+)#', '', $folder );
+	$folder = str_replace( '..', '', $folder ); // To prevent going up directories
+
+	return $folder;
+}
+
+/**
  * Loads a plugin from your plugins folder.
  *
  * Note - This function does not trigger plugin activation / deactivation hooks.
