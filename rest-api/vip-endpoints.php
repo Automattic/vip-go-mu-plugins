@@ -57,6 +57,14 @@ class WPCOM_VIP_REST_API_Endpoints {
 			},
 		) );
 
+		register_rest_route( $this->namespace, '/jetpack/', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'list_jetpack_details' ),
+			'permission_callback' => function() {
+				return wpcom_vip_go_rest_api_request_allowed( $this->namespace );
+			},
+		) );
+
 		add_filter( 'rest_authentication_errors', array( $this, 'force_authorized_access' ), 999 ); // hook in late to bypass any others that override our auth requirements
 	}
 
@@ -194,6 +202,58 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$plugins = $this->get_all_plugins();
 
 		return new WP_REST_Response( $plugins );
+	}
+
+	/**
+	 * List Jetpack Cache site details.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function list_jetpack_details( $request ): WP_REST_Response {
+		$details = [];
+
+		if ( is_multisite() ) {
+			$_sites = get_sites( array(
+				'public'   => null,
+				'archived' => 0,
+				'spam'     => 0,
+				'deleted'  => 0,
+				'fields'   => 'ids',
+			) );
+
+			if ( is_array( $_sites ) ) {
+				// Switch to the blog to ensure certain domain filtering is respected.
+				foreach ( $_sites as $_site ) {
+					switch_to_blog( $_site );
+					$details[] = $this->get_jetpack_details_for_site();
+
+					restore_current_blog();
+				}
+			} else {
+				$details = new WP_Error( 'no-sites-found', 'Failed to retrieve any sites for this multisite network.' );
+			}
+		} else {
+			$details[] = $this->get_jetpack_details_for_site();
+		}
+
+		return new WP_REST_Response( $details );
+	}
+
+	/**
+	 * Get Jetpack Cache Site ID, Home URL and the connection status for the current site.
+	 *
+	 * @return array
+	 */
+	protected function get_jetpack_details_for_site(): array {
+		$connection = new Automattic\Jetpack\Connection\Manager();
+		$data = [
+			'site_id'       => get_current_blog_id(),
+			'cache_site_id' => Jetpack::get_option( 'id' ),
+			'home_url'      => home_url(),
+			'is_active'     => $connection->is_active(),
+		];
+
+		return $data;
 	}
 
 	/**
