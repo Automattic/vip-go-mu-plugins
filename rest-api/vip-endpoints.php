@@ -240,15 +240,17 @@ class WPCOM_VIP_REST_API_Endpoints {
 	}
 
 	/**
-	 * Get Jetpack Cache Site ID and Home URL for current site.
+	 * Get Jetpack Cache Site ID, Home URL and the connection status for the current site.
 	 *
 	 * @return array
 	 */
 	protected function get_jetpack_details_for_site(): array {
+		$connection = new Automattic\Jetpack\Connection\Manager();
 		$data = [
 			'site_id'       => get_current_blog_id(),
 			'cache_site_id' => Jetpack::get_option( 'id' ),
 			'home_url'      => home_url(),
+			'is_active'     => $connection->is_active(),
 		];
 
 		return $data;
