@@ -8,11 +8,11 @@
  Author URI: https://wordpress.org/
  Text Domain: debug-bar
  */
-add_filter( 'debug_bar_enable', function( $enable ) {
-	$enable = is_automattician();
 
-	return $enable;
-}, 99 );
+// If the user is an Automattician (typically a vip_support user), then force-enable Debug Bar.
+add_filter( 'debug_bar_enable', function( $enable ) {
+	return is_automattician() ? true : $enable;
+}, 999 );
 
 // We only need to load the files if it's enabled
 add_action( 'init', function() {
