@@ -964,6 +964,12 @@ function _wpcom_vip_load_plugin_sanitizer( $folder ) {
  * @return bool True if the include was successful
  */
 function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_candidate_not_used = null ) {
+	$filtered_args = apply_filters( 'wpcom_vip_load_plugin_args', array( 'plugin'  => $plugin, 'folder'  => $folder ), $load_release_candidate_not_used );
+	if ( is_array( $filtered_args ) ) {
+		$plugin = isset( $filtered_args['plugin'] ) ? $filtered_args['plugin'] : $plugin;
+		$folder = isset( $filtered_args['folder'] ) ? $filtered_args['folder'] : $folder;
+	}
+
 	// Make sure there's a plugin to load
 	if ( empty($plugin) ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
