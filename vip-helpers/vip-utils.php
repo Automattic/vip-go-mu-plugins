@@ -964,6 +964,7 @@ function _wpcom_vip_load_plugin_sanitizer( $folder ) {
  * @return bool True if the include was successful
  */
 function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_candidate_not_used = null ) {
+	// This filter is used in the WP.com compatibility plugin (https://github.com/Automattic/vip-go-wpcom-compat).
 	$filtered_args = apply_filters( 'wpcom_vip_load_plugin_args', array( 'plugin'  => $plugin, 'folder'  => $folder ), $load_release_candidate_not_used );
 	if ( is_array( $filtered_args ) ) {
 		$plugin = isset( $filtered_args['plugin'] ) ? $filtered_args['plugin'] : $plugin;
