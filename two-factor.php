@@ -12,10 +12,16 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
-defined( 'VIP_2FA_TIME_GATE' ) || define( 'VIP_2FA_TIME_GATE', strtotime( '2019-07-17 18:00:00' ) );
+defined( 'VIP_2FA_TIME_GATE' ) || define( 'VIP_2FA_TIME_GATE', strtotime( '2019-07-24 18:00:00' ) );
 define( 'VIP_IS_AFTER_2FA_TIME_GATE', time() > VIP_2FA_TIME_GATE );
 
 function wpcom_vip_should_force_two_factor() {
+
+	// Don't force 2FA by default in local environments
+	if ( ! WPCOM_IS_VIP_ENV && ! apply_filters( 'wpcom_vip_is_two_factor_local_testing', false ) ) {
+		return false;
+	}
+	
 	// The proxy is the second factor for VIP Support users
 	if ( true === A8C_PROXIED_REQUEST ) {
 		return false;
@@ -35,6 +41,12 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
+	// If it's a request attempting to connect a local user to a
+	// WordPress.com user via XML-RPC or REST, allow it through.
+	if ( wpcom_vip_is_jetpack_authorize_request() ) {
+		return false;
+	}
+
 	// Don't force 2FA for OneLogin SSO
 	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
 		return false;
@@ -47,6 +59,52 @@ function wpcom_vip_should_force_two_factor() {
 
 	return true;
 }
+
+function wpcom_vip_is_jetpack_authorize_request() {
+	return (
+		// XML-RPC Jetpack authorize request
+		// This works with the classic core XML-RPC endpoint, but not
+		// Jetpack's alternate endpoint.
+		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
+		&& isset( $_GET['for'] ) && 'jetpack' === $_GET['for']
+		&& isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message , $GLOBALS['wp_xmlrpc_server']->message->methodName )
+		&& 'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
+	) || (
+		// REST Jetpack authorize request
+		defined( 'REST_REQUEST' ) && REST_REQUEST
+		&& isset( $GLOBALS['wp_rest_server'] )
+		&& wpcom_vip_is_jetpack_authorize_rest_request()
+	);
+}
+
+/**
+ * Setter/Getter to keep track of whether the current request is a REST
+ * API request for /jetpack/v4/remote_authorize request that connects a
+ * WordPress.com user to a local user.
+ */
+function wpcom_vip_is_jetpack_authorize_rest_request( $set = null ) {
+	static $is_jetpack_authorize_rest_request = false;
+	if ( ! is_null( $set ) ) {
+		$is_jetpack_authorize_rest_request = $set;
+	}
+
+	return $is_jetpack_authorize_rest_request;
+}
+
+/**
+ * Hooked to the `rest_request_before_callbacks` filter to keep track of
+ * whether the current request is a REST API request for
+ * /jetpack/v4/remote_authorize request that connects WordPress.com user
+ * to a local user.
+ * @return unmodified - it's attached to a filter.
+ */
+function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler ) {
+	if ( isset( $handler['callback'] ) && 'Jetpack_Core_Json_Api_Endpoints::remote_authorize' === $handler['callback'] ) {
+		wpcom_vip_is_jetpack_authorize_rest_request( true );
+	}
+	return $response;
+}
+add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 2 );
 
 function wpcom_vip_is_two_factor_forced() {
 	if ( ! wpcom_vip_should_force_two_factor() ) {
@@ -65,7 +123,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			// Calculate current_user_can outside map_meta_cap to avoid callback loop
 			add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
 				return $limited;
-			} );
+			}, 9 );
 		} else if ( $limited && wpcom_vip_should_force_two_factor() ) {
 			add_action( 'admin_notices', 'wpcom_vip_two_factor_prep_admin_notice' );
 		}
@@ -92,7 +150,8 @@ function wpcom_enable_two_factor_plugin() {
  * Remove caps for users without two-factor enabled so they are treated as a Contributor.
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
-	if ( wpcom_vip_is_two_factor_forced() ) {
+	// If the machine user is not defined or the current user is not the machine user, don't filter caps.
+	if ( wpcom_vip_is_two_factor_forced() && ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || $user_id !== WPCOM_VIP_MACHINE_USER_ID ) ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
 			'read',

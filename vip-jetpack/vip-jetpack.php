@@ -10,6 +10,11 @@
  */
 
 /**
+ * Add the Connection Pilot. Ensures Jetpack is consistently connected.
+ */
+require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );
+
+/**
  * Enable VIP modules required as part of the platform
  */
 require_once( __DIR__ . '/jetpack-mandatory.php' );
@@ -140,5 +145,5 @@ add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recapt
 
 // Disable Jetpack sync when user is added to blog.
 add_action( 'init', function() {
-	remove_action( 'jetpack_user_authorized', [ 'Jetpack_Sync_Actions', 'do_initial_sync' ] );
+	remove_action( 'jetpack_user_authorized', [ 'Automattic\\Jetpack\\Sync\\Actions', 'do_initial_sync' ] );
 } );

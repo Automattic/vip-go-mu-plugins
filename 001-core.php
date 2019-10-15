@@ -9,6 +9,16 @@
 
 require_once( __DIR__ . '/001-core/privacy.php' );
 
+/**
+ * Disable current theme validation
+ *
+ * By default, WordPress falls back to a default theme if it can't find
+ * the active theme. This is undesirable because it requires manually
+ * re-activating the correct theme and can lead to data loss in the form
+ * of deactivated widgets and menu location assignments.
+ */
+add_filter( 'validate_current_theme', '__return_false' );
+
 if ( false !== WPCOM_IS_VIP_ENV ) {
 	add_action( 'muplugins_loaded', 'wpcom_vip_init_core_restrictions' );
 }
