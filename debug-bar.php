@@ -11,8 +11,12 @@
 
 // If the user is an Automattician (typically a vip_support user), then force-enable Debug Bar.
 add_filter( 'debug_bar_enable', function( $enable ) {
-	return is_automattician() ? true : $enable;
-}, 999 );
+	if ( is_automattician() ) {
+		return true;
+	}
+
+	return $enable;
+}, PHP_INT_MAX );
 
 // We only need to load the files if it's enabled
 add_action( 'init', function() {
