@@ -292,6 +292,13 @@ class VIP_Filesystem {
 			$file_path = substr( $file_path, strlen( $upload_path['basedir'] ) + 1 );
 		}
 
+		// Strip any query params that snuck through
+		$queryStringStart = strpos( $file_path, '?' );
+
+		if ( false !== $queryStringStart ) {
+			$file_path = substr( $file_path, 0, $queryStringStart );
+		}
+
 		return $file_path;
 	}
 
