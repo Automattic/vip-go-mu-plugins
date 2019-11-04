@@ -216,7 +216,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		// Cache purging disabled, bail
-		if ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_FILE_PURGING ) {
+		if ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) {
 			return;
 		}
 
