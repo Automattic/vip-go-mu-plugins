@@ -215,6 +215,11 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
+		// Cache purging disabled, bail
+		if ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_FILE_PURGING ) {
+			return;
+		}
+
 		$this->ban_urls = array_unique( $this->ban_urls );
 		$this->purge_urls = array_unique( $this->purge_urls );
 
