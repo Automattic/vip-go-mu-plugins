@@ -31,6 +31,12 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function init() {
+		// Cache purging disabled, bail
+		if (( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) || ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING )) {
+			error_log( 'Cache will not be purged: an import is running, or cache purging is disabled. Check site configuration.' );
+			return;
+		}
+		
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
@@ -215,12 +221,6 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
-		// Cache purging disabled, bail
-		if (( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) || ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING )) {
-			error_log( 'Cache will not be purged: an import is running, or cache purging is disabled. Check site configuration.' );
-			return;
-		}
-
 		$this->ban_urls = array_unique( $this->ban_urls );
 		$this->purge_urls = array_unique( $this->purge_urls );
 
@@ -290,8 +290,8 @@ class WPCOM_VIP_Cache_Manager {
 	public function queue_post_purge( $post_id ) {
 		if ( $this->site_cache_purged )
 			return false;
-		// Do not queue anything if an import is running or cache purging is disabled
-		if ( defined( 'WP_IMPORTING' ) || ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) ) {
+
+		if ( defined( 'WP_IMPORTING' ) ) {
 			return false;
 		}
 
