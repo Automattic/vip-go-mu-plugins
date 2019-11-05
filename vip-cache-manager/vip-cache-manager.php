@@ -216,8 +216,8 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		// Cache purging disabled, bail
-		if ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) {
-			error_log( 'Cache will not be purged, as purging is disabled for this site. If you think this should not happen, check vip-config.php.' );
+		if (( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) || ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING )) {
+			error_log( 'Cache will not be purged: an import is running, or cache purging is disabled. Check site configuration.' );
 			return;
 		}
 
