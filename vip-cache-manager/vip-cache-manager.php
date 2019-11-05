@@ -290,8 +290,8 @@ class WPCOM_VIP_Cache_Manager {
 	public function queue_post_purge( $post_id ) {
 		if ( $this->site_cache_purged )
 			return false;
-
-		if ( defined( 'WP_IMPORTING' ) ) {
+		// Do not queue anything if an import is running or cache purging is disabled
+		if ( defined( 'WP_IMPORTING' ) || defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) ) {
 			return false;
 		}
 
