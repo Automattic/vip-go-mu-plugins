@@ -217,6 +217,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		// Cache purging disabled, bail
 		if ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) {
+			error_log( 'Cache will not be purged, as purging is disabled for this site. If you think this should not happen, check vip-config.php.' );
 			return;
 		}
 
