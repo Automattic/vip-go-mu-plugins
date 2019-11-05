@@ -291,6 +291,10 @@ class WPCOM_VIP_Cache_Manager {
 		if ( $this->site_cache_purged )
 			return false;
 
+		if ( defined( 'WP_IMPORTING' ) ) {
+			return false;
+		}
+
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
 		     'revision' === $post->post_type ||
