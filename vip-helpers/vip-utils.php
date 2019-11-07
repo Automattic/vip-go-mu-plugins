@@ -492,6 +492,11 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		'http_api_args' => array(), // See http://codex.wordpress.org/Function_API/wp_remote_get
 	);
 
+	if ( defined( 'WPCOM_VIP_DISABLE_SSL_VERIFY' ) && WPCOM_VIP_DISABLE_SSL_VERIFY ) {
+		// Only allow this to be false on non VIP envs.
+		$extra_args_defaults[ 'sslverify' ] = WPCOM_IS_VIP_ENV;
+	}
+
 	$extra_args = wp_parse_args( $extra_args, $extra_args_defaults );
 
 	$cache_key       = md5( serialize( array_merge( $extra_args, array( 'url' => $url ) ) ) );
@@ -764,7 +769,14 @@ function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeou
 	}
 
 	$start = microtime( true );
-	$response = wp_remote_get( $url, array_merge( $args, array( 'timeout' => $timeout ) ) );
+
+	$extra_args_defaults = array( 'timeout' => $timeout );
+	if ( defined( 'WPCOM_VIP_DISABLE_SSL_VERIFY' ) && WPCOM_VIP_DISABLE_SSL_VERIFY ) {
+		// Only allow this to be false on non VIP envs.
+		$extra_args_defaults[ 'sslverify' ] = WPCOM_IS_VIP_ENV;
+	}
+
+	$response = wp_remote_get( $url, array_merge( $args, $extra_args_defaults ) );
 	$end = microtime( true );
 
 	$elapsed = ( $end - $start ) > $timeout;
