@@ -235,6 +235,11 @@ class VIP_Filesystem_Stream_Wrapper {
 			return false;
 		}
 
+		if ( 'r' === $this->mode ) {
+			// No writes in 'read' mode
+			return false;
+		}
+
 		try {
 			// Upload to file service
 			$result = $this->client
