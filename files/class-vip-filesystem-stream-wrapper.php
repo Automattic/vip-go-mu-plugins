@@ -28,6 +28,15 @@ class VIP_Filesystem_Stream_Wrapper {
 	public $client;
 
 	/**
+	 * The fopen mode for current file
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 * @var     string      The fopen mode
+	 */
+	protected $mode;
+
+	/**
 	 * The file resource fetched through the VIP Files API
 	 *
 	 * @since   1.0.0
@@ -122,6 +131,11 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
+		$mode = rtrim( $mode, 'bt' );
+
+		if ( ! $this->validate( $path, $mode ) ) {
+			return false;
+		}
 
 		try {
 			$result = $this->client->get_file( $path );
@@ -141,7 +155,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Converts file contents into stream resource
-			$file = $this->string_to_resource( $result );
+			$file = $this->string_to_resource( $result, $mode );
 
 			// Get meta data
 			$meta           = stream_get_meta_data( $file );
@@ -150,6 +164,7 @@ class VIP_Filesystem_Stream_Wrapper {
 
 			$this->file = $file;
 			$this->path = $path;
+			$this->mode = $mode;
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -597,18 +612,27 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @access  protected
 	 *
 	 * @param   string     $data   The file content to be written
+	 * @param   string     $mode   The fopen mode
 	 *
 	 * @return  resource   Returns resource or false on write error
 	 */
-	protected function string_to_resource( $data ) {
+	protected function string_to_resource( $data, $mode ) {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if ( false === fwrite( $tmp_handler, $data ) ) {
 			trigger_error( 'Error creating temporary resource #vip-go-streams',
 				E_USER_ERROR );
 		}
-		// Need to rewind file pointer as fwrite moves it to EOF
-		rewind( $tmp_handler );
+
+		switch ( $mode ) {
+			case 'a':
+				// Make sure pointer is at end of file for appends
+				fseek( $tmp_handler, 0, SEEK_END );
+				break;
+			default:
+				// Need to rewind file pointer as fwrite moves it to EOF
+				rewind( $tmp_handler );
+		}
 
 		return $tmp_handler;
 	}
