@@ -480,14 +480,15 @@ function wpcom_vip_cache_delete( $key, $group = '' ) {
  *
  * @global wpdb $wpdb
  *
- * @param bool   $in_same_term   Optional. Whether post should be in a same taxonomy term. Note - only the first term will be used from wp_get_object_terms().
- * @param int    $excluded_term  Optional. The term to exclude.
- * @param bool   $previous       Optional. Whether to retrieve previous post.
- * @param string $taxonomy       Optional. Taxonomy, if $in_same_term is true. Default 'category'.
+ * @param bool         $in_same_term         Optional. Whether post should be in a same taxonomy term. Note - only the first term will be used from wp_get_object_terms().
+ * @param int          $excluded_term        Optional. The term to exclude.
+ * @param bool         $previous             Optional. Whether to retrieve previous post.
+ * @param string       $taxonomy             Optional. Taxonomy, if $in_same_term is true. Default 'category'.
+ * @param bool|int     $time_span_in_seconds Optional. Limit the scope of the adjacent post to the desired amount in seconds.
  *
  * @return null|string|WP_Post Post object if successful. Null if global $post is not set. Empty string if no corresponding post exists.
  */
-function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '', $previous = true, $taxonomy = 'category', $adjacent = '' ) {
+function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '', $previous = true, $taxonomy = 'category', $adjacent = '', $time_span_in_seconds = false ) {
 	global $wpdb;
 	if ( ( ! $post = get_post() ) || ! taxonomy_exists( $taxonomy ) ) {
 		return null;
@@ -515,9 +516,9 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 
 				$term_id_to_search = apply_filters( 'wpcom_vip_limit_adjacent_post_term_id', $term_id_to_search, $term_array_ids, $excluded_terms, $taxonomy, $previous );
 
-				if ( ! empty( $term_id_to_search ) ) {  // allow filters to short circuit by returning a empty like value
-					$join = " INNER JOIN $wpdb->term_relationships AS tr ON p.ID = tr.object_id INNER JOIN $wpdb->term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id"; // Only join if we are sure there is a term
-					$where = $wpdb->prepare( 'AND tt.taxonomy = %s AND tt.term_id IN (%d)  ', $taxonomy,$term_id_to_search ); //
+				if ( ! empty( $term_id_to_search ) ){ //allow filters to short circuit by returning a empty like value
+					$join = " INNER JOIN $wpdb->term_relationships AS tr ON p.ID = tr.object_id INNER JOIN $wpdb->term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id"; //Only join if we are sure there is a term
+					$where = $wpdb->prepare( "AND tt.taxonomy = %s AND tt.term_id IN (%d)  ", $taxonomy,$term_id_to_search ); //
 				}
 			}
 		}
@@ -532,6 +533,23 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	}
 	$sort  = "ORDER BY p.post_date $order LIMIT $limit";
 	$where = $wpdb->prepare( "WHERE p.post_date $op %s AND p.post_type = %s AND p.post_status = 'publish' $where", $current_post_date, $post->post_type );
+
+	if ( false !== $time_span_in_seconds && $time_span_in_seconds > 0 ) {
+		// Limit the query using the opposite sign of $op
+		$op_inverse = $previous ? '>' : '<';
+
+		// If querying for a $previous post, multiply by -1 to subtract the time span instead
+		if ( $previous ) {
+			$time_span_in_seconds *= - 1;
+		}
+
+		$post_limit_timestamp = ( strtotime( $current_post_date ) + $time_span_in_seconds );
+		if ( $post_limit_timestamp > 0 ) {
+			$post_limit_date = date( 'Y-m-d H:i:s', $post_limit_timestamp );
+			$where           = $wpdb->prepare( "$where AND p.post_date $op_inverse %s", $post_limit_date );
+		}
+	}
+
 	$query = "SELECT p.ID FROM $wpdb->posts AS p $join $where $sort";
 
 	$found_post = ''; // blank instead of false so not found is cached.
