@@ -656,6 +656,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$this->file = null;
 			$this->path = null;
 			$this->uri  = null;
+			$this->mode = null;
 		}
 
 		return $result;
