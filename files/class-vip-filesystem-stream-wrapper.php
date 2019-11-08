@@ -650,4 +650,69 @@ class VIP_Filesystem_Stream_Wrapper {
 	protected function trim_path( $path ) {
 		return ltrim( $path, 'vip:/\\' );
 	}
+
+	/**
+	 * Validates the provided stream arguments for fopen.
+	*
+	* @since   1.0.0
+	* @access  private
+	* @param   string    $path   Path to file
+	* @param   string    $mode   fopen mode
+	*
+	* @return  bool
+	 */
+	private function validate( $path, $mode ) {
+		if ( ! in_array( $mode, [ 'r', 'w', 'a', 'x' ], true ) ) {
+			trigger_error( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." );
+
+			return false;
+		}
+
+		// When using mode "x" validate if the file exists before attempting
+		// to read
+		if ( 'x' === $mode ) {
+			try {
+				$info   = array();
+				$result = $this->client->is_file( $path, $info );
+				if ( is_wp_error( $result ) ) {
+					trigger_error(
+						sprintf(
+							'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
+							$mode,
+							$path,
+							$result->get_error_message()
+						),
+						E_USER_WARNING
+					);
+
+					return false;
+				}
+
+				if ( $result ) {
+					// File already exists
+					trigger_error(
+						sprintf( 'File %s already exists. Cannot use mode %s', $path, $mode )
+					);
+
+					return false;
+				}
+
+				return $stats;
+			} catch ( \Exception $e ) {
+				trigger_error(
+					sprintf(
+						'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
+						$mode,
+						$path, 
+						$result->get_error_message()
+					),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+		}
+
+		return true;
+	}
 }
