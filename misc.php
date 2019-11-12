@@ -151,3 +151,9 @@ add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
  * Stop Woocommerce from trying to create files on read-only filesystem
  */
 add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
+
+/**
+ * WordPress 5.3 adds "big image" processing, for images over 2560px (by default).
+ * This is not needed on VIP Go since we use Photon for dynamic image work.
+ */
+add_filter( 'big_image_size_threshold', '__return_false' );
