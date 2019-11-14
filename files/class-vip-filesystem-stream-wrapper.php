@@ -131,7 +131,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
-		$mode = rtrim( $mode, 'bt' );
+		// Also ignore '+' modes since the handlers are all read+write anyway
+		$mode = rtrim( $mode, 'bt+' );
 
 		if ( ! $this->validate( $path, $mode ) ) {
 			return false;
