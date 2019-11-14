@@ -10,6 +10,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	const DEFAULT_PROTOCOL = 'vip';
 
 	/**
+	 * Allowed fopen modes
+	 *
+	 * We are ignoring `b`, `t` and `+` modes as they do not affect how this
+	 * Stream Wrapper works.
+	 * Not supporting `c` and `e` modes as these are rarely used and adds complexity
+	 * to support.
+	 */
+	const ALLOWED_MODES = [ 'r', 'w', 'a', 'x' ];
+
+	/**
 	 * The Stream context. Set by PHP
 	 *
 	 * @since   1.0.0
@@ -708,7 +718,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	* @return  bool
 	 */
 	private function validate( $path, $mode ) {
-		if ( ! in_array( $mode, [ 'r', 'w', 'a', 'x' ], true ) ) {
+		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
 			trigger_error( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." );
 
 			return false;
