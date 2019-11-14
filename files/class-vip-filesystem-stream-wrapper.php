@@ -237,6 +237,11 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		if ( 'r' === $this->mode ) {
 			// No writes in 'read' mode
+			trigger_error(
+				sprintf( 'stream_flush failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ),
+				E_USER_WARNING
+			);
+
 			return false;
 		}
 
