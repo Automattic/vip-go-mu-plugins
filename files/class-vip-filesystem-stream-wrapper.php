@@ -315,6 +315,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  int|bool    Number of bytes written or false on error
 	 */
 	public function stream_write( $data ) {
+		if ( 'r' === $this->mode ) {
+			// No writes in 'read' mode
+			trigger_error(
+				sprintf( 'stream_write failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ),
+				E_USER_WARNING
+			);
+
+			return false;
+		}
+
 		$length = fwrite( $this->file, $data );
 
 		if ( false === $length ) {
