@@ -47,34 +47,32 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	// Don't force 2FA for OneLogin SSO
-	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
-		return false;
-	}
-
-	// Don't force 2FA for SimpleSaml
-	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
+	// Allow custom SSO solutions
+	if ( wpcom_vip_use_custom_sso() ) {
 		return false;
 	}
 
 	return true;
 }
 
-function wpcom_vip_is_jetpack_authorize_request() {
-	return (
-		// XML-RPC Jetpack authorize request
-		// This works with the classic core XML-RPC endpoint, but not
-		// Jetpack's alternate endpoint.
-		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
-		&& isset( $_GET['for'] ) && 'jetpack' === $_GET['for']
-		&& isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message , $GLOBALS['wp_xmlrpc_server']->message->methodName )
-		&& 'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
-	) || (
-		// REST Jetpack authorize request
-		defined( 'REST_REQUEST' ) && REST_REQUEST
-		&& isset( $GLOBALS['wp_rest_server'] )
-		&& wpcom_vip_is_jetpack_authorize_rest_request()
-	);
+function wpcom_vip_use_custom_sso() {
+
+	$custom_sso_enabled = apply_filters( 'wpcom_vip_use_custom_sso', null );
+	if( null !== $custom_sso_enabled ) {
+		return $custom_sso_enabled;
+	}
+
+	// Check for OneLogin SSO
+	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
+		return true;
+	}
+
+	// Check for SimpleSaml
+	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
+		return true;
+	}
+
+	return false;
 }
 
 /**
