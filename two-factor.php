@@ -75,6 +75,23 @@ function wpcom_vip_use_custom_sso() {
 	return false;
 }
 
+function wpcom_vip_is_jetpack_authorize_request() {
+	return (
+		// XML-RPC Jetpack authorize request
+		// This works with the classic core XML-RPC endpoint, but not
+		// Jetpack's alternate endpoint.
+		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
+		&& isset( $_GET['for'] ) && 'jetpack' === $_GET['for']
+		&& isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message , $GLOBALS['wp_xmlrpc_server']->message->methodName )
+		&& 'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
+	) || (
+		// REST Jetpack authorize request
+		defined( 'REST_REQUEST' ) && REST_REQUEST
+		&& isset( $GLOBALS['wp_rest_server'] )
+		&& wpcom_vip_is_jetpack_authorize_rest_request()
+	);
+}
+
 /**
  * Setter/Getter to keep track of whether the current request is a REST
  * API request for /jetpack/v4/remote_authorize request that connects a
