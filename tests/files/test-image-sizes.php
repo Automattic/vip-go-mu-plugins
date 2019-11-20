@@ -149,13 +149,13 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 						'crop' => false,
 					],
 					'1536x1536' => [
-						'width' => 1536,
-						'height' => 1536,
+						'width' => '1536',
+						'height' => '1536',
 						'crop' => false,
-				],
+					],
 					'2048x2048' => [
-						'width' => 2048,
-						'height' => 2048,
+						'width' => '2048',
+						'height' => '2048',
 						'crop' => false,
 					],
 				],
@@ -445,7 +445,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 				'params' => [
 					'resize' => '2048,1153',
 				],
-			]
+			],
 		];
 	}
 
