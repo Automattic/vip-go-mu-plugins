@@ -717,7 +717,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	*
 	* @return  bool
 	 */
-	private function validate( $path, $mode ) {
+	public function validate( $path, $mode ) {
 		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
 			trigger_error( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." );
 
