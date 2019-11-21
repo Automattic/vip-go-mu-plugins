@@ -9,6 +9,12 @@
  * License: GPL2+
  */
 
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 50000 );
+
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', HOUR_IN_SECONDS );
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', 6 * HOUR_IN_SECONDS );
+
 /**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
@@ -34,6 +40,34 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 
 	return $modules;
 }, 999 );
+
+/**
+ * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
+ * 
+ * Still allows changing the value per site, but locks it into the range
+ */
+add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
+	$value = intval( $value );
+
+	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
+	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT );
+
+	return $value;
+}, 9999 );
+
+/**
+ * Lock down the jetpack_sync_settings_max_queue_lag to an allowed range
+ * 
+ * Still allows changing the value per site, but locks it into the range
+ */
+add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
+	$value = intval( $value );
+
+	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
+	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT );
+
+	return $value;
+}, 9999 );
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
