@@ -544,7 +544,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Convert to actual file to upload to new path
-			$file     = $this->string_to_resource( $result );
+			$file     = $this->string_to_resource( $result, 'r' );
 			$meta     = stream_get_meta_data( $file );
 			$filePath = $meta['uri'];
 
@@ -647,7 +647,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @return  resource   Returns resource or false on write error
 	 */
-	protected function string_to_resource( $data, $mode = null ) {
+	protected function string_to_resource( $data, $mode ) {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if ( false === fwrite( $tmp_handler, $data ) ) {
