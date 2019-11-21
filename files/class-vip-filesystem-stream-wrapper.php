@@ -647,7 +647,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @return  resource   Returns resource or false on write error
 	 */
-	protected function string_to_resource( $data, $mode ) {
+	protected function string_to_resource( $data, $mode = null ) {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if ( false === fwrite( $tmp_handler, $data ) ) {
