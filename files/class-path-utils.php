@@ -4,13 +4,13 @@ namespace Automattic\VIP\Files;
 
 class Path_Utils {
 	public static function is_subdirectory_multisite_path( $file_path, $uploads_path ) {
-		$pattern = '#^/[_0-9a-zA-Z-]+/' . $uploads_path . '/sites/[0-9]+/#';
+		$pattern = '#^/[_0-9a-zA-Z-]+/' . $uploads_path . '/#';
 
 		return preg_match( $pattern, $file_path );
 	}
 
 	public static function is_sub_subdirectory_multisite_path( $file_path, $uploads_path ) {
-		$pattern = '#^/[_0-9a-zA-Z-]+/[_0-9a-zA-Z-]+/' . $uploads_path . '/sites/[0-9]+/#';
+		$pattern = '#^/[_0-9a-zA-Z-]+/[_0-9a-zA-Z-]+/' . $uploads_path . '/#';
 
 		return preg_match( $pattern, $file_path );
 	}
