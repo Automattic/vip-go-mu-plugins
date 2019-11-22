@@ -63,7 +63,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 			[
 				'jetpack_sync_settings_max_queue_lag',
 				10000000,
-				21600,
+				86400,
 			],
 
 			// Just right
