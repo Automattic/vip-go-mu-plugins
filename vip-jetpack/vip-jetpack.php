@@ -20,7 +20,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
  * 
  * The queue is stored in the option table, so if the queue gets _too_ large, site performance suffers
  */
-define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 50000 );
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 100000 );
 
 /**
  * The lower bound for the incremental sync queue lag - if the oldest item has been sitting unsynced for this long,
