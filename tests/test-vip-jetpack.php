@@ -14,7 +14,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 			[
 				'jetpack_sync_settings_max_queue_size',
 				10000000,
-				50000,
+				100000,
 			],
 
 			// Just right
