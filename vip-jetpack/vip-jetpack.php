@@ -142,3 +142,16 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
 }
 add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
+
+/**
+ * Remove Jetpack's Feature Hints.
+ *
+ * @see https://jetpack.com/?p=59210
+ *
+ * @param array $tools Array of extra tools to include.
+ */
+function wpcom_vip_remove_jetpack_search_hints( $tools ) {
+    unset( $tools[ array_search( 'plugin-search.php', $tools, true ) ] );
+    return $tools;
+}
+add_filter( 'jetpack_tools_to_include', 'wpcom_vip_remove_jetpack_search_hints' );
