@@ -35,7 +35,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', 2 * HOUR_IN_SECONDS );
  * The maximum incremental sync queue lag allowed - just sets a reasonable upper bound on this limit to prevent extremely
  * stale incremental sync queues
  */
-define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', 6 * HOUR_IN_SECONDS );
 
 /**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
