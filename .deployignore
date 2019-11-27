@@ -1,6 +1,7 @@
 .deployignore
 
 .ackrc
+.circleci
 .codeclimate.yml
 .coveralls.yml
 .distignore
@@ -53,6 +54,9 @@ yarn.lock
 /cron-control/bin/
 /cron-control/runner/
 /cron-control/tests/
+/cron-control-next/bin/
+/cron-control-next/runner/
+/cron-control-next/tests/
 /jetpack/bin/build-asset-cdn-json.php
 /jetpack/docker/
 /jetpack/docs/
@@ -68,6 +72,7 @@ yarn.lock
 /shared-plugins/two-factor/assets/
 /shared-plugins/two-factor/dev-lib/
 /tests/
+/vip-support/.circleci
 /vip-support/bin/
 /vip-support/features/
 /vip-support/tests/
