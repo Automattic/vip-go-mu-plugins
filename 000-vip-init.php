@@ -180,7 +180,7 @@ add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
 
 	// All non-production domains should not be indexed.
-	if ( 'production' !== VIP_GO_ENV || false !== stristr( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
+	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 
