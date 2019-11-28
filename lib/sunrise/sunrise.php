@@ -13,6 +13,33 @@ require_once( WP_CONTENT_DIR . '/mu-plugins/lib/utils/context.php' );
 
 use Automattic\VIP\Utils\Context;
 
+if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+	$is_url_flag_set = is_wp_cli_url_flag_set();
+	if ( ! $is_url_flag_set ) {
+		globalize_main_site();
+	}
+
+	unset( $assoc_args, $has_url_flag );
+}
+
+function is_wp_cli_url_flag_set() {
+	$config = \WP_CLI::get_configurator()->to_array();
+
+	return ! empty( $config[ 0 ] ) && ! empty( $config[ 0 ][ 'url' ] );
+}
+
+function globalize_main_site() {
+	global $current_site, $current_blog;
+
+	if ( ! defined( 'BLOG_ID_CURRENT_SITE' ) || ! defined( 'SITE_ID_CURRENT_SITE' ) ) {
+		return;
+	}
+
+	// TODO: consider direct query here to avoid cache issues?
+	$current_blog = \WP_Site::get_instance( BLOG_ID_CURRENT_SITE );
+	$current_site = \WP_Network::get_instance( SITE_ID_CURRENT_SITE );
+}
+
 /**
  * Log errors retrieving network for a given request
  *
