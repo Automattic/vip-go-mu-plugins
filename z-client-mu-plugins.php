@@ -90,7 +90,7 @@ function wpcom_vip_filter_client_mu_plugins_url( $url, $url_path, $plugin_path )
 	static $mu_plugins_dir, $mu_plugins_url;
 
 	if ( ! isset( $mu_plugins_dir ) ) {
-		$mu_plugins_dir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR;
+		$mu_plugins_dir = wp_normalize_path( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR );
 	}
 
 	if ( ! isset( $mu_plugins_url ) ) {
@@ -99,6 +99,8 @@ function wpcom_vip_filter_client_mu_plugins_url( $url, $url_path, $plugin_path )
 	}
 
 	// Only override client-mu-plugins paths
+	$plugin_path = wp_normalize_path($plugin_path);
+	
 	if ( 0 === strpos( $plugin_path, $mu_plugins_dir ) ) {
 		// Let's get the root of the plugin's path and replace the root bits of the path with the URL
 		// E.g. starting with a plugin path (`/var/www/wp-content/client-mu-plugins/plugin/file.php`), replace the root path (`/var/www/wp-content/client-mu-plugins`) with the URL (https://example.com/wp-content/client-mu-plugins).
