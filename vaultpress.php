@@ -17,4 +17,14 @@ if ( ! defined( 'VAULTPRESS_TIMEOUT' ) ) {
 	define( 'VAULTPRESS_TIMEOUT', 10 );
 }
 
-require_once( __DIR__ . '/vaultpress/vaultpress.php' );
+$vaultpress_to_load = WPMU_PLUGIN_DIR . '/vaultpress/vaultpress.php';
+if ( defined( 'WPCOM_VIP_VAULTPRESS_LOCAL' ) && WPCOM_VIP_VAULTPRESS_LOCAL ) {
+	// Set a specific alternative VaultPress
+	$vaultpress_to_test = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/vaultpress/vaultpress.php';
+	// Test that our proposed VaultPress exists, otherwise do not use it
+	if ( file_exists( $vaultpress_to_test ) ) {
+		$vaultpress_to_load = $vaultpress_to_test;
+	}
+}
+
+require_once( $vaultpress_to_load );
