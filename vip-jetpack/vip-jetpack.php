@@ -102,7 +102,9 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $valu
 }, 9999 );
 
 /**
- * Reduce the time between sync batches on VIP
+ * Reduce the time between sync batches on VIP for performance gains.
+ *
+ * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
  * 
  * Default is 10 seconds
  */
