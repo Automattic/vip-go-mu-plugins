@@ -96,7 +96,6 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
  *
  * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
  * 
- * The default interval for this cronjob is 5 minutes
  */
 add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $value ) {
 	return 4 * MINUTE_IN_SECONDS;
