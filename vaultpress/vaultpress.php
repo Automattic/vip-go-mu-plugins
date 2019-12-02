@@ -1947,7 +1947,7 @@ JS;
 			if ( 1 === openssl_verify( serialize( array( 'uri' => $uri, 'post' => $post ) ), base64_decode( $sslsig ), $this->get_option( 'public_key' ) ) ) {
 				return true;
 			} else {
-				$__vp_validate_error = array( 'error' => 'invalid_signed_data' );
+				$__vp_validate_error = array( 'error' => 'invalid_signed_data (ssl) ' . serialize( $_POST ) );
 				return false;
 			}
 		}
@@ -1957,7 +1957,7 @@ JS;
 			return true;
 		}
 
-		$__vp_validate_error = array( 'error' => 'invalid_signed_data' );
+		$__vp_validate_error = array( 'error' => 'invalid_signed_data (plain) ' . serialize( $_POST ) );
 		return false;
 	}
 
