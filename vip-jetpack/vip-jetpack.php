@@ -100,6 +100,15 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $valu
 	return 4 * MINUTE_IN_SECONDS;
 }, 9999 );
 
+/**
+ * Reduce the time between sync batches on VIP
+ * 
+ * Default is 10 seconds
+ */
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function( $value ) {
+	return 1;
+}, 9999 );
+
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
 	add_action( 'updating_jetpack_version', function( $new_version, $old_version ) {
