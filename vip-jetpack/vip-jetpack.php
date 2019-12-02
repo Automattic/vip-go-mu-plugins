@@ -20,7 +20,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
  * 
  * The queue is stored in the option table, so if the queue gets _too_ large, site performance suffers
  */
-define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 100000 );
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 50000 );
 
 /**
  * The lower bound for the incremental sync queue lag - if the oldest item has been sitting unsynced for this long,
@@ -35,7 +35,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', 2 * HOUR_IN_SECONDS );
  * The maximum incremental sync queue lag allowed - just sets a reasonable upper bound on this limit to prevent extremely
  * stale incremental sync queues
  */
-define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', 8 * HOUR_IN_SECONDS );
 
 /**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
