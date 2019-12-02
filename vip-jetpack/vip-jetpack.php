@@ -106,7 +106,6 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $valu
  *
  * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
  * 
- * Default is 10 seconds
  */
 add_filter( 'option_jetpack_sync_settings_sync_wait_time', function( $value ) {
 	return 1;
