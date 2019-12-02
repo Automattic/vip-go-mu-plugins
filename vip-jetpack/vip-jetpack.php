@@ -92,7 +92,9 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
 }, 9999 );
 
 /**
- * Allow incremental syncing via cron to take longer than the default 30 seconds
+ * Allow incremental syncing via cron to take longer than the default 30 seconds.
+ *
+ * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
  * 
  * The default interval for this cronjob is 5 minutes
  */
