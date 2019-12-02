@@ -91,6 +91,15 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
 	return $value;
 }, 9999 );
 
+/**
+ * Allow incremental syncing via cron to take longer than the default 30 seconds
+ * 
+ * The default interval for this cronjob is 5 minutes
+ */
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $value ) {
+	return 4 * MINUTE_IN_SECONDS;
+}, 9999 );
+
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
 	add_action( 'updating_jetpack_version', function( $new_version, $old_version ) {
