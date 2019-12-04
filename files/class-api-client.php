@@ -139,7 +139,7 @@ class API_Client {
 
 		// response looks like {"filename":"/wp-content/uploads/path/to/file.ext"}
 		// save to cache
-		$this->cache->cache_file( $response_data->filename, file_get_contents( $local_path ) );
+		$this->cache->copy_to_cache( $response_data->filename, $local_path );
 
 		return $response_data->filename;
 	}

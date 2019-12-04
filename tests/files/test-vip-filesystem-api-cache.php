@@ -102,6 +102,39 @@ class API_Cache_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, file_get_contents( $files[ 'test.jpg' ] ) );
 	}
 
+	public function test__copy_to_cache() {
+		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
+		$prop = self::get_property( $this->cache, 'files' );
+
+		$this->cache->copy_to_cache( 'test.txt', $file_path );
+
+		$files = $prop->getValue( $this->cache );
+
+		$this->assertTrue( isset( $files[ 'test.txt' ] ) );
+	}
+
+	public function test__copy_to_cache__update_cache() {
+		$test_file = tempnam( sys_get_temp_dir(), 'test' );
+
+		file_put_contents( $test_file, 'test data' );
+
+		$prop = self::get_property( $this->cache, 'files' );
+		$prop->setValue( $this->cache, [ 'test.jpg' => $test_file ] );
+
+		$expected = 'updated data';
+
+		$test_file2 = tempnam( sys_get_temp_dir(), 'test' );
+
+		file_put_contents( $test_file2, $expected );
+
+		$this->cache->copy_to_cache( 'test.jpg', $test_file2 );
+
+		$files = $prop->getValue( $this->cache );
+
+		$this->assertTrue( isset( $files[ 'test.jpg' ] ) );
+		$this->assertEquals( $expected, file_get_contents( $files[ 'test.jpg' ] ) );
+	}
+
 	public function test__remove_file() {
 		$test_file = tempnam( sys_get_temp_dir(), 'test' );
 
