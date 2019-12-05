@@ -23,6 +23,14 @@ if ( true === WPCOM_IS_VIP_ENV ) {
 			if ( 'wp-tinymce-root' === $handle || 'wp-tinymce' === $handle ) {
 				$do_concat = false;
 			}
+			
+			// Don't concat core scripts that use strict mode
+			// We can't blindly concatenate strict and non-strict scripts because
+			// strict mode applies to the whole file and changes functionality
+			// More info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
+			if ( 'react' === $handle || 'react-dom' === $handle ) {
+				$do_concat = false;
+			}
 
 			return $do_concat;
 		}, 10, 2 );
