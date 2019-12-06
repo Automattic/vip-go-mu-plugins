@@ -91,6 +91,26 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
 	return $value;
 }, 9999 );
 
+/**
+ * Allow incremental syncing via cron to take longer than the default 30 seconds.
+ *
+ * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
+ * 
+ */
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $value ) {
+	return 4 * MINUTE_IN_SECONDS;
+}, 9999 );
+
+/**
+ * Reduce the time between sync batches on VIP for performance gains.
+ *
+ * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
+ * 
+ */
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function( $value ) {
+	return 1;
+}, 9999 );
+
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
 	add_action( 'updating_jetpack_version', function( $new_version, $old_version ) {
