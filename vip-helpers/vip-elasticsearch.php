@@ -451,3 +451,15 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 
     return $es_query_args;
 }
+
+/**
+ * Filter ElasticPress index name if using VIP ES infrastructure
+ */
+function filter_ep_index_name( $index_name, $blog_id, $indexables ) {
+	if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
+		$index_name = 'vip-' . VIP_GO_APP_ID . '-' . $indexables->slug . '-' . $blog_id;
+	}
+
+	return $index_name;
+}
+add_filter( 'ep_index_name', 'filter_ep_index_name', PHP_INT_MAX, 3 );
