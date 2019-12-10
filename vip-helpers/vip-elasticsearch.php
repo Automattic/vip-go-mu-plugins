@@ -462,4 +462,4 @@ function filter_ep_index_name( $index_name, $blog_id, $indexables ) {
 
 	return $index_name;
 }
-add_filter( 'ep_index_name', 'filter_ep_index_name', PHP_INT_MAX, 3 );
+add_filter( 'ep_index_name', 'filter_ep_index_name', PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
