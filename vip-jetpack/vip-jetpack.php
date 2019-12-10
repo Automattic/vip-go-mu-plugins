@@ -229,6 +229,7 @@ add_filter( 'jetpack_sync_modules', function( $modules ) {
 
 	if ( defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && true === VIP_JETPACK_FULL_SYNC_IMMEDIATELY ) {
 		foreach ( $modules as $key => $module ) {
+			// Replace Jetpack_Sync_Modules_Full_Sync or Full_Sync with the new module
 			if ( in_array( $module, [ 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync', 'Jetpack_Sync_Modules_Full_Sync' ], true ) ) {
 				$modules[ $key ] = 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately';
 			}
