@@ -9,6 +9,34 @@
  * License: GPL2+
  */
 
+/** 
+ * Lowest incremental sync queue size allowed on VIP - JP default is 1000, but we're bumping to 10000 to give VIPs more
+ * headroom as they tend to publish more than average
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
+
+/**
+ * The largest incremental sync queue size allowed - items will not get enqueued if there are already this many pending
+ * 
+ * The queue is stored in the option table, so if the queue gets _too_ large, site performance suffers
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 100000 );
+
+/**
+ * The lower bound for the incremental sync queue lag - if the oldest item has been sitting unsynced for this long,
+ * new items will not be added to the queue
+ * 
+ * The default is 15 minutes, but VIP sites often have more busy queues and we must prevent dropping items if the sync is
+ * running behind
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', 2 * HOUR_IN_SECONDS );
+
+/**
+ * The maximum incremental sync queue lag allowed - just sets a reasonable upper bound on this limit to prevent extremely
+ * stale incremental sync queues
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
+
 /**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
@@ -34,6 +62,54 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 
 	return $modules;
 }, 999 );
+
+/**
+ * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
+ * 
+ * Still allows changing the value per site, but locks it into the range
+ */
+add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
+	$value = intval( $value );
+
+	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
+	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT );
+
+	return $value;
+}, 9999 );
+
+/**
+ * Lock down the jetpack_sync_settings_max_queue_lag to an allowed range
+ * 
+ * Still allows changing the value per site, but locks it into the range
+ */
+add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
+	$value = intval( $value );
+
+	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
+	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT );
+
+	return $value;
+}, 9999 );
+
+/**
+ * Allow incremental syncing via cron to take longer than the default 30 seconds.
+ *
+ * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
+ * 
+ */
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $value ) {
+	return 4 * MINUTE_IN_SECONDS;
+}, 9999 );
+
+/**
+ * Reduce the time between sync batches on VIP for performance gains.
+ *
+ * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
+ * 
+ */
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function( $value ) {
+	return 1;
+}, 9999 );
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
@@ -143,7 +219,22 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 }
 add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
 
-// Disable Jetpack sync when user is added to blog.
-add_action( 'init', function() {
-	remove_action( 'jetpack_user_authorized', [ 'Automattic\\Jetpack\\Sync\\Actions', 'do_initial_sync' ] );
+/**
+ * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
+ */
+add_filter( 'jetpack_sync_modules', function( $modules ) {
+	if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
+		return $modules;
+	}
+
+	if ( defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && true === VIP_JETPACK_FULL_SYNC_IMMEDIATELY ) {
+		foreach ( $modules as $key => $module ) {
+			// Replace Jetpack_Sync_Modules_Full_Sync or Full_Sync with the new module
+			if ( in_array( $module, [ 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync', 'Jetpack_Sync_Modules_Full_Sync' ], true ) ) {
+				$modules[ $key ] = 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately';
+			}
+		}
+	}
+
+	return $modules;
 } );

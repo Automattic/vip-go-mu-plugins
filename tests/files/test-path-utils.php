@@ -26,12 +26,6 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 			'no_wp-content-uploads' => [
 				'/subsite1/sites/1/file.jpg',
 			],
-			'no_sites' => [
-				'/subsite1/wp-content/uploads/1/file.jpg',
-			],
-			'invalid_site-id' => [
-				'/subsite1/wp-content/uploads/sites/xyz/file.jpg',
-			],
 		];
 	}
 
@@ -88,12 +82,6 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 			'no_wp-content-uploads' => [
 				'/subsite1/subsite2/sites/1/file.jpg',
 			],
-			'no_sites' => [
-				'/subsite1/subsite2/wp-content/uploads/1/file.jpg',
-			],
-			'invalid_site-id' => [
-				'/subsite1/subsite2/wp-content/uploads/sites/xyz/file.jpg',
-			],
 		];
 	}
 
@@ -136,10 +124,18 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 				'/subsite1/wp-content/uploads/sites/2/file.jpg',
 				'/wp-content/uploads/sites/2/file.jpg',
 			],
+			'sub_subdirectory_no_site' => [
+				'/subsite1/subsite2/wp-content/uploads/file.jpg',
+				'/wp-content/uploads/file.jpg',
+			],
+			'subdirectory_no_site' => [
+				'/subsite1/wp-content/uploads/file.jpg',
+				'/wp-content/uploads/file.jpg',
+			],
 			'other' => [
 				'',
 				false,
-			]
+			],
 		];
 	}
 
