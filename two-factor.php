@@ -44,17 +44,32 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	// Don't force 2FA for OneLogin SSO
-	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
-		return false;
-	}
-
-	// Don't force 2FA for SimpleSaml
-	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
+	// Allow custom SSO solutions
+	if ( wpcom_vip_use_custom_sso() ) {
 		return false;
 	}
 
 	return true;
+}
+
+function wpcom_vip_use_custom_sso() {
+
+	$custom_sso_enabled = apply_filters( 'wpcom_vip_use_custom_sso', null );
+	if( null !== $custom_sso_enabled ) {
+		return $custom_sso_enabled;
+	}
+
+	// Check for OneLogin SSO
+	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
+		return true;
+	}
+
+	// Check for SimpleSaml
+	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
+		return true;
+	}
+
+	return false;
 }
 
 function wpcom_vip_is_jetpack_authorize_request() {
