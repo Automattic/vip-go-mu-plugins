@@ -218,3 +218,23 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
 }
 add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
+
+/**
+ * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
+ */
+add_filter( 'jetpack_sync_modules', function( $modules ) {
+	if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
+		return $modules;
+	}
+
+	if ( defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && true === VIP_JETPACK_FULL_SYNC_IMMEDIATELY ) {
+		foreach ( $modules as $key => $module ) {
+			// Replace Jetpack_Sync_Modules_Full_Sync or Full_Sync with the new module
+			if ( in_array( $module, [ 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync', 'Jetpack_Sync_Modules_Full_Sync' ], true ) ) {
+				$modules[ $key ] = 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately';
+			}
+		}
+	}
+
+	return $modules;
+} );
