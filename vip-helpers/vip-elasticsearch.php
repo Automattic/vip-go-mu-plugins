@@ -455,11 +455,11 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 /**
  * Filter ElasticPress index name if using VIP ES infrastructure
  */
-function filter_ep_index_name( $index_name, $blog_id, $indexables ) {
+function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexables ) {
 	if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
 		$index_name = sprintf( 'vip-%s-%s-%s', VIP_GO_APP_ID, $indexables->slug, $blog_id );
 	}
 
 	return $index_name;
 }
-add_filter( 'ep_index_name', 'filter_ep_index_name', PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
+add_filter( 'ep_index_name', 'vip_elasticsearch_filter_ep_index_name', PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
