@@ -36,10 +36,6 @@
 	<exclude-pattern>wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>wp-cron-control/*</exclude-pattern>
 
-	<!-- Other files (borrowed and modified from a Symfony package) -->
-	<exclude-pattern>lib/proxy/ip-utils.php</exclude-pattern>
-	<exclude-pattern>tests/test-lib-proxy-ip-utils.php</exclude-pattern>
-
 	<!-- How to scan -->
 	<!-- Show sniff and progress -->
 	<arg value="sp"/>
