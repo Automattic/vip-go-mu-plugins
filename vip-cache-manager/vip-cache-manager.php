@@ -35,7 +35,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) ) {
 			return;
 		}
-		
+
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
@@ -333,6 +333,13 @@ class WPCOM_VIP_Cache_Manager {
 			}
 			foreach ( $terms as $term ) {
 				$post_purge_urls = array_merge( $post_purge_urls, $this->get_purge_urls_for_term( $term ) );
+			}
+		}
+
+		if ( 'post' === get_post_type( $post ) ) {
+			$page_for_posts = get_option( 'page_for_posts' );
+			if ( $page_for_posts ) {
+				$post_purge_urls = array_merge( $post_purge_urls, get_permalink( $page_for_posts ) );
 			}
 		}
 
