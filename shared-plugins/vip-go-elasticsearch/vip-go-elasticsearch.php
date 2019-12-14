@@ -146,20 +146,22 @@ class WPCOM_elasticsearch {
 
 		$posts = array();
 
-		// We have to return something in $posts for regular search templates to work, so build up an array
-		// of simple, un-inflated WP_Post objects that will be inflated by ES_WPCOM_SearchResult_Posts_Iterator in The Loop
-		foreach ( $this->search_result['results']['hits'] as $result ) {
-			// Create an empty WP_Post object that will be inflated later
-			$post = new stdClass();
+		if ( isset( $this->search_result['results'], $this->search_result['results']['hits'] ) && is_array( $this->search_result['results']['hits'] ) ) {
+			// We have to return something in $posts for regular search templates to work, so build up an array
+			// of simple, un-inflated WP_Post objects that will be inflated by ES_WPCOM_SearchResult_Posts_Iterator in The Loop
+			foreach ( $this->search_result['results']['hits'] as $result ) {
+				// Create an empty WP_Post object that will be inflated later
+				$post = new stdClass();
 
-			$post->ID 		= $result['fields']['post_id'];
-			$post->blog_id 	= $result['fields']['blog_id'];
+				$post->ID      = $result['fields']['post_id'];
+				$post->blog_id = $result['fields']['blog_id'];
 
-			// Run through get_post() to add all expected properties (even if they're empty)
-			$post = get_post( $post );
+				// Run through get_post() to add all expected properties (even if they're empty)
+				$post = get_post( $post );
 
-			if ( $post ) {
-				$posts[] = $post;
+				if ( $post ) {
+					$posts[] = $post;
+				}
 			}
 		}
 
