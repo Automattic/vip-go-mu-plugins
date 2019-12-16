@@ -40,7 +40,7 @@ class API_Client {
 
 	protected function is_valid_path( $path ) {
 		$path = ltrim( $path, '/\\' );
-		return 0 === strpos( $path, 'wp-content/uploads/' );
+		return 0 === strpos( $path, 'wp-content/uploads' );
 	}
 
 	public function get_api_url( $path ) {
