@@ -1177,3 +1177,9 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
 	}, 10, 0 );
 }
+
+/**
+ * WordPress 5.3 adds "big image" processing, for images over 2560px (by default).
+ * This is not needed on VIP Go since we use Photon for dynamic image work.
+ */
+add_filter( 'big_image_size_threshold', '__return_false' );
