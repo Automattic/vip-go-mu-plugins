@@ -10,7 +10,7 @@
 // We don't want concat running outside VIP Go environments.
 if ( true === WPCOM_IS_VIP_ENV ) {
 	// Activate concatenation
-	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
+	if ( ! isset( $_GET['concat_js'] ) || 'no' !== $_GET['concat_js'] ) {
 		require __DIR__ .'/http-concat/jsconcat.php';
 
 		add_filter( 'js_do_concat', function( $do_concat, $handle ) {
@@ -28,7 +28,7 @@ if ( true === WPCOM_IS_VIP_ENV ) {
 		}, 10, 2 );
 	}
 
-	if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
+	if ( ! isset( $_GET['concat_css'] ) || 'no' !== $_GET['concat_css'] ) {
 		require __DIR__ .'/http-concat/cssconcat.php';
 	}
 }
