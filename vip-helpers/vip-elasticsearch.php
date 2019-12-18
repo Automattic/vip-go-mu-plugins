@@ -449,7 +449,7 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 		}
 	}
 
-    return $es_query_args;
+	return $es_query_args;
 }
 
 /**
@@ -457,6 +457,7 @@ function wpcom_search_api_wp_to_es_args( $args ) {
  */
 function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexables ) {
 	if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
+		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
 		$index_name = sprintf( 'vip-%s-%s-%s', FILES_CLIENT_SITE_ID, $indexables->slug, $blog_id );
 	}
 
