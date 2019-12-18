@@ -197,7 +197,7 @@ class VIP_Filesystem {
 	 * @return  bool        True if filetype is supported. Else false
 	 */
 	protected function check_filetype_with_backend( $filename ) {
-		$upload_path = $this->get_upload_path();
+		$upload_path = trailingslashit( $this->get_upload_path() );
 
 		$file_path = $upload_path . $filename;
 
