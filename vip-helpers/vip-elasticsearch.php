@@ -457,7 +457,7 @@ function wpcom_search_api_wp_to_es_args( $args ) {
  */
 function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexables ) {
 	if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
-		$index_name = sprintf( 'vip-%s-%s-%s', VIP_GO_APP_ID, $indexables->slug, $blog_id );
+		$index_name = sprintf( 'vip-%s-%s-%s', FILES_CLIENT_SITE_ID, $indexables->slug, $blog_id );
 	}
 
 	return $index_name;

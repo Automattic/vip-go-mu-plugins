@@ -10,7 +10,7 @@ class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 	public function test__vip_elasticsearch_filter_ep_index_name() {
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
-		define( 'VIP_GO_APP_ID', 123 );
+		define( 'FILES_CLIENT_SITE_ID', 123 );
 		define( 'USE_VIP_ELASTICSEARCH', true );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
@@ -29,7 +29,7 @@ class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 	public function test__vip_elasticsearch_filter_ep_index_name__no_constant() {
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
-		define( 'VIP_GO_APP_ID', 123 );
+		define( 'FILES_CLIENT_SITE_ID', 123 );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
 
@@ -47,7 +47,7 @@ class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 	public function test__vip_elasticsearch_filter_ep_index_name__constant_is_false() {
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
-		define( 'VIP_GO_APP_ID', 123 );
+		define( 'FILES_CLIENT_SITE_ID', 123 );
 		define( 'USE_VIP_ELASTICSEARCH', false );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
