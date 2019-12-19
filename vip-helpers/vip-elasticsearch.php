@@ -464,7 +464,7 @@ function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexab
 	return $index_name;
 }
 
-// Only add filter when using VIP Elasticsearch, b/c older versions of ElasticPress only pass 2 args to this which is a PHP warning
+// Only add filter when using VIP Elasticsearch, b/c older versions of ElasticPress only pass 2 args to this which is a PHP fatal
 if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
 	add_filter( 'ep_index_name', 'vip_elasticsearch_filter_ep_index_name', PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 }
