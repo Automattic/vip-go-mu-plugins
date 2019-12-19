@@ -2,7 +2,7 @@
 
 class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 	/**
-	 * Test `ep_index_name` filter for ElasticPress + VIP ElasticSearch
+	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
 	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -18,7 +18,7 @@ class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Test `ep_index_name` filter for ElasticPress + VIP ElasticSearch
+	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
 	 *
 	 * USE_VIP_ELASTICSEARCH not defined
 	 *
