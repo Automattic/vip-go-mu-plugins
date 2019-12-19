@@ -12,6 +12,9 @@ class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 
 		define( 'USE_VIP_ELASTICSEARCH', true );
 
+		// Hack to get around the constant not being defined early enough...there is probably a proper PHPUnit way to do that
+		add_filter( 'ep_index_name', 'vip_elasticsearch_filter_ep_index_name', PHP_INT_MAX, 3 );
+
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
 
 		$this->assertEquals( 'vip-123-slug-1', $index_name );
