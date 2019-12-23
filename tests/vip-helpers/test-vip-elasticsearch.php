@@ -93,8 +93,6 @@ class VIP_ElasticSearch_Test extends \WP_UnitTestCase {
 	public function test__vip_elasticsearch_bulk_chunk_size_not_defined_when_not_using_vip_elasticsearch() {
 		define( 'USE_VIP_ELASTICSEARCH', false );
 
-		vip_elasticsearch_setup_constants();
-
 		$this->assertEquals( defined( 'EP_SYNC_CHUNK_LIMIT' ), false );
 	}
 }
