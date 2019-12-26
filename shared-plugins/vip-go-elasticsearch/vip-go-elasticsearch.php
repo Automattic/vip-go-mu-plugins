@@ -1,11 +1,11 @@
 <?php /*
 
-This plugins is still in beta. Want to try it? Contact us. :)
+This plugin has been replaced by Jetpack Search and will be removed in the future, please do not use it.
 
 **************************************************************************
 
-Plugin Name: VIP Go Search Add-On
-Description: Super-charged search powered by Jetpack and Elasticsearch. Please contact us before using this plugin.
+Plugin Name: VIP Go Search Add-On (Deprecated)
+Description: This plugin has been replaced by Jetpack Search
 Author:      Automattic
 Author URI:  http://automattic.com/
 
