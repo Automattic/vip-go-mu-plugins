@@ -91,6 +91,9 @@ class WXR_Parser_SimpleXML {
 		$base_url = $xml->xpath('/rss/channel/wp:base_site_url');
 		$base_url = (string) trim( $base_url[0] );
 
+		$blog_url = $xml->xpath('/rss/channel/wp:base_blog_url');
+		$blog_url = (string) trim( $blog_url[0] );
+
 		$namespaces = $xml->getDocNamespaces();
 		if ( ! isset( $namespaces['wp'] ) )
 			$namespaces['wp'] = 'http://wordpress.org/export/1.1/';
@@ -259,6 +262,7 @@ class WXR_Parser_SimpleXML {
 			'tags' => $tags,
 			'terms' => $terms,
 			'base_url' => $base_url,
+			'blog_url' => $blog_url,
 			'version' => $wxr_version
 		);
 	}
@@ -312,6 +316,7 @@ class WXR_Parser_XML {
 			'tags' => $this->tag,
 			'terms' => $this->term,
 			'base_url' => $this->base_url,
+			'blog_url' => $this->blog_url,
 			'version' => $this->wxr_version
 		);
 	}
@@ -403,6 +408,9 @@ class WXR_Parser_XML {
 			case 'wp:base_site_url':
 				$this->base_url = $this->cdata;
 				break;
+			case 'wp:base_blog_url':
+				$this->blog_url = $this->cdata;
+				break;
 			case 'wp:wxr_version':
 				$this->wxr_version = $this->cdata;
 				break;
@@ -431,6 +439,7 @@ class WXR_Parser_Regex {
 	var $tags = array();
 	var $terms = array();
 	var $base_url = '';
+	var $blog_url = '';
 
 	function __construct() {
 		$this->has_gzip = is_callable( 'gzopen' );
@@ -459,6 +468,12 @@ class WXR_Parser_Regex {
 				if ( false !== strpos( $importline, '<wp:base_site_url>' ) ) {
 					preg_match( '|<wp:base_site_url>(.*?)</wp:base_site_url>|is', $importline, $url );
 					$this->base_url = $url[1];
+					continue;
+				}
+
+				if ( false !== strpos( $importline, '<wp:base_blog_url>' ) ) {
+					preg_match( '|<wp:base_blog_url>(.*?)</wp:base_blog_url>|is', $importline, $url );
+					$this->blog_url = $url[1];
 					continue;
 				}
 
@@ -508,6 +523,7 @@ class WXR_Parser_Regex {
 			'tags' => $this->tags,
 			'terms' => $this->terms,
 			'base_url' => $this->base_url,
+			'blog_url' => $this->blog_url,
 			'version' => $wxr_version
 		);
 	}

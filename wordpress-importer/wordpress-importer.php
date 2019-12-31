@@ -48,6 +48,7 @@ class WP_Import extends WP_Importer {
 	var $categories = array();
 	var $tags = array();
 	var $base_url = '';
+	var $blog_url = '';
 
 	// mappings from old information to new
 	var $processed_authors = array();
@@ -151,6 +152,7 @@ class WP_Import extends WP_Importer {
 		$this->categories = $import_data['categories'];
 		$this->tags = $import_data['tags'];
 		$this->base_url = esc_url( $import_data['base_url'] );
+		$this->blog_url = esc_url( $import_data['blog_url'] );
 
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
@@ -391,7 +393,7 @@ class WP_Import extends WP_Importer {
 	 * Doesn't create a new category if its slug already exists
 	 */
 	function process_categories() {
-		$this->categories = apply_filters( 'wp_import_categories', $this->categories );
+		$this->categories = apply_filters( 'wp_import_categories', $this->categories, $this->blog_url );
 
 		if ( empty( $this->categories ) )
 			return;
