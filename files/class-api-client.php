@@ -202,6 +202,13 @@ class API_Client {
 	}
 
 	public function is_file( $file_path, &$info = null ) {
+		// check in cache first
+		$stats = $this->cache->get_file_stats( $file_path );
+		if ( $stats ) {
+			$info = $stats;
+			return true;
+		}
+
 		$response = $this->call_api( $file_path, 'GET', [
 			'timeout' => 2,
 			'headers' => [
@@ -218,6 +225,9 @@ class API_Client {
 		if ( 200 === $response_code ) {
 			$response_body = wp_remote_retrieve_body( $response );
 			$info = json_decode( $response_body, true );
+
+			// cache file info
+			$this->cache->cache_file_stats( $file_path, $info );
 
 			return true;
 		} elseif ( 404 === $response_code ) {
