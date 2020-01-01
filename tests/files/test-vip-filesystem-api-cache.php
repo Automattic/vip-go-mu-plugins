@@ -196,14 +196,21 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		file_put_contents( $test_file, 'test data' );
 
-		$prop = self::get_property( $this->cache, 'files' );
-		$prop->setValue( $this->cache, [ 'test.jpg' => $test_file ] );
+		$filesProp = self::get_property( $this->cache, 'files' );
+		$filesProp->setValue( $this->cache, [ 'test.jpg' => $test_file ] );
+
+		$statsProp = self::get_property( $this->cache, 'file_stats' );
+		$statsProp->setValue( $this->cache, [ 'test.jpg' => [ 'size' => '24', 'mtime' => '123456779' ] ] );
 
 		$this->cache->remove_file( 'test.jpg' );
 
-		$files = $prop->getValue( $this->cache );
+		$files = $filesProp->getValue( $this->cache );
 
 		$this->assertEmpty( $files );
 		$this->assertFalse( file_exists( $test_file ) );
+
+		$stats = $statsProp->getValue( $this->cache );
+
+		$this->assertEmpty( $stats );
 	}
 }
