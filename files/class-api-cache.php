@@ -122,8 +122,6 @@ class API_Cache {
 		}
 
 		// Remove cached stats too if any
-		if ( isset( $this->file_stats[ $file_name ] ) ) {
-			unset( $this->file_stats[ $file_name ] );
-		} 
+		unset( $this->file_stats[ $file_name ] );
 	}
 }
