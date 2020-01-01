@@ -54,8 +54,8 @@ class API_Cache {
 			unset( $this->files[ $name ] );
 		}
 
-    // empty file stats cache
-    $this->file_stats = [];
+		// empty file stats cache
+		$this->file_stats = [];
 	}
 
 	public function get_file( $filepath ) {
@@ -68,7 +68,7 @@ class API_Cache {
 		return false;
 	}
 
-  public function get_file_stats( $filepath ) {
+	public function get_file_stats( $filepath ) {
 		$file_name = basename( $filepath );
 
 		if ( isset( $this->file_stats[ $file_name ] ) ) {
@@ -76,7 +76,7 @@ class API_Cache {
 		}
 
 		return false;
-  }
+	}
 
 	public function cache_file( $filepath, $data ) {
 		$file_name = basename( $filepath );
@@ -92,12 +92,12 @@ class API_Cache {
 		file_put_contents( $this->files[ $file_name ], $data );
 	}
 
-  public function cache_file_stats( $filepath, $info ) {
+	public function cache_file_stats( $filepath, $info ) {
 		$file_name = basename( $filepath );
 
 		// This will overwrite existing stats if any
 		$this->file_stats[ $file_name ] = $info;
-  }
+	}
 
 	public function copy_to_cache( $dst, $src ) {
 		$file_name = basename( $dst );
