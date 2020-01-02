@@ -469,6 +469,18 @@ function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexab
 	return $index_name;
 }
 
+function vip_elasticsearch_filter_ep_do_intercept_request( $request, $query, $args, $failures ) {
+	if ( 'GET' === $args['method'] ) {
+		// Only override GETs
+		$request = vip_safe_wp_remote_get( $query['url'], null, 3, 1, 20, $args );
+	} else {	
+		// Same as ElasticPress default
+		$request = wp_remote_request( $query['url'], $args );
+	}
+
+	return $request;
+}
+
 /**
  * Setup constants required by the VIP Elasticsearch service
  */
@@ -484,4 +496,6 @@ if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
 	vip_elasticsearch_setup_constants();
 
 	add_filter( 'ep_index_name', 'vip_elasticsearch_filter_ep_index_name', PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
+	add_filter( 'ep_intercept_remote_request', '__return_true' );
+	add_filter( 'ep_do_intercept_request', 'vip_elasticsearch_filter_ep_do_intercept_request', PHP_INT_MAX, 4 );
 }
