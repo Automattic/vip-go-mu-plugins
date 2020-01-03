@@ -81,6 +81,8 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 			$icon = "\u{2705}"; // unicode check mark
 			$diff = '';
 			if ( $db_total !== $es_total ) {
+				$error = true;
+
 				$icon = "\u{274C}"; // unicode cross mark
 
 				if ( $es_result ) {
@@ -119,5 +121,3 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		}
 	}
 }
-
-WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Health_Command' );
