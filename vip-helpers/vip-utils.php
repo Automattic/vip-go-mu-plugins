@@ -736,8 +736,11 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
 function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
 	global $blog_id;
 
+	$defaults_args = array( 'method' => 'GET' );
+	$parsed_args = wp_parse_args( $args, $default_args );
+
 	$cache_group = "$blog_id:vip_safe_wp_remote_request";
-	$cache_key = 'disable_remote_get_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $args[ 'method' ] );
+	$cache_key = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args[ 'method' ] );
 
 	// valid url
 	if ( empty( $url ) || !parse_url( $url ) )
@@ -764,7 +767,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	}
 
 	$start = microtime( true );
-	$response = wp_remote_request( $url, array_merge( $args, array( 'timeout' => $timeout ) ) );
+	$response = wp_remote_request( $url, array_merge( $parsed_args, array( 'timeout' => $timeout ) ) );
 	$end = microtime( true );
 
 	$elapsed = ( $end - $start ) > $timeout;
@@ -813,9 +816,11 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
  * @see wp_remote_get()
  */
 function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
-	$args[ 'method' ] = 'GET';
+	// Same defaults as WP_HTTP::get() https://developer.wordpress.org/reference/classes/wp_http/get/
+	$defaults_args = array( 'method' => 'GET' );
+	$parsed_args = wp_parse_args( $args, $default_args );
 
-	return vip_safe_wp_remote_request( $url, $fallback_value, $threshold, $timeout, $retry, $args );
+	return vip_safe_wp_remote_request( $url, $fallback_value, $threshold, $timeout, $retry, $parsed_args );
 }
 
 /**
