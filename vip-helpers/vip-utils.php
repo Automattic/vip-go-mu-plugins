@@ -724,12 +724,12 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
  *
  * @author tottdev
  * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
- * @param string $url URL to fetch
+ * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
  * @param int $threshold Optional. The number of fails required before subsequent requests automatically return the fallback value. Defaults to 3, with a maximum of 10.
  * @param int $timeout Optional. Number of seconds before the request times out. Valid values 1-3; defaults to 1.
  * @param int $retry Optional. Number of seconds before resetting the fail counter and the number of seconds to delay making new requests after the fail threshold is reached. Defaults to 20, with a minimum of 10.
- * @param array Optional. Set other arguments to be passed to wp_remote_get().
+ * @param array Optional. Set other arguments to be passed to wp_remote_request().
  * @return string|WP_Error|array Array of results. If fail counter is met, returns the $fallback_value, otherwise return WP_Error.
  * @see wp_remote_request()
  */
