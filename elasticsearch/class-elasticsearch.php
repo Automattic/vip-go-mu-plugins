@@ -21,7 +21,9 @@ class Elasticsearch {
 		/**
 		 * Load ES Health command class
 		 */
-		require_once 'class-health-command.php';
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			require_once 'class-health-command.php';
+		}
 	}
 
 	protected function add_hooks() {
