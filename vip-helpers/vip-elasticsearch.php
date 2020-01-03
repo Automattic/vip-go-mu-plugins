@@ -470,13 +470,7 @@ function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexab
 }
 
 function vip_elasticsearch_filter_ep_do_intercept_request( $request, $query, $args, $failures ) {
-	if ( 'GET' === $args['method'] ) {
-		// Only override GETs
-		$request = vip_safe_wp_remote_get( $query['url'], null, 3, 1, 20, $args );
-	} else {	
-		// Same as ElasticPress default
-		$request = wp_remote_request( $query['url'], $args );
-	}
+	$request = vip_safe_wp_remote_request( $query['url'], null, 3, 1, 20, $args );
 
 	return $request;
 }
