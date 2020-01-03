@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\CLI;
+namespace Automattic\VIP\Elasticsearch;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
@@ -11,9 +11,9 @@ use \ElasticPress\Elasticsearch as Elasticsearch;
 /**
  * Helper commands to manage VIP Go Elasticsearch indexes
  *
- * @package Automattic\VIP\CLI
+ * @package Automattic\VIP\Elasticsearch
  */
-class VIP_Elasticsearch_CLI_Command extends \WPCOM_VIP_CLI_Command {
+class Health_Command extends \WPCOM_VIP_CLI_Command {
 
 	/**
 	 * @var WP_CLI\Fetchers\Plugin Plugin fetcher
@@ -120,4 +120,4 @@ class VIP_Elasticsearch_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\VIP_Elasticsearch_CLI_Command' );
+WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Health_Command' );
