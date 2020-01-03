@@ -75,7 +75,7 @@ class VIP_Elasticsearch_CLI_Command extends \WPCOM_VIP_CLI_Command {
 				$error = true;
 				$es_conn_err = true;
 			} else {
-				$es_total = $es_result[ 'found_documents' ];
+				$es_total = $es_result[ 'found_documents' ][ 'value' ];
 			}
 
 			$icon = "\u{2705}"; // unicode check mark
