@@ -175,10 +175,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 // Load elasticsearch helpers
-require_once( __DIR__ . '/elasticsearch/class-elasticsearch.php');
+if ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) {
+	require_once( __DIR__ . '/elasticsearch/class-elasticsearch.php');
 
-$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-$es_plugin->init();
+	$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+	$es_plugin->init();
+}
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {

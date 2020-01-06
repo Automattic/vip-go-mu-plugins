@@ -10,11 +10,9 @@ class Elasticsearch {
 	 * Initialize the VIP Elasticsearch plugin
 	 */
 	public function init() {
-		if ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) {
-			$this->load_dependencies();
-			$this->add_hooks();
-			$this->load_commands();
-		}
+		$this->load_dependencies();
+		$this->add_hooks();
+		$this->load_commands();
 	}
 
 	protected function load_dependencies() {
