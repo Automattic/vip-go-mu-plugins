@@ -61,7 +61,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 			// Get total count in DB
 			$result = $indexable->query_db( $query_args );
 
-			$db_total = $result[ 'total_objects' ];
+			$db_total = (int) $result[ 'total_objects' ];
 
 			// Get total count in ES index
 			$query = new WP_Query( $query_args );
@@ -75,7 +75,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 				$error = true;
 				$es_conn_err = true;
 			} else {
-				$es_total = $es_result[ 'found_documents' ][ 'value' ];
+				$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
 			}
 
 			$icon = "\u{2705}"; // unicode check mark
