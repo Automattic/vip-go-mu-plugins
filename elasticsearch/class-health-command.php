@@ -48,7 +48,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 
 		$post_types = $indexable->get_indexable_post_types();
 
-		WP_CLI::line( sprintf( "Checking %d post types (%s)\n", count( $post_types ), implode( ',', $post_types ) ) );
+		WP_CLI::line( sprintf( "Checking %d post types (%s)\n", count( $post_types ), implode( ', ', $post_types ) ) );
 
 		$error = false;
 		$es_conn_err = false;
