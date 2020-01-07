@@ -50,10 +50,10 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::line( sprintf( "Checking %d post types (%s)\n", count( $post_types ), implode( ', ', $post_types ) ) );
 
-		$error = false;
-		$es_conn_err = false;
-
 		foreach( $post_types as $post_type ) {
+			$error = false;
+			$es_conn_err = false;
+
 			$query_args = [ 
 				'post_type' => $post_type,
 			];
@@ -70,24 +70,24 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 			
+			$diff = '';
 			if ( ! $es_result ) {
 				$es_total = 'N/A';
 				$error = true;
 				$es_conn_err = true;
 			} else {
 				$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
+
+				if ( $db_total !== $es_total ) {
+					$error = true;
+
+					$diff = sprintf( ', diff: %d', $es_total - $db_total );
+				}
 			}
 
 			$icon = "\u{2705}"; // unicode check mark
-			$diff = '';
-			if ( $db_total !== $es_total ) {
-				$error = true;
-
-				$icon = "\u{274C}"; // unicode cross mark
-
-				if ( $es_result ) {
-					$diff = sprintf( ', diff: %d', $es_total - $db_total );
-				}
+			if ( $error ) {
+					$icon = "\u{274C}"; // unicode cross mark
 			}
 
 			WP_CLI::line( sprintf( "%s %s (db: %d, es: %s%s)", $icon, $post_type, $db_total, $es_total, $diff ) );
