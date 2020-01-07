@@ -176,7 +176,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 // Load elasticsearch helpers
 if ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) {
-	require_once( __DIR__ . '/elasticsearch/class-elasticsearch.php');
+	require_once( __DIR__ . '/elasticsearch/class-elasticsearch.php' );
 
 	$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
 	$es_plugin->init();
