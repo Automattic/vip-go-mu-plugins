@@ -7,9 +7,9 @@ class WPCOM_VIP_Get_Resized_Attachment_Url_Test extends \WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function mock_slow_http_response( $mocked_response, $response_time = 1 ) {
+	public function mock_http_response( $mocked_response, $response_time = 1 ) {
 		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response, $response_time ) {
-			sleep( $response_time );
+			usleep( $response_time * 1000000 );
 
 			return $mocked_response;
 		}, 10, 3 );
@@ -37,101 +37,86 @@ class WPCOM_VIP_Get_Resized_Attachment_Url_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_end_of_url, $actual_end_of_url );
 	}
 
-	function vip_safe_wp_remote_request_provider() {
-		return array(
-			'first' => array(
-				'https://localhost', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				'mocked_response', // Expected response
-			),
-			'second' => array(
-				'https://localhost', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				'mocked_response', // Expected response
-			),
-			'third' => array(
-				'https://localhost', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				'mocked_response', // Expected response
-			),
+	/**
+	 * Test vip_safe_wp_remote_request() behavior with normal responses
+	 */
+	public function test__vip_safe_wp_remote_request_with_normal_response() {
+		$url = 'https://localhost';
+		$response = 'mock_response';
 
-			// After 3 timeouts, subsequent requests will fail
-			'now fails' => array(
-				'https://localhost', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				new WP_Error( 'remote_request_disabled' ), // Expected response
-			),
+		$this->mock_http_response( $response, 0.10 );
 
-			// But not for other urls
-			'different_url' => array(
-				'https://localhost/other', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				'mocked_response', // Expected response
-			),
-		);
+		// We can call it 4 times (more than the default threshold of 3) and it always returns the expected response (no failure / fallback)
+		for( $i = 0; $i < 4; $i++ ) {
+			$res = vip_safe_wp_remote_request( $url );
+
+			$this->assertEquals( $response, $res );
+		}
 	}
 
 	/**
-	 * Test vip_safe_wp_remote_request() behavior
-	 * 
-	 * @dataProvider vip_safe_wp_remote_request_provider
+	 * Test vip_safe_wp_remote_request() behavior with slow response - returns fallback after 3 failures
 	 */
-	public function test__vip_safe_wp_remote_request_with_default_args( $url, $mocked_response, $mocked_response_time, $expected_response ) {
-		$this->mock_slow_http_response( $mocked_response, $mocked_response_time );
+	public function test__vip_safe_wp_remote_request_with_slow_response() {
+		$url = 'https://localhost';
+		$response = 'mock_response';
 
+		$this->mock_http_response( $response, 1.1 ); // 1.1 seconds, over the default 1 second threshold
+
+		// We can call it 3 times and it always returns the expected response (no failure / fallback)
+		for( $i = 0; $i < 3; $i++ ) {
+			$res = vip_safe_wp_remote_request( $url );
+
+			$this->assertEquals( $response, $res );
+		}
+
+		// But on the 4th time, it returns the error
 		$res = vip_safe_wp_remote_request( $url );
 
-		$this->assertEquals( $res, $expected_response );
+		$this->assertEquals( true, is_wp_error( $res ) );
+		$this->assertEquals( 'remote_request_disabled', $res->get_error_code() );
 	}
 
-	/*function vip_safe_wp_remote_request_provider_with_all_args() {
-		return array(
-			'first' => array(
-				'https://localhost/1-threshold', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				'mocked_response', // Expected response
-				'fallback_value', // Fallback
-				1, // Threshold
-				1, // Timeout
-				1, // Retry
-				array(), // Args
-			),
+	/**
+	 * Test vip_safe_wp_remote_request() behavior with normal responses, with all args
+	 */
+	public function test__vip_safe_wp_remote_request_with_normal_response_with_all_args() {
+		$url = 'https://localhost';
+		$response = 'mock_response';
 
-			// Threshold of 1 exceeded, should fail
-			'now_fails' => array(
-				'https://localhost/1-threshold', // Url
-				'mocked_response', // Mocked response
-				2, // Mocked HTTP request time
-				'fallback_value', // Expected response
-				'fallback_value', // Fallback
-				1, // Threshold
-				1, // Timeout
-				1, // Retry
-				array(), // Args
-			),
-		);
-	}*/
+		$this->mock_http_response( $response, 0.10 );
+
+		// We can call it 3 times (which is above our custom threshold from args) and it always returns the expected response (no failure / fallback)
+		for( $i = 0; $i < 4; $i++ ) {
+			$res = vip_safe_wp_remote_request( $url, 'custom_fallback', 1, 2, 10, array( 'method' => 'POST' ) );
+
+			$this->assertEquals( $response, $res );
+		}
+	}
 
 	/**
-	 * Test vip_safe_wp_remote_request() behavior, with all args
-	 * 
-	 * @dataProvider vip_safe_wp_remote_request_provider_with_all_args
+	 * Test vip_safe_wp_remote_request() behavior with slow response with all args
 	 */
-	/*public function test__vip_safe_wp_remote_request_with_default_args( $url, $mocked_response, $mocked_response_time, $expected_response ) {
-		$this->mock_slow_http_response( $mocked_response, $mocked_response_time );
+	public function test__vip_safe_wp_remote_request_with_slow_response_with_all_args() {
+		$url = 'https://localhost';
+		$response = 'mock_response';
+		$custom_fallback = 'custom_fallback';
 
-		$res = vip_safe_wp_remote_request( $url );
+		$this->mock_http_response( $response, 2.1 ); // Longer than the threshold in our args
 
-		$this->assertEquals( $res, $expected_response );
-	}*/
+		// First time returns the expected response (no failure / fallback)
+		$res = vip_safe_wp_remote_request( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'POST' ) );
 
-	/*public function test__vip_safe_wp_remote_get() {
-		
-	}*/
+		$this->assertEquals( $response, $res );
+
+		// But on the 2nd time, it returns the error
+		$res = vip_safe_wp_remote_request( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'POST' ) );
+
+		$this->assertEquals( $custom_fallback, $res );
+
+		// And if we call it with different query args, it uses a different cache
+		$res = vip_safe_wp_remote_request( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'GET' ) );
+
+		$this->assertEquals( $response, $res );
+	}
 }
