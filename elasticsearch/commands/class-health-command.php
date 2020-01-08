@@ -9,7 +9,7 @@ use \ElasticPress\Indexables as Indexables;
 use \ElasticPress\Elasticsearch as Elasticsearch;
 
 /**
- * Helper commands to manage VIP Go Elasticsearch indexes
+ * Commands to view and manage the health of VIP Go Elasticsearch indexes
  *
  * @package Automattic\VIP\Elasticsearch
  */
