@@ -722,7 +722,6 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
  *
  * Note that like wp_remote_request(), this function does not cache.
  *
- * @author tottdev
  * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
  * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
@@ -804,7 +803,6 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
  *
  * Note that like wp_remote_get(), this function does not cache.
  *
- * @author tottdev
  * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
  * @param string $url URL to fetch
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
