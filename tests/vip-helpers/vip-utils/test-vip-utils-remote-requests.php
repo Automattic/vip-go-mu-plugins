@@ -62,7 +62,7 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends \WP_UnitTestCase {
 		for( $i = 0; $i < 4; $i++ ) {
 			$res = vip_safe_wp_remote_request( $url, 'custom_fallback', 1, 2, 10, array( 'method' => 'POST' ) );
 
-			$this->assertEquals( $response, $res );
+			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
 		}
 	}
 
@@ -79,17 +79,17 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends \WP_UnitTestCase {
 		// First time returns the expected response (no failure / fallback)
 		$res = vip_safe_wp_remote_request( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'POST' ) );
 
-		$this->assertEquals( $response, $res );
+		$this->assertEquals( $response, $res, 'Initial call response was incorrect' );
 
 		// But on the 2nd time, it returns the error
 		$res = vip_safe_wp_remote_request( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'POST' ) );
 
-		$this->assertEquals( $custom_fallback, $res );
+		$this->assertEquals( $custom_fallback, $res, 'Second call response was incorrect' );
 
 		// And if we call it with different query args, it uses a different cache
 		$res = vip_safe_wp_remote_request( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'GET' ) );
 
-		$this->assertEquals( $response, $res );
+		$this->assertEquals( $response, $res, 'Third call (with different query args) response was incorrect' );
 	}
 
 	/**
@@ -105,7 +105,7 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends \WP_UnitTestCase {
 		for( $i = 0; $i < 4; $i++ ) {
 			$res = vip_safe_wp_remote_get( $url );
 
-			$this->assertEquals( $response, $res );
+			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
 		}
 	}
 
@@ -122,14 +122,14 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends \WP_UnitTestCase {
 		for( $i = 0; $i < 3; $i++ ) {
 			$res = vip_safe_wp_remote_get( $url );
 
-			$this->assertEquals( $response, $res );
+			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
 		}
 
 		// But on the 4th time, it returns the error
 		$res = vip_safe_wp_remote_get( $url );
 
-		$this->assertEquals( true, is_wp_error( $res ) );
-		$this->assertEquals( 'remote_request_disabled', $res->get_error_code() );
+		$this->assertEquals( true, is_wp_error( $res ), '4th request did not return a WP_Error' );
+		$this->assertEquals( 'remote_request_disabled', $res->get_error_code(), 'Error code for 4th request was incorrect' );
 	}
 
 	/**
@@ -145,7 +145,7 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends \WP_UnitTestCase {
 		for( $i = 0; $i < 4; $i++ ) {
 			$res = vip_safe_wp_remote_get( $url, 'custom_fallback', 1, 2, 10, array( 'some' => 'thing' ) );
 
-			$this->assertEquals( $response, $res );
+			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
 		}
 	}
 
@@ -162,16 +162,16 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends \WP_UnitTestCase {
 		// First time returns the expected response (no failure / fallback)
 		$res = vip_safe_wp_remote_get( $url, $custom_fallback, 1, 2, 10, array( 'some' => 'thing' ) );
 
-		$this->assertEquals( $response, $res );
+		$this->assertEquals( $response, $res, 'Initial call response was incorrect' );
 
 		// But on the 2nd time, it returns the error
 		$res = vip_safe_wp_remote_get( $url, $custom_fallback, 1, 2, 10, array( 'some' => 'thing' ) );
 
-		$this->assertEquals( $custom_fallback, $res );
+		$this->assertEquals( $custom_fallback, $res, 'Second call response was incorrect' );
 
 		// And if we call it with different query args, it uses a different cache
 		$res = vip_safe_wp_remote_get( $url, $custom_fallback, 1, 2, 10, array( 'method' => 'POST' ) );
 
-		$this->assertEquals( $response, $res );
+		$this->assertEquals( $response, $res, 'Final call (with different query args) response was incorrect' );
 	}
 }
