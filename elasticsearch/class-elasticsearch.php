@@ -11,7 +11,7 @@ class Elasticsearch {
 	 */
 	public function init() {
 		$this->load_dependencies();
-		$this->add_hooks();
+		$this->setup_hooks();
 		$this->load_commands();
 	}
 
@@ -24,8 +24,8 @@ class Elasticsearch {
 		}
 	}
 
-	protected function add_hooks() {
 		// Add filters and action hooks here
+	protected function setup_hooks() {
 	}
 
 	protected function load_commands() {
