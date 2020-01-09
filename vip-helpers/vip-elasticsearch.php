@@ -451,37 +451,3 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 
 	return $es_query_args;
 }
-
-/**
- * Filter ElasticPress index name if using VIP ES infrastructure
- */
-function vip_elasticsearch_filter_ep_index_name( $index_name, $blog_id, $indexables ) {
-	if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
-		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
-		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexables->slug );
-
-		// $blog_id won't be present on global indexes (such as users)
-		if ( $blog_id ) {
-			$index_name .= sprintf( '-%s', $blog_id );
-		}
-	}
-
-	return $index_name;
-}
-
-/**
- * Setup constants required by the VIP Elasticsearch service
- */
-function vip_elasticsearch_setup_constants() {
-	// Ensure we limit bulk indexing chunk size to a reasonable number (no limit by default)
-	if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
-		define( 'EP_SYNC_CHUNK_LIMIT', 250 );
-	}
-}
-
-// Only add filter when using VIP Elasticsearch, b/c older versions of ElasticPress only pass 2 args to this which is a PHP fatal
-if ( defined( 'USE_VIP_ELASTICSEARCH' ) && true === USE_VIP_ELASTICSEARCH ) {
-	vip_elasticsearch_setup_constants();
-
-	add_filter( 'ep_index_name', 'vip_elasticsearch_filter_ep_index_name', PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
-}
