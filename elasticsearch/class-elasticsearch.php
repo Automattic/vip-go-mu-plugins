@@ -15,7 +15,7 @@ class Elasticsearch {
 		$this->load_commands();
 	}
 
-	protected function load_dependencies() {
+	public function load_dependencies() {
 		/**
 		 * Load ES Health command class
 		 */
@@ -25,10 +25,10 @@ class Elasticsearch {
 	}
 
 		// Add filters and action hooks here
-	protected function setup_hooks() {
+	public function setup_hooks() {
 	}
 
-	protected function load_commands() {
+	public function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Health_Command' );
 		}
