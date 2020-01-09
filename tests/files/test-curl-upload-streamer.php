@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
-class Curl_Streamer_Test extends \WP_UnitTestCase {
+class Curl_Upload_Streamer_Test extends \WP_UnitTestCase {
 	const TEST_FILE_PATH = __DIR__ . '/../fixtures/files/stream.txt';
 
 	private $curl_streamer;
@@ -10,14 +10,14 @@ class Curl_Streamer_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../files/class-curl-streamer.php' );
+		require_once( __DIR__ . '/../../files/class-curl-upload-streamer.php' );
 	}
 
 	public function setUp() {
 		parent::setUp();
 
 		$this->file_stream = fopen( self::TEST_FILE_PATH, 'r' );
-		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );
+		$this->curl_streamer = new Curl_Upload_Streamer( self::TEST_FILE_PATH );
 		$this->curl_streamer->init();
 	}
 
