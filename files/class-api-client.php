@@ -153,13 +153,21 @@ class API_Client {
 
 	public function get_file( $file_path ) {
 		// check in cache first
-		$file_content = $this->cache->get_file( $file_path );
-		if ( $file_content ) {
-			return $file_content;
+		$file = $this->cache->get_file( $file_path );
+		if ( $file ) {
+			return $file;
 		}
+
+		$tmp_file = tempnam( get_temp_dir(), 'vip' );
+		$tmp_handle = fopen( $tmp_file, 'w+' );
+
+		$curl_streamer = new Curl_Download_Streamer( $tmp_handle );
+		$curl_streamer->init();
 
 		// not in cache so get from API
 		$response = $this->call_api( $file_path, 'GET' );
+
+		$curl_streamer->deinit();
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -175,11 +183,14 @@ class API_Client {
 		}
 
 		$body = wp_remote_retrieve_body( $response );
+		fwrite( $tmp_handle, $body );
+
+		rewind( $tmp_handle );
 
 		// save to cache
-		$this->cache->cache_file( $file_path, $body );
+		$this->cache->cache_file( $file_path, $tmp_file );
 
-		return $body;
+		return $tmp_handle;
 	}
 
 	public function delete_file( $file_path ) {

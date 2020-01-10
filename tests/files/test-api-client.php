@@ -314,8 +314,19 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function test__get_file( $mocked_response, $expected_result ) {
 		$this->mock_http_response( $mocked_response );
 
-		$actual_result = $this->api_client->get_file( '/wp-content/uploads/file.jpg' );
+		$file = $this->api_client->get_file( '/wp-content/uploads/file.jpg' );
+		
+		if ( is_object( $file ) ) {
+			$actual_result = $file;
+		} else {
+			$actual_result = stream_get_contents( $file );
+		}
+
 		$this->assertEquals( $expected_result, $actual_result );
+
+		if ( is_resource( $file ) ) {
+			fclose( $file );
+		}
 	}
 
 	public function test__get_file__validate_request() {
