@@ -28,8 +28,6 @@ class Curl_Download_Streamer {
 			return;
 		}
 
-		$file_size = filesize( $this->file_path );
-
-		curl_setopt( $curl_handle, CURLOPT_FILE, $$this->stream );
+		curl_setopt( $curl_handle, CURLOPT_FILE, $this->stream );
 	}
 }
