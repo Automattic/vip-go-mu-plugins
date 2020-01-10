@@ -5,43 +5,6 @@ namespace Automattic\VIP\Elasticsearch;
 class Elasticsearch_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		require_once __DIR__ . '/../../elasticsearch/class-elasticsearch.php';
-	}	
-	
-	/**
-	 * Helper function for accessing protected method.
-	 *
-	 * @param string $name Name of the method.
-	 *
-	 * @return ReflectionMethod
-	 */
-	protected static function getMethod( $name ) {
-		$class = new \ReflectionClass( '\\Automattic\\VIP\\Elasticsearch\\Elasticsearch' );
-	
-		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
-
-		return $method;
-	}
-
-	/**
-	 * Test the VIP Elasticsearch init() method
-	 */
-	public function test__vip_elasticsearch_init() {
-		$es = $this->getMockBuilder( '\\Automattic\\VIP\\Elasticsearch\\Elasticsearch' )->getMock();
-
-		$es->expects( $load_dependencies_spy = $this->any() )->method( 'load_dependencies' );
-		$es->expects( $setup_constants_spy = $this->any() )->method( 'setup_constants' );
-		$es->expects( $setup_hooks_spy = $this->any() )->method( 'setup_hooks' );
-		$es->expects( $load_commands_spy = $this->any() )->method( 'load_commands' );
-
-		$es->init();
-
-		$invocations = $spy->getInvocations();
-
-		$this->assertEquals( 1, count( $load_dependencies_spy->getInvocations() ) );
-		$this->assertEquals( 1, count( $setup_constants_spy->getInvocations() ) );
-		$this->assertEquals( 1, count( $setup_hooks_spy->getInvocations() ) );
-		$this->assertEquals( 1, count( $load_commands_spy->getInvocations() ) );
 	}
 
 	/**
@@ -52,9 +15,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-	
-		$method = $this->getMethod( 'setup_hooks' );
-		$method->invoke( $es );
+		$es->init();
 
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
@@ -73,9 +34,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name_global_index() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-
-		$method = $this->getMethod( 'setup_hooks' );
-		$method->invoke( $es );
+		$es->init();
 
 		$mock_indexable = (object) [ 'slug' => 'users' ];
 
@@ -108,9 +67,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_elasticsearch_bulk_chunk_size_default() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-
-		$method = $this->getMethod( 'setup_constants' );
-		$method->invoke( $es );
+		$es->init();
 
 		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 250 );
 	}
@@ -125,9 +82,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-
-		$method = $this->getMethod( 'setup_hooks' );
-		$method->invoke( $es );
+		$es->init();
 
 		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 500 );
 	}
