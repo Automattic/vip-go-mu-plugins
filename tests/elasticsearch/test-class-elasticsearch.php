@@ -2,6 +2,10 @@
 
 namespace Automattic\VIP\Elasticsearch;
 
+/**
+ * @runInSeparateProcess
+ * @preserveGlobalState disabled
+ */
 class Elasticsearch_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		require_once __DIR__ . '/../../elasticsearch/class-elasticsearch.php';
@@ -9,9 +13,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
@@ -28,9 +29,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch for global indexes
 	 *
 	 * On "global" indexes, such as users, no blog id will be present
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name_global_index() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
@@ -47,9 +45,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
 	 *
 	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name__no_constant() {
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
@@ -61,9 +56,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that we set a default bulk index chunk size limit
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_elasticsearch_bulk_chunk_size_default() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
@@ -74,9 +66,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that the default bulk index chunk size limit is not applied if constant is already defined
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_elasticsearch_bulk_chunk_size_already_defined() {
 		define( 'EP_SYNC_CHUNK_LIMIT', 500 );
@@ -89,9 +78,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that the default bulk index chunk size limit is not defined if we're not using VIP Elasticsearch
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_elasticsearch_bulk_chunk_size_not_defined_when_not_using_vip_elasticsearch() {
 		$this->assertEquals( defined( 'EP_SYNC_CHUNK_LIMIT' ), false );
