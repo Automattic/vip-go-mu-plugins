@@ -34,6 +34,10 @@ class Elasticsearch {
 
 	protected function setup_hooks() {
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
+
+		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
+		add_filter( 'ep_intercept_remote_request', '__return_true' );
+		add_filter( 'ep_do_intercept_request', 'vip_elasticsearch_filter_ep_do_intercept_request', PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
@@ -55,5 +59,13 @@ class Elasticsearch {
 		}
 
 		return $index_name;
+	}
+
+	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
+		$fallback_error = new WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
+
+		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
+	
+		return $request;
 	}
 }
