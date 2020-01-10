@@ -2,11 +2,14 @@
 
 namespace Automattic\VIP\Elasticsearch;
 
-/**
- * @runInSeparateProcess
- * @preserveGlobalState disabled
- */
 class Elasticsearch_Test extends \WP_UnitTestCase {
+	/**
+	 * Make tests run in separate processes since we're testing state
+	 * related to plugin init, including various constants.
+	 */
+	protected $preserveGlobalState = FALSE;
+	protected $runTestInSeparateProcess = TRUE;
+
 	public function setUp() {
 		require_once __DIR__ . '/../../elasticsearch/class-elasticsearch.php';
 	}
