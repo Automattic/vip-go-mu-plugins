@@ -16,7 +16,7 @@ class Elasticsearch {
 		$this->load_commands();
 	}
 
-	public function load_dependencies() {
+	protected function load_dependencies() {
 		/**
 		 * Load ES Health command class
 		 */
@@ -25,18 +25,18 @@ class Elasticsearch {
 		}
 	}
 
-	public function setup_constants() {
+	protected function setup_constants() {
 		// Ensure we limit bulk indexing chunk size to a reasonable number (no limit by default)
 		if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
 			define( 'EP_SYNC_CHUNK_LIMIT', 250 );
 		}
 	}
 
-	public function setup_hooks() {
+	protected function setup_hooks() {
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 	}
 
-	public function load_commands() {
+	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Health_Command' );
 		}

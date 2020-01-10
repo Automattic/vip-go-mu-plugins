@@ -5,6 +5,22 @@ namespace Automattic\VIP\Elasticsearch;
 class Elasticsearch_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		require_once __DIR__ . '/../../elasticsearch/class-elasticsearch.php';
+	}	
+	
+	/**
+	 * Helper function for accessing protected method.
+	 *
+	 * @param string $name Name of the method.
+	 *
+	 * @return ReflectionMethod
+	 */
+	protected static function getMethod( $name ) {
+		$class = new \ReflectionClass( '\\Automattic\\VIP\\Elasticsearch\\Elasticsearch' );
+	
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+
+		return $method;
 	}
 
 	/**
@@ -15,7 +31,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-		$es->setup_hooks();
+	
+		$method = $this->getMethod( 'setup_hooks' );
+		$method->invoke( $es );
 
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
@@ -34,7 +52,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_elasticsearch_filter_ep_index_name_global_index() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-		$es->setup_hooks();
+
+		$method = $this->getMethod( 'setup_hooks' );
+		$method->invoke( $es );
 
 		$mock_indexable = (object) [ 'slug' => 'users' ];
 
@@ -67,7 +87,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_elasticsearch_bulk_chunk_size_default() {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-		$es->setup_constants();
+
+		$method = $this->getMethod( 'setup_constants' );
+		$method->invoke( $es );
 
 		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 250 );
 	}
@@ -82,7 +104,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-		$es->setup_hooks();
+
+		$method = $this->getMethod( 'setup_hooks' );
+		$method->invoke( $es );
 
 		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 500 );
 	}
