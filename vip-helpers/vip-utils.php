@@ -718,26 +718,28 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
 }
 
 /**
- * This is a sophisticated extended version of wp_remote_get(). It is designed to more gracefully handle failure than wpcom_vip_file_get_contents() does.
+ * This is a sophisticated extended version of wp_remote_request(). It is designed to more gracefully handle failure than wpcom_vip_file_get_contents() does.
  *
- * Note that like wp_remote_get(), this function does not cache.
+ * Note that like wp_remote_request(), this function does not cache.
  *
- * @author tottdev
  * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
- * @param string $url URL to fetch
+ * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
  * @param int $threshold Optional. The number of fails required before subsequent requests automatically return the fallback value. Defaults to 3, with a maximum of 10.
  * @param int $timeout Optional. Number of seconds before the request times out. Valid values 1-3; defaults to 1.
  * @param int $retry Optional. Number of seconds before resetting the fail counter and the number of seconds to delay making new requests after the fail threshold is reached. Defaults to 20, with a minimum of 10.
- * @param array Optional. Set other arguments to be passed to wp_remote_get().
+ * @param array Optional. Set other arguments to be passed to wp_remote_request().
  * @return string|WP_Error|array Array of results. If fail counter is met, returns the $fallback_value, otherwise return WP_Error.
- * @see wp_remote_get()
+ * @see wp_remote_request()
  */
-function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
+function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
 	global $blog_id;
 
-	$cache_group = "$blog_id:vip_safe_wp_remote_get";
-	$cache_key = 'disable_remote_get_' . md5( parse_url( $url, PHP_URL_HOST ) );
+	$default_args = array( 'method' => 'GET' );
+	$parsed_args = wp_parse_args( $args, $default_args );
+
+	$cache_group = "$blog_id:vip_safe_wp_remote_request";
+	$cache_key = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args[ 'method' ] );
 
 	// valid url
 	if ( empty( $url ) || !parse_url( $url ) )
@@ -760,11 +762,11 @@ function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeou
 	// check if the timeout was hit and obey the option and return the fallback value
 	if ( false !== $option && time() - $option['time'] < $retry ) {
 		if ( $option['hits'] >= $threshold )
-			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_get_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
+			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
 	}
 
 	$start = microtime( true );
-	$response = wp_remote_get( $url, array_merge( $args, array( 'timeout' => $timeout ) ) );
+	$response = wp_remote_request( $url, array_merge( $parsed_args, array( 'timeout' => $timeout ) ) );
 	$end = microtime( true );
 
 	$elapsed = ( $end - $start ) > $timeout;
@@ -786,7 +788,7 @@ function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeou
 	if ( is_wp_error( $response ) ) {
 		// Log errors for internal WP.com debugging
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			error_log( "vip_safe_wp_remote_get: Blog ID {$blog_id}: Fetching $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ) );
+			error_log( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ) );
 		}
 		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 
@@ -794,6 +796,23 @@ function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeou
 	}
 
 	return $response;
+}
+
+/**
+ * This is a convenience method for vip_safe_wp_remote_request() and behaves the same
+ *
+ * Note that like wp_remote_get(), this function does not cache.
+ *
+ * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
+ * @see vip_safe_wp_remote_request()
+ * @see wp_remote_get()
+ */
+function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
+	// Same defaults as WP_HTTP::get() https://developer.wordpress.org/reference/classes/wp_http/get/
+	$default_args = array( 'method' => 'GET' );
+	$parsed_args = wp_parse_args( $args, $default_args );
+
+	return vip_safe_wp_remote_request( $url, $fallback_value, $threshold, $timeout, $retry, $parsed_args );
 }
 
 /**
