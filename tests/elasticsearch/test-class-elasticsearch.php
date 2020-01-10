@@ -9,7 +9,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
@@ -26,9 +26,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch for global indexes
-	 * 
+	 *
 	 * On "global" indexes, such as users, no blog id will be present
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
@@ -47,7 +47,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
 	 *
 	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
@@ -61,7 +61,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that we set a default bulk index chunk size limit
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
@@ -74,7 +74,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that the default bulk index chunk size limit is not applied if constant is already defined
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
@@ -89,7 +89,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that the default bulk index chunk size limit is not defined if we're not using VIP Elasticsearch
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
