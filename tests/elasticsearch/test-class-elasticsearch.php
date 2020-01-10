@@ -24,6 +24,27 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the VIP Elasticsearch init() method
+	 */
+	public function test__vip_elasticsearch_init() {
+		$es = $this->getMockBuilder( '\\Automattic\\VIP\\Elasticsearch\\Elasticsearch' )->getMock();
+
+		$es->expects( $load_dependencies_spy = $this->any() )->method( 'load_dependencies' );
+		$es->expects( $setup_constants_spy = $this->any() )->method( 'setup_constants' );
+		$es->expects( $setup_hooks_spy = $this->any() )->method( 'setup_hooks' );
+		$es->expects( $load_commands_spy = $this->any() )->method( 'load_commands' );
+
+		$es->init();
+
+		$invocations = $spy->getInvocations();
+
+		$this->assertEquals( 1, count( $load_dependencies_spy->getInvocations() ) );
+		$this->assertEquals( 1, count( $setup_constants_spy->getInvocations() ) );
+		$this->assertEquals( 1, count( $setup_hooks_spy->getInvocations() ) );
+		$this->assertEquals( 1, count( $load_commands_spy->getInvocations() ) );
+	}
+
+	/**
 	 * Test `ep_index_name` filter for ElasticPress + VIP Elasticsearch
 	 * 
 	 * @runInSeparateProcess
