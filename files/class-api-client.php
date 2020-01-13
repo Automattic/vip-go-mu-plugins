@@ -141,6 +141,9 @@ class API_Client {
 		// save to cache
 		$this->cache->copy_to_cache( $response_data->filename, $local_path );
 
+		// reset file stats cache if any
+		$this->cache->remove_stats( $response_data->filename );
+
 		return $response_data->filename;
 	}
 

@@ -213,4 +213,15 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$this->assertEmpty( $stats );
 	}
+
+	public function test__remove_stats() {
+		$prop = self::get_property( $this->cache, 'file_stats' );
+		$prop->setValue( $this->cache, [ 'test.jpg' => [ 'size' => '234', 'mtime' => '123456779' ] ] );
+
+		$this->cache->remove_stats( 'test.jpg' );
+
+		$stats = $prop->getValue( $this->cache );
+
+		$this->assertFalse( isset( $stats[ 'test.jpg' ] ) );
+	}
 }

@@ -124,4 +124,11 @@ class API_Cache {
 		// Remove cached stats too if any
 		unset( $this->file_stats[ $file_name ] );
 	}
+
+	public function remove_stats( $filepath ) {
+		$file_name = basename( $filepath );
+
+		// Remove cached stats if any
+		unset( $this->file_stats[ $file_name ] );
+	}
 }
