@@ -37,7 +37,7 @@ class Elasticsearch {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
-		add_filter( 'ep_do_intercept_request', 'vip_elasticsearch_filter_ep_do_intercept_request', PHP_INT_MAX, 4 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
