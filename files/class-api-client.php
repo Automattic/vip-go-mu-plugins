@@ -69,11 +69,11 @@ class API_Client {
 
 		$timeout = $request_args['timeout'] ?? self::DEFAULT_REQUEST_TIMEOUT;
 
-		$request_args = [
+		$request_args = array_merge( $request_args, [
 			'method' => $method,
 			'headers' => $headers,
 			'timeout' => $timeout,
-		];
+		] );
 
 		$response = wp_remote_request( $request_url, $request_args );
 
