@@ -4,8 +4,7 @@ namespace Automattic\VIP\Files;
 
 use WP_Error;
 
-require( __DIR__ . '/class-curl-upload-streamer.php' );
-require( __DIR__ . '/class-curl-download-streamer.php' );
+require( __DIR__ . '/class-curl-streamer.php' );
 require( __DIR__ . '/class-api-cache.php' );
 
 function new_api_client() {
@@ -102,7 +101,7 @@ class API_Client {
 
 		$request_timeout = $this->calculate_upload_timeout( $file_size );
 
-		$curl_streamer = new Curl_Upload_Streamer( $local_path );
+		$curl_streamer = new Curl_Streamer( $local_path );
 		$curl_streamer->init();
 
 		$response = $this->call_api( $upload_path, 'PUT', [

@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
-class Curl_Upload_Streamer {
+class Curl_Streamer {
 	private $file_path;
 
 	public function __construct( $file_path ) {
