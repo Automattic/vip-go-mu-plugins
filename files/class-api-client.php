@@ -159,15 +159,14 @@ class API_Client {
 		}
 
 		$tmp_file = tempnam( get_temp_dir(), 'vip' );
-		$tmp_handle = fopen( $tmp_file, 'w+' );
 
-		$curl_streamer = new Curl_Download_Streamer( $tmp_handle );
-		$curl_streamer->init();
+		$request_args = [
+			'stream' => true,
+			'filename' => $tmp_file,
+		];
 
 		// not in cache so get from API
-		$response = $this->call_api( $file_path, 'GET' );
-
-		$curl_streamer->deinit();
+		$response = $this->call_api( $file_path, 'GET', $request_args );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -182,15 +181,10 @@ class API_Client {
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
-		$body = wp_remote_retrieve_body( $response );
-		fwrite( $tmp_handle, $body );
-
-		rewind( $tmp_handle );
-
 		// save to cache
 		$this->cache->cache_file( $file_path, $tmp_file );
 
-		return $tmp_handle;
+		return fopen( $tmp_file, 'r+' );
 	}
 
 	public function delete_file( $file_path ) {
