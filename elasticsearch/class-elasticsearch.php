@@ -36,7 +36,7 @@ class Elasticsearch {
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
-		add_filter( 'ep_intercept_remote_request', '__return_true' );
+		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
 	}
 
