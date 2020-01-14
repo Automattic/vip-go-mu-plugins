@@ -38,6 +38,7 @@ class Elasticsearch {
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
+		add_filter( 'jetpack_active_modules', [ $this, 'filter__jetpack_active_modules' ], 9999 );
 	}
 
 	protected function load_commands() {
@@ -67,5 +68,15 @@ class Elasticsearch {
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
 	
 		return $request;
+	}
+
+	public function filter__jetpack_active_modules( $modules ) {
+		// Filter out 'search' from the active modules. We use array_filter() to get _all_ instances, as it could be present multiple times
+		$filtered = array_filter ( $modules, function( $module ) {
+			return 'search' === $module ? false : true;
+		} );
+
+		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
+		return array_values( $filtered );
 	}
 }
