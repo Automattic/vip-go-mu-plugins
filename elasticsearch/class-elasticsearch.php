@@ -73,7 +73,10 @@ class Elasticsearch {
 	public function filter__jetpack_active_modules( $modules ) {
 		// Filter out 'search' from the active modules. We use array_filter() to get _all_ instances, as it could be present multiple times
 		$filtered = array_filter ( $modules, function( $module ) {
-			return 'search' === $module ? false : true;
+			if ( 'search' === $module ) {
+				return false;
+			}
+			return true;
 		} );
 
 		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
