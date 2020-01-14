@@ -63,7 +63,7 @@ class API_Cache {
 	public function cache_file( $filepath, $data ) {
 		$file_name = basename( $filepath );
 
-		if ( ! isset( $this->files[ $file_name ])) {
+		if ( ! isset( $this->files[ $file_name ] ) ) {
 			// create file with unique filename
 			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
 
@@ -72,6 +72,20 @@ class API_Cache {
 
 		// This will overwrite existing file if any
 		file_put_contents( $this->files[ $file_name ], $data );
+	}
+
+	public function copy_to_cache( $dst, $src ) {
+		$file_name = basename( $dst );
+
+		if ( ! isset( $this->files[ $file_name ] ) ) {
+			// create file with unique filename
+			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
+
+			$this->files[ $file_name ] = $tmp_file;
+		}
+
+		// This will overwrite existing file if any
+		copy( $src, $this->files[ $file_name ] );
 	}
 
 	public function remove_file( $filepath ) {

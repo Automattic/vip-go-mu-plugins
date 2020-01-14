@@ -174,14 +174,21 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
+// Load elasticsearch helpers
+if ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) {
+	require_once( __DIR__ . '/elasticsearch/class-elasticsearch.php' );
+
+	$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+	$es_plugin->init();
+}
+
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
 
-	// All non-production domains should not be indexed.
-	// This should not apply only to *.vip-go.co
-	if ( 'production' !== VIP_GO_ENV ) {
+	// Non-production applications and go-vip.(co|net) domains should not be indexed.
+	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 

@@ -197,7 +197,7 @@ class VIP_Filesystem {
 	 * @return  bool        True if filetype is supported. Else false
 	 */
 	protected function check_filetype_with_backend( $filename ) {
-		$upload_path = $this->get_upload_path();
+		$upload_path = trailingslashit( $this->get_upload_path() );
 
 		$file_path = $upload_path . $filename;
 
@@ -290,6 +290,13 @@ class VIP_Filesystem {
 		if ( false !== $pos ) {
 			// +1 to account far trailing slash
 			$file_path = substr( $file_path, strlen( $upload_path['basedir'] ) + 1 );
+		}
+
+		// Strip any query params that snuck through
+		$queryStringStart = strpos( $file_path, '?' );
+
+		if ( false !== $queryStringStart ) {
+			$file_path = substr( $file_path, 0, $queryStringStart );
 		}
 
 		return $file_path;
