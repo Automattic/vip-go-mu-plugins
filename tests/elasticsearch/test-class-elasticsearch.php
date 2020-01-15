@@ -85,4 +85,15 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	public function test__vip_elasticsearch_bulk_chunk_size_not_defined_when_not_using_vip_elasticsearch() {
 		$this->assertEquals( defined( 'EP_SYNC_CHUNK_LIMIT' ), false );
 	}
+
+	/**
+	 * Test that we are sending HTTP requests through the VIP helper functions
+	 */
+	public function test__vip_elasticsearch_has_http_layer_filters() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$this->assertEquals( true, has_filter( 'ep_intercept_remote_request', '__return_true' ) );
+		$this->assertEquals( true, has_filter( 'ep_do_intercept_request', [ $es, 'filter__ep_do_intercept_request' ] ) );
+	}
 }
