@@ -183,7 +183,7 @@ class API_Client {
 		// save to cache
 		$this->cache->cache_file( $file_path, $tmp_file );
 
-		return fopen( $tmp_file, 'r+' );
+		return $tmp_file;
 	}
 
 	public function delete_file( $file_path ) {

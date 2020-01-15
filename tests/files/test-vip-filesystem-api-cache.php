@@ -65,9 +65,7 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$actual = $this->cache->get_file( 'test.jpg' );
 
-		$this->assertEquals( $expected, stream_get_contents( $actual ) );
-
-		fclose( $actual );
+		$this->assertEquals( $expected, file_get_contents( $actual ) );
 	}
 
 	public function test__get_file__invalid_file() {

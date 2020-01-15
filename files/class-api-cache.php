@@ -54,7 +54,7 @@ class API_Cache {
 		$file_name = basename( $filepath );
 
 		if ( isset( $this->files[ $file_name ] ) ) {
-			return fopen( $this->files[ $file_name ], 'r+' );
+			return $this->files[ $file_name ];
 		}
 
 		return false;

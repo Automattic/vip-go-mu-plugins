@@ -324,17 +324,13 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		$file = $this->api_client->get_file( '/wp-content/uploads/get_file.jpg' );
 		
-		if ( is_object( $file ) ) {
+		if ( is_wp_error( $file ) ) {
 			$actual_result = $file;
 		} else {
-			$actual_result = stream_get_contents( $file );
+			$actual_result = file_get_contents( $file );
 		}
 
 		$this->assertEquals( $expected_result, $actual_result );
-
-		if ( is_resource( $file ) ) {
-			fclose( $file );
-		}
 	}
 
 	public function test__get_file__validate_request() {
