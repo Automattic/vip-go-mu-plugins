@@ -157,7 +157,7 @@ class API_Client {
 			return $file;
 		}
 
-		$tmp_file = tempnam( get_temp_dir(), 'vip' );
+		$tmp_file = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
 		$request_args = [

@@ -71,7 +71,7 @@ class API_Cache {
 
 		if ( ! isset( $this->files[ $file_name ] ) ) {
 			// create file with unique filename
-			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
+			$tmp_file = $this->create_tmp_file();
 
 			$this->files[ $file_name ] = $tmp_file;
 		}
@@ -87,5 +87,9 @@ class API_Cache {
 			unlink( $this->files[ $file_name ] );
 			unset( $this->files[ $file_name ] );
 		}
+	}
+
+	public function create_tmp_file() {
+		return tempnam( $this->tmp_dir, 'vip' );
 	}
 }
