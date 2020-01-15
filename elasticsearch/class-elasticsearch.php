@@ -23,7 +23,7 @@ class Elasticsearch {
 			require_once __DIR__ . '/commands/class-health-command.php';
 		}
 		// Load ElasticPress
-		require_once __DIR__ . '/adapters/elasticpress/elasticpress.php';
+		require_once __DIR__ . '/elasticpress/elasticpress.php';
 	}
 
 	protected function add_hooks() {
