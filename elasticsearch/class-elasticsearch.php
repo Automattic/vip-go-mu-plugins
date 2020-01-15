@@ -23,6 +23,8 @@ class Elasticsearch {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-health-command.php';
 		}
+		// Load ElasticPress
+		require_once __DIR__ . '/elasticpress/elasticpress.php';
 	}
 
 	protected function setup_constants() {
