@@ -159,6 +159,7 @@ class API_Client {
 
 		$tmp_file = tempnam( get_temp_dir(), 'vip' );
 
+		// Request args for wp_remote_request()
 		$request_args = [
 			'stream' => true,
 			'filename' => $tmp_file,
@@ -184,6 +185,12 @@ class API_Client {
 		$this->cache->cache_file( $file_path, $tmp_file );
 
 		return $tmp_file;
+	}
+
+	public function get_file_content( $file_path ) {
+		$file = $this->get_file( $file_path );
+
+		return file_get_contents( $file );
 	}
 
 	public function delete_file( $file_path ) {
