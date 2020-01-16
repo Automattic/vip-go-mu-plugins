@@ -45,4 +45,4 @@
 	url = git@github.com:Automattic/Cron-Control.git
 [submodule "elasticsearch/elasticpress"]
 	path = elasticsearch/elasticpress
-	url = git@github.com/Automattic/ElasticPress.git
+	url = git@github.com:Automattic/ElasticPress.git
