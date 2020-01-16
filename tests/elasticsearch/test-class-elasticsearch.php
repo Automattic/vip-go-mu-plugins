@@ -85,4 +85,109 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	public function test__vip_elasticsearch_bulk_chunk_size_not_defined_when_not_using_vip_elasticsearch() {
 		$this->assertEquals( defined( 'EP_SYNC_CHUNK_LIMIT' ), false );
 	}
+
+	/**
+	 * Test that we are sending HTTP requests through the VIP helper functions
+	 */
+	public function test__vip_elasticsearch_has_http_layer_filters() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$this->assertEquals( true, has_filter( 'ep_intercept_remote_request', '__return_true' ) );
+		$this->assertEquals( true, has_filter( 'ep_do_intercept_request', [ $es, 'filter__ep_do_intercept_request' ] ) );
+	}
+
+	/**
+	 * Test that we are setting up the filter to auto-disable JP Search
+	 */
+	public function test__vip_elasticsearch_has_jp_search_module_filter() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$this->assertEquals( true, has_filter( 'jetpack_active_modules', [ $es, 'filter__jetpack_active_modules' ] ) );
+	}
+
+	public function vip_elasticsearch_filter__jetpack_active_modules() {
+		return array(
+			// No modules, no change
+			array(
+				// Input
+				array(),
+
+				// Expected
+				array(),
+			),
+
+			// Search not enabled, no change
+			array(
+				// Input
+				array(
+					'foo',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+
+			// Search enabled, should be removed from list
+			array(
+				// Input
+				array(
+					'foo',
+					'search',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+
+			// Search-like module enabled, should not be removed from list
+			array(
+				// Input
+				array(
+					'foo',
+					'searchbar',
+				),
+
+				// Expected
+				array(
+					'foo',
+					'searchbar',
+				),
+			),
+
+			// Search enabled multiple times, should be removed from list
+			array(
+				// Input
+				array(
+					'search',
+					'foo',
+					'search',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Test that our active modules filter works as expected
+	 * 
+	 * @dataProvider vip_elasticsearch_filter__jetpack_active_modules
+	 */
+	public function test__vip_elasticsearch_filter__jetpack_active_modules( $input, $expected ) {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$result = $es->filter__jetpack_active_modules( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
 }
