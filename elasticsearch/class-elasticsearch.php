@@ -23,6 +23,8 @@ class Elasticsearch {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-health-command.php';
 		}
+		// Load ElasticPress
+		require_once __DIR__ . '/elasticpress/elasticpress.php';
 	}
 
 	protected function setup_constants() {
@@ -34,6 +36,11 @@ class Elasticsearch {
 
 	protected function setup_hooks() {
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
+
+		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
+		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
+		add_filter( 'jetpack_active_modules', [ $this, 'filter__jetpack_active_modules' ], 9999 );
 	}
 
 	protected function load_commands() {
@@ -55,5 +62,26 @@ class Elasticsearch {
 		}
 
 		return $index_name;
+	}
+
+	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
+		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
+
+		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
+	
+		return $request;
+	}
+
+	public function filter__jetpack_active_modules( $modules ) {
+		// Filter out 'search' from the active modules. We use array_filter() to get _all_ instances, as it could be present multiple times
+		$filtered = array_filter ( $modules, function( $module ) {
+			if ( 'search' === $module ) {
+				return false;
+			}
+			return true;
+		} );
+
+		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
+		return array_values( $filtered );
 	}
 }
