@@ -188,7 +188,10 @@ function generate_personal_data_export_file( $request_id ) {
 
 		// Create the folder path
 		$local_archive_dirname = dirname( $local_archive_pathname );
-		wp_mkdir_p( $local_archive_dirname );
+		$local_archive_dir_created = wp_mkdir_p( $local_archive_dirname );
+		if ( is_wp_error( $local_archive_dir_created ) ) {
+			wp_send_json_error( $local_archive_dir_created->get_error_message() );
+		}
 	}
 
 	// Note: core deletes the file if it exists, but we can just overwrite it when we upload.
