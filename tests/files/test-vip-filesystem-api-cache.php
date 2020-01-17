@@ -78,7 +78,7 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$actual = $this->cache->get_file( 'test.jpg' );
 
-		$this->assertEquals( $expected, $actual );
+		$this->assertEquals( $expected, file_get_contents( $actual ) );
 	}
 
 	public function test__get_file__invalid_file() {
@@ -107,7 +107,9 @@ class API_Cache_Test extends \WP_UnitTestCase {
 	public function test__cache_file() {
 		$prop = self::get_property( $this->cache, 'files' );
 
-		$this->cache->cache_file( 'test.txt', 'test data' );
+		$file = tempnam( sys_get_temp_dir(), 'test' );
+
+		$this->cache->cache_file( 'test.txt', $file );
 
 		$files = $prop->getValue( $this->cache );
 
@@ -124,7 +126,11 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$expected = 'updated data';
 
-		$this->cache->cache_file( 'test.jpg', $expected );
+		$updated_file = tempnam( sys_get_temp_dir(), 'test' );
+
+		file_put_contents( $updated_file, $expected );
+
+		$this->cache->cache_file( 'test.jpg', $updated_file );
 
 		$files = $prop->getValue( $this->cache );
 

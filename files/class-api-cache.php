@@ -62,7 +62,7 @@ class API_Cache {
 		$file_name = basename( $filepath );
 
 		if ( isset( $this->files[ $file_name ] ) ) {
-			return file_get_contents( $this->files[ $file_name ] );
+			return $this->files[ $file_name ];
 		}
 
 		return false;
@@ -78,18 +78,10 @@ class API_Cache {
 		return false;
 	}
 
-	public function cache_file( $filepath, $data ) {
+	public function cache_file( $filepath, $local_file ) {
 		$file_name = basename( $filepath );
 
-		if ( ! isset( $this->files[ $file_name ] ) ) {
-			// create file with unique filename
-			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
-
-			$this->files[ $file_name ] = $tmp_file;
-		}
-
-		// This will overwrite existing file if any
-		file_put_contents( $this->files[ $file_name ], $data );
+		$this->files[ $file_name ] = $local_file;
 	}
 
 	public function cache_file_stats( $filepath, $info ) {
@@ -104,7 +96,7 @@ class API_Cache {
 
 		if ( ! isset( $this->files[ $file_name ] ) ) {
 			// create file with unique filename
-			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
+			$tmp_file = $this->create_tmp_file();
 
 			$this->files[ $file_name ] = $tmp_file;
 		}
@@ -130,5 +122,9 @@ class API_Cache {
 
 		// Remove cached stats if any
 		unset( $this->file_stats[ $file_name ] );
+	}
+
+	public function create_tmp_file() {
+		return tempnam( $this->tmp_dir, 'vip' );
 	}
 }
