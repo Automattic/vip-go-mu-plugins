@@ -121,4 +121,86 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT' ) );
 		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT' ) );
 	}
+
+	function get_jetpack_sync_modules_data() {
+		return [
+			'not-enabled' => [
+				false, // sync immediately constant
+				// modules input
+				[
+					'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
+					'not-sync' => 'Not_Sync_Class',
+				],
+				// modules output
+				[
+					'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
+					'not-sync' => 'Not_Sync_Class',
+				],
+			],
+
+			'enabled-no-matching-modules' => [
+				true,
+				[
+					'sync' => 'Other_Sync_Class',
+				],
+				[
+					'sync' => 'Other_Sync_Class',
+				],
+			],
+
+			'enabled-with-matching-modules' => [
+				true,
+				[
+					'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
+					'not-sync' => 'Not_Sync_Class',
+				],
+				[
+					'sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
+					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
+					'not-sync' => 'Not_Sync_Class',
+				],
+			],
+		];
+	}
+
+	/**
+	 * When the class is not defined, modules are not modified.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__jetpack_sync_modules__without_class() {
+		$modules = [
+			'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+			'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
+			'not-sync' => 'Not_Sync_Class',
+		];
+		$expected_modules = [
+			'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+			'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
+			'not-sync' => 'Not_Sync_Class',
+		];
+
+		$actual_modules = apply_filters( 'jetpack_sync_modules', $modules );
+
+		$this->assertEquals( $expected_modules, $actual_modules );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_jetpack_sync_modules_data
+	 */
+	public function test__jetpack_sync_modules__class_exists( $full_sync_enabled, $modules, $expected_modules ) {
+		require_once( __DIR__ . '/fixtures/jetpack/class-jetpack-sync-immediately.php' );
+
+		define( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY', $full_sync_enabled );
+
+		$actual_modules = apply_filters( 'jetpack_sync_modules', $modules );
+
+		$this->assertEquals( $expected_modules, $actual_modules );
+	}
 }

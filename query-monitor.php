@@ -34,8 +34,9 @@
  * Determines if Query Monitor should be enabled. We don't
  * want to load it if we don't have to.
  *
- *  - If a QM_COOKIE is detected, Query monitor is enabled
- *  - If the WPCOM_VIP_QM_ENABLE constant is true, Query Monitor is enabled
+ *  - If logged-in user has the `view_query_monitor`
+ *    capability, Query Monitor is enabled.
+ *  - If a QM_COOKIE is detected, Query Monitor is enabled.
  *
  * Note that we have to set the value for QM_COOKIE here,
  * in order to detect it.
