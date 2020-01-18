@@ -240,8 +240,9 @@ function _upload_archive_file( $archive_path ) {
 	// Hard-coded and full of assumptions for now.
 	// TODO: need a cleaner approach for this. Can probably borrow `WP_Filesystem_VIP_Uploads::sanitize_uploads_path()`.
 	$archive_file = basename( $archive_path );
-	$exports_folder = basename( wp_privacy_exports_dir() );
-	$upload_path = sprintf( '/wp-content/uploads/%s/%s', $exports_folder, $archive_file );
+	$exports_url = wp_privacy_exports_url();
+	$wp_content_strpos = strpos( $exports_url, '/wp-content/uploads/' );
+	$upload_path = trailingslashit( substr( $exports_url, $wp_content_strpos ) ) . $archive_file;
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
 	$upload_result = $api_client->upload_file( $archive_path, $upload_path );
