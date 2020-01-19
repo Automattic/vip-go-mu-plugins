@@ -40,9 +40,6 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-counts
 	 */
 	public function validate_counts( $args, $assoc_args ) {
-		// Make sure ElasticPress is installed and active
-		$this->is_elasticpress_active();
-
 		// Get indexable objects
 		$indexable = Indexables::factory()->get( 'post' );
 
@@ -105,19 +102,5 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		}
 
 		WP_CLI::success( 'counts for public post types are all equal!' );
-	}
-
-	protected function is_elasticpress_active() {
-		$plugin = $this->plugin_fetcher->get( 'ElasticPress' );
-
-		if ( ! $plugin ) {
-			WP_CLI::error( 'ElasticPress plugin not found' );
-		}		
-
-		$file = $plugin->file;
-
-		if ( ! is_plugin_active( $file ) && ! is_plugin_active_for_network( $file ) ) {
-			WP_CLI::error( 'ElasticPress plugin not active' );
-		}
 	}
 }
