@@ -71,20 +71,25 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 			if ( ! $es_result ) {
 				$es_total = 'N/A';
 				$error = true;
+				// Most likely an issue either connecting to ElasticSearch, or no index was found
 				$es_conn_err = true;
-			} else {
-				$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
+				// Something is broken, bail instead of returning partial/incorrect data
+				$msg = 'error connecting to Elasticsearch instance, or no index was found. Please verify your settings.';
+				WP_CLI::error( $msg );
+				return;
+			}
+			// Verify actual results
+			$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
 
-				if ( $db_total !== $es_total ) {
-					$error = true;
+			if ( $db_total !== $es_total ) {
+				$error = true;
 
-					$diff = sprintf( ', diff: %d', $es_total - $db_total );
-				}
+				$diff = sprintf( ', diff: %d', $es_total - $db_total );
 			}
 
 			$icon = "\u{2705}"; // unicode check mark
 			if ( $error ) {
-					$icon = "\u{274C}"; // unicode cross mark
+				$icon = "\u{274C}"; // unicode cross mark
 			}
 
 			WP_CLI::line( sprintf( "%s %s (db: %d, es: %s%s)", $icon, $post_type, $db_total, $es_total, $diff ) );
@@ -93,11 +98,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 
 		if( $error ) {
-			if ( $es_conn_err ) {
-				$msg = 'cannot connect to Elasticsearch instance.';
-			} else {
-				$msg = 'found inconsistent counts for post types.';
-			}
+			$msg = 'found inconsistent counts for post types.';
 			WP_CLI::error( $msg );
 		}
 
