@@ -6,6 +6,7 @@ use \WP_CLI;
 use \WP_CLI\Utils;
 use \WP_Query as WP_Query;
 use \ElasticPress\Indexables as Indexables;
+use \ElasticPress\Features as Features;
 use \ElasticPress\Elasticsearch as Elasticsearch;
 
 /**
@@ -51,7 +52,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 			$error = false;
 			$es_conn_err = false;
 
-			$query_args = [ 
+			$query_args = [
 				'post_type' => $post_type,
 			];
 
@@ -92,7 +93,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 				$icon = "\u{274C}"; // unicode cross mark
 			}
 
-			WP_CLI::line( sprintf( "%s %s (db: %d, es: %s%s)", $icon, $post_type, $db_total, $es_total, $diff ) );
+			WP_CLI::line( sprintf( "%s %s (DB: %d, ES: %s%s)", $icon, $post_type, $db_total, $es_total, $diff ) );
 		}
 
 		WP_CLI::line( '' );
@@ -103,5 +104,79 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		}
 
 		WP_CLI::success( 'counts for public post types are all equal!' );
+	}
+
+	/**
+	 * Validate DB and ES index users counts
+	 *
+	 * ## OPTIONS
+	 *
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-users
+	 *
+	 * @subcommand validate-users
+	 */
+	public function validate_users( $args, $assoc_args ) {
+		Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
+		$users = Indexables::factory()->get( 'user' );
+		
+		WP_CLI::line( sprintf( "Validating users count\n" ) );
+
+		$error = false;
+		$es_conn_err = false;
+
+		$query_args = [
+			'order' => 'asc',
+		];
+
+		// Get total count in DB
+		$result = $users->query_db( $query_args );
+
+		$db_total = (int) $result[ 'total_objects' ];
+
+		// Get total count in ES index
+		$query = new WP_Query( $query_args );
+
+		$formatted_args = $users->format_args( $query->query_vars, $query );
+
+		$es_result = $users->query_es( $formatted_args, $query->query_vars );
+		
+		$diff = '';
+		if ( ! $es_result ) {
+			$es_total = 'N/A';
+			$error = true;
+			// Most likely an issue either connecting to ElasticSearch, or no index was found
+			$es_conn_err = true;
+			// Something is broken, bail instead of returning partial/incorrect data
+			$msg = 'error connecting to Elasticsearch instance, or index not found: did you activate Users feature?';
+			WP_CLI::error( $msg );
+			return;
+		}
+		// Verify actual results
+		$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
+
+		if ( $db_total !== $es_total ) {
+			$error = true;
+
+			$diff = sprintf( ', diff: %d', $es_total - $db_total );
+		}
+
+		$icon = "\u{2705}"; // unicode check mark
+		if ( $error ) {
+			$icon = "\u{274C}"; // unicode cross mark
+		}
+
+		WP_CLI::line( sprintf( "%s (DB: %d, ES: %s%s)", $icon, $db_total, $es_total, $diff ) );
+
+		WP_CLI::line( '' );
+
+		if( $error ) {
+			$msg = 'found inconsistent counts for users.';
+			WP_CLI::error( $msg );
+		}
+
+		WP_CLI::success( 'counts for users are all equal!' );
+
 	}
 }
