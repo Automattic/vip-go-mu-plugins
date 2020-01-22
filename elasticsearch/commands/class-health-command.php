@@ -33,7 +33,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-counts
 	 */
 	public function validate_counts( $args, $assoc_args ) {
-		$this->validate_posts_counts( $args, $assoc_args );
+		$this->validate_posts_count( $args, $assoc_args );
 		$this->validate_users_count( $args, $assoc_args );
 	}
 
@@ -48,7 +48,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand validate-posts-count
 	 */
-	public function validate_posts_counts( $args, $assoc_args ) {
+	public function validate_posts_count( $args, $assoc_args ) {
 		// Get indexable objects
 		$indexable = Indexables::factory()->get( 'post' );
 
