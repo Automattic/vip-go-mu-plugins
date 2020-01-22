@@ -77,7 +77,6 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 				// Something is broken, bail instead of returning partial/incorrect data
 				$msg = 'error connecting to Elasticsearch instance, or no index was found. Please verify your settings.';
 				WP_CLI::error( $msg );
-				return;
 			}
 			// Verify actual results
 			$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
@@ -151,23 +150,22 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 			// Something is broken, bail instead of returning partial/incorrect data
 			$msg = 'error connecting to Elasticsearch instance, or index not found: did you activate Users feature?';
 			WP_CLI::error( $msg );
-			return;
 		}
+
+		$icon = "\u{2705}"; // unicode check mark
+
 		// Verify actual results
 		$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
 
 		if ( $db_total !== $es_total ) {
 			$error = true;
-
+			$icon = "\u{274C}"; // unicode cross mark
 			$diff = sprintf( ', diff: %d', $es_total - $db_total );
 		}
 
-		$icon = "\u{2705}"; // unicode check mark
-		if ( $error ) {
-			$icon = "\u{274C}"; // unicode cross mark
-		}
+		$users_comparison_message = sprintf( "%s (DB: %d, ES: %s%s)", $icon, $db_total, $es_total, $diff );
 
-		WP_CLI::line( sprintf( "%s (DB: %d, ES: %s%s)", $icon, $db_total, $es_total, $diff ) );
+		WP_CLI::line( $users_comparison_message );
 
 		WP_CLI::line( '' );
 
