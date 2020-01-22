@@ -117,7 +117,6 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-users
 	 */
 	public function validate_users( $args, $assoc_args ) {
-		Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 		$users = Indexables::factory()->get( 'user' );
 		
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
