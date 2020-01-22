@@ -792,7 +792,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	if ( is_wp_error( $response ) ) {
 		// Log errors for internal WP.com debugging
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			error_log( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ) );
+			trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ), E_USER_NOTICE );
 		}
 		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 
