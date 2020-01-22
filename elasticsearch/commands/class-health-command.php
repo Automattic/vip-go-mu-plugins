@@ -15,22 +15,14 @@ use \ElasticPress\Elasticsearch as Elasticsearch;
  * @package Automattic\VIP\Elasticsearch
  */
 class Health_Command extends \WPCOM_VIP_CLI_Command {
-
-	/**
-	 * @var WP_CLI\Fetchers\Plugin Plugin fetcher
-	 */
-	protected $plugin_fetcher;
-
 	public function __construct() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 		parent::__construct();
-
-		$this->plugin_fetcher = new \WP_CLI\Fetchers\Plugin();
 	}
 
 	/**
-	 * Validate DB and ES index post counts
+	 * Validate DB and ES index counts for all objects
 	 *
 	 * ## OPTIONS
 	 *
@@ -41,6 +33,22 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-counts
 	 */
 	public function validate_counts( $args, $assoc_args ) {
+		$this->validate_posts_counts( $args, $assoc_args );
+		$this->validate_users_count( $args, $assoc_args );
+	}
+
+	/**
+	 * Validate DB and ES index post counts
+	 *
+	 * ## OPTIONS
+	 *
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-posts-count
+	 *
+	 * @subcommand validate-posts-count
+	 */
+	public function validate_posts_counts( $args, $assoc_args ) {
 		// Get indexable objects
 		$indexable = Indexables::factory()->get( 'post' );
 
@@ -112,11 +120,11 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 *
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-es health validate-users
+	 *     wp vip-es health validate-users-count
 	 *
-	 * @subcommand validate-users
+	 * @subcommand validate-users-count
 	 */
-	public function validate_users( $args, $assoc_args ) {
+	public function validate_users_count( $args, $assoc_args ) {
 		$users = Indexables::factory()->get( 'user' );
 		
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
