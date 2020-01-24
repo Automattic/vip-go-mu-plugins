@@ -14,5 +14,3 @@ add_filter( 'two_factor_providers', function( $p ) {
 	unset( $p[ 'Two_Factor_Dummy' ] );
 	return $p;
 } );
-
-add_filter( 'two_factor_user_api_login_enable', '__return_true' );
