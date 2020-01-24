@@ -57,15 +57,14 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	public function get_contents( $file ) {
 		$uploads_path = $this->sanitize_uploads_path( $file );
 
-		// TODO: Caching for remote gets? Static single request cache vs memcache?
-		$contents = $this->api->get_file( $uploads_path );
-		if ( is_wp_error( $contents ) ) {
-			$this->errors = $contents;
+		$content = $this->api->get_file_content( $uploads_path );
+		if ( is_wp_error( $content ) ) {
+			$this->errors = $content;
 
 			return false;
 		}
 
-		return $contents;
+		return $content;
 	}
 
 	/**

@@ -546,6 +546,44 @@ table.comments td.comment p a:after {
 	margin-top: 1.5rem;
 }
 
+.akismet-box-header {
+	max-width: 700px;
+	margin: 0 auto 40px auto;
+	line-height: 1.5;
+}
+
+.akismet-box-header h2 {
+	margin: 1.5rem 10% 0;
+	font-size: 1.375rem;
+	font-weight: 700;
+	color: #000;
+}
+
+.akismet-box .centered {
+	text-align: center;
+}
+
+.akismet-enter-api-key-box {
+	margin: 1.5rem 0;
+}
+
+.akismet-box .enter-api-key {
+	display: none;
+	margin-top: 1.5rem;
+}
+
+.akismet-box .akismet-toggles {
+	margin: 3rem 0;
+}
+
+.akismet-box .akismet-ak-connect, .akismet-box .toggle-jp-connect {
+	display: none;
+}
+
+.akismet-box .enter-api-key p {
+	padding: 0 1.5rem;
+}
+
 .akismet-button, .akismet-button:hover, .akismet-button:visited {
 	background: white;
 	border-color: #c8d7e1;
