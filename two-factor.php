@@ -12,6 +12,18 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
+// Handle 2fa for API requests
+add_filter( 'two_factor_user_api_login_enable', function( $enable ) {
+	// Track some stats around how frequenctly we're hitting this
+	Automattic\VIP\Stats\send_pixel( [
+		'vip-go-2fa-api-blocked-by-site' => FILES_CLIENT_SITE_ID,
+		'vip-go-2fa-api-blocked-by-ua' => sanitize_key( $_SERVER['HTTP_USER_AGENT'] ), 
+	] );
+
+	// Allow API requests for now while we validate impact
+	return true;
+}, 1 );
+
 function wpcom_vip_should_force_two_factor() {
 
 	// Don't force 2FA by default in local environments
