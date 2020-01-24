@@ -32,6 +32,16 @@ class Elasticsearch {
 		if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
 			define( 'EP_SYNC_CHUNK_LIMIT', 250 );
 		}
+
+		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			$host = VIP_ELASTICSEARCH_ENDPOINTS[ 0 ];
+
+			define( 'EP_HOST', $host );
+		}
+
+		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
+			define( 'ES_SHIELD', sprintf( '%s:%s', VIP_ELASTICSEARCH_USERNAME, VIP_ELASTICSEARCH_PASSWORD ) );
+		}
 	}
 
 	protected function setup_hooks() {
