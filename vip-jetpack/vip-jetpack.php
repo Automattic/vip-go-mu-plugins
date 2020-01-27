@@ -38,6 +38,15 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', 2 * HOUR_IN_SECONDS );
 define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
 
 /**
+ * Enable the the new Jetpack full sync method (queue-less) on non-production sites for testing
+ * 
+ * Can be removed (along with later code that uses the constant) after Jetpack 8.2 is deployed
+ */
+if ( ! defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && 'production' !== VIP_GO_ENV ) {
+	define( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY', true );
+}
+
+/**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
 require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );

@@ -63,9 +63,6 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
  * Verify the remote proxy via a secret verification key, and set the
  * end user IP if verification succeeds.
  *
- * This is not the preferred method, use only when it is not possible to
- * acquire a whitelist of remote proxy IP addresses.
- *
  * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
  *
  * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
@@ -92,9 +89,6 @@ function fix_remote_address_with_verification_key( $user_ip, $submitted_verifica
  * Verify the remote proxy via a secret verification key, and set the
  * end user IP from an X-Forwarded-For style comma separated list of IP
  * addresses if verification succeeds.
- *
- * This is not the preferred method, use only when it is not possible to
- * acquire a whitelist of remote proxy IP addresses.
  *
  * Only two levels of proxies are supported.
  *
