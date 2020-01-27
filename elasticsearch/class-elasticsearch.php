@@ -10,9 +10,9 @@ class Elasticsearch {
 	 * Initialize the VIP Elasticsearch plugin
 	 */
 	public function init() {
-		$this->load_dependencies();
 		$this->setup_constants();
 		$this->setup_hooks();
+		$this->load_dependencies();
 		$this->load_commands();
 	}
 
