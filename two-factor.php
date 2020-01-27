@@ -23,7 +23,7 @@ add_filter( 'two_factor_user_api_login_enable', function( $enable ) {
 			'vip-go-2fa-api-allowed' => sprintf( '%d-%s', FILES_CLIENT_SITE_ID, sanitize_key( $_SERVER['HTTP_USER_AGENT'] ) ),
 		] );
 
-		return $enable;
+		return true;
 	}
 
 	// Track stats around how frequently we're hitting this
