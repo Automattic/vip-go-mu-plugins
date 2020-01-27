@@ -14,14 +14,26 @@ require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
 // Handle 2fa for API requests
 add_filter( 'two_factor_user_api_login_enable', function( $enable ) {
-	// Track some stats around how frequenctly we're hitting this
+	// Allow API requests for a subset of environments for now.
+	if ( defined( 'VIP_2FA_ALLOW_API_LOGIN_ENV_IDS' )
+		&& is_array( VIP_2FA_ALLOW_API_LOGIN_ENV_IDS )
+		&& in_array( FILES_CLIENT_SITE_ID, VIP_2FA_ALLOW_API_LOGIN_ENV_IDS, true ) ) {
+
+		Automattic\VIP\Stats\send_pixel( [
+			'vip-go-2fa-api-allowed' => sprintf( '%d-%s', FILES_CLIENT_SITE_ID, sanitize_key( $_SERVER['HTTP_USER_AGENT'] ) ),
+		] );
+
+		return $enable;
+	}
+
+	// Track stats around how frequently we're hitting this
 	Automattic\VIP\Stats\send_pixel( [
 		'vip-go-2fa-api-blocked-by-site' => FILES_CLIENT_SITE_ID,
 		'vip-go-2fa-api-blocked-by-ua' => sanitize_key( $_SERVER['HTTP_USER_AGENT'] ), 
 	] );
 
-	// Allow API requests for now while we validate impact
-	return true;
+	// Do not allow API requests for users with 2fa enabled.
+	return false;
 }, 1 );
 
 function wpcom_vip_should_force_two_factor() {
