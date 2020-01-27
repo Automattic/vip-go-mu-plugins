@@ -34,7 +34,7 @@ add_filter( 'two_factor_user_api_login_enable', function( $enable ) {
 
 	// Do not allow API requests for users with 2fa enabled.
 	return false;
-}, 1 );
+}, 1 ); // Allow overrides at later priorities
 
 function wpcom_vip_should_force_two_factor() {
 
