@@ -148,13 +148,15 @@ class VIP_Filesystem_Stream_Wrapper {
 			return false;
 		}
 
+		$meta = [];
+
 		try {
 			$result = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) ) {
 				if ( 'file-not-found' !== $result->get_error_code() ) {
 					trigger_error(
-						sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+						sprintf( 'stream_open/get_file failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
 						E_USER_WARNING
 					);
 
@@ -163,14 +165,28 @@ class VIP_Filesystem_Stream_Wrapper {
 
 				// File doesn't exist on File service so create new file
 				$file = $this->string_to_resource( '', $mode );
+
+				$meta = stream_get_meta_data( $file );
+
+				// Upload new file to file service
+				$upload_result = $this->client->upload_file( $meta[ 'uri' ], $path );
+				if ( is_wp_error( $upload_result ) ) {
+					trigger_error(
+						sprintf( 'stream_open/upload_file failed for %s with error: %s #vip-go-streams', $path, $upload_result->get_error_message() ),
+						E_USER_WARNING
+					);
+
+					return false;
+				}
 			} else {
 				$file = fopen( $result, $mode );
+
+				$meta = stream_get_meta_data( $file );
 			}
 
 			// Get meta data
-			$meta           = stream_get_meta_data( $file );
-			$this->seekable = $meta['seekable'];
-			$this->uri      = $meta['uri'];
+			$this->seekable = $meta[ 'seekable' ];
+			$this->uri      = $meta[ 'uri' ];
 
 			$this->file = $file;
 			$this->path = $path;
