@@ -14,6 +14,9 @@ use \ElasticPress\Features as Features;
  * @package Automattic\VIP\Elasticsearch
  */
 class Health_Command extends \WPCOM_VIP_CLI_Command {
+	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
+	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
+
 	public function __construct() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
@@ -66,14 +69,13 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 				'post_type' => $post_type,
 				'post_status' => array_values( $post_statuses ),
 			];
-			if ( ! $this->vip_elasticsearch->validate_entity_count( $query_args, $posts, $post_type ) ) {
-				// TODO: do not error out
-				WP_CLI::error( 'found inconsistent counts for post type: ' . $post_type );
+			if ( ! Elasticsearch::factory()->validate_entity_count( $query_args, $posts, $post_type ) ) {
+				WP_CLI::line( self::FAILURE_ICON . 'found inconsistent counts for post type: ' . $post_type );
 			}
 		}
 
 		WP_CLI::line( '' );
-		WP_CLI::success( 'counts for public post types are all equal!' );
+		WP_CLI::success( self::SUCCESS_ICON . ' counts for public post types are all equal!' );
 	}
 
 	/**
