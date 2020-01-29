@@ -82,7 +82,6 @@ class Elasticsearch {
 	 * ];
 	 *
 	 * @param mixed $indexable Intance of an ElasticPress Indexable Object to search on
-	 * @param string $slug Human readable name for the Slug
 	 * @return WP_Error|boolean
 	 */
 	public function validate_entity_count( array $query_args, \ElasticPress\Indexable $indexable ) {
