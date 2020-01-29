@@ -32,16 +32,23 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-counts
 	 */
 	public function validate_counts( $args, $assoc_args ) {
-		WP_CLI::line( "Validating posts count\n" );
-
-		$posts_results = Elasticsearch::factory()->validate_posts_count( $args, $assoc_args );
-		if ( is_wp_error( $posts_results ) ) {
-			WP_CLI::warning( 'Error while validating posts count: ' . $posts_results->get_error_message() );
-		}
-
-		$this->render_results( $posts_results );
+		$this->validate_posts_count( $args, $assoc_args );
 
 		WP_CLI::line( '' );
+
+		$this->validate_users_count();
+	}
+
+	/**
+	 * ## OPTIONS
+	 *
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-users-count
+	 *
+	 * @subcommand validate-users-count
+	 */
+	public function validate_users_count( $args, $assoc_args ) {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
 		$users_results = Elasticsearch::factory()->validate_users_count( $args, $assoc_args );
@@ -50,6 +57,26 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		}
 		$this->render_results( $users_results );
 	}
+
+	/**
+	 * ## OPTIONS
+	 *
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-posts-count
+	 *
+	 * @subcommand validate-posts-count
+	 */
+	public function validate_posts_count( $args, $assoc_args ) {
+		WP_CLI::line( "Validating posts count\n" );
+
+		$posts_results = Elasticsearch::factory()->validate_posts_count( $args, $assoc_args );
+		if ( is_wp_error( $posts_results ) ) {
+			WP_CLI::warning( 'Error while validating posts count: ' . $posts_results->get_error_message() );
+		}
+		$this->render_results( $posts_results );
+	}
+
 
 	private function render_results( array $results ) {
 		foreach( $results as $result ) {
@@ -61,7 +88,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 				$message = 'no' . $message;
 			}
 
-			$message = sprintf( '%s %s when counting %s, type: %s (DB: %s, ES: %s, Diff: %s)', $icon, $message, $result[ 'entity' ], $result[ 'type' ], $result[ 'db_total' ], $result[ 'es_total' ], $result[ 'diff' ] );
+			$message = sprintf( '%s %s when counting entity: %s, type: %s (DB: %s, ES: %s, Diff: %s)', $icon, $message, $result[ 'entity' ], $result[ 'type' ], $result[ 'db_total' ], $result[ 'es_total' ], $result[ 'diff' ] );
 			WP_CLI::line( $message );
 		}
 	}
