@@ -121,6 +121,32 @@ class Elasticsearch {
 	}
 
 	/**
+	 * Validate DB and ES index users counts
+	 *
+	 * ## OPTIONS
+	 *
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-users-count
+	 *
+	 * @subcommand validate-users-count
+	 */
+	public function validate_users_count( $args, $assoc_args ) {
+		$users = Indexables::factory()->get( 'user' );
+
+		$query_args = [
+			'order' => 'asc',
+		];
+
+		$result = $this->validate_entity_count( $query_args, $users );
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error( 'es_users_count_error', $result->get_error_message() );
+		}
+		// TODO: returns JSON-ified results
+	}
+
+
+	/**
 	 * Helper function to wrap WP_*Query
 	 *
 	 * @since   1.0.0

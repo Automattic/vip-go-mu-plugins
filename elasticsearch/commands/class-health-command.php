@@ -36,7 +36,16 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function validate_counts( $args, $assoc_args ) {
 		$this->validate_posts_count( $args, $assoc_args );
-		$this->validate_users_count( $args, $assoc_args );
+		WP_CLI::line( sprintf( "Validating users count\n" ) );
+
+		$users_results = Elasticsearch::factory()->validate_users_count( $args, $assoc_args );
+		if ( is_wp_error( $users_results ) ) {
+			WP_CLI::error( 'found inconsistent counts for users.' );
+		}
+
+		WP_CLI::line( '' );
+		WP_CLI::success( 'counts for users are all equal!' );
+
 		// TODO: check return values and WP_CLI:error if any === false
 		// WP_CLI::error
 	}
@@ -95,34 +104,5 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		} else {
 			WP_CLI::error( self::FAILURE_ICON . ' inconsistencies found for posts!' );
 		}
-	}
-
-	/**
-	 * Validate DB and ES index users counts
-	 *
-	 * ## OPTIONS
-	 *
-	 *
-	 * ## EXAMPLES
-	 *     wp vip-es health validate-users-count
-	 *
-	 * @subcommand validate-users-count
-	 */
-	public function validate_users_count( $args, $assoc_args ) {
-		$users = Indexables::factory()->get( 'user' );
-		
-		WP_CLI::line( sprintf( "Validating users count\n" ) );
-
-		$query_args = [
-			'order' => 'asc',
-		];
-
-		if ( ! Elasticsearch::factory()->validate_entity_count( $query_args, $users, 'user' ) ) {
-			WP_CLI::error( 'found inconsistent counts for users.' );
-		}
-
-		WP_CLI::line( '' );
-		WP_CLI::success( 'counts for users are all equal!' );
-
 	}
 }
