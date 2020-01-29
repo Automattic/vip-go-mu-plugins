@@ -117,9 +117,6 @@ class Elasticsearch {
 		if ( $db_total !== $es_total ) {
 			$diff = sprintf( ', diff: %d', $es_total - $db_total );
 		}
-		// TODO: Maybe return an array with these values and the calling code will print those out
-		//WP_CLI::line( sprintf( "%s %s (DB: %d, ES: %s%s)", $icon, $slug, $db_total, $es_total, $diff ) );
-		// TODO: in case of error, return false
 		return [ 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
 	}
 
