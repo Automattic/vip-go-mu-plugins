@@ -117,7 +117,7 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		$this->debug_mode = false;
 		if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
-			$this->debug_mode = WP_DEBUG;
+			$this->debug_mode = true;
 		}
 	}
 
