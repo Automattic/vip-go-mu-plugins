@@ -131,7 +131,7 @@ class Elasticsearch {
 			'order' => 'asc',
 		];
 
-		$result = $this->validate_entity_count( $query_args, $users );
+		$result = self::validate_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( 'es_validate_users_count_error', $result->get_error_message() );
 		}
@@ -167,7 +167,7 @@ class Elasticsearch {
 				'post_status' => array_values( $post_statuses ),
 			];
 
-			$result = Elasticsearch::factory()->validate_entity_count( $query_args, $posts );
+			$result = self::validate_entity_count( $query_args, $posts );
 
 			// In case of error skip to the next post type
 			if ( is_wp_error( $result ) ) {
