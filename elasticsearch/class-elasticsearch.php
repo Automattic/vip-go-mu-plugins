@@ -8,6 +8,7 @@ use \ElasticPress\Features as Features;
 
 use \WP_CLI;
 use \WP_Query as WP_Query;
+use \WP_User_Query as WP_User_Query;
 
 class Elasticsearch {
 	/**
@@ -83,9 +84,6 @@ class Elasticsearch {
 	 * @param mixed $indexable Intance of an ElasticPress Indexable Object to search on
 	 * @param string $slug Human readable name for the Slug
 	 * @return WP_Error|boolean
-	 * TODO: return WP_Error in case of error,
-	 * Remove WP_CLI instances and move then to validsate_counts to avoid mixing logic and representation
-	 * Maybe Move this function inside of ElasticSearch class (separate PR)
 	 */
 	public function validate_entity_count( array $query_args, \ElasticPress\Indexable $indexable ) {
 		try {
@@ -99,7 +97,7 @@ class Elasticsearch {
 
 		// Get total count in ES index
 		try {
-			$query = new WP_Query( $query_args );
+			$query = $this->queryObjects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
@@ -126,7 +124,12 @@ class Elasticsearch {
 		return [ 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
 	}
 
-
+	private function queryObjects( array $query_args, string $type ) {
+		if ( 'user' === $type ) {
+			return new WP_User_Query( $query_args );
+		}
+		return new WP_Query( $query_args );
+	}
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
