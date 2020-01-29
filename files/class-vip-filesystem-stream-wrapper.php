@@ -116,7 +116,8 @@ class VIP_Filesystem_Stream_Wrapper {
 		$this->protocol = $protocol ?: self::DEFAULT_PROTOCOL;
 
 		$this->debug_mode = false;
-		if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
+		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' )
+			&& true === VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG ) {
 			$this->debug_mode = true;
 		}
 	}
