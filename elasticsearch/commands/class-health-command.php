@@ -55,6 +55,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * Remove all WP_CLI and make it return meaningful values (according to WP standards)
 	 */
 	public function validate_posts_count( $args, $assoc_args ) {
+		$consistency_check = true;
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
 
@@ -69,13 +70,31 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 				'post_type' => $post_type,
 				'post_status' => array_values( $post_statuses ),
 			];
-			if ( ! Elasticsearch::factory()->validate_entity_count( $query_args, $posts, $post_type ) ) {
-				WP_CLI::line( self::FAILURE_ICON . 'found inconsistent counts for post type: ' . $post_type );
+
+			$result = Elasticsearch::factory()->validate_entity_count( $query_args, $posts );
+
+			// In case of error skip to the next post type
+			if ( is_wp_error( $result ) ) {
+				WP_CLI::line( self::FAILURE_ICON . ' error while verifying post type: ' . $post_type . ', details: ' . $result->get_error_message() );
+				continue;
+			}
+
+			$diff_details = sprintf( 'DB: %s, ES: %s', $result[ 'db_total' ], $result[ 'es_total' ] );
+
+			if ( $result[ 'diff' ] ) {
+				WP_CLI::line( self::FAILURE_ICON . ' found inconsistent counts for post type: ' . $post_type . '; ' . $diff_details );
+				$consistency_check = false;
+			} else {
+				WP_CLI::line( self::SUCCESS_ICON . ' counts for post type: ' . $post_type . ' correct; ' . $diff_details );
 			}
 		}
 
 		WP_CLI::line( '' );
-		WP_CLI::success( self::SUCCESS_ICON . ' counts for public post types are all equal!' );
+		if ( $consistency_check ) {
+			WP_CLI::success( self::SUCCESS_ICON . ' counts for post types are all equal.' );
+		} else {
+			WP_CLI::error( self::FAILURE_ICON . ' inconsistencies found for posts!' );
+		}
 	}
 
 	/**
