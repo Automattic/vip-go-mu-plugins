@@ -51,7 +51,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	public function validate_users_count( $args, $assoc_args ) {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
-		$users_results = Elasticsearch::factory()->validate_users_count( $args, $assoc_args );
+		$users_results = Elasticsearch::factory()->verify_index_users_count( $args, $assoc_args );
 		if ( is_wp_error( $users_results ) ) {
 			WP_CLI::warning( 'Error while validating users count:' . $users_results->get_error_message() );
 		}
@@ -70,7 +70,7 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	public function validate_posts_count( $args, $assoc_args ) {
 		WP_CLI::line( "Validating posts count\n" );
 
-		$posts_results = Elasticsearch::factory()->validate_posts_count( $args, $assoc_args );
+		$posts_results = Elasticsearch::factory()->verify_index_posts_count( $args, $assoc_args );
 		if ( is_wp_error( $posts_results ) ) {
 			WP_CLI::warning( 'Error while validating posts count: ' . $posts_results->get_error_message() );
 		}
