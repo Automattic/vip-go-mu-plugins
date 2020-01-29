@@ -140,16 +140,6 @@ class Elasticsearch {
 
 	/**
 	 * Validate DB and ES index post counts
-	 *
-	 * ## OPTIONS
-	 *
-	 *
-	 * ## EXAMPLES
-	 *     wp vip-es health validate-posts-count
-	 *
-	 * @subcommand validate-posts-count
-	 * Move this function inside of ElasticSearch class (separate PR?)
-	 * Remove all WP_CLI and make it return meaningful values (according to WP standards)
 	 */
 	public function validate_posts_count( $args, $assoc_args ) {
 		// Get indexable objects
