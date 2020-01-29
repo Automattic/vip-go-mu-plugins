@@ -87,6 +87,49 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the ES config constants are set automatically when not already defined and VIP-provided configs are present
+	 */
+	public function test__vip_elasticsearch_connection_constants() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		) );
+
+		define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$this->assertEquals( EP_HOST, 'https://es-endpoint1' );
+		$this->assertEquals( ES_SHIELD, 'foo:bar' );
+	}
+
+	/**
+	 * Test that the ES config constants are _not_ set automatically when already defined and VIP-provided configs are present
+	 * 
+	 */
+	public function test__vip_elasticsearch_connection_constants_with_overrides() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		) );
+
+		define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		// Client over-rides - don't fatal
+		define( 'EP_HOST', 'https://somethingelse' );
+		define( 'ES_SHIELD', 'bar:baz' );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$this->assertEquals( EP_HOST, 'https://somethingelse' );
+		$this->assertEquals( ES_SHIELD, 'bar:baz' );
+	}
+
+	/**
 	 * Test that we are sending HTTP requests through the VIP helper functions
 	 */
 	public function test__vip_elasticsearch_has_http_layer_filters() {
