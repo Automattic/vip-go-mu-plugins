@@ -123,14 +123,6 @@ class Elasticsearch {
 
 	/**
 	 * Validate DB and ES index users counts
-	 *
-	 * ## OPTIONS
-	 *
-	 *
-	 * ## EXAMPLES
-	 *     wp vip-es health validate-users-count
-	 *
-	 * @subcommand validate-users-count
 	 */
 	public function validate_users_count( $args, $assoc_args ) {
 		$users = Indexables::factory()->get( 'user' );
