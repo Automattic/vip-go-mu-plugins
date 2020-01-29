@@ -2,10 +2,14 @@
 
 namespace Automattic\VIP\Elasticsearch;
 
+use \ElasticPress\Indexable as Indexable;
+use \ElasticPress\Indexables as Indexables;
+use \ElasticPress\Features as Features;
+
 use \WP_CLI;
+use \WP_Query as WP_Query;
 
 class Elasticsearch {
-
 	/**
 	 * Initialize the VIP Elasticsearch plugin
 	 */
@@ -48,6 +52,83 @@ class Elasticsearch {
 			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Health_Command' );
 		}
 	}
+
+	/**
+	 * Return singleton instance of class
+	 *
+	 * @return object
+	 */
+	public static function factory() {
+		static $instance = false;
+
+		if ( ! $instance ) {
+			$instance = new self();
+		}
+
+		return $instance;
+	}
+
+	/**
+	 * Verify the difference in number for a given entity between the DB and ElasticSearch.
+	 * Entities can be either posts or users.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 * @param array $query_args Valid WP_Query criteria, mandatory fields as in following example:
+	 * $query_args = [
+	 *		'post_type' => $post_type,
+	 *		'post_status' => array( $post_statuses )
+	 * ];
+	 *
+	 * @param mixed $indexable Intance of an ElasticPress Indexable Object to search on
+	 * @param string $slug Human readable name for the Slug
+	 * @return WP_Error|boolean
+	 * TODO: return WP_Error in case of error,
+	 * Remove WP_CLI instances and move then to validsate_counts to avoid mixing logic and representation
+	 * Maybe Move this function inside of ElasticSearch class (separate PR)
+	 */
+	public function validate_entity_count( array $query_args, \ElasticPress\Indexable $indexable ) {
+		try {
+			// Get total count in DB
+			$result = $indexable->query_db( $query_args );
+
+			$db_total = (int) $result[ 'total_objects' ];
+		} catch ( \Exception $e ) {
+			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-go-elasticsearch', $group, $$e->get_error_message() ) );
+		}
+
+		try {					// Get total count in ES index
+			$query = new WP_Query( $query_args );
+			$formatted_args = $indexable->format_args( $query->query_vars, $query );
+			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
+		} catch ( \Exception $e ) {
+			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $group, $$e->get_error_message() ) );
+		}
+
+		$diff = '';
+		if ( ! $es_result ) {
+			$es_total = 'N/A';
+			// Something is broken, bail instead of returning partial/incorrect data
+			$msg = 'error while querying ElasticSearch.';
+			var_dump( $es_result );
+			WP_CLI::line( $msg );
+		}
+
+		$icon = "\u{2705}"; // unicode check mark
+
+		// Verify actual results
+		$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
+
+		if ( $db_total !== $es_total ) {
+			$icon = "\u{274C}"; // unicode cross mark
+			$diff = sprintf( ', diff: %d', $es_total - $db_total );
+		}
+		// TODO: Maybe return an array with these values and the calling code will print those out
+		//WP_CLI::line( sprintf( "%s %s (DB: %d, ES: %s%s)", $icon, $slug, $db_total, $es_total, $diff ) );
+		// TODO: in case of error, return false
+		return true;
+	}
+
 
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
