@@ -194,6 +194,11 @@ class VIP_Filesystem_Stream_Wrapper {
 
 					return false;
 				}
+
+				// Clear stat caches for the file.
+				// The upload above calls various stat-related functions which are then cached.
+				// The cached values can then lead to unexpected behavior even after the file has changed (e.g. in Curl_Streamer).
+				clearstatcache( false, $path );
 			} else {
 				$file = fopen( $result, $mode );
 
