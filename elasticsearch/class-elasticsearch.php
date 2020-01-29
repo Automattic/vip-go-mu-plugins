@@ -81,8 +81,8 @@ class Elasticsearch {
 	 *		'post_status' => array( $post_statuses )
 	 * ];
 	 *
-	 * @param mixed $indexable Intance of an ElasticPress Indexable Object to search on
-	 * @return WP_Error|boolean
+	 * @param mixed $indexable Instance of an ElasticPress Indexable Object to search on
+	 * @return WP_Error|array
 	 */
 	public function validate_entity_count( array $query_args, \ElasticPress\Indexable $indexable ) {
 		try {
@@ -123,6 +123,20 @@ class Elasticsearch {
 		return [ 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
 	}
 
+	/**
+	 * Helper function to wrap WP_*Query
+	 *
+	 * @since   1.0.0
+	 * @access  private
+	 * @param array $query_args Valid WP_Query criteria, mandatory fields as in following example:
+	 * $query_args = [
+	 *		'post_type' => $post_type,
+	 *		'post_status' => array( $post_statuses )
+	 * ];
+	 *
+	 * @param string $type Type (Slug) of the objects to be searched (should be either 'user' or 'post')
+	 * @return WP_Query
+	 */
 	private function queryObjects( array $query_args, string $type ) {
 		if ( 'user' === $type ) {
 			return new WP_User_Query( $query_args );
