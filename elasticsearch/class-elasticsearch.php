@@ -94,39 +94,36 @@ class Elasticsearch {
 
 			$db_total = (int) $result[ 'total_objects' ];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-go-elasticsearch', $group, $$e->get_error_message() ) );
+			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-go-elasticsearch', $e->get_error_message() ) );
 		}
 
-		try {					// Get total count in ES index
+		// Get total count in ES index
+		try {
 			$query = new WP_Query( $query_args );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $group, $$e->get_error_message() ) );
+			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $e->get_error_message() ) );
 		}
 
 		$diff = '';
+		// There is not other useful information out of query_es(): it just returns false in case of failure
 		if ( ! $es_result ) {
 			$es_total = 'N/A';
-			// Something is broken, bail instead of returning partial/incorrect data
 			$msg = 'error while querying ElasticSearch.';
-			var_dump( $es_result );
-			WP_CLI::line( $msg );
+			return new WP_Error( 'es_query_error', 'failure querying ES. Hint: verify arguments format. #vip-go-elasticsearch' );
 		}
-
-		$icon = "\u{2705}"; // unicode check mark
 
 		// Verify actual results
 		$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
 
 		if ( $db_total !== $es_total ) {
-			$icon = "\u{274C}"; // unicode cross mark
 			$diff = sprintf( ', diff: %d', $es_total - $db_total );
 		}
 		// TODO: Maybe return an array with these values and the calling code will print those out
 		//WP_CLI::line( sprintf( "%s %s (DB: %d, ES: %s%s)", $icon, $slug, $db_total, $es_total, $diff ) );
 		// TODO: in case of error, return false
-		return true;
+		return [ 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
 	}
 
 
