@@ -117,7 +117,8 @@ class Elasticsearch {
 		if ( $db_total !== $es_total ) {
 			$diff = sprintf( ', diff: %d', $es_total - $db_total );
 		}
-		return [ 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
+
+		return [ 'entity' => $indexable->slug, 'type' => ( array_key_exists( 'post_type', $query_args ) ? $query_args[ 'post_type' ] : 'N/A' ), 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
 	}
 
 	/**
@@ -140,9 +141,54 @@ class Elasticsearch {
 
 		$result = $this->validate_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
-			return new WP_Error( 'es_users_count_error', $result->get_error_message() );
+			return new WP_Error( 'es_validate_users_count_error', $result->get_error_message() );
 		}
-		// TODO: returns JSON-ified results
+		return array( $result );
+	}
+
+	/**
+	 * Validate DB and ES index post counts
+	 *
+	 * ## OPTIONS
+	 *
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-posts-count
+	 *
+	 * @subcommand validate-posts-count
+	 * Move this function inside of ElasticSearch class (separate PR?)
+	 * Remove all WP_CLI and make it return meaningful values (according to WP standards)
+	 */
+	public function validate_posts_count( $args, $assoc_args ) {
+		// Get indexable objects
+		$posts = Indexables::factory()->get( 'post' );
+
+		$post_types = $posts->get_indexable_post_types();
+
+		$results = [];
+
+		foreach( $post_types as $post_type ) {
+			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+
+			$query_args = [
+				'post_type' => $post_type,
+				'post_status' => array_values( $post_statuses ),
+			];
+
+			$result = Elasticsearch::factory()->validate_entity_count( $query_args, $posts );
+
+			// In case of error skip to the next post type
+			if ( is_wp_error( $result ) ) {
+				WP_CLI::line( ' error while verifying post type: ' . $post_type . ', details: ' . $result->get_error_message() );
+				continue;
+			}
+
+			$diff_details = sprintf( 'DB: %s, ES: %s', $result[ 'db_total' ], $result[ 'es_total' ] );
+
+			$results[] = $result;
+
+		}
+		return $results;
 	}
 
 
@@ -166,6 +212,7 @@ class Elasticsearch {
 		}
 		return new WP_Query( $query_args );
 	}
+
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */

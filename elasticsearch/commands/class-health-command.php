@@ -4,9 +4,6 @@ namespace Automattic\VIP\Elasticsearch;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
-use \ElasticPress\Indexables as Indexables;
-use \ElasticPress\Features as Features;
-//use \ElasticPress\Elasticsearch as Elasticsearch;
 
 /**
  * Commands to view and manage the health of VIP Go Elasticsearch indexes
@@ -35,74 +32,37 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-counts
 	 */
 	public function validate_counts( $args, $assoc_args ) {
-		$this->validate_posts_count( $args, $assoc_args );
+		WP_CLI::line( "Validating posts count\n" );
+
+		$posts_results = Elasticsearch::factory()->validate_posts_count( $args, $assoc_args );
+		if ( is_wp_error( $posts_results ) ) {
+			WP_CLI::warning( 'Error while validating posts count: ' . $posts_results->get_error_message() );
+		}
+
+		$this->render_results( $posts_results );
+
+		WP_CLI::line( '' );
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
 		$users_results = Elasticsearch::factory()->validate_users_count( $args, $assoc_args );
 		if ( is_wp_error( $users_results ) ) {
-			WP_CLI::error( 'found inconsistent counts for users.' );
+			WP_CLI::warning( 'Error while validating users count:' . $users_results->get_error_message() );
 		}
-
-		WP_CLI::line( '' );
-		WP_CLI::success( 'counts for users are all equal!' );
-
-		// TODO: check return values and WP_CLI:error if any === false
-		// WP_CLI::error
+		$this->render_results( $users_results );
 	}
 
-	/**
-	 * Validate DB and ES index post counts
-	 *
-	 * ## OPTIONS
-	 *
-	 *
-	 * ## EXAMPLES
-	 *     wp vip-es health validate-posts-count
-	 *
-	 * @subcommand validate-posts-count
-	 * Move this function inside of ElasticSearch class (separate PR?)
-	 * Remove all WP_CLI and make it return meaningful values (according to WP standards)
-	 */
-	public function validate_posts_count( $args, $assoc_args ) {
-		$consistency_check = true;
-		// Get indexable objects
-		$posts = Indexables::factory()->get( 'post' );
-
-		$post_types = $posts->get_indexable_post_types();
-
-		WP_CLI::line( sprintf( "Checking %d post types (%s)\n", count( $post_types ), implode( ', ', $post_types ) ) );
-
-		foreach( $post_types as $post_type ) {
-			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
-
-			$query_args = [
-				'post_type' => $post_type,
-				'post_status' => array_values( $post_statuses ),
-			];
-
-			$result = Elasticsearch::factory()->validate_entity_count( $query_args, $posts );
-
-			// In case of error skip to the next post type
-			if ( is_wp_error( $result ) ) {
-				WP_CLI::line( self::FAILURE_ICON . ' error while verifying post type: ' . $post_type . ', details: ' . $result->get_error_message() );
-				continue;
-			}
-
-			$diff_details = sprintf( 'DB: %s, ES: %s', $result[ 'db_total' ], $result[ 'es_total' ] );
-
+	private function render_results( array $results ) {
+		foreach( $results as $result ) {
+			$message = ' inconsistencies found';  
 			if ( $result[ 'diff' ] ) {
-				WP_CLI::line( self::FAILURE_ICON . ' found inconsistent counts for post type: ' . $post_type . '; ' . $diff_details );
-				$consistency_check = false;
+				$icon = self::FAILURE_ICON;
 			} else {
-				WP_CLI::line( self::SUCCESS_ICON . ' counts for post type: ' . $post_type . ' correct; ' . $diff_details );
+				$icon = self::SUCCESS_ICON;
+				$message = 'no' . $message;
 			}
-		}
 
-		WP_CLI::line( '' );
-		if ( $consistency_check ) {
-			WP_CLI::success( self::SUCCESS_ICON . ' counts for post types are all equal.' );
-		} else {
-			WP_CLI::error( self::FAILURE_ICON . ' inconsistencies found for posts!' );
+			$message = sprintf( '%s %s when counting %s, type: %s (DB: %s, ES: %s, Diff: %s)', $icon, $message, $result[ 'entity' ], $result[ 'type' ], $result[ 'db_total' ], $result[ 'es_total' ], $result[ 'diff' ] );
+			WP_CLI::line( $message );
 		}
 	}
 }
