@@ -686,7 +686,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  resource|bool
 	 */
 	public function stream_cast( $cast_as ) {
-		$this->debug( sprintf( 'stream_stat =>  %s + %s + %s', $cast_as, $this->path, $this->uri ) );
+		$this->debug( sprintf( 'stream_cast =>  %s + %s + %s', $cast_as, $this->path, $this->uri ) );
 
 		if ( ! is_null( $this->file ) ) {
 			return $this->file;
