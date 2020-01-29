@@ -92,6 +92,15 @@ class VIP_Filesystem_Stream_Wrapper {
 	private $protocol;
 
 	/**
+	 * Debug mode flag
+	 *
+	 * @since		1.0.0
+	 * @access	private
+	 * @var			bool		Is debug mode on
+	 */
+	private $debug_mode;
+
+	/**
 	 * Vip_Filesystem_Stream constructor.
 	 *
 	 * @param API_Client $client
@@ -105,6 +114,11 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		$this->protocol = $protocol ?: self::DEFAULT_PROTOCOL;
+
+		$this->debug_mode = false;
+		if ( defined( 'WP_DEBUG' ) ) {
+			$this->debug_mode = WP_DEBUG;
+		}
 	}
 
 	/**
@@ -140,6 +154,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True on success or false on failure
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
+		$this->debug( sprintf( 'stream_open => %s + %s + %s', $path, $mode, $options ) );
+
 		$path = $this->trim_path( $path );
 		// Also ignore '+' modes since the handlers are all read+write anyway
 		$mode = rtrim( $mode, 'bt+' );
@@ -210,6 +226,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @access  public
 	 */
 	public function stream_close() {
+		$this->debug( sprintf( 'stream_close => %s + %s', $this->path, $this->uri ) );
+
 		return $this->close_handler( $this->file );
 	}
 
@@ -222,6 +240,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return bool
 	 */
 	public function stream_eof() {
+		$this->debug( sprintf( 'stream_eof => %s + %s', $this->path, $this->uri ) );
+
 		return feof( $this->file );
 	}
 
@@ -236,6 +256,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  string  The file contents
 	 */
 	public function stream_read( $count ) {
+		$this->debug( sprintf( 'stream_read => %s + %s + %s', $count, $this->path, $this->uri ) );
+
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
 			trigger_error(
@@ -257,6 +279,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True on success. False on failure
 	 */
 	public function stream_flush() {
+		$this->debug( sprintf( 'stream_flush =>  %s + %s', $this->path, $this->uri ) );
+
 		if ( ! $this->file ) {
 			return false;
 		}
@@ -307,6 +331,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool  True if position was updated, False if not
 	 */
 	public function stream_seek( $offset, $whence ) {
+		$this->debug( sprintf( 'stream_seak =>  %s + %s + %s + %s', $offset, $whence, $this->path, $this->uri ) );
+
 		if ( ! $this->seekable ) {
 			// File not seekable
 			trigger_error(
@@ -341,6 +367,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  int|bool    Number of bytes written or false on error
 	 */
 	public function stream_write( $data ) {
+		$this->debug( sprintf( 'stream_write =>  %s + %s + %s', $data, $whence, $this->path, $this->uri ) );
+
 		if ( 'r' === $this->mode ) {
 			// No writes in 'read' mode
 			trigger_error(
@@ -374,6 +402,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True if success. False on failure
 	 */
 	public function unlink( $path ) {
+		$this->debug( sprintf( 'unlink =>  %s', $path ) );
+
 		$path = $this->trim_path( $path );
 
 		try {
@@ -410,6 +440,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  array   The file statistics
 	 */
 	public function stream_stat() {
+		$this->debug( sprintf( 'stream_stat =>  %s + %s', $this->path, $this->uri ) );
+
 		return fstat( $this->file );
 	}
 
@@ -428,6 +460,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  array|bool  The file statistics or false if failed
 	 */
 	public function url_stat( $path, $flags ) {
+		$this->debug( sprintf( 'url_stat =>  %s + %s', $path, $flags ) );
+
 		$path = $this->trim_path( $path );
 
 		// Default stats
@@ -521,6 +555,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool|int    Returns current position or false on failure
 	 */
 	public function stream_tell() {
+		$this->debug( sprintf( 'stream_tell =>  %s + %s', $this->path, $this->uri ) );
+
 		return $this->file ? ftell( $this->file ) : false;
 	}
 
@@ -536,6 +572,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True on successful rename
 	 */
 	public function rename( $path_from, $path_to ) {
+		$this->debug( sprintf( 'rename =>  %s + %s', $path_from, $path_to ) );
+
 		if ( $path_from === $path_to ) {
 			// from and to path are identical so do nothing
 			return true;
@@ -609,6 +647,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function mkdir( $path, $mode, $options ) {
+		$this->debug( sprintf( 'mkdir =>  %s + %s + %s', $path, $mode, $options ) );
+
 		// Currently, it will always return true as directories are automatically created on the Filesystem API
 		return true;
 	}
@@ -628,6 +668,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function stream_metadata( $path, $option, $value ) {
+		$this->debug( sprintf( 'stream_metadata =>  %s + %s + %s', $path, $option, $value ) );
+
 		return false;
 	}
 
@@ -644,6 +686,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  resource|bool
 	 */
 	public function stream_cast( $cast_as ) {
+		$this->debug( sprintf( 'stream_stat =>  %s + %s + %s', $cast_as, $this->path, $this->uri ) );
+
 		if ( ! is_null( $this->file ) ) {
 			return $this->file;
 		}
@@ -785,5 +829,20 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Log debug message
+	 *
+	 * @since		1.0.0
+	 * @access	protected
+	 * @param		string		$message	Debug message to be logged
+	 */
+	protected function debug( $message ) {
+		if ( ! $this->debug_mode ) {
+			return;
+		}
+
+		error_log( sprintf( '%s (%s)', $message, wp_debug_backtrace_summary() ) );
 	}
 }
