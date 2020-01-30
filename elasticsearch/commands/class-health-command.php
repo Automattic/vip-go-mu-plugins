@@ -52,9 +52,6 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
 		$users_results = Elasticsearch::factory()->verify_index_users_count( $args, $assoc_args );
-		if ( is_wp_error( $users_results ) ) {
-			WP_CLI::warning( 'Error while validating users count:' . $users_results->get_error_message() );
-		}
 		$this->render_results( $users_results );
 	}
 
@@ -71,15 +68,17 @@ class Health_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( "Validating posts count\n" );
 
 		$posts_results = Elasticsearch::factory()->verify_index_posts_count( $args, $assoc_args );
-		if ( is_wp_error( $posts_results ) ) {
-			WP_CLI::warning( 'Error while validating posts count: ' . $posts_results->get_error_message() );
-		}
 		$this->render_results( $posts_results );
 	}
 
-
 	private function render_results( array $results ) {
 		foreach( $results as $result ) {
+			// If it's an error, print out a warning and go to the next iteration
+			if ( array_key_exists( 'error', $result ) ) {
+				WP_CLI::warning( 'Error while validating count:' . $result->get_error_message() );
+				continue;
+			}
+
 			$message = ' inconsistencies found';  
 			if ( $result[ 'diff' ] ) {
 				$icon = self::FAILURE_ICON;
