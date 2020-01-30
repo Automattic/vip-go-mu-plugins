@@ -188,7 +188,7 @@ class Elasticsearch {
 	 * @param string $type Type (Slug) of the objects to be searched (should be either 'user' or 'post')
 	 * @return WP_Query
 	 */
-	private function queryObjects( array $query_args, string $type ) {
+	private function query_objects( array $query_args, string $type ) {
 		if ( 'user' === $type ) {
 			return new WP_User_Query( $query_args );
 		}
