@@ -96,7 +96,7 @@ class Elasticsearch {
 
 		// Get total count in ES index
 		try {
-			$query = $this->queryObjects( $query_args, $indexable->slug );
+			$query = $this->query_objects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
@@ -133,7 +133,7 @@ class Elasticsearch {
 
 		$result = self::verify_index_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
-			return new WP_Error( 'es_validate_users_count_error', $result->get_error_message() );
+			$result = [ 'entity' => $users->slug, 'type' => 'N/A', 'error' => $result->get_error_message() ];
 		}
 		return array( $result );
 	}
@@ -161,11 +161,8 @@ class Elasticsearch {
 
 			// In case of error skip to the next post type
 			if ( is_wp_error( $result ) ) {
-				WP_CLI::line( ' error while verifying post type: ' . $post_type . ', details: ' . $result->get_error_message() );
-				continue;
+				$result = [ 'entity' => $posts->slug, 'type' => $post_type, 'error' => $result->get_error_message() ];
 			}
-
-			$diff_details = sprintf( 'DB: %s, ES: %s', $result[ 'db_total' ], $result[ 'es_total' ] );
 
 			$results[] = $result;
 
