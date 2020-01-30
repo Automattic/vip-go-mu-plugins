@@ -94,9 +94,9 @@ class VIP_Filesystem_Stream_Wrapper {
 	/**
 	 * Debug mode flag
 	 *
-	 * @since		1.0.0
-	 * @access	private
-	 * @var			bool		Is debug mode on
+	 * @since   1.0.0
+	 * @access  private
+	 * @var	    bool    Is debug mode on
 	 */
 	private $debug_mode;
 
