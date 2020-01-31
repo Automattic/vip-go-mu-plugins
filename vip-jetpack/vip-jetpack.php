@@ -164,7 +164,9 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
  * which can then break features like Jetpack Search.
  */
 add_filter( 'pre_option_jetpack_active_plan', function( $pre_option, $option, $default ) {
-	if ( true === WPCOM_IS_VIP_ENV && defined( 'VIP_JETPACK_DEFAULT_PLAN' ) ) {
+	if ( true === WPCOM_IS_VIP_ENV
+		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
+		&& Jetpack::is_active() ) {
 		return VIP_JETPACK_DEFAULT_PLAN;
 	}
 
