@@ -11,7 +11,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = TRUE;
 
 	public function setUp() {
-		require_once __DIR__ . '/../../elasticsearch/class-elasticsearch.php';
+		require_once __DIR__ . '/../../elasticsearch/elasticsearch.php';
 	}
 
 	/**
