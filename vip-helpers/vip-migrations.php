@@ -48,7 +48,7 @@ function run_after_data_migration_cleanup() {
 
 	wp_cache_flush();
 
-	reset_user_roles();
+	maybe_reset_admin_role();
 	connect_jetpack();
 	connect_vaultpress();
 	connect_akismet();
@@ -64,9 +64,12 @@ function delete_db_transients() {
 	);
 }
 
-function reset_user_roles() {
+// Verify the admin role exists, otherwise machine user creation will fail.
+function maybe_reset_admin_role() {
 	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
-		\WP_CLI::runcommand( sprintf( 'role reset --all --url=%s', home_url() ) );
+		if ( ! get_role( 'administrator' ) ) {
+			\WP_CLI::runcommand( sprintf( 'role reset administrator --url=%s', home_url() ) );
+		}
 	} else {
 		trigger_error( 'Cannot reset user roles outside of a WP_CLI context, skipping', E_USER_WARNING );
 	}
