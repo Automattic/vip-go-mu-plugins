@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Elasticsearch
+ * Plugin Name: VIP Search
  * Description: Power your site search and other queries with Elasticsearch
  * Version:     0.1
  * Author:      Automattic VIP
