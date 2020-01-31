@@ -70,8 +70,10 @@ class Health {
 
 	/**
 	 * Validate DB and ES index users counts
+	 *
+	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function verify_index_users_count( $args, $assoc_args ) {
+	public static function verify_index_users_count() {
 		$users = Indexables::factory()->get( 'user' );
 
 		$query_args = [
@@ -91,8 +93,10 @@ class Health {
 
 	/**
 	 * Validate DB and ES index post counts
+	 *
+	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function verify_index_posts_count( $args, $assoc_args ) {
+	public static function verify_index_posts_count() {
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
 
