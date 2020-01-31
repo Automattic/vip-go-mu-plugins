@@ -54,7 +54,7 @@ class Elasticsearch {
 
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\HealthCommand' );
+			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Commands\HealthCommand' );
 		}
 	}
 

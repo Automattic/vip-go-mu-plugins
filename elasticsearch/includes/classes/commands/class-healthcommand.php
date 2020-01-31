@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Elasticsearch\Commands;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
@@ -51,7 +51,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_users_count( $args, $assoc_args ) {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
-		$users_results = Health::verify_index_users_count( $args, $assoc_args );
+		$users_results = \Automattic\VIP\Elasticsearch\Health::verify_index_users_count( $args, $assoc_args );
 		$this->render_results( $users_results );
 	}
 
@@ -67,7 +67,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_posts_count( $args, $assoc_args ) {
 		WP_CLI::line( "Validating posts count\n" );
 
-		$posts_results = Health::verify_index_posts_count( $args, $assoc_args );
+		$posts_results = \Automattic\VIP\Elasticsearch\Health::verify_index_posts_count( $args, $assoc_args );
 		$this->render_results( $posts_results );
 	}
 
