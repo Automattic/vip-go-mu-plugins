@@ -48,6 +48,7 @@ function run_after_data_migration_cleanup() {
 
 	wp_cache_flush();
 
+	reset_user_roles();
 	connect_jetpack();
 	connect_vaultpress();
 	connect_akismet();
@@ -61,6 +62,14 @@ function delete_db_transients() {
 		WHERE option_name LIKE '\_transient\_%'
 		OR option_name LIKE '\_site\_transient\_%'"
 	);
+}
+
+function reset_user_roles() {
+	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+		\WP_CLI::runcommand( sprintf( 'role reset --all --url=%s', home_url() ) );
+	} else {
+		trigger_error( 'Cannot reset user roles outside of a WP_CLI context, skipping', E_USER_WARNING );
+	}
 }
 
 function connect_jetpack() {
