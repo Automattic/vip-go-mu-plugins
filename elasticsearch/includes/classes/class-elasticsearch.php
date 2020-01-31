@@ -20,7 +20,7 @@ class Elasticsearch {
 		 * Load ES Health command class
 		 */
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			require_once __DIR__ . '/commands/HealthCommand.php';
+			require_once __DIR__ . '/commands/class-healthcommand.php';
 		}
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
