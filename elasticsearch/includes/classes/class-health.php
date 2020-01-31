@@ -37,7 +37,7 @@ class Health {
 
 		// Get total count in ES index
 		try {
-			$query = (new self)->query_objects( $query_args, $indexable->slug );
+			$query = self::query_objects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
@@ -126,7 +126,7 @@ class Health {
 	 * @param string $type Type (Slug) of the objects to be searched (should be either 'user' or 'post')
 	 * @return WP_Query
 	 */
-	private function query_objects( array $query_args, string $type ) {
+	private static function query_objects( array $query_args, string $type ) {
 		if ( 'user' === $type ) {
 			return new WP_User_Query( $query_args );
 		}
