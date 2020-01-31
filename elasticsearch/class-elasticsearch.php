@@ -10,9 +10,9 @@ class Elasticsearch {
 	 * Initialize the VIP Elasticsearch plugin
 	 */
 	public function init() {
-		$this->load_dependencies();
 		$this->setup_constants();
 		$this->setup_hooks();
+		$this->load_dependencies();
 		$this->load_commands();
 	}
 
@@ -31,6 +31,16 @@ class Elasticsearch {
 		// Ensure we limit bulk indexing chunk size to a reasonable number (no limit by default)
 		if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
 			define( 'EP_SYNC_CHUNK_LIMIT', 250 );
+		}
+
+		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			$host = VIP_ELASTICSEARCH_ENDPOINTS[ 0 ];
+
+			define( 'EP_HOST', $host );
+		}
+
+		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
+			define( 'ES_SHIELD', sprintf( '%s:%s', VIP_ELASTICSEARCH_USERNAME, VIP_ELASTICSEARCH_PASSWORD ) );
 		}
 	}
 
@@ -67,6 +77,10 @@ class Elasticsearch {
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
 
+		// TEMP - currently ES server is using a self signed cert during the testing phase...that'll be changed in the near
+		// future, at which time we can remove this
+		$args['sslverify'] = false;
+	
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
 	
 		return $request;
