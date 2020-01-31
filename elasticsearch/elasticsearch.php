@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Elasticsearch
- * Description: VIP Elasticsearch plugin
+ * Description: Power your site search and other queries with Elasticsearch
  * Version:     0.1
  * Author:      Automattic VIP
  * Author URI:  http://wpvip.com
