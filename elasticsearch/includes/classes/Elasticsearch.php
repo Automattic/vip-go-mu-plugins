@@ -59,21 +59,6 @@ class Elasticsearch {
 	}
 
 	/**
-	 * Return singleton instance of class
-	 *
-	 * @return object
-	 */
-	public static function factory() {
-		static $instance = false;
-
-		if ( ! $instance ) {
-			$instance = new self();
-		}
-
-		return $instance;
-	}
-
-	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
 	public function filter__ep_index_name( $index_name, $blog_id, $indexables ) {
