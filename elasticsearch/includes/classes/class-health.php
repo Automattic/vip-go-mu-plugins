@@ -59,7 +59,13 @@ class Health {
 			$diff = sprintf( ', diff: %d', $es_total - $db_total );
 		}
 
-		return [ 'entity' => $indexable->slug, 'type' => ( array_key_exists( 'post_type', $query_args ) ? $query_args[ 'post_type' ] : 'N/A' ), 'db_total' => $db_total, 'es_total' => $es_total, 'diff' => $diff ];
+		return [
+			'entity' => $indexable->slug,
+			'type' => ( array_key_exists( 'post_type', $query_args ) ? $query_args[ 'post_type' ] : 'N/A' ),
+			'db_total' => $db_total,
+			'es_total' => $es_total,
+			'diff' => $diff
+		];
 	}
 
 	/**
@@ -74,7 +80,11 @@ class Health {
 
 		$result = self::verify_index_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
-			$result = [ 'entity' => $users->slug, 'type' => 'N/A', 'error' => $result->get_error_message() ];
+			$result = [
+				'entity' => $users->slug,
+				'type' => 'N/A',
+				'error' => $result->get_error_message()
+			];
 		}
 		return array( $result );
 	}
@@ -102,7 +112,11 @@ class Health {
 
 			// In case of error skip to the next post type
 			if ( is_wp_error( $result ) ) {
-				$result = [ 'entity' => $posts->slug, 'type' => $post_type, 'error' => $result->get_error_message() ];
+				$result = [
+					'entity' => $posts->slug,
+					'type' => $post_type,
+					'error' => $result->get_error_message()
+				];
 			}
 
 			$results[] = $result;
