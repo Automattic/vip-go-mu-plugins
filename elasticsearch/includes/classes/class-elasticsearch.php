@@ -5,7 +5,6 @@ namespace Automattic\VIP\Elasticsearch;
 use \WP_CLI;
 
 class Elasticsearch {
-
 	/**
 	 * Initialize the VIP Elasticsearch plugin
 	 */
@@ -21,10 +20,10 @@ class Elasticsearch {
 		 * Load ES Health command class
 		 */
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			require_once __DIR__ . '/commands/class-health-command.php';
+			require_once __DIR__ . '/commands/class-healthcommand.php';
 		}
 		// Load ElasticPress
-		require_once __DIR__ . '/elasticpress/elasticpress.php';
+		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 	}
 
 	protected function setup_constants() {
@@ -55,7 +54,7 @@ class Elasticsearch {
 
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Health_Command' );
+			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Commands\HealthCommand' );
 		}
 	}
 
