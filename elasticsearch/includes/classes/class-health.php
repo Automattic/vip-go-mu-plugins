@@ -25,7 +25,7 @@ class Health {
 	 * @param mixed $indexable Instance of an ElasticPress Indexable Object to search on
 	 * @return WP_Error|array
 	 */
-	public static function verify_index_entity_count( array $query_args, \ElasticPress\Indexable $indexable ) {
+	public static function validate_index_entity_count( array $query_args, \ElasticPress\Indexable $indexable ) {
 		try {
 			// Get total count in DB
 			$result = $indexable->query_db( $query_args );
@@ -73,14 +73,14 @@ class Health {
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function verify_index_users_count() {
+	public static function validate_index_users_count() {
 		$users = Indexables::factory()->get( 'user' );
 
 		$query_args = [
 			'order' => 'asc',
 		];
 
-		$result = self::verify_index_entity_count( $query_args, $users );
+		$result = self::validate_index_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
 			$result = [
 				'entity' => $users->slug,
@@ -96,7 +96,7 @@ class Health {
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function verify_index_posts_count() {
+	public static function validate_index_posts_count() {
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
 
@@ -112,7 +112,7 @@ class Health {
 				'post_status' => array_values( $post_statuses ),
 			];
 
-			$result = self::verify_index_entity_count( $query_args, $posts );
+			$result = self::validate_index_entity_count( $query_args, $posts );
 
 			// In case of error skip to the next post type
 			if ( is_wp_error( $result ) ) {
