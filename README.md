@@ -70,6 +70,11 @@ composer install
 vagrant@vvv:/wp-content/mu-plugins$ vendor/bin/phpunit
 ```
 
+Tests failing with `Error: Call to undefined function xdebug_get_headers()` or similar? xdebug needs to be turned on in VVV before running tests: 
+```bash
+vagrant@vvv:/wp-content/mu-plugins$ xdebug_on
+```
+
 #### Travis
 
 PHP Linting and PHPUnit tests are also run by Travis as part of PRs and merges. See the `script` section of [`.travis.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.travis.yml).
