@@ -2,9 +2,9 @@
 /**
  * Plugin Name: Elasticsearch
  * Description: Power your site search and other queries with Elasticsearch
- * Version:     0.1
+ * Version:     0.1.0
  * Author:      Automattic VIP
- * Author URI:  http://wpvip.com
+ * Author URI:  https://wpvip.com
  * License:     GPLv2 or later
  * Text Domain: elasticsearch
  * Domain Path: /lang/
