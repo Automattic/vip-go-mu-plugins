@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Elasticsearch;
 
+use Automattic\VIP\Elasticsearch\Health as Health;
+
 class HealthJob {
 
 	/**
@@ -61,5 +63,8 @@ class HealthJob {
 	 * Check ElasticSearch index health
 	 */
 	public function check_health() {
+		$user_results = Health::validate_index_users_count();
+
+		$post_results = Health::validate_index_posts_count();
 	}
 }
