@@ -64,7 +64,7 @@ class HealthJob {
 
 		// Not actually five minutes; we want it to run faster though to get through everything.
 		$schedule[ self::CRON_INTERVAL_NAME ] = [
-			'interval' => CRON_INTERVAL,
+			'interval' => self::CRON_INTERVAL,
 			'display' => __( 'Once every 30 minutes' ),
 		];
 
