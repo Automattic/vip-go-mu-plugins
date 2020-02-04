@@ -24,13 +24,25 @@ class HealthJob {
 	const CRON_INTERVAL = 60 * 30;
 
 	/**
+	 * Initialize the job class
+	 *
+	 * @access	public
+	 */
+	public function init() {
+		// Add the custom cron schedule
+		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
+
+		$this->schedule_job();
+	}
+
+	/**
 	 * Schedule health check job
 	 *
 	 * Add the event name to WP cron schedule and then add the action
 	 */
 	public function schedule_job() {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME )  ) {
-			wp_schedule_event( time(), '', self::CRON_EVENT_NAME );
+			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
 
 		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
