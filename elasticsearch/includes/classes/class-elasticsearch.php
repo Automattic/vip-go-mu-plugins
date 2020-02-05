@@ -13,6 +13,7 @@ class Elasticsearch {
 		$this->setup_hooks();
 		$this->load_dependencies();
 		$this->load_commands();
+		$this->setup_healthchecks();
 	}
 
 	protected function load_dependencies() {
@@ -24,6 +25,9 @@ class Elasticsearch {
 		}
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+
+		// Load health check cron job
+		require_once __DIR__ . '/class-health-job.php';
 	}
 
 	protected function setup_constants() {
@@ -56,6 +60,11 @@ class Elasticsearch {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Commands\HealthCommand' );
 		}
+	}
+
+	protected function setup_healthchecks() {
+		$healhcheck = new HealthJob();
+		add_action( 'init', [ $healhcheck, 'init' ] );
 	}
 
 	/**
