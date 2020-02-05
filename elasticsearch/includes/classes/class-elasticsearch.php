@@ -64,7 +64,7 @@ class Elasticsearch {
 
 	protected function setup_healthchecks() {
 		$healhcheck = new HealthJob();
-		$healhcheck->init();
+		add_action( 'init', [ $healhcheck, 'init' ] );
 	}
 
 	/**
