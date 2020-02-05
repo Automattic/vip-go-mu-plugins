@@ -44,7 +44,6 @@ class Health {
 			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $e->get_error_message() ) );
 		}
 
-		$diff = '';
 		// There is not other useful information out of query_es(): it just returns false in case of failure
 		if ( ! $es_result ) {
 			$es_total = 'N/A';
@@ -55,8 +54,9 @@ class Health {
 		// Verify actual results
 		$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
 
+		$diff = 0;
 		if ( $db_total !== $es_total ) {
-			$diff = sprintf( ', diff: %d', $es_total - $db_total );
+			$diff = $es_total - $db_total;
 		}
 
 		return [
@@ -64,7 +64,7 @@ class Health {
 			'type' => ( array_key_exists( 'post_type', $query_args ) ? $query_args[ 'post_type' ] : 'N/A' ),
 			'db_total' => $db_total,
 			'es_total' => $es_total,
-			'diff' => $diff
+			'diff' => $diff,
 		];
 	}
 
