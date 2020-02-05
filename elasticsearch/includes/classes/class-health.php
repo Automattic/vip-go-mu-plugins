@@ -39,6 +39,10 @@ class Health {
 		try {
 			$query = self::query_objects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
+
+			// Get exact total count since Elasticsearch default stops at 10,000.
+			$formatted_args['track_total_hits'] = true;
+
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
 			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $e->get_error_message() ) );
