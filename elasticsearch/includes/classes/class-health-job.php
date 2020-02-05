@@ -18,10 +18,8 @@ class HealthJob {
 
 	/**
 	 * Custom cron interval value
-	 *
-	 * 30 minutes in seconds
 	 */
-	const CRON_INTERVAL = 60 * 30;
+	const CRON_INTERVAL = 60 * 30; // 30 minutes in seconds
 
 	/**
 	 * Initialize the job class
@@ -62,7 +60,6 @@ class HealthJob {
 			return $schedule;
 		}
 
-		// Not actually five minutes; we want it to run faster though to get through everything.
 		$schedule[ self::CRON_INTERVAL_NAME ] = [
 			'interval' => self::CRON_INTERVAL,
 			'display' => __( 'VIP Search Healthcheck time interval' ),
