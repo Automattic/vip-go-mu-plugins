@@ -89,6 +89,14 @@ function wpcom_vip_should_force_two_factor() {
 	return true;
 }
 
+/**
+ * Determines if the current user using 2FA.
+ * 
+ * Uses a static variable to store the result of Two_Factor_Core::is_user_using_two_factor()
+ * by user ID to limit the number of times it needs to be called for each user to one time.
+ *
+ * @return bool
+ */
 function wpcom_vip_is_current_user_using_two_factor() {
 	static $user_using_2FA = array();
 
