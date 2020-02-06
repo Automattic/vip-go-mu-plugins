@@ -64,7 +64,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
 		$es->init();
 
-		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 250 );
+		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 500 );
 	}
 
 	/**
