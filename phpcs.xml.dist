@@ -60,5 +60,6 @@
 	<rule ref="WordPress-VIP-Go"/>
 	
 	<!-- Rules: Check WordPress Coding Standards -->
-	<rule ref="WordPress"/>
+	<rule ref="WordPress-Core"/>
+	<rule ref="WordPress-Docs"/>
 </ruleset>
