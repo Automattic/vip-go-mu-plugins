@@ -70,7 +70,7 @@ abstract class Indexable {
 		 * @return  {int} New number of items
 		 * @since  3.0
 		 */
-		return apply_filters( 'ep_bulk_items_per_page', 350, $this );
+		return apply_filters( 'ep_bulk_items_per_page', 500, $this );
 	}
 
 	/**

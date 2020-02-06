@@ -33,7 +33,7 @@ class Elasticsearch {
 	protected function setup_constants() {
 		// Ensure we limit bulk indexing chunk size to a reasonable number (no limit by default)
 		if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
-			define( 'EP_SYNC_CHUNK_LIMIT', 250 );
+			define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
