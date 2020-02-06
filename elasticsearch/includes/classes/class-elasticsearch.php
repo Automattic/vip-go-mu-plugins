@@ -63,8 +63,11 @@ class Elasticsearch {
 	}
 
 	protected function setup_healthchecks() {
-		$healhcheck = new HealthJob();
-		add_action( 'init', [ $healhcheck, 'init' ] );
+		// Only start healthcheck job on production env
+		if ( 'production' === VIP_GO_ENV ) {
+			$healhcheck = new HealthJob();
+			add_action( 'init', [ $healhcheck, 'init' ] );
+		}
 	}
 
 	/**
