@@ -66,7 +66,7 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	if ( Two_Factor_Core::is_user_using_two_factor() ) {
+	if ( wpcom_vip_is_current_user_using_two_factor() ) {
 		return false;
 	}
 
@@ -87,6 +87,20 @@ function wpcom_vip_should_force_two_factor() {
 	}
 
 	return true;
+}
+
+function wpcom_vip_is_current_user_using_two_factor() {
+	static $user_using_2FA = array();
+
+	$current_user_id = get_current_user_id();
+	
+	if ( isset( $user_using_2FA[ $current_user_id ]  ) ) {
+		return $user_using_2FA[ $current_user_id ];
+	}
+
+	$user_using_2FA[ $current_user_id ] = Two_Factor_Core::is_user_using_two_factor();
+
+	return $user_using_2FA[ $current_user_id ];
 }
 
 function wpcom_vip_use_custom_sso() {
