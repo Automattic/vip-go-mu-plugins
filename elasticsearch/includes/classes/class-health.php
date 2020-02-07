@@ -51,7 +51,6 @@ class Health {
 		// There is not other useful information out of query_es(): it just returns false in case of failure
 		if ( ! $es_result ) {
 			$es_total = 'N/A';
-			$msg = 'error while querying ElasticSearch.';
 			return new WP_Error( 'es_query_error', 'failure querying ES. Hint: verify arguments format. #vip-go-elasticsearch' );
 		}
 
