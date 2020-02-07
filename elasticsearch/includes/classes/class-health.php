@@ -48,10 +48,11 @@ class Health {
 			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $e->get_error_message() ) );
 		}
 
-		// There is not other useful information out of query_es(): it just returns false in case of failure
+		// There is not other useful information out of query_es(): it just returns false in case of failure.
+		// This may be due to different causes, e.g. index not existing or incorrect connection parameters.
 		if ( ! $es_result ) {
 			$es_total = 'N/A';
-			return new WP_Error( 'es_query_error', 'failure querying ES. Hint: verify arguments format. #vip-go-elasticsearch' );
+			return new WP_Error( 'es_query_error', 'failure querying ES. #vip-go-elasticsearch' );
 		}
 
 		// Verify actual results
