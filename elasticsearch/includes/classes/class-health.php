@@ -85,7 +85,7 @@ class Health {
 			$result = [
 				'entity' => 'user',
 				'type' => 'N/A',
-				'error' => 'Error retrieving users indexables from Elasticsearch',
+				'error' => 'Error retrieving users documents from Elasticsearch',
 			];
 		}
 
@@ -112,6 +112,16 @@ class Health {
 	public static function validate_index_posts_count() {
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
+
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $posts ) {
+			$result = [
+				'entity' => 'post',
+				'type' => 'N/A',
+				'error' => 'Error retrieving posts documents from Elasticsearch',
+			];
+		}
 
 		$post_types = $posts->get_indexable_post_types();
 
