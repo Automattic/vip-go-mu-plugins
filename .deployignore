@@ -22,7 +22,6 @@
 .jshintrc
 .npmrc
 .nvmrc
-.phpcs.xml.dist
 .scrutinizer.yml
 .travis.yml
 .wordpress-org/
