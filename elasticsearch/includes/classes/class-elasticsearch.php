@@ -116,6 +116,8 @@ class Elasticsearch {
 		}
 
 		foreach( $widgets as $index => $file ) {
+			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
+			// even though we filtered it to off earlier, so we need to prevent it from loading
 			if( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
 				unset( $widgets[ $index ] );
 			}
