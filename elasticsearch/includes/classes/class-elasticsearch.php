@@ -56,7 +56,7 @@ class Elasticsearch {
 		add_filter( 'jetpack_active_modules', [ $this, 'filter__jetpack_active_modules' ], 9999 );
 
 		//Filter jetpack widgets
-		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10, 1 );
+		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10 );
 	}
 
 	protected function load_commands() {
