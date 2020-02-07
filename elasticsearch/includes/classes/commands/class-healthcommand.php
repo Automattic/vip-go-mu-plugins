@@ -80,7 +80,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		foreach( $results as $result ) {
 			// If it's an error, print out a warning and go to the next iteration
 			if ( array_key_exists( 'error', $result ) ) {
-				WP_CLI::warning( 'Error while validating count:' . $result->get_error_message() );
+				WP_CLI::warning( 'Error while validating count:' . $result[ 'error' ]);
 				continue;
 			}
 

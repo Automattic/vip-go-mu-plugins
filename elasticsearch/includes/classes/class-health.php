@@ -79,6 +79,15 @@ class Health {
 	 */
 	public static function validate_index_users_count() {
 		$users = Indexables::factory()->get( 'user' );
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $users ) {
+			$result = [
+				'entity' => 'user',
+				'type' => 'N/A',
+				'error' => 'Error retrieving users indexables from Elasticsearch',
+			];
+		}
 
 		$query_args = [
 			'order' => 'asc',
