@@ -123,6 +123,9 @@ class Elasticsearch {
 			}
 		}
 
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		$widgets = array_values( $widgets );
+
 		return $widgets;
 	}
 }
