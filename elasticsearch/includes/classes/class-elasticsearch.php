@@ -110,7 +110,17 @@ class Elasticsearch {
 		return array_values( $filtered );
 	}
 
-	public function filter__jetpack_widgets_to_include( $widget_include ) {
-		return [];
+	public function filter__jetpack_widgets_to_include( $widgets ) {
+		if ( ! is_array( $widgets ) ) {
+			return $widgets;
+		}
+
+		foreach( $widgets as $index => $file ) {
+			if( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+				unset( $widgets[ $index ] );
+			}
+		}
+
+		return $widgets;
 	}
 }
