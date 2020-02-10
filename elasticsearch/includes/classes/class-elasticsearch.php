@@ -91,7 +91,8 @@ class Elasticsearch {
 		$args['sslverify'] = false;
 
 		// If query url ends with '_bulk'
-		if ( 0 === substr_compare( $query[ 'url' ], '_bulk', -5 ) ) {
+		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
+		if ( 0 === substr_compare( $query_path, '_bulk', -5 ) ) {
 			// Bulk index request so increase timeout
 			$timeout = 5;
 		}
