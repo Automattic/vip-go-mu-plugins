@@ -86,7 +86,7 @@ class HealthJob {
 	 * Process the health check result
 	 *
 	 * @access	protected
-	 * @param		array		$result		Array of results from Health index validation
+	 * @param	array		$result		Array of results from Health index validation
 	 */
 	protected function process_results( $result ) {
 		// If there's an error, alert
