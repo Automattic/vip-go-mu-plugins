@@ -93,7 +93,7 @@ class Elasticsearch {
 		// If query url ends with '_bulk'
 		if ( 0 === substr_compare( $query[ 'url' ], '_bulk', -5 ) ) {
 			// Bulk index request so increase timeout
-			$timeout = 3;
+			$timeout = 5;
 		}
 
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
