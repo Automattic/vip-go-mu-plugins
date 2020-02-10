@@ -84,7 +84,7 @@ class Elasticsearch {
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
-		$timeout = 1;
+		$timeout = 2;
 
 		// TEMP - currently ES server is using a self signed cert during the testing phase...that'll be changed in the near
 		// future, at which time we can remove this
