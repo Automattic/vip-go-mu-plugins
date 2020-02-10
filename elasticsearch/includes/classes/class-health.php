@@ -82,11 +82,7 @@ class Health {
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $users ) {
-			$result = [
-				'entity' => 'user',
-				'type' => 'N/A',
-				'error' => 'Error retrieving users documents from Elasticsearch',
-			];
+			return new WP_Error( 'es_users_query_error', 'failure retrieving user documents from ES #vip-go-elasticsearch' );
 		}
 
 		$query_args = [
@@ -95,11 +91,7 @@ class Health {
 
 		$result = self::validate_index_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
-			$result = [
-				'entity' => $users->slug,
-				'type' => 'N/A',
-				'error' => $result->get_error_message()
-			];
+			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-go-elasticsearch', $result->get_error_message() ) );
 		}
 		return array( $result );
 	}
@@ -116,11 +108,7 @@ class Health {
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $posts ) {
-			$result = [
-				'entity' => 'post',
-				'type' => 'N/A',
-				'error' => 'Error retrieving posts documents from Elasticsearch',
-			];
+			return new WP_Error( 'es_users_query_error', 'failure retrieving post documents from ES #vip-go-elasticsearch' );
 		}
 
 		$post_types = $posts->get_indexable_post_types();
@@ -138,6 +126,7 @@ class Health {
 			$result = self::validate_index_entity_count( $query_args, $posts );
 
 			// In case of error skip to the next post type
+			// Not returning an error, otherwise there is no visibility on other post types
 			if ( is_wp_error( $result ) ) {
 				$result = [
 					'entity' => $posts->slug,

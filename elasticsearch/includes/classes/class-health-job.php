@@ -90,7 +90,7 @@ class HealthJob {
 	 */
 	protected function process_results( $result ) {
 		// If there's an error, alert
-		if( array_key_exists( 'error', $results ) ) {
+		if( array_key_exists( 'error', $result ) ) {
 			wpcom_vip_irc(
 				'#vip-go-es-alerts',
 				sprintf( 'Error while validating index for %s: %s',
