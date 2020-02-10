@@ -13,6 +13,7 @@ class Elasticsearch {
 		$this->setup_hooks();
 		$this->load_dependencies();
 		$this->load_commands();
+		$this->setup_healthchecks();
 	}
 
 	protected function load_dependencies() {
@@ -24,6 +25,9 @@ class Elasticsearch {
 		}
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+
+		// Load health check cron job
+		require_once __DIR__ . '/class-health-job.php';
 	}
 
 	protected function setup_constants() {
@@ -55,6 +59,21 @@ class Elasticsearch {
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Commands\HealthCommand' );
+		}
+	}
+
+	protected function setup_healthchecks() {
+		/**
+		 * Filter wether to enable VIP search healthcheck
+		 *
+		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 */
+		$enable = apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+		if ( $enable ) {
+			$healhcheck = new HealthJob();
+
+			// Hook into init action to ensure cron-control has already been loaded
+			add_action( 'init', [ $healhcheck, 'init' ] );
 		}
 	}
 
