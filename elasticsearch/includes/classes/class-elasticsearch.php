@@ -63,8 +63,18 @@ class Elasticsearch {
 	}
 
 	protected function setup_healthchecks() {
-		$healhcheck = new HealthJob();
-		add_action( 'init', [ $healhcheck, 'init' ] );
+		/**
+		 * Filter wether to enable VIP search healthcheck
+		 *
+		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 */
+		$enable = apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+		if ( $enable ) {
+			$healhcheck = new HealthJob();
+
+			// Hook into init action to ensure cron-control has already been loaded
+			add_action( 'init', [ $healhcheck, 'init' ] );
+		}
 	}
 
 	/**
