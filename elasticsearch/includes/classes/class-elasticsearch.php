@@ -33,7 +33,7 @@ class Elasticsearch {
 	protected function setup_constants() {
 		// Ensure we limit bulk indexing chunk size to a reasonable number (no limit by default)
 		if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
-			define( 'EP_SYNC_CHUNK_LIMIT', 250 );
+			define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
@@ -49,6 +49,9 @@ class Elasticsearch {
 
 	protected function setup_hooks() {
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
+
+		// Override default per page value set in elasticsearch/elasticpress/includes/classes/Indexable.php
+		add_filter( 'ep_bulk_items_per_page', [ $this, 'filter__ep_bulk_items_per_page' ], PHP_INT_MAX );
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
@@ -100,6 +103,13 @@ class Elasticsearch {
 		}
 
 		return $index_name;
+	}
+
+	/**
+	 * Filter to set ep_bulk_items_per_page to 500
+	 */
+	public function filter__ep_bulk_items_per_page() {
+		return 500;
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
