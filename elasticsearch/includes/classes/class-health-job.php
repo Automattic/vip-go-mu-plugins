@@ -78,7 +78,7 @@ class HealthJob {
 
 		$post_results = Health::validate_index_posts_count();
 
-		$this->process_results( $user_results );
+		$this->process_results( $post_results );
 	}
 
 	/**
