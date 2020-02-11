@@ -28,6 +28,9 @@ class Elasticsearch {
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
+
+		// Load our custom dashboard
+		require_once __DIR__ . '/class-dashboard.php';
 	}
 
 	protected function setup_constants() {
