@@ -105,7 +105,7 @@ class Elasticsearch {
 
 		// If query url ends with '_bulk'
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
-		if ( 0 === substr_compare( $query_path, '_bulk', -5 ) ) {
+		if ( wp_endswith( $query_path, '_bulk' ) ) {
 			// Bulk index request so increase timeout
 			$timeout = 5;
 		}
