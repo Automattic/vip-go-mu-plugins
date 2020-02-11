@@ -107,7 +107,7 @@ class HealthJob {
 				'#vip-go-es-alerts',
 				sprintf( 'Error while validating index for %s: %s',
 				home_url(),
-				$result->get_error_message() ),
+				$result['error'] ),
 				2
 			);	
 		}
