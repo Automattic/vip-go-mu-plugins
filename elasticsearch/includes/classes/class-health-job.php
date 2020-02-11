@@ -87,44 +87,46 @@ class HealthJob {
 	 * @access	protected
 	 * @param	array		$result		Array of results from Health index validation
 	 */
-	protected function process_results( $result ) {
-		// If the whole thing failed, error and exit
-		if( is_wp_error( $result ) ) {
-			wpcom_vip_irc(
-				'#vip-go-es-alerts',
-				sprintf( 'Error while validating index for %s: %s',
-				home_url(),
-				$result->get_error_message() ),
-				2
-			);
+	protected function process_results( $results ) {
+		foreach( $results as $result ) {
+			// If the whole thing failed, error
+			if( is_wp_error( $result ) ) {
+				wpcom_vip_irc(
+					'#vip-go-es-alerts',
+					sprintf( 'Error while validating index for %s: %s',
+					home_url(),
+					$result->get_error_message() ),
+					2
+				);
 
-			return;
-		}
+				continue;
+			}
 
-		// If there's an error, alert
-		if( array_key_exists( 'error', $result ) ) {
-			wpcom_vip_irc(
-				'#vip-go-es-alerts',
-				sprintf( 'Error while validating index for %s: %s',
-				home_url(),
-				$result['error'] ),
-				2
-			);	
-		}
+			// If there's an error, alert
+			if( array_key_exists( 'error', $result ) ) {
+				wpcom_vip_irc(
+					'#vip-go-es-alerts',
+					sprintf( 'Error while validating index for %s: %s',
+					home_url(),
+					$result['error'] ),
+					2
+				);	
+			}
 
-		// Only alert if inconsistencies found
-		if ( $result[ 'diff' ] ) {
-			wpcom_vip_irc(
-				'#vip-go-es-alerts',
-				sprintf( 'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
-				home_url(),
-				$result[ 'entity' ],
-				$result[ 'type' ],
-				$result[ 'db_total' ],
-				$result[ 'es_total' ],
-				$result[ 'diff' ] ),
-				2
-			);	
+			// Only alert if inconsistencies found
+			if ( $result[ 'diff' ] ) {
+				wpcom_vip_irc(
+					'#vip-go-es-alerts',
+					sprintf( 'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
+					home_url(),
+					$result[ 'entity' ],
+					$result[ 'type' ],
+					$result[ 'db_total' ],
+					$result[ 'es_total' ],
+					$result[ 'diff' ] ),
+					2
+				);	
+			}
 		}
 	}
 }
