@@ -20,8 +20,8 @@ class Integration {
 			return false;
 		}
 
-		if ( true === get_option( 'vip_enable_elasticsearch' ) ) {
-			return true;
+		if ( get_option( 'vip_enable_elasticsearch' ) ) {
+			return false;
 		}
 
 		return true;
