@@ -74,7 +74,6 @@ class HealthJob {
 	public function check_health() {
 		$user_results = Health::validate_index_users_count();
 
-
 		$this->process_results( $user_results );
 
 		$post_results = Health::validate_index_posts_count();
