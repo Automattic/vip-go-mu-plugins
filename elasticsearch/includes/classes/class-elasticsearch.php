@@ -68,6 +68,8 @@ class Elasticsearch {
 	protected function setup_healthchecks() {
 		// Disable healthcheck job
 		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === DISABLE_VIP_SEARCH_HEALTHCHECKS ) {
+			HealthJob::disable_job();
+
 			return;
 		}
 

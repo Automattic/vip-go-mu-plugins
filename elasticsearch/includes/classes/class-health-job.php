@@ -47,6 +47,17 @@ class HealthJob {
 	}
 
 	/**
+	 * Disable health check job
+	 *
+	 * Remove the ES health check job from the events list
+	 */
+	public static function disable_job() {
+			if ( wp_next_scheduled( HealthJob::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( HealthJob::CRON_EVENT_NAME );
+			}
+	}
+
+	/**
 	 * Filter `cron_schedules` output
 	 *
 	 * Add the custom interval to WP cron schedule
