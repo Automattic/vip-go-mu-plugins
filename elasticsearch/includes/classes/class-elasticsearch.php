@@ -25,12 +25,8 @@ class Elasticsearch {
 		}
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
-
-		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
-		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
-			// Load ElasticPress Debug Bar
-			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
-		}
+		// Load ElasticPress Debug Bar
+		require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
