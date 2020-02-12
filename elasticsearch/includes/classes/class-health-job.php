@@ -51,9 +51,9 @@ class HealthJob {
 	 *
 	 * Remove the ES health check job from the events list
 	 */
-	public static function disable_job() {
-			if ( wp_next_scheduled( HealthJob::CRON_EVENT_NAME ) ) {
-				wp_clear_scheduled_hook( HealthJob::CRON_EVENT_NAME );
+	public function disable_job() {
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
 			}
 	}
 
