@@ -25,7 +25,7 @@ class Elasticsearch {
 		}
 
 		// Load ElasticPress
-		require_once __DIR__ . '/elasticpress/elasticpress.php';
+		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
