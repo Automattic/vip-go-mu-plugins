@@ -20,4 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/includes/classes/class-elasticsearch.php';
 
+// Load ElasticPress
+require_once __DIR__ . '/elasticpress/elasticpress.php';
+// Load ElasticPress Debug Bar
+require_once __DIR__ . '/debug-bar-elasticpress/debug-bar-elasticpress.php';
+
+
 do_action( 'vip_search_loaded' );
