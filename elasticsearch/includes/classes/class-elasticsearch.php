@@ -36,7 +36,7 @@ class Elasticsearch {
 	protected function setup_constants() {
 		// Ensure we limit bulk indexing chunk size to a reasonable number (no limit by default)
 		if ( ! defined( 'EP_SYNC_CHUNK_LIMIT' ) ) {
-			define( 'EP_SYNC_CHUNK_LIMIT', 250 );
+			define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
@@ -53,10 +53,16 @@ class Elasticsearch {
 	protected function setup_hooks() {
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
+		// Override default per page value set in elasticsearch/elasticpress/includes/classes/Indexable.php
+		add_filter( 'ep_bulk_items_per_page', [ $this, 'filter__ep_bulk_items_per_page' ], PHP_INT_MAX );
+
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
 		add_filter( 'jetpack_active_modules', [ $this, 'filter__jetpack_active_modules' ], 9999 );
+
+		// Filter jetpack widgets
+		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10 );
 	}
 
 	protected function load_commands() {
@@ -66,8 +72,18 @@ class Elasticsearch {
 	}
 
 	protected function setup_healthchecks() {
-		$healhcheck = new HealthJob();
-		add_action( 'init', [ $healhcheck, 'init' ] );
+		/**
+		 * Filter wether to enable VIP search healthcheck
+		 *
+		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 */
+		$enable = apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+		if ( $enable ) {
+			$healhcheck = new HealthJob();
+
+			// Hook into init action to ensure cron-control has already been loaded
+			add_action( 'init', [ $healhcheck, 'init' ] );
+		}
 	}
 
 	/**
@@ -83,6 +99,13 @@ class Elasticsearch {
 		}
 
 		return $index_name;
+	}
+
+	/**
+	 * Filter to set ep_bulk_items_per_page to 500
+	 */
+	public function filter__ep_bulk_items_per_page() {
+		return 500;
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
@@ -108,5 +131,24 @@ class Elasticsearch {
 
 		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
 		return array_values( $filtered );
+	}
+
+	public function filter__jetpack_widgets_to_include( $widgets ) {
+		if ( ! is_array( $widgets ) ) {
+			return $widgets;
+		}
+
+		foreach( $widgets as $index => $file ) {
+			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
+			// even though we filtered it to off earlier, so we need to prevent it from loading
+			if( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+				unset( $widgets[ $index ] );
+			}
+		}
+
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		$widgets = array_values( $widgets );
+
+		return $widgets;
 	}
 }

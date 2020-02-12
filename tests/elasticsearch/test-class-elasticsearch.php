@@ -64,7 +64,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
 		$es->init();
 
-		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 250 );
+		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 500 );
 	}
 
 	/**
@@ -230,6 +230,61 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$es->init();
 
 		$result = $es->filter__jetpack_active_modules( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function vip_elasticsearch_filter__jetpack_widgets_to_include_data() {
+		return array(
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/search.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				12345, // non-array
+
+				// Expected
+				12345,
+			),
+		);
+	}
+
+	/**
+	 * Test that the widgets filter works as expected
+	 * 
+	 * @dataProvider vip_elasticsearch_filter__jetpack_widgets_to_include_data
+	 */
+	public function test__vip_elasticsearch_filter__jetpack_widgets_to_include( $input, $expected ) {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$result = $es->filter__jetpack_widgets_to_include( $input );
 
 		$this->assertEquals( $expected, $result );
 	}
