@@ -52,6 +52,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
 		$users_results = \Automattic\VIP\Elasticsearch\Health::validate_index_users_count();
+		if ( is_wp_error( $users_results ) ) {
+			WP_CLI::warning( $users_results->get_error_message() );
+			return;
+		}
 		$this->render_results( $users_results );
 	}
 
@@ -80,7 +84,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		foreach( $results as $result ) {
 			// If it's an error, print out a warning and go to the next iteration
 			if ( array_key_exists( 'error', $result ) ) {
-				WP_CLI::warning( 'Error while validating count:' . $result->get_error_message() );
+				WP_CLI::warning( 'Error while validating count: ' . $result[ 'error' ]);
 				continue;
 			}
 
