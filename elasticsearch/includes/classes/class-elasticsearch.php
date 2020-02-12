@@ -25,6 +25,8 @@ class Elasticsearch {
 		}
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+		// Load ElasticPress Debug Bar
+		require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
