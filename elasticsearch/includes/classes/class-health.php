@@ -39,24 +39,28 @@ class Health {
 		try {
 			$query = self::query_objects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
+
+			// Get exact total count since Elasticsearch default stops at 10,000.
+			$formatted_args['track_total_hits'] = true;
+
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
 			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $e->get_error_message() ) );
 		}
 
-		$diff = '';
-		// There is not other useful information out of query_es(): it just returns false in case of failure
+		// There is not other useful information out of query_es(): it just returns false in case of failure.
+		// This may be due to different causes, e.g. index not existing or incorrect connection parameters.
 		if ( ! $es_result ) {
 			$es_total = 'N/A';
-			$msg = 'error while querying ElasticSearch.';
-			return new WP_Error( 'es_query_error', 'failure querying ES. Hint: verify arguments format. #vip-go-elasticsearch' );
+			return new WP_Error( 'es_query_error', 'failure querying ES. #vip-go-elasticsearch' );
 		}
 
 		// Verify actual results
 		$es_total = (int) $es_result[ 'found_documents' ][ 'value' ];
 
+		$diff = 0;
 		if ( $db_total !== $es_total ) {
-			$diff = sprintf( ', diff: %d', $es_total - $db_total );
+			$diff = $es_total - $db_total;
 		}
 
 		return [
@@ -64,7 +68,7 @@ class Health {
 			'type' => ( array_key_exists( 'post_type', $query_args ) ? $query_args[ 'post_type' ] : 'N/A' ),
 			'db_total' => $db_total,
 			'es_total' => $es_total,
-			'diff' => $diff
+			'diff' => $diff,
 		];
 	}
 
@@ -75,6 +79,11 @@ class Health {
 	 */
 	public static function validate_index_users_count() {
 		$users = Indexables::factory()->get( 'user' );
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $users ) {
+			return new WP_Error( 'es_users_query_error', 'failure retrieving user documents from ES #vip-go-elasticsearch' );
+		}
 
 		$query_args = [
 			'order' => 'asc',
@@ -82,11 +91,7 @@ class Health {
 
 		$result = self::validate_index_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
-			$result = [
-				'entity' => $users->slug,
-				'type' => 'N/A',
-				'error' => $result->get_error_message()
-			];
+			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-go-elasticsearch', $result->get_error_message() ) );
 		}
 		return array( $result );
 	}
@@ -99,6 +104,12 @@ class Health {
 	public static function validate_index_posts_count() {
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
+
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $posts ) {
+			return new WP_Error( 'es_users_query_error', 'failure retrieving post documents from ES #vip-go-elasticsearch' );
+		}
 
 		$post_types = $posts->get_indexable_post_types();
 
@@ -115,6 +126,7 @@ class Health {
 			$result = self::validate_index_entity_count( $query_args, $posts );
 
 			// In case of error skip to the next post type
+			// Not returning an error, otherwise there is no visibility on other post types
 			if ( is_wp_error( $result ) ) {
 				$result = [
 					'entity' => $posts->slug,
