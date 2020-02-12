@@ -45,6 +45,12 @@ class Elasticsearch {
 		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
 			define( 'ES_SHIELD', sprintf( '%s:%s', VIP_ELASTICSEARCH_USERNAME, VIP_ELASTICSEARCH_PASSWORD ) );
 		}
+
+		// Do not allow sync via Dashboard (WP-CLI is preferred for indexing).
+		// The Dashboard is hidden anyway but just in case.
+		if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
+			define( 'EP_DASHBOARD_SYNC', false );
+		}
 	}
 
 	protected function setup_hooks() {
