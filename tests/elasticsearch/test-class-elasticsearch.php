@@ -130,6 +130,94 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is showing
+	 */
+	public function test__vip_elasticsearch_loads_ep_debug_bar_when_debug_bar_showing() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar enabled
+		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
+
+		// Be sure we don't already have the class loaded (or our test does nothing)
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should now exist
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
+	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is disabled, but Query Monitor is showing
+	 */
+	public function test__vip_elasticsearch_loads_ep_debug_bar_when_debug_bar_disabled_but_qm_enabled() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar enabled
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
+
+		// Be sure we don't already have the class loaded (or our test does nothing)
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should now exist
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
+	 * Test that we load the ElasticPress Debug Bar plugin when both Debug Bar Query Monitor are showing
+	 */
+	public function test__vip_elasticsearch_loads_ep_debug_bar_when_debug_bar_and_qm_enabled() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar enabled
+		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
+
+		// Be sure we don't already have the class loaded (or our test does nothing)
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should now exist
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
+	 * Test that we don't load the ElasticPress Debug Bar plugin when neither Debug Bar or Query Monitor are showing
+	 */
+	public function test__vip_elasticsearch_does_not_load_ep_debug_bar_when_debug_bar_and_qm_disabled() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar enabled
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should not exist
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
 	 * Test that we are sending HTTP requests through the VIP helper functions
 	 */
 	public function test__vip_elasticsearch_has_http_layer_filters() {
