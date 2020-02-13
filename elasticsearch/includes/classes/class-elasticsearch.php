@@ -27,12 +27,6 @@ class Elasticsearch {
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
-		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
-		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
-			// Load ElasticPress Debug Bar
-			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
-		}
-
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
 	}
@@ -55,6 +49,8 @@ class Elasticsearch {
 	}
 
 	protected function setup_hooks() {
+		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
+
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
 		// Override default per page value set in elasticsearch/elasticpress/includes/classes/Indexable.php
@@ -87,6 +83,15 @@ class Elasticsearch {
 
 			// Hook into init action to ensure cron-control has already been loaded
 			add_action( 'init', [ $healhcheck, 'init' ] );
+		}
+	}
+
+	public function action__plugins_loaded() {
+		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
+		// NOTE - must hook in here b/c the functions required for checking if debug bar is enabled aren't loaded earlier
+		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+			// Load ElasticPress Debug Bar
+			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
 	}
 
