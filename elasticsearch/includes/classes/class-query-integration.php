@@ -16,7 +16,7 @@ class Query_Integration {
 	 * When we're ready to use the index in production, the `vip_enable_elasticsearch`
 	 * option will be set to `true`, which will enable querying for everyone.
 	 */
-	function ep_skip_query_integration( $skip ) {
+	static function ep_skip_query_integration( $skip ) {
 		if ( isset( $_GET[ 'es' ] ) ) {
 			return false;
 		}
