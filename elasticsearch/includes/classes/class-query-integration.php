@@ -20,11 +20,8 @@ class Query_Integration {
 			return false;
 		}
 
-		if ( get_option( 'vip_enable_elasticsearch' ) ) {
-			return false;
-		}
-
-		return true;
+		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
+			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
 	}
 }
 
