@@ -88,7 +88,7 @@ class Elasticsearch {
 
 	public function action__plugins_loaded() {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
-		// NOTE - must hook in here b/c the functions required for checking if debug bar is enabled aren't loaded earlier
+		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
 		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
