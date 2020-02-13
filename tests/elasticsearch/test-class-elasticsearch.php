@@ -158,8 +158,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
 		remove_all_filters( 'debug_bar_enable' );
 
-		// Debug bar enabled
+		// Debug bar disabled
 		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		// But QM enabled
 		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
 
 		// Be sure we don't already have the class loaded (or our test does nothing)
@@ -183,6 +184,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 		// Debug bar enabled
 		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
+		// And QM enabled
 		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
 
 		// Be sure we don't already have the class loaded (or our test does nothing)
@@ -204,8 +206,9 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
 		remove_all_filters( 'debug_bar_enable' );
 
-		// Debug bar enabled
+		// Debug bar disabled
 		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		// And QM disabled
 		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
 
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
