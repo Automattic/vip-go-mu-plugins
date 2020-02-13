@@ -30,7 +30,7 @@ class Elasticsearch {
 		require_once __DIR__ . '/class-health-job.php';
 
 		// Load elasticsearch integration
-		require_once __DIR__ . '/class-elasticsearch-integration.php';
+		require_once __DIR__ . '/class-query-integration.php';
 	}
 
 	protected function setup_constants() {

@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Elasticsearch;
 
-class Integration {
+class Query_Integration {
 
 	function __construct() {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ) );
@@ -28,4 +28,4 @@ class Integration {
 	}
 }
 
-new Integration;
+new Query_Integration;
