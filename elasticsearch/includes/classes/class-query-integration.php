@@ -6,6 +6,7 @@ class Query_Integration {
 
 	function __construct() {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 	}
 
 	/**
