@@ -46,3 +46,6 @@
 [submodule "elasticsearch/elasticpress"]
 	path = elasticsearch/elasticpress
 	url = https://github.com/Automattic/ElasticPress.git
+[submodule "elasticsearch/debug-bar-elasticpress"]
+	path = elasticsearch/debug-bar-elasticpress
+	url = https://github.com/10up/debug-bar-elasticpress.git
