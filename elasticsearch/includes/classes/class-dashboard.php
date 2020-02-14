@@ -12,7 +12,9 @@ class Dashboard {
 	 * Disable the Elasticpress dashboard
 	 */
 	function admin_init() {
-		remove_menu_page( 'elasticpress' );
+		if ( ! is_automattician() ) {
+			remove_menu_page( 'elasticpress' );
+		}
 	}
 }
 
