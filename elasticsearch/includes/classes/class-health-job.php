@@ -4,6 +4,8 @@ namespace Automattic\VIP\Elasticsearch;
 
 use Automattic\VIP\Elasticsearch\Health as Health;
 
+require_once __DIR__ . '/class-health.php';
+
 class HealthJob {
 
 	/**
