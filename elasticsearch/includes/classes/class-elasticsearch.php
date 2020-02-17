@@ -29,6 +29,9 @@ class Elasticsearch {
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
+
+		// Load our custom dashboard
+		require_once __DIR__ . '/class-dashboard.php';
 	}
 
 	protected function setup_constants() {
@@ -69,6 +72,10 @@ class Elasticsearch {
 
 		// Filter jetpack widgets
 		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10 );
+
+		// Disable query integration by default
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 	}
 
 	protected function load_commands() {
@@ -125,11 +132,8 @@ class Elasticsearch {
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
-		$timeout = 2;
 
-		// TEMP - currently ES server is using a self signed cert during the testing phase...that'll be changed in the near
-		// future, at which time we can remove this
-		$args['sslverify'] = false;
+		$timeout = 2;
 
 		// If query url ends with '_bulk'
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
@@ -173,5 +177,33 @@ class Elasticsearch {
 		$widgets = array_values( $widgets );
 
 		return $widgets;
+	}
+
+	/**
+	 * Separate plugin enabled and querying the index
+	 *
+	 * The index can be tested at any time by setting an `es` query argument.
+	 * When we're ready to use the index in production, the `vip_enable_elasticsearch`
+	 * option will be set to `true`, which will enable querying for everyone.
+	 */
+	static function ep_skip_query_integration( $skip ) {
+		if ( isset( $_GET[ 'es' ] ) ) {
+			return false;
+		}
+
+		/**
+		 * Honor filters that skip query integration
+		 *
+		 * It may be desirable to skip query integration for specific
+		 * queries. We should honor those other filters. Since this
+		 * defaults to false, it will only kick in if someone specifically
+		 * wants to bypass ES in addition to what we're doing here.
+		 */
+		if ( $skip ) {
+			return true;
+		}
+
+		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
+			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
 	}
 }
