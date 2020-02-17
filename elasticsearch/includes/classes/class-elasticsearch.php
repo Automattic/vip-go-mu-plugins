@@ -23,11 +23,15 @@ class Elasticsearch {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 		}
+
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
+
+		// Load our custom dashboard
+		require_once __DIR__ . '/class-dashboard.php';
 	}
 
 	protected function setup_constants() {
@@ -45,9 +49,17 @@ class Elasticsearch {
 		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
 			define( 'ES_SHIELD', sprintf( '%s:%s', VIP_ELASTICSEARCH_USERNAME, VIP_ELASTICSEARCH_PASSWORD ) );
 		}
+
+		// Do not allow sync via Dashboard (WP-CLI is preferred for indexing).
+		// The Dashboard is hidden anyway but just in case.
+		if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
+			define( 'EP_DASHBOARD_SYNC', false );
+		}
 	}
 
 	protected function setup_hooks() {
+		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
+
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
 		// Override default per page value set in elasticsearch/elasticpress/includes/classes/Indexable.php
@@ -60,6 +72,10 @@ class Elasticsearch {
 
 		// Filter jetpack widgets
 		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10 );
+
+		// Disable query integration by default
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 	}
 
 	protected function load_commands() {
@@ -80,6 +96,15 @@ class Elasticsearch {
 
 			// Hook into init action to ensure cron-control has already been loaded
 			add_action( 'init', [ $healhcheck, 'init' ] );
+		}
+	}
+
+	public function action__plugins_loaded() {
+		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
+		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
+		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+			// Load ElasticPress Debug Bar
+			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
 	}
 
@@ -107,10 +132,6 @@ class Elasticsearch {
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
-
-		// TEMP - currently ES server is using a self signed cert during the testing phase...that'll be changed in the near
-		// future, at which time we can remove this
-		$args['sslverify'] = false;
 	
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
 	
@@ -147,5 +168,33 @@ class Elasticsearch {
 		$widgets = array_values( $widgets );
 
 		return $widgets;
+	}
+
+	/**
+	 * Separate plugin enabled and querying the index
+	 *
+	 * The index can be tested at any time by setting an `es` query argument.
+	 * When we're ready to use the index in production, the `vip_enable_elasticsearch`
+	 * option will be set to `true`, which will enable querying for everyone.
+	 */
+	static function ep_skip_query_integration( $skip ) {
+		if ( isset( $_GET[ 'es' ] ) ) {
+			return false;
+		}
+
+		/**
+		 * Honor filters that skip query integration
+		 *
+		 * It may be desirable to skip query integration for specific
+		 * queries. We should honor those other filters. Since this
+		 * defaults to false, it will only kick in if someone specifically
+		 * wants to bypass ES in addition to what we're doing here.
+		 */
+		if ( $skip ) {
+			return true;
+		}
+
+		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
+			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
 	}
 }
