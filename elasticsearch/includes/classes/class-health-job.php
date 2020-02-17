@@ -116,7 +116,7 @@ class HealthJob {
 			}
 
 			// Only alert if inconsistencies found
-			if ( isset( $result[ 'diff' ] ) ) {
+			if ( isset( $result[ 'diff' ] ) && 0 !== $result[ 'diff' ] ) {
 				wpcom_vip_irc(
 					'#vip-go-es-alerts',
 					sprintf( 'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
