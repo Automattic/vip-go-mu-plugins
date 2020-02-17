@@ -92,13 +92,9 @@ class HealthJob {
 	protected function process_results( $results ) {
 		// If the whole thing failed, error
 		if( is_wp_error( $results ) ) {
-			wpcom_vip_irc(
-				'#vip-go-es-alerts',
-				sprintf( 'Error while validating index for %s: %s',
-				home_url(),
-				$results->get_error_message() ),
-				2
-			);
+			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
+
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 			return;
 		}
@@ -106,29 +102,40 @@ class HealthJob {
 		foreach( $results as $result ) {
 			// If there's an error, alert
 			if( array_key_exists( 'error', $result ) ) {
-				wpcom_vip_irc(
-					'#vip-go-es-alerts',
-					sprintf( 'Error while validating index for %s: %s',
-					home_url(),
-					$result['error'] ),
-					2
-				);	
+				$message = sprintf( 'Error while validating index for %s: %s', home_url(), $result['error'] );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
 
 			// Only alert if inconsistencies found
 			if ( isset( $result[ 'diff' ] ) && 0 !== $result[ 'diff' ] ) {
-				wpcom_vip_irc(
-					'#vip-go-es-alerts',
-					sprintf( 'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
+				$message = sprintf(
+					'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
 					$result[ 'entity' ],
 					$result[ 'type' ],
 					$result[ 'db_total' ],
 					$result[ 'es_total' ],
-					$result[ 'diff' ] ),
-					2
-				);	
+					$result[ 'diff' ]
+				);
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );	
 			}
 		}
+	}
+
+	/**
+	 * Send an alert
+	 * 
+	 * @see wpcom_vip_irc()
+	 * 
+	 * @param string $channel IRC / Slack channel to send message to
+	 * @param string $message The message to send
+	 * @param int $level Alert level
+	 * 
+	 * @return bool Bool indicating if sending succeeded or failed
+	 */
+	public function send_alert( $channel, $message, $level ) {
+		return wpcom_vip_irc( $channel, $message, $level );
 	}
 }
