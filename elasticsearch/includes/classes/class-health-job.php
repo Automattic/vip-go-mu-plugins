@@ -89,7 +89,7 @@ class HealthJob {
 	 * @access	protected
 	 * @param	array		$result		Array of results from Health index validation
 	 */
-	protected function process_results( $results ) {
+	public function process_results( $results ) {
 		// If the whole thing failed, error
 		if( is_wp_error( $results ) ) {
 			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
