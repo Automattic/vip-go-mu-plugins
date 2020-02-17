@@ -752,7 +752,13 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$threshold = abs( $threshold );
 
 	// timeouts > 5 seconds are just not reasonable for production usage
-	$timeout = ( (int) $timeout > 5 ) ? 5 : (int) $timeout;
+	$timeout = (int) $timeout;
+	if ( $timeout > 5 ) {
+		_doing_it_wrong( __FUNCTION__, 'Using a timeout value of over 5 seconds is strongly discouraged because users have to wait for the remote request to finish before the rest of their page loads.', null );
+
+		$timeout = 5;
+	}
+
 	// retry time < 10 seconds will default to 10 seconds.
 	$retry =  ( (int) $retry < 10 ) ? 10 : (int) $retry;
 	// more than 10 faulty hits seem to be to much
