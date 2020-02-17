@@ -4,6 +4,8 @@ namespace Automattic\VIP\Elasticsearch;
 
 use Automattic\VIP\Elasticsearch\Health as Health;
 
+require_once __DIR__ . '/class-health.php';
+
 class HealthJob {
 
 	/**
@@ -89,12 +91,12 @@ class HealthJob {
 	 */
 	protected function process_results( $results ) {
 		// If the whole thing failed, error
-		if( is_wp_error( $result ) ) {
+		if( is_wp_error( $results ) ) {
 			wpcom_vip_irc(
 				'#vip-go-es-alerts',
 				sprintf( 'Error while validating index for %s: %s',
 				home_url(),
-				$result->get_error_message() ),
+				$results->get_error_message() ),
 				2
 			);
 
@@ -114,7 +116,7 @@ class HealthJob {
 			}
 
 			// Only alert if inconsistencies found
-			if ( $result[ 'diff' ] ) {
+			if ( isset( $result[ 'diff' ] ) ) {
 				wpcom_vip_irc(
 					'#vip-go-es-alerts',
 					sprintf( 'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
