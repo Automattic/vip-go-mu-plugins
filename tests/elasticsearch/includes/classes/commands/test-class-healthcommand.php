@@ -2,10 +2,9 @@
 
 namespace Automattic\VIP\Elasticsearch\Commands;
 
-
 class HealthCommand_Test extends \WP_UnitTestCase {
 	public function setUp() {
-		define( 'WP_CLI', true );
+		// define( 'WP_CLI', true );
 
 		// require_once __DIR__ . '/../../../../../vip-helpers/vip-wp-cli.php';
 		// require_once __DIR__ . '/../../../../../elasticsearch/elasticsearch.php';
