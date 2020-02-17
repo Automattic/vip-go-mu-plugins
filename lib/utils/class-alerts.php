@@ -132,6 +132,33 @@ class Alerts {
 	}
 
 	/**
+	 * Validate Opsgenie details array
+	 *
+	 * @param $details array
+	 *
+	 * @return array
+	 */
+	protected function validate_details( $details) {
+		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
+
+		if ( ! is_array( $details ) ) {
+			throw new Exception( "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+		}
+
+		foreach( $details as $key => $value ) {
+			if ( ! array_key_exists( $key, $required_keys ) ) {
+				throw new Exception( "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+			}
+
+			if ( ! $value ) {
+				throw new Exception( "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+			}
+		}
+
+		return $details;
+	}
+
+	/**
 	 * Get an instance of this Alerts class
 	 *
 	 * @return Alerts
@@ -183,7 +210,7 @@ class Alerts {
 
 			$channel_or_user = $alerts->validate_channel_or_user( $channel_or_user );
 
-			$message = $this->validate_message( $message );
+			$message = $alerts->validate_message( $message );
 
 			$body = [
 				'channel' => $channel_or_user,
@@ -192,6 +219,8 @@ class Alerts {
 			];
 
 			$alerts->send( $body );
+
+			return true;
 		} catch( Exception $e ) {
 			error_log( $e->getMessage() );
 
@@ -202,11 +231,36 @@ class Alerts {
 	/**
 	 * Send an alert to Opsgenie
 	 *
+	 * @param $message string Opsgenie alert message
+	 * @param $details array Array of opsgenie details values. Expected values: `alias`, `description`, `entity`, `priority`, `source`
+	 * @param $kind string Cache slug
+	 * @param $interval integer Interval in seconds between two messages sent from one DC
+	 *
 	 * @return bool	True if successful. Else, will return false
 	 */
 	public static function opsgenie( $message, $details, $kind = '', $interval = 0 ) {
 		try {
 			$alerts = self::get_instance();
+
+			if ( $kind && $interval ) {
+				if ( ! $alerts->add_cache( $kind, $interval ) ) {
+					return false;
+				}
+			}
+
+			$message = $alerts->validate_message( $message );
+
+			$details = $alerts->validate_details( $details );
+
+			$details[ 'message' ] = $message;
+
+			$body = [
+				'ops_alert' => $details,
+			];
+
+			$alerts->send( $body );
+
+			return true;
 		} catch( Exception $e ) {
 			error_log( $e->getMessage() );
 
