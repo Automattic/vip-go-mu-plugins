@@ -204,6 +204,8 @@ class Alerts {
 
 			if ( $kind && $interval ) {
 				if ( ! $alerts->add_cache( $kind, $interval ) ) {
+					error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
+
 					return false;
 				}
 			}
@@ -244,6 +246,8 @@ class Alerts {
 
 			if ( $kind && $interval ) {
 				if ( ! $alerts->add_cache( $kind, $interval ) ) {
+					error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
+
 					return false;
 				}
 			}
