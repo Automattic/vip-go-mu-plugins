@@ -59,8 +59,10 @@ class Alerts {
 	 * @return array Response details from wp_remote_post
 	 */
 	protected function send( $body ) {
-		$response = wp_remote_post( $this->service_url, [
-			'timeout' => 0.1,
+		$fallback_error = new \WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
+
+		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
+			'method' => 'POST',
 			'body' => json_encode( $body ),
 		] );
 
