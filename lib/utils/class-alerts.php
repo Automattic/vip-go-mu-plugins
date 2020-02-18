@@ -35,7 +35,7 @@ class Alerts {
 	 * Contructor
 	 *
 	 * Set to protected to prevent direct instantiation.
-	 * Use Alerts::get_instance() to get an instance of Alerts
+	 * Use Alerts::instance() to get an instance of Alerts
 	 */
 	protected function __construct() {
 		if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
@@ -200,7 +200,7 @@ class Alerts {
 	 */
 	public static function chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
 		try {
-			$alerts = self::get_instance();
+			$alerts = self::instance();
 
 			if ( $kind && $interval ) {
 				if ( ! $alerts->add_cache( $kind, $interval ) ) {
@@ -240,7 +240,7 @@ class Alerts {
 	 */
 	public static function opsgenie( $message, $details, $kind = '', $interval = 0 ) {
 		try {
-			$alerts = self::get_instance();
+			$alerts = self::instance();
 
 			if ( $kind && $interval ) {
 				if ( ! $alerts->add_cache( $kind, $interval ) ) {
