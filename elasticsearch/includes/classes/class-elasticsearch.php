@@ -5,6 +5,8 @@ namespace Automattic\VIP\Elasticsearch;
 use \WP_CLI;
 
 class Elasticsearch {
+	public $healthcheck;
+
 	/**
 	 * Initialize the VIP Elasticsearch plugin
 	 */
@@ -91,11 +93,12 @@ class Elasticsearch {
 		 * @param		bool	$enable		True to enable the healthcheck cron job
 		 */
 		$enable = apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+	
 		if ( $enable ) {
-			$healhcheck = new HealthJob();
+			$this->healthcheck = new HealthJob();
 
 			// Hook into init action to ensure cron-control has already been loaded
-			add_action( 'init', [ $healhcheck, 'init' ] );
+			add_action( 'init', [ $this->healthcheck, 'init' ] );
 		}
 	}
 
