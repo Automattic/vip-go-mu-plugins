@@ -163,7 +163,7 @@ class Alerts {
 	 *
 	 * @return Alerts
 	 */
-	public static function get_instance() {
+	public static function instance() {
 		if ( null === self::$instance ) {
 			self::$instance = new Alerts();
 		}
