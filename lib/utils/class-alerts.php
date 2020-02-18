@@ -120,17 +120,11 @@ class Alerts {
 	 * @return string Validated and trimmed message
 	 */
 	protected function validate_message( $message ) {
-		if ( is_array( $message ) || is_object( $message ) ) {
+		if ( ! is_string( $message ) || ! trim( $message ) ) {
 			throw new Exception( "Invalid \$message: Alerts\:\:chat( " . print_r( $message, true ) . " );" );
 		}
 
-		$message = trim( $message );
-
-		if ( ! $message ) {
-			throw new Exception( "Invalid \$message: Alerts\:\:chat( '$message' );" );
-		}
-
-		return $message;
+		return trim( $message );
 	}
 
 	/**
