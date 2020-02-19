@@ -50,8 +50,7 @@ vagrant@vvv:~$cd /path/to/wp-content/mu-plugins
 4. Setup the WordPress tests:
 
 ```bash
-vagrant@vvv:
-vagrant@vvv:/wp-content/mu-plugins$ ./bin/install-wp-tests.sh %empty_DB_name% %db_user% %db_name%
+vagrant@vvv:/wp-content/mu-plugins$ ./bin/install-wp-tests.sh %empty_DB_name% %db_user% %db_user_password%
 ```
 
 Note: you need to replace the `%placeholder%` strings above with the appropriate values. Use a separate test database for this as the contents will get trashed during testing.
@@ -68,6 +67,11 @@ composer install
 
 ```bash
 vagrant@vvv:/wp-content/mu-plugins$ vendor/bin/phpunit
+```
+
+Tests failing with `Error: Call to undefined function xdebug_get_headers()` or similar? xdebug needs to be turned on in VVV before running tests: 
+```bash
+vagrant@vvv:/wp-content/mu-plugins$ xdebug_on
 ```
 
 #### Travis

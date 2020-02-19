@@ -742,8 +742,9 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$cache_key = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args[ 'method' ] );
 
 	// valid url
-	if ( empty( $url ) || !parse_url( $url ) )
+	if ( empty( $url ) || !parse_url( $url ) ) {
 		return ( $fallback_value ) ? $fallback_value : new WP_Error('invalid_url', $url );
+	}
 
 	// Ensure positive values
 	$timeout   = abs( $timeout );
@@ -761,8 +762,13 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 
 	// check if the timeout was hit and obey the option and return the fallback value
 	if ( false !== $option && time() - $option['time'] < $retry ) {
-		if ( $option['hits'] >= $threshold )
+		if ( $option['hits'] >= $threshold ) {
+			if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
+				trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} has been throttled after {$option['hits']} attempts. Not reattempting until after $retry seconds", E_USER_WARNING );
+			}
+
 			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
+		}
 	}
 
 	$start = microtime( true );
@@ -771,24 +777,25 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 
 	$elapsed = ( $end - $start ) > $timeout;
 	if ( true === $elapsed ) {
-		if ( false !== $option && $option['hits'] < $threshold )
+		if ( false !== $option && $option['hits'] < $threshold ) {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $option['hits']+1 ), $cache_group, $retry );
-		else if ( false !== $option && $option['hits'] == $threshold )
+		} else if ( false !== $option && $option['hits'] == $threshold ) {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $threshold ), $cache_group, $retry );
-		else
+		} else {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => 1 ), $cache_group, $retry );
+		}
 	}
 	else {
-		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry )
+		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
 			wp_cache_set( $cache_key, array( 'time' => $option['time'], 'hits' => $option['hits']-1 ), $cache_group, $retry );
-		else
+		} else {
 			wp_cache_delete( $cache_key, $cache_group);
+		}
 	}
 
 	if ( is_wp_error( $response ) ) {
-		// Log errors for internal WP.com debugging
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			error_log( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ) );
+			trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} and a timeout of $timeout failed. Result: " . maybe_serialize( $response ), E_USER_WARNING );
 		}
 		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 

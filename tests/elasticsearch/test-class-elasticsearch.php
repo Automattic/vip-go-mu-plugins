@@ -11,7 +11,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = TRUE;
 
 	public function setUp() {
-		require_once __DIR__ . '/../../elasticsearch/class-elasticsearch.php';
+		require_once __DIR__ . '/../../elasticsearch/elasticsearch.php';
 	}
 
 	/**
@@ -64,7 +64,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
 		$es->init();
 
-		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 250 );
+		$this->assertEquals( EP_SYNC_CHUNK_LIMIT, 500 );
 	}
 
 	/**
@@ -127,6 +127,97 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( EP_HOST, 'https://somethingelse' );
 		$this->assertEquals( ES_SHIELD, 'bar:baz' );
+	}
+
+	/**
+	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is showing
+	 */
+	public function test__vip_elasticsearch_loads_ep_debug_bar_when_debug_bar_showing() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar enabled
+		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
+
+		// Be sure we don't already have the class loaded (or our test does nothing)
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should now exist
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
+	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is disabled, but Query Monitor is showing
+	 */
+	public function test__vip_elasticsearch_loads_ep_debug_bar_when_debug_bar_disabled_but_qm_enabled() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar disabled
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		// But QM enabled
+		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
+
+		// Be sure we don't already have the class loaded (or our test does nothing)
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should now exist
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
+	 * Test that we load the ElasticPress Debug Bar plugin when both Debug Bar Query Monitor are showing
+	 */
+	public function test__vip_elasticsearch_loads_ep_debug_bar_when_debug_bar_and_qm_enabled() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar enabled
+		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
+		// And QM enabled
+		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
+
+		// Be sure we don't already have the class loaded (or our test does nothing)
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should now exist
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+	}
+
+	/**
+	 * Test that we don't load the ElasticPress Debug Bar plugin when neither Debug Bar or Query Monitor are showing
+	 */
+	public function test__vip_elasticsearch_does_not_load_ep_debug_bar_when_debug_bar_and_qm_disabled() {
+		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
+		remove_all_filters( 'debug_bar_enable' );
+
+		// Debug bar disabled
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		// And QM disabled
+		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$es->action__plugins_loaded();
+
+		// Class should not exist
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
 	}
 
 	/**
@@ -232,5 +323,89 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$result = $es->filter__jetpack_active_modules( $input );
 
 		$this->assertEquals( $expected, $result );
+	}
+
+	public function vip_elasticsearch_filter__jetpack_widgets_to_include_data() {
+		return array(
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/search.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				12345, // non-array
+
+				// Expected
+				12345,
+			),
+		);
+	}
+
+	/**
+	 * Test that the widgets filter works as expected
+	 * 
+	 * @dataProvider vip_elasticsearch_filter__jetpack_widgets_to_include_data
+	 */
+	public function test__vip_elasticsearch_filter__jetpack_widgets_to_include( $input, $expected ) {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$result = $es->filter__jetpack_widgets_to_include( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	/**
+	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
+	 */
+	public function test__vip_elasticsearch_setup_healthchecks_with_enabled() {
+		// Need to filter to enable the HealthJob
+		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Should not have fataled (class was included)
+
+		// Should have registered the init action to setup the health check
+		$this->assertEquals( true, has_action( 'init', [ $es->healthcheck, 'init' ] ) );
+	}
+
+	/**
+	 * Test that instantiating the HealthJob does not happen when not in production
+	 */
+	public function test__vip_elasticsearch_setup_healthchecks_disabled_in_non_production_env() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Should not have fataled (class was included)
+
+		// Should not have instantiated and registered the init action to setup the health check
+		$this->assertEquals( false, isset( $es->healthcheck ) );
 	}
 }
