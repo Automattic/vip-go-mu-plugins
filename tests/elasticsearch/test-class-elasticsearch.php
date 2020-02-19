@@ -379,4 +379,33 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $result );
 	}
+
+	/**
+	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
+	 */
+	public function test__vip_elasticsearch_setup_healthchecks_with_enabled() {
+		// Need to filter to enable the HealthJob
+		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Should not have fataled (class was included)
+
+		// Should have registered the init action to setup the health check
+		$this->assertEquals( true, has_action( 'init', [ $es->healthcheck, 'init' ] ) );
+	}
+
+	/**
+	 * Test that instantiating the HealthJob does not happen when not in production
+	 */
+	public function test__vip_elasticsearch_setup_healthchecks_disabled_in_non_production_env() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Should not have fataled (class was included)
+
+		// Should not have instantiated and registered the init action to setup the health check
+		$this->assertEquals( false, isset( $es->healthcheck ) );
+	}
 }

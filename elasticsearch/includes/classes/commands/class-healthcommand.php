@@ -5,6 +5,8 @@ namespace Automattic\VIP\Elasticsearch\Commands;
 use \WP_CLI;
 use \WP_CLI\Utils;
 
+require_once __DIR__ . '/../class-health.php';
+
 /**
  * Commands to view and manage the health of VIP Go Elasticsearch indexes
  *
