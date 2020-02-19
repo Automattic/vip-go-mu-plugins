@@ -231,6 +231,60 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$this->assertEquals( true, has_filter( 'ep_do_intercept_request', [ $es, 'filter__ep_do_intercept_request' ] ) );
 	}
 
+	public function vip_elasticsearch_request_timeout_calculation_data() {
+		return array(
+			// Regular search
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_search',
+				),
+				// The expected timeout
+				2,
+			),
+			// Bulk index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_bulk',
+				),
+				// The expected timeout
+				5,
+			),
+			// Url containing _bulk
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_bulk/bar?_bulk',
+				),
+				// The expected timeout
+				2,
+			),
+			// Random other url
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_anything',
+				),
+				// The expected timeout
+				2,
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly calculate the HTTP request timeout value for ES requests
+	 * 
+	 * @dataProvider vip_elasticsearch_get_http_timeout_for_query_data()
+	 */
+	public function test__vip_elasticsearch_get_http_timeout_for_query( $query, $expected_timeout ) {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+
+		$timeout = $es->get_http_timeout_for_query( $query );
+
+		$thes->assertEquals( $expected_timeout, $timeout );
+	}
+
 	/**
 	 * Test that we are setting up the filter to auto-disable JP Search
 	 */
