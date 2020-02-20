@@ -282,7 +282,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 
 		$timeout = $es->get_http_timeout_for_query( $query );
 
-		$thes->assertEquals( $expected_timeout, $timeout );
+		$this->assertEquals( $expected_timeout, $timeout );
 	}
 
 	/**
