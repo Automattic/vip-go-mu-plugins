@@ -231,7 +231,7 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$this->assertEquals( true, has_filter( 'ep_do_intercept_request', [ $es, 'filter__ep_do_intercept_request' ] ) );
 	}
 
-	public function vip_elasticsearch_request_timeout_calculation_data() {
+	public function vip_elasticsearch_get_http_timeout_for_query_data() {
 		return array(
 			// Regular search
 			array(
