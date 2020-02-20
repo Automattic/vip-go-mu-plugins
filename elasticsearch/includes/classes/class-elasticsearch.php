@@ -87,12 +87,12 @@ class Elasticsearch {
 	}
 
 	protected function setup_healthchecks() {
-		$healhcheck = new HealthJob();
+		$this->healthcheck = new HealthJob();
 
 		// Disable healthcheck job
 		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === DISABLE_VIP_SEARCH_HEALTHCHECKS ) {
 			// Hook into init action to ensure cron-control has already been loaded
-			add_action( 'init', [ $healhcheck, 'disable_job' ] );
+			add_action( 'init', [ $this->healthcheck, 'disable_job' ] );
 
 			return;
 		}
