@@ -231,6 +231,60 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$this->assertEquals( true, has_filter( 'ep_do_intercept_request', [ $es, 'filter__ep_do_intercept_request' ] ) );
 	}
 
+	public function vip_elasticsearch_get_http_timeout_for_query_data() {
+		return array(
+			// Regular search
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_search',
+				),
+				// The expected timeout
+				2,
+			),
+			// Bulk index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_bulk',
+				),
+				// The expected timeout
+				5,
+			),
+			// Url containing _bulk
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_bulk/bar?_bulk',
+				),
+				// The expected timeout
+				2,
+			),
+			// Random other url
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_anything',
+				),
+				// The expected timeout
+				2,
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly calculate the HTTP request timeout value for ES requests
+	 * 
+	 * @dataProvider vip_elasticsearch_get_http_timeout_for_query_data()
+	 */
+	public function test__vip_elasticsearch_get_http_timeout_for_query( $query, $expected_timeout ) {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+
+		$timeout = $es->get_http_timeout_for_query( $query );
+
+		$this->assertEquals( $expected_timeout, $timeout );
+	}
+
 	/**
 	 * Test that we are setting up the filter to auto-disable JP Search
 	 */
@@ -378,5 +432,34 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		$result = $es->filter__jetpack_widgets_to_include( $input );
 
 		$this->assertEquals( $expected, $result );
+	}
+
+	/**
+	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
+	 */
+	public function test__vip_elasticsearch_setup_healthchecks_with_enabled() {
+		// Need to filter to enable the HealthJob
+		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Should not have fataled (class was included)
+
+		// Should have registered the init action to setup the health check
+		$this->assertEquals( true, has_action( 'init', [ $es->healthcheck, 'init' ] ) );
+	}
+
+	/**
+	 * Test that instantiating the HealthJob does not happen when not in production
+	 */
+	public function test__vip_elasticsearch_setup_healthchecks_disabled_in_non_production_env() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Should not have fataled (class was included)
+
+		// Should not have instantiated and registered the init action to setup the health check
+		$this->assertEquals( false, isset( $es->healthcheck ) );
 	}
 }

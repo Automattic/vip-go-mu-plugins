@@ -5,6 +5,8 @@ namespace Automattic\VIP\Elasticsearch;
 use \WP_CLI;
 
 class Elasticsearch {
+	public $healthcheck;
+
 	/**
 	 * Initialize the VIP Elasticsearch plugin
 	 */
@@ -101,9 +103,10 @@ class Elasticsearch {
 		 * @param		bool	$enable		True to enable the healthcheck cron job
 		 */
 		$enable = apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+	
 		if ( $enable ) {
 			// Hook into init action to ensure cron-control has already been loaded
-			add_action( 'init', [ $healhcheck, 'init' ] );
+			add_action( 'init', [ $this->healthcheck, 'init' ] );
 		}
 	}
 
@@ -140,10 +143,26 @@ class Elasticsearch {
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
-	
-		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
+
+		$timeout = $this->get_http_timeout_for_query( $query );
+
+		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 	
 		return $request;
+	}
+
+	public function get_http_timeout_for_query( $query ) {
+		$timeout = 2;
+
+		// If query url ends with '_bulk'
+		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
+
+		if ( wp_endswith( $query_path, '_bulk' ) ) {
+			// Bulk index request so increase timeout
+			$timeout = 5;
+		}
+
+		return $timeout;
 	}
 
 	public function filter__jetpack_active_modules( $modules ) {
