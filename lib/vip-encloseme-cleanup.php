@@ -74,9 +74,7 @@ class VIP_Encloseme_Cleanup {
             $meta_exists = $wpdb->get_var( $find_meta_query );
         } while ( ! is_null( $meta_exists ) && false === defined( 'DISABLE_VIP_CLEANUP_ENV' ) );
 
-}
         update_option( self::OPTION_NAME, time() );
-
         wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Finished _encloseme meta cleanup for %s.', get_site_url() ) );
     }
 }
