@@ -78,6 +78,8 @@ class Elasticsearch {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		
+		add_filter( 'jetpack_search_should_handle_query', array( __CLASS__, 'jetpack_search_should_handle_query' ) );
 	}
 
 	protected function load_commands() {
@@ -216,5 +218,22 @@ class Elasticsearch {
 
 		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
 			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
+	}
+	
+	/**
+	 * Disable Jetpack Search if ElasticPress is enabled
+	 *
+	 * When we enable the ElasticPress query integration, we want to simultaneously
+	 * ensure that queries are not being offloaded to Jetpack Search.
+	 *
+	 * This also means that any testing of ElasticPress will not have queries offloaded
+	 * to Jetpack Search.
+	 */
+	static function jetpack_search_should_handle_query( $should_handle_query ) {
+		if ( false === Elasticsearch::ep_skip_query_integration( true ) ) {
+			return false;
+		}
+		
+		return $should_handle_query;
 	}
 }
