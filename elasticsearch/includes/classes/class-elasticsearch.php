@@ -78,6 +78,15 @@ class Elasticsearch {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+
+		// Term changes
+		add_action( 'edited_term', array( __CLASS__, 'action__edited_term' ), 10, 3 );
+
+		// If we hook into pre_delete_term, we could query the objects and schedule a cron job that can diff
+		// those and what's in the term at runtime, to detect if the deletion failed half way. b/c it loops over all
+		// objects and updates their terms. introduces a race condition though. but need to still stay in sync when
+		// it fails half way through...before delete_term fires
+		add_action( 'delete_term', array( __CLASS__, 'action__delete_term' ), 10, 4 );
 	}
 
 	protected function load_commands() {
@@ -114,6 +123,18 @@ class Elasticsearch {
 				ep_setup_query_log();
 			}
 		}
+	}
+
+	public function action__edited_term( $term_id, $tt_id, $taxonomy ) {
+		// Find ID of all attached posts (query lifted from wp_delete_term())
+		$object_ids = (array) $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
+
+		// Queue::queue_objects_for_indexing( $object_ids, 'post' );
+	}
+
+	public function action__delete_term( $term, $tt_id, $taxonomy, $deleted_term, $object_ids ) {
+		// After a term is deleted, we need to re-index all the posts that were attached (from $object_ids)
+		// Queue::queue_objects_for_indexing( $object_ids, 'post' );
 	}
 
 	/**
