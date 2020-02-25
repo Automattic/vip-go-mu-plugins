@@ -85,6 +85,13 @@ class HealthJob {
 	 * Check ElasticSearch index health
 	 */
 	public function check_health() {
+		// Check if job has been disabled
+		if ( ! $this->is_enabled() ) {
+			$this->disable_job();
+
+			return;
+		}
+
 		$user_results = Health::validate_index_users_count();
 
 		$this->process_results( $user_results );
