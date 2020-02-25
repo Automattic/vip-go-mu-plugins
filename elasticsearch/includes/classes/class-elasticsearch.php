@@ -108,6 +108,11 @@ class Elasticsearch {
 		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
+
+			// And ensure the logging has been setup (since it also hooks on plugins_loaded)
+			if ( function_exists( 'ep_setup_query_log' ) ) {
+				ep_setup_query_log();
+			}
 		}
 	}
 
@@ -135,10 +140,26 @@ class Elasticsearch {
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
-	
-		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, 1, 20, $args );
+
+		$timeout = $this->get_http_timeout_for_query( $query );
+
+		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 	
 		return $request;
+	}
+
+	public function get_http_timeout_for_query( $query ) {
+		$timeout = 2;
+
+		// If query url ends with '_bulk'
+		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
+
+		if ( wp_endswith( $query_path, '_bulk' ) ) {
+			// Bulk index request so increase timeout
+			$timeout = 5;
+		}
+
+		return $timeout;
 	}
 
 	public function filter__jetpack_active_modules( $modules ) {
