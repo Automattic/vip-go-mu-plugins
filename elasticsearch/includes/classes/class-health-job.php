@@ -149,4 +149,22 @@ class HealthJob {
 	public function send_alert( $channel, $message, $level ) {
 		return wpcom_vip_irc( $channel, $message, $level );
 	}
+
+	/**
+	 * Is health check job enabled
+	 *
+	 * @return bool True if job is enabled. Else, false
+	 */
+	public function is_enabled() {
+		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === DISABLE_VIP_SEARCH_HEALTHCHECKS ) {
+			return false;
+		}
+
+		/**
+		 * Filter wether to enable VIP search healthcheck
+		 *
+		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 */
+		return apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+	}
 }
