@@ -8,21 +8,21 @@ class Alerts {
 	 *
 	 * @var string
 	 */
-	protected $service_address;
+	public $service_address;
 
 	/**
 	 * The alerts service port
 	 *
 	 * @var string
 	 */
-	protected $service_port;
+	public $service_port;
 
 	/**
 	 * Full path to the alerts service
 	 *
 	 * @var string
 	 */
-	protected $service_url;
+	public $service_url;
 
 	/**
 	 * Instance of his Alerts class
@@ -37,18 +37,8 @@ class Alerts {
 	 * Set to protected to prevent direct instantiation.
 	 * Use Alerts::instance() to get an instance of Alerts
 	 */
-	protected function __construct() {
-		if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
-			throw new Exception( 'Missing alerts service host configuration in ALERT_SERVICE_ADDRESS constant' );
-		}
-
-		if ( ! defined( 'ALERT_SERVICE_PORT' ) || ! ALERT_SERVICE_PORT ) {
-			throw new Exception( 'Missing alerts service port configuration in ALERT_SERVICE_PORT constant' );
-		}
-
-		$this->service_address = ALERT_SERVICE_ADDRESS;
-		$this->service_port = ALERT_SERVICE_PORT;
-		$this->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $this->service_address, $this->service_port );
+	private function __construct() {
+		// empty private constructor
 	}
 
 	/**
@@ -161,7 +151,21 @@ class Alerts {
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
-			self::$instance = new Alerts();
+			$alerts = new Alerts();
+
+			if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
+				return new WP_Error( 'missing-service-address', 'Missing alerts service host configuration in ALERT_SERVICE_ADDRESS constant' );
+			}
+
+			if ( ! defined( 'ALERT_SERVICE_PORT' ) || ! ALERT_SERVICE_PORT ) {
+				return new WP_Error( 'missing-service-port', 'Missing alerts service port configuration in ALERT_SERVICE_PORT constant' );
+			}
+
+			$alerts->service_address = ALERT_SERVICE_ADDRESS;
+			$alerts->service_port = ALERT_SERVICE_PORT;
+			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $this->service_address, $this->service_port );
+
+			self::$instance = $alerts;
 		}
 
 		return self::$instance;
