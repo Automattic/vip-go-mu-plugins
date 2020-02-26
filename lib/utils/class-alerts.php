@@ -46,7 +46,7 @@ class Alerts {
 	 *
 	 * @param array $body The alert message body
 	 *
-	 * @return array Response details from wp_remote_post
+	 * @return array|WP_Error Response details from wp_remote_post
 	 */
 	private function send( $body ) {
 		$fallback_error = new \WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
@@ -57,7 +57,7 @@ class Alerts {
 		] );
 
 		if ( is_wp_error( $response ) ) {
-			throw new Exception( sprintf( 'Error sending alert: %s', $response->get_error_message() ) );
+			return new WP_Error( 'alert-send-failed', sprintf( 'Error sending alert: %s', $response->get_error_message() ) );
 		}
 
 		return $response;
@@ -88,13 +88,13 @@ class Alerts {
 	 *
 	 * @param $channel_or_user string
 	 *
-	 * @return string Validated and cleaned channel or user name
+	 * @return string|WP_Error Validated and cleaned channel or user name or a WP_Error object
 	 */
 	private function validate_channel_or_user( $channel_or_user ) {
 		$channel_or_user = preg_replace( '/[^0-9a-z#@|.-]/', '', $channel_or_user );
 
 		if ( ! $channel_or_user ) {
-			throw new Exception( "Invalid \$channel_or_user: Alerts\:\:chat( '$channel_or_user' );" );
+			return new WP_Error( 'invalid-channel-or-user', "Invalid \$channel_or_user: Alerts\:\:chat( '$channel_or_user' );" );
 		}
 
 		return $channel_or_user;
@@ -107,11 +107,11 @@ class Alerts {
 	 *
 	 * @param $message mixed
 	 *
-	 * @return string Validated and trimmed message
+	 * @return string|WP_Error Validated and trimmed message or a WP_Error object
 	 */
 	private function validate_message( $message ) {
 		if ( ! is_string( $message ) || ! trim( $message ) ) {
-			throw new Exception( "Invalid \$message: Alerts\:\:chat( " . print_r( $message, true ) . " );" );
+			return new WP_Error( 'invalid-alert-message', "Invalid \$message: Alerts\:\:chat( " . print_r( $message, true ) . " );" );
 		}
 
 		return trim( $message );
@@ -122,22 +122,22 @@ class Alerts {
 	 *
 	 * @param $details array
 	 *
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	private function validate_details( $details) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
-			throw new Exception( "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+			return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
 		}
 
 		foreach( $details as $key => $value ) {
 			if ( ! array_key_exists( $key, $required_keys ) ) {
-				throw new Exception( "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
 			}
 
 			if ( ! $value ) {
-				throw new Exception( "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
 			}
 		}
 
@@ -147,7 +147,7 @@ class Alerts {
 	/**
 	 * Get an instance of this Alerts class
 	 *
-	 * @return Alerts
+	 * @return Alerts|WP_Error
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -199,35 +199,47 @@ class Alerts {
 	 * @return bool	True if successful. Else, will return false
 	 */
 	public static function chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
-		try {
-			$alerts = self::instance();
+		$alerts = self::instance();
 
-			if ( $kind && $interval ) {
-				if ( ! $alerts->add_cache( $kind, $interval ) ) {
-					error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
-
-					return false;
-				}
-			}
-
-			$channel_or_user = $alerts->validate_channel_or_user( $channel_or_user );
-
-			$message = $alerts->validate_message( $message );
-
-			$body = [
-				'channel' => $channel_or_user,
-				'type'    => $level,
-				'text'    => $message,
-			];
-
-			$alerts->send( $body );
-
-			return true;
-		} catch( Exception $e ) {
-			error_log( $e->getMessage() );
+		if ( is_wp_error( $alerts ) ) {
+			error_log( $alerts->get_error_message() );
 
 			return false;
 		}
+
+		if ( $kind && $interval ) {
+			if ( ! $alerts->add_cache( $kind, $interval ) ) {
+				error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
+
+				return false;
+			}
+		}
+
+		$channel_or_user = $alerts->validate_channel_or_user( $channel_or_user );
+
+		if ( is_wp_error( $channel_or_user ) ) {
+			error_log( $channel_or_user->get_error_message() );
+
+			return false;
+		}
+
+		$message = $alerts->validate_message( $message );
+
+		if ( is_wp_error( $message ) ) {
+			error_log( $message->get_error_message() );
+
+			return false;
+		}
+
+		$body = [
+			'channel' => $channel_or_user,
+			'type'    => $level,
+			'text'    => $message,
+		];
+
+		$alerts->send( $body );
+
+		return true;
 	}
 
 	/**
@@ -241,34 +253,46 @@ class Alerts {
 	 * @return bool	True if successful. Else, will return false
 	 */
 	public static function opsgenie( $message, $details, $kind = '', $interval = 0 ) {
-		try {
-			$alerts = self::instance();
+		$alerts = self::instance();
 
-			if ( $kind && $interval ) {
-				if ( ! $alerts->add_cache( $kind, $interval ) ) {
-					error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
-
-					return false;
-				}
-			}
-
-			$message = $alerts->validate_message( $message );
-
-			$details = $alerts->validate_details( $details );
-
-			$details[ 'message' ] = $message;
-
-			$body = [
-				'ops_alert' => $details,
-			];
-
-			$alerts->send( $body );
-
-			return true;
-		} catch( Exception $e ) {
-			error_log( $e->getMessage() );
+		if ( is_wp_error( $alerts ) ) {
+			error_log( $alerts->get_error_message() );
 
 			return false;
 		}
+
+		if ( $kind && $interval ) {
+			if ( ! $alerts->add_cache( $kind, $interval ) ) {
+				error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
+
+				return false;
+			}
+		}
+
+		$message = $alerts->validate_message( $message );
+
+		if ( is_wp_error( $message ) ) {
+			error_log( $message->get_error_message() );
+
+			return false;
+		}
+
+		$details = $alerts->validate_details( $details );
+
+		if ( is_wp_error( $details ) ) {
+			error_log( $details->get_error_message() );
+
+			return false;
+		}
+
+		$details[ 'message' ] = $message;
+
+		$body = [
+			'ops_alert' => $details,
+		];
+
+		$alerts->send( $body );
+
+		return true;
 	}
 }
