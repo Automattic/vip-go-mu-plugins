@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Utils;
 
+use WP_Error;
+
 class Alerts {
 	/**
 	 * The alerts service address
@@ -163,7 +165,7 @@ class Alerts {
 
 			$alerts->service_address = ALERT_SERVICE_ADDRESS;
 			$alerts->service_port = ALERT_SERVICE_PORT;
-			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $this->service_address, $this->service_port );
+			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $alerts->service_address, $alerts->service_port );
 
 			self::$instance = $alerts;
 		}
