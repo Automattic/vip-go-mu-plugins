@@ -29,7 +29,7 @@ class Alerts {
 	 *
 	 * @var Alerts
 	 */
-	protected static $instance = null;
+	private static $instance = null;
 
 	/**
 	 * Contructor
@@ -48,7 +48,7 @@ class Alerts {
 	 *
 	 * @return array Response details from wp_remote_post
 	 */
-	protected function send( $body ) {
+	private function send( $body ) {
 		$fallback_error = new \WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
 
 		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
@@ -73,7 +73,7 @@ class Alerts {
 	 *
 	 * @return bool
 	 */
-	protected function add_cache( $key, $expire ) {
+	private function add_cache( $key, $expire ) {
 		if ( function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
 			wp_cache_add_global_groups( [ 'irc-ratelimit' ] );
 
@@ -90,7 +90,7 @@ class Alerts {
 	 *
 	 * @return string Validated and cleaned channel or user name
 	 */
-	protected function validate_channel_or_user( $channel_or_user ) {
+	private function validate_channel_or_user( $channel_or_user ) {
 		$channel_or_user = preg_replace( '/[^0-9a-z#@|.-]/', '', $channel_or_user );
 
 		if ( ! $channel_or_user ) {
@@ -109,7 +109,7 @@ class Alerts {
 	 *
 	 * @return string Validated and trimmed message
 	 */
-	protected function validate_message( $message ) {
+	private function validate_message( $message ) {
 		if ( ! is_string( $message ) || ! trim( $message ) ) {
 			throw new Exception( "Invalid \$message: Alerts\:\:chat( " . print_r( $message, true ) . " );" );
 		}
@@ -124,7 +124,7 @@ class Alerts {
 	 *
 	 * @return array
 	 */
-	protected function validate_details( $details) {
+	private function validate_details( $details) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
