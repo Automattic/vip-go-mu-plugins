@@ -144,6 +144,9 @@ class Elasticsearch {
 		$timeout = $this->get_http_timeout_for_query( $query );
 
 		// Add custom headers to identify authorized traffic
+		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
+			$args['headers'] = [];
+		}
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 	
