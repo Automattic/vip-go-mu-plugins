@@ -134,7 +134,7 @@ class Alerts {
 		}
 
 		foreach( $details as $key => $value ) {
-			if ( ! array_key_exists( $key, $required_keys ) ) {
+			if ( ! in_array( $key, $required_keys ) ) {
 				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
 			}
 
