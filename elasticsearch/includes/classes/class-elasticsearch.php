@@ -87,14 +87,10 @@ class Elasticsearch {
 	}
 
 	protected function setup_healthchecks() {
-		$healthcheck = new HealthJob();
+		$this->healthcheck = new HealthJob();
 	
-		if ( $healthcheck->is_enabled() ) {
-			$this->healthcheck = $healthcheck;
-
-			// Hook into init action to ensure cron-control has already been loaded
-			add_action( 'init', [ $this->healthcheck, 'init' ] );
-		}
+		// Hook into init action to ensure cron-control has already been loaded
+		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
 	public function action__plugins_loaded() {

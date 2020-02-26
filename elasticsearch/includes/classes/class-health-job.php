@@ -29,6 +29,13 @@ class HealthJob {
 	 * @access	public
 	 */
 	public function init() {
+		// We always add this action so that the job can unregister itself if it no longer should be running
+		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+
+		if ( ! $this->is_enabled() ) {
+			return;
+		}
+
 		// Add the custom cron schedule
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
@@ -44,8 +51,6 @@ class HealthJob {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME )  ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
-
-		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
 	}
 
 	/**
