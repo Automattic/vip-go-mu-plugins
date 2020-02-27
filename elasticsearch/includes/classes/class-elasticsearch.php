@@ -143,6 +143,9 @@ class Elasticsearch {
 
 		// Bulk index them all
 		\ElasticPress\Indexables::factory()->get( 'post' )->bulk_index( $object_ids );
+		if ( ! count( $object_ids ) ) {
+			return false;
+		}
 	}
 
 	public function action__set_object_terms( $object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids ) {
