@@ -80,12 +80,12 @@ class Elasticsearch {
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
 		// Term changes
-		add_action( 'edited_term', array( __CLASS__, 'action__edited_term' ), 10, 3 );
+		add_action( 'edited_term', array( $this, 'action__edited_term' ), 10, 3 );
 
 		// We hook into individual posts' set_object_terms action instead of delete_term because the latter could fail
 		// part way through (out of memory, timeout) and leave some posts with update terms, others without, and us with an 
 		// inconsistent index. So we handle the individual post change instead as it is definitive and independent
-		add_action( 'set_object_terms', array( __CLASS__, 'action__set_object_terms' ), 10, 6 );
+		add_action( 'set_object_terms', array( $this, 'action__set_object_terms' ), 10, 6 );
 	}
 
 	protected function load_commands() {
