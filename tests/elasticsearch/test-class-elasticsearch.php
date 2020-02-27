@@ -462,4 +462,105 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		// Should not have instantiated and registered the init action to setup the health check
 		$this->assertEquals( false, isset( $es->healthcheck ) );
 	}
+
+	/**
+	 * Test that posts are re-indexed correctly when terms are edited
+	 */
+	public function test__vip_elasticsearch_edited_term_hook() {
+		$taxonomy = 'category';
+
+		$term_factory = new \WP_UnitTest_Factory_For_Term( null, 'category' );
+		$term_id = $term_factory->create_object( [
+			'name' => 'term-for-update-testing',
+		] );
+
+		$post_factory = new \WP_UnitTest_Factory_For_Post();
+
+		$post_ids = [];
+
+		for( $i = 0; $i < 3; $i++ ) {
+			$post_ids[] = $post_factory->create_object( [
+				'post_title' => 'Tester',
+				'post_content' => 'Test content',
+				'post_category' => [ $term_id ],
+			] );
+		}
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		wp_update_term( $term_id, $taxonomy, array( 'slug' => 'new-slug' ) );
+
+		// The sync queue is an array like [ 1 => true, 2 => true ]
+		$expected_sync_queue = array_fill_keys( $post_ids, true );
+
+		$this->assertEquals( $expected_sync_queue, $es->get_indexable( 'post' )->sync_manager->sync_queue );
+	}
+
+	/**
+	 * Test that posts are re-indexed correctly when terms are edited on a post
+	 */
+	public function test__vip_elasticsearch_set_object_terms_hook_on_term_delete() {
+		$taxonomy = 'category';
+
+		$term_factory = new \WP_UnitTest_Factory_For_Term( null, 'category' );
+		$term_id = $term_factory->create_object( [
+			'name' => 'term-for-deletion-testing',
+		] );
+
+		$post_factory = new \WP_UnitTest_Factory_For_Post();
+
+		$post_id = $post_factory->create_object( [
+			'post_title' => 'Tester',
+			'post_content' => 'Test content',
+			'post_category' => [ $term_id ],
+		] );
+
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		// Deleting the term
+		wp_delete_term( $term_id, $taxonomy );
+
+		// And it should have queued up an indexing for this post
+		$this->assertEquals( array( $post_id => true ), $es->get_indexable( 'post' )->sync_manager->sync_queue );
+	}
+
+	/**
+	 * Test that posts are re-indexed correctly when terms are edited on a post, but only once if there are
+	 * multiple changes that would cause a re-index
+	 */
+	public function test__vip_elasticsearch_set_object_terms_hook_with_multiple_changes() {
+		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es->init();
+
+		$taxonomy = 'category';
+
+		$term_factory = new \WP_UnitTest_Factory_For_Term( null, 'category' );
+		$term_id = $term_factory->create_object( [
+			'name' => 'term-for-deletion-testing',
+		] );
+
+		$post_factory = new \WP_UnitTest_Factory_For_Post();
+
+		$post_id = $post_factory->create_object( [
+			'post_title' => 'Tester',
+			'post_content' => 'Test content',
+			'post_category' => [ $term_id ],
+		] );
+
+		$post = get_post( $post_id );
+
+		$post->post_title = 'New title';
+		$post->post_category = [];
+
+		// Update the post
+		wp_update_post( $post );
+
+		// Then deleting the term
+		wp_delete_term( $term_id, $taxonomy );
+
+		// All those changes should have only registered themselves once (unique sync item per object)
+		$this->assertEquals( array( $post_id => true ), $es->get_indexable( 'post' )->sync_manager->sync_queue );
+	}
 }
