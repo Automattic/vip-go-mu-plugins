@@ -141,17 +141,22 @@ class Elasticsearch {
 		// Find ID of all attached posts (query lifted from wp_delete_term())
 		$object_ids = (array) $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
 
-		// Bulk index them all
-		\ElasticPress\Indexables::factory()->get( 'post' )->bulk_index( $object_ids );
 		if ( ! count( $object_ids ) ) {
 			return false;
+		}
+
+		$indexable = $this->get_indexable( 'post' );
+
+		// Add all of them to the queue
+		foreach( $object_ids as $id ) {
+			$indexable->sync_manager->add_to_queue( $id );
 		}
 	}
 
 	public function action__set_object_terms( $object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids ) {
 		// TODO only run if the taxonomy is one that is indexed...use the ep_sync_taxonomies filter
 
-		\ElasticPress\Indexables::factory()->get( 'post' )->index( $object_id );
+		$this->get_indexable( 'post' )->sync_manager->add_to_queue( $object_id );
 	}
 
 	/**
