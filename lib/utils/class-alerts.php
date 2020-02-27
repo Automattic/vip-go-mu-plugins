@@ -163,6 +163,10 @@ class Alerts {
 				return new WP_Error( 'missing-service-port', 'Missing alerts service port configuration in ALERT_SERVICE_PORT constant' );
 			}
 
+			if( ! is_int( ALERT_SERVICE_PORT ) || ALERT_SERVICE_PORT > 65535 || ALERT_SERVICE_PORT < 1 ) {
+				return new WP_Error( 'incorrect-service-port', 'Service port must be an integer value in the 1-65535 range.' );
+			}
+
 			$alerts->service_address = ALERT_SERVICE_ADDRESS;
 			$alerts->service_port = ALERT_SERVICE_PORT;
 			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $alerts->service_address, $alerts->service_port );
