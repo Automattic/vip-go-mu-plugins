@@ -171,7 +171,7 @@ namespace Automattic\VIP\Utils;
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__validate_details() {
+	public function test__validate_opsgenie_details() {
 		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
 		define( 'ALERT_SERVICE_PORT', 9999 );
 
@@ -185,9 +185,9 @@ namespace Automattic\VIP\Utils;
 
 		$alerts = Alerts::instance();
 
-		$validate_details_method = self::get_alerts_method( 'validate_details' );
+		$validate_opsgenie_details_method = self::get_alerts_method( 'validate_opsgenie_details' );
 
-		$result = $validate_details_method->invokeArgs( $alerts, [ $details ] );
+		$result = $validate_opsgenie_details_method->invokeArgs( $alerts, [ $details ] );
 
 		$this->assertEquals( $details, $result );
 	}
@@ -224,15 +224,15 @@ namespace Automattic\VIP\Utils;
 	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__invalid_details
 	 */
-	public function test__validate_details__invalid_details( $details ) {
+	public function test__validate_opsgenie_details__invalid_details( $details ) {
 		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
 		define( 'ALERT_SERVICE_PORT', 9999 );
 
 		$alerts = Alerts::instance();
 
-		$validate_details_method = self::get_alerts_method( 'validate_details' );
+		$validate_opsgenie_details_method = self::get_alerts_method( 'validate_opsgenie_details' );
 
-		$result = $validate_details_method->invokeArgs( $alerts, [ $details ] );
+		$result = $validate_opsgenie_details_method->invokeArgs( $alerts, [ $details ] );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-opsgenie-details', $result->get_error_code(), 'Wrong error code' );
