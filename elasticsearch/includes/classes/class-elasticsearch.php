@@ -136,6 +136,8 @@ class Elasticsearch {
 	}
 
 	public function action__edited_term( $term_id, $tt_id, $taxonomy ) {
+		global $wpdb;
+
 		// Find ID of all attached posts (query lifted from wp_delete_term())
 		$object_ids = (array) $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
 
