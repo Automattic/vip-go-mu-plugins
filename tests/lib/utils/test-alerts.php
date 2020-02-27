@@ -43,7 +43,7 @@ namespace Automattic\VIP\Utils;
 		$alerts = Alerts::instance();
 
 		$this->assertWPError( $alerts );
-		$this->assertEquals( 'missing-service-address', $alerts->get_error_code(), 'Wrong error message' );
+		$this->assertEquals( 'missing-service-address', $alerts->get_error_code(), 'Wrong error code' );
 	}
 
 	/**
@@ -56,7 +56,7 @@ namespace Automattic\VIP\Utils;
 		$alerts = Alerts::instance();
 
 		$this->assertWPError( $alerts );
-		$this->assertEquals( 'missing-service-port', $alerts->get_error_code(), 'Wrong error message' );
+		$this->assertEquals( 'missing-service-port', $alerts->get_error_code(), 'Wrong error code' );
 	}
 
 	public function get_test_data__valid_channel_or_user() {
@@ -173,7 +173,7 @@ namespace Automattic\VIP\Utils;
 		$result = $validate_message_method->invokeArgs( $alerts, [ $message ] );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid-alert-message', $result->get_error_code() );
+		$this->assertEquals( 'invalid-alert-message', $result->get_error_code(), 'Wrong error code' );
 		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
 		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
 		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
@@ -250,7 +250,7 @@ namespace Automattic\VIP\Utils;
 		$result = $validate_details_method->invokeArgs( $alerts, [ $details ] );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid-opsgenie-details', $result->get_error_code() );
+		$this->assertEquals( 'invalid-opsgenie-details', $result->get_error_code(), 'Wrong error code' );
 		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
 		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
 		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
