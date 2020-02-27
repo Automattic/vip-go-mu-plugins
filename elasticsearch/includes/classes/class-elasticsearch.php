@@ -110,6 +110,17 @@ class Elasticsearch {
 		}
 	}
 
+	/**
+	 * Abstract the retrieval of ElasticPress Indexable instances for easier mocking in tests
+	 * 
+	 * @see \ElasticPress\Indexables::get()
+	 * @param string $type The type of indexable to retrieve
+	 * @return \ElasticPress\Indexable Indexable instance, or false if not found
+	 */
+	public function get_indexable( $type ) {
+		return \ElasticPress\Indexables::factory()->get( $type );
+	}
+
 	public function action__plugins_loaded() {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
