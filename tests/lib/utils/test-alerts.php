@@ -88,9 +88,6 @@ namespace Automattic\VIP\Utils;
 		$result = $validate_channel_or_user_method->invokeArgs( $alerts, [ $channel_or_user ] );
 
 		$this->assertEquals( $expected, $result );
-		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
-		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
 	public function get_test_data__invalid_channel_or_user() {
@@ -121,9 +118,6 @@ namespace Automattic\VIP\Utils;
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-channel-or-user', $result->get_error_code() );
-		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
-		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
 	/**
@@ -141,9 +135,6 @@ namespace Automattic\VIP\Utils;
 		$result = $validate_message_method->invokeArgs( $alerts, [ 'Test message ' ] );
 
 		$this->assertEquals( 'Test message', $result );
-		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
-		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
 	public function get_test_data__invalid_message() {
@@ -174,9 +165,6 @@ namespace Automattic\VIP\Utils;
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-alert-message', $result->get_error_code(), 'Wrong error code' );
-		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
-		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
 	/**
@@ -202,9 +190,6 @@ namespace Automattic\VIP\Utils;
 		$result = $validate_details_method->invokeArgs( $alerts, [ $details ] );
 
 		$this->assertEquals( $details, $result );
-		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
-		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
 	public function get_test_data__invalid_details() {
@@ -251,8 +236,5 @@ namespace Automattic\VIP\Utils;
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-opsgenie-details', $result->get_error_code(), 'Wrong error code' );
-		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
-		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 }
