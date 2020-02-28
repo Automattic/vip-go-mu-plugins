@@ -28,6 +28,7 @@
 	<!-- Other directories -->
 	<exclude-pattern>.git/*</exclude-pattern>
 	<exclude-pattern>akismet/*</exclude-pattern>
+	<exclude-pattern>bin/*</exclude-pattern>
 	<exclude-pattern>debug-bar/*</exclude-pattern>
 	<exclude-pattern>drop-ins/*</exclude-pattern>
 	<exclude-pattern>elasticsearch/elasticpress/*</exclude-pattern>
