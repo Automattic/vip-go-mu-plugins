@@ -80,14 +80,24 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	}
 
 	/**
+	 * Standardize the format of the SMS message
+	 *
+	 * @param string $token User token.
+	 */
+	public function format_sms_message( $token ) {
+		$message = $token . " is your " . $_SERVER['HTTP_HOST'] . " verification code.\r\n" . "@" . $_SERVER['HTTP_HOST'] . " #" . $token;
+		return $message;
+	}
+
+	/**
 	 * Generate and send the user token.
 	 *
 	 * @param WP_User $user WP_User object of the logged-in user.
 	 */
 	public function generate_and_send_token( $user ) {
 		require_once( WPMU_PLUGIN_DIR . '/lib/sms.php' );
-		$token = $this->generate_token( $user->ID ); // Store in variable to prevent generating code twice
-		$message = $token . " is your " . $_SERVER['HTTP_HOST'] . " verification code.\r\n" . "@" . $_SERVER['HTTP_HOST'] . " #" . $token;
+		$verification_code = $this->generate_token( $user->ID ); // Store in variable to prevent generating code twice
+		$message = $this->format_sms_message( $verification_code );
 		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
 			return \Automattic\VIP\SMS\send_sms( $sms, $message );
 		}
