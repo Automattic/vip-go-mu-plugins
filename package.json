@@ -1,0 +1,14 @@
+{
+  "name": "@automattic/vip-go-mu-plugins",
+  "private": true,
+  "version": "1.0.0",
+  "description": "mu-plugins used on the VIP Go platform",
+  "scripts": {
+    "phpcs": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines"
+  },
+  "author": "Automattic",
+  "devDependencies": {
+    "eslines": "1.1.0",
+    "eslint": "5.16.0"
+  }
+}
