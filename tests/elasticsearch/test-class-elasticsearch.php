@@ -460,6 +460,6 @@ class Elasticsearch_Test extends \WP_UnitTestCase {
 		// Should not have fataled (class was included)
 
 		// Should not have instantiated and registered the init action to setup the health check
-		$this->assertEquals( false, isset( $es->healthcheck ) );
+		$this->assertEquals( false, $es->healthcheck->is_enabled() );
 	}
 }
