@@ -6,7 +6,6 @@
         "downgrade-unmodified-lines": {
             "remote": "origin/master",
             "rulesNotToDowngrade": [
-                "Generic.WhiteSpace.DisallowTabIndent.TabsUsed"
 	    ]
         }
     }
