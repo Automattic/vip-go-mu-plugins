@@ -63,7 +63,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.3
+      - image: circleci/php:7.3-node
       - image: *db_image
 
   php73-build-singlesite:
@@ -72,7 +72,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.3
+      - image: circleci/php:7.3-node
       - image: *db_image
 
   php74-build-multisite:
@@ -81,7 +81,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.4
+      - image: circleci/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite:
@@ -90,5 +90,5 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.4
+      - image: circleci/php:7.4-node
       - image: *db_image
