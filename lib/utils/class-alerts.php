@@ -160,6 +160,107 @@ class Alerts {
 	}
 
 	/**
+	 * Send a message to IRC and/or Slack
+	 *
+	 * See Alerts::chat()
+	 *
+	 */
+	public function send_to_chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 1 ) {
+		if( '' === $kind ) {
+			// Generate default kind value
+			$kind = $this->generate_kind( $channel_or_user . $message );
+		}
+
+		if ( ! $this->add_cache( $kind, $interval ) ) {
+			error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
+
+			return false;
+		}
+
+		$channel_or_user = $this->validate_channel_or_user( $channel_or_user );
+
+		if ( is_wp_error( $channel_or_user ) ) {
+			error_log( $channel_or_user->get_error_message() );
+
+			return false;
+		}
+
+		$message = $this->validate_message( $message );
+
+		if ( is_wp_error( $message ) ) {
+			error_log( $message->get_error_message() );
+
+			return false;
+		}
+
+		$body = [
+			'channel' => $channel_or_user,
+			'type'    => $level,
+			'text'    => $message,
+		];
+
+		$response = $this->send( $body );
+
+		if ( is_wp_error( $response ) ) {
+			error_log( $response->get_error_message() );
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Send an alert to Opsgenie
+	 *
+	 * See Alerts::opsgenie()
+	 */
+	public function send_to_opsgenie( $message, $details, $kind = '', $interval = 1 ) {
+		if( '' === $kind ) {
+			// Generate default kind value
+			$kind = $this->generate_kind( $message . json_encode( $details ) );
+		}
+
+		if ( ! $this->add_cache( $kind, $interval ) ) {
+			error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
+
+			return false;
+		}
+
+		$message = $this->validate_message( $message );
+
+		if ( is_wp_error( $message ) ) {
+			error_log( $message->get_error_message() );
+
+			return false;
+		}
+
+		$details = $this->validate_opsgenie_details( $details );
+
+		if ( is_wp_error( $details ) ) {
+			error_log( $details->get_error_message() );
+
+			return false;
+		}
+
+		$details[ 'message' ] = $message;
+
+		$body = [
+			'ops_alert' => $details,
+		];
+
+		$response = $this->send( $body );
+
+		if ( is_wp_error( $response ) ) {
+			error_log( $response->get_error_message() );
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Get an instance of this Alerts class
 	 *
 	 * @return Alerts|WP_Error
@@ -226,42 +327,8 @@ class Alerts {
 			return false;
 		}
 
-		if( '' === $kind ) {
-			// Generate default kind value
-			$kind = $alerts->generate_kind( $channel_or_user . $message );
-		}
 
-		if ( ! $alerts->add_cache( $kind, $interval ) ) {
-			error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
-
-			return false;
-		}
-
-		$channel_or_user = $alerts->validate_channel_or_user( $channel_or_user );
-
-		if ( is_wp_error( $channel_or_user ) ) {
-			error_log( $channel_or_user->get_error_message() );
-
-			return false;
-		}
-
-		$message = $alerts->validate_message( $message );
-
-		if ( is_wp_error( $message ) ) {
-			error_log( $message->get_error_message() );
-
-			return false;
-		}
-
-		$body = [
-			'channel' => $channel_or_user,
-			'type'    => $level,
-			'text'    => $message,
-		];
-
-		$alerts->send( $body );
-
-		return true;
+		return $alerts->send_to_chat( $channel_or_user, $message, $level, $kind, $interval );
 	}
 
 	/**
@@ -283,41 +350,6 @@ class Alerts {
 			return false;
 		}
 
-		if( '' === $kind ) {
-			// Generate default kind value
-			$kind = $alerts->generate_kind( $message . json_encode( $details ) );
-		}
-
-		if ( ! $alerts->add_cache( $kind, $interval ) ) {
-			error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
-
-			return false;
-		}
-
-		$message = $alerts->validate_message( $message );
-
-		if ( is_wp_error( $message ) ) {
-			error_log( $message->get_error_message() );
-
-			return false;
-		}
-
-		$details = $alerts->validate_opsgenie_details( $details );
-
-		if ( is_wp_error( $details ) ) {
-			error_log( $details->get_error_message() );
-
-			return false;
-		}
-
-		$details[ 'message' ] = $message;
-
-		$body = [
-			'ops_alert' => $details,
-		];
-
-		$alerts->send( $body );
-
-		return true;
+		return $alerts->send_to_opsgenie( $message, $details, $kind, $interval );
 	}
 }
