@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "mu-plugins used on the VIP Go platform",
   "scripts": {
-    "phpcs": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines"
+    "phpcs": "vendor/bin/phpcs",
+    "phpcs:changed": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet"
   },
   "author": "Automattic",
   "devDependencies": {
