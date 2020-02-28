@@ -147,6 +147,19 @@ class Alerts {
 	}
 
 	/**
+	 * Generate a default kind value for rate limiting
+	 *
+	 * Uses md5() to generate a hash of $key as the default kind value
+	 *
+	 * @param $key string String to generate the kind value from
+	 *
+	 * @return string The generated kind value
+	 */
+	private function generate_kind( $key ) {
+		return md5( $key );
+	}
+
+	/**
 	 * Get an instance of this Alerts class
 	 *
 	 * @return Alerts|WP_Error
@@ -204,7 +217,7 @@ class Alerts {
 	 *
 	 * @return bool	True if successful. Else, will return false
 	 */
-	public static function chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
+	public static function chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 1 ) {
 		$alerts = self::instance();
 
 		if ( is_wp_error( $alerts ) ) {
@@ -213,12 +226,15 @@ class Alerts {
 			return false;
 		}
 
-		if ( $kind && $interval ) {
-			if ( ! $alerts->add_cache( $kind, $interval ) ) {
-				error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
+		if( '' === $kind ) {
+			// Generate default kind value
+			$kind = $alerts->generate_kind( $channel_or_user . $message );
+		}
 
-				return false;
-			}
+		if ( ! $alerts->add_cache( $kind, $interval ) ) {
+			error_log( sprintf( 'Alert rate limited: chat( %s, %s, %s, %s, %s );', $channel_or_user, $message, $level, $kind, $interval ) );
+
+			return false;
 		}
 
 		$channel_or_user = $alerts->validate_channel_or_user( $channel_or_user );
@@ -258,7 +274,7 @@ class Alerts {
 	 *
 	 * @return bool	True if successful. Else, will return false
 	 */
-	public static function opsgenie( $message, $details, $kind = '', $interval = 0 ) {
+	public static function opsgenie( $message, $details, $kind = '', $interval = 1 ) {
 		$alerts = self::instance();
 
 		if ( is_wp_error( $alerts ) ) {
@@ -267,12 +283,15 @@ class Alerts {
 			return false;
 		}
 
-		if ( $kind && $interval ) {
-			if ( ! $alerts->add_cache( $kind, $interval ) ) {
-				error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
+		if( '' === $kind ) {
+			// Generate default kind value
+			$kind = $alerts->generate_kind( $message . json_encode( $details ) );
+		}
 
-				return false;
-			}
+		if ( ! $alerts->add_cache( $kind, $interval ) ) {
+			error_log( sprintf( 'Alert rate limited: opsgenie( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
+
+			return false;
 		}
 
 		$message = $alerts->validate_message( $message );
