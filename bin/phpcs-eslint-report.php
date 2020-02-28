@@ -22,7 +22,8 @@ class ESLintReport implements Report {
 	 * @return bool
 	 */
 	public function generateFileReport( $report, File $phpcsFile, $showSources = false, $width = 80 ) {
-		$filename = $report['filename'];
+		// The differ in eslines generates full paths so make sure it's absolute.
+		$filename = $phpcsFile->path;
 
 		$error_count = $report['errors'];
 		$warning_count = $report['warnings'];
