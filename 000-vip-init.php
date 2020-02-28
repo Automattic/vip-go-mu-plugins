@@ -9,6 +9,8 @@
  * Remember vip-init.php? This is like that, but better! 
  */
 
+error_log( 'Initializing VIP!' );
+
 /**
  * By virtue of the filename, this file is included first of
  * all the files in the VIP Go MU plugins directory. All
