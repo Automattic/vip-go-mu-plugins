@@ -18,6 +18,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-require_once __DIR__ . '/includes/classes/class-elasticsearch.php';
+require_once __DIR__ . '/includes/classes/class-search.php';
 
 do_action( 'vip_search_loaded' );
