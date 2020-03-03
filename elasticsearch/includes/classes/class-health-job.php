@@ -97,9 +97,13 @@ class HealthJob {
 			return;
 		}
 
-		$user_results = Health::validate_index_users_count();
+		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
-		$this->process_results( $user_results );
+		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
+			$user_results = Health::validate_index_users_count();
+
+			$this->process_results( $user_results );
+		}
 
 		$post_results = Health::validate_index_posts_count();
 
