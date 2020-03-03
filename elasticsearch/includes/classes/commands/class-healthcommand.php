@@ -29,7 +29,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 *
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-es health validate-counts
+	 *     wp vip-search health validate-counts
 	 *
 	 * @subcommand validate-counts
 	 */
