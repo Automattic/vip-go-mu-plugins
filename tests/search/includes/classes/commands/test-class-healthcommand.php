@@ -7,8 +7,8 @@ class HealthCommand_Test extends \WP_UnitTestCase {
 		// define( 'WP_CLI', true );
 
 		// require_once __DIR__ . '/../../../../../vip-helpers/vip-wp-cli.php';
-		// require_once __DIR__ . '/../../../../../elasticsearch/elasticsearch.php';
-		// require_once __DIR__ . '/../../../../../elasticsearch/includes/classes/commands/class-healthcommand.php';
+		// require_once __DIR__ . '/../../../../../search/search.php';
+		// require_once __DIR__ . '/../../../../../search/includes/classes/commands/class-healthcommand.php';
 	}
 
 	public function test__vip_search_healthcommand_validate_users_count() {
