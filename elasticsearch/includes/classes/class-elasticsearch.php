@@ -214,7 +214,8 @@ class Elasticsearch {
 			return true;
 		}
 
-		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
-			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
+		$query_integration_enabled = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
+		// The filter is checking if we should _skip_ query integration
+		return ! $query_integration_enabled;
 	}
 }
