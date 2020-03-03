@@ -325,8 +325,8 @@ class Search {
 	 * This also means that any testing of ElasticPress will not have queries offloaded
 	 * to Jetpack Search.
 	 */
-	static function jetpack_search_should_handle_query( $should_handle_query ) {
-		if ( false === Elasticsearch::ep_skip_query_integration( true ) ) {
+	protected static function jetpack_search_should_handle_query( $should_handle_query ) {
+		if ( false === self::ep_skip_query_integration( true ) ) {
 			return false;
 		}
 		
