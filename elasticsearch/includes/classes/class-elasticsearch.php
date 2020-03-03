@@ -194,8 +194,8 @@ class Search {
 	 * Separate plugin enabled and querying the index
 	 *
 	 * The index can be tested at any time by setting an `es` query argument.
-	 * When we're ready to use the index in production, the `vip_enable_elasticsearch`
-	 * option will be set to `true`, which will enable querying for everyone.
+	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
+	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	static function ep_skip_query_integration( $skip ) {
 		if ( isset( $_GET[ 'es' ] ) ) {
