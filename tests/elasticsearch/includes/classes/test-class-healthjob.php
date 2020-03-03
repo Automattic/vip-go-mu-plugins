@@ -14,7 +14,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$job = new \Automattic\VIP\SearchHealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob();
 
 		$job->check_health();
 	}
@@ -35,7 +35,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		\ElasticPress\Features::factory()->registered_features['users'] = $users_mock;
 
 		// Mock the health job
-		$job = $this->getMockBuilder( \Automattic\VIP\SearchHealthJob::class )
+		$job = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setMethods( array( 'process_results' ) )
 			->getMock();
 
@@ -82,7 +82,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\SearchHealthJob::class )
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setMethods( [ 'send_alert' ] )
 			->getMock();
 
@@ -138,7 +138,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\SearchHealthJob::class )
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setMethods( [ 'send_alert' ] )
 			->getMock();
 
