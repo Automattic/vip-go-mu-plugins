@@ -320,6 +320,7 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+<<<<<<< HEAD:tests/search/test-class-search.php
 	 * Test that we are setting up the filter to auto-disable JP Search
 	 */
 	public function test__vip_search_has_jp_search_module_filter() {
