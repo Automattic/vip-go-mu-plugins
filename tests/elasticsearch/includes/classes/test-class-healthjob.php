@@ -26,17 +26,17 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$es->init();
 
 		$users_mock = $this->getMockBuilder( \ElasticPress\Feature\Users\Users::class )
-			->setMethods( [ 'is_active' ] )
+			->setMethods( array( 'is_active' ) )
 			->getMock();
 
 		$users_mock->method( 'is_active' )->will( $this->returnValue( false ) );
 
 		// Mock the users feature
-		\ElasticPress\Features::factory()->registered_features[ 'users' ] = $users_mock;
+		\ElasticPress\Features::factory()->registered_features['users'] = $users_mock;
 
 		// Mock the health job
 		$job = $this->getMockBuilder( \Automattic\VIP\Elasticsearch\HealthJob::class )
-			->setMethods( [ 'process_results' ] )
+			->setMethods( array( 'process_results' ) )
 			->getMock();
 
 		// Only expect it to process 1 set of results (for regular posts)
