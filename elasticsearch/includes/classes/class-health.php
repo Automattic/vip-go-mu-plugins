@@ -32,7 +32,7 @@ class Health {
 
 			$db_total = (int) $result[ 'total_objects' ];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-go-elasticsearch', $e->get_error_message() ) );
+			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->get_error_message() ) );
 		}
 
 		// Get total count in ES index
@@ -45,14 +45,14 @@ class Health {
 
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-go-elasticsearch', $e->get_error_message() ) );
+			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $e->get_error_message() ) );
 		}
 
 		// There is not other useful information out of query_es(): it just returns false in case of failure.
 		// This may be due to different causes, e.g. index not existing or incorrect connection parameters.
 		if ( ! $es_result ) {
 			$es_total = 'N/A';
-			return new WP_Error( 'es_query_error', 'failure querying ES. #vip-go-elasticsearch' );
+			return new WP_Error( 'es_query_error', 'failure querying ES. #vip-search' );
 		}
 
 		// Verify actual results
@@ -82,7 +82,7 @@ class Health {
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $users ) {
-			return new WP_Error( 'es_users_query_error', 'failure retrieving user documents from ES #vip-go-elasticsearch' );
+			return new WP_Error( 'es_users_query_error', 'failure retrieving user documents from ES #vip-search' );
 		}
 
 		$query_args = [
@@ -91,7 +91,7 @@ class Health {
 
 		$result = self::validate_index_entity_count( $query_args, $users );
 		if ( is_wp_error( $result ) ) {
-			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-go-elasticsearch', $result->get_error_message() ) );
+			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-search', $result->get_error_message() ) );
 		}
 		return array( $result );
 	}
@@ -108,7 +108,7 @@ class Health {
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $posts ) {
-			return new WP_Error( 'es_users_query_error', 'failure retrieving post documents from ES #vip-go-elasticsearch' );
+			return new WP_Error( 'es_users_query_error', 'failure retrieving post documents from ES #vip-search' );
 		}
 
 		$post_types = $posts->get_indexable_post_types();

@@ -130,7 +130,7 @@ class Elasticsearch {
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
-		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
+		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 
 		$timeout = $this->get_http_timeout_for_query( $query );
 
