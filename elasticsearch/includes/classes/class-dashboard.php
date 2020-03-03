@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
 class Dashboard {
 

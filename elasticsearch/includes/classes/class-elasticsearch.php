@@ -1,10 +1,10 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
 use \WP_CLI;
 
-class Elasticsearch {
+class Search {
 	public $healthcheck;
 
 	/**

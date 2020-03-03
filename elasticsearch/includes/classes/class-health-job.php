@@ -1,8 +1,8 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Elasticsearch\Health as Health;
+use Automattic\VIP\Search\Health as Health;
 
 require_once __DIR__ . '/class-health.php';
 

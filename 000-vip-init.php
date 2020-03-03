@@ -179,8 +179,8 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/elasticsearch/elasticsearch.php' );
 
-	$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-	$es_plugin->init();
+	$search_plugin = new \Automattic\VIP\Search\Search();
+	$search_plugin->init();
 }
 
 // Add custom header for VIP

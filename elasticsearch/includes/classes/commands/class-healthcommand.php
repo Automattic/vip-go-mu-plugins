@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch\Commands;
+namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
@@ -10,7 +10,7 @@ require_once __DIR__ . '/../class-health.php';
 /**
  * Commands to view and manage the health of VIP Search indexes
  *
- * @package Automattic\VIP\Elasticsearch
+ * @package Automattic\VIP\Search
  */
 class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
@@ -53,7 +53,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_users_count( $args, $assoc_args ) {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
-		$users_results = \Automattic\VIP\Elasticsearch\Health::validate_index_users_count();
+		$users_results = \Automattic\VIP\Search\Health::validate_index_users_count();
 		if ( is_wp_error( $users_results ) ) {
 			WP_CLI::warning( $users_results->get_error_message() );
 			return;
@@ -73,7 +73,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_posts_count( $args, $assoc_args ) {
 		WP_CLI::line( "Validating posts count\n" );
 
-		$posts_results = \Automattic\VIP\Elasticsearch\Health::validate_index_posts_count();
+		$posts_results = \Automattic\VIP\Search\Health::validate_index_posts_count();
 		$this->render_results( $posts_results );
 	}
 

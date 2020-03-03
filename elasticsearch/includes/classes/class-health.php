@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
 use \ElasticPress\Indexable as Indexable;
 use \ElasticPress\Indexables as Indexables;
