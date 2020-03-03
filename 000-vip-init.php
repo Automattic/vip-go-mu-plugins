@@ -175,7 +175,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 // Load elasticsearch helpers
-if ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) {
+if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
+	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/elasticsearch/elasticsearch.php' );
 
 	$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
