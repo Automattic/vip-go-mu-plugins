@@ -8,7 +8,7 @@ use \WP_CLI\Utils;
 require_once __DIR__ . '/../class-health.php';
 
 /**
- * Commands to view and manage the health of VIP Go Elasticsearch indexes
+ * Commands to view and manage the health of VIP Search indexes
  *
  * @package Automattic\VIP\Elasticsearch
  */

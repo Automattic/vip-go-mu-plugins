@@ -11,7 +11,7 @@ use \WP_Error as WP_Error;
 
 class Health {
 	/**
-	 * Verify the difference in number for a given entity between the DB and ElasticSearch.
+	 * Verify the difference in number for a given entity between the DB and the index.
 	 * Entities can be either posts or users.
 	 *
 	 * @since   1.0.0

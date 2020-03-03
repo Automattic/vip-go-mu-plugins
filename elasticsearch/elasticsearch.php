@@ -1,15 +1,15 @@
 <?php
 /**
- * Plugin Name: Elasticsearch
+ * Plugin Name: VIP Search
  * Description: Power your site search and other queries with Elasticsearch
  * Version:     0.1.0
  * Author:      Automattic VIP
  * Author URI:  https://wpvip.com
  * License:     GPLv2 or later
- * Text Domain: elasticsearch
+ * Text Domain: vip-search
  * Domain Path: /lang/
  *
- * @package  elasticsearch
+ * @package Automattic\VIP\Search
  */
 
 namespace Automattic\VIP\Elasticsearch;

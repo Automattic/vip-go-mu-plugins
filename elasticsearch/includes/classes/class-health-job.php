@@ -87,7 +87,7 @@ class HealthJob {
 	}
 
 	/**
-	 * Check ElasticSearch index health
+	 * Check index health
 	 */
 	public function check_health() {
 		// Check if job has been disabled
