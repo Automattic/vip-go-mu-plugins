@@ -1,0 +1,12 @@
+{
+    "branches": {
+        "default": ["downgrade-unmodified-lines"]
+    },
+    "processors": {
+        "downgrade-unmodified-lines": {
+            "remote": "origin/master",
+            "rulesNotToDowngrade": [
+	    ]
+        }
+    }
+}
