@@ -14,3 +14,6 @@ phpdoc
 # Composer
 vendor
 output
+
+# npm
+node_modules
