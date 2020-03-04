@@ -241,6 +241,11 @@ class Search {
 		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
 	}
 
+	/**
+	 * Filter for ep_pre_request_host
+	 *
+	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
+	 */
 	static function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
 		if( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
 			return $host;
@@ -249,6 +254,9 @@ class Search {
 		return self::round_robin_hosts( $host, VIP_ELASTICSEARCH_ENDPOINTS );
 	}
 
+	/**
+	 * Return the next host in the list based on the current host
+	 */
 	static function round_robin_hosts( $host, $hostList ) {
 		$cur_index = array_search( $host, $hostList );
 		$max_index = count( $hostList ) - 1;
