@@ -489,6 +489,26 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( false, $es->healthcheck->is_enabled() );
 	}
 
+	/**
+	 * Test that checks both single and multi-host retries
+	 */
+	public function test__vip_search_filter__ep_pre_request_host() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
+		$this->assertEquals( 'test', $es::filter__ep_pre_request_host( 'test', 0, '', [] ) );
+
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'endpoint1',
+			'endpoint2',
+			'endpoint3',
+			'endpoint4',
+		) );
+
+		$this->assertEquals( true, in_array( $es::filter__ep_pre_request_host( 'endpoint1', 0, '', [] ), VIP_ELASTICSEARCH_ENDPOINTS ) );
+	}
+
 	public function test__round_robin_hosts() {
 		$es = new \Automattic\VIP\Search\Search();
 		$hosts = [
