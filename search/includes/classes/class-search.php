@@ -86,6 +86,8 @@ class Search {
 
 		// Round-robin retry hosts if connection to a host fails
 		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
+		
+		add_filter( 'ep_valid_response', [ $this, 'filter__ep_valid_response' ], 10 );
 	}
 
 	protected function load_commands() {
@@ -276,5 +278,14 @@ class Search {
 		}
 
 		return $hosts[ array_rand( $hosts ) ];
+	}
+
+	public function filter__ep_valid_response( $response, $query, $query_args, $query_object ) {
+		if ( ! headers_sent() ) {
+			/**
+			 * Manually set a header to indicate the search results are from elasticSearch
+			 */
+			header( 'X-ElasticPress-Search-Valid-Response: true' );
+		}
 	}
 }
