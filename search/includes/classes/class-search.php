@@ -81,6 +81,9 @@ class Search {
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
+
+		// Round-robin retry hosts if connection to a host fails
+		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
@@ -237,6 +240,25 @@ class Search {
 		// The filter is checking if we should _skip_ query integration
 		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
 	}
+
+	static function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
+		if( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
+			return $host;
+		}
+
+		return self::round_robin_hosts( $host, VIP_ELASTICSEARCH_ENDPOINTS );
+	}
+
+	static function round_robin_hosts( $host, $hostList ) {
+		$cur_index = array_search( $host, $hostList );
+		$max_index = count( $hostList ) - 1;
+
+		if ( $cur_index === $max_index or is_null( $cur_index ) ) {
+			return $hostList[ 0 ];
+		}
+
+		return $hostList[ $cur_index + 1 ];
+	} 
 
 	/*
 	 * Given a list of endpoints, randomly select one for load balancing purposes.

@@ -489,6 +489,18 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( false, $es->healthcheck->is_enabled() );
 	}
 
+	public function test__round_robin_hosts() {
+		$es = new \Automattic\VIP\Search\Search();
+		$hosts = [
+			'test0',
+			'test1',
+			'test2', 
+			'test3',
+		];
+		$this->assertEquals( 'test1', $es::round_robin_hosts( 'test0', $hosts ) );
+		$this->assertEquals( 'test0', $es::round_robin_hosts( 'test3', $hosts ) );
+	}
+
 	public function test__load_balance_endpoints() {
 		$endpoints = [
 			'endpoint1',
