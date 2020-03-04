@@ -78,6 +78,9 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+
+		// Disable certain EP Features
+		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
 	}
 
 	protected function load_commands() {
@@ -156,6 +159,18 @@ class Search {
 		}
 
 		return $timeout;
+	}
+
+	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
+		$disabled_features = array(
+			'documents',
+		);
+
+		if ( in_array( $feature->slug, $disabled_features, true ) ) {
+			return false;
+		}
+
+		return $active;
 	}
 
 	public function filter__jetpack_active_modules( $modules ) {
