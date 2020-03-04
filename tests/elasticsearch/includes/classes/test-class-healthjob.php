@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
 class HealthJob_Test extends \WP_UnitTestCase {
 	public function setUp() {
@@ -11,10 +11,10 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test__vip_search_healthjob_check_health() {
 		// We have to test under the assumption that the main class has been loaded and initialized,
 		// as it does various setup tasks like including dependencies
-		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$job = new \Automattic\VIP\Elasticsearch\HealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob();
 
 		$job->check_health();
 	}
@@ -22,7 +22,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test__vip_search_healthjob_check_health_with_inactive_features() {
 		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
 
-		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
 		$users_mock = $this->getMockBuilder( \ElasticPress\Feature\Users\Users::class )
@@ -35,7 +35,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		\ElasticPress\Features::factory()->registered_features['users'] = $users_mock;
 
 		// Mock the health job
-		$job = $this->getMockBuilder( \Automattic\VIP\Elasticsearch\HealthJob::class )
+		$job = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setMethods( array( 'process_results' ) )
 			->getMock();
 
@@ -79,10 +79,10 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 		// We have to test under the assumption that the main class has been loaded and initialized,
 		// as it does various setup tasks like including dependencies
-		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Elasticsearch\HealthJob::class )
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setMethods( [ 'send_alert' ] )
 			->getMock();
 
@@ -135,10 +135,10 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 		// We have to test under the assumption that the main class has been loaded and initialized,
 		// as it does various setup tasks like including dependencies
-		$es = new \Automattic\VIP\Elasticsearch\Elasticsearch();
+		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Elasticsearch\HealthJob::class )
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setMethods( [ 'send_alert' ] )
 			->getMock();
 
