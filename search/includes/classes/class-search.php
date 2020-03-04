@@ -268,7 +268,7 @@ class Search {
 		return $hostList[ $cur_index + 1 ];
 	} 
 
-	/*
+	/**
 	 * Given a list of endpoints, randomly select one for load balancing purposes.
 	 */
 	static function load_balance_endpoints( $endpoints ) {
