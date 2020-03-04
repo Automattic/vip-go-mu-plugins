@@ -80,6 +80,22 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	}
 
 	/**
+	 * Standardize the format of the SMS message
+	 *
+	 * @param string $token User token.
+	 */
+	public function format_sms_message( $verification_code ) {
+		$site_title = get_bloginfo();
+		$parse = parse_url( home_url() );
+		$home_url_without_protocol = $parse['host'];
+
+		$format = '%1$d is your %2$s verification code.' . "\n\n" . '@%3$s #%1$d';
+
+		$message = sprintf( $format, $verification_code, $site_title, $home_url_without_protocol );
+		return $message;
+	}
+
+	/**
 	 * Generate and send the user token.
 	 *
 	 * @param WP_User $user WP_User object of the logged-in user.
@@ -88,13 +104,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		require_once( WPMU_PLUGIN_DIR . '/lib/sms.php' );
 
 		$token = $this->generate_token( $user->ID ); // Store in variable to prevent generating code twice
-		$site_title = get_bloginfo();
-		$parse = parse_url( home_url() );
-		$home_url_without_protocol = $parse['host'];
-
-		$format = '%1$d is your %2$s verification code.' . "\n\n" . '@%3$s #%1$d';
-
-		$message = sprintf( $format, $token, $site_title, $home_url_without_protocol );
+		$message = $this->format_sms_message( $token );
 
 		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
 
