@@ -88,13 +88,14 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		require_once( WPMU_PLUGIN_DIR . '/lib/sms.php' );
 
 		$token = $this->generate_token( $user->ID ); // Store in variable to prevent generating code twice
-		$parse = parse_url( home_url() );
-		$host = $parse[ 'host' ];
 		$site_title = get_bloginfo();
+		$parse = parse_url( home_url() );
+		$home_url_without_protocol = $parse['host'];
 
-		$message = $token . " is your " . $site_title . " verification code.\r\n" .
-						"@" . $host . " #" . $token;
-		
+		$format = '%1$d is your %2$s verification code.' . "\n\n" . '@%3$s #%1$d';
+
+		$message = sprintf( $format, $token, $site_title, $home_url_without_protocol );
+
 		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
 
 		return \Automattic\VIP\SMS\send_sms( $sms, $message );
