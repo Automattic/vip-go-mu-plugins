@@ -4,8 +4,8 @@ namespace Automattic\VIP\Search;
 
 class HealthJob_Test extends \WP_UnitTestCase {
 	public function setUp() {
-		require_once __DIR__ . '/../../../../elasticsearch/elasticsearch.php';
-		require_once __DIR__ . '/../../../../elasticsearch/includes/classes/class-health-job.php';
+		require_once __DIR__ . '/../../../../search/search.php';
+		require_once __DIR__ . '/../../../../search/includes/classes/class-health-job.php';
 	}
 
 	public function test__vip_search_healthjob_check_health() {

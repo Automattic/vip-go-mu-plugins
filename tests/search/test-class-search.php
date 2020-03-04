@@ -11,7 +11,7 @@ class Search_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = TRUE;
 
 	public function setUp() {
-		require_once __DIR__ . '/../../elasticsearch/elasticsearch.php';
+		require_once __DIR__ . '/../../search/search.php';
 	}
 
 	/**
