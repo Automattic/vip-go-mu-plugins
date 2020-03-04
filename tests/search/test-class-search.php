@@ -57,6 +57,32 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'index-name', $index_name );
 	}
 
+	public function vip_search_enforces_disabled_features_data() {
+		return array(
+			array( 'documents' ),
+		);
+	}
+
+	/**
+	 * Test that given an EP Feature slug, that feature is always disabled
+	 * 
+	 * @dataProvider vip_search_enforces_disabled_features_data
+	 */
+	public function test__vip_search_enforces_disabled_features( $slug ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// Activate the feature
+		\ElasticPress\Features::factory()->activate_feature( $slug );
+
+		// And attempt to force-enable it via filter
+		add_filter( 'ep_feature_active', '__return_true' );
+
+		$active = \ElasticPress\Features::factory()->get_registered_feature( $slug )->is_active();
+
+		$this->assertFalse( $active );
+	}
+
 	/**
 	 * Test that we set a default bulk index chunk size limit
 	 */
