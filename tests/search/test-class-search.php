@@ -497,16 +497,19 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->init();
 
 		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
-		$this->assertEquals( 'test', $es::filter__ep_pre_request_host( 'test', 0, '', [] ) );
+		$this->assertEquals( 'test', $es::filter__ep_pre_request_host( 'test', 0, '', array() ) );
 
-		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'endpoint1',
-			'endpoint2',
-			'endpoint3',
-			'endpoint4',
-		) );
+		define( 
+			'VIP_ELASTICSEARCH_ENDPOINTS', 
+			array(
+				'endpoint1',
+				'endpoint2',
+				'endpoint3',
+				'endpoint4',
+			) 
+		);
 
-		$this->assertEquals( true, in_array( $es::filter__ep_pre_request_host( 'endpoint1', 0, '', [] ), VIP_ELASTICSEARCH_ENDPOINTS ) );
+		$this->assertEquals( true, in_array( $es::filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS ) );
 	}
 
 	/*
@@ -514,12 +517,12 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_search_round_robin_hosts() {
 		$es = new \Automattic\VIP\Search\Search();
-		$hosts = [
+		$hosts = array(
 			'test0',
 			'test1',
 			'test2', 
 			'test3',
-		];
+		);
 		$this->assertEquals( 'test1', $es::round_robin_hosts( 'test0', $hosts ) );
 		$this->assertEquals( 'test0', $es::round_robin_hosts( 'test3', $hosts ) );
 	}
@@ -528,12 +531,12 @@ class Search_Test extends \WP_UnitTestCase {
 	 * Test for making sure the load balance functionality works
 	 */
 	public function test__vip_search_load_balance_endpoints() {
-		$endpoints = [
+		$endpoints = array(
 			'endpoint1',
 			'endpoint2',
 			'endpoint3',
 			'endpoint4',
-		];
+		);
 		$es = new \Automattic\VIP\Search\Search();
 
 		$this->assertEquals( true, in_array( $es::load_balance_endpoints( $endpoints ), $endpoints ) );
