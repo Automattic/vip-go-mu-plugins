@@ -509,7 +509,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( true, in_array( $es::filter__ep_pre_request_host( 'endpoint1', 0, '', [] ), VIP_ELASTICSEARCH_ENDPOINTS ) );
 	}
 
-	public function test__round_robin_hosts() {
+	/*
+	 * Test for making sure the round robin function returns the next array value
+	 */
+	public function test__vip_search_round_robin_hosts() {
 		$es = new \Automattic\VIP\Search\Search();
 		$hosts = [
 			'test0',
@@ -521,7 +524,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'test0', $es::round_robin_hosts( 'test3', $hosts ) );
 	}
 
-	public function test__load_balance_endpoints() {
+	/*
+	 * Test for making sure the load balance functionality works
+	 */
+	public function test__vip_search_load_balance_endpoints() {
 		$endpoints = [
 			'endpoint1',
 			'endpoint2',
