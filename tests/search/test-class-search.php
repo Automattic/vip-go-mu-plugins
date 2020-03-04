@@ -127,7 +127,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$this->assertEquals( true, 'https://es-endpoint1' === EP_HOST or 'https://es-endpoint2' === EP_HOST );
+		$this->assertEquals( true, 'https://es-endpoint1' === EP_HOST || 'https://es-endpoint2' === EP_HOST );
 		$this->assertEquals( ES_SHIELD, 'foo:bar' );
 	}
 
