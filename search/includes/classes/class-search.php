@@ -43,7 +43,7 @@ class Search {
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host = VIP_ELASTICSEARCH_ENDPOINTS[ 0 ];
+			$host = self::load_balance_endpoints( VIP_ELASTICSEARCH_ENDPOINTS );
 
 			define( 'EP_HOST', $host );
 		}
@@ -236,5 +236,18 @@ class Search {
 
 		// The filter is checking if we should _skip_ query integration
 		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+	}
+
+	/*
+	 * Given a list of endpoints, randomly select one for load balancing purposes.
+	 */
+	static function load_balance_endpoints( $endpoints ) {
+		if( ! is_array( $endpoints ) ) {
+			return $endpoints;
+		}
+
+		return $endpoints[  
+			rand( 0, count( $endpoints ) - 1 ) 
+		];
 	}
 }

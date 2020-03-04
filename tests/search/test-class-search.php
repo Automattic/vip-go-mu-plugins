@@ -488,4 +488,16 @@ class Search_Test extends \WP_UnitTestCase {
 		// Should not have instantiated and registered the init action to setup the health check
 		$this->assertEquals( false, $es->healthcheck->is_enabled() );
 	}
+
+	public function test__load_balance_endpoints() {
+		$endpoints = [
+			'endpoint1',
+			'endpoint2',
+			'endpoint3',
+			'endpoint4',
+		];
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertEquals( true, in_array( $es::load_balance_endpoints( $endpoints ), $endpoints ) );
+	}
 }
