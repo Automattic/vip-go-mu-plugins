@@ -47,7 +47,7 @@ job-references:
           name: "Run Tests"
           command: |
             if [[ "$RUN_EXTRA" == "1" ]]; then
-              make lint
+              npm run phplint
               npm run phpcs:changed:remote
             fi
             rm -rf $WP_TESTS_DIR $WP_CORE_DIR
