@@ -530,13 +530,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'test0', $es->get_next_host( $hosts, 0 ), 'get_next_host() didn\'t use the same host with 0 total failures and 4 hosts with a starting index of 0' );
 		$this->assertEquals( 'test1', $es->get_next_host( $hosts, 1 ), 'get_next_host() didn\'t get the correct host with 1 total failures and 4 hosts with a starting index of 0' );
 		$this->assertEquals( 'test0', $es->get_next_host( $hosts, 3 ), 'get_next_host() didn\'t restart at the beginning of the list upon reaching the end with 4 total failures and 4 hosts with a starting index of 1' );
-		$this->assertEquals( 'test1', $es->get_next_host( $hosts, 17 ), 'get_next_host() didn\'t match expected result with 21 total failures and 4 hosts. and a starting index of 1' );
+		$this->assertEquals( 'test1', $es->get_next_host( $hosts, 17 ), 'get_next_host() didn\'t match expected result with 21 total failures and 4 hosts. and a starting index of 0' );
 
 		array_push( $hosts, 'test4', 'test5', 'test6' ); // Add some array values
 
-		$this->assertEquals( 'test5', $es->get_next_host( $hosts, 4 ), 'get_next_host() didn\'t get the same host with 21 total failures and 7 hosts with starting index of 1.' );
-		$this->assertEquals( 'test6', $es->get_next_host( $hosts, 1 ), 'get_next_host() didn\'t get the next host with 22 total failure and 7 hosts with starting index of 5' );
-		$this->assertEquals( 'test3', $es->get_next_host( $hosts, 4 ), 'get_next_host() didn\'t get the correct host with 26 total failures and 7 hosts with a starting index of 7' );
+		$this->assertEquals( 'test5', $es->get_next_host( $hosts, 4 ), 'get_next_host() didn\'t get the same host with 25 total failures and 7 hosts with starting index of 1.' );
+		$this->assertEquals( 'test6', $es->get_next_host( $hosts, 1 ), 'get_next_host() didn\'t get the next host with 26 total failure and 7 hosts with starting index of 5' );
+		$this->assertEquals( 'test3', $es->get_next_host( $hosts, 4 ), 'get_next_host() didn\'t get the correct host with 30 total failures and 7 hosts with a starting index of 6' );
 	}
 
 	/*
