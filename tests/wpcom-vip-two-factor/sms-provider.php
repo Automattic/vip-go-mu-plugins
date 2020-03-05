@@ -7,7 +7,7 @@ class Two_Factor_SMS_Test extends WP_UnitTestCase {
 	}
 
 	public function test__two_factor_sms_formatting() {
-		$two_factor = new Two_Factor_SMS();
+		$two_factor = Two_Factor_SMS::get_instance();
 
 		$token      = 123456;
 		$site_title = 'Test Blog'; // used set values for test site
