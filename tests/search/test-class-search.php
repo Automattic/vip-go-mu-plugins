@@ -127,7 +127,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$this->assertEquals( true, 'https://es-endpoint1' === EP_HOST || 'https://es-endpoint2' === EP_HOST );
+		$this->assertContains( EP_HOST, VIP_ELASTICSEARCH_ENDPOINTS );
 		$this->assertEquals( ES_SHIELD, 'foo:bar' );
 	}
 
@@ -497,7 +497,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->init();
 
 		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
-		$this->assertEquals( 'test', $es::filter__ep_pre_request_host( 'test', 0, '', array() ) );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
 
 		define( 
 			'VIP_ELASTICSEARCH_ENDPOINTS', 
@@ -509,13 +509,13 @@ class Search_Test extends \WP_UnitTestCase {
 			) 
 		);
 
-		$this->assertEquals( true, in_array( $es::filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS ) );
+		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS );
 	}
 
 	/*
 	 * Test for making sure the round robin function returns the next array value
 	 */
-	public function test__vip_search_round_robin_hosts() {
+	public function test__vip_search_get_next_host() {
 		$es = new \Automattic\VIP\Search\Search();
 		$hosts = array(
 			'test0',
@@ -523,22 +523,22 @@ class Search_Test extends \WP_UnitTestCase {
 			'test2', 
 			'test3',
 		);
-		$this->assertEquals( 'test1', $es::round_robin_hosts( 'test0', $hosts ) );
-		$this->assertEquals( 'test0', $es::round_robin_hosts( 'test3', $hosts ) );
+		$this->assertEquals( 'test1', $es->get_next_host( 'test0', $hosts ) );
+		$this->assertEquals( 'test0', $es->get_next_host( 'test3', $hosts ) );
 	}
 
 	/*
 	 * Test for making sure the load balance functionality works
 	 */
-	public function test__vip_search_load_balance_endpoints() {
-		$endpoints = array(
-			'endpoint1',
-			'endpoint2',
-			'endpoint3',
-			'endpoint4',
+	public function test__vip_search_get_random_host() {
+		$hosts = array(
+			'test0',
+			'test1',
+			'test2', 
+			'test3',
 		);
 		$es = new \Automattic\VIP\Search\Search();
 
-		$this->assertEquals( true, in_array( $es::load_balance_endpoints( $endpoints ), $endpoints ) );
+		$this->assertContains( $es->get_random_host( $hosts ), $hosts );
 	}
 }

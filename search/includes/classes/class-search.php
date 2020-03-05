@@ -43,7 +43,7 @@ class Search {
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host = self::load_balance_endpoints( VIP_ELASTICSEARCH_ENDPOINTS );
+			$host = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
 
 			define( 'EP_HOST', $host );
 		}
@@ -246,36 +246,36 @@ class Search {
 	 *
 	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
 	 */
-	public static function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
+	public function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
 			return $host;
 		}
 
-		return self::round_robin_hosts( $host, VIP_ELASTICSEARCH_ENDPOINTS );
+		return $this->get_next_host( $host, VIP_ELASTICSEARCH_ENDPOINTS );
 	}
 
 	/**
 	 * Return the next host in the list based on the current host
 	 */
-	public static function round_robin_hosts( $host, $host_list ) {
-		$cur_index = array_search( $host, $host_list );
-		$max_index = count( $host_list ) - 1;
+	public function get_next_host( $host, $hosts ) {
+		$cur_index = array_search( $host, $hosts );
+		$max_index = count( $hosts ) - 1;
 
 		if ( $cur_index === $max_index || is_null( $cur_index ) ) {
-			return $host_list[0];
+			return $hosts[0];
 		}
 
-		return $host_list[ $cur_index + 1 ];
+		return $hosts[ $cur_index + 1 ];
 	} 
 
 	/**
-	 * Given a list of endpoints, randomly select one for load balancing purposes.
+	 * Given a list of hosts, randomly select one for load balancing purposes.
 	 */
-	public static function load_balance_endpoints( $endpoints ) {
-		if ( ! is_array( $endpoints ) ) {
-			return $endpoints;
+	public function get_random_host( $hosts ) {
+		if ( ! is_array( $hosts ) ) {
+			return $hosts;
 		}
 
-		return $endpoints[ rand( 0, count( $endpoints ) - 1 ) ];
+		return $hosts[ array_rand( $hosts ) ];
 	}
 }
