@@ -1,8 +1,8 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Elasticsearch\Health as Health;
+use Automattic\VIP\Search\Health as Health;
 
 require_once __DIR__ . '/class-health.php';
 
@@ -87,7 +87,7 @@ class HealthJob {
 	}
 
 	/**
-	 * Check ElasticSearch index health
+	 * Check index health
 	 */
 	public function check_health() {
 		// Check if job has been disabled

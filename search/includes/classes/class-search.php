@@ -1,14 +1,14 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
 use \WP_CLI;
 
-class Elasticsearch {
+class Search {
 	public $healthcheck;
 
 	/**
-	 * Initialize the VIP Elasticsearch plugin
+	 * Initialize the VIP Search plugin
 	 */
 	public function init() {
 		$this->setup_constants();
@@ -64,7 +64,7 @@ class Elasticsearch {
 
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
-		// Override default per page value set in elasticsearch/elasticpress/includes/classes/Indexable.php
+		// Override default per page value set in elasticpress/includes/classes/Indexable.php
 		add_filter( 'ep_bulk_items_per_page', [ $this, 'filter__ep_bulk_items_per_page' ], PHP_INT_MAX );
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
@@ -78,11 +78,14 @@ class Elasticsearch {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+
+		// Disable certain EP Features
+		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
 	}
 
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Commands\HealthCommand' );
+			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 		}
 	}
 
@@ -130,7 +133,7 @@ class Elasticsearch {
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
-		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
+		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 
 		$timeout = $this->get_http_timeout_for_query( $query );
 
@@ -156,6 +159,18 @@ class Elasticsearch {
 		}
 
 		return $timeout;
+	}
+
+	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
+		$disabled_features = array(
+			'documents',
+		);
+
+		if ( in_array( $feature->slug, $disabled_features, true ) ) {
+			return false;
+		}
+
+		return $active;
 	}
 
 	public function filter__jetpack_active_modules( $modules ) {
@@ -194,8 +209,8 @@ class Elasticsearch {
 	 * Separate plugin enabled and querying the index
 	 *
 	 * The index can be tested at any time by setting an `es` query argument.
-	 * When we're ready to use the index in production, the `vip_enable_elasticsearch`
-	 * option will be set to `true`, which will enable querying for everyone.
+	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
+	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	static function ep_skip_query_integration( $skip ) {
 		if ( isset( $_GET[ 'es' ] ) ) {
@@ -214,7 +229,12 @@ class Elasticsearch {
 			return true;
 		}
 
-		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
-			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
+		// Legacy constant name
+		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
+
+		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
+
+		// The filter is checking if we should _skip_ query integration
+		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
 	}
 }
