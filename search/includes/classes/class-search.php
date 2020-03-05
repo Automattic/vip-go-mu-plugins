@@ -6,6 +6,7 @@ use \WP_CLI;
 
 class Search {
 	public $healthcheck;
+	private $current_host_index;
 
 	/**
 	 * Initialize the VIP Search plugin
@@ -44,6 +45,7 @@ class Search {
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
 			$host = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
+			$this->current_host_index = array_search( $host, VIP_ELASTICSEARCH_ENDPOINTS );
 
 			define( 'EP_HOST', $host );
 		}
@@ -251,21 +253,16 @@ class Search {
 			return $host;
 		}
 
-		return $this->get_next_host( $host, VIP_ELASTICSEARCH_ENDPOINTS );
+		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
 	}
 
 	/**
-	 * Return the next host in the list based on the current host
+	 * Return the next host in the list based on the current host index
 	 */
-	public function get_next_host( $host, $hosts ) {
-		$cur_index = array_search( $host, $hosts );
-		$max_index = count( $hosts ) - 1;
-
-		if ( $cur_index === $max_index || is_null( $cur_index ) ) {
-			return $hosts[0];
-		}
-
-		return $hosts[ $cur_index + 1 ];
+	public function get_next_host( $hosts, $failures ) {
+		$this->current_host_index = ( $this->current_host_index + $failures ) % count( $hosts );
+		
+		return $hosts[ $this->current_host_index ];
 	} 
 
 	/**
