@@ -497,7 +497,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->init();
 
 		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
 
 		define( 
 			'VIP_ELASTICSEARCH_ENDPOINTS', 
@@ -509,7 +509,7 @@ class Search_Test extends \WP_UnitTestCase {
 			) 
 		);
 
-		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS );
+		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS' );
 	}
 
 	/*
@@ -523,8 +523,8 @@ class Search_Test extends \WP_UnitTestCase {
 			'test2', 
 			'test3',
 		);
-		$this->assertEquals( 'test1', $es->get_next_host( 'test0', $hosts ) );
-		$this->assertEquals( 'test0', $es->get_next_host( 'test3', $hosts ) );
+		$this->assertEquals( 'test1', $es->get_next_host( 'test0', $hosts ), 'get_next_host() didn\'t get the next host in the list' );
+		$this->assertEquals( 'test0', $es->get_next_host( 'test3', $hosts ), 'get_next_host() didn\'t restart at the beginning of the list upon reaching the end' );
 	}
 
 	/*
