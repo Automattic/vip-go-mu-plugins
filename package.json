@@ -11,6 +11,7 @@
   "author": "Automattic",
   "devDependencies": {
     "eslines": "1.1.0",
-    "eslint": "5.16.0"
+    "eslint": "5.16.0",
+    "husky": "4.2.3"
   }
 }
