@@ -89,28 +89,6 @@ function wpcom_vip_should_force_two_factor() {
 	return true;
 }
 
-/**
- * Determines if the current user using 2FA.
- * 
- * Uses a static variable to store the result of Two_Factor_Core::is_user_using_two_factor()
- * by user ID to limit the number of times it needs to be called for each user to one time.
- *
- * @return bool
- */
-function wpcom_vip_is_current_user_using_two_factor() {
-	static $user_using_2FA = array();
-
-	$current_user_id = get_current_user_id();
-	
-	if ( isset( $user_using_2FA[ $current_user_id ]  ) ) {
-		return $user_using_2FA[ $current_user_id ];
-	}
-
-	$user_using_2FA[ $current_user_id ] = Two_Factor_Core::is_user_using_two_factor();
-
-	return $user_using_2FA[ $current_user_id ];
-}
-
 function wpcom_vip_use_custom_sso() {
 
 	$custom_sso_enabled = apply_filters( 'wpcom_vip_use_custom_sso', null );
@@ -195,11 +173,11 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			return $limited;
 		}, 9 );
 
-		// Calcuate current user's two factor authentication support outside map_meta_cap to avoid callback loop
+		// Calcuate two factor authentication support outside map_meta_cap to avoid callback loop
 		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
-		$is_current_user_using_two_factor = wpcom_vip_is_current_user_using_two_factor();
-		add_filter( 'wpcom_vip_is_current_user_using_two_factor', function() use ( $is_current_user_using_two_factor ) {
-			return $is_current_user_using_two_factor;
+		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
+		add_filter( 'wpcom_vip_is_user_using_two_factor', function() use ( $is_user_using_two_factor ) {
+			return $is_user_using_two_factor;
 		}, 9 );
 		
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
