@@ -1,5 +1,5 @@
 {
   "hooks": {
-    "pre-commit": "npm run phplint && npm run phpcs:changed:local"
+    "pre-push": "npm run phplint && npm run phpcs:changed:local"
   }
 }
