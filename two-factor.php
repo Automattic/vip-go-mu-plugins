@@ -66,7 +66,7 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	if ( apply_filters( 'wpcom_vip_is_current_user_using_two_factor', false ) ) {
+	if ( apply_filters( 'wpcom_vip_is_user_using_two_factor', false ) ) {
 		return false;
 	}
 
