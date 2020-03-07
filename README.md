@@ -20,6 +20,25 @@ These are generated via CI by the [`generate-docs.sh`]() script.
 make lint
 ```
 
+#### PHPCS
+
+We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`) assuming the dependencies have been installed:
+
+```
+composer install
+npm install
+``` 
+
+This is also run on Circle CI for all PRs.
+
+If you want too scan the entire codebase:
+
+```
+composer install
+npm install
+npm run phpcs
+```
+
 #### PHPUnit
 
 We have a script that runs unit tests in a self-contained Docker environment.
