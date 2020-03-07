@@ -6,6 +6,7 @@ use \WP_CLI;
 
 class Search {
 	public $healthcheck;
+	private $current_host_index;
 
 	/**
 	 * Initialize the VIP Search plugin
@@ -43,7 +44,8 @@ class Search {
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host = VIP_ELASTICSEARCH_ENDPOINTS[ 0 ];
+			$host = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
+			$this->current_host_index = array_search( $host, VIP_ELASTICSEARCH_ENDPOINTS );
 
 			define( 'EP_HOST', $host );
 		}
@@ -81,6 +83,9 @@ class Search {
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
+
+		// Round-robin retry hosts if connection to a host fails
+		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
@@ -236,5 +241,38 @@ class Search {
 
 		// The filter is checking if we should _skip_ query integration
 		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+	}
+
+	/**
+	 * Filter for ep_pre_request_host
+	 *
+	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
+	 */
+	public function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
+			return $host;
+		}
+
+		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
+	}
+
+	/**
+	 * Return the next host in the list based on the current host index
+	 */
+	public function get_next_host( $hosts, $failures ) {
+		$this->current_host_index = ( $this->current_host_index + $failures ) % count( $hosts );
+		
+		return $hosts[ $this->current_host_index ];
+	} 
+
+	/**
+	 * Given a list of hosts, randomly select one for load balancing purposes.
+	 */
+	public function get_random_host( $hosts ) {
+		if ( ! is_array( $hosts ) ) {
+			return $hosts;
+		}
+
+		return $hosts[ array_rand( $hosts ) ];
 	}
 }
