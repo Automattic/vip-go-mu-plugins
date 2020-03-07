@@ -1,5 +1,5 @@
 {
   "hooks": {
-    "pre-commit": "npm run phpcs:changed:local"
+    "pre-push": "npm run phpcs:changed:local"
   }
 }
