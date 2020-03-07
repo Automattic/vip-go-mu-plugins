@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "mu-plugins used on the VIP Go platform",
   "scripts": {
+    "phplint": "bin/php-lint.sh",
     "phpcs": "vendor/bin/phpcs",
     "phpcs:changed:remote": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet",
     "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index"
