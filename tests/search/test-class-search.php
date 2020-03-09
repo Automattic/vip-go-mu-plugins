@@ -555,4 +555,21 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertContains( $es->get_random_host( $hosts ), $hosts );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__send_vary_headers__sent_for_group() {
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		apply_filters( 'ep_valid_response', [], [], [], [], null );
+		
+		do_action( 'send_headers' );
+
+		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
+	}
+
 }
