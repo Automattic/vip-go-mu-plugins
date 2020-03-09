@@ -224,16 +224,59 @@ class Health {
 		// Grab all of the documents from ES
 		$documents = $indexable->multi_get( $document_ids );
 
-		$diff = [];
+		$expected_post_ids = wp_list_pluck( $expected_post_rows, 'ID' );
+		$found_document_ids = wp_list_pluck( $documents, 'post_id' );
 
-		// Compare the docs with what's in the DB
-		foreach( $expected_post_rows as $row ) {
-			$prepared_document = $indexable->prepare_document( $row->ID );
+		$diffs = [];
 
-			// TODO calculate and return the diff between the objects
+		// What's missing in ES?
+		$missing_from_index = array_diff( $expected_post_ids, $found_document_ids );
+
+		// If anything is missing from index, record it
+		if ( count( $missing_from_index ) ) {
+			foreach( $missing_from_index as $post_id ) {
+				// Prepare the doc so we can report what it _should_ be
+				$prepared_document = $indexable->prepare_document( $post_id );
+		
+				$diffs[] = array( 
+					'wanted' => array( $prepared_document ),
+					'actual' => null,
+				);
+			}
 		}
 
-		return $diff;
+		// What's in ES but shouldn't be?
+		$extra_in_index = array_diff( $found_document_ids, $expected_post_ids );
+
+		// If anything is in the index that shouldn't be, record it
+		if ( count( $extra_in_index ) ) {
+			foreach( $extra_in_index as $document ) {
+				$diffs[] = array( 
+					'wanted' => null,
+					'actual' => $document,
+				);
+			}
+		}
+
+		// Compare each indexed document with what it _should_ be if it were re-indexed now
+		foreach( $documents as $document ) {
+			$prepared_document = $indexable->prepare_document( $document[ 'post_id' ] );
+
+			$diff = self::diff_document_and_prepared_document( $document, $prepared_document );
+
+			if ( $diff ) {
+				$diffs[ $diff ];
+			}
+		}
+
+		return $diffs;
+	}
+
+	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
+
+		// TODO
+
+		return null;
 	}
 
 	public static function get_last_post_id() {
