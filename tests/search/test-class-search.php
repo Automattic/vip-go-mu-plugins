@@ -565,7 +565,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		apply_filters( 'ep_valid_response', [], [], [], [], null );
+		apply_filters( 'ep_valid_response', array(), array(), array(), array(), null );
 		
 		do_action( 'send_headers' );
 
