@@ -10,6 +10,8 @@ use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
 
 class Health {
+	const CONTENT_VALIDATION_BATCH_SIZE = 100;
+
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
 	 * Entities can be either posts or users.
@@ -139,6 +141,111 @@ class Health {
 
 		}
 		return $results;
+	}
+
+	/**
+	 * Validate DB and ES index post content
+	 *
+	 * @return array Array containing counts and ids of posts with inconsistent content
+	 */
+	public static function validate_index_posts_content() {
+		// Get indexable objects
+		$indexable = Indexables::factory()->get( 'post' );
+
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $indexable ) {
+			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
+		}
+
+		$results = [];
+
+		// To fully validate the index, we have to check batches of post IDs
+		// to compare the values in the DB with the index (and catch any that don't exist in either)
+		// The most efficient way to do this is to iterate through all post IDs, which solves
+		// high-offset performance problems and catches objects in the index that aren't in the DB
+		$start_post_id = 1;
+		$last_post_id = self::get_last_post_id();
+
+		do {
+			$query_args = [
+				'post_type' => $post_type,
+				'post_status' => $post_statuses,
+			];
+
+			$results = validate_index_posts_content_batch( $indexable, $start_post_id );
+
+			if ( is_wp_error( $result ) ) {
+				$result = [
+					'entity' => $indexable->slug,
+					'start_post_id' => $start_post_id,
+					'error' => $result->get_error_message()
+				];
+			}
+
+			$results[] = $result;
+
+			$start_post_id += self::CONTENT_VALIDATION_BATCH_SIZE;
+
+			// Requery for the last post id after each batch b/c the site is probably growing
+			// while this runs
+			$last_post_id = self::get_last_post_id();
+		} while ( $start_post_id > $last_post_id );
+
+		return $results;
+	}
+
+	public static function validate_index_posts_content_batch( $indexable, $start_post_id ) {
+		$sql = $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, self::CONTENT_VALIDATION_BATCH_SIZE );
+
+		$rows = $wpdb->get_results( $sql );
+
+		$post_types = $indexable->get_indexable_post_types();
+		$post_statuses = $indexable->get_indexable_post_status();
+
+		// First we need to see identify which posts are actually expected in the index, by checking the same filters that
+		// are used in ElasticPress\Indexable\Post\SyncManager::action_sync_on_update()
+		$expected_post_rows = array_filter( $rows, function( $row ) {
+			if ( ! in_array( $row->post_type, $post_types ) ) {
+				return false;
+			}
+			
+			if ( ! in_array( $row->post_status, $post_statuses ) ) {
+				return false;
+			}
+
+			$skipped = apply_filters( 'ep_post_sync_kill', false, $post->ID, $post->ID );
+
+			return ! $skipped;
+		} );
+
+		$document_ids = self::get_document_ids_for_batch( $start_post_id );
+
+		// Grab all of the documents from ES
+		$documents = $indexable->multi_get( $document_ids );
+
+		$diff = [];
+
+		// Compare the docs with what's in the DB
+		foreach( $expected_post_rows as $row ) {
+			$prepared_document = $indexable->prepare_document( $row->ID );
+
+			// TODO calculate and return the diff between the objects
+		}
+
+		return $diff;
+	}
+
+	public static function get_last_post_id() {
+		global $wpdb;
+
+		$last = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
+
+		return $last;
+	}
+
+	public static function get_document_ids_for_batch( $start_post_id ) {
+		return range( $start_post_id, self::CONTENT_VALIDATION_BATCH_SIZE );
 	}
 
 	/**
