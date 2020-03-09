@@ -141,7 +141,6 @@ class Health {
 		return $results;
 	}
 
-
 	/**
 	 * Helper function to wrap WP_*Query
 	 *
