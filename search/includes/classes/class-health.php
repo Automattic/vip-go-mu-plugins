@@ -197,7 +197,7 @@ class Health {
 
 			// Limit $results size
 			if ( strlen( serialize( $results ) ) > self::CONTENT_VALIDATION_MAX_DIFF_SIZE ) {
-				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d bytes, aborting', self::CONTENT_VALIDATION_DIFF_SIZE_LIMIT ) );
+				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d bytes, aborting', self::CONTENT_VALIDATION_MAX_DIFF_SIZE ) );
 
 				$error->add_data( $results, 'diff' );
 
