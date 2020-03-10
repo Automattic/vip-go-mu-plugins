@@ -283,7 +283,7 @@ class Health {
 				// Grab the actual doc from 
 				$diffs[ 'post_' . $document_id ] = array( 
 					'expected' => null,
-					'actual' => sprinf( '%d not to be indexed', $document_id ),
+					'actual' => sprintf( '%d not to be indexed', $document_id ),
 				);
 			}
 		}
