@@ -292,10 +292,28 @@ class Health {
 	}
 
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
+		$diff = [];
 
-		// TODO
+		foreach( $document as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$recursive_diff = self::diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
 
-		return null;
+				if ( ! empty( $recursive_diff ) ) {
+					$diff[ $key ] = $recursive_diff;
+				}
+			} else if ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				$diff[ $key ] = array(
+					'expected' => $prepared_document[ $key ],
+					'actual' => $document[ $key ],
+				);
+			}
+		}
+
+		if ( empty( $diff ) ) {
+			return null;
+		}
+
+		return $diff;
 	}
 
 	public static function get_last_post_id() {
