@@ -267,11 +267,8 @@ class Health {
 		// If anything is missing from index, record it
 		if ( count( $missing_from_index ) ) {
 			foreach( $missing_from_index as $post_id ) {
-				// Prepare the doc so we can report what it _should_ be
-				$prepared_document = $indexable->prepare_document( $post_id );
-		
-					'expected' => array( $prepared_document ),
 				$diffs[ 'post_' . $post_id ] = array( 
+					'expected' => sprintf( '%d to be indexed', $post_id ),
 					'actual' => null,
 				);
 			}
@@ -282,10 +279,11 @@ class Health {
 
 		// If anything is in the index that shouldn't be, record it
 		if ( count( $extra_in_index ) ) {
-			foreach( $extra_in_index as $document ) {
+			foreach( $extra_in_index as $document_id ) {
+				// Grab the actual doc from 
 				$diffs[ 'post_' . $document_id ] = array( 
 					'expected' => null,
-					'actual' => $document,
+					'actual' => sprinf( '%d not to be indexed', $document_id ),
 				);
 			}
 		}
