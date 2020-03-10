@@ -10,7 +10,7 @@ use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
 
 class Health {
-	const CONTENT_VALIDATION_BATCH_SIZE = 100;
+	const CONTENT_VALIDATION_BATCH_SIZE = 500;
 
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
@@ -168,12 +168,10 @@ class Health {
 		$last_post_id = self::get_last_post_id();
 
 		do {
-			$query_args = [
-				'post_type' => $post_type,
-				'post_status' => $post_statuses,
-			];
-
-			$results = validate_index_posts_content_batch( $indexable, $start_post_id );
+			// TODO add verbose mode?
+			// \WP_CLI::line( 'Doing batch starting at ' . $start_post_id );
+			
+			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id );
 
 			if ( is_wp_error( $result ) ) {
 				$result = [
@@ -183,20 +181,24 @@ class Health {
 				];
 			}
 
-			$results[] = $result;
+			$results = array_merge( $results, $result );
 
 			$start_post_id += self::CONTENT_VALIDATION_BATCH_SIZE;
 
 			// Requery for the last post id after each batch b/c the site is probably growing
 			// while this runs
 			$last_post_id = self::get_last_post_id();
-		} while ( $start_post_id > $last_post_id );
+		} while ( $start_post_id <= $last_post_id );
 
 		return $results;
 	}
 
 	public static function validate_index_posts_content_batch( $indexable, $start_post_id ) {
-		$sql = $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, self::CONTENT_VALIDATION_BATCH_SIZE );
+		global $wpdb;
+
+		$next_batch_post_id = $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE;
+
+		$sql = $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id );
 
 		$rows = $wpdb->get_results( $sql );
 
@@ -205,16 +207,17 @@ class Health {
 
 		// First we need to see identify which posts are actually expected in the index, by checking the same filters that
 		// are used in ElasticPress\Indexable\Post\SyncManager::action_sync_on_update()
-		$expected_post_rows = array_filter( $rows, function( $row ) {
-			if ( ! in_array( $row->post_type, $post_types ) ) {
+		$expected_post_rows = array_filter( $rows, function( $row ) use ( $post_types, $post_statuses ) {
+			
+			if ( ! in_array( $row->post_type, $post_types, true ) ) {
 				return false;
 			}
 			
-			if ( ! in_array( $row->post_status, $post_statuses ) ) {
+			if ( ! in_array( $row->post_status, $post_statuses, true ) ) {
 				return false;
 			}
 
-			$skipped = apply_filters( 'ep_post_sync_kill', false, $post->ID, $post->ID );
+			$skipped = apply_filters( 'ep_post_sync_kill', false, $row->ID, $row->ID );
 
 			return ! $skipped;
 		} );
@@ -224,8 +227,13 @@ class Health {
 		// Grab all of the documents from ES
 		$documents = $indexable->multi_get( $document_ids );
 
+		// Filter out any that weren't found
+		$documents = array_filter( $documents, function( $document ) {
+			return ! is_null( $document );
+		} );
+
 		$expected_post_ids = wp_list_pluck( $expected_post_rows, 'ID' );
-		$found_document_ids = wp_list_pluck( $documents, 'post_id' );
+		$found_document_ids = wp_list_pluck( $documents, 'ID' );
 
 		$diffs = [];
 
@@ -284,11 +292,11 @@ class Health {
 
 		$last = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
 
-		return $last;
+		return (int) $last;
 	}
 
 	public static function get_document_ids_for_batch( $start_post_id ) {
-		return range( $start_post_id, self::CONTENT_VALIDATION_BATCH_SIZE );
+		return range( $start_post_id, $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE - 1 );
 	}
 
 	/**
