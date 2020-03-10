@@ -307,7 +307,22 @@ class Health {
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
 		$diff = [];
 
-		foreach( $document as $key => $value ) {
+		$ignored_keys = array(
+			// This field is proving problematic to reliably diff due to differences in the filters
+			// that run during normal indexing and this validator
+			'post_content_filtered',
+
+			// Meta fields from EP's "magic" formatting, which is non-deterministic and impossible to validate
+			'datetime',
+			'date',
+			'time',
+		);
+
+		foreach ( $document as $key => $value ) {
+			if ( in_array( $key, $ignored_keys, true) ) {
+				continue;
+			}
+
 			if ( is_array( $value ) ) {
 				$recursive_diff = self::diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
 
