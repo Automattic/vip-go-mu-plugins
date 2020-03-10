@@ -137,6 +137,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 
 		if ( empty( $results ) ) {
 			WP_CLI::success( 'No inconsistencies found!' );
+
+			exit();
 		}
 
 		// Not empty, so inconsistencies were found...
