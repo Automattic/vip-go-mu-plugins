@@ -2,7 +2,7 @@
 /**
  * Manage autoloaded options
  */
-class Option_Autoload extends WPCOM_VIP_CLI_Command {
+class Option_Autoload extends WP_CLI_Command {
 
 	/**
 	 * Set autoload for option
