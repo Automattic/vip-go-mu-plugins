@@ -86,6 +86,9 @@ class Search {
 
 		// Round-robin retry hosts if connection to a host fails
 		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
+
+		// Remove post_status from taxonomy list if it exists
+		add_filter( 'ep_post_get_taxonomies', array( $this, 'filter__ep_post_get_taxonomies' ), PHP_INT_MAX );
 	}
 
 	protected function load_commands() {
@@ -256,6 +259,24 @@ class Search {
 		}
 
 		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
+	}
+
+	/**
+	 * Filter for ep_post_get_taxonomies
+	 *
+	 * Return the list of taxonomies without post_status
+	 */
+	public function filter__ep_post_get_taxonomies( $taxonomies ) {
+		if ( ! in_array( 'post_status', $taxonomies ) ) {
+			return $taxonomies;
+		}
+
+		return array_filter( 
+			$taxonomies, 
+			function( $taxonomy ) {
+				return 'post_status' !== $taxonomy;
+			} 
+		);
 	}
 
 	/**

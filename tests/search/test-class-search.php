@@ -517,6 +517,21 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 107, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
 	}
 
+	public function test__vip_search_filter__ep_post_get_taxonomies() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$taxonomies = array( 'test', 'cat', 'kitten' );
+
+		$this->assertEquals( $taxonomies, $es->filter__ep_post_get_taxonomies( $taxonomies ), 'filter__ep_post_get_taxonomies should just pass the taxonomies through if it doesn\'t contain post_status' );
+
+		$taxonomies[] = 'post_status';
+		$taxonomies[] = 'post_status';
+		$taxonomies[] = 'post_status';
+
+		$this->assertNotContains( 'post_status', $es->filter__ep_post_get_taxonomies( $taxonomies ), 'filter__ep_post_get_taxonomies should never contain post_status' );
+	}
+
 	/*
 	 * Test for making sure the round robin function returns the next array value
 	 */
