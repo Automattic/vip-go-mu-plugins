@@ -159,6 +159,8 @@ class Health {
 			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
 		}
 
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+
 		$results = [];
 
 		// To fully validate the index, we have to check batches of post IDs
@@ -174,13 +176,14 @@ class Health {
 		}
 
 		do {
-			// TODO add verbose mode?
-			// \WP_CLI::line( 'Doing batch starting at ' . $start_post_id );
-	
 			$next_batch_post_id = $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE;
 
 			if ( $last_post_id < $next_batch_post_id ) {
 				$next_batch_post_id = $last_post_id + 1;
+			}
+
+			if ( $is_cli ) {
+				\WP_CLI::line( sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ) );
 			}
 			
 			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id );
