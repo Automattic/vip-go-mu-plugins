@@ -258,7 +258,7 @@ class Health {
 				$prepared_document = $indexable->prepare_document( $post_id );
 		
 				$diffs[ $post_id ] = array( 
-					'wanted' => array( $prepared_document ),
+					'expected' => array( $prepared_document ),
 					'actual' => null,
 				);
 			}
@@ -271,7 +271,7 @@ class Health {
 		if ( count( $extra_in_index ) ) {
 			foreach( $extra_in_index as $document ) {
 				$diffs[ $document['ID'] ] = array( 
-					'wanted' => null,
+					'expected' => null,
 					'actual' => $document,
 				);
 			}
