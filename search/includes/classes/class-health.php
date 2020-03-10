@@ -257,7 +257,7 @@ class Health {
 				// Prepare the doc so we can report what it _should_ be
 				$prepared_document = $indexable->prepare_document( $post_id );
 		
-				$diffs[] = array( 
+				$diffs[ $post_id ] = array( 
 					'wanted' => array( $prepared_document ),
 					'actual' => null,
 				);
@@ -270,7 +270,7 @@ class Health {
 		// If anything is in the index that shouldn't be, record it
 		if ( count( $extra_in_index ) ) {
 			foreach( $extra_in_index as $document ) {
-				$diffs[] = array( 
+				$diffs[ $document['ID'] ] = array( 
 					'wanted' => null,
 					'actual' => $document,
 				);
@@ -284,7 +284,7 @@ class Health {
 			$diff = self::diff_document_and_prepared_document( $document, $prepared_document );
 
 			if ( $diff ) {
-				$diffs[ $diff ];
+				$diffs[ $document['ID'] ] = $diff;
 			}
 		}
 
