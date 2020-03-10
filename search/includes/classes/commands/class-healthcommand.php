@@ -110,6 +110,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * 
 	 * [--start_post_id=<int>]
 	 * : Optional starting post id (defaults to 1)
+	 * ---
+	 * default: 1
+	 * ---
 	 * 
 	 * [--last_post_id=<int>]
 	 * : Optional last post id to check
