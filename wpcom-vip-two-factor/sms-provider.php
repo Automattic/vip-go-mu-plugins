@@ -87,7 +87,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	public function format_sms_message( $verification_code ) {
 		$site_title = get_bloginfo();
 		$parse = parse_url( home_url() );
-		$home_url_without_protocol = $parse['host'];
+		$home_url_without_protocol = $parse['host'] . $parse['path'];
 
 		$format = '%1$d is your %2$s verification code.' . "\n\n" . '@%3$s #%1$d';
 
