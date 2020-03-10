@@ -47,7 +47,7 @@ class Option_Autoload extends WPCOM_VIP_CLI_Command {
 			WP_CLI::error( sprintf( "Option autoload already set to '%s'.", $yn ) );
 		}
 
-		$option_updated = $wpdb->get_results( $wpdb->prepare( "UPDATE {$wpdb->options} SET autoload = %s where option_name = %s", $yn, $option ) );
+		$wpdb->get_results( $wpdb->prepare( "UPDATE {$wpdb->options} SET autoload = %s where option_name = %s", $yn, $option ) );
 
 		$check_option = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
@@ -170,7 +170,7 @@ class Option_Autoload extends WPCOM_VIP_CLI_Command {
 		$yn = $this->validate_yn( $yn, 'yes' );
 
 		// option list uses on/off ¯\_(ツ)_/¯
-		$yn = $yn == 'yes' ? 'on' : 'off';
+		$yn = $yn === 'yes' ? 'on' : 'off';
 
 		WP_CLI::run_command( [ 'option', 'list' ], [ 'autoload' => $yn, 'fields' => 'option_name', 'format' => $assoc_args['format'] ] );
 
