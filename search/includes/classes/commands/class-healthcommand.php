@@ -144,7 +144,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		// Not empty, so inconsistencies were found...
 		WP_CLI::warning( 'Inconsistencies found!' );
 
-		$this->render_contents_diff( $result );
+		$this->render_contents_diff( $results );
 	}
 
 	public function render_contents_diff( $diff ) {
