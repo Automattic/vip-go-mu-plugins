@@ -11,6 +11,7 @@ use \WP_Error as WP_Error;
 
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE = 500;
+	const CONTENT_VALIDATION_MAX_DIFF_SIZE = MB_IN_BYTES;
 
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
@@ -193,6 +194,15 @@ class Health {
 			}
 
 			$results = array_merge( $results, $result );
+
+			// Limit $results size
+			if ( strlen( serialize( $results ) ) > self::CONTENT_VALIDATION_MAX_DIFF_SIZE ) {
+				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d bytes, aborting', self::CONTENT_VALIDATION_DIFF_SIZE_LIMIT ) );
+
+				$error->add_data( $results, 'diff' );
+
+				return $error;
+			}
 
 			$start_post_id += self::CONTENT_VALIDATION_BATCH_SIZE;
 
