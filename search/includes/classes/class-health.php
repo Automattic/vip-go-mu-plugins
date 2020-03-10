@@ -148,7 +148,7 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content() {
+	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null ) {
 		// Get indexable objects
 		$indexable = Indexables::factory()->get( 'post' );
 
@@ -164,14 +164,25 @@ class Health {
 		// to compare the values in the DB with the index (and catch any that don't exist in either)
 		// The most efficient way to do this is to iterate through all post IDs, which solves
 		// high-offset performance problems and catches objects in the index that aren't in the DB
-		$start_post_id = 1;
-		$last_post_id = self::get_last_post_id();
+		$dynamic_last_post_id = false;
+
+		if ( ! $last_post_id ) {
+			$last_post_id = self::get_last_post_id();
+
+			$dynamic_last_post_id = true;
+		}
 
 		do {
 			// TODO add verbose mode?
 			// \WP_CLI::line( 'Doing batch starting at ' . $start_post_id );
+	
+			$next_batch_post_id = $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE;
+
+			if ( $last_post_id < $next_batch_post_id ) {
+				$next_batch_post_id = $last_post_id + 1;
+			}
 			
-			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id );
+			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id );
 
 			if ( is_wp_error( $result ) ) {
 				$result = [
@@ -185,18 +196,18 @@ class Health {
 
 			$start_post_id += self::CONTENT_VALIDATION_BATCH_SIZE;
 
-			// Requery for the last post id after each batch b/c the site is probably growing
-			// while this runs
-			$last_post_id = self::get_last_post_id();
+			if ( $dynamic_last_post_id ) {
+				// Requery for the last post id after each batch b/c the site is probably growing
+				// while this runs
+				$last_post_id = self::get_last_post_id();
+			}
 		} while ( $start_post_id <= $last_post_id );
 
 		return $results;
 	}
 
-	public static function validate_index_posts_content_batch( $indexable, $start_post_id ) {
+	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id ) {
 		global $wpdb;
-
-		$next_batch_post_id = $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE;
 
 		$sql = $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id );
 
@@ -222,7 +233,7 @@ class Health {
 			return ! $skipped;
 		} );
 
-		$document_ids = self::get_document_ids_for_batch( $start_post_id );
+		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id );
 
 		// Grab all of the documents from ES
 		$documents = $indexable->multi_get( $document_ids );
@@ -295,8 +306,8 @@ class Health {
 		return (int) $last;
 	}
 
-	public static function get_document_ids_for_batch( $start_post_id ) {
-		return range( $start_post_id, $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE - 1 );
+	public static function get_document_ids_for_batch( $start_post_id, $next_batch_post_id ) {
+		return range( $start_post_id, $next_batch_post_id - 1 );
 	}
 
 	/**
