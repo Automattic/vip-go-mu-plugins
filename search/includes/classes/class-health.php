@@ -232,7 +232,6 @@ class Health {
 		// First we need to see identify which posts are actually expected in the index, by checking the same filters that
 		// are used in ElasticPress\Indexable\Post\SyncManager::action_sync_on_update()
 		$expected_post_rows = array_filter( $rows, function( $row ) use ( $post_types, $post_statuses ) {
-			
 			if ( ! in_array( $row->post_type, $post_types, true ) ) {
 				return false;
 			}
