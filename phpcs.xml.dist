@@ -62,6 +62,8 @@
 
 	<!-- Rules: Check VIP Coding Standards - see
 		https://github.com/Automattic/VIP-Coding-Standards/ -->
-	<rule ref="WordPress-VIP-Go"/>
+	<rule ref="WordPress-VIP-Go">
+		<exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.internal_wpcom_vip_irc"/>
+	</rule>
 	
 </ruleset>
