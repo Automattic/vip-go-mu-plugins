@@ -265,7 +265,7 @@ class Health {
 		$missing_from_index = array_diff( $expected_post_ids, $found_document_ids );
 
 		// If anything is missing from index, record it
-		if ( count( $missing_from_index ) ) {
+		if ( 0 < count( $missing_from_index ) ) {
 			foreach( $missing_from_index as $post_id ) {
 				$diffs[ 'post_' . $post_id ] = array( 
 					'expected' => sprintf( 'Post %d not to be indexed', $post_id ),
@@ -278,7 +278,7 @@ class Health {
 		$extra_in_index = array_diff( $found_document_ids, $expected_post_ids );
 
 		// If anything is in the index that shouldn't be, record it
-		if ( count( $extra_in_index ) ) {
+		if ( 0 < count( $extra_in_index ) ) {
 			foreach( $extra_in_index as $document_id ) {
 				// Grab the actual doc from 
 				$diffs[ 'post_' . $document_id ] = array( 
