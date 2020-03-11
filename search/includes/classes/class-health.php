@@ -246,7 +246,7 @@ class Health {
 			return ! $skipped;
 		} );
 
-		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id );
+		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id - 1 );
 
 		// Grab all of the documents from ES
 		$documents = $indexable->multi_get( $document_ids );
@@ -354,8 +354,8 @@ class Health {
 		return (int) $last;
 	}
 
-	public static function get_document_ids_for_batch( $start_post_id, $next_batch_post_id ) {
-		return range( $start_post_id, $next_batch_post_id - 1 );
+	public static function get_document_ids_for_batch( $start_post_id, $last_post_id ) {
+		return range( $start_post_id, $last_post_id );
 	}
 
 	/**
