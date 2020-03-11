@@ -268,8 +268,10 @@ class Health {
 		if ( 0 < count( $missing_from_index ) ) {
 			foreach( $missing_from_index as $post_id ) {
 				$diffs[ 'post_' . $post_id ] = array( 
-					'expected' => sprintf( 'Post %d not to be indexed', $post_id ),
-					'actual' => null,
+					'existence' => array( 
+						'expected' => sprintf( 'Post %d not to be indexed', $post_id ),
+						'actual' => null,
+					),
 				);
 			}
 		}
@@ -281,9 +283,11 @@ class Health {
 		if ( 0 < count( $extra_in_index ) ) {
 			foreach( $extra_in_index as $document_id ) {
 				// Grab the actual doc from 
-				$diffs[ 'post_' . $document_id ] = array( 
-					'expected' => null,
-					'actual' => sprintf( 'Post %d is currently indexed', $document_id ),
+				$diffs[ 'post_' . $document_id ] = array(
+					'existence' => array( 
+						'expected' => null,
+						'actual' => sprintf( 'Post %d is currently indexed', $document_id ),
+					),
 				);
 			}
 		}
