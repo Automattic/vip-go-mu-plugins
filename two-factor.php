@@ -12,42 +12,8 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
-// Handle 2fa for API requests
-add_filter( 'two_factor_user_api_login_enable', function( $allow_2fa_bypass, $user_id ) {
-	// Allow API requests for a subset of environments for now.
-	if ( defined( 'VIP_2FA_ALLOW_API_LOGIN_ENV_IDS' )
-		&& is_array( VIP_2FA_ALLOW_API_LOGIN_ENV_IDS )
-		&& in_array( FILES_CLIENT_SITE_ID, VIP_2FA_ALLOW_API_LOGIN_ENV_IDS, true ) ) {
-
-		Automattic\VIP\Stats\send_pixel( [
-			'vip-go-2fa-api-allowed' => sprintf( '%d-%s', FILES_CLIENT_SITE_ID, sanitize_key( $_SERVER['HTTP_USER_AGENT'] ) ),
-		] );
-
-		$user = get_userdata( $user_id );
-		$user_login = $user ? $user->user_login : sprintf( 'user_id #%s', $user_id );
-
-		trigger_error( sprintf(
-			'The request to %s %s%s (from %s + %s + %s) may be blocked soon because of 2fa restrictions #2fa-api-block.',
-			$_SERVER['REQUEST_METHOD'],
-			$_SERVER['HTTP_HOST'],
-			$_SERVER['REQUEST_URI'],
-			$user_login,
-			$_SERVER['REMOTE_ADDR'],
-			$_SERVER['HTTP_USER_AGENT']
-		), E_USER_WARNING );
-
-		return true;
-	}
-
-	// Track stats around how frequently we're hitting this
-	Automattic\VIP\Stats\send_pixel( [
-		'vip-go-2fa-api-blocked-by-site' => FILES_CLIENT_SITE_ID,
-		'vip-go-2fa-api-blocked-by-ua' => sanitize_key( $_SERVER['HTTP_USER_AGENT'] ), 
-	] );
-
-	// Do not allow API requests for users with 2fa enabled.
-	return false;
-}, 1, 2 ); // Allow overrides at later priorities
+// Do not allow API requests from 2fa users.
+add_filter( 'two_factor_user_api_login_enable', '__return_false', 1 ); // Hook in early to allow overrides
 
 function wpcom_vip_should_force_two_factor() {
 
