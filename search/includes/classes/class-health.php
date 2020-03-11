@@ -56,7 +56,7 @@ class Health {
 		}
 
 		// Verify actual results
-		$es_total = (int) $es_result['found_documents'];
+		$es_total = (int) $es_result['found_documents']['value'];
 
 		$diff = 0;
 		if ( $db_total !== $es_total ) {
