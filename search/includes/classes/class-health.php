@@ -231,19 +231,7 @@ class Health {
 
 		// First we need to see identify which posts are actually expected in the index, by checking the same filters that
 		// are used in ElasticPress\Indexable\Post\SyncManager::action_sync_on_update()
-		$expected_post_rows = array_filter( $rows, function( $row ) use ( $post_types, $post_statuses ) {
-			if ( ! in_array( $row->post_type, $post_types, true ) ) {
-				return false;
-			}
-			
-			if ( ! in_array( $row->post_status, $post_statuses, true ) ) {
-				return false;
-			}
-
-			$skipped = apply_filters( 'ep_post_sync_kill', false, $row->ID, $row->ID );
-
-			return ! $skipped;
-		} );
+		$expected_post_rows = self::filter_expected_post_rows( $rows, $post_types, $post_statuses );
 
 		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id - 1 );
 
@@ -303,6 +291,24 @@ class Health {
 		}
 
 		return $diffs;
+	}
+
+	public static function filter_expected_post_rows( $rows, $post_types, $post_statuses ) {
+		$filtered = array_filter( $rows, function( $row ) use ( $post_types, $post_statuses ) {
+			if ( ! in_array( $row->post_type, $post_types, true ) ) {
+				return false;
+			}
+			
+			if ( ! in_array( $row->post_status, $post_statuses, true ) ) {
+				return false;
+			}
+
+			$skipped = apply_filters( 'ep_post_sync_kill', false, $row->ID, $row->ID );
+
+			return ! $skipped;
+		} );
+
+		return $filtered;
 	}
 
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
