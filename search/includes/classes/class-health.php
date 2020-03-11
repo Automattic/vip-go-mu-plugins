@@ -269,7 +269,7 @@ class Health {
 			foreach( $missing_from_index as $post_id ) {
 				$diffs[ 'post_' . $post_id ] = array( 
 					'existence' => array( 
-						'expected' => sprintf( 'Post %d not to be indexed', $post_id ),
+						'expected' => sprintf( 'Post %d to be indexed', $post_id ),
 						'actual' => null,
 					),
 				);
