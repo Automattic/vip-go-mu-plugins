@@ -10,6 +10,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	const DEFAULT_PROTOCOL = 'vip';
 
 	/**
+	 * Allowed fopen modes
+	 *
+	 * We are ignoring `b`, `t` and `+` modes as they do not affect how this
+	 * Stream Wrapper works.
+	 * Not supporting `c` and `e` modes as these are rarely used and adds complexity
+	 * to support.
+	 */
+	const ALLOWED_MODES = [ 'r', 'w', 'a', 'x' ];
+
+	/**
 	 * The Stream context. Set by PHP
 	 *
 	 * @since   1.0.0
@@ -26,6 +36,15 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @var     API_Client  VIP Files API Client
 	 */
 	public $client;
+
+	/**
+	 * The fopen mode for current file
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 * @var     string      The fopen mode
+	 */
+	protected $mode;
 
 	/**
 	 * The file resource fetched through the VIP Files API
@@ -122,6 +141,12 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function stream_open( $path, $mode, $options, &$opened_path ) {
 		$path = $this->trim_path( $path );
+		// Also ignore '+' modes since the handlers are all read+write anyway
+		$mode = rtrim( $mode, 'bt+' );
+
+		if ( ! $this->validate( $path, $mode ) ) {
+			return false;
+		}
 
 		try {
 			$result = $this->client->get_file( $path );
@@ -137,11 +162,10 @@ class VIP_Filesystem_Stream_Wrapper {
 				}
 
 				// File doesn't exist on File service so create new file
-				$result = '';
+				$file = $this->string_to_resource( '', $mode );
+			} else {
+				$file = fopen( $result, $mode );
 			}
-
-			// Converts file contents into stream resource
-			$file = $this->string_to_resource( $result );
 
 			// Get meta data
 			$meta           = stream_get_meta_data( $file );
@@ -150,6 +174,7 @@ class VIP_Filesystem_Stream_Wrapper {
 
 			$this->file = $file;
 			$this->path = $path;
+			$this->mode = $mode;
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -217,6 +242,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function stream_flush() {
 		if ( ! $this->file ) {
+			return false;
+		}
+
+		if ( 'r' === $this->mode ) {
+			// No writes in 'read' mode
+			trigger_error(
+				sprintf( 'stream_flush failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ),
+				E_USER_WARNING
+			);
+
 			return false;
 		}
 
@@ -290,6 +325,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  int|bool    Number of bytes written or false on error
 	 */
 	public function stream_write( $data ) {
+		if ( 'r' === $this->mode ) {
+			// No writes in 'read' mode
+			trigger_error(
+				sprintf( 'stream_write failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ),
+				E_USER_WARNING
+			);
+
+			return false;
+		}
+
 		$length = fwrite( $this->file, $data );
 
 		if ( false === $length ) {
@@ -498,7 +543,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Convert to actual file to upload to new path
-			$file     = $this->string_to_resource( $result );
+			$file     = $this->string_to_resource( $result, 'r' );
 			$meta     = stream_get_meta_data( $file );
 			$filePath = $meta['uri'];
 
@@ -597,18 +642,27 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @access  protected
 	 *
 	 * @param   string     $data   The file content to be written
+	 * @param   string     $mode   The fopen mode
 	 *
 	 * @return  resource   Returns resource or false on write error
 	 */
-	protected function string_to_resource( $data ) {
+	protected function string_to_resource( $data, $mode ) {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
 		if ( false === fwrite( $tmp_handler, $data ) ) {
 			trigger_error( 'Error creating temporary resource #vip-go-streams',
 				E_USER_ERROR );
 		}
-		// Need to rewind file pointer as fwrite moves it to EOF
-		rewind( $tmp_handler );
+
+		switch ( $mode ) {
+			case 'a':
+				// Make sure pointer is at end of file for appends
+				fseek( $tmp_handler, 0, SEEK_END );
+				break;
+			default:
+				// Need to rewind file pointer as fwrite moves it to EOF
+				rewind( $tmp_handler );
+		}
 
 		return $tmp_handler;
 	}
@@ -632,6 +686,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$this->file = null;
 			$this->path = null;
 			$this->uri  = null;
+			$this->mode = null;
 		}
 
 		return $result;
@@ -649,5 +704,70 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	protected function trim_path( $path ) {
 		return ltrim( $path, 'vip:/\\' );
+	}
+
+	/**
+	 * Validates the provided stream arguments for fopen.
+	*
+	* @since   1.0.0
+	* @access  private
+	* @param   string    $path   Path to file
+	* @param   string    $mode   fopen mode
+	*
+	* @return  bool
+	 */
+	public function validate( $path, $mode ) {
+		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
+			trigger_error( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." );
+
+			return false;
+		}
+
+		// When using mode "x" validate if the file exists before attempting
+		// to read
+		if ( 'x' === $mode ) {
+			try {
+				$info   = array();
+				$result = $this->client->is_file( $path, $info );
+				if ( is_wp_error( $result ) ) {
+					trigger_error(
+						sprintf(
+							'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
+							$mode,
+							$path,
+							$result->get_error_message()
+						),
+						E_USER_WARNING
+					);
+
+					return false;
+				}
+
+				if ( $result ) {
+					// File already exists
+					trigger_error(
+						sprintf( 'File %s already exists. Cannot use mode %s', $path, $mode )
+					);
+
+					return false;
+				}
+
+				return $stats;
+			} catch ( \Exception $e ) {
+				trigger_error(
+					sprintf(
+						'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
+						$mode,
+						$path, 
+						$result->get_error_message()
+					),
+					E_USER_WARNING
+				);
+
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

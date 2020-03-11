@@ -11,10 +11,27 @@
  * Domain Path: /languages/
  */
 
+define( 'VIP_VAULTPRESS_SKIP_FILES', [
+	// The following EP files are large and complex and consistently trigger 100% CPU usage on scan.
+	'/elasticpress/dist/js/ordering-script.min.js',
+	'/elasticpress/dist/js/related-posts-block-script.min.js',
+	'/elasticpress/dist/js/stats-script.min.js',
+] );
+
 // VaultPress uses a default timeout of 60s, which can be bad in the rare cases where its API is slow to respond.
 // Drop it down to something a bit more reasonable.
 if ( ! defined( 'VAULTPRESS_TIMEOUT' ) ) {
 	define( 'VAULTPRESS_TIMEOUT', 10 );
 }
+
+add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $file_content ) {
+	foreach ( VIP_VAULTPRESS_SKIP_FILES as $vp_skip_file ) {
+		if ( wp_endswith( $file, $vp_skip_file ) ) {
+			return true;
+		}
+	}
+
+	return $should_skip_file;
+}, 10, 4 );
 
 require_once( __DIR__ . '/vaultpress/vaultpress.php' );
