@@ -243,13 +243,30 @@ class Health {
 			return ! is_null( $document );
 		} );
 
-		$expected_post_ids = wp_list_pluck( $expected_post_rows, 'ID' );
+		$found_post_ids = wp_list_pluck( $expected_post_rows, 'ID' );
 		$found_document_ids = wp_list_pluck( $documents, 'ID' );
 
-		$diffs = [];
+		$diffs = self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
 
+		// Compare each indexed document with what it _should_ be if it were re-indexed now
+		foreach( $documents as $document ) {
+			$prepared_document = $indexable->prepare_document( $document[ 'post_id' ] );
+
+			$diff = self::diff_document_and_prepared_document( $document, $prepared_document );
+
+			if ( $diff ) {
+				$diffs[ 'post_' . $document['ID'] ] = $diff;
+			}
+		}
+
+		return $diffs;
+	}
+
+	public static function get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ) {
+		$diffs = [];
+	
 		// What's missing in ES?
-		$missing_from_index = array_diff( $expected_post_ids, $found_document_ids );
+		$missing_from_index = array_diff( $found_post_ids, $found_document_ids );
 
 		// If anything is missing from index, record it
 		if ( 0 < count( $missing_from_index ) ) {
@@ -264,7 +281,7 @@ class Health {
 		}
 
 		// What's in ES but shouldn't be?
-		$extra_in_index = array_diff( $found_document_ids, $expected_post_ids );
+		$extra_in_index = array_diff( $found_document_ids, $found_post_ids );
 
 		// If anything is in the index that shouldn't be, record it
 		if ( 0 < count( $extra_in_index ) ) {
@@ -276,17 +293,6 @@ class Health {
 						'actual' => sprintf( 'Post %d is currently indexed', $document_id ),
 					),
 				);
-			}
-		}
-
-		// Compare each indexed document with what it _should_ be if it were re-indexed now
-		foreach( $documents as $document ) {
-			$prepared_document = $indexable->prepare_document( $document[ 'post_id' ] );
-
-			$diff = self::diff_document_and_prepared_document( $document, $prepared_document );
-
-			if ( $diff ) {
-				$diffs[ 'post_' . $document['ID'] ] = $diff;
 			}
 		}
 
