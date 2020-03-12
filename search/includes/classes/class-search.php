@@ -286,7 +286,9 @@ class Search {
 			/**
 			 * Manually set a header to indicate the search results are from elasticSearch
 			 */
-			header( 'X-ElasticPress-Search-Valid-Response: true' );
+			if ( isset( $_GET[ 'ep_debug' ] ) ) {
+				header( 'X-ElasticPress-Search-Valid-Response: true' );
+			}
 		}
 		return $response;
 	}

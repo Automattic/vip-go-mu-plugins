@@ -564,11 +564,15 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-
+		
+		$_GET['ep_debug'] = true;
+		
 		apply_filters( 'ep_valid_response', array(), array(), array(), array(), null );
 		
 		do_action( 'send_headers' );
 
+		unset( $_GET['ep_debug'] );
+		
 		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
 	}
 
