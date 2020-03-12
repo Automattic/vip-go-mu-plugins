@@ -144,7 +144,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
 		add_filter( 'wpcom_vip_is_user_using_two_factor', function() use ( $is_user_using_two_factor ) {
 			return $is_user_using_two_factor;
-		}, 9 );
+		}, 10 );
 		
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
