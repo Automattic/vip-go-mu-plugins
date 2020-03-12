@@ -518,6 +518,30 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/*
+	 * Test for making sure filter__ep_pre_request_host handles empty endpoint lists
+	 */
+	public function test__vip_search_filter__ep_pre_request_host_empty_endpoint() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+		
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array() );
+
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+	}
+
+	/*
+	 * Test for making sure filter__ep_pre_request_host handles endpoint lists that aren't arrays
+	 */
+	public function test__vip_search_filter__ep_pre_request_host_endpoint_not_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+		
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
+	
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+	}
+
+	/*
 	 * Test for making sure the round robin function returns the next array value
 	 */
 	public function test__vip_search_get_next_host() {

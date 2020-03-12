@@ -258,6 +258,14 @@ class Search {
 			return $host;
 		}
 
+		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return $host;
+		}
+
+		if ( 0 === count( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return $host;
+		}
+
 		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
 	}
 
