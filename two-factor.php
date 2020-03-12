@@ -146,8 +146,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			'wpcom_vip_is_user_using_two_factor',
 			function() use ( $is_user_using_two_factor ) {
 				return $is_user_using_two_factor;
-			}, 
-			10 
+			}
 		);
 		
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
