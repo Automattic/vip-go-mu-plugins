@@ -192,7 +192,7 @@ class Health {
 				$result = [
 					'entity' => $indexable->slug,
 					'start_post_id' => $start_post_id,
-					'error' => $result->get_error_message()
+					'error' => $result->get_error_message(),
 				];
 			}
 
@@ -222,9 +222,7 @@ class Health {
 	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id ) {
 		global $wpdb;
 
-		$sql = $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id );
-
-		$rows = $wpdb->get_results( $sql );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
 
 		$post_types = $indexable->get_indexable_post_types();
 		$post_statuses = $indexable->get_indexable_post_status();
@@ -249,8 +247,8 @@ class Health {
 		$diffs = self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
-		foreach( $documents as $document ) {
-			$prepared_document = $indexable->prepare_document( $document[ 'post_id' ] );
+		foreach ( $documents as $document ) {
+			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
 			$diff = self::diff_document_and_prepared_document( $document, $prepared_document );
 
@@ -270,7 +268,7 @@ class Health {
 
 		// If anything is missing from index, record it
 		if ( 0 < count( $missing_from_index ) ) {
-			foreach( $missing_from_index as $post_id ) {
+			foreach ( $missing_from_index as $post_id ) {
 				$diffs[ 'post_' . $post_id ] = array( 
 					'existence' => array( 
 						'expected' => sprintf( 'Post %d to be indexed', $post_id ),
@@ -285,7 +283,7 @@ class Health {
 
 		// If anything is in the index that shouldn't be, record it
 		if ( 0 < count( $extra_in_index ) ) {
-			foreach( $extra_in_index as $document_id ) {
+			foreach ( $extra_in_index as $document_id ) {
 				// Grab the actual doc from 
 				$diffs[ 'post_' . $document_id ] = array(
 					'existence' => array( 
@@ -332,7 +330,7 @@ class Health {
 		);
 
 		foreach ( $document as $key => $value ) {
-			if ( in_array( $key, $ignored_keys, true) ) {
+			if ( in_array( $key, $ignored_keys, true ) ) {
 				continue;
 			}
 
