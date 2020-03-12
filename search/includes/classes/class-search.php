@@ -173,6 +173,7 @@ class Search {
 	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
 		$disabled_features = array(
 			'documents',
+			'users',
 		);
 
 		if ( in_array( $feature->slug, $disabled_features, true ) ) {
