@@ -11,7 +11,7 @@ use \WP_Error as WP_Error;
 
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE = 500;
-	const CONTENT_VALIDATION_MAX_DIFF_SIZE = MB_IN_BYTES;
+	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 5 * MB_IN_BYTES;
 
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
