@@ -1,14 +1,15 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
 use \WP_CLI;
 
-class Elasticsearch {
+class Search {
 	public $healthcheck;
+	private $current_host_index;
 
 	/**
-	 * Initialize the VIP Elasticsearch plugin
+	 * Initialize the VIP Search plugin
 	 */
 	public function init() {
 		$this->setup_constants();
@@ -43,7 +44,8 @@ class Elasticsearch {
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host = VIP_ELASTICSEARCH_ENDPOINTS[ 0 ];
+			$host = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
+			$this->current_host_index = array_search( $host, VIP_ELASTICSEARCH_ENDPOINTS );
 
 			define( 'EP_HOST', $host );
 		}
@@ -64,7 +66,7 @@ class Elasticsearch {
 
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
-		// Override default per page value set in elasticsearch/elasticpress/includes/classes/Indexable.php
+		// Override default per page value set in elasticpress/includes/classes/Indexable.php
 		add_filter( 'ep_bulk_items_per_page', [ $this, 'filter__ep_bulk_items_per_page' ], PHP_INT_MAX );
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
@@ -78,34 +80,35 @@ class Elasticsearch {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+
+		// Disable certain EP Features
+		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
+
+		// Round-robin retry hosts if connection to a host fails
+		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
+		
+		add_filter( 'ep_valid_response', array( $this, 'filter__ep_valid_response' ), 10, 4 );
 	}
 
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'vip-es health', __NAMESPACE__ . '\Commands\HealthCommand' );
+			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 		}
 	}
 
 	protected function setup_healthchecks() {
-		/**
-		 * Filter wether to enable VIP search healthcheck
-		 *
-		 * @param		bool	$enable		True to enable the healthcheck cron job
-		 */
-		$enable = apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+		$this->healthcheck = new HealthJob();
 	
-		if ( $enable ) {
-			$this->healthcheck = new HealthJob();
-
-			// Hook into init action to ensure cron-control has already been loaded
-			add_action( 'init', [ $this->healthcheck, 'init' ] );
-		}
+		// Hook into init action to ensure cron-control has already been loaded
+		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
 	public function action__plugins_loaded() {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
 		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+			// Load query log override function to remove Authorization header from requests
+			require_once __DIR__ . '/../functions/ep-get-query-log.php';
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 
@@ -139,10 +142,15 @@ class Elasticsearch {
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
-		$fallback_error = new \WP_Error( 'vip-elasticsearch-upstream-request-failed', 'There was an error connecting to the upstream Elasticsearch server' );
+		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 
 		$timeout = $this->get_http_timeout_for_query( $query );
 
+		// Add custom headers to identify authorized traffic
+		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
+			$args['headers'] = [];
+		}
+		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 	
 		return $request;
@@ -160,6 +168,19 @@ class Elasticsearch {
 		}
 
 		return $timeout;
+	}
+
+	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
+		$disabled_features = array(
+			'documents',
+			'users',
+		);
+
+		if ( in_array( $feature->slug, $disabled_features, true ) ) {
+			return false;
+		}
+
+		return $active;
 	}
 
 	public function filter__jetpack_active_modules( $modules ) {
@@ -198,8 +219,8 @@ class Elasticsearch {
 	 * Separate plugin enabled and querying the index
 	 *
 	 * The index can be tested at any time by setting an `es` query argument.
-	 * When we're ready to use the index in production, the `vip_enable_elasticsearch`
-	 * option will be set to `true`, which will enable querying for everyone.
+	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
+	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	static function ep_skip_query_integration( $skip ) {
 		if ( isset( $_GET[ 'es' ] ) ) {
@@ -218,7 +239,65 @@ class Elasticsearch {
 			return true;
 		}
 
-		return ! ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' )
-			&& true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION );
+		// Legacy constant name
+		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
+
+		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
+
+		// The filter is checking if we should _skip_ query integration
+		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+	}
+
+	/**
+	 * Filter for ep_pre_request_host
+	 *
+	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
+	 */
+	public function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
+			return $host;
+		}
+
+		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return $host;
+		}
+
+		if ( 0 === count( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return $host;
+		}
+
+		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
+	}
+
+	/**
+	 * Return the next host in the list based on the current host index
+	 */
+	public function get_next_host( $hosts, $failures ) {
+		$this->current_host_index = ( $this->current_host_index + $failures ) % count( $hosts );
+		
+		return $hosts[ $this->current_host_index ];
+	} 
+
+	/**
+	 * Given a list of hosts, randomly select one for load balancing purposes.
+	 */
+	public function get_random_host( $hosts ) {
+		if ( ! is_array( $hosts ) ) {
+			return $hosts;
+		}
+
+		return $hosts[ array_rand( $hosts ) ];
+	}
+
+	public function filter__ep_valid_response( $response, $query, $query_args, $query_object ) {
+		if ( ! headers_sent() ) {
+			/**
+			 * Manually set a header to indicate the search results are from elasticSearch
+			 */
+			if ( isset( $_GET['ep_debug'] ) ) {
+				header( 'X-ElasticPress-Search-Valid-Response: true' );
+			}
+		}
+		return $response;
 	}
 }

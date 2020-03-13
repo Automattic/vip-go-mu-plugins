@@ -1,8 +1,8 @@
 <?php
 
-namespace Automattic\VIP\Elasticsearch;
+namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Elasticsearch\Health as Health;
+use Automattic\VIP\Search\Health as Health;
 
 require_once __DIR__ . '/class-health.php';
 
@@ -29,6 +29,13 @@ class HealthJob {
 	 * @access	public
 	 */
 	public function init() {
+		// We always add this action so that the job can unregister itself if it no longer should be running
+		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+
+		if ( ! $this->is_enabled() ) {
+			return;
+		}
+
 		// Add the custom cron schedule
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
@@ -44,8 +51,17 @@ class HealthJob {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME )  ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
+	}
 
-		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+	/**
+	 * Disable health check job
+	 *
+	 * Remove the ES health check job from the events list
+	 */
+	public function disable_job() {
+		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+		}
 	}
 
 	/**
@@ -71,12 +87,23 @@ class HealthJob {
 	}
 
 	/**
-	 * Check ElasticSearch index health
+	 * Check index health
 	 */
 	public function check_health() {
-		$user_results = Health::validate_index_users_count();
+		// Check if job has been disabled
+		if ( ! $this->is_enabled() ) {
+			$this->disable_job();
 
-		$this->process_results( $user_results );
+			return;
+		}
+
+		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
+
+		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
+			$user_results = Health::validate_index_users_count();
+
+			$this->process_results( $user_results );
+		}
 
 		$post_results = Health::validate_index_posts_count();
 
@@ -137,5 +164,23 @@ class HealthJob {
 	 */
 	public function send_alert( $channel, $message, $level ) {
 		return wpcom_vip_irc( $channel, $message, $level );
+	}
+
+	/**
+	 * Is health check job enabled
+	 *
+	 * @return bool True if job is enabled. Else, false
+	 */
+	public function is_enabled() {
+		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === DISABLE_VIP_SEARCH_HEALTHCHECKS ) {
+			return false;
+		}
+
+		/**
+		 * Filter wether to enable VIP search healthcheck
+		 *
+		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 */
+		return apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
 	}
 }
