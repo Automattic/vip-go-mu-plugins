@@ -32,7 +32,7 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	if ( apply_filters( 'wpcom_vip_is_user_using_two_factor', false ) ) {
+	if ( Two_Factor_Core::is_user_using_two_factor() ) {
 		return false;
 	}
 
@@ -139,16 +139,6 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			return $limited;
 		}, 9 );
 
-		// Calcuate two factor authentication support outside map_meta_cap to avoid callback loop
-		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
-		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
-		add_filter( 
-			'wpcom_vip_is_user_using_two_factor',
-			function() use ( $is_user_using_two_factor ) {
-				return $is_user_using_two_factor;
-			}
-		);
-		
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
 	}
