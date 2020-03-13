@@ -88,6 +88,9 @@ class Search {
 		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
 		
 		add_filter( 'ep_valid_response', array( $this, 'filter__ep_valid_response' ), 10, 4 );
+
+		// Allow querying while a bulk index is running
+		add_filter( 'ep_enable_query_integration_during_indexing', '__return_true' );
 	}
 
 	protected function load_commands() {
