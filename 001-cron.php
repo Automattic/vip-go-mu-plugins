@@ -118,7 +118,7 @@ function wpcom_vip_cron_control_event_object_to_string( $event ) {
  */
 function wpcom_vip_log_cron_control_uncacheable_cron_option( $option_size, $buckets, $option_flat_count ) {
 	$message = sprintf( 'Cron Control Cron Option Uncacheable Alert - home: %s | option size: %d | buckets: %d | option flat count: %d', home_url( '/' ), $option_size, $buckets, $option_flat_count );
-	wpcom_vip_irc( 'vipv2-alerts', $message, 2, 'cache-control-uncacheable-cron-option', 900 );
+	wpcom_vip_irc( 'vip-go-criticals', $message, 2, 'cache-control-uncacheable-cron-option', 900 );
 }
 
 /**
