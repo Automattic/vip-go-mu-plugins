@@ -541,6 +541,18 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
 	}
 
+	/**
+	 * Ensure that we're allowing querying during bulk re-index, via the ep_enable_query_integration_during_indexing filter
+	 */
+	public function test__vip_search_filter__ep_enable_query_integration_during_indexing() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$allowed = apply_filters( 'ep_enable_query_integration_during_indexing', false );
+
+		$this->assertTrue( $allowed );
+	}
+
 	/*
 	 * Test for making sure the round robin function returns the next array value
 	 */
