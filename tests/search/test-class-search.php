@@ -168,7 +168,7 @@ class Search_Test extends \WP_UnitTestCase {
 		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
 
 		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar plugin already loaded, therefore this test is not asserting that the plugin is loaded' );
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
@@ -176,7 +176,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->action__plugins_loaded();
 
 		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
 	}
 
 	/**
