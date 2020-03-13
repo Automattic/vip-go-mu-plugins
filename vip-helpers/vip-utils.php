@@ -726,7 +726,7 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
  * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
  * @param int $threshold Optional. The number of fails required before subsequent requests automatically return the fallback value. Defaults to 3, with a maximum of 10.
- * @param int $timeout Optional. Number of seconds before the request times out. Valid values 1-3; defaults to 1.
+ * @param int $timeout Optional. Number of seconds before the request times out. Valid values 1-5; defaults to 1.
  * @param int $retry Optional. Number of seconds before resetting the fail counter and the number of seconds to delay making new requests after the fail threshold is reached. Defaults to 20, with a minimum of 10.
  * @param array Optional. Set other arguments to be passed to wp_remote_request().
  * @return string|WP_Error|array Array of results. If fail counter is met, returns the $fallback_value, otherwise return WP_Error.
@@ -742,16 +742,23 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$cache_key = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args[ 'method' ] );
 
 	// valid url
-	if ( empty( $url ) || !parse_url( $url ) )
+	if ( empty( $url ) || !parse_url( $url ) ) {
 		return ( $fallback_value ) ? $fallback_value : new WP_Error('invalid_url', $url );
+	}
 
 	// Ensure positive values
 	$timeout   = abs( $timeout );
 	$retry     = abs( $retry );
 	$threshold = abs( $threshold );
 
-	// timeouts > 3 seconds are just not reasonable for production usage
-	$timeout = ( (int) $timeout > 3 ) ? 3 : (int) $timeout;
+	// timeouts > 5 seconds are just not reasonable for production usage
+	$timeout = (int) $timeout;
+	if ( $timeout > 5 ) {
+		_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+
+		$timeout = 5;
+	}
+
 	// retry time < 10 seconds will default to 10 seconds.
 	$retry =  ( (int) $retry < 10 ) ? 10 : (int) $retry;
 	// more than 10 faulty hits seem to be to much
@@ -761,8 +768,13 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 
 	// check if the timeout was hit and obey the option and return the fallback value
 	if ( false !== $option && time() - $option['time'] < $retry ) {
-		if ( $option['hits'] >= $threshold )
+		if ( $option['hits'] >= $threshold ) {
+			if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
+				trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} has been throttled after {$option['hits']} attempts. Not reattempting until after $retry seconds", E_USER_WARNING );
+			}
+
 			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
+		}
 	}
 
 	$start = microtime( true );
@@ -771,24 +783,25 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 
 	$elapsed = ( $end - $start ) > $timeout;
 	if ( true === $elapsed ) {
-		if ( false !== $option && $option['hits'] < $threshold )
+		if ( false !== $option && $option['hits'] < $threshold ) {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $option['hits']+1 ), $cache_group, $retry );
-		else if ( false !== $option && $option['hits'] == $threshold )
+		} else if ( false !== $option && $option['hits'] == $threshold ) {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $threshold ), $cache_group, $retry );
-		else
+		} else {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => 1 ), $cache_group, $retry );
+		}
 	}
 	else {
-		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry )
+		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
 			wp_cache_set( $cache_key, array( 'time' => $option['time'], 'hits' => $option['hits']-1 ), $cache_group, $retry );
-		else
+		} else {
 			wp_cache_delete( $cache_key, $cache_group);
+		}
 	}
 
 	if ( is_wp_error( $response ) ) {
-		// Log errors for internal WP.com debugging
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			error_log( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ) );
+			trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} and a timeout of $timeout failed. Result: " . maybe_serialize( $response ), E_USER_WARNING );
 		}
 		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 
@@ -1101,27 +1114,6 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 				// We found what we were looking for, break from both loops
 				break 2;
 			}
-		}
-	}
-
-	// For WordPress 5.0+, any environments that want to use the Gutenberg plugin need to define a specific constant.
-	// Without the constant in place, we skip loading the plugin and fallback to the core block editor.
-	// This will also facilitate the upgrade path where core disables the Gutenberg plugin as part of the upgrade.
-	if ( 'gutenberg' === $plugin ) {
-		$db_version = absint( get_option( 'db_version' ) );
-		$is_50_plus = $db_version >= 43764;
-
-		$should_load_gutenberg = true;
-		if ( ! defined( 'GUTENBERG_USE_PLUGIN' ) ) {
-			$should_load_gutenberg = false;
-		} elseif ( true !== GUTENBERG_USE_PLUGIN ) {
-			$should_load_gutenberg = false;
-		}
-
-		if ( $is_50_plus && ! $should_load_gutenberg ) {
-			trigger_error( 'wpcom_vip_load_plugin: Skipped loading Gutenberg plugin. Please add `define( \'GUTENBERG_USE_PLUGIN\', true );` if you would like to use the plugin over the Core Block Editor. For details, see https://vip.wordpress.com/documentation/vip-go/loading-gutenberg/', E_USER_WARNING );
-
-			return;
 		}
 	}
 	

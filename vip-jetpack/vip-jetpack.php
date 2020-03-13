@@ -38,6 +38,98 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', 2 * HOUR_IN_SECONDS );
 define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
 
 /**
+ * Enable the the new Jetpack full sync method (queue-less) on non-production sites for testing
+ * 
+ * Can be removed (along with later code that uses the constant) after Jetpack 8.2 is deployed
+ */
+if ( ! defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && 'production' !== VIP_GO_ENV ) {
+	define( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY', true );
+}
+
+// Default plan object for all VIP sites.
+define( 'VIP_JETPACK_DEFAULT_PLAN', array(
+	'product_id' => 'vip',
+	'product_slug' => 'vip',
+	'product_name_short' => 'VIP',
+	'product_variation' => 'vip',
+	'supports' => array (
+		'videopress',
+		'akismet',
+		'vaultpress',
+		'seo-tools',
+		'google-analytics',
+		'wordads',
+		'search',
+	),
+	'features' => array (
+		'active' => array (
+			'premium-themes',
+			'akismet',
+			'vaultpress-backups',
+			'vaultpress-backup-archive',
+			'vaultpress-storage-space',
+			'vaultpress-automated-restores',
+			'vaultpress-security-scanning',
+			'polldaddy',
+			'simple-payments',
+			'support',
+			'wordads-jetpack',
+		),
+		'available' => array (
+			'akismet' => array (
+				'jetpack_free',
+				'jetpack_premium',
+				'jetpack_personal',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+				'jetpack_personal_monthly',
+			),
+			'vaultpress-backups' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'vaultpress-backup-archive' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'vaultpress-storage-space' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'vaultpress-automated-restores' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'simple-payments' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'support' => array (
+				'jetpack_premium',
+				'jetpack_personal',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+				'jetpack_personal_monthly',
+			),
+			'premium-themes' => array (
+				'jetpack_business_monthly',
+			),
+			'vaultpress-security-scanning' => array (
+				'jetpack_business_monthly',
+			),
+			'polldaddy' => array (
+				'jetpack_business_monthly',
+			),
+		),
+	),
+) );
+
+/**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
 require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );
@@ -62,6 +154,24 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 
 	return $modules;
 }, 999 );
+
+/**
+ * Prevent the jetpack_active_plan from ever being overridden.
+ *
+ * All sites on VIP Go should always have have a valid VIP plan.
+ *
+ * This will prevent issues from the plan option being corrupted,
+ * which can then break features like Jetpack Search.
+ */
+add_filter( 'pre_option_jetpack_active_plan', function( $pre_option, $option, $default ) {
+	if ( true === WPCOM_IS_VIP_ENV
+		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
+		&& Jetpack::is_active() ) {
+		return VIP_JETPACK_DEFAULT_PLAN;
+	}
+
+	return $pre_option;
+}, 10, 3 );
 
 /**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range

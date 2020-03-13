@@ -3,6 +3,6 @@
         "phpunit/phpunit": "~6.5",
         "automattic/vipwpcs": "^2.0",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
-        "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0"
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.6.2"
     }
 }

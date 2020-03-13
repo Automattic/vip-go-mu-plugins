@@ -149,6 +149,7 @@ if ( WPCOM_SANDBOXED ) {
 
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
@@ -175,11 +176,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 // Load elasticsearch helpers
-if ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) {
-	require_once( __DIR__ . '/elasticsearch/class-elasticsearch.php' );
+if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
+	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	require_once( __DIR__ . '/search/search.php' );
 
-	$es_plugin = new \Automattic\VIP\Elasticsearch\Elasticsearch();
-	$es_plugin->init();
+	$search_plugin = new \Automattic\VIP\Search\Search();
+	$search_plugin->init();
 }
 
 // Add custom header for VIP
