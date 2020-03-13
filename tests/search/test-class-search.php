@@ -170,6 +170,9 @@ class Search_Test extends \WP_UnitTestCase {
 		// Be sure we don't already have the class loaded (or our test does nothing)
 		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar plugin already loaded, therefore this test is not asserting that the plugin is loaded' );
 
+		// Be sure the constant isn't already defined (or our test does not assert that it was defined at runtime)
+		$this->assertEquals( false, defined( 'WP_EP_DEBUG' ), 'WP_EP_DEBUG constant already defined, therefore this test is not asserting that the constant is set at runtime' );
+
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -177,6 +180,9 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
+
+		// And the debug constant should have been set (required for saving queries)
+		$this->assertEquals( true, constant( 'WP_EP_DEBUG' ), 'Incorrect value for WP_EP_DEBUG constant' );
 	}
 
 	/**
