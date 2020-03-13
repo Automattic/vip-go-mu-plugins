@@ -116,11 +116,6 @@ class Search {
 			require_once __DIR__ . '/../functions/ep-get-query-log.php';
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
-
-			// And ensure the logging has been setup (since it also hooks on plugins_loaded)
-			if ( function_exists( 'ep_setup_query_log' ) ) {
-				ep_setup_query_log();
-			}
 		}
 	}
 
