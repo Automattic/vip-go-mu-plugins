@@ -6,6 +6,8 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+namespace Automattic\VIP\Logstash;
+
 require_once __DIR__ . '/class-logger.php';
 
 /**
