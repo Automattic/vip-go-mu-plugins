@@ -518,6 +518,42 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/*
+	 * Test for making sure filter__ep_pre_request_host handles empty endpoint lists
+	 */
+	public function test__vip_search_filter__ep_pre_request_host_empty_endpoint() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+		
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array() );
+
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+	}
+
+	/*
+	 * Test for making sure filter__ep_pre_request_host handles endpoint lists that aren't arrays
+	 */
+	public function test__vip_search_filter__ep_pre_request_host_endpoint_not_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+		
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
+	
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+	}
+
+	/**
+	 * Ensure that we're allowing querying during bulk re-index, via the ep_enable_query_integration_during_indexing filter
+	 */
+	public function test__vip_search_filter__ep_enable_query_integration_during_indexing() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$allowed = apply_filters( 'ep_enable_query_integration_during_indexing', false );
+
+		$this->assertTrue( $allowed );
+	}
+
+	/*
 	 * Test for making sure the round robin function returns the next array value
 	 */
 	public function test__vip_search_get_next_host() {
@@ -555,4 +591,25 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertContains( $es->get_random_host( $hosts ), $hosts );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__send_vary_headers__sent_for_group() {
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+		
+		$_GET['ep_debug'] = true;
+		
+		apply_filters( 'ep_valid_response', array(), array(), array(), array(), null );
+		
+		do_action( 'send_headers' );
+
+		unset( $_GET['ep_debug'] );
+		
+		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
+	}
+
 }
