@@ -16,6 +16,11 @@
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
+	
+	if ( defined('WPCOM_VIP_USE_CORE_CRON') && WPCOM_VIP_USE_CORE_CRON ) {
+		return true;
+	}
+
 	// Do not load outside of VIP environments, unless explicitly requested
 	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
 		return true;
