@@ -1,0 +1,90 @@
+#
+# ATTACHMENTS
+#
+Hellonico\Fixtures\Entity\Attachment:
+  image{1..100}:
+    file: <image(<uploadDir()>, 1200, 1200)>
+
+#
+# USERS
+#
+Hellonico\Fixtures\Entity\User:
+  user{1..300}:
+    user_login (unique): <username()>
+    user_pass: 123456
+    user_email: <safeEmail()>
+    user_url: <url()>
+    user_registered: <dateTimeThisDecade()>
+    first_name: <firstName()>
+    last_name: <lastName()>
+    description: <sentence()>
+    role: <randomElement(['subscriber', 'editor', 'publisher', 'reader', 'writer', 'other'])>
+    meta:
+      phone_number: <phoneNumber()>
+      address: <streetAddress()>
+      zip: <postcode()>
+      city: <city()>
+
+#
+# TERMS
+#
+Hellonico\Fixtures\Entity\Term:
+  term_default (template):
+    name (unique): <words(10, true)>
+    description: <sentence()>
+  category{1..2000} (extends term_default):
+    parent: '50%? <termId(childless=1)>'
+    taxonomy: 'category'
+  tag{1..5000} (extends term_default):
+    taxonomy: post_tag
+  places{1..200} (extends term_default):
+    taxonomy: place
+       
+#
+# POSTS
+#
+Hellonico\Fixtures\Entity\Post:
+  post_default (template):
+    post_title (unique): <words(20, true)>
+    post_date: <dateTimeThisDecade()>
+    post_content: <paragraphs(10, true)>
+    post_excerpt: <paragraphs(1, true)>
+    post_author: '@user*->ID'
+    meta:
+      _thumbnail_id: '@image*->ID'
+      extra_field: <paragraphs(1, true)>
+      string_field: <sentence()>
+      int_field: <randomNumber()>
+      date_field: <dateTimeThisCentury()>
+      float_field: <latitude()>
+
+  post{1..1000000} (extends post_default):
+    post_category: '3x @category*->term_id'
+    tax_input:
+      post_tag: '5x @tag*->term_id'
+
+  page{1..5000} (extends post_default):
+    post_type: page
+
+  product{1..10000} (extends post_default):
+    post_type: product
+    
+#
+# COMMENTS
+#
+Hellonico\Fixtures\Entity\Comment:
+  comment{1..2000000}:
+    comment_post_ID: '@post*->ID'
+    user_id: '@user*->ID'
+    comment_date: <dateTimeBetween( '@post*->post_date' )>
+    comment_author: '@user*->user_login'
+    comment_author_email: '@user*->user_email'
+    comment_author_url: '@user*->user_url'
+    comment_content: <paragraphs(2, true)>
+    comment_agent: <userAgent()>
+    comment_author_IP: <ipv4()>
+    comment_approved: 1
+    comment_karma: <numberBetween(1, 100)>
+    comment_meta:
+      some_key: <sentence()>
+      another_key: <sentence()>
