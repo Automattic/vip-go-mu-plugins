@@ -350,29 +350,33 @@ class Logger {
 		if ( static::$processed_entries ) {
 			return; // Already done.
 		}
+
+		$fallback_error = new \WP_Error( 'logstash-send-failed', 'There was an error connecting to the logstash endpoint' );
+
 		static::$processed_entries = true;
 		$endpoint = 'https://public-api.wordpress.com/rest/v1.1/logstash/bulk';
 
 		$entry_chunks = array_chunk( static::$entries, static::BULK_ENTRIES_COUNT );
+
 		// Process all entries.
 		foreach ( $entry_chunks as $entries ) {
 			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
 				static::maybe_wp_debug_log_entries( $entries );
 				continue; // Bypassing REST API below in this case.
 			}
-			$json_data     = wp_json_encode( $entries );
+
+			$json_data = wp_json_encode( $entries );
+
 			// Send to logstash via REST API endpoint with payload containing log entry details.
-			$_wp_remote_response         = wp_remote_post(
-				$endpoint,
-				[
-					'timeout'     => 2,
+			$_wp_remote_response = vip_safe_wp_remote_request( $endpoint, $fallback_error, 3, 2, 5, [
+					'method' => 'POST',
 					'redirection' => 0,
-					'blocking'    => false,
-					'body'        => [
+					'blocking' => false,
+					'body' => [
 						'params' => $json_data,
 					],
-				]
-			);
+				] );
+
 			$_wp_remote_response_code    = wp_remote_retrieve_response_code( $_wp_remote_response );
 			$_wp_remote_response_message = wp_remote_retrieve_response_message( $_wp_remote_response );
 
