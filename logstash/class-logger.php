@@ -337,7 +337,7 @@ class Logger {
 
 		// Sends data to logstash on shutdown.
 		if ( ! has_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ] ) ) {
-			add_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ] );
+			add_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ], 9999 );
 		}
 	}
 
@@ -354,6 +354,12 @@ class Logger {
 		$fallback_error = new \WP_Error( 'logstash-send-failed', 'There was an error connecting to the logstash endpoint' );
 
 		static::$processed_entries = true;
+
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			// Flush content to client first to prevent slow page load
+			fastcgi_finish_request();
+		}
+
 		$endpoint = 'https://public-api.wordpress.com/rest/v1.1/logstash/bulk';
 
 		$entry_chunks = array_chunk( static::$entries, static::BULK_ENTRIES_COUNT );
