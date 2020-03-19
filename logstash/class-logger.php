@@ -375,13 +375,13 @@ class Logger {
 
 			// Send to logstash via REST API endpoint with payload containing log entry details.
 			$_wp_remote_response = vip_safe_wp_remote_request( $endpoint, $fallback_error, 3, 5, 5, [
-					'method' => 'POST',
-					'redirection' => 0,
-					'blocking' => false,
-					'body' => [
-						'params' => $json_data,
-					],
-				] );
+				'method' => 'POST',
+				'redirection' => 0,
+				'blocking' => false,
+				'body' => [
+					'params' => $json_data,
+				],
+			] );
 
 			$_wp_remote_response_code    = wp_remote_retrieve_response_code( $_wp_remote_response );
 			$_wp_remote_response_message = wp_remote_retrieve_response_message( $_wp_remote_response );
