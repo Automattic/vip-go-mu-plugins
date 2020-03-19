@@ -62,6 +62,7 @@ yarn.lock
 /cron-control-next/bin/
 /cron-control-next/runner/
 /cron-control-next/tests/
+/search/data/
 /search/elasticpress/bin/
 /search/elasticpress/config/
 /search/elasticpress/docs/
