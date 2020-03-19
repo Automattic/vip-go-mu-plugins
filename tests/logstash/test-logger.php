@@ -12,6 +12,8 @@ class Logger_Test extends \WP_UnitTestCase {
 	}
 
 	public function setUp() {
+		parent::setUp();
+
 		$this->errors = [];
 
 		set_error_handler( [ $this, 'errorHandler' ] );
@@ -19,6 +21,12 @@ class Logger_Test extends \WP_UnitTestCase {
 		// Reset Logger::$entries prop
 		$entries_prop = $this->get_property( 'entries' );
 		$entries_prop->setValue( [] );
+	}
+
+	public function tearDown() {
+		restore_error_handler();
+
+		parent::tearDown();
 	}
 
 	public function errorHandler( $errno, $errstr, $errfile, $errline, $errcontext ) {
