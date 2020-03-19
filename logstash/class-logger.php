@@ -256,7 +256,7 @@ class Logger {
 			'message'  => '',                                        // Required.
 
 			'user_id'  => get_current_user_id(),                     // Optional.
-			'user_ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',          // phpcs:ignore -- Optional.
+			'user_ua'  => $_SERVER['HTTP_USER_AGENT'] ?? '',         // phpcs:ignore -- Optional.
 
 			'extra'    => [],                                        // Optional.
 		];
@@ -327,7 +327,7 @@ class Logger {
 		}
 
 		// Adjust `feature` and JSON-encode pretty-print data.
-		$data['feature']        = 'a8c_vip_' . $data['feature'];
+		$data['feature'] = 'a8c_vip_' . $data['feature'];
 
 		// Adjust `extra` and JSON-encode data that gets sent in the API request.
 		$data['extra'] = isset( $data['extra'] ) ? wp_json_encode( $data['extra'], JSON_PRETTY_PRINT ) : '';
