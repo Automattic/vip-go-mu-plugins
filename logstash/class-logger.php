@@ -374,7 +374,7 @@ class Logger {
 			$json_data = wp_json_encode( $entries );
 
 			// Send to logstash via REST API endpoint with payload containing log entry details.
-			$_wp_remote_response = vip_safe_wp_remote_request( $endpoint, $fallback_error, 3, 2, 5, [
+			$_wp_remote_response = vip_safe_wp_remote_request( $endpoint, $fallback_error, 3, 5, 5, [
 					'method' => 'POST',
 					'redirection' => 0,
 					'blocking' => false,
