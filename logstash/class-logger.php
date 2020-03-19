@@ -318,7 +318,7 @@ class Logger {
 			return; // Failed validation.
 
 		} elseif ( isset( $data['extra'] ) && ! is_array( $data['extra'] ) && ! is_object( $data['extra'] ) && ! is_scalar( $data['extra'] ) ) {
-			trigger_error( 'Invalid `extra` in call to ' . esc_html( __METHOD__ ) . '(). Must be an ojbect, array, or scalar value.', E_USER_WARNING );
+			trigger_error( 'Invalid `extra` in call to ' . esc_html( __METHOD__ ) . '(). Must be an object, array, or scalar value.', E_USER_WARNING );
 			return; // Failed validation.
 
 		} elseif ( isset( $data['extra'] ) && strlen( wp_json_encode( $data['extra'] ) ) > static::MAX_ENTRY_EXTRA_SIZE ) {
@@ -397,9 +397,7 @@ class Logger {
 	public static function maybe_wp_debug_log_entries( array $entries ) : void {
 		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) ) {
 			return; // Not applicable.
-		} 
-
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+		} elseif ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
 			return; // Not applicable.
 		}
 
