@@ -397,9 +397,9 @@ class Logger {
 	public static function maybe_wp_debug_log_entries( array $entries ) : void {
 		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) ) {
 			return; // Not applicable.
-		} elseif ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			return; // Not applicable.
-		} elseif ( ! defined( 'WP_DEBUG_LOG' ) || ! WP_DEBUG_LOG ) {
+		} 
+
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
 			return; // Not applicable.
 		}
 
@@ -416,6 +416,11 @@ class Logger {
 	 * @param array $entry Data.
 	 */
 	public static function wp_debug_log( array $entry ) : void {
+		if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
+			// Don't run this on VIP Go
+			return;
+		}
+
 		$log_path = WP_CONTENT_DIR . '/debug.log';
 		$log_path = is_string( WP_DEBUG_LOG ) && WP_DEBUG_LOG ? WP_DEBUG_LOG : $log_path;
 
