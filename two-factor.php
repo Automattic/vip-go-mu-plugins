@@ -227,6 +227,6 @@ function wpcom_vip_two_factor_admin_notice() {
 add_action( 'login_init', function() {
 	// Add some debugging to track down failed 2fa emails
 	add_action( 'wp_mail_failed', function( $error ) {
-		trigger_error( sprintf( 'wp_mail_failed: %s', $error->get_error_message() ), E_USER_WARNING );
+		trigger_error( sprintf( 'wp_mail_failed: %s', esc_html( $error->get_error_message() ) ), E_USER_WARNING );
 	} );
 } );
