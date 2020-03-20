@@ -29,6 +29,7 @@ class VIP_Encloseme_Cleanup {
 
         if ( $already_ran && wp_next_scheduled( self::CRON_HOOK ) ) {
             wp_clear_scheduled_hook( self::CRON_HOOK );
+            return;
         }
 
         if ( false === $already_ran && ! wp_next_scheduled( self::CRON_HOOK ) ) {
