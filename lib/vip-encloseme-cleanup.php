@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'VIP_ENCLOSEME_LIMIT_SIZE' ) ) {
+    define( 'VIP_ENCLOSEME_LIMIT_SIZE', 1000 );
+}
+
 class VIP_Encloseme_Cleanup {
     const OPTION_NAME = 'vip_encloseme_cleanup';
     const CRON_HOOK = 'vip_encloseme_cleanup_hook';
@@ -42,6 +46,10 @@ class VIP_Encloseme_Cleanup {
             return;
         }
 
+        if ( defined( 'DISABLE_VIP_CLEANUP_ENV' ) && true === DISABLE_VIP_CLEANUP_ENV ) {
+            return;
+        }
+
         global $wpdb;
         $find_meta_query = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_encloseme' LIMIT 1"; // We use this instead of count to mitigate the risk of the SQL server going away. 
         $meta_exists = $wpdb->get_var( $find_meta_query ); 
@@ -56,24 +64,28 @@ class VIP_Encloseme_Cleanup {
 
         do {
             $pids = $wpdb->get_results(
-                "SELECT DISTINCT post_id FROM $wpdb->postmeta WHERE meta_key = '_encloseme' LIMIT 1000",
+                sprintf(
+                    "SELECT DISTINCT post_id FROM $wpdb->postmeta WHERE meta_key = '_encloseme' LIMIT %d", VIP_ENCLOSEME_LIMIT_SIZE
+                ),
                 ARRAY_N
             );
+
+            if ( empty( $pids ) ) {
+                break; // Bail, no post IDs have been found.
+            }
+
             $pids = array_map( function( $pid ) {
                 return $pid[0];
             }, $pids );
             
             foreach( $pids as $pid ) {
                 delete_post_meta( $pid, '_encloseme' );
-                if ( defined( 'DISABLE_VIP_CLEANUP_ENV' ) && true === DISABLE_VIP_CLEANUP_ENV ) {
-                    break 2;
-                }
             }
     
             sleep( 3 );
 
             $meta_exists = $wpdb->get_var( $find_meta_query );
-        } while ( ! is_null( $meta_exists ) && false === defined( 'DISABLE_VIP_CLEANUP_ENV' ) );
+        } while ( ! is_null( $meta_exists ) );
 
         update_option( self::OPTION_NAME, time() );
         wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Finished _encloseme meta cleanup for %s.', get_site_url() ) );
