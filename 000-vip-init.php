@@ -147,6 +147,9 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Logging
+require_once( __DIR__ . '/logstash/logstash.php' );
+
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
 require_once( __DIR__ . '/lib/utils/class-alerts.php' );

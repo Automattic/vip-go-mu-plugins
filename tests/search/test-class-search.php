@@ -168,7 +168,10 @@ class Search_Test extends \WP_UnitTestCase {
 		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
 
 		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
+		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar plugin already loaded, therefore this test is not asserting that the plugin is loaded' );
+
+		// Be sure the constant isn't already defined (or our test does not assert that it was defined at runtime)
+		$this->assertEquals( false, defined( 'WP_EP_DEBUG' ), 'WP_EP_DEBUG constant already defined, therefore this test is not asserting that the constant is set at runtime' );
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
@@ -176,7 +179,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->action__plugins_loaded();
 
 		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
+		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
+
+		// And the debug constant should have been set (required for saving queries)
+		$this->assertEquals( true, constant( 'WP_EP_DEBUG' ), 'Incorrect value for WP_EP_DEBUG constant' );
 	}
 
 	/**
@@ -539,6 +545,18 @@ class Search_Test extends \WP_UnitTestCase {
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
 	
 		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+	}
+
+	/**
+	 * Ensure that we're allowing querying during bulk re-index, via the ep_enable_query_integration_during_indexing filter
+	 */
+	public function test__vip_search_filter__ep_enable_query_integration_during_indexing() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$allowed = apply_filters( 'ep_enable_query_integration_during_indexing', false );
+
+		$this->assertTrue( $allowed );
 	}
 
 	/*
