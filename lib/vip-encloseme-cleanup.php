@@ -3,7 +3,7 @@
 class VIP_Encloseme_Cleanup {
     const OPTION_NAME = 'vip_encloseme_cleanup';
     const CRON_HOOK = 'vip_encloseme_cleanup_hook';
-    const CRON_INTERVAL = 'vip_cleanup_interval';
+    const CRON_INTERVAL = 'vip_encloseme_cleanup_interval';
 
     public static function init() {
         add_filter( 'cron_schedules', [ __CLASS__, 'add_cron_schedule' ] );
