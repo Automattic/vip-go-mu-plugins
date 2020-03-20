@@ -88,6 +88,9 @@ class Search {
 		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
 		
 		add_filter( 'ep_valid_response', array( $this, 'filter__ep_valid_response' ), 10, 4 );
+
+		// Allow querying while a bulk index is running
+		add_filter( 'ep_enable_query_integration_during_indexing', '__return_true' );
 	}
 
 	protected function load_commands() {
@@ -107,15 +110,15 @@ class Search {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
 		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+			// Must be set to true to enable saving of queries in \ElasticPress\Elasticsearch
+			if ( ! defined( 'WP_EP_DEBUG' ) ) {
+				define( 'WP_EP_DEBUG', true );
+			}
+
 			// Load query log override function to remove Authorization header from requests
 			require_once __DIR__ . '/../functions/ep-get-query-log.php';
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
-
-			// And ensure the logging has been setup (since it also hooks on plugins_loaded)
-			if ( function_exists( 'ep_setup_query_log' ) ) {
-				ep_setup_query_log();
-			}
 		}
 	}
 
