@@ -16,8 +16,8 @@
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	
-	if ( defined('WPCOM_VIP_USE_CORE_CRON') && WPCOM_VIP_USE_CORE_CRON ) {
+
+	if ( defined( 'WPCOM_VIP_USE_CORE_CRON' ) && WPCOM_VIP_USE_CORE_CRON ) {
 		return true;
 	}
 
@@ -153,7 +153,7 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
 	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 	add_action( 'a8c_cron_control_uncacheable_cron_option', 'wpcom_vip_log_cron_control_uncacheable_cron_option', 10, 3 );
-	
+
 	$cron_control_next_version = __DIR__ . '/cron-control-next/cron-control.php';
 
 	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
