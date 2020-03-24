@@ -91,6 +91,13 @@ class Search {
 
 		// Allow querying while a bulk index is running
 		add_filter( 'ep_enable_query_integration_during_indexing', '__return_true' );
+
+		// Set facet taxonomies size. Shouldn't currently be used, but it makes sense to have it set to a sensible
+		// default just in case it ends up in use so that the application doesn't error
+		add_filter( 'ep_facet_taxonomies_size', array( $this, 'filter__ep_facet_taxonomies_size' ), PHP_INT_MAX );
+
+		// Disable facet queries
+		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
 	}
 
 	protected function load_commands() {
@@ -302,5 +309,12 @@ class Search {
 			}
 		}
 		return $response;
+	}
+
+	/*
+	 * Given the current facet taxonomies size and a taxonomy, determine the facet taxonomy size
+	 */
+	public function filter__ep_facet_taxonomies_size( $size, $taxonomy ) {
+		return 5;
 	}
 }
