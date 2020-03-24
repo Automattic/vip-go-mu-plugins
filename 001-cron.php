@@ -17,7 +17,9 @@
  */
 function wpcom_vip_use_core_cron() {
 
-	if ( defined( 'WPCOM_VIP_USE_CORE_CRON' ) && WPCOM_VIP_USE_CORE_CRON ) {
+	// For some applications, Cron Control is not a good fit. Allow those apps to use core cron instead. 
+	// Note: please check with the VIP team before using this constant as it's not always guaranteed to work.
+	if ( defined( 'VIP_USE_CORE_CRON' ) && true === VIP_USE_CORE_CRON ) {
 		return true;
 	}
 
