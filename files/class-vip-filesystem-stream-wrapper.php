@@ -165,8 +165,6 @@ class VIP_Filesystem_Stream_Wrapper {
 			return false;
 		}
 
-		$meta = [];
-
 		try {
 			$result = $this->client->get_file( $path );
 
@@ -183,36 +181,29 @@ class VIP_Filesystem_Stream_Wrapper {
 				// File doesn't exist on File service so create new file
 				$file = $this->string_to_resource( '', $mode );
 
-				$meta = stream_get_meta_data( $file );
-
-				// Upload new file to file service
-				$upload_result = $this->client->upload_file( $meta[ 'uri' ], $path );
-				if ( is_wp_error( $upload_result ) ) {
-					trigger_error(
-						sprintf( 'stream_open/upload_file failed for %s with error: %s #vip-go-streams', $path, $upload_result->get_error_message() ),
-						E_USER_WARNING
-					);
-
-					return false;
-				}
-
 				// Clear stat caches for the file.
 				// The upload above calls various stat-related functions which are then cached.
 				// The cached values can then lead to unexpected behavior even after the file has changed (e.g. in Curl_Streamer).
 				clearstatcache( false, $path );
 			} else {
 				$file = fopen( $result, $mode );
-
-				$meta = stream_get_meta_data( $file );
 			}
 
 			// Get meta data
+			$meta						= stream_get_meta_data( $file );
 			$this->seekable = $meta[ 'seekable' ];
 			$this->uri      = $meta[ 'uri' ];
 
 			$this->file = $file;
 			$this->path = $path;
 			$this->mode = $mode;
+
+			// Cache file stats so that calls to url_stat will work
+			$stats = fstat( $file );
+			$this->client->cache_file_stats( $path, [
+				'size'	=> $stats['size'],
+				'mtime' => $stats['mtime'],
+			] );
 
 			return true;
 		} catch ( \Exception $e ) {
