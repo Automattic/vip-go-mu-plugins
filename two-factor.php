@@ -168,7 +168,7 @@ function wpcom_enable_two_factor_plugin() {
 		return;	
 	}
 
-	require_once( 'two-factor' );
+	require_once( WPMU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php' );
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
