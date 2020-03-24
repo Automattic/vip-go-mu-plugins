@@ -101,6 +101,18 @@ class VIP_Filesystem_Stream_Wrapper {
 	private $debug_mode;
 
 	/**
+	 * Flush empty file flag
+	 *
+	 * Flag to determine if an empty file should be flushed to the 
+	 * Filesystem.
+	 *
+	 * @since		1.0.0
+	 * @access	private
+	 * @var			bool		Should flush empty file
+	 */
+	private $should_flush_empty;
+
+	/**
 	 * Vip_Filesystem_Stream constructor.
 	 *
 	 * @param API_Client $client
@@ -120,6 +132,9 @@ class VIP_Filesystem_Stream_Wrapper {
 			&& true === VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG ) {
 			$this->debug_mode = true;
 		}
+
+		// Mark new empty file as flushable
+		$this->should_flush_empty = true;
 	}
 
 	/**
@@ -225,6 +240,12 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_close() {
 		$this->debug( sprintf( 'stream_close => %s + %s', $this->path, $this->uri ) );
 
+		if ( $this->should_flush_empty ) {
+			$this->stream_flush();
+
+			$this->should_flush_empty = false;
+		}
+
 		return $this->close_handler( $this->file );
 	}
 
@@ -301,6 +322,8 @@ class VIP_Filesystem_Stream_Wrapper {
 					sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $result->get_error_message() ),
 					E_USER_WARNING
 				);
+
+				$this->should_flush_empty = false;
 
 				return false;
 			}
@@ -385,6 +408,8 @@ class VIP_Filesystem_Stream_Wrapper {
 			);
 			return false;
 		}
+
+		$this->should_flush_empty = false;
 
 		return $length;
 	}
