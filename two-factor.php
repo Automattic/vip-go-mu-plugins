@@ -141,13 +141,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 
 		// Calcuate two factor authentication support outside map_meta_cap to avoid callback loop
 		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
-		$is_user_using_two_factor = false;
-		
-		// We load the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
-		// This filter still runs even if skip-plugins is set, so add a check to make sure Two_Factor_Core exists
-		if ( class_exists( 'Two_Factor_Core' ) ) {
-			$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
-		}
+		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
 
 		add_filter( 
 			'wpcom_vip_is_user_using_two_factor',
@@ -168,6 +162,8 @@ function wpcom_enable_two_factor_plugin() {
 		return;	
 	}
 
+	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
+	// Switching to require_once so it no longer gets skipped
 	require_once( WPMU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php' );
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
