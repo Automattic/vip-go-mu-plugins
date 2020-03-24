@@ -7,15 +7,20 @@ class Two_Factor_SMS_Test extends WP_UnitTestCase {
 	}
 
 	public function test__two_factor_sms_formatting() {
+		$token = 123456;
+		$expected = '123456 is your Test Blog verification code.' . "\n\n" . '@example.org #123456';
+
 		$two_factor = Two_Factor_SMS::get_instance();
+		$actual   = $two_factor->format_sms_message( $token );
 
-		$token      = 123456;
-		$site_title = 'Test Blog'; // used set values for test site
-		$home_url   = 'example.org'; // used set values for test site
+		$this->assertEquals( $expected, $actual );
+	}
 
-		$format = '%1$d is your %2$s verification code.' . "\n\n" . '@%3$s #%1$d';
+	public function test__two_factor_sms_formatting__code_with_leading_zero() {
+		$token = 0123456;
+		$expected = '0123456 is your Test Blog verification code.' . "\n\n" . '@example.org #0123456';
 
-		$expected = sprintf( $format, $token, $site_title, $home_url );
+		$two_factor = Two_Factor_SMS::get_instance();
 		$actual   = $two_factor->format_sms_message( $token );
 
 		$this->assertEquals( $expected, $actual );
