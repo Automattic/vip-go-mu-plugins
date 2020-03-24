@@ -168,7 +168,7 @@ function wpcom_enable_two_factor_plugin() {
 		return;	
 	}
 
-	wpcom_vip_load_plugin( 'two-factor' );
+	require_once( 'two-factor' );
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
