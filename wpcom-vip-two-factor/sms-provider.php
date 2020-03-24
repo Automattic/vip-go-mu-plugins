@@ -89,7 +89,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		$parse = parse_url( home_url() );
 		$home_url_without_protocol = $parse['host'] . $parse['path'];
 
-		$format = '%1$d is your %2$s verification code.' . "\n\n" . '@%3$s #%1$d';
+		$format = '%1$s is your %2$s verification code.' . "\n\n" . '@%3$s #%1$s';
 
 		$message = sprintf( $format, $verification_code, $site_title, $home_url_without_protocol );
 		return $message;
