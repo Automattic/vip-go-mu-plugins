@@ -1,12 +1,15 @@
 .deployignore
 
 .ackrc
+.babelrc
+.browserslistrc
 .circleci
 .codeclimate.yml
 .coveralls.yml
 .distignore
 .editorconfig
 .eslines.json
+.eslintignore
 .eslintrc
 .eslintrc.js
 .git
@@ -14,14 +17,15 @@
 .github
 .gitignore
 .gitmodules
+.huskyrc.json
 .jscsrc
 .jshintignore
 .jshintrc
 .npmrc
 .nvmrc
-.phpcs.xml.dist
 .scrutinizer.yml
 .travis.yml
+.wordpress-org/
 composer.json
 composer.lock
 CONTRIBUTING.md
@@ -30,6 +34,7 @@ Gruntfile.js
 gulpfile.babel.js
 install-wp-tests.sh
 LICENSE
+LICENSE.md
 Makefile
 package.json
 package-lock.json
@@ -57,6 +62,15 @@ yarn.lock
 /cron-control-next/bin/
 /cron-control-next/runner/
 /cron-control-next/tests/
+/search/elasticpress/bin/
+/search/elasticpress/config/
+/search/elasticpress/docs/
+/search/elasticpress/tests/
+/search/elasticpress/run-wpacceptance.sh
+/search/elasticpress/wpacceptance.json
+/search/elasticpress/CHANGELOG.md
+/search/elasticpress/hookdoc-conf.json
+/search/elasticpress/postcss.config.js
 /jetpack/bin/build-asset-cdn-json.php
 /jetpack/docker/
 /jetpack/docs/

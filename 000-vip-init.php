@@ -147,8 +147,12 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Logging
+require_once( __DIR__ . '/logstash/logstash.php' );
+
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
@@ -172,6 +176,15 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
+}
+
+// Load elasticsearch helpers
+if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
+	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	require_once( __DIR__ . '/search/search.php' );
+
+	$search_plugin = new \Automattic\VIP\Search\Search();
+	$search_plugin->init();
 }
 
 // Add custom header for VIP

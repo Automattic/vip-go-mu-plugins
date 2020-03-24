@@ -28,8 +28,11 @@
 	<!-- Other directories -->
 	<exclude-pattern>.git/*</exclude-pattern>
 	<exclude-pattern>akismet/*</exclude-pattern>
+	<exclude-pattern>bin/*</exclude-pattern>
 	<exclude-pattern>debug-bar/*</exclude-pattern>
 	<exclude-pattern>drop-ins/*</exclude-pattern>
+	<exclude-pattern>elasticsearch/elasticpress/*</exclude-pattern>
+	<exclude-pattern>elasticsearch/debug-bar-elasticpress/*</exclude-pattern>
 	<exclude-pattern>shared-plugins/*</exclude-pattern>
 	<exclude-pattern>vaultpress/*</exclude-pattern>
 	<exclude-pattern>vendor/*</exclude-pattern>
@@ -37,8 +40,6 @@
 	<exclude-pattern>wp-cron-control/*</exclude-pattern>
 
 	<!-- How to scan -->
-	<!-- Show sniff and progress -->
-	<arg value="sp"/>
 	<!-- Strip the file paths down to the relevant bit -->
 	<arg name="basepath" value="."/>
 	<!-- Enables parallel processing when available for faster results. -->
@@ -55,7 +56,26 @@
 		https://github.com/PHPCompatibility/PHPCompatibility#sniffing-your-code-for-compatibility-with-specific-php-versions -->
 	<config name="testVersion" value="7.3-"/>
 
+	<!-- Rules: WordPress Coding Standards - see
+		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards -->
+	<!-- WordPress-Extra includes WordPress-Core -->
+	<rule ref="WordPress-Extra"/>
+	<!-- For help in understanding these custom sniff properties:
+		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties -->
+	<config name="minimum_supported_wp_version" value="5.3"/>
+
 	<!-- Rules: Check VIP Coding Standards - see
 		https://github.com/Automattic/VIP-Coding-Standards/ -->
-	<rule ref="WordPress-VIP-Go"/>
+	<rule ref="WordPress-VIP-Go">
+		<exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.internal_wpcom_vip_irc"/>
+		
+		<!-- These disallow anonymous functions as action callbacks -->
+		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
+
+		<!-- Allow short array syntax -->
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+	</rule>
+	
 </ruleset>

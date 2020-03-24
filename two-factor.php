@@ -12,6 +12,9 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
+// Do not allow API requests from 2fa users.
+add_filter( 'two_factor_user_api_login_enable', '__return_false', 1 ); // Hook in early to allow overrides
+
 function wpcom_vip_should_force_two_factor() {
 
 	// Don't force 2FA by default in local environments

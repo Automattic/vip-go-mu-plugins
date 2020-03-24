@@ -76,7 +76,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 	public function test__get_contents__error() {
 		$this->api_client_mock
-			->method( 'get_file' )
+			->method( 'get_file_content' )
 			->willReturn( new WP_Error( 'oh-no', 'Oh no!' ) );
 
 		$expected_error_code = 'oh-no';
@@ -91,7 +91,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 	public function test__get_contents__success() {
 		$this->api_client_mock
-			->method( 'get_file' )
+			->method( 'get_file_content' )
 			->with( '/wp-content/uploads/file.txt' )
 			->willReturn( 'Hello World!' );
 
@@ -104,7 +104,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 	public function test__get_contents_array__error() {
 		$this->api_client_mock
-			->method( 'get_file' )
+			->method( 'get_file_content' )
 			->willReturn( new WP_Error( 'oh-no', 'Oh no!' ) );
 
 		$actual_contents = $this->filesystem->get_contents_array( 'file.txt' );
@@ -148,7 +148,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	 */
 	public function test__get_contents_array__success( $api_response, $expected_contents ) {
 		$this->api_client_mock
-			->method( 'get_file' )
+			->method( 'get_file_content' )
 			->with( '/wp-content/uploads/file.txt' )
 			->willReturn( $api_response );
 

@@ -162,11 +162,10 @@ class VIP_Filesystem_Stream_Wrapper {
 				}
 
 				// File doesn't exist on File service so create new file
-				$result = '';
+				$file = $this->string_to_resource( '', $mode );
+			} else {
+				$file = fopen( $result, $mode );
 			}
-
-			// Converts file contents into stream resource
-			$file = $this->string_to_resource( $result, $mode );
 
 			// Get meta data
 			$meta           = stream_get_meta_data( $file );
