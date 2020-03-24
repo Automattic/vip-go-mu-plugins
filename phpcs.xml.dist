@@ -56,9 +56,13 @@
 		https://github.com/PHPCompatibility/PHPCompatibility#sniffing-your-code-for-compatibility-with-specific-php-versions -->
 	<config name="testVersion" value="7.3-"/>
 
-	<!-- Rules: Check WordPress Coding Standards -->
-	<rule ref="WordPress-Core" />
-	<rule ref="WordPress-Extra" />
+	<!-- Rules: WordPress Coding Standards - see
+		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards -->
+	<!-- WordPress-Extra includes WordPress-Core -->
+	<rule ref="WordPress-Extra"/>
+	<!-- For help in understanding these custom sniff properties:
+		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties -->
+	<config name="minimum_supported_wp_version" value="5.3"/>
 
 	<!-- Rules: Check VIP Coding Standards - see
 		https://github.com/Automattic/VIP-Coding-Standards/ -->
