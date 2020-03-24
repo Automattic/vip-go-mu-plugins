@@ -254,6 +254,15 @@ class API_Client {
 	}
 
 	/**
+	 * Explicitly caches file stat data
+	 *
+	 * Basically an interface to API_Cache::cache_file_stats();
+	 */
+	public function cache_file_stats( $file_path, $info ) {
+		$this->cache->cache_file_stats( $file_path, $info );	
+	}
+
+	/**
 	 * Use the filesystem API to generate a unique filename based on
 	 * provided file path
 	 *
