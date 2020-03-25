@@ -68,11 +68,11 @@ class API_Client {
 
 		$timeout = $request_args['timeout'] ?? self::DEFAULT_REQUEST_TIMEOUT;
 
-		$request_args = [
+		$request_args = array_merge( $request_args, [
 			'method' => $method,
 			'headers' => $headers,
 			'timeout' => $timeout,
-		];
+		] );
 
 		$response = wp_remote_request( $request_url, $request_args );
 
@@ -141,6 +141,9 @@ class API_Client {
 		// save to cache
 		$this->cache->copy_to_cache( $response_data->filename, $local_path );
 
+		// reset file stats cache if any
+		$this->cache->remove_stats( $response_data->filename );
+
 		return $response_data->filename;
 	}
 
@@ -152,13 +155,21 @@ class API_Client {
 
 	public function get_file( $file_path ) {
 		// check in cache first
-		$file_content = $this->cache->get_file( $file_path );
-		if ( $file_content ) {
-			return $file_content;
+		$file = $this->cache->get_file( $file_path );
+		if ( $file ) {
+			return $file;
 		}
 
+		$tmp_file = $this->cache->create_tmp_file();
+
+		// Request args for wp_remote_request()
+		$request_args = [
+			'stream' => true,
+			'filename' => $tmp_file,
+		];
+
 		// not in cache so get from API
-		$response = $this->call_api( $file_path, 'GET' );
+		$response = $this->call_api( $file_path, 'GET', $request_args );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -173,12 +184,16 @@ class API_Client {
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
 
-		$body = wp_remote_retrieve_body( $response );
-
 		// save to cache
-		$this->cache->cache_file( $file_path, $body );
+		$this->cache->cache_file( $file_path, $tmp_file );
 
-		return $body;
+		return $tmp_file;
+	}
+
+	public function get_file_content( $file_path ) {
+		$file = $this->get_file( $file_path );
+
+		return file_get_contents( $file );
 	}
 
 	public function delete_file( $file_path ) {
@@ -202,6 +217,13 @@ class API_Client {
 	}
 
 	public function is_file( $file_path, &$info = null ) {
+		// check in cache first
+		$stats = $this->cache->get_file_stats( $file_path );
+		if ( $stats ) {
+			$info = $stats;
+			return true;
+		}
+
 		$response = $this->call_api( $file_path, 'GET', [
 			'timeout' => 2,
 			'headers' => [
@@ -218,6 +240,9 @@ class API_Client {
 		if ( 200 === $response_code ) {
 			$response_body = wp_remote_retrieve_body( $response );
 			$info = json_decode( $response_body, true );
+
+			// cache file info
+			$this->cache->cache_file_stats( $file_path, $info );
 
 			return true;
 		} elseif ( 404 === $response_code ) {

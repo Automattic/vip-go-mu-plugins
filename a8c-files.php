@@ -68,9 +68,7 @@ class A8C_Files {
 
 		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
 		// The old school implementation will be phased out soon.
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER
-			// NOTE: Temporarily disable Stream Wrapper loading for sites on AMS as it's not ready for use there
-			&& 'ams-files.vipv2.net' !== FILE_SERVICE_ENDPOINT ) {
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
 			$this->init_vip_filesystem();
 		} else {
 			$this->init_legacy_filesystem();
