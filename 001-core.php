@@ -49,7 +49,7 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 	* This disables all unnecessary tests.
  */
 function remove_background_updates_test( $tests ) {
- unset( $tests['async']['background_updates'] );
- return $tests;
+	unset( $tests['async']['background_updates'] );
+	return $tests;
 }
 add_filter( 'site_status_tests', 'remove_background_updates_test' );
