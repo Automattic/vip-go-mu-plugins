@@ -90,7 +90,7 @@ class Search {
 
 		// Set facet taxonomies size. Shouldn't currently be used, but it makes sense to have it set to a sensible
 		// default just in case it ends up in use so that the application doesn't error
-		add_filter( 'ep_facet_taxonomies_size', array( $this, 'filter__ep_facet_taxonomies_size' ) );
+		add_filter( 'ep_facet_taxonomies_size', array( $this, 'filter__ep_facet_taxonomies_size' ), 10, 2 );
 
 		// Disable facet queries
 		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
