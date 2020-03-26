@@ -618,4 +618,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
 	}
 
+	public function test__vip_search_filter__ep_facet_taxonomies_size() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 5, $es->filter__ep_facet_taxonomies_size( 10000, 'category' ) );
+	}
 }
