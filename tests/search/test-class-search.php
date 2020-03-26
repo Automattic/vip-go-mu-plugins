@@ -475,4 +475,143 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 5, $es->filter__ep_facet_taxonomies_size( 10000, 'category' ) );
 	}
+
+	public function vip_search_filter__jetpack_active_modules() {
+		return array(
+			// No modules, no change
+			array(
+				// Input
+				array(),
+
+				// Expected
+				array(),
+			),
+
+			// Search not enabled, no change
+			array(
+				// Input
+				array(
+					'foo',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+
+			// Search enabled, should be removed from list
+			array(
+				// Input
+				array(
+					'foo',
+					'search',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+
+			// Search-like module enabled, should not be removed from list
+			array(
+				// Input
+				array(
+					'foo',
+					'searchbar',
+				),
+
+				// Expected
+				array(
+					'foo',
+					'searchbar',
+				),
+			),
+
+			// Search enabled multiple times, should be removed from list
+			array(
+				// Input
+				array(
+					'search',
+					'foo',
+					'search',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Test that our active modules filter works as expected
+	 * 
+	 * @dataProvider vip_search_filter__jetpack_active_modules
+	 */
+	public function test__vip_search_filter__jetpack_active_modules( $input, $expected ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->filter__jetpack_active_modules( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function vip_search_filter__jetpack_widgets_to_include_data() {
+		return array(
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/search.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				12345, // non-array
+
+				// Expected
+				12345,
+			),
+		);
+	}
+
+	/**
+	 * Test that the widgets filter works as expected
+	 * 
+	 * @dataProvider vip_search_filter__jetpack_widgets_to_include_data
+	 */
+	public function test__vip_search_filter__jetpack_widgets_to_include( $input, $expected ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->filter__jetpack_widgets_to_include( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
 }

@@ -281,4 +281,37 @@ class Search {
 	public function filter__ep_facet_taxonomies_size( $size, $taxonomy ) {
 		return 5;
 	}
+
+	/*
+	 * Remove the search module from active Jetpack modules
+	 */
+	public function filter__jetpack_active_modules( $modules ) {
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		return array_values( array_filter( $modules, function( $module ) {
+			if ( 'search' === $module ) {
+				return false;
+			}
+			return true;
+		} ) ); // phpcs:ignore WordPress.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed
+	}
+
+	/*
+	 * Remove the search widget from Jetpack widget include list
+	 */
+	public function filter__jetpack_widgets_to_include( $widgets ) {
+		if ( ! is_array( $widgets ) ) {
+			return $widgets;
+		}
+
+		foreach ( $widgets as $index => $file ) {
+			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
+			// even though we filtered it to off earlier, so we need to prevent it from loading
+			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+				unset( $widgets[ $index ] );
+			}
+		}
+
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		return array_values( $widgets );
+	}
 }
