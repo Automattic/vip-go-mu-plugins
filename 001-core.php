@@ -39,3 +39,14 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 	}
 	return $caps;
 }
+
+function vip_filter_unnecessary_php_modules_for_site_health_tests( $modules ) {
+	// Remove 'exif' PHP module.
+	if ( isset( $modules['exif'] ) ) {
+		unset( $modules['exif'] );
+	}
+
+	return $modules;
+}
+
+add_filter( 'site_status_test_php_modules', 'vip_filter_unnecessary_php_modules_for_site_health_tests' );
