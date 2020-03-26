@@ -94,8 +94,6 @@ class Search {
 
 		// Disable facet queries
 		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
-		
-		add_filter( 'jetpack_search_should_handle_query', array( __CLASS__, 'jetpack_search_should_handle_query' ) );
 	}
 
 	protected function load_commands() {
@@ -282,22 +280,5 @@ class Search {
 	 */
 	public function filter__ep_facet_taxonomies_size( $size, $taxonomy ) {
 		return 5;
-	}
-	
-	/**
-	 * Disable Jetpack Search if ElasticPress is enabled
-	 *
-	 * When we enable the ElasticPress query integration, we want to simultaneously
-	 * ensure that queries are not being offloaded to Jetpack Search.
-	 *
-	 * This also means that any testing of ElasticPress will not have queries offloaded
-	 * to Jetpack Search.
-	 */
-	protected static function jetpack_search_should_handle_query( $should_handle_query ) {
-		if ( false === self::ep_skip_query_integration( true ) ) {
-			return false;
-		}
-		
-		return $should_handle_query;
 	}
 }
