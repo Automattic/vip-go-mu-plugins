@@ -41,7 +41,7 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 }
 
 /**
-	* Diable tests in the Site Health (AKA site status) tool page
+	* Disable tests in the Site Health (AKA site status) tool page
 	*
 	* By default, WordPress runs a series of tests on the Site Health tool
 	* page in wp-admin. This disables all irrelevant or unnecessary tests.
