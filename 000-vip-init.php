@@ -185,6 +185,20 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 
 	$search_plugin = new \Automattic\VIP\Search\Search();
 	$search_plugin->init();
+
+	// If VIP Search query integration is enabled, disable Jetpack Search
+	if( $search_plugin::ep_skip_query_integration() ) {
+		add_filter( 'jetpack_active_modules', function( $modules ) {
+			$index = array_search( 'search', $modules, true );
+			if ( false !== $index ) {
+				unset( $modules[ $index ] );
+			}
+			
+			return $modules;
+		}, PHP_INT_MAX );
+
+		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
+	}
 }
 
 // Add custom header for VIP
