@@ -41,11 +41,11 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 }
 
 /**
-	* Disable tests in the Site Health (AKA site status) tool page
-	*
-	* By default, WordPress runs a series of tests on the Site Health tool
-	* page in wp-admin. This disables all irrelevant or unnecessary tests.
-	*/
+ * Disable tests in the Site Health (AKA site status) tool page
+ *
+ * By default, WordPress runs a series of tests on the Site Health tool
+ * page in wp-admin. This disables all irrelevant or unnecessary tests.
+ */
 function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// Disable "Background Updates" test.
 	// WordPress updates are managed by the VIP team.
