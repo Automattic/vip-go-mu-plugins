@@ -46,6 +46,11 @@ function vip_filter_unnecessary_php_modules_for_site_health_tests( $modules ) {
 		unset( $modules['exif'] );
 	}
 
+	// Remove 'imagick' PHP module.
+	if ( isset( $modules['imagick'] ) ) {
+		unset( $modules['imagick'] );
+	}
+
 	return $modules;
 }
 
