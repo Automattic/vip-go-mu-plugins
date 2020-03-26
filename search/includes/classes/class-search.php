@@ -191,38 +191,6 @@ class Search {
 		return $active;
 	}
 
-	public function filter__jetpack_active_modules( $modules ) {
-		// Filter out 'search' from the active modules. We use array_filter() to get _all_ instances, as it could be present multiple times
-		$filtered = array_filter ( $modules, function( $module ) {
-			if ( 'search' === $module ) {
-				return false;
-			}
-			return true;
-		} );
-
-		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
-		return array_values( $filtered );
-	}
-
-	public function filter__jetpack_widgets_to_include( $widgets ) {
-		if ( ! is_array( $widgets ) ) {
-			return $widgets;
-		}
-
-		foreach( $widgets as $index => $file ) {
-			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
-			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
-				unset( $widgets[ $index ] );
-			}
-		}
-
-		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
-		$widgets = array_values( $widgets );
-
-		return $widgets;
-	}
-
 	/**
 	 * Separate plugin enabled and querying the index
 	 *
