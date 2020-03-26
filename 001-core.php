@@ -40,6 +40,13 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 	return $caps;
 }
 
+/**
+ * Filter PHP modules in the Site Health (AKA site status) tool page
+ *
+ * By default, WordPress runs php_extension tests on the Site Health tool
+ * page in wp-admin. This filters out all irrelevant or unnecessary PHP modules
+	* within the test.
+ */
 function vip_filter_unnecessary_php_modules_for_site_health_tests( $modules ) {
 	// Remove 'exif' PHP module.
 	if ( isset( $modules['exif'] ) ) {
