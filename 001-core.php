@@ -63,7 +63,7 @@ add_filter( 'site_status_tests', 'vip_disable_unnecessary_site_health_tests' );
  *
  * By default, WordPress runs php_extension tests on the Site Health tool
  * page in wp-admin. This filters out all irrelevant or unnecessary PHP modules
-	* within the test.
+ * within the test.
  */
 function vip_filter_unnecessary_php_modules_for_site_health_tests( $modules ) {
 	// Remove 'exif' PHP module.
