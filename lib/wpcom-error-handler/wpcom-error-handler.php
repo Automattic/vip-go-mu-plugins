@@ -83,7 +83,7 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
  */
 function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file, $line ) {
 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-	if ( ! is_numeric( $type ) || ! ( $type & error_reporting() ) ) { 
+	if ( ! is_int( $type ) || ! ( $type & error_reporting() ) ) { 
 		return true;
 	}
 
