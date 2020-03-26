@@ -49,7 +49,11 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// Disable "Background Updates" test.
 	// WordPress updates are managed by the VIP team.
-	unset( $tests['async']['background_updates'] );
+	if ( isset( $tests['async'] ) && isset( $tests['async']['background_updates'] ) ) {
+		unset( $tests['async']['background_updates'] );
+	}
+
 	return $tests;
 }
+
 add_filter( 'site_status_tests', 'vip_disable_unnecessary_site_health_tests' );
