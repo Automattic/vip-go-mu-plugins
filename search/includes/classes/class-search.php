@@ -218,8 +218,16 @@ class Search {
 
 		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
 
-		// The filter is checking if we should _skip_ query integration
-		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
+
+		$option_value = get_option( 'vip_enable_vip_search_query_integration' );
+
+		$enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
+		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
+	
+		return $skipped;
 	}
 
 	/**
