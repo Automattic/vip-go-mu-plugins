@@ -16,7 +16,7 @@ class StatsD {
 	 * @param float $time The elapsed time (ms) to log
 	 **/
 	public static function timing( $stats, $time ) {
-		StatsD::updateStats( $stats, $time, 1, 'ms' );
+		self::update_stats( $stats, $time, 1, 'ms' );
 	}
 
 	/**
@@ -26,7 +26,7 @@ class StatsD {
 	 * @param float $value The value for the stats.
 	 **/
 	public static function gauge( $stats, $value ) {
-		StatsD::updateStats( $stats, $value, 1, 'g' );
+		self::update_stats( $stats, $value, 1, 'g' );
 	}
 
 	/**
@@ -44,29 +44,29 @@ class StatsD {
 	 * @param float $value The value for the stats.
 	 **/
 	public static function set( $stats, $value ) {
-		StatsD::updateStats( $stats, $value, 1, 's' );
+		self::update_stats( $stats, $value, 1, 's' );
 	}
 
 	/**
 	 * Increments one or more stats counters
 	 *
 	 * @param string|array $stats The metric(s) to increment.
-	 * @param float|1 $sampleRate the rate (0-1) for sampling.
+	 * @param float|1 $sample_rate the rate (0-1) for sampling.
 	 * @return boolean
 	 **/
-	public static function increment( $stats, $sampleRate = 1 ) {
-		StatsD::updateStats( $stats, 1, $sampleRate, 'c' );
+	public static function increment( $stats, $sample_rate = 1 ) {
+		self::update_stats( $stats, 1, $sample_rate, 'c' );
 	}
 
 	/**
 	 * Decrements one or more stats counters.
 	 *
 	 * @param string|array $stats The metric(s) to decrement.
-	 * @param float|1 $sampleRate the rate (0-1) for sampling.
+	 * @param float|1 $sample_rate the rate (0-1) for sampling.
 	 * @return boolean
 	 **/
-	public static function decrement( $stats, $sampleRate = 1 ) {
-		StatsD::updateStats( $stats, -1, $sampleRate, 'c' );
+	public static function decrement( $stats, $sample_rate = 1 ) {
+		self::update_stats( $stats, -1, $sample_rate, 'c' );
 	}
 
 	/**
@@ -74,28 +74,28 @@ class StatsD {
 	 *
 	 * @param string|array $stats The metric(s) to update. Should be either a string or array of metrics.
 	 * @param int|1 $delta The amount to increment/decrement each metric by.
-	 * @param float|1 $sampleRate the rate (0-1) for sampling.
+	 * @param float|1 $sample_rate the rate (0-1) for sampling.
 	 * @param string|c $metric The metric type ("c" for count, "ms" for timing, "g" for gauge, "s" for set)
 	 * @return boolean
 	 **/
-	public static function updateStats( $stats, $delta = 1, $sampleRate = 1, $metric = 'c' ) {
+	public static function update_stats( $stats, $delta = 1, $sample_rate = 1, $metric = 'c' ) {
 		if ( ! is_array( $stats ) ) {
 			$stats = array( $stats ); 
 		}
 
 		$data = array();
 
-		foreach( $stats as $stat ) {
+		foreach ( $stats as $stat ) {
 			$data[ $stat ] = "$delta|$metric";
 		}
 
-		StatsD::send( $data, $sampleRate );
+		self::send( $data, $sample_rate );
 	}
 
 	/*
 	 * Send the metrics over UDP
 	 **/
-	public static function send( $data, $sampleRate = 1 ) {
+	public static function send( $data, $sample_rate = 1 ) {
 		// Disables StatsD logging for test environments
 		if ( defined( 'VIP_DISABLE_STATSD' ) && VIP_DISABLE_STATSD ) {
 			return;
@@ -107,19 +107,19 @@ class StatsD {
 		}
 
 		// sampling
-		$sampledData = array();
+		$sampled_data = array();
 
-		if ( $sampleRate < 1 ) {
+		if ( $sample_rate < 1 ) {
 			foreach ( $data as $stat => $value ) {
-				if ( ( mt_rand() / mt_getrandmax() ) <= $sampleRate ) {
-					$sampledData[ $stat ] = "$value|@$sampleRate";
+				if ( ( mt_rand() / mt_getrandmax() ) <= $sample_rate ) {
+					$sampled_data[ $stat ] = "$value|@$sample_rate";
 				}
 			}
 		} else {
-			$sampledData = $data;
+			$sampled_data = $data;
 		}
 
-		if ( empty( $sampledData ) ) {
+		if ( empty( $sampled_data ) ) {
 			return;
 		}
 
@@ -134,13 +134,13 @@ class StatsD {
 				return;
 			}
 
-			foreach ( $sampledData as $stat => $value ) {
+			foreach ( $sampled_data as $stat => $value ) {
 				fwrite( $fp, "$stat:$value" );
 			}
 
 			fclose( $fp );
-		} catch (Exception $e) {
-
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Do nothing, just squash it
 		}
 	}
 }
