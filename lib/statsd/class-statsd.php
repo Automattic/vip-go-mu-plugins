@@ -126,7 +126,7 @@ class StatsD {
 		// Wrap this in a try/catch - failures in any of this should be silently ignored
 		try {
 			$host = VIP_STATSD_HOST;
-			$port = VIP_STATDS_PORT;
+			$port = VIP_STATSD_PORT;
 
 			$fp = fsockopen( "udp://$host", $port, $errno, $errstr );
 
