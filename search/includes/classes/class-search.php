@@ -157,7 +157,42 @@ class Search {
 			$args['headers'] = [];
 		}
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
+
+		$statsd = new Automattic\VIP\StatsD();
+		$statsd_mode = $this->get_statsd_request_mode_for_url();
+		$statsd_prefix = $this->get_statsd_prefix( $statsd_mode );
+
+		$start_time = microtime( true );
+	
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+
+		$end_time = microtime( true );
+
+		$duration = ( $end_time - $start_time ) * 1000;
+
+		if ( is_wp_error( $request ) ) {
+			// Failed :( record an error
+
+			// TODO need to detect timeout vs error
+			// $statsd->increment( $statsd_prefix . '.timeout' );
+			// $statsd->increment( $statsd_prefix . '.error' );
+		} else {
+			// Success!
+			$statsd->timing( $statsd_prefix . '.total', $duration );
+
+			// Record engine time
+		}
+
+
+
+		// TODO 
+		// implement "get mode from url"
+		// track retries (bonus)
+		// detect error vs timeout
+		// do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
+		// engine time
+		// tests for new functions
+
 	
 		return $request;
 	}
@@ -251,6 +286,22 @@ class Search {
 		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
 	}
 
+	public function get_current_host() {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
+			return null;
+		}
+
+		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return null;
+		}
+
+		if ( 0 === count( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return null;
+		}
+
+		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+	}
+
 	/**
 	 * Return the next host in the list based on the current host index
 	 */
@@ -321,5 +372,43 @@ class Search {
 
 		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
 		return array_values( $widgets );
+	}
+
+	/**
+	 * Given an ES url, determine the "mode" of the request for stats purposes
+	 * 
+	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
+	 */
+	public function get_statsd_request_mode_for_url( $url ) {
+
+	}
+
+	/**
+	 * Get the statsd stat prefix for a given "mode"
+	 */
+	public function get_statsd_prefix( $url ) {
+		$key_parts = array(
+			'com.wordpress', // Global prefix
+			'elasticsearch', // Service name
+		);
+
+		$host = parse_url( $url, \PHP_URL_HOST );
+		$port = parse_url( $url, \PHP_URL_PORT );
+
+		// Assume all host names are in the format es-ha-$dc.vipv2.net
+		$matches = array();
+		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host , $matches ) ) {
+			$key_parts[] = $matches[1]; // DC of ES node
+			$key_parts[] = $port . '_vipgo'; // ES node e.g. 9235_vipgo
+		} else {
+			$key_parts[] = 'unknown';
+			$key_parts[] = 'unknown';
+		}
+
+		// Break up tracking based on mode
+		$key_parts[] = $this->get_statsd_request_mode_for_url( $url );
+
+		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
+		return implode( '.', $key_parts );
 	}
 }
