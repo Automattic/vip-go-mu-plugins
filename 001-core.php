@@ -57,3 +57,27 @@ function vip_disable_unnecessary_site_health_tests( $tests ) {
 }
 
 add_filter( 'site_status_tests', 'vip_disable_unnecessary_site_health_tests' );
+
+/**
+ * Filter PHP modules in the Site Health (AKA site status) tool page
+ *
+ * By default, WordPress runs php_extension tests on the Site Health tool
+ * page in wp-admin. This filters out all irrelevant or unnecessary PHP modules
+ * within the test.
+ */
+function vip_filter_unnecessary_php_modules_for_site_health_tests( $modules ) {
+	// Remove 'exif' PHP module.
+	if ( isset( $modules['exif'] ) ) {
+		unset( $modules['exif'] );
+	}
+
+	// Remove 'imagick' PHP module.
+	if ( isset( $modules['imagick'] ) ) {
+		unset( $modules['imagick'] );
+	}
+
+	return $modules;
+}
+
+add_filter( 'site_status_test_php_modules', 'vip_filter_unnecessary_php_modules_for_site_health_tests' );
+
