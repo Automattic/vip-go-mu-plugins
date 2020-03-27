@@ -72,10 +72,6 @@ class Search {
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
-		add_filter( 'jetpack_active_modules', [ $this, 'filter__jetpack_active_modules' ], 9999 );
-
-		// Filter jetpack widgets
-		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10 );
 
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
@@ -91,6 +87,13 @@ class Search {
 
 		// Allow querying while a bulk index is running
 		add_filter( 'ep_enable_query_integration_during_indexing', '__return_true' );
+
+		// Set facet taxonomies size. Shouldn't currently be used, but it makes sense to have it set to a sensible
+		// default just in case it ends up in use so that the application doesn't error
+		add_filter( 'ep_facet_taxonomies_size', array( $this, 'filter__ep_facet_taxonomies_size' ), 10, 2 );
+
+		// Disable facet queries
+		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
 	}
 
 	protected function load_commands() {
@@ -186,38 +189,6 @@ class Search {
 		return $active;
 	}
 
-	public function filter__jetpack_active_modules( $modules ) {
-		// Filter out 'search' from the active modules. We use array_filter() to get _all_ instances, as it could be present multiple times
-		$filtered = array_filter ( $modules, function( $module ) {
-			if ( 'search' === $module ) {
-				return false;
-			}
-			return true;
-		} );
-
-		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
-		return array_values( $filtered );
-	}
-
-	public function filter__jetpack_widgets_to_include( $widgets ) {
-		if ( ! is_array( $widgets ) ) {
-			return $widgets;
-		}
-
-		foreach( $widgets as $index => $file ) {
-			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
-			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
-				unset( $widgets[ $index ] );
-			}
-		}
-
-		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
-		$widgets = array_values( $widgets );
-
-		return $widgets;
-	}
-
 	/**
 	 * Separate plugin enabled and querying the index
 	 *
@@ -247,8 +218,16 @@ class Search {
 
 		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
 
-		// The filter is checking if we should _skip_ query integration
-		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
+
+		$option_value = get_option( 'vip_enable_vip_search_query_integration' );
+
+		$enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
+		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
+	
+		return $skipped;
 	}
 
 	/**
@@ -302,5 +281,45 @@ class Search {
 			}
 		}
 		return $response;
+	}
+
+	/*
+	 * Given the current facet taxonomies size and a taxonomy, determine the facet taxonomy size
+	 */
+	public function filter__ep_facet_taxonomies_size( $size, $taxonomy ) {
+		return 5;
+	}
+
+	/*
+	 * Remove the search module from active Jetpack modules
+	 */
+	public function filter__jetpack_active_modules( $modules ) {
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		return array_values( array_filter( $modules, function( $module ) {
+			if ( 'search' === $module ) {
+				return false;
+			}
+			return true;
+		} ) ); // phpcs:ignore WordPress.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed
+	}
+
+	/*
+	 * Remove the search widget from Jetpack widget include list
+	 */
+	public function filter__jetpack_widgets_to_include( $widgets ) {
+		if ( ! is_array( $widgets ) ) {
+			return $widgets;
+		}
+
+		foreach ( $widgets as $index => $file ) {
+			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
+			// even though we filtered it to off earlier, so we need to prevent it from loading
+			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+				unset( $widgets[ $index ] );
+			}
+		}
+
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		return array_values( $widgets );
 	}
 }
