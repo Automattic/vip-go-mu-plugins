@@ -614,4 +614,19 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $result );
 	}
+
+	/**
+	 * Test that the track_total_hits arg exists
+	 */
+	public function test__vip_filter__ep_post_formatted_args() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->filter__ep_post_formatted_args( array(), '', '' );
+
+		$this->assertTrue( array_key_exists( 'track_total_hits', $result ), 'track_total_hits doesn\'t exist in fortmatted args' );
+		if ( array_key_exists( 'track_total_hits', $result ) ) {
+			$this->assertTrue( $result['track_total_hits'], 'track_total_hits isn\'t set to true' );
+		}
+	}
 }
