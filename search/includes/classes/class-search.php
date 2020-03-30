@@ -137,7 +137,8 @@ class Search {
 		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
 		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
 		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) && defined( 'VIP_SEARCH_DUPLICATE_REQUESTS' ) && true === VIP_SEARCH_DUPLICATE_REQUESTS ) {
-			// TODO register JS
+			wp_register_script( 'vip-search-duplicate-requests', plugins_url( '/assets/js/duplicate-requests.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+			wp_enqueue_script( 'vip-search-duplicate-requests' );
 		}
 	}
 
