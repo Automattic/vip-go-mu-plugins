@@ -101,8 +101,14 @@ class StatsD {
 			return;
 		}
 
-		// If we don't have server info defined, abort
-		if ( ! defined( 'VIP_STATSD_HOST' ) || ! VIP_STATSD_HOST || ! defined( 'VIP_STATSD_PORT' ) || ! VIP_STATSD_PORT ) {
+		// If we don't have server info defined, abort and warn
+		if ( ! defined( 'VIP_STATSD_HOST' ) || ! VIP_STATSD_HOST ) {
+			trigger_error( 'VIP_STATSD_HOST not set, no data sent to statsd', E_USER_WARNING );
+			return;
+		} 
+		
+		if ( ! defined( 'VIP_STATSD_PORT' ) || ! VIP_STATSD_PORT ) {
+			trigger_error( 'VIP_STATSD_PORT not set, no data sent to statsd', E_USER_WARNING );
 			return;
 		}
 
@@ -123,24 +129,32 @@ class StatsD {
 			return;
 		}
 
-		// Wrap this in a try/catch - failures in any of this should be silently ignored
-		try {
-			$host = VIP_STATSD_HOST;
-			$port = VIP_STATSD_PORT;
+		$host = VIP_STATSD_HOST;
+		$port = VIP_STATSD_PORT;
+		$url = "udp://$host";
 
-			$fp = fsockopen( "udp://$host", $port, $errno, $errstr );
+		// Wrap this in a try/catch - failures in any of this should logged as warnings
+		try {
+			$fp = fsockopen( $url, $port, $errno, $errstr );
 
 			if ( ! $fp ) {
+				throw new \Exception( "fsockopen: $errstr ($errno)" );
 				return;
 			}
 
 			foreach ( $sampled_data as $stat => $value ) {
-				fwrite( $fp, "$stat:$value" );
+				if ( false === fwrite( $fp, "$stat:$value" ) ) {
+					$escaped_write = addslashes( "$stat:$value" );
+					throw new \Exception( "fwrite: failed to write '$escaped_write'" );
+				}
 			}
 
-			fclose( $fp );
-		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Do nothing, just squash it
+			if ( false === fclose( $fp ) ) {
+				throw new \Exception( "fclose: failed to close open file pointer" );
+			}
+		} catch ( \Exception $e ) {
+			$escaped_url = addslashes( $url );
+			trigger_error( "Statsd::send exception('$escaped_url'): {$e->getMessage()}", E_USER_WARNING );
 		}
 	}
 }
