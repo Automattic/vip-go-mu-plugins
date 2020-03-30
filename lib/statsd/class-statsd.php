@@ -103,14 +103,14 @@ class StatsD {
 
 		// If we don't have server info defined, abort and warn
 		if ( ! defined( 'VIP_STATSD_HOST' ) || ! VIP_STATSD_HOST ) {
-			if ( true === WPCOM_IS_VIP_ENV  ) {
+			if ( true === WPCOM_IS_VIP_ENV ) {
 				trigger_error( 'VIP_STATSD_HOST not set, no data sent to statsd', \E_USER_WARNING );
-			}	
+			}
 			return;
 		} 
 		
 		if ( ! defined( 'VIP_STATSD_PORT' ) || ! VIP_STATSD_PORT ) {
-			if ( true === WPCOM_IS_VIP_ENV  ) {
+			if ( true === WPCOM_IS_VIP_ENV ) {
 				trigger_error( 'VIP_STATSD_PORT not set, no data sent to statsd', \E_USER_WARNING );
 			}
 			return;
