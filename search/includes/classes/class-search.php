@@ -183,9 +183,9 @@ class Search {
 			$error_messages = $request->get_error_messages();
 			
 			foreach ( $error_messages as $error_message ) {
-				// Default stat for errors is error
+				// Default stat for errors is 'error'
 				$stat = 'error';
-				// If curl error 28(), the stat should be timeout	
+				// If curl error 28(timeout), the stat should be 'timeout'	
 				if ( $this->is_curl_timeout( $error_message ) ) {
 					$stat = 'timeout';
 				}
@@ -208,6 +208,9 @@ class Search {
 		return $request;
 	}
 
+	/*
+	 * Given an error message, determine if it's from curl error 28(timeout)
+	 */
 	private function is_curl_timeout( $error_message ) {
 		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
 	}
