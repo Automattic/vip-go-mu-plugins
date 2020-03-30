@@ -97,6 +97,9 @@ class Search {
 
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
 		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
+
+		add_action( 'init', array( $this, 'action__init' ) );
+		add_action( 'wp', array( $this, 'action__wp' ) );
 	}
 
 	protected function load_commands() {
@@ -125,6 +128,16 @@ class Search {
 			require_once __DIR__ . '/../functions/ep-get-query-log.php';
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
+		}
+	}
+
+	public function action__wp() {
+		global $wp_query;
+
+		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
+		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
+		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) && defined( 'VIP_SEARCH_DUPLICATE_REQUESTS' ) && true === VIP_SEARCH_DUPLICATE_REQUESTS ) {
+			// TODO register JS
 		}
 	}
 
