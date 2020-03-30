@@ -161,8 +161,8 @@ class Search {
 		}
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
-		$statsd = new Automattic\VIP\StatsD();
-		$statsd_mode = $this->get_statsd_request_mode_for_url();
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd_mode = $this->get_statsd_request_mode_for_url( $query['url'] );
 		$statsd_prefix = $this->get_statsd_prefix( $statsd_mode );
 
 		$start_time = microtime( true );
@@ -173,31 +173,43 @@ class Search {
 
 		$duration = ( $end_time - $start_time ) * 1000;
 
+		// Inline error data for testing
+		/*$request = new \WP_Error();
+		$request->add( '', "random error 1" );
+		$request->add( '', "cURL error 28: Operation timed out after 2001 milliseconds with 0 bytes received" );
+		$request->add( '', "random error 2" );*/
+
 		if ( is_wp_error( $request ) ) {
-			// Failed :( record an error
+			$error_messages = $request->get_error_messages();
+			
+			foreach ( $error_messages as $error_message ) {
+				// Default stat for errors is error
+				$stat = 'error';
+				// If curl error 28(), the stat should be timeout	
+				if ( $this->is_curl_timeout( $error_message ) ) {
+					$stat = 'timeout';
+				}
 
-			// TODO need to detect timeout vs error
-			// $statsd->increment( $statsd_prefix . '.timeout' );
-			// $statsd->increment( $statsd_prefix . '.error' );
+				$statsd->increment( $statsd_prefix . $stat );
+			}
 		} else {
-			// Success!
-			$statsd->timing( $statsd_prefix . '.total', $duration );
-
 			// Record engine time
+			$statsd->timing( $statsd_prefix . 'total', $duration );
 		}
 
-
-
 		// TODO 
-		// implement "get mode from url"
-		// track retries (bonus)
-		// detect error vs timeout
-		// do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
-		// engine time
-		// tests for new functions
-
+		// [] implement "get mode from url"
+		// [] track retries (bonus)
+		// [x] detect error vs timeout
+		// [] do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
+		// [] engine time
+		// [] tests for new functions
 	
 		return $request;
+	}
+
+	private function is_curl_timeout( $error_message ) {
+		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
 	}
 
 	public function get_http_timeout_for_query( $query ) {
@@ -413,7 +425,7 @@ class Search {
 
 		// Assume all host names are in the format es-ha-$dc.vipv2.net
 		$matches = array();
-		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host , $matches ) ) {
+		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
 			$key_parts[] = $port . '_vipgo'; // ES node e.g. 9235_vipgo
 		} else {
