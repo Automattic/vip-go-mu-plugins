@@ -154,11 +154,11 @@ class StatsD {
 			}
 
 			if ( false === fclose( $fp ) ) {
-				throw new \Exception( "fclose: failed to close open file pointer" );
+				throw new \Exception( 'fclose: failed to close open file pointer' );
 			}
 		} catch ( \Exception $e ) {
 			$escaped_url = addslashes( $url );
-			trigger_error( "Statsd::send exception('$escaped_url'): {$e->getMessage()}", \E_USER_WARNING );
+			trigger_error( "Statsd::send exception('$escaped_url'): {$e->getMessage()}", \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 	}
 }
