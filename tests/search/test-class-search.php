@@ -764,12 +764,12 @@ class Search_Test extends \WP_UnitTestCase {
 			array(
 				'https://es-ha-bur.vipv2.net:1234',
 				'search',
-				'com.wordpress.elasticsearch.bur.1234_vipgo.search',
+				'com.wordpress.elasticsearch.bur.ha1234_vipgo.search',
 			),
 			array(
 				'https://es-ha-dca.vipv2.net:4321',
 				'index',
-				'com.wordpress.elasticsearch.dca.4321_vipgo.index',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index',
 			),
 		);
 	}

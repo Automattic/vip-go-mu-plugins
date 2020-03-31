@@ -460,7 +460,7 @@ class Search {
 		$matches = array();
 		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
-			$key_parts[] = $port . '_vipgo'; // ES node e.g. 9235_vipgo
+			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
 		} else {
 			$key_parts[] = 'unknown';
 			$key_parts[] = 'unknown';
