@@ -72,15 +72,6 @@ class Logger {
 	protected const MAX_ENTRY_MESSAGE_SIZE = 262144;
 
 	/**
-	 * Maximum log entry user UA size.
-	 *
-	 * @since 2020-01-10
-	 *
-	 * @var int 255 bytes.
-	 */
-	protected const MAX_ENTRY_USER_UA_SIZE = 255;
-
-	/**
 	 * Maximum log entry extra (data) size.
 	 *
 	 * @since 2020-01-10
@@ -88,6 +79,74 @@ class Logger {
 	 * @var int 256kbs.
 	 */
 	protected const MAX_ENTRY_EXTRA_SIZE = 262144;
+
+	/**
+	 * Array of allowed parameters
+	 *
+	 * @var Array
+	 */
+	protected const ALLOWED_PARAMS = [
+		'activity_timestamp',
+		'api_url',
+		'api_auth_hint',
+		'blog_id',
+		'browser_name',
+		'browser_version',
+		'calypso_env',
+		'calypso_path',
+		'calypso_section',
+		'client_id',
+		'comment_id',
+		'comment_type',
+		'commit',
+		'connection_id',
+		'datacenter',
+		'destination_ip',
+		'dest',
+		'dest_target',
+		'duration',
+		'error_code',         //string error code
+		'extra',              //string with additional data. eg json encoded, lists of ids
+		'feature',
+		'file',
+		'host',
+		'http_response_code',
+		'index',
+		'line',
+		'message',
+		'method',
+		'note_id',
+		'jetpack_version',
+		'hosting_provider',
+		'plugin',
+		'path',
+		'post_id',
+		'pid',
+		'plan_id',
+		'redirect_location',
+		'score',
+		'severity',
+		'site_id',
+		'size',
+		'source_ip',
+		'success',
+		'tags',
+		'devtags',
+		'tests',
+		'timestamp',
+		'trace',
+		'url',
+		'user_id',
+		'external_user_id',
+		'user_locale',
+		'gt_id',					// Guided Transfer ID
+		'job_type',       //async job type
+		'job_id',         //async job id (long)
+		'job_priority',   //integer
+		'es_index',       //Elasticsearch index name
+		'id',             //any generic numeric long id
+		'ids',            //any list of numeric long ids
+	];
 
 	/**
 	 * Add a log entry.
@@ -222,6 +281,100 @@ class Logger {
 	}
 
 	/**
+	 * Parse logstash parameters
+	 *
+	 * @param array $params An associative array of parameters to save to logstash
+	 *
+	 * @return array An array of parsed logstash parameters
+	 */
+	protected static function parse_params( array $params ) : array {
+		// Prepare data.
+		$default_params = [
+			'site_id'		=> get_current_network_id(),                  // Required.
+			'blog_id'		=> get_current_blog_id(),                     // Required.
+			'host'			=> strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
+
+			'severity'	=> '',                                        // Optional.
+			'feature'		=> '',                                        // Required.
+			'message'		=> '',                                        // Required.
+
+			'user_id'		=> get_current_user_id(),                     // Optional.
+
+			'extra'			=> [],                                        // Optional.
+			'timestamp' => date( 'Y-m-d H:i:s' ),											// Required.
+			'index'     => 'log2logstash',														// Required
+		];
+
+		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
+			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 1 );
+
+			if ( isset( $backtrace[0] ) && isset( $backtrace[0]['file'] ) ) {
+				$default_params['file'] = $backtrace[0]['file'];
+			}
+
+			if ( isset( $backtrace[0] ) && isset( $backtrace[0]['line'] ) ) {
+				$default_params['line'] = $backtrace[0]['line'];
+			}
+		}
+
+		$params = array_merge( $default_params, $params );
+		$params = array_intersect_key( $params, $default_params );
+
+		// Filter unallowed parameters
+		foreach( $params as $key => $value ) {
+			if ( ! in_array( $key, static::ALLOWED_PARAMS ) ) {
+				// Not in whitelist so unset
+				unset( $params[ $key ] );
+				continue;
+			}
+
+			// Cast params into proper type
+			switch( $key ) {
+				case 'ids':
+				case 'devtags':
+				case 'tags':
+					$params[ $key ] = (array) $value;
+					break;
+				case 'duration':
+				case 'score':
+				case 'lag_float':
+					$params[ $key ] = (double) $value;
+					break;
+				case 'queue_size':
+					$params[ $key ] = (int) $value;
+					break;
+				case 'full_sync_items':
+					$params[ $key ] = (int) $value;
+					break;
+				case 'blog_id':
+				case 'client_id':
+				case 'comment_id':
+				case 'connection_id':
+				case 'note_id':
+				case 'post_id':
+				case 'user_id':
+				case 'size':
+				case 'http_response_code':
+				case 'pid':
+				case 'id':
+				case 'job_priority':
+				case 'job_id':
+				case 'plan_id':
+				case 'site_id':
+					$params[ $key ] = (int) $value;
+					break;
+				case 'extra':
+					// Do nothing as extra will parsed into a JSON string
+					break;
+				default:
+					$params[ $key ] = (string) $value;
+			}
+		}
+
+		return $params;
+	}
+
+	/**
 	 * Adds a new log entry, which is processed later on shutdown.
 	 *
 	 * @since 2020-01-10
@@ -246,22 +399,7 @@ class Logger {
 	 */
 	public static function log2logstash( array $data ) : void {
 		// Prepare data.
-		$default_data = [
-			'site_id'  => get_current_network_id(),                  // Required.
-			'blog_id'  => get_current_blog_id(),                     // Required.
-			'host'     => strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
-
-			'severity' => '',                                        // Optional.
-			'feature'  => '',                                        // Required.
-			'message'  => '',                                        // Required.
-
-			'user_id'  => get_current_user_id(),                     // Optional.
-			'user_ua'  => $_SERVER['HTTP_USER_AGENT'] ?? '',         // phpcs:ignore -- Optional.
-
-			'extra'    => [],                                        // Optional.
-		];
-		$data         = array_merge( $default_data, $data );
-		$data         = array_intersect_key( $data, $default_data );
+		$data = static::parse_params( $data );
 
 		// Data validations.
 		// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
@@ -277,10 +415,6 @@ class Logger {
 			trigger_error( 'Invalid `blog_id` in call to ' . esc_html( __METHOD__ ) . '(). Must be an integer > 0.', E_USER_WARNING );
 			return; // Failed validation.
 
-		} elseif ( isset( $data['host'] ) && ! is_string( $data['host'] ) ) {
-			trigger_error( 'Invalid `host` in call to ' . esc_html( __METHOD__ ) . '(). Must be a string.', E_USER_WARNING );
-			return; // Failed validation.
-
 		} elseif ( isset( $data['host'] ) && strlen( $data['host'] ) > static::MAX_ENTRY_HOST_SIZE ) {
 			trigger_error( 'Invalid `host` in call to ' . esc_html( __METHOD__ ) . '(). Must be ' . esc_html( static::MAX_ENTRY_HOST_SIZE ) . ' bytes or less.', E_USER_WARNING );
 			return; // Failed validation.
@@ -289,32 +423,12 @@ class Logger {
 			trigger_error( 'Invalid `severity` in call to ' . esc_html( __METHOD__ ) . '(). Must be one of: ``, `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, `debug`.', E_USER_WARNING );
 			return; // Failed validation.
 
-		} elseif ( empty( $data['feature'] ) || ! is_string( $data['feature'] ) ) {
-			trigger_error( 'Missing required `feature` in call to ' . esc_html( __METHOD__ ) . '(). Must be a string.', E_USER_WARNING );
-			return; // Failed validation.
-
 		} elseif ( strlen( $data['feature'] ) > static::MAX_ENTRY_FEATURE_SIZE ) {
 			trigger_error( 'Invalid `feature` in call to ' . esc_html( __METHOD__ ) . '(). Must be ' . esc_html( static::MAX_ENTRY_FEATURE_SIZE ) . ' bytes or less.', E_USER_WARNING );
 			return; // Failed validation.
 
-		} elseif ( empty( $data['message'] ) || ! is_string( $data['message'] ) ) {
-			trigger_error( 'Missing required `message` in call to ' . esc_html( __METHOD__ ) . '(). Must be a string.', E_USER_WARNING );
-			return; // Failed validation.
-
 		} elseif ( strlen( $data['message'] ) > static::MAX_ENTRY_MESSAGE_SIZE ) {
 			trigger_error( 'Invalid `message` in call to ' . esc_html( __METHOD__ ) . '(). Must be ' . esc_html( static::MAX_ENTRY_MESSAGE_SIZE ) . ' bytes or less.', E_USER_WARNING );
-			return; // Failed validation.
-
-		} elseif ( isset( $data['user_id'] ) && ! is_int( $data['user_id'] ) || $data['user_id'] < 0 ) {
-			trigger_error( 'Invalid `user_id` in call to ' . esc_html( __METHOD__ ) . '(). Must be an integer >= 0.', E_USER_WARNING );
-			return; // Failed validation.
-
-		} elseif ( isset( $data['user_ua'] ) && ! is_string( $data['user_ua'] ) ) {
-			trigger_error( 'Invalid `user_ua` in call to ' . esc_html( __METHOD__ ) . '(). Must be a string.', E_USER_WARNING );
-			return; // Failed validation.
-
-		} elseif ( isset( $data['user_ua'] ) && strlen( $data['user_ua'] ) > static::MAX_ENTRY_USER_UA_SIZE ) {
-			trigger_error( 'Invalid `user_ua` in call to ' . esc_html( __METHOD__ ) . '(). Must be ' . esc_html( static::MAX_ENTRY_USER_UA_SIZE ) . ' bytes or less.', E_USER_WARNING );
 			return; // Failed validation.
 
 		} elseif ( isset( $data['extra'] ) && ! is_array( $data['extra'] ) && ! is_object( $data['extra'] ) && ! is_scalar( $data['extra'] ) ) {
@@ -342,7 +456,7 @@ class Logger {
 	}
 
 	/**
-	 * Sends data to logstash via REST API on shutdown, viewable in Kibana.
+	 * Save data to logstash log file
 	 *
 	 * @since 2020-01-10
 	 */
@@ -351,8 +465,6 @@ class Logger {
 			return; // Already done.
 		}
 
-		$fallback_error = new \WP_Error( 'logstash-send-failed', 'There was an error connecting to the logstash endpoint' );
-
 		static::$processed_entries = true;
 
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
@@ -360,36 +472,22 @@ class Logger {
 			fastcgi_finish_request();
 		}
 
-		$endpoint = 'https://public-api.wordpress.com/rest/v1.1/logstash/bulk';
-
-		$entry_chunks = array_chunk( static::$entries, static::BULK_ENTRIES_COUNT );
-
 		// Process all entries.
-		foreach ( $entry_chunks as $entries ) {
+		foreach ( static::$entries as $entry ) {
 			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
-				static::maybe_wp_debug_log_entries( $entries );
-				continue; // Bypassing REST API below in this case.
+				static::maybe_wp_debug_log_entries( $entry );
+				continue; // Bypassing logstash log writing below in this case.
 			}
 
-			$json_data = wp_json_encode( $entries );
+			$json_data = wp_json_encode( $entry );
 
-			// Send to logstash via REST API endpoint with payload containing log entry details.
-			$_wp_remote_response = vip_safe_wp_remote_request( $endpoint, $fallback_error, 3, 5, 5, [
-				'method' => 'POST',
-				'redirection' => 0,
-				'blocking' => false,
-				'body' => [
-					'params' => $json_data,
-				],
-			] );
-
-			$_wp_remote_response_code    = wp_remote_retrieve_response_code( $_wp_remote_response );
-			$_wp_remote_response_message = wp_remote_retrieve_response_message( $_wp_remote_response );
-
-			if ( 200 !== $_wp_remote_response_code ) {
-				static::maybe_wp_debug_log_entries( $entries );
-				trigger_error( 'Unable to ' . esc_html( __METHOD__ ) . '(). Response from <' . esc_html( $endpoint ) . '> was [' . esc_html( $_wp_remote_response_code ) . ']: ' . esc_html( $_wp_remote_response_message ) . '.', E_USER_WARNING );
+			if ( ! $json_data ) {
+				trigger_error( 'log2logstash could not encode your log.', E_USER_WARNING );
+				return;
 			}
+
+			// Log to file
+			error_log( $json_data . "\n", 3, '/tmp/logstash.log' );
 		}
 	}
 
@@ -407,9 +505,7 @@ class Logger {
 			return; // Not applicable.
 		}
 
-		foreach ( $entries as $entry ) {
-			static::wp_debug_log( $entry );
-		}
+		static::wp_debug_log( $entry );
 	}
 
 	/**
