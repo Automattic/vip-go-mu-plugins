@@ -133,6 +133,11 @@ class Search {
 	public function action__wp() {
 		global $wp_query;
 
+		// Avoid infinite loops because our requests load the URL with this param.
+		if ( isset( $_GET['es'] ) ) {
+			return;
+		}
+
 		// Temp functionality for testing phase.
 		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
 		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
