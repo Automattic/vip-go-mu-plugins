@@ -12,6 +12,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 	public function setUp() {
 		require_once __DIR__ . '/../../search/search.php';
+
+		$this->search_instance = new \Automattic\VIP\Search\Search();
 	}
 
 	/**
@@ -628,5 +630,132 @@ class Search_Test extends \WP_UnitTestCase {
 		if ( array_key_exists( 'track_total_hits', $result ) ) {
 			$this->assertTrue( $result['track_total_hits'], 'track_total_hits isn\'t set to true' );
 		}
+	}
+
+	public function get_statsd_request_mode_for_request_data() {
+		return array(
+			// Search
+			array(
+				'https://host/_search',
+				'post',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search',
+				'post',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search?foo=bar',
+				'post',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search',
+				'get',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search?foo=bar',
+				'get',
+				'search',
+			),
+
+			// Get
+			array(
+				'https://host/index-name/_doc/12345',
+				'get',
+				'get',
+			),
+			array(
+				'https://host/index-name/_doc/12345',
+				'head',
+				'other',
+			),
+			array(
+				'https://host/index-name/_mget',
+				'get',
+				'get',
+			),
+			array(
+				'https://host/index-name/_mget?foo=bar',
+				'post',
+				'get',
+			),
+
+			// Delete
+			array(
+				'https://host/index-name/_doc/12345',
+				'delete',
+				'delete',
+			),
+			array(
+				'https://host/index-name/_doc/12345?foo=bar',
+				'delete',
+				'delete',
+			),
+
+			// Indexing
+			array(
+				'https://host/index-name/_doc/12345',
+				'put',
+				'index',
+			),
+			array(
+				'https://host/index-name/_doc',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_create/12345',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_create/12345',
+				'put',
+				'index',
+			),
+			array(
+				'https://host/index-name/_update/12345',
+				'post',
+				'index',
+			),
+
+			// Bulk indexing
+			array(
+				'https://host/_bulk',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_bulk',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_bulk?foo=bar',
+				'post',
+				'index',
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly determine the right stat (referred to as "mode" on wpcom)
+	 * for a given ES url
+	 * 
+	 * manage|analyze|status|langdetect|index|delete_query|get|scroll|search
+	 * 
+	 * @dataProvider get_statsd_request_mode_for_request_data()
+	 */
+	public function test_get_statsd_request_mode_for_request( $url, $method, $expected_mode ) {
+		$args = array(
+			'method' => $method,
+		);
+
+		$mode = $this->search_instance->get_statsd_request_mode_for_request( $url, $args );
+
+		$this->assertEquals( $expected_mode, $mode );
 	}
 }

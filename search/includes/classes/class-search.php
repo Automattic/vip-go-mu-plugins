@@ -412,6 +412,7 @@ class Search {
 	 */
 	public function get_statsd_request_mode_for_url( $url ) {
 
+		}
 	}
 
 	/**
