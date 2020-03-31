@@ -78,8 +78,7 @@ class API_Client {
 
 		// Debug log
 		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) &&
-			true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) )
-		{
+			true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) ) {
 			$this->log_request( $path, $method, $request_args );
 		}
 

@@ -859,7 +859,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @since   1.0.0
 	 * @access  protected
-	 * @param   string    $message	Debug message to be logged
+	 * @param   string    $message  Debug message to be logged
 	 */
 	protected function debug( $message ) {
 		if ( ! $this->debug_mode ) {
