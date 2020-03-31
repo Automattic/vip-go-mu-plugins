@@ -78,7 +78,7 @@ class API_Client {
 
 		// Debug log
 		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) &&
-		     true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) )
+			true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) )
 		{
 			$this->log_request( $path, $method, $request_args );
 		}
@@ -259,7 +259,7 @@ class API_Client {
 	 * Basically an interface to API_Cache::cache_file_stats();
 	 */
 	public function cache_file_stats( $file_path, $info ) {
-		$this->cache->cache_file_stats( $file_path, $info );	
+		$this->cache->cache_file_stats( $file_path, $info );
 	}
 
 	/**

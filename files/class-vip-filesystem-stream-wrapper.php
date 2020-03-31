@@ -96,7 +96,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @since   1.0.0
 	 * @access  private
-	 * @var	    bool    Is debug mode on
+	 * @var     bool    Is debug mode on
 	 */
 	private $debug_mode;
 
@@ -106,9 +106,9 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * Flag to determine if an empty file should be flushed to the 
 	 * Filesystem.
 	 *
-	 * @since		1.0.0
-	 * @access	private
-	 * @var			bool		Should flush empty file
+	 * @since   1.0.0
+	 * @access  private
+	 * @var     bool    Should flush empty file
 	 */
 	private $should_flush_empty;
 
@@ -186,6 +186,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			if ( is_wp_error( $result ) ) {
 				if ( 'file-not-found' !== $result->get_error_code() ) {
 					trigger_error(
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Not really outputing to anywhere
 						sprintf( 'stream_open/get_file failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
 						E_USER_WARNING
 					);
@@ -205,9 +206,9 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Get meta data
-			$meta						= stream_get_meta_data( $file );
-			$this->seekable = $meta[ 'seekable' ];
-			$this->uri      = $meta[ 'uri' ];
+			$meta           = stream_get_meta_data( $file );
+			$this->seekable = $meta['seekable'];
+			$this->uri      = $meta['uri'];
 
 			$this->file = $file;
 			$this->path = $path;
@@ -216,7 +217,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			// Cache file stats so that calls to url_stat will work
 			$stats = fstat( $file );
 			$this->client->cache_file_stats( $path, [
-				'size'	=> $stats['size'],
+				'size'  => $stats['size'],
 				'mtime' => $stats['mtime'],
 			] );
 
@@ -789,7 +790,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	}
 
 	/**
-	 * Validates the provided stream arguments for fopen.
+	* Validates the provided stream arguments for fopen.
 	*
 	* @since   1.0.0
 	* @access  private
@@ -797,7 +798,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	* @param   string    $mode   fopen mode
 	*
 	* @return  bool
-	 */
+	*/
 	public function validate( $path, $mode ) {
 		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
 			trigger_error( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." );
@@ -856,15 +857,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	/**
 	 * Log debug message
 	 *
-	 * @since		1.0.0
-	 * @access	protected
-	 * @param		string		$message	Debug message to be logged
+	 * @since   1.0.0
+	 * @access  protected
+	 * @param   string    $message	Debug message to be logged
 	 */
 	protected function debug( $message ) {
 		if ( ! $this->debug_mode ) {
 			return;
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( sprintf( '%s (%s)', $message, wp_debug_backtrace_summary() ) );
 	}
 }
