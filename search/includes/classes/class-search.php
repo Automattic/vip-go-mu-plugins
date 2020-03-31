@@ -162,7 +162,7 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd_mode = $this->get_statsd_request_mode_for_url( $query['url'] );
+		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$statsd_prefix = $this->get_statsd_prefix( $statsd_mode );
 
 		$start_time = microtime( true );
@@ -198,7 +198,7 @@ class Search {
 		}
 
 		// TODO 
-		// [] implement "get mode from url"
+		// [x] implement "get mode from url"
 		// [] track retries (bonus)
 		// [x] detect error vs timeout
 		// [] do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
@@ -410,15 +410,67 @@ class Search {
 	 * 
 	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
 	 */
-	public function get_statsd_request_mode_for_url( $url ) {
+	public function get_statsd_request_mode_for_request( $url, $args ) {
+		$parsed = parse_url( $url );
 
+		$path = explode( '/', $parsed[ 'path'] );
+		$method = strtolower( $args['method'] ) ?? 'post';
+
+		// NOTE - Not doing a switch() b/c the meaningful part of URI is not always in same spot
+
+		if ( '_search' === end( $path ) ) {
+			return 'search';
 		}
+
+		// Individual documents
+		if ( '_doc' === $path[ count( $path ) - 2 ] ) {
+			if ( 'delete' === $method ) {
+				return 'delete';
+			}
+
+			if ( 'get' === $method ) {
+				return 'get';
+			}
+
+			if ( 'put' === $method ) {
+				return 'index';
+			}
+		}
+
+		// Multi-get
+		if ( '_mget' === end( $path ) ) {
+			return 'get';
+		}
+
+		// Creating new docs
+		if ( '_create' === $path[ count( $path ) - 2 ] ) {
+			if ( 'put' === $method || 'post' === $method ) {
+				return 'index';
+			}
+		}
+
+		if ( '_doc' === end( $path ) && 'post' === $method ) {
+			return 'index';
+		}
+
+		// Updating existing doc (supports partial update)
+		if ( '_update' === $path[ count( $path ) - 2 ] ) {
+			return 'index';
+		}
+
+		// Bulk indexing
+		if ( '_bulk' === end( $path ) ) {
+			return 'index';
+		}
+
+		// Unknown
+		return 'other';
 	}
 
 	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $url ) {
+	public function get_statsd_prefix( $mode ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
@@ -438,7 +490,7 @@ class Search {
 		}
 
 		// Break up tracking based on mode
-		$key_parts[] = $this->get_statsd_request_mode_for_url( $url );
+		$key_parts[] = $mode;
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
