@@ -420,7 +420,7 @@ class Search {
 	public function get_statsd_request_mode_for_request( $url, $args ) {
 		$parsed = parse_url( $url );
 
-		$path = explode( '/', $parsed[ 'path'] );
+		$path = explode( '/', $parsed['path'] );
 		$method = strtolower( $args['method'] ) ?? 'post';
 
 		// NOTE - Not doing a switch() b/c the meaningful part of URI is not always in same spot
