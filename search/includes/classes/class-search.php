@@ -163,7 +163,9 @@ class Search {
 		wp_remote_request( $vip_search_url, [
 			'user-agent' => sprintf( 'VIP Search Query Mirror; %s', home_url() ),
 			'blocking' => false,
-			'timeout' => 5, // Shouldn't take this long but give it some breathing room
+			// Shouldn't take this long but give it some breathing room.
+			// Also not necessary with blocking=>false, but just in case.
+			'timeout' => 3,
 		] );
 	}
 
