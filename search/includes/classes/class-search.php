@@ -163,7 +163,7 @@ class Search {
 
 		$statsd = new \Automattic\VIP\StatsD();
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
-		$statsd_prefix = $this->get_statsd_prefix( $statsd_mode );
+		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		$start_time = microtime( true );
 	
@@ -477,7 +477,7 @@ class Search {
 	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $mode ) {
+	public function get_statsd_prefix( $url, $mode = 'other' ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
