@@ -184,26 +184,33 @@ class Search {
 			
 			foreach ( $error_messages as $error_message ) {
 				// Default stat for errors is 'error'
-				$stat = 'error';
+				$stat = '.error';
 				// If curl error 28(timeout), the stat should be 'timeout'	
 				if ( $this->is_curl_timeout( $error_message ) ) {
-					$stat = 'timeout';
+					$stat = '.timeout';
 				}
 
 				$statsd->increment( $statsd_prefix . $stat );
 			}
 		} else {
-			// Record engine time
-			$statsd->timing( $statsd_prefix . 'total', $duration );
+			// Record engine time (have to parse JSON to get it)
+			$response_body = wp_remote_retrieve_body( $request );
+			$response = json_decode( $response_body, true );
+
+			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
+				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+			}
+
+			$statsd->timing( $statsd_prefix . '.total', $duration );
 		}
 
 		// TODO 
 		// [x] implement "get mode from url"
 		// [] track retries (bonus)
 		// [x] detect error vs timeout
-		// [] do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
-		// [] engine time
-		// [] tests for new functions
+		// [x] do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
+		// [x] engine time
+		// [x] tests for new functions
 	
 		return $request;
 	}
