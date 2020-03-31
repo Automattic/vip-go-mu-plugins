@@ -758,4 +758,28 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_mode, $mode );
 	}
+
+	public function get_statsd_prefix_data() {
+		return array(
+			array(
+				'https://es-ha-bur.vipv2.net:1234',
+				'search',
+				'com.wordpress.elasticsearch.bur.1234_vipgo.search',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'index',
+				'com.wordpress.elasticsearch.dca.4321_vipgo.index',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_statsd_prefix_data
+	 */
+	public function test_get_statsd_prefix( $url, $mode, $expected ) {
+		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode );
+
+		$this->assertEquals( $expected, $prefix );
+	}
 }
