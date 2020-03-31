@@ -59,7 +59,9 @@ class Logger_Test extends \WP_UnitTestCase {
 			'severity' => 'alert',
 			'feature' => 'test',
 			'message' => 'Test alert',
-			'timestamp' => '2020-03-26 05:29:05'
+			'timestamp' => '2020-03-26 05:29:05',
+			'file' => '/app/logstash/class-logger.php',
+			'line' => '402',
 		];
 
 		$expected = array_merge( $data, [
@@ -70,8 +72,6 @@ class Logger_Test extends \WP_UnitTestCase {
 			'user_id' => 0,
 			'extra' => '[]',
 			'index' => 'log2logstash',
-			'file' => '/app/logstash/class-logger.php',
-			'line' => '402',
 		] );
 
 		Logger::log2logstash( $data );

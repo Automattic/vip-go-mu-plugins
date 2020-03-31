@@ -318,7 +318,6 @@ class Logger {
 		}
 
 		$params = array_merge( $default_params, $params );
-		$params = array_intersect_key( $params, $default_params );
 
 		// Filter unallowed parameters
 		foreach( $params as $key => $value ) {
