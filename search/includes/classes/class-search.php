@@ -173,12 +173,6 @@ class Search {
 
 		$duration = ( $end_time - $start_time ) * 1000;
 
-		// Inline error data for testing
-		/*$request = new \WP_Error();
-		$request->add( '', "random error 1" );
-		$request->add( '', "cURL error 28: Operation timed out after 2001 milliseconds with 0 bytes received" );
-		$request->add( '', "random error 2" );*/
-
 		if ( is_wp_error( $request ) ) {
 			$error_messages = $request->get_error_messages();
 			
@@ -203,14 +197,6 @@ class Search {
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
 		}
-
-		// TODO 
-		// [x] implement "get mode from url"
-		// [] track retries (bonus)
-		// [x] detect error vs timeout
-		// [x] do we have to reparse json to get engine time? or can we hook into EP? EP doesn't start any timers
-		// [x] engine time
-		// [x] tests for new functions
 	
 		return $request;
 	}
