@@ -86,6 +86,7 @@ yarn.lock
 /shared-plugins/two-factor/assets/
 /shared-plugins/two-factor/dev-lib/
 /tests/
+/vaultpress/changelog.txt
 /vip-support/.circleci
 /vip-support/bin/
 /vip-support/features/
