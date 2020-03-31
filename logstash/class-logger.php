@@ -290,7 +290,7 @@ class Logger {
 	protected static function parse_params( array $params ) : array {
 		// Prepare data.
 		$default_params = [
-			'site_id'	  => get_current_network_id(),                  // Required.
+			'site_id'   => get_current_network_id(),                  // Required.
 			'blog_id'   => get_current_blog_id(),                     // Required.
 			'host'      => strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
 
@@ -486,7 +486,7 @@ class Logger {
 			}
 
 			// Log to file
-			// phpcs: disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( $json_data . "\n", 3, '/tmp/logstash.log' );
 		}
 	}
