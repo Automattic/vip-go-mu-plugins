@@ -1116,27 +1116,6 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 			}
 		}
 	}
-
-	// For WordPress 5.0+, any environments that want to use the Gutenberg plugin need to define a specific constant.
-	// Without the constant in place, we skip loading the plugin and fallback to the core block editor.
-	// This will also facilitate the upgrade path where core disables the Gutenberg plugin as part of the upgrade.
-	if ( 'gutenberg' === $plugin ) {
-		$db_version = absint( get_option( 'db_version' ) );
-		$is_50_plus = $db_version >= 43764;
-
-		$should_load_gutenberg = true;
-		if ( ! defined( 'GUTENBERG_USE_PLUGIN' ) ) {
-			$should_load_gutenberg = false;
-		} elseif ( true !== GUTENBERG_USE_PLUGIN ) {
-			$should_load_gutenberg = false;
-		}
-
-		if ( $is_50_plus && ! $should_load_gutenberg ) {
-			trigger_error( 'wpcom_vip_load_plugin: Skipped loading Gutenberg plugin. Please add `define( \'GUTENBERG_USE_PLUGIN\', true );` if you would like to use the plugin over the Core Block Editor. For details, see https://vip.wordpress.com/documentation/vip-go/loading-gutenberg/', E_USER_WARNING );
-
-			return;
-		}
-	}
 	
 	if ( $includepath && file_exists( $includepath ) ) {
 		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}/{$file}" );

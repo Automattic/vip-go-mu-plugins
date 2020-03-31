@@ -102,4 +102,54 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::line( $message );
 		}
 	}
+
+	/**
+	 * Validate DB and ES index contents for all objects
+	 *
+	 * ## OPTIONS
+	 * 
+	 * [--start_post_id=<int>]
+	 * : Optional starting post id (defaults to 1)
+	 * ---
+	 * default: 1
+	 * ---
+	 * 
+	 * [--last_post_id=<int>]
+	 * : Optional last post id to check
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search health validate-contents
+	 * 
+	 * @subcommand validate-contents
+	 */
+	public function validate_contents( $args, $assoc_args ) {
+		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'] );
+
+		if ( is_wp_error( $results ) ) {
+			$diff = $results->get_error_data( 'diff' );
+
+			if ( ! empty( $diff ) ) {
+				$this->render_contents_diff( $diff );
+			}
+
+			WP_CLI::error( $results->get_error_message() );
+		}
+
+		if ( empty( $results ) ) {
+			WP_CLI::success( 'No inconsistencies found!' );
+
+			exit();
+		}
+
+		// Not empty, so inconsistencies were found...
+		WP_CLI::warning( 'Inconsistencies found!' );
+
+		$this->render_contents_diff( $results );
+	}
+
+	public function render_contents_diff( $diff ) {
+		// TODO
+
+		var_dump( $diff );
+	}
 }
