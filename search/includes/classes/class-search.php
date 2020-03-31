@@ -94,6 +94,9 @@ class Search {
 
 		// Disable facet queries
 		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
+
+		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
+		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
 	}
 
 	protected function load_commands() {
@@ -218,8 +221,16 @@ class Search {
 
 		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
 
-		// The filter is checking if we should _skip_ query integration
-		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
+
+		$option_value = get_option( 'vip_enable_vip_search_query_integration' );
+
+		$enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
+		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
+	
+		return $skipped;
 	}
 
 	/**
@@ -313,5 +324,18 @@ class Search {
 
 		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
 		return array_values( $widgets );
+	}
+
+	/*
+	 * Filter for formatted_args in post queries
+	 */ // phpcs:ignore WordPress.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed
+	public function filter__ep_post_formatted_args( $formatted_args, $query_vars, $query ) {
+		// Check if track_total_hits is set
+		// Don't override it if it is
+		if ( ! array_key_exists( 'track_total_hits', $formatted_args ) ) {
+			$formatted_args['track_total_hits'] = true;
+		}
+
+		return $formatted_args;
 	}
 }
