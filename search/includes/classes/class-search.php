@@ -297,22 +297,6 @@ class Search {
 		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
 	}
 
-	public function get_current_host() {
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
-			return null;
-		}
-
-		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			return null;
-		}
-
-		if ( 0 === count( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			return null;
-		}
-
-		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
-	}
-
 	/**
 	 * Return the next host in the list based on the current host index
 	 */
