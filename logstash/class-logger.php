@@ -105,8 +105,8 @@ class Logger {
 		'dest',
 		'dest_target',
 		'duration',
-		'error_code',         //string error code
-		'extra',              //string with additional data. eg json encoded, lists of ids
+		'error_code',         // string error code
+		'extra',              // string with additional data. eg json encoded, lists of ids
 		'feature',
 		'file',
 		'host',
@@ -139,13 +139,13 @@ class Logger {
 		'user_id',
 		'external_user_id',
 		'user_locale',
-		'gt_id',					// Guided Transfer ID
-		'job_type',       //async job type
-		'job_id',         //async job id (long)
-		'job_priority',   //integer
-		'es_index',       //Elasticsearch index name
-		'id',             //any generic numeric long id
-		'ids',            //any list of numeric long ids
+		'gt_id',          // Guided Transfer ID
+		'job_type',       // async job type
+		'job_id',         // async job id (long)
+		'job_priority',   // integer
+		'es_index',       // Elasticsearch index name
+		'id',             // any generic numeric long id
+		'ids',            // any list of numeric long ids
 	];
 
 	/**
@@ -290,19 +290,19 @@ class Logger {
 	protected static function parse_params( array $params ) : array {
 		// Prepare data.
 		$default_params = [
-			'site_id'		=> get_current_network_id(),                  // Required.
-			'blog_id'		=> get_current_blog_id(),                     // Required.
-			'host'			=> strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
+			'site_id'	  => get_current_network_id(),                  // Required.
+			'blog_id'   => get_current_blog_id(),                     // Required.
+			'host'      => strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
 
-			'severity'	=> '',                                        // Optional.
-			'feature'		=> '',                                        // Required.
-			'message'		=> '',                                        // Required.
+			'severity'  => '',                                        // Optional.
+			'feature'   => '',                                        // Required.
+			'message'   => '',                                        // Required.
 
-			'user_id'		=> get_current_user_id(),                     // Optional.
+			'user_id'   => get_current_user_id(),                     // Optional.
 
-			'extra'			=> [],                                        // Optional.
-			'timestamp' => date( 'Y-m-d H:i:s' ),											// Required.
-			'index'     => 'log2logstash',														// Required
+			'extra'     => [],                                        // Optional.
+			'timestamp' => gmdate( 'Y-m-d H:i:s' ),                   // Required.
+			'index'     => 'log2logstash',                            // Required
 		];
 
 		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
@@ -320,7 +320,7 @@ class Logger {
 		$params = array_merge( $default_params, $params );
 
 		// Filter unallowed parameters
-		foreach( $params as $key => $value ) {
+		foreach ( $params as $key => $value ) {
 			if ( ! in_array( $key, static::ALLOWED_PARAMS ) ) {
 				// Not in whitelist so unset
 				unset( $params[ $key ] );
@@ -328,7 +328,7 @@ class Logger {
 			}
 
 			// Cast params into proper type
-			switch( $key ) {
+			switch ( $key ) {
 				case 'ids':
 				case 'devtags':
 				case 'tags':
@@ -337,7 +337,7 @@ class Logger {
 				case 'duration':
 				case 'score':
 				case 'lag_float':
-					$params[ $key ] = (double) $value;
+					$params[ $key ] = (float) $value;
 					break;
 				case 'queue_size':
 					$params[ $key ] = (int) $value;
@@ -486,6 +486,7 @@ class Logger {
 			}
 
 			// Log to file
+			// phpcs: disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( $json_data . "\n", 3, '/tmp/logstash.log' );
 		}
 	}
