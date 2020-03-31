@@ -98,7 +98,6 @@ class Search {
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
 		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
 
-		add_action( 'init', array( $this, 'action__init' ) );
 		add_action( 'wp', array( $this, 'action__wp' ) );
 	}
 
