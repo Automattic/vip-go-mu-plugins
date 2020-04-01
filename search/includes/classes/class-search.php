@@ -98,7 +98,11 @@ class Search {
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
 		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
 
+    // Early hook for modifying behavior of main query
 		add_action( 'wp', array( $this, 'action__wp' ) );
+
+		// Disable query fuzziness by default
+		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
 	}
 
 	protected function load_commands() {
