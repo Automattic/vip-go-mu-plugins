@@ -782,4 +782,34 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $prefix );
 	}
+
+	/**
+	 * Test formatted args structure checks
+	 */
+	public function test__vip_search_filter__ep_formatted_args() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'wrong' ), $es->filter__ep_formatted_args( array( 'wrong' ), '' ), 'didn\'t just return formatted args when the structure of formatted args didn\'t match what was expected' );
+
+		$formatted_args = array(
+			'query' => array(
+				'bool' => array(
+					'should' => array(
+						array(
+							'multi_match' => array(
+								'operator' => 'Random string',
+							),
+						),
+						'Random string',
+					),
+				),
+			),
+		);
+
+		$result = $es->filter__ep_formatted_args( $formatted_args, '' );
+
+		$this->assertTrue( array_key_exists( 'must', $result['query']['bool'] ), 'didn\'t replace should with must' );
+		$this->assertEquals( $result['query']['bool']['must'][0]['multi_match']['operator'], 'AND', 'didn\'t set the remainder of the query correctly' );
+	}
 }
