@@ -103,6 +103,9 @@ class Search {
 
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
+
+		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
+		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
 	}
 
 	protected function load_commands() {
@@ -516,5 +519,22 @@ class Search {
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
+	}
+
+	/*
+	 * Filter for formatted_args in queries
+	 */
+	public function filter__ep_formatted_args( $formatted_args, $args ) {
+		// Check for expected structure, ie: this filters first
+		if ( ! isset( $formatted_args['query']['bool']['should'][0]['multi_match'] ) ) {
+			return $formatted_args;
+		}
+
+		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
+		$formatted_args['query']['bool']['must'] = $formatted_args['query']['bool']['should'];
+		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
+		unset( $formatted_args['query']['bool']['should'] );
+
+		return $formatted_args;
 	}
 }
