@@ -205,9 +205,52 @@ class Search {
 			$args['headers'] = [];
 		}
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+
+		$start_time = microtime( true );
+	
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+
+		$end_time = microtime( true );
+
+		$duration = ( $end_time - $start_time ) * 1000;
+
+		if ( is_wp_error( $request ) ) {
+			$error_messages = $request->get_error_messages();
+			
+			foreach ( $error_messages as $error_message ) {
+				// Default stat for errors is 'error'
+				$stat = '.error';
+				// If curl error 28(timeout), the stat should be 'timeout'	
+				if ( $this->is_curl_timeout( $error_message ) ) {
+					$stat = '.timeout';
+				}
+
+				$statsd->increment( $statsd_prefix . $stat );
+			}
+		} else {
+			// Record engine time (have to parse JSON to get it)
+			$response_body = wp_remote_retrieve_body( $request );
+			$response = json_decode( $response_body, true );
+
+			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
+				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+			}
+
+			$statsd->timing( $statsd_prefix . '.total', $duration );
+		}
 	
 		return $request;
+	}
+
+	/*
+	 * Given an error message, determine if it's from curl error 28(timeout)
+	 */
+	private function is_curl_timeout( $error_message ) {
+		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
 	}
 
 	public function get_http_timeout_for_query( $query ) {
@@ -382,5 +425,96 @@ class Search {
 		}
 
 		return $formatted_args;
+	}
+
+	/**
+	 * Given an ES url, determine the "mode" of the request for stats purposes
+	 * 
+	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
+	 */
+	public function get_statsd_request_mode_for_request( $url, $args ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', $parsed['path'] );
+		$method = strtolower( $args['method'] ) ?? 'post';
+
+		// NOTE - Not doing a switch() b/c the meaningful part of URI is not always in same spot
+
+		if ( '_search' === end( $path ) ) {
+			return 'search';
+		}
+
+		// Individual documents
+		if ( '_doc' === $path[ count( $path ) - 2 ] ) {
+			if ( 'delete' === $method ) {
+				return 'delete';
+			}
+
+			if ( 'get' === $method ) {
+				return 'get';
+			}
+
+			if ( 'put' === $method ) {
+				return 'index';
+			}
+		}
+
+		// Multi-get
+		if ( '_mget' === end( $path ) ) {
+			return 'get';
+		}
+
+		// Creating new docs
+		if ( '_create' === $path[ count( $path ) - 2 ] ) {
+			if ( 'put' === $method || 'post' === $method ) {
+				return 'index';
+			}
+		}
+
+		if ( '_doc' === end( $path ) && 'post' === $method ) {
+			return 'index';
+		}
+
+		// Updating existing doc (supports partial update)
+		if ( '_update' === $path[ count( $path ) - 2 ] ) {
+			return 'index';
+		}
+
+		// Bulk indexing
+		if ( '_bulk' === end( $path ) ) {
+			return 'index';
+		}
+
+		// Unknown
+		return 'other';
+	}
+
+	/**
+	 * Get the statsd stat prefix for a given "mode"
+	 */
+	public function get_statsd_prefix( $url, $mode = 'other' ) {
+		$key_parts = array(
+			'com.wordpress', // Global prefix
+			'elasticsearch', // Service name
+		);
+
+		$host = parse_url( $url, \PHP_URL_HOST );
+		$port = parse_url( $url, \PHP_URL_PORT );
+
+		// Assume all host names are in the format es-ha-$dc.vipv2.net
+		$matches = array();
+		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host, $matches ) ) {
+			$key_parts[] = $matches[1]; // DC of ES node
+			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
+		} else {
+			$key_parts[] = 'unknown';
+			$key_parts[] = 'unknown';
+		}
+
+		// Break up tracking based on mode
+		$key_parts[] = $mode;
+
+		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
+		return implode( '.', $key_parts );
 	}
 }
