@@ -98,6 +98,9 @@ class Search {
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
 		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
 
+		// Early hook for modifying behavior of main query
+		add_action( 'wp', array( $this, 'action__wp' ) );
+
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
 	}
@@ -129,6 +132,45 @@ class Search {
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
+	}
+
+	public function action__wp() {
+		global $wp_query;
+
+		// Avoid infinite loops because our requests load the URL with this param.
+		if ( isset( $_GET['es'] ) ) {
+			return;
+		}
+
+		// Temp functionality for testing phase.
+		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
+		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
+		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
+			$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
+
+			$option_value = get_option( 'vip_enable_search_query_mirroring' );
+			$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+			$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+
+			if ( $is_mirroring_enabled ) {
+				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
+			}
+		}
+	}
+
+	public function do_mirror_search_request() {
+		fastcgi_finish_request();
+
+		$vip_search_url = home_url( add_query_arg( 'es', 'true' ) );
+
+		wp_remote_request( $vip_search_url, [
+			'user-agent' => sprintf( 'VIP Search Query Mirror; %s', home_url() ),
+			'blocking' => false,
+			// Shouldn't take this long but give it some breathing room.
+			// Also not necessary with blocking=>false, but just in case.
+			'timeout' => 3,
+		] );
 	}
 
 	/**
