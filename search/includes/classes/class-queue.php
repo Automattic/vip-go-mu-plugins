@@ -13,6 +13,13 @@ class Queue {
 	const CACHE_GROUP = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
+	public function init() {
+		require_once( __DIR__ . '/Queue/class-schema.php' );
+
+		$this->schema = new Queue\Schema();
+		$this->schema->init();
+	}
+
 	/**
 	 * Queue an object for re-indexing
 	 * 

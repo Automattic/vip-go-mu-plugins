@@ -35,6 +35,11 @@ class Search {
 
 		// Load our custom dashboard
 		require_once __DIR__ . '/class-dashboard.php';
+
+		require_once __DIR__ . '/class-queue.php';
+
+		$this->queue = new Queue();
+		$this->queue->init();
 	}
 
 	protected function setup_constants() {
