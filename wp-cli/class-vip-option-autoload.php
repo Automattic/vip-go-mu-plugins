@@ -28,7 +28,7 @@ class Option_Autoload extends WP_CLI_Command {
 	 *     Success: Autoload changed. Cache flushed.
 	 *
 	 */
-	function set( $args, $assoc_args ) {
+	public function set( $args, $assoc_args ) {
 
 		list( $option, $yn ) = $args;
 
@@ -40,7 +40,7 @@ class Option_Autoload extends WP_CLI_Command {
 		$option_autoload = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
 		if ( is_null( $option_autoload ) ) {
-			WP_CLI::error( "Option does not exist." );
+			WP_CLI::error( 'Option does not exist.' );
 		}
 
 		if ( $option_autoload === $yn ) {
@@ -52,7 +52,7 @@ class Option_Autoload extends WP_CLI_Command {
 		$check_option = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
 		if ( $check_option === $option_autoload ) {
-			WP_CLI::error( "Option not updated." );
+			WP_CLI::error( 'Option not updated.' );
 		}
 
 		$alloptions_before = wp_cache_get( 'alloptions', 'options' );
@@ -62,12 +62,12 @@ class Option_Autoload extends WP_CLI_Command {
 
 		$cache_success = false;
 		switch ( $check_option ) {
-			case 'no' :
+			case 'no':
 				$cache_success = ( isset( $alloptions_before[ $option ] ) ) && ( ! isset( $alloptions_after[ $option ] ) );
-			break;
-			case 'yes' :
+				break;
+			case 'yes':
 				$cache_success = ( ! isset( $alloptions_before[ $option ] ) ) && ( isset( $alloptions_after[ $option ] ) );
-			break;
+				break;
 		}
 
 		WP_CLI::success( sprintf(
@@ -108,7 +108,7 @@ class Option_Autoload extends WP_CLI_Command {
 	 *     "yes"
 	 *
 	 */
-	function get( $args, $assoc_args ) {
+	public function get( $args, $assoc_args ) {
 
 		list( $option ) = $args;
 
@@ -116,7 +116,7 @@ class Option_Autoload extends WP_CLI_Command {
 		$option_autoload = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
 		if ( is_null( $option_autoload ) ) {
-			WP_CLI::error( "Option does not exist." );
+			WP_CLI::error( 'Option does not exist.' );
 		}
 
 		WP_CLI::print_value( $option_autoload, $assoc_args );
@@ -164,15 +164,22 @@ class Option_Autoload extends WP_CLI_Command {
 	 *
 	 * @subcommand list
 	 */
-	function list_( $args, $assoc_args ) {
+	public function list_( $args, $assoc_args ) {
 
 		list( $yn ) = $args;
 		$yn = $this->validate_yn( $yn, 'yes' );
 
 		// option list uses on/off ¯\_(ツ)_/¯
-		$yn = $yn === 'yes' ? 'on' : 'off';
+		$yn = 'yes' === $yn ? 'on' : 'off';
 
-		WP_CLI::run_command( [ 'option', 'list' ], [ 'autoload' => $yn, 'fields' => 'option_name', 'format' => $assoc_args['format'] ] );
+		WP_CLI::run_command( 
+			[ 'option', 'list' ],
+			[
+				'autoload' => $yn,
+				'fields' => 'option_name',
+				'format' => $assoc_args['format'],
+			],
+		);
 
 		WP_CLI::log( "Try 'wp option list' for more control." );
 	}
@@ -193,7 +200,7 @@ class Option_Autoload extends WP_CLI_Command {
 	 *     Success: Object deleted.
 	 *
 	 */
-	function refresh( $args, $assoc_args ) {
+	public function refresh( $args, $assoc_args ) {
 
 		WP_CLI::run_command( [ 'cache', 'delete', 'alloptions', 'options' ] );
 
