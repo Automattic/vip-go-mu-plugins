@@ -97,6 +97,7 @@ class Queue {
 	 * 
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
+	 * @param int $time Unix timestamp when the object was last indexed
 	 */
 	public function set_last_index_time( $object_id, $object_type, $time ) {
 		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type );
