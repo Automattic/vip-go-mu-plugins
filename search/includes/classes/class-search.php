@@ -6,6 +6,7 @@ use \WP_CLI;
 
 class Search {
 	public $healthcheck;
+	public $queue;
 	private $current_host_index;
 
 	/**
