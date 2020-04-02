@@ -95,9 +95,6 @@ class Queue {
 	/**
 	 * Set the unix timestamp when the object was last indexed
 	 * 
-	 * This provides rate limiting by checking the cached timestamp of the last successful indexing operation
-	 * and applying the defined minimum interval between successive indexing jobs
-	 * 
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 */
