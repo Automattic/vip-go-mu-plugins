@@ -203,8 +203,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * NOTE - needs to come last for the "is_enabled()" tests, b/c it sets the constant
-	 * which causes it to bail early
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test_vip_search_healthjob_is_disabled_when_constant_is_set() {
 		define( 'DISABLE_VIP_SEARCH_HEALTHCHECKS', true );
