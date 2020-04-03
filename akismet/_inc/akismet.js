@@ -147,6 +147,11 @@ jQuery( function ( $ ) {
 	} );
 
 	$( '.checkforspam' ).click( function( e ) {
+		if ( $( this ).hasClass( 'checkforspam-pending-config' ) ) {
+			// Akismet hasn't been configured yet. Allow the user to proceed to the button's link.
+			return;
+		}
+
 		e.preventDefault();
 
 		if ( $( this ).hasClass( 'button-disabled' ) ) {
