@@ -176,9 +176,11 @@ class HealthJob {
 			return false;
 		}
 
+		$enabled = 'production' === VIP_GO_ENV;
+
 		// Don't run the checks if the index is not built
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
-			return false;
+			$enabled = false;
 		}
 
 		/**
@@ -186,6 +188,6 @@ class HealthJob {
 		 *
 		 * @param bool $enable True to enable the healthcheck cron job
 		 */
-		return apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+		return apply_filters( 'enable_vip_search_healthchecks', $enabled );
 	}
 }
