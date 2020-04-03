@@ -149,4 +149,12 @@ class Queue {
 
 		return $wpdb->update( $table_name, $data, array( 'id' => $id ) );
 	}
+
+	public function empty_queue() {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->query( "TRUNCATE TABLE {$table_name}" );
+	}
 }
