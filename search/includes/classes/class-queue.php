@@ -157,4 +157,17 @@ class Queue {
 
 		return $wpdb->query( "TRUNCATE TABLE {$table_name}" );
 	}
+
+	public function get_batch_jobs( $count = 250 ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' LIMIT %d",
+				$count
+			)
+		);
+	}
 }
