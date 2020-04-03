@@ -44,6 +44,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->method( 'process_results' );
 
 		$job->check_health();
+
+		remove_filter( 'enable_vip_search_healthchecks', '__return_true' );
 	}
 
 	/**
@@ -152,5 +154,65 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->will( $this->returnValue( true ) );
 
 		$stub->process_results( $results );
+	}
+
+	public function test_vip_search_healthjob_is_not_enabled_when_indexing_is_occuring() {
+		add_filter( 'ep_is_indexing', '__return_true' );
+
+		$job = new \Automattic\VIP\Search\HealthJob();
+
+		$enabled = $job->is_enabled();
+
+		$this->assertFalse( $enabled );
+
+		remove_filter( 'ep_is_indexing', '__return_true' );
+	}
+
+	public function test_vip_search_healthjob_is_not_enabled_before_first_index() {
+		add_filter( 'ep_last_sync', '__return_false' );
+
+		$job = new \Automattic\VIP\Search\HealthJob();
+
+		$enabled = $job->is_enabled();
+
+		$this->assertFalse( $enabled );
+
+		remove_filter( 'ep_last_sync', '__return_false' );
+	}
+
+	public function test_vip_search_healthjob_is_enabled_when_expected() {
+		add_filter( 'ep_is_indexing', '__return_false' );
+		add_filter( 'ep_last_sync', '__return_true' );
+
+		// Have to filter the enabled envs to allow `false`, which is the VIP_GO_ENV in tests
+		$enabled_environments = function() {
+			return [ false ];
+		};
+
+		add_filter( 'vip_search_healthchecks_enabled_environments', $enabled_environments );
+
+		$job = new \Automattic\VIP\Search\HealthJob();
+
+		$enabled = $job->is_enabled();
+
+		$this->assertTrue( $enabled );
+
+		remove_filter( 'ep_is_indexing', '__return_false' );
+		remove_filter( 'ep_last_sync', '__return_true' );
+		remove_filter( 'vip_search_healthchecks_enabled_environments', $enabled_environments );
+	}
+
+	/**
+	 * NOTE - needs to come last for the "is_enabled()" tests, b/c it sets the constant
+	 * which causes it to bail early
+	 */
+	public function test_vip_search_healthjob_is_disabled_when_constant_is_set() {
+		define( 'DISABLE_VIP_SEARCH_HEALTHCHECKS', true );
+
+		$job = new \Automattic\VIP\Search\HealthJob();
+
+		$enabled = $job->is_enabled();
+
+		$this->assertFalse( $enabled );
 	}
 }
