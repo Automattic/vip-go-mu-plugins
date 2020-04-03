@@ -817,6 +817,9 @@ class Search_Test extends \WP_UnitTestCase {
 	 * Ensure we disable indexing of filtered content by default
 	 */
 	public function test__vip_search_filter__ep_allow_post_content_filtered_index() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
 		$enabled = apply_filters( 'ep_allow_post_content_filtered_index', true );
 
 		$this->assertFalse( $enabled );
