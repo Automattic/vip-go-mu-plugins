@@ -172,7 +172,7 @@ class Option_Autoload extends WP_CLI_Command {
 		// option list uses on/off ¯\_(ツ)_/¯
 		$yn = 'yes' === $yn ? 'on' : 'off';
 
-		WP_CLI::run_command( 
+		WP_CLI::run_command(
 			[ 'option', 'list' ],
 			[
 				'autoload' => $yn,
