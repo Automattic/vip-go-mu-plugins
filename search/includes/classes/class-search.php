@@ -26,6 +26,7 @@ class Search {
 		 */
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
+			require_once __DIR__ . '/commands/class-queuecommand.php';
 		}
 
 		// Load ElasticPress
@@ -117,6 +118,7 @@ class Search {
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
+			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 		}
 	}
 
