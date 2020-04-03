@@ -496,9 +496,9 @@ class Logger {
 	 *
 	 * @since 2020-01-10
 	 *
-	 * @param array $entries.
+	 * @param array $entry.
 	 */
-	public static function maybe_wp_debug_log_entries( array $entries ) : void {
+	public static function maybe_wp_debug_log_entries( array $entry ) : void {
 		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) ) {
 			return; // Not applicable.
 		} elseif ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
