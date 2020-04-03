@@ -141,4 +141,12 @@ class Queue {
 	public function get_index_interval_time( $object_id, $object_type ) {
 		return 60;
 	}
+
+	public function update_job( $id, $data ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->update( $table_name, $data, array( 'id' => $id ) );
+	}
 }
