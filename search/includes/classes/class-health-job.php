@@ -176,7 +176,9 @@ class HealthJob {
 			return false;
 		}
 
-		$enabled = 'production' === VIP_GO_ENV;
+		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
+
+		$enabled = in_array( VIP_GO_ENV, $enabled_environments, true );
 
 		// Don't run the checks if the index is not built
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
