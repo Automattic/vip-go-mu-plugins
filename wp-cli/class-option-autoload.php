@@ -71,8 +71,8 @@ class Option_Autoload extends WP_CLI_Command {
 		}
 
 		WP_CLI::success( sprintf(
-			'Autoload changed.%s',
-			WP_CLI::colorize( $cache_success ? ' Cache flushed.' : ' %rCache flush failed.%n' )
+			'Autoload changed. %s',
+			WP_CLI::colorize( $cache_success ? 'Cache flushed.' : '%rCache flush failed.%n' )
 		) );
 
 	}
