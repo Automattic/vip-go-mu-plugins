@@ -177,9 +177,9 @@ class HealthJob {
 		}
 
 		/**
-		 * Filter wether to enable VIP search healthcheck
+		 * Filter whether to enable VIP search healthcheck
 		 *
-		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 * @param bool $enable True to enable the healthcheck cron job
 		 */
 		return apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
 	}
