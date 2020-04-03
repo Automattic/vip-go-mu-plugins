@@ -127,7 +127,7 @@ class Queue {
 	 * @return string The cache key to use for the object's last indexed timestamp
 	 */
 	public function get_last_index_time_cache_key( $object_id, $object_type ) {
-		$cache_key = sprintf( '%s-%d', $object_type, $object_id );
+		return sprintf( '%s-%d', $object_type, $object_id );
 	}
 
 	/**
