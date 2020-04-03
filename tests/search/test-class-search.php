@@ -812,4 +812,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( array_key_exists( 'must', $result['query']['bool'] ), 'didn\'t replace should with must' );
 		$this->assertEquals( $result['query']['bool']['must'][0]['multi_match']['operator'], 'AND', 'didn\'t set the remainder of the query correctly' );
 	}
+
+	/**
+	 * Ensure we disable indexing of filtered content by default
+	 */
+	public function test__vip_search_filter__ep_allow_post_content_filtered_index() {
+		$enabled = apply_filters( 'ep_allow_post_content_filtered_index', true );
+
+		$this->assertFalse( $enabled );
+	}
 }

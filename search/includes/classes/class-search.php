@@ -106,6 +106,9 @@ class Search {
 
 		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
 		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
+
+		// Disable indexing of filtered content by default, as it's not searched by default
+		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
 	}
 
 	protected function load_commands() {
