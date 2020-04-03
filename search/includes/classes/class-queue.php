@@ -46,12 +46,14 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
+		// Have to escape this separately so we can insert NULL if no start time specified
+		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
+
 		$result = $wpdb->query(
 			$wpdb->prepare(
-				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, %s, %s )",
+				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, {$start_time_escaped}, %s )",
 				$object_id,
 				$object_type,
-				$next_index_time,
 				'queued'
 			)
 		);
