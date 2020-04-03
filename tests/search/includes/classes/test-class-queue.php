@@ -4,12 +4,22 @@ namespace Automattic\VIP\Search;
 
 class Queue_Test extends \WP_UnitTestCase {
 	public function setUp() {
+		global $wpdb;
+
+		$wpdb->hide_errors();
+
+		wp_cache_flush();
+
 		require_once __DIR__ . '/../../../../search/search.php';
 
 		$this->es = new \Automattic\VIP\Search\Search();
 		$this->es->init();
 
 		$this->queue = $this->es->queue;
+
+		$this->queue->schema->prepare_table();
+
+		$this->queue->empty_queue();
 	}
 
 	public function test_deduplication_of_repeat_indexing() {
