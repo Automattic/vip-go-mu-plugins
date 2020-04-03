@@ -661,3 +661,11 @@ table.comments td.comment p a:after {
 .akismet-section-header__actions {
 	line-height: 1.75rem;
 }
+
+.akismet-setup-instructions {
+	text-align: center;
+}
+
+.akismet-setup-instructions form {
+	padding-bottom: 1.5rem;
+}
