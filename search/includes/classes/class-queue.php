@@ -44,9 +44,11 @@ class Queue {
 			$next_index_time = null;
 		}
 
+		$table_name = $this->schema->get_table_name();
+
 		$result = $wpdb->query(
 			$wpdb->prepare(
-				"INSERT INTO vip_search_index_queue ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, %s, %s )",
+				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, %s, %s )",
 				$object_id,
 				$object_type,
 				$next_index_time,
