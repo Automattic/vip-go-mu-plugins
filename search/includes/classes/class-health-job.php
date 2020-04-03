@@ -176,6 +176,11 @@ class HealthJob {
 			return false;
 		}
 
+		// Don't run the checks if the index is not built
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+			return false;
+		}
+
 		/**
 		 * Filter whether to enable VIP search healthcheck
 		 *
