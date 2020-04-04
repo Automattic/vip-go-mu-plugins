@@ -176,11 +176,20 @@ class HealthJob {
 			return false;
 		}
 
+		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
+
+		$enabled = in_array( VIP_GO_ENV, $enabled_environments, true );
+
+		// Don't run the checks if the index is not built
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+			$enabled = false;
+		}
+
 		/**
-		 * Filter wether to enable VIP search healthcheck
+		 * Filter whether to enable VIP search healthcheck
 		 *
-		 * @param		bool	$enable		True to enable the healthcheck cron job
+		 * @param bool $enable True to enable the healthcheck cron job
 		 */
-		return apply_filters( 'enable_vip_search_healthchecks', 'production' === VIP_GO_ENV );
+		return apply_filters( 'enable_vip_search_healthchecks', $enabled );
 	}
 }
