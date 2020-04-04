@@ -156,11 +156,15 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		return [
 			'dirty path' => [
 				'vip://wp-content/uploads/vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768'
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'wp-content/uploads/2019/01/foo.jpg?resize=100,100',
+				'wp-content/uploads/2019/01/foo.jpg',
 			],
 			'clean path' => [
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768'
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'wp-content/uploads/2019/01/foo.jpg',
+				'wp-content/uploads/2019/01/foo.jpg',
 			]
 		];
 	}

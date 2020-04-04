@@ -2,8 +2,8 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau
 Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 4.0
-Tested up to: 5.2
-Stable tag: 4.1.2
+Tested up to: 5.4
+Stable tag: 4.1.4
 License: GPLv2 or later
 
 Akismet checks your comments and contact form submissions against our global database of spam to protect you and your site from malicious content.
@@ -20,15 +20,32 @@ Major features in Akismet include:
 * Moderators can see the number of approved comments for each user.
 * A discard feature that outright blocks the worst spam, saving you disk space and speeding up your site.
 
-PS: You'll need an [Akismet.com API key](https://akismet.com/get/) to use it.  Keys are free for personal blogs; paid subscriptions are available for businesses and commercial sites.
+PS: You'll be prompted to get an Akismet.com API key to use it, once activated. Keys are free for personal blogs; paid subscriptions are available for businesses and commercial sites.
 
 == Installation ==
 
-Upload the Akismet plugin to your blog, Activate it, then enter your [Akismet.com API key](https://akismet.com/get/).
+Upload the Akismet plugin to your blog, activate it, and then enter your Akismet.com API key.
 
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 4.1.4 =
+*Release Date - 17 March 2020*
+
+* Only redirect to the Akismet setup screen upon plugin activation if the plugin was activated manually from within the plugin-related screens, to help users with non-standard install workflows, like WP-CLI.
+* Update the layout of the initial setup screen to be more readable on small screens.
+* If no API key has been entered, don't run code that expects an API key.
+* Improve the readability of the comment history entries.
+* Don't modify the comment form HTML if no API key has been set.
+
+= 4.1.3 =
+*Release Date - 31 October 2019*
+
+* Prevented an attacker from being able to cause a user to unknowingly recheck their Pending comments for spam.
+* Improved compatibility with Jetpack 7.7+.
+* Updated the plugin activation page to use consistent language and markup.
+* Redirecting users to the Akismet connnection/settings screen upon plugin activation, in an effort to make it easier for people to get setup.
 
 = 4.1.2 =
 *Release Date - 14 May 2019*
