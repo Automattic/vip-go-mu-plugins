@@ -31,6 +31,11 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function init() {
+		// Cache purging disabled, bail
+		if ( ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) ) {
+			return;
+		}
+		
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
@@ -285,7 +290,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( $this->site_cache_purged )
 			return false;
 
-		if ( defined( 'WP_IMPORTING' ) ) {
+		if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
 			return false;
 		}
 

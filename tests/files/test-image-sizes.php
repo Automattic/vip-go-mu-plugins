@@ -148,6 +148,16 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 						'height' => '1024',
 						'crop' => false,
 					],
+					'1536x1536' => [
+						'width' => '1536',
+						'height' => '1536',
+						'crop' => false,
+					],
+					'2048x2048' => [
+						'width' => '2048',
+						'height' => '2048',
+						'crop' => false,
+					],
 				],
 			],
 		];
@@ -255,6 +265,18 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 						'file' => 'image.jpg?resize=1024,576',
 						'width' => 1024,
 						'height' => 576,
+						'mime-type' => 'image/jpeg',
+					],
+					'1536x1536' => [
+						'file' => 'image.jpg?resize=1536,865',
+						'width' => 1536,
+						'height' => 865,
+						'mime-type' => 'image/jpeg',
+					],
+					'2048x2048' => [
+						'file' => 'image.jpg?resize=2048,1153',
+						'width' => 2048,
+						'height' => 1153,
 						'mime-type' => 'image/jpeg',
 					],
 				]
@@ -400,6 +422,28 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 				],
 				'params' => [
 					'resize' => '1024,576',
+				],
+			],
+			'1536x1536' => [
+				'width' => 1536,
+				'height' => 1536,
+				'calculated_dimensions' => [
+					'width' => 1536,
+					'height' => 865,
+				],
+				'params' => [
+					'resize' => '1536,865',
+				],
+			],
+			'2048x2048' => [
+				'width' => 2048,
+				'height' => 2048,
+				'calculated_dimensions' => [
+					'width' => 2048,
+					'height' => 1153,
+				],
+				'params' => [
+					'resize' => '2048,1153',
 				],
 			],
 		];
@@ -574,7 +618,9 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		$expected_srcset =
 			'http://example.org/wp-content/uploads/' . $this->test_image . '?resize=300,169 300w'
 			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=768,432 768w'
-			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1024,576 1024w';
+			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1024,576 1024w'
+			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1536,865 1536w'
+			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=2048,1153 2048w';
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id ) );
 

@@ -198,9 +198,10 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 
 	private function maybe_create_user() {
 		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
+
 		if ( ! $user ) {
 			$cmd = sprintf(
-				'user create --url=%s --role=%s --display_name=%s --porcelain %s %s',
+				'user create --url=%s --role=%s --display_name=%s --porcelain %s %s --skip-plugins --skip-themes',
 				escapeshellarg( get_site_url() ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_ROLE ),
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_NAME ),
@@ -208,9 +209,16 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 				escapeshellarg( WPCOM_VIP_MACHINE_USER_EMAIL )
 			);
 
-			$user_id = WP_CLI::runcommand( $cmd, [
-				'return' => true,
+			$user_create_cmd_result = WP_CLI::runcommand( $cmd, [
+				'return'     => 'all',
+				'exit_error' => false,
 			] );
+
+			$user_id = $user_create_cmd_result->stdout;
+
+			if ( $user_create_cmd_result->stderr && ! $user_id ) {
+				return new WP_Error( 'maybe_create_user-failed', 'Failed to create new user. Reason: ' . $user_create_cmd_result->stderr );
+			}
 
 			$user = get_userdata( $user_id );
 			if ( ! $user ) {

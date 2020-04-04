@@ -68,9 +68,7 @@ class A8C_Files {
 
 		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
 		// The old school implementation will be phased out soon.
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER
-			// NOTE: Temporarily disable Stream Wrapper loading for sites on AMS as it's not ready for use there
-			&& 'ams-files.vipv2.net' !== FILE_SERVICE_ENDPOINT ) {
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
 			$this->init_vip_filesystem();
 		} else {
 			$this->init_legacy_filesystem();
@@ -1177,3 +1175,9 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
 	}, 10, 0 );
 }
+
+/**
+ * WordPress 5.3 adds "big image" processing, for images over 2560px (by default).
+ * This is not needed on VIP Go since we use Photon for dynamic image work.
+ */
+add_filter( 'big_image_size_threshold', '__return_false' );

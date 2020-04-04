@@ -100,15 +100,44 @@ defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAM
 defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
+add_action( 'set_current_user', function() {
+	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
+
+	if ( $user && $user->ID ) {
+		defined( 'WPCOM_VIP_MACHINE_USER_ID' ) or define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
+	}
+}, PHP_INT_MIN );
+
 // Support a limited number of additional "Internal Events" in Cron Control.
 // These events run regardless of the number of pending events, and they cannot be deleted.
-define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', array(
+$internal_cron_events = array(
 	array(
 		'schedule' => 'hourly',
 		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Automattic\VIP\Support_User\User::CRON_ACTION
 		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
-	),
-) );
+	)
+);
+
+// JP Connection Pilot disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
+}
+
+// JP Connection Pilot auto-reconnect disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
+}
+
+if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
+	$internal_cron_events[] = array(
+		'schedule'  => 'hourly',
+		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
+		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
+		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ),
+	);
+}
+
+define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
@@ -118,8 +147,13 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Logging
+require_once( __DIR__ . '/logstash/logstash.php' );
+require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
+
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
@@ -145,14 +179,30 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
+// Load elasticsearch helpers
+if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
+	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	require_once( __DIR__ . '/search/search.php' );
+
+	$search_plugin = new \Automattic\VIP\Search\Search();
+	$search_plugin->init();
+
+	// If VIP Search query integration is enabled, disable Jetpack Search
+	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
+		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
+		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
+		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
+	}
+}
+
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
-	$headers['X-hacker'] = 'If you\'re reading this, you should visit automattic.com/jobs and apply to join the fun, mention this header.';
-	$headers['X-Powered-By'] = 'WordPress.com VIP <https://vip.wordpress.com>';
+	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
+	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
+	$headers['Host-Header'] = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
-	// All non-production domains should not be indexed.
-	// This should not apply only to *.vip-go.co
-	if ( 'production' !== VIP_GO_ENV ) {
+	// Non-production applications and go-vip.(co|net) domains should not be indexed.
+	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 

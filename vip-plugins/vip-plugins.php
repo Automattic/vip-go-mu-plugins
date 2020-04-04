@@ -273,6 +273,10 @@ add_action( 'admin_enqueue_scripts', 'wpcom_vip_plugins_ui_admin_enqueue_scripts
 function wpcom_vip_include_active_plugins() {
 	$retired_plugins_option = get_option( 'wpcom_vip_active_plugins', array() );
 
+	if ( ! is_array( $retired_plugins_option ) ) {
+		return;
+	}
+
 	foreach ( $retired_plugins_option as $plugin ) {
 		 wpcom_vip_load_plugin( $plugin );
 	}
