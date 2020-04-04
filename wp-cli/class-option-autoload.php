@@ -178,7 +178,7 @@ class Option_Autoload extends WP_CLI_Command {
 				'autoload' => $yn,
 				'fields' => 'option_name',
 				'format' => $assoc_args['format'],
-			],
+			]
 		);
 
 		WP_CLI::log( "Try 'wp option list' for more control." );
