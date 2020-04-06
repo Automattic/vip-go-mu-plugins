@@ -14,7 +14,6 @@ class WPCOM_VIP_CLI_Command extends WP_CLI_Command {
 			return;
 
 		$wp_object_cache->group_ops = array();
-		$wp_object_cache->stats = array();
 		$wp_object_cache->memcache_debug = array();
 		$wp_object_cache->cache = array();
 
