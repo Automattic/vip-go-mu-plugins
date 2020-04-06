@@ -82,7 +82,8 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
  * When we run at shutdown we must not die as then the pretty printing of the Error doesn't happen which is lame sauce.
  */
 function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file, $line ) {
-	if ( ! ( $type & ini_get( 'error_reporting' ) ) ) {
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+	if ( ! is_int( $type ) || ! ( $type & error_reporting() ) ) { 
 		return true;
 	}
 

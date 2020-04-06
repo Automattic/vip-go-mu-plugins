@@ -72,10 +72,6 @@ class Search {
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
-		add_filter( 'jetpack_active_modules', [ $this, 'filter__jetpack_active_modules' ], 9999 );
-
-		// Filter jetpack widgets
-		add_filter( 'jetpack_widgets_to_include', [ $this, 'filter__jetpack_widgets_to_include' ], 10 );
 
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
@@ -91,6 +87,42 @@ class Search {
 
 		// Allow querying while a bulk index is running
 		add_filter( 'ep_enable_query_integration_during_indexing', '__return_true' );
+
+		// Set facet taxonomies size. Shouldn't currently be used, but it makes sense to have it set to a sensible
+		// default just in case it ends up in use so that the application doesn't error
+		add_filter( 'ep_facet_taxonomies_size', array( $this, 'filter__ep_facet_taxonomies_size' ), 10, 2 );
+
+		// Disable facet queries
+		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
+
+		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
+		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
+
+		// Early hook for modifying behavior of main query
+		add_action( 'wp', array( $this, 'action__wp' ) );
+
+		// Disable query fuzziness by default
+		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
+
+		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
+		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
+
+		// Disable indexing of filtered content by default, as it's not searched by default
+		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
+		
+		// Date relevancy defaults. Taken from Jetpack Search.
+		// Set to 'gauss'
+		add_filter( 'epwr_decay_function', array( $this, 'filter__epwr_decay_function' ), 0, 3 );
+		// Set to '360d'	
+		add_filter( 'epwr_scale', array( $this, 'filter__epwr_scale' ), 0, 3 );
+		// Set to .9 
+		add_filter( 'epwr_decay', array( $this, 'filter__epwr_decay' ), 0, 3 );
+		// Set to '0d'
+		add_filter( 'epwr_offset', array( $this, 'filter__epwr_offset' ), 0, 3 );
+		// Set to 'multiply'	
+		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
+		// Set to 'multiply'
+		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
 	}
 
 	protected function load_commands() {
@@ -120,6 +152,45 @@ class Search {
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
+	}
+
+	public function action__wp() {
+		global $wp_query;
+
+		// Avoid infinite loops because our requests load the URL with this param.
+		if ( isset( $_GET['es'] ) ) {
+			return;
+		}
+
+		// Temp functionality for testing phase.
+		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
+		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
+		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
+			$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
+
+			$option_value = get_option( 'vip_enable_search_query_mirroring' );
+			$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+			$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+
+			if ( $is_mirroring_enabled ) {
+				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
+			}
+		}
+	}
+
+	public function do_mirror_search_request() {
+		fastcgi_finish_request();
+
+		$vip_search_url = home_url( add_query_arg( 'es', 'true' ) );
+
+		wp_remote_request( $vip_search_url, [
+			'user-agent' => sprintf( 'VIP Search Query Mirror; %s', home_url() ),
+			'blocking' => false,
+			// Shouldn't take this long but give it some breathing room.
+			// Also not necessary with blocking=>false, but just in case.
+			'timeout' => 3,
+		] );
 	}
 
 	/**
@@ -154,9 +225,52 @@ class Search {
 			$args['headers'] = [];
 		}
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+
+		$start_time = microtime( true );
+	
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+
+		$end_time = microtime( true );
+
+		$duration = ( $end_time - $start_time ) * 1000;
+
+		if ( is_wp_error( $request ) ) {
+			$error_messages = $request->get_error_messages();
+			
+			foreach ( $error_messages as $error_message ) {
+				// Default stat for errors is 'error'
+				$stat = '.error';
+				// If curl error 28(timeout), the stat should be 'timeout'	
+				if ( $this->is_curl_timeout( $error_message ) ) {
+					$stat = '.timeout';
+				}
+
+				$statsd->increment( $statsd_prefix . $stat );
+			}
+		} else {
+			// Record engine time (have to parse JSON to get it)
+			$response_body = wp_remote_retrieve_body( $request );
+			$response = json_decode( $response_body, true );
+
+			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
+				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+			}
+
+			$statsd->timing( $statsd_prefix . '.total', $duration );
+		}
 	
 		return $request;
+	}
+
+	/*
+	 * Given an error message, determine if it's from curl error 28(timeout)
+	 */
+	private function is_curl_timeout( $error_message ) {
+		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
 	}
 
 	public function get_http_timeout_for_query( $query ) {
@@ -184,38 +298,6 @@ class Search {
 		}
 
 		return $active;
-	}
-
-	public function filter__jetpack_active_modules( $modules ) {
-		// Filter out 'search' from the active modules. We use array_filter() to get _all_ instances, as it could be present multiple times
-		$filtered = array_filter ( $modules, function( $module ) {
-			if ( 'search' === $module ) {
-				return false;
-			}
-			return true;
-		} );
-
-		// array_filter() preserves keys, so to get a clean / flat array we must pass it through array_values()
-		return array_values( $filtered );
-	}
-
-	public function filter__jetpack_widgets_to_include( $widgets ) {
-		if ( ! is_array( $widgets ) ) {
-			return $widgets;
-		}
-
-		foreach( $widgets as $index => $file ) {
-			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
-			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
-				unset( $widgets[ $index ] );
-			}
-		}
-
-		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
-		$widgets = array_values( $widgets );
-
-		return $widgets;
 	}
 
 	/**
@@ -247,8 +329,16 @@ class Search {
 
 		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
 
-		// The filter is checking if we should _skip_ query integration
-		return ! ( $query_integration_enabled || $query_integration_enabled_legacy );
+		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
+
+		$option_value = get_option( 'vip_enable_vip_search_query_integration' );
+
+		$enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
+		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
+	
+		return $skipped;
 	}
 
 	/**
@@ -302,5 +392,208 @@ class Search {
 			}
 		}
 		return $response;
+	}
+
+	/*
+	 * Given the current facet taxonomies size and a taxonomy, determine the facet taxonomy size
+	 */
+	public function filter__ep_facet_taxonomies_size( $size, $taxonomy ) {
+		return 5;
+	}
+
+	/*
+	 * Remove the search module from active Jetpack modules
+	 */
+	public function filter__jetpack_active_modules( $modules ) {
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		return array_values( array_filter( $modules, function( $module ) {
+			if ( 'search' === $module ) {
+				return false;
+			}
+			return true;
+		} ) ); // phpcs:ignore WordPress.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed
+	}
+
+	/*
+	 * Remove the search widget from Jetpack widget include list
+	 */
+	public function filter__jetpack_widgets_to_include( $widgets ) {
+		if ( ! is_array( $widgets ) ) {
+			return $widgets;
+		}
+
+		foreach ( $widgets as $index => $file ) {
+			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
+			// even though we filtered it to off earlier, so we need to prevent it from loading
+			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+				unset( $widgets[ $index ] );
+			}
+		}
+
+		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
+		return array_values( $widgets );
+	}
+
+	/*
+	 * Filter for formatted_args in post queries
+	 */ // phpcs:ignore WordPress.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed
+	public function filter__ep_post_formatted_args( $formatted_args, $query_vars, $query ) {
+		// Check if track_total_hits is set
+		// Don't override it if it is
+		if ( ! array_key_exists( 'track_total_hits', $formatted_args ) ) {
+			$formatted_args['track_total_hits'] = true;
+		}
+
+		return $formatted_args;
+	}
+
+	/**
+	 * Given an ES url, determine the "mode" of the request for stats purposes
+	 * 
+	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
+	 */
+	public function get_statsd_request_mode_for_request( $url, $args ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', $parsed['path'] );
+		$method = strtolower( $args['method'] ) ?? 'post';
+
+		// NOTE - Not doing a switch() b/c the meaningful part of URI is not always in same spot
+
+		if ( '_search' === end( $path ) ) {
+			return 'search';
+		}
+
+		// Individual documents
+		if ( '_doc' === $path[ count( $path ) - 2 ] ) {
+			if ( 'delete' === $method ) {
+				return 'delete';
+			}
+
+			if ( 'get' === $method ) {
+				return 'get';
+			}
+
+			if ( 'put' === $method ) {
+				return 'index';
+			}
+		}
+
+		// Multi-get
+		if ( '_mget' === end( $path ) ) {
+			return 'get';
+		}
+
+		// Creating new docs
+		if ( '_create' === $path[ count( $path ) - 2 ] ) {
+			if ( 'put' === $method || 'post' === $method ) {
+				return 'index';
+			}
+		}
+
+		if ( '_doc' === end( $path ) && 'post' === $method ) {
+			return 'index';
+		}
+
+		// Updating existing doc (supports partial update)
+		if ( '_update' === $path[ count( $path ) - 2 ] ) {
+			return 'index';
+		}
+
+		// Bulk indexing
+		if ( '_bulk' === end( $path ) ) {
+			return 'index';
+		}
+
+		// Unknown
+		return 'other';
+	}
+
+	/**
+	 * Get the statsd stat prefix for a given "mode"
+	 */
+	public function get_statsd_prefix( $url, $mode = 'other' ) {
+		$key_parts = array(
+			'com.wordpress', // Global prefix
+			'elasticsearch', // Service name
+		);
+
+		$host = parse_url( $url, \PHP_URL_HOST );
+		$port = parse_url( $url, \PHP_URL_PORT );
+
+		// Assume all host names are in the format es-ha-$dc.vipv2.net
+		$matches = array();
+		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host, $matches ) ) {
+			$key_parts[] = $matches[1]; // DC of ES node
+			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
+		} else {
+			$key_parts[] = 'unknown';
+			$key_parts[] = 'unknown';
+		}
+
+		// Break up tracking based on mode
+		$key_parts[] = $mode;
+
+		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
+		return implode( '.', $key_parts );
+	}
+
+	/*
+	 * Filter for formatted_args in queries
+	 */
+	public function filter__ep_formatted_args( $formatted_args, $args ) {
+		// Check for expected structure, ie: this filters first
+		if ( ! isset( $formatted_args['query']['bool']['should'][0]['multi_match'] ) ) {
+			return $formatted_args;
+		}
+
+		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
+		$formatted_args['query']['bool']['must'] = $formatted_args['query']['bool']['should'];
+		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
+		unset( $formatted_args['query']['bool']['should'] );
+
+		return $formatted_args;
+	}
+
+	/*
+	 * Filter for setting decay function for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_decay_function( $decay_function, $formatted_args, $args ) {
+		return 'gauss';
+	}
+
+	/*
+	 * Filter for setting scale for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_scale( $scale, $formatted_args, $args ) {
+		return '360d';
+	}
+	
+	/*
+	 * Filter for setting decay for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_decay( $decay, $formatted_args, $args ) {
+		return .9;
+	}
+
+	/*
+	 * Filter for setting offset for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_offset( $offset, $formatted_args, $args ) {
+		return '0d';
+	}
+
+	/*
+	 * Filter for setting score mode for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_score_mode( $score_mode, $formatted_args, $args ) {
+		return 'multiply';
+	}
+
+	/*
+	 * Filter for setting boost mode for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
+		return 'multiply';
 	}
 }

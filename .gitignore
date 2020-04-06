@@ -12,7 +12,7 @@ phpdoc.xml
 phpdoc
 
 # Composer
-vendor
+/vendor/
 output
 
 # npm

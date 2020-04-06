@@ -59,6 +59,9 @@ class Logger_Test extends \WP_UnitTestCase {
 			'severity' => 'alert',
 			'feature' => 'test',
 			'message' => 'Test alert',
+			'timestamp' => '2020-03-26 05:29:05',
+			'file' => '/app/logstash/class-logger.php',
+			'line' => '402',
 		];
 
 		$expected = array_merge( $data, [
@@ -67,8 +70,8 @@ class Logger_Test extends \WP_UnitTestCase {
 			'blog_id' => 1,
 			'host' => 'example.org',
 			'user_id' => 0,
-			'user_ua' => '',
 			'extra' => '[]',
+			'index' => 'log2logstash',
 		] );
 
 		Logger::log2logstash( $data );
@@ -135,24 +138,6 @@ class Logger_Test extends \WP_UnitTestCase {
 		$this->assertEquals( [], $entries_prop->getValue() );
 	}
 
-	public function test__log2logstash__invalid_host() {
-		$data = [
-			'host' => 123,
-			'severity' => 'alert',
-			'feature' => 'test',
-			'message' => 'Test alert',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `host` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be a string.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
-
-		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
-	}
-
 	public function test__log2logstash__invalid_host_size() {
 		$data = [
 			'host' => 'BqnKKZj3EHPqnzg7HC9aHJRFfqMZiHPJbKjKZJBeCrqcQmFq2QN2202GOYwsuVzkmKnxycLXUhTS4vbIDsMcNfsPWB0vcz9TxjfbqiJ3Tt0akDmxf841w409Ghge2PnUJ1fA7PkeyQmQux3D36AiLz8VmglrIbiI4zhDG8iiJG09XuOyMWjthvnyWqQqSuQLx2vbdifauXfEXMcPanXk2T2quG94OfHzBkptLPnUKi8n7FMk8mSagR0OHrM1QPOso',
@@ -188,23 +173,6 @@ class Logger_Test extends \WP_UnitTestCase {
 		$this->assertEquals( [], $entries_prop->getValue() );
 	}
 
-	public function test__log2logstash__invalid_feature() {
-		$data = [
-			'severity' => 'alert',
-			'feature' => 123,
-			'message' => 'Test alert',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Missing required `feature` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be a string.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
-
-		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
-	}
-
 	public function test__log2logstash__invalid_feature_size() {
 		$data = [
 			'severity' => 'alert',
@@ -215,77 +183,6 @@ class Logger_Test extends \WP_UnitTestCase {
 		Logger::log2logstash( $data );
 
 		$this->assertError( 'Invalid `feature` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 200 bytes or less.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
-
-		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
-	}
-
-	public function test__log2logstash__invalid_message() {
-		$data = [
-			'severity' => 'alert',
-			'feature' => 'test',
-			'message' => 123,
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Missing required `message` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be a string.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
-
-		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
-	}
-
-	public function test__log2logstash__invalid_user_id() {
-		$data = [
-			'severity' => 'alert',
-			'feature' => 'test',
-			'message' => 'Test alert',
-			'user_id' => 'invalid',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `user_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer >= 0.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
-
-		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
-	}
-
-	public function test__log2logstash__invalid_user_ua() {
-		$data = [
-			'severity' => 'alert',
-			'feature' => 'test',
-			'message' => 'Test alert',
-			'user_ua' => 123,
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `user_ua` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be a string.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
-
-		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
-	}
-
-	public function test__log2logstash__invalid_user_ua_size() {
-		$data = [
-			'severity' => 'alert',
-			'feature' => 'test',
-			'message' => 'Test alert',
-			'user_ua' => 'BqnKKZj3EHPqnzg7HC9aHJRFfqMZiHPJbKjKZJBeCrqcQmFq2QN2202GOYwsuVzkmKnxycLXUhTS4vbIDsMcNfsPWB0vcz9TxjfbqiJ3Tt0akDmxf841w409Ghge2PnUJ1fA7PkeyQmQux3D36AiLz8VmglrIbiI4zhDG8iiJG09XuOyMWjthvnyWqQqSuQLx2vbdifauXfEXMcPanXk2T2quG94OfHzBkptLPnUKi8n7FMk8mSagR0OHrM1QPOso',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `user_ua` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 255 bytes or less.', E_USER_WARNING );
 
 		$entries_prop = $this->get_property( 'entries' );
 
@@ -309,5 +206,37 @@ class Logger_Test extends \WP_UnitTestCase {
 
 		// No new entries added
 		$this->assertEquals( [], $entries_prop->getValue() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__process_entries_on_shutdown() {
+		define( 'WP_DEBUG_LOG', '/tmp/test.log' );
+
+		$entries = [
+			[
+				'feature' => 'a8c_vip_test',
+				'site_id' => 1,
+				'blog_id' => 1,
+				'host' => 'example.org',
+				'user_id' => 0,
+				'extra' => '[]',
+				'index' => 'log2logstash',
+				'severity' => 'alert',
+				'feature' => 'test',
+				'message' => 'Test alert',
+				'timestamp' => '2020-03-26 05:29:05',
+				'file' => '/app/logstash/class-logger.php',
+				'line' => '402',
+			],
+		];
+
+		$entries_prop = $this->get_property( 'entries' );
+		$entries_prop->setValue( $entries );
+
+		// Assert no errors thrown. Function does nothing on non VIP Go env
+		$this->assertNull( Logger::process_entries_on_shutdown() );
 	}
 }

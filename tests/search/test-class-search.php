@@ -12,6 +12,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 	public function setUp() {
 		require_once __DIR__ . '/../../search/search.php';
+
+		$this->search_instance = new \Automattic\VIP\Search\Search();
 	}
 
 	/**
@@ -320,155 +322,6 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that we are setting up the filter to auto-disable JP Search
-	 */
-	public function test__vip_search_has_jp_search_module_filter() {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
-
-		$this->assertEquals( true, has_filter( 'jetpack_active_modules', [ $es, 'filter__jetpack_active_modules' ] ) );
-	}
-
-	public function vip_search_filter__jetpack_active_modules() {
-		return array(
-			// No modules, no change
-			array(
-				// Input
-				array(),
-
-				// Expected
-				array(),
-			),
-
-			// Search not enabled, no change
-			array(
-				// Input
-				array(
-					'foo',
-				),
-
-				// Expected
-				array(
-					'foo',
-				),
-			),
-
-			// Search enabled, should be removed from list
-			array(
-				// Input
-				array(
-					'foo',
-					'search',
-				),
-
-				// Expected
-				array(
-					'foo',
-				),
-			),
-
-			// Search-like module enabled, should not be removed from list
-			array(
-				// Input
-				array(
-					'foo',
-					'searchbar',
-				),
-
-				// Expected
-				array(
-					'foo',
-					'searchbar',
-				),
-			),
-
-			// Search enabled multiple times, should be removed from list
-			array(
-				// Input
-				array(
-					'search',
-					'foo',
-					'search',
-				),
-
-				// Expected
-				array(
-					'foo',
-				),
-			),
-		);
-	}
-
-	/**
-	 * Test that our active modules filter works as expected
-	 * 
-	 * @dataProvider vip_search_filter__jetpack_active_modules
-	 */
-	public function test__vip_search_filter__jetpack_active_modules( $input, $expected ) {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
-
-		$result = $es->filter__jetpack_active_modules( $input );
-
-		$this->assertEquals( $expected, $result );
-	}
-
-	public function vip_search_filter__jetpack_widgets_to_include_data() {
-		return array(
-			array(
-				// Input
-				array(
-					'/path/to/jetpack/modules/widgets/file.php',
-					'/path/to/jetpack/modules/widgets/other.php',
-				),
-
-				// Expected
-				array(
-					'/path/to/jetpack/modules/widgets/file.php',
-					'/path/to/jetpack/modules/widgets/other.php',
-				),
-			),
-
-			array(
-				// Input
-				array(
-					'/path/to/jetpack/modules/widgets/file.php',
-					'/path/to/jetpack/modules/widgets/search.php',
-					'/path/to/jetpack/modules/widgets/other.php',
-				),
-
-				// Expected
-				array(
-					'/path/to/jetpack/modules/widgets/file.php',
-					'/path/to/jetpack/modules/widgets/other.php',
-				),
-			),
-
-			array(
-				// Input
-				12345, // non-array
-
-				// Expected
-				12345,
-			),
-		);
-	}
-
-	/**
-	 * Test that the widgets filter works as expected
-	 * 
-	 * @dataProvider vip_search_filter__jetpack_widgets_to_include_data
-	 */
-	public function test__vip_search_filter__jetpack_widgets_to_include( $input, $expected ) {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
-
-		$result = $es->filter__jetpack_widgets_to_include( $input );
-
-		$this->assertEquals( $expected, $result );
-	}
-
-	/**
 	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
 	 */
 	public function test__vip_search_setup_healthchecks_with_enabled() {
@@ -618,4 +471,357 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
 	}
 
+	public function test__vip_search_filter__ep_facet_taxonomies_size() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 5, $es->filter__ep_facet_taxonomies_size( 10000, 'category' ) );
+	}
+
+	public function vip_search_filter__jetpack_active_modules() {
+		return array(
+			// No modules, no change
+			array(
+				// Input
+				array(),
+
+				// Expected
+				array(),
+			),
+
+			// Search not enabled, no change
+			array(
+				// Input
+				array(
+					'foo',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+
+			// Search enabled, should be removed from list
+			array(
+				// Input
+				array(
+					'foo',
+					'search',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+
+			// Search-like module enabled, should not be removed from list
+			array(
+				// Input
+				array(
+					'foo',
+					'searchbar',
+				),
+
+				// Expected
+				array(
+					'foo',
+					'searchbar',
+				),
+			),
+
+			// Search enabled multiple times, should be removed from list
+			array(
+				// Input
+				array(
+					'search',
+					'foo',
+					'search',
+				),
+
+				// Expected
+				array(
+					'foo',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Test that our active modules filter works as expected
+	 * 
+	 * @dataProvider vip_search_filter__jetpack_active_modules
+	 */
+	public function test__vip_search_filter__jetpack_active_modules( $input, $expected ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->filter__jetpack_active_modules( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function vip_search_filter__jetpack_widgets_to_include_data() {
+		return array(
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/search.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+
+				// Expected
+				array(
+					'/path/to/jetpack/modules/widgets/file.php',
+					'/path/to/jetpack/modules/widgets/other.php',
+				),
+			),
+
+			array(
+				// Input
+				12345, // non-array
+
+				// Expected
+				12345,
+			),
+		);
+	}
+
+	/**
+	 * Test that the widgets filter works as expected
+	 * 
+	 * @dataProvider vip_search_filter__jetpack_widgets_to_include_data
+	 */
+	public function test__vip_search_filter__jetpack_widgets_to_include( $input, $expected ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->filter__jetpack_widgets_to_include( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	/**
+	 * Test that the track_total_hits arg exists
+	 */
+	public function test__vip_filter__ep_post_formatted_args() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->filter__ep_post_formatted_args( array(), '', '' );
+
+		$this->assertTrue( array_key_exists( 'track_total_hits', $result ), 'track_total_hits doesn\'t exist in fortmatted args' );
+		if ( array_key_exists( 'track_total_hits', $result ) ) {
+			$this->assertTrue( $result['track_total_hits'], 'track_total_hits isn\'t set to true' );
+		}
+	}
+
+	public function get_statsd_request_mode_for_request_data() {
+		return array(
+			// Search
+			array(
+				'https://host/_search',
+				'post',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search',
+				'post',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search?foo=bar',
+				'post',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search',
+				'get',
+				'search',
+			),
+			array(
+				'https://host/index-name/_search?foo=bar',
+				'get',
+				'search',
+			),
+
+			// Get
+			array(
+				'https://host/index-name/_doc/12345',
+				'get',
+				'get',
+			),
+			array(
+				'https://host/index-name/_doc/12345',
+				'head',
+				'other',
+			),
+			array(
+				'https://host/index-name/_mget',
+				'get',
+				'get',
+			),
+			array(
+				'https://host/index-name/_mget?foo=bar',
+				'post',
+				'get',
+			),
+
+			// Delete
+			array(
+				'https://host/index-name/_doc/12345',
+				'delete',
+				'delete',
+			),
+			array(
+				'https://host/index-name/_doc/12345?foo=bar',
+				'delete',
+				'delete',
+			),
+
+			// Indexing
+			array(
+				'https://host/index-name/_doc/12345',
+				'put',
+				'index',
+			),
+			array(
+				'https://host/index-name/_doc',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_create/12345',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_create/12345',
+				'put',
+				'index',
+			),
+			array(
+				'https://host/index-name/_update/12345',
+				'post',
+				'index',
+			),
+
+			// Bulk indexing
+			array(
+				'https://host/_bulk',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_bulk',
+				'post',
+				'index',
+			),
+			array(
+				'https://host/index-name/_bulk?foo=bar',
+				'post',
+				'index',
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly determine the right stat (referred to as "mode" on wpcom)
+	 * for a given ES url
+	 * 
+	 * manage|analyze|status|langdetect|index|delete_query|get|scroll|search
+	 * 
+	 * @dataProvider get_statsd_request_mode_for_request_data()
+	 */
+	public function test_get_statsd_request_mode_for_request( $url, $method, $expected_mode ) {
+		$args = array(
+			'method' => $method,
+		);
+
+		$mode = $this->search_instance->get_statsd_request_mode_for_request( $url, $args );
+
+		$this->assertEquals( $expected_mode, $mode );
+	}
+
+	public function get_statsd_prefix_data() {
+		return array(
+			array(
+				'https://es-ha-bur.vipv2.net:1234',
+				'search',
+				'com.wordpress.elasticsearch.bur.ha1234_vipgo.search',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'index',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_statsd_prefix_data
+	 */
+	public function test_get_statsd_prefix( $url, $mode, $expected ) {
+		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode );
+
+		$this->assertEquals( $expected, $prefix );
+	}
+
+	/**
+	 * Test formatted args structure checks
+	 */
+	public function test__vip_search_filter__ep_formatted_args() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'wrong' ), $es->filter__ep_formatted_args( array( 'wrong' ), '' ), 'didn\'t just return formatted args when the structure of formatted args didn\'t match what was expected' );
+
+		$formatted_args = array(
+			'query' => array(
+				'bool' => array(
+					'should' => array(
+						array(
+							'multi_match' => array(
+								'operator' => 'Random string',
+							),
+						),
+						'Random string',
+					),
+				),
+			),
+		);
+
+		$result = $es->filter__ep_formatted_args( $formatted_args, '' );
+
+		$this->assertTrue( array_key_exists( 'must', $result['query']['bool'] ), 'didn\'t replace should with must' );
+		$this->assertEquals( $result['query']['bool']['must'][0]['multi_match']['operator'], 'AND', 'didn\'t set the remainder of the query correctly' );
+	}
+
+	/**
+	 * Ensure we disable indexing of filtered content by default
+	 */
+	public function test__vip_search_filter__ep_allow_post_content_filtered_index() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$enabled = apply_filters( 'ep_allow_post_content_filtered_index', true );
+
+		$this->assertFalse( $enabled );
+	}
 }
