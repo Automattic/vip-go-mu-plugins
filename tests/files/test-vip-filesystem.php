@@ -6,6 +6,7 @@ use WP_Error;
 use WP_UnitTestCase;
 
 class VIP_Filesystem_Test extends WP_UnitTestCase {
+	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
 	/**
 	 * @var     VIP_Filesystem
@@ -155,11 +156,15 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		return [
 			'dirty path' => [
 				'vip://wp-content/uploads/vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768'
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'wp-content/uploads/2019/01/foo.jpg?resize=100,100',
+				'wp-content/uploads/2019/01/foo.jpg',
 			],
 			'clean path' => [
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768'
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'wp-content/uploads/2019/01/foo.jpg',
+				'wp-content/uploads/2019/01/foo.jpg',
 			]
 		];
 	}
@@ -197,5 +202,70 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$actual = $get_file_uri_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
 
 		$this->assertEquals( $expected, $actual );
+	}
+
+	public function get_test_data__filter_get_attached_file() {
+		$uploads = wp_get_upload_dir();
+		return [
+			'proper file path' => [
+				[
+					'file' => 'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+					'attachment_id' => 1
+				],
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg'
+			],
+			'corrupted file path' => [
+				[
+					'file' => 'vip://wp-content/uploads/' . $uploads[ 'baseurl' ] . '/2019/01/IMG_4115.jpg',
+					'attachment_id' => 1
+				],
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg'
+			]
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__filter_get_attached_file
+	 */
+	public function test__filter_get_attached_file( $args, $expected ) {
+		$actual = $this->vip_filesystem->filter_get_attached_file( $args[ 'file' ], $args[ 'attachment_id' ] );
+
+		$this->assertEquals( $expected, $actual );
+	}
+
+	public function get_test_data__filter_wp_generate_attachment_metadata() {
+		return [
+			'filesize-not-set' => [
+				[],
+				[
+					'filesize' => 6941712,
+				],
+			],
+
+			'filesize-already-set' => [
+				[
+					'filesize' => 1234,
+				],
+				[
+					'filesize' => 1234,
+				],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__filter_wp_generate_attachment_metadata
+	 */
+	public function test__filter_wp_generate_attachment_metadata( $initial_metadata, $expected_metadata ) {
+		// Remove filters as they conflict with the logic in our filter function below.
+		// We don't have a test-specific wrapper that we can fall back to.
+		$remove_filters = self::get_method( 'remove_filters' );
+		$remove_filters->invoke( $this->vip_filesystem );
+
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+
+		$actual_metadata = $this->vip_filesystem->filter_wp_generate_attachment_metadata( $initial_metadata, $attachment_id );
+
+		$this->assertEquals( $expected_metadata, $actual_metadata );
 	}
 }

@@ -146,10 +146,20 @@ jQuery( function ( $ ) {
 		} );
 	} );
 
-	$('.checkforspam:not(.button-disabled)').click( function(e) {
+	$( '.checkforspam' ).click( function( e ) {
+		if ( $( this ).hasClass( 'checkforspam-pending-config' ) ) {
+			// Akismet hasn't been configured yet. Allow the user to proceed to the button's link.
+			return;
+		}
+
 		e.preventDefault();
 
-		$('.checkforspam:not(.button-disabled)').addClass('button-disabled');
+		if ( $( this ).hasClass( 'button-disabled' ) ) {
+			window.location.href = $( this ).data( 'success-url' ).replace( '__recheck_count__', 0 ).replace( '__spam_count__', 0 );
+			return;
+		}
+
+		$('.checkforspam').addClass('button-disabled').addClass( 'checking' );
 		$('.checkforspam-spinner').addClass( 'spinner' ).addClass( 'is-active' );
 
 		// Update the label on the "Check for Spam" button to use the active "Checking for Spam" language.
@@ -164,6 +174,8 @@ jQuery( function ( $ ) {
 	function akismet_check_for_spam(offset, limit) {
 		var check_for_spam_buttons = $( '.checkforspam' );
 		
+		var nonce = check_for_spam_buttons.data( 'nonce' );
+		
 		// We show the percentage complete down to one decimal point so even queues with 100k
 		// pending comments will show some progress pretty quickly.
 		var percentage_complete = Math.round( ( recheck_count / check_for_spam_buttons.data( 'pending-comment-count' ) ) * 1000 ) / 10;
@@ -176,9 +188,16 @@ jQuery( function ( $ ) {
 			{
 				'action': 'akismet_recheck_queue',
 				'offset': offset,
-				'limit': limit
+				'limit': limit,
+				'nonce': nonce
 			},
 			function(result) {
+				if ( 'error' in result ) {
+					// An error is only returned in the case of a missing nonce, so we don't need the actual error message.
+					window.location.href = check_for_spam_buttons.data( 'failure-url' );
+					return;
+				}
+				
 				recheck_count += result.counts.processed;
 				spam_count += result.counts.spam;
 				
@@ -277,9 +296,64 @@ jQuery( function ( $ ) {
 	/**
 	 * Sets the comment form privacy notice display to hide when one clicks Core's dismiss button on the related admin notice.
 	 */
-	$( '#akismet-privacy-notice-admin-notice' ).on( 'click', '.notice-dismiss', function(){
-		$.ajax({
-                        url: './options-general.php?page=akismet-key-config&akismet_comment_form_privacy_notice=hide',
-		});
+	$( '#akismet-privacy-notice-admin-notice' ).on( 'click', '.notice-dismiss', function () {
+		$.ajax( {
+			url: './options-general.php?page=akismet-key-config&akismet_comment_form_privacy_notice=hide',
+		} );
 	});
+
+	$( '.akismet-could-be-primary' ).each( function () {
+		var form = $( this ).closest( 'form' );
+
+		form.data( 'initial-state', form.serialize() );
+
+		form.on( 'change keyup', function () {
+			var self = $( this );
+			var submit_button = self.find( '.akismet-could-be-primary' );
+
+			if ( self.serialize() != self.data( 'initial-state' ) ) {
+				submit_button.addClass( 'akismet-is-primary' );
+			}
+			else {
+				submit_button.removeClass( 'akismet-is-primary' );
+			}
+		} );
+	} );
+
+	/**
+	 * Shows the Enter API key form
+	 */
+	$( '.akismet-enter-api-key-box a' ).on( 'click', function ( e ) {
+		e.preventDefault();
+
+		var div = $( '.enter-api-key' );
+		div.show( 500 );
+		div.find( 'input[name=key]' ).focus();
+
+		$( this ).hide();
+	} );
+
+	/**
+	 * Hides the Connect with Jetpack form | Shows the Activate Akismet Account form
+	 */
+	$( 'a.toggle-ak-connect' ).on( 'click', function ( e ) {
+		e.preventDefault();
+
+		$( '.akismet-ak-connect' ).slideToggle('slow');
+		$( 'a.toggle-ak-connect' ).hide();
+		$( '.akismet-jp-connect' ).hide();
+		$( 'a.toggle-jp-connect' ).show();
+	} );
+
+	/**
+	 * Shows the Connect with Jetpack form | Hides the Activate Akismet Account form
+	 */
+	$( 'a.toggle-jp-connect' ).on( 'click', function ( e ) {
+		e.preventDefault();
+
+		$( '.akismet-jp-connect' ).slideToggle('slow');
+		$( 'a.toggle-jp-connect' ).hide();
+		$( '.akismet-ak-connect' ).hide();
+		$( 'a.toggle-ak-connect' ).show();
+	} );
 });

@@ -25,10 +25,39 @@ require_once( __DIR__ . '/files/init-filesystem.php' );
 
 require_once( __DIR__ . '/files/class-vip-filesystem.php' );
 
+/**
+ * The class use to update attachment meta data
+ */
+require_once __DIR__ . '/files/class-meta-updater.php';
+
 use Automattic\VIP\Files\Path_Utils;
 use Automattic\VIP\Files\VIP_Filesystem;
+use Automattic\VIP\Files\Meta_Updater;
 
 class A8C_Files {
+
+	/**
+	 * The name of the scheduled cron event to update attachment metadata
+	 */
+	const CRON_EVENT_NAME = 'vip_update_attachment_filesizes';
+
+	/**
+	 * Option name to mark all attachment filesize update completed
+	 */
+	const OPT_ALL_FILESIZE_PROCESSED = 'vip_all_attachment_filesize_processed_v2';
+
+	/**
+	 * Option name to mark next index for starting the next batch of filesize updates.
+	 */
+	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index_v2';
+
+	/**
+	 * Option name for storing Max ID.
+	 *
+	 * We do not need to keep this updated as new attachments will already have file sizes
+	 * included in their meta.
+	 */
+	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id_v2';
 
 	function __construct() {
 
@@ -45,20 +74,24 @@ class A8C_Files {
 			$this->init_legacy_filesystem();
 		}
 
-		// Limit to certain contexts for the initial testing and roll-out.
-		// This will be phased out and become the default eventually.
-		$use_jetpack_photon = $this->use_jetpack_photon();
-		if ( $use_jetpack_photon ) {
-			$this->init_jetpack_photon_filters();
-		} else {
-			$this->init_vip_photon_filters();
-		}
+		// Initialize Photon-specific filters.
+		// Wait till `init` to make sure Jetpack and the Photon module are ready.
+		add_action( 'init', array( $this, 'init_photon' ) );
 
 		// ensure we always upload with year month folder layouts
 		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+
+		// Conditionally schedule the attachment filesize metaata update job
+		if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
+			// add new cron schedule for filesize update
+			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 );
+
+			// Schedule meta update job
+			$this->schedule_update_job();
+		}
 	}
 
 	/**
@@ -89,7 +122,23 @@ class A8C_Files {
 		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
 	}
 
+	function init_photon() {
+		// Limit to certain contexts for the initial testing and roll-out.
+		// This will be phased out and become the default eventually.
+		$use_jetpack_photon = $this->use_jetpack_photon();
+		if ( $use_jetpack_photon ) {
+			$this->init_jetpack_photon_filters();
+		} else {
+			$this->init_vip_photon_filters();
+		}
+	}
+
 	private function init_jetpack_photon_filters() {
+		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
+			return;
+		}
+
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
 		// Externally hosted files continue to use the remot Photon service.
@@ -819,17 +868,150 @@ class A8C_Files {
 		return array( $img_url, $w, $h, $resized );
 	}
 
+	/**
+	 * Filter `cron_schedules` output
+	 *
+	 * Add a custom schedule for a 5 minute interval
+	 *
+	 * @param   array   $schedule
+	 *
+	 * @return  mixed
+	 */
+	public function filter_cron_schedules( $schedule ) {
+		if ( isset( $schedule[ 'vip_five_minutes' ] ) ) {
+			return $schedule;
+		}
+
+		// Not actually five minutes; we want it to run faster though to get through everything.
+		$schedule['vip_five_minutes'] = [
+			'interval' => 180,
+			'display' => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
+		];
+
+		return $schedule;
+	}
+
+	public function schedule_update_job() {
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
+
+			return;
+		}
+
+		if (! wp_next_scheduled ( self::CRON_EVENT_NAME )) {
+			wp_schedule_event(time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
+		}
+
+		add_action( self::CRON_EVENT_NAME, [ $this, 'update_attachment_meta' ] );
+	}
+
+	/**
+	 * Cron job to update attachment metadata with file size
+	 */
+	public function update_attachment_meta() {
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
+				self::CRON_EVENT_NAME,
+				home_url() ),
+			5 );
+
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			// already done. Nothing to update
+			wpcom_vip_irc(
+				'#vip-go-filesize-updates',
+				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
+					home_url(),
+					self::CRON_EVENT_NAME ),
+				5 );
+			return;
+		}
+
+		$batch_size = 3000;
+		if ( defined( 'VIP_FILESYSTEM_FILESIZE_UPDATE_BATCH_SIZE' ) ) {
+			$batch_size = (int) VIP_FILESYSTEM_FILESIZE_UPDATE_BATCH_SIZE;
+		}
+		$updater = new Meta_Updater( $batch_size );
+
+		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
+		if ( ! $max_id ) {
+			$max_id = $updater->get_max_id();
+			update_option( self::OPT_MAX_POST_ID, $max_id, false );
+		}
+
+		$num_lookups = 0;
+		$max_lookups = 10;
+
+		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
+		$end_index = $start_index + $batch_size;
+
+		do {
+			if ( $start_index > $max_id ) {
+				// This means all attachments have been processed so marking as done
+				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				wpcom_vip_irc(
+					'#vip-go-filesize-updates',
+					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
+						$max_id,
+						home_url(),
+						self::CRON_EVENT_NAME
+					),
+					5
+				);
+
+				return;
+			}
+
+			$attachments = $updater->get_attachments( $start_index, $end_index );
+
+			// Bump the next index in case the cron job dies before we've processed everything
+			update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+
+			$start_index = $end_index + 1;
+			$end_index = $start_index + $batch_size;
+
+			// Avoid infinite loops
+			$num_lookups++;
+			if ( $num_lookups >= $max_lookups ) {
+				break;
+			}
+		} while ( empty( $attachments ) );
+
+		if ( $attachments ) {
+			$counts = $updater->update_attachments( $attachments );
+		}
+
+		// All done, update next index option
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Batch %d to %d (of %d) completed on %s. Processed %d attachments (%s) $vip-go-streams-debug',
+				$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), json_encode( $counts ) ),
+			5
+		);
+
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+	}
+
 }
 
 class A8C_Files_Utils {
 	public static function filter_photon_domain( $photon_url, $image_url ) {
 			$home_url = home_url();
+			$site_url = site_url();
+
 			if ( wp_startswith( $image_url, $home_url ) ) {
 				return $home_url;
 			}
 
+			if ( wp_startswith( $image_url, $site_url ) ) {
+				return $site_url;
+			}
+
 			$image_url_parsed = parse_url( $image_url );
-			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) ) {
+			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
 				return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 			}
 
@@ -905,37 +1087,74 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		return $data;
 	}
 
-	$sizes_already_exist = (
-		true === is_array( $data )
-		&& true === array_key_exists( 'sizes', $data )
-		&& true === is_array( $data['sizes'] )
-		&& false === empty( $data['sizes'] )
-	);
-	if ( $sizes_already_exist ) {
+	// Missing some critical data we need to determine sizes, so bail.
+	if ( ! isset( $data['file'] )
+		|| ! isset( $data['width'] )
+		|| ! isset( $data['height'] ) ) {
 		return $data;
 	}
 
-	// Missing some critical data we need to determine sizes, so bail
-	if ( ! isset( $data['file'] )
-	    || ! isset( $data['width'] )
-	    || ! isset( $data['height'] ) ) {
-		return $data;    
+	static $cached_sizes = [];
+
+	// Don't process image sizes that we already processed.
+	if ( isset( $cached_sizes[ $attachment_id ] ) ) {
+		$data['sizes'] = $cached_sizes[ $attachment_id ];
+		return $data;
 	}
-	
+
+	// Skip non-image attachments
 	$mime_type = get_post_mime_type( $attachment_id );
 	$attachment_is_image = preg_match( '!^image/!', $mime_type );
-
-	if ( 1 === $attachment_is_image ) {
-		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
-		$data['sizes'] = $image_sizes->generate_sizes_meta();
+	if ( 1 !== $attachment_is_image ) {
+		return $data;
 	}
+
+	if ( ! isset( $data['sizes'] ) || ! is_array( $data['sizes'] ) ) {
+		$data['sizes'] = [];
+	}
+
+	$sizes_already_exist = false === empty( $data['sizes'] );
+
+	global $_wp_additional_image_sizes;
+
+	if ( is_array( $_wp_additional_image_sizes ) ) {
+		$available_sizes = array_keys( $_wp_additional_image_sizes );
+		$known_sizes     = array_keys( $data['sizes'] );
+		$missing_sizes   = array_diff( $available_sizes, $known_sizes );
+
+		if ( $sizes_already_exist && empty( $missing_sizes ) ) {
+			return $data;
+		}
+
+		$new_sizes = array();
+
+		foreach ( $missing_sizes as $size ) {
+			$new_width          = (int) $_wp_additional_image_sizes[ $size ]['width'];
+			$new_height         = (int) $_wp_additional_image_sizes[ $size ]['height'];
+			$new_sizes[ $size ] = array(
+				'file'      => basename( $data['file'] ),
+				'width'     => $new_width,
+				'height'    => $new_height,
+				'mime_type' => $mime_type,
+			);
+		}
+
+		if ( ! empty( $new_sizes ) ) {
+			$data['sizes'] = array_merge( $data['sizes'], $new_sizes );
+		}
+	}
+
+	$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
+	$data['sizes'] = $image_sizes->generate_sizes_meta();
+
+	$cached_sizes[ $attachment_id ] = $data['sizes'];
 
 	return $data;
 }
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 	// Kick things off
-	add_action( 'init', 'a8c_files_init' );
+	a8c_files_init();
 
 	// Disable automatic creation of intermediate image sizes.
 	// We generate them on-the-fly on VIP.
@@ -956,3 +1175,9 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
 	}, 10, 0 );
 }
+
+/**
+ * WordPress 5.3 adds "big image" processing, for images over 2560px (by default).
+ * This is not needed on VIP Go since we use Photon for dynamic image work.
+ */
+add_filter( 'big_image_size_threshold', '__return_false' );

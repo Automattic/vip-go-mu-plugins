@@ -1,7 +1,7 @@
 <?php 
 
 /**
- * Retrieve featured plugins from the vip.wordpress.com API
+ * Retrieve featured plugins from the wpvip.com API
  *
  * @return array an array of plugins
  */
@@ -10,15 +10,15 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 
 	if ( false === $plugins ) {
 		$plugins = array();
-		$url_for_featured_plugins = 'https://vip.wordpress.com/wp-json/vip/v1/plugins?type=technology';
+		$url_for_featured_plugins = 'https://wpvip.com/wp-json/vip/v0/plugins?type=technology';
 		$response = vip_safe_wp_remote_get( $url_for_featured_plugins, false, 3, 5 );
 
 		if ( ! $response ) {
-			trigger_error( 'The API on vip.wordpress.com is not responding (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
+			trigger_error( 'The API on wpvip.com is not responding (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
 		}
 
 		if ( is_wp_error( $response ) ) {
-			trigger_error( 'The API on vip.wordpress.com is not responding (' . esc_url( $url_for_featured_plugins ) . '): ' . esc_html( $response->get_error_message() ), E_USER_WARNING );
+			trigger_error( 'The API on wpvip.com is not responding (' . esc_url( $url_for_featured_plugins ) . '): ' . esc_html( $response->get_error_message() ), E_USER_WARNING );
 		}
 
 		if ( ! $response || is_wp_error( $response ) ) {
@@ -27,7 +27,7 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 			$plugins = json_decode( $response['body'] );
 
 			if ( empty( $plugins ) ) {
-				trigger_error( 'The API on vip.wordpress.com returned empty data (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
+				trigger_error( 'The API on wpvip.com returned empty data (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
 				wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', MINUTE_IN_SECONDS );
 			} else {
 				wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', HOUR_IN_SECONDS * 4 );
@@ -272,6 +272,10 @@ add_action( 'admin_enqueue_scripts', 'wpcom_vip_plugins_ui_admin_enqueue_scripts
  */
 function wpcom_vip_include_active_plugins() {
 	$retired_plugins_option = get_option( 'wpcom_vip_active_plugins', array() );
+
+	if ( ! is_array( $retired_plugins_option ) ) {
+		return;
+	}
 
 	foreach ( $retired_plugins_option as $plugin ) {
 		 wpcom_vip_load_plugin( $plugin );
