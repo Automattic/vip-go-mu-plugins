@@ -175,7 +175,7 @@ function wpcom_enable_two_factor_plugin() {
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 	// If the machine user is not defined or the current user is not the machine user, don't filter caps.
-	if ( wpcom_vip_is_two_factor_forced() && ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || $user_id !== WPCOM_VIP_MACHINE_USER_ID ) ) {
+	if ( ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || WPCOM_VIP_MACHINE_USER_ID !== $user_id ) && wpcom_vip_is_two_factor_forced() ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
 			'read',
