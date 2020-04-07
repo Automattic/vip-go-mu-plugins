@@ -221,7 +221,7 @@ class Health {
 			$results = array_merge( $results, $result );
 
 			// Limit $results size
-			if ( count ( $results ) > $max_diff_size ) {
+			if ( count( $results ) > $max_diff_size ) {
 				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
