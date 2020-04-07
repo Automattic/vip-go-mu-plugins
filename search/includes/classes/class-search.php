@@ -124,6 +124,23 @@ class Search {
 
 		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
 		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
+
+		// Disable indexing of filtered content by default, as it's not searched by default
+		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
+		
+		// Date relevancy defaults. Taken from Jetpack Search.
+		// Set to 'gauss'
+		add_filter( 'epwr_decay_function', array( $this, 'filter__epwr_decay_function' ), 0, 3 );
+		// Set to '360d'	
+		add_filter( 'epwr_scale', array( $this, 'filter__epwr_scale' ), 0, 3 );
+		// Set to .9 
+		add_filter( 'epwr_decay', array( $this, 'filter__epwr_decay' ), 0, 3 );
+		// Set to '0d'
+		add_filter( 'epwr_offset', array( $this, 'filter__epwr_offset' ), 0, 3 );
+		// Set to 'multiply'	
+		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
+		// Set to 'multiply'
+		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
 	}
 
 	protected function load_commands() {
@@ -555,5 +572,47 @@ class Search {
 		unset( $formatted_args['query']['bool']['should'] );
 
 		return $formatted_args;
+	}
+
+	/*
+	 * Filter for setting decay function for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_decay_function( $decay_function, $formatted_args, $args ) {
+		return 'gauss';
+	}
+
+	/*
+	 * Filter for setting scale for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_scale( $scale, $formatted_args, $args ) {
+		return '360d';
+	}
+	
+	/*
+	 * Filter for setting decay for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_decay( $decay, $formatted_args, $args ) {
+		return .9;
+	}
+
+	/*
+	 * Filter for setting offset for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_offset( $offset, $formatted_args, $args ) {
+		return '0d';
+	}
+
+	/*
+	 * Filter for setting score mode for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_score_mode( $score_mode, $formatted_args, $args ) {
+		return 'multiply';
+	}
+
+	/*
+	 * Filter for setting boost mode for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
+		return 'multiply';
 	}
 }
