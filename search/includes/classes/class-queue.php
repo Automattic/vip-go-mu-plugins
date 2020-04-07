@@ -166,12 +166,92 @@ class Queue {
 		return $wpdb->update( $table_name, $data, array( 'id' => $id ) );
 	}
 
+	public function update_jobs( $jobs, $data ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		$escaped_fields = [];
+
+		foreach( $data as $column => $value ) {
+			$escaped_fields[] = $wpdb->prepare( "{$column} = %s", $value );
+		}
+
+		$escaped_fields = implode( ', ', $escaped_fields );
+
+		$ids = wp_list_pluck( $jobs, 'id' );
+
+		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
+
+		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE id IN ( {$escaped_ids} )";
+
+		return $wpdb->get_results( $sql );
+	}
+
+	public function delete_jobs( $jobs ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		$ids = wp_list_pluck( $jobs, 'id' );
+
+		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
+
+		$sql = "DELETE FROM {$table_name} WHERE id IN ( {$escaped_ids} )";
+
+		return $wpdb->get_results( $sql );
+	}
+
 	public function empty_queue() {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
 		return $wpdb->query( "TRUNCATE TABLE {$table_name}" );
+	}
+
+	public function count_jobs( $status, $object_type = 'post' ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s",
+				$status,
+				$object_type
+			)
+		);
+	}
+
+	public function count_jobs_due_now( $status, $object_type = 'post' ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )",
+				$status,
+				$object_type
+			)
+		);
+	}
+
+	public function get_next_job_for_object( $object_id, $object_type ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		$job = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued' LIMIT 1",
+				$object_id,
+				$object_type
+			)
+		);
+
+		return $job;
 	}
 
 	public function get_batch_jobs( $count = 250 ) {
