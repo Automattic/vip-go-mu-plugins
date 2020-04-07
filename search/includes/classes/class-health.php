@@ -206,7 +206,7 @@ class Health {
 			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id );
 
 			if ( is_wp_error( $result ) ) {
-				$result['errors'] = array( sprintf( 'batch %d - %d (entitiy: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
+				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
 			}
 
 			$results = array_merge( $results, $result );
