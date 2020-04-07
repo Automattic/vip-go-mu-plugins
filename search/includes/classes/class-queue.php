@@ -59,6 +59,10 @@ class Queue {
 		// Have to escape this separately so we can insert NULL if no start time specified
 		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
 
+		$original_suppress = $wpdb->suppress_errors;
+
+		$wpdb->suppress_errors( true );
+
 		$result = $wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, {$start_time_escaped}, %s )",
@@ -67,6 +71,8 @@ class Queue {
 				'queued'
 			)
 		);
+
+		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
 	}
