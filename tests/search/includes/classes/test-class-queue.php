@@ -10,6 +10,10 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		wp_cache_flush();
 
+		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
+			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
+		}
+
 		require_once __DIR__ . '/../../../../search/search.php';
 
 		$this->es = new \Automattic\VIP\Search\Search();
