@@ -16,10 +16,20 @@ class Queue {
 	public $schema;
 
 	public function init() {
+		if ( ! $this->is_enabled() ) {
+			return;
+		}
+
 		require_once( __DIR__ . '/Queue/class-schema.php' );
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
+	}
+
+	public function is_enabled() {
+		$enabled_by_constant = defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) && true === VIP_SEARCH_ENABLE_ASYNC_INDEXING;
+
+		return $enabled_by_constant;
 	}
 
 	/**
