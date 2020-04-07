@@ -259,11 +259,23 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->get_results(
+		// TODO transaction
+
+		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' LIMIT %d",
 				$count
 			)
 		);
+
+		// Set them as running
+		$this->update_jobs( $jobs, array( 'status' => 'running' ) );
+
+		// Set right status on the already queried jobs objects
+		foreach( $jobs as &$job ) {
+			$job->status = 'running';
+		}
+
+		return $jobs;
 	}
 }
