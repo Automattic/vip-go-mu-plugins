@@ -278,4 +278,38 @@ class Queue {
 
 		return $jobs;
 	}
+
+	public function process_batch_jobs( $jobs ) {
+		$indexables = \ElasticPress\Indexables::factory();
+	
+		// Organize by object type
+		$jobs_by_type = array();
+
+		foreach( $jobs as $job ) {
+			if ( ! is_array( $jobs_by_type[ $job->object_type ] ) ) {
+				$jobs_by_type[ $job->object_type ] = array();
+			}
+
+			$jobs_by_type[ $job->object_type ][] = $job;
+		}
+		
+		// Batch process each type using the indexable
+		foreach( $jobs_by_type as $type => $jobs ) {
+			$indexable = $indexables->get( $type );
+
+			$ids = wp_list_pluck( $jobs, 'object_id' );
+
+			$indexable->bulk_index( $ids );
+
+			// TODO handle errors
+
+			// Mark all as being indexed just now, for rate limiting
+			foreach( $jobs as $job ) {
+				$this->set_last_index_time( $job->object_id, $job->object_type, time() );
+			}
+	
+			// Mark them as done in queue
+			$this->delete_jobs( $jobs );
+		}
+	}
 }
