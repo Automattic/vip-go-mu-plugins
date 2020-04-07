@@ -159,7 +159,7 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect=false ) {
+	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false ) {
 		// If batch size value NOT a numberic value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
@@ -271,19 +271,19 @@ class Health {
 		$found_document_ids = wp_list_pluck( $documents, 'ID' );
 
 		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
-		                  : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
+		                  : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
 			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
 			$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
-			                 : self::simplified_diff_document_and_prepared_document( $document, $prepared_document );
+			                 : self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 			if ( $diff ) {
 				$key = self::get_post_key( $document['ID'] );
 				$diffs[ $key ] = $inspect ? $diff
-				                          : self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
+				                          : self::simplified_format_post_diff( $document['ID'], 'inconsistent' ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 			}
 		}
 

@@ -193,8 +193,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		} else {
 			WP_CLI::warning( 'Formatting is being ignored!' );
 			$i = 0;
-			foreach( $diff as $d ) {
-				if ( $i === intval( $max_diff_size  ) ) {
+			foreach ( $diff as $d ) {
+				if ( intval( $max_diff_size ) === $i ) {
 					break;
 				}
 
