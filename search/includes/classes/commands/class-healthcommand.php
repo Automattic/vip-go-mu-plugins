@@ -124,9 +124,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * ---
 	 *
 	 * [--max_diff_size=<int>]
-	 * : Optional max diff size in mb
+	 * : Optional max count of diff before exiting
 	 * ---
-	 * default: 5
+	 * default: 1000
 	 * ---
 	 *
 	 * [--format=<string>]

@@ -11,7 +11,17 @@ use \WP_Error as WP_Error;
 
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE = 500;
-	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 5 * MB_IN_BYTES;
+	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
+	const DOCUMENT_IGNORED_KEYS = array(
+		// This field is proving problematic to reliably diff due to differences in the filters
+		// that run during normal indexing and this validator
+		'post_content_filtered',
+
+		// Meta fields from EP's "magic" formatting, which is non-deterministic and impossible to validate
+		'datetime',
+		'date',
+		'time',
+	);
 
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
@@ -160,11 +170,10 @@ class Health {
 
 		// If max diff size NOT an int over 0, reset to default
 		//     Otherwise convert max diff size to bytes
-		if ( ! is_numeric( $max_diff_size ) || 0 >= $max_diff_size || $max_diff_size > PHP_INT_MAX ) {
+		if ( ! is_numeric( $max_diff_size ) || 0 > $max_diff_size || $max_diff_size > PHP_INT_MAX ) {
 			$max_diff_size = self::CONTENT_VALIDATION_MAX_DIFF_SIZE;
 		} else {
 			$max_diff_size = intval( $max_diff_size );
-			$max_diff_size = $max_diff_size * MB_IN_BYTES;
 		}
 
 		// Get indexable objects
@@ -212,8 +221,10 @@ class Health {
 			$results = array_merge( $results, $result );
 
 			// Limit $results size
-			if ( strlen( serialize( $results ) ) > $max_diff_size ) {
-				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d bytes, aborting', $max_diff_size ) );
+			if ( count ( $results ) > $max_diff_size ) {
+				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
 				$error->add_data( $results, 'diff' );
 
@@ -361,24 +372,13 @@ class Health {
 	}
 
 	public static function simplified_diff_document_and_prepared_document( $document, $prepared_document ) {
-		$ignored_keys = array(
-			// This field is proving problematic to reliably diff due to differences in the filters
-			// that run during normal indexing and this validator
-			'post_content_filtered',
-
-			// Meta fields from EP's "magic" formatting, which is non-deterministic and impossible to validate
-			'datetime',
-			'date',
-			'time',
-		);
-
 		foreach ( $document as $key => $value ) {
-			if ( in_array( $key, $ignored_keys, true ) ) {
+			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
 			} else if ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				return true;
 			}
@@ -390,19 +390,8 @@ class Health {
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
 		$diff = [];
 
-		$ignored_keys = array(
-			// This field is proving problematic to reliably diff due to differences in the filters
-			// that run during normal indexing and this validator
-			'post_content_filtered',
-
-			// Meta fields from EP's "magic" formatting, which is non-deterministic and impossible to validate
-			'datetime',
-			'date',
-			'time',
-		);
-
 		foreach ( $document as $key => $value ) {
-			if ( in_array( $key, $ignored_keys, true ) ) {
+			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
