@@ -24,6 +24,9 @@ class Queue {
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
+
+		// TODO this needs to be smarter - to only offload bulk and failed operations
+		$this->offload_indexing_to_queue();
 	}
 
 	public function is_enabled() {
@@ -311,5 +314,35 @@ class Queue {
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
 		}
+	}
+	
+	/**
+	 * If called during a request, any queued indexing will be instead sent to
+	 * the async queue
+	 */
+	public function offload_indexing_to_queue() {
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 2 );
+	}
+
+	public function intercept_ep_sync_manager_indexing( $sync_manager, $indexable_slug ) {
+		// Only posts supported right now
+		if ( 'post' !== $indexable_slug ) {
+			return;
+		}
+
+		if ( empty( $sync_manager->sync_queue ) ) {
+			return true;
+		}
+	
+		// TODO add function to bulk insert
+
+		foreach( array_keys( $sync_manager->sync_queue ) as $object_id ) {
+			$this->queue_object( $object_id, $indexable_slug );
+		}
+
+		// Empty out the queue now that we've queued those items up
+		$sync_manager->sync_queue = [];
+
+		return true;
 	}
 }
