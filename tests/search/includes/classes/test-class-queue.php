@@ -6,8 +6,6 @@ class Queue_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		global $wpdb;
 
-		$wpdb->hide_errors();
-
 		wp_cache_flush();
 
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
