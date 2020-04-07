@@ -26,7 +26,7 @@ class Queue {
 		$this->schema->init();
 
 		// TODO this needs to be smarter - to only offload bulk and failed operations
-		$this->offload_indexing_to_queue();
+		// $this->offload_indexing_to_queue();
 	}
 
 	public function is_enabled() {
