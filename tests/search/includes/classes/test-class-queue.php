@@ -82,7 +82,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 			// Insert a job, and set it to running
 			$this->queue->queue_object( $object['id'], $object['type'] );
-			$this->queue->update_job( $object['id'], array( 'status' => 'running' ) );
+			$this->queue->get_batch_jobs( 10 ); // Sets it to running
 			$this->queue->set_last_index_time( $object['id'], $object['type'], $now );
 			
 			// Requeue the job
