@@ -159,8 +159,8 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent ) {
-		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
+	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect=false ) {
+		// If batch size value NOT a numberic value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
 			$batch_size = self::CONTENT_VALIDATION_BATCH_SIZE;
@@ -212,7 +212,7 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			
-			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id );
+			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
@@ -245,7 +245,7 @@ class Health {
 		return $results;
 	}
 
-	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id ) {
+	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
 		global $wpdb;
 
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
@@ -270,17 +270,20 @@ class Health {
 		$found_post_ids = wp_list_pluck( $expected_post_rows, 'ID' );
 		$found_document_ids = wp_list_pluck( $documents, 'ID' );
 
-		$diffs = self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
+		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
+		                  : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
 			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
-			$diff = self::simplified_diff_document_and_prepared_document( $document, $prepared_document );
+			$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
+			                 : self::simplified_diff_document_and_prepared_document( $document, $prepared_document );
 
 			if ( $diff ) {
 				$key = self::get_post_key( $document['ID'] );
-				$diffs[ $key ] = self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
+				$diffs[ $key ] = $inspect ? $diff
+				                          : self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
 			}
 		}
 

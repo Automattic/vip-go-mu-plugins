@@ -107,7 +107,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * Validate DB and ES index contents for all objects
 	 *
 	 * ## OPTIONS
-	 * 
+	 *
+	 * [--inspect]
+	 * : Optional gives more verbose output for index inconsistencies
+	 *
 	 * [--start_post_id=<int>]
 	 * : Optional starting post id (defaults to 1)
 	 * ---
@@ -144,13 +147,13 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ) );
+		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ) );
 
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
 
 			if ( ! empty( $diff ) ) {
-				$this->render_contents_diff( $diff );
+				$this->render_contents_diff( $diff, $assoc_args['format'], $assoc_args['max_diff_size'] );
 			}
 
 			WP_CLI::error( $results->get_error_message() );
@@ -170,10 +173,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::warning( 'Inconsistencies found!' );
 		}
 
-		$this->render_contents_diff( $results, $assoc_args['format'] );
+		$this->render_contents_diff( $results, $assoc_args['format'], $assoc_args['max_diff_size'] );
 	}
 
-	public function render_contents_diff( $diff, $format = 'csv' ) {
+	public function render_contents_diff( $diff, $format = 'csv', $max_diff_size ) {
 		if ( ! is_array( $diff ) || empty( $diff ) ) {
 			return;
 		}
@@ -184,11 +187,25 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 
 		// Array pop without modifying the diff array
 		$d = $this->get_last( $diff );
-	
+
 		if ( array_key_exists( 'type', $d ) && array_key_exists( 'id', $d ) && array_key_exists( 'issue', $d ) ) {
 			\WP_CLI\Utils\format_items( $format, $diff, array( 'type', 'id', 'issue' ) );
 		} else {
-			var_dump( $diff );
+			WP_CLI::warning( 'Formatting is being ignored!' );
+			$i = 0;
+			foreach( $diff as $d ) {
+				if ( $i === intval( $max_diff_size  ) ) {
+					break;
+				}
+
+				var_dump( $d );
+				
+				$i++;
+			}
+
+			if ( $i < count( $diff ) ) {
+				WP_CLI::warning( sprintf( 'Truncated diff processing at %d out of %d since max_diff_size is %d', $i, count( $diff ), $max_diff_size ) ); 
+			}
 		}
 	}
 
