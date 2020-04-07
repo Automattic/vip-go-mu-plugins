@@ -52,7 +52,7 @@ class Queue {
 		$next_index_time = $this->get_next_index_time( $object_id, $object_type );
 
 		if ( is_int( $next_index_time ) ) {
-			$next_index_time = date( 'Y-m-d H:i:s', $next_index_time );
+			$next_index_time = gmdate( 'Y-m-d H:i:s', $next_index_time );
 		} else {
 			$next_index_time = null;
 		}
@@ -68,7 +68,7 @@ class Queue {
 
 		$result = $wpdb->query(
 			$wpdb->prepare(
-				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, {$start_time_escaped}, %s )",
+				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, {$start_time_escaped}, %s )", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$object_id,
 				$object_type,
 				'queued'
@@ -176,8 +176,8 @@ class Queue {
 
 		$escaped_fields = [];
 
-		foreach( $data as $column => $value ) {
-			$escaped_fields[] = $wpdb->prepare( "{$column} = %s", $value );
+		foreach ( $data as $column => $value ) {
+			$escaped_fields[] = $wpdb->prepare( "{$column} = %s", $value ); // Cannot prepare column name. @codingStandardsIgnoreLine
 		}
 
 		$escaped_fields = implode( ', ', $escaped_fields );
@@ -186,9 +186,9 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
 
-		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE id IN ( {$escaped_ids} )";
+		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE id IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 
-		return $wpdb->get_results( $sql );
+		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
 
 	public function delete_jobs( $jobs ) {
@@ -200,9 +200,9 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
 
-		$sql = "DELETE FROM {$table_name} WHERE id IN ( {$escaped_ids} )";
+		$sql = "DELETE FROM {$table_name} WHERE id IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 
-		return $wpdb->get_results( $sql );
+		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
 
 	public function empty_queue() {
@@ -210,7 +210,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->query( "TRUNCATE TABLE {$table_name}" );
+		return $wpdb->query( "TRUNCATE TABLE {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 	}
 
 	public function count_jobs( $status, $object_type = 'post' ) {
@@ -220,7 +220,7 @@ class Queue {
 
 		return $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s",
+				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$status,
 				$object_type
 			)
@@ -234,7 +234,7 @@ class Queue {
 
 		return $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )",
+				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$status,
 				$object_type
 			)
@@ -248,7 +248,7 @@ class Queue {
 
 		$job = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued' LIMIT 1",
+				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued' LIMIT 1", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$object_id,
 				$object_type
 			)
@@ -266,7 +266,7 @@ class Queue {
 
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' LIMIT %d",
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$count
 			)
 		);
@@ -275,7 +275,7 @@ class Queue {
 		$this->update_jobs( $jobs, array( 'status' => 'running' ) );
 
 		// Set right status on the already queried jobs objects
-		foreach( $jobs as &$job ) {
+		foreach ( $jobs as &$job ) {
 			$job->status = 'running';
 		}
 
@@ -288,7 +288,7 @@ class Queue {
 		// Organize by object type
 		$jobs_by_type = array();
 
-		foreach( $jobs as $job ) {
+		foreach ( $jobs as $job ) {
 			if ( ! is_array( $jobs_by_type[ $job->object_type ] ) ) {
 				$jobs_by_type[ $job->object_type ] = array();
 			}
@@ -297,7 +297,7 @@ class Queue {
 		}
 		
 		// Batch process each type using the indexable
-		foreach( $jobs_by_type as $type => $jobs ) {
+		foreach ( $jobs_by_type as $type => $jobs ) {
 			$indexable = $indexables->get( $type );
 
 			$ids = wp_list_pluck( $jobs, 'object_id' );
@@ -307,7 +307,7 @@ class Queue {
 			// TODO handle errors
 
 			// Mark all as being indexed just now, for rate limiting
-			foreach( $jobs as $job ) {
+			foreach ( $jobs as $job ) {
 				$this->set_last_index_time( $job->object_id, $job->object_type, time() );
 			}
 	
@@ -336,7 +336,7 @@ class Queue {
 	
 		// TODO add function to bulk insert
 
-		foreach( array_keys( $sync_manager->sync_queue ) as $object_id ) {
+		foreach ( array_keys( $sync_manager->sync_queue ) as $object_id ) {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
 

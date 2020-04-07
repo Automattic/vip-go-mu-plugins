@@ -44,14 +44,14 @@ class Queue_Test extends \WP_UnitTestCase {
 		$times = 10;
 
 		foreach ( $objects as $object ) {
-			for( $i = 0; $i < $times; $i++ ) {
+			for ( $i = 0; $i < $times; $i++ ) {
 				$this->queue->queue_object( $object['id'], $object['type'] );
 			}
 
 			// Now it should only exist once
 			$results = $wpdb->get_results( 
 				$wpdb->prepare( 
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'",
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object['id'],
 					$object['type']
 				)
@@ -93,13 +93,13 @@ class Queue_Test extends \WP_UnitTestCase {
 
 			$row = $wpdb->get_row( 
 				$wpdb->prepare( 
-					"SELECT `start_time` FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'",
+					"SELECT `start_time` FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object['id'],
 					$object['type']
 				)
 			);
 
-			$expected_start_time = date( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time( $object['id'], $object['type'] ) );
+			$expected_start_time = gmdate( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time( $object['id'], $object['type'] ) );
 
 			$this->assertEquals( $expected_start_time, $row->start_time );
 		}
@@ -157,7 +157,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		// $status_string = "'publish', 'draft'";
 		$ids_where_string = implode( ', ', $ids_escaped );
 
-		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `id` IN {$ids_where_string} AND `status` != 'running'" );
+		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `id` IN {$ids_where_string} AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
 
 		$this->assertEquals( 0, $not_running_count );
 	}

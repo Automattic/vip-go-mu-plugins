@@ -54,7 +54,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::confirm( 'This command queues hundreds of posts for indexing as a stress test and is not recommended to be run in production. Continue?' );
 
-		if ( $assoc_args[ 'truncate' ] ) {
+		if ( $assoc_args['truncate'] ) {
 			WP_CLI::confirm( 'Are you sure you want to truncate the existing indexing queue? Any items currently queued will be dropped' );
 
 			$queue->empty_queue();
@@ -81,7 +81,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( sprintf( 'Queuing %d objects via ElasticPress', count( $q->posts ) ) );
 
 		// Queue up batch of posts
-		foreach( $q->posts as $post ) {
+		foreach ( $q->posts as $post ) {
 			$indexable->sync_manager->add_to_queue( $post->ID );
 		}
 
@@ -109,7 +109,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 		for ( $i = 0; $i < $requeue_times; $i++ ) {
 			WP_CLI::line( sprintf( 'Requeuing same %d objects for re-indexing', count( $q->posts ) ) );
 
-			foreach( $q->posts as $post ) {
+			foreach ( $q->posts as $post ) {
 				$indexable->sync_manager->add_to_queue( $post->ID );
 			}
 
@@ -129,7 +129,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( sprintf( 'Without index debouncing and rate limiting, would expect %d index operations', $total_times_queued ) );
 
 		// Find next index timestamp for the first object, to show when it can be next re-indexed
-		$next_job_for_first_post = $queue->get_next_job_for_object( $q->posts[ 0 ]->ID, 'post' );
+		$next_job_for_first_post = $queue->get_next_job_for_object( $q->posts[0]->ID, 'post' );
 
 		$next_job_start_time = strtotime( $next_job_for_first_post->start_time );
 
