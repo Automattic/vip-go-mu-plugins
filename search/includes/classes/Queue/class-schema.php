@@ -3,7 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 class Schema {
-	const TABLE_SUFFIX = 'vip_search_queue';
+	const TABLE_SUFFIX = 'vip_search_index_queue';
 
 	const DB_VERSION        = 1;
 	const DB_VERSION_OPTION = 'vip_search_queue_db_version';
