@@ -130,7 +130,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$now = time();
 
-		// Insert first job, set it to running, so that we get some queued objects that aren't starting yet
+		// Insert first job, set it to running, so that we get some queued objects that are rate limited
 		$this->queue->queue_object( $objects[0]['id'], $objects[0]['type'] );
 		$this->queue->set_last_index_time( $objects[0]['id'], $objects[0]['type'], $now );
 		$this->queue->update_job( $objects[0]['id'], array( 'status' => 'running' ) );
@@ -152,8 +152,6 @@ class Queue_Test extends \WP_UnitTestCase {
 		// And each of those should be now marked as "running"
 		$ids_escaped = array_map( 'esc_sql', $expected_object_ids );
 
-		// $status_string: a comma separated string with quoted post stati
-		// $status_string = "'publish', 'draft'";
 		$ids_where_string = implode( ', ', $ids_escaped );
 
 		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `id` IN {$ids_where_string} AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
