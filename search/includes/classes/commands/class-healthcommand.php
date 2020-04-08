@@ -177,7 +177,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	public function render_contents_diff( $diff, $format = 'csv', $max_diff_size, $silent = false ) {
-		if ( ! is_array( $diff ) || empty( $diff ) ) {
+		if ( ! is_array( $diff ) || empty( $diff ) || 0 >= $max_diff_size ) {
 			return;
 		}
 
