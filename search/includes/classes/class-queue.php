@@ -169,7 +169,7 @@ class Queue {
 		return $wpdb->update( $table_name, $data, array( 'id' => $id ) );
 	}
 
-	public function update_jobs( $jobs, $data ) {
+	public function update_jobs( $job_ids, $data ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -182,9 +182,7 @@ class Queue {
 
 		$escaped_fields = implode( ', ', $escaped_fields );
 
-		$ids = wp_list_pluck( $jobs, 'id' );
-
-		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
+		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
 		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE id IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 
@@ -272,7 +270,9 @@ class Queue {
 		);
 
 		// Set them as running
-		$this->update_jobs( $jobs, array( 'status' => 'running' ) );
+		$job_ids = wp_list_pluck( $jobs, 'id' );
+
+		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
