@@ -11,7 +11,17 @@ use \WP_Error as WP_Error;
 
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE = 500;
-	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 5 * MB_IN_BYTES;
+	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
+	const DOCUMENT_IGNORED_KEYS = array(
+		// This field is proving problematic to reliably diff due to differences in the filters
+		// that run during normal indexing and this validator
+		'post_content_filtered',
+
+		// Meta fields from EP's "magic" formatting, which is non-deterministic and impossible to validate
+		'datetime',
+		'date',
+		'time',
+	);
 
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
@@ -149,7 +159,23 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null ) {
+	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false ) {
+		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
+		//     Otherwise, turn it into an int
+		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
+			$batch_size = self::CONTENT_VALIDATION_BATCH_SIZE;
+		} else {
+			$batch_size = intval( $batch_size );
+		}
+
+		// If max diff size NOT an int over 0, reset to default
+		//     Otherwise convert max diff size to bytes
+		if ( ! is_numeric( $max_diff_size ) || 0 > $max_diff_size || $max_diff_size > PHP_INT_MAX ) {
+			$max_diff_size = self::CONTENT_VALIDATION_MAX_DIFF_SIZE;
+		} else {
+			$max_diff_size = intval( $max_diff_size );
+		}
+
 		// Get indexable objects
 		$indexable = Indexables::factory()->get( 'post' );
 
@@ -176,50 +202,52 @@ class Health {
 		}
 
 		do {
-			$next_batch_post_id = $start_post_id + self::CONTENT_VALIDATION_BATCH_SIZE;
+			$next_batch_post_id = $start_post_id + $batch_size;
 
 			if ( $last_post_id < $next_batch_post_id ) {
 				$next_batch_post_id = $last_post_id + 1;
 			}
 
-			if ( $is_cli ) {
-				\WP_CLI::line( sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ) );
+			if ( $is_cli && ! $silent ) {
+				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			
-			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id );
+			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
-				$result = [
-					'entity' => $indexable->slug,
-					'start_post_id' => $start_post_id,
-					'error' => $result->get_error_message(),
-				];
+				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
 			}
 
 			$results = array_merge( $results, $result );
 
 			// Limit $results size
-			if ( strlen( serialize( $results ) ) > self::CONTENT_VALIDATION_MAX_DIFF_SIZE ) {
-				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d bytes, aborting', self::CONTENT_VALIDATION_MAX_DIFF_SIZE ) );
+			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
+				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
 				$error->add_data( $results, 'diff' );
 
 				return $error;
 			}
 
-			$start_post_id += self::CONTENT_VALIDATION_BATCH_SIZE;
+			$start_post_id += $batch_size; 
 
 			if ( $dynamic_last_post_id ) {
 				// Requery for the last post id after each batch b/c the site is probably growing
 				// while this runs
 				$last_post_id = self::get_last_post_id();
 			}
+
+			if ( $is_cli && ! $silent ) {
+				echo sprintf( "...%s\n", empty( $result ) ? '✅' : '❌' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
 		} while ( $start_post_id <= $last_post_id );
 
 		return $results;
 	}
 
-	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id ) {
+	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
 		global $wpdb;
 
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
@@ -244,16 +272,48 @@ class Health {
 		$found_post_ids = wp_list_pluck( $expected_post_rows, 'ID' );
 		$found_document_ids = wp_list_pluck( $documents, 'ID' );
 
-		$diffs = self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
+		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
+		                  : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
 			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
-			$diff = self::diff_document_and_prepared_document( $document, $prepared_document );
+			$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
+			                 : self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 			if ( $diff ) {
-				$diffs[ 'post_' . $document['ID'] ] = $diff;
+				$key = self::get_post_key( $document['ID'] );
+				$diffs[ $key ] = $inspect ? $diff
+				                          : self::simplified_format_post_diff( $document['ID'], 'inconsistent' ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+			}
+		}
+
+		return $diffs;
+	}
+
+	public static function simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ) {
+		$diffs = [];
+
+		// What's missing in ES?
+		$missing_from_index = array_diff( $found_post_ids, $found_document_ids );
+
+		// If anything is missing from index, record it
+		if ( 0 < count( $missing_from_index ) ) {
+			foreach ( $missing_from_index as $post_id ) {
+				$key = self::get_post_key( $post_id );
+				$diffs[ $key ] = self::simplified_format_post_diff( $post_id, 'missing_from_index' );
+			}
+		}
+
+		// What's in ES but shouldn't be?
+		$extra_in_index = array_diff( $found_document_ids, $found_post_ids );
+
+		// If anything is in the index that shouldn't be, record it
+		if ( 0 < count( $extra_in_index ) ) {
+			foreach ( $extra_in_index as $document_id ) {
+				$key = self::get_post_key( $document_id );
+				$diffs[ $key ] = self::simplified_format_post_diff( $document_id, 'extra_in_index' );
 			}
 		}
 
@@ -315,22 +375,27 @@ class Health {
 		return $filtered;
 	}
 
+	public static function simplified_diff_document_and_prepared_document( $document, $prepared_document ) {
+		foreach ( $document as $key => $value ) {
+			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
+				continue;
+			}
+
+			if ( is_array( $value ) ) {
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
+			} else if ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
 		$diff = [];
 
-		$ignored_keys = array(
-			// This field is proving problematic to reliably diff due to differences in the filters
-			// that run during normal indexing and this validator
-			'post_content_filtered',
-
-			// Meta fields from EP's "magic" formatting, which is non-deterministic and impossible to validate
-			'datetime',
-			'date',
-			'time',
-		);
-
 		foreach ( $document as $key => $value ) {
-			if ( in_array( $key, $ignored_keys, true ) ) {
+			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
@@ -388,4 +453,15 @@ class Health {
 		return new WP_Query( $query_args );
 	}
 
+	private static function simplified_format_post_diff( $id, $issue ) {
+		return array(
+			'id' => $id,
+			'type' => 'post',
+			'issue' => $issue,
+		);
+	}
+
+	private static function get_post_key( $id ) {
+		return sprintf( '%s_%d', 'post', $id );
+	}
 }
