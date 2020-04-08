@@ -320,7 +320,6 @@ class Health {
 		return $diffs;
 	}
 
-
 	public static function get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ) {
 		$diffs = [];
 	
