@@ -243,8 +243,6 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		if ( $this->should_flush_empty ) {
 			$this->stream_flush();
-
-			$this->should_flush_empty = false;
 		}
 
 		return $this->close_handler( $this->file );
