@@ -321,17 +321,17 @@ class Queue {
 	 * the async queue
 	 */
 	public function offload_indexing_to_queue() {
-		add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 2 );
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
 	}
 
-	public function intercept_ep_sync_manager_indexing( $sync_manager, $indexable_slug ) {
+	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
 		// Only posts supported right now
 		if ( 'post' !== $indexable_slug ) {
-			return;
+			return $bail;
 		}
 
 		if ( empty( $sync_manager->sync_queue ) ) {
-			return true;
+			return $bail;
 		}
 	
 		// TODO add function to bulk insert
