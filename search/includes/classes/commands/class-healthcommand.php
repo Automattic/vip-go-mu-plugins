@@ -173,16 +173,24 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::warning( 'Inconsistencies found!' );
 		}
 
-		$this->render_contents_diff( $results, $assoc_args['format'], $assoc_args['max_diff_size'] );
+		$this->render_contents_diff( $results, $assoc_args['format'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ) );
 	}
 
-	public function render_contents_diff( $diff, $format = 'csv', $max_diff_size ) {
+	public function render_contents_diff( $diff, $format = 'csv', $max_diff_size, $silent = false ) {
 		if ( ! is_array( $diff ) || empty( $diff ) ) {
 			return;
 		}
 
 		if ( ! in_array( $format, array( 'table', 'json', 'csv', 'yaml', 'ids', 'count' ) ) ) {
 			$format = 'csv';
+		}
+
+		$max_diff_size = intval( $max_diff_size );
+
+		$truncate_msg = '';
+		if ( count( $diff ) > $max_diff_size ) {
+			$truncate_msg = sprintf( 'Truncated diff processing at %d out of %d since max_diff_size is %d', $max_diff_size, count( $diff ), $max_diff_size );
+			$diff = array_slice( $diff, 0, $max_diff_size, true );
 		}
 
 		// Array pop without modifying the diff array
@@ -192,20 +200,13 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			\WP_CLI\Utils\format_items( $format, $diff, array( 'type', 'id', 'issue' ) );
 		} else {
 			WP_CLI::warning( 'Formatting is being ignored!' );
-			$i = 0;
 			foreach ( $diff as $d ) {
-				if ( intval( $max_diff_size ) === $i ) {
-					break;
-				}
-
 				var_dump( $d );
-				
-				$i++;
 			}
+		}
 
-			if ( $i < count( $diff ) ) {
-				WP_CLI::warning( sprintf( 'Truncated diff processing at %d out of %d since max_diff_size is %d', $i, count( $diff ), $max_diff_size ) ); 
-			}
+		if ( ! empty( $truncate_msg ) && ! $silent ) {
+			WP_CLI::warning( $truncate_msg ); 
 		}
 	}
 

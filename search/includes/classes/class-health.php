@@ -221,7 +221,7 @@ class Health {
 			$results = array_merge( $results, $result );
 
 			// Limit $results size
-			if ( count( $results ) > $max_diff_size ) {
+			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
 				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
@@ -239,7 +239,9 @@ class Health {
 				$last_post_id = self::get_last_post_id();
 			}
 
-			echo sprintf( "...%s\n", empty( $result ) ? '✅' : '❌' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			if ( $is_cli && ! $silent ) {
+				echo sprintf( "...%s\n", empty( $result ) ? '✅' : '❌' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
 		} while ( $start_post_id <= $last_post_id );
 
 		return $results;
