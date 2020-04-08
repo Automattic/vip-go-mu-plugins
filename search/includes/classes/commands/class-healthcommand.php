@@ -117,13 +117,34 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * [--last_post_id=<int>]
 	 * : Optional last post id to check
 	 *
+	 * [--batch_size=<int>]
+	 * : Optional batch size
+	 * ---
+	 * default: 500
+	 * ---
+	 *
+	 * [--max_diff_size=<int>]
+	 * : Optional max count of diff before exiting
+	 * ---
+	 * default: 1000
+	 * ---
+	 *
+	 * [--format=<string>]
+	 * : Optional one of: table json csv yaml ids count
+	 * ---
+	 * default: csv
+	 * ---
+	 *
+	 * [--silent]
+	 * : Optional silences all non-error output except for the final results
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search health validate-contents
 	 * 
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'] );
+		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ) );
 
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
@@ -136,20 +157,42 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		}
 
 		if ( empty( $results ) ) {
-			WP_CLI::success( 'No inconsistencies found!' );
-
+			
+			if ( ! isset( $assoc_args['silent'] ) ) {
+				WP_CLI::success( 'No inconsistencies found!' );
+			}
+			
 			exit();
 		}
 
-		// Not empty, so inconsistencies were found...
-		WP_CLI::warning( 'Inconsistencies found!' );
+		if ( ! isset( $assoc_args['silent'] ) ) {
+			// Not empty, so inconsistencies were found...
+			WP_CLI::warning( 'Inconsistencies found!' );
+		}
 
-		$this->render_contents_diff( $results );
+		$this->render_contents_diff( $results, $assoc_args['format'] );
 	}
 
-	public function render_contents_diff( $diff ) {
-		// TODO
+	public function render_contents_diff( $diff, $format = 'csv' ) {
+		if ( ! is_array( $diff ) || empty( $diff ) ) {
+			return;
+		}
 
-		var_dump( $diff );
+		if ( ! in_array( $format, array( 'table', 'json', 'csv', 'yaml', 'ids', 'count' ) ) ) {
+			$format = 'csv';
+		}
+
+		// Array pop without modifying the diff array
+		$d = $this->get_last( $diff );
+	
+		if ( array_key_exists( 'type', $d ) && array_key_exists( 'id', $d ) && array_key_exists( 'issue', $d ) ) {
+			\WP_CLI\Utils\format_items( $format, $diff, array( 'type', 'id', 'issue' ) );
+		} else {
+			var_dump( $diff );
+		}
+	}
+
+	private function get_last( $array ) {
+		return end( $array );
 	}
 }
