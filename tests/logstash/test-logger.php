@@ -207,4 +207,36 @@ class Logger_Test extends \WP_UnitTestCase {
 		// No new entries added
 		$this->assertEquals( [], $entries_prop->getValue() );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__process_entries_on_shutdown() {
+		define( 'WP_DEBUG_LOG', '/tmp/test.log' );
+
+		$entries = [
+			[
+				'feature' => 'a8c_vip_test',
+				'site_id' => 1,
+				'blog_id' => 1,
+				'host' => 'example.org',
+				'user_id' => 0,
+				'extra' => '[]',
+				'index' => 'log2logstash',
+				'severity' => 'alert',
+				'feature' => 'test',
+				'message' => 'Test alert',
+				'timestamp' => '2020-03-26 05:29:05',
+				'file' => '/app/logstash/class-logger.php',
+				'line' => '402',
+			],
+		];
+
+		$entries_prop = $this->get_property( 'entries' );
+		$entries_prop->setValue( $entries );
+
+		// Assert no errors thrown. Function does nothing on non VIP Go env
+		$this->assertNull( Logger::process_entries_on_shutdown() );
+	}
 }
