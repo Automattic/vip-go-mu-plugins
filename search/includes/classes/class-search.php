@@ -23,7 +23,7 @@ class Search {
 	}
 
 	public static function instance() {
-		if ( ! ( static::$_instance instanceof Automattic\VIP\Search\Search ) ) {
+		if ( ! ( static::$_instance instanceof Search ) ) {
 			static::$_instance = new Search();
 			static::$_instance->init();
 		}
