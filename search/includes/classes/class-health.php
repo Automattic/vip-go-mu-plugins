@@ -160,7 +160,7 @@ class Health {
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
 	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false ) {
-		// If batch size value NOT a numberic value over 0 but less than or equal to PHP_INT_MAX, reset to default
+		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
 			$batch_size = self::CONTENT_VALIDATION_BATCH_SIZE;
