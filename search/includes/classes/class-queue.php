@@ -225,15 +225,14 @@ class Queue {
 		);
 	}
 
-	public function count_jobs_due_now( $status, $object_type = 'post' ) {
+	public function count_jobs_due_now( $object_type = 'post' ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
 		return $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$status,
+				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = 'queued' AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$object_type
 			)
 		);
