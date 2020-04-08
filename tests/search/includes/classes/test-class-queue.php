@@ -14,8 +14,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
-		$this->es = new \Automattic\VIP\Search\Search();
-		$this->es->init();
+		$this->es = \Automattic\VIP\Search\Search::instance();
 
 		$this->queue = $this->es->queue;
 
