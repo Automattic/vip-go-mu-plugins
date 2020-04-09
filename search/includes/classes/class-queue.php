@@ -272,6 +272,10 @@ class Queue {
 			)
 		);
 
+		if ( ! count( $jobs ) ) {
+			return array();
+		}
+
 		// Set them as running
 		$job_ids = wp_list_pluck( $jobs, 'id' );
 
