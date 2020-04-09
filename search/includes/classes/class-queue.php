@@ -21,9 +21,14 @@ class Queue {
 		}
 
 		require_once( __DIR__ . '/Queue/class-schema.php' );
+		require_once( __DIR__ . '/Queue/class-cron.php' );
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
+
+		$this->cron = new Queue\Cron();
+		$this->cron->init();
+		$this->cron->queue = $this;
 
 		$this->setup_hooks();
 	}
