@@ -25,14 +25,18 @@ class Queue {
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
 
-		// TODO this needs to be smarter - to only offload bulk and failed operations
-		// $this->offload_indexing_to_queue();
+		$this->setup_hooks();
 	}
 
 	public function is_enabled() {
 		$enabled_by_constant = defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) && true === VIP_SEARCH_ENABLE_ASYNC_INDEXING;
 
 		return $enabled_by_constant;
+	}
+
+	public function setup_hooks() {
+		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
+		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 	}
 
 	/**
@@ -320,7 +324,9 @@ class Queue {
 	 * the async queue
 	 */
 	public function offload_indexing_to_queue() {
-		add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
+		if ( ! has_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ] ) ) {
+			add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
+		}
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
