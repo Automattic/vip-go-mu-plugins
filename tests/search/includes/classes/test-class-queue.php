@@ -289,7 +289,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->intercept_ep_sync_manager_indexing( false, $mock_sync_manager, 'post' );
 
 		// Now the jobs should be queued up in the table
-		foreach( $post_ids as $post_id ) {
+		foreach ( $post_ids as $post_id ) {
 			$job = $this->queue->get_next_job_for_object( $post_id, 'post' );
 
 			$this->assertEquals( 'queued', $job->status, "Wrong job status ($job->status) for post $post_id" );
