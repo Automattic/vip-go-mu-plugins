@@ -543,7 +543,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Convert to actual file to upload to new path
-			$file     = $this->string_to_resource( $result, 'r' );
+			$file     = $this->string_to_resource( file_get_contents( $result ), 'r' );
 			$meta     = stream_get_meta_data( $file );
 			$filePath = $meta['uri'];
 
