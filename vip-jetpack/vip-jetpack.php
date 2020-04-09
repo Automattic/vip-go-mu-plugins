@@ -348,3 +348,8 @@ add_filter( 'jetpack_sync_modules', function( $modules ) {
 
 	return $modules;
 } );
+
+/**
+ * Hide promotions/upgrade cards for now
+ */
+add_filter( 'jetpack_show_promotions', '__return_false' );
