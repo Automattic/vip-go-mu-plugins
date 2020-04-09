@@ -154,7 +154,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$ids_where_string = implode( ', ', $ids_escaped );
 
-		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `id` IN {$ids_where_string} AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
+		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `id` IN ({$ids_where_string}) AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
 
 		$this->assertEquals( 0, $not_running_count );
 	}
