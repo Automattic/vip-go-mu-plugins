@@ -36,7 +36,10 @@ class Queue {
 	public function is_enabled() {
 		$enabled_by_constant = defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) && true === VIP_SEARCH_ENABLE_ASYNC_INDEXING;
 
-		return $enabled_by_constant;
+		$option_value = get_option( 'vip_enable_search_indexing_queue' );
+		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		return $enabled_by_constant || $is_enabled_by_option;
 	}
 
 	public function setup_hooks() {
