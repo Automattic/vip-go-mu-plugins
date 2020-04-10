@@ -5,8 +5,9 @@ namespace Automattic\VIP\Search\Queue;
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION        = 1;
-	const DB_VERSION_OPTION = 'vip_search_queue_db_version';
+	const DB_VERSION = 1;
+	const DB_VERSION_TRANSIENT = 'vip_search_queue_db_version';
+	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
 	const TABLE_CREATE_LOCK = 'vip_search_queue_creating_table';
 
 	public function init() {
@@ -28,7 +29,7 @@ class Schema {
 	}
 
 	public function is_installed() {
-		$db_version = (int) get_option( self::DB_VERSION_OPTION );
+		$db_version = (int) get_transient( self::DB_VERSION_TRANSIENT );
 
 		return version_compare( $db_version, 0, '>' );
 	}
@@ -136,7 +137,7 @@ class Schema {
 		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
 		if ( 1 === $table_count ) {
-			update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
 		}
 	}
 
