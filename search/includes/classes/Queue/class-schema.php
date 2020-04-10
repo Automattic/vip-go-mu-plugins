@@ -78,7 +78,7 @@ class Schema {
 	 * Does not include front-end requests
 	 */
 	public function maybe_create_table_on_shutdown() {
-		if ( ! is_admin() && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		if ( ! is_admin() || ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
 
