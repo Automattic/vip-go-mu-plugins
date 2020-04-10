@@ -38,7 +38,7 @@ class Cron {
 	/**
 	 * Initialize the job class
 	 *
-	 * @access	public
+	 * @access public
 	 */
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
@@ -61,7 +61,7 @@ class Cron {
 	 * Add the event name to WP cron schedule and then add the action
 	 */
 	public function schedule_job() {
-		if ( ! wp_next_scheduled( self::CRON_JOB_CREATOR_EVENT_NAME )  ) {
+		if ( ! wp_next_scheduled( self::CRON_JOB_CREATOR_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_JOB_CREATOR_INTERVAL_NAME, self::CRON_JOB_CREATOR_EVENT_NAME );
 		}
 	}
@@ -82,9 +82,9 @@ class Cron {
 	 *
 	 * Add the custom interval to WP cron schedule
 	 *
-	 * @param		array	$schedule
+	 * @param array $schedule
 	 *
-	 * @return	mixed
+	 * @return mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
 		if ( isset( $schedule[ self::CRON_JOB_CREATOR_INTERVAL_NAME ] ) ) {
