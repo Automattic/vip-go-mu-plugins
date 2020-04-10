@@ -117,7 +117,13 @@ class Cron {
 		// Find jobs to process
 		$jobs = $this->queue->get_batch_jobs( self::CRON_PROCESSOR_MAX_OBJECTS_PER_JOB );
 
-		wp_schedule_event( time(), self::CRON_PROCESSOR_EVENT_NAME, $jobs );
+		if ( ! count( $jobs ) ) {
+			return;
+		}
+
+		$job_ids = wp_list_pluck( $jobs, 'id' );
+
+		wp_schedule_single_event( time(), self::CRON_PROCESSOR_EVENT_NAME, $job_ids );
 	}
 
 	/**
