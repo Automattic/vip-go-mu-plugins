@@ -132,7 +132,7 @@ class Cron {
 		// Find jobs to process
 		$jobs = $this->queue->get_batch_jobs( self::CRON_PROCESSOR_MAX_OBJECTS_PER_JOB );
 
-		if ( ! count( $jobs ) ) {
+		if ( empty( $jobs ) ) {
 			return;
 		}
 
