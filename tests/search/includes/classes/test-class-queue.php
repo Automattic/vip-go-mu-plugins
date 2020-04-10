@@ -298,4 +298,22 @@ class Queue_Test extends \WP_UnitTestCase {
 		// And the SyncManager's queue should have been emptied
 		$this->assertEmpty( $mock_sync_manager->sync_queue );
 	}
+
+	public function test_get_jobs() {
+		$this->queue->queue_object( 1000, 'post' );
+		$this->queue->queue_object( 2000, 'post' );
+
+		$jobs = $this->queue->get_jobs( array( 1, 2 ) );
+
+		$expected_object_ids = array( 1000, 2000 );
+		$actual_object_ids = wp_list_pluck( $jobs, 'object_id' );
+
+		$this->assertEquals( $expected_object_ids, $actual_object_ids );
+	}
+
+	public function test_get_jobs_with_empty() {
+		$jobs = $this->queue->get_jobs( array() );
+
+		$this->assertEquals( array(), $jobs );
+	}
 }

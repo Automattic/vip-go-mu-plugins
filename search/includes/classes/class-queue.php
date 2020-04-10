@@ -263,12 +263,30 @@ class Queue {
 		return $job;
 	}
 
+	public function get_jobs( $job_ids ) {
+		global $wpdb;
+
+		if ( ! count( $job_ids ) ) {
+			return array();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		$escaped_ids = array_map( 'intval', $job_ids );
+		$escaped_ids = implode( ', ', $job_ids );
+
+		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
+		
+		return $jobs;
+	}
+
 	public function get_batch_jobs( $count = 250 ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
 		// TODO transaction
+		// TODO only find objects that aren't already running
 
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
