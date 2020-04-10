@@ -100,7 +100,11 @@ class Cron {
 	}
 
 	/**
-	 * Process a batch of jobs
+	 * Process a batch of jobs via cron
+	 * 
+	 * This is the cron hook for indexing a batch of objects
+	 * 
+	 * @param {array} $job_ids Array of job ids to process
 	 */
 	public function process_jobs( $job_ids ) {
 		$jobs = $this->queue->get_jobs( $job_ids );
@@ -112,6 +116,9 @@ class Cron {
 		$this->queue->process_batch_jobs( $jobs );
 	}
 
+	/**
+	 * Find objects that need to be processed (in a batch) and schedule an event to process them
+	 */
 	public function create_jobs() {
 		// Check if job has been disabled
 		if ( ! $this->is_enabled() ) {
@@ -119,6 +126,8 @@ class Cron {
 
 			return;
 		}
+
+		// TODO add a "max batches" setting and keep creating batch jobs until none are found or we hit the max
 
 		// Find jobs to process
 		$jobs = $this->queue->get_batch_jobs( self::CRON_PROCESSOR_MAX_OBJECTS_PER_JOB );
