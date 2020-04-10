@@ -109,7 +109,7 @@ class Cron {
 	public function process_jobs( $job_ids ) {
 		$jobs = $this->queue->get_jobs( $job_ids );
 
-		if ( ! count( $jobs ) ) {
+		if ( empty( $jobs ) ) {
 			return;
 		}
 
