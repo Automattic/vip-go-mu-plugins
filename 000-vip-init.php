@@ -184,8 +184,7 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/search/search.php' );
 
-	$search_plugin = new \Automattic\VIP\Search\Search();
-	$search_plugin->init();
+	$search_plugin = \Automattic\VIP\Search\Search::instance();
 
 	// If VIP Search query integration is enabled, disable Jetpack Search
 	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
