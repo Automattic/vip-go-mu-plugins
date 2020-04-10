@@ -241,7 +241,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_close() {
 		$this->debug( sprintf( 'stream_close => %s + %s', $this->path, $this->uri ) );
 
-		if ( $this->should_flush_empty ) {
+		// Don't attempt to flush new file when in read mode
+		if ( $this->should_flush_empty && 'r' !== $this->mode ) {
 			$this->stream_flush();
 		}
 
