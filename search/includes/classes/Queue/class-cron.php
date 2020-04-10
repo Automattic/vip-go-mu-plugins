@@ -102,8 +102,14 @@ class Cron {
 	/**
 	 * Process a batch of jobs
 	 */
-	public function process_jobs( $jobs ) {
-		$this->queue->process_jobs( $jobs );
+	public function process_jobs( $job_ids ) {
+		$jobs = $this->queue->get_jobs( $job_ids );
+
+		if ( ! count( $jobs ) ) {
+			return;
+		}
+
+		$this->queue->process_batch_jobs( $jobs );
 	}
 
 	public function create_jobs() {
