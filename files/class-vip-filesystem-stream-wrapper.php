@@ -834,14 +834,14 @@ class VIP_Filesystem_Stream_Wrapper {
 					return false;
 				}
 
-				return $stats;
+				return true;
 			} catch ( \Exception $e ) {
 				trigger_error(
 					sprintf(
 						'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
 						$mode,
 						$path, 
-						$result->get_error_message()
+						$e->getMessage()
 					),
 					E_USER_WARNING
 				);
