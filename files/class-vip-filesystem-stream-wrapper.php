@@ -841,7 +841,7 @@ class VIP_Filesystem_Stream_Wrapper {
 						'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
 						$mode,
 						$path, 
-						$e->getMessage()
+						$e->getMessage() // phpcs:ignore
 					),
 					E_USER_WARNING
 				);

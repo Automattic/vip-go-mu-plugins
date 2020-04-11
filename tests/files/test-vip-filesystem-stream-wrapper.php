@@ -61,7 +61,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 			}
 		}
 
-		$this->fail( 'Error with level ' . $errno . " and message '" . $errstr . "' not found in " . var_export( $this->errors, TRUE ) );
+		$this->fail( 'Error with level ' . $errno . " and message '" . $errstr . "' not found in " . var_export( $this->errors, true ) );
 	}
 
 	public function test__rename__same_path() {
@@ -120,8 +120,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__validate_valid_mode
 	 */
 	public function test__validate__valid_mode( $mode ) {
-		$this->assertTrue( 
-			$this->stream_wrapper->validate( '/test/path', $mode ) );
+		$this->assertTrue( $this->stream_wrapper->validate( '/test/path', $mode ) );
 	}
 
 	public function get_test_data__validate_invalid_mode() {
