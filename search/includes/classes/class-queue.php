@@ -13,6 +13,8 @@ class Queue {
 	const CACHE_GROUP = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
+	const MAX_BATCH_SIZE = 1000;
+
 	public $schema;
 
 	public function init() {
@@ -284,6 +286,10 @@ class Queue {
 	}
 
 	public function get_batch_jobs( $count = 250 ) {
+		// Enforce a reasonable limit on batch size
+		$count = min( $count, self::MAX_BATCH_SIZE );
+		$count = max( $count, 1 );
+
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
