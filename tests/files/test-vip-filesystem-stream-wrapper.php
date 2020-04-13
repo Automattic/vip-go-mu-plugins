@@ -9,7 +9,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 
 	private $api_client_mock;
 
-	private $errors;
+	private $errors = [];
 
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
@@ -30,6 +30,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	public function tearDown() {
 		$this->stream_wrapper = null;
 		$this->api_client_mock = null;
+
+		$this->errors = [];
 
 		restore_error_handler();
 
