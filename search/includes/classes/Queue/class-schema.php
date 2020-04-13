@@ -123,7 +123,7 @@ class Schema {
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
 			`object_id` bigint(20) DEFAULT NULL COMMENT 'WP object ID',
 			`object_type` varchar(45) DEFAULT NULL COMMENT 'WP object type',
-			`priority` int(11) DEFAULT NULL COMMENT 'Relative priority for this item compared to others (of any object_type)',
+			`priority` int(1) DEFAULT '5' COMMENT 'Relative priority for this item compared to others (of any object_type)',
 			`start_time` datetime DEFAULT NULL COMMENT 'Datetime when the item can be indexed (but not before) - used for debouncing',
 			`status` varchar(45) NOT NULL COMMENT 'Status of the indexing job',
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
