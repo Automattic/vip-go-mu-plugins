@@ -154,7 +154,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$ids_where_string = implode( ', ', $ids_escaped );
 
-		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `id` IN ({$ids_where_string}) AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
+		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
 
 		// There should be 1 that now isn't marked as running, and that's post 1 which was rescheduled again for the future (rate limited)
 		$this->assertEquals( 1, $not_running_count );
@@ -184,7 +184,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 'queued', $job->status );
 
-		$this->queue->update_job( $job->id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+		$this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
 
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
@@ -201,7 +201,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'queued', $job1->status );
 		$this->assertEquals( 'queued', $job2->status );
 
-		$this->queue->update_jobs( array( $job1->id, $job2->id ), array( 'start_time' => '2040-01-01 00:00:00' ) );
+		$this->queue->update_jobs( array( $job1->job_id, $job2->job_id ), array( 'start_time' => '2040-01-01 00:00:00' ) );
 
 		$job1 = $this->queue->get_next_job_for_object( 1, 'post' );
 		$job2 = $this->queue->get_next_job_for_object( 2, 'post' );
@@ -256,7 +256,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		// Set the first job to be for the future
 		$job1 = $this->queue->get_next_job_for_object( 1, 'post' );
 
-		$this->queue->update_job( $job1->id, array( 'start_time' => '2040-01-01 00:00:00' ) );
+		$this->queue->update_job( $job1->job_id, array( 'start_time' => '2040-01-01 00:00:00' ) );
 
 		$count = $this->queue->count_jobs_due_now( 'post' );
 
