@@ -121,7 +121,7 @@ class Schema {
 		// Define schema and create the table.
 		$schema = "CREATE TABLE `{$table_name}` (
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
-			`object_id` int(11) DEFAULT NULL COMMENT 'WP object ID',
+			`object_id` bigint(20) DEFAULT NULL COMMENT 'WP object ID',
 			`object_type` varchar(45) DEFAULT NULL COMMENT 'WP object type',
 			`priority` int(11) DEFAULT NULL COMMENT 'Relative priority for this item compared to others (of any object_type)',
 			`start_time` datetime DEFAULT NULL COMMENT 'Datetime when the item can be indexed (but not before) - used for debouncing',
