@@ -69,6 +69,8 @@ class Queue {
 
 		$original_suppress = $wpdb->suppress_errors;
 
+		// Suppress errors because duplicate key errors are expected, as we use the UNIQUE index
+		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
 		$result = $wpdb->query(
