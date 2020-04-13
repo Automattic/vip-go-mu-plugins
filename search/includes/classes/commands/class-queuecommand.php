@@ -97,7 +97,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::line( 'Processing a batch of queued async jobs' );
 
-		$jobs = $queue->get_batch_jobs( $batch_size );
+		$jobs = $queue->checkout_jobs( $batch_size );
 
 		$queue->process_batch_jobs( $jobs );
 
