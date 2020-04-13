@@ -22,7 +22,7 @@ class Queue {
 			return;
 		}
 
-		require_once( __DIR__ . '/Queue/class-schema.php' );
+		require_once( __DIR__ . '/queue/class-schema.php' );
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
