@@ -129,7 +129,7 @@ class Schema {
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (`id`),
 			UNIQUE KEY `unique_object_and_status` (`object_id`,`object_type`,`status`)
-		) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8\n";
+		) ENGINE=InnoDB";
 
 		dbDelta( $schema, true );
 
