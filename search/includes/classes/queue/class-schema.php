@@ -139,7 +139,7 @@ class Schema {
 		if ( 1 === $table_count ) {
 			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
 		} else {
-			trigger_error( "VIP Search Queue index table ($table_name) not found after dbDelta()", \E_USER_WARNING );
+			trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
 		}
 	}
 
