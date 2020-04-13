@@ -81,7 +81,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 			// Insert a job, and set it to running
 			$this->queue->queue_object( $object['id'], $object['type'] );
-			$this->queue->get_batch_jobs( 10 ); // Sets it to running
+			$this->queue->checkout_jobs( 10 ); // Sets it to running
 			$this->queue->set_last_index_time( $object['id'], $object['type'], $now );
 			
 			// Requeue the job
@@ -104,7 +104,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		}
 	}
 
-	public function test_get_batch_jobs() {
+	public function test_checkout_jobs() {
 		global $wpdb;
 
 		$table_name = $this->queue->schema->get_table_name();
@@ -140,7 +140,7 @@ class Queue_Test extends \WP_UnitTestCase {
 			$this->queue->queue_object( $object['id'], $object['type'] );
 		}
 			
-		$jobs = $this->queue->get_batch_jobs( 10 );
+		$jobs = $this->queue->checkout_jobs( 10 );
 
 		$object_ids = wp_list_pluck( $jobs, 'object_id' );
 

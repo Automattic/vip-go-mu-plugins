@@ -285,7 +285,13 @@ class Queue {
 		return $jobs;
 	}
 
-	public function get_batch_jobs( $count = 250 ) {
+	/**
+	 * Grab $count jobs that are due now and mark them as running
+	 * 
+	 * @param {int} $count How many jobs to check out
+	 * @return array Array of jobs (db rows) that were checked out
+	 */
+	public function checkout_jobs( $count = 250 ) {
 		// Enforce a reasonable limit on batch size
 		$count = min( $count, self::MAX_BATCH_SIZE );
 		$count = max( $count, 1 );
