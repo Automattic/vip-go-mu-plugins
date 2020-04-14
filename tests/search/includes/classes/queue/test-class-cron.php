@@ -102,7 +102,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->cron->queue = $original_queue;
 	}
 
-	public function test_sweep_jobs() {
+	public function test_schedule_batch_job() {
 		$mock_queue = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'checkout_jobs' ] )
 			->getMock();

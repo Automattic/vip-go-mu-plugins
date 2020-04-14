@@ -131,6 +131,10 @@ class Cron {
 
 		// TODO add a "max batches" setting and keep creating batch jobs until none are found or we hit the max
 
+		$this->schedule_batch_job();
+	}
+
+	public function schedule_batch_job() {
 		// Find jobs to process
 		$jobs = $this->queue->checkout_jobs( self::PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT );
 
