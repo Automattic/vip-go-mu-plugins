@@ -138,7 +138,7 @@ class Cron {
 			return;
 		}
 
-		$job_ids = wp_list_pluck( $jobs, 'id' );
+		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, $job_ids );
 	}
