@@ -282,7 +282,7 @@ class Queue {
 		$escaped_ids = array_map( 'intval', $job_ids );
 		$escaped_ids = implode( ', ', $job_ids );
 
-		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
+		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
 		
 		return $jobs;
 	}
