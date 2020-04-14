@@ -5,8 +5,9 @@ namespace Automattic\VIP\Search\Queue;
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION        = 1;
-	const DB_VERSION_OPTION = 'vip_search_queue_db_version';
+	const DB_VERSION = 1;
+	const DB_VERSION_TRANSIENT = 'vip_search_queue_db_version';
+	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
 	const TABLE_CREATE_LOCK = 'vip_search_queue_creating_table';
 
 	public function init() {
@@ -28,7 +29,7 @@ class Schema {
 	}
 
 	public function is_installed() {
-		$db_version = (int) get_option( self::DB_VERSION_OPTION );
+		$db_version = (int) get_transient( self::DB_VERSION_TRANSIENT );
 
 		return version_compare( $db_version, 0, '>' );
 	}
@@ -119,16 +120,16 @@ class Schema {
 
 		// Define schema and create the table.
 		$schema = "CREATE TABLE `{$table_name}` (
-			`id` bigint(20) NOT NULL AUTO_INCREMENT,
-			`object_id` int(11) DEFAULT NULL COMMENT 'WP object ID',
+			`job_id` bigint(20) NOT NULL AUTO_INCREMENT,
+			`object_id` bigint(20) DEFAULT NULL COMMENT 'WP object ID',
 			`object_type` varchar(45) DEFAULT NULL COMMENT 'WP object type',
-			`priority` int(11) DEFAULT NULL COMMENT 'Relative priority for this item compared to others (of any object_type)',
+			`priority` tinyint(1) DEFAULT '5' COMMENT 'Relative priority for this item compared to others (of any object_type)',
 			`start_time` datetime DEFAULT NULL COMMENT 'Datetime when the item can be indexed (but not before) - used for debouncing',
 			`status` varchar(45) NOT NULL COMMENT 'Status of the indexing job',
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (`id`),
+			PRIMARY KEY (`job_id`),
 			UNIQUE KEY `unique_object_and_status` (`object_id`,`object_type`,`status`)
-		) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8\n";
+		) ENGINE=InnoDB";
 
 		dbDelta( $schema, true );
 
@@ -136,7 +137,9 @@ class Schema {
 		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
 		if ( 1 === $table_count ) {
-			update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
+		} else {
+			trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
 		}
 	}
 

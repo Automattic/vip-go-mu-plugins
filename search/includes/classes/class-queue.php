@@ -78,6 +78,8 @@ class Queue {
 
 		$original_suppress = $wpdb->suppress_errors;
 
+		// Suppress errors because duplicate key errors are expected, as we use the UNIQUE index
+		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
 		$result = $wpdb->query(
@@ -175,12 +177,12 @@ class Queue {
 		return 60;
 	}
 
-	public function update_job( $id, $data ) {
+	public function update_job( $job_id, $data ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->update( $table_name, $data, array( 'id' => $id ) );
+		return $wpdb->update( $table_name, $data, array( 'job_id' => $job_id ) );
 	}
 
 	public function update_jobs( $job_ids, $data ) {
@@ -198,7 +200,7 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
-		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE id IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 
 		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
@@ -208,11 +210,11 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		$ids = wp_list_pluck( $jobs, 'id' );
+		$ids = wp_list_pluck( $jobs, 'job_id' );
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
 
-		$sql = "DELETE FROM {$table_name} WHERE id IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		$sql = "DELETE FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 
 		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
@@ -315,7 +317,7 @@ class Queue {
 		}
 
 		// Set them as running
-		$job_ids = wp_list_pluck( $jobs, 'id' );
+		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
 
