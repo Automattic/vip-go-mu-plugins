@@ -275,7 +275,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( null, $job->start_time );
 	}
 
-	public function test_process_batch_jobs() {
+	public function test_process_jobs() {
 		// TODO
 	}
 

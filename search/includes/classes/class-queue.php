@@ -329,7 +329,7 @@ class Queue {
 		return $jobs;
 	}
 
-	public function process_batch_jobs( $jobs ) {
+	public function process_jobs( $jobs ) {
 		$indexables = \ElasticPress\Indexables::factory();
 	
 		// Organize by object type

@@ -111,7 +111,7 @@ class Cron {
 			return;
 		}
 
-		$this->queue->process_batch_jobs( $jobs );
+		$this->queue->process_jobs( $jobs );
 	}
 
 	/**
