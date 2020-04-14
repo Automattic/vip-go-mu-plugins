@@ -73,7 +73,7 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 }
 
 define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
@@ -184,8 +184,7 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/search/search.php' );
 
-	$search_plugin = new \Automattic\VIP\Search\Search();
-	$search_plugin->init();
+	$search_plugin = \Automattic\VIP\Search\Search::instance();
 
 	// If VIP Search query integration is enabled, disable Jetpack Search
 	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
