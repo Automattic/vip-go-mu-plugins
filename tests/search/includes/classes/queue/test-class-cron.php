@@ -31,6 +31,36 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
 	}
 
+	public function test_schedule_sweeper_job() {
+		// Make sure it's not already scheduled
+		$this->cron->disable_sweeper_job();
+
+		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
+		
+		$this->assertFalse( $existing, 'Existing cron event, wp_clear_scheduled_hook() failed' );
+
+		$this->cron->schedule_sweeper_job();
+
+		$next = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
+
+		$this->assertTrue( (boolean) $next, 'After Cron::schedule_sweeper_job(), job was not found' );
+	}
+
+	public function test_disable_sweeper_job() {
+		// Make sure it already exists
+		$this->cron->schedule_sweeper_job();
+
+		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
+		
+		$this->assertTrue( (boolean) $existing, 'Sweeper cron event not scheduled, cannot test deletion' );
+
+		$this->cron->disable_sweeper_job();
+
+		$next = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
+
+		$this->assertFalse( $next, 'After Cron:disable_sweeper_job(), job was still found' );
+	}
+
 	public function test_process_jobs() {
 		$mock_queue = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'get_jobs', 'process_jobs' ] )
