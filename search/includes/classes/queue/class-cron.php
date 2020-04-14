@@ -62,7 +62,7 @@ class Cron {
 	 */
 	public function schedule_sweeper_job() {
 		if ( ! wp_next_scheduled( self::SWEEPER_CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time(), self::SWEEPER_CRON_INTERVAL, self::SWEEPER_CRON_EVENT_NAME );
+			wp_schedule_event( time(), self::SWEEPER_CRON_INTERVAL_NAME, self::SWEEPER_CRON_EVENT_NAME );
 		}
 	}
 
