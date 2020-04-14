@@ -124,7 +124,7 @@ class Cron {
 	public function sweep_jobs() {
 		// Check if job has been disabled
 		if ( ! $this->is_enabled() ) {
-			$this->disable_job();
+			$this->disable_sweeper_job();
 
 			return;
 		}
