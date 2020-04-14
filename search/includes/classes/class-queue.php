@@ -336,7 +336,7 @@ class Queue {
 		$jobs_by_type = array();
 
 		foreach ( $jobs as $job ) {
-			if ( ! is_array( $jobs_by_type[ $job->object_type ] ) ) {
+			if ( ! isset( $jobs_by_type[ $job->object_type ] ) ) {
 				$jobs_by_type[ $job->object_type ] = array();
 			}
 
