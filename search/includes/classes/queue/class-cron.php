@@ -85,11 +85,11 @@ class Cron {
 	 * @return mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::SWEEPER_CRON_INTERVAL ] ) ) {
+		if ( isset( $schedule[ self::SWEEPER_CRON_INTERVAL_NAME ] ) ) {
 			return $schedule;
 		}
 
-		$schedule[ self::SWEEPER_CRON_INTERVAL ] = [
+		$schedule[ self::SWEEPER_CRON_INTERVAL_NAME ] = [
 			'interval' => self::SWEEPER_CRON_INTERVAL,
 			'display' => __( 'VIP Search index queue job creator time interval' ),
 		];
