@@ -8,12 +8,12 @@ class Cron {
 	/**
 	 * The name of the cron event to run the index processing
 	 */
-	const CRON_PROCESSOR_EVENT_NAME = 'vip_search_queue_processor';
+	const PROCESSOR_CRON_EVENT_NAME = 'vip_search_queue_processor';
 
 	/**
 	 * How many objects to re-index at a time in a single cron job
 	 */
-	const CRON_PROCESSOR_MAX_OBJECTS_PER_JOB = 1000;
+	const PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT = 1000;
 
 	/**
 	 * The name of the recurring cron event that checks for any unscheduled or deadlocked jobs
@@ -42,7 +42,7 @@ class Cron {
 	 */
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_PROCESSOR_EVENT_NAME, [ $this, 'process_jobs' ] );
+		add_action( self::PROCESSOR_CRON_EVENT_NAME, [ $this, 'process_jobs' ] );
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
 
 		if ( ! $this->is_enabled() ) {
@@ -132,7 +132,7 @@ class Cron {
 		// TODO add a "max batches" setting and keep creating batch jobs until none are found or we hit the max
 
 		// Find jobs to process
-		$jobs = $this->queue->get_batch_jobs( self::CRON_PROCESSOR_MAX_OBJECTS_PER_JOB );
+		$jobs = $this->queue->get_batch_jobs( self::PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT );
 
 		if ( empty( $jobs ) ) {
 			return;
@@ -140,7 +140,7 @@ class Cron {
 
 		$job_ids = wp_list_pluck( $jobs, 'id' );
 
-		wp_schedule_single_event( time(), self::CRON_PROCESSOR_EVENT_NAME, $job_ids );
+		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, $job_ids );
 	}
 
 	/**
