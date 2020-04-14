@@ -273,7 +273,7 @@ class Queue {
 	public function get_jobs( $job_ids ) {
 		global $wpdb;
 
-		if ( ! count( $job_ids ) ) {
+		if ( empty( $job_ids ) ) {
 			return array();
 		}
 
@@ -312,7 +312,7 @@ class Queue {
 			)
 		);
 
-		if ( ! count( $jobs ) ) {
+		if ( empty( $jobs ) ) {
 			return array();
 		}
 
