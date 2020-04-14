@@ -16,19 +16,19 @@ class Cron {
 	const CRON_PROCESSOR_MAX_OBJECTS_PER_JOB = 1000;
 
 	/**
-	 * The name of the recurring cron event that schedules individual cron events to process objects
+	 * The name of the recurring cron event that checks for any unscheduled or deadlocked jobs
 	 */
-	const CRON_JOB_CREATOR_EVENT_NAME = 'vip_search_queue_job_creator';
+	const SWEEPER_CRON_EVENT_NAME = 'vip_search_queue_sweeper';
 
 	/**
-	 * Custom cron interval name
+	 * Custom cron interval name for the "sweeper"
 	 */
-	const CRON_JOB_CREATOR_INTERVAL_NAME = 'vip_search_queue_job_creator_interval';
+	const SWEEPER_CRON_INTERVAL_NAME = 'vip_search_queue_sweeper_interval';
 
 	/**
 	 * Custom cron interval value
 	 */
-	const CRON_JOB_CREATOR_INTERVAL = \MINUTE_IN_SECONDS;
+	const SWEEPER_CRON_INTERVAL = 5 * \MINUTE_IN_SECONDS;
 
 	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
@@ -43,7 +43,7 @@ class Cron {
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::CRON_PROCESSOR_EVENT_NAME, [ $this, 'process_jobs' ] );
-		add_action( self::CRON_JOB_CREATOR_EVENT_NAME, [ $this, 'create_jobs' ] );
+		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -52,7 +52,7 @@ class Cron {
 		// Add the custom cron schedule
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
-		$this->schedule_job();
+		$this->schedule_sweeper_job();
 	}
 
 	/**
@@ -60,20 +60,18 @@ class Cron {
 	 *
 	 * Add the event name to WP cron schedule and then add the action
 	 */
-	public function schedule_job() {
-		if ( ! wp_next_scheduled( self::CRON_JOB_CREATOR_EVENT_NAME ) ) {
-			wp_schedule_event( time(), self::CRON_JOB_CREATOR_INTERVAL_NAME, self::CRON_JOB_CREATOR_EVENT_NAME );
+	public function schedule_sweeper_job() {
+		if ( ! wp_next_scheduled( self::SWEEPER_CRON_EVENT_NAME ) ) {
+			wp_schedule_event( time(), self::SWEEPER_CRON_INTERVAL, self::SWEEPER_CRON_EVENT_NAME );
 		}
 	}
 
 	/**
-	 * Disable health check job
-	 *
-	 * Remove the ES health check job from the events list
+	 * Disable recurring sweeper job
 	 */
-	public function disable_job() {
-		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+	public function disable_sweeper_job() {
+		if ( wp_next_scheduled( self::SWEEPER_CRON_EVENT_NAME ) ) {
+			wp_clear_scheduled_hook( self::SWEEPER_CRON_EVENT_NAME );
 		}
 	}
 
@@ -87,12 +85,12 @@ class Cron {
 	 * @return mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_JOB_CREATOR_INTERVAL_NAME ] ) ) {
+		if ( isset( $schedule[ self::SWEEPER_CRON_INTERVAL ] ) ) {
 			return $schedule;
 		}
 
-		$schedule[ self::CRON_JOB_CREATOR_INTERVAL_NAME ] = [
-			'interval' => self::CRON_JOB_CREATOR_INTERVAL,
+		$schedule[ self::SWEEPER_CRON_INTERVAL ] = [
+			'interval' => self::SWEEPER_CRON_INTERVAL,
 			'display' => __( 'VIP Search index queue job creator time interval' ),
 		];
 
@@ -118,8 +116,12 @@ class Cron {
 
 	/**
 	 * Find objects that need to be processed (in a batch) and schedule an event to process them
+	 * 
+	 * This is intended to be a "sweep" of any objects that may have been missed - as stuff gets queued,
+	 * we schedule vip_search_queue_processor events immediately, but this helps find anything that fell through
+	 * the cracks (fatal error or something) as well as identify deadlocks
 	 */
-	public function create_jobs() {
+	public function sweep_jobs() {
 		// Check if job has been disabled
 		if ( ! $this->is_enabled() ) {
 			$this->disable_job();
