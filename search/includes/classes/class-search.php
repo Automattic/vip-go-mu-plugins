@@ -8,6 +8,8 @@ class Search {
 	public $healthcheck;
 	private $current_host_index;
 
+	private static $_instance;
+
 	/**
 	 * Initialize the VIP Search plugin
 	 */
@@ -17,6 +19,15 @@ class Search {
 		$this->load_dependencies();
 		$this->load_commands();
 		$this->setup_healthchecks();
+	}
+
+	public static function instance() {
+		if ( ! ( static::$_instance instanceof Search ) ) {
+			static::$_instance = new Search();
+			static::$_instance->init();
+		}
+
+		return static::$_instance;
 	}
 
 	protected function load_dependencies() {
