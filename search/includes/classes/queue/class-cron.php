@@ -56,9 +56,9 @@ class Cron {
 	}
 
 	/**
-	 * Schedule health check job
+	 * Schedule sweeper job
 	 *
-	 * Add the event name to WP cron schedule and then add the action
+	 * This event checks for any queued items that haven't yet been scheduled, and any that are deadlocked
 	 */
 	public function schedule_sweeper_job() {
 		if ( ! wp_next_scheduled( self::SWEEPER_CRON_EVENT_NAME ) ) {
