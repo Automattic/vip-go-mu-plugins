@@ -1,10 +1,10 @@
 <?php
 
-namespace Automattic\VIP\Search;
+namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue\Cron as Cron;
 
-class Queue_Test extends \WP_UnitTestCase {
+class Cron_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		global $wpdb;
 
