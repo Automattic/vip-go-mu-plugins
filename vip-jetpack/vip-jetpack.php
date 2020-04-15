@@ -353,7 +353,7 @@ add_filter( 'jetpack_sync_modules', function( $modules ) {
  * Hide promotions/upgrade cards for now except for sites that we want to opt into Instant Search
  */
 add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
-	if ( defined( 'VIP_GO_JETPACK_ENABLE_INSTANT_SEARCH' ) && VIP_GO_JETPACK_ENABLE_INSTANT_SEARCH ) {
+	if ( defined( 'VIP_JETPACK_ENABLE_INSTANT_SEARCH' ) && true === VIP_JETPACK_ENABLE_INSTANT_SEARCH ) {
 		return $is_enabled;
 	}
 
