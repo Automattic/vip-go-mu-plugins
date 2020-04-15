@@ -99,7 +99,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		$jobs = $queue->checkout_jobs( $batch_size );
 
-		$queue->process_batch_jobs( $jobs );
+		$queue->process_jobs( $jobs );
 
 		WP_CLI::line( sprintf( 'Processed %d jobs from the index', $batch_size ) );
 
