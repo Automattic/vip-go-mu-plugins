@@ -144,9 +144,7 @@ class Cron {
 
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		// 5 seconds in the future b/c events with time() weren't getting processed correctly, even though WP
-		// said it added the event to the cron array. Bug?
-		wp_schedule_single_event( time() + 5, self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
+		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
 	}
 
 	/**
