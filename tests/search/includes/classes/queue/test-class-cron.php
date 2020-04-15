@@ -31,6 +31,10 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_schedule_sweeper_job() {
 		// Make sure it's not already scheduled
 		$this->cron->disable_sweeper_job();
@@ -46,6 +50,10 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->assertTrue( (boolean) $next, 'After Cron::schedule_sweeper_job(), job was not found' );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_disable_sweeper_job() {
 		// Make sure it already exists
 		$this->cron->schedule_sweeper_job();
