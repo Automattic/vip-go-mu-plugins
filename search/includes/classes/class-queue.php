@@ -316,20 +316,25 @@ class Queue {
 			return array();
 		}
 
-		// Set them as running
+		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
+		$this->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
-			$job->status = 'running';
+			$job->status = 'scheduled';
 		}
 
 		return $jobs;
 	}
 
 	public function process_jobs( $jobs ) {
+		// Set them as running
+		$job_ids = wp_list_pluck( $jobs, 'job_id' );
+
+		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
+
 		$indexables = \ElasticPress\Indexables::factory();
 	
 		// Organize by object type

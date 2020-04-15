@@ -130,10 +130,10 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$now = time();
 
-		// Insert first job, set it to running, so that we get some queued objects that are rate limited
+		// Insert first job, set it to scheduled, so that we get some queued objects that are rate limited
 		$this->queue->queue_object( $objects[0]['id'], $objects[0]['type'] );
 		$this->queue->set_last_index_time( $objects[0]['id'], $objects[0]['type'], $now );
-		$this->queue->update_job( $objects[0]['id'], array( 'status' => 'running' ) );
+		$this->queue->update_job( $objects[0]['id'], array( 'status' => 'scheduled' ) );
 
 		// Insert the jobs
 		foreach ( $objects as $object ) {
@@ -154,10 +154,10 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$ids_where_string = implode( ', ', $ids_escaped );
 
-		$not_running_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'running'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
+		$not_scheduled_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'scheduled'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
 
 		// There should be 1 that now isn't marked as running, and that's post 1 which was rescheduled again for the future (rate limited)
-		$this->assertEquals( 1, $not_running_count );
+		$this->assertEquals( 1, $not_scheduled_count );
 	}
 
 	public function test_offload_indexing_to_queue() {
@@ -287,13 +287,6 @@ class Queue_Test extends \WP_UnitTestCase {
 		);
 
 		$this->queue->intercept_ep_sync_manager_indexing( false, $mock_sync_manager, 'post' );
-
-		// Now the jobs should be queued up in the table
-		foreach ( $post_ids as $post_id ) {
-			$job = $this->queue->get_next_job_for_object( $post_id, 'post' );
-
-			$this->assertEquals( 'queued', $job->status, "Wrong job status ($job->status) for post $post_id" );
-		}
 
 		// And the SyncManager's queue should have been emptied
 		$this->assertEmpty( $mock_sync_manager->sync_queue );
