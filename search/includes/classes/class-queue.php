@@ -324,6 +324,11 @@ class Queue {
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status = 'scheduled';
+
+			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
+			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
+			// between the time we check out the job and the cron processor actually runs
+			$this->set_last_index_time( $job->object_id, $job->object_type, time() );
 		}
 
 		return $jobs;
@@ -357,11 +362,6 @@ class Queue {
 			$indexable->bulk_index( $ids );
 
 			// TODO handle errors
-
-			// Mark all as being indexed just now, for rate limiting
-			foreach ( $jobs as $job ) {
-				$this->set_last_index_time( $job->object_id, $job->object_type, time() );
-			}
 	
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
