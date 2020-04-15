@@ -47,7 +47,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$next = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
 
-		$this->assertTrue( (boolean) $next, 'After Cron::schedule_sweeper_job(), job was not found' );
+		$this->assertTrue( (bool) $next, 'After Cron::schedule_sweeper_job(), job was not found' );
 	}
 
 	/**
@@ -60,7 +60,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
 		
-		$this->assertTrue( (boolean) $existing, 'Sweeper cron event not scheduled, cannot test deletion' );
+		$this->assertTrue( (bool) $existing, 'Sweeper cron event not scheduled, cannot test deletion' );
 
 		$this->cron->disable_sweeper_job();
 
