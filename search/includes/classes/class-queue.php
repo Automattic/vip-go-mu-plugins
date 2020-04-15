@@ -389,6 +389,9 @@ class Queue {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
 
+		// Queue up a cron event to process these immediately
+		$this->cron->schedule_batch_job();
+
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
 
