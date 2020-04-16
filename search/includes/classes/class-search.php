@@ -9,6 +9,11 @@ class Search {
 	public $queue;
 	private $current_host_index;
 
+	private static $query_count_cache_key = 'vip_search_query_count';
+	private static $query_count_ttl = 300; // 5 minutes in seconds 
+	private static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	private static $query_rand_comparison = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+
 	private static $_instance;
 
 	/**
@@ -343,6 +348,15 @@ class Search {
 			return true;
 		}
 
+		// If the query count has exceeded the maximum
+		//     Only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Should be roughly half over time
+			if ( self::$query_rand_comparison >= rand( 1, 10 ) ) {
+				return true;
+			}
+		}
+
 		// Legacy constant name
 		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
 
@@ -614,5 +628,16 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/*
+	 * Increment the number of queries that have been passed through VIP Search
+	 */
+	private static function query_count_incr() {
+		if ( ! wp_cache_get( self::$query_count_cache_key ) ) {
+			wp_cache_set( self::$query_count_cache_key, 0, 'default', self::$query_count_ttl );
+		}
+
+		return wp_cache_incr( self::$query_count_cache_key );
 	}
 }
