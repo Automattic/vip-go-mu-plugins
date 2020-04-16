@@ -634,7 +634,7 @@ class Search {
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
 	private static function query_count_incr() {
-		if ( ! wp_cache_get( self::$query_count_cache_key ) ) {
+		if ( false === wp_cache_get( self::$query_count_cache_key ) ) {
 			wp_cache_set( self::$query_count_cache_key, 0, 'default', self::$query_count_ttl );
 		}
 
