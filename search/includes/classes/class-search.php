@@ -9,7 +9,8 @@ class Search {
 	public $queue;
 	private $current_host_index;
 
-	private static $query_count_cache_key = 'vip_search_query_count';
+	private static $query_count_cache_key = 'query_count';
+	private static $query_count_cache_group = 'vip_search';
 	private static $query_count_ttl = 300; // 5 minutes in seconds 
 	private static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	private static $query_rand_comparison = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
