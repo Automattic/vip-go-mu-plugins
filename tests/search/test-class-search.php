@@ -824,4 +824,61 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertFalse( $enabled );
 	}
+
+	/*
+	 * Ensure the various options, constants, and rate limiting affect query integration in the right ways
+	 */
+	public function test__ep_skip_query_integration() {
+		delete_option( 'vip_enable_vip_search_query_integration' );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip by default' );
+
+		add_option( 'vip_enable_vip_search_query_integration', false );
+		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip if option is false' );
+		
+		update_option( 'vip_enable_vip_search_query_integration', true );
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
+		
+		delete_option( 'vip_enable_vip_search_query_integration' );
+
+		// False will now be the default
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when query integration constant is set by default' );
+		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
+
+		// Set es query string to test override
+		$_GET['es'] = true;
+		
+		$this->assertFalse( $es::ep_skip_query_integration( true ), 'should never skip when es query string set' );
+		
+		// Unset es query string to not interfere with rest of tests
+		unset( $_GET['es'] );
+
+		// Force ratelimiting to apply
+		$es::$MAX_QUERY_COUNT = 0;
+
+		// Force this request to be ratelimited
+		$es::$QUERY_RAND_COMPARISON = 11;
+
+		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip since ratelimiting is happening and this request is one that\'s being ratelimited' );
+	}
+
+	/**
+	 * Ensure the incrementor for tracking request counts behaves properly
+	 */
+	public function test__query_count_incr() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		// Reset cache key
+		wp_cache_delete( $es::QUERY_COUNT_CACHE_KEY, $es::QUERY_COUNT_CACHE_GROUP );
+
+		$this->assertEquals( 1, $es::query_count_incr(), 'initial value should be 1' );
+
+		for( $i = 2; $i < 10; $i++ ) {
+			$this->assertEquals( $i, $es::query_count_incr(), 'value should increment with loop' );
+		}
+	}
 }

@@ -9,11 +9,12 @@ class Search {
 	public $queue;
 	private $current_host_index;
 
-	private const QUERY_COUNT_CACHE_KEY = 'query_count';
-	private const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public static $MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
-	private const MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	private const QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+
 
 	private static $_instance;
 
@@ -351,9 +352,9 @@ class Search {
 
 		// If the query count has exceeded the maximum
 		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::MAX_QUERY_COUNT ) {
+		if ( self::query_count_incr() > self::$MAX_QUERY_COUNT ) {
 			// Should be roughly half over time
-			if ( self::QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
+			if ( self::$QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
 				return true;
 			}
 		}
@@ -634,7 +635,7 @@ class Search {
 	/*
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
-	private static function query_count_incr() {
+	public static function query_count_incr() {
 		if ( false === wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
 			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::QUERY_COUNT_CACHE_GROUP, self::QUERY_COUNT_TTL );
 		}
