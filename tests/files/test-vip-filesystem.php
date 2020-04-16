@@ -99,51 +99,6 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $actual );
 	}
 
-	public function test__filter_filetype_check() {
-		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'check_filetype_with_backend' ] )
-				->getMock();
-
-		$stub->expects( $this->once() )
-				->method( 'check_filetype_with_backend' )
-				->with( 'somefile.jpg' )
-				->will( $this->returnValue( true ) );
-
-		$expected = [
-			'ext' => '.jpg',
-			'type' => 'image/jpeg',
-			'proper_filename' => true,
-		];
-		$actual = $stub->filter_filetype_check( $expected, '/path/to/somefile.jpg', 'somefile.jpg', [] );
-
-		$this->assertEquals( $expected, $actual );
-	}
-
-	public function test__filter_filetype_check__invalid_file() {
-		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-		             ->setMethods( [ 'check_filetype_with_backend' ] )
-		             ->getMock();
-
-		$stub->expects( $this->once() )
-		     ->method( 'check_filetype_with_backend' )
-		     ->with( 'somefile.jpg' )
-		     ->will( $this->returnValue( false ) );
-
-		$data = [
-			'ext' => '.jpg',
-			'type' => 'image/jpeg',
-			'proper_filename' => true,
-		];
-		$expected = [
-			'ext' => '',
-			'type' => '',
-			'proper_filename' => false,
-		];
-		$actual = $stub->filter_filetype_check( $data, '/path/to/somefile.jpg', 'somefile.jpg', [] );
-
-		$this->assertEquals( $expected, $actual );
-	}
-
 	public function test__get_upload_path() {
 		$get_upload_path = self::get_method( 'get_upload_path' );
 
