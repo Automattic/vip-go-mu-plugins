@@ -636,7 +636,7 @@ class Search {
 	 */
 	private static function query_count_incr() {
 		if ( false === wp_cache_get( self::$query_count_cache_key ) ) {
-			wp_cache_set( self::$query_count_cache_key, 0, 'default', self::$query_count_ttl );
+			wp_cache_set( self::$query_count_cache_key, 0, self::$query_count_cache_group, self::$query_count_ttl );
 		}
 
 		return wp_cache_incr( self::$query_count_cache_key );
