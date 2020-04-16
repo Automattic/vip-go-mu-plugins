@@ -23,12 +23,16 @@ class Queue {
 		}
 
 		require_once( __DIR__ . '/queue/class-schema.php' );
+		require_once( __DIR__ . '/queue/class-cron.php' );
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
 
-		// TODO this needs to be smarter - to only offload bulk and failed operations
-		// $this->offload_indexing_to_queue();
+		$this->cron = new Queue\Cron();
+		$this->cron->init();
+		$this->cron->queue = $this;
+
+		$this->setup_hooks();
 	}
 
 	public function is_enabled() {
@@ -38,6 +42,11 @@ class Queue {
 		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
 
 		return $enabled_by_constant || $is_enabled_by_option;
+	}
+
+	public function setup_hooks() {
+		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
+		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 	}
 
 	/**
@@ -261,6 +270,23 @@ class Queue {
 		return $job;
 	}
 
+	public function get_jobs( $job_ids ) {
+		global $wpdb;
+
+		if ( empty( $job_ids ) ) {
+			return array();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		$escaped_ids = array_map( 'intval', $job_ids );
+		$escaped_ids = implode( ', ', $job_ids );
+
+		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
+		
+		return $jobs;
+	}
+
 	/**
 	 * Grab $count jobs that are due now and mark them as running
 	 * 
@@ -277,6 +303,7 @@ class Queue {
 		$table_name = $this->schema->get_table_name();
 
 		// TODO transaction
+		// TODO only find objects that aren't already running
 
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
@@ -285,27 +312,41 @@ class Queue {
 			)
 		);
 
-		// Set them as running
+		if ( empty( $jobs ) ) {
+			return array();
+		}
+
+		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
+		$this->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
-			$job->status = 'running';
+			$job->status = 'scheduled';
+
+			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
+			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
+			// between the time we check out the job and the cron processor actually runs
+			$this->set_last_index_time( $job->object_id, $job->object_type, time() );
 		}
 
 		return $jobs;
 	}
 
-	public function process_batch_jobs( $jobs ) {
+	public function process_jobs( $jobs ) {
+		// Set them as running
+		$job_ids = wp_list_pluck( $jobs, 'job_id' );
+
+		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
+
 		$indexables = \ElasticPress\Indexables::factory();
 	
 		// Organize by object type
 		$jobs_by_type = array();
 
 		foreach ( $jobs as $job ) {
-			if ( ! is_array( $jobs_by_type[ $job->object_type ] ) ) {
+			if ( ! isset( $jobs_by_type[ $job->object_type ] ) ) {
 				$jobs_by_type[ $job->object_type ] = array();
 			}
 
@@ -321,11 +362,6 @@ class Queue {
 			$indexable->bulk_index( $ids );
 
 			// TODO handle errors
-
-			// Mark all as being indexed just now, for rate limiting
-			foreach ( $jobs as $job ) {
-				$this->set_last_index_time( $job->object_id, $job->object_type, time() );
-			}
 	
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
@@ -337,7 +373,9 @@ class Queue {
 	 * the async queue
 	 */
 	public function offload_indexing_to_queue() {
-		add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
+		if ( ! has_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ] ) ) {
+			add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
+		}
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
@@ -355,6 +393,9 @@ class Queue {
 		foreach ( array_keys( $sync_manager->sync_queue ) as $object_id ) {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
+
+		// Queue up a cron event to process these immediately
+		$this->cron->schedule_batch_job();
 
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
