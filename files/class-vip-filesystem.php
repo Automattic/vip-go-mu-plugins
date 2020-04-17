@@ -196,7 +196,7 @@ class VIP_Filesystem {
 	 */
 	protected function validate_file_length( $file_path ) {
 		if ( mb_strlen( $file_path ) > self::MAX_FILE_PATH_LENGTH ) {
-			return new WP_Error( 'path-too-long', sprintf( 'The file name and path cannot exceed %d characters. Please rename the file to something shorter and try again.', MAX_FILE_PATH_LENGTH ) );
+			return new WP_Error( 'path-too-long', sprintf( 'The file name and path cannot exceed %d characters. Please rename the file to something shorter and try again.', self::MAX_FILE_PATH_LENGTH ) );
 		}
 
 		return true;
