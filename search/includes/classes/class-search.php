@@ -136,6 +136,9 @@ class Search {
 
 		// Better shard counts
 		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
+
+		// Better replica counts
+		add_filter( 'ep_default_index_number_of_replicas', array( $this, 'filter__ep_default_index_number_of_replicas' ) );
 		
 		// Date relevancy defaults. Taken from Jetpack Search.
 		// Set to 'gauss'
@@ -499,6 +502,13 @@ class Search {
 		}
 
 		return $shards;
+	}
+
+	/**
+	 * Set the number of replicas for the index
+	 */
+	public function filter__ep_default_index_number_of_replicas( $replicas ) {
+		return 2;
 	}
 
 	/**

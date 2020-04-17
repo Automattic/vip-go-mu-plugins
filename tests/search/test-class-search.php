@@ -88,6 +88,15 @@ class Search_Test extends \WP_UnitTestCase {
 		remove_filter( 'wp_count_posts', $return_big_count );
 	}
 
+	public function test__vip_search_filter_ep_default_index_number_of_replicas() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$replicas = apply_filters( 'ep_default_index_number_of_replicas', 1 );
+
+		$this->assertEquals( 2, $replicas );
+	}
+
 	public function vip_search_enforces_disabled_features_data() {
 		return array(
 			array( 'documents' ),
