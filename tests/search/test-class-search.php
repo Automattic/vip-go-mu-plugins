@@ -877,7 +877,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 1, $es::query_count_incr(), 'initial value should be 1' );
 
-		for( $i = 2; $i < 10; $i++ ) {
+		for ( $i = 2; $i < 10; $i++ ) {
 			$this->assertEquals( $i, $es::query_count_incr(), 'value should increment with loop' );
 		}
 	}
