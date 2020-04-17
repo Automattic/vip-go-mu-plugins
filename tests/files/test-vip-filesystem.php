@@ -57,6 +57,14 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		return $method;
 	}
 
+	/**
+	 * Helper function to get upload path created from VIP_Filesystem
+	 */
+	private function get_upload_path() {
+		$upload_dir_path = wp_get_upload_dir()['path'];
+		return substr( $upload_dir_path, strlen( VIP_Filesystem::PROTOCOL . '://' ) );
+	}
+
 	public function get_test_data__filter_upload_dir() {
 		return [
 			'local-uploads' => [
@@ -222,5 +230,71 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$actual_metadata = $this->vip_filesystem->filter_wp_generate_attachment_metadata( $initial_metadata, $attachment_id );
 
 		$this->assertEquals( $expected_metadata, $actual_metadata );
+	}
+
+	public function test__filter_validate_file__valid_file() {
+		$file = [
+			'name' => 'testfile.txt',
+		];
+		$basepath = $this->get_upload_path();
+
+		$stub = $this->getMockBuilder( VIP_Filesystem::class )
+				->setMethods( [ 'validate_file_type' ] )
+				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'validate_file_type' )
+				->with( $basepath . '/' . $file['name'] )
+				->will( $this->returnValue( true ) );
+
+		$actual = $stub->filter_validate_file( $file );
+
+		$this->assertEquals( $file['name'], $actual['name'] );
+		$this->assertArrayNotHasKey( 'error', $actual );
+	}
+
+	public function test__filter_validate_file__invalid_file_length() {
+		$file = [
+			'name' => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz.txt',
+		];
+
+		$stub = $this->getMockBuilder( VIP_Filesystem::class )
+				->setMethods( [ 'validate_file_type' ] )
+				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'validate_file_type' );
+
+		$actual = $stub->filter_validate_file( $file );
+
+		$this->assertArrayHasKey( 'error', $actual );
+		$this->assertEquals(
+			'The file name and path cannot exceed 255 characters. Please rename the file to something shorter and try again.',
+			$actual['error']
+		);
+	}
+
+	public function test__filter_validate_file__invalid_file_type() {
+		$file = [
+			'name' => 'testfile.exe',
+		];
+		$basepath = $this->get_upload_path();
+
+		$stub = $this->getMockBuilder( VIP_Filesystem::class )
+				->setMethods( [ 'validate_file_type' ] )
+				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'validate_file_type' )
+				->with( $basepath . '/' . $file['name'] )
+				->will( $this->returnValue( new WP_Error( 'invalid-file-type', 'Failed to generate new unique file name `testfile.exe` (response code: 400)' ) ) );
+
+		$actual = $stub->filter_validate_file( $file );
+
+		$this->assertArrayHasKey( 'error', $actual );
+		$this->assertEquals(
+			'Failed to generate new unique file name `testfile.exe` (response code: 400)',
+			$actual['error']
+		);
 	}
 }
