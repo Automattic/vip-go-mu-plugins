@@ -11,8 +11,8 @@ class Search {
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
-	public static $MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	public static $QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $query_rand_comparison = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
 
@@ -352,9 +352,9 @@ class Search {
 
 		// If the query count has exceeded the maximum
 		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::$MAX_QUERY_COUNT ) {
+		if ( self::query_count_incr() > self::$max_query_count ) {
 			// Should be roughly half over time
-			if ( self::$QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
+			if ( self::$query_rand_comparison >= rand( 1, 10 ) ) {
 				return true;
 			}
 		}

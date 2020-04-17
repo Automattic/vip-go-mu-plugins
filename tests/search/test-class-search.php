@@ -858,10 +858,10 @@ class Search_Test extends \WP_UnitTestCase {
 		unset( $_GET['es'] );
 
 		// Force ratelimiting to apply
-		$es::$MAX_QUERY_COUNT = 0;
+		$es::$max_query_count = 0;
 
 		// Force this request to be ratelimited
-		$es::$QUERY_RAND_COMPARISON = 11;
+		$es::$query_rand_comparison = 11;
 
 		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip since ratelimiting is happening and this request is one that\'s being ratelimited' );
 	}
