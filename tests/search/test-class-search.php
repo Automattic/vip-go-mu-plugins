@@ -59,6 +59,35 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'index-name', $index_name );
 	}
 
+	public function test__vip_search_filter_ep_default_index_number_of_shards() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$shards = apply_filters( 'ep_default_index_number_of_shards', 5 );
+
+		$this->assertEquals( 1, $shards );
+	}
+
+	public function test__vip_search_filter_ep_default_index_number_of_shards_large_site() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// Simulate a large site
+		$return_big_count = function( $counts ) {
+			$counts->publish = 2000000;
+
+			return $counts;
+		};
+
+		add_filter( 'wp_count_posts', $return_big_count );
+
+		$shards = apply_filters( 'ep_default_index_number_of_shards', 5 );
+
+		$this->assertEquals( 4, $shards );
+
+		remove_filter( 'wp_count_posts', $return_big_count );
+	}
+
 	public function vip_search_enforces_disabled_features_data() {
 		return array(
 			array( 'documents' ),

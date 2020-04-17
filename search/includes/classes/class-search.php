@@ -133,6 +133,9 @@ class Search {
 
 		// Disable indexing of filtered content by default, as it's not searched by default
 		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
+
+		// Better shard counts
+		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
 		
 		// Date relevancy defaults. Taken from Jetpack Search.
 		// Set to 'gauss'
@@ -479,6 +482,23 @@ class Search {
 		}
 
 		return $formatted_args;
+	}
+
+	/**
+	 * Set the number of shards in the index settings
+	 * 
+	 * NOTE - this can only be changed during index creation, not on an existing index
+	 */
+	public function filter__ep_default_index_number_of_shards( $shards ) {
+		$shards = 1;
+
+		$posts_count = wp_count_posts();
+
+		if ( $posts_count->publish > 1000000 ) {
+			$shards = 4;
+		}
+
+		return $shards;
 	}
 
 	/**
