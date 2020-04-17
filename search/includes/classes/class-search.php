@@ -338,7 +338,7 @@ class Search {
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
-	static function ep_skip_query_integration( $skip, $query = false ) {
+	static function ep_skip_query_integration( $skip, $query = null ) {
 		if ( isset( $_GET[ 'es' ] ) ) {
 			return false;
 		}
