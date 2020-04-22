@@ -68,7 +68,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
  * @param int          $post_id   Optional. The post ID to fetch stats for. Defaults to the $post global's value.
  * @param int          $num_days  Optional. How many days to go back to include in the stats. Default is 1. Maximum 90 days.
  * @param string|bool  $end_data  Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is today's UTC date.
- * @return int Number of pageviews, 0 if empty/error.
+ * @return int|false Number of pageviews or false on error.
  */
 function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date = false ) {
 	// Check Jetpack is present and active
@@ -92,7 +92,7 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 		$args['num_days'] = max( 1, min( 90, absint( $args['num_days'] ) ) );
 
 		$posts = stats_get_csv( 'postviews', $args );
-		$views = $posts[0]['views'];
+		$views = $posts[0]['views'] ?? 0;
 	} else {
 		// If Jetpack is not present or not active, fake the data returned
 		$views = mt_rand( 0, 20000 );
