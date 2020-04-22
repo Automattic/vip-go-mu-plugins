@@ -199,4 +199,103 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $post->ID, $last_post_id );
 	}
+
+	public function test_simplified_get_missing_docs_or_posts_diff() {
+		$found_post_ids = array( 1, 3, 5 );
+		$found_document_ids = array( 1, 3, 7 );
+
+		$diff = \Automattic\VIP\Search\Health::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids );
+
+		$expected_diff = array(
+			'post_5' => array(
+				'type' => 'post',
+				'id' => 5,
+				'issue' => 'missing_from_index',
+			),
+			'post_7' => array(
+				'type' => 'post',
+				'id' => 7,
+				'issue' => 'extra_in_index',
+			),
+		);
+
+		$this->assertEquals( $expected_diff, $diff );
+	}
+
+	public function simplified_get_diff_document_and_prepared_document_data() {
+		return array(
+			// Simple diff
+			array(
+				// Expected
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Indexed
+				array(
+					'post_title' => 'bar',
+				),
+
+				// Expected diff
+				true,
+			),
+
+			// Nested props
+			array(
+				// Expected
+				array(
+					'post_title' => 'foo',
+					'meta' => array(
+						'somemeta' => array(
+							'raw' => 'somemeta_raw',
+							'value' => 'somemeta_value',
+							'date' => '1970-01-01',
+						),
+					),
+				),
+
+				// Indexed
+				array(
+					'post_title' => 'bar',
+					'meta' => array(
+						'somemeta' => array(
+							'raw' => 'somemeta_raw_other',
+							'value' => 'somemeta_value_other',
+							'date' => '1970-12-31', // Should not be validated
+						),
+					),
+				),
+
+				// Expected diff
+				true,
+			),
+
+			// No diff
+			array(
+				// Expected
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Indexed
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Expected diff
+				false,
+			),
+		);
+	}
+
+
+	/**
+	 * @dataProvider simplified_get_diff_document_and_prepared_document_data
+	 */
+	public function test_simplified_diff_document_and_prepared_document( $prepared_document, $document, $expected_diff ) {
+		$diff = \Automattic\VIP\Search\Health::simplified_diff_document_and_prepared_document( $document, $prepared_document );
+
+		// Should be false since there are no inconsitencies in the test data
+		$this->assertEquals( $diff, $expected_diff );
+	}
 }
