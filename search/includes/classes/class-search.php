@@ -15,7 +15,6 @@ class Search {
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
-
 	private static $_instance;
 
 	/**
