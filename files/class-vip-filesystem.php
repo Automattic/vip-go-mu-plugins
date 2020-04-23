@@ -179,7 +179,7 @@ class VIP_Filesystem {
 			return $file;
 		}
 
-		$check_length = $this->validate_file_length( $file_path );
+		$check_length = $this->validate_file_path_length( $file_path );
 		if ( is_wp_error( $check_length ) ) {
 			$file['error'] = $check_length->get_error_message();
 
@@ -194,7 +194,7 @@ class VIP_Filesystem {
 	 *
 	 * @param  string  Path starting with /wp-content/uploads
 	 */
-	protected function validate_file_length( $file_path ) {
+	protected function validate_file_path_length( $file_path ) {
 		if ( mb_strlen( $file_path ) > self::MAX_FILE_PATH_LENGTH ) {
 			return new WP_Error( 'path-too-long', sprintf( 'The file name and path cannot exceed %d characters. Please rename the file to something shorter and try again.', self::MAX_FILE_PATH_LENGTH ) );
 		}
