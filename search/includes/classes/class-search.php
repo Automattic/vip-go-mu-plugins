@@ -625,6 +625,17 @@ class Search {
 			return $formatted_args;
 		}
 
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			$allow_exact_search_site_ids = array(
+				1284,
+			);
+
+			// Only allow exact search for whitelisted site ids
+			if ( ! in_array( VIP_GO_APP_ID, $allow_exact_search_site_ids, true ) ) {
+				return $formatted_args;
+			}
+		}
+
 		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
 		$formatted_args['query']['bool']['must'] = $formatted_args['query']['bool']['should'];
 		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
