@@ -887,14 +887,14 @@ class Search_Test extends \WP_UnitTestCase {
 		unset( $_GET['es'] );
 
 		update_option( 'vip_enable_vip_search_query_integration', true );
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );	
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
 		
 		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
 	}
 
 	/*
 	 * Emsure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
-	 */	
+	 */
 	public function test__ep_skip_query_integration_skip_constant() {
 		$es = new \Automattic\VIP\Search\Search();
 
