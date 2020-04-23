@@ -92,7 +92,7 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 		$args['num_days'] = max( 1, min( 90, absint( $args['num_days'] ) ) );
 
 		$posts = stats_get_csv( 'postviews', $args );
-		$views = $posts[0];
+		$views = $posts[0]['views'] ?? 0;
 	} else {
 		// If Jetpack is not present or not active, fake the data returned
 		$views = mt_rand( 0, 20000 );
@@ -100,5 +100,3 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 
 	return absint( $views );
 }
-
-

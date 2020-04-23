@@ -197,7 +197,7 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
-	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
+	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
 	$headers['Host-Header'] = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
