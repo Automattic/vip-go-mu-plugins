@@ -9,6 +9,12 @@ class Search {
 	public $queue;
 	private $current_host_index;
 
+	private const QUERY_COUNT_CACHE_KEY = 'query_count';
+	private const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
+	private const MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	private const QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+
 	private static $_instance;
 
 	/**
@@ -92,7 +98,7 @@ class Search {
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
 
 		// Disable query integration by default
-		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
 		// Disable certain EP Features
@@ -127,6 +133,12 @@ class Search {
 
 		// Disable indexing of filtered content by default, as it's not searched by default
 		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
+
+		// Better shard counts
+		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
+
+		// Better replica counts
+		add_filter( 'ep_default_index_number_of_replicas', array( $this, 'filter__ep_default_index_number_of_replicas' ) );
 		
 		// Date relevancy defaults. Taken from Jetpack Search.
 		// Set to 'gauss'
@@ -326,9 +338,23 @@ class Search {
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
-	static function ep_skip_query_integration( $skip ) {
+	public static function ep_skip_query_integration( $skip, $query = null ) {
 		if ( isset( $_GET[ 'es' ] ) ) {
 			return false;
+		}
+
+		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
+		// This is intended to be a temporary workaround until a better fix is made
+		$bypassed_on_main_query_site_ids = [
+			1284,
+			1286,
+		];
+	
+		if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
+			// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
+			if ( $query && $query->is_main_query() && ! $query->is_search() ) {
+				return true;
+			}
 		}
 
 		/**
@@ -341,6 +367,15 @@ class Search {
 		 */
 		if ( $skip ) {
 			return true;
+		}
+
+		// If the query count has exceeded the maximum
+		//     Only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::MAX_QUERY_COUNT ) {
+			// Should be roughly half over time
+			if ( self::QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
+				return true;
+			}
 		}
 
 		// Legacy constant name
@@ -467,6 +502,30 @@ class Search {
 	}
 
 	/**
+	 * Set the number of shards in the index settings
+	 * 
+	 * NOTE - this can only be changed during index creation, not on an existing index
+	 */
+	public function filter__ep_default_index_number_of_shards( $shards ) {
+		$shards = 1;
+
+		$posts_count = wp_count_posts();
+
+		if ( $posts_count->publish > 1000000 ) {
+			$shards = 4;
+		}
+
+		return $shards;
+	}
+
+	/**
+	 * Set the number of replicas for the index
+	 */
+	public function filter__ep_default_index_number_of_replicas( $replicas ) {
+		return 2;
+	}
+
+	/**
 	 * Given an ES url, determine the "mode" of the request for stats purposes
 	 * 
 	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
@@ -566,6 +625,17 @@ class Search {
 			return $formatted_args;
 		}
 
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			$allow_exact_search_site_ids = array(
+				1284,
+			);
+
+			// Only allow exact search for whitelisted site ids
+			if ( ! in_array( VIP_GO_APP_ID, $allow_exact_search_site_ids, true ) ) {
+				return $formatted_args;
+			}
+		}
+
 		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
 		$formatted_args['query']['bool']['must'] = $formatted_args['query']['bool']['should'];
 		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
@@ -614,5 +684,16 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/*
+	 * Increment the number of queries that have been passed through VIP Search
+	 */
+	private static function query_count_incr() {
+		if ( false === wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::QUERY_COUNT_CACHE_GROUP, self::QUERY_COUNT_TTL );
+		}
+
+		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::QUERY_COUNT_CACHE_GROUP );
 	}
 }

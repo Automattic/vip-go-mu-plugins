@@ -99,7 +99,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		$jobs = $queue->checkout_jobs( $batch_size );
 
-		$queue->process_batch_jobs( $jobs );
+		$queue->process_jobs( $jobs );
 
 		WP_CLI::line( sprintf( 'Processed %d jobs from the index', $batch_size ) );
 
@@ -118,7 +118,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 			$indexable->sync_manager->index_sync_queue();
 		}
 
-		$after_requeue_queued_count = $queue->count_jobs( 'queued', $object_type );
+		$after_requeue_queued_count = $queue->count_jobs( 'scheduled', $object_type );
 		$after_requeue_queued_due_now_count = $queue->count_jobs_due_now( $object_type );
 
 		$total_times_queued = count( $q->posts ) * ( $requeue_times + 1 ); // +1 b/c of the initial batch we queued before retrying
