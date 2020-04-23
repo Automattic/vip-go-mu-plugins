@@ -12,7 +12,7 @@ class Search {
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
 	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	public static $query_rand_comparison = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
 
@@ -340,6 +340,15 @@ class Search {
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	public static function ep_skip_query_integration( $skip, $query = null ) {
+		// If the query count has exceeded the maximum
+		//     Only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Should be roughly half over time
+			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				return true;
+			}
+		}
+		
 		if ( isset( $_GET[ 'es' ] ) ) {
 			return false;
 		}
@@ -350,13 +359,15 @@ class Search {
 			1284,
 			1286,
 		];
-	
-		if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-			// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-			if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-				return true;
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
+				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
+				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
+					return true;
+				}
 			}
-		}
+		}	
 
 		/**
 		 * Honor filters that skip query integration
@@ -368,15 +379,6 @@ class Search {
 		 */
 		if ( $skip ) {
 			return true;
-		}
-
-		// If the query count has exceeded the maximum
-		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::$max_query_count ) {
-			// Should be roughly half over time
-			if ( self::$query_rand_comparison >= rand( 1, 10 ) ) {
-				return true;
-			}
 		}
 
 		// Legacy constant name
@@ -690,7 +692,7 @@ class Search {
 	/*
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
-	public static function query_count_incr() {
+	private static function query_count_incr() {
 		if ( false === wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
 			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::QUERY_COUNT_CACHE_GROUP, self::QUERY_COUNT_TTL );
 		}

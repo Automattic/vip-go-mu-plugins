@@ -866,42 +866,68 @@ class Search_Test extends \WP_UnitTestCase {
 	/*
 	 * Ensure the various options, constants, and rate limiting affect query integration in the right ways
 	 */
-	public function test__ep_skip_query_integration() {
-		delete_option( 'vip_enable_vip_search_query_integration' );
+	public function test__ep_skip_query_integration_skip_by_default() {
+		$es = new \Automattic\VIP\Search\Search();
+		$this->assertTrue( $es::ep_skip_query_integration( false ) );
+	}
 
+	/*
+	 * Ensure the vip_enable_vip_search_query_integration option works properly with ep_skip_query_integration filter
+	 */
+	public function test__ep_skip_query_integration_skip_option() {
 		$es = new \Automattic\VIP\Search\Search();
 
-		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip by default' );
-
+		// True will now be the default
 		add_option( 'vip_enable_vip_search_query_integration', false );
 		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip if option is false' );
-		
-		update_option( 'vip_enable_vip_search_query_integration', true );
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
-		
-		delete_option( 'vip_enable_vip_search_query_integration' );
-
-		// False will now be the default
-		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-		
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when query integration constant is set by default' );
-		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
 
 		// Set es query string to test override
 		$_GET['es'] = true;
-		
 		$this->assertFalse( $es::ep_skip_query_integration( true ), 'should never skip when es query string set' );
-		
-		// Unset es query string to not interfere with rest of tests
 		unset( $_GET['es'] );
+
+		update_option( 'vip_enable_vip_search_query_integration', true );
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );	
+		
+		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
+	}
+
+	/*
+	 * Emsure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
+	 */	
+	public function test__ep_skip_query_integration_skip_constant() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		// False will now be the default
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when query integration constant is set by default' );
+		
+		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
+	
+		// Set es query string to test override
+		$_GET['es'] = true;
+		$this->assertFalse( $es::ep_skip_query_integration( true ), 'should never skip when es query string set' );
+	}
+
+	/*
+	 * Ensure ratelimiting works prioperly with ep_skip_query_integration filter
+	 */
+	public function test__ep_skip_query_integration_skip_ratelimiting() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		add_option( 'vip_enable_vip_search_query_integration', true );
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		$_GET['es'] = true;
 
 		// Force ratelimiting to apply
 		$es::$max_query_count = 0;
-
+		
 		// Force this request to be ratelimited
-		$es::$query_rand_comparison = 11;
+		$es::$query_db_fallback_value = 11;
 
-		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip since ratelimiting is happening and this request is one that\'s being ratelimited' );
+		// ep_skip_query_integration should always be true if ratelimited
+		$this->assertTrue( $es::ep_skip_query_integration( false ) );
 	}
 
 	/**
@@ -909,14 +935,25 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__query_count_incr() {
 		$es = new \Automattic\VIP\Search\Search();
+		$query_count_incr = self::get_method( 'query_count_incr' );
 
 		// Reset cache key
 		wp_cache_delete( $es::QUERY_COUNT_CACHE_KEY, $es::QUERY_COUNT_CACHE_GROUP );
 
-		$this->assertEquals( 1, $es::query_count_incr(), 'initial value should be 1' );
+		$this->assertEquals( 1, $query_count_incr->invokeArgs( $es, [] ), 'initial value should be 1' );
 
 		for ( $i = 2; $i < 10; $i++ ) {
-			$this->assertEquals( $i, $es::query_count_incr(), 'value should increment with loop' );
+			$this->assertEquals( $i, $query_count_incr->invokeArgs( $es, [] ), 'value should increment with loop' );
 		}
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_method( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
 	}
 }
