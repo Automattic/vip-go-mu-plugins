@@ -367,7 +367,7 @@ class Search {
 					return true;
 				}
 			}
-		}	
+		}
 
 		/**
 		 * Honor filters that skip query integration
