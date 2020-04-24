@@ -78,12 +78,8 @@ class VIP_Encloseme_Cleanup {
 				break; // Bail, no post IDs have been found.
 			}
 
-			$pids = array_map( function( $pid ) {
-				return $pid[0];
-			}, $pids );
-			
 			foreach ( $pids as $pid ) {
-				delete_post_meta( $pid, '_encloseme' );
+				delete_post_meta( $pid[0], '_encloseme' );
 			}
 	
 			sleep( 3 );
