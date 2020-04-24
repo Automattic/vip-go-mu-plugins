@@ -360,7 +360,7 @@ class Search {
 			}
 		}
 		
-		if ( isset( $_GET[ 'es' ] ) ) {
+		if ( isset( $_GET['es'] ) ) {
 			return false;
 		}
 
