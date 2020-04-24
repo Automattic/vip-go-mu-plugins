@@ -882,7 +882,7 @@ class Search_Test extends \WP_UnitTestCase {
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
 		$_GET['es'] = true;
 		
-		$this->assertFalse( $es::ep_skip_query_integration( true ) );
+		$this->assertTrue( $es::ep_skip_query_integration( true ) );
 	}
 
 	/*
