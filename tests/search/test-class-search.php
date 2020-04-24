@@ -864,11 +864,25 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/*
-	 * Ensure the various options, constants, and rate limiting affect query integration in the right ways
+	 * Ensure that ep_skip_query_integration is true by default with no options/constants/skip
 	 */
 	public function test__ep_skip_query_integration_skip_by_default() {
 		$es = new \Automattic\VIP\Search\Search();
 		$this->assertTrue( $es::ep_skip_query_integration( false ) );
+	}
+
+	/*
+	 * Ensure that filters disabling query integration are honored
+	 */
+	public function test__ep_skip_query_integration_skip_filter() {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		// Set options/constants/query string to enable query integration
+		add_option( 'vip_enable_vip_search_query_integration', true );
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		$_GET['es'] = true;
+		
+		$this->assertFalse( $es::ep_skip_query_integration( true ) );
 	}
 
 	/*
@@ -883,17 +897,15 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// Set es query string to test override
 		$_GET['es'] = true;
-		$this->assertFalse( $es::ep_skip_query_integration( true ), 'should never skip when es query string set' );
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
 		unset( $_GET['es'] );
 
 		update_option( 'vip_enable_vip_search_query_integration', true );
 		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
-		
-		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
 	}
 
 	/*
-	 * Emsure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
+	 * Ensure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
 	 */
 	public function test__ep_skip_query_integration_skip_constant() {
 		$es = new \Automattic\VIP\Search\Search();
@@ -907,7 +919,7 @@ class Search_Test extends \WP_UnitTestCase {
 	
 		// Set es query string to test override
 		$_GET['es'] = true;
-		$this->assertFalse( $es::ep_skip_query_integration( true ), 'should never skip when es query string set' );
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
 	}
 
 	/*
@@ -926,7 +938,7 @@ class Search_Test extends \WP_UnitTestCase {
 		// Force this request to be ratelimited
 		$es::$query_db_fallback_value = 11;
 
-		// ep_skip_query_integration should always be true if ratelimited
+		// ep_skip_query_integration should be true if ratelimited
 		$this->assertTrue( $es::ep_skip_query_integration( false ) );
 	}
 
