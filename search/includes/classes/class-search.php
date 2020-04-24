@@ -339,6 +339,18 @@ class Search {
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	public static function ep_skip_query_integration( $skip, $query = null ) {
+		/**
+		 * Honor filters that skip query integration
+		 *
+		 * It may be desirable to skip query integration for specific
+		 * queries. We should honor those other filters. Since this
+		 * defaults to false, it will only kick in if someone specifically
+		 * wants to bypass ES in addition to what we're doing here.
+		 */
+		if ( $skip ) {
+			return true;
+		}
+
 		// If the query count has exceeded the maximum
 		//     Only allow half of the queries to use VIP Search
 		if ( self::query_count_incr() > self::$max_query_count ) {
@@ -366,18 +378,6 @@ class Search {
 					return true;
 				}
 			}
-		}
-
-		/**
-		 * Honor filters that skip query integration
-		 *
-		 * It may be desirable to skip query integration for specific
-		 * queries. We should honor those other filters. Since this
-		 * defaults to false, it will only kick in if someone specifically
-		 * wants to bypass ES in addition to what we're doing here.
-		 */
-		if ( $skip ) {
-			return true;
 		}
 
 		// Legacy constant name
