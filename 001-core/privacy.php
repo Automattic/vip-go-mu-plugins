@@ -60,6 +60,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// Create the exports folder if needed.
 	$exports_dir = wp_privacy_exports_dir();
 	$exports_url = wp_privacy_exports_url();
+	$temp_dir = get_temp_dir();
 
 	$result = wp_mkdir_p( $exports_dir );
 	if ( is_wp_error( $result ) ) {
@@ -73,7 +74,8 @@ function generate_personal_data_export_file( $request_id ) {
 	$obscura              = wp_generate_password( 32, false, false );
 	$file_basename        = 'wp-personal-data-file-' . $stripped_email . '-' . $obscura;
 	$html_report_filename = $file_basename . '.html';
-	$html_report_pathname = wp_normalize_path( $exports_dir . $html_report_filename );
+	// Use temp_dir because we don't want the file generated remotely yet.
+	$html_report_pathname = wp_normalize_path( $temp_dir . $html_report_filename );
 
 	$file = fopen( $html_report_pathname, 'w' );
 	if ( false === $file ) {
@@ -177,14 +179,29 @@ function generate_personal_data_export_file( $request_id ) {
 	// We can't currently iterate through files in the Files Service so we need a way to query exports by date.
 	update_post_meta( $request_id, '_vip_export_generated_time', time() );
 
+	$local_archive_pathname = $archive_pathname;
+	// Hack: ZipArchive and PclZip don't support streams.
+	// So, let's force the path to use a local one in the temp dir, which will work.
+	// All other references (meta) will still use the correct stream URL. 
+	if ( 0 === strpos( $local_archive_pathname, 'vip://' ) ) {
+		$local_archive_pathname = get_temp_dir() . substr( $archive_pathname, 6 );
+
+		// Create the folder path
+		$local_archive_dirname = dirname( $local_archive_pathname );
+		$local_archive_dir_created = wp_mkdir_p( $local_archive_dirname );
+		if ( is_wp_error( $local_archive_dir_created ) ) {
+			wp_send_json_error( $local_archive_dir_created->get_error_message() );
+		}
+	}
+
 	// Note: core deletes the file if it exists, but we can just overwrite it when we upload.
 
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
 	if ( class_exists( '\ZipArchive' ) ) {
-		$zip_result = _ziparchive_create_file( $archive_pathname, $html_report_pathname );
+		$zip_result = _ziparchive_create_file( $local_archive_pathname, $html_report_pathname );
 	} else {
-		$zip_result = _pclzip_create_file( $archive_pathname, $html_report_pathname );
+		$zip_result = _pclzip_create_file( $local_archive_pathname, $html_report_pathname );
 	}
 
 	// Remove the HTML file since it's not needed anymore.
@@ -195,9 +212,9 @@ function generate_personal_data_export_file( $request_id ) {
 		$error = sprintf( __( 'Unable to generate export file (archive) for writing: %s' ), $zip_result->get_error_message() );
 	} else {
 		/** This filter is documented in wp-admin/includes/file.php */
-		do_action( 'wp_privacy_personal_data_export_file_created', $archive_pathname, $archive_url, $html_report_pathname, $request_id );
+		do_action( 'wp_privacy_personal_data_export_file_created', $local_archive_pathname, $archive_url, $html_report_pathname, $request_id );
 
-		$upload_result = _upload_archive_file( $archive_pathname );
+		$upload_result = _upload_archive_file( $local_archive_pathname );
 		if ( is_wp_error( $upload_result ) ) {
 			$error = sprintf( __( 'Failed to upload export file (archive): %s' ), $upload_result->get_error_message() );
 		}
@@ -223,8 +240,9 @@ function _upload_archive_file( $archive_path ) {
 	// Hard-coded and full of assumptions for now.
 	// TODO: need a cleaner approach for this. Can probably borrow `WP_Filesystem_VIP_Uploads::sanitize_uploads_path()`.
 	$archive_file = basename( $archive_path );
-	$exports_folder = basename( wp_privacy_exports_dir() );
-	$upload_path = sprintf( '/wp-content/uploads/%s/%s', $exports_folder, $archive_file );
+	$exports_url = wp_privacy_exports_url();
+	$wp_content_strpos = strpos( $exports_url, '/wp-content/uploads/' );
+	$upload_path = trailingslashit( substr( $exports_url, $wp_content_strpos ) ) . $archive_file;
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
 	$upload_result = $api_client->upload_file( $archive_path, $upload_path );

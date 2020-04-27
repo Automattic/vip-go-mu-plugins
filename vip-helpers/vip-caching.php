@@ -576,21 +576,36 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	return $found_post;
 }
 
-function wpcom_vip_attachment_url_to_postid( $url ) {
+function wpcom_vip_attachment_cache_key( $url ) {
+	return 'wpcom_vip_attachment_url_post_id_' . md5( $url );
+}
 
-	$id = wp_cache_get( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) );
+function wpcom_vip_attachment_url_to_postid( $url ) {
+	$cache_key = wpcom_vip_attachment_cache_key( $url );
+	$id        = wp_cache_get( $cache_key );
 	if ( false === $id ) {
 		$id = attachment_url_to_postid( $url );
 		if ( empty( $id ) ) {
-			wp_cache_set( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
 		} else {
-			wp_cache_set( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		}
 	} elseif ( 'not_found' === $id ) {
 		return false;
 	}
 	return $id;
 }
+
+/**
+ * Remove cached post ID when attachment post deleted
+ *
+ * @see wpcom_vip_attachment_url_to_postid()
+ */
+add_action( 'delete_attachment', function ( $post_id ) {
+	$url = wp_get_attachment_url( $post_id );
+	$cache_key = wpcom_vip_attachment_cache_key( $url );
+	wp_cache_delete( $cache_key, 'default' );
+} );
 
 /**
  * Use this function to cache the comment counting in the wp menu that can be slow on sites with lots of comments
