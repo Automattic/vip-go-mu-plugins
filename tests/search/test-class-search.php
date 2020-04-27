@@ -925,7 +925,7 @@ class Search_Test extends \WP_UnitTestCase {
 	/*
 	 * Ensure ratelimiting works prioperly with ep_skip_query_integration filter
 	 */
-	public function test__ep_skip_query_integration_skip_ratelimiting() {
+	public function test__rate_limit_ep_query_integration() {
 		$es = new \Automattic\VIP\Search\Search();
 
 		add_option( 'vip_enable_vip_search_query_integration', true );
@@ -939,7 +939,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es::$query_db_fallback_value = 11;
 
 		// ep_skip_query_integration should be true if ratelimited
-		$this->assertTrue( $es::ep_skip_query_integration( false ) );
+		$this->assertTrue( $es::rate_limit_ep_query_integration( false ) );
 	}
 
 	/**

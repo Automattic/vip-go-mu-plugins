@@ -100,6 +100,7 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -350,15 +351,6 @@ class Search {
 		if ( $skip ) {
 			return true;
 		}
-
-		// If the query count has exceeded the maximum
-		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::$max_query_count ) {
-			// Should be roughly half over time
-			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
-				return true;
-			}
-		}
 		
 		if ( isset( $_GET['es'] ) ) {
 			return false;
@@ -395,6 +387,21 @@ class Search {
 		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
 	
 		return $skipped;
+	}
+
+	public static function rate_limit_ep_query_integration( $skip ) {
+		if ( $skip ) {
+			return true;
+		}
+
+		// If the query count has exceeded the maximum
+		//     Only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Should be roughly half over time
+			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				return true;
+			}
+		}
 	}
 
 	/**
