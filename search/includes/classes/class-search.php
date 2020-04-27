@@ -100,6 +100,7 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		// Rate limit query integration
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
 
 		// Disable certain EP Features
@@ -389,7 +390,18 @@ class Search {
 		return $skipped;
 	}
 
+	/**
+	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 *
+	 * Honor any previous filters that skip query integration. If query integration is
+	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
+	 * roughly half of the queries received to the database and half through ElasticPress.
+	 *
+	 * @param $skip current ep_skip_query_integration value
+	 * @return bool new value of ep_skip_query_integration
+	 */
 	public static function rate_limit_ep_query_integration( $skip ) {
+		// Honor previous filters that skip query integration
 		if ( $skip ) {
 			return true;
 		}
@@ -402,6 +414,8 @@ class Search {
 				return true;
 			}
 		}
+
+		return false;
 	}
 
 	/**

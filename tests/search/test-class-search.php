@@ -932,6 +932,9 @@ class Search_Test extends \WP_UnitTestCase {
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
 		$_GET['es'] = true;
 
+		$this->assertFalse( $es::rate_limit_ep_query_integration( false ), 'the default value should be false' );
+		$this->assertTrue( $es::rate_limit_ep_query_integration( true ), 'should honor filters that skip query integrations' );
+
 		// Force ratelimiting to apply
 		$es::$max_query_count = 0;
 		
@@ -939,7 +942,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es::$query_db_fallback_value = 11;
 
 		// ep_skip_query_integration should be true if ratelimited
-		$this->assertTrue( $es::rate_limit_ep_query_integration( false ) );
+		$this->assertTrue( $es::rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
 	}
 
 	/**
