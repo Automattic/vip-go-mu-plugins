@@ -51,12 +51,12 @@ class Queue {
 
 	/**
 	 * Queue an object for re-indexing
-	 * 
+	 *
 	 * If the object is already queued, it will not be queued again
-	 * 
+	 *
 	 * If the object is being re-indexed too frequently, it will be queued but with a start_time
 	 * in the future representing the earliest time the queue processor can index the object
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 */
@@ -94,6 +94,27 @@ class Queue {
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
+	}
+
+	/**
+	 * Queue objects for re-indexing
+	 *
+	 * If the object is already queued, it will not be queued again
+	 *
+	 * If the object is being re-indexed too frequently, it will be queued but with a start_time
+	 * in the future representing the earliest time the queue processor can index the object
+	 *
+	 * @param array $object_ids The ids of the objects
+	 * @param string $object_type The type of objects
+	 */
+	public function queue_objects( $object_ids, $object_type = 'post' ) {
+		if ( ! is_array( $object_ids ) ) {
+			return;
+		}
+
+		foreach ( $object_ids as $object_id ) {
+			$this->queue_object( $object_id, $object_type );
+		}
 	}
 
 	/**

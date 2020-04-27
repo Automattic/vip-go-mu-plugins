@@ -309,4 +309,31 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( array(), $jobs );
 	}
+
+	public function test_queue_objects_not_array() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$this->queue->queue_objects( 'Test' );
+		$this->queue->queue_objects( 42 );
+
+		$results = $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE 1", \ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( 0, count( $results ), 'shouldn\'t add objects to queue if object id list isn\'t an array' );
+	}
+
+	public function test_queue_objects_should_match_database() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = range( 0, 20 );
+		
+		$this->queue->queue_objects( $objects );
+
+		$results = $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE 1", \ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		
+		$this->assertEquals( count( $objects ), count( $results ), '# of objects queued doesn\'t match # of objects found in the database' );
+	}
 }
