@@ -73,7 +73,7 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 }
 
 define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
@@ -147,8 +147,13 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Logging
+require_once( __DIR__ . '/logstash/logstash.php' );
+require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
+
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
@@ -174,14 +179,29 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
+// Load elasticsearch helpers
+if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
+	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	require_once( __DIR__ . '/search/search.php' );
+
+	$search_plugin = \Automattic\VIP\Search\Search::instance();
+
+	// If VIP Search query integration is enabled, disable Jetpack Search
+	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
+		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
+		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
+		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
+	}
+}
+
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
-	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
+	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
+	$headers['Host-Header'] = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
-	// All non-production domains should not be indexed.
-	// This should not apply only to *.vip-go.co
-	if ( 'production' !== VIP_GO_ENV ) {
+	// Non-production applications and go-vip.(co|net) domains should not be indexed.
+	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 
