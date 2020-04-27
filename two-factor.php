@@ -12,6 +12,9 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
+// Do not allow API requests from 2fa users.
+add_filter( 'two_factor_user_api_login_enable', '__return_false', 1 ); // Hook in early to allow overrides
+
 function wpcom_vip_should_force_two_factor() {
 
 	// Don't force 2FA by default in local environments
@@ -29,7 +32,7 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	if ( Two_Factor_Core::is_user_using_two_factor() ) {
+	if ( apply_filters( 'wpcom_vip_is_user_using_two_factor', false ) ) {
 		return false;
 	}
 
@@ -136,6 +139,17 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			return $limited;
 		}, 9 );
 
+		// Calcuate two factor authentication support outside map_meta_cap to avoid callback loop
+		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
+		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
+
+		add_filter( 
+			'wpcom_vip_is_user_using_two_factor',
+			function() use ( $is_user_using_two_factor ) {
+				return $is_user_using_two_factor;
+			}
+		);
+
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
 	}
@@ -148,7 +162,9 @@ function wpcom_enable_two_factor_plugin() {
 		return;	
 	}
 
-	wpcom_vip_load_plugin( 'two-factor' );
+	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
+	// Switching to require_once so it no longer gets skipped
+	require_once( WPMU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php' );
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
@@ -159,7 +175,7 @@ function wpcom_enable_two_factor_plugin() {
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 	// If the machine user is not defined or the current user is not the machine user, don't filter caps.
-	if ( wpcom_vip_is_two_factor_forced() && ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || $user_id !== WPCOM_VIP_MACHINE_USER_ID ) ) {
+	if ( ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || WPCOM_VIP_MACHINE_USER_ID !== $user_id ) && wpcom_vip_is_two_factor_forced() ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
 			'read',

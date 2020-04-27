@@ -43,6 +43,14 @@ class API_Client_Test extends \WP_UnitTestCase {
 				'args' => $args,
 			];
 
+			if ( $args[ 'stream' ] && 
+				! is_wp_error( $mocked_response ) && 
+				isset( $mocked_response[ 'response' ] ) && 
+				$mocked_response[ 'response' ][ 'code' ] === 200 ) {
+				// Handle streamed requests
+				file_put_contents( $args[ 'filename' ], $mocked_response[ 'body' ] );
+			}
+
 			return $mocked_response;
 		}, 10, 3 );
 	}
@@ -283,7 +291,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 					],
 					'body' => null,
 				],
-				new WP_Error( 'file-not-found', 'The requested file `/wp-content/uploads/file.jpg` does not exist (response code: 404)' ),
+				new WP_Error( 'file-not-found', 'The requested file `/wp-content/uploads/get_file.jpg` does not exist (response code: 404)' ),
 			],
 
 			'other-bad-status' => [
@@ -293,7 +301,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 					],
 					'body' => null,
 				],
-				new WP_Error( 'get_file-failed', 'Failed to get file `/wp-content/uploads/file.jpg` (response code: 500)' ),
+				new WP_Error( 'get_file-failed', 'Failed to get file `/wp-content/uploads/get_file.jpg` (response code: 500)' ),
 			],
 
 			'file-exists' => [
@@ -314,7 +322,14 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function test__get_file( $mocked_response, $expected_result ) {
 		$this->mock_http_response( $mocked_response );
 
-		$actual_result = $this->api_client->get_file( '/wp-content/uploads/file.jpg' );
+		$file = $this->api_client->get_file( '/wp-content/uploads/get_file.jpg' );
+		
+		if ( is_wp_error( $file ) ) {
+			$actual_result = $file;
+		} else {
+			$actual_result = file_get_contents( $file );
+		}
+
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
