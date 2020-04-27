@@ -407,7 +407,7 @@ class Search {
 		}
 
 		// If the query count has exceeded the maximum
-		//     Only allow half of the queries to use VIP Search
+		// only allow half of the queries to use VIP Search
 		if ( self::query_count_incr() > self::$max_query_count ) {
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
