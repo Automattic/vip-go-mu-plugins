@@ -317,4 +317,42 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( array(), $jobs );
 	}
+
+	public function test_get_deadlocked_jobs() {
+		$this->queue->queue_object( 1000, 'post' );
+		$this->queue->queue_object( 2000, 'post' );
+		$this->queue->queue_object( 3000, 'post' );
+
+		// Set the first job to have been scheduled in the recent past, to be flagged as deadlocked
+		$job1 = $this->queue->get_next_job_for_object( 1000, 'post' );
+
+		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME;
+
+		$this->queue->update_job( $job1->job_id, array(
+			'status' => 'scheduled',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+		) );
+
+		// Set the second job to have been scheduled in the far past, to be flagged as deadlocked
+		$job2 = $this->queue->get_next_job_for_object( 3000, 'post' );
+
+		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME - ( 3 * DAY_IN_SECONDS );
+
+		$this->queue->update_job( $job2->job_id, array(
+			'status' => 'scheduled',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+		) );
+
+		// Now both jobs 1 and 2 should be considered deadlocked
+		$deadlocked_jobs = $this->queue->get_deadlocked_jobs();
+
+		$deadlocked_job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+
+		$expected_deadlocked_job_ids = array(
+			$job1->job_id,
+			$job2->job_id,
+		);
+
+		$this->assertEquals( $expected_deadlocked_job_ids, $deadlocked_job_ids );
+	}
 }

@@ -14,6 +14,7 @@ class Queue {
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
 	const MAX_BATCH_SIZE = 1000;
+	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
 	public $schema;
 
@@ -337,6 +338,29 @@ class Queue {
 			$this->set_last_index_time( $job->object_id, $job->object_type, time() );
 		}
 
+		return $jobs;
+	}
+
+	/**
+	 * Find any jobs that are considered "deadlocked"
+	 * 
+	 * A deadlocked job is one that has been scheduled for processing, but has
+	 * not completed within the defined time period
+	 */
+	public function get_deadlocked_jobs( $count = 250 ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		// If job was scheduled before this time, it is considered deadlocked
+		$deadlocked_time = time() - self::DEADLOCK_TIME;
+
+		$jobs = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d",
+			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+			$count
+		) );
+		
 		return $jobs;
 	}
 
