@@ -2,6 +2,8 @@
 
 if ( ! defined( 'WP_CLI' ) ) return;
 
+define( 'WP_IMPORTING', true ); // to prevent potentially expensive actions being triggered on delete
+
 /**
  * Scrub Posts
  * 
