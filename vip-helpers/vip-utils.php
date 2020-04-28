@@ -1286,6 +1286,9 @@ function _wpcom_vip_include_plugin( $file ) {
 	// Start by marking down the currently defined variables (so we can exclude them later)
 	$pre_include_variables = get_defined_vars();
 
+	// Support symlinks
+	wp_register_plugin_realpath( $file );
+
 	// Now include
 	include_once( $file );
 
