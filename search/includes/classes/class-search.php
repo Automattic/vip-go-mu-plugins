@@ -9,11 +9,11 @@ class Search {
 	public $queue;
 	private $current_host_index;
 
-	private const QUERY_COUNT_CACHE_KEY = 'query_count';
-	private const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
-	private const MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	private const QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	private static $_instance;
 
@@ -100,6 +100,8 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		// Rate limit query integration
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -339,24 +341,6 @@ class Search {
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	public static function ep_skip_query_integration( $skip, $query = null ) {
-		if ( isset( $_GET[ 'es' ] ) ) {
-			return false;
-		}
-
-		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
-		// This is intended to be a temporary workaround until a better fix is made
-		$bypassed_on_main_query_site_ids = [
-			1284,
-			1286,
-		];
-	
-		if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-			// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-			if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-				return true;
-			}
-		}
-
 		/**
 		 * Honor filters that skip query integration
 		 *
@@ -368,13 +352,24 @@ class Search {
 		if ( $skip ) {
 			return true;
 		}
+		
+		if ( isset( $_GET['es'] ) ) {
+			return false;
+		}
 
-		// If the query count has exceeded the maximum
-		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::MAX_QUERY_COUNT ) {
-			// Should be roughly half over time
-			if ( self::QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
-				return true;
+		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
+		// This is intended to be a temporary workaround until a better fix is made
+		$bypassed_on_main_query_site_ids = [
+			1284,
+			1286,
+		];
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
+				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
+				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
+					return true;
+				}
 			}
 		}
 
@@ -393,6 +388,34 @@ class Search {
 		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
 	
 		return $skipped;
+	}
+
+	/**
+	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 *
+	 * Honor any previous filters that skip query integration. If query integration is
+	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
+	 * roughly half of the queries received to the database and half through ElasticPress.
+	 *
+	 * @param $skip current ep_skip_query_integration value
+	 * @return bool new value of ep_skip_query_integration
+	 */
+	public static function rate_limit_ep_query_integration( $skip ) {
+		// Honor previous filters that skip query integration
+		if ( $skip ) {
+			return true;
+		}
+
+		// If the query count has exceeded the maximum
+		// only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Should be roughly half over time
+			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
