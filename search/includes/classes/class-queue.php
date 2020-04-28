@@ -319,11 +319,17 @@ class Queue {
 		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
+		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
+
+		$this->update_jobs( $job_ids, array(
+			'status' => 'scheduled',
+			'scheduled_time' => $scheduled_time,
+		) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status = 'scheduled';
+			$job->scheduled_time = $scheduled_time;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
