@@ -6,13 +6,14 @@ git:
   submodules: false
 
 php:
-  - 7
-  - 7.1
+  - 7.3
+
+branches:
+  only:
+  - master
 
 env:
-  matrix:
-    - WP_VERSION=latest WP_MULTISITE=0 DEPLOY_BRANCH=master
-    - WP_VERSION=latest WP_MULTISITE=1 DEPLOY_BRANCH=master
+ - DEPLOY_BRANCH=master
 
 addons:
   apt:
@@ -22,24 +23,9 @@ addons:
 before_install:
   - ./ci/prepare.sh
 
-install: true
+install: echo "Skipping install"
 
-before_script:
-  # Force Travis to use our global install than the system one
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
-  # Travis ships phpunit6 which no longer supports `PHPUnit_Framework_TestCase`, see https://core.trac.wordpress.org/ticket/39822
-  - composer global require "phpunit/phpunit=5.7.*"
-  - phpunit --version
-
-script:
-  # Linting and unit tests
-  - make test
-
-notifications:
-  slack:
-    secure: "DFGhxNw5Ai4/P3Ur55RTgOIowejSzIbH9YFYatULUZfIRdXk8Zuo75n+xyysciqdGD4hV1jVZCecb37LRZtUiKPwsr7tRPsw5e7H7sb0M1FG1eVrupTZS+HwJ3/Dwg8B866JCGVOhniaaW4rDXLYn2n96H+2N60Su37VaYoHQPQfwSZuRp5QSRsHz6gAlIScYG4emOmREhmTw/x6K5GcT0k3Sv18uIWfrO9WTkCaUsVraT0f0LYkPGJNL91E8KYKrcX3/vGEFF8nL/JUyM3KexB/6OCG+0IxGcFlZ0FJAu2mTaEk6Y6S53u3NpoCjZTSPOA+ClHEfV52HrimpAsKBhY9VmuYkdlaJOLeRuxKvBma5VTOQf9zlWxcKeOf6ySWsxYfD8nFlwdIbcqOBTU4QeKQXUAOmmk8E/nbe+NBl02VI0A9n4P+QOMoedJjF9Ds+T98d4POAhzbvVH3igdB++w7/X/86JsJqVUnQXk7LE/qWiYDcPmIdFxKB4gUfQBS4e7KOqsCpN35b4Nrjex12Jk4sPYk9eQLBP1NxCn2A+y4Wm0WHN6MOoRrVC4CXHwz4r+hyVcGFthabG3uH+s7/EyG5nUESbaoYpwJ+5+yvYi/HyC7IcwPY6Cp2CnMfFMm3ROrrGw+MaVQxbkrpFen2UZe5wjkOJY2NmNTjaSQzvg="
-    on_success: change
-    on_failure: change
+script: echo "Skipping script"
 
 after_success:
   # Push the aggregated code, including submodules, to the public repo

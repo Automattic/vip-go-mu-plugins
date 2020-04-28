@@ -249,12 +249,12 @@ function wpcom_vip_disable_postpost() {
 /**
  * Outputs Open Graph tags to various pages on the site
  *
- * @deprecated Deprecated since VIP 2.0.0 - Use jetpack_enable_open_graph()
+ * @deprecated Deprecated since VIP 2.0.0 - Use the `jetpack_enable_open_graph` filter
  * @link http://vip.wordpress.com/documentation/open-graph/ Adding Open Graph Tags
  * @see http://developers.facebook.com/docs/opengraph/ Open Graph
  */
 function wpcom_vip_enable_opengraph() {
-    _deprecated_function( __FUNCTION__, '2.0.0', 'jetpack_enable_open_graph' );
+	_deprecated_function( __FUNCTION__, '2.0.0', '`jetpack_enable_open_graph` filter' );
 }
 
 /**
@@ -1136,21 +1136,6 @@ function wpcom_vip_get_resized_remote_image_url( $url, $width, $height, $escape 
 	$thumburl = jetpack_photon_url( $url, array( 'resize' => array( $width, $height ) ) );
 
 	return ( $escape ) ? esc_url( $thumburl ) : $thumburl;
-}
-
-/**
- * Helper function for wpcom_vip_load_plugin(); sanitizes plugin folder name.
- *
- * You shouldn't use this function.
- *
- * @param string $folder Folder name
- * @return string Sanitized folder name
- */
-function _wpcom_vip_load_plugin_sanitizer( $folder ) {
-	$folder = preg_replace( '#([^a-zA-Z0-9-_.]+)#', '', $folder );
-	$folder = str_replace( '..', '', $folder ); // To prevent going up directories
-
-	return $folder;
 }
 
 /**

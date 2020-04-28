@@ -3,6 +3,8 @@ jQuery( function ( $ ) {
 	var mshotSecondTryTimer = null
 	var mshotThirdTryTimer = null
 	
+	var mshotEnabledLinkSelector = 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a';
+	
 	$('.akismet-status').each(function () {
 		var thisId = $(this).attr('commentid');
 		$(this).prependTo('#comment-' + thisId + ' .column-comment');
@@ -82,7 +84,7 @@ jQuery( function ( $ ) {
 	});
 
 	// Show a preview image of the hovered URL. Applies to author URLs and URLs inside the comments.
-	$( '#the-comment-list' ).on( 'mouseover', 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a', function () {
+	$( '#the-comment-list' ).on( 'mouseover', mshotEnabledLinkSelector, function () {
 		clearTimeout( mshotRemovalTimer );
 
 		if ( $( '.akismet-mshot' ).length > 0 ) {
@@ -99,9 +101,9 @@ jQuery( function ( $ ) {
 		clearTimeout( mshotSecondTryTimer );
 		clearTimeout( mshotThirdTryTimer );
 
-		var thisHref = encodeURIComponent( $( this ).attr( 'href' ) );
+		var thisHref = $( this ).attr( 'href' );
 
-		var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="//s0.wordpress.com/mshots/v1/' + thisHref + '?w=450" width="450" height="338" class="mshot-image" /></div>' );
+		var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="' + akismet_mshot_url( thisHref ) + '" width="450" height="338" class="mshot-image" /></div>' );
 		mShot.data( 'link', this );
 
 		var offset = $( this ).offset();
@@ -111,12 +113,15 @@ jQuery( function ( $ ) {
 			top: offset.top + ( $( this ).height() / 2 ) - 101 // 101 = top offset of the arrow plus the top border thickness
 		} );
 
+		// These retries appear to be superfluous if .mshot-image has already loaded, but it's because mShots
+		// can return a "Generating thumbnail..." image if it doesn't have a thumbnail ready, so we need
+		// to retry to see if we can get the newly generated thumbnail.
 		mshotSecondTryTimer = setTimeout( function () {
-			mShot.find( '.mshot-image' ).attr( 'src', '//s0.wordpress.com/mshots/v1/'+thisHref+'?w=450&r=2' );
+			mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 2 ) );
 		}, 6000 );
 
 		mshotThirdTryTimer = setTimeout( function () {
-			mShot.find( '.mshot-image' ).attr( 'src', '//s0.wordpress.com/mshots/v1/'+thisHref+'?w=450&r=3' );
+			mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 3 ) );
 		}, 12000 );
 
 		$( 'body' ).append( mShot );
@@ -127,12 +132,34 @@ jQuery( function ( $ ) {
 
 			$( '.akismet-mshot' ).remove();
 		}, 200 );
+	} ).on( 'mouseover', 'tr', function () {
+		// When the mouse hovers over a comment row, begin preloading mshots for any links in the comment or the comment author.
+		var linksToPreloadMshotsFor = $( this ).find( mshotEnabledLinkSelector );
+		
+		linksToPreloadMshotsFor.each( function () {
+			// Don't attempt to preload an mshot for a single link twice. Browser caching should cover this, but in case of
+			// race conditions, save a flag locally when we've begun trying to preload one.
+			if ( ! $( this ).data( 'akismet-mshot-preloaded' ) ) {
+				akismet_preload_mshot( $( this ).attr( 'href' ) );
+				$( this ).data( 'akismet-mshot-preloaded', true );
+			}
+		} );
 	} );
 
-	$('.checkforspam:not(.button-disabled)').click( function(e) {
+	$( '.checkforspam' ).click( function( e ) {
+		if ( $( this ).hasClass( 'checkforspam-pending-config' ) ) {
+			// Akismet hasn't been configured yet. Allow the user to proceed to the button's link.
+			return;
+		}
+
 		e.preventDefault();
 
-		$('.checkforspam:not(.button-disabled)').addClass('button-disabled');
+		if ( $( this ).hasClass( 'button-disabled' ) ) {
+			window.location.href = $( this ).data( 'success-url' ).replace( '__recheck_count__', 0 ).replace( '__spam_count__', 0 );
+			return;
+		}
+
+		$('.checkforspam').addClass('button-disabled').addClass( 'checking' );
 		$('.checkforspam-spinner').addClass( 'spinner' ).addClass( 'is-active' );
 
 		// Update the label on the "Check for Spam" button to use the active "Checking for Spam" language.
@@ -145,22 +172,37 @@ jQuery( function ( $ ) {
 	var recheck_count = 0;
 
 	function akismet_check_for_spam(offset, limit) {
+		var check_for_spam_buttons = $( '.checkforspam' );
+		
+		var nonce = check_for_spam_buttons.data( 'nonce' );
+		
+		// We show the percentage complete down to one decimal point so even queues with 100k
+		// pending comments will show some progress pretty quickly.
+		var percentage_complete = Math.round( ( recheck_count / check_for_spam_buttons.data( 'pending-comment-count' ) ) * 1000 ) / 10;
+		
 		// Update the progress counter on the "Check for Spam" button.
-		$( '.checkforspam-progress' ).text( $( '.checkforspam' ).data( 'progress-label-format' ).replace( '%1$s', offset ) );
+		$( '.checkforspam-progress' ).text( check_for_spam_buttons.data( 'progress-label-format' ).replace( '%1$s', percentage_complete ) );
 
 		$.post(
 			ajaxurl,
 			{
 				'action': 'akismet_recheck_queue',
 				'offset': offset,
-				'limit': limit
+				'limit': limit,
+				'nonce': nonce
 			},
 			function(result) {
+				if ( 'error' in result ) {
+					// An error is only returned in the case of a missing nonce, so we don't need the actual error message.
+					window.location.href = check_for_spam_buttons.data( 'failure-url' );
+					return;
+				}
+				
 				recheck_count += result.counts.processed;
 				spam_count += result.counts.spam;
 				
 				if (result.counts.processed < limit) {
-					window.location.href = $( '.checkforspam' ).data( 'success-url' ).replace( '__recheck_count__', recheck_count ).replace( '__spam_count__', spam_count );
+					window.location.href = check_for_spam_buttons.data( 'success-url' ).replace( '__recheck_count__', recheck_count ).replace( '__spam_count__', spam_count );
 				}
 				else {
 					// Account for comments that were caught as spam and moved out of the queue.
@@ -223,4 +265,95 @@ jQuery( function ( $ ) {
 			}
 		});
 	}
+	
+	/**
+	 * Generate an mShot URL if given a link URL.
+	 *
+	 * @param string linkUrl
+	 * @param int retry If retrying a request, the number of the retry.
+	 * @return string The mShot URL;
+	 */
+	function akismet_mshot_url( linkUrl, retry ) {
+		var mshotUrl = '//s0.wordpress.com/mshots/v1/' + encodeURIComponent( linkUrl ) + '?w=900';
+		
+		if ( retry ) {
+			mshotUrl += '&r=' + encodeURIComponent( retry );
+		}
+		
+		return mshotUrl;
+	}
+	
+	/**
+	 * Begin loading an mShot preview of a link.
+	 *
+	 * @param string linkUrl
+	 */
+	function akismet_preload_mshot( linkUrl ) {
+		var img = new Image();
+		img.src = akismet_mshot_url( linkUrl );
+	}
+
+	/**
+	 * Sets the comment form privacy notice display to hide when one clicks Core's dismiss button on the related admin notice.
+	 */
+	$( '#akismet-privacy-notice-admin-notice' ).on( 'click', '.notice-dismiss', function () {
+		$.ajax( {
+			url: './options-general.php?page=akismet-key-config&akismet_comment_form_privacy_notice=hide',
+		} );
+	});
+
+	$( '.akismet-could-be-primary' ).each( function () {
+		var form = $( this ).closest( 'form' );
+
+		form.data( 'initial-state', form.serialize() );
+
+		form.on( 'change keyup', function () {
+			var self = $( this );
+			var submit_button = self.find( '.akismet-could-be-primary' );
+
+			if ( self.serialize() != self.data( 'initial-state' ) ) {
+				submit_button.addClass( 'akismet-is-primary' );
+			}
+			else {
+				submit_button.removeClass( 'akismet-is-primary' );
+			}
+		} );
+	} );
+
+	/**
+	 * Shows the Enter API key form
+	 */
+	$( '.akismet-enter-api-key-box a' ).on( 'click', function ( e ) {
+		e.preventDefault();
+
+		var div = $( '.enter-api-key' );
+		div.show( 500 );
+		div.find( 'input[name=key]' ).focus();
+
+		$( this ).hide();
+	} );
+
+	/**
+	 * Hides the Connect with Jetpack form | Shows the Activate Akismet Account form
+	 */
+	$( 'a.toggle-ak-connect' ).on( 'click', function ( e ) {
+		e.preventDefault();
+
+		$( '.akismet-ak-connect' ).slideToggle('slow');
+		$( 'a.toggle-ak-connect' ).hide();
+		$( '.akismet-jp-connect' ).hide();
+		$( 'a.toggle-jp-connect' ).show();
+	} );
+
+	/**
+	 * Shows the Connect with Jetpack form | Hides the Activate Akismet Account form
+	 */
+	$( 'a.toggle-jp-connect' ).on( 'click', function ( e ) {
+		e.preventDefault();
+
+		$( '.akismet-jp-connect' ).slideToggle('slow');
+		$( 'a.toggle-jp-connect' ).hide();
+		$( '.akismet-ak-connect' ).hide();
+		$( 'a.toggle-ak-connect' ).show();
+	} );
 });

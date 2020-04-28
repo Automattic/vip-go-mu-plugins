@@ -62,18 +62,39 @@ function es_api_search_index( $args ) {
 
     $args['blog_id'] = absint( $args['blog_id'] );
 
-    $service_url = 'https://public-api.wordpress.com/rest/v1/sites/' . $args['blog_id'] . '/search';
+    $endpoint = sprintf( '/sites/%s/search', $args['blog_id'] );
+    $service_url = 'https://public-api.wordpress.com/rest/v1' . $endpoint;
+
+    $do_authenticated_request = false;
+    if ( class_exists( 'Jetpack_Client' )
+            && isset( $args['authenticated_request'] )
+	    && true === $args['authenticated_request'] ) {
+        $do_authenticated_request = true;
+    }
 
     unset( $args['blog_id'] );
+    unset( $args['authenticated_request'] );
 
-    $start_time = microtime( true );
-
-    $request = wp_remote_post( $service_url, array(
+    $request_args = array(
         'headers' => array(
             'Content-Type' => 'application/json',
         ),
-        'body' => json_encode( $args ),
-    ) );
+    );
+    $request_body = json_encode( $args );
+
+    $start_time = microtime( true );
+
+    if ( $do_authenticated_request ) {
+      $request_args['method'] = 'POST';
+
+      $request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
+    } else {
+      $request_args = array_merge( $request_args, array(
+        'body' => $request_body,
+	    ) );
+
+      $request = wp_remote_post( $service_url, $request_args );
+    }
 
     $end_time = microtime( true );
 
@@ -98,7 +119,7 @@ function es_api_search_index( $args ) {
         'args'          => $args,
         'response'      => $response,
         'response_code' => wp_remote_retrieve_response_code( $request ),
-        'elapsed'       => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
+        'elapsed_time'  => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
         'es_time'       => $took,
         'url'           => $service_url,
 	);
@@ -318,7 +339,8 @@ function wpcom_search_api_wp_to_es_args( $args ) {
     if ( empty( $es_query_args['sort'] ) )
         unset( $es_query_args['sort'] );
 
-    // Facets
+	// Facets. Deprecated in favor of Aggregations. Code is very similar, but left in place for backwards compatibility
+	// while things are migrated over. Should be removed once everything is running > 2.x
     if ( ! empty( $args['facets'] ) ) {
         foreach ( (array) $args['facets'] as $label => $facet ) {
             switch ( $facet['type'] ) {
@@ -372,5 +394,60 @@ function wpcom_search_api_wp_to_es_args( $args ) {
         }
     }
 
-    return $es_query_args;
+	// Aggregations
+	if ( ! empty( $args['aggregations'] ) ) {
+		$max_aggregations_count = 100;
+
+		foreach ( (array) $args['aggregations'] as $label => $aggregation ) {
+			switch ( $aggregation['type'] ) {
+
+				case 'taxonomy':
+					switch ( $aggregation['taxonomy'] ) {
+
+						case 'post_tag':
+							$field = 'tag';
+							break;
+
+						case 'category':
+							$field = 'category';
+							break;
+
+						default:
+							$field = 'taxonomy.' . $aggregation['taxonomy'];
+							break;
+					} // switch $aggregation['taxonomy']
+
+					$es_query_args['aggregations'][ $label ] = array(
+						'terms' => array(
+							'field' => $field . '.slug',
+							'size' => min( (int) $aggregation['count'], $max_aggregations_count ),
+						),
+					);
+
+					break;
+
+				case 'post_type':
+					$es_query_args['aggregations'][ $label ] = array(
+						'terms' => array(
+							'field' => 'post_type',
+							'size' => min( (int) $aggregation['count'], $max_aggregations_count ),
+						),
+					);
+
+					break;
+
+				case 'date_histogram':
+					$es_query_args['aggregations'][ $label ] = array(
+						'date_histogram' => array(
+							'interval' => $aggregation['interval'],
+							'field'    => ( ! empty( $aggregation['field'] ) && 'post_date_gmt' == $aggregation['field'] ) ? 'date_gmt' : 'date',
+						),
+					);
+
+					break;
+			}
+		}
+	}
+
+	return $es_query_args;
 }

@@ -11,6 +11,9 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 require_once( __DIR__ . '/api.php' );
 
 class WPCOM_VIP_Cache_Manager {
+	const MAX_PURGE_URLS = 100;
+	const MAX_BAN_URLS   = 10;
+
 	private $ban_urls = array();
 	private $purge_urls = array();
 	private $site_cache_purged = false;
@@ -24,19 +27,15 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function __construct() {
-		// Execute the healthcheck as quickly as possible
-		if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
-			if ( function_exists( 'newrelic_end_transaction' ) ) {
-				# See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
-				newrelic_end_transaction( true );
-			}
-			die( 'ok' );
-		}
-
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
 	public function init() {
+		// Cache purging disabled, bail
+		if ( ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) ) {
+			return;
+		}
+		
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
@@ -52,18 +51,29 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
 	}
 
+	public function get_queued_purge_urls() {
+		return $this->purge_urls;
+	}
+
+	public function clear_queued_purge_urls() {
+		$this->purge_urls = [];
+	}
+
 	public function get_manual_purge_link() {
 		if ( ! $this->can_purge_cache() ) {
 			return;
 		}
 
+		echo "<hr>";
+
 		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
 
-		$button_html =  esc_html__( 'Press the button below to force a purge of your entire page cache.' );
+		$button_html =  esc_html__( 'Press the button below to force a purge of the entire page cache. If you are sandboxed, it will purge the sandbox cache by default. ' );
+		$button_html .= '<strong>' . esc_html__( 'This button is visible to Automatticans only.' ) . '</strong>';
 		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
 		$button_html .= esc_html__( 'Purge Page Cache' );
 		$button_html .= '</strong></a></span>';
-		
+
 		echo "<p>$button_html</p>\n";
 	}
 
@@ -239,6 +249,18 @@ class WPCOM_VIP_Cache_Manager {
 		 */
 		do_action( 'wpcom_vip_cache_pre_execute_bans', $this->ban_urls );
 
+		$num_ban_urls = count( $this->ban_urls );
+		$num_purge_urls = count( $this->purge_urls );
+		if ( $num_ban_urls > self::MAX_BAN_URLS ) {
+			trigger_error( sprintf( 'vip-cache-manager: Trying to BAN too many URLs (total count %s); limiting count to %d', number_format( $num_ban_urls ), self::MAX_BAN_URLS ), E_USER_WARNING );
+			array_splice( $this->ban_urls, self::MAX_BAN_URLS );
+		}
+
+		if ( $num_purge_urls > self::MAX_PURGE_URLS ) {
+			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), self::MAX_PURGE_URLS ), E_USER_WARNING );
+			array_splice( $this->purge_urls, self::MAX_PURGE_URLS );
+		}
+
 		$requests = array();
 		foreach( (array) $this->ban_urls as $url )
 			$requests = array_merge( $requests, $this->build_purge_request( $url, 'BAN' ) );
@@ -268,8 +290,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( $this->site_cache_purged )
 			return false;
 
-		if ( defined( 'WP_IMPORTING' ) ) {
-			$this->purge_site_cache();
+		if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
 			return false;
 		}
 
@@ -282,6 +303,11 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return;
+		}
+
+		// Skip purge if it is a new attachment
+		if ( 'attachment' === $post->post_type && $post->post_date === $post->post_modified ) {
 			return;
 		}
 
@@ -406,6 +432,17 @@ class WPCOM_VIP_Cache_Manager {
 	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
 	 */
 	public function queue_terms_purges( $ids, $taxonomy ) {
+		$taxonomy_object = get_taxonomy( $taxonomy );
+		if ( ! $taxonomy_object ) {
+			return;
+		}
+
+		if ( false === $taxonomy_object->public
+			&& false === $taxonomy_object->publicly_queryable
+			&& false === $taxonomy_object->show_in_rest ) {
+			return;
+		}
+
 		$get_term_args = array(
 			'taxonomy'    => $taxonomy,
 			'include'     => $ids,
@@ -490,8 +527,7 @@ class WPCOM_VIP_Cache_Manager {
 			$term_purge_urls[] = $maybe_purge_url;
 			// Now add the pages for the archive we're clearing
 			for( $i = 2; $i <= $max_pages; $i++ ) {
-				$maybe_purge_url_page = rtrim( $maybe_purge_url, '/' ) . '/' . ltrim( $paging_endpoint, '/' );
-				$maybe_purge_url_page = sprintf( $maybe_purge_url_page, $i );
+				$maybe_purge_url_page = rtrim( $maybe_purge_url, '/' ) . '/' . ltrim( sprintf( $paging_endpoint, $i ), '/' );
 				$term_purge_urls[] = user_trailingslashit( $maybe_purge_url_page, 'paged' );
 			}
 		}
@@ -501,7 +537,9 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		/**
-		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd
+		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd.
+		 *
+		 * This is the taxonomy-agnostic version of the filter.
 		 *
 		 * Developers can hook this filter and check the term being purged in order
 		 * to also purge related URLs, e.g. feeds.
@@ -512,10 +550,31 @@ class WPCOM_VIP_Cache_Manager {
 		 * during initial code review and pre-deployment review where we
 		 * see issues.
 		 *
-		 * @param array $this->purge_urls {
+		 * @param array $term_purge_urls {
 		 *     An array of URLs for you to add to
 		 * }
-		 * @param type  $term_id The ID of the term which is the primary reason for the purge
+		 * @param int    $term_id The ID of the term
+		 */
+		$term_purge_urls = apply_filters( 'wpcom_vip_cache_purge_term_urls', $term_purge_urls, $term->term_id );
+
+		/**
+		 * Allows adding URLs to be PURGEd from cache when a given term_id is PURGEd
+		 *
+		 * This is the taxonomy-specific version of the filter.
+		 *
+		 * Developers can hook this filter and check the term being purged in order
+		 * to also purge related URLs, e.g. feeds.
+		 *
+		 * PLEASE NOTE: Your site benefits from the performance that our HTTP
+		 * Reverse Proxy Caching provides, and purging URLs from that cache
+		 * should be done cautiously. VIP may push back on use of this filter
+		 * during initial code review and pre-deployment review where we
+		 * see issues.
+		 *
+		 * @param array $term_purge_urls {
+		 *     An array of URLs for you to add to
+		 * }
+		 * @param int  $term_id The ID of the term which is the primary reason for the purge
 		 */
 		$term_purge_urls = apply_filters( "wpcom_vip_cache_purge_{$taxonomy_name}_term_urls", $term_purge_urls, $term->term_id );
 
@@ -530,12 +589,15 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return bool True on success
 	 */
 	public function queue_purge_url( $url ) {
-		$url = esc_url_raw( $url );
-		$url = wp_http_validate_url( $url );
-		if ( false === $url ) {
+		$normalized_url = $this->normalize_purge_url( $url );
+		$is_valid_url = $this->is_valid_purge_url( $normalized_url );
+
+		if ( false === $is_valid_url ) {
+			trigger_error( sprintf( 'vip-cache-manager: Tried to PURGE invalid URL: %s', $url ), E_USER_WARNING );
 			return false;
 		}
-		$this->purge_urls[] = $url;
+
+		$this->purge_urls[] = $normalized_url;
 		return true;
 	}
 
@@ -555,6 +617,27 @@ class WPCOM_VIP_Cache_Manager {
 		) {
 			$this->queue_purge_url( get_permalink( $post_before ) );
 		}
+	}
+
+	protected function normalize_purge_url( $url ) {
+		$normalized_url = esc_url_raw( $url );
+
+		// Easy way to strip off query params and fragments since we don't have access to `http_build_url`.
+		$query_index = mb_strpos( $normalized_url, '?' );
+		if ( false !== $query_index ) {
+			$normalized_url = mb_substr( $normalized_url, 0, $query_index );
+		}
+
+		$fragment_index = mb_strpos( $normalized_url, '#' );
+		if ( false !== $fragment_index ) {
+			$normalized_url = mb_substr( $normalized_url, 0, $fragment_index );
+		}
+
+		return $normalized_url;
+	}
+
+	protected function is_valid_purge_url( $url ) {
+		return wp_http_validate_url( $url );
 	}
 
 	private function can_purge_cache() {

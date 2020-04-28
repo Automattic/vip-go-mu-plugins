@@ -1,6 +1,10 @@
 <?php
 
-class VIP_Go_Core_Updates_Test extends WP_UnitTestCase {
+class VIP_Go__Core__Disable_Update_Caps_Test extends WP_UnitTestCase {
+	public function setUp() {
+		wpcom_vip_init_core_restrictions();
+	}
+
 	public function test__super_admin_should_not_have_update_core_cap() {
 		$super_admin = $this->factory->user->create_and_get( array( 'role' => 'administrator' ) );
 		grant_super_admin( $super_admin->ID );

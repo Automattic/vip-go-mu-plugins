@@ -1,36 +1,27 @@
 [submodule "vip-dashboard"]
 	path = vip-dashboard
-	url = git@github.com:Automattic/vip-dashboard.git
+	url = https://github.com/Automattic/vip-dashboard.git
 [submodule "vip-support"]
 	path = vip-support
-	url = git@github.com:Automattic/vip-support.git
+	url = https://github.com/Automattic/vip-support.git
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
-	url = git@github.com:Automattic/advanced-post-cache.git
+	url = https://github.com/Automattic/advanced-post-cache.git
 [submodule "jetpack"]
 	path = jetpack
-	url = git@github.com:Automattic/jetpack.git
+	url = https://github.com/Automattic/jetpack.git
 [submodule "rewrite-rules-inspector"]
 	path = rewrite-rules-inspector
-	url = git@github.com:Automattic/rewrite-rules-inspector
+	url = https://github.com/Automattic/rewrite-rules-inspector
 [submodule "http-concat"]
 	path = http-concat
-	url = git@github.com:Automattic/nginx-http-concat.git
-[submodule "shared-plugins/fieldmanager"]
-	path = shared-plugins/fieldmanager
-	url = https://github.com/alleyinteractive/wordpress-fieldmanager.git
-[submodule "shared-plugins/livefyre-apps"]
-	path = shared-plugins/livefyre-apps
-	url = git@github.com:Livefyre/Livefyre-Apps-Wordpress-Plugin.git
+	url = https://github.com/Automattic/nginx-http-concat.git
 [submodule "query-monitor"]
 	path = query-monitor
-	url = git@github.com:johnbillion/query-monitor.git
-[submodule "shared-plugins/msm-sitemap"]
-	path = shared-plugins/msm-sitemap
-	url = git@github.com:Automattic/msm-sitemap.git
+	url = https://github.com/johnbillion/query-monitor.git
 [submodule "cron-control"]
 	path = cron-control
-	url = git@github.com:Automattic/Cron-Control.git
+	url = https://github.com/Automattic/Cron-Control.git
 [submodule "debug-bar-cron"]
 	path = debug-bar-cron
 	url = https://github.com/tollmanz/debug-bar-cron.git
@@ -40,3 +31,21 @@
 [submodule "shared-plugins/two-factor"]
 	path = shared-plugins/two-factor
 	url = https://github.com/georgestephanis/two-factor.git
+[submodule "drop-ins/object-cache"]
+	path = drop-ins/object-cache
+	url = https://github.com/Automattic/wp-memcached.git
+[submodule "lightweight-term-count-update"]
+	path = lightweight-term-count-update
+	url = https://github.com/Automattic/lightweight-term-count-update
+[submodule "gutenberg-ramp"]
+	path = gutenberg-ramp
+	url = https://github.com/Automattic/gutenberg-ramp.git
+[submodule "cron-control-next"]
+	path = cron-control-next
+	url = git@github.com:Automattic/Cron-Control.git
+[submodule "elasticsearch/elasticpress"]
+	path = search/elasticpress
+	url = https://github.com/Automattic/ElasticPress.git
+[submodule "elasticsearch/debug-bar-elasticpress"]
+	path = search/debug-bar-elasticpress
+	url = https://github.com/10up/debug-bar-elasticpress.git

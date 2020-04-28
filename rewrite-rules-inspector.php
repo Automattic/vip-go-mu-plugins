@@ -24,7 +24,7 @@ add_filter( 'rri_parent_slug', function() { return 'vip-dashboard'; } );
  */
 add_action( 'switch_theme', 'rri_wpcom_action_switch_theme' );
 function rri_wpcom_action_switch_theme( $new_name ) {
-	wpcom_initiate_flush_rewrite_rules();
+	flush_rewrite_rules();
 }
 
 /**

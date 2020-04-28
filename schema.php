@@ -1,7 +1,10 @@
 <?php
 
-/*
- * Schema Customizations
+/**
+ * Plugin Name: VIP Schema
+ * Description: Provides VIP-specific database schema customizations.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
 namespace Automattic\VIP\Schema;

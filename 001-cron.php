@@ -4,17 +4,24 @@
  Plugin URI:
  Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
  Author: Erick Hitter, Automattic
- Version: 1.5
+ Version: 2.0
  Text Domain: automattic-cron-control
  */
 
 /**
- * Inactive multisite subsites can't be reached by our cron runners, so should use Core's native approach
+ * Determine if Cron Control is called for
+ *
+ * Inactive multisite subsites and local environments are generally unavailable
  *
  * @return bool
  */
 function wpcom_vip_use_core_cron() {
-	// Bail early for anything that isn't a multisite subsite
+	// Do not load outside of VIP environments, unless explicitly requested
+	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
+		return true;
+	}
+
+	// Bail early for anything else that isn't a multisite subsite
 	if ( ! is_multisite() || is_main_site() ) {
 		return false;
 	}
@@ -35,6 +42,10 @@ function wpcom_vip_use_core_cron() {
  * Cron Control handles authentication itself
  */
 function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
+	if ( ! class_exists( '\Automattic\WP\Cron_Control\REST_API' ) ) {
+		return $allowed;
+	}
+
 	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
 
 	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
@@ -62,6 +73,55 @@ function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
 }
 
 /**
+ * Log details of fatal error in callback that Cron Control caught
+ *
+ * @param $event object
+ * @param $error \Throwable
+ */
+function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
+	$message = sprintf( 'PHP Fatal error:  Caught Error: %1$s in %2$s:%3$d%4$sStack trace:%4$s# %5$s%4$s%6$s',
+		$error->getMessage(),
+		$error->getFile(),
+		$error->getLine(),
+		PHP_EOL,
+		wpcom_vip_cron_control_event_object_to_string( $event ),
+		$error->getTraceAsString()
+	);
+	error_log( $message );
+}
+
+/**
+ * Convert event object to log entry
+ *
+ * @param $event object
+ */
+function wpcom_vip_log_cron_control_event_object( $event ) {
+	$message  = 'Cron Control Uncaught Error - ';
+	$message .= wpcom_vip_cron_control_event_object_to_string( $event );
+	error_log( $message );
+}
+
+/**
+ * Convert event object to string suitable for logging
+ *
+ * @param $event object
+ * @return string
+ */
+function wpcom_vip_cron_control_event_object_to_string( $event ) {
+	return sprintf( 'ID: %1$d | timestamp: %2$s | action: %3$s | action_hashed: %4$s | instance: %5$s | home: %6$s', $event->ID, $event->timestamp, $event->action, $event->action_hashed, $event->instance, home_url( '/' ) );
+}
+
+/**
+ * Callback for 'a8c_cron_control_uncacheable_cron_option' action. Send an alert to IRC and Slack in case of cron option being too big.
+ *
+ * @param $event object
+ */
+function wpcom_vip_log_cron_control_uncacheable_cron_option( $option_size, $buckets, $option_flat_count ) {
+	$message = sprintf( 'Cron Control Cron Option Uncacheable Alert - home: %s | option size: %d | buckets: %d | option flat count: %d', home_url( '/' ), $option_size, $buckets, $option_flat_count );
+	wpcom_vip_irc( 'vip-go-criticals', $message, 2, 'cache-control-uncacheable-cron-option', 900 );
+}
+
+/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
@@ -82,5 +142,20 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 */
 	add_filter( 'jetpack_sync_sender_should_load', 'wpcom_vip_disable_jetpack_sync_on_cron_shutdown' );
 
-	require_once __DIR__ . '/cron-control/cron-control.php';
+	/**
+	 * Log details of events that fail
+	 */
+	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
+	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
+	add_action( 'a8c_cron_control_uncacheable_cron_option', 'wpcom_vip_log_cron_control_uncacheable_cron_option', 10, 3 );
+	
+	$cron_control_next_version = __DIR__ . '/cron-control-next/cron-control.php';
+
+	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
+		// Use latest version for testing
+		require_once $cron_control_next_version;
+	} else {
+		// Use regular version
+		require_once __DIR__ . '/cron-control/cron-control.php';
+	}
 }

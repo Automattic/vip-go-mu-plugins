@@ -1,23 +1,42 @@
 <?php
-/*
-Plugin Name: Query Monitor
-Description: Monitoring of database queries, hooks, conditionals and more (including VIP Go tweaks).
-Version:     2.13.4
-Plugin URI:  https://querymonitor.com/
-Author:      John Blackbourn
-Author URI:  https://johnblackbourn.com/
-Text Domain: query-monitor
-Domain Path: /languages/
-License:     GPL v2 or later
 
-*/
+/**
+ * Query Monitor plugin for WordPress
+ *
+ * @package   query-monitor
+ * @link      https://github.com/johnbillion/query-monitor
+ * @author    John Blackbourn <john@johnblackbourn.com>
+ * @copyright 2009-2018 John Blackbourn
+ * @license   GPL v2 or later
+ *
+ * Plugin Name:  Query Monitor
+ * Description:  The Developer Tools panel for WordPress.
+ * Version:      3.1.1
+ * Plugin URI:   https://github.com/johnbillion/query-monitor
+ * Author:       John Blackbourn & contributors
+ * Author URI:   https://github.com/johnbillion/query-monitor/graphs/contributors
+ * Text Domain:  query-monitor
+ * Domain Path:  /languages/
+ * Requires PHP: 5.3.6
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 /**
  * Determines if Query Monitor should be enabled. We don't
  * want to load it if we don't have to.
  *
- * * If a QM_COOKIE is detected, Query monitor is enabled
- * * If the WPCOM_VIP_QM_ENABLE constant is true, Query Monitor is enabled
+ *  - If logged-in user has the `view_query_monitor`
+ *    capability, Query Monitor is enabled.
+ *  - If a QM_COOKIE is detected, Query Monitor is enabled.
  *
  * Note that we have to set the value for QM_COOKIE here,
  * in order to detect it.
@@ -38,7 +57,9 @@ function wpcom_vip_qm_enable( $enable ) {
 	if ( current_user_can( 'view_query_monitor' ) ) {
 		return true;
 	}
-	if ( isset( $_COOKIE[QM_COOKIE] ) ) {
+
+	// We're not validating the cookie here as QM will do that later
+	if ( isset( $_COOKIE[ QM_COOKIE ] ) ) {
 		return true;
 	}
 

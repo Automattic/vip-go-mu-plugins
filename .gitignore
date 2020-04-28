@@ -12,7 +12,8 @@ phpdoc.xml
 phpdoc
 
 # Composer
-vendor
-composer.json
-composer.lock
+/vendor/
 output
+
+# npm
+node_modules

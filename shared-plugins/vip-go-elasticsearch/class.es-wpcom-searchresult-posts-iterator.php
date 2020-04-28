@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Provide a custom Iterator for seamlessly switching to the appropriate blog and inflating posts for 
+ * Provide a custom Iterator for seamlessly switching to the appropriate blog and inflating posts for
  * search results that may or many not live on other sites.
  *
  * Provides lazy loading of posts (by id) and transparent blog contetx switching for iterating a ES result set
@@ -9,28 +9,28 @@
 class ES_WPCOM_SearchResult_Posts_Iterator implements SeekableIterator, Countable, ArrayAccess {
 	/**
 	 * The ES search result to retrieve posts for
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $search_result;
 
 	/**
 	 * An array of inflated posts represented in the $search_result
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $posts;
 
 	/**
 	 * The current offset
-	 * 
+	 *
 	 * @var int
 	 */
 	protected $pointer = 0;
 
 	/**
 	 * Retrieve the ES search result
-	 * 
+	 *
 	 * @return array The ES search result
 	 */
 	public function get_search_result() {
@@ -39,7 +39,7 @@ class ES_WPCOM_SearchResult_Posts_Iterator implements SeekableIterator, Countabl
 
 	/**
 	 * Set the ES search result
-	 * 
+	 *
 	 * @param array $search_result The ES search result to associate with this iterator
 	 */
 	public function set_search_result( array $search_result ) {
@@ -50,7 +50,7 @@ class ES_WPCOM_SearchResult_Posts_Iterator implements SeekableIterator, Countabl
 
 	/**
 	 * Retrieve a post from the database by id, and conditionally switch to the appropriate blog, if needed
-	 * 
+	 *
 	 * @param  array 	$es_result The individual hit in an ES search result to inflate a post for
 	 * @return WP_Post 	The inflated WP_Post object, or null if not found
 	 */
@@ -64,7 +64,7 @@ class ES_WPCOM_SearchResult_Posts_Iterator implements SeekableIterator, Countabl
 	}
 
 	// Implement SeekableIterator
-	
+
 	public function seek( $position ) {
 		$this->pointer = $position;
 	}
@@ -90,13 +90,13 @@ class ES_WPCOM_SearchResult_Posts_Iterator implements SeekableIterator, Countabl
 	}
 
 	// Implement Countable
-	
+
 	public function count() {
 		return count( $this->search_result['results']['hits'] );
 	}
 
 	// Implement ArrayAccess
-	
+
 	public function offsetExists( $index ) {
 		return isset( $this->search_result['results']['hits'][ $index ] );
 	}

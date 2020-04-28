@@ -250,20 +250,6 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 
  * @return int Post ID, or 0 on failure.
  */
 function wpcom_vip_url_to_postid( $url ) {
-	// Can only run after init, since home_url() has not been filtered to the mapped domain prior to that,
-	// which will cause url_to_postid to fail
-	// @see https://vip.wordpress.com/documentation/vip-development-tips-tricks/home_url-vs-site_url/
-	if ( ! did_action( 'init' ) ) {
-		_doing_it_wrong( 'wpcom_vip_url_to_postid', 'wpcom_vip_url_to_postid must be called after the init action, as home_url() has not yet been filtered', '' );
-
-		return 0;
-	}
-
-	// Sanity check; no URLs not from this site
-	if ( parse_url( $url, PHP_URL_HOST ) !== wpcom_vip_get_home_host() ) {
-		return 0;
-	}
-
 	$cache_key = md5( $url );
 	$post_id = wp_cache_get( $cache_key, 'url_to_postid' );
 
@@ -590,21 +576,36 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	return $found_post;
 }
 
-function wpcom_vip_attachment_url_to_postid( $url ) {
+function wpcom_vip_attachment_cache_key( $url ) {
+	return 'wpcom_vip_attachment_url_post_id_' . md5( $url );
+}
 
-	$id = wp_cache_get( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) );
+function wpcom_vip_attachment_url_to_postid( $url ) {
+	$cache_key = wpcom_vip_attachment_cache_key( $url );
+	$id        = wp_cache_get( $cache_key );
 	if ( false === $id ) {
 		$id = attachment_url_to_postid( $url );
 		if ( empty( $id ) ) {
-			wp_cache_set( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
 		} else {
-			wp_cache_set( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		}
 	} elseif ( 'not_found' === $id ) {
 		return false;
 	}
 	return $id;
 }
+
+/**
+ * Remove cached post ID when attachment post deleted
+ *
+ * @see wpcom_vip_attachment_url_to_postid()
+ */
+add_action( 'delete_attachment', function ( $post_id ) {
+	$url = wp_get_attachment_url( $post_id );
+	$cache_key = wpcom_vip_attachment_cache_key( $url );
+	wp_cache_delete( $cache_key, 'default' );
+} );
 
 /**
  * Use this function to cache the comment counting in the wp menu that can be slow on sites with lots of comments
@@ -684,8 +685,8 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	return $link;
 }
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
-	// Don't bother if slug hasn't changed.
-	if ( $post->post_name == $post_before->post_name ) {
+	// Don't bother if the slug or date hasn't changed.
+	if ( $post->post_name == $post_before->post_name && $post->post_date == $post_before->post_date ) {
 		return;
 	}
 
@@ -721,3 +722,11 @@ function wpcom_vip_maybe_skip_old_slug_redirect(){
 function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 	add_action( 'template_redirect', 'wpcom_vip_maybe_skip_old_slug_redirect', 7 ); //Run this before wpcom_vip_wp_old_slug_redirect so we can also remove our caching helper
 }
+
+/**
+* Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
+*
+* This cannot be included inside Jetpack because it ships with caching disabled by default.
+* By enabling caching it's possible to save time in uncached page renders.
+**/
+add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );

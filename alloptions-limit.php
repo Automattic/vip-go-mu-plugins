@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Plugin Name: VIP All Options Limit
+ * Description: Provides warnings and notifications for wp_options exceeding limits.
+ * Author: Automattic
+ * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ */
+
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
 
 function wpcom_vip_sanity_check_alloptions() {
@@ -108,7 +115,9 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		// Send to IRC, if we have a host configured
 		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 			wpcom_vip_irc( '#nagios-vip', $to_irc, $irc_alert_level, 'a8c-alloptions' );
-			wpcom_vip_irc( '#wordpress.com-errors', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+			if ( 'production' === $environment ) {
+				wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+			}
 		}
 
 		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;

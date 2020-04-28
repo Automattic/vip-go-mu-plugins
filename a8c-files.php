@@ -19,7 +19,45 @@ define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
 define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
+require_once( __DIR__ . '/files/class-path-utils.php' );
+
+require_once( __DIR__ . '/files/init-filesystem.php' );
+
+require_once( __DIR__ . '/files/class-vip-filesystem.php' );
+
+/**
+ * The class use to update attachment meta data
+ */
+require_once __DIR__ . '/files/class-meta-updater.php';
+
+use Automattic\VIP\Files\Path_Utils;
+use Automattic\VIP\Files\VIP_Filesystem;
+use Automattic\VIP\Files\Meta_Updater;
+
 class A8C_Files {
+
+	/**
+	 * The name of the scheduled cron event to update attachment metadata
+	 */
+	const CRON_EVENT_NAME = 'vip_update_attachment_filesizes';
+
+	/**
+	 * Option name to mark all attachment filesize update completed
+	 */
+	const OPT_ALL_FILESIZE_PROCESSED = 'vip_all_attachment_filesize_processed_v2';
+
+	/**
+	 * Option name to mark next index for starting the next batch of filesize updates.
+	 */
+	const OPT_NEXT_FILESIZE_INDEX = 'vip_next_attachment_filesize_index_v2';
+
+	/**
+	 * Option name for storing Max ID.
+	 *
+	 * We do not need to keep this updated as new attachments will already have file sizes
+	 * included in their meta.
+	 */
+	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id_v2';
 
 	function __construct() {
 
@@ -28,6 +66,46 @@ class A8C_Files {
 			return 1073741824; // pow( 2, 30 )
 		});
 
+		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
+		// The old school implementation will be phased out soon.
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+			$this->init_vip_filesystem();
+		} else {
+			$this->init_legacy_filesystem();
+		}
+
+		// Initialize Photon-specific filters.
+		// Wait till `init` to make sure Jetpack and the Photon module are ready.
+		add_action( 'init', array( $this, 'init_photon' ) );
+
+		// ensure we always upload with year month folder layouts
+		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
+
+		// ensure the correct upload URL is used even after switch_to_blog is called
+		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+
+		// Conditionally schedule the attachment filesize metaata update job
+		if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
+			// add new cron schedule for filesize update
+			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 );
+
+			// Schedule meta update job
+			$this->schedule_update_job();
+		}
+	}
+
+	/**
+	 * Initializes and wires up Stream Wrapper plugin.
+	 */
+	private function init_vip_filesystem() {
+		$vip_filesystem = new VIP_Filesystem();
+		$vip_filesystem->run();
+	}
+
+	/**
+	 * Initializes our legacy filter-based approach to uploads.
+	 */
+	private function init_legacy_filesystem() {
 		// Hooks for the mu-plugin WordPress Importer
 		add_filter( 'load-importer-wordpress', array( &$this, 'check_to_download_file' ), 10 );
 		add_filter( 'wp_insert_attachment_data', array( &$this, 'check_to_upload_file' ), 10, 2 );
@@ -38,11 +116,13 @@ class A8C_Files {
 		add_filter( 'upload_dir', array( &$this, 'get_upload_dir' ), 10, 1 );
 
 		add_filter( 'wp_handle_upload', array( &$this, 'upload_file' ), 10, 2 );
-		add_filter( 'wp_delete_file',   array( &$this, 'delete_file' ), 20, 1 );
+		add_filter( 'wp_delete_file', array( &$this, 'delete_file' ), 20, 1 );
 
-		add_filter( 'wp_save_image_file',        array( &$this, 'save_image_file' ), 10, 5 );
+		add_filter( 'wp_save_image_file', array( &$this, 'save_image_file' ), 10, 5 );
 		add_filter( 'wp_save_image_editor_file', array( &$this, 'save_image_file' ), 10, 5 );
+	}
 
+	function init_photon() {
 		// Limit to certain contexts for the initial testing and roll-out.
 		// This will be phased out and become the default eventually.
 		$use_jetpack_photon = $this->use_jetpack_photon();
@@ -51,17 +131,14 @@ class A8C_Files {
 		} else {
 			$this->init_vip_photon_filters();
 		}
-
-		// Automatic creation of intermediate image sizes is disabled via `wpcom_intermediate_sizes()`
-
-		// ensure we always upload with year month folder layouts
-		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
-
-		// ensure the correct upload URL is used even after switch_to_blog is called
-		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
 	}
 
 	private function init_jetpack_photon_filters() {
+		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
+			return;
+		}
+
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
 		// Externally hosted files continue to use the remot Photon service.
@@ -71,14 +148,15 @@ class A8C_Files {
 		// This results in all images being full size (which is not ideal)
 		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
 
-		// The sizes metadata is not used and mostly useless on Go so let's empty it out.
-		// This may need some revisiting for `srcset` handling.
-		add_filter( 'wp_get_attachment_metadata', function( $data, $post_id ) {
-			if ( isset( $data['sizes'] ) ) {
-				$data['sizes'] = array();
-			}
-			return $data;
-		}, 10, 2 );
+		if ( false === is_vip_go_srcset_enabled() ) {
+			add_filter( 'wp_get_attachment_metadata', function ( $data, $post_id ) {
+				if ( isset( $data['sizes'] ) ) {
+					$data['sizes'] = array();
+				}
+
+				return $data;
+			}, 10, 2 );
+		}
 
 		// This is our catch-all to strip dimensions from intermediate images in content.
 		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
@@ -241,7 +319,7 @@ class A8C_Files {
 
 		$ch = curl_init( $post_url );
 
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt( $ch, CURLOPT_HEADER, false );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
 		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
@@ -258,19 +336,25 @@ class A8C_Files {
 	 * Filter's the return value of `wp_unique_filename()`
 	 */
 	public function filter_unique_filename( $filename, $ext, $dir, $unique_filename_callback ) {
+		// If a unique filename callback was used, let's just use its results.
+		// `wp_unique_filename` has fired this already so we don't need to actually call it.
+		if ( $unique_filename_callback && is_callable( $unique_filename_callback ) ) {
+			return $filename;
+		}
+
 		if ( '.tmp' === $ext || '/tmp/' === $dir ) {
 			return $filename;
 		}
 
 		$ext = strtolower( $ext );
 
-		$filename = $this->_sanitize_filename( $filename, $ext );
+		$filename = $this->_sanitize_filename( $filename );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
 		if ( 200 == $check['http_code'] ) {
 			$obj = json_decode( $check['content'] );
-			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $post_url ) ) {
+			if ( isset(  $obj->filename ) && basename( $obj->filename ) != basename( $filename ) ) {
 				$filename = $obj->filename;
 			}
 		}
@@ -284,7 +368,7 @@ class A8C_Files {
 	 * Leverages Mogile backend, which will return a 406 or other non-200 code if the filetype is unsupported
 	 */
 	public function filter_filetype_check( $filetype_data, $file, $filename, $mimes ) {
-		$filename = $this->_sanitize_filename( $filename, '.' . pathinfo( $filename, PATHINFO_EXTENSION ) );
+		$filename = $this->_sanitize_filename( $filename );
 
 		$check = $this->_check_uniqueness_with_backend( $filename );
 
@@ -301,18 +385,13 @@ class A8C_Files {
 
 	/**
 	 * Ensure consistent filename sanitization
-	 *
-	 * Eventually, this should be `sanitize_file_name()` instead, but for legacy reasons, we go through this process
 	 */
-	private function _sanitize_filename( $filename, $ext ) {
-		$filename = str_replace( $ext, '', $filename );
-		$filename = str_replace( '%', '', sanitize_title_with_dashes( $filename ) ) . $ext;
-
-		return $filename;
+	private function _sanitize_filename( $filename ) {
+		return sanitize_file_name( $filename );
 	}
 
 	/**
-	 * Common method to check Mogile backend for filename uniqueness
+	 * Common method to return a unique filename from the VIP Go File Service using the provided filename as a starting point
 	 */
 	private function _check_uniqueness_with_backend( $filename ) {
 		$headers = array(
@@ -328,9 +407,12 @@ class A8C_Files {
 
 		$url_parts = parse_url( $uploads['url'] . '/' . $filename );
 		$file_path = $url_parts['path'];
-		if ( is_multisite() &&
-			preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-			$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
+		if ( is_multisite() ) {
+			$sanitized_file_path = Path_Utils::trim_leading_multisite_directory( $file_path, $this->get_upload_path() );
+			if ( false !== $sanitized_file_path ) {
+				$file_path = $sanitized_file_path;
+				unset( $sanitized_file_path );
+			}
 		}
 
 		$post_url = $this->get_files_service_hostname() . $file_path;
@@ -361,10 +443,14 @@ class A8C_Files {
 		} else {
 			$url_parts = parse_url( $details['url'] );
 			$file_path = $url_parts['path'];
-			if ( is_multisite() &&
-				preg_match( '/^\/[_0-9a-zA-Z-]+\/' . str_replace( '/', '\/', $this->get_upload_path() ) . '\/sites\/[0-9]+\//', $file_path ) ) {
-				$file_path = preg_replace( '/^\/[_0-9a-zA-Z-]+/', '', $file_path );
-				$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
+			if ( is_multisite() ) {
+				$sanitized_file_path = Path_Utils::trim_leading_multisite_directory( $file_path, $this->get_upload_path() );
+				if ( false !== $sanitized_file_path ) {
+					$file_path = $sanitized_file_path;
+					unset( $sanitized_file_path );
+
+					$details['url'] = $url_parts['scheme'] . '://' . $url_parts['host'] . $file_path;
+				}
 			}
 			$post_url = $this->get_files_service_hostname() . $file_path;
 		}
@@ -429,6 +515,10 @@ class A8C_Files {
 	}
 
 	function delete_file( $file_name ) {
+		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
+		// which all except the first result in 404's, keep accounting of what we've deleted.
+		static $deleted_uris = array();
+
 		$url_parts = parse_url( $file_name );
 		if ( false !== stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) )
 			$file_uri = substr( $url_parts['path'], stripos( $url_parts['path'], constant( 'LOCAL_UPLOADS' ) ) + strlen( constant( 'LOCAL_UPLOADS' ) ) );
@@ -440,9 +530,16 @@ class A8C_Files {
 					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
 				);
 
+		$delete_uri = $file_uri;
 		$service_url = $this->get_files_service_hostname() . '/' . $this->get_upload_path();
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() ) ) {
 			$service_url .= '/sites/' . get_current_blog_id();
+			$delete_uri = '/sites/' . get_current_blog_id() . $delete_uri;
+		}
+
+		if ( in_array( $delete_uri, $deleted_uris ) ) {
+			// This file has already been successfully deleted from the file service in this request
+			return;
 		}
 
 		$ch = curl_init( $service_url . $file_uri );
@@ -458,9 +555,12 @@ class A8C_Files {
 		curl_close( $ch );
 
 		if ( 200 != $http_code ) {
-			error_log( sprintf( __( 'Error deleting the file from the remote servers: Code %d' ), $http_code ) );
+			trigger_error( sprintf( __( 'Error deleting the file %s from the remote servers: Code %d' ), $file_uri, $http_code ), E_USER_WARNING );
 			return;
 		}
+
+		// Set our static so we can later recall that this file has already been deleted and purged
+		$deleted_uris[] = $delete_uri;
 
 		// We successfully deleted the file, purge the file from the caches
 		$invalidation_url = get_site_url() . '/' . $this->get_upload_path();
@@ -475,24 +575,57 @@ class A8C_Files {
 	private function purge_file_cache( $url, $method ) {
 		global $file_cache_servers;
 
+		$parsed = parse_url( $url );
+		if ( empty( $parsed['host'] ) ) {
+			return $requests;
+		}
+
+		$uri = '/';
+		if ( isset( $parsed['path'] ) ) {
+			$uri = $parsed['path'];
+		}
+		if ( isset( $parsed['query'] ) ) {
+			$uri .= $parsed['query'];
+		}
+
 		$requests = array();
 
-		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) )
-			return $requests;
+		if ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+			$data = array(
+				'group' => 'vip-go',
+				'scope' => 'global',
+				'type'  => $method,
+				'uri'   => $parsed['host'] . $uri,
+				'cb'    => 'nil',
+			);
+			$json = json_encode( $data );
 
-		$parsed = parse_url( $url );
-		if ( empty( $parsed['host'] ) )
+			$curl = curl_init();
+			curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
+			curl_setopt( $curl, CURLOPT_POST, true );
+			curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json',
+					'Content-Length: ' . strlen( $json )
+				) );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_exec( $curl );
+			$http_code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+			curl_close( $curl );
+
+			if ( 200 != $http_code ) {
+				trigger_error( sprintf( __( 'Error purging %s from the cache service: Code %d' ), $url, $http_code ), E_USER_WARNING );
+			}
+			return;
+		}
+
+		if ( ! isset( $file_cache_servers ) || empty( $file_cache_servers ) ) {
+			trigger_error( sprintf( __( 'Error purging the file cache for %s: There are no file cache servers defined.' ), $url ), E_USER_WARNING );
 			return $requests;
+		}
 
 		foreach ( $file_cache_servers as $server  ) {
 			$server = explode( ':', $server[0] );
-
-			$uri = '/';
-			if ( isset( $parsed['path'] ) )
-				$uri = $parsed['path'];
-			if ( isset( $parsed['query'] ) )
-				$uri .= $parsed['query'];
-
 			$requests[] = array(
 				'ip'     => $server[0],
 				'port'   => $server[1],
@@ -735,17 +868,150 @@ class A8C_Files {
 		return array( $img_url, $w, $h, $resized );
 	}
 
+	/**
+	 * Filter `cron_schedules` output
+	 *
+	 * Add a custom schedule for a 5 minute interval
+	 *
+	 * @param   array   $schedule
+	 *
+	 * @return  mixed
+	 */
+	public function filter_cron_schedules( $schedule ) {
+		if ( isset( $schedule[ 'vip_five_minutes' ] ) ) {
+			return $schedule;
+		}
+
+		// Not actually five minutes; we want it to run faster though to get through everything.
+		$schedule['vip_five_minutes'] = [
+			'interval' => 180,
+			'display' => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
+		];
+
+		return $schedule;
+	}
+
+	public function schedule_update_job() {
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			}
+
+			return;
+		}
+
+		if (! wp_next_scheduled ( self::CRON_EVENT_NAME )) {
+			wp_schedule_event(time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
+		}
+
+		add_action( self::CRON_EVENT_NAME, [ $this, 'update_attachment_meta' ] );
+	}
+
+	/**
+	 * Cron job to update attachment metadata with file size
+	 */
+	public function update_attachment_meta() {
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
+				self::CRON_EVENT_NAME,
+				home_url() ),
+			5 );
+
+		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
+			// already done. Nothing to update
+			wpcom_vip_irc(
+				'#vip-go-filesize-updates',
+				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
+					home_url(),
+					self::CRON_EVENT_NAME ),
+				5 );
+			return;
+		}
+
+		$batch_size = 3000;
+		if ( defined( 'VIP_FILESYSTEM_FILESIZE_UPDATE_BATCH_SIZE' ) ) {
+			$batch_size = (int) VIP_FILESYSTEM_FILESIZE_UPDATE_BATCH_SIZE;
+		}
+		$updater = new Meta_Updater( $batch_size );
+
+		$max_id = (int) get_option( self::OPT_MAX_POST_ID );
+		if ( ! $max_id ) {
+			$max_id = $updater->get_max_id();
+			update_option( self::OPT_MAX_POST_ID, $max_id, false );
+		}
+
+		$num_lookups = 0;
+		$max_lookups = 10;
+
+		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
+		$end_index = $start_index + $batch_size;
+
+		do {
+			if ( $start_index > $max_id ) {
+				// This means all attachments have been processed so marking as done
+				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
+
+				wpcom_vip_irc(
+					'#vip-go-filesize-updates',
+					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
+						$max_id,
+						home_url(),
+						self::CRON_EVENT_NAME
+					),
+					5
+				);
+
+				return;
+			}
+
+			$attachments = $updater->get_attachments( $start_index, $end_index );
+
+			// Bump the next index in case the cron job dies before we've processed everything
+			update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+
+			$start_index = $end_index + 1;
+			$end_index = $start_index + $batch_size;
+
+			// Avoid infinite loops
+			$num_lookups++;
+			if ( $num_lookups >= $max_lookups ) {
+				break;
+			}
+		} while ( empty( $attachments ) );
+
+		if ( $attachments ) {
+			$counts = $updater->update_attachments( $attachments );
+		}
+
+		// All done, update next index option
+		wpcom_vip_irc(
+			'#vip-go-filesize-updates',
+			sprintf( 'Batch %d to %d (of %d) completed on %s. Processed %d attachments (%s) $vip-go-streams-debug',
+				$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), json_encode( $counts ) ),
+			5
+		);
+
+		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+	}
+
 }
 
 class A8C_Files_Utils {
 	public static function filter_photon_domain( $photon_url, $image_url ) {
 			$home_url = home_url();
+			$site_url = site_url();
+
 			if ( wp_startswith( $image_url, $home_url ) ) {
 				return $home_url;
 			}
 
+			if ( wp_startswith( $image_url, $site_url ) ) {
+				return $site_url;
+			}
+
 			$image_url_parsed = parse_url( $image_url );
-			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) ) {
+			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
 				return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 			}
 
@@ -769,7 +1035,7 @@ class A8C_Files_Utils {
 		}
 
 		return $url;
-	}	
+	}
 }
 
 function a8c_files_init() {
@@ -785,8 +1051,133 @@ function wpcom_intermediate_sizes( $sizes ) {
 	return __return_empty_array();
 }
 
+/**
+ * Figure out whether srcset is enabled or not. Should be run on init action
+ * earliest in order to allow clients to override this via theme's functions.php
+ *
+ * @return bool True if VIP Go File Service compatibile srcset solution is enabled.
+ */
+function is_vip_go_srcset_enabled() {
+	// Allow override via querystring for easy testing
+	if ( isset( $_GET['disable_vip_srcset'] ) ) {
+		return '0' === $_GET['disable_vip_srcset'];
+	}
+
+	$enabled = true;
+
+	/**
+	 * Filters the default state of VIP Go File Service compatible srcset solution.
+	 *
+	 * @param bool True if the srcset solution is turned on, False otherwise.
+	 */
+	return (bool) apply_filters( 'vip_go_srcset_enabled', $enabled );
+}
+
+/**
+ * Inject image sizes to attachment metadata.
+ *
+ * @param array $data          Attachment metadata.
+ * @param int   $attachment_id Attachment's post ID.
+ *
+ * @return array Attachment metadata.
+ */
+function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
+	// Can't do much if data is empty
+	if ( empty( $data ) ) {
+		return $data;
+	}
+
+	// Missing some critical data we need to determine sizes, so bail.
+	if ( ! isset( $data['file'] )
+		|| ! isset( $data['width'] )
+		|| ! isset( $data['height'] ) ) {
+		return $data;
+	}
+
+	static $cached_sizes = [];
+
+	// Don't process image sizes that we already processed.
+	if ( isset( $cached_sizes[ $attachment_id ] ) ) {
+		$data['sizes'] = $cached_sizes[ $attachment_id ];
+		return $data;
+	}
+
+	// Skip non-image attachments
+	$mime_type = get_post_mime_type( $attachment_id );
+	$attachment_is_image = preg_match( '!^image/!', $mime_type );
+	if ( 1 !== $attachment_is_image ) {
+		return $data;
+	}
+
+	if ( ! isset( $data['sizes'] ) || ! is_array( $data['sizes'] ) ) {
+		$data['sizes'] = [];
+	}
+
+	$sizes_already_exist = false === empty( $data['sizes'] );
+
+	global $_wp_additional_image_sizes;
+
+	if ( is_array( $_wp_additional_image_sizes ) ) {
+		$available_sizes = array_keys( $_wp_additional_image_sizes );
+		$known_sizes     = array_keys( $data['sizes'] );
+		$missing_sizes   = array_diff( $available_sizes, $known_sizes );
+
+		if ( $sizes_already_exist && empty( $missing_sizes ) ) {
+			return $data;
+		}
+
+		$new_sizes = array();
+
+		foreach ( $missing_sizes as $size ) {
+			$new_width          = (int) $_wp_additional_image_sizes[ $size ]['width'];
+			$new_height         = (int) $_wp_additional_image_sizes[ $size ]['height'];
+			$new_sizes[ $size ] = array(
+				'file'      => basename( $data['file'] ),
+				'width'     => $new_width,
+				'height'    => $new_height,
+				'mime_type' => $mime_type,
+			);
+		}
+
+		if ( ! empty( $new_sizes ) ) {
+			$data['sizes'] = array_merge( $data['sizes'], $new_sizes );
+		}
+	}
+
+	$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
+	$data['sizes'] = $image_sizes->generate_sizes_meta();
+
+	$cached_sizes[ $attachment_id ] = $data['sizes'];
+
+	return $data;
+}
+
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
-	add_action( 'init', 'a8c_files_init' );
+	// Kick things off
+	a8c_files_init();
+
+	// Disable automatic creation of intermediate image sizes.
+	// We generate them on-the-fly on VIP.
 	add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
+	add_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
+
+	// Conditionally load our srcset solution during our testing period.
+	add_action( 'init', function () {
+		if ( true !== is_vip_go_srcset_enabled() ) {
+			return;
+		}
+
+		require_once( __DIR__ . '/files/class-image.php' );
+		require_once( __DIR__ . '/files/class-image-sizes.php' );
+
+		// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
+		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );
+	}, 10, 0 );
 }
+
+/**
+ * WordPress 5.3 adds "big image" processing, for images over 2560px (by default).
+ * This is not needed on VIP Go since we use Photon for dynamic image work.
+ */
+add_filter( 'big_image_size_threshold', '__return_false' );

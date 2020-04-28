@@ -80,8 +80,10 @@ table.comments td.comment p a:after {
     display: inline-block !important;
 }
 .checkforspam-progress {
-	padding-left: 1ex;
 	display: none;
+}
+.checkforspam.checking .checkforspam-progress {
+	padding-left: 1ex;
 }
 .checkforspam.button-disabled .checkforspam-progress {
 	display: inline;
@@ -216,8 +218,16 @@ table.comments td.comment p a:after {
 /**
  * For the activation notice on the plugins page.
  */
+
+#akismet_setup_prompt {
+	background: none;
+	border: none;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+}
+
 .akismet_activate {
-	min-width: 825px;
 	border: 1px solid #4F800D;
 	padding: 5px;
 	margin: 15px 0;
@@ -238,7 +248,6 @@ table.comments td.comment p a:after {
 	font-size: 140px;
 	color: #769F33;
 	font-family: Georgia, "Times New Roman", Times, serif;
-	z-index: 1;
 }
 
 .akismet_activate .aa_button {
@@ -287,6 +296,7 @@ table.comments td.comment p a:after {
 }
 
 .akismet_activate .aa_button_container {
+	box-sizing: border-box;
 	display: inline-block;
 	background: #DEF1B8;
 	padding: 5px;
@@ -303,12 +313,37 @@ table.comments td.comment p a:after {
 	margin-left: 25px;
 	color: #E5F2B1;
 	font-size: 15px;
-	z-index: 1000;
 }
 
 .akismet_activate .aa_description strong {
 	color: #FFF;
 	font-weight: normal;
+}
+
+@media (max-width: 550px) {
+	.akismet_activate .aa_a {
+		display: none;
+	}
+	
+	.akismet_activate .aa_button_container {
+		width: 100%;
+	}
+}
+
+@media (max-width: 782px) {
+	.akismet_activate {
+		min-width: 0;
+	}
+}
+
+@media (max-width: 850px) {
+	#akismet_setup_prompt .aa_description {
+		display: none;
+	}
+	
+	.akismet_activate {
+		min-width: 0;
+	}
 }
 
 .jetpack_page_akismet-key-config #wpcontent, .settings_page_akismet-key-config #wpcontent {
@@ -417,6 +452,10 @@ table.comments td.comment p a:after {
 	padding: 1.5rem;
 }
 
+.akismet-lower .notice {
+	margin-bottom: 2rem;
+}
+
 .akismet-card {
 	margin-top: 1rem;
 	margin-bottom: 0;
@@ -507,6 +546,44 @@ table.comments td.comment p a:after {
 	margin-top: 1.5rem;
 }
 
+.akismet-box-header {
+	max-width: 700px;
+	margin: 0 auto 40px auto;
+	line-height: 1.5;
+}
+
+.akismet-box-header h2 {
+	margin: 1.5rem 10% 0;
+	font-size: 1.375rem;
+	font-weight: 700;
+	color: #000;
+}
+
+.akismet-box .centered {
+	text-align: center;
+}
+
+.akismet-enter-api-key-box {
+	margin: 1.5rem 0;
+}
+
+.akismet-box .enter-api-key {
+	display: none;
+	margin-top: 1.5rem;
+}
+
+.akismet-box .akismet-toggles {
+	margin: 3rem 0;
+}
+
+.akismet-box .akismet-ak-connect, .akismet-box .toggle-jp-connect {
+	display: none;
+}
+
+.akismet-box .enter-api-key p {
+	padding: 0 1.5rem;
+}
+
 .akismet-button, .akismet-button:hover, .akismet-button:visited {
 	background: white;
 	border-color: #c8d7e1;
@@ -583,4 +660,12 @@ table.comments td.comment p a:after {
 
 .akismet-section-header__actions {
 	line-height: 1.75rem;
+}
+
+.akismet-setup-instructions {
+	text-align: center;
+}
+
+.akismet-setup-instructions form {
+	padding-bottom: 1.5rem;
 }

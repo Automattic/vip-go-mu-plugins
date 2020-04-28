@@ -1,0 +1,147 @@
+.featured-plugins {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	margin: 0;
+	padding: 0;
+}
+
+.featured-plugins:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.featured-plugins .plugin {
+	float: left;
+	background: #fff;
+	margin: 0.5%;
+	width: 19%;
+	box-sizing: border-box;
+	-webkit-transition: all .4s;
+	transition: all .4s;
+	position: relative;
+}
+
+@media screen and (max-width: 1400px) {
+	.featured-plugins .plugin {
+		width: 24%;
+	}
+}
+
+@media screen and (max-width: 1150px) {
+	.featured-plugins .plugin {
+		width: 32%;
+	}
+}
+
+@media screen and (max-width: 840px) {
+	.featured-plugins .plugin {
+		width: 49%;
+	}
+}
+
+@media screen and (max-width: 515px) {
+	.featured-plugins .plugin {
+		width: 100%;
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+.featured-plugins .plugin:hover {
+	-webkit-box-shadow: 0 6px 24px rgba(98,112,122,.16);
+	box-shadow: 0 6px 24px rgba(98,112,122,.16);
+	background: ;
+}
+
+.featured-plugins .plugin .fp-content {
+	padding: 15px;
+	display: block;
+	position: relative;
+	text-decoration: none;
+	height: 100%;
+	box-sizing: border-box;
+	color: #151e25;
+}
+
+.featured-plugins .plugin img {
+	max-width: 60%;
+	margin: 0 auto;
+	display: block;
+}
+
+.featured-plugins .plugin.hovered .fp-content {
+	-webkit-filter: blur(3px);
+	filter: blur(3px);	
+}
+
+.featured-plugins .plugin .fp-content p {
+	margin: 0;
+	padding: 0;
+	text-decoration: none;
+}
+
+.featured-plugins .plugin .fp-overlay {
+	background: rgba(255,255,255,.7);
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: none;
+}
+
+.featured-plugins .plugin .fp-overlay.visible {
+	display: block;
+}
+
+.featured-plugins .plugin.hovered .fp-overlay {
+	-webkit-animation: expand 0.8s cubic-bezier(0.14, 0.61, 0.2, 1) 0s 1 forwards;
+	animation: expand 0.8s cubic-bezier(0.14, 0.61, 0.2, 1) 0s 1 forwards;
+	display: table;
+}
+
+.featured-plugins .plugin .fp-overlay-inner {
+	display: table-row;
+	width: 100%;
+	height: 100%;
+}
+
+.featured-plugins .plugin .fp-overlay-inner .fp-overlay-cell {
+	display: table-cell;
+	vertical-align: middle;
+	text-align: center;
+}
+
+.featured-plugins .plugin .fp-overlay-inner span {
+	position: relative;;
+	display: inline-block;
+	cursor: pointer;
+	position: relative;
+	width: auto;
+	padding: 10px 20px;
+	color: #151e25;
+	background: #fff;
+	border: 2px solid #c29c69;
+	font-weight: bold;
+	outline: none;
+}
+
+.featured-plugins .plugin.hovered .fp-overlay-inner span:hover {
+	background: #c29c69;
+}
+
+.featured-plugins .plugin.hovered .fp-overlay-inner span:active {
+	top: 1px;
+}
+
+@keyframes expand {
+	0% {
+		opacity: 0
+	}
+	100% {
+		opacity: 1;
+		height: 100%
+	}
+}

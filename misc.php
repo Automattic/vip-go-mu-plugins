@@ -15,7 +15,9 @@ add_filter( 'upload_mimes', function( $mimes ) {
 // Ensure we do not send the cache headers through to Varnish,
 // so responses obey the cache settings we have configured.
 function wpcom_vip_check_for_404_and_remove_cache_headers( $headers ) {
-	if ( is_404() ) {
+	global $wp_query;
+
+	if ( isset( $wp_query ) && is_404() ) {
 		unset( $headers['Expires'] );
 		unset( $headers['Cache-Control'] );
 		unset( $headers['Pragma'] );
@@ -129,7 +131,7 @@ if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
  *
  * The WordPress core is currently not setting `no_found_rows` inside the `_WP_Editors::wp_link_query`
  * See https://core.trac.wordpress.org/ticket/38784
- * 
+ *
  * Since the `_WP_Editors::wp_link_query` method is not using the `found_posts` nor `max_num_pages`
  * properties of `WP_Query` class, the `SQL_CALC_FOUND_ROWS` in produced SQL query is extra and
  * useless.
@@ -144,3 +146,8 @@ function wpcom_vip_wp_link_query_args( $query ) {
 }
 
 add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
+
+/**
+ * Stop Woocommerce from trying to create files on read-only filesystem
+ */
+add_filter( 'woocommerce_install_skip_create_files', '__return_true' );

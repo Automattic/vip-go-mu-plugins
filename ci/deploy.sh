@@ -35,7 +35,7 @@ set -x
 
 cp ${TRAVIS_BUILD_DIR}/ci/known_hosts ~/.ssh/known_hosts
 
-git clone git@github.com:Automattic/vip-mu-plugins-public.git /tmp/target
+git clone git@github.com:Automattic/vip-go-mu-plugins-built.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
 
@@ -57,6 +57,11 @@ find ${DEPLOY_BUILD_DIR} -name ".travis.yml" -exec rm -rfv {} \; 2> /dev/null
 # Remove everything unnecessary to running this (tests, deploy scripts, etc)
 rm -v ${DEPLOY_BUILD_DIR}/README.md
 mv -v ${DEPLOY_BUILD_DIR}/README-PUBLIC.md ${DEPLOY_BUILD_DIR}/README.md
+
+# Update the composer file to the distribution version
+rm -v ${DEPLOY_BUILD_DIR}/composer.json
+mv -v ${DEPLOY_BUILD_DIR}/ci/templates/composer.json ${DEPLOY_BUILD_DIR}/composer.json
+
 # @FIXME: We will need to replace this ci dir with one which can run tests on the public repo
 # BUT this public ci dir cannot include our insecure key (and does not need to)
 rm -rfv ${DEPLOY_BUILD_DIR}/ci/

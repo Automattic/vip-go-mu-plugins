@@ -48,15 +48,21 @@ class WPCOM_elasticsearch {
 
 	private $original_blog_id;
 
+	private $posts_iterator;
+
 	private static $instance;
 
 	private function __construct() {
 		/* Don't do anything, needs to be initialized via instance() method */
 	}
 
-	public function __clone() { wp_die( "Please don't __clone WPCOM_elasticsearch" ); }
+	public function __clone() {
+		wp_die( "Please don't __clone WPCOM_elasticsearch" );
+	}
 
-	public function __wakeup() { wp_die( "Please don't __wakeup WPCOM_elasticsearch" ); }
+	public function __wakeup() {
+		wp_die( "Please don't __wakeup WPCOM_elasticsearch" );
+	}
 
 	public static function instance() {
 		if ( ! isset( self::$instance ) ) {
@@ -67,11 +73,13 @@ class WPCOM_elasticsearch {
 	}
 
 	public function setup() {
-		if ( ! function_exists( 'es_api_search_index' ) )
+		if ( ! function_exists( 'es_api_search_index' ) ) {
 			return;
+		}
 
-		if ( function_exists( 'es_api_get_index_name_by_blog_id' ) && is_admin() && is_wp_error( es_api_get_index_name_by_blog_id(  get_current_blog_id() ) ) ) {
+		if ( function_exists( 'es_api_get_index_name_by_blog_id' ) && is_admin() && is_wp_error( es_api_get_index_name_by_blog_id( get_current_blog_id() ) ) ) {
 			add_action( 'admin_notices', array( $this, 'admin_notice_no_index' ) );
+
 			return;
 		}
 
@@ -110,8 +118,9 @@ class WPCOM_elasticsearch {
 	}
 
 	public function filter__post_limits_request( $limits, $query ) {
-		if ( ! $query->is_search() )
+		if ( ! $query->is_search() ) {
 			return $limits;
+		}
 
 		if ( empty( $limits ) || $query->get( 'no_found_rows' ) ) {
 			$this->do_found_posts = false;
@@ -123,11 +132,13 @@ class WPCOM_elasticsearch {
 	}
 
 	public function filter__the_posts( $posts, $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $query->is_main_query() || ! $query->is_search() ) {
 			return $posts;
+		}
 
-		if ( ! is_array( $this->search_result ) )
+		if ( ! is_array( $this->search_result ) ) {
 			return $posts;
+		}
 
 		// This class handles the heavy lifting of transparently switching blogs and inflating posts
 		$this->posts_iterator = new ES_WPCOM_SearchResult_Posts_Iterator();
@@ -147,8 +158,9 @@ class WPCOM_elasticsearch {
 			// Run through get_post() to add all expected properties (even if they're empty)
 			$post = get_post( $post );
 
-			if ( $post )
+			if ( $post ) {
 				$posts[] = $post;
+			}
 		}
 
 		// Listen for the start/end of The Loop, to add some action handlers for transparently loading the post
@@ -160,8 +172,9 @@ class WPCOM_elasticsearch {
 	public function filter__posts_request( $sql, $query ) {
 		global $wpdb;
 
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $query->is_main_query() || ! $query->is_search() ) {
 			return $sql;
+		}
 
 		$page = ( $query->get( 'paged' ) ) ? absint( $query->get( 'paged' ) ) : 1;
 
@@ -181,11 +194,13 @@ class WPCOM_elasticsearch {
 				case 'taxonomy':
 					$query_var = $this->get_taxonomy_query_var( $this->facets[ $label ]['taxonomy'] );
 
-					if ( ! $query_var )
+					if ( ! $query_var ) {
 						continue 2;  // switch() is considered a looping structure
+					}
 
-					if ( $query->get( $query_var ) )
+					if ( $query->get( $query_var ) ) {
 						$es_wp_query_args['terms'][ $this->facets[ $label ]['taxonomy'] ] = explode( ',', $query->get( $query_var ) );
+					}
 
 					// This plugon's custom "categery" isn't a real query_var, so manually handle it
 					if ( 'category' == $query_var && ! empty( $_GET[ $query_var ] ) ) {
@@ -201,8 +216,7 @@ class WPCOM_elasticsearch {
 				case 'post_type':
 					if ( $query->get( 'post_type' ) && 'any' != $query->get( 'post_type' ) ) {
 						$post_types_via_user = $query->get( 'post_type' );
-					}
-					elseif ( ! empty( $_GET['post_type'] ) ) {
+					} elseif ( ! empty( $_GET['post_type'] ) ) {
 						$post_types_via_user = explode( ',', $_GET['post_type'] );
 					} else {
 						$post_types_via_user = false;
@@ -215,22 +229,26 @@ class WPCOM_elasticsearch {
 						foreach ( (array) $post_types_via_user as $post_type_via_user ) {
 							$post_type_object = get_post_type_object( $post_type_via_user );
 
-							if ( ! $post_type_object || $post_type_object->exclude_from_search )
+							if ( ! $post_type_object || $post_type_object->exclude_from_search ) {
 								continue;
+							}
 
 							$post_types[] = $post_type_via_user;
 						}
 					}
 
 					// Default to all non-excluded from search post types
-					if ( empty( $post_types ) )
-						$post_types = array_values( get_post_types( array( 'exclude_from_search' => false ) ) );
+					if ( empty( $post_types ) ) {
+						$post_types = array_values( get_post_types( array(
+							'exclude_from_search' => false,
+						) ) );
+					}
 
 					$es_wp_query_args['post_type'] = $post_types;
 
 					break;
-			}
-		}
+			} // End switch().
+		} // End foreach().
 
 		// Date
 		if ( $query->get( 'year' ) ) {
@@ -255,12 +273,16 @@ class WPCOM_elasticsearch {
 				$date_end   = $query->get( 'year' ) . '-12-31 23:59:59';
 			}
 
-			$es_wp_query_args['date_range'] = array( 'field' => 'date', 'gte' => $date_start, 'lte' => $date_end );
+			$es_wp_query_args['date_range'] = array(
+				'field' => 'date',
+				'gte'   => $date_start,
+				'lte'   => $date_end,
+			);
 		}
 
 		// Facets
 		if ( ! empty( $this->facets ) ) {
-			$es_wp_query_args['facets'] = $this->facets;
+			$es_wp_query_args['aggregations'] = $this->facets;
 		}
 
 		// You can use this filter to modify the search query parameters, such as controlling the post_type.
@@ -272,7 +294,7 @@ class WPCOM_elasticsearch {
 
 		$es_query_args['fields'] = array(
 			'post_id',
-			'blog_id'
+			'blog_id',
 		);
 
 		// This filter is harder to use if you're unfamiliar with ES but it allows complete control over the query
@@ -291,6 +313,12 @@ class WPCOM_elasticsearch {
 			return '';
 		}
 
+		// If we have aggregations, fix the ordering to match the input order (Facets used to return in the same order as input,
+		// aggregations seem to be unordered.) Can't find a way to do this in ES itself
+		if ( $this->search_result['results']['aggregations'] ) {
+			$this->search_result['results']['aggregations'] = $this->fix_aggregation_ordering( $this->search_result['results']['aggregations'], $this->facets );
+		}
+
 		// Allow filtering of entire result set to modify it or to add / remove results
 		$this->search_result = apply_filters( 'wpcom_elasticsearch_found_posts', $this->search_result );
 
@@ -303,29 +331,33 @@ class WPCOM_elasticsearch {
 	}
 
 	public function filter__found_posts_query( $sql, $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $query->is_main_query() || ! $query->is_search() ) {
 			return $sql;
+		}
 
 		return '';
 	}
 
 	public function filter__found_posts( $found_posts, $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $query->is_main_query() || ! $query->is_search() ) {
 			return $found_posts;
+		}
 
 		return $this->found_posts;
 	}
 
 	public function filter__wpcom_elasticsearch_query_args( $es_query_args, $query ) {
-		if ( is_array( $this->additional_indices ) && ! empty( $this->additional_indices ) )
+		if ( is_array( $this->additional_indices ) && ! empty( $this->additional_indices ) ) {
 			$es_query_args['additional_indices'] = $this->additional_indices;
+		}
 
 		return $es_query_args;
 	}
 
 	public function action__pre_get_posts( $query ) {
-		if ( ! $query->is_main_query() || ! $query->is_search() )
+		if ( ! $query->is_main_query() || ! $query->is_search() ) {
 			return;
+		}
 
 		$query->set( 'cache_results', false );
 	}
@@ -349,8 +381,9 @@ class WPCOM_elasticsearch {
 		}
 
 		// Restore the original blog, if we're not on it
-		if ( get_current_blog_id() !== $this->original_blog_id )
+		if ( get_current_blog_id() !== $this->original_blog_id ) {
 			switch_to_blog( $this->original_blog_id );
+		}
 	}
 
 	public function action__the_post( &$post ) {
@@ -358,37 +391,52 @@ class WPCOM_elasticsearch {
 
 		$post = $this->get_post_by_index( $wp_query->current_post );
 
-		if ( ! $post )
+		if ( ! $post ) {
 			return;
+		}
 
 		// Do some additional setup that normally happens in setup_postdata(), but gets skipped
 		// in this plugin because the posts hadn't yet been inflated.
 		$authordata 	= get_userdata( $post->post_author );
 
-		$currentday 	= mysql2date('d.m.y', $post->post_date, false);
-		$currentmonth 	= mysql2date('m', $post->post_date, false);
+		$currentday 	= mysql2date( 'd.m.y', $post->post_date, false );
+		$currentmonth 	= mysql2date( 'm', $post->post_date, false );
 
-		$numpages = 1;
+		$numpages  = 1;
 		$multipage = 0;
-		$page = get_query_var('page');
-		if ( ! $page )
+
+		$page = get_query_var( 'page' );
+
+		if ( ! $page ) {
 			$page = 1;
-		if ( is_single() || is_page() || is_feed() )
+		}
+
+		if ( is_single() || is_page() || is_feed() ) {
 			$more = 1;
+		}
+
 		$content = $post->post_content;
+
 		if ( false !== strpos( $content, '<!--nextpage-->' ) ) {
-			if ( $page > 1 )
+			if ( $page > 1 ) {
 				$more = 1;
+			}
+
 			$content = str_replace( "\n<!--nextpage-->\n", '<!--nextpage-->', $content );
 			$content = str_replace( "\n<!--nextpage-->", '<!--nextpage-->', $content );
 			$content = str_replace( "<!--nextpage-->\n", '<!--nextpage-->', $content );
+
 			// Ignore nextpage at the beginning of the content.
-			if ( 0 === strpos( $content, '<!--nextpage-->' ) )
+			if ( 0 === strpos( $content, '<!--nextpage-->' ) ) {
 				$content = substr( $content, 15 );
-			$pages = explode('<!--nextpage-->', $content);
-			$numpages = count($pages);
-			if ( $numpages > 1 )
+			}
+
+			$pages    = explode( '<!--nextpage-->', $content );
+			$numpages = count( $pages );
+
+			if ( $numpages > 1 ) {
 				$multipage = 1;
+			}
 		} else {
 			$pages = array( $post->post_content );
 		}
@@ -436,20 +484,25 @@ class WPCOM_elasticsearch {
 	public function set_additional_blogs( $domains = array() ) {
 		$this->additional_indices = array();
 
-		foreach( $domains as $domain ) {
+		foreach ( $domains as $domain ) {
 			$blog_id = (int) get_blog_id_from_url( $domain );
 
 			if ( $blog_id ) {
 				$name = es_api_get_index_name_by_blog_id( $blog_id );
-				if ( !is_wp_error( $name ) )
-					$this->additional_indices[] = array( 'name' => $name );
+
+				if ( ! is_wp_error( $name ) ) {
+					$this->additional_indices[] = array(
+						'name' => $name,
+					);
+				}
 			}
 		}
 	}
 
 	public function get_search_result( $raw = false ) {
-		if ( $raw )
+		if ( $raw ) {
 			return $this->search_result;
+		}
 
 		return ( ! empty( $this->search_result ) && ! is_wp_error( $this->search_result ) && is_array( $this->search_result ) && ! empty( $this->search_result['results'] ) ) ? $this->search_result['results'] : false;
 	}
@@ -471,17 +524,19 @@ class WPCOM_elasticsearch {
 		$max_score = 0;
 
 		if ( is_array( $suggestions ) && ! empty( $suggestions ) ) {
-			foreach( $suggestions as $suggestion_query ) {
+			foreach ( $suggestions as $suggestion_query ) {
 				// Each $suggestion_query represents the 'suggest' query passed to ES...normally just one
-				if ( ! is_array( $suggestion_query ) || ! $suggest_result = $suggestion_query[0] )
+				if ( ! is_array( $suggestion_query ) || ! $suggest_result = $suggestion_query[0] ) {
 					continue;
+				}
 
 				$suggest_options = $suggest_result['options'];
 
 				// We want to find the highest scoring suggestion across all 'suggest' queries
-				foreach( $suggest_options as $suggest_option ) {
-					if ( $max_score > $suggest_option['score'] )
+				foreach ( $suggest_options as $suggest_option ) {
+					if ( $max_score > $suggest_option['score'] ) {
 						continue;
+					}
 
 					$search_suggestion 	= $suggest_option['text'];
 					$max_score 			= $suggest_option['score'];
@@ -508,34 +563,39 @@ class WPCOM_elasticsearch {
 
 	public function get_search_facets() {
 		$search_result = $this->get_search_result();
-		return ( ! empty( $search_result ) && ! empty( $search_result['facets'] ) ) ? $search_result['facets'] : array();
+		return ( ! empty( $search_result ) && ! empty( $search_result['aggregations'] ) ) ? $search_result['aggregations'] : array();
 	}
 
 	// Turns raw ES facet data into data that is more useful in a WordPress setting
 	public function get_search_facet_data() {
-		if ( empty( $this->facets ) )
+		if ( empty( $this->facets ) ) {
 			return false;
+		}
 
 		$facets = $this->get_search_facets();
 
-		if ( ! $facets )
+		if ( ! $facets ) {
 			return false;
+		}
 
 		$facet_data = array();
 
 		foreach ( $facets as $label => $facet ) {
-			if ( empty( $this->facets[ $label ] ) )
+			if ( empty( $this->facets[ $label ] ) ) {
 				continue;
+			}
 
 			$facets_data[ $label ] = $this->facets[ $label ];
+
 			$facets_data[ $label ]['items'] = array();
 
 			// All taxonomy terms are going to have the same query_var
-			if( 'taxonomy' == $this->facets[ $label ]['type'] ) {
+			if ( 'taxonomy' === $this->facets[ $label ]['type'] ) {
 				$tax_query_var = $this->get_taxonomy_query_var( $this->facets[ $label ]['taxonomy'] );
 
-				if ( ! $tax_query_var )
+				if ( ! $tax_query_var ) {
 					continue;
+				}
 
 				$existing_term_slugs = ( get_query_var( $tax_query_var ) ) ? explode( ',', get_query_var( $tax_query_var ) ) : array();
 
@@ -550,15 +610,21 @@ class WPCOM_elasticsearch {
 			}
 
 			$items = array();
+
 			if ( ! empty( $facet['terms'] ) ) {
 				$items = (array) $facet['terms'];
-			}
-			elseif ( ! empty( $facet['entries'] ) ) {
-				$items = (array) $facet['entries'];
+			} elseif ( ! empty( $facet['buckets'] ) ) {
+				$items = (array) $facet['buckets'];
 			}
 
 			// Some facet types like date_histogram don't support the max results parameter
-			if ( count( $items ) > $this->facets[ $label ]['count'] ) {
+			if ( is_int( $this->facets[ $label ]['count'] ) && count( $items ) > $this->facets[ $label ]['count'] ) {
+				if ( 'date_histogram' === $this->facets[ $label ]['type'] ) {
+					if ( ! empty( $this->facets[ $label ]['order'] ) && ( 'desc' === strtolower( $this->facets[ $label ]['order'] ) ) ) {
+						$items = array_reverse( $items );
+					}
+				}
+
 				$items = array_slice( $items, 0, $this->facets[ $label ]['count'] );
 			}
 
@@ -567,35 +633,44 @@ class WPCOM_elasticsearch {
 
 				switch ( $this->facets[ $label ]['type'] ) {
 					case 'taxonomy':
-						$term = get_term_by( 'slug', $item['term'], $this->facets[ $label ]['taxonomy'] );
+						$term = get_term_by( 'slug', $item['key'], $this->facets[ $label ]['taxonomy'] );
 
-						if ( ! $term )
+						if ( ! $term ) {
 							continue 2; // switch() is considered a looping structure
+						}
 
 						// Don't allow refinement on a term we're already refining on
-						if ( in_array( $term->slug, $existing_term_slugs ) )
+						if ( in_array( $term->slug, $existing_term_slugs ) ) {
 							continue 2;
+						}
 
 						$slugs = array_merge( $existing_term_slugs, array( $term->slug ) );
 
-						$query_vars = array( $tax_query_var => implode( ',', $slugs ) );
-						$name       = $term->name;
+						$query_vars = array(
+							$tax_query_var => implode( ',', $slugs ),
+						);
+
+						$name = $term->name;
 
 						break;
 
 					case 'post_type':
-						$post_type = get_post_type_object( $item['term'] );
+						$post_type = get_post_type_object( $item['key'] );
 
-						if ( ! $post_type || $post_type->exclude_from_search )
+						if ( ! $post_type || $post_type->exclude_from_search ) {
 							continue 2;  // switch() is considered a looping structure
+						}
 
-						$query_vars = array( 'post_type' => $item['term'] );
-						$name       = $post_type->labels->singular_name;
+						$query_vars = array(
+							'post_type' => $item['key'],
+						);
+
+						$name = $post_type->labels->singular_name;
 
 						break;
 
 					case 'date_histogram':
-						$timestamp = $item['time'] / 1000;
+						$timestamp = $item['key'] / 1000;
 
 						switch ( $this->facets[ $label ]['interval'] ) {
 							case 'year':
@@ -604,7 +679,9 @@ class WPCOM_elasticsearch {
 									'monthnum' => false,
 									'day'      => false,
 								);
+
 								$name = date( 'Y', $timestamp );
+
 								break;
 
 							case 'month':
@@ -613,7 +690,9 @@ class WPCOM_elasticsearch {
 									'monthnum' => date( 'n', $timestamp ),
 									'day'      => false,
 								);
+
 								$name = date( 'F Y', $timestamp );
+
 								break;
 
 							case 'day':
@@ -622,33 +701,35 @@ class WPCOM_elasticsearch {
 									'monthnum' => date( 'n', $timestamp ),
 									'day'      => date( 'j', $timestamp ),
 								);
+
 								$name = date( 'F jS, Y', $timestamp );
+
 								break;
 
 							default:
 								continue 3; // switch() is considered a looping structure
-						}
+						} // End switch().
 
 						break;
 
 					default:
 						//continue 2; // switch() is considered a looping structure
-				}
+				} // End switch().
 
 				// Remove any backslash from the GET parameters
-				$_GET = array_map( "stripslashes", $_GET );
+				$unslashed = wp_unslash( $_GET );
 
 				// Need to urlencode param values since add_query_arg doesn't
-				$url_params = urlencode_deep( array_merge( $_GET, $query_vars ) );
+				$url_params = urlencode_deep( array_merge( $unslashed, $query_vars ) );
 
 				$facets_data[ $label ]['items'][] = array(
 					'url'        => add_query_arg( $url_params, home_url() ),
 					'query_vars' => $query_vars,
 					'name'       => $name,
-					'count'      => $item['count'],
+					'count'      => $item['doc_count'],
 				);
-			}
-		}
+			} // End foreach().
+		} // End foreach().
 
 		return $facets_data;
 	}
@@ -662,8 +743,9 @@ class WPCOM_elasticsearch {
 				case 'taxonomy':
 					$query_var = $this->get_taxonomy_query_var( $facet['taxonomy'] );
 
-					if ( ! $query_var || empty( $_GET[ $query_var ] ) )
+					if ( ! $query_var || empty( $_GET[ $query_var ] ) ) {
 						continue 2;  // switch() is considered a looping structure
+					}
 
 					$slugs = explode( ',', $_GET[ $query_var ] );
 
@@ -673,8 +755,9 @@ class WPCOM_elasticsearch {
 						// Todo: caching here
 						$term = get_term_by( 'slug', $slug, $facet['taxonomy'] );
 
-						if ( ! $term || is_wp_error( $term ) )
+						if ( ! $term || is_wp_error( $term ) ) {
 							continue;
+						}
 
 						$url = ( $slug_count > 1 ) ? add_query_arg( $query_var, implode( ',', array_diff( $slugs, array( $slug ) ) ) ) : remove_query_arg( $query_var );
 
@@ -688,18 +771,20 @@ class WPCOM_elasticsearch {
 					break;
 
 				case 'post_type':
-					if ( empty( $_GET['post_type'] ) )
+					if ( empty( $_GET['post_type'] ) ) {
 						continue 2;
+					}
 
-					$post_types = explode( ',', $_GET[ 'post_type' ] );
+					$post_types = explode( ',', $_GET['post_type'] );
 
 					$post_type_count = count( $post_types );
 
 					foreach ( $post_types as $post_type ) {
 						$post_type_object = get_post_type_object( $post_type );
 
-						if ( ! $post_type_object )
+						if ( ! $post_type_object ) {
 							continue;
+						}
 
 						$url = ( $post_type_count > 1 ) ? add_query_arg( 'post_type', implode( ',', array_diff( $post_types, array( $post_type ) ) ) ) : remove_query_arg( 'post_type' );
 
@@ -715,8 +800,9 @@ class WPCOM_elasticsearch {
 				case 'date_histogram':
 					switch ( $facet['interval'] ) {
 						case 'year':
-							if ( empty( $_GET['year'] ) )
+							if ( empty( $_GET['year'] ) ) {
 								continue 3;
+							}
 
 							$filters[] = array(
 								'url'  => remove_query_arg( array( 'year', 'monthnum', 'day' ) ),
@@ -727,8 +813,9 @@ class WPCOM_elasticsearch {
 							break;
 
 						case 'month':
-							if ( empty( $_GET['year'] ) || empty( $_GET['monthnum'] ) )
-								continue;
+							if ( empty( $_GET['year'] ) || empty( $_GET['monthnum'] ) ) {
+								continue 3;
+							}
 
 							$filters[] = array(
 								'url'  => remove_query_arg( array( 'monthnum', 'day' ) ),
@@ -740,8 +827,9 @@ class WPCOM_elasticsearch {
 
 						case 'day':
 
-							if ( empty( $_GET['year'] ) || empty( $_GET['monthnum'] ) || empty( $_GET['day'] ) )
-								continue;
+							if ( empty( $_GET['year'] ) || empty( $_GET['monthnum'] ) || empty( $_GET['day'] ) ) {
+								continue 3;
+							}
 
 							$filters[] = array(
 								'url'  => remove_query_arg( 'day' ),
@@ -753,12 +841,12 @@ class WPCOM_elasticsearch {
 
 						default:
 							continue 3;
-					}
+					} // End switch().
 
 					break;
 
-			} // end switch()
-		}
+			} // End switch().
+		} // End foreach().
 
 		return $filters;
 	}
@@ -776,6 +864,33 @@ class WPCOM_elasticsearch {
 		// Some taxonomies do not have a query_var allow custom filtering
 		return apply_filters( 'wpcom_elasticsearch_taxonomy_query_var', $taxonomy->query_var, $taxonomy_name );
 	}
+
+	/**
+	 * Takes an array of aggregation results, and ensures the array key ordering matches the key order in $desired
+	 * which is the input order
+	 *
+	 * Necessary because ES does not always return Aggs in the same order that you put them in (it used to in Facets)
+	 *
+	 * @param array $aggregations Agg results to be reordered
+	 * @param array $desired Array with keys representing the desired ordering
+	 *
+	 * @return array A new array with reordered keys, matching those in $desired
+	 */
+	public function fix_aggregation_ordering( array $aggregations, array $desired ) {
+		if ( empty( $aggregations ) || empty( $desired ) ) {
+			return $aggregations;
+		}
+
+		$reordered = array();
+
+		foreach( array_keys( $desired ) as $agg_name ) {
+			if ( isset( $aggregations[ $agg_name ] ) ) {
+				$reordered[ $agg_name ] = $aggregations[ $agg_name ];
+			}
+		}
+
+		return $reordered;
+	}
 }
 
 function WPCOM_elasticsearch() {
@@ -783,3 +898,5 @@ function WPCOM_elasticsearch() {
 }
 
 WPCOM_elasticsearch();
+
+
