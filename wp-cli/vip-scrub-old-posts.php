@@ -1,6 +1,8 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 
-if ( ! defined( 'WP_CLI' ) ) return;
+if ( ! defined( 'WP_CLI' ) ) {
+	return;
+}
 
 define( 'WP_IMPORTING', true ); // to prevent potentially expensive actions being triggered on delete
 
@@ -33,14 +35,14 @@ class VIP_Scrub_Posts extends WPCOM_VIP_CLI_Command {
 	 *     wp vip-scrub posts --date='-1 month'
 	 *     wp vip-scrub posts --date='2015-01-01'
 	 */
-	function posts( $args, $assoc_args ) {
+	public function posts( $args, $assoc_args ) {
 
 		$dry_run = isset( $assoc_args['dry-run'] ) ? ! ( 'false' === $assoc_args['dry-run'] ) : true;
 
-		$date = date( 'Y-m-d', strtotime( $assoc_args['date'] ) );
+		$date = date( 'Y-m-d', strtotime( $assoc_args['date'] ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 
 		$posts_per_page = intval( $assoc_args['posts_per_page'] );
-		if ( $posts_per_page === 0 ) {
+		if ( 0 === $posts_per_page ) {
 			$posts_per_page = 100;
 		}
 
@@ -69,7 +71,7 @@ class VIP_Scrub_Posts extends WPCOM_VIP_CLI_Command {
 		$args['no_found_rows'] = true;
 
 		if ( $total > 0 ) {
-			WP_CLI::confirm( sprintf( "Found %d posts (of %d) older than %s. Proceed?", $total, $gtotal, $date ) );
+			WP_CLI::confirm( sprintf( 'Found %d posts (of %d) older than %s. Proceed?', $total, $gtotal, $date ) );
 		} else {
 			WP_CLI::line( 'No posts found' );
 			return;
@@ -81,7 +83,7 @@ class VIP_Scrub_Posts extends WPCOM_VIP_CLI_Command {
 		if ( ! $dry_run ) {
 			$this->start_bulk_operation();
 		}
-		for( $i=1; $i<=$pages; $i++ ) {
+		for ( $i = 1; $i <= $pages; $i++ ) {
 
 			if ( $i > 1 ) {
 				if ( $dry_run ) {
@@ -89,7 +91,6 @@ class VIP_Scrub_Posts extends WPCOM_VIP_CLI_Command {
 				}
 				$scrub_query = new WP_Query( $args );
 			}
-
 
 			foreach ( $scrub_query->posts as $post_id ) {
 				$count++;
@@ -109,19 +110,15 @@ class VIP_Scrub_Posts extends WPCOM_VIP_CLI_Command {
 					}
 				}
 
-
 				$notify->tick();
 			}
-
 		}
 		if ( ! $dry_run ) {
 			$this->end_bulk_operation();
 		}
 
 		$notify->finish();
-
 	}
-
 }
 
 WP_CLI::add_command( 'vip-scrub', 'VIP_Scrub_Posts' );
