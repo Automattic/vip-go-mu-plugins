@@ -356,7 +356,7 @@ class Queue {
 		$deadlocked_time = time() - self::DEADLOCK_TIME;
 
 		$jobs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d",
+			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 			$count
 		) );
@@ -371,7 +371,7 @@ class Queue {
 		// Run this several times, to release potentially many jobs in reasonable batches
 		$batches = 5;
 
-		for( $i = 0; $i < $batches; $i++ ) {
+		for ( $i = 0; $i < $batches; $i++ ) {
 			$deadlocked_jobs = $this->get_deadlocked_jobs( 500 );
 
 			// If none found, we can stop the loop
