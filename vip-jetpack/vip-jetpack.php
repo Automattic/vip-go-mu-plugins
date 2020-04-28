@@ -9,6 +9,131 @@
  * License: GPL2+
  */
 
+/** 
+ * Lowest incremental sync queue size allowed on VIP - JP default is 1000, but we're bumping to 10000 to give VIPs more
+ * headroom as they tend to publish more than average
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
+
+/**
+ * The largest incremental sync queue size allowed - items will not get enqueued if there are already this many pending
+ * 
+ * The queue is stored in the option table, so if the queue gets _too_ large, site performance suffers
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 100000 );
+
+/**
+ * The lower bound for the incremental sync queue lag - if the oldest item has been sitting unsynced for this long,
+ * new items will not be added to the queue
+ * 
+ * The default is 15 minutes, but VIP sites often have more busy queues and we must prevent dropping items if the sync is
+ * running behind
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT', 2 * HOUR_IN_SECONDS );
+
+/**
+ * The maximum incremental sync queue lag allowed - just sets a reasonable upper bound on this limit to prevent extremely
+ * stale incremental sync queues
+ */
+define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
+
+/**
+ * Enable the the new Jetpack full sync method (queue-less) on non-production sites for testing
+ * 
+ * Can be removed (along with later code that uses the constant) after Jetpack 8.2 is deployed
+ */
+if ( ! defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && 'production' !== VIP_GO_ENV ) {
+	define( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY', true );
+}
+
+// Default plan object for all VIP sites.
+define( 'VIP_JETPACK_DEFAULT_PLAN', array(
+	'product_id' => 'vip',
+	'product_slug' => 'vip',
+	'product_name_short' => 'VIP',
+	'product_variation' => 'vip',
+	'supports' => array (
+		'videopress',
+		'akismet',
+		'vaultpress',
+		'seo-tools',
+		'google-analytics',
+		'wordads',
+		'search',
+	),
+	'features' => array (
+		'active' => array (
+			'premium-themes',
+			'akismet',
+			'vaultpress-backups',
+			'vaultpress-backup-archive',
+			'vaultpress-storage-space',
+			'vaultpress-automated-restores',
+			'vaultpress-security-scanning',
+			'polldaddy',
+			'simple-payments',
+			'support',
+			'wordads-jetpack',
+		),
+		'available' => array (
+			'akismet' => array (
+				'jetpack_free',
+				'jetpack_premium',
+				'jetpack_personal',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+				'jetpack_personal_monthly',
+			),
+			'vaultpress-backups' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'vaultpress-backup-archive' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'vaultpress-storage-space' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'vaultpress-automated-restores' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'simple-payments' => array (
+				'jetpack_premium',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+			),
+			'support' => array (
+				'jetpack_premium',
+				'jetpack_personal',
+				'jetpack_premium_monthly',
+				'jetpack_business_monthly',
+				'jetpack_personal_monthly',
+			),
+			'premium-themes' => array (
+				'jetpack_business_monthly',
+			),
+			'vaultpress-security-scanning' => array (
+				'jetpack_business_monthly',
+			),
+			'polldaddy' => array (
+				'jetpack_business_monthly',
+			),
+		),
+	),
+) );
+
+/**
+ * Add the Connection Pilot. Ensures Jetpack is consistently connected.
+ */
+require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );
+
 /**
  * Enable VIP modules required as part of the platform
  */
@@ -29,6 +154,72 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 
 	return $modules;
 }, 999 );
+
+/**
+ * Prevent the jetpack_active_plan from ever being overridden.
+ *
+ * All sites on VIP Go should always have have a valid VIP plan.
+ *
+ * This will prevent issues from the plan option being corrupted,
+ * which can then break features like Jetpack Search.
+ */
+add_filter( 'pre_option_jetpack_active_plan', function( $pre_option, $option, $default ) {
+	if ( true === WPCOM_IS_VIP_ENV
+		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
+		&& Jetpack::is_active() ) {
+		return VIP_JETPACK_DEFAULT_PLAN;
+	}
+
+	return $pre_option;
+}, 10, 3 );
+
+/**
+ * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
+ * 
+ * Still allows changing the value per site, but locks it into the range
+ */
+add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
+	$value = intval( $value );
+
+	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
+	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT );
+
+	return $value;
+}, 9999 );
+
+/**
+ * Lock down the jetpack_sync_settings_max_queue_lag to an allowed range
+ * 
+ * Still allows changing the value per site, but locks it into the range
+ */
+add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
+	$value = intval( $value );
+
+	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
+	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT );
+
+	return $value;
+}, 9999 );
+
+/**
+ * Allow incremental syncing via cron to take longer than the default 30 seconds.
+ *
+ * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
+ * 
+ */
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $value ) {
+	return 4 * MINUTE_IN_SECONDS;
+}, 9999 );
+
+/**
+ * Reduce the time between sync batches on VIP for performance gains.
+ *
+ * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
+ * 
+ */
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function( $value ) {
+	return 1;
+}, 9999 );
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
@@ -138,7 +329,33 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 }
 add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
 
-// Disable Jetpack sync when user is added to blog.
-add_action( 'init', function() {
-	remove_action( 'jetpack_user_authorized', [ 'Jetpack_Sync_Actions', 'do_initial_sync' ] );
+/**
+ * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
+ */
+add_filter( 'jetpack_sync_modules', function( $modules ) {
+	if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
+		return $modules;
+	}
+
+	if ( defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && true === VIP_JETPACK_FULL_SYNC_IMMEDIATELY ) {
+		foreach ( $modules as $key => $module ) {
+			// Replace Jetpack_Sync_Modules_Full_Sync or Full_Sync with the new module
+			if ( in_array( $module, [ 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync', 'Jetpack_Sync_Modules_Full_Sync' ], true ) ) {
+				$modules[ $key ] = 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately';
+			}
+		}
+	}
+
+	return $modules;
+} );
+
+/**
+ * Hide promotions/upgrade cards for now except for sites that we want to opt into Instant Search
+ */
+add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
+	if ( defined( 'VIP_JETPACK_ENABLE_INSTANT_SEARCH' ) && true === VIP_JETPACK_ENABLE_INSTANT_SEARCH ) {
+		return $is_enabled;
+	}
+
+	return false;
 } );

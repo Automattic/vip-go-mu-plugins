@@ -12,5 +12,8 @@ phpdoc.xml
 phpdoc
 
 # Composer
-vendor
+/vendor/
 output
+
+# npm
+node_modules
