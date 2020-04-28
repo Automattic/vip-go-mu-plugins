@@ -364,6 +364,30 @@ class Queue {
 		return $jobs;
 	}
 
+	/**
+	 * Find and release deadlocked jobs
+	 */
+	public function free_deadlocked_jobs() {
+		// Run this several times, to release potentially many jobs in reasonable batches
+		$batches = 5;
+
+		for( $i = 0; $i < $batches; $i++ ) {
+			$deadlocked_jobs = $this->get_deadlocked_jobs( 500 );
+
+			// If none found, we can stop the loop
+			if ( empty( $deadlocked_jobs ) ) {
+				break;
+			}
+
+			$deadlocked_job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+
+			$this->update_jobs( $deadlocked_job_ids, array(
+				'status' => 'queued',
+				'scheduled_time' => null,
+			) );
+		}
+	}
+
 	public function process_jobs( $jobs ) {
 		// Set them as running
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );

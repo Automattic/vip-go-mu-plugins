@@ -355,4 +355,38 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_deadlocked_job_ids, $deadlocked_job_ids );
 	}
+
+	public function test_free_deadlocked_jobs() {
+		$this->queue->queue_object( 1000, 'post' );
+		$this->queue->queue_object( 2000, 'post' );
+		$this->queue->queue_object( 3000, 'post' );
+
+		// Set the first job to have been scheduled in the recent past, to be flagged as deadlocked
+		$job1 = $this->queue->get_next_job_for_object( 1000, 'post' );
+
+		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME;
+
+		$this->queue->update_job( $job1->job_id, array(
+			'status' => 'scheduled',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+		) );
+
+		// Set the second job to have been scheduled in the far past, to be flagged as deadlocked
+		$job2 = $this->queue->get_next_job_for_object( 3000, 'post' );
+
+		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME - ( 3 * DAY_IN_SECONDS );
+
+		$this->queue->update_job( $job2->job_id, array(
+			'status' => 'scheduled',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+		) );
+
+		// Now free the deadlocked jobs
+		$this->queue->free_deadlocked_jobs();
+
+		// And all jobs should be back to being queued
+		$count = $this->queue->count_jobs_due_now( 'post' );
+
+		$this->assertEquals( 3, $count );
+	}
 }
