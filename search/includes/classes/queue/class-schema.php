@@ -31,7 +31,7 @@ class Schema {
 	public function is_installed() {
 		$db_version = (int) get_transient( self::DB_VERSION_TRANSIENT );
 
-		return version_compare( $db_version, 0, '>' );
+		return version_compare( $db_version, self::DB_VERSION, '>=' );
 	}
 
 	/**
