@@ -88,9 +88,6 @@ class Search {
 	protected function setup_hooks() {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
-		// For handling indexing failures
-		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
-
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 
 		// Override default per page value set in elasticpress/includes/classes/Indexable.php
@@ -188,25 +185,6 @@ class Search {
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
-	}
-
-	/**
-	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled, 
-	 * queue all of the posts for indexing.
-	 *
-	 * @param {array} $document_ids IDs of the documents that were to be indexed
-	 * @param {string} $slug Indexable slug
-	 * @param {array|boolean} $return Elasticsearch response. False on error.
-	 * @return {bool} Whether anything was done
-	 */
-	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
-		if ( false === $this->queue->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
-			return false;
-		}
-
-		$this->queue->queue_objects( $document_ids );
-		
-		return true;
 	}
 
 	public function action__wp() {

@@ -863,19 +863,6 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $enabled );
 	}
 
-	public function test__vip_search_action__ep_after_bulk_index() {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
-
-		$this->assertFalse( $es->action__ep_after_bulk_index( array(), 'post', false ), 'should return false when the queue is not enabled' );
-
-		define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-
-		$this->assertFalse( $es->action__ep_after_bulk_index( 'not_array', 'post', false ), 'should return false when $document_ids is not an array' );
-		$this->assertFalse( $es->action__ep_after_bulk_index( array(), 'not post', false ), 'should return false when $slug is not set to \'post\'' );
-		$this->assertFalse( $es->action__ep_after_bulk_index( array(), 'post', true ), 'should return false when $return is not false' );
-		$this->assertTrue( $es->action__ep_after_bulk_index( array(), 'post', false ), 'should return true if the queue is enabled, $document_ids is an array, $slug is \'post\', and $return is false' );
-
 	/*
 	 * Ensure that ep_skip_query_integration is true by default with no options/constants/skip
 	 */

@@ -47,6 +47,9 @@ class Queue {
 	public function setup_hooks() {
 		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
+
+		// For handling indexing failures
+		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 	}
 
 	/**
@@ -420,6 +423,25 @@ class Queue {
 
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
+
+		return true;
+	}
+
+	/**
+	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled, 
+	 * queue all of the posts for indexing.
+	 *
+	 * @param {array} $document_ids IDs of the documents that were to be indexed
+	 * @param {string} $slug Indexable slug
+	 * @param {array|boolean} $return Elasticsearch response. False on error.
+	 * @return {bool} Whether anything was done
+	 */
+	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
+		if ( false === $this->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
+			return false;
+		}
+
+		$this->queue_objects( $document_ids );
 
 		return true;
 	}
