@@ -626,7 +626,7 @@ class Search {
 		$path = explode( '/', trim( $parsed['path'], '/' ) );
 
 		// Index name is _usually_ the first part of the path
-		$index_name = $path[ 0 ];
+		$index_name = $path[0];
 
 		// If it starts with underscore but isn't "_all", then we didn't detect the index name
 		// and should return null
