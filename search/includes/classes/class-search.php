@@ -260,8 +260,12 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
+
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_index_name = $this->get_statsd_index_name_for_url( $query['url'] );
+
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
 	
@@ -283,6 +287,7 @@ class Search {
 				}
 
 				$statsd->increment( $statsd_prefix . $stat );
+				$statsd->increment( $statsd_per_site_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
@@ -291,9 +296,11 @@ class Search {
 
 			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
 				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
+			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
 		}
 	
 		return $request;
