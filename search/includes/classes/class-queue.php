@@ -14,6 +14,7 @@ class Queue {
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
 	const MAX_BATCH_SIZE = 1000;
+	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
 	public $schema;
 
@@ -343,11 +344,17 @@ class Queue {
 		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
+		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
+
+		$this->update_jobs( $job_ids, array(
+			'status' => 'scheduled',
+			'scheduled_time' => $scheduled_time,
+		) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status = 'scheduled';
+			$job->scheduled_time = $scheduled_time;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
@@ -356,6 +363,53 @@ class Queue {
 		}
 
 		return $jobs;
+	}
+
+	/**
+	 * Find any jobs that are considered "deadlocked"
+	 * 
+	 * A deadlocked job is one that has been scheduled for processing, but has
+	 * not completed within the defined time period
+	 */
+	public function get_deadlocked_jobs( $count = 250 ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		// If job was scheduled before this time, it is considered deadlocked
+		$deadlocked_time = time() - self::DEADLOCK_TIME;
+
+		$jobs = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+			$count
+		) );
+		
+		return $jobs;
+	}
+
+	/**
+	 * Find and release deadlocked jobs
+	 */
+	public function free_deadlocked_jobs() {
+		// Run this several times, to release potentially many jobs in reasonable batches
+		$batches = 5;
+
+		for ( $i = 0; $i < $batches; $i++ ) {
+			$deadlocked_jobs = $this->get_deadlocked_jobs( 500 );
+
+			// If none found, we can stop the loop
+			if ( empty( $deadlocked_jobs ) ) {
+				break;
+			}
+
+			$deadlocked_job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+
+			$this->update_jobs( $deadlocked_job_ids, array(
+				'status' => 'queued',
+				'scheduled_time' => null,
+			) );
+		}
 	}
 
 	public function process_jobs( $jobs ) {
