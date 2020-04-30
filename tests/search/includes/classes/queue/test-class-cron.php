@@ -112,7 +112,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 	public function test_schedule_batch_job() {
 		$mock_queue = $this->getMockBuilder( Queue::class )
-			->setMethods( [ 'checkout_jobs' ] )
+			->setMethods( [ 'checkout_jobs', 'free_deadlocked_jobs' ] )
 			->getMock();
 
 		$mock_job_ids = array( 1, 2 );
