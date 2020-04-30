@@ -611,6 +611,26 @@ class Search {
 	}
 
 	/**
+	 * Given an ES url, determine the index name of the request for stats purposes
+	 */
+	public function get_statsd_index_name_for_url( $url ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', trim( $parsed['path'], '/' ) );
+
+		// Index name is _usually_ the first part of the path
+		$index_name = $path[ 0 ];
+
+		// If it starts with underscore but isn't "_all", then we didn't detect the index name
+		// and should return null
+		if ( wp_startswith( $index_name, '_' ) && '_all' !== $index_name ) {
+			return null;
+		}
+
+		return $index_name;
+	}
+
+	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
 	public function get_statsd_prefix( $url, $mode = 'other' ) {

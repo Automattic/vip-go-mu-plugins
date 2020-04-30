@@ -797,6 +797,49 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_mode, $mode );
 	}
 
+	public function get_statsd_index_name_for_url_data() {
+		return array(
+			// Search
+			array(
+				'https://host.com/_search',
+				null,
+			),
+			array(
+				'https://host.com/index-name/_search',
+				'index-name',
+			),
+			array(
+				'https://host.com/index-name,index-name-2/_search',
+				'index-name,index-name-2',
+			),
+			array(
+				'https://host.com/_all/_search',
+				'_all',
+			),
+
+			// Other misc operations
+			array(
+				'https://host.com/index-name/_bulk',
+				'index-name',
+			),
+			array(
+				'https://host.com/index-name/_doc',
+				'index-name',
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly determine the index name from an ES API url for stats purposes
+	 * 
+	 * @dataProvider get_statsd_index_name_for_url_data()
+	 */
+	public function test_get_statsd_index_name_for_url( $url, $expected_index_name ) {
+		$index_name = $this->search_instance->get_statsd_index_name_for_url( $url );
+
+		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
 	public function get_statsd_prefix_data() {
 		return array(
 			array(
