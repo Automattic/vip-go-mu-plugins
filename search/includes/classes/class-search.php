@@ -633,7 +633,7 @@ class Search {
 	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $url, $mode = 'other' ) {
+	public function get_statsd_prefix( $url, $mode = 'other', $app_id = null, $index_name = null ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
@@ -654,6 +654,15 @@ class Search {
 
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
+
+		// If app id / index name passed, include those too
+		if ( is_int( $app_id ) ) {
+			$key_parts[] = $app_id;
+		}
+
+		if ( is_string( $index_name ) && ! empty( $index_name ) ) {
+			$key_parts[] = $index_name;
+		}
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
