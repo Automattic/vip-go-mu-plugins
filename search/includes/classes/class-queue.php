@@ -48,16 +48,19 @@ class Queue {
 	public function setup_hooks() {
 		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
+
+		// For handling indexing failures
+		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 	}
 
 	/**
 	 * Queue an object for re-indexing
-	 * 
+	 *
 	 * If the object is already queued, it will not be queued again
-	 * 
+	 *
 	 * If the object is being re-indexed too frequently, it will be queued but with a start_time
 	 * in the future representing the earliest time the queue processor can index the object
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 */
@@ -95,6 +98,27 @@ class Queue {
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
+	}
+
+	/**
+	 * Queue objects for re-indexing
+	 *
+	 * If the object is already queued, it will not be queued again
+	 *
+	 * If the object is being re-indexed too frequently, it will be queued but with a start_time
+	 * in the future representing the earliest time the queue processor can index the object
+	 *
+	 * @param array $object_ids The ids of the objects
+	 * @param string $object_type The type of objects
+	 */
+	public function queue_objects( $object_ids, $object_type = 'post' ) {
+		if ( ! is_array( $object_ids ) ) {
+			return;
+		}
+
+		foreach ( $object_ids as $object_id ) {
+			$this->queue_object( $object_id, $object_type );
+		}
 	}
 
 	/**
@@ -453,6 +477,25 @@ class Queue {
 
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
+
+		return true;
+	}
+
+	/**
+	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled, 
+	 * queue all of the posts for indexing.
+	 *
+	 * @param {array} $document_ids IDs of the documents that were to be indexed
+	 * @param {string} $slug Indexable slug
+	 * @param {array|boolean} $return Elasticsearch response. False on error.
+	 * @return {bool} Whether anything was done
+	 */
+	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
+		if ( false === $this->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
+			return false;
+		}
+
+		$this->queue_objects( $document_ids );
 
 		return true;
 	}

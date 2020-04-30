@@ -318,6 +318,54 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( array(), $jobs );
 	}
 
+	public function test_queue_objects_not_array() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$this->queue->queue_objects( 'Test' );
+		$this->queue->queue_objects( 42 );
+
+		$results = $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE 1", \ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( 0, count( $results ), 'shouldn\'t add objects to queue if object id list isn\'t an array' );
+	}
+
+	public function test_queue_objects_should_match_database() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = range( 10, 20 );
+		
+		$this->queue->queue_objects( $objects );
+
+		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
+	}
+
+	public function test__action__ep_after_bulk_index_validation() {
+		$this->assertFalse( $this->queue->action__ep_after_bulk_index( 'not_array', 'post', false ), 'should return false when $document_ids is not an array' );
+		$this->assertFalse( $this->queue->action__ep_after_bulk_index( array(), 'not post', false ), 'should return false when $slug is not set to \'post\'' );
+		$this->assertFalse( $this->queue->action__ep_after_bulk_index( array(), 'post', true ), 'should return false when $return is not false' );
+		$this->assertTrue( $this->queue->action__ep_after_bulk_index( array(), 'post', false ), 'should return true if the queue is enabled, $document_ids is an array, $slug is \'post\', and $return is false' );
+	}
+
+	public function test__action__ep_after_bulk_index_functionality() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = range( 10, 20 );
+
+		$this->queue->action__ep_after_bulk_index( $objects, 'post', false );
+
+		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
+	}
+
 	public function test_get_deadlocked_jobs() {
 		$this->queue->queue_object( 1000, 'post' );
 		$this->queue->queue_object( 2000, 'post' );
