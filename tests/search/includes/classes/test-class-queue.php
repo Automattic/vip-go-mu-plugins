@@ -364,7 +364,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
-  }
+	}
 
 	public function test_get_deadlocked_jobs() {
 		$this->queue->queue_object( 1000, 'post' );
