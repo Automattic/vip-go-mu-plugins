@@ -248,23 +248,23 @@ function wpcom_vip_should_woocommerce_prevent_admin_access( $prevent_access ) {
 		return $prevent_access;
 	}
 
-    /**
-     * Check to see if this user should be able to access the admin based on their role.
-     * By default, WooCommerce checks the 'edit_posts', 'manage_woocommerce', and 'view_admin_dashboard'
-     * capabilities to see if a user should be able to access wp-admin.
-     */ 
-    // Get the role names that have any of these caps.
-    $roles_have_caps = wpcom_vip_roles_that_can( [ 'edit_posts', 'manage_woocommerce', 'view_admin_dashboard' ] );
+	/**
+	 * Check to see if this user should be able to access the admin based on their role.
+	 * By default, WooCommerce checks the 'edit_posts', 'manage_woocommerce', and 'view_admin_dashboard'
+	 * capabilities to see if a user should be able to access wp-admin.
+	 */ 
+	// Get the role names that have any of these caps.
+	$roles_have_caps = wpcom_vip_roles_that_can( [ 'edit_posts', 'manage_woocommerce', 'view_admin_dashboard' ] );
 
-    // Get the current user's role(s).
-    $current_user_role = wp_get_current_user()->roles;
+	// Get the current user's role(s).
+	$current_user_role = wp_get_current_user()->roles;
 
-    // Do any of the roles match this user? If so, don't keep them out of the admin.
-    if ( ! empty( array_intersect( $current_user_role, $roles_have_caps ) ) ) {
-        return false;
-    }
+	// Do any of the roles match this user? If so, don't keep them out of the admin.
+	if ( ! empty( array_intersect( $current_user_role, $roles_have_caps ) ) ) {
+		return false;
+	}
 
-    return $prevent_access;
+	return $prevent_access;
 }
 
 /**
@@ -275,35 +275,35 @@ function wpcom_vip_should_woocommerce_prevent_admin_access( $prevent_access ) {
  * @return array An array of role slugs that have any capability in the $caps array.
  */
 function wpcom_vip_roles_that_can( $caps = [] ) {
-    // If a string is passed, convert it to an array.
-    if ( is_string( $caps ) ) {
-        $caps = [ $caps ];
-    }
+	// If a string is passed, convert it to an array.
+	if ( is_string( $caps ) ) {
+		$caps = [ $caps ];
+	}
 
-    // We can't do anything if $caps is not an array, return early.
-    if ( ! is_array( $caps ) ) {
-        return [];
-    }
-    
-    // Get all roles.
-    $roles = wp_roles();
+	// We can't do anything if $caps is not an array, return early.
+	if ( ! is_array( $caps ) ) {
+		return [];
+	}
 
-    // Set up our return array.
-    $roles_that_can = [];
+	// Get all roles.
+	$roles = wp_roles();
 
-    // Look through each role.
-    foreach ( $roles->roles as $role_slug => $role ) {
-        $set_this_role = false;
+	// Set up our return array.
+	$roles_that_can = [];
 
-        // Look through each capability that was passed.
-        foreach ( $caps as $cap ) {
-            // If this role has the capability, and the capability is set to true, and we haven't already set this role name.
-            if ( isset( $role['capabilities'][ $cap ] ) && $role['capabilities'][ $cap ] && ! $set_this_role ) {
-                $roles_that_can[] = $role_slug;
-                $set_this_role = true;
-            }
-        }
-    }
-    
-    return $roles_that_can;
+	// Look through each role.
+	foreach ( $roles->roles as $role_slug => $role ) {
+		$set_this_role = false;
+
+		// Look through each capability that was passed.
+		foreach ( $caps as $cap ) {
+			// If this role has the capability, and the capability is set to true, and we haven't already set this role name.
+			if ( isset( $role['capabilities'][ $cap ] ) && $role['capabilities'][ $cap ] && ! $set_this_role ) {
+				$roles_that_can[] = $role_slug;
+				$set_this_role = true;
+			}
+		}
+	}
+
+	return $roles_that_can;
 }
