@@ -245,7 +245,7 @@ function wpcom_vip_should_woocommerce_prevent_admin_access( $prevent_access ) {
 	// If the 2FA plugin won't be enabled or $prevent access is already `false`, do nothing and return early.
 	$vip_two_factor_enabled = apply_filters( 'wpcom_vip_enable_two_factor', true );
 	if ( true !== $vip_two_factor_enabled || ! $prevent_access ) {
-		return $prevent_access;
+		return false;
 	}
 
 	/**
