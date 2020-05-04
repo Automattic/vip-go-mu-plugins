@@ -317,7 +317,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			sleep( 1 );
 
 			$offset += $limit;
-			$attachment_ids_count = count( $attachment_ids )
+			$attachment_ids_count = count( $attachment_ids );
 		} while ( $attachment_ids_count );
 
 		$progress->finish();
