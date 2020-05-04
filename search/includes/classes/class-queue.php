@@ -18,6 +18,14 @@ class Queue {
 
 	public $schema;
 
+	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
+	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
+	public static $max_indexing_op_count = 3000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
+	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
+	private const INDEX_QUEUEING_TTL = 1 * HOUR_IN_SECONDS; // Keep indexing op queueing for an hour once ratelimiting is triggered
+
+
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -51,6 +59,8 @@ class Queue {
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
+
+		add_action( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], 0, 3 );
 	}
 
 	/**
@@ -498,5 +508,51 @@ class Queue {
 		$this->queue_objects( $document_ids );
 
 		return true;
+	}
+
+	/**
+	 * Hook pre_ep_index_sync_queue for indexing operation ratelimiting.
+	 * If ratelimited, bail and offload indexing to queue.
+	 *
+	 * @param {bool} $bail Current value of bail
+	 * @param {object} $sync_manager Instance of Sync_Manager
+	 * @param {string} $indexable_slug Indexable slug
+	 * @return {bool} Whether to bail on indexing or not
+	 */
+	public function ratelimit_indexing( $bail, $sync_manager, $indexable_slug ) {
+		// Only posts supported right now
+		if ( 'post' !== $indexable_slug ) {
+			return $bail;
+		}
+
+		// Determine whether indexing is ratelimited currently and if this is an indexing operation
+		$is_indexing_ratelimited = false !== wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
+		
+		if ( $this->is_enabled() ) {
+			// If indexing operation ratelimiting is hit, queue index operations
+			$index_count_in_period = self::index_count_incr( count( $sync_manager->sync_queue ) );
+			if ( $index_count_in_period > self::$max_indexing_op_count || $is_indexing_ratelimited ) {
+				// Offload indexing to async queue
+				$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
+				
+				if ( ! $is_indexing_ratelimited ) {
+					wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+					$is_indexing_ratelimited = true;
+				}
+			}
+		}
+
+		return $is_indexing_ratelimited;
+	}
+
+	/*
+	 * Increment the number of indexing operations that have been passed through VIP Search
+	 */
+	private static function index_count_incr( $increment = 1 ) {
+		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_COUNT_TTL );
+		}
+
+		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
 	}
 }

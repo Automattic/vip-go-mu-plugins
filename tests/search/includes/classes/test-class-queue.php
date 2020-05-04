@@ -437,4 +437,32 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 3, $count );
 	}
+
+	/**
+	 * Ensure the incrementor for tracking indexing operations counts behaves properly
+	 */
+	public function test__index_count_incr() {
+		$index_count_incr = self::get_method( 'index_count_incr' );
+
+		// Reset cache key
+		wp_cache_delete( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP );
+
+		$this->assertEquals( 1, $index_count_incr->invokeArgs( $this->queue, [] ), 'initial value should be 1' );
+
+		for ( $i = 2; $i < 10; $i++ ) {
+			$this->assertEquals( $i, $index_count_incr->invokeArgs( $this->queue, [] ), 'value should increment with loop' );
+		}
+
+		$this->assertEquals( 14, $index_count_incr->invokeArgs( $this->queue, [ 5 ] ), 'should increment properly without using the default increment of 1' );
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_method( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
+	}
 }
