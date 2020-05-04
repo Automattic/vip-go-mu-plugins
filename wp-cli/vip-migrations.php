@@ -225,12 +225,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		do {
-			$sql            = $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query . ' LIMIT %d,%d', $offset, $limit );
+			$sql            = $wpdb->prepare( 'SELECT ID FROM %s WHERE post_type = "attachment" %s LIMIT %d,%d', $wpdb->posts, $date_query, $offset, $limit );
 			$attachment_ids = array_map(
 				function( $attachment_ids ) {
 					return (int) $attachment_ids[0];
 				},
-				$wpdb->get_results( $sql, ARRAY_N )
+				$wpdb->get_results( $sql, ARRAY_N ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			);
 
 			foreach ( $attachment_ids as $attachment_id ) {
@@ -317,7 +317,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			sleep( 1 );
 
 			$offset += $limit;
-		} while ( count( $attachment_ids ) );
+			$attachment_ids_count = count( $attachment_ids )
+		} while ( $attachment_ids_count );
 
 		$progress->finish();
 		WP_CLI\Utils\write_csv( $file_descriptor, $output );
