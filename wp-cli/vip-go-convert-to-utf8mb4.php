@@ -163,7 +163,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		while ( $pass <= 3 ) {
 			foreach ( $tables as $table ) {
 				// Get the current CHARSET.
-				$table_create = $wpdb->get_results( "SHOW CREATE TABLE $table", ARRAY_N );
+				$table_create = $wpdb->get_results( $wpdb->prepare( 'SHOW CREATE TABLE %s', $table ), ARRAY_N );
 				$charset = array_column( $table_create, 1 )[0]; // Flatten array to string.
 				$charset = preg_match( '/CHARSET=(.*)(?:\s+|$)/Ui', $charset, $matches );
 
@@ -185,7 +185,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 				if ( 'utf8mb4' !== $charset || 'utf8mb4_unicode_ci' !== $collate ) {
 					$columns_to_fix = 0;
-					$columns = $wpdb->get_results( "SHOW COLUMNS FROM $table", ARRAY_N );
+					$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %s', $table ), ARRAY_N );
 
 					foreach ( $columns as $column ) {
 						$column_name    = $column[0];
@@ -196,7 +196,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 						$column_extra   = $column[5];
 
 						$new_column_type = false;
-						switch( $column_type ) {
+						switch ( $column_type ) {
 							case 'char':
 								$new_column_type = 'BINARY';
 								break;
@@ -245,7 +245,6 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 								$sql .= "MODIFY `$column_name` $column_type CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 							}
 						}
-
 					} // End Column Loop.
 
 					if ( $columns_to_fix > 0 ) {
@@ -256,13 +255,12 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 						$sql .= "ALTER TABLE `$table` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" . PHP_EOL;
 					}
 				}
-
 			} // End Table loop
 
 			$pass++;
 		}
 
-		echo $sql;
+		echo $sql; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
