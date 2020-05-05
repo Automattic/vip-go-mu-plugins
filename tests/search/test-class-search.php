@@ -1189,6 +1189,59 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $enabled );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_mirror_wp_query_when_mirroring_disabled() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', false );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		$query = new WP_Query();
+
+		$should_mirror = $es->should_mirror_wp_query( $query );
+
+		$this->assertFalse( $should_mirror );
+	}
+
+	public function test__filter_the_posts_no_mirroring() {
+		$search = $this->createMock( \Automattic\VIP\Search\Search::class );
+
+		$posts = array();
+		$query = new \stdClass();
+
+		$search->expects( $this->once() )
+			->method( 'should_mirror_wp_query' )
+			->with( $query )
+			->will( $this->returnValue( false ) );
+
+		$filtered_posts = $search->filter__the_posts( $posts, $query );
+	
+		// Should not have altered the posts array
+		$this->assertEquals( $posts, $filtered_posts );
+	}
+
+	public function test__filter_the_posts_with_mirroring() {
+		$search = $this->createMock( \Automattic\VIP\Search\Search::class );
+
+		$posts = array();
+		$query = new \stdClass();
+
+		$search->expects( $this->once() )
+			->method( 'should_mirror_wp_query' )
+			->with( $query )
+			->will( $this->returnValue( true ) );
+
+		$search->expects( $this->once() )
+			->method( 'do_mirror_wp_query' )
+			->with( $query );
+
+		$filtered_posts = $search->filter__the_posts( $posts, $query );
+	
+		// Should not have altered the posts array
+		$this->assertEquals( $posts, $filtered_posts );
+	}
 
 	public function get_diff_mirrored_wp_query_results_data() {
 		return array(
