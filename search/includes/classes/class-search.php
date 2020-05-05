@@ -158,6 +158,9 @@ class Search {
 
 		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
 		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
+
+		// For testing, mirror certain WP_Query's on certain sites
+		add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
 	}
 
 	protected function load_commands() {
@@ -233,6 +236,21 @@ class Search {
 			// Also not necessary with blocking=>false, but just in case.
 			'timeout' => 3,
 		] );
+	}
+
+	/**
+	 * Filter that runs at the end of WP_Query, used to transparently mirror certain WP_Query's on certain sites
+	 * for testing / evaluation
+	 */
+	public function filter__the_posts( &$posts, $query ) {
+		// If this query is one that should be transparently mirrored, run the mirroring
+		$should_mirror = $this->should_mirror_wp_query( $query );
+
+		if ( $should_mirror ) {
+			$this->mirror_wp_query( $query );
+		}
+
+		return $posts;
 	}
 
 	public function should_mirror_wp_query( $query ) {
