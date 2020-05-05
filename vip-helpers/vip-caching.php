@@ -685,8 +685,8 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	return $link;
 }
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
-	// Don't bother if slug hasn't changed.
-	if ( $post->post_name == $post_before->post_name ) {
+	// Don't bother if the slug or date hasn't changed.
+	if ( $post->post_name == $post_before->post_name && $post->post_date == $post_before->post_date ) {
 		return;
 	}
 

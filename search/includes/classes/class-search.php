@@ -9,11 +9,11 @@ class Search {
 	public $queue;
 	private $current_host_index;
 
-	private const QUERY_COUNT_CACHE_KEY = 'query_count';
-	private const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
-	private const MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	private const QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	private static $_instance;
 
@@ -100,6 +100,8 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		// Rate limit query integration
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -153,6 +155,9 @@ class Search {
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
+
+		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
+		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
 	}
 
 	protected function load_commands() {
@@ -258,8 +263,12 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
+
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_index_name = $this->get_statsd_index_name_for_url( $query['url'] );
+
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
 	
@@ -281,6 +290,7 @@ class Search {
 				}
 
 				$statsd->increment( $statsd_prefix . $stat );
+				$statsd->increment( $statsd_per_site_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
@@ -289,9 +299,11 @@ class Search {
 
 			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
 				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
+			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
 		}
 	
 		return $request;
@@ -339,24 +351,6 @@ class Search {
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	public static function ep_skip_query_integration( $skip, $query = null ) {
-		if ( isset( $_GET[ 'es' ] ) ) {
-			return false;
-		}
-
-		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
-		// This is intended to be a temporary workaround until a better fix is made
-		$bypassed_on_main_query_site_ids = [
-			1284,
-			1286,
-		];
-	
-		if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-			// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-			if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-				return true;
-			}
-		}
-
 		/**
 		 * Honor filters that skip query integration
 		 *
@@ -368,13 +362,24 @@ class Search {
 		if ( $skip ) {
 			return true;
 		}
+		
+		if ( isset( $_GET['es'] ) ) {
+			return false;
+		}
 
-		// If the query count has exceeded the maximum
-		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::MAX_QUERY_COUNT ) {
-			// Should be roughly half over time
-			if ( self::QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
-				return true;
+		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
+		// This is intended to be a temporary workaround until a better fix is made
+		$bypassed_on_main_query_site_ids = [
+			1284,
+			1286,
+		];
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
+				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
+				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
+					return true;
+				}
 			}
 		}
 
@@ -393,6 +398,34 @@ class Search {
 		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
 	
 		return $skipped;
+	}
+
+	/**
+	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 *
+	 * Honor any previous filters that skip query integration. If query integration is
+	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
+	 * roughly half of the queries received to the database and half through ElasticPress.
+	 *
+	 * @param $skip current ep_skip_query_integration value
+	 * @return bool new value of ep_skip_query_integration
+	 */
+	public static function rate_limit_ep_query_integration( $skip ) {
+		// Honor previous filters that skip query integration
+		if ( $skip ) {
+			return true;
+		}
+
+		// If the query count has exceeded the maximum
+		// only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Should be roughly half over time
+			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -588,9 +621,29 @@ class Search {
 	}
 
 	/**
+	 * Given an ES url, determine the index name of the request for stats purposes
+	 */
+	public function get_statsd_index_name_for_url( $url ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', trim( $parsed['path'], '/' ) );
+
+		// Index name is _usually_ the first part of the path
+		$index_name = $path[0];
+
+		// If it starts with underscore but isn't "_all", then we didn't detect the index name
+		// and should return null
+		if ( wp_startswith( $index_name, '_' ) && '_all' !== $index_name ) {
+			return null;
+		}
+
+		return $index_name;
+	}
+
+	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $url, $mode = 'other' ) {
+	public function get_statsd_prefix( $url, $mode = 'other', $app_id = null, $index_name = null ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
@@ -611,6 +664,15 @@ class Search {
 
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
+
+		// If app id / index name passed, include those too
+		if ( is_int( $app_id ) ) {
+			$key_parts[] = $app_id;
+		}
+
+		if ( is_string( $index_name ) && ! empty( $index_name ) ) {
+			$key_parts[] = $index_name;
+		}
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
@@ -684,6 +746,21 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/**
+	 * Filter for enabling or disabling ES query offloading for a given WP_Query
+	 * 
+	 * This is used to allow query offloading using the 'es' var (which most VIP sites are already using
+	 * via es-wp-query), in addition to the EP default 'ep_integrate' var
+	 */
+	public function filter__ep_elasticpress_enabled( $enabled, $query ) {
+		// If the WP_Query has an 'es' var that is truthy, enable query offloading via VIP Search
+		if ( isset( $query->query_vars['es'] ) && $query->query_vars['es'] ) {
+			$enabled = true;
+		}
+
+		return $enabled;
 	}
 
 	/*

@@ -97,6 +97,83 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 2, $replicas );
 	}
 
+	public function vip_search_filter_ep_elasticpress_enabled_data() {
+		return array(
+			// Enabled
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => 1,
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => true,
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => '1',
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+
+			// Disabled
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(),
+				),
+				// Expected $enabled
+				false,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => 0,
+					),
+				),
+				// Expected $enabled
+				false,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => false,
+					),
+				),
+				// Expected $enabled
+				false,
+			),
+		);
+	}
+	/**
+	 * @dataProvider vip_search_filter_ep_elasticpress_enabled_data
+	 */
+	public function test__vip_search_filter_ep_elasticpress_enabled( $query, $expected_enabled ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$enabled = apply_filters( 'ep_elasticpress_enabled', false, $query );
+
+		$this->assertEquals( $expected_enabled, $enabled );
+	}
+
 	public function vip_search_enforces_disabled_features_data() {
 		return array(
 			array( 'documents' ),
@@ -797,6 +874,49 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_mode, $mode );
 	}
 
+	public function get_statsd_index_name_for_url_data() {
+		return array(
+			// Search
+			array(
+				'https://host.com/_search',
+				null,
+			),
+			array(
+				'https://host.com/index-name/_search',
+				'index-name',
+			),
+			array(
+				'https://host.com/index-name,index-name-2/_search',
+				'index-name,index-name-2',
+			),
+			array(
+				'https://host.com/_all/_search',
+				'_all',
+			),
+
+			// Other misc operations
+			array(
+				'https://host.com/index-name/_bulk',
+				'index-name',
+			),
+			array(
+				'https://host.com/index-name/_doc',
+				'index-name',
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly determine the index name from an ES API url for stats purposes
+	 * 
+	 * @dataProvider get_statsd_index_name_for_url_data()
+	 */
+	public function test_get_statsd_index_name_for_url( $url, $expected_index_name ) {
+		$index_name = $this->search_instance->get_statsd_index_name_for_url( $url );
+
+		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
 	public function get_statsd_prefix_data() {
 		return array(
 			array(
@@ -817,6 +937,41 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test_get_statsd_prefix( $url, $mode, $expected ) {
 		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode );
+
+		$this->assertEquals( $expected, $prefix );
+	}
+
+	public function get_statsd_prefix_with_site_and_index_data() {
+		return array(
+			array(
+				'https://es-ha-bur.vipv2.net:1234',
+				'search',
+				1,
+				'vip-1-post',
+				'com.wordpress.elasticsearch.bur.ha1234_vipgo.search.1.vip-1-post',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'index',
+				2,
+				'vip-2-post-2',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.2.vip-2-post-2',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'index',
+				3,
+				'vip-3-post-2-2',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.3.vip-3-post-2-2',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_statsd_prefix_with_site_and_index_data
+	 */
+	public function test_get_statsd_prefix_with_site_and_index( $url, $mode, $app_id, $index_name, $expected ) {
+		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode, $app_id, $index_name );
 
 		$this->assertEquals( $expected, $prefix );
 	}
@@ -861,5 +1016,114 @@ class Search_Test extends \WP_UnitTestCase {
 		$enabled = apply_filters( 'ep_allow_post_content_filtered_index', true );
 
 		$this->assertFalse( $enabled );
+	}
+
+	/*
+	 * Ensure that ep_skip_query_integration is true by default with no options/constants/skip
+	 */
+	public function test__ep_skip_query_integration_skip_by_default() {
+		$es = new \Automattic\VIP\Search\Search();
+		$this->assertTrue( $es::ep_skip_query_integration( false ) );
+	}
+
+	/*
+	 * Ensure that filters disabling query integration are honored
+	 */
+	public function test__ep_skip_query_integration_skip_filter() {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		// Set options/constants/query string to enable query integration
+		add_option( 'vip_enable_vip_search_query_integration', true );
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		$_GET['es'] = true;
+		
+		$this->assertTrue( $es::ep_skip_query_integration( true ) );
+	}
+
+	/*
+	 * Ensure the vip_enable_vip_search_query_integration option works properly with ep_skip_query_integration filter
+	 */
+	public function test__ep_skip_query_integration_skip_option() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		// True will now be the default
+		add_option( 'vip_enable_vip_search_query_integration', false );
+		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip if option is false' );
+
+		// Set es query string to test override
+		$_GET['es'] = true;
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
+		unset( $_GET['es'] );
+
+		update_option( 'vip_enable_vip_search_query_integration', true );
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
+	}
+
+	/*
+	 * Ensure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
+	 */
+	public function test__ep_skip_query_integration_skip_constant() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		// False will now be the default
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when query integration constant is set by default' );
+		
+		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
+	
+		// Set es query string to test override
+		$_GET['es'] = true;
+		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
+	}
+
+	/*
+	 * Ensure ratelimiting works prioperly with ep_skip_query_integration filter
+	 */
+	public function test__rate_limit_ep_query_integration() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		add_option( 'vip_enable_vip_search_query_integration', true );
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		$_GET['es'] = true;
+
+		$this->assertFalse( $es::rate_limit_ep_query_integration( false ), 'the default value should be false' );
+		$this->assertTrue( $es::rate_limit_ep_query_integration( true ), 'should honor filters that skip query integrations' );
+
+		// Force ratelimiting to apply
+		$es::$max_query_count = 0;
+		
+		// Force this request to be ratelimited
+		$es::$query_db_fallback_value = 11;
+
+		// ep_skip_query_integration should be true if ratelimited
+		$this->assertTrue( $es::rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
+	}
+
+	/**
+	 * Ensure the incrementor for tracking request counts behaves properly
+	 */
+	public function test__query_count_incr() {
+		$es = new \Automattic\VIP\Search\Search();
+		$query_count_incr = self::get_method( 'query_count_incr' );
+
+		// Reset cache key
+		wp_cache_delete( $es::QUERY_COUNT_CACHE_KEY, $es::QUERY_COUNT_CACHE_GROUP );
+
+		$this->assertEquals( 1, $query_count_incr->invokeArgs( $es, [] ), 'initial value should be 1' );
+
+		for ( $i = 2; $i < 10; $i++ ) {
+			$this->assertEquals( $i, $query_count_incr->invokeArgs( $es, [] ), 'value should increment with loop' );
+		}
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_method( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
 	}
 }
