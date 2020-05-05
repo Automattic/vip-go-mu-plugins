@@ -202,17 +202,23 @@ class Search {
 		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
 		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
 		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
-			$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
-
-			$option_value = get_option( 'vip_enable_search_query_mirroring' );
-			$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
-
-			$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+			$is_mirroring_enabled = $this->is_query_mirroring_enabled();
 
 			if ( $is_mirroring_enabled ) {
 				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
 			}
 		}
+	}
+
+	public function is_query_mirroring_enabled() {
+		$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
+
+		$option_value = get_option( 'vip_enable_search_query_mirroring' );
+		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+
+		return $is_mirroring_enabled;
 	}
 
 	public function do_mirror_search_request() {
