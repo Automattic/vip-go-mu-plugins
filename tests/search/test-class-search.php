@@ -1077,6 +1077,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
 	}
 
+	public function test__ep_skip_query_integration_allow_for_mirrored() {
+		// TODO
+	}
+
 	/*
 	 * Ensure ratelimiting works prioperly with ep_skip_query_integration filter
 	 */

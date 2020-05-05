@@ -435,6 +435,11 @@ class Search {
 			}
 		}
 
+		// If query is marked for mirroring (for evaluation phase), allow it
+		if ( isset( $query->query_vars['vip_search_mirrored'] ) && $query->query_vars['vip_search_mirrored'] ) {
+			return false;
+		}
+
 		// Legacy constant name
 		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
 
