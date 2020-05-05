@@ -442,7 +442,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	 * Ensure that the value passed into the filter is returned if the indexable_slug is not 'post'
 	 */
 	public function test__ratelimit_indexing_should_pass_bail_if_not_post() {
-		$this->assertTrue( $this->queue->ratelimit_indexing( true, '', 'hippo' ), 'should return true since true was passed in' );		
+		$this->assertTrue( $this->queue->ratelimit_indexing( true, '', 'hippo' ), 'should return true since true was passed in' );
 		$this->assertFalse( $this->queue->ratelimit_indexing( false, '', 'hippo' ), 'should return false since false was passed in' );
 	}
 
@@ -453,7 +453,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$sync_manager = new \stdClass();
 		$sync_manager->sync_queue = array();
 
-		$this->assertTrue( $this->queue->ratelimit_indexing( true, $sync_manager, 'post' ), 'should return true since true was passed in' );		
+		$this->assertTrue( $this->queue->ratelimit_indexing( true, $sync_manager, 'post' ), 'should return true since true was passed in' );
 		$this->assertFalse( $this->queue->ratelimit_indexing( false, $sync_manager, 'post' ), 'should return false since false was passed in' );
 	}
 
