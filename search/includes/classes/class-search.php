@@ -235,6 +235,36 @@ class Search {
 		] );
 	}
 
+	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
+		// Normalize
+		if ( ! is_array( $original_posts ) ) {
+			$original_posts = array();
+		}
+
+		if ( ! is_array( $mirrored_posts ) ) {
+			$mirrored_posts = array();
+		}
+		
+		$original_post_ids = wp_list_pluck( $original_posts, 'ID' );
+		$mirrored_post_ids = wp_list_pluck( $mirrored_posts, 'ID' );
+
+		$missing = array_diff( $original_post_ids, $mirrored_post_ids );
+		$extra = array_diff( $mirrored_post_ids, $original_post_ids );
+
+		if ( empty( $missing ) && empty( $extra ) ) {
+			return null;
+		}
+
+		return array(
+			'missing' => array_values( $missing ),
+			'extra' => array_values( $extra ),
+		);
+	}
+
+	public function log_mirrored_wp_query_diff( $diff ) {
+
+	}
+
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */

@@ -1185,6 +1185,172 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $enabled );
 	}
 
+
+	public function get_diff_mirrored_wp_query_results_data() {
+		return array(
+			// No diff
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Expected diff
+				null,
+			),
+
+			// Posts missing from mirrored
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+					array(
+						'ID' => 4,
+					),
+				),
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Expected diff
+				array(
+					'missing' => array(
+						2,
+						4,
+					),
+					'extra' => array(),
+				),
+			),
+
+			// Extra posts
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+					array(
+						'ID' => 4,
+					),
+				),
+
+				// Expected diff
+				array(
+					'missing' => array(),
+					'extra' => array(
+						2,
+						4,
+					),
+				),
+			),
+
+			// Non-array input
+			array(
+				// Original
+				null,
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+				),
+
+				// Expected diff
+				array(
+					'missing' => array(),
+					'extra' => array(
+						1,
+					),
+				),
+			),
+			
+			// Non-array input
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+				),
+
+				// Mirrored
+				null,
+
+				// Expected diff
+				array(
+					'missing' => array(
+						1,
+					),
+					'extra' => array(),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_diff_mirrored_wp_query_results_data
+	 */
+	public function test__diff_mirrored_wp_query_results( $original_posts, $mirrored_posts, $expected_diff ) {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$diff = $es->diff_mirrored_wp_query_results( $original_posts, $mirrored_posts );
+
+		$this->assertEquals( $expected_diff, $diff );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
