@@ -121,4 +121,43 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT' ) );
 		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT' ) );
 	}
+
+	function get_jetpack_sync_modules_data() {
+		return [
+			'enabled-no-matching-modules' => [
+				[
+					'sync' => 'Other_Sync_Class',
+				],
+				[
+					'sync' => 'Other_Sync_Class',
+				],
+			],
+
+			'enabled-with-matching-modules' => [
+				[
+					'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
+					'not-sync' => 'Not_Sync_Class',
+				],
+				[
+					'sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
+					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
+					'not-sync' => 'Not_Sync_Class',
+				],
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_jetpack_sync_modules_data
+	 */
+	public function test__jetpack_sync_modules__class_exists( $modules, $expected_modules ) {
+		require_once( __DIR__ . '/fixtures/jetpack/class-jetpack-sync-immediately.php' );
+
+		$actual_modules = apply_filters( 'jetpack_sync_modules', $modules );
+
+		$this->assertEquals( $expected_modules, $actual_modules );
+	}
 }

@@ -43,3 +43,9 @@
 [submodule "cron-control-next"]
 	path = cron-control-next
 	url = git@github.com:Automattic/Cron-Control.git
+[submodule "elasticsearch/elasticpress"]
+	path = search/elasticpress
+	url = https://github.com/Automattic/ElasticPress.git
+[submodule "elasticsearch/debug-bar-elasticpress"]
+	path = search/debug-bar-elasticpress
+	url = https://github.com/10up/debug-bar-elasticpress.git
