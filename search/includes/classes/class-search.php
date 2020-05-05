@@ -155,6 +155,9 @@ class Search {
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
+
+		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
+		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
 	}
 
 	protected function load_commands() {
@@ -743,6 +746,21 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/**
+	 * Filter for enabling or disabling ES query offloading for a given WP_Query
+	 * 
+	 * This is used to allow query offloading using the 'es' var (which most VIP sites are already using
+	 * via es-wp-query), in addition to the EP default 'ep_integrate' var
+	 */
+	public function filter__ep_elasticpress_enabled( $enabled, $query ) {
+		// If the WP_Query has an 'es' var that is truthy, enable query offloading via VIP Search
+		if ( isset( $query->query_vars['es'] ) && $query->query_vars['es'] ) {
+			$enabled = true;
+		}
+
+		return $enabled;
 	}
 
 	/*
