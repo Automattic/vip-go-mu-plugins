@@ -25,7 +25,6 @@ class Queue {
 	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
 	private const INDEX_QUEUEING_TTL = 1 * HOUR_IN_SECONDS; // Keep indexing op queueing for an hour once ratelimiting is triggered
 
-
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -60,7 +59,7 @@ class Queue {
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 
-		add_action( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], 0, 3 );
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
 
 	/**
@@ -522,6 +521,10 @@ class Queue {
 	public function ratelimit_indexing( $bail, $sync_manager, $indexable_slug ) {
 		// Only posts supported right now
 		if ( 'post' !== $indexable_slug ) {
+			return $bail;
+		}
+
+		if ( empty( $sync_manager->sync_queue ) ) {
 			return $bail;
 		}
 
