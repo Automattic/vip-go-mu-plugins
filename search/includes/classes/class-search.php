@@ -251,6 +251,24 @@ class Search {
 		return false;
 	}
 
+	public function do_mirror_wp_query( $query ) {
+		$mirrored_vars = $query->query_vars;
+
+		// Enable ES integration
+		$mirrored_vars['es'] = true;
+
+		// Mark this as a mirrored query (passes check in filter__ep_skip_query_integration() when query integration is otherwise disabled)
+		$mirrored_vars['vip_search_mirrored'] = true;
+
+		$mirrored_query = new \WP_Query( $mirrored_vars );
+
+		$diff = $this->diff_mirrored_wp_query_results( $query, $mirrored_query );
+
+		if ( ! empty( $diff ) ) {
+			$this->log_mirrored_wp_query_diff( $diff );
+		}
+	}
+
 	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
 		// Normalize
 		if ( ! is_array( $original_posts ) ) {
