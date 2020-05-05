@@ -235,6 +235,22 @@ class Search {
 		] );
 	}
 
+	public function should_mirror_wp_query( $query ) {
+		// If this was already an ES query, don't mirror
+		if ( isset( $query['es'] ) || isset( $query['ep_integrate'] ) || isset( $query['vip_search_mirrored'] ) || $query->elasticsearch_success ) {
+			return false;
+		}
+
+		// If mirroring is not enabled at all, skip
+		if ( ! $this->is_query_mirroring_enabled() ) {
+			return false;
+		}
+
+		// Is this one of the targeted queries?
+	
+		return false;
+	}
+
 	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
 		// Normalize
 		if ( ! is_array( $original_posts ) ) {
