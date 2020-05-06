@@ -327,7 +327,7 @@ class Search {
 			'extra' => array(
 				'query_vars' => $query->query_vars,
 				'diff' => $diff,
-				'uri' => $_SERVER[ 'REQUEST_URI' ],
+				'uri' => isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null,
 			),
 		) );
 	}
