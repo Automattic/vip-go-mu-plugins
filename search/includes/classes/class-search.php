@@ -242,7 +242,7 @@ class Search {
 	 * Filter that runs at the end of WP_Query, used to transparently mirror certain WP_Query's on certain sites
 	 * for testing / evaluation
 	 */
-	public function filter__the_posts( &$posts, $query ) {
+	public function filter__the_posts( $posts, $query ) {
 		// If this query is one that should be transparently mirrored, run the mirroring
 		$should_mirror = $this->should_mirror_wp_query( $query );
 
