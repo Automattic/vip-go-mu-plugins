@@ -247,7 +247,7 @@ class Search {
 		$should_mirror = $this->should_mirror_wp_query( $query );
 
 		if ( $should_mirror ) {
-			$this->mirror_wp_query( $query );
+			$this->do_mirror_wp_query( $query );
 		}
 
 		return $posts;
