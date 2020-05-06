@@ -1224,7 +1224,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$es = new \Automattic\VIP\Search\Search();
 
-		$query = new WP_Query();
+		$query = new \WP_Query();
 
 		$should_mirror = $es->should_mirror_wp_query( $query );
 
@@ -1233,26 +1233,34 @@ class Search_Test extends \WP_UnitTestCase {
 
 	public function get_should_mirror_wp_query_when_query_already_offloaded_data() {
 		return array(
-			(object) array(
-				'query_vars' => array(
-					'es' => true,
+			array(
+				(object) array(
+					'query_vars' => array(
+						'es' => true,
+					),
 				),
 			),
 
-			(object) array(
-				'query_vars' => array(
-					'ep_integrate' => true,
+			array(
+				(object) array(
+					'query_vars' => array(
+						'ep_integrate' => true,
+					),
 				),
 			),
 			
-			(object) array(
-				'query_vars' => array(
-					'vip_search_mirrored' => true,
+			array(
+				(object) array(
+					'query_vars' => array(
+						'vip_search_mirrored' => true,
+					),
 				),
 			),
 
-			(object) array(
-				'elasticsearch_succes' => true,
+			array(
+				(object) array(
+					'elasticsearch_succes' => true,
+				),
 			),
 		);
 	}
@@ -1284,7 +1292,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$posts = array();
 		$query = new \stdClass();
 
-		$filtered_posts = $search->filter__the_posts( $posts, $query );
+		$filtered_posts = $es->filter__the_posts( $posts, $query );
 	
 		// Should not have altered the posts array
 		$this->assertEquals( $posts, $filtered_posts );
