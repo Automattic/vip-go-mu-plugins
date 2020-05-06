@@ -1077,8 +1077,34 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__ep_skip_query_integration_allow_for_mirrored() {
-		// TODO
+		// Should not start off enabled (or our test tells us nothing)
+		define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', false );
+		update_option( 'vip_enable_vip_search_query_integration', false );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		// Regular query should skip integration
+		$regular_query = new \WP_Query();
+
+		$skipped = $es::ep_skip_query_integration( false, $regular_query );
+
+		$this->assertTrue( $skipped );
+
+		// But a mirrored query should be allowed (not skipped)
+		$mirrored_query = new \WP_Query( array(
+			'vip_search_mirrored' => true,
+		) );
+
+		$skipped = $es::ep_skip_query_integration( false, $mirrored_query );
+
+		$this->assertFalse( $skipped );
+
+		delete_option( 'vip_enable_vip_search_query_integration' );
 	}
 
 	/*
