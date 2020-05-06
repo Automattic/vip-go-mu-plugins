@@ -255,7 +255,7 @@ class Search {
 
 	public function should_mirror_wp_query( $query ) {
 		// If this was already an ES query, don't mirror
-		if ( isset( $query['es'] ) || isset( $query['ep_integrate'] ) || isset( $query['vip_search_mirrored'] ) || $query->elasticsearch_success ) {
+		if ( isset( $query->query_vars['es'] ) || isset( $query->query_vars['ep_integrate'] ) || isset( $query->query_vars['vip_search_mirrored'] ) || isset( $query->elasticsearch_success ) ) {
 			return false;
 		}
 
