@@ -275,7 +275,7 @@ class Search {
 		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
 
 		if ( ! empty( $diff ) ) {
-			$this->log_mirrored_wp_query_diff( $diff );
+			$this->log_mirrored_wp_query_diff( $query, $diff );
 		}
 	}
 
@@ -319,8 +319,17 @@ class Search {
 		);
 	}
 
-	public function log_mirrored_wp_query_diff( $diff ) {
-
+	public function log_mirrored_wp_query_diff( $query, $diff ) {
+		\Automattic\VIP\Logstash\log2logstash( array(
+			'severity' => 'warning',
+			'feature' => 'vip_search_wp_query_mirroring',
+			'message' => 'Inconsistent mirrored offloaded WP_Query results detected',
+			'extra' => array(
+				'query_vars' => $query->query_vars,
+				'diff' => $diff,
+				'uri' => $_SERVER[ 'REQUEST_URI' ],
+			),
+		) );
 	}
 
 	/**
