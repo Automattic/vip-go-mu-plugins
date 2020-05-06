@@ -359,3 +359,12 @@ add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
 
 	return false;
 } );
+
+function vip_jetpack_admin_enqueue_scripts() {
+	$admin_css_url  = WP_CONTENT_URL . '/mu-plugins/' . basename( __DIR__ ) . '/css/admin-settings.css';
+	$admin_css_file = WP_CONTENT_DIR . '/mu-plugins/' . basename( __DIR__ ) . '/css/admin-settings.css';
+	$mtime          = filemtime( $admin_css_file );
+	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url, array(), $mtime );
+}
+
+add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
