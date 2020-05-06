@@ -1205,6 +1205,45 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $should_mirror );
 	}
 
+	public function get_should_mirror_wp_query_when_query_already_offloaded_data() {
+		return array(
+			(object) array(
+				'query_vars' => array(
+					'es' => true,
+				),
+			),
+
+			(object) array(
+				'query_vars' => array(
+					'ep_integrate' => true,
+				),
+			),
+			
+			(object) array(
+				'query_vars' => array(
+					'vip_search_mirrored' => true,
+				),
+			),
+
+			(object) array(
+				'elasticsearch_succes' => true,
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_should_mirror_wp_query_when_query_already_offloaded_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_mirror_wp_query_when_query_already_offloaded( $query ) {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$should_mirror = $es->should_mirror_wp_query( $query );
+
+		$this->assertFalse( $should_mirror );
+	}
+
 	public function test__filter_the_posts_no_mirroring() {
 		$search = $this->createMock( \Automattic\VIP\Search\Search::class );
 
