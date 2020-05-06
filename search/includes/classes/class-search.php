@@ -280,7 +280,7 @@ class Search {
 
 		$mirrored_query = new \WP_Query( $mirrored_vars );
 
-		$diff = $this->diff_mirrored_wp_query_results( $query, $mirrored_query );
+		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
 
 		if ( ! empty( $diff ) ) {
 			$this->log_mirrored_wp_query_diff( $diff );
