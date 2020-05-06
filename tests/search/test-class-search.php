@@ -1270,16 +1270,19 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $should_mirror );
 	}
 
-	public function test__filter_the_posts_no_mirroring() {
-		$search = $this->createMock( \Automattic\VIP\Search\Search::class );
+	/**
+	 * Test the "the_posts" filter callback, which is responsible for mirroring WP_Query's under 
+	 * certain limited circumstances
+	 * 
+	 * NOTE - due to PHPUnit's lack of support for partial mocking, we can't actually spy on the related
+	 * function calls (to check if mirroring is enabled, then to do the mirroring if so), so we're just doing
+	 * a very basic check that it's not altering the $posts array in any way
+	 */
+	public function test__filter_the_posts() {
+		$es = new \Automattic\VIP\Search\Search();
 
 		$posts = array();
 		$query = new \stdClass();
-
-		$search->expects( $this->once() )
-			->method( 'should_mirror_wp_query' )
-			->with( $query )
-			->will( $this->returnValue( false ) );
 
 		$filtered_posts = $search->filter__the_posts( $posts, $query );
 	
@@ -1287,25 +1290,18 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $posts, $filtered_posts );
 	}
 
-	public function test__filter_the_posts_with_mirroring() {
-		$search = $this->createMock( \Automattic\VIP\Search\Search::class );
+	public function test__get_mirrored_wp_query() {
+		$es = new \Automattic\VIP\Search\Search();
 
-		$posts = array();
-		$query = new \stdClass();
+		$vars = array( 'foo' => 'bar' );
 
-		$search->expects( $this->once() )
-			->method( 'should_mirror_wp_query' )
-			->with( $query )
-			->will( $this->returnValue( true ) );
+		$query = new \WP_Query( $vars );
 
-		$search->expects( $this->once() )
-			->method( 'do_mirror_wp_query' )
-			->with( $query );
+		$mirrored_query = $es->get_mirrored_wp_query( $query );
 
-		$filtered_posts = $search->filter__the_posts( $posts, $query );
-	
-		// Should not have altered the posts array
-		$this->assertEquals( $posts, $filtered_posts );
+		// There's not really a better way in PHPUnit to assert the resulting array contains expected array/values...
+		$this->assertEquals( 'bar', $mirrored_query->query_vars['foo'] );
+		$this->assertEquals( true, $mirrored_query->query_vars['vip_search_mirrored'] );
 	}
 
 	public function get_diff_mirrored_wp_query_results_data() {

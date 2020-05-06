@@ -270,7 +270,17 @@ class Search {
 	}
 
 	public function do_mirror_wp_query( $query ) {
-		$mirrored_vars = $query->query_vars;
+		$mirrored_query = $this->get_mirrored_wp_query( $query );
+
+		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
+
+		if ( ! empty( $diff ) ) {
+			$this->log_mirrored_wp_query_diff( $diff );
+		}
+	}
+
+	public function get_mirrored_wp_query( $query ) {
+		$mirrored_vars = $query->query_vars; // Arrays are passed by value so won't be affecting originals
 
 		// Enable ES integration
 		$mirrored_vars['es'] = true;
@@ -280,11 +290,7 @@ class Search {
 
 		$mirrored_query = new \WP_Query( $mirrored_vars );
 
-		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
-
-		if ( ! empty( $diff ) ) {
-			$this->log_mirrored_wp_query_diff( $diff );
-		}
+		return $mirrored_query;
 	}
 
 	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
