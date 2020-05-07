@@ -8,6 +8,7 @@ class Search {
 	public $healthcheck;
 	public $queue;
 	private $current_host_index;
+	private $mirrored_wp_query_queue = array();
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
@@ -162,6 +163,7 @@ class Search {
 		// For testing, mirror certain WP_Query's on certain sites
 		if ( $this->is_query_mirroring_enabled() ) {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
+			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
 		}
 	}
 
@@ -249,7 +251,7 @@ class Search {
 		$should_mirror = $this->should_mirror_wp_query( $query );
 
 		if ( $should_mirror ) {
-			$this->do_mirror_wp_query( $query );
+			$this->queue_mirrored_wp_query( $query );
 		}
 
 		return $posts;
@@ -271,6 +273,10 @@ class Search {
 		return false;
 	}
 
+	public function queue_mirrored_wp_query( $query ) {
+		$this->mirrored_wp_query_queue[] = $query;
+	}
+
 	public function do_mirror_wp_query( $query ) {
 		$mirrored_query = $this->get_mirrored_wp_query( $query );
 
@@ -278,6 +284,22 @@ class Search {
 
 		if ( ! empty( $diff ) ) {
 			$this->log_mirrored_wp_query_diff( $query, $diff );
+		}
+	}
+
+	public function action__shutdown_do_mirrored_wp_queries() {
+		if ( ! $this->is_query_mirroring_enabled() ) {
+			return;
+		}
+
+		if ( empty( $this->mirrored_wp_query_queue ) || ! is_array( $this->mirrored_wp_query_queue ) ) {
+			return;
+		}
+
+		fastcgi_finish_request();
+
+		foreach( $this->mirrored_wp_query_queue as $query ) {
+			$this->do_mirror_wp_query( $query );
 		}
 	}
 

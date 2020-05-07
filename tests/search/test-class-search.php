@@ -1298,6 +1298,24 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $posts, $filtered_posts );
 	}
 
+	public function test__queue_mirrored_wp_query() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$queue = self::get_property( 'mirrored_wp_query_queue' )->getValue( $es );
+
+		$this->assertEmpty( $queue );
+
+		$vars = array( 'foo' => 'bar' );
+
+		$query = new \WP_Query( $vars );
+
+		$es->queue_mirrored_wp_query( $query );
+
+		$queue = self::get_property( 'mirrored_wp_query_queue' )->getValue( $es );
+
+		$this->assertContains( $query, $queue );
+	}
+
 	public function test__get_mirrored_wp_query() {
 		$es = new \Automattic\VIP\Search\Search();
 
@@ -1485,5 +1503,17 @@ class Search_Test extends \WP_UnitTestCase {
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_property( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
+
+		$property = $class->getProperty( $name );
+		$property->setAccessible( true );
+
+		return $property;
 	}
 }
