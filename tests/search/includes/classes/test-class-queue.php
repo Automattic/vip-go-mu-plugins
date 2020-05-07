@@ -570,6 +570,17 @@ class Queue_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure the logic for checking if index ratelimiting is turned on works
+	 */
+	public function test__is_indexing_ratelimited() {
+		$this->assertFalse( $this->queue::is_indexing_ratelimited(), 'should be false since the object cache should be empty' );
+
+		$this->queue::turn_on_index_ratelimiting();
+
+		$this->assertTrue( $this->queue::is_indexing_ratelimited(), 'should be true since Queue::turn_on_index_ratelimiting was called' );
+	}
+
+	/**
 	 * Ensure the incrementor for tracking indexing operations counts behaves properly
 	 */
 	public function test__index_count_incr() {

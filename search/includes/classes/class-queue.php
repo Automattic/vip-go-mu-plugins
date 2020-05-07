@@ -485,7 +485,7 @@ class Queue {
 		}
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
-		if ( false === wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+		if ( ! self::is_indexing_ratelimited() ) {
 			$this->cron->schedule_batch_job();
 		}
 		
@@ -533,28 +533,24 @@ class Queue {
 			return $bail;
 		}
 
-		// Determine whether indexing is ratelimited currently and if this is an indexing operation
-		$is_indexing_ratelimited = false !== wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
-		
 		// Increment first to prevent overrunning ratelimiting
 		$increment = count( $sync_manager->sync_queue );
 		$index_count_in_period = self::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
-		if ( $index_count_in_period > self::$max_indexing_op_count || $is_indexing_ratelimited ) {
+		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
 			$this->record_ratelimited_stat( $increment, $indexable_slug );
 
 			// Offload indexing to async queue
 			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 
-			if ( ! $is_indexing_ratelimited ) {
-				wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
-				$is_indexing_ratelimited = true;
+			if ( ! self::is_indexing_ratelimited() ) {
+				self::turn_on_index_ratelimiting();
 			}
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
-		if ( true === $bail || true === $is_indexing_ratelimited ) {
+		if ( true === $bail || true === self::is_indexing_ratelimited() ) {
 			return true;
 		} else {
 			return false;
@@ -585,6 +581,24 @@ class Queue {
 
 		$statsd->increment( $stat, $count );
 		$statsd->increment( $per_site_stat, $count );
+	}
+
+	/**
+	 * Check whether indexing is currently ratelimited
+	 *
+	 * @return {bool} Whether indexing is curretly ratelimited
+	 */
+	public static function is_indexing_ratelimited() {
+		return false !== wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/**
+	 *  Turn on ratelimit indexing
+	 *
+	 * @return {bool} True on success, false on failure
+	 */
+	public static function turn_on_index_ratelimiting() {
+		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
 	}
 
 	/*
