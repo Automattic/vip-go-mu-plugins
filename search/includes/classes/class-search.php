@@ -155,6 +155,9 @@ class Search {
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
+
+		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
+		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
 	}
 
 	protected function load_commands() {
@@ -260,8 +263,12 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
+
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_index_name = $this->get_statsd_index_name_for_url( $query['url'] );
+
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
 	
@@ -283,6 +290,7 @@ class Search {
 				}
 
 				$statsd->increment( $statsd_prefix . $stat );
+				$statsd->increment( $statsd_per_site_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
@@ -291,9 +299,11 @@ class Search {
 
 			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
 				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
+			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
 		}
 	
 		return $request;
@@ -611,9 +621,29 @@ class Search {
 	}
 
 	/**
+	 * Given an ES url, determine the index name of the request for stats purposes
+	 */
+	public function get_statsd_index_name_for_url( $url ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', trim( $parsed['path'], '/' ) );
+
+		// Index name is _usually_ the first part of the path
+		$index_name = $path[0];
+
+		// If it starts with underscore but isn't "_all", then we didn't detect the index name
+		// and should return null
+		if ( wp_startswith( $index_name, '_' ) && '_all' !== $index_name ) {
+			return null;
+		}
+
+		return $index_name;
+	}
+
+	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $url, $mode = 'other' ) {
+	public function get_statsd_prefix( $url, $mode = 'other', $app_id = null, $index_name = null ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
@@ -634,6 +664,15 @@ class Search {
 
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
+
+		// If app id / index name passed, include those too
+		if ( is_int( $app_id ) ) {
+			$key_parts[] = $app_id;
+		}
+
+		if ( is_string( $index_name ) && ! empty( $index_name ) ) {
+			$key_parts[] = $index_name;
+		}
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
@@ -707,6 +746,21 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/**
+	 * Filter for enabling or disabling ES query offloading for a given WP_Query
+	 * 
+	 * This is used to allow query offloading using the 'es' var (which most VIP sites are already using
+	 * via es-wp-query), in addition to the EP default 'ep_integrate' var
+	 */
+	public function filter__ep_elasticpress_enabled( $enabled, $query ) {
+		// If the WP_Query has an 'es' var that is truthy, enable query offloading via VIP Search
+		if ( isset( $query->query_vars['es'] ) && $query->query_vars['es'] ) {
+			$enabled = true;
+		}
+
+		return $enabled;
 	}
 
 	/*

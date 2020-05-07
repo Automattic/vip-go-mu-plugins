@@ -129,7 +129,7 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 			for ( $i = 0; $i < $count; ++$i ) {
 				$query = '';
 
-				if ( array_key_exists( 'query', $wpdb->queries[ $i ] ) ) {
+				if ( is_array( $wpdb->queries[ $i ] ) && array_key_exists( 'query', $wpdb->queries[ $i ] ) ) {
 					$query = $wpdb->queries[$i]['query'];
 					$query = preg_replace( "#\s+#", ' ', $query );
 					$query = str_replace( '\"', '', $query );
@@ -154,7 +154,7 @@ class WPCOM_VIP_Debug_Bar_Query_Summary extends Debug_Bar_Panel {
 
 				$query_type_counts[ $query ]++;
 
-				if ( array_key_exists( 'elapsed', $wpdb->queries[ $i ] ) ) {
+				if ( is_array( $wpdb->queries[ $i ] ) && array_key_exists( 'elapsed', $wpdb->queries[ $i ] ) ) {
 					$query_types[$query] += $wpdb->queries[$i]['elapsed'];
 				}
 			}

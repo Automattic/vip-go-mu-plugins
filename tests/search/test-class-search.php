@@ -97,6 +97,83 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 2, $replicas );
 	}
 
+	public function vip_search_filter_ep_elasticpress_enabled_data() {
+		return array(
+			// Enabled
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => 1,
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => true,
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => '1',
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+
+			// Disabled
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(),
+				),
+				// Expected $enabled
+				false,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => 0,
+					),
+				),
+				// Expected $enabled
+				false,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => false,
+					),
+				),
+				// Expected $enabled
+				false,
+			),
+		);
+	}
+	/**
+	 * @dataProvider vip_search_filter_ep_elasticpress_enabled_data
+	 */
+	public function test__vip_search_filter_ep_elasticpress_enabled( $query, $expected_enabled ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$enabled = apply_filters( 'ep_elasticpress_enabled', false, $query );
+
+		$this->assertEquals( $expected_enabled, $enabled );
+	}
+
 	public function vip_search_enforces_disabled_features_data() {
 		return array(
 			array( 'documents' ),
@@ -797,6 +874,49 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_mode, $mode );
 	}
 
+	public function get_statsd_index_name_for_url_data() {
+		return array(
+			// Search
+			array(
+				'https://host.com/_search',
+				null,
+			),
+			array(
+				'https://host.com/index-name/_search',
+				'index-name',
+			),
+			array(
+				'https://host.com/index-name,index-name-2/_search',
+				'index-name,index-name-2',
+			),
+			array(
+				'https://host.com/_all/_search',
+				'_all',
+			),
+
+			// Other misc operations
+			array(
+				'https://host.com/index-name/_bulk',
+				'index-name',
+			),
+			array(
+				'https://host.com/index-name/_doc',
+				'index-name',
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly determine the index name from an ES API url for stats purposes
+	 * 
+	 * @dataProvider get_statsd_index_name_for_url_data()
+	 */
+	public function test_get_statsd_index_name_for_url( $url, $expected_index_name ) {
+		$index_name = $this->search_instance->get_statsd_index_name_for_url( $url );
+
+		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
 	public function get_statsd_prefix_data() {
 		return array(
 			array(
@@ -817,6 +937,41 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test_get_statsd_prefix( $url, $mode, $expected ) {
 		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode );
+
+		$this->assertEquals( $expected, $prefix );
+	}
+
+	public function get_statsd_prefix_with_site_and_index_data() {
+		return array(
+			array(
+				'https://es-ha-bur.vipv2.net:1234',
+				'search',
+				1,
+				'vip-1-post',
+				'com.wordpress.elasticsearch.bur.ha1234_vipgo.search.1.vip-1-post',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'index',
+				2,
+				'vip-2-post-2',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.2.vip-2-post-2',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'index',
+				3,
+				'vip-3-post-2-2',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.3.vip-3-post-2-2',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_statsd_prefix_with_site_and_index_data
+	 */
+	public function test_get_statsd_prefix_with_site_and_index( $url, $mode, $app_id, $index_name, $expected ) {
+		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode, $app_id, $index_name );
 
 		$this->assertEquals( $expected, $prefix );
 	}
