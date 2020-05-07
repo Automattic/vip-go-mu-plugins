@@ -23,7 +23,7 @@ class Queue {
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
 	public static $max_indexing_op_count = 3000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
 	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
-	private const INDEX_QUEUEING_TTL = 1 * HOUR_IN_SECONDS; // Keep indexing op queueing for an hour once ratelimiting is triggered
+	private const INDEX_QUEUEING_TTL = 15 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 15 minutes once ratelimiting is triggered
 
 	public function init() {
 		if ( ! $this->is_enabled() ) {
@@ -446,6 +446,9 @@ class Queue {
 
 			$ids = wp_list_pluck( $jobs, 'object_id' );
 
+			// Increment first to prevent overrunning ratelimiting
+			self::index_count_incr( count( $ids ) );
+
 			$indexable->bulk_index( $ids );
 
 			// TODO handle errors
@@ -480,9 +483,6 @@ class Queue {
 		foreach ( array_keys( $sync_manager->sync_queue ) as $object_id ) {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
-
-		// Queue up a cron event to process these immediately
-		$this->cron->schedule_batch_job();
 
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
@@ -531,21 +531,55 @@ class Queue {
 		// Determine whether indexing is ratelimited currently and if this is an indexing operation
 		$is_indexing_ratelimited = false !== wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
 		
-		if ( $this->is_enabled() ) {
-			// If indexing operation ratelimiting is hit, queue index operations
-			$index_count_in_period = self::index_count_incr( count( $sync_manager->sync_queue ) );
-			if ( $index_count_in_period > self::$max_indexing_op_count || $is_indexing_ratelimited ) {
-				// Offload indexing to async queue
-				$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
-				
-				if ( ! $is_indexing_ratelimited ) {
-					wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
-					$is_indexing_ratelimited = true;
-				}
+		// Increment first to prevent overrunning ratelimiting
+		$increment = count( $sync_manager->sync_queue );
+		$index_count_in_period = self::index_count_incr( $increment );
+
+		// If indexing operation ratelimiting is hit, queue index operations
+		if ( $index_count_in_period > self::$max_indexing_op_count || $is_indexing_ratelimited ) {
+			$this->record_ratelimited_stat( $increment, $indexable_slug );
+
+			// Offload indexing to async queue
+			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
+
+			if ( ! $is_indexing_ratelimited ) {
+				wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+				$is_indexing_ratelimited = true;
 			}
 		}
 
-		return $is_indexing_ratelimited;
+		// Honor filters that want to bail on indexing while also honoring ratelimiting
+		if ( true === $bail || true === $is_indexing_ratelimited ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function record_ratelimited_stat( $count, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		// Since we're ratelimting indexing, it seems safe to define this
+		$statsd_mode = 'index_ratelimited';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat= $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat, $count );
+		$statsd->increment( $per_site_stat, $count );
 	}
 
 	/*
