@@ -769,7 +769,7 @@ class Search {
 	 * @return {string|WP_Error} Returns the host on success or a WP_Error on failure
 	 */
 	public function get_current_host() {
-		if( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			if ( defined( 'EP_HOST' ) ) {
 				return EP_HOST;
 			}
