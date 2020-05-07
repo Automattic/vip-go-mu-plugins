@@ -280,10 +280,33 @@ class Search {
 	public function do_mirror_wp_query( $query ) {
 		$mirrored_query = $this->get_mirrored_wp_query( $query );
 
+		$statsd_mode = 'mirrored_wp_query';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = \ElasticPress\Indexables::factory()->get( 'post' )->get_index_name();
+
+		$url = $this->get_current_host();
+		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat );
+		$statsd->increment( $per_site_stat );
+
 		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
 
 		if ( ! empty( $diff ) ) {
 			$this->log_mirrored_wp_query_diff( $query, $diff );
+
+			// Record a stat for the diff
+			$statsd_mode = 'mirrored_wp_query_inconsistent';
+
+			$stat = $this->get_statsd_prefix( $url, $statsd_mode );
+			$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+			$statsd->increment( $stat );
+			$statsd->increment( $per_site_stat );
 		}
 	}
 
