@@ -7,7 +7,7 @@ use \WP_CLI;
 class Search {
 	public $healthcheck;
 	public $queue;
-	private $current_host_index;
+	private $current_host_index = 0;
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
@@ -445,16 +445,16 @@ class Search {
 			return $host;
 		}
 
-		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
+		return $this->get_next_host( $failures );
 	}
 
 	/**
 	 * Return the next host in the list based on the current host index
 	 */
-	public function get_next_host( $hosts, $failures ) {
-		$this->current_host_index = ( $this->current_host_index + $failures ) % count( $hosts );
+	public function get_next_host( $failures ) {
+		$this->current_host_index += $failures;
 		
-		return $hosts[ $this->current_host_index ];
+		return $this->get_current_host();
 	} 
 
 	/**
@@ -760,6 +760,33 @@ class Search {
 		}
 
 		return $enabled;
+	}
+
+	/**
+	 * Get current Elasticsearch host
+	 *
+	 * @return {string|WP_Error} Returns the host on success or a WP_Error on failure
+	 */
+	public function get_current_host() {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			if ( defined( 'EP_HOST' ) ) {
+				return EP_HOST;
+			}
+
+			return new \WP_Error( 'vip-search-no-host-found', 'No Elasticsearch hosts found' );
+		}
+
+		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return VIP_ELASTICSEARCH_ENDPOINTS;
+		}
+
+		if ( ! is_int( $this->current_host_index ) ) {
+			$this->current_host_index = 0;
+		}
+
+		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
+
+		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
 	}
 
 	/*
