@@ -18,6 +18,13 @@ class Queue {
 
 	public $schema;
 
+	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
+	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
+	public static $max_indexing_op_count = 3000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
+	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
+	private const INDEX_QUEUEING_TTL = 15 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 15 minutes once ratelimiting is triggered
+
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -51,6 +58,8 @@ class Queue {
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
+
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
 
 	/**
@@ -437,6 +446,9 @@ class Queue {
 
 			$ids = wp_list_pluck( $jobs, 'object_id' );
 
+			// Increment first to prevent overrunning ratelimiting
+			self::index_count_incr( count( $ids ) );
+
 			$indexable->bulk_index( $ids );
 
 			// TODO handle errors
@@ -472,9 +484,11 @@ class Queue {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
 
-		// Queue up a cron event to process these immediately
-		$this->cron->schedule_batch_job();
-
+		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
+		if ( ! self::is_indexing_ratelimited() ) {
+			$this->cron->schedule_batch_job();
+		}
+		
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
 
@@ -498,5 +512,103 @@ class Queue {
 		$this->queue_objects( $document_ids );
 
 		return true;
+	}
+
+	/**
+	 * Hook pre_ep_index_sync_queue for indexing operation ratelimiting.
+	 * If ratelimited, bail and offload indexing to queue.
+	 *
+	 * @param {bool} $bail Current value of bail
+	 * @param {object} $sync_manager Instance of Sync_Manager
+	 * @param {string} $indexable_slug Indexable slug
+	 * @return {bool} Whether to bail on indexing or not
+	 */
+	public function ratelimit_indexing( $bail, $sync_manager, $indexable_slug ) {
+		// Only posts supported right now
+		if ( 'post' !== $indexable_slug ) {
+			return $bail;
+		}
+
+		if ( empty( $sync_manager->sync_queue ) ) {
+			return $bail;
+		}
+
+		// Increment first to prevent overrunning ratelimiting
+		$increment = count( $sync_manager->sync_queue );
+		$index_count_in_period = self::index_count_incr( $increment );
+
+		// If indexing operation ratelimiting is hit, queue index operations
+		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
+			$this->record_ratelimited_stat( $increment, $indexable_slug );
+
+			// Offload indexing to async queue
+			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
+
+			if ( ! self::is_indexing_ratelimited() ) {
+				self::turn_on_index_ratelimiting();
+			}
+		}
+
+		// Honor filters that want to bail on indexing while also honoring ratelimiting
+		if ( true === $bail || true === self::is_indexing_ratelimited() ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function record_ratelimited_stat( $count, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		// Since we're ratelimting indexing, it seems safe to define this
+		$statsd_mode = 'index_ratelimited';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat, $count );
+		$statsd->increment( $per_site_stat, $count );
+	}
+
+	/**
+	 * Check whether indexing is currently ratelimited
+	 *
+	 * @return {bool} Whether indexing is curretly ratelimited
+	 */
+	public static function is_indexing_ratelimited() {
+		return false !== wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/**
+	 *  Turn on ratelimit indexing
+	 *
+	 * @return {bool} True on success, false on failure
+	 */
+	public static function turn_on_index_ratelimiting() {
+		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+	}
+
+	/*
+	 * Increment the number of indexing operations that have been passed through VIP Search
+	 */
+	private static function index_count_incr( $increment = 1 ) {
+		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_COUNT_TTL );
+		}
+
+		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
 	}
 }

@@ -437,4 +437,174 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 3, $count );
 	}
+
+	/**
+	 * Ensure that the value passed into the filter is returned if the indexable_slug is not 'post'
+	 */
+	public function test__ratelimit_indexing_should_pass_bail_if_not_post() {
+		$this->assertTrue( $this->queue->ratelimit_indexing( true, '', 'hippo' ), 'should return true since true was passed in' );
+		$this->assertFalse( $this->queue->ratelimit_indexing( false, '', 'hippo' ), 'should return false since false was passed in' );
+	}
+
+	/**
+	 * Ensure that the value passed into the filter is returned if the sync queue is empty
+	 */
+	public function test__ratelimit_indexing_should_pass_bail_if_sync_queue_empty() {
+		$sync_manager = new \stdClass();
+		$sync_manager->sync_queue = array();
+
+		$this->assertTrue( $this->queue->ratelimit_indexing( true, $sync_manager, 'post' ), 'should return true since true was passed in' );
+		$this->assertFalse( $this->queue->ratelimit_indexing( false, $sync_manager, 'post' ), 'should return false since false was passed in' );
+	}
+
+	/**
+	 * Ensure that the count in the cache doesn't exist on load
+	 */
+	public function test_ratelimit_indexing_cache_count_should_not_exist_onload() {
+		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist prior to first function call' );
+	}
+	
+	/**
+	 * Ensure that the count in the cache doesn't exist if the ratelimit_indexing returns early
+	 */
+	public function test_ratelimit_indexing_cache_count_should_not_exists_if_early_return() {
+		$sync_manager = new \stdClass();
+		$sync_manager->sync_queue = array();
+
+		$this->queue->ratelimit_indexing( true, '', 'hippo' );
+		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+
+		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist if function calls all returned early' );
+	}
+
+	/**
+	 * Ensure that the queue isn't populated if ratelimiting isn't triggered
+	 */
+	public function test_ratelimit_indexing_queue_should_be_empty_if_no_ratelimiting() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$sync_manager = new \stdClass();
+		$sync_manager->sync_queue = range( 3, 9 );
+
+		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
+
+		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+
+		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
+
+		foreach ( $sync_manager->sync_queue as $object_id ) {
+			$results = $wpdb->get_results( 
+				$wpdb->prepare( 
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+
+			$this->assertCount( 0, $results, "should be 0 occurrences of post id #$object_id in queue table" );
+		}
+
+		$sync_manager->sync_queue = range( 10, 20 );
+
+		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+
+		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
+
+		foreach ( $sync_manager->sync_queue as $object_id ) {
+			$results = $wpdb->get_results( 
+				$wpdb->prepare( 
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+
+			$this->assertCount( 0, $results, "should be 0 occurrences of post id #$object_id in queue table" );
+		}
+	}
+
+	/**
+	 * Ensure that the queue is populated if ratelimiting is triggered
+	 */
+	public function test_ratelimit_indexing_queue_should_be_populated_if_ratelimiting_enabled() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$sync_manager = new \stdClass();
+		$sync_manager->sync_queue = range( 3, 9 );
+
+		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
+
+		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+
+		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
+
+		foreach ( $sync_manager->sync_queue as $object_id ) {
+			$results = $wpdb->get_results( 
+				$wpdb->prepare( 
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+
+			$this->assertCount( 1, $results, "should be 1 occurrence of post id #$object_id in queue table" );
+		}
+
+		$sync_manager->sync_queue = range( 10, 20 );
+
+		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+
+		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
+
+		foreach ( $sync_manager->sync_queue as $object_id ) {
+			$results = $wpdb->get_results( 
+				$wpdb->prepare( 
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+
+			$this->assertCount( 1, $results, "should be 0 occurrences of post id #$object_id in queue table" );
+		}
+	}
+
+	/**
+	 * Ensure the logic for checking if index ratelimiting is turned on works
+	 */
+	public function test__is_indexing_ratelimited() {
+		$this->assertFalse( $this->queue::is_indexing_ratelimited(), 'should be false since the object cache should be empty' );
+
+		$this->queue::turn_on_index_ratelimiting();
+
+		$this->assertTrue( $this->queue::is_indexing_ratelimited(), 'should be true since Queue::turn_on_index_ratelimiting was called' );
+	}
+
+	/**
+	 * Ensure the incrementor for tracking indexing operations counts behaves properly
+	 */
+	public function test__index_count_incr() {
+		$index_count_incr = self::get_method( 'index_count_incr' );
+
+		// Reset cache key
+		wp_cache_delete( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP );
+
+		$this->assertEquals( 1, $index_count_incr->invokeArgs( $this->queue, [] ), 'initial value should be 1' );
+
+		for ( $i = 2; $i < 10; $i++ ) {
+			$this->assertEquals( $i, $index_count_incr->invokeArgs( $this->queue, [] ), 'value should increment with loop' );
+		}
+
+		$this->assertEquals( 14, $index_count_incr->invokeArgs( $this->queue, [ 5 ] ), 'should increment properly without using the default increment of 1' );
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_method( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
+	}
 }
