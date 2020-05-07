@@ -7,6 +7,7 @@ use \WP_CLI;
 class Search {
 	public $healthcheck;
 	public $queue;
+	private $mirrored_wp_query_queue = array();
 	private $current_host_index = 0;
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
@@ -158,6 +159,12 @@ class Search {
 
 		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
 		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
+
+		// For testing, mirror certain WP_Query's on certain sites
+		if ( $this->is_query_mirroring_enabled() ) {
+			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
+			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
+		}
 	}
 
 	protected function load_commands() {
@@ -202,17 +209,23 @@ class Search {
 		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
 		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
 		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
-			$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
-
-			$option_value = get_option( 'vip_enable_search_query_mirroring' );
-			$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
-
-			$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+			$is_mirroring_enabled = $this->is_query_mirroring_enabled();
 
 			if ( $is_mirroring_enabled ) {
 				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
 			}
 		}
+	}
+
+	public function is_query_mirroring_enabled() {
+		$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
+
+		$option_value = get_option( 'vip_enable_search_query_mirroring' );
+		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+
+		return $is_mirroring_enabled;
 	}
 
 	public function do_mirror_search_request() {
@@ -227,6 +240,143 @@ class Search {
 			// Also not necessary with blocking=>false, but just in case.
 			'timeout' => 3,
 		] );
+	}
+
+	/**
+	 * Filter that runs at the end of WP_Query, used to transparently mirror certain WP_Query's on certain sites
+	 * for testing / evaluation
+	 */
+	public function filter__the_posts( $posts, $query ) {
+		// If this query is one that should be transparently mirrored, run the mirroring
+		$should_mirror = $this->should_mirror_wp_query( $query );
+
+		if ( $should_mirror ) {
+			$this->queue_mirrored_wp_query( $query );
+		}
+
+		return $posts;
+	}
+
+	public function should_mirror_wp_query( $query ) {
+		// If this was already an ES query, don't mirror
+		if ( isset( $query->query_vars['es'] ) || isset( $query->query_vars['ep_integrate'] ) || isset( $query->query_vars['vip_search_mirrored'] ) || isset( $query->elasticsearch_success ) ) {
+			return false;
+		}
+
+		// If mirroring is not enabled at all, skip
+		if ( ! $this->is_query_mirroring_enabled() ) {
+			return false;
+		}
+
+		// Is this one of the targeted queries?
+	
+		return false;
+	}
+
+	public function queue_mirrored_wp_query( $query ) {
+		$this->mirrored_wp_query_queue[] = $query;
+	}
+
+	public function do_mirror_wp_query( $query ) {
+		$mirrored_query = $this->get_mirrored_wp_query( $query );
+
+		$statsd_mode = 'mirrored_wp_query';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = \ElasticPress\Indexables::factory()->get( 'post' )->get_index_name();
+
+		$url = $this->get_current_host();
+		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat );
+		$statsd->increment( $per_site_stat );
+
+		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
+
+		if ( ! empty( $diff ) ) {
+			$this->log_mirrored_wp_query_diff( $query, $diff );
+
+			// Record a stat for the diff
+			$statsd_mode = 'mirrored_wp_query_inconsistent';
+
+			$stat = $this->get_statsd_prefix( $url, $statsd_mode );
+			$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+			$statsd->increment( $stat );
+			$statsd->increment( $per_site_stat );
+		}
+	}
+
+	public function action__shutdown_do_mirrored_wp_queries() {
+		if ( ! $this->is_query_mirroring_enabled() ) {
+			return;
+		}
+
+		if ( empty( $this->mirrored_wp_query_queue ) || ! is_array( $this->mirrored_wp_query_queue ) ) {
+			return;
+		}
+
+		fastcgi_finish_request();
+
+		foreach ( $this->mirrored_wp_query_queue as $query ) {
+			$this->do_mirror_wp_query( $query );
+		}
+	}
+
+	public function get_mirrored_wp_query( $query ) {
+		$mirrored_vars = $query->query_vars; // Arrays are passed by value so won't be affecting originals
+
+		// Enable ES integration
+		$mirrored_vars['es'] = true;
+
+		// Mark this as a mirrored query (passes check in filter__ep_skip_query_integration() when query integration is otherwise disabled)
+		$mirrored_vars['vip_search_mirrored'] = true;
+
+		$mirrored_query = new \WP_Query( $mirrored_vars );
+
+		return $mirrored_query;
+	}
+
+	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
+		// Normalize
+		if ( ! is_array( $original_posts ) ) {
+			$original_posts = array();
+		}
+
+		if ( ! is_array( $mirrored_posts ) ) {
+			$mirrored_posts = array();
+		}
+		
+		$original_post_ids = wp_list_pluck( $original_posts, 'ID' );
+		$mirrored_post_ids = wp_list_pluck( $mirrored_posts, 'ID' );
+
+		$missing = array_diff( $original_post_ids, $mirrored_post_ids );
+		$extra = array_diff( $mirrored_post_ids, $original_post_ids );
+
+		if ( empty( $missing ) && empty( $extra ) ) {
+			return null;
+		}
+
+		return array(
+			'missing' => array_values( $missing ),
+			'extra' => array_values( $extra ),
+		);
+	}
+
+	public function log_mirrored_wp_query_diff( $query, $diff ) {
+		\Automattic\VIP\Logstash\log2logstash( array(
+			'severity' => 'warning',
+			'feature' => 'vip_search_wp_query_mirroring',
+			'message' => 'Inconsistent mirrored offloaded WP_Query results detected',
+			'extra' => array(
+				'query_vars' => $query->query_vars,
+				'diff' => $diff,
+				'uri' => isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null,
+			),
+		) );
 	}
 
 	/**
@@ -380,6 +530,11 @@ class Search {
 					return true;
 				}
 			}
+		}
+
+		// If query is marked for mirroring (for evaluation phase), allow it
+		if ( isset( $query->query_vars['vip_search_mirrored'] ) && $query->query_vars['vip_search_mirrored'] ) {
+			return false;
 		}
 
 		// Legacy constant name
