@@ -160,7 +160,9 @@ class Search {
 		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
 
 		// For testing, mirror certain WP_Query's on certain sites
-		add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
+		if ( $this->is_query_mirroring_enabled() ) {
+			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
+		}
 	}
 
 	protected function load_commands() {
