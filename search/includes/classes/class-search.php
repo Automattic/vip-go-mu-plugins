@@ -321,7 +321,7 @@ class Search {
 
 		fastcgi_finish_request();
 
-		foreach( $this->mirrored_wp_query_queue as $query ) {
+		foreach ( $this->mirrored_wp_query_queue as $query ) {
 			$this->do_mirror_wp_query( $query );
 		}
 	}
