@@ -484,6 +484,11 @@ class Queue {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
 
+		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
+		if ( false === wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			$this->cron->schedule_batch_job();
+		}
+		
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
 
