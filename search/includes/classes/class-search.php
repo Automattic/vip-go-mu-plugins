@@ -269,7 +269,12 @@ class Search {
 		}
 
 		// Is this one of the targeted queries?
-	
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( 2160 === VIP_GO_APP_ID && $query->is_main_query() && ( $query->is_category() || $query->is_archive() ) ) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 
