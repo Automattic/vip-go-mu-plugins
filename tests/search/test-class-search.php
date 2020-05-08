@@ -97,6 +97,83 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 2, $replicas );
 	}
 
+	public function vip_search_filter_ep_elasticpress_enabled_data() {
+		return array(
+			// Enabled
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => 1,
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => true,
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => '1',
+					),
+				),
+				// Expected $enabled
+				true,
+			),
+
+			// Disabled
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(),
+				),
+				// Expected $enabled
+				false,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => 0,
+					),
+				),
+				// Expected $enabled
+				false,
+			),
+			array(
+				// Fake WP_Query
+				(object) array( 
+					'query_vars' => array(
+						'es' => false,
+					),
+				),
+				// Expected $enabled
+				false,
+			),
+		);
+	}
+	/**
+	 * @dataProvider vip_search_filter_ep_elasticpress_enabled_data
+	 */
+	public function test__vip_search_filter_ep_elasticpress_enabled( $query, $expected_enabled ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$enabled = apply_filters( 'ep_elasticpress_enabled', false, $query );
+
+		$this->assertEquals( $expected_enabled, $enabled );
+	}
+
 	public function vip_search_enforces_disabled_features_data() {
 		return array(
 			array( 'documents' ),
@@ -455,23 +532,19 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__vip_search_get_next_host() {
 		$es = new \Automattic\VIP\Search\Search();
-		$hosts = array(
-			'test0',
-			'test1',
-			'test2', 
-			'test3',
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS',
+			array(
+				'test0',
+				'test1',
+				'test2', 
+				'test3',
+			)
 		);
 
-		$this->assertEquals( 'test0', $es->get_next_host( $hosts, 0 ), 'get_next_host() didn\'t use the same host with 0 total failures and 4 hosts with a starting index of 0' );
-		$this->assertEquals( 'test1', $es->get_next_host( $hosts, 1 ), 'get_next_host() didn\'t get the correct host with 1 total failures and 4 hosts with a starting index of 0' );
-		$this->assertEquals( 'test0', $es->get_next_host( $hosts, 3 ), 'get_next_host() didn\'t restart at the beginning of the list upon reaching the end with 4 total failures and 4 hosts with a starting index of 1' );
-		$this->assertEquals( 'test1', $es->get_next_host( $hosts, 17 ), 'get_next_host() didn\'t match expected result with 21 total failures and 4 hosts. and a starting index of 0' );
-
-		array_push( $hosts, 'test4', 'test5', 'test6' ); // Add some array values
-
-		$this->assertEquals( 'test5', $es->get_next_host( $hosts, 4 ), 'get_next_host() didn\'t get the same host with 25 total failures and 7 hosts with starting index of 1.' );
-		$this->assertEquals( 'test6', $es->get_next_host( $hosts, 1 ), 'get_next_host() didn\'t get the next host with 26 total failure and 7 hosts with starting index of 5' );
-		$this->assertEquals( 'test3', $es->get_next_host( $hosts, 4 ), 'get_next_host() didn\'t get the correct host with 30 total failures and 7 hosts with a starting index of 6' );
+		$this->assertEquals( 'test0', $es->get_next_host( 0 ), 'get_next_host() didn\'t use the same host with 0 total failures and 4 hosts with a starting index of 0' );
+		$this->assertEquals( 'test1', $es->get_next_host( 1 ), 'get_next_host() didn\'t get the correct host with 1 total failures and 4 hosts with a starting index of 0' );
+		$this->assertEquals( 'test0', $es->get_next_host( 3 ), 'get_next_host() didn\'t restart at the beginning of the list upon reaching the end with 4 total failures and 4 hosts with a starting index of 1' );
+		$this->assertEquals( 'test1', $es->get_next_host( 17 ), 'get_next_host() didn\'t match expected result with 21 total failures and 4 hosts. and a starting index of 0' );
 	}
 
 	/*
@@ -1000,6 +1073,36 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_skip_query_integration_allow_for_mirrored() {
+		// Should not start off enabled (or our test tells us nothing)
+		define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', false );
+		update_option( 'vip_enable_vip_search_query_integration', false );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		// Regular query should skip integration
+		$regular_query = new \WP_Query();
+
+		$skipped = $es::ep_skip_query_integration( false, $regular_query );
+
+		$this->assertTrue( $skipped );
+
+		// But a mirrored query should be allowed (not skipped)
+		$mirrored_query = new \WP_Query( array(
+			'vip_search_mirrored' => true,
+		) );
+
+		$skipped = $es::ep_skip_query_integration( false, $mirrored_query );
+
+		$this->assertFalse( $skipped );
+
+		delete_option( 'vip_enable_vip_search_query_integration' );
+	}
+
 	/*
 	 * Ensure ratelimiting works prioperly with ep_skip_query_integration filter
 	 */
@@ -1040,6 +1143,354 @@ class Search_Test extends \WP_UnitTestCase {
 		}
 	}
 
+	public function test__is_query_mirroring_enabled_no_constant_no_option() {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$enabled = $es->is_query_mirroring_enabled();
+
+		$this->assertFalse( $enabled );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_mirroring_enabled_via_option() {
+		update_option( 'vip_enable_search_query_mirroring', true );
+
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$enabled = $es->is_query_mirroring_enabled();
+
+		delete_option( 'vip_enable_search_query_mirroring' );
+
+		$this->assertTrue( $enabled );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_mirroring_enabled_with_option_false() {
+		update_option( 'vip_enable_search_query_mirroring', false );
+
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$enabled = $es->is_query_mirroring_enabled();
+
+		delete_option( 'vip_enable_search_query_mirroring' );
+
+		$this->assertFalse( $enabled );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_mirroring_enabled_via_constant() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$enabled = $es->is_query_mirroring_enabled();
+
+		$this->assertTrue( $enabled );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_mirroring_enabled_with_constant_false() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', false );
+
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$enabled = $es->is_query_mirroring_enabled();
+
+		$this->assertFalse( $enabled );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_mirror_wp_query_when_mirroring_disabled() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', false );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		$query = new \WP_Query();
+
+		$should_mirror = $es->should_mirror_wp_query( $query );
+
+		$this->assertFalse( $should_mirror );
+	}
+
+	public function get_should_mirror_wp_query_when_query_already_offloaded_data() {
+		return array(
+			array(
+				(object) array(
+					'query_vars' => array(
+						'es' => true,
+					),
+				),
+			),
+
+			array(
+				(object) array(
+					'query_vars' => array(
+						'ep_integrate' => true,
+					),
+				),
+			),
+			
+			array(
+				(object) array(
+					'query_vars' => array(
+						'vip_search_mirrored' => true,
+					),
+				),
+			),
+
+			array(
+				(object) array(
+					'elasticsearch_succes' => true,
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_should_mirror_wp_query_when_query_already_offloaded_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_mirror_wp_query_when_query_already_offloaded( $query ) {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$should_mirror = $es->should_mirror_wp_query( $query );
+
+		$this->assertFalse( $should_mirror );
+	}
+
+	/**
+	 * Test the "the_posts" filter callback, which is responsible for mirroring WP_Query's under 
+	 * certain limited circumstances
+	 * 
+	 * NOTE - due to PHPUnit's lack of support for partial mocking, we can't actually spy on the related
+	 * function calls (to check if mirroring is enabled, then to do the mirroring if so), so we're just doing
+	 * a very basic check that it's not altering the $posts array in any way
+	 */
+	public function test__filter_the_posts() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$posts = array();
+		$query = new \stdClass();
+
+		$filtered_posts = $es->filter__the_posts( $posts, $query );
+	
+		// Should not have altered the posts array
+		$this->assertEquals( $posts, $filtered_posts );
+	}
+
+	public function test__queue_mirrored_wp_query() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$queue = self::get_property( 'mirrored_wp_query_queue' )->getValue( $es );
+
+		$this->assertEmpty( $queue );
+
+		$vars = array( 'foo' => 'bar' );
+
+		$query = new \WP_Query( $vars );
+
+		$es->queue_mirrored_wp_query( $query );
+
+		$queue = self::get_property( 'mirrored_wp_query_queue' )->getValue( $es );
+
+		$this->assertContains( $query, $queue );
+	}
+
+	public function test__get_mirrored_wp_query() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$vars = array( 'foo' => 'bar' );
+
+		$query = new \WP_Query( $vars );
+
+		$mirrored_query = $es->get_mirrored_wp_query( $query );
+
+		// There's not really a better way in PHPUnit to assert the resulting array contains expected array/values...
+		$this->assertEquals( 'bar', $mirrored_query->query_vars['foo'] );
+		$this->assertEquals( true, $mirrored_query->query_vars['vip_search_mirrored'] );
+	}
+
+	public function get_diff_mirrored_wp_query_results_data() {
+		return array(
+			// No diff
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Expected diff
+				null,
+			),
+
+			// Posts missing from mirrored
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+					array(
+						'ID' => 4,
+					),
+				),
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Expected diff
+				array(
+					'missing' => array(
+						2,
+						4,
+					),
+					'extra' => array(),
+				),
+			),
+
+			// Extra posts
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 3,
+					),
+				),
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+					array(
+						'ID' => 2,
+					),
+					array(
+						'ID' => 3,
+					),
+					array(
+						'ID' => 4,
+					),
+				),
+
+				// Expected diff
+				array(
+					'missing' => array(),
+					'extra' => array(
+						2,
+						4,
+					),
+				),
+			),
+
+			// Non-array input
+			array(
+				// Original
+				null,
+
+				// Mirrored
+				array(
+					array(
+						'ID' => 1,
+					),
+				),
+
+				// Expected diff
+				array(
+					'missing' => array(),
+					'extra' => array(
+						1,
+					),
+				),
+			),
+			
+			// Non-array input
+			array(
+				// Original
+				array(
+					array(
+						'ID' => 1,
+					),
+				),
+
+				// Mirrored
+				null,
+
+				// Expected diff
+				array(
+					'missing' => array(
+						1,
+					),
+					'extra' => array(),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_diff_mirrored_wp_query_results_data
+	 */
+	public function test__diff_mirrored_wp_query_results( $original_posts, $mirrored_posts, $expected_diff ) {
+		$es = new \Automattic\VIP\Search\Search();
+		
+		$diff = $es->diff_mirrored_wp_query_results( $original_posts, $mirrored_posts );
+
+		$this->assertEquals( $expected_diff, $diff );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
@@ -1048,5 +1499,17 @@ class Search_Test extends \WP_UnitTestCase {
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function get_property( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
+
+		$property = $class->getProperty( $name );
+		$property->setAccessible( true );
+
+		return $property;
 	}
 }
