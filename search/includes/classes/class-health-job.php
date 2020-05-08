@@ -23,6 +23,10 @@ class HealthJob {
 	 */
 	const CRON_INTERVAL = 60 * 30; // 30 minutes in seconds
 
+	const HEALTH_CHECK_DISABLED_SITES = array(
+		2341,
+	);
+
 	/**
 	 * Initialize the job class
 	 *
@@ -174,6 +178,12 @@ class HealthJob {
 	public function is_enabled() {
 		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === DISABLE_VIP_SEARCH_HEALTHCHECKS ) {
 			return false;
+		}
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( in_array( VIP_GO_APP_ID, self::HEALTH_CHECK_DISABLED_SITES ) ) {
+				return false;
+			}
 		}
 
 		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
