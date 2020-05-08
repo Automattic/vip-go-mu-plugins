@@ -181,7 +181,7 @@ class HealthJob {
 		}
 
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, self::HEALTH_CHECK_DISABLED_SITES ) ) {
+			if ( in_array( VIP_GO_APP_ID, self::HEALTH_CHECK_DISABLED_SITES, true ) ) {
 				return false;
 			}
 		}
