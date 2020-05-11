@@ -359,3 +359,16 @@ add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
 
 	return false;
 } );
+
+/**
+ * Custom CSS tweaks for the Jetpack Admin pages
+ */
+function vip_jetpack_admin_enqueue_scripts() {
+	if ( ! isset( $_GET['page'] ) || 'jetpack' !== $_GET['page'] ) {
+		return;
+	}
+	$admin_css_url  = plugins_url( '/css/admin-settings.css', __FILE__ );
+	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url );
+}
+
+add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
