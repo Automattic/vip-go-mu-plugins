@@ -53,6 +53,7 @@ wpcom-helper.php
 yarn.lock
 
 /README-PUBLIC.md
+/akismet/changelog.txt
 /bin/
 /ci/
 /cache/examples/

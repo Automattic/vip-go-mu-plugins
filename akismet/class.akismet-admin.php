@@ -32,10 +32,6 @@ class Akismet_Admin {
 		if ( isset( $_POST['action'] ) && $_POST['action'] == 'enter-key' ) {
 			self::enter_api_key();
 		}
-
-		if ( ! empty( $_GET['akismet_comment_form_privacy_notice'] ) && empty( $_GET['settings-updated']) ) {
-			self::set_form_privacy_notice_option( $_GET['akismet_comment_form_privacy_notice'] );
-		}
 	}
 
 	public static function init_hooks() {
@@ -69,11 +65,6 @@ class Akismet_Admin {
 		add_filter( 'wxr_export_skip_commentmeta', array( 'Akismet_Admin', 'exclude_commentmeta_from_export' ), 10, 3 );
 		
 		add_filter( 'all_plugins', array( 'Akismet_Admin', 'modify_plugin_description' ) );
-
-		if ( class_exists( 'Jetpack' ) ) {
-			add_filter( 'akismet_comment_form_privacy_notice_url_display',  array( 'Akismet_Admin', 'jetpack_comment_form_privacy_notice_url' ) );
-			add_filter( 'akismet_comment_form_privacy_notice_url_hide',     array( 'Akismet_Admin', 'jetpack_comment_form_privacy_notice_url' ) );
-		}
 
 		// priority=1 because we need ours to run before core's comment anonymizer runs, and that's registered at priority=10
 		add_filter( 'wp_privacy_personal_data_erasers', array( 'Akismet_Admin', 'register_personal_data_eraser' ), 1 );
@@ -890,14 +881,6 @@ class Akismet_Admin {
 		) );
 	}
 
-	public static function display_privacy_notice_control_warning() {
-		if ( !current_user_can( 'manage_options' ) )
-			return;
-		Akismet::view( 'notice', array(
-			'type' => 'privacy',
-		) );
-	}
-
 	public static function display_spam_check_warning() {
 		Akismet::fix_scheduled_recheck();
 
@@ -1031,10 +1014,6 @@ class Akismet_Admin {
 			$notices[] = array( 'type' => $akismet_user->status );
 		}
 
-		if ( false === get_option( 'akismet_comment_form_privacy_notice' ) ) {
-			$notices[] = array( 'type' => 'privacy' );
-		}
-
 		/*
 		// To see all variants when testing.
 		$notices[] = array( 'type' => 'active-notice', 'time_saved' => 'Cleaning up spam takes time. Akismet has saved you 1 minute!' );
@@ -1104,14 +1083,6 @@ class Akismet_Admin {
 		}
 		else if ( isset( $_GET['akismet_recheck_error'] ) ) {
 			echo '<div class="notice notice-error"><p>' . esc_html( __( 'Akismet could not recheck your comments for spam.', 'akismet' ) ) . '</p></div>';
-		}
-
-		$akismet_comment_form_privacy_notice_option = get_option( 'akismet_comment_form_privacy_notice' );
-		if ( ! in_array( $akismet_comment_form_privacy_notice_option, array( 'hide', 'display' ) ) ) {
-			$api_key = Akismet::get_api_key();
-			if ( ! empty( $api_key ) ) {
-				self::display_privacy_notice_control_warning();
-			}
 		}
 	}
 
@@ -1226,10 +1197,6 @@ class Akismet_Admin {
 		if ( in_array( $state, array( 'display', 'hide' ) ) ) {
 			update_option( 'akismet_comment_form_privacy_notice', $state );
 		}
-	}
-
-	public static function jetpack_comment_form_privacy_notice_url( $url ) {
-		return str_replace( 'options-general.php', 'admin.php', $url );
 	}
 	
 	public static function register_personal_data_eraser( $erasers ) {
