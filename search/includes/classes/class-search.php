@@ -273,6 +273,14 @@ class Search {
 			if ( 2160 === VIP_GO_APP_ID && $query->is_main_query() && ( $query->is_category() || $query->is_archive() ) ) {
 				return true;
 			}
+
+			$offload_main_tax_site_ids = array(
+				929,
+			);
+
+			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
+				return true;
+			}
 		}
 
 		return false;
