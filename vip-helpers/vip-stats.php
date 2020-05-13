@@ -91,8 +91,16 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 		// Ensure num_days is least 1, but no more than 90
 		$args['num_days'] = max( 1, min( 90, absint( $args['num_days'] ) ) );
 
-		$posts = stats_get_csv( 'postviews', $args );
-		$views = $posts[0]['views'] ?? 0;
+		$cache_key = 'views_' . $args['post_id'] . '_' . $args['num_days'] . '_' . $args['end_date'];
+
+		$views = wp_cache_get( $cache_key, 'vip_stats' );
+
+		if ( false === $views ) {	
+			$posts = stats_get_csv( 'postviews', $args );
+			$views = $posts[0]['views'] ?? 0;
+			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
+		}
+		
 	} else {
 		// If Jetpack is not present or not active, fake the data returned
 		$views = mt_rand( 0, 20000 );
