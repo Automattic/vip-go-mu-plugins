@@ -95,7 +95,7 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 
 		$views = wp_cache_get( $cache_key, 'vip_stats' );
 
-		if ( false === $views ) {	
+		if ( false === $views ) {
 			$posts = stats_get_csv( 'postviews', $args );
 			$views = $posts[0]['views'] ?? 0;
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
