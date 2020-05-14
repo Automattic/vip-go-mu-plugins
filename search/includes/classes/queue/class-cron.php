@@ -157,7 +157,7 @@ class Cron {
 
 			$this->queue->queue_object( $posts->post->ID );
 
-			$i = $i + 1;
+			$i = $i + 1; // phpcs:ignore Squiz.Operators.IncrementDecrementUsage.Found
 			// If post count is higher than batch count, schedule a batch job at the end of each batch if not ratelimited
 			if ( $posts->found_posts > self::TERM_UPDATE_BATCH_SIZE ) {
 				$schedule_batch = 0 === $i % self::TERM_UPDATE_BATCH_SIZE;
