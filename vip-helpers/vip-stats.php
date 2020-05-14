@@ -100,7 +100,6 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 			$views = $posts[0]['views'] ?? 0;
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
 		}
-		
 	} else {
 		// If Jetpack is not present or not active, fake the data returned
 		$views = mt_rand( 0, 20000 );
