@@ -472,25 +472,7 @@ class Queue {
 	 * Offload term indexing to the queue
 	 */
 	public function offload_term_indexing_to_queue( $term_id ) {
-		$term_taxonomy_id = $this->get_term_taxonomy_id( $term_id );
-
-		if ( is_null( $term_taxonomy_id ) ) {
-			return;
-		}
-
-		$this->cron->schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id );
-	}
-
-	public function get_term_taxonomy_id( $term_id ) {
-		if ( ! is_int( $term_id ) ) {
-			return null;
-		}
-		
-		global $wpdb;
-
-		$query  = $wpdb->prepare( 'SELECT `term_taxonomy_id` FROM `' . $wpdb->term_taxonomy . '` WHERE term_id = %d LIMIT 1', $term_id );
-
-		return $wpdb->get_var( $query );
+		$this->cron->schedule_queue_posts_for_term_id( $term_id );
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {

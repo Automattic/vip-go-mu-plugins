@@ -36,6 +36,11 @@ class Cron {
 	const TERM_UPDATE_CRON_EVENT_NAME = 'vip_search_term_update';
 
 	/**
+	 * The number of objects queued per batch for term updates
+	 */
+	const TERM_UPDATE_BATCH_SIZE = 1000;
+
+	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
 	 */
 	public $queue;
@@ -126,21 +131,44 @@ class Cron {
 	 * @param {int} $term_taxonomy_id The term id you want to fetch/index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		error_log( 'Taxonomy='.$term_taxonomy_id );
 		if ( ! is_int( $term_taxonomy_id ) ) {
 			return;
 		}
 
-		global $wpdb;
+		$args = array(
+			'posts_per_page' => -1,
+			'tax_query' => array(
+				array(
+					'field' => 'term_taxonomy_id',
+					'terms' => $term_taxonomy_id,
+				),
+			),
+		);
 
-		$query = $wpdb->prepare( 'SELECT `object_id` FROM `' . $wpdb->term_relationships . '` WHERE `term_taxonomy_id` = %d', $term_taxonomy_id );
+		$posts = new \WP_Query( $args );
 
-		$results = $wpdb->get_results( $query );
+		if ( ! $posts->have_posts() ) {
+			return;
+		}
 
-		$object_ids = wp_list_pluck( $results, 'object_id'  );
+		$i = 0;
+		while ( $posts->have_posts() ) {
+			$posts->the_post();
 
-		$this->queue->queue_objects( $object_ids );
+			$this->queue->queue_object( $posts->post->ID );
 
+			$i = $i + 1;
+			// If post count is higher than batch count, schedule a batch job at the end of each batch if not ratelimited
+			if ( $posts->found_posts > self::TERM_UPDATE_BATCH_SIZE ) {
+				$schedule_batch = 0 === $i % self::TERM_UPDATE_BATCH_SIZE;
+
+				if ( true === $schedule_batch && ! $this->queue::is_indexing_ratelimited() ) {
+					$this->schedule_batch_job();
+				}
+			}
+		}
+
+		// Schedule a batch job if not ratelimited to catch anything not scheduled in the post loop 
 		if ( ! $this->queue::is_indexing_ratelimited() ) {
 			$this->schedule_batch_job();
 		}
@@ -181,16 +209,10 @@ class Cron {
 		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
 	}
 
-	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		if ( ! is_int( $term_taxonomy_id ) ) {
-			if ( ! is_numeric( $term_taxonomy_id ) ) {
-				return;
-			}
+	public function schedule_queue_posts_for_term_id( $term_id ) {
+		$term = \get_term( $term_id );
 
-			$term_taxonomy_id = intval( $term_taxonomy_id );
-		}
-
-		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id ) );
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term->term_taxonomy_id ) );
 	}
 
 	/**
