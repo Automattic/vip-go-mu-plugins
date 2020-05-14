@@ -31,6 +31,11 @@ class Cron {
 	const SWEEPER_CRON_INTERVAL = 5 * \MINUTE_IN_SECONDS;
 
 	/**
+	 * The name of the cron event for processing term updates
+	 */
+	const TERM_UPDATE_CRON_EVENT_NAME = 'vip_search_term_update';
+
+	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
 	 */
 	public $queue;
@@ -44,6 +49,7 @@ class Cron {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::PROCESSOR_CRON_EVENT_NAME, [ $this, 'process_jobs' ] );
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
+		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -115,6 +121,32 @@ class Cron {
 	}
 
 	/**
+	 * Given a term id, queue all posts for reindexing that match it
+	 *
+	 * @param {int} $term_taxonomy_id The term id you want to fetch/index
+	 */
+	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		error_log( 'Taxonomy='.$term_taxonomy_id );
+		if ( ! is_int( $term_taxonomy_id ) ) {
+			return;
+		}
+
+		global $wpdb;
+
+		$query = $wpdb->prepare( 'SELECT `object_id` FROM `' . $wpdb->term_relationships . '` WHERE `term_taxonomy_id` = %d', $term_taxonomy_id );
+
+		$results = $wpdb->get_results( $query );
+
+		$object_ids = wp_list_pluck( $results, 'object_id'  );
+
+		$this->queue->queue_objects( $object_ids );
+
+		if ( ! $this->queue::is_indexing_ratelimited() ) {
+			$this->schedule_batch_job();
+		}
+	}
+
+	/**
 	 * Find objects that need to be processed (in a batch) and schedule an event to process them
 	 * 
 	 * This is intended to be a "sweep" of any objects that may have been missed - as stuff gets queued,
@@ -147,6 +179,18 @@ class Cron {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
+	}
+
+	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		if ( ! is_int( $term_taxonomy_id ) ) {
+			if ( ! is_numeric( $term_taxonomy_id ) ) {
+				return;
+			}
+
+			$term_taxonomy_id = intval( $term_taxonomy_id );
+		}
+
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id ) );
 	}
 
 	/**

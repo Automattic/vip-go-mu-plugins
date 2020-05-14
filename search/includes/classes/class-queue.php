@@ -53,8 +53,8 @@ class Queue {
 	}
 
 	public function setup_hooks() {
-		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
-		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
+		add_action( 'edit_terms', [ $this, 'offload_term_indexing_to_queue' ], 10, 1 );
+		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ], 10, 1 );
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
@@ -457,7 +457,7 @@ class Queue {
 			$this->delete_jobs( $jobs );
 		}
 	}
-	
+
 	/**
 	 * If called during a request, any queued indexing will be instead sent to
 	 * the async queue
@@ -466,6 +466,31 @@ class Queue {
 		if ( ! has_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ] ) ) {
 			add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
 		}
+	}
+
+	/**
+	 * Offload term indexing to the queue
+	 */
+	public function offload_term_indexing_to_queue( $term_id ) {
+		$term_taxonomy_id = $this->get_term_taxonomy_id( $term_id );
+
+		if ( is_null( $term_taxonomy_id ) ) {
+			return;
+		}
+
+		$this->cron->schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id );
+	}
+
+	public function get_term_taxonomy_id( $term_id ) {
+		if ( ! is_int( $term_id ) ) {
+			return null;
+		}
+		
+		global $wpdb;
+
+		$query  = $wpdb->prepare( 'SELECT `term_taxonomy_id` FROM `' . $wpdb->term_taxonomy . '` WHERE term_id = %d LIMIT 1', $term_id );
+
+		return $wpdb->get_var( $query );
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
