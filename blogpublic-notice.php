@@ -71,7 +71,7 @@ add_action( 'wp_ajax_blogpublic_notice_dismiss', __NAMESPACE__ . '\dismiss_callb
  * remove 'dismiss' flag to reshow the notice
  */
 function reset_notice_dismissal( $old_value, $value, $option ) {
-	if ( 0 === $old_value && 1 === $value ) {
+	if ( ( '0' === $old_value || 0 === $old_value ) && 1 === $value ) {
 		delete_option( 'blogpublic_notice_dismissed' );
 	}
 }
