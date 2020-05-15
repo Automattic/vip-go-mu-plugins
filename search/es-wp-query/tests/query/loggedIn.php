@@ -27,7 +27,7 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 	}
 
 	function test_query_not_logged_in_default() {
-		$posts = $this->q->query( '' );
+		$posts = $this->q->query( 'posts_per_page=100' );
 
 		// the output should be the only published post
 		$expected = array_values( get_post_stati( array( 'public' => true ) ) );
@@ -40,7 +40,7 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 	}
 
 	function test_query_not_logged_in_any_status() {
-		$posts = $this->q->query( 'post_status=any' );
+		$posts = $this->q->query( 'post_status=any&posts_per_page=100' );
 
 		// the output should be the only post statuses not set to exclude from search
 		$expected = array_values( get_post_stati( array( 'exclude_from_search' => false ) ) );
@@ -54,7 +54,8 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 
 	function test_query_not_logged_in_all_statuses() {
 		$posts = $this->q->query( array(
-			'post_status' => array_values( get_post_stati() )
+			'post_status' => array_values( get_post_stati() ),
+			'posts_per_page' => 100,
 		) );
 
 		// the output should be the only post statuses not set to exclude from search
@@ -70,7 +71,7 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 		$current_user = get_current_user_id();
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
-		$posts = $this->q->query( '' );
+		$posts = $this->q->query( 'posts_per_page=100' );
 
 		// the output should be the private and published posts
 		$public = array_values( get_post_stati( array( 'public' => true ) ) );
@@ -90,7 +91,7 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 		$current_user = get_current_user_id();
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
-		$posts = $this->q->query( 'post_status=any' );
+		$posts = $this->q->query( 'post_status=any&posts_per_page=100' );
 
 		// the output should be the only post statuses not set to exclude from search
 		$expected = array_values( get_post_stati( array( 'exclude_from_search' => false ) ) );
@@ -109,7 +110,8 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$posts = $this->q->query( array(
-			'post_status' => array_values( get_post_stati() )
+			'post_status' => array_values( get_post_stati() ),
+			'posts_per_page' => 100,
 		) );
 
 		// the output should be the only post statuses not set to exclude from search
@@ -127,7 +129,7 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 		$current_user = get_current_user_id();
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'subscriber' ) ) );
 
-		$posts = $this->q->query( '' );
+		$posts = $this->q->query( 'posts_per_page=100' );
 
 		// the output should be the only published post
 		$expected = array_values( get_post_stati( array( 'public' => true ) ) );
@@ -145,7 +147,7 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 		$current_user = get_current_user_id();
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'subscriber' ) ) );
 
-		$posts = $this->q->query( 'post_status=any' );
+		$posts = $this->q->query( 'post_status=any&posts_per_page=100' );
 
 		// the output should be the only post statuses not set to exclude from search
 		$expected = array_values( get_post_stati( array( 'exclude_from_search' => false ) ) );
@@ -164,7 +166,8 @@ class Tests_Query_LoggedIn extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'subscriber' ) ) );
 
 		$posts = $this->q->query( array(
-			'post_status' => array_values( get_post_stati() )
+			'post_status' => array_values( get_post_stati() ),
+			'posts_per_page' => 100,
 		) );
 
 		// the output should be the only post statuses not set to exclude from search

@@ -7,22 +7,20 @@ class Tests_Post_Query extends WP_UnitTestCase {
 	 * @ticket 17065
 	 */
 	function test_orderby_array() {
-		global $wpdb;
-
 		$q1 = new ES_WP_Query( array(
 			'orderby' => array(
 				'type' => 'DESC',
 				'name' => 'ASC'
 			)
 		) );
-		$this->assertEquals( 'desc', $q1->es_args['sort'][0]['post_type'] );
-		$this->assertEquals( 'asc', $q1->es_args['sort'][1]['post_name'] );
+		$this->assertEquals( 'desc', $q1->es_args['sort'][0][ $q1->es_map( 'post_type' ) ] );
+		$this->assertEquals( 'asc', $q1->es_args['sort'][1][ $q1->es_map( 'post_name' ) ] );
 
 		$q2 = new ES_WP_Query( array( 'orderby' => array() ) );
 		$this->assertFalse( isset( $q2->es_args['sort'] ) );
 
 		$q3 = new ES_WP_Query( array( 'post_type' => 'post' ) );
-		$this->assertEquals( 'desc', $q3->es_args['sort'][0]['post_date.date'] );
+		$this->assertEquals( 'desc', $q3->es_args['sort'][0][ $q1->es_map( 'post_date' ) ] );
 	}
 
 	/**
@@ -30,25 +28,23 @@ class Tests_Post_Query extends WP_UnitTestCase {
 	 * @ticket 17065
 	 */
 	function test_order() {
-		global $wpdb;
-
 		$q1 = new ES_WP_Query( array(
 			'orderby' => array(
 				'post_type' => 'foo'
 			)
 		) );
-		$this->assertEquals( 'desc', $q1->es_args['sort'][0]['post_type'] );
+		$this->assertEquals( 'desc', $q1->es_args['sort'][0][ $q1->es_map( 'post_type' ) ] );
 
 		$q2 = new ES_WP_Query( array(
 			'orderby' => 'title',
 			'order'   => 'foo'
 		) );
-		$this->assertEquals( 'desc', $q2->es_args['sort'][0]['post_title'] );
+		$this->assertEquals( 'desc', $q2->es_args['sort'][0][ $q1->es_map( 'post_title' ) ] );
 
 		$q3 = new ES_WP_Query( array(
 			'order' => 'asc'
 		) );
-		$this->assertEquals( 'asc', $q3->es_args['sort'][0]['post_date.date'] );
+		$this->assertEquals( 'asc', $q3->es_args['sort'][0][ $q1->es_map( 'post_date' ) ] );
 	}
 
 	/**

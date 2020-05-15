@@ -11,7 +11,11 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 	public $q;
 
+	public $subquery_assertions = array();
+
 	public function setUp() {
+		global $wp_query;
+
 		parent::setUp();
 
 		$cat_a = $this->factory->term->create( array( 'taxonomy' => 'category', 'name' => 'cat-a' ) );
@@ -54,8 +58,14 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 		es_wp_query_index_test_data();
 
-		unset( $this->q );
+		// Set the query to be the global query so we can assert query conditionals.
+		$this->q =& $wp_query;
 		$this->q = new WP_Query();
+	}
+
+	public function tearDown() {
+		$this->reset_post_types();
+		parent::tearDown();
 	}
 
 	function test_wp_query_default() {
@@ -77,6 +87,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 0, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
 	}
 
 	function test_wp_query() {
@@ -98,6 +109,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
 	}
 
 	function test_wp_query_posts_per_page() {
@@ -114,6 +126,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		$this->assertCount( 5, $posts );
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
 	}
 
 	function test_wp_query_offset() {
@@ -135,6 +148,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		$this->assertCount( 10, $posts );
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
 	}
 
 	function test_wp_query_paged() {
@@ -154,9 +168,9 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		);
 
 		$this->assertCount( 10, $posts );
-		$this->assertTrue( $this->q->is_paged() );
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page', 'is_paged' );
 	}
 
 	function test_wp_query_paged_and_posts_per_page() {
@@ -170,9 +184,9 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		);
 
 		$this->assertCount( 4, $posts );
-		$this->assertTrue( $this->q->is_paged() );
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page', 'is_paged' );
 	}
 
 	/**
@@ -195,9 +209,9 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		);
 
 		$this->assertCount( 10, $posts );
-		$this->assertTrue( $this->q->is_paged() );
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page', 'is_paged' );
 	}
 
 	function test_wp_query_no_results() {
@@ -205,6 +219,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 		$this->assertEmpty( $posts );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_date', 'is_archive', 'is_year' );
 	}
 
 	function test_wp_query_rule_changes() {
@@ -216,6 +231,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 		$this->assertEmpty( $posts );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
 
 		foreach ( array_keys( $wp_post_types ) as $slug )
 			$wp_post_types[$slug]->exclude_from_search = false;
@@ -224,6 +240,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $posts2 );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
 	}
 
 	/**
@@ -238,6 +255,8 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		);
 
 		$posts = $this->q->query( 'tag=tag-a&es=true' );
+		$this->assertQueryTrue( 'is_tag', 'is_archive' );
+
 		$this->assertCount( 4, $posts );
 		$this->assertEquals( $expected, wp_list_pluck( $posts, 'post_name' ) );
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
@@ -258,6 +277,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 	 */
 	function test_wp_query_change_query_vars() {
 		$posts = $this->q->query( 'tag=tag-b&es=true' );
+		$this->assertQueryTrue( 'is_tag', 'is_archive' );
 		$expected = array(
 			'tags-b-and-c',
 			'tags-a-and-b',
@@ -269,6 +289,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
 
 		$posts = $this->q->query( 'tag=tag-c&es=true' );
+		$this->assertQueryTrue( 'is_tag', 'is_archive' );
 		$expected = array(
 			'tags-a-and-c',
 			'tags-b-and-c',
@@ -288,6 +309,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 			'order'   => 'ASC',
 			'es'      => true
 		) );
+		$this->assertQueryTrue( 'is_date', 'is_time', 'is_archive' );
 		$expected = array(
 			$this->parent_one,
 			$this->parent_two,
@@ -307,6 +329,8 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 			'order'           => 'ASC',
 			'es'              => true
 		) );
+		$this->assertQueryTrue( 'is_home', 'is_front_page' );
+
 		$expected = array(
 			$this->child_one   => $this->parent_one,
 			$this->child_two   => $this->parent_one,
@@ -356,6 +380,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		add_action( 'pre_get_posts', array( $this, '_run_another_es_query' ), 1001 );
 
 		$posts = $this->q->query( 'category_name=cat-b&es=2' );
+		$this->assertQueryTrue( 'is_category', 'is_archive' );
 		$expected = array(
 			'cat-b',
 			'cats-b-and-c',
@@ -374,6 +399,7 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 	function test_wp_query_data_changes_between_queries() {
 
 		$posts = $this->q->query( 'tag=tag-a&es=true' );
+		$this->assertQueryTrue( 'is_tag', 'is_archive' );
 		$expected = array(
 			'tags-a-and-c',
 			'tags-a-and-b',
@@ -400,4 +426,34 @@ class Tests_Query_Shoehorn extends WP_UnitTestCase {
 		$this->assertEquals( 1, substr_count( $this->q->request, 'ES_WP_Query Shoehorn' ) );
 	}
 
+	/**
+	 * Hook for pre_get_posts to test subqueries.
+	 *
+	 * @param \WP_Query $query WP_Query (or ES_WP_Query) object querying for posts.
+	 */
+	public function _check_subquery_conditionals( $query ) {
+		global $wp_query;
+		if ( $query instanceof \ES_WP_Query ) {
+			$backup_query = $wp_query;
+			$wp_query = $query;
+			call_user_func_array( array( $this, 'assertQueryTrue' ), $this->subquery_assertions );
+			$wp_query = $backup_query;
+			$this->subquery_assertions = array();
+		}
+	}
+
+	public function test_non_search_archive_flags() {
+		// Define the assertions the subquery should make.
+		$this->subquery_assertions = array( 'is_year', 'is_date', 'is_archive' );
+
+		add_action( 'pre_get_posts', array( $this, '_check_subquery_conditionals' ) );
+		$posts = $this->q->query( 'year=2009&es=true' );
+		remove_action( 'pre_get_posts', array( $this, '_check_subquery_conditionals' ) );
+
+		/*
+		 * This is a roundabout way of verifying that the pre_get_posts filter
+		 * ran successfully.
+		 */
+		$this->assertEmpty( $this->subquery_assertions );
+	}
 }

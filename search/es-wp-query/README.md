@@ -6,7 +6,7 @@ A drop-in replacement for WP_Query to leverage Elasticsearch for complex queries
 
 ## Warning!
 
-This plugin is currently in pre-alpha development, and as such, no part of it is guaranteed. It works (the unit tests prove that), but we won't be concerned about backwards compatibility until the first release. If you choose to use this, please pay close attention to the commit log to make sure we don't break anything you've implemented.
+This plugin is currently in beta development, and as such, no part of it is guaranteed. It works (the unit tests prove that), but we won't be concerned about backwards compatibility until the first release. If you choose to use this, please pay close attention to the commit log to make sure we don't break anything you've implemented.
 
 
 ## Instructions for use
@@ -44,6 +44,15 @@ The second way to use this library is to add `'es' => true` to your WP_Query arg
 In one regard, this is a safer way to use this library, because it will fall back on good 'ole `WP_Query` if the library ever goes missing. However, because it depends on the normal processing of WP_Query, it's possible for a plugin or theme to create conflicts, where that plugin or theme is trying to modify WP_Query through one of its provided filters (see below for additional details). In that regard, this can be a very unsafe way to use this library.
 
 Regardless of which way you use the library, everything else about the object should work as per usual.
+
+## Differences with WP_Query and Unsupported Features
+
+### Meta Queries
+
+* **Regexp comparisons are not supported.** The regular expression syntax is slightly different in Elasticsearch vs. PHP, so even if we tried to support them, it would result in a lot of unexpected behaviors. Furthermore, regular expressions are very resource-intensive in Elasticsearch, so you're probably better off just using WP_Query for these queries regardless.
+	* If you try to use a regexp query, ES_WP_Query will throw a `_doing_it_wrong()` notice.
+* **LIKE comparisons are incongruous with MySQL.** In ES_WP_Query, LIKE-comparison meta queries will run a `match` query against the analyzed meta values. This will behave similar to a keyword search and will generally be more useful than a LIKE query in MySQL. However, there are notably differences with the MySQL implementation and ES_WP_Query will very likely produce different search results, so don't expect it to be a drop-in replacement.
+
 
 ## A note about WP_Query filters
 
