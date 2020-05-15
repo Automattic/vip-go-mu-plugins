@@ -187,6 +187,26 @@ function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 			$subscriber_caps[] = 'edit_user';
 		}
 
+		// WooCommerce caps to check
+		$woocommerce_caps = [
+			'edit_posts',
+			'manage_woocommerce',
+			'view_admin_dashboard',
+		];
+
+		// Track whether or not we've already granted this user wp-admin access based on WC standards.
+		static $user_should_have_wc_admin_access = false;
+
+		// If we haven't granted access yet, and this $cap is a WC cap to check.
+		if ( ! $user_should_have_wc_admin_access && in_array( $cap, $woocommerce_caps ) ) {
+
+			// If this user has this $cap and it's `true`, grant this user wp-admin access.
+			if ( isset( wp_get_current_user()->allcaps[ $cap ] ) && true === wp_get_current_user()->allcaps[ $cap ] ) {
+				$user_should_have_wc_admin_access = true;
+				add_filter( 'woocommerce_prevent_admin_access', '__return_false' );
+			}
+		}
+
 		if ( ! in_array( $cap, $subscriber_caps, true ) ) {
 			return array( 'do_not_allow' );
 		}
