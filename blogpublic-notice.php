@@ -25,7 +25,7 @@ function notice( $wp_admin_bar ) {
 
 	printf(
 		'<div id="blogpublic-notice" class="notice notice-warning is-dismissible"><p>Your site may be discoverable by search engines. You can change this in <a href="%s">Reading Settings</a>, under <strong>Search Engine Visibility</strong>.</p></div>',
-		admin_url('options-reading.php')
+		esc_url( admin_url( 'options-reading.php' ) )
 	);
 	add_action( 'admin_footer', __NAMESPACE__ . '\dismiss_handler' );
 }
