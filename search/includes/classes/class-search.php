@@ -157,9 +157,6 @@ class Search {
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
 
-		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
-		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
-
 		// For testing, mirror certain WP_Query's on certain sites
 		if ( $this->is_query_mirroring_enabled() ) {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
