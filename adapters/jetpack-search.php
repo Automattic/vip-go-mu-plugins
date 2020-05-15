@@ -1,6 +1,6 @@
 <?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
- * ES_WP_Query adapters: WordPress.com VIP adapter
+ * ES_WP_Query adapters: Jetpack Search adapter
  *
  * @package ES_WP_Query
  */
@@ -8,7 +8,7 @@
 // phpcs:disable Generic.Classes.DuplicateClassName.Found
 
 /**
- * An adapter for WordPress.com VIP.
+ * An adapter for Jetpack Search.
  */
 class ES_WP_Query extends ES_WP_Query_Wrapper {
 
@@ -20,16 +20,12 @@ class ES_WP_Query extends ES_WP_Query_Wrapper {
 	 * @return array The response from the Elasticsearch server.
 	 */
 	protected function query_es( $es_args ) {
-		if ( function_exists( 'es_api_search_index' ) ) {
-			$es_args['name'] = es_api_get_index_name_by_blog_id( $es_args['blog_id'] );
-			if ( is_wp_error( $es_args['name'] ) ) {
-				return [];
+		if ( class_exists( 'Jetpack_Search' ) ) {
+			$jetpack_search = Jetpack_Search::instance();
+			if ( method_exists( $jetpack_search, 'search' ) ) {
+				$es_args = apply_filters( 'jetpack_search_es_query_args', $es_args, $this );
+				return $jetpack_search->search( $es_args );
 			}
-			$response = es_api_search_index( $es_args, 'es-wp-query' );
-			if ( is_wp_error( $response ) ) {
-				$response = [];
-			}
-			return $response;
 		}
 	}
 
@@ -179,7 +175,7 @@ function vip_es_field_map( $es_map ) {
 			'tag_slug'                      => 'tag.slug',
 			'tag_name'                      => 'tag.name.raw',
 		),
-		$es_map 
+		$es_map
 	);
 }
 add_filter( 'es_field_map', 'vip_es_field_map' );
@@ -238,12 +234,14 @@ function vip_es_disable_advanced_post_cache( &$query ) {
 
 	static $disabled_apc = false;
 
+	if ( empty( $advanced_post_cache_object ) || ! is_object( $advanced_post_cache_object ) ) {
+		return;
+	}
 
 	/*
 	 * These two might be passsed to us; we only
 	 * handle WP_Query, so ignore these.
 	 */
-
 	if (
 		( $query instanceof ES_WP_Query_Wrapper ) ||
 		( $query instanceof ES_WP_Query )
