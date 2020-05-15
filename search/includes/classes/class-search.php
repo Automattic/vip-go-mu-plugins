@@ -181,6 +181,16 @@ class Search {
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
+	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return new \WP_Error( 'indexable-not-found', 'Invalid query type specified. Must be a valid Indexable from ElasticPress' );
+		}
+
+		return $indexable->query_es( $es_args, $wp_query_args, $index_name );
+	}
+
 	public function action__plugins_loaded() {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier

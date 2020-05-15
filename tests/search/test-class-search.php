@@ -16,6 +16,16 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 	}
 
+	public function test_query_es_with_invalid_type() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->query_es( 'foo' );
+
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( 'indexable-not-found', $result->get_error_code() );
+	}
+
 	/**
 	 * Test `ep_index_name` filter for ElasticPress + VIP Search
 	 */
