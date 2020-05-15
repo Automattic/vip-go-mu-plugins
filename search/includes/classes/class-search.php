@@ -195,6 +195,16 @@ class Search {
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
+
+		// Load es-wp-query, if not already loaded. This is done during plugins_loaded so we don't conflict
+		// with sites that have included this plugin themselves
+		if ( ! class_exists( '\\ES_WP_Query' ) ) {
+			require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
+
+			if ( function_exists( 'es_wp_query_load_adapter' ) ) {
+				es_wp_query_load_adapter( 'vip-search' );
+			}
+		}
 	}
 
 	public function action__wp() {
