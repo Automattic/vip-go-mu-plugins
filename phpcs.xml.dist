@@ -31,8 +31,9 @@
 	<exclude-pattern>bin/*</exclude-pattern>
 	<exclude-pattern>debug-bar/*</exclude-pattern>
 	<exclude-pattern>drop-ins/*</exclude-pattern>
-	<exclude-pattern>elasticsearch/elasticpress/*</exclude-pattern>
-	<exclude-pattern>elasticsearch/debug-bar-elasticpress/*</exclude-pattern>
+	<exclude-pattern>search/elasticpress/*</exclude-pattern>
+	<exclude-pattern>search/debug-bar-elasticpress/*</exclude-pattern>
+	<exclude-pattern>search/es-wp-query/*</exclude-pattern>
 	<exclude-pattern>shared-plugins/*</exclude-pattern>
 	<exclude-pattern>vaultpress/*</exclude-pattern>
 	<exclude-pattern>vendor/*</exclude-pattern>
