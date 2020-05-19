@@ -54,7 +54,7 @@ class Cron {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::PROCESSOR_CRON_EVENT_NAME, [ $this, 'process_jobs' ] );
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
-		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
+		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_id' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -128,19 +128,26 @@ class Cron {
 	/**
 	 * Given a term id, queue all posts for reindexing that match it
 	 *
-	 * @param {int} $term_taxonomy_id The term id you want to fetch/index
+	 * @param {int} $term_id The term id you want to fetch/index
 	 */
-	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		if ( ! is_int( $term_taxonomy_id ) ) {
+	public function queue_posts_for_term_id( $term_id ) {
+		$term = \get_term( $term_id );
+
+		if ( is_wp_error( $term ) ) {
+			return;
+		}
+
+		if ( ! is_int( $term->term_taxonomy_id ) ) {
 			return;
 		}
 
 		$args = array(
-			'posts_per_page' => -1,
+			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
+			'paged' => 1,
 			'tax_query' => array(
 				array(
 					'field' => 'term_taxonomy_id',
-					'terms' => $term_taxonomy_id,
+					'terms' => $term->term_taxonomy_id,
 				),
 			),
 		);
@@ -151,20 +158,30 @@ class Cron {
 			return;
 		}
 
-		$i = 0;
-		while ( $posts->have_posts() ) {
-			$posts->the_post();
+		while ( $args['paged'] <= $posts->max_num_pages ) {
+			$i = 0;
+			while ( $posts->have_posts() ) {
+				$posts->the_post();
 
-			$this->queue->queue_object( $posts->post->ID );
+				$this->queue->queue_object( $posts->post->ID );
 
-			$i = $i + 1; // phpcs:ignore Squiz.Operators.IncrementDecrementUsage.Found
-			// If post count is higher than batch count, schedule a batch job at the end of each batch if not ratelimited
-			if ( $posts->found_posts > self::TERM_UPDATE_BATCH_SIZE ) {
-				$schedule_batch = 0 === $i % self::TERM_UPDATE_BATCH_SIZE;
+				$i = $i + 1; // phpcs:ignore Squiz.Operators.IncrementDecrementUsage.Found
+				// If post count is higher than batch count, schedule a batch job at the end of each batch if not ratelimited
+				if ( $posts->found_posts > self::TERM_UPDATE_BATCH_SIZE ) {
+					$schedule_batch = 0 === $i % self::TERM_UPDATE_BATCH_SIZE;
 
-				if ( true === $schedule_batch && ! $this->queue::is_indexing_ratelimited() ) {
-					$this->schedule_batch_job();
+					if ( true === $schedule_batch && ! $this->queue::is_indexing_ratelimited() ) {
+						$this->schedule_batch_job();
+					}
 				}
+			}
+
+			\wp_reset_query();
+			$args['paged'] = intval( $args['paged'] ) + 1;
+			$posts = new \WP_Query( $args );
+
+			if ( ! $posts->have_posts() ) {
+				return;
 			}
 		}
 
@@ -210,9 +227,7 @@ class Cron {
 	}
 
 	public function schedule_queue_posts_for_term_id( $term_id ) {
-		$term = \get_term( $term_id );
-
-		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term->term_taxonomy_id ) );
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_id ) );
 	}
 
 	/**
