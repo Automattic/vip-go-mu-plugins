@@ -157,9 +157,6 @@ class Search {
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
 
-		// Allow query offloading with the 'es' query var (in addition to default 'ep_integrate')
-		add_filter( 'ep_elasticpress_enabled', array( $this, 'filter__ep_elasticpress_enabled' ), 10, 2 );
-
 		// For testing, mirror certain WP_Query's on certain sites
 		if ( $this->is_query_mirroring_enabled() ) {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
@@ -181,6 +178,16 @@ class Search {
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
+	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return new \WP_Error( 'indexable-not-found', 'Invalid query type specified. Must be a valid Indexable from ElasticPress' );
+		}
+
+		return $indexable->query_es( $es_args, $wp_query_args, $index_name );
+	}
+
 	public function action__plugins_loaded() {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
@@ -194,6 +201,16 @@ class Search {
 			require_once __DIR__ . '/../functions/ep-get-query-log.php';
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
+		}
+
+		// Load es-wp-query, if not already loaded. This is done during plugins_loaded so we don't conflict
+		// with sites that have included this plugin themselves
+		if ( ! class_exists( '\\ES_WP_Query' ) ) {
+			require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
+
+			if ( function_exists( 'es_wp_query_load_adapter' ) ) {
+				es_wp_query_load_adapter( 'vip-search' );
+			}
 		}
 	}
 
@@ -913,21 +930,6 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
-	}
-
-	/**
-	 * Filter for enabling or disabling ES query offloading for a given WP_Query
-	 * 
-	 * This is used to allow query offloading using the 'es' var (which most VIP sites are already using
-	 * via es-wp-query), in addition to the EP default 'ep_integrate' var
-	 */
-	public function filter__ep_elasticpress_enabled( $enabled, $query ) {
-		// If the WP_Query has an 'es' var that is truthy, enable query offloading via VIP Search
-		if ( isset( $query->query_vars['es'] ) && $query->query_vars['es'] ) {
-			$enabled = true;
-		}
-
-		return $enabled;
 	}
 
 	/**
