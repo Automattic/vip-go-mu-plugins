@@ -55,8 +55,8 @@ class Queue {
 	}
 
 	public function setup_hooks() {
-		add_action( 'edit_terms', [ $this, 'offload_term_indexing_to_queue' ], 10, 1 );
-		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ], 10, 1 );
+		add_action( 'edit_terms', [ $this, 'offload_term_indexing_to_queue' ] );
+		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
