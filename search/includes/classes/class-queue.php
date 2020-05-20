@@ -25,6 +25,8 @@ class Queue {
 	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
 	private const INDEX_QUEUEING_TTL = 15 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 15 minutes once ratelimiting is triggered
 
+	private const MAX_SYNC_INDEXING_COUNT = 10000;
+
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -472,7 +474,19 @@ class Queue {
 	 * Offload term indexing to the queue
 	 */
 	public function offload_term_indexing_to_queue( $term_id ) {
-		$this->cron->schedule_queue_posts_for_term_id( $term_id );
+		$term = \get_term( $term_id );
+
+		if ( is_wp_error( $term ) || ! is_object( $term ) ) {
+			return;
+		}
+
+		if ( $term->count <= self::MAX_SYNC_INDEXING_COUNT ) {
+			$this->offload_indexing_to_queue();
+			return;
+		}
+
+		add_filter( 'ep_skip_action_edited_term', '__return_true' ); // Disable ElasticPress execution on term edit
+		$this->cron->schedule_queue_posts_for_term( $term );
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
