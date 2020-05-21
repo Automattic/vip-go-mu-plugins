@@ -54,7 +54,7 @@ class Cron {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::PROCESSOR_CRON_EVENT_NAME, [ $this, 'process_jobs' ] );
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
-		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term' ] );
+		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -126,12 +126,12 @@ class Cron {
 	}
 
 	/**
-	 * Given a term, queue all posts for reindexing that match it
+	 * Given a term taxonomy id, queue all posts for reindexing that match it
 	 *
-	 * @param {WP_Term} $term The term you want to index
+	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
 	 */
-	public function queue_posts_for_term( $term ) {
-		if ( ! is_int( $term->term_taxonomy_id ) ) {
+	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		if ( ! is_int( $term_taxonomy_id ) ) {
 			return;
 		}
 
@@ -141,7 +141,7 @@ class Cron {
 			'tax_query' => array(
 				array(
 					'field' => 'term_taxonomy_id',
-					'terms' => $term->term_taxonomy_id,
+					'terms' => $term_taxonomy_id,
 				),
 			),
 		);
@@ -220,8 +220,8 @@ class Cron {
 		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
 	}
 
-	public function schedule_queue_posts_for_term( $term ) {
-		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term ) );
+	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id ) );
 	}
 
 	/**

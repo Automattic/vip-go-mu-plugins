@@ -486,7 +486,7 @@ class Queue {
 		}
 
 		add_filter( 'ep_skip_action_edited_term', '__return_true' ); // Disable ElasticPress execution on term edit
-		$this->cron->schedule_queue_posts_for_term( $term );
+		$this->cron->schedule_queue_posts_for_term_taxonomy_id( $term->term_taxonomy_id );
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
