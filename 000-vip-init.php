@@ -44,7 +44,7 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 			http_response_code( 503 );
 
 			header( 'X-VIP-Go-Maintenance: true' );
-
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
 
 			exit;
