@@ -1391,7 +1391,7 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
-	// Simple UA check to filter out most
+	// Simple UA check to filter out most.
 	if ( false === stripos( $_SERVER[ 'HTTP_USER_AGENT' ], 'jetpack' ) ) {
 		return false;
 	}
@@ -1415,7 +1415,8 @@ function vip_is_jetpack_request() {
 		'192.0.102.95/32',
 	);
 
-	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'HTTP_X_FORWARDED_FOR' ], $jetpack_ips );
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
 /**
