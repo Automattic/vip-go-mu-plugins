@@ -38,7 +38,7 @@ class Cron {
 	/**
 	 * The number of objects queued per batch for term updates
 	 */
-	const TERM_UPDATE_BATCH_SIZE = 10000;
+	const TERM_UPDATE_BATCH_SIZE = 25000;
 
 	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
