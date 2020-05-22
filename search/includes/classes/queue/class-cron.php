@@ -38,7 +38,7 @@ class Cron {
 	/**
 	 * The number of objects queued per batch for term updates
 	 */
-	const TERM_UPDATE_BATCH_SIZE = 1000;
+	const TERM_UPDATE_BATCH_SIZE = 10000;
 
 	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
@@ -110,9 +110,9 @@ class Cron {
 
 	/**
 	 * Process a batch of jobs via cron
-	 * 
+	 *
 	 * This is the cron hook for indexing a batch of objects
-	 * 
+	 *
 	 * @param {array} $job_ids Array of job ids to process
 	 */
 	public function process_jobs( $job_ids ) {
@@ -131,10 +131,6 @@ class Cron {
 	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		if ( ! is_int( $term_taxonomy_id ) ) {
-			return;
-		}
-
 		$args = array(
 			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
 			'paged' => 1,
@@ -153,24 +149,11 @@ class Cron {
 		}
 
 		while ( $args['paged'] <= $posts->max_num_pages ) {
-			$i = 0;
 			while ( $posts->have_posts() ) {
 				$posts->the_post();
-
 				$this->queue->queue_object( $posts->post->ID );
-
-				$i = $i + 1; // phpcs:ignore Squiz.Operators.IncrementDecrementUsage.Found
-				// If post count is higher than batch count, schedule a batch job at the end of each batch if not ratelimited
-				if ( $posts->found_posts > self::TERM_UPDATE_BATCH_SIZE ) {
-					$schedule_batch = 0 === $i % self::TERM_UPDATE_BATCH_SIZE;
-
-					if ( true === $schedule_batch && ! $this->queue::is_indexing_ratelimited() ) {
-						$this->schedule_batch_job();
-					}
-				}
 			}
 
-			\wp_reset_query();
 			$args['paged'] = intval( $args['paged'] ) + 1;
 			$posts = new \WP_Query( $args );
 
@@ -178,16 +161,11 @@ class Cron {
 				return;
 			}
 		}
-
-		// Schedule a batch job if not ratelimited to catch anything not scheduled in the post loop 
-		if ( ! $this->queue::is_indexing_ratelimited() ) {
-			$this->schedule_batch_job();
-		}
 	}
 
 	/**
 	 * Find objects that need to be processed (in a batch) and schedule an event to process them
-	 * 
+	 *
 	 * This is intended to be a "sweep" of any objects that may have been missed - as stuff gets queued,
 	 * we schedule vip_search_queue_processor events immediately, but this helps find anything that fell through
 	 * the cracks (fatal error or something) as well as identify deadlocks
