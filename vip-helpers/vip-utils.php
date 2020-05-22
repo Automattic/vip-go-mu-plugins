@@ -1400,6 +1400,7 @@ function vip_is_jetpack_request() {
 
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
+	// Or https://jetpack.com/ips-v4.json
 	$jetpack_ips = array(
 		'122.248.245.244/32',
 		'54.217.201.243/32',
@@ -1414,7 +1415,7 @@ function vip_is_jetpack_request() {
 		'192.0.102.95/32',
 	);
 
-	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'HTTP_X_FORWARDED_FOR' ], $jetpack_ips );
 }
 
 /**
