@@ -1401,13 +1401,17 @@ function vip_is_jetpack_request() {
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
 	$jetpack_ips = array(
-		'122.248.245.244',
-		'54.217.201.243',
-		'54.232.116.4',
+		'122.248.245.244/32',
+		'54.217.201.243/32',
+		'54.232.116.4/32',
 		'192.0.80.0/20',
 		'192.0.96.0/20',
 		'192.0.112.0/20',
 		'195.234.108.0/22',
+		'192.0.96.202/32',
+		'192.0.98.138/32',
+		'192.0.102.71/32',
+		'192.0.102.95/32',
 	);
 
 	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
