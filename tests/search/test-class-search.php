@@ -16,6 +16,16 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 	}
 
+	public function test_query_es_with_invalid_type() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$result = $es->query_es( 'foo' );
+
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( 'indexable-not-found', $result->get_error_code() );
+	}
+
 	/**
 	 * Test `ep_index_name` filter for ElasticPress + VIP Search
 	 */
@@ -95,83 +105,6 @@ class Search_Test extends \WP_UnitTestCase {
 		$replicas = apply_filters( 'ep_default_index_number_of_replicas', 1 );
 
 		$this->assertEquals( 2, $replicas );
-	}
-
-	public function vip_search_filter_ep_elasticpress_enabled_data() {
-		return array(
-			// Enabled
-			array(
-				// Fake WP_Query
-				(object) array( 
-					'query_vars' => array(
-						'es' => 1,
-					),
-				),
-				// Expected $enabled
-				true,
-			),
-			array(
-				// Fake WP_Query
-				(object) array( 
-					'query_vars' => array(
-						'es' => true,
-					),
-				),
-				// Expected $enabled
-				true,
-			),
-			array(
-				// Fake WP_Query
-				(object) array( 
-					'query_vars' => array(
-						'es' => '1',
-					),
-				),
-				// Expected $enabled
-				true,
-			),
-
-			// Disabled
-			array(
-				// Fake WP_Query
-				(object) array( 
-					'query_vars' => array(),
-				),
-				// Expected $enabled
-				false,
-			),
-			array(
-				// Fake WP_Query
-				(object) array( 
-					'query_vars' => array(
-						'es' => 0,
-					),
-				),
-				// Expected $enabled
-				false,
-			),
-			array(
-				// Fake WP_Query
-				(object) array( 
-					'query_vars' => array(
-						'es' => false,
-					),
-				),
-				// Expected $enabled
-				false,
-			),
-		);
-	}
-	/**
-	 * @dataProvider vip_search_filter_ep_elasticpress_enabled_data
-	 */
-	public function test__vip_search_filter_ep_elasticpress_enabled( $query, $expected_enabled ) {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
-
-		$enabled = apply_filters( 'ep_elasticpress_enabled', false, $query );
-
-		$this->assertEquals( $expected_enabled, $enabled );
 	}
 
 	public function vip_search_enforces_disabled_features_data() {
