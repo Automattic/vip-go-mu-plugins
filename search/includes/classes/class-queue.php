@@ -14,8 +14,16 @@ class Queue {
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
 	const MAX_BATCH_SIZE = 1000;
+	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
 	public $schema;
+
+	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
+	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
+	public static $max_indexing_op_count = 3000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
+	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
+	private const INDEX_QUEUEING_TTL = 15 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 15 minutes once ratelimiting is triggered
 
 	public function init() {
 		if ( ! $this->is_enabled() ) {
@@ -47,16 +55,21 @@ class Queue {
 	public function setup_hooks() {
 		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
+
+		// For handling indexing failures
+		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
+
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
 
 	/**
 	 * Queue an object for re-indexing
-	 * 
+	 *
 	 * If the object is already queued, it will not be queued again
-	 * 
+	 *
 	 * If the object is being re-indexed too frequently, it will be queued but with a start_time
 	 * in the future representing the earliest time the queue processor can index the object
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 */
@@ -94,6 +107,27 @@ class Queue {
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
+	}
+
+	/**
+	 * Queue objects for re-indexing
+	 *
+	 * If the object is already queued, it will not be queued again
+	 *
+	 * If the object is being re-indexed too frequently, it will be queued but with a start_time
+	 * in the future representing the earliest time the queue processor can index the object
+	 *
+	 * @param array $object_ids The ids of the objects
+	 * @param string $object_type The type of objects
+	 */
+	public function queue_objects( $object_ids, $object_type = 'post' ) {
+		if ( ! is_array( $object_ids ) ) {
+			return;
+		}
+
+		foreach ( $object_ids as $object_id ) {
+			$this->queue_object( $object_id, $object_type );
+		}
 	}
 
 	/**
@@ -319,11 +353,17 @@ class Queue {
 		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
+		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
+
+		$this->update_jobs( $job_ids, array(
+			'status' => 'scheduled',
+			'scheduled_time' => $scheduled_time,
+		) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status = 'scheduled';
+			$job->scheduled_time = $scheduled_time;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
@@ -332,6 +372,53 @@ class Queue {
 		}
 
 		return $jobs;
+	}
+
+	/**
+	 * Find any jobs that are considered "deadlocked"
+	 * 
+	 * A deadlocked job is one that has been scheduled for processing, but has
+	 * not completed within the defined time period
+	 */
+	public function get_deadlocked_jobs( $count = 250 ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		// If job was scheduled before this time, it is considered deadlocked
+		$deadlocked_time = time() - self::DEADLOCK_TIME;
+
+		$jobs = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+			$count
+		) );
+		
+		return $jobs;
+	}
+
+	/**
+	 * Find and release deadlocked jobs
+	 */
+	public function free_deadlocked_jobs() {
+		// Run this several times, to release potentially many jobs in reasonable batches
+		$batches = 5;
+
+		for ( $i = 0; $i < $batches; $i++ ) {
+			$deadlocked_jobs = $this->get_deadlocked_jobs( 500 );
+
+			// If none found, we can stop the loop
+			if ( empty( $deadlocked_jobs ) ) {
+				break;
+			}
+
+			$deadlocked_job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+
+			$this->update_jobs( $deadlocked_job_ids, array(
+				'status' => 'queued',
+				'scheduled_time' => null,
+			) );
+		}
 	}
 
 	public function process_jobs( $jobs ) {
@@ -358,6 +445,9 @@ class Queue {
 			$indexable = $indexables->get( $type );
 
 			$ids = wp_list_pluck( $jobs, 'object_id' );
+
+			// Increment first to prevent overrunning ratelimiting
+			self::index_count_incr( count( $ids ) );
 
 			$indexable->bulk_index( $ids );
 
@@ -394,12 +484,131 @@ class Queue {
 			$this->queue_object( $object_id, $indexable_slug );
 		}
 
-		// Queue up a cron event to process these immediately
-		$this->cron->schedule_batch_job();
-
+		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
+		if ( ! self::is_indexing_ratelimited() ) {
+			$this->cron->schedule_batch_job();
+		}
+		
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
 
 		return true;
+	}
+
+	/**
+	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled, 
+	 * queue all of the posts for indexing.
+	 *
+	 * @param {array} $document_ids IDs of the documents that were to be indexed
+	 * @param {string} $slug Indexable slug
+	 * @param {array|boolean} $return Elasticsearch response. False on error.
+	 * @return {bool} Whether anything was done
+	 */
+	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
+		if ( false === $this->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
+			return false;
+		}
+
+		$this->queue_objects( $document_ids );
+
+		return true;
+	}
+
+	/**
+	 * Hook pre_ep_index_sync_queue for indexing operation ratelimiting.
+	 * If ratelimited, bail and offload indexing to queue.
+	 *
+	 * @param {bool} $bail Current value of bail
+	 * @param {object} $sync_manager Instance of Sync_Manager
+	 * @param {string} $indexable_slug Indexable slug
+	 * @return {bool} Whether to bail on indexing or not
+	 */
+	public function ratelimit_indexing( $bail, $sync_manager, $indexable_slug ) {
+		// Only posts supported right now
+		if ( 'post' !== $indexable_slug ) {
+			return $bail;
+		}
+
+		if ( empty( $sync_manager->sync_queue ) ) {
+			return $bail;
+		}
+
+		// Increment first to prevent overrunning ratelimiting
+		$increment = count( $sync_manager->sync_queue );
+		$index_count_in_period = self::index_count_incr( $increment );
+
+		// If indexing operation ratelimiting is hit, queue index operations
+		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
+			$this->record_ratelimited_stat( $increment, $indexable_slug );
+
+			// Offload indexing to async queue
+			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
+
+			if ( ! self::is_indexing_ratelimited() ) {
+				self::turn_on_index_ratelimiting();
+			}
+		}
+
+		// Honor filters that want to bail on indexing while also honoring ratelimiting
+		if ( true === $bail || true === self::is_indexing_ratelimited() ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function record_ratelimited_stat( $count, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		// Since we're ratelimting indexing, it seems safe to define this
+		$statsd_mode = 'index_ratelimited';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat, $count );
+		$statsd->increment( $per_site_stat, $count );
+	}
+
+	/**
+	 * Check whether indexing is currently ratelimited
+	 *
+	 * @return {bool} Whether indexing is curretly ratelimited
+	 */
+	public static function is_indexing_ratelimited() {
+		return false !== wp_cache_get( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/**
+	 *  Turn on ratelimit indexing
+	 *
+	 * @return {bool} True on success, false on failure
+	 */
+	public static function turn_on_index_ratelimiting() {
+		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+	}
+
+	/*
+	 * Increment the number of indexing operations that have been passed through VIP Search
+	 */
+	private static function index_count_incr( $increment = 1 ) {
+		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_COUNT_TTL );
+		}
+
+		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
 	}
 }

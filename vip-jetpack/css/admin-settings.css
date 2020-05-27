@@ -1,0 +1,4 @@
+/* Hide the Instant Search toggl */
+#jp-settings-search-jetpack .jp-form-fieldset:first-of-type {
+    display: none;
+}

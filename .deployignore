@@ -53,6 +53,7 @@ wpcom-helper.php
 yarn.lock
 
 /README-PUBLIC.md
+/akismet/changelog.txt
 /bin/
 /ci/
 /cache/examples/
@@ -71,6 +72,8 @@ yarn.lock
 /search/elasticpress/CHANGELOG.md
 /search/elasticpress/hookdoc-conf.json
 /search/elasticpress/postcss.config.js
+/search/es-wp-query/bin/
+/search/es-wp-query/tests/
 /jetpack/bin/build-asset-cdn-json.php
 /jetpack/docker/
 /jetpack/docs/
@@ -85,6 +88,7 @@ yarn.lock
 /shared-plugins/two-factor/.ci-env.sh
 /shared-plugins/two-factor/assets/
 /shared-plugins/two-factor/dev-lib/
+/shared-plugins/two-factor/tests/
 /tests/
 /vaultpress/changelog.txt
 /vip-support/.circleci

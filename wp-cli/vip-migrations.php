@@ -175,6 +175,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * [--extra-check]
 	 * : Checks the attachment's `_wp_attached_image` post meta for an edited image filename with a new URL.  This will be slower as it adds additional SQL queries.
 	 *
+	 * [--disable-cache]
+	 * : Disables the cache by appending a random query argument to each URL.
+	 *
+	 * [--find-empty-files]
+	 * : Logs files that are returned with 0 bytes.  Should probably not be used with `--log-found-files` because they will probably also return a 200.
+	 *
 	 * [--log-found-files]
 	 * : By default, only URLs with a status other than "200" are logged.  This will log found files as well.
 	 *
@@ -188,8 +194,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 */
 	public function validate_attachments( $args, $assoc_args ) {
 		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
-		$extra_check     = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
-		$output_file     = $args[0];
+		$output_file    = $args[0];
+		$extra_check    = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
+		$find_empty     = WP_CLI\Utils\get_flag_value( $assoc_args, 'find-empty-files', false );
+		$disable_cache  = WP_CLI\Utils\get_flag_value( $assoc_args, 'disable-cache', false );
 
 		$offset  = 0;
 		$limit   = 500;
@@ -214,8 +222,25 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		$count_sql        = 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query;
 		$attachment_count = $wpdb->get_row( $count_sql, ARRAY_N )[0];
+		WP_CLI::log( 'Saving output to ' . $output_file );
+
+		if ( $log_found_files ) {
+			WP_CLI::log( 'Logging found files.' );
+		}
+
+		if ( $extra_check ) {
+			WP_CLI::log( 'Running Extra URL Checks.  The total may increase as new URLs are found.' );
+		}
+
+		if ( $find_empty ) {
+			WP_CLI::log( 'Logging Empty Files.' );
+		}
+
+		if ( $disable_cache ) {
+			WP_CLI::log( 'Disabling Varnish Cache.' );
+		}
+		
 		$progress         = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
-		$attachments      = [];
 		$upload_dir       = wp_get_upload_dir();
 
 		if ( ! file_exists( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ) ) {
@@ -225,7 +250,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		do {
-			$sql            = $wpdb->prepare( 'SELECT ID FROM %s WHERE post_type = "attachment" %s LIMIT %d,%d', $wpdb->posts, $date_query, $offset, $limit );
+			$extra_count    = 0;
+			$attachments    = [];
+			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
 			$attachment_ids = array_map(
 				function( $attachment_ids ) {
 					return (int) $attachment_ids[0];
@@ -243,9 +270,15 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 						$extra_url = $upload_dir['baseurl'] . '/' . $attached_file[0]->meta_value;
 						if ( $extra_url !== $attachment_url ) {
 							$attachments[] = $extra_url;
+							$extra_count++;
 						}
 					}
 				}
+			}
+
+			if ( 0 !== $extra_count ) {
+				$attachment_count += $extra_count;
+				$progress->reset( $attachment_count );
 			}
 
 			$attachments        = array_unique( $attachments ); // Just in case, let's clear out any dupes.
@@ -270,7 +303,12 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 					$ch[ $index ] = curl_init();
 					curl_setopt( $ch[ $index ], CURLOPT_RETURNTRANSFER, true );
-					curl_setopt( $ch[ $index ], CURLOPT_URL, $url . '?cache_bust=' . wp_rand( 1000000, 9999999 ) );
+
+					if ( $disable_cache ) {
+						curl_setopt( $ch[ $index ], CURLOPT_URL, $url . '?disable-cache=' . mt_rand( 1000000, 9999999 ) );
+					} else {
+						curl_setopt( $ch[ $index ], CURLOPT_URL, $url );
+					}
 					curl_setopt( $ch[ $index ], CURLOPT_FOLLOWLOCATION, true );
 					curl_setopt( $ch[ $index ], CURLOPT_NOBODY, true );
 
@@ -302,6 +340,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 						$log_request = true;
 					}
 
+					if ( $find_empty && curl_getinfo( $handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD ) <= 0 ) {
+						$log_request = true;
+					}
+
 					if ( $log_request ) {
 						$output[] = array(
 							$url,
@@ -309,7 +351,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 						);
 					}
 				}
-				$progress->tick( count( $attachments_arrays ) );
+
+				$progress->tick( count( $attachments_arrays ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
 
 			}
 

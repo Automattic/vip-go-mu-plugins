@@ -129,6 +129,8 @@ class Cron {
 			return;
 		}
 
+		$this->queue->free_deadlocked_jobs();
+
 		// TODO add a "max batches" setting and keep creating batch jobs until none are found or we hit the max
 
 		$this->schedule_batch_job();

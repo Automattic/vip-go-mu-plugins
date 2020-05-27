@@ -7,13 +7,14 @@ use \WP_CLI;
 class Search {
 	public $healthcheck;
 	public $queue;
-	private $current_host_index;
+	private $mirrored_wp_query_queue = array();
+	private $current_host_index = 0;
 
-	private const QUERY_COUNT_CACHE_KEY = 'query_count';
-	private const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
-	private const MAX_QUERY_COUNT = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	private const QUERY_RAND_COMPARISON = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	private static $_instance;
 
@@ -100,6 +101,8 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+		// Rate limit query integration
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -153,6 +156,12 @@ class Search {
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
+
+		// For testing, mirror certain WP_Query's on certain sites
+		if ( $this->is_query_mirroring_enabled() ) {
+			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
+			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
+		}
 	}
 
 	protected function load_commands() {
@@ -169,6 +178,16 @@ class Search {
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
+	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return new \WP_Error( 'indexable-not-found', 'Invalid query type specified. Must be a valid Indexable from ElasticPress' );
+		}
+
+		return $indexable->query_es( $es_args, $wp_query_args, $index_name );
+	}
+
 	public function action__plugins_loaded() {
 		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
 		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
@@ -182,6 +201,16 @@ class Search {
 			require_once __DIR__ . '/../functions/ep-get-query-log.php';
 			// Load ElasticPress Debug Bar
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
+		}
+
+		// Load es-wp-query, if not already loaded. This is done during plugins_loaded so we don't conflict
+		// with sites that have included this plugin themselves
+		if ( ! class_exists( '\\ES_WP_Query' ) ) {
+			require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
+
+			if ( function_exists( 'es_wp_query_load_adapter' ) ) {
+				es_wp_query_load_adapter( 'vip-search' );
+			}
 		}
 	}
 
@@ -197,17 +226,23 @@ class Search {
 		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
 		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
 		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
-			$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
-
-			$option_value = get_option( 'vip_enable_search_query_mirroring' );
-			$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
-
-			$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+			$is_mirroring_enabled = $this->is_query_mirroring_enabled();
 
 			if ( $is_mirroring_enabled ) {
 				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
 			}
 		}
+	}
+
+	public function is_query_mirroring_enabled() {
+		$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
+
+		$option_value = get_option( 'vip_enable_search_query_mirroring' );
+		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
+
+		return $is_mirroring_enabled;
 	}
 
 	public function do_mirror_search_request() {
@@ -222,6 +257,156 @@ class Search {
 			// Also not necessary with blocking=>false, but just in case.
 			'timeout' => 3,
 		] );
+	}
+
+	/**
+	 * Filter that runs at the end of WP_Query, used to transparently mirror certain WP_Query's on certain sites
+	 * for testing / evaluation
+	 */
+	public function filter__the_posts( $posts, $query ) {
+		// If this query is one that should be transparently mirrored, run the mirroring
+		$should_mirror = $this->should_mirror_wp_query( $query );
+
+		if ( $should_mirror ) {
+			$this->queue_mirrored_wp_query( $query );
+		}
+
+		return $posts;
+	}
+
+	public function should_mirror_wp_query( $query ) {
+		// If this was already an ES query, don't mirror
+		if ( isset( $query->query_vars['es'] ) || isset( $query->query_vars['ep_integrate'] ) || isset( $query->query_vars['vip_search_mirrored'] ) || isset( $query->elasticsearch_success ) ) {
+			return false;
+		}
+
+		// If mirroring is not enabled at all, skip
+		if ( ! $this->is_query_mirroring_enabled() ) {
+			return false;
+		}
+
+		// Is this one of the targeted queries?
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( 2160 === VIP_GO_APP_ID && $query->is_main_query() && ( $query->is_category() || $query->is_archive() ) ) {
+				return true;
+			}
+
+			$offload_main_tax_site_ids = array(
+				929,
+			);
+
+			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public function queue_mirrored_wp_query( $query ) {
+		$this->mirrored_wp_query_queue[] = $query;
+	}
+
+	public function do_mirror_wp_query( $query ) {
+		$mirrored_query = $this->get_mirrored_wp_query( $query );
+
+		$statsd_mode = 'mirrored_wp_query';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = \ElasticPress\Indexables::factory()->get( 'post' )->get_index_name();
+
+		$url = $this->get_current_host();
+		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat );
+		$statsd->increment( $per_site_stat );
+
+		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
+
+		if ( ! empty( $diff ) ) {
+			$this->log_mirrored_wp_query_diff( $query, $diff );
+
+			// Record a stat for the diff
+			$statsd_mode = 'mirrored_wp_query_inconsistent';
+
+			$stat = $this->get_statsd_prefix( $url, $statsd_mode );
+			$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+			$statsd->increment( $stat );
+			$statsd->increment( $per_site_stat );
+		}
+	}
+
+	public function action__shutdown_do_mirrored_wp_queries() {
+		if ( ! $this->is_query_mirroring_enabled() ) {
+			return;
+		}
+
+		if ( empty( $this->mirrored_wp_query_queue ) || ! is_array( $this->mirrored_wp_query_queue ) ) {
+			return;
+		}
+
+		fastcgi_finish_request();
+
+		foreach ( $this->mirrored_wp_query_queue as $query ) {
+			$this->do_mirror_wp_query( $query );
+		}
+	}
+
+	public function get_mirrored_wp_query( $query ) {
+		$mirrored_vars = $query->query_vars; // Arrays are passed by value so won't be affecting originals
+
+		// Enable ES integration
+		$mirrored_vars['es'] = true;
+
+		// Mark this as a mirrored query (passes check in filter__ep_skip_query_integration() when query integration is otherwise disabled)
+		$mirrored_vars['vip_search_mirrored'] = true;
+
+		$mirrored_query = new \WP_Query( $mirrored_vars );
+
+		return $mirrored_query;
+	}
+
+	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
+		// Normalize
+		if ( ! is_array( $original_posts ) ) {
+			$original_posts = array();
+		}
+
+		if ( ! is_array( $mirrored_posts ) ) {
+			$mirrored_posts = array();
+		}
+		
+		$original_post_ids = wp_list_pluck( $original_posts, 'ID' );
+		$mirrored_post_ids = wp_list_pluck( $mirrored_posts, 'ID' );
+
+		$missing = array_diff( $original_post_ids, $mirrored_post_ids );
+		$extra = array_diff( $mirrored_post_ids, $original_post_ids );
+
+		if ( empty( $missing ) && empty( $extra ) ) {
+			return null;
+		}
+
+		return array(
+			'missing' => array_values( $missing ),
+			'extra' => array_values( $extra ),
+		);
+	}
+
+	public function log_mirrored_wp_query_diff( $query, $diff ) {
+		\Automattic\VIP\Logstash\log2logstash( array(
+			'severity' => 'warning',
+			'feature' => 'vip_search_wp_query_mirroring',
+			'message' => 'Inconsistent mirrored offloaded WP_Query results detected',
+			'extra' => array(
+				'query_vars' => $query->query_vars,
+				'diff' => $diff,
+				'uri' => isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null,
+			),
+		) );
 	}
 
 	/**
@@ -258,8 +443,12 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
+
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_index_name = $this->get_statsd_index_name_for_url( $query['url'] );
+
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
 	
@@ -281,6 +470,7 @@ class Search {
 				}
 
 				$statsd->increment( $statsd_prefix . $stat );
+				$statsd->increment( $statsd_per_site_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
@@ -289,9 +479,11 @@ class Search {
 
 			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
 				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
+				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
+			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
 		}
 	
 		return $request;
@@ -321,7 +513,6 @@ class Search {
 	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
 		$disabled_features = array(
 			'documents',
-			'users',
 		);
 
 		if ( in_array( $feature->slug, $disabled_features, true ) ) {
@@ -339,24 +530,6 @@ class Search {
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	public static function ep_skip_query_integration( $skip, $query = null ) {
-		if ( isset( $_GET[ 'es' ] ) ) {
-			return false;
-		}
-
-		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
-		// This is intended to be a temporary workaround until a better fix is made
-		$bypassed_on_main_query_site_ids = [
-			1284,
-			1286,
-		];
-	
-		if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-			// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-			if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-				return true;
-			}
-		}
-
 		/**
 		 * Honor filters that skip query integration
 		 *
@@ -368,14 +541,30 @@ class Search {
 		if ( $skip ) {
 			return true;
 		}
+		
+		if ( isset( $_GET['es'] ) ) {
+			return false;
+		}
 
-		// If the query count has exceeded the maximum
-		//     Only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::MAX_QUERY_COUNT ) {
-			// Should be roughly half over time
-			if ( self::QUERY_RAND_COMPARISON >= rand( 1, 10 ) ) {
-				return true;
+		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
+		// This is intended to be a temporary workaround until a better fix is made
+		$bypassed_on_main_query_site_ids = [
+			1284,
+			1286,
+		];
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
+				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
+				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
+					return true;
+				}
 			}
+		}
+
+		// If query is marked for mirroring (for evaluation phase), allow it
+		if ( isset( $query->query_vars['vip_search_mirrored'] ) && $query->query_vars['vip_search_mirrored'] ) {
+			return false;
 		}
 
 		// Legacy constant name
@@ -396,6 +585,34 @@ class Search {
 	}
 
 	/**
+	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 *
+	 * Honor any previous filters that skip query integration. If query integration is
+	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
+	 * roughly half of the queries received to the database and half through ElasticPress.
+	 *
+	 * @param $skip current ep_skip_query_integration value
+	 * @return bool new value of ep_skip_query_integration
+	 */
+	public static function rate_limit_ep_query_integration( $skip ) {
+		// Honor previous filters that skip query integration
+		if ( $skip ) {
+			return true;
+		}
+
+		// If the query count has exceeded the maximum
+		// only allow half of the queries to use VIP Search
+		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Should be roughly half over time
+			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Filter for ep_pre_request_host
 	 *
 	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
@@ -413,16 +630,16 @@ class Search {
 			return $host;
 		}
 
-		return $this->get_next_host( VIP_ELASTICSEARCH_ENDPOINTS, $failures );
+		return $this->get_next_host( $failures );
 	}
 
 	/**
 	 * Return the next host in the list based on the current host index
 	 */
-	public function get_next_host( $hosts, $failures ) {
-		$this->current_host_index = ( $this->current_host_index + $failures ) % count( $hosts );
+	public function get_next_host( $failures ) {
+		$this->current_host_index += $failures;
 		
-		return $hosts[ $this->current_host_index ];
+		return $this->get_current_host();
 	} 
 
 	/**
@@ -588,9 +805,29 @@ class Search {
 	}
 
 	/**
+	 * Given an ES url, determine the index name of the request for stats purposes
+	 */
+	public function get_statsd_index_name_for_url( $url ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', trim( $parsed['path'], '/' ) );
+
+		// Index name is _usually_ the first part of the path
+		$index_name = $path[0];
+
+		// If it starts with underscore but isn't "_all", then we didn't detect the index name
+		// and should return null
+		if ( wp_startswith( $index_name, '_' ) && '_all' !== $index_name ) {
+			return null;
+		}
+
+		return $index_name;
+	}
+
+	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $url, $mode = 'other' ) {
+	public function get_statsd_prefix( $url, $mode = 'other', $app_id = null, $index_name = null ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
@@ -611,6 +848,15 @@ class Search {
 
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
+
+		// If app id / index name passed, include those too
+		if ( is_int( $app_id ) ) {
+			$key_parts[] = $app_id;
+		}
+
+		if ( is_string( $index_name ) && ! empty( $index_name ) ) {
+			$key_parts[] = $index_name;
+		}
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
@@ -684,6 +930,33 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/**
+	 * Get current Elasticsearch host
+	 *
+	 * @return {string|WP_Error} Returns the host on success or a WP_Error on failure
+	 */
+	public function get_current_host() {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			if ( defined( 'EP_HOST' ) ) {
+				return EP_HOST;
+			}
+
+			return new \WP_Error( 'vip-search-no-host-found', 'No Elasticsearch hosts found' );
+		}
+
+		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+			return VIP_ELASTICSEARCH_ENDPOINTS;
+		}
+
+		if ( ! is_int( $this->current_host_index ) ) {
+			$this->current_host_index = 0;
+		}
+
+		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
+
+		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
 	}
 
 	/*
