@@ -165,6 +165,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Iterate over attachments and check to see if they actually exist.
 	 *
+	 * Found files are cached in the /tmp directory for quicker re-checks.
+	 *
 	 * ## OPTIONS
 	 *
 	 * <csv-filename>
@@ -197,10 +199,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$find_empty     = WP_CLI\Utils\get_flag_value( $assoc_args, 'find-empty-files', false );
 		$disable_cache  = WP_CLI\Utils\get_flag_value( $assoc_args, 'disable-cache', false );
 
-		$offset = 0;
-		$limit = 500;
+		$offset  = 0;
+		$limit   = 500;
 		$threads = 10;
-		$output = array( array('url', 'status' ) );
+		$output  = array( array( 'url', 'status' ) );
 
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
@@ -209,18 +211,17 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		global $wpdb;
 
-		$date_query = "";
+		$date_query = '';
 		if ( isset( $assoc_args['start_date'] ) ) {
-			$date_query .= $wpdb->prepare(" AND post_date > '%s' ", $assoc_args['start_date'] );
+			$date_query .= $wpdb->prepare( ' AND post_date > %s ', $assoc_args['start_date'] );
 		}
 
 		if ( isset( $assoc_args['end_date'] ) ) {
-			$date_query .= $wpdb->prepare(" AND post_date < '%s' ", $assoc_args['end_date'] );
+			$date_query .= $wpdb->prepare( ' AND post_date < %s ', $assoc_args['end_date'] );
 		}
 
-		$count_sql = 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query;
+		$count_sql        = 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query;
 		$attachment_count = $wpdb->get_row( $count_sql, ARRAY_N )[0];
-
 		WP_CLI::log( 'Saving output to ' . $output_file );
 
 		if ( $log_found_files ) {
@@ -228,7 +229,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		if ( $extra_check ) {
-			WP_CLI::log( 'Running Extra URL Checks.' );
+			WP_CLI::log( 'Running Extra URL Checks.  The total may increase as new URLs are found.' );
 		}
 
 		if ( $find_empty ) {
@@ -238,42 +239,62 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( $disable_cache ) {
 			WP_CLI::log( 'Disabling Varnish Cache.' );
 		}
+		
+		$progress         = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		$upload_dir       = wp_get_upload_dir();
 
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		if ( ! file_exists( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ) ) {
+			$cache = [];
+		} else {
+			$cache = json_decode( file_get_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ), ARRAY_N );
+		}
 
 		do {
-			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query . ' LIMIT %d,%d', $offset, $limit );
-			$attachments = $wpdb->get_results( $sql );
+			$extra_count    = 0;
+			$attachments    = [];
+			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
+			$attachment_ids = array_map(
+				function( $attachment_ids ) {
+					return (int) $attachment_ids[0];
+				},
+				$wpdb->get_results( $sql, ARRAY_N ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			);
 
-			if ( $extra_check ) {
-				$extra_attachments = [];
-				foreach( $attachments as $attachment ) {
-					$attachment_ids = $wpdb->get_results( $wpdb->prepare( 'SELECT ID from ' . $wpdb->posts . ' WHERE guid=%s', $attachment->guid ) );
-					foreach( $attachment_ids as $attachment_id ) {
-						$attached_file = $wpdb->get_results( $wpdb->prepare( 'SELECT meta_value from ' . $wpdb->postmeta . ' WHERE post_id=%d AND meta_key="_wp_attached_file"', $attachment_id->ID ) );
-						if ( ! empty( $attached_file ) ) {
-							$extra_guid = substr( $attachment->guid, 0, strrpos( $attachment->guid, '/' ) + 1 ) . $attached_file[0]->meta_value;
-							if ( $extra_guid !== $attachment->guid ) {
-								$extra_attachments[] = (object) [ 'guid' => $extra_guid ];
-							}
+			foreach ( $attachment_ids as $attachment_id ) {
+				$attachment_url = wp_get_attachment_url( $attachment_id );
+				$attachments[]  = $attachment_url;
+
+				if ( $extra_check ) {
+					$attached_file = $wpdb->get_results( $wpdb->prepare( 'SELECT meta_value from ' . $wpdb->postmeta . ' WHERE post_id=%d AND meta_key="_wp_attached_file"', $attachment_id ) );
+					if ( ! empty( $attached_file ) ) {
+						$extra_url = $upload_dir['baseurl'] . '/' . $attached_file[0]->meta_value;
+						if ( $extra_url !== $attachment_url ) {
+							$attachments[] = $extra_url;
+							$extra_count++;
 						}
 					}
 				}
-				$attachments = array_merge( $attachments, $extra_attachments );
 			}
-			
-			// Break the attachments into groups of maxiumum 10 elements
-			$attachments_arrays = array_chunk( $attachments , $threads );
 
-			$mh = curl_multi_init();
-			// Loop through each block of 10 attachments
+			if ( 0 !== $extra_count ) {
+				$attachment_count += $extra_count;
+				$progress->reset( $attachment_count );
+			}
+
+			$attachments        = array_unique( $attachments ); // Just in case, let's clear out any dupes.
+			$attachments_arrays = array_chunk( $attachments, $threads ); // Break the attachments into groups of maxiumum 10 elements.
+			$mh                 = curl_multi_init();
+
+			// Loop through each block of 10 attachments.
 			foreach ( $attachments_arrays as $attachments_array ) {
 
-				$ch = array();
+				$ch    = array();
 				$index = 0;
 
-				foreach( $attachments_array as $attachment ) {
-					$url = $attachment->guid;
+				foreach ( $attachments_array as $url ) {
+					if ( isset( $cache['200'] ) && in_array( $url, $cache['200'], true ) ) {
+						continue;
+					}
 
 					// By switching the URLs from http:// to https>// we save a request, since it will be redirected to the SSL url
 					if ( is_ssl() ) {
@@ -295,20 +316,23 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					$index++;
 				}
 
-				// Exec the cURL requests
+				// Exec the cURL requests.
 				$curl_active = null;
+
 				do {
 					$mrc = curl_multi_exec( $mh, $curl_active );
 				} while ( $curl_active > 0 );
 
-				// Process the responses
-				foreach( $ch as $index => $handle ) {
-					$log_request = false;
-
+				// Process the responses.
+				foreach ( $ch as $index => $handle ) {
+					$log_request   = false;
 					$response_code = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
-					$url = curl_getinfo( $handle, CURLINFO_EFFECTIVE_URL );
+					$url           = curl_getinfo( $handle, CURLINFO_EFFECTIVE_URL );
+					$url           = strtok( $url, '?' );
 
 					curl_multi_remove_handle( $mh, $handle );
+
+					$cache[ $response_code ][] = $url;
 
 					if ( 200 === $response_code ) {
 						$log_request = $log_found_files;
@@ -326,9 +350,9 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 							$response_code,
 						);
 					}
-
-					$progress->tick();
 				}
+
+				$progress->tick( count( $attachments_arrays ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
 
 			}
 
@@ -336,12 +360,25 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			sleep( 1 );
 
 			$offset += $limit;
-		} while ( count( $attachments ) );
+			$attachment_ids_count = count( $attachment_ids );
+		} while ( $attachment_ids_count );
+
 		$progress->finish();
 		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
-	}
 
+		foreach ( $cache as $response_code => $url_array ) {
+			$cache[ $response_code ] = array_unique( $url_array );
+			WP_CLI::line( 'Found ' . number_format( count( $cache[ $response_code ] ) ) . ' URLs with a response code of ' . $response_code );
+
+			// We only want to cache 200s.
+			if ( 200 != $response_code ) {
+				unset( $cache[ $response_code ] );
+			}
+		}
+
+		file_put_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ), wp_json_encode( $cache ) );
+	}
 	/**
 	 * Import user meta attributes from a CSV file.
 	 *
