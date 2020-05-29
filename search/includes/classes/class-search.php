@@ -16,6 +16,47 @@ class Search {
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
+	// From https://github.com/Automattic/jetpack/blob/c36432aa890dc24cafee4c4362711ffcafb9c983/packages/sync/src/class-defaults.php#L689-L732
+	public const POST_META_DEFAULT_ALLOW_LIST = array(
+		'_feedback_akismet_values',
+		'_feedback_email',
+		'_feedback_extra_fields',
+		'_g_feedback_shortcode',
+		'_jetpack_post_thumbnail',
+		'_menu_item_classes',
+		'_menu_item_menu_item_parent',
+		'_menu_item_object',
+		'_menu_item_object_id',
+		'_menu_item_orphaned',
+		'_menu_item_type',
+		'_menu_item_xfn',
+		'_publicize_facebook_user',
+		'_publicize_twitter_user',
+		'_thumbnail_id',
+		'_wp_attached_file',
+		'_wp_attachment_backup_sizes',
+		'_wp_attachment_context',
+		'_wp_attachment_image_alt',
+		'_wp_attachment_is_custom_background',
+		'_wp_attachment_is_custom_header',
+		'_wp_attachment_metadata',
+		'_wp_page_template',
+		'_wp_trash_meta_comments_status',
+		'_wpas_mess',
+		'content_width',
+		'custom_css_add',
+		'custom_css_preprocessor',
+		'enclosure',
+		'imagedata',
+		'nova_price',
+		'publicize_results',
+		'sharing_disabled',
+		'switch_like_status',
+		'videopress_guid',
+		'vimeo_poster_image',
+		'advanced_seo_description',
+	);
+
 	private static $_instance;
 
 	/**
@@ -142,7 +183,7 @@ class Search {
 
 		// Better replica counts
 		add_filter( 'ep_default_index_number_of_replicas', array( $this, 'filter__ep_default_index_number_of_replicas' ) );
-		
+	
 		// Date relevancy defaults. Taken from Jetpack Search.
 		// Set to 'gauss'
 		add_filter( 'epwr_decay_function', array( $this, 'filter__epwr_decay_function' ), 0, 3 );
@@ -162,6 +203,9 @@ class Search {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
 			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
 		}
+
+		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
+		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
 	}
 
 	protected function load_commands() {
@@ -957,6 +1001,33 @@ class Search {
 		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
 
 		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+	}
+
+	/**
+	 * Filter for reducing post meta for indexing to only the allow list and for
+	 * respecting the maximum field count gracefully
+	 */	
+	public function filter__ep_prepare_meta_data( $current_meta, $post ) {
+		if ( ! is_array( $current_meta ) ) {
+			return $current_meta;
+		}
+
+		if ( is_wp_error( $post ) || ! is_object( $post ) ) {
+			return $current_meta;
+		}
+		
+		/**
+		 * Filters the allow list used for post meta indexing
+		 * 
+		 * @hook vip_search_post_meta_allow_list
+		 * @param {array} $current_allow_list The current allow list for post meta indexing
+		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
+		 */
+		$client_post_meta_allow_list = apply_filter( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST );
+
+		$new_meta = array_intersect( $current_meta, $client_post_meta_allow_list );
+
+		return $new_meta;
 	}
 
 	/*
