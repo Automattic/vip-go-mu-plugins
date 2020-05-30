@@ -45,7 +45,7 @@ npm run phpcs
 
 ##### PHPUnit
 
-We have a script that runs unit tests in a self-contained Docker environment.  To run these test, execute the following from the project root:
+We have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
 
 ```
 ./bin/phpunit-docker.sh [wp-version]
