@@ -4,54 +4,64 @@ This is the development repo for mu-plugins on [VIP Go](http://vip.wordpress.com
 
 ## Development
 
+### Cloning with Submodules
 
+This repository contains many git submodules.  Use the following command to clone them recursively:
 
-### PHPDoc
+```bash
+git clone --recurse-submodules -j8 git@github.com:Automattic/vip-go-mu-plugins.git
+```
 
-You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
+The `-j8` allows you to pull down up to 8 in parallel to speed things up.
 
-These are generated via CI by the [`generate-docs.sh`]() script.
+### Dependency Installation
+
+To install the PHP and JavaScript dependencies, execute the following commands:
+
+```bash
+composer install
+npm install
+```
 
 ### Tests
 
-#### PHP Lint
+##### PHP Lint
 
 ```bash
 make lint
 ```
 
-#### PHPCS
+##### PHPCS
 
-We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`) assuming the dependencies have been installed:
-
-```
-composer install
-npm install
-``` 
+We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`).
 
 This is also run on Circle CI for all PRs.
 
 If you want too scan the entire codebase:
 
 ```
-composer install
-npm install
 npm run phpcs
 ```
 
-#### PHPUnit
+##### PHPUnit
 
-We have a script that runs unit tests in a self-contained Docker environment.
+We have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
 
 ```
-usage: ./bin/phpunit-docker.sh [wp-version]
+./bin/phpunit-docker.sh [wp-version]
 ```
 
 You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
 
-#### CI
+##### CI
 
 PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. See [`.circleci/config.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.circleci/config.yml) for more.
+
+### PHPDoc
+
+You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
+
+These are generated via CI by the [`generate-docs.sh`]() script.
 
 ## Deployment
 
