@@ -720,7 +720,7 @@ function wpcom_vip_maybe_skip_old_slug_redirect() {
 		return;
 	}
 
-	if( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+	if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
 		return;
 	}
 
