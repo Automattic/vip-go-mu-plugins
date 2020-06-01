@@ -28,7 +28,7 @@ npm install
 ##### PHP Lint
 
 ```bash
-make lint
+npm run phplint
 ```
 
 ##### PHPCS
@@ -39,7 +39,7 @@ This is also run on Circle CI for all PRs.
 
 If you want too scan the entire codebase:
 
-```
+```bash
 npm run phpcs
 ```
 
@@ -47,7 +47,7 @@ npm run phpcs
 
 We have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
 
-```
+```bash
 ./bin/phpunit-docker.sh [wp-version]
 ```
 
