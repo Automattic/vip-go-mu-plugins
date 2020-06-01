@@ -294,7 +294,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		$max_purge_urls = defined( 'PURGE_BATCH_SERVER_URL' ) ? self::MAX_PURGE_BATCH_URLS : self::MAX_PURGE_URLS;
 		if ( $num_purge_urls > $max_purge_urls ) {
-			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), $max_purge_urls ), E_USER_WARNING );
+			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), number_format( $max_purge_urls ) ), E_USER_WARNING );
 			array_splice( $this->purge_urls, $max_purge_urls );
 		}
 
