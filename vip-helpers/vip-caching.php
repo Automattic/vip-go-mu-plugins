@@ -716,11 +716,18 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
  * providers that generate random URLs.
  */
 function wpcom_vip_maybe_skip_old_slug_redirect() {
-	if ( is_404() && ( 0 === strpos( $_SERVER['REQUEST_URI'], '/http:' ) || 0 === strpos( $_SERVER['REQUEST_URI'], '/https:' ) ) ) {
+	if ( ! is_404() ) {
+		return;
+	}
+
+	if( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		return;
+	}
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/http:' ) || 0 === strpos( $_SERVER['REQUEST_URI'], '/https:' ) ) {
 		remove_action( 'template_redirect', 'wp_old_slug_redirect' );
 		remove_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
 	}
-
 }
 
 function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
