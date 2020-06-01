@@ -111,7 +111,7 @@ class WPCOM_VIP_Cache_Manager {
 				if ( 500 < strlen( $data ) ) {
 					$compressed_data = gzencode( $data );
 					curl_setopt( $curl, CURLOPT_ENCODING, 'gzip' );
-					curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
+					curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
 				} else {
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
 				}
