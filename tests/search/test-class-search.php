@@ -364,7 +364,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
 		$es = new \Automattic\VIP\Search\Search();
 
-		$timeout = $es->get_http_timeout_for_query( $query );
+		$timeout = $es->get_http_timeout_for_query( $query, array() );
 
 		$this->assertEquals( $expected_timeout, $timeout );
 	}
