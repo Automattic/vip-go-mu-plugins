@@ -762,7 +762,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
 			$timeout = 30;
 		}
-	} elseif( \is_admin() && $is_post_request ) {
+	} elseif ( \is_admin() && $is_post_request ) {
 		if ( 15 < $timeout ) {
 			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
 			$timeout = 15;
