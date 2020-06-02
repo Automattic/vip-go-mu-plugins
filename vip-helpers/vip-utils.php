@@ -752,13 +752,11 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$threshold = abs( $threshold );
 
 	// Default max timeout is 5s. 
-	// For POST requests, this needs to be a bit higher due to Elasticsearch and other things. 
-	// For POST requests through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things. 
+	// For POST requests for admins through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
 	$timeout = (int) $timeout;
-	if ( $timeout > 5 ) {
-		// Allow higher timeouts for POST requests
+	if ( \is_admin() ) {
 		if ( 0 === strcasecmp( 'POST', $parsed_args['method'] ) ) {
-			// Allow even higher timeouts for POST requests through WP-CLI
 			if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				if ( 30 < $timeout ) {
 					_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
@@ -770,7 +768,9 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 					$timeout = 15;
 				}
 			}
-		} else {
+		}
+	} else {
+		if ( $timeout > 5 ) {
 			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
 			$timeout = 5;
 		}
