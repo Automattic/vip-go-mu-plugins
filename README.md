@@ -4,24 +4,11 @@ This is the development repo for mu-plugins on [VIP Go](http://vip.wordpress.com
 
 ## Development
 
-### Cloning with Submodules
+### Local Dev
 
-This repository contains many git submodules.  Use the following command to clone them recursively:
+We recommend using the Lando-based development environment for local development: https://github.com/Automattic/vip-go-mu-dev
 
-```bash
-git clone --recurse-submodules -j8 git@github.com:Automattic/vip-go-mu-plugins.git
-```
-
-The `-j8` allows you to pull down up to 8 in parallel to speed things up.
-
-### Dependency Installation
-
-To install the PHP and JavaScript dependencies, execute the following commands:
-
-```bash
-composer install
-npm install
-```
+Follow the instructions in the `vip-go-mu-dev` repo to get set up (it includes a clone of this repo).
 
 ### Tests
 
