@@ -434,12 +434,11 @@ class Search {
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 
-		$timeout = $this->get_http_timeout_for_query( $query );
-
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
 		}
+
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
@@ -451,7 +450,9 @@ class Search {
 		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
-	
+
+		$timeout = $this->get_http_timeout_for_query( $query, $args );
+
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
@@ -496,15 +497,25 @@ class Search {
 		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
 	}
 
-	public function get_http_timeout_for_query( $query ) {
+	public function get_http_timeout_for_query( $query, $args ) {
 		$timeout = 2;
 
-		// If query url ends with '_bulk'
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
+		$is_post_request = false;
 
+		if ( isset( $args['method'] ) && 0 === strcasecmp( 'POST', $args['method'] ) ) {
+			$is_post_request = true;
+		}
+
+		// Bulk index request so increase timeout
 		if ( wp_endswith( $query_path, '_bulk' ) ) {
-			// Bulk index request so increase timeout
 			$timeout = 5;
+
+			if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+				$timeout = 30;
+			} elseif ( \is_admin() && $is_post_request ) {
+				$timeout = 15;
+			}
 		}
 
 		return $timeout;
