@@ -36,7 +36,7 @@ function maybe_show_not_proxied_flag() {
 	}
 
 	if (
-		( ! function_exists( '\is_automattician') ) ||
+		( ! function_exists( '\is_automattician' ) ) ||
 		( ! \is_automattician() )
 	) {
 		return;
@@ -48,7 +48,8 @@ function maybe_show_not_proxied_flag() {
 	) {
 		return;
 	}
-?>
+
+	?>
 	<div id="a8c-not-proxied-flag">
 		Not A8C Proxied
 	</div>
