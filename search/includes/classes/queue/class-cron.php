@@ -134,6 +134,9 @@ class Cron {
 		$args = array(
 			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
 			'paged' => 1,
+			'fields' => 'ids',
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
 			'tax_query' => array(
 				array(
 					'field' => 'term_taxonomy_id',
