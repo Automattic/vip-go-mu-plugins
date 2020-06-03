@@ -4,54 +4,51 @@ This is the development repo for mu-plugins on [VIP Go](http://vip.wordpress.com
 
 ## Development
 
+### Local Dev
 
+We recommend using the Lando-based development environment for local development: https://github.com/Automattic/vip-go-mu-dev
+
+Follow the instructions in the `vip-go-mu-dev` repo to get set up (it includes a clone of this repo).
+
+### Tests
+
+##### PHP Lint
+
+```bash
+npm run phplint
+```
+
+##### PHPCS
+
+We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`).
+
+This is also run on Circle CI for all PRs.
+
+If you want too scan the entire codebase:
+
+```bash
+npm run phpcs
+```
+
+##### PHPUnit
+
+We have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
+
+```bash
+./bin/phpunit-docker.sh [wp-version]
+```
+
+You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
+
+##### CI
+
+PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. See [`.circleci/config.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.circleci/config.yml) for more.
 
 ### PHPDoc
 
 You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
 
 These are generated via CI by the [`generate-docs.sh`]() script.
-
-### Tests
-
-#### PHP Lint
-
-```bash
-make lint
-```
-
-#### PHPCS
-
-We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`) assuming the dependencies have been installed:
-
-```
-composer install
-npm install
-``` 
-
-This is also run on Circle CI for all PRs.
-
-If you want too scan the entire codebase:
-
-```
-composer install
-npm install
-npm run phpcs
-```
-
-#### PHPUnit
-
-We have a script that runs unit tests in a self-contained Docker environment.
-
-```
-usage: ./bin/phpunit-docker.sh [wp-version]
-```
-
-You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
-
-#### CI
-
-PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. See [`.circleci/config.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.circleci/config.yml) for more.
 
 ## Deployment
 

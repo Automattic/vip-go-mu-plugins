@@ -38,13 +38,17 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 			return 1;
 		}, 9999 );
 	} else {
-		http_response_code( 503 );
+		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+		require_once __DIR__ . '/vip-helpers/vip-utils.php';
+		if ( ! vip_is_jetpack_request() ) {
+			http_response_code( 503 );
 
-		header( 'X-VIP-Go-Maintenance: true' );
+			header( 'X-VIP-Go-Maintenance: true' );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
 
-		echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
-
-		exit;
+			exit;
+		}
 	}
 }
 
