@@ -28,24 +28,15 @@ function maybe_show_not_proxied_flag() {
 		return;
 	}
 
-	if (
-		( ! function_exists( '\is_user_logged_in' ) ) ||
-		( ! \is_user_logged_in() )
-	) {
+	if ( ( ! function_exists( '\is_user_logged_in' ) ) || ( ! \is_user_logged_in() ) ) {
 		return;
 	}
 
-	if (
-		( ! function_exists( '\is_automattician' ) ) ||
-		( ! \is_automattician() )
-	) {
+	if ( ( ! function_exists( '\is_automattician' ) ) || ( ! \is_automattician() ) ) {
 		return;
 	}
 
-	if (
-		( ! function_exists( '\is_proxied_request' ) ) ||
-		( \is_proxied_request() )
-	) {
+	if ( ( ! function_exists( '\is_proxied_request' ) ) || ( \is_proxied_request() ) ) {
 		return;
 	}
 
