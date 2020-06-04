@@ -36,7 +36,7 @@ class Sync {
 			return;
 		}
 
-		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME )  ) {
+		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
 	}

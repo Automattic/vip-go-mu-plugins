@@ -67,31 +67,33 @@ class Private_Sites {
 	 * Feeds must be disabled in JP Private mode to prevent WP.com from subscribing to the content
 	 */
 	public function disable_core_feeds() {
-		add_action( 'do_feed',      array( $this, 'action_do_feed' ), -1 );
-		add_action( 'do_feed_rdf',  array( $this, 'action_do_feed' ), -1 );
-		add_action( 'do_feed_rss',  array( $this, 'action_do_feed' ), -1 );
+		add_action( 'do_feed', array( $this, 'action_do_feed' ), -1 );
+		add_action( 'do_feed_rdf', array( $this, 'action_do_feed' ), -1 );
+		add_action( 'do_feed_rss', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_rss2', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_atom', array( $this, 'action_do_feed' ), -1 );
 	}
 
 	/*
- 	 * Block the entire site for the feedbot
- 	 *
- 	 * Blocks the entire site, including custom feeds, to the WP.com reader
- 	 */
+	 * Block the entire site for the feedbot
+	 *
+	 * Blocks the entire site, including custom feeds, to the WP.com reader
+	 */
 	public function block_unnecessary_access() {
 		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
 			// Don't block xml-rpc requests for Jetpack's sake
 			return;
 		}
 
-		if ( false !== stripos( $_SERVER[ 'HTTP_USER_AGENT' ], self::FEEDBOT_USER_AGENT ) ) {
+		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && false !== stripos( $_SERVER['HTTP_USER_AGENT'], self::FEEDBOT_USER_AGENT ) ) {
 			wp_die( 'Feeds are disabled in Jetpack Private Mode', 403 );
 		}
 	}
 
 	public function action_do_feed() {
-		if ( vip_is_jetpack_request() || false !== stripos( $_SERVER[ 'HTTP_USER_AGENT' ], self::FEEDBOT_USER_AGENT ) ) {
+		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		if ( vip_is_jetpack_request() || ( isset( $_SERVER['HTTP_USER_AGENT'] ) && false !== stripos( $_SERVER['HTTP_USER_AGENT'], self::FEEDBOT_USER_AGENT ) ) ) {
 			wp_die( 'Feeds are disabled in Jetpack Private Mode', 403 );
 		}
 	}
@@ -131,7 +133,7 @@ class Private_Sites {
 	 *
 	 * @return array
 	 */
-	function filter_blog_public_option_for_sync( $args ) {
+	public function filter_blog_public_option_for_sync( $args ) {
 		if ( ! is_array( $args ) ) {
 			return $args;
 		}
@@ -154,7 +156,7 @@ class Private_Sites {
 	 *
 	 * @return array
 	 */
-	function filter_blog_public_option_for_full_sync( $args ) {
+	public function filter_blog_public_option_for_full_sync( $args ) {
 		if ( ! is_array( $args ) ) {
 			return $args;
 		}
