@@ -6,7 +6,7 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * Remember vip-init.php? This is like that, but better! 
+ * Remember vip-init.php? This is like that, but better!
  */
 
 /**
@@ -197,6 +197,13 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
 	}
 }
+
+// Load config related helpers
+require_once( __DIR__ . '/config/class-sync.php' );
+
+add_action( 'init', function() {
+	\Automattic\VIP\Config\Sync::instance();
+} );
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
