@@ -42,23 +42,27 @@ function maybe_show_not_proxied_flag() {
 
 	?>
 	<div id="a8c-not-proxied-flag">
-		Not A8C Proxied
+		Not Proxied
 	</div>
 
 	<style>
 	#a8c-not-proxied-flag {
 		z-index: 9991;
-		font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
-		font-size: 14px;
 		background-color: rgb(0, 124, 186);
 		color: rgb(221, 221, 221);
 		text-align: center;
 		bottom: 50px;
 		left: 20px;
 		position: fixed;
-		width: 115px;
 		height: 28px;
 		line-height: 28px;
+		letter-spacing: 0.2em;
+		text-shadow: none;
+		font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
+		font-size: 9px;
+		font-weight: bold;
+		text-transform: uppercase;
+		padding: 0 10px;
 	}
 	</style>
 	<?php
