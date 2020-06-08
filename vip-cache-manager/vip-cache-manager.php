@@ -104,15 +104,15 @@ class WPCOM_VIP_Cache_Manager {
 
 				curl_setopt( $curl, CURLOPT_HEADER, false );
 				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
 				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
 				curl_setopt( $curl, CURLOPT_POST, true );
 
 				if ( 500 < strlen( $data ) ) {
 					$compressed_data = gzencode( $data );
-					curl_setopt( $curl, CURLOPT_ENCODING, 'gzip' );
+					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Encoding: gzip' ) );
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
 				} else {
+					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
 				}
 
