@@ -32,11 +32,10 @@ function maybe_show_not_proxied_flag() {
 		return;
 	}
 
-	if ( ( ! function_exists( '\is_automattician' ) ) || ( ! \is_automattician() ) ) {
-		return;
-	}
+	$is_automattician = function_exists( '\is_automattician' ) && \is_automattician();
+	$is_proxied = function_exists( '\is_proxied_request' ) && \is_proxied_request();
 
-	if ( ( ! function_exists( '\is_proxied_request' ) ) || ( \is_proxied_request() ) ) {
+	if ( $is_automattician && ! $is_proxied ) {
 		return;
 	}
 
