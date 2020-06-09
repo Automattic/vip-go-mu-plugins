@@ -14,7 +14,8 @@ namespace Automattic\VIP\NotProxiedFlag;
  *
  * This mu-plugin will make wp-admin display a small
  * banner when not proxied and logged in as Automattican,
- * indicating that the caller is not proxied.
+ * indicating that the caller is not proxied. It is not to
+ * be displayed for other users.
  */
 
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\enable_not_proxied_flag' );
@@ -24,18 +25,21 @@ function enable_not_proxied_flag() {
 }
 
 function maybe_show_not_proxied_flag() {
-	if ( ! \is_admin() ) {
-		return;
-	}
-
-	if ( ( ! function_exists( '\is_user_logged_in' ) ) || ( ! \is_user_logged_in() ) ) {
-		return;
-	}
-
+	/*
+	 * Display only if is an automattician.
+	 */ 
 	$is_automattician = function_exists( '\is_automattician' ) && \is_automattician();
+
+	if ( ! $is_automattician ) {
+		return;
+	}
+
+	/*
+	 * Do not display when proxied.
+	 */
 	$is_proxied = function_exists( '\is_proxied_request' ) && \is_proxied_request();
 
-	if ( $is_automattician && ! $is_proxied ) {
+	if ( $is_proxied ) {
 		return;
 	}
 
