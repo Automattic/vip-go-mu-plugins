@@ -86,7 +86,7 @@ class WPCOM_VIP_Cache_Manager {
 	public function curl_multi( $requests ) {
 		$curl_multi = curl_multi_init();
 
-		if ( defined( 'PURGE_BATCH_SERVER_URL' ) && defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+		if ( defined( 'PURGE_BATCH_SERVER_URL' ) && defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
 			$req_chunks = array_chunk( $requests, self::CACHE_PURGE_BATCH_SIZE, true );
 			foreach ( $req_chunks as $req_chunk ) {
 				$req_array = array();
@@ -118,7 +118,7 @@ class WPCOM_VIP_Cache_Manager {
 
 				curl_multi_add_handle( $curl_multi, $curl );
 			}
-		} elseif ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+		} elseif ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
 			foreach ( $requests as $req ) {
 				$data = array(
 					'group' => 'vip-go',
