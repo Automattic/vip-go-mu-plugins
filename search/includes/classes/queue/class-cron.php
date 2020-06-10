@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue as Queue;
+use \ElasticPress\Indexables as Indexables;
 
 class Cron {
 	/**
@@ -130,14 +131,27 @@ class Cron {
 	 *
 	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
 	 */
-	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id, $indexable_post_types, $indexable_post_statuses ) {
+		// Only proceed if indexable post types are defined correctly
+		if ( ! is_array( $indexable_post_types ) || empty( $indexable_post_types ) ) {
+			return;
+		}
+
+		// Only proceed if indexable post statuses are defined correctly
+		if ( ! is_array( $indexable_post_statuses ) || empty( $indexable_post_statuses ) ) {
+			return;
+		}
+
 		// WP_Query args for looking up posts that match the term taxonomy id
 		$args = array(
 			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
+			'post_type' => $indexable_post_types,
+			'post_status' => $indexable_post_statuses,
 			'paged' => 1,
 			'fields' => 'ids',
 			'update_post_meta_cache' => false,
 			'update_post_term_cache' => false,
+			'ignore_sticky_posts' => true,
 			'tax_query' => array(
 				array(
 					'field' => 'term_taxonomy_id',
@@ -148,6 +162,7 @@ class Cron {
 
 		$posts = new \WP_Query( $args );
 
+		// If no posts, just return early
 		if ( ! $posts->have_posts() ) {
 			return;
 		}
@@ -206,7 +221,12 @@ class Cron {
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id ) );
+		// Since it's not guaranteed cron will get the same filters, we should get the indexable post types and statuses
+		// prior to scheduling and then hand those in to be used in subsequent WP_Querys
+		$indexable_post_types = Indexables::factory()->get( 'post' )->get_indexable_post_types();
+		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id, $indexable_post_types, $indexable_post_statuses ) );
 	}
 
 	/**
