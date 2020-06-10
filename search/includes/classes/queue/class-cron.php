@@ -131,6 +131,7 @@ class Cron {
 	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		// WP_Query args for looking up posts that match the term taxonomy id
 		$args = array(
 			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
 			'paged' => 1,
@@ -151,14 +152,18 @@ class Cron {
 			return;
 		}
 
+		// Iterate pagination
 		while ( $args['paged'] <= $posts->max_num_pages ) {
+			// Queue all posts for page 
 			foreach ( $posts->posts as $post ) {
 				$this->queue->queue_object( $post->ID );
 			}
 
+			// Go to the next page and reset $posts
 			$args['paged'] = intval( $args['paged'] ) + 1;
 			$posts = new \WP_Query( $args );
 
+			// If page is empty, just return early
 			if ( ! $posts->have_posts() ) {
 				return;
 			}
