@@ -480,6 +480,7 @@ class Queue {
 			return;
 		}
 
+		// If the number of affected posts is low enough, process them now rather than send them to cron
 		if ( $term->count <= self::MAX_SYNC_INDEXING_COUNT ) {
 			$this->offload_indexing_to_queue();
 			return;
