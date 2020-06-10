@@ -175,7 +175,7 @@ class Cron {
 		while ( $args['paged'] <= $posts->max_num_pages ) {
 			// Queue all posts for page 
 			foreach ( $posts->posts as $post ) {
-				$this->queue->queue_object( $post->ID );
+				$this->queue->queue_object( $post );
 			}
 
 			// Go to the next page and reset $posts
