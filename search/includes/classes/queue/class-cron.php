@@ -131,7 +131,10 @@ class Cron {
 	 *
 	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
 	 */
-	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id, $indexable_post_types, $indexable_post_statuses ) {
+	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		$indexable_post_types = Indexables::factory()->get( 'post' )->get_indexable_post_types();
+		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+
 		// Only proceed if indexable post types are defined correctly
 		if ( ! is_array( $indexable_post_types ) || empty( $indexable_post_types ) ) {
 			return;
@@ -142,7 +145,8 @@ class Cron {
 			return;
 		}
 
-		// WP_Query args for looking up posts that match the term taxonomy id
+		// WP_Query args for looking up posts that match the term taxonomy id and indexable
+		// post types/statuses
 		$args = array(
 			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
 			'post_type' => $indexable_post_types,
@@ -221,12 +225,7 @@ class Cron {
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		// Since it's not guaranteed cron will get the same filters, we should get the indexable post types and statuses
-		// prior to scheduling and then hand those in to be used in subsequent WP_Querys
-		$indexable_post_types = Indexables::factory()->get( 'post' )->get_indexable_post_types();
-		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
-
-		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id, $indexable_post_types, $indexable_post_statuses ) );
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id ) );
 	}
 
 	/**
