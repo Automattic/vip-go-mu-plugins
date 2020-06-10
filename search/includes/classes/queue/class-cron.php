@@ -152,9 +152,8 @@ class Cron {
 		}
 
 		while ( $args['paged'] <= $posts->max_num_pages ) {
-			while ( $posts->have_posts() ) {
-				$posts->the_post();
-				$this->queue->queue_object( $posts->post->ID );
+			foreach ( $posts->posts as $post ) {
+				$this->queue->queue_object( $post->ID );
 			}
 
 			$args['paged'] = intval( $args['paged'] ) + 1;
