@@ -173,9 +173,9 @@ function vip_es_field_map( $es_map ) {
 			'category_id'                   => 'terms.category.term_id',
 			'category_slug'                 => 'terms.category.slug',
 			'category_name'                 => 'terms.category.name',
-			'tag_id'                        => 'terms.tag.term_id',
-			'tag_slug'                      => 'terms.tag.slug',
-			'tag_name'                      => 'terms.tag.name',
+			'tag_id'                        => 'terms.post_tag.term_id',
+			'tag_slug'                      => 'terms.post_tag.slug',
+			'tag_name'                      => 'terms.post_tag.name',
 		),
 		$es_map
 	);
