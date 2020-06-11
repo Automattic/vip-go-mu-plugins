@@ -12,7 +12,7 @@ class Search {
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
-	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
