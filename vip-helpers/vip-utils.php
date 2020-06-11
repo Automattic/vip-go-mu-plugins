@@ -1380,7 +1380,7 @@ function is_automattician( $user_id = false ) {
  * @return bool True, if the current request is made via the Automattic proxy
  */
 function is_proxied_automattician() {
-	return A8C_PROXIED_REQUEST && is_automattician();
+	return is_proxied_request() && is_automattician();
 }
 
 /**
