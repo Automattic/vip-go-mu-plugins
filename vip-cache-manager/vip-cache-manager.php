@@ -11,8 +11,10 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 require_once( __DIR__ . '/api.php' );
 
 class WPCOM_VIP_Cache_Manager {
-	const MAX_PURGE_URLS = 100;
-	const MAX_BAN_URLS   = 10;
+	const MAX_PURGE_URLS         = 100;
+	const MAX_PURGE_BATCH_URLS   = 4000;
+	const MAX_BAN_URLS           = 10;
+	const CACHE_PURGE_BATCH_SIZE = 2000;
 
 	private $ban_urls = array();
 	private $purge_urls = array();
@@ -35,7 +37,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) ) {
 			return;
 		}
-		
+
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
@@ -84,8 +86,40 @@ class WPCOM_VIP_Cache_Manager {
 	public function curl_multi( $requests ) {
 		$curl_multi = curl_multi_init();
 
-		foreach ( $requests as $req ) {
-			if ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
+		if ( defined( 'PURGE_BATCH_SERVER_URL' ) && defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
+			$req_chunks = array_chunk( $requests, self::CACHE_PURGE_BATCH_SIZE, true );
+			foreach ( $req_chunks as $req_chunk ) {
+				$req_array = array();
+				foreach ( $req_chunk as $req ) {
+					$req_array[] = array(
+						'group' => 'vip-go',
+						'scope' => 'global',
+						'type'  => $req['method'],
+						'uri'   => $req['host'] . $req['uri'],
+					);
+				}
+				$data = json_encode( $req_array );
+
+				$curl = curl_init( constant( 'PURGE_BATCH_SERVER_URL' ) );
+
+				curl_setopt( $curl, CURLOPT_HEADER, false );
+				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_setopt( $curl, CURLOPT_POST, true );
+
+				if ( 500 < strlen( $data ) ) {
+					$compressed_data = gzencode( $data );
+					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Encoding: gzip' ) );
+					curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
+				} else {
+					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
+					curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
+				}
+
+				curl_multi_add_handle( $curl_multi, $curl );
+			}
+		} elseif ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
+			foreach ( $requests as $req ) {
 				$data = array(
 					'group' => 'vip-go',
 					'scope' => 'global',
@@ -99,18 +133,20 @@ class WPCOM_VIP_Cache_Manager {
 				curl_setopt( $curl, CURLOPT_POST, true );
 				curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
 				curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
-						'Content-Type: application/json',
-						'Content-Length: ' . strlen( $json )
-					) );
+					'Content-Type: application/json',
+					'Content-Length: ' . strlen( $json ),
+				) );
 				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
 				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 				curl_multi_add_handle( $curl_multi, $curl );
-			} else {
+			}
+		} else {
+			foreach ( $requests as $req ) {
 				// Purge HTTP
 				$curl = curl_init();
 				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
 				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: http" ) );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", 'X-Forwarded-Proto: http' ) );
 				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
 				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 				curl_setopt( $curl, CURLOPT_NOBODY, true );
@@ -121,7 +157,7 @@ class WPCOM_VIP_Cache_Manager {
 				$curl = curl_init();
 				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
 				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", "X-Forwarded-Proto: https" ) );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", 'X-Forwarded-Proto: https' ) );
 				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
 				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 				curl_setopt( $curl, CURLOPT_NOBODY, true );
@@ -256,9 +292,10 @@ class WPCOM_VIP_Cache_Manager {
 			array_splice( $this->ban_urls, self::MAX_BAN_URLS );
 		}
 
-		if ( $num_purge_urls > self::MAX_PURGE_URLS ) {
-			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), self::MAX_PURGE_URLS ), E_USER_WARNING );
-			array_splice( $this->purge_urls, self::MAX_PURGE_URLS );
+		$max_purge_urls = defined( 'PURGE_BATCH_SERVER_URL' ) ? self::MAX_PURGE_BATCH_URLS : self::MAX_PURGE_URLS;
+		if ( $num_purge_urls > $max_purge_urls ) {
+			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), number_format( $max_purge_urls ) ), E_USER_WARNING );
+			array_splice( $this->purge_urls, $max_purge_urls );
 		}
 
 		$requests = array();
