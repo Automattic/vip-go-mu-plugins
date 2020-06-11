@@ -473,7 +473,7 @@ class Queue {
 	/**
 	 * Offload term indexing to the queue
 	 */
-	public function offload_term_indexing_to_queue( $term_id ) {
+	public function offload_term_indexing_to_queue( $term_id, $taxonomy ) {
 		$term = \get_term( $term_id );
 
 		if ( is_wp_error( $term ) || ! is_object( $term ) ) {
