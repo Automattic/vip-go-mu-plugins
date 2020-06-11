@@ -84,70 +84,72 @@ jQuery( function ( $ ) {
 	});
 
 	// Show a preview image of the hovered URL. Applies to author URLs and URLs inside the comments.
-	$( '#the-comment-list' ).on( 'mouseover', mshotEnabledLinkSelector, function () {
-		clearTimeout( mshotRemovalTimer );
+	if ( "enable_mshots" in WPAkismet && WPAkismet.enable_mshots ) {
+		$( '#the-comment-list' ).on( 'mouseover', mshotEnabledLinkSelector, function () {
+			clearTimeout( mshotRemovalTimer );
 
-		if ( $( '.akismet-mshot' ).length > 0 ) {
-			if ( $( '.akismet-mshot:first' ).data( 'link' ) == this ) {
-				// The preview is already showing for this link.
-				return;
+			if ( $( '.akismet-mshot' ).length > 0 ) {
+				if ( $( '.akismet-mshot:first' ).data( 'link' ) == this ) {
+					// The preview is already showing for this link.
+					return;
+				}
+				else {
+					// A new link is being hovered, so remove the old preview.
+					$( '.akismet-mshot' ).remove();
+				}
 			}
-			else {
-				// A new link is being hovered, so remove the old preview.
-				$( '.akismet-mshot' ).remove();
-			}
-		}
 
-		clearTimeout( mshotSecondTryTimer );
-		clearTimeout( mshotThirdTryTimer );
-
-		var thisHref = $( this ).attr( 'href' );
-
-		var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="' + akismet_mshot_url( thisHref ) + '" width="450" height="338" class="mshot-image" /></div>' );
-		mShot.data( 'link', this );
-
-		var offset = $( this ).offset();
-
-		mShot.offset( {
-			left : Math.min( $( window ).width() - 475, offset.left + $( this ).width() + 10 ), // Keep it on the screen if the link is near the edge of the window.
-			top: offset.top + ( $( this ).height() / 2 ) - 101 // 101 = top offset of the arrow plus the top border thickness
-		} );
-
-		// These retries appear to be superfluous if .mshot-image has already loaded, but it's because mShots
-		// can return a "Generating thumbnail..." image if it doesn't have a thumbnail ready, so we need
-		// to retry to see if we can get the newly generated thumbnail.
-		mshotSecondTryTimer = setTimeout( function () {
-			mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 2 ) );
-		}, 6000 );
-
-		mshotThirdTryTimer = setTimeout( function () {
-			mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 3 ) );
-		}, 12000 );
-
-		$( 'body' ).append( mShot );
-	} ).on( 'mouseout', 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a', function () {
-		mshotRemovalTimer = setTimeout( function () {
 			clearTimeout( mshotSecondTryTimer );
 			clearTimeout( mshotThirdTryTimer );
 
-			$( '.akismet-mshot' ).remove();
-		}, 200 );
-	} ).on( 'mouseover', 'tr', function () {
-		// When the mouse hovers over a comment row, begin preloading mshots for any links in the comment or the comment author.
-		var linksToPreloadMshotsFor = $( this ).find( mshotEnabledLinkSelector );
-		
-		linksToPreloadMshotsFor.each( function () {
-			// Don't attempt to preload an mshot for a single link twice. Browser caching should cover this, but in case of
-			// race conditions, save a flag locally when we've begun trying to preload one.
-			if ( ! $( this ).data( 'akismet-mshot-preloaded' ) ) {
-				akismet_preload_mshot( $( this ).attr( 'href' ) );
-				$( this ).data( 'akismet-mshot-preloaded', true );
-			}
-		} );
-	} );
+			var thisHref = $( this ).attr( 'href' );
 
-	$( '.checkforspam' ).click( function( e ) {
-		if ( $( this ).hasClass( 'checkforspam-pending-config' ) ) {
+			var mShot = $( '<div class="akismet-mshot mshot-container"><div class="mshot-arrow"></div><img src="' + akismet_mshot_url( thisHref ) + '" width="450" height="338" class="mshot-image" /></div>' );
+			mShot.data( 'link', this );
+
+			var offset = $( this ).offset();
+
+			mShot.offset( {
+				left : Math.min( $( window ).width() - 475, offset.left + $( this ).width() + 10 ), // Keep it on the screen if the link is near the edge of the window.
+				top: offset.top + ( $( this ).height() / 2 ) - 101 // 101 = top offset of the arrow plus the top border thickness
+			} );
+
+			// These retries appear to be superfluous if .mshot-image has already loaded, but it's because mShots
+			// can return a "Generating thumbnail..." image if it doesn't have a thumbnail ready, so we need
+			// to retry to see if we can get the newly generated thumbnail.
+			mshotSecondTryTimer = setTimeout( function () {
+				mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 2 ) );
+			}, 6000 );
+
+			mshotThirdTryTimer = setTimeout( function () {
+				mShot.find( '.mshot-image' ).attr( 'src', akismet_mshot_url( thisHref, 3 ) );
+			}, 12000 );
+
+			$( 'body' ).append( mShot );
+		} ).on( 'mouseout', 'a[id^="author_comment_url"], tr.pingback td.column-author a:first-of-type, td.comment p a', function () {
+			mshotRemovalTimer = setTimeout( function () {
+				clearTimeout( mshotSecondTryTimer );
+				clearTimeout( mshotThirdTryTimer );
+
+				$( '.akismet-mshot' ).remove();
+			}, 200 );
+		} ).on( 'mouseover', 'tr', function () {
+			// When the mouse hovers over a comment row, begin preloading mshots for any links in the comment or the comment author.
+			var linksToPreloadMshotsFor = $( this ).find( mshotEnabledLinkSelector );
+			
+			linksToPreloadMshotsFor.each( function () {
+				// Don't attempt to preload an mshot for a single link twice. Browser caching should cover this, but in case of
+				// race conditions, save a flag locally when we've begun trying to preload one.
+				if ( ! $( this ).data( 'akismet-mshot-preloaded' ) ) {
+					akismet_preload_mshot( $( this ).attr( 'href' ) );
+					$( this ).data( 'akismet-mshot-preloaded', true );
+				}
+			} );
+		} );
+	}
+
+	$( '.checkforspam.enable-on-load' ).click( function( e ) {
+		if ( $( this ).hasClass( 'ajax-disabled' ) ) {
 			// Akismet hasn't been configured yet. Allow the user to proceed to the button's link.
 			return;
 		}
@@ -162,11 +164,9 @@ jQuery( function ( $ ) {
 		$('.checkforspam').addClass('button-disabled').addClass( 'checking' );
 		$('.checkforspam-spinner').addClass( 'spinner' ).addClass( 'is-active' );
 
-		// Update the label on the "Check for Spam" button to use the active "Checking for Spam" language.
-		$( '.checkforspam .akismet-label' ).text( $( '.checkforspam' ).data( 'active-label' ) );
-
 		akismet_check_for_spam(0, 100);
 	});
+	$( '.checkforspam.enable-on-load' ).removeClass( 'button-disabled' );
 
 	var spam_count = 0;
 	var recheck_count = 0;
@@ -181,7 +181,7 @@ jQuery( function ( $ ) {
 		var percentage_complete = Math.round( ( recheck_count / check_for_spam_buttons.data( 'pending-comment-count' ) ) * 1000 ) / 10;
 		
 		// Update the progress counter on the "Check for Spam" button.
-		$( '.checkforspam-progress' ).text( check_for_spam_buttons.data( 'progress-label-format' ).replace( '%1$s', percentage_complete ) );
+		$( '.checkforspam' ).text( check_for_spam_buttons.data( 'progress-label' ).replace( '%1$s', percentage_complete ) );
 
 		$.post(
 			ajaxurl,
