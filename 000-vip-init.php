@@ -205,6 +205,12 @@ add_action( 'init', function() {
 	\Automattic\VIP\Config\Sync::instance();
 } );
 
+// Load _encloseme meta cleanup scheduler
+require_once( __DIR__ . '/lib/class-vip-encloseme-cleanup.php' );
+
+$enclosemeCleaner = new VIP_Encloseme_Cleanup();
+$enclosemeCleaner->init();
+
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
