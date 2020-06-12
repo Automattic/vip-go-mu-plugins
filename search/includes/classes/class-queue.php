@@ -283,7 +283,7 @@ class Queue {
 			}
 		}
 
-		$job_count = $wpdb->get_var( $query ); // Cannot prepare table name. @codingStandardsIgnoreLine
+		$job_count = $wpdb->get_var( $query ); // Query may change depending on status/object type @codingStandardsIgnoreLine
 
 		return intval( $job_count );
 	}
