@@ -208,8 +208,8 @@ add_action( 'init', function() {
 // Load _encloseme meta cleanup scheduler
 require_once( __DIR__ . '/lib/class-vip-encloseme-cleanup.php' );
 
-$enclosemeCleaner = new VIP_Encloseme_Cleanup();
-$enclosemeCleaner->init();
+$encloseme_cleaner = new VIP_Encloseme_Cleanup();
+$encloseme_cleaner->init();
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
