@@ -485,14 +485,12 @@ class Queue {
 
 		$url = $es->get_current_host();
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$count = $this->get_total_queue_size();
 
 		$statsd = new \Automattic\VIP\StatsD();
 
 		$statsd->gauge( $stat, $count );
-		$statsd->gauge( $per_site_stat, $count );
 	}
 	
 	/**
