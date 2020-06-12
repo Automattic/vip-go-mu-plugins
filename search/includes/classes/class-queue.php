@@ -266,13 +266,26 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$status,
-				$object_type
-			)
+		$query = $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+			$status,
+			$object_type
 		);
+
+		if ( 'all' === strtolower( $status ) ) {
+			if ( 'all' === strtolower( $object_type ) ) {
+				$query = "SELECT COUNT(*) FROM {$table_name} WHERE 1"; // Cannot prepare table name. @codingStandardsIgnoreLine
+			} else {
+				$query = $wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table_name} WHERE `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_type
+				);
+			}
+		}
+
+		$job_count = $wpdb->get_var( $query );
+
+		return intval( $job_count ); 	
 	}
 
 	public function count_jobs_due_now( $object_type = 'post' ) {
@@ -286,16 +299,6 @@ class Queue {
 				$object_type
 			)
 		);
-	}
-
-	public function get_total_queue_size() {
-		global $wpdb;
-
-		$table_name = $this->schema->get_table_name();
-
-		$queue_size = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE 1" ); // Cannot prepare table name. @codingStandardsIgnoreLine
-
-		return intval( $queue_size );
 	}
 
 	public function get_next_job_for_object( $object_id, $object_type ) {
@@ -486,7 +489,7 @@ class Queue {
 		$url = $es->get_current_host();
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
-		$count = $this->get_total_queue_size();
+		$count = $this->count_jobs( 'all', $indexable->slug );
 
 		$statsd = new \Automattic\VIP\StatsD();
 		$statsd->gauge( $per_site_stat, $count );
