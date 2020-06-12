@@ -632,7 +632,7 @@ class Search {
 		}
 
 		// Can't use $this in static context
-		$es = \Search::instance();
+		$es = self::instance();
 		
 		$statsd_mode = 'query_ratelimited';
 		$statsd_index_name = $indexable->get_index_name();
