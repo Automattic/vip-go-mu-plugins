@@ -598,6 +598,27 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 14, $index_count_incr->invokeArgs( $this->queue, [ 5 ] ), 'should increment properly without using the default increment of 1' );
 	}
 
+	public function test__record_queue_count_stat_should_be_0_by_default() {
+		$this->assertEquals( 0, $this->queue->get_total_queue_size() );
+	}
+
+	public function test__record_queue_count_stat_should_return_the_queue_count() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		foreach ( range( 0, 9 ) as $object_id ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+		}
+
+		$this->assertEquals( 10, $this->queue->get_total_queue_size() );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

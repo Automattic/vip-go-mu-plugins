@@ -288,6 +288,16 @@ class Queue {
 		);
 	}
 
+	public function get_total_queue_size() {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		$queue_size = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE 1" ); // Cannot prepare table name. @codingStandardsIgnoreLine
+
+		return intval( $queue_size );
+	}
+
 	public function get_next_job_for_object( $object_id, $object_type ) {
 		global $wpdb;
 
@@ -455,7 +465,34 @@ class Queue {
 	
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
+
+			$this->record_queue_count_stat( $indexable );
 		}
+	}
+
+	public function record_queue_count_stat( $indexable ) {
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$statsd_mode = 'queue_size';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$count = $this->get_total_queue_size();
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->gauge( $stat, $count );
+		$statsd->gauge( $per_site_stat, $count );
 	}
 	
 	/**
