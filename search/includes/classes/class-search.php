@@ -167,7 +167,6 @@ class Search {
 
 		// Truncate search strings to a reasonable length
 		add_action( 'parse_query', array( $this, 'truncate_search_string_length' ), PHP_INT_MAX );
-
 	}
 
 	protected function load_commands() {
