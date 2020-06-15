@@ -907,13 +907,13 @@ class Search {
 		return $formatted_args;
 	}
 
-	public function truncate_search_string_length( $query_object ) {
-		if ( $query_object->is_search() ) {
-			$search = $query_object->query['s'];
+	public function truncate_search_string_length( $query ) {
+		if ( $query->is_search() ) {
+			$search = $query->get( 's' );
 
 			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
 			
-			$query_object->set( 's', $truncated_search );
+			$query->set( 's', $truncated_search );
 		}
 	}
 
