@@ -616,11 +616,35 @@ class Search {
 		if ( self::query_count_incr() > self::$max_query_count ) {
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				self::record_ratelimited_query_stat();
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	public static function record_ratelimited_query_stat() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		// Can't use $this in static context
+		$es = self::instance();
+		
+		$statsd_mode = 'query_ratelimited';
+		$statsd_index_name = $indexable->get_index_name();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat );
+		$statsd->increment( $per_site_stat );
 	}
 
 	/**
