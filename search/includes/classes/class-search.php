@@ -16,7 +16,7 @@ class Search {
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
-  private const MAX_SEARCH_LENGTH = 255;
+	private const MAX_SEARCH_LENGTH = 255;
   
 	// From https://github.com/Automattic/jetpack/blob/c36432aa890dc24cafee4c4362711ffcafb9c983/packages/sync/src/class-defaults.php#L689-L732
 	public const POST_META_DEFAULT_ALLOW_LIST = array(
