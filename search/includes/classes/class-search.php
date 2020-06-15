@@ -907,7 +907,7 @@ class Search {
 		return $formatted_args;
 	}
 
-	public function truncate_search_string_length( $query ) {
+	public function truncate_search_string_length( &$query ) {
 		if ( $query->is_search() ) {
 			$search = $query->get( 's' );
 
