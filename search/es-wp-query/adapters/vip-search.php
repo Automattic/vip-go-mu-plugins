@@ -135,6 +135,7 @@ function vip_es_field_map( $es_map ) {
 			'post_content.analyzed'         => 'post_content',
 			'post_title'                    => 'post_title',
 			'post_title.analyzed'           => 'post_title',
+			'post_type'                     => 'post_type.raw',
 			'post_excerpt'                  => 'post_excerpt',
 			'post_password'                 => 'post_password',  // This isn't indexed on VIP.
 			'post_name'                     => 'post_name',
