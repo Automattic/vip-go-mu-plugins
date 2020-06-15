@@ -1041,6 +1041,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__rate_limit_ep_query_integration() {
 		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
 
 		add_option( 'vip_enable_vip_search_query_integration', true );
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
