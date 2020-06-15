@@ -12,10 +12,12 @@ class Search {
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
-	public static $max_query_count = 3000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
+	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
+  private const MAX_SEARCH_LENGTH = 255;
+  
 	// From https://github.com/Automattic/jetpack/blob/c36432aa890dc24cafee4c4362711ffcafb9c983/packages/sync/src/class-defaults.php#L689-L732
 	public const POST_META_DEFAULT_ALLOW_LIST = array(
 		'_feedback_akismet_values',
@@ -206,6 +208,9 @@ class Search {
 
 		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
 		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
+
+		// Truncate search strings to a reasonable length
+		add_action( 'parse_query', array( $this, 'truncate_search_string_length' ), PHP_INT_MAX );
 	}
 
 	protected function load_commands() {
@@ -478,12 +483,11 @@ class Search {
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
 		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 
-		$timeout = $this->get_http_timeout_for_query( $query );
-
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
 		}
+
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd = new \Automattic\VIP\StatsD();
@@ -495,7 +499,9 @@ class Search {
 		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
-	
+
+		$timeout = $this->get_http_timeout_for_query( $query, $args );
+
 		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
@@ -540,15 +546,25 @@ class Search {
 		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
 	}
 
-	public function get_http_timeout_for_query( $query ) {
+	public function get_http_timeout_for_query( $query, $args ) {
 		$timeout = 2;
 
-		// If query url ends with '_bulk'
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
+		$is_post_request = false;
 
+		if ( isset( $args['method'] ) && 0 === strcasecmp( 'POST', $args['method'] ) ) {
+			$is_post_request = true;
+		}
+
+		// Bulk index request so increase timeout
 		if ( wp_endswith( $query_path, '_bulk' ) ) {
-			// Bulk index request so increase timeout
 			$timeout = 5;
+
+			if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+				$timeout = 30;
+			} elseif ( \is_admin() && $is_post_request ) {
+				$timeout = 15;
+			}
 		}
 
 		return $timeout;
@@ -649,11 +665,35 @@ class Search {
 		if ( self::query_count_incr() > self::$max_query_count ) {
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				self::record_ratelimited_query_stat();
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	public static function record_ratelimited_query_stat() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		// Can't use $this in static context
+		$es = self::instance();
+		
+		$statsd_mode = 'query_ratelimited';
+		$statsd_index_name = $indexable->get_index_name();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat );
+		$statsd->increment( $per_site_stat );
 	}
 
 	/**
@@ -932,6 +972,16 @@ class Search {
 		unset( $formatted_args['query']['bool']['should'] );
 
 		return $formatted_args;
+	}
+
+	public function truncate_search_string_length( &$query ) {
+		if ( $query->is_search() ) {
+			$search = $query->get( 's' );
+
+			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
+			
+			$query->set( 's', $truncated_search );
+		}
 	}
 
 	/*

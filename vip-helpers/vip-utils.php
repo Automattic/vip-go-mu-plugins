@@ -751,12 +751,27 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$retry     = abs( $retry );
 	$threshold = abs( $threshold );
 
-	// timeouts > 5 seconds are just not reasonable for production usage
+	// Default max timeout is 5s. 
+	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things. 
 	$timeout = (int) $timeout;
-	if ( $timeout > 5 ) {
-		_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
 
-		$timeout = 5;
+	if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+		if ( 30 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
+			$timeout = 30;
+		}
+	} elseif ( \is_admin() && $is_post_request ) {
+		if ( 15 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
+			$timeout = 15;
+		}
+	} else {
+		if ( $timeout > 5 ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+			$timeout = 5;
+		}
 	}
 
 	// retry time < 10 seconds will default to 10 seconds.
@@ -1365,7 +1380,7 @@ function is_automattician( $user_id = false ) {
  * @return bool True, if the current request is made via the Automattic proxy
  */
 function is_proxied_automattician() {
-	return A8C_PROXIED_REQUEST && is_automattician();
+	return is_proxied_request() && is_automattician();
 }
 
 /**
