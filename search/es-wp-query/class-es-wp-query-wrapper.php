@@ -169,7 +169,9 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 	 * @access public
 	 */
 	public function set_found_posts( $q, $es_response ) {
-		if ( isset( $es_response['hits']['total'] ) ) {
+		if ( isset( $es_response['hits']['total']['value'] ) ) {
+			$this->found_posts = absint( $es_response['hits']['total']['value'] );
+		} elseif ( isset( $es_response['hits']['total'] ) ) {
 			$this->found_posts = absint( $es_response['hits']['total'] );
 		} else {
 			$this->found_posts = 0;
@@ -253,7 +255,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 				'tag_slug'           => 'terms.%s.slug',
 				'tag_name'           => 'terms.%s.name',
 				'tag_tt_id'          => 'terms.%s.term_taxonomy_id',
-			) 
+			)
 		);
 
 		$this->parse_query();
@@ -424,7 +426,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						'after'     => $date,
 						'before'    => $date,
 						'inclusive' => true,
-					) 
+					)
 				);
 				$date_filter = $date_query->get_dsl( $this );
 				if ( ! empty( $date_filter ) ) {
@@ -995,8 +997,8 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						array(
 							'protected'              => true,
 							'show_in_admin_all_list' => true,
-						) 
-					) 
+						)
+					)
 				);
 			}
 
@@ -1153,7 +1155,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 				'fields' => $fields,
 				'size'   => $size,
 				'from'   => $from,
-			) 
+			)
 		);
 
 		// Filter again for the benefit of caching plugins. Regular plugins should use the hooks above.
@@ -1312,7 +1314,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						'post_type'   => $post_type,
 						'post_status' => 'publish',
 						'nopaging'    => true, // phpcs:ignore WordPress.VIP.PostsPerPage.posts_per_page_nopaging
-					) 
+					)
 				);
 
 				foreach ( $stickies as $sticky_post ) {
@@ -1635,7 +1637,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 					'query'  => $query,
 					'fields' => (array) $fields,
 				),
-				$args 
+				$args
 			),
 		);
 	}
