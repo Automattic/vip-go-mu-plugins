@@ -268,13 +268,26 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$status,
-				$object_type
-			)
+		$query = $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+			$status,
+			$object_type
 		);
+
+		if ( 'all' === strtolower( $status ) ) {
+			if ( 'all' === strtolower( $object_type ) ) {
+				$query = "SELECT COUNT(*) FROM {$table_name} WHERE 1"; // Cannot prepare table name. @codingStandardsIgnoreLine
+			} else {
+				$query = $wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table_name} WHERE `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_type
+				);
+			}
+		}
+
+		$job_count = $wpdb->get_var( $query ); // Query may change depending on status/object type @codingStandardsIgnoreLine
+
+		return intval( $job_count );
 	}
 
 	public function count_jobs_due_now( $object_type = 'post' ) {
@@ -457,7 +470,31 @@ class Queue {
 	
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
+
+			$this->record_queue_count_stat( $indexable );
 		}
+	}
+
+	public function record_queue_count_stat( $indexable ) {
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$statsd_mode = 'queue_size';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$count = $this->count_jobs( 'all', $indexable->slug );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd->gauge( $per_site_stat, $count );
 	}
 
 	/**
