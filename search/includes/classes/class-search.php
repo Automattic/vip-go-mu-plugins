@@ -16,6 +16,8 @@ class Search {
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
+	private const MAX_SEARCH_LENGTH = 255;
+
 	private static $_instance;
 
 	/**
@@ -162,6 +164,9 @@ class Search {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
 			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
 		}
+
+		// Truncate search strings to a reasonable length
+		add_action( 'parse_query', array( $this, 'truncate_search_string_length' ), PHP_INT_MAX );
 	}
 
 	protected function load_commands() {
@@ -923,6 +928,16 @@ class Search {
 		unset( $formatted_args['query']['bool']['should'] );
 
 		return $formatted_args;
+	}
+
+	public function truncate_search_string_length( &$query ) {
+		if ( $query->is_search() ) {
+			$search = $query->get( 's' );
+
+			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
+			
+			$query->set( 's', $truncated_search );
+		}
 	}
 
 	/*
