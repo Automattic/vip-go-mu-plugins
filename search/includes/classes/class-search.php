@@ -47,6 +47,9 @@ class Search {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
+
+			// Remove elasticpress command
+			WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
 		}
 
 		// Load ElasticPress
@@ -173,6 +176,7 @@ class Search {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
+			WP_CLI::add_command( 'vip-search', '\ElasticPress\Command' );
 		}
 	}
 
@@ -1007,6 +1011,13 @@ class Search {
 		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
 
 		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+	}
+
+	/*
+	 * Hook for WP CLI before_add_command:elasticpress
+	 */
+	public function abort_elasticpress_add_command( $addition ) {
+		$addition->abort( 'elasticpress command aliased to vip-search' );
 	}
 
 	/*
