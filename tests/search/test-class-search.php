@@ -1443,6 +1443,108 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__get_maximum_field_count_latest_filter_value_should_be_respected() {
+		\add_filter( 'ep_total_field_limit', function() {
+			return 33;
+		}, PHP_INT_MAX );
+		
+		$es = new \Automattic\VIP\Search\Search();
+
+		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
+
+		$this->assertEquals( 33, $get_maximum_field_count->invokeArgs( $es, array() ) );		
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__get_maximum_field_count_absolute_maximum_is_20000() {
+		\add_filter( 'ep_total_field_limit', function() {
+			return 1000000;
+		}, PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
+
+		$this->assertEquals( 20000, $get_maximum_field_count->invokeArgs( $es, array() ) );		
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_maximum_field_count_should_be_respected() {
+		\add_filter(
+			'ep_total_field_limit',
+			function() {
+				return 0;
+			},
+			PHP_INT_MAX
+		);
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		// From Search::POST_META_DEFAULT_ALLOW_LIST
+		$post_meta = array (
+			'_feedback_akismet_values',
+			'_feedback_email',
+			'_feedback_extra_fields',
+			'_g_feedback_shortcode',
+		);
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		$this->assertEquals( 0, count( $meta ), 'meta count should be zero' );
+
+		\add_filter(
+			'ep_total_field_limit',
+			function() {
+				return 131; // 109 base document field count plus 2 post meta * 11(how many fields a post meta occupies)
+			},
+			PHP_INT_MAX
+		);
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+		
+		$this->assertEquals( 2, count( $meta ), 'meta count should be two' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respectedby_default() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		// From Search::POST_META_DEFAULT_ALLOW_LIST
+		$post_meta = array (
+			'_feedback_akismet_values',
+			'_feedback_email',
+			'_feedback_extra_fields',
+			'_g_feedback_shortcode',
+		);
+
+		$post_meta[] = 'random_thing_not_allow_listed';
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		array_pop( $post_meta ); // Remove last added value that should have been excluded by the filter
+
+		$this->assertEquals( $meta, $post_meta );
+	}
+
+	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {

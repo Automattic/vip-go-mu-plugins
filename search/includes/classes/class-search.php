@@ -18,7 +18,7 @@ class Search {
 
 	private const MAX_SEARCH_LENGTH = 255;
 
-	private const DISABLE_POST_META_ALLOW_LIST = array (
+	private const DISABLE_POST_META_ALLOW_LIST = array(
 		2341,
 	);
 
@@ -1087,12 +1087,13 @@ class Search {
 		 * @param {array} $current_allow_list The current allow list for post meta indexing
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
-		$client_post_meta_allow_list = apply_filter( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST );
+		$client_post_meta_allow_list = apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST );
 
 		// Only include meta that matches the allow list
 		$new_meta = array_intersect( $current_meta, $client_post_meta_allow_list );
 
-		$terms = \get_the_terms( $post );
+		$taxonomies = \get_taxonomies( '', 'names' );
+		$terms = \wp_get_object_terms( $post->ID, $taxonomies );
 
 		$max_field_count = $this->get_maximum_field_count();
 
