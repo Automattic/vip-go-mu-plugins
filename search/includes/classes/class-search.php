@@ -17,7 +17,11 @@ class Search {
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
 	private const MAX_SEARCH_LENGTH = 255;
-  
+
+	private const DISABLE_POST_META_ALLOW_LIST = array (
+		2341,
+	);
+
 	// From https://github.com/Automattic/jetpack/blob/c36432aa890dc24cafee4c4362711ffcafb9c983/packages/sync/src/class-defaults.php#L689-L732
 	public const POST_META_DEFAULT_ALLOW_LIST = array(
 		'_feedback_akismet_values',
@@ -1062,6 +1066,12 @@ class Search {
 	 * respecting the maximum field count gracefully
 	 */
 	public function filter__ep_prepare_meta_data( $current_meta, $post ) {
+		if ( defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			if ( in_array( FILES_CLIENT_SITE_ID, self::DISABLE_POST_META_ALLOW_LIST, true ) ) {
+				return $current_meta;
+			}
+		}
+
 		if ( ! is_array( $current_meta ) ) {
 			return $current_meta;
 		}
