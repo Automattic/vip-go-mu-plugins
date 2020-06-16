@@ -1455,7 +1455,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
 
-		$this->assertEquals( 33, $get_maximum_field_count->invokeArgs( $es, array() ) );		
+		$this->assertEquals( 33, $get_maximum_field_count->invokeArgs( $es, array() ) );
 	}
 
 	/**
@@ -1471,7 +1471,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
 
-		$this->assertEquals( 20000, $get_maximum_field_count->invokeArgs( $es, array() ) );		
+		$this->assertEquals( 20000, $get_maximum_field_count->invokeArgs( $es, array() ) );
 	}
 
 	/**
@@ -1490,7 +1490,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 
 		// From Search::POST_META_DEFAULT_ALLOW_LIST
-		$post_meta = array (
+		$post_meta = array(
 			'_feedback_akismet_values',
 			'_feedback_email',
 			'_feedback_extra_fields',
@@ -1525,7 +1525,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 
 		// From Search::POST_META_DEFAULT_ALLOW_LIST
-		$post_meta = array (
+		$post_meta = array(
 			'_feedback_akismet_values',
 			'_feedback_email',
 			'_feedback_extra_fields',
