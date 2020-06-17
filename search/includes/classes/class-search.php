@@ -181,6 +181,9 @@ class Search {
 
 		// Truncate search strings to a reasonable length
 		add_action( 'parse_query', array( $this, 'truncate_search_string_length' ), PHP_INT_MAX );
+
+		// Try to prevent the field limit from being set too high
+		add_filter( 'ep_total_field_limit', array( $this, 'limit_field_limit' ), PHP_INT_MAX );
 	}
 
 	protected function load_commands() {
@@ -1030,8 +1033,7 @@ class Search {
 	}
 
 	/**
-	 * Filter for reducing post meta for indexing to only the allow list and for
-	 * respecting the maximum field count gracefully
+	 * Filter for reducing post meta for indexing to only the allow list
 	 */
 	public function filter__ep_prepare_meta_data( $current_meta, $post ) {
 		if ( defined( 'FILES_CLIENT_SITE_ID' ) ) {
@@ -1060,37 +1062,6 @@ class Search {
 		// Only include meta that matches the allow list
 		$new_meta = array_intersect( $current_meta, $client_post_meta_allow_list );
 
-		$taxonomies = \get_taxonomies( '', 'names' );
-		$terms = \wp_get_object_terms( $post->ID, $taxonomies );
-
-		$max_field_count = $this->get_maximum_field_count();
-
-		// Default field count in index is 109
-		$current_field_count = 109;
-
-		if ( \is_wp_error( $terms ) || ! is_array( $terms ) ) {
-			$available_field_count = $max_field_count;
-		} else {
-			// A term takes up 9 fields in the index
-			$current_field_count += 9 * count( $terms );
-
-			$available_field_count = $max_field_count - $current_field_count;
-		}
-
-		// A post meta takes up 11 fields in the index
-		$post_meta_field_count = count( $new_meta ) * 11;
-
-		$available_field_count = $max_field_count - $current_field_count;
-
-		if ( $available_field_count < $post_meta_field_count ) {
-			$slice_size = floor( $available_field_count / 11 );
-
-			// Todo: log2logstash and trigger P4 Opsgenie alert
-
-			// slice size of 0 is fine since that just returns and empty array
-			return array_slice( $new_meta, 0, $slice_size );
-		}
-
 		return $new_meta;
 	}
 
@@ -1099,6 +1070,25 @@ class Search {
 	 */
 	public function abort_elasticpress_add_command( $addition ) {
 		$addition->abort( 'elasticpress command aliased to vip-search' );
+	}
+
+	/**
+	 * Limit the maximum field limit from ElasticPress to 20000
+	 *
+	 * @param {int} $field_limit The current max field count
+	 * @return {int} The new max field count
+	 */
+	public function limit_field_limit( $field_limit ) {
+		if ( ! is_int( $field_limit ) ) {
+			$field_limit = intval( $field_limit );
+		}
+
+		if ( 20000 < $field_limit ) {
+			_doing_it_wrong( 'limit_field_limit', "ep_total_field_limit was set to $field_limit. Maximum value is 20000.", '5.4.2' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			$field_limit = 20000;
+		}
+
+		return $field_limit;
 	}
 
 	/*
@@ -1110,25 +1100,5 @@ class Search {
 		}
 
 		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::QUERY_COUNT_CACHE_GROUP );
-	}
-
-	/**
-	 * Get the maximum field count from ElasticPress and verify that it's normal
-	 *
-	 * @return {int} The maximum field count
-	 */
-	private function get_maximum_field_count() {
-		$field_count  = apply_filters( 'ep_total_field_limit', 5000 );
-
-		if ( ! is_int( $field_count ) ) {
-			$field_count = intval( $field_count );
-		}
-
-		if ( 20000 < $field_count ) {
-			_doing_it_wrong( 'get_maximum_field_count', "ep_total_field_limit was set to $field_count. Maximum value is 20000.", '5.4.2' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			$field_count = 20000;
-		}
-
-		return $field_count;
 	}
 }

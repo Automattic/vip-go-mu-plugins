@@ -1446,90 +1446,64 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__get_maximum_field_count_latest_filter_value_should_be_respected() {
-		\add_filter( 'ep_total_field_limit', function() {
-			return 33;
-		}, PHP_INT_MAX );
-		
-		$es = new \Automattic\VIP\Search\Search();
-
-		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
-
-		$this->assertEquals( 33, $get_maximum_field_count->invokeArgs( $es, array() ) );
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__get_maximum_field_count_absolute_maximum_is_20000() {
-		\add_filter( 'ep_total_field_limit', function() {
-			return 1000000;
-		}, PHP_INT_MAX );
-
+	public function test__limit_field_limit_absolute_maximum_is_20000() {
 		// Don't trigger an error since it's expected
 		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
 
 		$es = new \Automattic\VIP\Search\Search();
 
-		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
-
-		$this->assertEquals( 20000, $get_maximum_field_count->invokeArgs( $es, array() ) );
+		$this->assertEquals( 20000, $es->limit_field_limit( 1000000 ) );
 	}
 
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__filter__ep_prepare_meta_data_maximum_field_count_should_be_respected() {
+	public function test__limit_field_limit_should_respect_values_under_maximum() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertEquals( 777, $es->limit_field_limit( 777 ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_total_field_limit_should_limit_total_fields() {
+		// Don't trigger an error since it's expected
+		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+	
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
 		\add_filter(
 			'ep_total_field_limit',
 			function() {
-				return 0;
-			},
-			PHP_INT_MAX
-		);
-
-		$es = new \Automattic\VIP\Search\Search();
-
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function() {
-				return array(
-					'random_post_meta',
-					'another_one',
-					'third',
-				);
+				return 1000000;
 			}
 		);
 
-		// Matches allow listed meta
-		$post_meta = array(
-			'random_post_meta',
-			'another_one',
-			'third',
-		);
+		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) ); 
+	}
 
-		$post = new \WP_Post( new \StdClass() );
-		$post->ID = 0;
-
-		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
-
-		$this->assertEquals( 0, count( $meta ), 'meta count should be zero' );
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_total_field_limit_should_respect_values_under_the_limit() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
 
 		\add_filter(
 			'ep_total_field_limit',
 			function() {
-				return 131; // 109 base document field count plus 2 post meta * 11(how many fields a post meta occupies)
-			},
-			PHP_INT_MAX
+				return 787;
+			}
 		);
 
-		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
-		
-		$this->assertEquals( 2, count( $meta ), 'meta count should be two' );
+		$this->assertEquals( 787, apply_filters( 'ep_total_field_limit', 5000 ) );
 	}
-
+	
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
