@@ -1055,7 +1055,7 @@ class Search {
 		 * @param {array} $current_allow_list The current allow list for post meta indexing
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
-		$client_post_meta_allow_list = apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST );
+		$client_post_meta_allow_list = apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
 
 		// Only include meta that matches the allow list
 		$new_meta = array_intersect( $current_meta, $client_post_meta_allow_list );
