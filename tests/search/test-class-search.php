@@ -1467,6 +1467,9 @@ class Search_Test extends \WP_UnitTestCase {
 			return 1000000;
 		}, PHP_INT_MAX );
 
+		// Don't trigger an error since it's expected
+		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+
 		$es = new \Automattic\VIP\Search\Search();
 
 		$get_maximum_field_count = self::get_method( 'get_maximum_field_count' );
