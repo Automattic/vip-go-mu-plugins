@@ -302,6 +302,7 @@ class Search {
 
 			$offload_main_tax_site_ids = array(
 				929,
+				1281,
 			);
 
 			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ! $query->is_search() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
