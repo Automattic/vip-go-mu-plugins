@@ -48,8 +48,8 @@ class Search {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
 
-			// Remove elasticpress command
-			WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
+			// Remove elasticpress command. Need a better way.
+			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
 		}
 
 		// Load ElasticPress
