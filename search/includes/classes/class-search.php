@@ -1157,7 +1157,7 @@ class Search {
 		}
 
 		if ( 20000 < $field_count ) {
-			_doing_it_wrong( 'get_maximum_field_count', "ep_total_field_limit was set to $field_count. Maximum value is 20000.", '5.4.2' );
+			_doing_it_wrong( 'get_maximum_field_count', "ep_total_field_limit was set to $field_count. Maximum value is 20000.", '5.4.2' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$field_count = 20000;
 		}
 
