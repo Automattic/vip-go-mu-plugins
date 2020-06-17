@@ -1492,12 +1492,22 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$es = new \Automattic\VIP\Search\Search();
 
-		// From Search::POST_META_DEFAULT_ALLOW_LIST
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta',
+					'another_one',
+					'third',
+				);
+			}
+		);
+
+		// Matches allow listed meta
 		$post_meta = array(
-			'_feedback_akismet_values',
-			'_feedback_email',
-			'_feedback_extra_fields',
-			'_g_feedback_shortcode',
+			'random_post_meta',
+			'another_one',
+			'third',
 		);
 
 		$post = new \WP_Post( new \StdClass() );
@@ -1524,15 +1534,25 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respectedby_default() {
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
 		$es = new \Automattic\VIP\Search\Search();
 
-		// From Search::POST_META_DEFAULT_ALLOW_LIST
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta',
+					'another_one',
+					'third',
+				);
+			}
+		);
+
+		// Matches allow listed meta
 		$post_meta = array(
-			'_feedback_akismet_values',
-			'_feedback_email',
-			'_feedback_extra_fields',
-			'_g_feedback_shortcode',
+			'random_post_meta',
+			'another_one',
+			'third',
 		);
 
 		$post_meta[] = 'random_thing_not_allow_listed';
