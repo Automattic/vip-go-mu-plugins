@@ -16,6 +16,8 @@ class Search {
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
+	private const MAX_SEARCH_LENGTH = 255;
+
 	private static $_instance;
 
 	/**
@@ -45,6 +47,9 @@ class Search {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
+
+			// Remove elasticpress command
+			WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
 		}
 
 		// Load ElasticPress
@@ -162,12 +167,16 @@ class Search {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
 			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
 		}
+
+		// Truncate search strings to a reasonable length
+		add_action( 'parse_query', array( $this, 'truncate_search_string_length' ), PHP_INT_MAX );
 	}
 
 	protected function load_commands() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
+			WP_CLI::add_command( 'vip-search', '\ElasticPress\Command' );
 		}
 	}
 
@@ -295,7 +304,7 @@ class Search {
 				929,
 			);
 
-			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
+			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ! $query->is_search() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
 				return true;
 			}
 		}
@@ -616,11 +625,35 @@ class Search {
 		if ( self::query_count_incr() > self::$max_query_count ) {
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
+				self::record_ratelimited_query_stat();
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	public static function record_ratelimited_query_stat() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		// Can't use $this in static context
+		$es = self::instance();
+		
+		$statsd_mode = 'query_ratelimited';
+		$statsd_index_name = $indexable->get_index_name();
+
+		$url = $es->get_current_host();
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->increment( $stat );
+		$statsd->increment( $per_site_stat );
 	}
 
 	/**
@@ -901,6 +934,16 @@ class Search {
 		return $formatted_args;
 	}
 
+	public function truncate_search_string_length( &$query ) {
+		if ( $query->is_search() ) {
+			$search = $query->get( 's' );
+
+			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
+			
+			$query->set( 's', $truncated_search );
+		}
+	}
+
 	/*
 	 * Filter for setting decay function for date relevancy in ElasticPress
 	 */
@@ -968,6 +1011,13 @@ class Search {
 		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
 
 		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+	}
+
+	/*
+	 * Hook for WP CLI before_add_command:elasticpress
+	 */
+	public function abort_elasticpress_add_command( $addition ) {
+		$addition->abort( 'elasticpress command aliased to vip-search' );
 	}
 
 	/*
