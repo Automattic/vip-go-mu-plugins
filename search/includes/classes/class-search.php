@@ -22,46 +22,9 @@ class Search {
 		2341,
 	);
 
-	// From https://github.com/Automattic/jetpack/blob/c36432aa890dc24cafee4c4362711ffcafb9c983/packages/sync/src/class-defaults.php#L689-L732
-	public const POST_META_DEFAULT_ALLOW_LIST = array(
-		'_feedback_akismet_values',
-		'_feedback_email',
-		'_feedback_extra_fields',
-		'_g_feedback_shortcode',
-		'_jetpack_post_thumbnail',
-		'_menu_item_classes',
-		'_menu_item_menu_item_parent',
-		'_menu_item_object',
-		'_menu_item_object_id',
-		'_menu_item_orphaned',
-		'_menu_item_type',
-		'_menu_item_xfn',
-		'_publicize_facebook_user',
-		'_publicize_twitter_user',
-		'_thumbnail_id',
-		'_wp_attached_file',
-		'_wp_attachment_backup_sizes',
-		'_wp_attachment_context',
-		'_wp_attachment_image_alt',
-		'_wp_attachment_is_custom_background',
-		'_wp_attachment_is_custom_header',
-		'_wp_attachment_metadata',
-		'_wp_page_template',
-		'_wp_trash_meta_comments_status',
-		'_wpas_mess',
-		'content_width',
-		'custom_css_add',
-		'custom_css_preprocessor',
-		'enclosure',
-		'imagedata',
-		'nova_price',
-		'publicize_results',
-		'sharing_disabled',
-		'switch_like_status',
-		'videopress_guid',
-		'vimeo_poster_image',
-		'advanced_seo_description',
-	);
+	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
+	// sites
+	public const POST_META_DEFAULT_ALLOW_LIST = array();
 
 	private static $_instance;
 
