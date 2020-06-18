@@ -28,6 +28,10 @@ class Cache {
 			return;
 		}
 
+		if ( ! is_a( $query, 'WP_Query' ) ) {
+			return;
+		}
+
 		if ( \ElasticPress\Indexables::factory()->get( 'post' )->elasticpress_enabled( $query ) && ! apply_filters( 'ep_skip_query_integration', false, $query ) ) {
 			if ( true === $disabled_apc ) {
 				// Already disabled, don't try again.
