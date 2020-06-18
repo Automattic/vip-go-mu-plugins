@@ -1055,6 +1055,7 @@ class Search {
 		 * 
 		 * @hook vip_search_post_meta_allow_list
 		 * @param {array} $current_allow_list The current allow list for post meta indexing
+		 * @param {WP_Post} $post The post whose meta data is being prepared
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
 		$client_post_meta_allow_list = apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
