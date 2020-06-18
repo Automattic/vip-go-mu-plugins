@@ -1583,7 +1583,7 @@ class Search_Test extends \WP_UnitTestCase {
 				'Skip',
 			),
 			'skipped_string' => array(
-				'Skip'
+				'Skip',
 			),
 			'third' => array(
 				'true',
