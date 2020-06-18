@@ -2,7 +2,7 @@
 namespace Automattic\VIP\Search;
 
 class Cache {
-	function __construct() {
+	public function __construct() {
 		add_action( 'pre_get_posts', array( $this, 'disable_apc_for_ep_enabled_requests' ), 0 );
 	}
 
@@ -19,7 +19,7 @@ class Cache {
 	 *
 	 * @param WP_Query $query The query to examine.
 	 */
-	function disable_apc_for_ep_enabled_requests( &$query ) {
+	public function disable_apc_for_ep_enabled_requests( &$query ) {
 		global $advanced_post_cache_object;
 
 		static $disabled_apc = false;
