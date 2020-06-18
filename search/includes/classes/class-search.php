@@ -1054,14 +1054,43 @@ class Search {
 		 * Filters the allow list used for post meta indexing
 		 * 
 		 * @hook vip_search_post_meta_allow_list
-		 * @param {array} $current_allow_list The current allow list for post meta indexing
+		 * @param {array} $current_allow_list The current allow list for post meta indexing either as a list of post meta keys or as an associative array( e.g.: array( 'key' => true ); )
 		 * @param {WP_Post} $post The post whose meta data is being prepared
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
 		$client_post_meta_allow_list = apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
 
+		// If the array is empty, an array_intersect will result in an empty array. If the allow list isn't an array, assume no post meta is allow listed
+		if ( empty( $client_post_meta_allow_list ) || ! is_array( $client_post_meta_allow_list ) ) {
+			return array();
+		}
+
+		// If client meta allow list is an associative array
+		if ( array_keys( $client_post_meta_allow_list ) !== range( 0, count( $client_post_meta_allow_list ) - 1 ) ) {
+			/* 
+			 * Filter out values not set to true since the current format of the allow list as an associative array is:
+			 * 
+			 * array (
+			 * 		'key' => true,
+			 * );
+			 *
+			 * which means that anything besides true should logically be discarded
+			 */
+			$client_post_meta_allow_list = array_filter(
+				$client_post_meta_allow_list,
+				function( $value ) {
+					return true === $value;
+				}
+			);
+
+			$client_post_meta_allow_list = array_keys( $client_post_meta_allow_list );
+		}
+
+		// Since we're comparing result of get_post_meta(as $current_meta), we need to do an array_intersect_key since $current_meta should be an assoc array
+		$client_post_meta_allow_list_assoc = array_flip( $client_post_meta_allow_list );
+
 		// Only include meta that matches the allow list
-		$new_meta = array_intersect( $current_meta, $client_post_meta_allow_list );
+		$new_meta = array_intersect_key( $current_meta, $client_post_meta_allow_list_assoc );
 
 		return $new_meta;
 	}

@@ -1522,23 +1522,95 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		// Matches allow listed meta
+		// Matches allow list
 		$post_meta = array(
-			'random_post_meta',
-			'another_one',
-			'third',
+			'random_post_meta' => array(
+				'Random value',
+			),
+			'another_one' => array(
+				'4656784',
+			),
+			'third' => array(
+				'true',
+			),
 		);
 
-		$post_meta[] = 'random_thing_not_allow_listed';
+		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
 		$post = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
 
 		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
 
-		array_pop( $post_meta ); // Remove last added value that should have been excluded by the filter
+		unset( $post_meta['random_thing_not_allow_listed'] ); // Remove last added value that should have been excluded by the filter
 
 		$this->assertEquals( $meta, $post_meta );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default_assoc() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta' => true,
+					'another_one' => true,
+					'skipped' => false,
+					'skipped_another' => 4,
+					'skipped_string' => 'Wooo',
+					'third' => true,
+				);
+			}
+		);
+
+		// Matches allow list
+		$post_meta = array(
+			'random_post_meta' => array(
+				'Random value',
+			),
+			'another_one' => array(
+				'4656784',
+			),
+			'skipped' => array(
+				'Skip',
+			),
+			'skipped_another' => array(
+				'Skip',
+			),
+			'skipped_string' => array(
+				'Skip'
+			),
+			'third' => array(
+				'true',
+			),
+		);
+
+		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		$this->assertEquals(
+			$meta,
+			array(
+				'random_post_meta' => array(
+					'Random value',
+				),
+				'another_one' => array(
+					'4656784',
+				),
+				'third' => array(
+					'true',
+				),
+			)
+		);
 	}
 
 	/**
