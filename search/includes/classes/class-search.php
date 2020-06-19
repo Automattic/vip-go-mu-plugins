@@ -65,6 +65,10 @@ class Search {
 
 		$this->queue = new Queue();
 		$this->queue->init();
+
+		// Caching layer
+		require_once __DIR__ . '/class-cache.php';
+		$this->cache = new Cache();
 	}
 
 	protected function setup_constants() {
