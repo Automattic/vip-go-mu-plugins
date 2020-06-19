@@ -552,12 +552,42 @@ class Search {
 	}
 
 	/**
-	 * Separate plugin enabled and querying the index
+	 * Separate plugin enabling from querying the index
 	 *
-	 * The index can be tested at any time by setting an `es` query argument.
+	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
+	 *
+	 * The integration can be tested at any time by setting an `es` query argument (?es=true).
+	 * 
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
+	public static function is_query_integration_enabled() {
+		if ( isset( $_GET['es'] ) ) {
+			return true;
+		}
+
+		// Legacy constant name
+		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
+
+		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
+
+		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
+
+		if ( $enabled_by_constant ) {
+			return true;
+		}
+
+		$option_value = get_option( 'vip_enable_vip_search_query_integration' );
+
+		$enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+
+		if ( $enabled_by_option ) {
+			return true;
+		}
+
+		return false;
+	}
+
 	public static function ep_skip_query_integration( $skip, $query = null ) {
 		/**
 		 * Honor filters that skip query integration
@@ -569,10 +599,6 @@ class Search {
 		 */
 		if ( $skip ) {
 			return true;
-		}
-		
-		if ( isset( $_GET['es'] ) ) {
-			return false;
 		}
 
 		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
@@ -591,26 +617,10 @@ class Search {
 			}
 		}
 
-		// If query is marked for mirroring (for evaluation phase), allow it
-		if ( isset( $query->query_vars['vip_search_mirrored'] ) && $query->query_vars['vip_search_mirrored'] ) {
-			return false;
-		}
-
-		// Legacy constant name
-		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
-
-		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
-
-		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
-
-		$option_value = get_option( 'vip_enable_vip_search_query_integration' );
-
-		$enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
+		$integration_enabled = self::is_query_integration_enabled();
 
 		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
-		$skipped = ! ( $enabled_by_constant || $enabled_by_option );
-	
-		return $skipped;
+		return ! $integration_enabled;
 	}
 
 	/**
