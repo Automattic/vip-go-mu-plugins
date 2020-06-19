@@ -16,7 +16,8 @@ class Cache_Test extends \WP_UnitTestCase {
 			'found_posts',
 		];
 
-		$this->es = \Automattic\VIP\Search\Search::instance();
+		$this->es = new \Automattic\VIP\Search\Search();
+		$this->es->init();
 		\ElasticPress\register_indexable_posts();
 
 		add_filter( 'ep_skip_query_integration', '__return_false', 100 );
