@@ -28,7 +28,7 @@ class Cache {
 			return;
 		}
 
-		if ( ! is_a( $query, 'WP_Query' ) ) {
+		if ( 'WP_Query' !== get_class( $query ) ) {
 			return;
 		}
 
