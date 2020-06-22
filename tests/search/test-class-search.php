@@ -1438,6 +1438,177 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__limit_field_limit_absolute_maximum_is_20000() {
+		// Don't trigger an error since it's expected
+		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertEquals( 20000, $es->limit_field_limit( 1000000 ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__limit_field_limit_should_respect_values_under_maximum() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertEquals( 777, $es->limit_field_limit( 777 ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_total_field_limit_should_limit_total_fields() {
+		// Don't trigger an error since it's expected
+		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+	
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		\add_filter(
+			'ep_total_field_limit',
+			function() {
+				return 1000000;
+			}
+		);
+
+		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) ); 
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_total_field_limit_should_respect_values_under_the_limit() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		\add_filter(
+			'ep_total_field_limit',
+			function() {
+				return 787;
+			}
+		);
+
+		$this->assertEquals( 787, apply_filters( 'ep_total_field_limit', 5000 ) );
+	}
+	
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta',
+					'another_one',
+					'third',
+				);
+			}
+		);
+
+		// Matches allow list
+		$post_meta = array(
+			'random_post_meta' => array(
+				'Random value',
+			),
+			'another_one' => array(
+				'4656784',
+			),
+			'third' => array(
+				'true',
+			),
+		);
+
+		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		unset( $post_meta['random_thing_not_allow_listed'] ); // Remove last added value that should have been excluded by the filter
+
+		$this->assertEquals( $meta, $post_meta );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default_assoc() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta' => true,
+					'another_one' => true,
+					'skipped' => false,
+					'skipped_another' => 4,
+					'skipped_string' => 'Wooo',
+					'third' => true,
+				);
+			}
+		);
+
+		// Matches allow list
+		$post_meta = array(
+			'random_post_meta' => array(
+				'Random value',
+			),
+			'another_one' => array(
+				'4656784',
+			),
+			'skipped' => array(
+				'Skip',
+			),
+			'skipped_another' => array(
+				'Skip',
+			),
+			'skipped_string' => array(
+				'Skip',
+			),
+			'third' => array(
+				'true',
+			),
+		);
+
+		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		$this->assertEquals(
+			$meta,
+			array(
+				'random_post_meta' => array(
+					'Random value',
+				),
+				'another_one' => array(
+					'4656784',
+				),
+				'third' => array(
+					'true',
+				),
+			)
+		);
+	}
+
+	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
