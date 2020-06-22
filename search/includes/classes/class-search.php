@@ -175,7 +175,7 @@ class Search {
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
 
 		// For testing, mirror certain WP_Query's on certain sites
-		if ( $this->is_query_mirroring_enabled() ) {
+		if ( self::is_query_mirroring_enabled() ) {
 			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
 			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
 		}
@@ -230,15 +230,7 @@ class Search {
 			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
 		}
 
-		// Load es-wp-query, if not already loaded. This is done during plugins_loaded so we don't conflict
-		// with sites that have included this plugin themselves
-		if ( ! class_exists( '\\ES_WP_Query' ) ) {
-			require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
-
-			if ( function_exists( 'es_wp_query_load_adapter' ) ) {
-				es_wp_query_load_adapter( 'vip-search' );
-			}
-		}
+		$this->maybe_load_es_wp_query();
 	}
 
 	public function action__wp() {
@@ -253,7 +245,7 @@ class Search {
 		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
 		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
 		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
-			$is_mirroring_enabled = $this->is_query_mirroring_enabled();
+			$is_mirroring_enabled = self::is_query_mirroring_enabled();
 
 			if ( $is_mirroring_enabled ) {
 				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
@@ -261,7 +253,33 @@ class Search {
 		}
 	}
 
-	public function is_query_mirroring_enabled() {
+	public function maybe_load_es_wp_query() {
+		if ( ! self::should_load_es_wp_query() ) {
+			return;
+		}
+
+		require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
+
+		// If no other adapter has loaded, load ours. This is to prevent fatals (duplicate function/class definitions) if other
+		// adapters were somehow loaded before ours
+		if ( ! class_exists( '\\ES_WP_Query' ) && function_exists( 'es_wp_query_load_adapter' ) ) {
+			es_wp_query_load_adapter( 'vip-search' );
+		}
+	}
+
+	public static function should_load_es_wp_query() {
+		// Don't load if plugin already loaded elsewhere
+		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
+			return false;
+		}
+
+		$mirroring_enabled = self::is_query_mirroring_enabled();
+		$integration_enabled = self::is_query_integration_enabled();
+
+		return $mirroring_enabled || $integration_enabled;
+	}
+
+	public static function is_query_mirroring_enabled() {
 		$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
 
 		$option_value = get_option( 'vip_enable_search_query_mirroring' );
@@ -308,7 +326,7 @@ class Search {
 		}
 
 		// If mirroring is not enabled at all, skip
-		if ( ! $this->is_query_mirroring_enabled() ) {
+		if ( ! self::is_query_mirroring_enabled() ) {
 			return false;
 		}
 
@@ -373,7 +391,7 @@ class Search {
 	}
 
 	public function action__shutdown_do_mirrored_wp_queries() {
-		if ( ! $this->is_query_mirroring_enabled() ) {
+		if ( ! self::is_query_mirroring_enabled() ) {
 			return;
 		}
 

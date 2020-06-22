@@ -1056,6 +1056,60 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure we don't load es-wp-query by default (if it's not enabled)
+	 */
+	public function test__should_load_es_wp_query_default() {
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertFalse( $should );
+	}
+
+	/**
+	 * Ensure we don't load es-wp-query if it is already loaded
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_already_loaded() {
+		// To cause should_load_es_wp_query() to otherwise return true
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		require_once __DIR__ . '/../../search/es-wp-query/es-wp-query.php';
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertFalse( $should );
+	}
+
+	/**
+	 * Ensure we do load es-wp-query when mirroring is enabled
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_with_query_mirroring() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertTrue( $should );
+	}
+
+	/**
+	 * Ensure we do load es-wp-query when query integration is enabled
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_query_integration() {
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertTrue( $should );
+	}
+
+	/**
 	 * Ensure the incrementor for tracking request counts behaves properly
 	 */
 	public function test__query_count_incr() {
@@ -1073,9 +1127,7 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__is_query_mirroring_enabled_no_constant_no_option() {
-		$es = new \Automattic\VIP\Search\Search();
-		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertFalse( $enabled );
 	}
@@ -1086,10 +1138,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_via_option() {
 		update_option( 'vip_enable_search_query_mirroring', true );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		delete_option( 'vip_enable_search_query_mirroring' );
 
@@ -1102,10 +1152,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_with_option_false() {
 		update_option( 'vip_enable_search_query_mirroring', false );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		delete_option( 'vip_enable_search_query_mirroring' );
 
@@ -1118,10 +1166,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_via_constant() {
 		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertTrue( $enabled );
 	}
@@ -1132,10 +1178,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_with_constant_false() {
 		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', false );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertFalse( $enabled );
 	}
