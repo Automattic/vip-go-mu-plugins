@@ -1056,6 +1056,60 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure we don't load es-wp-query by default (if it's not enabled)
+	 */
+	public function test__should_load_es_wp_query_default() {
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertFalse( $should );
+	}
+
+	/**
+	 * Ensure we don't load es-wp-query if it is already loaded
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_already_loaded() {
+		// To cause should_load_es_wp_query() to otherwise return true
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		require_once __DIR__ . '/../../search/es-wp-query/es-wp-query.php';
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertFalse( $should );
+	}
+
+	/**
+	 * Ensure we do load es-wp-query when mirroring is enabled
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_with_query_mirroring() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertTrue( $should );
+	}
+
+	/**
+	 * Ensure we do load es-wp-query when query integration is enabled
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_query_integration() {
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertTrue( $should );
+	}
+
+	/**
 	 * Ensure the incrementor for tracking request counts behaves properly
 	 */
 	public function test__query_count_incr() {
