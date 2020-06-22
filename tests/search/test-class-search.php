@@ -948,92 +948,87 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/*
-	 * Ensure that ep_skip_query_integration is true by default with no options/constants/skip
+	 * Ensure that is_query_integration_enabled() is false by default with no options/constants
 	 */
-	public function test__ep_skip_query_integration_skip_by_default() {
-		$es = new \Automattic\VIP\Search\Search();
-		$this->assertTrue( $es::ep_skip_query_integration( false ) );
+	public function test__is_query_integration_enabled_default() {
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	/*
+	 * Ensure is_query_integration_enabled() option works properly with the vip_enable_vip_search_query_integration option
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_option() {
+		update_option( 'vip_enable_vip_search_query_integration', true );
+	
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+
+		delete_option( 'vip_enable_vip_search_query_integration' );
+	}
+
+	/*
+	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_legacy_constant() {
+		define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', true );
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	/*
+	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_constant() {
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	/**
+	 * Ensure query integration is enabled when the 'es' query param is set
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_query_param() {
+		// Set es query string to test override
+		$_GET['es'] = true;
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
 	}
 
 	/*
 	 * Ensure that filters disabling query integration are honored
-	 */
-	public function test__ep_skip_query_integration_skip_filter() {
-		$es = new \Automattic\VIP\Search\Search();
-		
-		// Set options/constants/query string to enable query integration
-		add_option( 'vip_enable_vip_search_query_integration', true );
-		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-		$_GET['es'] = true;
-		
-		$this->assertTrue( $es::ep_skip_query_integration( true ) );
-	}
-
-	/*
-	 * Ensure the vip_enable_vip_search_query_integration option works properly with ep_skip_query_integration filter
-	 */
-	public function test__ep_skip_query_integration_skip_option() {
-		$es = new \Automattic\VIP\Search\Search();
-
-		// True will now be the default
-		add_option( 'vip_enable_vip_search_query_integration', false );
-		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip if option is false' );
-
-		// Set es query string to test override
-		$_GET['es'] = true;
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
-		unset( $_GET['es'] );
-
-		update_option( 'vip_enable_vip_search_query_integration', true );
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
-	}
-
-	/*
-	 * Ensure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
-	 */
-	public function test__ep_skip_query_integration_skip_constant() {
-		$es = new \Automattic\VIP\Search\Search();
-
-		// False will now be the default
-		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when query integration constant is set by default' );
-		
-		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
-	
-		// Set es query string to test override
-		$_GET['es'] = true;
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
-	}
-
-	/**
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__ep_skip_query_integration_allow_for_mirrored() {
-		// Should not start off enabled (or our test tells us nothing)
-		define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', false );
-		update_option( 'vip_enable_vip_search_query_integration', false );
+	public function test__ep_skip_query_integration_filter() {
+		// Set constants to enable query integration
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		
+		// We pass in `true` as the starting value for the filter, indicating it should be skipped. We expect that `true` comes back out,
+		// even though query integration is enabled, which indicates that we're properly respecting other filters that have already decided
+		// this query should be skipped
+		$this->assertTrue( \Automattic\VIP\Search\Search::ep_skip_query_integration( true ) );
+	}
 
-		$es = new \Automattic\VIP\Search\Search();
-
-		// Regular query should skip integration
-		$regular_query = new \WP_Query();
-
-		$skipped = $es::ep_skip_query_integration( false, $regular_query );
-
-		$this->assertTrue( $skipped );
-
-		// But a mirrored query should be allowed (not skipped)
-		$mirrored_query = new \WP_Query( array(
-			'vip_search_mirrored' => true,
-		) );
-
-		$skipped = $es::ep_skip_query_integration( false, $mirrored_query );
-
-		$this->assertFalse( $skipped );
-
-		delete_option( 'vip_enable_vip_search_query_integration' );
+	/*
+	 * Ensure that EP query integration is disabled by default
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_skip_query_integration_default() {
+		$this->assertTrue( \Automattic\VIP\Search\Search::ep_skip_query_integration( false ) );
 	}
 
 	/*
