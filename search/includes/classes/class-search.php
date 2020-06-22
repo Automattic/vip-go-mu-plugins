@@ -218,10 +218,12 @@ class Search {
 
 		// Load es-wp-query, if not already loaded. This is done during plugins_loaded so we don't conflict
 		// with sites that have included this plugin themselves
-		if ( ! class_exists( '\\ES_WP_Query' ) ) {
+		if ( ! class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
 			require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
 
-			if ( function_exists( 'es_wp_query_load_adapter' ) ) {
+			// If no other adapter has loaded, load ours. This is to prevent fatals (duplicate function/class definitions) if sites
+			// try to load other adapters before ours
+			if ( ! class_exists( '\\ES_WP_Query' ) && function_exists( 'es_wp_query_load_adapter' ) ) {
 				es_wp_query_load_adapter( 'vip-search' );
 			}
 		}
