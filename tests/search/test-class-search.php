@@ -1073,9 +1073,7 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__is_query_mirroring_enabled_no_constant_no_option() {
-		$es = new \Automattic\VIP\Search\Search();
-		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertFalse( $enabled );
 	}
@@ -1086,10 +1084,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_via_option() {
 		update_option( 'vip_enable_search_query_mirroring', true );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		delete_option( 'vip_enable_search_query_mirroring' );
 
@@ -1102,10 +1098,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_with_option_false() {
 		update_option( 'vip_enable_search_query_mirroring', false );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		delete_option( 'vip_enable_search_query_mirroring' );
 
@@ -1118,10 +1112,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_via_constant() {
 		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertTrue( $enabled );
 	}
@@ -1132,10 +1124,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_with_constant_false() {
 		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', false );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertFalse( $enabled );
 	}
