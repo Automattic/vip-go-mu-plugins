@@ -48,8 +48,8 @@ class Search {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
 
-			// Remove elasticpress command
-			WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
+			// Remove elasticpress command. Need a better way.
+			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
 		}
 
 		// Load ElasticPress
@@ -65,6 +65,10 @@ class Search {
 
 		$this->queue = new Queue();
 		$this->queue->init();
+
+		// Caching layer
+		require_once __DIR__ . '/class-cache.php';
+		$this->cache = new Cache();
 	}
 
 	protected function setup_constants() {
@@ -302,6 +306,11 @@ class Search {
 
 			$offload_main_tax_site_ids = array(
 				929,
+				1281,
+				1284,
+				1286,
+				1513,
+				2161,
 			);
 
 			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ! $query->is_search() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
