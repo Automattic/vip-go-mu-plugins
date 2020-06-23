@@ -61,6 +61,7 @@ class VIP_Encloseme_Cleanup {
 
 		wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Starting _encloseme meta cleanup for %s.', get_site_url() ) );
 
+        $total = 0;
 		for ( $count = 0; $count < 10; $count++ ) {
 			if ( ! defined( 'ENABLE_VIP_ENCLOSEME_CLEANUP_ENV' ) ) { // Constant not set, bail.
 				break;
@@ -81,8 +82,12 @@ class VIP_Encloseme_Cleanup {
 			foreach ( $pids as $pid ) {
 				delete_post_meta( $pid[0], '_encloseme' );
 			}
+
+            $total += count( $pids );
 	
 			sleep( 3 );
 		} 
+
+		wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Deleted %s _encloseme meta entries for %s.', $total, get_site_url() ) );
 	}
 }
