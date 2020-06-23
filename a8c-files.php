@@ -1001,16 +1001,19 @@ class A8C_Files_Utils {
 	public static function filter_photon_domain( $photon_url, $image_url ) {
 			$home_url = home_url();
 			$site_url = site_url();
+		
+			$image_url_parsed = parse_url( $image_url );
+			$home_url_parsed = parse_url( $home_url );
+			$site_url_parsed = parse_url( $site_url );
 
-			if ( wp_startswith( $image_url, $home_url ) ) {
+			if ( $image_url_parsed[ 'host' ] === $home_url_parsed[ 'host' ] ) {
 				return $home_url;
 			}
 
-			if ( wp_startswith( $image_url, $site_url ) ) {
+			if ( $image_url_parsed[ 'host' ] === $site_url_parsed[ 'host' ] ) {
 				return $site_url;
 			}
 
-			$image_url_parsed = parse_url( $image_url );
 			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
 				return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 			}
