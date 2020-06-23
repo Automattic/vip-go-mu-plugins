@@ -102,7 +102,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 						$results[ 0 ][ 'es_total' ],
 						$results[ 0 ][ 'diff' ]
 					),
-					2
+					2,
+					$results[ 0 ][ 'type' ],
 				),
 				array(
 					'#vip-go-es-alerts',
@@ -115,7 +116,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 						$results[ 1 ][ 'es_total' ],
 						$results[ 1 ][ 'diff' ]
 					),
-					2
+					2,
+					$results[ 1 ][ 'type' ],
 				),
 				// NOTE - we've skipped the 3rd result here b/c it has a diff of 0 and shouldn't alert
 				array(
