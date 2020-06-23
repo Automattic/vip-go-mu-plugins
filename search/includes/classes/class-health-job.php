@@ -150,23 +150,35 @@ class HealthJob {
 					$result[ 'diff' ]
 				);
 
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );	
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, $result['type'] );
 			}
 		}
 	}
 
 	/**
 	 * Send an alert
-	 * 
+	 *
 	 * @see wpcom_vip_irc()
-	 * 
+	 *
 	 * @param string $channel IRC / Slack channel to send message to
 	 * @param string $message The message to send
 	 * @param int $level Alert level
-	 * 
-	 * @return bool Bool indicating if sending succeeded or failed
+	 * @param string $type content type
+	 *
+	 * @return bool Bool indicating if sending succeeded, failed or skipped
 	 */
-	public function send_alert( $channel, $message, $level ) {
+	public function send_alert( $channel, $message, $level, $type = '' ) {
+		// We only want to send an alert if a consistency check didn't correct itself in two intervals.
+		if ( $type ) {
+			$cache_key = "healthcheck:{$type}";
+			if ( false === wp_cache_get( $cache_key, 'vip-search' ) ) {
+				wp_cache_set( $cache_key, 1, 'vip-search', self::CRON_INTERVAL * 2 );
+				return false;
+			}
+
+			wp_cache_delete( $cache_key, 'vip-search' );
+		}
+
 		return wpcom_vip_irc( $channel, $message, $level );
 	}
 
@@ -190,7 +202,7 @@ class HealthJob {
 
 		$enabled = in_array( VIP_GO_ENV, $enabled_environments, true );
 
-		// Don't run the checks if the index is not built
+		// Don't run the checks if the index is not built.
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
 			$enabled = false;
 		}
