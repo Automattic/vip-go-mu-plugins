@@ -2,6 +2,8 @@
 namespace Automattic\VIP\Search;
 
 class Cache {
+	const CACHE_GROUP_KEY = 'vip-search';
+
 	public function __construct() {
 		add_action( 'pre_get_posts', array( $this, 'disable_apc_for_ep_enabled_requests' ), 0 );
 	}

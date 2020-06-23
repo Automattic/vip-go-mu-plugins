@@ -170,13 +170,13 @@ class HealthJob {
 	public function send_alert( $channel, $message, $level, $type = '' ) {
 		// We only want to send an alert if a consistency check didn't correct itself in two intervals.
 		if ( $type ) {
-			$cache_key = "healthcheck:{$type}";
+			$cache_key = "healthcheck_alert_seen:{$type}";
 			if ( false === wp_cache_get( $cache_key, 'vip-search' ) ) {
-				wp_cache_set( $cache_key, 1, 'vip-search', self::CRON_INTERVAL * 2 );
+				wp_cache_set( $cache_key, 1, Cache::CACHE_GROUP_KEY, round( self::CRON_INTERVAL * 1.5 ) );
 				return false;
 			}
 
-			wp_cache_delete( $cache_key, 'vip-search' );
+			wp_cache_delete( $cache_key, Cache::CACHE_GROUP_KEY );
 		}
 
 		return wpcom_vip_irc( $channel, $message, $level );
