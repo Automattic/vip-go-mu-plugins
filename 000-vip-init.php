@@ -98,6 +98,13 @@ if ( false !== VIP_GO_ENV ) {
 define( 'WPCOM_VIP_PRIVATE_DIR', $private_dir_path );
 unset( $private_dir_path );
 
+if ( ! defined( 'WC_LOG_DIR' ) ) {
+	/**
+	 * @constant WC_LOG_DIR Write Woocommerce logs to the /tmp directory to prevent them from being copied to the Files Service
+	 */
+	define( 'WC_LOG_DIR', '/tmp' );
+}
+
 // Define these values just in case
 defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
 defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAME', 'VIP' );
