@@ -1572,6 +1572,9 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_filter__ep_sync_taxonomies_default_data
 	 */
 	public function test__filter__ep_sync_taxonomies_default( $input_taxonomies ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
 		$post = new \stdClass();
 
 		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $input_taxonomies, $post );
@@ -1588,6 +1591,9 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_sync_taxonomies_added() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
 		$post = new \stdClass();
 
 		$start_taxonomies = array(
@@ -1625,6 +1631,9 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_sync_taxonomies_removed() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
 		$post = new \stdClass();
 
 		$start_taxonomies = array(
