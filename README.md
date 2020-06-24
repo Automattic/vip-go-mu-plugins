@@ -40,6 +40,12 @@ We have a script that runs unit tests in a self-contained Docker environment.  T
 
 You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
 
+You can also pass the path to a specific test as well as extra PHPUnit arguments:
+
+```bash
+./bin/phpunit-docker.sh tests/path/to/the/test-something.php --stop-on-failure [...args]
+```
+
 ##### CI
 
 PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. See [`.circleci/config.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.circleci/config.yml) for more.
