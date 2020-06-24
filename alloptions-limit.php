@@ -68,13 +68,13 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 	$irc_alert_level = 2; // ALERT
 
-	$opsgenie_alert_level = "P4";
+	$opsgenie_alert_level = 'P4';
 	if ( $blocked ) {
 		$msg = "This site is now BLOCKED from loading until option sizes are under control.";
 
 		// If site is blocked, then the IRC alert is CRITICAL
 		$irc_alert_level = 3;
-		$opsgenie_alert_level = "P3";
+		$opsgenie_alert_level = 'P3';
 	} else {
 		$msg = "Site will be blocked from loading if option sizes get too much bigger.";
 	}
