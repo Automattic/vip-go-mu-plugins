@@ -14,7 +14,6 @@ class Search_Test extends \WP_UnitTestCase {
 		require_once __DIR__ . '/../../search/search.php';
 
 		$this->search_instance = new \Automattic\VIP\Search\Search();
-		$this->search_instance->init();
 	}
 
 	public function test_query_es_with_invalid_type() {
