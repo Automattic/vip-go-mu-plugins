@@ -1542,6 +1542,128 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 787, apply_filters( 'ep_total_field_limit', 5000 ) );
 	}
+
+	public function get_filter__ep_sync_taxonomies_default_data() {
+		return array(
+			array(
+				array(),
+			),
+			array(
+				array(
+					(object) array(
+						'name' => 'category',
+					),
+				),
+			),
+			array(
+				array(
+					(object) array(
+						'name' => 'category',
+					),
+					(object) array(
+						'name' => 'post_tag',
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_filter__ep_sync_taxonomies_default_data
+	 */
+	public function test__filter__ep_sync_taxonomies_default( $input_taxonomies ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$post = new \stdClass();
+
+		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $input_taxonomies, $post );
+
+		$input_taxonomy_names = wp_list_pluck( $input_taxonomies, 'name' );
+		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
+
+		// No change expected
+		$this->assertEquals( $input_taxonomy_names, $filtered_taxonomy_names );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_sync_taxonomies_added() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$post = new \stdClass();
+
+		$start_taxonomies = array(
+			(object) array(
+				'name' => 'category',
+			),
+		);
+
+		\add_filter(
+			'vip_search_post_taxonomies_allow_list',
+			function( $taxonomies ) {
+				$taxonomies[] = 'post_tag';
+				$taxonomies[] = 'post_tag';
+
+				return $taxonomies;
+			}
+		);
+
+		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $start_taxonomies, $post );
+
+		// Pull out just the names, for easier comparison
+		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
+
+		$expected_taxonomy_names = array(
+			'category',
+			'post_tag',
+		);
+
+		// Should now include the additional taxonomies
+		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_sync_taxonomies_removed() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$post = new \stdClass();
+
+		$start_taxonomies = array(
+			(object) array(
+				'name' => 'category',
+			),
+			(object) array(
+				'name' => 'post_tag',
+			),
+		);
+
+		\add_filter(
+			'vip_search_post_taxonomies_allow_list',
+			function( $taxonomies ) {
+				return array( 'post_tag' );
+			}
+		);
+
+		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $start_taxonomies, $post );
+
+		// Pull out just the names, for easier comparison
+		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
+
+		$expected_taxonomy_names = array(
+			'post_tag',
+		);
+
+		// Should now not include the removed taxonomies
+		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
+	}
 	
 	/**
 	 * @runInSeparateProcess

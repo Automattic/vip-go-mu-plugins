@@ -183,6 +183,9 @@ class Search {
 		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
 		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
 
+		// Implement a more convenient way to filter which taxonomies get synced to posts
+		add_filter( 'ep_sync_taxonomies', array( $this, 'filter__ep_sync_taxonomies' ), 999, 2 );
+
 		// Truncate search strings to a reasonable length
 		add_action( 'parse_query', array( $this, 'truncate_search_string_length' ), PHP_INT_MAX );
 
@@ -1062,6 +1065,31 @@ class Search {
 		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
 
 		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+	}
+
+	/**
+	 * Filter for which taxonomies are allowed to be indexed
+	 */
+	public function filter__ep_sync_taxonomies( $current_taxonomies, $post ) {
+		if ( ! is_array( $current_taxonomies ) ) {
+			$current_taxonomies = array();
+		}
+
+		// The ep_sync_taxonomies filter is a plain array of taxonomy objects...we implement this filter for convienence to prevent
+		// needing to traverse the array to see if taxonomies need added or removed
+		$taxonomy_names = array_unique( wp_list_pluck( $current_taxonomies, 'name' ) );
+
+		/**
+		 * Filter taxonomies to be synced with a post
+		 *
+		 * @hook vip_search_post_taxonomies_allow_list
+		 * @param  {array} $taxonomy_names The current list of taxonomy names to sync with the post
+		 * @param  {WP_Post} Post object
+		 * @return  {array} New array of taxonomy names to sync with the post
+		 */
+		$filtered_taxonomy_names = array_unique( apply_filters( 'vip_search_post_taxonomies_allow_list', $taxonomy_names, $post ) );
+
+		return array_map( 'get_taxonomy', $filtered_taxonomy_names );
 	}
 
 	/**
