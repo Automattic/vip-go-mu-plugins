@@ -53,6 +53,7 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) 
 }
 
 function wpcom_vip_login_limiter( $username ) {
+	http_response_code( 403 );
 	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT, MINUTE_IN_SECONDS * 5 );
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
@@ -114,6 +115,7 @@ function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
 	}
 
 	if ( is_wp_error( $login_limit_error ) ) {
+		http_response_code( 429 );
 		return new IXR_Error( 429, $login_limit_error->get_error_message() );
 	}
 
