@@ -163,25 +163,59 @@ function vip_es_field_map( $es_map ) {
 			'menu_order'                    => 'menu_order',
 			'post_mime_type'                => 'post_mime_type',
 			'comment_count'                 => 'comment_count',
-			'post_meta'                     => 'meta.%s.value',
+			'post_meta'                     => 'meta.%s.value.sortable',
 			'post_meta.analyzed'            => 'meta.%s.value',
 			'post_meta.long'                => 'meta.%s.long',
 			'post_meta.double'              => 'meta.%s.double',
 			'post_meta.binary'              => 'meta.%s.boolean',
 			'term_id'                       => 'terms.%s.term_id',
 			'term_slug'                     => 'terms.%s.slug',
-			'term_name'                     => 'terms.%s.name',
+			'term_name'                     => 'terms.%s.name.sortable',
 			'category_id'                   => 'terms.category.term_id',
 			'category_slug'                 => 'terms.category.slug',
-			'category_name'                 => 'terms.category.name',
+			'category_name'                 => 'terms.category.name.sortable',
 			'tag_id'                        => 'terms.post_tag.term_id',
 			'tag_slug'                      => 'terms.post_tag.slug',
-			'tag_name'                      => 'terms.post_tag.name',
+			'tag_name'                      => 'terms.post_tag.name.sortable',
 		),
 		$es_map
 	);
 }
 add_filter( 'es_field_map', 'vip_es_field_map' );
+
+/**
+ * Returns the lowercase version of a meta value.
+ *
+ * @param mixed  $meta_value   The meta value.
+ * @param string $meta_key     The meta key.
+ * @param string $meta_compare The comparison operation.
+ * @param string $meta_type    The type of meta (post, user, term, etc).
+ * @return mixed If value is a string, returns the lowercase version. Otherwise, returns the original value, unmodified.
+ */
+function vip_es_meta_value_tolower( $meta_value, $meta_key, $meta_compare, $meta_type ) {
+	if ( ! is_string( $meta_value ) || empty( $meta_value ) ) {
+		return $meta_value;
+	}
+	return strtolower( $meta_value );
+}
+add_filter( 'es_meta_query_meta_value', 'vip_es_meta_value_tolower', 10, 4 );
+
+/**
+ * Normalise term name to lowercase as we are mapping that against the "sortable" field, which is a lowercased keyword.
+ *
+ * @param string|mixed $term     Term's name which should be normalised to
+ *                               lowercase.
+ * @param string       $taxonomy Taxonomy of the term.
+ * @return mixed If $term is a string, lowercased string is returned. Otherwise
+ *               original value is return unchanged.
+ */
+function vip_es_term_name_slug_tolower( $term, $taxonomy ) {
+	if ( ! is_string( $term ) || empty( $term ) ) {
+		return $term;
+	}
+	return strtolower( $term );
+}
+add_filter( 'es_tax_query_term_name', 'vip_es_term_name_slug_tolower', 10, 2 );
 
 /**
  * Advanced Post Cache and es-wp-query do not work well together. In
