@@ -121,6 +121,12 @@ function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
 }
 add_filter( 'xmlrpc_login_error', 'wpcom_vip_login_limit_xmlrpc_error', 10, 2 );
 
+function wpcom_set_status_header_on_xmlrpc_failed_login_requests( $error ) {
+	header( "X-XMLRPC-Error-Code: {$error->code}" );
+	return $error;
+}
+add_action( 'xmlrpc_login_error', 'wpcom_set_status_header_on_xmlrpc_failed_login_requests' );
+
 function wpcom_vip_lost_password_limit( $errors ) {
 	// Don't bother checking if we're already error-ing out
 	if ( $errors->get_error_code() ) {
