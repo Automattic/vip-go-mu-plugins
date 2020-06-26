@@ -157,6 +157,30 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_index_name, $index_name );
 	}
 
+	public function test__vip_search_filter_ep_index_name_with_overridden_version() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// For EP to register Indexables
+		do_action( 'plugins_loaded' );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		// Override the version
+		$es->versioning->set_current_version_number( 42 );
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
+
+		$this->assertEquals( 'vip-123-post-v42', $index_name, 'Overridden index name is not correct' );
+
+		// Reset
+		$es->versioning->reset_current_version_number();
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
+
+		$this->assertEquals( 'vip-123-post', $index_name );
+	}
+
 	public function test__vip_search_filter_ep_default_index_number_of_shards() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();

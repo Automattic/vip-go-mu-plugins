@@ -9,6 +9,65 @@ use \WP_Error as WP_Error;
 
 class Versioning {
 	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
+	
+	/**
+	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
+	 */
+	private $current_index_version_by_type = array();
+
+	/**
+	 * Set the current (not active) version for a given Indexable. This allows us to work on other index versions without making
+	 * that index active
+	 * 
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to temporarily set the current index version
+	 * @return {bool|WP_Error} True on success, or WP_Error on failure
+	 */
+	public function set_current_version_number( Indexable $indexable, $version_number ) {
+		// Validate that the requested version is known
+		$versions = $this->get_versions( $indexable );
+
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return new WP_Error( 'invalid-index-version', sprintf( 'The requested index version %d does not exist', $version_number ) );
+		}
+
+		$this->current_index_version_by_type[ $indexable->slug ] = $version_number;
+
+		return true;
+	}
+
+	/**
+	 * Reset the current version for a given Indexable. This will default back to the active index, with no override
+	 * 
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to reset the current index version
+	 * @return {bool|WP_Error} True on success
+	 */
+	public function reset_current_version_number( Indexable $indexable ) {
+		unset( $this->current_index_version_by_type[ $indexable->slug ] );
+
+		return true;
+	}
+
+	/**
+	 * Get the current index version number
+	 * 
+	 * The current index number is the index that should be used for requests. It is different than the active index, which is the index
+	 * that has been designated as the default for all requests. The current index can be overridden to make requests to other indexs, such as
+	 * for indexing content on them while they are still inactive
+	 * 
+	 * This defaults to the active index, but can be overridden by calling Versioning::set_current_version_number()
+	 * 
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to get the current version number
+	 * @return {int} The current version number
+	 */
+	public function get_current_version_number( Indexable $indexable ) {
+		$override = isset( $this->current_index_version_by_type[ $indexable->slug ] ) ? $this->current_index_version_by_type[ $indexable->slug ] : null;
+
+		if ( is_int( $override ) ) {
+			return $override;
+		}
+
+		return $this->get_active_version_number( $indexable );
+	}
 
 	/**
 	 * Retrieve the active index version for a given Indexable

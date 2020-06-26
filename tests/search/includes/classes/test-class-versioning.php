@@ -364,4 +364,33 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( wp_list_pluck( $versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
 		$this->assertEquals( wp_list_pluck( $versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
 	}
+
+	public function test_current_version_number_overrides() {
+		delete_option( Versioning::INDEX_VERSIONS_OPTION );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$result = $this->version_instance->add_version( $indexable );
+
+		$this->assertTrue( $result, 'Failed to add new version of index' );
+
+		// Defaults to active index (1 in our case)
+		$this->assertEquals( 1, $this->version_instance->get_current_version_number( $indexable ), 'Default (non-overridden) version number is wrong' );
+
+		// Now we override so we can work on other indexes
+		$result = $this->version_instance->set_current_version_number( $indexable, 2 );
+
+		$this->assertTrue( $result, 'Failed to set current version number' );
+
+		// Current index should now be 2
+		$this->assertEquals( 2, $this->version_instance->get_current_version_number( $indexable ), 'Overridden version number is wrong' );
+
+		// And reset it back to default
+		$result = $this->version_instance->reset_current_version_number( $indexable );
+
+		$this->assertTrue( $result, 'Failed to reset current version number' );
+
+		// Back to the active index
+		$this->assertEquals( 1, $this->version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
+	}
 }
