@@ -77,6 +77,10 @@ class Search {
 		// Caching layer
 		require_once __DIR__ . '/class-cache.php';
 		$this->cache = new Cache();
+
+		// Index versioning
+		require_once __DIR__ . '/class-versioning.php';
+		$this->versioning = new Versioning();
 	}
 
 	protected function setup_constants() {
