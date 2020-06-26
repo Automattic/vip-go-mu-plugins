@@ -627,6 +627,15 @@ class Search {
 		return false;
 	}
 
+	/**
+	 * Whether the site is in "network" mode, meaning subsites should be indexed into the same index
+	 * 
+	 */
+	public static function is_network_mode() {
+		// NOTE - Not using strict equality check here so that we match EP
+		return defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK;
+	}
+
 	public static function ep_skip_query_integration( $skip, $query = null ) {
 		/**
 		 * Honor filters that skip query integration

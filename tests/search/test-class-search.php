@@ -1005,6 +1005,30 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
 	}
 
+	public function test_is_network_mode_default() {
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_network_mode() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_is_network_mode_with_constant() {
+		define( 'EP_IS_NETWORK', true );
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_network_mode() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_is_network_mode_with_constant_false() {
+		define( 'EP_IS_NETWORK', false);
+
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_network_mode() );
+	}
+
 	/*
 	 * Ensure that filters disabling query integration are honored
 	 *
