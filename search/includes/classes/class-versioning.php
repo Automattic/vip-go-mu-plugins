@@ -160,7 +160,7 @@ class Versioning {
 	 * @param {array} Array of version information for the given Indexable
 	 * @return {bool} Boolean indicating if the version information was saved successfully or not
 	 */
-	public function update_versions( Indexable $indexable = null, $versions ) {
+	public function update_versions( Indexable $indexable, $versions ) {
 		if ( Search::is_network_mode() ) {
 			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
 		} else {
