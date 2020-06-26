@@ -11,7 +11,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->version_instance = $search->versioning;
 	}
 
-	public function get_get_next_version_from_versions_data() {
+	public function get_get_next_version_number_data() {
 		return array(
 			array(
 				// Input array of versions
@@ -79,10 +79,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_get_next_version_from_versions_data
+	 * @dataProvider get_get_next_version_number_data
 	 */
-	public function test_get_next_version_from_versions( $versions, $expected_next_version ) {
-		$next_version = $this->version_instance->get_next_version_from_versions( $versions );
+	public function test_get_next_version_number( $versions, $expected_next_version ) {
+		$next_version = $this->version_instance->get_next_version_number( $versions );
 
 		$this->assertEquals( $expected_next_version, $next_version );
 	}	
