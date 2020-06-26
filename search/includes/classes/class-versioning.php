@@ -189,7 +189,7 @@ class Versioning {
 	 * @param {int} The index version to get stats for
 	 * @return {array} Array of index stats
 	 */
-	public function get_version_stats( \ElasticPress\Indexable $indexable, $version ) {
+	public function get_version_stats( Indexable $indexable, $version ) {
 		// Need helper function in \ElasticPress\Elasticsearch
 	}
 
