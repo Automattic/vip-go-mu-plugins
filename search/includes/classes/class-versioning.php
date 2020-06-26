@@ -16,17 +16,57 @@ class Versioning {
 	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to get the active index version
 	 * @return {int} The currently active index version
 	 */
-	public function get_active_version( \ElasticPress\Indexable $indexable ) {
+	public function get_active_version( Indexable $indexable ) {
+		$versions = $this->get_versions( $indexable );
 
+		$active_statuses = wp_list_pluck( $versions, 'active' );
+
+		$array_index = array_search( true, $active_statuses, true );
+
+		if ( false === $array_index ) {
+			return null;
+		}
+
+		return $versions[ $array_index ];
+	}
+
+	/**
+	 * Grab just the version number for the active version
+	 * 
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable to get the active version number for
+	 * @return {int} The currently active version number
+	 */
+	public function get_active_version_number( Indexable $indexable ) {
+		$active_version = $this->get_active_version( $indexable );
+
+		if ( ! $active_version ) {
+			return 1;
+		}
+
+		return $active_version['number'];
 	}
 
 	/**
 	 * Retrieve details about available index versions
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The optional indexable type for which to retrieve index versions
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable for which to retrieve index versions
 	 * @return {array} Array of index versions
 	 */
-	public function get_versions( \ElasticPress\Indexable $indexable = null ) {
+	public function get_versions( Indexable $indexable = null ) {
+		$slug = $indexable->slug;
+
+		if ( Search::is_network_mode() ) {
+			$versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
+		} else {
+			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+		}
+
+		if ( ! isset( $versions[ $slug ] ) || ! is_array( $versions[ $slug ] ) ) {
+			return array();
+		}
+
+		return $versions[ $slug ];
+	}
 
 	/**
 	 * Determine what the next index version number is, based on an array of existing index versions
