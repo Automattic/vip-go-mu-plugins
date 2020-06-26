@@ -38,14 +38,14 @@ class Versioning {
 	 * @param {array} $versions Array of existing versions from which to calculate the next version
 	 * @return {int} Next version number
 	 */
-	public function get_next_version_from_versions( $versions ) {
+	public function get_next_version_number( $versions ) {
 		$new_version = null;
 
 		// If site has no versions yet (1 version), the next version is 2
 		if ( empty( $versions ) || ! is_array( $versions ) ) {
 			$new_version = 2;
 		} else {
-			$new_version = max( array_keys( $versions ) );
+			$new_version = max( wp_list_pluck( $versions, 'number' ) );
 		}
 
 		if ( ! is_int( $new_version ) || $new_version <= 2 ) {

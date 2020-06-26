@@ -16,29 +16,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					2 => array(),
-					3 => array(),
+					array( 'number' => 2 ),
+					array( 'number' => 3 ),
 				),
 				// Expected next version
 				4,
-			),
-			array(
-				// Input array of versions
-				array(
-					0 => array(),
-				),
-				// Expected next version
-				2,
-			),
-			array(
-				// Input array of versions
-				array(
-					-1 => array(),
-					-2 => array(),
-					-3 => array(),
-				),
-				// Expected next version
-				2,
 			),
 			array(
 				// Input array of versions
@@ -49,8 +31,18 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1000000 => array(),
-					2000000 => array(),
+					array( 'number' => -1 ),
+					array( 'number' => -2 ),
+					array( 'number' => -3 ),
+				),
+				// Expected next version
+				2,
+			),
+			array(
+				// Input array of versions
+				array(
+					array( 'number' => 2000000 ),
+					array( 'number' => 1000000 ),
 				),
 				// Expected next version
 				2000001,
@@ -58,22 +50,12 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					'one' => array(),
-					'two' => array(),
-					3 => array(),
+					array( 'number' => 'one' ),
+					array( 'number' => 'two' ),
+					array( 'number' => 3 ),
 				),
 				// Expected next version
 				4,
-			),
-			array(
-				// Input array of versions (flat array, invalid structure)
-				array(
-					1,
-					2,
-					3,
-				),
-				// Expected next version
-				2,
 			),
 		);
 	}
