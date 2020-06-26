@@ -192,18 +192,4 @@ class Versioning {
 	public function get_version_stats( Indexable $indexable, $version ) {
 		// Need helper function in \ElasticPress\Elasticsearch
 	}
-
-	/**
-	 * Get the versioned index name for a given Indexable
-	 * 
-	 * Note - versions start at 1, and the first version will not contain a version identifier for backwards compatibility with
-	 * unversioned indexes
-	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to get the versioned index name
-	 * @param {int} The index version to get the name for
-	 * @return {string} The versioned index name
-	 */
-	public function get_versioned_index_name( \ElasticPress\Indexable $indexable, $version ) {
-
-	}
 }

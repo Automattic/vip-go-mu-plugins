@@ -69,6 +69,94 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'index-name', $index_name );
 	}
 
+	public function vip_search_filter_ep_index_name_with_versions_data() {
+		return array(
+			array(
+				// Active index number
+				1,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post',
+			),
+			array(
+				// Active index number
+				2,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post-v2',
+			),
+			array(
+				// Active index number
+				1,
+				// Blog id
+				2,
+				// Expected index name
+				'vip-123-post-2',
+			),
+			array(
+				// Active index number
+				2,
+				// Blog id
+				2,
+				// Expected index name
+				'vip-123-post-2-v2',
+			),
+			array(
+				// Active index number
+				null,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post',
+			),
+			array(
+				// Active index number
+				0,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post',
+			),
+		);
+	}
+
+	/**
+	 * Test `ep_index_name` filter with versioning
+	 *
+	 * When current version is 1, the index name should not have a version applied to it
+	 * 
+	 * @dataProvider vip_search_filter_ep_index_name_with_versions_data
+	 * 
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__vip_search_filter_ep_index_name_with_versions( $active_version, $blog_id, $expected_index_name ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// For EP to register Indexables
+		do_action( 'plugins_loaded' );
+
+		// Mock the Versioning class so we can control which version it returns
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
+				->setMethods( [ 'get_active_version_number' ] )
+				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'get_active_version_number' )
+				->will( $this->returnValue( $active_version ) );
+
+		$es->versioning = $stub;
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', $blog_id, $indexable );
+
+		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
 	public function test__vip_search_filter_ep_default_index_number_of_shards() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();

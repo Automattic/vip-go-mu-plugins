@@ -478,6 +478,12 @@ class Search {
 			$index_name .= sprintf( '-%s', $blog_id );
 		}
 
+		$active_version = $this->versioning->get_active_version_number( $indexable );
+
+		if ( is_int( $active_version ) && $active_version > 1 ) {
+			$index_name .= sprintf( '-v%d', $active_version );
+		}
+
 		return $index_name;
 	}
 
