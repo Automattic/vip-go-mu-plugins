@@ -469,9 +469,9 @@ class Search {
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
-	public function filter__ep_index_name( $index_name, $blog_id, $indexables ) {
+	public function filter__ep_index_name( $index_name, $blog_id, $indexable ) {
 		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
-		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexables->slug );
+		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexable->slug );
 
 		// $blog_id won't be present on global indexes (such as users)
 		if ( $blog_id ) {
