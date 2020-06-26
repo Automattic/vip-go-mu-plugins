@@ -150,11 +150,36 @@ class Versioning {
 	 * Verifies that the new target index does in-fact exist, then marks it as active
 	 * 
 	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to activate the new index
-	 * @param {int} $version The new index version to activate
+	 * @param {int} $version_number The new index version to activate
 	 * @return {bool|WP_Error} Boolean indicating success, or WP_Error on error 
 	 */
-	public function activate_version( \ElasticPress\Indexable $indexable, $version ) {
+	public function activate_version( Indexable $indexable, $version_number ) {
+		$versions = $this->get_versions( $indexable );
 
+		$version_found = false;
+
+		// Mark all others as inactive, activate the new one
+		foreach( $versions as &$version ) {
+			if ( $version_number === $version[ 'number' ] ) {
+				$version_found = true;
+
+				$version['active'] = true;
+				$version['activated_time' ] = time();
+			} else {
+				$version['active'] = false;
+			}
+		}
+
+		// If this wasn't a valid version, abort with error
+		if ( ! $version_found ) {
+			return new WP_Error( 'invalid-index-version', sprintf( 'The index version %d was not found', $version_number ) );
+		}
+
+		if ( ! $this->update_versions( $indexable, $versions ) ) {
+			return new WP_Error( 'failed-activating-version', sprintf( 'The index version %d failed to activate', $version_number ) );
+		}
+
+		return true;
 	}
 
 	/**
