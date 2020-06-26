@@ -8,7 +8,7 @@ use \ElasticPress\Indexables as Indexables;
 use \WP_Error as WP_Error;
 
 class Versioning {
-	const CURRENT_VERSION_OPTION = 'vip_search_index_versions';
+	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
 
 	/**
 	 * Retrieve the active index version for a given Indexable
