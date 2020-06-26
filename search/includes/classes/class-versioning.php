@@ -30,6 +30,31 @@ class Versioning {
 	 */
 	public function get_versions( \ElasticPress\Indexable $indexable = null ) {
 
+	/**
+	 * Determine what the next index version number is, based on an array of existing index versions
+	 * 
+	 * Versions start at 1
+	 * 
+	 * @param {array} $versions Array of existing versions from which to calculate the next version
+	 * @return {int} Next version number
+	 */
+	public function get_next_version_from_versions( $versions ) {
+		$new_version = null;
+
+		// If site has no versions yet (1 version), the next version is 2
+		if ( empty( $versions ) || ! is_array( $versions ) ) {
+			$new_version = 2;
+		} else {
+			$new_version = max( array_keys( $versions ) );
+		}
+
+		if ( ! is_int( $new_version ) || $new_version <= 2 ) {
+			$new_version = 2;
+		} else {
+			$new_version++;
+		}
+
+		return $new_version;
 	}
 
 	/**
