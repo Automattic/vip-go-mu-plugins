@@ -69,6 +69,55 @@ class Versioning {
 	}
 
 	/**
+	 * Retrieve details about available index versions
+	 * 
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable for which to create a new version
+	 * @return {bool} Boolean indicating if the new version was successfully added or not
+	 */
+	public function add_version( Indexable $indexable ) {
+		$slug = $indexable->slug;
+	
+		$versions = $this->get_versions( $indexable );
+
+		$new_version = $this->get_next_version_number( $versions );
+
+		if ( ! $new_version ) {
+			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
+		}
+
+		$versions[] = array(
+			'number' => $new_version,
+			'active' => false,
+			'created_time' => time(),
+		);
+
+		return $this->update_versions( $indexable, $versions );
+	}
+
+	/**
+	 * Save details about available index versions
+	 * 
+	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to update versions
+	 * @param {array} Array of version information for the given Indexable
+	 * @return {bool} Boolean indicating if the version information was saved successfully or not
+	 */
+	public function update_versions( Indexable $indexable, $versions ) {
+		if ( Search::is_network_mode() ) {
+			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
+		} else {
+			$current_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+		}
+
+		$current_versions[ $indexable->slug ] = $versions;
+	
+		if ( Search::is_network_mode() ) {
+			return update_site_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
+		}
+
+		return update_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
+	}
+
+	/**
 	 * Determine what the next index version number is, based on an array of existing index versions
 	 * 
 	 * Versions start at 1

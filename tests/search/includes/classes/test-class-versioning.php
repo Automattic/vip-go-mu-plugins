@@ -122,5 +122,58 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$active_version = $this->version_instance->get_active_version_number( $indexable, $versions );
 
 		$this->assertEquals( $expected_active_version, $active_version );
+	}
+
+	public function add_version_data() {
+		return array(
+			// No index marked active
+			array(
+				// Input array of versions
+				array(
+					array( 'number' => 2, 'active' => false ),
+					array( 'number' => 3, 'active' => false ),
+				),
+				// Indexable slug
+				'post',
+				// Expected new versions
+				array(
+					array( 'number' => 2, 'active' => false ),
+					array( 'number' => 3, 'active' => false ),
+					array( 'number' => 4, 'active' => false ),
+				),
+			),
+
+			// No versions tracked
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Expected new versions
+				array(
+					array( 'number' => 2, 'active' => false ),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider add_version_data
+	 */
+	public function test_add_version( $versions, $indexable_slug, $expected_new_versions ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		$this->version_instance->update_versions( $indexable, $versions );
+
+		// Add the new version
+		$succeeded = $this->version_instance->add_version( $indexable );
+
+		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
+
+		$new_versions = $this->version_instance->get_versions( $indexable );
+
+		// Can only compare the deterministic parts of the version info (not created_time, for example)
+		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
+		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
 	}	
 }
