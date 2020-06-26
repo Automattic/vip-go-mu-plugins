@@ -159,12 +159,12 @@ class Versioning {
 		$version_found = false;
 
 		// Mark all others as inactive, activate the new one
-		foreach( $versions as &$version ) {
-			if ( $version_number === $version[ 'number' ] ) {
+		foreach ( $versions as &$version ) {
+			if ( $version_number === $version['number'] ) {
 				$version_found = true;
 
 				$version['active'] = true;
-				$version['activated_time' ] = time();
+				$version['activated_time'] = time();
 			} else {
 				$version['active'] = false;
 			}

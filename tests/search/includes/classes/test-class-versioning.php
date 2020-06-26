@@ -19,8 +19,12 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2 ),
-					array( 'number' => 3 ),
+					array(
+						'number' => 2,
+					),
+					array(
+						'number' => 3,
+					),
 				),
 				// Expected next version
 				4,
@@ -34,9 +38,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => -1 ),
-					array( 'number' => -2 ),
-					array( 'number' => -3 ),
+					array(
+						'number' => -1,
+					),
+					array(
+						'number' => -2,
+					),
+					array(
+						'number' => -3,
+					),
 				),
 				// Expected next version
 				2,
@@ -44,8 +54,12 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2000000 ),
-					array( 'number' => 1000000 ),
+					array(
+						'number' => 2000000,
+					),
+					array(
+						'number' => 1000000,
+					),
 				),
 				// Expected next version
 				2000001,
@@ -53,9 +67,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 'one' ),
-					array( 'number' => 'two' ),
-					array( 'number' => 3 ),
+					array(
+						'number' => 'one',
+					),
+					array(
+						'number' => 'two',
+					),
+					array(
+						'number' => 3,
+					),
 				),
 				// Expected next version
 				4,
@@ -78,8 +98,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2, 'active' => false ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => false,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 				// Indexable slug
 				'post',
@@ -100,8 +126,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2, 'active' => true ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => true,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 				// Indexable slug
 				'post',
@@ -130,16 +162,31 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2, 'active' => false ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => false,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 				// Indexable slug
 				'post',
 				// Expected new versions
 				array(
-					array( 'number' => 2, 'active' => false ),
-					array( 'number' => 3, 'active' => false ),
-					array( 'number' => 4, 'active' => false ),
+					array(
+						'number' => 2, 
+						'active' => false,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
+					array(
+						'number' => 4,
+						'active' => false,
+					),
 				),
 			),
 
@@ -151,7 +198,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Expected new versions
 				array(
-					array( 'number' => 2, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => false,
+					),
 				),
 			),
 		);
@@ -183,8 +233,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2, 'active' => false ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => false,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 				// Indexable slug
 				'post',
@@ -192,8 +248,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 				2,
 				// Expected new versions
 				array(
-					array( 'number' => 2, 'active' => true ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => true,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 			),
 
@@ -201,8 +263,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2, 'active' => false ),
-					array( 'number' => 3, 'active' => true ),
+					array(
+						'number' => 2,
+						'active' => false,
+					),
+					array(
+						'number' => 3,
+						'active' => true,
+					),
 				),
 				// Indexable slug
 				'post',
@@ -210,8 +278,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 				2,
 				// Expected new versions
 				array(
-					array( 'number' => 2, 'active' => true ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => true,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 			),
 		);
@@ -251,8 +325,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array( 'number' => 2, 'active' => false ),
-					array( 'number' => 3, 'active' => false ),
+					array(
+						'number' => 2,
+						'active' => false,
+					),
+					array(
+						'number' => 3,
+						'active' => false,
+					),
 				),
 				// Indexable slug
 				'post',

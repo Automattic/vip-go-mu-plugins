@@ -1024,7 +1024,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_is_network_mode_with_constant_false() {
-		define( 'EP_IS_NETWORK', false);
+		define( 'EP_IS_NETWORK', false );
 
 		$this->assertFalse( \Automattic\VIP\Search\Search::is_network_mode() );
 	}
