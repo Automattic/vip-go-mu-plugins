@@ -19,10 +19,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 					),
 				),
@@ -38,13 +38,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					-1 => array(
 						'number' => -1,
 					),
-					array(
+					-2 => array(
 						'number' => -2,
 					),
-					array(
+					-3 => array(
 						'number' => -3,
 					),
 				),
@@ -54,10 +54,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2000000 => array(
 						'number' => 2000000,
 					),
-					array(
+					1000000 => array(
 						'number' => 1000000,
 					),
 				),
@@ -67,13 +67,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					'one' => array(
 						'number' => 'one',
 					),
-					array(
+					'two' => array(
 						'number' => 'two',
 					),
-					array(
+					3 => array(
 						'number' => 3,
 					),
 				),
@@ -98,11 +98,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => false,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
@@ -126,11 +126,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => true,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
@@ -162,11 +162,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => false,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
@@ -175,15 +175,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Expected new versions
 				array(
-					array(
+					2 => array(
 						'number' => 2, 
 						'active' => false,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
-					array(
+					4 => array(
 						'number' => 4,
 						'active' => false,
 					),
@@ -198,7 +198,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Expected new versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => false,
 					),
@@ -233,11 +233,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => false,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
@@ -248,11 +248,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 				2,
 				// Expected new versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => true,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
@@ -263,11 +263,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => false,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => true,
 					),
@@ -278,11 +278,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 				2,
 				// Expected new versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => true,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),
@@ -325,11 +325,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					array(
+					2 => array(
 						'number' => 2,
 						'active' => false,
 					),
-					array(
+					3 => array(
 						'number' => 3,
 						'active' => false,
 					),

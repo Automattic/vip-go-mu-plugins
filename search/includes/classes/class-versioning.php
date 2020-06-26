@@ -85,7 +85,7 @@ class Versioning {
 			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
 		}
 
-		$versions[] = array(
+		$versions[ $new_version ] = array(
 			'number' => $new_version,
 			'active' => false,
 			'created_time' => time(),
@@ -101,7 +101,7 @@ class Versioning {
 	 * @param {array} Array of version information for the given Indexable
 	 * @return {bool} Boolean indicating if the version information was saved successfully or not
 	 */
-	public function update_versions( Indexable $indexable, $versions ) {
+	public function update_versions( Indexable $indexable = null, $versions ) {
 		if ( Search::is_network_mode() ) {
 			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
 		} else {
@@ -132,7 +132,7 @@ class Versioning {
 		if ( empty( $versions ) || ! is_array( $versions ) ) {
 			$new_version = 2;
 		} else {
-			$new_version = max( wp_list_pluck( $versions, 'number' ) );
+			$new_version = max( array_keys( $versions ) );
 		}
 
 		if ( ! is_int( $new_version ) || $new_version <= 2 ) {
@@ -156,23 +156,19 @@ class Versioning {
 	public function activate_version( Indexable $indexable, $version_number ) {
 		$versions = $this->get_versions( $indexable );
 
-		$version_found = false;
+		// If this wasn't a valid version, abort with error
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return new WP_Error( 'invalid-index-version', sprintf( 'The index version %d was not found', $version_number ) );
+		}
 
 		// Mark all others as inactive, activate the new one
 		foreach ( $versions as &$version ) {
 			if ( $version_number === $version['number'] ) {
-				$version_found = true;
-
 				$version['active'] = true;
 				$version['activated_time'] = time();
 			} else {
 				$version['active'] = false;
 			}
-		}
-
-		// If this wasn't a valid version, abort with error
-		if ( ! $version_found ) {
-			return new WP_Error( 'invalid-index-version', sprintf( 'The index version %d was not found', $version_number ) );
 		}
 
 		if ( ! $this->update_versions( $indexable, $versions ) ) {
