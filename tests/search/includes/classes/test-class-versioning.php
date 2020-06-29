@@ -3,6 +3,13 @@
 namespace Automattic\VIP\Search;
 
 class Versioning_Test extends \WP_UnitTestCase {
+	/**
+	* Make tests run in separate processes since we're testing state
+	* related to plugin init, including various constants.
+	*/
+	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+
 	static $version_instance;
 
 	public static function setUpBeforeClass() {
