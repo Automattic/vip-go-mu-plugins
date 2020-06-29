@@ -33,11 +33,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$mock_indexable = (object) [ 'slug' => 'slug' ];
+		do_action( 'plugins_loaded' );
 
-		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$this->assertEquals( 'vip-123-slug-1', $index_name );
+		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
+
+		$this->assertEquals( 'vip-123-post-1', $index_name );
 	}
 
 	/**
@@ -49,11 +51,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$mock_indexable = (object) [ 'slug' => 'users' ];
+		do_action( 'plugins_loaded' );
 
-		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $mock_indexable );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'user' );
 
-		$this->assertEquals( 'vip-123-users', $index_name );
+		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
+
+		$this->assertEquals( 'vip-123-user', $index_name );
 	}
 
 	/**
@@ -62,9 +66,14 @@ class Search_Test extends \WP_UnitTestCase {
 	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
 	 */
 	public function test__vip_search_filter_ep_index_name__no_constant() {
-		$mock_indexable = (object) [ 'slug' => 'slug' ];
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
 
-		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
+		do_action( 'plugins_loaded' );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
 
 		$this->assertEquals( 'index-name', $index_name );
 	}
