@@ -471,8 +471,34 @@ class Queue {
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
 
+			$this->record_processed_from_queue_stat( count( $jobs ), $indexable );
+
 			$this->record_queue_count_stat( $indexable );
 		}
+	}
+
+	public function record_processed_from_queue_stat( $count, $indexable ) {
+		if ( ! $indexable ) {
+			return;
+		}
+
+		if ( ! is_int( $count ) ) {
+			$count = intval( $count );
+		}
+
+		$statsd_mode = 'processed_from_queue';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd->increment( $per_site_stat, $count );
 	}
 
 	public function record_queue_count_stat( $indexable ) {
