@@ -24,8 +24,8 @@ class VIP_Encloseme_Cleanup {
 		}
 
 		$schedule[ self::CRON_INTERVAL ] = [
-			'interval' => 1200,
-			'display' => __( 'Once every twenty minutes.' ),
+			'interval' => 600,
+			'display' => __( 'Once every ten minutes.' ),
 		];
 		
 		return $schedule;
