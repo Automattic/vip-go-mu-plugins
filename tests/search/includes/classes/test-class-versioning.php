@@ -3,7 +3,9 @@
 namespace Automattic\VIP\Search;
 
 class Versioning_Test extends \WP_UnitTestCase {
-	public function setUp() {
+	static $version_instance;
+
+	public static function setUpBeforeClass() {
 		require_once __DIR__ . '/../../../../search/search.php';
 
 		$search = \Automattic\VIP\Search\Search::instance();
@@ -11,7 +13,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
 
-		$this->version_instance = $search->versioning;
+		self::$version_instance = $search->versioning;
 	}
 
 	public function get_next_version_number_data() {
@@ -87,7 +89,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_next_version_number_data
 	 */
 	public function test_get_next_version_number( $versions, $expected_next_version ) {
-		$next_version = $this->version_instance->get_next_version_number( $versions );
+		$next_version = self::$version_instance->get_next_version_number( $versions );
 
 		$this->assertEquals( $expected_next_version, $next_version );
 	}
@@ -149,9 +151,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 	public function test_get_active_version_number( $versions, $indexable_slug, $expected_active_version ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
-		$this->version_instance->update_versions( $indexable, $versions );
+		self::$version_instance->update_versions( $indexable, $versions );
 
-		$active_version = $this->version_instance->get_active_version_number( $indexable, $versions );
+		$active_version = self::$version_instance->get_active_version_number( $indexable, $versions );
 
 		$this->assertEquals( $expected_active_version, $active_version );
 	}
@@ -213,14 +215,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 	public function test_add_version( $versions, $indexable_slug, $expected_new_versions ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
-		$this->version_instance->update_versions( $indexable, $versions );
+		self::$version_instance->update_versions( $indexable, $versions );
 
 		// Add the new version
-		$succeeded = $this->version_instance->add_version( $indexable );
+		$succeeded = self::$version_instance->add_version( $indexable );
 
 		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
 
-		$new_versions = $this->version_instance->get_versions( $indexable );
+		$new_versions = self::$version_instance->get_versions( $indexable );
 
 		// Can only compare the deterministic parts of the version info (not created_time, for example)
 		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
@@ -297,23 +299,23 @@ class Versioning_Test extends \WP_UnitTestCase {
 	public function test_activate_version( $versions, $indexable_slug, $version_to_activate, $expected_new_versions ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
-		$this->version_instance->update_versions( $indexable, $versions );
+		self::$version_instance->update_versions( $indexable, $versions );
 
 		$now = time();
 
 		// Add the new version
-		$succeeded = $this->version_instance->activate_version( $indexable, $version_to_activate );
+		$succeeded = self::$version_instance->activate_version( $indexable, $version_to_activate );
 
 		$this->assertTrue( $succeeded, 'Activating version failed, but it should have succeeded' );
 
-		$new_versions = $this->version_instance->get_versions( $indexable );
+		$new_versions = self::$version_instance->get_versions( $indexable );
 
 		// Can only compare the deterministic parts of the version info (not activated_time, for example)
 		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
 		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
 
 		// And make sure the now active version recorded when it was activated
-		$active_version = $this->version_instance->get_active_version( $indexable );
+		$active_version = self::$version_instance->get_active_version( $indexable );
 
 		$this->assertEquals( $version_to_activate, $active_version['number'], 'Currently active version does not match expected active version' );
 		$this->assertEquals( $now, $active_version['activated_time'], '"activated_time" property of currently active version does not match expected value' );
@@ -348,17 +350,17 @@ class Versioning_Test extends \WP_UnitTestCase {
 	public function test_activate_version_invalid( $versions, $indexable_slug, $version_to_activate ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
-		$this->version_instance->update_versions( $indexable, $versions );
+		self::$version_instance->update_versions( $indexable, $versions );
 
 		$now = time();
 
 		// Add the new version
-		$result = $this->version_instance->activate_version( $indexable, $version_to_activate );
+		$result = self::$version_instance->activate_version( $indexable, $version_to_activate );
 
 		$this->assertTrue( is_wp_error( $result ), 'Expected WP_Error instance' );
 		$this->assertEquals( 'invalid-index-version', $result->get_error_code() );
 
-		$new_versions = $this->version_instance->get_versions( $indexable );
+		$new_versions = self::$version_instance->get_versions( $indexable );
 
 		// Can only compare the deterministic parts of the version info (not activated_time, for example), but should be unchanged
 		$this->assertEquals( wp_list_pluck( $versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
@@ -370,27 +372,27 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$result = $this->version_instance->add_version( $indexable );
+		$result = self::$version_instance->add_version( $indexable );
 
 		$this->assertTrue( $result, 'Failed to add new version of index' );
 
 		// Defaults to active index (1 in our case)
-		$this->assertEquals( 1, $this->version_instance->get_current_version_number( $indexable ), 'Default (non-overridden) version number is wrong' );
+		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Default (non-overridden) version number is wrong' );
 
 		// Now we override so we can work on other indexes
-		$result = $this->version_instance->set_current_version_number( $indexable, 2 );
+		$result = self::$version_instance->set_current_version_number( $indexable, 2 );
 
 		$this->assertTrue( $result, 'Failed to set current version number' );
 
 		// Current index should now be 2
-		$this->assertEquals( 2, $this->version_instance->get_current_version_number( $indexable ), 'Overridden version number is wrong' );
+		$this->assertEquals( 2, self::$version_instance->get_current_version_number( $indexable ), 'Overridden version number is wrong' );
 
 		// And reset it back to default
-		$result = $this->version_instance->reset_current_version_number( $indexable );
+		$result = self::$version_instance->reset_current_version_number( $indexable );
 
 		$this->assertTrue( $result, 'Failed to reset current version number' );
 
 		// Back to the active index
-		$this->assertEquals( 1, $this->version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
+		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
 	}
 }
