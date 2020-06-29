@@ -6,7 +6,7 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
-require_once( WP_CONTENT_DIR . '/mu-plugins/lib/utils/class-alerts.php' );
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 use Automattic\VIP\Utils\Alerts;
 
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
