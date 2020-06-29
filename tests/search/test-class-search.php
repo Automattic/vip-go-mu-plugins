@@ -139,6 +139,8 @@ class Search_Test extends \WP_UnitTestCase {
 		// For EP to register Indexables
 		do_action( 'plugins_loaded' );
 
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
 		// Mock the Versioning class so we can control which version it returns
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
 				->setMethods( [ 'get_active_version_number' ] )
@@ -146,11 +148,10 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$stub->expects( $this->once() )
 				->method( 'get_active_version_number' )
+				->with( $indexable )
 				->will( $this->returnValue( $active_version ) );
 
 		$es->versioning = $stub;
-
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', $blog_id, $indexable );
 
@@ -167,7 +168,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
 		// Override the version
-		$es->versioning->set_current_version_number( 42 );
+		$es->versioning->set_current_version_number( $indexable, 42 );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
