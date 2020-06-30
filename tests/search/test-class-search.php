@@ -176,19 +176,27 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
+		$succeeded = $es->versioning->add_version( $indexable );
+
+		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
+
 		// Override the version
-		$es->versioning->set_current_version_number( $indexable, 42 );
+		$override_result = $es->versioning->set_current_version_number( $indexable, 2 );
+
+		$this->assertTrue( $override_result, 'Setting current version number failed' );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
-		$this->assertEquals( 'vip-123-post-v42', $index_name, 'Overridden index name is not correct' );
+		$this->assertEquals( 'vip-123-post-v2', $index_name, 'Overridden index name is not correct' );
 
 		// Reset
-		$es->versioning->reset_current_version_number();
+		$es->versioning->reset_current_version_number( $indexable );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
 		$this->assertEquals( 'vip-123-post', $index_name );
+
+		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 	}
 
 	public function test__vip_search_filter_ep_default_index_number_of_shards() {
