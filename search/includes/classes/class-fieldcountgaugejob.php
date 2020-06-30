@@ -9,7 +9,7 @@ class FieldCountGaugeJob {
 
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_EVENT_NAME, [ $this, 'set_field_count_gauge' ] );
+		add_action( \Automattic\VIP\Config\Sync::CRON_EVENT_NAME, [ $this, 'set_field_count_gauge' ] );
 	}
 
 	/**
