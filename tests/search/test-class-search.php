@@ -66,14 +66,9 @@ class Search_Test extends \WP_UnitTestCase {
 	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
 	 */
 	public function test__vip_search_filter_ep_index_name__no_constant() {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
+		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
-		do_action( 'plugins_loaded' );
-
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-
-		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
+		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
 
 		$this->assertEquals( 'index-name', $index_name );
 	}
