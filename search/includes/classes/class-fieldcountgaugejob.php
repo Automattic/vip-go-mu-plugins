@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search;
 
+require_once( __DIR__ . '/../../../config/class-sync.php' );
+
 class FieldCountGaugeJob {
 	const CRON_EVENT_NAME = 'vip_config_sync_cron';
 
