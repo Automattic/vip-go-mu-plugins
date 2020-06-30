@@ -53,11 +53,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 		do_action( 'plugins_loaded' );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'user' );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
-		$this->assertEquals( 'vip-123-user', $index_name );
+		$this->assertEquals( 'vip-123-post', $index_name );
 	}
 
 	/**
