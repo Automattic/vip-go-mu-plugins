@@ -5,8 +5,6 @@ namespace Automattic\VIP\Search;
 class FieldCountGaugeJob {
 	const CRON_EVENT_NAME = 'vip_config_sync_cron';
 
-	const FIELD_COUNT_GAUGE_DISABLED_SITES = array();
-
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( \Automattic\VIP\Config\Sync::CRON_EVENT_NAME, [ $this, 'set_field_count_gauge' ] );
