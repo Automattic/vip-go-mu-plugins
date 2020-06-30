@@ -215,9 +215,7 @@ class Search {
 
 	protected function setup_regular_stat_collection() {
 		$this->field_count_gauge = new FieldCountGaugeJob();
-
-		// Hook into init action to ensure cron-control has already been loaded
-		add_action( 'init', array( $this->field_count_gauge, 'init' ) );
+		$this->field_count_gauge->init();
 	}
 
 	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
