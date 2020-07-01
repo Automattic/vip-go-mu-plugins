@@ -751,12 +751,27 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$retry     = abs( $retry );
 	$threshold = abs( $threshold );
 
-	// timeouts > 5 seconds are just not reasonable for production usage
+	// Default max timeout is 5s. 
+	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things. 
 	$timeout = (int) $timeout;
-	if ( $timeout > 5 ) {
-		_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
 
-		$timeout = 5;
+	if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+		if ( 30 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
+			$timeout = 30;
+		}
+	} elseif ( \is_admin() && $is_post_request ) {
+		if ( 15 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
+			$timeout = 15;
+		}
+	} else {
+		if ( $timeout > 5 ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+			$timeout = 5;
+		}
 	}
 
 	// retry time < 10 seconds will default to 10 seconds.
@@ -1365,7 +1380,7 @@ function is_automattician( $user_id = false ) {
  * @return bool True, if the current request is made via the Automattic proxy
  */
 function is_proxied_automattician() {
-	return A8C_PROXIED_REQUEST && is_automattician();
+	return is_proxied_request() && is_automattician();
 }
 
 /**
@@ -1391,7 +1406,7 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
-	// Simple UA check to filter out most
+	// Simple UA check to filter out most.
 	if ( false === stripos( $_SERVER[ 'HTTP_USER_AGENT' ], 'jetpack' ) ) {
 		return false;
 	}
@@ -1400,17 +1415,23 @@ function vip_is_jetpack_request() {
 
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
+	// Or https://jetpack.com/ips-v4.json
 	$jetpack_ips = array(
-		'122.248.245.244',
-		'54.217.201.243',
-		'54.232.116.4',
+		'122.248.245.244/32',
+		'54.217.201.243/32',
+		'54.232.116.4/32',
 		'192.0.80.0/20',
 		'192.0.96.0/20',
 		'192.0.112.0/20',
 		'195.234.108.0/22',
+		'192.0.96.202/32',
+		'192.0.98.138/32',
+		'192.0.102.71/32',
+		'192.0.102.95/32',
 	);
 
-	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
 /**

@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue as Queue;
+use \ElasticPress\Indexables as Indexables;
 
 class Cron {
 	/**
@@ -31,6 +32,16 @@ class Cron {
 	const SWEEPER_CRON_INTERVAL = 5 * \MINUTE_IN_SECONDS;
 
 	/**
+	 * The name of the cron event for processing term updates
+	 */
+	const TERM_UPDATE_CRON_EVENT_NAME = 'vip_search_term_update';
+
+	/**
+	 * The number of objects queued per batch for term updates
+	 */
+	const TERM_UPDATE_BATCH_SIZE = 25000;
+
+	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
 	 */
 	public $queue;
@@ -44,6 +55,7 @@ class Cron {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::PROCESSOR_CRON_EVENT_NAME, [ $this, 'process_jobs' ] );
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
+		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -99,9 +111,9 @@ class Cron {
 
 	/**
 	 * Process a batch of jobs via cron
-	 * 
+	 *
 	 * This is the cron hook for indexing a batch of objects
-	 * 
+	 *
 	 * @param {array} $job_ids Array of job ids to process
 	 */
 	public function process_jobs( $job_ids ) {
@@ -115,8 +127,71 @@ class Cron {
 	}
 
 	/**
+	 * Given a term taxonomy id, queue all posts for reindexing that match it
+	 *
+	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
+	 */
+	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		$indexable_post_types = Indexables::factory()->get( 'post' )->get_indexable_post_types();
+		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+
+		// Only proceed if indexable post types are defined correctly
+		if ( ! is_array( $indexable_post_types ) || empty( $indexable_post_types ) ) {
+			return;
+		}
+
+		// Only proceed if indexable post statuses are defined correctly
+		if ( ! is_array( $indexable_post_statuses ) || empty( $indexable_post_statuses ) ) {
+			return;
+		}
+
+		// WP_Query args for looking up posts that match the term taxonomy id and indexable
+		// post types/statuses
+		$args = array(
+			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
+			'post_type' => $indexable_post_types,
+			'post_status' => $indexable_post_statuses,
+			'paged' => 1,
+			'fields' => 'ids',
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+			'ignore_sticky_posts' => true,
+			'tax_query' => array(
+				array(
+					'field' => 'term_taxonomy_id',
+					'terms' => $term_taxonomy_id,
+				),
+			),
+		);
+
+		$posts = new \WP_Query( $args );
+
+		// If no posts, just return early
+		if ( ! $posts->have_posts() ) {
+			return;
+		}
+
+		// Iterate pagination
+		while ( $args['paged'] <= $posts->max_num_pages ) {
+			// Queue all posts for page 
+			foreach ( $posts->posts as $post ) {
+				$this->queue->queue_object( $post );
+			}
+
+			// Go to the next page and reset $posts
+			$args['paged'] = intval( $args['paged'] ) + 1;
+			$posts = new \WP_Query( $args );
+
+			// If page is empty, just return early
+			if ( ! $posts->have_posts() ) {
+				return;
+			}
+		}
+	}
+
+	/**
 	 * Find objects that need to be processed (in a batch) and schedule an event to process them
-	 * 
+	 *
 	 * This is intended to be a "sweep" of any objects that may have been missed - as stuff gets queued,
 	 * we schedule vip_search_queue_processor events immediately, but this helps find anything that fell through
 	 * the cracks (fatal error or something) as well as identify deadlocks
@@ -147,6 +222,10 @@ class Cron {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
+	}
+
+	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
+		wp_schedule_single_event( time(), self::TERM_UPDATE_CRON_EVENT_NAME, array( $term_taxonomy_id ) );
 	}
 
 	/**

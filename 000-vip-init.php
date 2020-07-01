@@ -6,7 +6,7 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * Remember vip-init.php? This is like that, but better! 
+ * Remember vip-init.php? This is like that, but better!
  */
 
 /**
@@ -38,13 +38,17 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 			return 1;
 		}, 9999 );
 	} else {
-		http_response_code( 503 );
+		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+		require_once __DIR__ . '/vip-helpers/vip-utils.php';
+		if ( ! vip_is_jetpack_request() ) {
+			http_response_code( 503 );
 
-		header( 'X-VIP-Go-Maintenance: true' );
+			header( 'X-VIP-Go-Maintenance: true' );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
 
-		echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
-
-		exit;
+			exit;
+		}
 	}
 }
 
@@ -193,6 +197,19 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
 	}
 }
+
+// Load config related helpers
+require_once( __DIR__ . '/config/class-sync.php' );
+
+add_action( 'init', function() {
+	\Automattic\VIP\Config\Sync::instance();
+} );
+
+// Load _encloseme meta cleanup scheduler
+require_once( __DIR__ . '/lib/class-vip-encloseme-cleanup.php' );
+
+$encloseme_cleaner = new VIP_Encloseme_Cleanup();
+$encloseme_cleaner->init();
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {

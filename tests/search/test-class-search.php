@@ -364,7 +364,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
 		$es = new \Automattic\VIP\Search\Search();
 
-		$timeout = $es->get_http_timeout_for_query( $query );
+		$timeout = $es->get_http_timeout_for_query( $query, array() );
 
 		$this->assertEquals( $expected_timeout, $timeout );
 	}
@@ -948,92 +948,87 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/*
-	 * Ensure that ep_skip_query_integration is true by default with no options/constants/skip
+	 * Ensure that is_query_integration_enabled() is false by default with no options/constants
 	 */
-	public function test__ep_skip_query_integration_skip_by_default() {
-		$es = new \Automattic\VIP\Search\Search();
-		$this->assertTrue( $es::ep_skip_query_integration( false ) );
+	public function test__is_query_integration_enabled_default() {
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	/*
+	 * Ensure is_query_integration_enabled() option works properly with the vip_enable_vip_search_query_integration option
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_option() {
+		update_option( 'vip_enable_vip_search_query_integration', true );
+	
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+
+		delete_option( 'vip_enable_vip_search_query_integration' );
+	}
+
+	/*
+	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_legacy_constant() {
+		define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', true );
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	/*
+	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_constant() {
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	/**
+	 * Ensure query integration is enabled when the 'es' query param is set
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_query_integration_enabled_via_query_param() {
+		// Set es query string to test override
+		$_GET['es'] = true;
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
 	}
 
 	/*
 	 * Ensure that filters disabling query integration are honored
-	 */
-	public function test__ep_skip_query_integration_skip_filter() {
-		$es = new \Automattic\VIP\Search\Search();
-		
-		// Set options/constants/query string to enable query integration
-		add_option( 'vip_enable_vip_search_query_integration', true );
-		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-		$_GET['es'] = true;
-		
-		$this->assertTrue( $es::ep_skip_query_integration( true ) );
-	}
-
-	/*
-	 * Ensure the vip_enable_vip_search_query_integration option works properly with ep_skip_query_integration filter
-	 */
-	public function test__ep_skip_query_integration_skip_option() {
-		$es = new \Automattic\VIP\Search\Search();
-
-		// True will now be the default
-		add_option( 'vip_enable_vip_search_query_integration', false );
-		$this->assertTrue( $es::ep_skip_query_integration( false ), 'should skip if option is false' );
-
-		// Set es query string to test override
-		$_GET['es'] = true;
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
-		unset( $_GET['es'] );
-
-		update_option( 'vip_enable_vip_search_query_integration', true );
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip if the option is true' );
-	}
-
-	/*
-	 * Ensure the VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant works properly with ep_skip_query_integration filter
-	 */
-	public function test__ep_skip_query_integration_skip_constant() {
-		$es = new \Automattic\VIP\Search\Search();
-
-		// False will now be the default
-		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when query integration constant is set by default' );
-		
-		$this->assertTrue( $es::ep_skip_query_integration( true ), 'should honor filters that skip query integrations' );
-	
-		// Set es query string to test override
-		$_GET['es'] = true;
-		$this->assertFalse( $es::ep_skip_query_integration( false ), 'should not skip when es query string set' );
-	}
-
-	/**
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__ep_skip_query_integration_allow_for_mirrored() {
-		// Should not start off enabled (or our test tells us nothing)
-		define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', false );
-		update_option( 'vip_enable_vip_search_query_integration', false );
+	public function test__ep_skip_query_integration_filter() {
+		// Set constants to enable query integration
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+		
+		// We pass in `true` as the starting value for the filter, indicating it should be skipped. We expect that `true` comes back out,
+		// even though query integration is enabled, which indicates that we're properly respecting other filters that have already decided
+		// this query should be skipped
+		$this->assertTrue( \Automattic\VIP\Search\Search::ep_skip_query_integration( true ) );
+	}
 
-		$es = new \Automattic\VIP\Search\Search();
-
-		// Regular query should skip integration
-		$regular_query = new \WP_Query();
-
-		$skipped = $es::ep_skip_query_integration( false, $regular_query );
-
-		$this->assertTrue( $skipped );
-
-		// But a mirrored query should be allowed (not skipped)
-		$mirrored_query = new \WP_Query( array(
-			'vip_search_mirrored' => true,
-		) );
-
-		$skipped = $es::ep_skip_query_integration( false, $mirrored_query );
-
-		$this->assertFalse( $skipped );
-
-		delete_option( 'vip_enable_vip_search_query_integration' );
+	/*
+	 * Ensure that EP query integration is disabled by default
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_skip_query_integration_default() {
+		$this->assertTrue( \Automattic\VIP\Search\Search::ep_skip_query_integration( false ) );
 	}
 
 	/*
@@ -1041,6 +1036,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__rate_limit_ep_query_integration() {
 		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
 
 		add_option( 'vip_enable_vip_search_query_integration', true );
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
@@ -1057,6 +1053,60 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// ep_skip_query_integration should be true if ratelimited
 		$this->assertTrue( $es::rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
+	}
+
+	/**
+	 * Ensure we don't load es-wp-query by default (if it's not enabled)
+	 */
+	public function test__should_load_es_wp_query_default() {
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertFalse( $should );
+	}
+
+	/**
+	 * Ensure we don't load es-wp-query if it is already loaded
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_already_loaded() {
+		// To cause should_load_es_wp_query() to otherwise return true
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		require_once __DIR__ . '/../../search/es-wp-query/es-wp-query.php';
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertFalse( $should );
+	}
+
+	/**
+	 * Ensure we do load es-wp-query when mirroring is enabled
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_with_query_mirroring() {
+		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertTrue( $should );
+	}
+
+	/**
+	 * Ensure we do load es-wp-query when query integration is enabled
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__should_load_es_wp_query_query_integration() {
+		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
+
+		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
+
+		$this->assertTrue( $should );
 	}
 
 	/**
@@ -1077,9 +1127,7 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__is_query_mirroring_enabled_no_constant_no_option() {
-		$es = new \Automattic\VIP\Search\Search();
-		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertFalse( $enabled );
 	}
@@ -1090,10 +1138,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_via_option() {
 		update_option( 'vip_enable_search_query_mirroring', true );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		delete_option( 'vip_enable_search_query_mirroring' );
 
@@ -1106,10 +1152,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_with_option_false() {
 		update_option( 'vip_enable_search_query_mirroring', false );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		delete_option( 'vip_enable_search_query_mirroring' );
 
@@ -1122,10 +1166,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_via_constant() {
 		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', true );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertTrue( $enabled );
 	}
@@ -1136,10 +1178,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_mirroring_enabled_with_constant_false() {
 		define( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING', false );
-
-		$es = new \Automattic\VIP\Search\Search();
 		
-		$enabled = $es->is_query_mirroring_enabled();
+		$enabled = \Automattic\VIP\Search\Search::is_query_mirroring_enabled();
 
 		$this->assertFalse( $enabled );
 	}
@@ -1424,6 +1464,316 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_diff, $diff );
 	}
 
+	public function test__truncate_search_string_length() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$expected_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStXPRoxWPHqdrHGsGkNQJJshYseaePxCJuGmY7kYp941TUoNF3GhSBEzjajNu0iwdCWrPMLxSJ5XXBltNM9of2LKvwa1hNPOXLka1tyAi8PSZlS53RbGhv7egKOYPyyPpR6mZlzJhx6nXXlZ5t3BtRdQOIvGho6HjdYwdd1hMyHHv1qpgg';
+		$provided_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStXPRoxWPHqdrHGsGkNQJJshYseaePxCJuGmY7kYp941TUoNF3GhSBEzjajNu0iwdCWrPMLxSJ5XXBltNM9of2LKvwa1hNPOXLka1tyAi8PSZlS53RbGhv7egKOYPyyPpR6mZlzJhx6nXXlZ5t3BtRdQOIvGho6HjdYwdd1hMyHHv1qpgg' .
+			'g5oMk1nWsx5fJ0B3bAFYKt1Y5dOA0Q4lQUqj8mf1LjcmR73wQwujc1GQfgCKj9X9Ktr6LrDtN5zAJFQboAJa7fZ9AiGxbJqUrLFs';
+
+		$wp_query_mock = new \WP_Query();
+
+		$wp_query_mock->set( 's', $provided_search_string );
+		$wp_query_mock->is_search = true;
+
+		$es->truncate_search_string_length( $wp_query_mock );
+
+		$this->assertEquals( $expected_search_string, $wp_query_mock->get( 's' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__limit_field_limit_absolute_maximum_is_20000() {
+		// Don't trigger an error since it's expected
+		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertEquals( 20000, $es->limit_field_limit( 1000000 ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__limit_field_limit_should_respect_values_under_maximum() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$this->assertEquals( 777, $es->limit_field_limit( 777 ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_total_field_limit_should_limit_total_fields() {
+		// Don't trigger an error since it's expected
+		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+	
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		\add_filter(
+			'ep_total_field_limit',
+			function() {
+				return 1000000;
+			}
+		);
+
+		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) ); 
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_total_field_limit_should_respect_values_under_the_limit() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		\add_filter(
+			'ep_total_field_limit',
+			function() {
+				return 787;
+			}
+		);
+
+		$this->assertEquals( 787, apply_filters( 'ep_total_field_limit', 5000 ) );
+	}
+
+	public function get_filter__ep_sync_taxonomies_default_data() {
+		return array(
+			array(
+				array(),
+			),
+			array(
+				array(
+					(object) array(
+						'name' => 'category',
+					),
+				),
+			),
+			array(
+				array(
+					(object) array(
+						'name' => 'category',
+					),
+					(object) array(
+						'name' => 'post_tag',
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_filter__ep_sync_taxonomies_default_data
+	 */
+	public function test__filter__ep_sync_taxonomies_default( $input_taxonomies ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$post = new \stdClass();
+
+		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $input_taxonomies, $post );
+
+		$input_taxonomy_names = wp_list_pluck( $input_taxonomies, 'name' );
+		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
+
+		// No change expected
+		$this->assertEquals( $input_taxonomy_names, $filtered_taxonomy_names );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_sync_taxonomies_added() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$post = new \stdClass();
+
+		$start_taxonomies = array(
+			(object) array(
+				'name' => 'category',
+			),
+		);
+
+		\add_filter(
+			'vip_search_post_taxonomies_allow_list',
+			function( $taxonomies ) {
+				$taxonomies[] = 'post_tag';
+				$taxonomies[] = 'post_tag';
+
+				return $taxonomies;
+			}
+		);
+
+		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $start_taxonomies, $post );
+
+		// Pull out just the names, for easier comparison
+		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
+
+		$expected_taxonomy_names = array(
+			'category',
+			'post_tag',
+		);
+
+		// Should now include the additional taxonomies
+		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_sync_taxonomies_removed() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$post = new \stdClass();
+
+		$start_taxonomies = array(
+			(object) array(
+				'name' => 'category',
+			),
+			(object) array(
+				'name' => 'post_tag',
+			),
+		);
+
+		\add_filter(
+			'vip_search_post_taxonomies_allow_list',
+			function( $taxonomies ) {
+				return array( 'post_tag' );
+			}
+		);
+
+		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $start_taxonomies, $post );
+
+		// Pull out just the names, for easier comparison
+		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
+
+		$expected_taxonomy_names = array(
+			'post_tag',
+		);
+
+		// Should now not include the removed taxonomies
+		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
+	}
+	
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta',
+					'another_one',
+					'third',
+				);
+			}
+		);
+
+		// Matches allow list
+		$post_meta = array(
+			'random_post_meta' => array(
+				'Random value',
+			),
+			'another_one' => array(
+				'4656784',
+			),
+			'third' => array(
+				'true',
+			),
+		);
+
+		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		unset( $post_meta['random_thing_not_allow_listed'] ); // Remove last added value that should have been excluded by the filter
+
+		$this->assertEquals( $meta, $post_meta );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default_assoc() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_post_meta' => true,
+					'another_one' => true,
+					'skipped' => false,
+					'skipped_another' => 4,
+					'skipped_string' => 'Wooo',
+					'third' => true,
+				);
+			}
+		);
+
+		// Matches allow list
+		$post_meta = array(
+			'random_post_meta' => array(
+				'Random value',
+			),
+			'another_one' => array(
+				'4656784',
+			),
+			'skipped' => array(
+				'Skip',
+			),
+			'skipped_another' => array(
+				'Skip',
+			),
+			'skipped_string' => array(
+				'Skip',
+			),
+			'third' => array(
+				'true',
+			),
+		);
+
+		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
+
+		$post = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
+
+		$this->assertEquals(
+			$meta,
+			array(
+				'random_post_meta' => array(
+					'Random value',
+				),
+				'another_one' => array(
+					'4656784',
+				),
+				'third' => array(
+					'true',
+				),
+			)
+		);
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
@@ -1435,7 +1785,7 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Helper function for accessing protected methods.
+	 * Helper function for accessing protected properties.
 	 */
 	protected static function get_property( $name ) {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
