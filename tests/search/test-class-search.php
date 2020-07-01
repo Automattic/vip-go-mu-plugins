@@ -136,7 +136,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__vip_search_filter_ep_index_name_with_versions( $active_version, $blog_id, $expected_index_name ) {
+	public function test__vip_search_filter_ep_index_name_with_versions( $current_version, $blog_id, $expected_index_name ) {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -145,19 +145,15 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		// PHPUnit < 8.2.3 uses ReflectionType::__toString() which is deprecated in PHP 7.4 and throws a warning. Can't upgrade PHPUnit beyond 7.5 b/c
-		// that's what WP supports. So here we are. https://github.com/sebastianbergmann/phpunit/issues/3728#issuecomment-504287305
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-
 		// Mock the Versioning class so we can control which version it returns
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
-				->setMethods( [ 'get_active_version_number' ] )
+				->setMethods( [ 'get_current_version_number' ] )
 				->getMock();
 
 		$stub->expects( $this->once() )
-				->method( 'get_active_version_number' )
+				->method( 'get_current_version_number' )
 				->with( $indexable )
-				->will( $this->returnValue( $active_version ) );
+				->will( $this->returnValue( $current_version ) );
 
 		$es->versioning = $stub;
 
