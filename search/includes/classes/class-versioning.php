@@ -19,8 +19,8 @@ class Versioning {
 	 * Set the current (not active) version for a given Indexable. This allows us to work on other index versions without making
 	 * that index active
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to temporarily set the current index version
-	 * @return {bool|WP_Error} True on success, or WP_Error on failure
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to temporarily set the current index version
+	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
 	public function set_current_version_number( Indexable $indexable, $version_number ) {
 		// Validate that the requested version is known
@@ -38,8 +38,8 @@ class Versioning {
 	/**
 	 * Reset the current version for a given Indexable. This will default back to the active index, with no override
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to reset the current index version
-	 * @return {bool|WP_Error} True on success
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to reset the current index version
+	 * @return bool|WP_Error True on success
 	 */
 	public function reset_current_version_number( Indexable $indexable ) {
 		unset( $this->current_index_version_by_type[ $indexable->slug ] );
@@ -56,8 +56,8 @@ class Versioning {
 	 * 
 	 * This defaults to the active index, but can be overridden by calling Versioning::set_current_version_number()
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to get the current version number
-	 * @return {int} The current version number
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to get the current version number
+	 * @return int The current version number
 	 */
 	public function get_current_version_number( Indexable $indexable ) {
 		$override = isset( $this->current_index_version_by_type[ $indexable->slug ] ) ? $this->current_index_version_by_type[ $indexable->slug ] : null;
@@ -72,8 +72,8 @@ class Versioning {
 	/**
 	 * Retrieve the active index version for a given Indexable
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to get the active index version
-	 * @return {int} The currently active index version
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to get the active index version
+	 * @return int The currently active index version
 	 */
 	public function get_active_version( Indexable $indexable ) {
 		$versions = $this->get_versions( $indexable );
@@ -92,8 +92,8 @@ class Versioning {
 	/**
 	 * Grab just the version number for the active version
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable to get the active version number for
-	 * @return {int} The currently active version number
+	 * @param \ElasticPress\Indexable $indexable The Indexable to get the active version number for
+	 * @return int The currently active version number
 	 */
 	public function get_active_version_number( Indexable $indexable ) {
 		$active_version = $this->get_active_version( $indexable );
@@ -108,8 +108,8 @@ class Versioning {
 	/**
 	 * Retrieve details about available index versions
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable for which to retrieve index versions
-	 * @return {array} Array of index versions
+	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve index versions
+	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable ) {
 		if ( Search::is_network_mode() ) {
@@ -130,8 +130,8 @@ class Versioning {
 	/**
 	 * Retrieve details about available index versions
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable for which to create a new version
-	 * @return {bool} Boolean indicating if the new version was successfully added or not
+	 * @param \ElasticPress\Indexable $indexable The Indexable for which to create a new version
+	 * @return bool Boolean indicating if the new version was successfully added or not
 	 */
 	public function add_version( Indexable $indexable ) {
 		$slug = $indexable->slug;
@@ -156,9 +156,9 @@ class Versioning {
 	/**
 	 * Save details about available index versions
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to update versions
-	 * @param {array} Array of version information for the given Indexable
-	 * @return {bool} Boolean indicating if the version information was saved successfully or not
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to update versions
+	 * @param array Array of version information for the given Indexable
+	 * @return bool Boolean indicating if the version information was saved successfully or not
 	 */
 	public function update_versions( Indexable $indexable, $versions ) {
 		if ( Search::is_network_mode() ) {
@@ -181,8 +181,8 @@ class Versioning {
 	 * 
 	 * Versions start at 1
 	 * 
-	 * @param {array} $versions Array of existing versions from which to calculate the next version
-	 * @return {int} Next version number
+	 * @param array $versions Array of existing versions from which to calculate the next version
+
 	 */
 	public function get_next_version_number( $versions ) {
 		$new_version = null;
@@ -208,9 +208,9 @@ class Versioning {
 	 * 
 	 * Verifies that the new target index does in-fact exist, then marks it as active
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to activate the new index
-	 * @param {int} $version_number The new index version to activate
-	 * @return {bool|WP_Error} Boolean indicating success, or WP_Error on error 
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
+	 * @param int $version_number The new index version to activate
+	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
 	public function activate_version( Indexable $indexable, $version_number ) {
 		$versions = $this->get_versions( $indexable );
@@ -240,9 +240,9 @@ class Versioning {
 	/**
 	 * Get stats for a given index version, such as how many documents it contains
 	 * 
-	 * @param {\ElasticPress\Indexable} $indexable The Indexable type for which to activate the new index
-	 * @param {int} The index version to get stats for
-	 * @return {array} Array of index stats
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
+	 * @param int The index version to get stats for
+	 * @return array Array of index stats
 	 */
 	public function get_version_stats( Indexable $indexable, $version ) {
 		// Need helper function in \ElasticPress\Elasticsearch
