@@ -101,6 +101,11 @@ class HealthJob {
 			return;
 		}
 
+		// Don't run the checks if the index is not built.
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+			return;
+		}
+
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
@@ -201,11 +206,6 @@ class HealthJob {
 		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
 
 		$enabled = in_array( VIP_GO_ENV, $enabled_environments, true );
-
-		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
-			$enabled = false;
-		}
 
 		/**
 		 * Filter whether to enable VIP search healthcheck
