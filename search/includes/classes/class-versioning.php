@@ -56,11 +56,14 @@ class Versioning {
 	 * 
 	 * This defaults to the active index, but can be overridden by calling Versioning::set_current_version_number()
 	 * 
+	 * NOTE - purposefully not adding a typehint due to a warning emitted by our very old version of PHPUnit on PHP 7.4 
+	 * (Function ReflectionType::__toString() is deprecated), because we mock this function, which causes __toString() to be called for params
+	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to get the current version number
+	 * 
 	 * @return int The current version number
 	 */
-	public function get_current_version_number( $indexable ) { // NOTE - purposefully not adding a typehint due to a warning emitted by our very old version of
-															   // PHPUnit on PHP 7.4 (Function ReflectionType::__toString() is deprecated), because we mock this
+	public function get_current_version_number( $indexable ) {
 		$override = isset( $this->current_index_version_by_type[ $indexable->slug ] ) ? $this->current_index_version_by_type[ $indexable->slug ] : null;
 
 		if ( is_int( $override ) ) {
