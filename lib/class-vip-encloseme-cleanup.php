@@ -40,7 +40,12 @@ class VIP_Encloseme_Cleanup {
 		}
 
 		if ( false === $completed && ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), self::CRON_INTERVAL, self::CRON_HOOK );
+			// Random jitter value to stagger the event start timing so that
+			// we don't get a sudden cascade of alerts when we add a new batch
+			// of sites.
+			$jitter = rand( 0, 10 ) * 60;
+
+			wp_schedule_event( time() + $jitter, self::CRON_INTERVAL, self::CRON_HOOK );
 		}
 	}
 
