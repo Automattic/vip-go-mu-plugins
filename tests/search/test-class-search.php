@@ -145,6 +145,10 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
+		// PHPUnit < 8.2.3 uses ReflectionType::__toString() which is deprecated in PHP 7.4 and throws a warning. Can't upgrade PHPUnit beyond 7.5 b/c
+		// that's what WP supports. So here we are.
+		PHPUnit_Framework_Error_Warning::$enabled = false;
+
 		// Mock the Versioning class so we can control which version it returns
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
 				->setMethods( [ 'get_active_version_number' ] )
@@ -154,6 +158,8 @@ class Search_Test extends \WP_UnitTestCase {
 				->method( 'get_active_version_number' )
 				->with( $indexable )
 				->will( $this->returnValue( $active_version ) );
+		
+		PHPUnit_Framework_Error_Warning::$enabled = true;
 
 		$es->versioning = $stub;
 
