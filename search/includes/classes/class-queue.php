@@ -106,6 +106,10 @@ class Queue {
 			)
 		);
 
+		if ( false !== $result ) {
+			$this->record_added_to_queue_stat( 1, $object_type );
+		}
+
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
@@ -495,6 +499,32 @@ class Queue {
 
 		$statsd = new \Automattic\VIP\StatsD();
 		$statsd->gauge( $per_site_stat, $count );
+	}
+
+	public function record_added_to_queue_stat( $count, $object_type ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		if ( ! is_int( $count ) ) {
+			$count = intval( $count );
+		}
+
+		$statsd_mode = 'added_to_queue';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd->increment( $per_site_stat, $count );
 	}
 
 	/**
