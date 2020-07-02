@@ -28,9 +28,11 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand add
 	 */
 	public function add( $args, $assoc_args ) {
+		$type = $args[ 0 ];
+	
 		$search = \Automattic\VIP\Search\Search::instance();
 
-		$indexable = \ElasticPress\Indexables::factory()->get( $assoc_args['type'] );
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
 		$result = $search->versioning->add_version( $indexable );
 
@@ -52,6 +54,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		$new_version = end( $versions );
 
-		WP_CLI::success( sprintf( 'Registered new index version %d. The new index has not yet been created', $new_version ) );
+		WP_CLI::success( sprintf( 'Registered new index version %d. The new index has not yet been created', $new_version['number'] ) );
 	}
 }
