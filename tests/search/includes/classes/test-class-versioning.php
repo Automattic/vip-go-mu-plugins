@@ -28,6 +28,19 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
+					1 => array(
+						'number' => 1,
+					),
+					2 => array(
+						'number' => 2,
+					),
+				),
+				// Expected next version
+				3,
+			),
+			array(
+				// Input array of versions
+				array(
 					2 => array(
 						'number' => 2,
 					),
@@ -194,6 +207,38 @@ class Versioning_Test extends \WP_UnitTestCase {
 					),
 					4 => array(
 						'number' => 4,
+						'active' => false,
+					),
+				),
+			),
+
+			// Current version is 2
+			array(
+				// Input array of versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
 						'active' => false,
 					),
 				),
