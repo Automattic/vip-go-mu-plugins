@@ -32,7 +32,7 @@ namespace Automattic\VIP\Utils;
 		$this->assertTrue( $alerts instanceof Alerts );
 		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
 		$this->assertEquals( 9999, $alerts->service_port, 'Wrong alerts service port' );
-		$this->assertEquals( 'http://test.host:9999/v1.0/alerts', $alerts->service_url, 'Wrong alerts service URL' );
+		$this->assertEquals( 'http://test.host:9999/v1.0/alert', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
 	/**

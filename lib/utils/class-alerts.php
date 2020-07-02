@@ -283,7 +283,7 @@ class Alerts {
 
 			$alerts->service_address = ALERT_SERVICE_ADDRESS;
 			$alerts->service_port = ALERT_SERVICE_PORT;
-			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $alerts->service_address, $alerts->service_port );
+			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alert', $alerts->service_address, $alerts->service_port );
 
 			self::$instance = $alerts;
 		}
