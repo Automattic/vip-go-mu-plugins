@@ -7,6 +7,8 @@ use \WP_CLI;
 class Search {
 	public $healthcheck;
 	public $field_count_gauge;
+	public $queue_wait_time;
+
 	public $queue;
 	private $mirrored_wp_query_queue = array();
 	private $current_host_index = 0;
@@ -68,8 +70,12 @@ class Search {
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
 
+
 		// Load field count gauge cron job
 		require_once __DIR__ . '/class-fieldcountgaugejob.php';
+
+		// Load queue wait time cron job
+		require_once __DIR__ . '/class-queuewaittimejob.php';
 
 		// Load our custom dashboard
 		require_once __DIR__ . '/class-dashboard.php';
@@ -213,9 +219,12 @@ class Search {
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
-	protected function setup_regular_stat_collection() {
+	protected function setup_regular_stat_collection() {/
 		$this->field_count_gauge = new FieldCountGaugeJob();
 		$this->field_count_gauge->init();
+
+		$this->queue_wait_time = new QueueWaitTimeJob();
+		$this->queue_wait_time->init();
 	}
 
 	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
@@ -718,6 +727,26 @@ class Search {
 
 		$statsd->increment( $stat );
 		$statsd->increment( $per_site_stat );
+	}
+
+	public function set_queue_wait_time_gauge() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$average_wait_time = $this->queue->get_average_queue_wait_time();
+
+		$statsd_mode = 'queue_wait_time';
+		$statsd_index_name = $indexable->get_index_name();
+
+		$url = $this->get_current_host();
+		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->gauge( $per_site_stat, $average_wait_time );
 	}
 
 	/**
