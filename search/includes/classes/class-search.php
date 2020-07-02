@@ -219,7 +219,7 @@ class Search {
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
 
-	protected function setup_regular_stat_collection() {/
+	protected function setup_regular_stat_collection() {
 		$this->field_count_gauge = new FieldCountGaugeJob();
 		$this->field_count_gauge->init();
 
