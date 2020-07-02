@@ -690,6 +690,41 @@ class Queue {
 		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
 	}
 
+	/**
+	 * Get the current average queue wait time
+	 *
+	 * @return {int} The current average wait time in seconds.
+	 */
+	public function get_average_queue_wait_time() {
+		global $wpdb;
+
+		// If run without having the queue enabled, queue wait times are 0
+		if ( ! $this->is_enabled() ) {
+			return 0;
+		}
+
+		// If schema is null, init likely not run yet
+		// Happens when cron is scheduled/run via wp commands
+		if ( is_null( $this->schema ) ) {
+			$this->init();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		$average_wait_time = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT FLOOR( AVG( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS average_wait_time FROM $table_name WHERE 1" // Cannot prepare table name. @codingStandardsIgnoreLine
+			)
+		);
+
+		// Null value will usually mean empty table 
+		if ( is_null( $average_wait_time ) || ! is_numeric( $average_wait_time ) ) {
+			return 0;
+		}
+
+		return intval( $average_wait_time );
+	}
+
 	/*
 	 * Increment the number of indexing operations that have been passed through VIP Search
 	 */
