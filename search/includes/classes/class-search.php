@@ -202,6 +202,12 @@ class Search {
 
 		// Try to prevent the field limit from being set too high
 		add_filter( 'ep_total_field_limit', array( $this, 'limit_field_limit' ), PHP_INT_MAX );
+	
+		// Check if meta is on allow list. If not, don't re-index
+		// Try to get these actions to run first
+		add_action( 'updated_post_meta', array( $this, 'maybe_ep_action_queue_meta_sync' ), PHP_INT_MIN, 4 );
+		add_action( 'added_post_meta', array( $this, 'maybe_ep_action_queue_meta_sync' ), PHP_INT_MIN, 4 );
+		add_action( 'deleted_post_meta', array( $this, 'maybe_ep_action_queue_meta_sync' ), PHP_INT_MIN, 4 );
 	}
 
 	protected function load_commands() {
@@ -1288,6 +1294,62 @@ class Search {
 		}
 
 		return $field_limit;
+	}
+
+	/**
+	 * Check if meta is on allow list. If it isn't, set ep_post_sync_kill to false
+	 *
+	 * @param {int|array} $meta_id Meta id.
+	 * @param {int} $object_id Object id.
+	 * @param {string} $meta_key Meta key.
+	 * @param {string} $meta_value Meta value.
+	 */
+	public function maybe_ep_action_queue_meta_sync( $meta_id, $object_id, $meta_key, $meta_value ) {
+		// If post meta allow list is disabled for this site, skip this functionality
+		if ( defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			if ( in_array( FILES_CLIENT_SITE_ID, self::DISABLE_POST_META_ALLOW_LIST, true ) ) {
+				return;
+			}
+		}
+
+		$post = \get_post( $object_id );
+
+		if ( is_null( $post ) ) {
+			return;
+		}
+
+		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
+
+		// If post meta allow list is not an array, treat it like an empty array.
+		if ( ! is_array( $post_meta_allow_list ) ) {
+			$post_meta_allow_list = array();
+		}
+
+		// If post meta allow list is an associative array
+		if ( array_keys( $post_meta_allow_list ) !== range( 0, count( $post_meta_allow_list ) - 1 ) ) {
+			/* 
+			 * Filter out values not set to true since the current format of the allow list as an associative array is:
+			 * 
+			 * array (
+			 * 		'key' => true,
+			 * );
+			 *
+			 * which means that anything besides true should logically be discarded
+			 */
+			$post_meta_allow_list = array_filter(
+				$post_meta_allow_list,
+				function( $value ) {
+					return true === $value;
+				}
+			);
+
+			$post_meta_allow_list = array_keys( $post_meta_allow_list );
+		}
+
+		// If post meta isn't in allow list, don't re-index the post
+		if ( ! in_array( $meta_key, $post_meta_allow_list, true ) ) {
+			\add_filter( 'ep_post_sync_kill', '__return_true', PHP_INT_MAX );
+		}
 	}
 
 	/*

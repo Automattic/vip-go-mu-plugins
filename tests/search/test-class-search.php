@@ -1775,6 +1775,43 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_ep_action_queue_meta_sync_should_set_ep_post_sync_kill_to_true_if_meta_not_in_allow_list() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$es->maybe_ep_action_queue_meta_sync( 40, $post_id, 'random_key', 'random_value' );
+
+		$this->assertTrue( apply_filters( 'ep_post_sync_kill', false, $post_id, $post_id ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_ep_action_queue_meta_sync_should_set_ep_post_sync_kill_to_false_if_meta_is_in_allow_list() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_key',
+				);
+			}
+		);
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$es->maybe_ep_action_queue_meta_sync( 40, $post_id, 'random_key', 'random_value' );
+
+		$this->assertFalse( apply_filters( 'ep_post_sync_kill', false, $post_id, $post_id ) );
+	}
+
+	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
