@@ -1297,22 +1297,20 @@ class Search {
 	}
 
 	/**
-	 * Check if meta is on allow list. If it isn't, set ep_post_sync_kill to false
+	 * Check if meta is on allow list. If it isn't, set ep_skip_post_meta_sync to false
 	 *
 	 * @param {int|array} $meta_id Meta id.
 	 * @param {int} $object_id Object id.
 	 * @param {string} $meta_key Meta key.
 	 * @param {string} $meta_value Meta value.
 	 */
-	public function maybe_ep_action_queue_meta_sync( $meta_id, $object_id, $meta_key, $meta_value ) {
+	public function maybe_ep_action_queue_meta_sync( $post, $meta_id, $meta_key, $meta_value ) {
 		// If post meta allow list is disabled for this site, skip this functionality
 		if ( defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			if ( in_array( FILES_CLIENT_SITE_ID, self::DISABLE_POST_META_ALLOW_LIST, true ) ) {
 				return;
 			}
 		}
-
-		$post = \get_post( $object_id );
 
 		if ( is_null( $post ) ) {
 			return;
@@ -1346,9 +1344,13 @@ class Search {
 			$post_meta_allow_list = array_keys( $post_meta_allow_list );
 		}
 
-		// If post meta isn't in allow list, don't re-index the post
-		if ( ! in_array( $meta_key, $post_meta_allow_list, true ) ) {
-			\add_filter( 'ep_post_sync_kill', '__return_true', PHP_INT_MAX );
+		// Remove all filters on PHP_INT_MAX priority just in case there are any conflicting values
+		remove_all_filters( 'ep_skip_post_meta_sync', PHP_INT_MAX );
+
+		if ( in_array( $meta_key, $post_meta_allow_list, true ) ) {
+			\add_filter( 'ep_skip_post_meta_sync', '__return_false', PHP_INT_MAX );
+		} else {
+			\add_filter( 'ep_skip_post_meta_sync', '__return_true', PHP_INT_MAX );
 		}
 	}
 
