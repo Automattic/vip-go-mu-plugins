@@ -580,4 +580,18 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $normalized );
 	}
+
+	public function test_get_version() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$one = self::$version_instance->get_version( $indexable, 1 );
+
+		$this->assertEquals( 1, $one['number'], 'Wrong version number for returned version (expected 1)' );
+
+		$new = self::$version_instance->add_version( $indexable );
+
+		$new_retrieved = self::$version_instance->get_version( $indexable, $new['number'] );
+
+		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
+	}
 }

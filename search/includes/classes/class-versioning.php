@@ -171,6 +171,24 @@ class Versioning {
 	}
 
 	/**
+	 * Retrieve details about a given index version
+	 * 
+	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve the index version
+	 * @return array Array of index versions
+	 */
+	public function get_version( Indexable $indexable, $version_number ) {
+		$slug = $indexable->slug;
+	
+		$versions = $this->get_versions( $indexable );
+
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return null;
+		}
+
+		return $versions[ $version_number ];
+	}
+
+	/**
 	 * Retrieve details about available index versions
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to create a new version
