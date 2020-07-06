@@ -1778,23 +1778,21 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__maybe_ep_action_queue_meta_sync_should_set_ep_skip_post_meta_sync_to_true_if_meta_not_in_allow_list() {
+	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
 		$es = \Automattic\VIP\Search\Search::instance();
 
-		$es->maybe_ep_action_queue_meta_sync( $post, 40, 'random_key', 'random_value' );
-
-		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', false ) );
+		$this->assertTrue( $es->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
 	}
 
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__maybe_ep_action_queue_meta_sync_should_set_ep_skip_post_meta_sync_to_false_if_meta_is_in_allow_list() {
+	public function test__filter__ep_skip_post_meta_sync_should_return_false_if_meta_is_in_allow_list() {
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
@@ -1810,9 +1808,30 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$es = \Automattic\VIP\Search\Search::instance();
 
-		$es->maybe_ep_action_queue_meta_sync( $post, 40, 'random_key', 'random_value' );
+		$this->assertFalse( $es->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
+	}
 
-		$this->assertFalse( apply_filters( 'ep_skip_post_meta_sync', false ) );
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_a_previous_filter_is_true() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_key',
+				);
+			}
+		);
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$this->assertTrue( $es->filter__ep_skip_post_meta_sync( true, $post, 40, 'random_key', 'random_value' ) );
 	}
 
 	/**

@@ -204,10 +204,7 @@ class Search {
 		add_filter( 'ep_total_field_limit', array( $this, 'limit_field_limit' ), PHP_INT_MAX );
 	
 		// Check if meta is on allow list. If not, don't re-index
-		// Try to get these actions to run first
-		add_action( 'updated_post_meta', array( $this, 'maybe_ep_action_queue_meta_sync' ), PHP_INT_MIN, 4 );
-		add_action( 'added_post_meta', array( $this, 'maybe_ep_action_queue_meta_sync' ), PHP_INT_MIN, 4 );
-		add_action( 'deleted_post_meta', array( $this, 'maybe_ep_action_queue_meta_sync' ), PHP_INT_MIN, 4 );
+		add_filter( 'ep_skip_post_meta_sync', array( $this, 'filter__ep_skip_post_meta_sync' ), PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
@@ -1299,21 +1296,29 @@ class Search {
 	/**
 	 * Check if meta is on allow list. If it isn't, set ep_skip_post_meta_sync to false
 	 *
+	 * @param {bool} $skip_sync The current value of whether the sync should be skipped or not
+	 * @param {WP_Post} $post The post that's attempting to be reindexed
 	 * @param {int|array} $meta_id Meta id.
-	 * @param {int} $object_id Object id.
 	 * @param {string} $meta_key Meta key.
 	 * @param {string} $meta_value Meta value.
+	 * @return {bool} The new value of whether the sync should be skipped or not
 	 */
-	public function maybe_ep_action_queue_meta_sync( $post, $meta_id, $meta_key, $meta_value ) {
-		// If post meta allow list is disabled for this site, skip this functionality
+	public function filter__ep_skip_post_meta_sync( $skip_sync, $post, $meta_id, $meta_key, $meta_value ) {
+		// Respect previous skip values
+		if ( true === $skip_sync ) {
+			return true;
+		}
+
+		// If post meta allow list is disabled for this site, skip the allow list check
 		if ( defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			if ( in_array( FILES_CLIENT_SITE_ID, self::DISABLE_POST_META_ALLOW_LIST, true ) ) {
-				return;
+				return $skip_sync;
 			}
 		}
 
+		// If post is invalid, respect current sync value
 		if ( is_null( $post ) ) {
-			return;
+			return $skip_sync;
 		}
 
 		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
@@ -1344,14 +1349,13 @@ class Search {
 			$post_meta_allow_list = array_keys( $post_meta_allow_list );
 		}
 
-		// Remove all filters on PHP_INT_MAX priority just in case there are any conflicting values
-		remove_all_filters( 'ep_skip_post_meta_sync', PHP_INT_MAX );
 
-		if ( in_array( $meta_key, $post_meta_allow_list, true ) ) {
-			\add_filter( 'ep_skip_post_meta_sync', '__return_false', PHP_INT_MAX );
-		} else {
-			\add_filter( 'ep_skip_post_meta_sync', '__return_true', PHP_INT_MAX );
+
+		if ( ! in_array( $meta_key, $post_meta_allow_list, true ) ) {
+			return true;
 		}
+
+		return false;	
 	}
 
 	/*
