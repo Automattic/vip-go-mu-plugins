@@ -34,6 +34,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+
 		$new_version = $search->versioning->add_version( $indexable );
 
 		if ( is_wp_error( $result ) ) {
@@ -69,6 +73,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
 
 		$versions = $search->versioning->get_versions( $indexable );
 
