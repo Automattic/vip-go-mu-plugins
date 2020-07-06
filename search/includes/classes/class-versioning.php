@@ -154,12 +154,6 @@ class Versioning {
 			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
 		}
 
-		// If we currently have 0 versions recorded and the new version is 2, add in version 1 so that it works as expected with 
-		// the rest of the functions that are based on the version option
-		if ( empty( $versions ) && 2 === $new_version ) {
-			
-		}
-
 		$versions[ $new_version ] = array(
 			'number' => $new_version,
 			'active' => false,
