@@ -52,6 +52,51 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Get details about a version of an index
+	 *
+	 * ## OPTIONS
+	 * 
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 * 
+	 * <version_number>
+	 * : The version number to retrieve
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search index-versions get post 2
+	 *
+	 * @subcommand get
+	 */
+	public function get( $args, $assoc_args ) {
+		$type = $args[0];
+		$version_number = intval( $args[1] );
+
+		if ( $version_number <= 0 ) {
+			return WP_CLI::error( 'New version number must be a positive int' );
+		}
+	
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+
+		$version = $search->versioning->get_version( $indexable, $version_number );
+
+		if ( is_wp_error( $version ) ) {
+			return WP_CLI::error( $result->get_error_message() );
+		}
+
+		if ( ! $version ) {
+			return WP_CLI::error( sprintf( 'Failed to get index version %d for type %s. Does it exist?', $version_number, $type ) );
+		}
+
+		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $version ), array( 'number', 'active', 'created_time', 'activated_time' ) );
+	}
+
+	/**
 	 * List all registered index versions
 	 *
 	 * ## OPTIONS
