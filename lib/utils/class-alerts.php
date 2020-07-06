@@ -246,7 +246,6 @@ class Alerts {
 		$details[ 'message' ] = $message;
 
 		$body = [
-			'message'   => $message,
 			'ops_alert' => $details,
 		];
 
