@@ -129,7 +129,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 					array( 
 						'alias'       => 'alloptions/' . $site_id,
 						'description' => 'The size of AllOptions is reaching the max limit of 1 MB.',
-						'entity'      => $site_id,
+						'entity'      => (string) $site_id,
 						'priority'    => $opsgenie_alert_level,
 						'source'      => 'sites/alloptions-size',
 					),
