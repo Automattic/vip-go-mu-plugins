@@ -46,4 +46,36 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::success( sprintf( 'Registered new index version %d. The new index has not yet been created', $new_version['number'] ) );
 	}
+
+	/**
+	 * List all registered index versions
+	 *
+	 * ## OPTIONS
+	 * 
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 *
+	 * [--format=<string>]
+	 * : Optional one of: table json csv yaml ids count
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search index-versions list post
+	 *
+	 * @subcommand list
+	 */
+	public function list( $args, $assoc_args ) {
+		$type = $args[ 0 ];
+	
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		$versions = $search->versioning->get_versions( $indexable );
+
+		if ( is_wp_error( $versions ) ) {
+			return WP_CLI::error( $result->get_error_message() );
+		}
+
+		\WP_CLI\Utils\format_items( $assoc_args['format'], $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
+	}
 }
