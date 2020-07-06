@@ -28,7 +28,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand add
 	 */
 	public function add( $args, $assoc_args ) {
-		$type = $args[ 0 ];
+		$type = $args[0];
 	
 		$search = \Automattic\VIP\Search\Search::instance();
 
@@ -68,7 +68,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand list
 	 */
 	public function list( $args, $assoc_args ) {
-		$type = $args[ 0 ];
+		$type = $args[0];
 	
 		$search = \Automattic\VIP\Search\Search::instance();
 
@@ -104,8 +104,8 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand activate
 	 */
 	public function activate( $args, $assoc_args ) {
-		$type = $args[ 0 ];
-		$new_version_number = intval( $args[ 1 ] );
+		$type = $args[0];
+		$new_version_number = intval( $args[1] );
 
 		if ( $new_version_number <= 0 ) {
 			return WP_CLI::error( 'New version number must be a positive int' );

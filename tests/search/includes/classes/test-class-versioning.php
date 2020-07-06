@@ -279,7 +279,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$expected_new_version = end( $expected_new_versions );
 
-		$this->assertEquals( $expected_new_version[ 'number' ], $new_version['number'], 'The returned new version does not match the expected new version' );
+		$this->assertEquals( $expected_new_version['number'], $new_version['number'], 'The returned new version does not match the expected new version' );
 
 		$new_versions = self::$version_instance->get_versions( $indexable );
 
