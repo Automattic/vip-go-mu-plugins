@@ -34,7 +34,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
-		$result = $search->versioning->add_version( $indexable );
+		$new_version = $search->versioning->add_version( $indexable );
 
 		if ( is_wp_error( $result ) ) {
 			return WP_CLI::error( $result->get_error_message() );
@@ -43,16 +43,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		if ( false === $result ) {
 			return WP_CLI::error( 'Failed to register the new index version' );
 		}
-	
-		$versions = $search->versioning->get_versions( $indexable );
-
-		if ( ! count( $versions ) ) {
-			return WP_CLI::error( 'No versions found after registering new version' );
-		}
-
-		// New version will be last on the list
-
-		$new_version = end( $versions );
 
 		WP_CLI::success( sprintf( 'Registered new index version %d. The new index has not yet been created', $new_version['number'] ) );
 	}
