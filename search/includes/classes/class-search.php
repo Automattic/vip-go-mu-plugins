@@ -88,6 +88,10 @@ class Search {
 		// Caching layer
 		require_once __DIR__ . '/class-cache.php';
 		$this->cache = new Cache();
+
+		// Index versioning
+		require_once __DIR__ . '/class-versioning.php';
+		$this->versioning = new Versioning();
 	}
 
 	protected function setup_constants() {
@@ -487,13 +491,19 @@ class Search {
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
-	public function filter__ep_index_name( $index_name, $blog_id, $indexables ) {
+	public function filter__ep_index_name( $index_name, $blog_id, $indexable ) {
 		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
-		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexables->slug );
+		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexable->slug );
 
 		// $blog_id won't be present on global indexes (such as users)
 		if ( $blog_id ) {
 			$index_name .= sprintf( '-%s', $blog_id );
+		}
+
+		$current_version = $this->versioning->get_current_version_number( $indexable );
+
+		if ( is_int( $current_version ) && $current_version > 1 ) {
+			$index_name .= sprintf( '-v%d', $current_version );
 		}
 
 		return $index_name;
@@ -643,6 +653,15 @@ class Search {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Whether the site is in "network" mode, meaning subsites should be indexed into the same index
+	 * 
+	 */
+	public static function is_network_mode() {
+		// NOTE - Not using strict equality check here so that we match EP
+		return defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK;
 	}
 
 	public static function ep_skip_query_integration( $skip, $query = null ) {

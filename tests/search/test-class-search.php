@@ -33,11 +33,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$mock_indexable = (object) [ 'slug' => 'slug' ];
+		do_action( 'plugins_loaded' );
 
-		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$this->assertEquals( 'vip-123-slug-1', $index_name );
+		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
+
+		$this->assertEquals( 'vip-123-post-1', $index_name );
 	}
 
 	/**
@@ -49,11 +51,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$mock_indexable = (object) [ 'slug' => 'users' ];
+		do_action( 'plugins_loaded' );
 
-		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $mock_indexable );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$this->assertEquals( 'vip-123-users', $index_name );
+		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
+
+		$this->assertEquals( 'vip-123-post', $index_name );
 	}
 
 	/**
@@ -67,6 +71,127 @@ class Search_Test extends \WP_UnitTestCase {
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
 
 		$this->assertEquals( 'index-name', $index_name );
+	}
+
+	public function vip_search_filter_ep_index_name_with_versions_data() {
+		return array(
+			array(
+				// Active index number
+				1,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post',
+			),
+			array(
+				// Active index number
+				2,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post-v2',
+			),
+			array(
+				// Active index number
+				1,
+				// Blog id
+				2,
+				// Expected index name
+				'vip-123-post-2',
+			),
+			array(
+				// Active index number
+				2,
+				// Blog id
+				2,
+				// Expected index name
+				'vip-123-post-2-v2',
+			),
+			array(
+				// Active index number
+				null,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post',
+			),
+			array(
+				// Active index number
+				0,
+				// Blog id
+				null,
+				// Expected index name
+				'vip-123-post',
+			),
+		);
+	}
+
+	/**
+	 * Test `ep_index_name` filter with versioning
+	 *
+	 * When current version is 1, the index name should not have a version applied to it
+	 * 
+	 * @dataProvider vip_search_filter_ep_index_name_with_versions_data
+	 * 
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__vip_search_filter_ep_index_name_with_versions( $current_version, $blog_id, $expected_index_name ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// For EP to register Indexables
+		do_action( 'plugins_loaded' );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		// Mock the Versioning class so we can control which version it returns
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
+				->setMethods( [ 'get_current_version_number' ] )
+				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'get_current_version_number' )
+				->with( $indexable )
+				->will( $this->returnValue( $current_version ) );
+
+		$es->versioning = $stub;
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', $blog_id, $indexable );
+
+		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
+	public function test__vip_search_filter_ep_index_name_with_overridden_version() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// For EP to register Indexables
+		do_action( 'plugins_loaded' );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$succeeded = $es->versioning->add_version( $indexable );
+
+		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
+
+		// Override the version
+		$override_result = $es->versioning->set_current_version_number( $indexable, 2 );
+
+		$this->assertTrue( $override_result, 'Setting current version number failed' );
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
+
+		$this->assertEquals( 'vip-123-post-v2', $index_name, 'Overridden index name is not correct' );
+
+		// Reset
+		$es->versioning->reset_current_version_number( $indexable );
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
+
+		$this->assertEquals( 'vip-123-post', $index_name );
+
+		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 	}
 
 	public function test__vip_search_filter_ep_default_index_number_of_shards() {
@@ -1003,6 +1128,30 @@ class Search_Test extends \WP_UnitTestCase {
 		$_GET['es'] = true;
 
 		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	public function test_is_network_mode_default() {
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_network_mode() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_is_network_mode_with_constant() {
+		define( 'EP_IS_NETWORK', true );
+
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_network_mode() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_is_network_mode_with_constant_false() {
+		define( 'EP_IS_NETWORK', false );
+
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_network_mode() );
 	}
 
 	/*
