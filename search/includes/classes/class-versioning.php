@@ -124,8 +124,14 @@ class Versioning {
 
 		$slug = $indexable->slug;
 
-		if ( ! isset( $versions[ $slug ] ) || ! is_array( $versions[ $slug ] ) ) {
-			return array();
+		if ( ! isset( $versions[ $slug ] ) || ! is_array( $versions[ $slug ] ) || empty( $versions[ $slug ] ) ) {
+			return array(
+				1 => array(
+					'number' => 1,
+					'active' => true,
+					'created_time' => null, // We don't know when it was actually created
+				),
+			);
 		}
 
 		return $versions[ $slug ];
@@ -151,11 +157,7 @@ class Versioning {
 		// If we currently have 0 versions recorded and the new version is 2, add in version 1 so that it works as expected with 
 		// the rest of the functions that are based on the version option
 		if ( empty( $versions ) && 2 === $new_version ) {
-			$versions[ 1 ] = array(
-				'number' => 1,
-				'active' => true,
-				'created_time' => null, // We don't know when it was actually created
-			);
+			
 		}
 
 		$versions[ $new_version ] = array(

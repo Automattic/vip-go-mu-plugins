@@ -378,6 +378,23 @@ class Versioning_Test extends \WP_UnitTestCase {
 				),
 			),
 
+			// Target index is already marked active, and is index 1
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Version to activate
+				1,
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => true,
+					),
+				),
+			),
+
 			// Switching back to 1, which may not exist in the option
 			array(
 				// Input array of versions
