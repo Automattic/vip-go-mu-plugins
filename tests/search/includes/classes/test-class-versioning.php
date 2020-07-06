@@ -398,16 +398,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			// Switching back to 1, which may not exist in the option
 			array(
 				// Input array of versions
-				array(
-					1 => array(
-						'number' => 1,
-						'active' => false,
-					),
-					2 => array(
-						'number' => 2,
-						'active' => true,
-					),
-				),
+				array(),
 				// Indexable slug
 				'post',
 				// Version to activate
@@ -417,10 +408,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 					1 => array(
 						'number' => 1,
 						'active' => true,
-					),
-					2 => array(
-						'number' => 2,
-						'active' => false,
 					),
 				),
 			),
@@ -474,6 +461,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Version to activate
 				4,
+			),
+
+			// Switching back to 1, when it's not registered (has been deleted over time)
+			array(
+				// Input array of versions
+				array(
+					200 => array(
+						'number' => 200,
+						'active' => false,
+					),
+					201 => array(
+						'number' => 201,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to activate
+				1,
 			),
 		);
 	}
