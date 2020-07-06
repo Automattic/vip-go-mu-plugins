@@ -1355,7 +1355,7 @@ class Search {
 			return true;
 		}
 
-		return false;	
+		return false;
 	}
 
 	/*
