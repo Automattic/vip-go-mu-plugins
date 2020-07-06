@@ -275,9 +275,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 		self::$version_instance->update_versions( $indexable, $versions );
 
 		// Add the new version
-		$succeeded = self::$version_instance->add_version( $indexable );
+		$new_version = self::$version_instance->add_version( $indexable );
 
-		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
+		$expected_new_version = end( $expected_new_versions );
+
+		$this->assertEquals( $expected_new_version[ 'number' ], $new_version['number'], 'The returned new version does not match the expected new version' );
 
 		$new_versions = self::$version_instance->get_versions( $indexable );
 
@@ -514,7 +516,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$result = self::$version_instance->add_version( $indexable );
 
-		$this->assertTrue( $result, 'Failed to add new version of index' );
+		$this->assertNotFalse( $result, 'Failed to add new version of index' );
+		$this->assertNotInstanceOf( \WP_Error::class, $result, 'Got WP_Error when adding new index version' );
 
 		// Defaults to active index (1 in our case)
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Default (non-overridden) version number is wrong' );
