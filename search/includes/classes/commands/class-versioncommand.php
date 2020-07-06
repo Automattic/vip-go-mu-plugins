@@ -139,4 +139,41 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::success( sprintf( 'Successfully activated index version %d for type %s', $new_version_number, $type ) );
 	}
+
+	/**
+	 * Get details about the currently active index version
+	 *
+	 * ## OPTIONS
+	 * 
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search index-versions get-active post
+	 *
+	 * @subcommand get-active
+	 */
+	public function get_active( $args, $assoc_args ) {
+		$type = $args[0];
+	
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+
+		$version = $search->versioning->get_active_version( $indexable );
+
+		if ( is_wp_error( $version ) ) {
+			return WP_CLI::error( $version->get_error_message() );
+		}
+
+		if ( ! is_array( $version ) ) {
+			return WP_CLI::error( 'Failed to retrieve the active index version' );
+		}
+		
+		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $version ), array( 'number', 'active', 'created_time', 'activated_time' ) );
+	}
 }
