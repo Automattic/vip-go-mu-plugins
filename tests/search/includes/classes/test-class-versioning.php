@@ -252,6 +252,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Expected new versions
 				array(
+					// Should have added the default version 1 data
+					1 => array(
+						'number' => 1,
+						'active' => true, // Defaults to active when no other index version is known
+					),
 					2 => array(
 						'number' => 2,
 						'active' => false,
@@ -313,7 +318,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				),
 			),
 
-			// Index already marked active
+			// With an index already marked active
 			array(
 				// Input array of versions
 				array(
@@ -369,6 +374,36 @@ class Versioning_Test extends \WP_UnitTestCase {
 					3 => array(
 						'number' => 3,
 						'active' => true,
+					),
+				),
+			),
+
+			// Switching back to 1, which may not exist in the option
+			array(
+				// Input array of versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to activate
+				1,
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => true,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => false,
 					),
 				),
 			),
