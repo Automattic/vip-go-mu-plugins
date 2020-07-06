@@ -348,7 +348,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				),
 			),
 
-			// Targete index is already marked active
+			// Target index is already marked active
 			array(
 				// Input array of versions
 				array(
