@@ -130,11 +130,44 @@ class Versioning {
 					'number' => 1,
 					'active' => true,
 					'created_time' => null, // We don't know when it was actually created
+					'activated_time' => null,
 				),
 			);
 		}
 
-		return $versions[ $slug ];
+		// Normalize the versions to ensure consistency (have all fields, etc)
+		return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
+	}
+
+	/**
+	 * Normalize the fields of a version, to handle old or incomplete data
+	 * 
+	 * This is important to keep the data stored in the option consistent and current when changes to the structure are needed
+	 * 
+	 * @param array The index version to normalize
+	 * @return array The index version, with all data normalized
+	 */
+	public function normalize_version( $version ) {
+		$version_fields = array(
+			'number',
+			'active',
+			'created_time',
+			'activated_time',
+		);
+
+		if ( ! is_array( $version ) ) {
+			$version = array();
+		}
+
+		$keys = array_keys( $version );
+
+		$missing_keys = array_diff( $version_fields, $keys );
+
+		foreach ( $missing_keys as $key ) {
+			$version[ $key ] = null;
+		}
+
+		return $version;
 	}
 
 	/**

@@ -538,4 +538,46 @@ class Versioning_Test extends \WP_UnitTestCase {
 		// Back to the active index
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
 	}
+
+	public function normalize_version_data() {
+		return array(
+			// No data at all
+			array(
+				// Input version
+				array(),
+				// Expected (normalized) version
+				array(
+					'number' => null,
+					'active' => null,
+					'activated_time' => null,
+					'created_time' => null,
+				),
+			),
+
+			// Partial data
+			array(
+				// Input version
+				array(
+					'number' => 2,
+					'active' => false,
+				),
+				// Expected (normalized) version
+				array(
+					'number' => 2,
+					'active' => false,
+					'activated_time' => null,
+					'created_time' => null,
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider normalize_version_data
+	 */
+	public function test_normalize_version( $input, $expected ) {
+		$normalized = self::$version_instance->normalize_version( $input );
+
+		$this->assertEquals( $expected, $normalized );
+	}
 }
