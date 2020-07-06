@@ -86,4 +86,57 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		\WP_CLI\Utils\format_items( $assoc_args['format'], $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
 	}
+
+	/**
+	 * Activate a version of an index. This will start sending all requests to the index version specified
+	 *
+	 * ## OPTIONS
+	 * 
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 * 
+	 * <version_number>
+	 * : The version number of the index to activate
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search index-versions activate post
+	 *
+	 * @subcommand activate
+	 */
+	public function activate( $args, $assoc_args ) {
+		$type = $args[ 0 ];
+		$new_version_number = intval( $args[ 1 ] );
+
+		if ( $new_version_number <= 0 ) {
+			return WP_CLI::error( 'New version number must be a positive int' );
+		}
+	
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+
+		$active_version_number = $search->versioning->get_active_version_number( $indexable );
+
+		if ( $active_version_number === $new_version_number ) {
+			return WP_CLI::error( sprintf( 'Index version %d is already active for type %s', $new_version_number, $type ) );
+		}
+
+		WP_CLI::confirm( sprintf( 'Are you sure you want to activate index version %d for type %s?', $new_version_number, $type ), $assoc_args );
+
+		$result = $search->versioning->activate_version( $indexable, $new_version_number );
+
+		if ( is_wp_error( $result ) ) {
+			return WP_CLI::error( $result->get_error_message() );
+		}
+
+		if ( ! $result ) {
+			return WP_CLI::error( sprintf( 'Failed to activate index version %d for type %s', $new_version_number, $type ) );
+		}
+
+		WP_CLI::success( sprintf( 'Successfully activated index version %d for type %s', $new_version_number, $type ) );
+	}
 }
