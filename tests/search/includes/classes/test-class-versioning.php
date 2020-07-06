@@ -342,6 +342,36 @@ class Versioning_Test extends \WP_UnitTestCase {
 					),
 				),
 			),
+
+			// Targete index is already marked active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to activate
+				3,
+				// Expected new versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+			),
 		);
 	}
 
