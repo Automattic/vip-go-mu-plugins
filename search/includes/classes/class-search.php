@@ -6,7 +6,9 @@ use \WP_CLI;
 
 class Search {
 	public $healthcheck;
+	public $field_count_gauge;
 	public $queue_wait_time;
+
 	public $queue;
 	private $mirrored_wp_query_queue = array();
 	private $current_host_index = 0;
@@ -68,6 +70,10 @@ class Search {
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
+
+
+		// Load field count gauge cron job
+		require_once __DIR__ . '/class-fieldcountgaugejob.php';
 
 		// Load queue wait time cron job
 		require_once __DIR__ . '/class-queuewaittimejob.php';
@@ -220,6 +226,9 @@ class Search {
 	}
 
 	protected function setup_regular_stat_collection() {
+		$this->field_count_gauge = new FieldCountGaugeJob();
+		$this->field_count_gauge->init();
+
 		$this->queue_wait_time = new QueueWaitTimeJob();
 		$this->queue_wait_time->init();
 	}
@@ -759,6 +768,76 @@ class Search {
 		$statsd = new \Automattic\VIP\StatsD();
 
 		$statsd->gauge( $per_site_stat, $average_wait_time );
+	}
+
+	/**
+	 * Set a gauge in statsd with the field count of the sites post index
+	 */
+	public function set_field_count_gauge() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$current_field_count = $this->get_current_field_count( $indexable );
+
+		if ( is_null( $current_field_count ) ) {
+			return;
+		}
+
+		$statsd_mode = 'field_count';
+		$statsd_index_name = $indexable->get_index_name();
+
+		$url = $this->get_current_host();
+		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+
+		$statsd->gauge( $per_site_stat, $current_field_count );
+	}
+
+	/**
+	 * Get the current field count of an indexable
+	 *
+	 * @param {\ElasticPress\Indexable} $indexable The indexable you want to get the current index field count of
+	 * @return {null|int} The current field count
+	 */
+	public function get_current_field_count( \ElasticPress\Indexable $indexable ) {
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$index_name = $indexable->get_index_name();
+		$path = "$index_name/_mapping";
+
+		// Send a request to get all current mappings
+		$raw = \ElasticPress\Elasticsearch::factory()->remote_request( $path );
+
+		// Elasticsearch responses are in JSON
+		$body = json_decode( $raw['body'], true );
+
+		// If JSON wasn't parsed correctly
+		if ( ! is_array( $body ) || empty( $body ) ) {
+			return;
+		}
+
+		// If JSON structure indicates an error
+		if ( array_key_exists( 'error', $body ) ) {
+			return;
+		}
+
+		$fields = array();
+
+		// The occurrences of 'type' in the results is equal to the number of fields in use.
+		// Since the assoc array can be pretty deeply nested, array_walk_recursive and a type check was used
+		array_walk_recursive( $body, function( $value, $key, $fields ) {
+			if ( 'type' === $key ) {
+				array_push( $fields[0], $key ); // Why reference to [0]? It doesn't want to work otherwise presently.
+			}
+		}, array( &$fields ) );
+
+		return count( $fields );
 	}
 
 	/**

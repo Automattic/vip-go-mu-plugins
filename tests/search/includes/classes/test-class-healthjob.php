@@ -21,6 +21,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 	public function test__vip_search_healthjob_check_health_with_inactive_features() {
 		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
+		update_option( 'ep_last_sync', time() ); // So EP thinks we've done an index before
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();

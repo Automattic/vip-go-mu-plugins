@@ -252,6 +252,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Expected new versions
 				array(
+					// Should have added the default version 1 data
+					1 => array(
+						'number' => 1,
+						'active' => true, // Defaults to active when no other index version is known
+					),
 					2 => array(
 						'number' => 2,
 						'active' => false,
@@ -313,7 +318,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				),
 			),
 
-			// Index already marked active
+			// With an index already marked active
 			array(
 				// Input array of versions
 				array(
@@ -339,6 +344,70 @@ class Versioning_Test extends \WP_UnitTestCase {
 					3 => array(
 						'number' => 3,
 						'active' => false,
+					),
+				),
+			),
+
+			// Target index is already marked active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to activate
+				3,
+				// Expected new versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+			),
+
+			// Target index is already marked active, and is index 1
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Version to activate
+				1,
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => true,
+					),
+				),
+			),
+
+			// Switching back to 1, which may not exist in the option
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Version to activate
+				1,
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => true,
 					),
 				),
 			),
@@ -392,6 +461,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Version to activate
 				4,
+			),
+
+			// Switching back to 1, when it's not registered (has been deleted over time)
+			array(
+				// Input array of versions
+				array(
+					200 => array(
+						'number' => 200,
+						'active' => false,
+					),
+					201 => array(
+						'number' => 201,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to activate
+				1,
 			),
 		);
 	}
