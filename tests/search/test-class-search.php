@@ -171,9 +171,10 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$succeeded = $es->versioning->add_version( $indexable );
+		$new_version = $es->versioning->add_version( $indexable );
 
-		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
+		$this->assertNotFalse( $new_version, 'Failed to add new version of index' );
+		$this->assertNotInstanceOf( \WP_Error::class, $new_version, 'Got WP_Error when adding new index version' );
 
 		// Override the version
 		$override_result = $es->versioning->set_current_version_number( $indexable, 2 );
