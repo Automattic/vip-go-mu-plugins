@@ -10,7 +10,7 @@ use \WP_CLI\Utils;
  *
  * @package Automattic\VIP\Search
  */
-class CoreCommand extends \WPCOM_VIP_CLI_Command {
+class CoreCommand extends \ElasticPress\Command {
 	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
 	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
 
