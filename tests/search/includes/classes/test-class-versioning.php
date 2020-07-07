@@ -275,9 +275,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 		self::$version_instance->update_versions( $indexable, $versions );
 
 		// Add the new version
-		$succeeded = self::$version_instance->add_version( $indexable );
+		$new_version = self::$version_instance->add_version( $indexable );
 
-		$this->assertTrue( $succeeded, 'Adding a new version failed, but it should have succeeded' );
+		$expected_new_version = end( $expected_new_versions );
+
+		$this->assertEquals( $expected_new_version['number'], $new_version['number'], 'The returned new version does not match the expected new version' );
 
 		$new_versions = self::$version_instance->get_versions( $indexable );
 
@@ -514,7 +516,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$result = self::$version_instance->add_version( $indexable );
 
-		$this->assertTrue( $result, 'Failed to add new version of index' );
+		$this->assertNotFalse( $result, 'Failed to add new version of index' );
+		$this->assertNotInstanceOf( \WP_Error::class, $result, 'Got WP_Error when adding new index version' );
 
 		// Defaults to active index (1 in our case)
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Default (non-overridden) version number is wrong' );
@@ -534,5 +537,61 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// Back to the active index
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
+	}
+
+	public function normalize_version_data() {
+		return array(
+			// No data at all
+			array(
+				// Input version
+				array(),
+				// Expected (normalized) version
+				array(
+					'number' => null,
+					'active' => null,
+					'activated_time' => null,
+					'created_time' => null,
+				),
+			),
+
+			// Partial data
+			array(
+				// Input version
+				array(
+					'number' => 2,
+					'active' => false,
+				),
+				// Expected (normalized) version
+				array(
+					'number' => 2,
+					'active' => false,
+					'activated_time' => null,
+					'created_time' => null,
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider normalize_version_data
+	 */
+	public function test_normalize_version( $input, $expected ) {
+		$normalized = self::$version_instance->normalize_version( $input );
+
+		$this->assertEquals( $expected, $normalized );
+	}
+
+	public function test_get_version() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$one = self::$version_instance->get_version( $indexable, 1 );
+
+		$this->assertEquals( 1, $one['number'], 'Wrong version number for returned version (expected 1)' );
+
+		$new = self::$version_instance->add_version( $indexable );
+
+		$new_retrieved = self::$version_instance->get_version( $indexable, $new['number'] );
+
+		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
 	}
 }

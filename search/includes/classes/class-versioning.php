@@ -130,11 +130,62 @@ class Versioning {
 					'number' => 1,
 					'active' => true,
 					'created_time' => null, // We don't know when it was actually created
+					'activated_time' => null,
 				),
 			);
 		}
 
-		return $versions[ $slug ];
+		// Normalize the versions to ensure consistency (have all fields, etc)
+		return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
+	}
+
+	/**
+	 * Normalize the fields of a version, to handle old or incomplete data
+	 * 
+	 * This is important to keep the data stored in the option consistent and current when changes to the structure are needed
+	 * 
+	 * @param array The index version to normalize
+	 * @return array The index version, with all data normalized
+	 */
+	public function normalize_version( $version ) {
+		$version_fields = array(
+			'number',
+			'active',
+			'created_time',
+			'activated_time',
+		);
+
+		if ( ! is_array( $version ) ) {
+			$version = array();
+		}
+
+		$keys = array_keys( $version );
+
+		$missing_keys = array_diff( $version_fields, $keys );
+
+		foreach ( $missing_keys as $key ) {
+			$version[ $key ] = null;
+		}
+
+		return $version;
+	}
+
+	/**
+	 * Retrieve details about a given index version
+	 * 
+	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve the index version
+	 * @return array Array of index versions
+	 */
+	public function get_version( Indexable $indexable, $version_number ) {
+		$slug = $indexable->slug;
+	
+		$versions = $this->get_versions( $indexable );
+
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return null;
+		}
+
+		return $versions[ $version_number ];
 	}
 
 	/**
@@ -148,19 +199,28 @@ class Versioning {
 	
 		$versions = $this->get_versions( $indexable );
 
-		$new_version = $this->get_next_version_number( $versions );
+		$new_version_number = $this->get_next_version_number( $versions );
 
-		if ( ! $new_version ) {
+		if ( ! $new_version_number ) {
 			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
 		}
 
-		$versions[ $new_version ] = array(
-			'number' => $new_version,
+		$new_version = array(
+			'number' => $new_version_number,
 			'active' => false,
 			'created_time' => time(),
+			'activated_time' => null,
 		);
 
-		return $this->update_versions( $indexable, $versions );
+		$versions[ $new_version_number ] = $new_version;
+
+		$result = $this->update_versions( $indexable, $versions );
+
+		if ( true !== $result ) {
+			return $result;
+		}
+
+		return $new_version;
 	}
 
 	/**
