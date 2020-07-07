@@ -15,7 +15,7 @@ class CoreCommand extends \ElasticPress\Command {
 	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
 
 	protected function _maybe_setup_index_version( &$assoc_args ) {
-		if ( $assoc_args[ 'version' ] ) {
+		if ( $assoc_args['version'] ) {
 			$version = intval( $assoc_args['version'] );
 
 			// If version is specified, the indexable must also be specified, as different indexables can have different versions
