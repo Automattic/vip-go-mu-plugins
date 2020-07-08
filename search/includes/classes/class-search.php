@@ -53,18 +53,6 @@ class Search {
 	}
 
 	protected function load_dependencies() {
-		/**
-		 * Load ES Health command class
-		 */
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			require_once __DIR__ . '/commands/class-healthcommand.php';
-			require_once __DIR__ . '/commands/class-queuecommand.php';
-			require_once __DIR__ . '/commands/class-versioncommand.php';
-
-			// Remove elasticpress command. Need a better way.
-			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
-		}
-
 		// Load ElasticPress
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
@@ -93,6 +81,19 @@ class Search {
 		// Index versioning
 		require_once __DIR__ . '/class-versioning.php';
 		$this->versioning = new Versioning();
+
+		/**
+		 * Load CLI commands
+		 */
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			require_once __DIR__ . '/commands/class-healthcommand.php';
+			require_once __DIR__ . '/commands/class-queuecommand.php';
+			require_once __DIR__ . '/commands/class-versioncommand.php';
+			require_once __DIR__ . '/commands/class-corecommand.php';
+
+			// Remove elasticpress command. Need a better way.
+			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
+		}
 	}
 
 	protected function setup_constants() {
@@ -217,7 +218,7 @@ class Search {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
-			WP_CLI::add_command( 'vip-search', '\ElasticPress\Command' );
+			WP_CLI::add_command( 'vip-search', __NAMESPACE__ . '\Commands\CoreCommand' );
 		}
 	}
 
