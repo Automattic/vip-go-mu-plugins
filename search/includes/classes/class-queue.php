@@ -497,7 +497,7 @@ class Queue {
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->increment( $per_site_stat, $count );
+		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	public function record_queue_count_stat( $indexable ) {
