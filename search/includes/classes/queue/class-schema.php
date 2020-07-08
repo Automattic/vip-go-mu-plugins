@@ -130,7 +130,7 @@ class Schema {
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
   			`scheduled_time` datetime DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
-			UNIQUE KEY `unique_object_status_index` (`object_id`,`object_type`,`status`,`index_version`)
+			UNIQUE KEY `unique_object_status_version` (`object_id`,`object_type`,`status`,`index_version`)
 		) ENGINE=InnoDB";
 
 		dbDelta( $schema, true );
