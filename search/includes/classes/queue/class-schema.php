@@ -126,7 +126,7 @@ class Schema {
 			`priority` tinyint(1) DEFAULT '5' COMMENT 'Relative priority for this item compared to others (of any object_type)',
 			`start_time` datetime DEFAULT NULL COMMENT 'Datetime when the item can be indexed (but not before) - used for debouncing',
 			`status` varchar(45) NOT NULL COMMENT 'Status of the indexing job',
-			`index_version` int(11) DEFAULT NULL,
+			`index_version` int(11) NOT NULL DEFAULT 1,
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
   			`scheduled_time` datetime DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
