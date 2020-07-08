@@ -142,7 +142,7 @@ class Schema {
 			// Between version 2 and 3, we added the `index_version` column, which is part of the unique index, so need to drop the old index
 			// (which doesn't happen automatically in dbDelta, sadly)
 			if ( 3 === self::DB_VERSION ) {
-				$wpdb->query( "DROP INDEX IF EXISTS `unique_object_and_status` on $table_name" );
+				$wpdb->query( "DROP INDEX IF EXISTS `unique_object_and_status` on $table_name" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 			}
 
 			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
