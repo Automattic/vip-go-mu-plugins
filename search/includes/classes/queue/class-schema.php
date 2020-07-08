@@ -130,7 +130,7 @@ class Schema {
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
   			`scheduled_time` datetime DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
-			UNIQUE KEY `unique_object_and_status` (`object_id`,`object_type`,`status`)
+			UNIQUE KEY `unique_object_status_index` (`object_id`,`object_type`,`status`,`index_version`)
 		) ENGINE=InnoDB";
 
 		dbDelta( $schema, true );
@@ -139,6 +139,12 @@ class Schema {
 		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
 		if ( 1 === $table_count ) {
+			// Between version 2 and 3, we added the `index_version` column, which is part of the unique index, so need to drop the old index
+			// (which doesn't happen automatically in dbDelta, sadly)
+			if ( 3 === self::DB_VERSION ) {
+				$wpdb->query( "DROP INDEX IF EXISTS `unique_object_and_status` on $table_name" );
+			}
+
 			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
 		} else {
 			trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
