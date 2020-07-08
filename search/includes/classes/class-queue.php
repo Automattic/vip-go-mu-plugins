@@ -470,7 +470,7 @@ class Queue {
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
 
-			$this->record_processed_from_queue_stat( count( $jobs ), $indexable );
+			$this->record_processed_from_queue_stat( count( $ids ), $indexable );
 
 			$this->record_queue_count_stat( $indexable );
 		}

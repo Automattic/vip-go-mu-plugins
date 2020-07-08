@@ -64,7 +64,8 @@ class Cron {
 		// Add the custom cron schedule
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
-		$this->schedule_sweeper_job();
+		// Hook into init action to ensure cron-control has already been loaded
+		add_action( 'init', [ $this, 'schedule_sweeper_job' ] );
 	}
 
 	/**
