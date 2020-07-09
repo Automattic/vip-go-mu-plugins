@@ -1925,6 +1925,126 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$this->assertTrue( $es->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_skip_post_meta_sync_should_return_false_if_meta_is_in_allow_list() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_key',
+				);
+			}
+		);
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$this->assertFalse( $es->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_a_previous_filter_is_true() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_key',
+				);
+			}
+		);
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$this->assertTrue( $es->filter__ep_skip_post_meta_sync( true, $post, 40, 'random_key', 'random_value' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_meta_not_in_allow_list() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_skip_post_meta_sync_filter_should_return_false_if_meta_is_in_allow_list() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_key',
+				);
+			}
+		);
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$this->assertFalse( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_a_previous_filter_is_true() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+
+		$post = \get_post( $post_id );
+
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array(
+					'random_key',
+				);
+			}
+		);
+
+		\Automattic\VIP\Search\Search::instance();
+
+		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', true, $post, 40, 'random_key', 'random_value' ) );
+	}
+
+	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {

@@ -208,6 +208,9 @@ class Search {
 
 		// Try to prevent the field limit from being set too high
 		add_filter( 'ep_total_field_limit', array( $this, 'limit_field_limit' ), PHP_INT_MAX );
+	
+		// Check if meta is on allow list. If not, don't re-index
+		add_filter( 'ep_skip_post_meta_sync', array( $this, 'filter__ep_skip_post_meta_sync' ), PHP_INT_MAX, 5 );
 	}
 
 	protected function load_commands() {
@@ -1241,41 +1244,7 @@ class Search {
 			return $current_meta;
 		}
 		
-		/**
-		 * Filters the allow list used for post meta indexing
-		 * 
-		 * @hook vip_search_post_meta_allow_list
-		 * @param {array} $current_allow_list The current allow list for post meta indexing either as a list of post meta keys or as an associative array( e.g.: array( 'key' => true ); )
-		 * @param {WP_Post} $post The post whose meta data is being prepared
-		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
-		 */
-		$client_post_meta_allow_list = apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
-
-		// If the array is empty, an array_intersect will result in an empty array. If the allow list isn't an array, assume no post meta is allow listed
-		if ( empty( $client_post_meta_allow_list ) || ! is_array( $client_post_meta_allow_list ) ) {
-			return array();
-		}
-
-		// If client meta allow list is an associative array
-		if ( array_keys( $client_post_meta_allow_list ) !== range( 0, count( $client_post_meta_allow_list ) - 1 ) ) {
-			/* 
-			 * Filter out values not set to true since the current format of the allow list as an associative array is:
-			 * 
-			 * array (
-			 * 		'key' => true,
-			 * );
-			 *
-			 * which means that anything besides true should logically be discarded
-			 */
-			$client_post_meta_allow_list = array_filter(
-				$client_post_meta_allow_list,
-				function( $value ) {
-					return true === $value;
-				}
-			);
-
-			$client_post_meta_allow_list = array_keys( $client_post_meta_allow_list );
-		}
+		$client_post_meta_allow_list = $this->get_post_meta_allow_list( $post );
 
 		// Since we're comparing result of get_post_meta(as $current_meta), we need to do an array_intersect_key since $current_meta should be an assoc array
 		$client_post_meta_allow_list_assoc = array_flip( $client_post_meta_allow_list );
@@ -1310,6 +1279,83 @@ class Search {
 		}
 
 		return $field_limit;
+	}
+
+	/**
+	 * Check if meta is on allow list. If it isn't, set ep_skip_post_meta_sync to false
+	 *
+	 * @param {bool} $skip_sync The current value of whether the sync should be skipped or not
+	 * @param {WP_Post} $post The post that's attempting to be reindexed
+	 * @param {int|array} $meta_id Meta id.
+	 * @param {string} $meta_key Meta key.
+	 * @param {string} $meta_value Meta value.
+	 * @return {bool} The new value of whether the sync should be skipped or not
+	 */
+	public function filter__ep_skip_post_meta_sync( $skip_sync, $post, $meta_id, $meta_key, $meta_value ) {
+		// Respect previous skip values
+		if ( true === $skip_sync ) {
+			return true;
+		}
+
+		// If post meta allow list is disabled for this site, skip the allow list check
+		if ( defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			if ( in_array( FILES_CLIENT_SITE_ID, self::DISABLE_POST_META_ALLOW_LIST, true ) ) {
+				return $skip_sync;
+			}
+		}
+
+		// If post is invalid, respect current sync value
+		if ( is_null( $post ) ) {
+			return $skip_sync;
+		}
+
+		$post_meta_allow_list = $this->get_post_meta_allow_list( $post );
+
+		if ( ! in_array( $meta_key, $post_meta_allow_list, true ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public function get_post_meta_allow_list( $post ) {
+		/**
+		 * Filters the allow list used for post meta indexing
+		 *
+		 * @hook vip_search_post_meta_allow_list
+		 * @param {array} $current_allow_list The current allow list for post meta indexing either as a list of post meta keys or as an associative array( e.g.: array( 'key' => true ); )
+		 * @param {WP_Post} $post The post whose meta data is being prepared
+		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
+		 */
+		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
+
+		// If post meta allow list is not an array, treat it like an empty array.
+		if ( ! is_array( $post_meta_allow_list ) ) {
+			$post_meta_allow_list = array();
+		}
+
+		// If post meta allow list is an associative array
+		if ( array_keys( $post_meta_allow_list ) !== range( 0, count( $post_meta_allow_list ) - 1 ) ) {
+			/* 
+			 * Filter out values not set to true since the current format of the allow list as an associative array is:
+			 * 
+			 * array (
+			 * 		'key' => true,
+			 * );
+			 *
+			 * which means that anything besides true should logically be discarded
+			 */
+			$post_meta_allow_list = array_filter(
+				$post_meta_allow_list,
+				function( $value ) {
+					return true === $value;
+				}
+			);
+
+			$post_meta_allow_list = array_keys( $post_meta_allow_list );
+		}
+
+		return $post_meta_allow_list;
 	}
 
 	/*
