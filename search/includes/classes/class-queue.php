@@ -470,7 +470,7 @@ class Queue {
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
 
-			$this->record_processed_from_queue_stat( count( $jobs ), $indexable );
+			$this->record_processed_from_queue_stat( count( $ids ), $indexable );
 
 			$this->record_queue_count_stat( $indexable );
 		}
@@ -497,7 +497,7 @@ class Queue {
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->increment( $per_site_stat, $count );
+		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	public function record_queue_count_stat( $indexable ) {
