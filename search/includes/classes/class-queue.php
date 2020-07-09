@@ -46,12 +46,7 @@ class Queue {
 	}
 
 	public function is_enabled() {
-		$enabled_by_constant = defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) && true === VIP_SEARCH_ENABLE_ASYNC_INDEXING;
-
-		$option_value = get_option( 'vip_enable_search_indexing_queue' );
-		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
-
-		return $enabled_by_constant || $is_enabled_by_option;
+		return true;
 	}
 
 	public function setup_hooks() {
@@ -475,7 +470,7 @@ class Queue {
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
 
-			$this->record_processed_from_queue_stat( count( $jobs ), $indexable );
+			$this->record_processed_from_queue_stat( count( $ids ), $indexable );
 
 			$this->record_queue_count_stat( $indexable );
 		}
@@ -502,7 +497,7 @@ class Queue {
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->increment( $per_site_stat, $count );
+		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	public function record_queue_count_stat( $indexable ) {
