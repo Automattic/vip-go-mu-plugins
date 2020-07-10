@@ -29,7 +29,7 @@ class Cron {
 	/**
 	 * Custom cron interval value
 	 */
-	const SWEEPER_CRON_INTERVAL = 5 * \MINUTE_IN_SECONDS;
+	const SWEEPER_CRON_INTERVAL = 1 * \MINUTE_IN_SECONDS;
 
 	/**
 	 * The name of the cron event for processing term updates
