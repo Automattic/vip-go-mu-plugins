@@ -237,7 +237,7 @@ class Cron {
 
 		global $wpdb;
 
-		$table_name = Automattic\WP\Cron_Control\Events_Store::instance()->get_table_name();
+		$table_name = \Automattic\WP\Cron_Control\Events_Store::instance()->get_table_name();
 
 		$current_processor_job_count = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE action = 'vip_search_queue_processor' AND status != 'complete'" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 
