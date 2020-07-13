@@ -60,6 +60,28 @@ class Queue {
 	}
 
 	/**
+	 * Given an array of queue operation options, determine the correct index version number
+	 * 
+	 * This returns $options['index_version'] if set, or defaults to the current index version. Extracted
+	 * here b/c it is reused all over
+	 */
+	public function get_index_version_number_from_options( $object_type, $options = array() ) {
+		$index_version = isset( $options['index_version'] ) ? $options['index_version'] : null;
+
+		if ( ! is_int( $index_version ) ) {
+			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
+
+			if ( ! $indexable ) {
+				return new WP_Error( sprintf( 'Indexable not found for type %s', 'invalid-indexable', $object_type ) );
+			}
+
+			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
+		}
+
+		return $index_version;
+	}
+
+	/**
 	 * Queue an object for re-indexing
 	 *
 	 * If the object is already queued, it will not be queued again
@@ -81,21 +103,7 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version = isset( $options['index_version'] ) ? $options['index_version'] : null;
-
-		if ( ! is_int( $index_version ) ) {
-			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
-			
-			if ( ! $indexable ) {
-				var_dump( $object_type );
-			}
-
-			if ( ! $indexable ) {
-				return new WP_Error( sprintf( 'Indexable not found for type %s', 'invalid-indexable', $object_type ) );
-			}
-
-			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
-		}
+		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
 
 		$table_name = $this->schema->get_table_name();
 

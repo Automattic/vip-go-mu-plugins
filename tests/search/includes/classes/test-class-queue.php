@@ -37,6 +37,41 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->empty_queue();
 	}
 
+	public function get_index_version_number_from_options_data() {
+		return array(
+			// Specified in options
+			array(
+				// Object type
+				'post',
+				// Options
+				array(
+					'index_version' => 2,
+				),
+				// Expected
+				2,
+			),
+
+			// Not specified, defaults to current index version
+			array(
+				// Object type
+				'post',
+				// Options
+				array(),
+				// Expected
+				1,
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_index_version_number_from_options_data
+	 */
+	public function test_get_index_version_number_from_options( $object_type, $options, $expected_version_number ) {
+		$version_number = $this->queue->get_index_version_number_from_options( $object_type, $options );
+
+		$this->assertEquals( $expected_version_number, $version_number );
+	}
+
 	public function test_deduplication_of_repeat_indexing() {
 		global $wpdb;
 
