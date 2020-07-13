@@ -332,16 +332,19 @@ class Queue {
 		);
 	}
 
-	public function get_next_job_for_object( $object_id, $object_type ) {
+	public function get_next_job_for_object( $object_id, $object_type, $options = array() ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
+		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+
 		$job = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued' LIMIT 1", // Cannot prepare table name. @codingStandardsIgnoreLine
+				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `index_version` = %d AND `status` = 'queued' LIMIT 1", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$object_id,
-				$object_type
+				$object_type,
+				$index_version
 			)
 		);
 
