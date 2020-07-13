@@ -137,13 +137,13 @@ class Queue {
 	 * @param array $object_ids The ids of the objects
 	 * @param string $object_type The type of objects
 	 */
-	public function queue_objects( $object_ids, $object_type = 'post' ) {
+	public function queue_objects( $object_ids, $object_type = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
 			return;
 		}
 
 		foreach ( $object_ids as $object_id ) {
-			$this->queue_object( $object_id, $object_type );
+			$this->queue_object( $object_id, $object_type, $options );
 		}
 	}
 
