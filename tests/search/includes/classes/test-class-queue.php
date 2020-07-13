@@ -72,6 +72,45 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_version_number, $version_number );
 	}
 
+	public function get_last_index_time_cache_key_data() {
+		return array(
+			// Index version specified in options
+			array(
+				// Object id
+				1,
+				// Object type
+				'post',
+				// Options
+				array(
+					'index_version' => 2,
+				),
+				// Expected
+				'post-1-v2',
+			),
+
+			// Index version not specified, defaults to current index version
+			array(
+				// Object id
+				9999,
+				// Object type
+				'post',
+				// Options
+				array(),
+				// Expected
+				'post-9999-v1',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_last_index_time_cache_key_data
+	 */
+	public function test_get_last_index_time_cache_key( $object_id, $object_type, $options, $expected_cache_key ) {
+		$cache_key = $this->queue->get_last_index_time_cache_key( $object_id, $object_type, $options );
+
+		$this->assertEquals( $expected_cache_key, $cache_key );
+	}
+
 	public function test_deduplication_of_repeat_indexing() {
 		global $wpdb;
 
