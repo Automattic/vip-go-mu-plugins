@@ -155,7 +155,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		// Should not have received post 1, because it is currently running, then scheduled again for the future
 		$expected_object_ids = array( 2, 3, 1000 );
 
-		$this->assertEquals( $expected_object_ids, $object_ids );
+		$this->assertEquals( $expected_object_ids, $object_ids, 'Checked out jobs ids do not match what was expected' );
 
 		// And each of those should be now marked as "running"
 		$ids_escaped = array_map( 'esc_sql', $expected_object_ids );
