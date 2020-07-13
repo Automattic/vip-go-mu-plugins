@@ -627,7 +627,7 @@ class Search {
 	 *
 	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
 	 *
-	 * The integration can be tested at any time by setting an `es` query argument (?es=true).
+	 * The integration can be tested at any time by setting an `es` query argument (?vip_search_enabled=true).
 	 * 
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
