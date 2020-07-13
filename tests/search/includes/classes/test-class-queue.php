@@ -360,6 +360,18 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 2, $count );
 	}
 
+	public function test_count_jobs_by_version() {
+		$this->queue->queue_object( 1, 'post', array( 'index_version' => 2 ) );
+		$this->queue->queue_object( 2, 'post', array( 'index_version' => 2 ) );
+		$this->queue->queue_object( 3, 'post', array( 'index_version' => 1 ) );
+
+		$count_default = $this->queue->count_jobs( 'queued', 'post' );
+		$count_version_2 = $this->queue->count_jobs( 'queued', 'post', array( 'index_version' => 2 ) );
+
+		$this->assertEquals( 1, $count_default );
+		$this->assertEquals( 2, $count_version_2 );
+	}
+
 	public function test_get_next_job_for_object() {
 		$this->queue->queue_object( 1, 'post' );
 
