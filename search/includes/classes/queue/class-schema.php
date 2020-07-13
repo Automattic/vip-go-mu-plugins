@@ -5,7 +5,7 @@ namespace Automattic\VIP\Search\Queue;
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION = 2;
+	const DB_VERSION = 3;
 	const DB_VERSION_TRANSIENT = 'vip_search_queue_db_version';
 	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
 	const TABLE_CREATE_LOCK = 'vip_search_queue_creating_table';
@@ -126,10 +126,11 @@ class Schema {
 			`priority` tinyint(1) DEFAULT '5' COMMENT 'Relative priority for this item compared to others (of any object_type)',
 			`start_time` datetime DEFAULT NULL COMMENT 'Datetime when the item can be indexed (but not before) - used for debouncing',
 			`status` varchar(45) NOT NULL COMMENT 'Status of the indexing job',
+			`index_version` int(11) NOT NULL DEFAULT 1,
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
   			`scheduled_time` datetime DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
-			UNIQUE KEY `unique_object_and_status` (`object_id`,`object_type`,`status`)
+			UNIQUE KEY `unique_object_status_version` (`object_id`,`object_type`,`status`,`index_version`)
 		) ENGINE=InnoDB";
 
 		dbDelta( $schema, true );
@@ -138,6 +139,12 @@ class Schema {
 		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
 		if ( 1 === $table_count ) {
+			// Between version 2 and 3, we added the `index_version` column, which is part of the unique index, so need to drop the old index
+			// (which doesn't happen automatically in dbDelta, sadly)
+			if ( 3 === self::DB_VERSION ) {
+				$wpdb->query( "DROP INDEX IF EXISTS `unique_object_and_status` on $table_name" ); // Cannot prepare table name. @codingStandardsIgnoreLine
+			}
+
 			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
 		} else {
 			trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
