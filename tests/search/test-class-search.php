@@ -1126,7 +1126,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_integration_enabled_via_query_param() {
 		// Set es query string to test override
-		$_GET['es'] = true;
+		$_GET[ \Automattic\VIP\Search\Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
 
 		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
 	}
@@ -1190,14 +1190,14 @@ class Search_Test extends \WP_UnitTestCase {
 
 		add_option( 'vip_enable_vip_search_query_integration', true );
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-		$_GET['es'] = true;
+		$_GET[ \Automattic\VIP\Search\Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
 
 		$this->assertFalse( $es::rate_limit_ep_query_integration( false ), 'the default value should be false' );
 		$this->assertTrue( $es::rate_limit_ep_query_integration( true ), 'should honor filters that skip query integrations' );
 
 		// Force ratelimiting to apply
 		$es::$max_query_count = 0;
-		
+
 		// Force this request to be ratelimited
 		$es::$query_db_fallback_value = 11;
 
