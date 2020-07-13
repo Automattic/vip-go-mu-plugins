@@ -166,14 +166,14 @@ class Queue {
 	 * 
 	 * @return int The soonest unix timestamp when the object can be indexed again
 	 */
-	public function get_next_index_time( $object_id, $object_type ) {
-		$last_index_time = $this->get_last_index_time( $object_id, $object_type );
+	public function get_next_index_time( $object_id, $object_type, $options = array() ) {
+		$last_index_time = $this->get_last_index_time( $object_id, $object_type, $options );
 
 		$next_index_time = null;
 
 		if ( is_int( $last_index_time ) && $last_index_time ) {
 			// Next index time is last index time + interval
-			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $object_type );
+			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $object_type, $options );
 		}
 
 		return $next_index_time;
@@ -187,8 +187,8 @@ class Queue {
 	 * 
 	 * @return int The unix timestamp when the object was last indexed
 	 */
-	public function get_last_index_time( $object_id, $object_type ) {
-		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type );
+	public function get_last_index_time( $object_id, $object_type, $options = array() ) {
+		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type, $options );
 
 		$last_index_time = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
@@ -206,8 +206,8 @@ class Queue {
 	 * @param string $object_type The type of object
 	 * @param int $time Unix timestamp when the object was last indexed
 	 */
-	public function set_last_index_time( $object_id, $object_type, $time ) {
-		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type );
+	public function set_last_index_time( $object_id, $object_type, $time, $options = array() ) {
+		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type, $options );
 
 		wp_cache_set( $cache_key, $time, self::CACHE_GROUP, self::OBJECT_LAST_INDEX_TIMESTAMP_TTL );
 	}
