@@ -368,8 +368,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		$count_default = $this->queue->count_jobs( 'queued', 'post' );
 		$count_version_2 = $this->queue->count_jobs( 'queued', 'post', array( 'index_version' => 2 ) );
 
-		$this->assertEquals( 1, $count_default );
-		$this->assertEquals( 2, $count_version_2 );
+		$this->assertEquals( 1, $count_default, 'Wrong count for default index version' );
+		$this->assertEquals( 2, $count_version_2, 'Wrong count for index version 2' );
 	}
 
 	public function test_get_next_job_for_object() {
