@@ -3,6 +3,20 @@
 namespace Automattic\VIP\Search;
 
 class Queue_Test extends \WP_UnitTestCase {
+	static public function setUpBeforeClass() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+
+		require_once __DIR__ . '/../../../../search/search.php';
+
+		\Automattic\VIP\Search\Search::instance();
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
+	}
+
 	public function setUp() {
 		global $wpdb;
 
