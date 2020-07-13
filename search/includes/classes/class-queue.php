@@ -220,8 +220,10 @@ class Queue {
 	 * 
 	 * @return string The cache key to use for the object's last indexed timestamp
 	 */
-	public function get_last_index_time_cache_key( $object_id, $object_type ) {
-		return sprintf( '%s-%d', $object_type, $object_id );
+	public function get_last_index_time_cache_key( $object_id, $object_type, $options = array() ) {
+		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+	
+		return sprintf( '%s-%d-%d', $object_type, $object_id, $index_version );
 	}
 
 	/**
