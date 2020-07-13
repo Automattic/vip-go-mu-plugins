@@ -293,14 +293,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
-
-		$query = $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND `index_version` = %d", // Cannot prepare table name. @codingStandardsIgnoreLine
-			$status,
-			$object_type,
-			$index_version
-		);
+		$query = null;
 
 		// TODO should we support $index_version here? Is there a better way to structure these conditionals?
 		if ( 'all' === strtolower( $status ) ) {
@@ -312,6 +305,19 @@ class Queue {
 					$object_type
 				);
 			}
+		}
+
+		// If query has not already been set, it's a "normal" query. This is done after b/c the index version lookup will fail 
+		// when $object_type is equal to 'all' since this is not a valid Indexable
+		if ( ! $query ) {
+			$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+
+			$query = $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND `index_version` = %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+				$status,
+				$object_type,
+				$index_version
+			);
 		}
 
 		$job_count = $wpdb->get_var( $query ); // Query may change depending on status/object type @codingStandardsIgnoreLine
