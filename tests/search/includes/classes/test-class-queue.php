@@ -383,6 +383,20 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( null, $job->start_time );
 	}
 
+	public function test_get_next_job_for_object_with_version() {
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->queue_object( 1, 'post', array( 'index_version' => 2 ) );
+
+		$job = $this->queue->get_next_job_for_object( 1, 'post', array( 'index_version' => 2 ) );
+
+		$this->assertEquals( 2, $job->job_id );
+		$this->assertEquals( 1, $job->object_id );
+		$this->assertEquals( 'post', $job->object_type );
+		$this->assertEquals( 'queued', $job->status );
+		$this->assertEquals( null, $job->start_time );
+		$this->assertEquals( 2, $job->index_version );
+	}
+
 	public function test_process_jobs() {
 		// TODO
 	}
