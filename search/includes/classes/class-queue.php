@@ -492,6 +492,8 @@ class Queue {
 
 			$jobs_by_type[ $job->object_type ][] = $job;
 		}
+
+		// TODO group by index version
 		
 		// Batch process each type using the indexable
 		foreach ( $jobs_by_type as $type => $jobs ) {
@@ -657,6 +659,8 @@ class Queue {
 		if ( false === $this->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
 			return false;
 		}
+
+		// TODO shouldn't this have a type?
 
 		$this->queue_objects( $document_ids );
 
