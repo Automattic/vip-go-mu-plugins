@@ -118,10 +118,11 @@ class Queue {
 
 		$result = $wpdb->query(
 			$wpdb->prepare(
-				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status` ) VALUES ( %d, %s, {$start_time_escaped}, %s )", // Cannot prepare table name. @codingStandardsIgnoreLine
+				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status`, `index_version` ) VALUES ( %d, %s, {$start_time_escaped}, %s, %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$object_id,
 				$object_type,
-				'queued'
+				'queued',
+				$index_version
 			)
 		);
 
