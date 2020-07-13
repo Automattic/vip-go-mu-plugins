@@ -223,7 +223,7 @@ class Queue {
 	public function get_last_index_time_cache_key( $object_id, $object_type, $options = array() ) {
 		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
 	
-		return sprintf( '%s-%d-%d', $object_type, $object_id, $index_version );
+		return sprintf( '%s-%d-v%d', $object_type, $object_id, $index_version );
 	}
 
 	/**
