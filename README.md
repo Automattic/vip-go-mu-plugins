@@ -32,7 +32,13 @@ npm run phpcs
 
 ##### PHPUnit
 
-We have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
+If you're using the Lando-based environvment and it's already running, you can run unit tests by calling:
+
+```bash
+lando test
+```
+
+If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
 
 ```bash
 ./bin/phpunit-docker.sh [wp-version]
