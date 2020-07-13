@@ -29,7 +29,7 @@ class Cron {
 	/**
 	 * Custom cron interval value
 	 */
-	const SWEEPER_CRON_INTERVAL = 5 * \MINUTE_IN_SECONDS;
+	const SWEEPER_CRON_INTERVAL = 1 * \MINUTE_IN_SECONDS;
 
 	/**
 	 * The name of the cron event for processing term updates
@@ -40,6 +40,11 @@ class Cron {
 	 * The number of objects queued per batch for term updates
 	 */
 	const TERM_UPDATE_BATCH_SIZE = 25000;
+
+	/**
+	 * The maximum number if processor jobs allowed at one time
+	 */
+	const MAX_PROCESSOR_JOB_COUNT = 5;
 
 	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
@@ -201,15 +206,47 @@ class Cron {
 		// Check if job has been disabled
 		if ( ! $this->is_enabled() ) {
 			$this->disable_sweeper_job();
-
-			return;
 		}
 
 		$this->queue->free_deadlocked_jobs();
 
-		// TODO add a "max batches" setting and keep creating batch jobs until none are found or we hit the max
+		// If job limit has been surpassed, don't schedule any new jobs
+		if ( $this->get_processor_job_count() > self::MAX_PROCESSOR_JOB_COUNT ) {
+			return;
+		}
 
-		$this->schedule_batch_job();
+		$i = 1; // Start incrementor at 1 since the first loop is the first job
+		do {
+			// Prevent loop from scheduling more than the maximum allowed jobs in any single iteration
+			if ( $i > self::MAX_PROCESSOR_JOB_COUNT ) {
+				return;
+			}
+			
+			$this->schedule_batch_job();
+
+			$i++;
+		} while ( $this->get_processor_job_count() < self::MAX_PROCESSOR_JOB_COUNT ); 
+		// Prevent continuing if the current processor job count goes over the max allowed job count
+	}
+
+	public function get_processor_job_count() {
+		// If cron control isn't available, only schedule one job
+		if ( ! class_exists( 'Automattic\\WP\\Cron_Control\\Events_Store' ) ) {
+			return self::MAX_PROCESSOR_JOB_COUNT;
+		}
+
+		global $wpdb;
+
+		$table_name = \Automattic\WP\Cron_Control\Events_Store::instance()->get_table_name();
+
+		$current_processor_job_count = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE action = 'vip_search_queue_processor' AND status != 'complete'" ); // Cannot prepare table name. @codingStandardsIgnoreLine
+
+		// If null, only schedule one job
+		if ( is_null( $current_processor_job_count ) ) {
+			return self::MAX_PROCESSOR_JOB_COUNT;
+		}
+
+		return intval( $current_processor_job_count );
 	}
 
 	public function schedule_batch_job() {
