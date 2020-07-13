@@ -288,17 +288,21 @@ class Queue {
 		return $wpdb->query( "TRUNCATE TABLE {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 	}
 
-	public function count_jobs( $status, $object_type = 'post' ) {
+	public function count_jobs( $status, $object_type = 'post', $options = array() ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
+		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+
 		$query = $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+			"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND `index_version` = %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			$status,
-			$object_type
+			$object_type,
+			$index_version
 		);
 
+		// TODO should we support $index_version here? Is there a better way to structure these conditionals?
 		if ( 'all' === strtolower( $status ) ) {
 			if ( 'all' === strtolower( $object_type ) ) {
 				$query = "SELECT COUNT(*) FROM {$table_name} WHERE 1"; // Cannot prepare table name. @codingStandardsIgnoreLine
