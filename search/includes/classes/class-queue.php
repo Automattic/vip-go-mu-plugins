@@ -70,7 +70,7 @@ class Queue {
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 */
-	public function queue_object( $object_id, $object_type = 'post' ) {
+	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
 		global $wpdb;
 
 		$next_index_time = $this->get_next_index_time( $object_id, $object_type );
@@ -79,6 +79,22 @@ class Queue {
 			$next_index_time = gmdate( 'Y-m-d H:i:s', $next_index_time );
 		} else {
 			$next_index_time = null;
+		}
+
+		$index_version = isset( $options['index_version'] ) ? $options['index_version'] : null;
+
+		if ( ! is_int( $index_version ) ) {
+			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
+			
+			if ( ! $indexable ) {
+				var_dump( $object_type );
+			}
+
+			if ( ! $indexable ) {
+				return new WP_Error( sprintf( 'Indexable not found for type %s', 'invalid-indexable', $object_type ) );
+			}
+
+			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
 		}
 
 		$table_name = $this->schema->get_table_name();

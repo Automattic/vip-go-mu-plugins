@@ -359,6 +359,20 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
 	}
 
+	public function test_queue_objects_with_specific_index_version() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = range( 10, 20 );
+		
+		$this->queue->queue_objects( $objects, 'post', array( 'index_version' => 2 ) );
+
+		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE `index_version` = 2" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
+	}
+
 	public function test__action__ep_after_bulk_index_validation() {
 		$this->assertFalse( $this->queue->action__ep_after_bulk_index( 'not_array', 'post', false ), 'should return false when $document_ids is not an array' );
 		$this->assertFalse( $this->queue->action__ep_after_bulk_index( array(), 'not post', false ), 'should return false when $slug is not set to \'post\'' );
