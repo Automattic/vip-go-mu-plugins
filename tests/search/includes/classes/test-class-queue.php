@@ -3,7 +3,7 @@
 namespace Automattic\VIP\Search;
 
 class Queue_Test extends \WP_UnitTestCase {
-	static public function setUpBeforeClass() {
+	public static function setUpBeforeClass() {
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 
 		require_once __DIR__ . '/../../../../search/search.php';
