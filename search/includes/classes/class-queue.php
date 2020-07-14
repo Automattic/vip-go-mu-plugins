@@ -235,7 +235,9 @@ class Queue {
 	 * 
 	 * @return int Minimum number of seconds between re-indexes
 	 */
-	public function get_index_interval_time( $object_id, $object_type ) {
+	public function get_index_interval_time( $object_id, $object_type, $options = array() ) {
+		// Room for future improvement - on non-active index versions, increase the time between re-indexing a given object
+
 		return 60;
 	}
 
