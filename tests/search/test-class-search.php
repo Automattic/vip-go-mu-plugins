@@ -1019,6 +1019,14 @@ class Search_Test extends \WP_UnitTestCase {
 				'vip-3-post-2-2',
 				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.3.vip-3-post-2-2',
 			),
+			// New naming convention
+			array(
+				'https://es-ha.dca.vipv2.net:4321',
+				'index',
+				3,
+				'vip-3-post-2-2',
+				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.3.vip-3-post-2-2',
+			),
 		);
 	}
 
