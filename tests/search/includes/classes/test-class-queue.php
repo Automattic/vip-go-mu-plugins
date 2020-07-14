@@ -776,6 +776,100 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 3, $this->queue->count_jobs( 'all', 'random object type' ), "queue size for 'random object type' should be 3" );
 	}
 
+	public function organize_jobs_by_index_version_and_type_data() {
+		return array(
+			array(
+				// Input
+				array(
+					(object) array(
+						'object_id' => 1,
+						'object_type' => 'post',
+						'index_version' => 1,
+					),
+					(object) array(
+						'object_id' => 2,
+						'object_type' => 'post',
+						'index_version' => 1,
+					),
+					(object) array(
+						'object_id' => 3,
+						'object_type' => 'post',
+						'index_version' => 2,
+					),
+					(object) array(
+						'object_id' => 4,
+						'object_type' => 'post',
+						'index_version' => 2,
+					),
+					(object) array(
+						'object_id' => 1,
+						'object_type' => 'user',
+						'index_version' => 1,
+					),
+					(object) array(
+						'object_id' => 2,
+						'object_type' => 'user',
+						'index_version' => 2,
+					),
+				),
+				// Expected
+				array(
+					1 => array(
+						'post' => array(
+							(object) array(
+								'object_id' => 1,
+								'object_type' => 'post',
+								'index_version' => 1,
+							),
+							(object) array(
+								'object_id' => 2,
+								'object_type' => 'post',
+								'index_version' => 1,
+							),
+						),
+						'user' => array(
+							(object) array(
+								'object_id' => 1,
+								'object_type' => 'user',
+								'index_version' => 1,
+							),
+						),
+					),
+					2 => array(
+						'post' => array(
+							(object) array(
+								'object_id' => 3,
+								'object_type' => 'post',
+								'index_version' => 2,
+							),
+							(object) array(
+								'object_id' => 4,
+								'object_type' => 'post',
+								'index_version' => 2,
+							),
+						),
+						'user' => array(
+							(object) array(
+								'object_id' => 2,
+								'object_type' => 'user',
+								'index_version' => 2,
+							),
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider organize_jobs_by_index_version_and_type_data
+	 */
+	public function test_organize_jobs_by_index_version_and_type( $input, $expected ) {
+		$organized = $this->queue->organize_jobs_by_index_version_and_type( $input );
+
+		$this->assertEquals( $expected, $organized );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

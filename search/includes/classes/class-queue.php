@@ -485,39 +485,61 @@ class Queue {
 
 		$indexables = \ElasticPress\Indexables::factory();
 	
-		// Organize by object type
-		$jobs_by_type = array();
-
-		foreach ( $jobs as $job ) {
-			if ( ! isset( $jobs_by_type[ $job->object_type ] ) ) {
-				$jobs_by_type[ $job->object_type ] = array();
-			}
-
-			$jobs_by_type[ $job->object_type ][] = $job;
-		}
-
-		// TODO group by index version
+		// Organize by version and type, so we can process each unique batch in bulk
+		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
 		
 		// Batch process each type using the indexable
-		foreach ( $jobs_by_type as $type => $jobs ) {
-			$indexable = $indexables->get( $type );
+		foreach ( $jobs_by_version_and_type as $index_version => $jobs_by_type ) {
+			foreach( $jobs_by_type as $type => $jobs ) {
+				$indexable = $indexables->get( $type );
 
-			$ids = wp_list_pluck( $jobs, 'object_id' );
+				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
 
-			// Increment first to prevent overrunning ratelimiting
-			self::index_count_incr( count( $ids ) );
+				$ids = wp_list_pluck( $jobs, 'object_id' );
 
-			$indexable->bulk_index( $ids );
+				// Increment first to prevent overrunning ratelimiting
+				self::index_count_incr( count( $ids ) );
 
-			// TODO handle errors
-	
-			// Mark them as done in queue
-			$this->delete_jobs( $jobs );
+				$indexable->bulk_index( $ids );
 
-			$this->record_processed_from_queue_stat( count( $ids ), $indexable );
+				// TODO handle errors
+		
+				// Mark them as done in queue
+				$this->delete_jobs( $jobs );
 
-			$this->record_queue_count_stat( $indexable );
+				$this->record_processed_from_queue_stat( count( $ids ), $indexable );
+
+				$this->record_queue_count_stat( $indexable );
+
+				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
+			}
 		}
+	}
+
+	/**
+	 * Given an array of jobs, sort them into sub arrays by type and index version
+	 * 
+	 * This helps us minimize the cost of switching between versions and types (Indexables) when processing a list of jobs
+	 * 
+	 * @param array Array of jobs to sort
+	 * @return array Multi-dimensional array of jobs, first keyed by version, then by type
+	 */
+	public function organize_jobs_by_index_version_and_type( $jobs ) {
+		$organized = array();
+
+		foreach ( $jobs as $job ) {
+			if ( ! isset( $organized[ $job->index_version ] ) ) {
+				$organized[ $job->index_version ] = array();
+			}
+
+			if ( ! isset( $organized[ $job->index_version ][ $job->object_type ] ) ) {
+				$organized[ $job->index_version ][ $job->object_type ] = array();
+			}
+
+			$organized[ $job->index_version ][ $job->object_type ][] = $job;
+		}
+
+		return $organized;
 	}
 
 	public function record_processed_from_queue_stat( $count, $indexable ) {
