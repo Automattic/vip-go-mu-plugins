@@ -15,6 +15,7 @@ class Search {
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip_search_enabled';
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
@@ -269,7 +270,7 @@ class Search {
 		global $wp_query;
 
 		// Avoid infinite loops because our requests load the URL with this param.
-		if ( isset( $_GET['es'] ) ) {
+		if ( isset( $_GET[ self::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] ) ) {
 			return;
 		}
 
@@ -325,7 +326,7 @@ class Search {
 	public function do_mirror_search_request() {
 		fastcgi_finish_request();
 
-		$vip_search_url = home_url( add_query_arg( 'es', 'true' ) );
+		$vip_search_url = home_url( add_query_arg( self::QUERY_INTEGRATION_FORCE_ENABLE_KEY, 'true' ) );
 
 		wp_remote_request( $vip_search_url, [
 			'user-agent' => sprintf( 'VIP Search Query Mirror; %s', home_url() ),
@@ -626,13 +627,13 @@ class Search {
 	 *
 	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
 	 *
-	 * The integration can be tested at any time by setting an `es` query argument (?es=true).
+	 * The integration can be tested at any time by setting an `es` query argument (?vip_search_enabled=true).
 	 * 
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
 	public static function is_query_integration_enabled() {
-		if ( isset( $_GET['es'] ) ) {
+		if ( isset( $_GET[ self::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] ) ) {
 			return true;
 		}
 
@@ -1070,7 +1071,7 @@ class Search {
 
 		// Assume all host names are in the format es-ha-$dc.vipv2.net
 		$matches = array();
-		if ( preg_match( '/^es-ha-(.*)\.vipv2\.net$/', $host, $matches ) ) {
+		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
 			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
 		} else {
