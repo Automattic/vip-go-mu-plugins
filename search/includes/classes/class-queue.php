@@ -490,7 +490,7 @@ class Queue {
 		
 		// Batch process each type using the indexable
 		foreach ( $jobs_by_version_and_type as $index_version => $jobs_by_type ) {
-			foreach( $jobs_by_type as $type => $jobs ) {
+			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
 
 				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
