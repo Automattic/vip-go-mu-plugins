@@ -21,6 +21,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 	public function test__vip_search_healthjob_check_health_with_inactive_features() {
 		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
+		update_option( 'ep_last_sync', time() ); // So EP thinks we've done an index before
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
@@ -96,26 +97,28 @@ class HealthJob_Test extends \WP_UnitTestCase {
 					sprintf(
 						'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
 						home_url(),
-						$results[ 0 ][ 'entity' ],
-						$results[ 0 ][ 'type' ],
-						$results[ 0 ][ 'db_total' ],
-						$results[ 0 ][ 'es_total' ],
-						$results[ 0 ][ 'diff' ]
+						$results[0]['entity'],
+						$results[0]['type'],
+						$results[0]['db_total'],
+						$results[0]['es_total'],
+						$results[0]['diff']
 					),
-					2
+					2,
+					"{$results[0]['entity']}:{$results[0]['type']}",
 				),
 				array(
 					'#vip-go-es-alerts',
 					sprintf(
 						'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
 						home_url(),
-						$results[ 1 ][ 'entity' ],
-						$results[ 1 ][ 'type' ],
-						$results[ 1 ][ 'db_total' ],
-						$results[ 1 ][ 'es_total' ],
-						$results[ 1 ][ 'diff' ]
+						$results[1]['entity'],
+						$results[1]['type'],
+						$results[1]['db_total'],
+						$results[1]['es_total'],
+						$results[1]['diff']
 					),
-					2
+					2,
+					"{$results[1]['entity']}:{$results[1]['type']}",
 				),
 				// NOTE - we've skipped the 3rd result here b/c it has a diff of 0 and shouldn't alert
 				array(

@@ -598,6 +598,56 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 14, $index_count_incr->invokeArgs( $this->queue, [ 5 ] ), 'should increment properly without using the default increment of 1' );
 	}
 
+	public function test__count_jobs_all_should_be_0_by_default() {
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all', 'all' ) );
+	}
+
+	public function test__count_jobs_all_should_return_the_queue_count() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		foreach ( range( 0, 9 ) as $object_id ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+		}
+
+		$this->assertEquals( 10, $this->queue->count_jobs( 'all', 'all' ) );
+	}
+
+	public function test__count_jobs_all_statuses_should_return_proper_count_by_object_type() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		// Add junk rows that shouldn't be picked up in count_jobs
+		foreach ( range( 0, 9 ) as $object_id ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id
+				)
+			);
+		}
+
+		foreach ( range( 0, 2 ) as $object_id ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO $table_name ( `object_id`, `object_type` ) VALUES ( %d, %s )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_id,
+					'random object type'
+				)
+			);
+		}
+
+		$this->assertEquals( 13, $this->queue->count_jobs( 'all', 'all' ), 'total queue size should be 13' );
+		$this->assertEquals( 3, $this->queue->count_jobs( 'all', 'random object type' ), "queue size for 'random object type' should be 3" );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

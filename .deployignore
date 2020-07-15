@@ -63,6 +63,7 @@ yarn.lock
 /cron-control-next/bin/
 /cron-control-next/runner/
 /cron-control-next/tests/
+/search/docs/
 /search/elasticpress/bin/
 /search/elasticpress/config/
 /search/elasticpress/docs/
@@ -72,6 +73,8 @@ yarn.lock
 /search/elasticpress/CHANGELOG.md
 /search/elasticpress/hookdoc-conf.json
 /search/elasticpress/postcss.config.js
+/search/es-wp-query/bin/
+/search/es-wp-query/tests/
 /jetpack/bin/build-asset-cdn-json.php
 /jetpack/docker/
 /jetpack/docs/

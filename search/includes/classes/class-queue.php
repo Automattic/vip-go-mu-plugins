@@ -25,6 +25,8 @@ class Queue {
 	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
 	private const INDEX_QUEUEING_TTL = 15 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 15 minutes once ratelimiting is triggered
 
+	private const MAX_SYNC_INDEXING_COUNT = 10000;
+
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -44,16 +46,11 @@ class Queue {
 	}
 
 	public function is_enabled() {
-		$enabled_by_constant = defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) && true === VIP_SEARCH_ENABLE_ASYNC_INDEXING;
-
-		$option_value = get_option( 'vip_enable_search_indexing_queue' );
-		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
-
-		return $enabled_by_constant || $is_enabled_by_option;
+		return true;
 	}
 
 	public function setup_hooks() {
-		add_action( 'edit_terms', [ $this, 'offload_indexing_to_queue' ] );
+		add_action( 'edited_terms', [ $this, 'offload_term_indexing_to_queue' ], 0, 2 );
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
 		// For handling indexing failures
@@ -103,6 +100,10 @@ class Queue {
 				'queued'
 			)
 		);
+
+		if ( false !== $result ) {
+			$this->record_added_to_queue_stat( 1, $object_type );
+		}
 
 		$wpdb->suppress_errors( $original_suppress );
 
@@ -266,13 +267,26 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$status,
-				$object_type
-			)
+		$query = $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+			$status,
+			$object_type
 		);
+
+		if ( 'all' === strtolower( $status ) ) {
+			if ( 'all' === strtolower( $object_type ) ) {
+				$query = "SELECT COUNT(*) FROM {$table_name} WHERE 1"; // Cannot prepare table name. @codingStandardsIgnoreLine
+			} else {
+				$query = $wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table_name} WHERE `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
+					$object_type
+				);
+			}
+		}
+
+		$job_count = $wpdb->get_var( $query ); // Query may change depending on status/object type @codingStandardsIgnoreLine
+
+		return intval( $job_count );
 	}
 
 	public function count_jobs_due_now( $object_type = 'post' ) {
@@ -455,9 +469,85 @@ class Queue {
 	
 			// Mark them as done in queue
 			$this->delete_jobs( $jobs );
+
+			$this->record_processed_from_queue_stat( count( $ids ), $indexable );
+
+			$this->record_queue_count_stat( $indexable );
 		}
 	}
-	
+
+	public function record_processed_from_queue_stat( $count, $indexable ) {
+		if ( ! $indexable ) {
+			return;
+		}
+
+		if ( ! is_int( $count ) ) {
+			$count = intval( $count );
+		}
+
+		$statsd_mode = 'processed_from_queue';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
+	}
+
+	public function record_queue_count_stat( $indexable ) {
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$statsd_mode = 'queue_size';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$count = $this->count_jobs( 'all', $indexable->slug );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd->gauge( $per_site_stat, $count );
+	}
+
+	public function record_added_to_queue_stat( $count, $object_type ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
+
+		if ( ! $indexable ) {
+			return;
+		}
+
+		if ( ! is_int( $count ) ) {
+			$count = intval( $count );
+		}
+
+		$statsd_mode = 'added_to_queue';
+
+		// Pull index name using the indexable slug from the EP indexable singleton
+		$statsd_index_name = $indexable->get_index_name();
+
+		// For url parsing operations
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$url = $es->get_current_host();
+		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+
+		$statsd = new \Automattic\VIP\StatsD();
+		$statsd->increment( $per_site_stat, $count );
+	}
+
 	/**
 	 * If called during a request, any queued indexing will be instead sent to
 	 * the async queue
@@ -466,6 +556,26 @@ class Queue {
 		if ( ! has_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ] ) ) {
 			add_filter( 'pre_ep_index_sync_queue', [ $this, 'intercept_ep_sync_manager_indexing' ], 10, 3 );
 		}
+	}
+
+	/**
+	 * Offload term indexing to the queue
+	 */
+	public function offload_term_indexing_to_queue( $term_id, $taxonomy ) {
+		$term = \get_term( $term_id, $taxonomy );
+
+		if ( is_wp_error( $term ) || ! is_object( $term ) ) {
+			return;
+		}
+
+		// If the number of affected posts is low enough, process them now rather than send them to cron
+		if ( $term->count <= self::MAX_SYNC_INDEXING_COUNT ) {
+			$this->offload_indexing_to_queue();
+			return;
+		}
+
+		add_filter( 'ep_skip_action_edited_term', '__return_true' ); // Disable ElasticPress execution on term edit
+		$this->cron->schedule_queue_posts_for_term_taxonomy_id( $term->term_taxonomy_id );
 	}
 
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
@@ -599,6 +709,41 @@ class Queue {
 	 */
 	public static function turn_on_index_ratelimiting() {
 		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+	}
+
+	/**
+	 * Get the current average queue wait time
+	 *
+	 * @return {int} The current average wait time in seconds.
+	 */
+	public function get_average_queue_wait_time() {
+		global $wpdb;
+
+		// If run without having the queue enabled, queue wait times are 0
+		if ( ! $this->is_enabled() ) {
+			return 0;
+		}
+
+		// If schema is null, init likely not run yet
+		// Happens when cron is scheduled/run via wp commands
+		if ( is_null( $this->schema ) ) {
+			$this->init();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		$average_wait_time = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT FLOOR( AVG( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS average_wait_time FROM $table_name WHERE 1" // Cannot prepare table name. @codingStandardsIgnoreLine
+			)
+		);
+
+		// Null value will usually mean empty table 
+		if ( is_null( $average_wait_time ) || ! is_numeric( $average_wait_time ) ) {
+			return 0;
+		}
+
+		return intval( $average_wait_time );
 	}
 
 	/*

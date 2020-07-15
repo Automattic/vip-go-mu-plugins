@@ -24,8 +24,8 @@ class VIP_Encloseme_Cleanup {
 		}
 
 		$schedule[ self::CRON_INTERVAL ] = [
-			'interval' => 1200,
-			'display' => __( 'Once every twenty minutes.' ),
+			'interval' => 600,
+			'display' => __( 'Once every ten minutes.' ),
 		];
 		
 		return $schedule;
@@ -40,7 +40,12 @@ class VIP_Encloseme_Cleanup {
 		}
 
 		if ( false === $completed && ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), self::CRON_INTERVAL, self::CRON_HOOK );
+			// Random jitter value to stagger the event start timing so that
+			// we don't get a sudden cascade of alerts when we add a new batch
+			// of sites.
+			$jitter = rand( 0, 10 ) * 60;
+
+			wp_schedule_event( time() + $jitter, self::CRON_INTERVAL, self::CRON_HOOK );
 		}
 	}
 
@@ -61,6 +66,7 @@ class VIP_Encloseme_Cleanup {
 
 		wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Starting _encloseme meta cleanup for %s.', get_site_url() ) );
 
+		$total = 0;
 		for ( $count = 0; $count < 10; $count++ ) {
 			if ( ! defined( 'ENABLE_VIP_ENCLOSEME_CLEANUP_ENV' ) ) { // Constant not set, bail.
 				break;
@@ -81,8 +87,12 @@ class VIP_Encloseme_Cleanup {
 			foreach ( $pids as $pid ) {
 				delete_post_meta( $pid[0], '_encloseme' );
 			}
+
+			$total += count( $pids );
 	
 			sleep( 3 );
 		} 
+
+		wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Deleted %s _encloseme meta entries for %s.', $total, get_site_url() ) );
 	}
 }

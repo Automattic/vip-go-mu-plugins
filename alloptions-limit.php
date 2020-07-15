@@ -6,6 +6,8 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
+use Automattic\VIP\Utils\Alerts;
 
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
 
@@ -66,11 +68,13 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 	$irc_alert_level = 2; // ALERT
 
+	$opsgenie_alert_level = 'P4';
 	if ( $blocked ) {
 		$msg = "This site is now BLOCKED from loading until option sizes are under control.";
 
 		// If site is blocked, then the IRC alert is CRITICAL
 		$irc_alert_level = 3;
+		$opsgenie_alert_level = 'P3';
 	} else {
 		$msg = "Site will be blocked from loading if option sizes get too much bigger.";
 	}
@@ -117,6 +121,22 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 			wpcom_vip_irc( '#nagios-vip', $to_irc, $irc_alert_level, 'a8c-alloptions' );
 			if ( 'production' === $environment ) {
 				wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+
+				// Send to OpsGenie
+				$alerts = Alerts::instance();
+				$alerts->opsgenie(
+					$subject,
+					array( 
+						'alias'       => 'alloptions/' . $site_id,
+						'description' => 'The size of AllOptions is reaching the max limit of 1 MB.',
+						'entity'      => (string) $site_id,
+						'priority'    => $opsgenie_alert_level,
+						'source'      => 'sites/alloptions-size',
+					),
+					'alloptions-size-alert',
+					'10'
+				);
+
 			}
 		}
 
