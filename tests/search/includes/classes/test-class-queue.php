@@ -3,6 +3,13 @@
 namespace Automattic\VIP\Search;
 
 class Queue_Test extends \WP_UnitTestCase {
+	/**
+	* Make tests run in separate processes since we're testing state
+	* related to plugin init, including various constants.
+	*/
+	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+
 	public static function setUpBeforeClass() {
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 
