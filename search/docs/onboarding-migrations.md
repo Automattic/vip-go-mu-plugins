@@ -26,7 +26,7 @@ When migrating or onboarding new sites there are a number of considerations that
             - If so, they must be added to the filter.
             - If not, the clients code will need to be reworked by them in order for it to work without those private taxonomy.
 
-## Index Field Count <a href='index-field-count'></a>
+## Index Field Count <a name='index-field-count'></a>
 
 Index field count is one of the major considerations in onboarding a site onto VIP Search. Elasticsearch limits how many unique fields an index can have. To this end, there is a limit set by the `ep_total_field_limit` filter. The default for Elasticsearch is 1000 total fields while VIP Search has it's default set at 5000 with an upper limit of 20000. 
 
@@ -36,14 +36,27 @@ Since the only taxonomy or meta that actually needs to be indexed are those that
 
 Currently, we only apply allow list functionality to posts.
 
-## Post Meta Allow List <a href='post-meta-allow-list'></a>
+## Post Meta Allow List <a name='post-meta-allow-list'></a>
 
 The post meta allow list is an allow list for what post meta may be indexed. If this is empty, no post meta will be indexed. It is incredibly important that any post meta that is used in queries be indexed or those queries won't get any hits when querying against VIP Search.
 
 The filter for setting the post meta allow list is `vip_search_post_meta_allow_list`. Its format is either an array of strings(`array( 'meta-one', 'meta-two' )`) or an associative array(`array( 'meta-one' => true, 'meta-two' => true)`). Setting the associative array values to false makes them not be used for the post meta allow list.
 
-## Post Taxonomy Allow List <a href='post-taxonomy-allow-list'></a>
+## Post Taxonomy Allow List <a name='post-taxonomy-allow-list'></a>
 
 The post taxonomy allow list is an allow list for what taxonomy may be indexed for a post. If this is empty, no taxonomy will be indexed for the post. The default values for the post taxonomy allow list is all public taxonomy from the result of `get_object_taxonomies` when called on the posts post type. This is a default inheirited from ElasticPress.
 
 The filter for setting the post taxonomy allow list is `vip_search_post_taxonomies_allow_list`. Its format is an array of taxonomy objects.
+
+
+## How to enable VIP Search? <a name='https://github.com/Automattic/vip-docs/pull/39'></a>
+
+1. Add two new constants to `wp-config.php` or other analog:
+	1. `define( 'VIP_ENABLE_VIP_SEARCH', true );`
+	1. `define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );`
+1. Disable and remove all other Elasticsearch-backed functionality. VIP Search uses forks of `es-wp-query` and `ElasticPress` that are loaded automatically. No other Elasticsearch backed functionality is supported while VIP Search is enabled.
+1. Commit/deploy those changes if applicable.
+1. Test it to make sure everything works.
+1. Run a re-index to make sure everything is in sync. You may need to drop your index and then re-index if you notice any irregularities at this point. Performed by running `wp vip-search index --setup`. **This drops your index and makes it inaccessible to VIP Search while this process takes place**.
+
+If anything goes wrong, you can just remove the constants and re-enable/replace the plugins and settings you had in place previously.
