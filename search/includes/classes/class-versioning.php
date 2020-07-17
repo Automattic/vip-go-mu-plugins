@@ -124,11 +124,9 @@ class Versioning {
 		$versions = $this->get_versions( $indexable );
 		$active_version_number = $this->get_active_version_number( $indexable );
 
-		$inactive_versions = array_merge( array(), $versions );
+		unset( $versions[ $active_version_number ] );
 
-		unset( $inactive_versions[ $active_version_number ] );
-
-		return $inactive_versions;
+		return $versions;
 	}
 
 	/**
