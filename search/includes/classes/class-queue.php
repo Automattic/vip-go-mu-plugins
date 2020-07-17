@@ -126,6 +126,17 @@ class Queue {
 			)
 		);
 
+		/**
+		 * Fires when an object is requested to be queued. Note that this fires regardless of if the object is actually queued
+		 * as it may have already been in the queue (and a new db row was not actually created)
+		 *
+		 * @param int $object_id Object id
+		 * @param string $object_type Object type (the Indexable slug)
+		 * @param array $options The options passed to queue_object()
+		 * @param int $index_version The index version that was used when queuing the object
+		 */
+		do_action( 'vip_search_indexing_object_queued', $object_id, $object_type, $options, $index_version );
+
 		if ( false !== $result ) {
 			$this->record_added_to_queue_stat( 1, $object_type );
 		}
