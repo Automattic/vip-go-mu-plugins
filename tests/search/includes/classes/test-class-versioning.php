@@ -178,6 +178,99 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_active_version, $active_version );
 	}
 
+	public function get_inactive_versions_data() {
+		return array(
+			// No index marked active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+						'created_time' => 1,
+						'activated_time' => null,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+						'created_time' => 2,
+						'activated_time' => null,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Expected inactive versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+						'created_time' => 1,
+						'activated_time' => null,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+						'created_time' => 2,
+						'activated_time' => null,
+					),
+				),
+			),
+
+			// No versions tracked
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Expected active version
+				array(),
+			),
+
+			// 1 version active, with another
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => true,
+						'created_time' => 1,
+						'activated_time' => 1,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Expected inactive versions
+				array(
+					3 => array(
+						'number' => 3,
+						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_inactive_versions_data
+	 */
+	public function test_get_inactive_versions( $versions, $indexable_slug, $expected_inactive_versions ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		self::$version_instance->update_versions( $indexable, $versions );
+
+		$inactive_versions = self::$version_instance->get_inactive_versions( $indexable );
+
+		$this->assertEquals( $expected_inactive_versions, $inactive_versions );
+	}
+
 	public function add_version_data() {
 		return array(
 			// No index marked active
