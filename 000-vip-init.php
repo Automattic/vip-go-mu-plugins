@@ -70,11 +70,6 @@ if ( ! defined( 'VIP_GO_ENV' ) ) {
 	define( 'VIP_GO_ENV', false );
 }
 
-// StatsD is disabled for the time being
-if ( ! defined( 'VIP_DISABLE_STATSD' ) ) {
-	define( 'VIP_DISABLE_STATSD', true );
-}
-
 // On VIP Go environments this will already be set to true in wp-config.php
 // Default to false for other environments, e.g. local development
 if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
