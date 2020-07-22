@@ -405,7 +405,7 @@ class Search {
 		$statsd = new \Automattic\VIP\StatsD();
 
 		$statsd->increment( $stat );
-		$statsd->increment( $per_site_stat );
+		// $statsd->increment( $per_site_stat );
 
 		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
 
@@ -419,7 +419,7 @@ class Search {
 			$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 			$statsd->increment( $stat );
-			$statsd->increment( $per_site_stat );
+			// $statsd->increment( $per_site_stat );
 		}
 	}
 
@@ -560,7 +560,7 @@ class Search {
 				}
 
 				$statsd->increment( $statsd_prefix . $stat );
-				$statsd->increment( $statsd_per_site_prefix . $stat );
+				// $statsd->increment( $statsd_per_site_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
@@ -569,11 +569,11 @@ class Search {
 
 			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
 				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
-				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
+				// $statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
-			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
+			// $statsd->timing( $statsd_per_site_prefix . '.total', $duration );
 		}
 	
 		return $request;
@@ -752,7 +752,7 @@ class Search {
 		$statsd = new \Automattic\VIP\StatsD();
 
 		$statsd->increment( $stat );
-		$statsd->increment( $per_site_stat );
+		// $statsd->increment( $per_site_stat );
 	}
 
 	public function set_queue_wait_time_gauge() {
@@ -772,7 +772,7 @@ class Search {
 
 		$statsd = new \Automattic\VIP\StatsD();
 
-		$statsd->gauge( $per_site_stat, $average_wait_time );
+		// $statsd->gauge( $per_site_stat, $average_wait_time );
 	}
 
 	/**
@@ -799,7 +799,7 @@ class Search {
 
 		$statsd = new \Automattic\VIP\StatsD();
 
-		$statsd->gauge( $per_site_stat, $current_field_count );
+		// $statsd->gauge( $per_site_stat, $current_field_count );
 	}
 
 	/**

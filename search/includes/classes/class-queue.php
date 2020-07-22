@@ -563,7 +563,7 @@ class Queue {
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
+		// $statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	public function record_queue_count_stat( $indexable ) {
@@ -585,7 +585,7 @@ class Queue {
 		$count = $this->count_jobs( 'all', $indexable->slug );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->gauge( $per_site_stat, $count );
+		// $statsd->gauge( $per_site_stat, $count );
 	}
 
 	public function record_added_to_queue_stat( $count, $object_type ) {
@@ -611,7 +611,7 @@ class Queue {
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->increment( $per_site_stat, $count );
+		// $statsd->increment( $per_site_stat, $count );
 	}
 
 	/**
@@ -758,7 +758,7 @@ class Queue {
 		$statsd = new \Automattic\VIP\StatsD();
 
 		$statsd->increment( $stat, $count );
-		$statsd->increment( $per_site_stat, $count );
+		// $statsd->increment( $per_site_stat, $count );
 	}
 
 	/**
