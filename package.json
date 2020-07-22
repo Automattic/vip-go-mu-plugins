@@ -6,14 +6,22 @@
   "scripts": {
     "phplint": "bin/php-lint.sh",
     "phpcs": "vendor/bin/phpcs",
+    "jest": "jest",
     "phpcs:changed:remote": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet",
-	"phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
-	"update-subtrees": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash"
+    "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
+    "update-subtrees": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash"
   },
   "author": "Automattic",
   "devDependencies": {
     "eslines": "1.1.0",
     "eslint": "5.16.0",
-    "husky": "4.2.3"
+    "faker": "4.1.0",
+    "husky": "4.2.3",
+    "jest": "26.1.0",
+    "jest-puppeteer": "4.4.0",
+    "node-fetch": "2.6.0",
+    "puppeteer": "5.2.1",
+    "uuid": "8.2.0",
+    "waait": "1.0.5"
   }
 }
