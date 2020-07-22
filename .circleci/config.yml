@@ -22,10 +22,8 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
       sudo -E docker-php-ext-install mysqli
-      sudo sh -c "printf '\ndeb http://ftp.us.debian.org/debian sid main\n' >> /etc/apt/sources.list"
-      sudo apt-get update && sudo apt-get install libgcc-8-dev=8.3.0-6 mysql-client
       npm install
       composer install -n
 
