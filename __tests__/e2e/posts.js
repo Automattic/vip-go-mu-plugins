@@ -5,6 +5,8 @@ const wait = require( 'waait' );
 const faker = require( 'faker' );
 
 /** Variables **/
+const USER_LOGIN = process.env.BASICAUTH_LOGIN || 'wordpress';
+const USER_PASSWORD = process.env.BASICAUTH_PASSWORD || 'wordpress';
 const WP_URL = process.env.WPURL || 'http://localhost';
 
 function generatePostBody( { title, status, content, excerpt, tags, categories, meta } ) {
@@ -19,13 +21,17 @@ function generatePostBody( { title, status, content, excerpt, tags, categories, 
 	} );
 }
 
-const createRequest = ( url, method, body ) => {
+const createBasicAuthFetcher = ( login, password ) => {
+	const base64LoginAndPassword = ( new Buffer( `${ login }:${ password }` ) ).toString('base64');
+
 	return fetch( url, {
 		method: method,
 		body: body,
-		headers: { 'Content-Type': 'application/json' },
+		headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${ base64LoginAndPassword }` },
 	} );
 };
+
+const createRequest = createBasicAuthFetcher( USER_LOGIN, USER_PASSWORD );
 
 const createNewPost = body => {
 	return createRequest( WP_URL + '/wp-json/wp/v2/posts', 'post', body );
