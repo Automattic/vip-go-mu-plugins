@@ -50,6 +50,68 @@ job-references:
             vendor/bin/phpunit --version
             vendor/bin/phpunit
 
+  vip_search_job: &vip_search_job
+    steps:
+      - run: *setup_environment
+      - checkout
+      - run: *install_dependencies
+      - run: *prepare_repo
+      - run:
+          name: "Install Headless Chrome dependencies"
+          command: |
+            sudo apt-get install -yq \
+            gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 \
+            libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 \
+            libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 \
+            libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates \
+            fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget libgbm-dev
+      - run:
+          name: "Download WordPress and add the basic-auth plugin for the REST API"
+          command: |
+            rm -rf $WP_TESTS_DIR $WP_CORE_DIR
+            bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
+            curl -s https://raw.githubusercontent.com/WP-API/Basic-Auth/master/basic-auth.php -o ${WP_CORE_DIR}/wp-content/plugins/basic-auth.php
+      - run:
+          name: "Configure apache"
+          command: |
+            cat > /tmp/wp.conf << EOF
+            <VirtualHost *:80>
+                 ServerAlias localhost
+                 ServerName 127.0.0.1
+                 DocumentRoot ${APACHE_WP_DIR}
+                 <Directory ${APACHE_WP_DIR}>
+                        Options FollowSymLinks
+                        AllowOverride None
+                        Require all granted
+                        RewriteEngine On
+                        RewriteBase /
+                        RewriteRule ^index\.php\$ - [L]
+                        RewriteCond %{REQUEST_FILENAME} !-f
+                        RewriteCond %{REQUEST_FILENAME} !-d
+                        RewriteRule . /index.php [L]
+                 </Directory>
+                 ErrorLog \${APACHE_LOG_DIR}/error.log
+                 CustomLog \${APACHE_LOG_DIR}/access.log combined
+            </VirtualHost>
+            EOF
+            sudo cp /tmp/wp.conf /etc/apache2/sites-available/000-default.conf && rm /tmp/wp.conf
+            sudo cp -r ${WP_CORE_DIR} "${APACHE_WP_DIR}"
+            sudo chown -R www-data.www-data "${APACHE_WP_DIR}"
+            sudo a2enmod rewrite
+            sudo service apache2 start
+      - run:
+          name: "Install WordPress and activate the basic-auth plugin"
+          command: |
+            curl -s https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /tmp/wp-cli.phar
+            php /tmp/wp-cli.phar core install --path="${APACHE_WP_DIR}" --url="localhost" \
+              --title="VIP search E2E tests" --admin_user=wordpress --admin_password=wordpress --admin_email=vip@me.me --skip-email
+            php /tmp/wp-cli.phar plugin activate --path="${APACHE_WP_DIR}" basic-auth
+      - run:
+          name: "Run tests"
+          command: |
+            npm install
+            npm run jest
+
 jobs:
   php73-build-multisite:
     <<: *php_job
@@ -94,4 +156,17 @@ jobs:
       - WP_CORE_DIR: "/tmp/wordpress"
     docker:
       - image: circleci/php:7.4-node
+      - image: *db_image
+
+  e2e-php74-build-singlesite:
+    <<: *vip_search_job
+    working_directory: ~/mu-plugins
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - WP_TESTS_DIR: "/tmp/wordpress-tests-lib"
+      - WP_CORE_DIR: "/tmp/wordpress"
+      - APACHE_WP_DIR: "/var/www/html/wordpress"
+    docker:
+      - image: circleci/php:7.4-apache-node
       - image: *db_image
