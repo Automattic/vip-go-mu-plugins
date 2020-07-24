@@ -108,6 +108,9 @@ job-references:
               --title="VIP search E2E tests" --admin_user=wordpress --admin_password=wordpress --admin_email=vip@me.me --skip-email
             php /tmp/wp-cli.phar plugin activate --path="${APACHE_WP_DIR}" basic-auth
       - run:
+          name: "Copy mu-plugins to webserver root"
+          command: cp -r . ${APACHE_WP_DIR}/mu-plugins
+      - run:
           name: "Run tests"
           command: |
             npm install
