@@ -23,5 +23,8 @@
     "puppeteer": "5.2.1",
     "uuid": "8.2.0",
     "waait": "1.0.5"
+  },
+  "jest": {
+    "preset": "jest-puppeteer"
   }
 }
