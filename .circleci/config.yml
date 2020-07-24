@@ -51,7 +51,7 @@ job-references:
             vendor/bin/phpunit --version
             vendor/bin/phpunit
 
-  vip_search_job: &vip_search_job
+  e2e_job: &e2e_job
     steps:
       - run: *setup_environment
       - checkout
@@ -160,7 +160,7 @@ jobs:
       - image: *db_image
 
   e2e-php74-build-singlesite:
-    <<: *vip_search_job
+    <<: *e2e_job
     working_directory: ~/mu-plugins
     environment:
       - WP_MULTISITE: "0"
