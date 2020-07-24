@@ -6,6 +6,7 @@ workflows:
       - php73-build-singlesite
       - php74-build-multisite
       - php74-build-singlesite
+      - e2e-php74-build-singlesite
 
 version: 2
 
