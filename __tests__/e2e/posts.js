@@ -24,11 +24,13 @@ function generatePostBody( { title, status, content, excerpt, tags, categories, 
 const createBasicAuthFetcher = ( login, password ) => {
 	const base64LoginAndPassword = ( new Buffer( `${ login }:${ password }` ) ).toString('base64');
 
-	return fetch( url, {
-		method: method,
-		body: body,
-		headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${ base64LoginAndPassword }` },
-	} );
+	return ( url, method, body ) => {
+		return fetch( url, {
+			method: method,
+			body: body,
+			headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${ base64LoginAndPassword }` },
+		} );
+	}
 };
 
 const createRequest = createBasicAuthFetcher( USER_LOGIN, USER_PASSWORD );
@@ -178,7 +180,7 @@ describe( 'Post And Search', () => {
 			ontent: 'API testing- specific search term in tags',
 			tags: [ tag.id ],
 		} ) );
-		
+
 		await wait( 1000 );
 		await page.goto( WP_URL + '/?exact=1&s=' + uniqueString );
 		const articles = await page.$$( 'article' );
@@ -262,7 +264,7 @@ describe( 'Post And Search', () => {
 		await deletePost( post.id );
 		await wait( 1000 );
 		await page.goto( WP_URL + '/?exact=1&s=' + uniqueString );
-		
+
 		const articles = await page.$$( 'article' );
 
 		expect( articles.length ).toBe( 0 );
@@ -299,7 +301,7 @@ describe( 'Post And Search', () => {
 	it( 'should find a post by unique meta ', async () => {
 		const uniqueString = await getUniqueString();
 		const uniqueMeta = await getUniqueString();
-		
+
 		// Create a new post/article that contains a specific search term in the 'title' of the post body
 		const post = await createNewPost( generatePostBody( {
 			content: 'API testing- Test searching for post meta',
