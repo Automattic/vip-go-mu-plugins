@@ -47,6 +47,12 @@ WP_TESTS_DIR_ACTUAL="${WP_TESTS_DIR%%+(/)}-${WP_VERSION}/"
 WP_CORE_DIR_ACTUAL="${WP_CORE_DIR%%+(/)}-${WP_VERSION}/"
 
 install_wp() {
+  # portable in-place argument for both GNU sed and Mac OSX sed
+	if [[ $(uname -s) == 'Darwin' ]]; then
+		local ioption='-i .bak'
+	else
+		local ioption='-i'
+	fi
 
 	if [ -d $WP_CORE_DIR_ACTUAL ]; then
 		return;
@@ -64,6 +70,14 @@ install_wp() {
 	tar --strip-components=1 -zxmf /tmp/wordpress.tar.gz -C $WP_CORE_DIR_ACTUAL
 
 	download https://raw.github.com/markoheijnen/wp-mysqli/master/db.php $WP_CORE_DIR_ACTUAL/wp-content/db.php
+
+	cp $WP_CORE_DIR_ACTUAL/wp-config-sample.php $WP_CORE_DIR_ACTUAL/wp-config.php
+
+  sed $ioption "s/database_name_here/$DB_NAME/" "$WP_CORE_DIR_ACTUAL"/wp-config.php
+  sed $ioption "s/username_here/$DB_USER/" "$WP_CORE_DIR_ACTUAL"/wp-config.php
+  sed $ioption "s/password_here/$DB_PASS/" "$WP_CORE_DIR_ACTUAL"/wp-config.php
+  sed $ioption "s|localhost|${DB_HOST}|" "$WP_CORE_DIR_ACTUAL"/wp-config.php
+  echo "define( 'WPLANG', '' );" >> "$WP_CORE_DIR_ACTUAL"/wp-config.php;
 }
 
 install_test_suite() {
