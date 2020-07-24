@@ -62,7 +62,7 @@ const getUniqueString = () => {
 }
 
 describe( 'Post And Search', () => {
-	it( 'should post a new post and find it using ES search', async () => {
+	it.skip( 'should post a new post and find it using ES search', async () => {
 		const uniqueString = await getUniqueString();
 
 		// Post a new article
@@ -92,7 +92,7 @@ describe( 'Post And Search', () => {
 	}, 10000 );
 
 	// Unique search term in `title` of the post
-	it( 'should generate a new post with a unique search term in the title and find it using ES', async () => {
+	it.skip( 'should generate a new post with a unique search term in the title and find it using ES', async () => {
 		const uniqueString = await getUniqueString();
 
 		// Create a new post/article that contains a specific search term in the 'title' of the post body
@@ -127,7 +127,7 @@ describe( 'Post And Search', () => {
 	}, 10000 );
 
 	// Unique search term in `excerpt` of the post
-	it( 'should generate a new post with a unique search term in the excerpt and find it using ES', async () => {
+	it.skip( 'should generate a new post with a unique search term in the excerpt and find it using ES', async () => {
 		const uniqueString = await getUniqueString();
 
 		// Create a new post/article that contains a specific search term in the 'excerpt' of the post body
@@ -164,7 +164,7 @@ describe( 'Post And Search', () => {
 	}, 10000 );
 
 	// Unique search term in 'tags'
-	it( 'should generate a new post with a unique search term in the tags and find it using ES', async () => {
+	it.skip( 'should generate a new post with a unique search term in the tags and find it using ES', async () => {
 		const uniqueString = await getUniqueString();
 
 		// Create a new tag
@@ -216,7 +216,7 @@ describe( 'Post And Search', () => {
 	}, 10000 );
 
 	// Unique search term in 'categories'
-	it( 'should generate a new post with a unique search term category and find it using ES', async () => {
+	it.skip( 'should generate a new post with a unique search term category and find it using ES', async () => {
 		const uniqueString = await getUniqueString();
 
 		// Create a new category
@@ -270,7 +270,7 @@ describe( 'Post And Search', () => {
 		expect( articles.length ).toBe( 0 );
 	}, 10000 );
 
-	it( 'should index a post after it\'s been switched from draft to published', async () => {
+	it.skip( 'should index a post after it\'s been switched from draft to published', async () => {
 		const uniqueString = await getUniqueString();
 		// Create a new post/article that contains a specific search term in the 'title' of the post body
 		const post = await createNewPost( generatePostBody( {
@@ -298,7 +298,7 @@ describe( 'Post And Search', () => {
 		expect( articlePublished.length ).toBe( 1 );
 	}, 10000 );
 
-	it( 'should find a post by unique meta ', async () => {
+	it.skip( 'should find a post by unique meta ', async () => {
 		const uniqueString = await getUniqueString();
 		const uniqueMeta = await getUniqueString();
 
@@ -318,7 +318,7 @@ describe( 'Post And Search', () => {
 
 	}, 10000 );
 
-	it( 'should remove meta from a post and check that it\'s no longer indexed ', async () => {
+	it.skip( 'should remove meta from a post and check that it\'s no longer indexed ', async () => {
 		const uniqueString = await getUniqueString();
 		const uniqueMeta = await getUniqueString();
 
