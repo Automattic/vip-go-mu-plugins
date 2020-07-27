@@ -412,7 +412,7 @@ class Versioning {
 
 				foreach ( $objects_by_version[ $active_version_number ] as $entry ) {
 					$object_id = $entry[0];
-					$options = $entry[1];
+					$options = is_array( $entry[1] ) ? $entry[1] : array();
 
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];
