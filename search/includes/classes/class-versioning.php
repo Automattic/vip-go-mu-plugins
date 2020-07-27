@@ -417,7 +417,7 @@ class Versioning {
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];
 
-					\Automattic\VIP\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
 				}
 
 				$this->reset_current_version_number( $indexable );
