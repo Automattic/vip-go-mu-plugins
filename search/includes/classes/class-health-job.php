@@ -25,6 +25,8 @@ class HealthJob {
 
 	const HEALTH_CHECK_DISABLED_SITES = array(
 		2341,
+		1076,
+		2624,
 	);
 
 	/**
