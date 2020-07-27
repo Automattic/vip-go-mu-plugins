@@ -933,6 +933,28 @@ class Versioning_Test extends \WP_UnitTestCase {
 		}
 	}
 
+	public function test_replicate_deletes_to_other_index_versions() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
+		self::$version_instance->update_versions( $indexable, array() ); // Reset them
+		self::$version_instance->add_version( $indexable );
+		self::$version_instance->add_version( $indexable );
+
+		// Add a filter that we can use to count how many deletes are actually sent to ES
+		$delete_count = 0;
+
+		add_filter( 'ep_do_intercept_request', function( $request, $query, $args, $failures ) use ( &$delete_count ) {
+			if ( 'DELETE' === $args['method'] ) {
+				$delete_count++;
+			}
+		}, 10, 4 );
+
+		$indexable->delete( 1 );
+
+		$this->assertEquals( $delete_count, 3 );
+	}
+
 	public function normalize_version_data() {
 		return array(
 			// No data at all
