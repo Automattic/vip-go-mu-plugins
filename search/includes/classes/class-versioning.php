@@ -369,6 +369,12 @@ class Versioning {
 		$this->replicate_queued_objects_to_other_versions( $this->queued_objects_by_type_and_version );
 	}
 
+	/**
+	 * Given an array of object types and the objects queued by version, replicate those jobs to the
+	 * _other_ index versions to keep them in sync
+	 * 
+	 * @param $queued_objects Multidimensional array of queued objects, keyed first by type, then index version
+	 */
 	public function replicate_queued_objects_to_other_versions( $queued_objects ) {
 		if ( ! is_array( $queued_objects ) || empty( $queued_objects ) ) {
 			return;
@@ -392,7 +398,7 @@ class Versioning {
 
 			$active_version_number = $this->get_active_version_number( $indexable );
 
-			// Were there any changes to the active version?
+			// Were there any changes to the active version? If not, we skip - we don't keep replicate non-active indexes to others
 			if ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) {
 				continue;
 			}
