@@ -664,6 +664,69 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_queued_objects_by_type_and_version, $this->get_property( 'queued_objects_by_type_and_version', self::$version_instance ) );
 	}
 
+	/**
+	 * Tests that queue jobs get properly replicated to the queue for other index versions
+	 */
+	public function test_queue_job_replication() {
+		global $wpdb;
+
+		self::$search->queue->empty_queue();
+
+		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
+		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
+		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+
+		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 1 );
+		do_action( 'vip_search_indexing_object_queued', 2, 'post', array( 'foo' => 'bar' ), 1 );
+		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 2 ); // Non-active version, should have no effect
+
+		do_action( 'shutdown' );
+
+		$expected_jobs = array(
+			array(
+				'object_id' => 1,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
+				'object_id' => 1,
+				'object_type' => 'post',
+				'index_version' => 3,
+			),
+			array(
+				'object_id' => 2,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
+				'object_id' => 2,
+				'object_type' => 'post',
+				'index_version' => 3,
+			),
+		);
+
+		$queue_table_name = self::$search->queue->schema->get_table_name();
+
+		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
+
+		$jobs = $wpdb->get_results(
+			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
+			ARRAY_A
+		);
+
+		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
+
+		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
+		foreach ( $expected_jobs as $index => $job ) {
+			$keys = array_keys( $job );
+
+			foreach ( $keys as $key ) {
+				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
+			}
+		}
+	}
+
 	public function replicate_queued_objects_to_other_versions_data() {
 		return array(
 			// Replicates queued items on the active index to a single non-active indexe
