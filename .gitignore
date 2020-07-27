@@ -14,6 +14,8 @@ phpdoc
 # Composer
 /vendor/
 output
+# Allow the QM output directory, as it's needed.
+!query-monitor/output
 
 # npm
 node_modules
