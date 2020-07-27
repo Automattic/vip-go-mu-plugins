@@ -24,6 +24,7 @@ class Versioning {
 	public function __construct() {
 		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
 		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
+		add_action( 'shutdown', [ $this, 'action__shutdown' ] );
 		
 		// When objects are indexed normally, they go into the EP "sync_queue", which we need to replicate out to the non-active index versions
 		// NOTE - the priority is very important, and must come _after_ the Queue class's pre_ep_index_sync_queue hook, so we don't duplicate effort (to allow

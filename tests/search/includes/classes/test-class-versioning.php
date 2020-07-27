@@ -683,7 +683,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 		do_action( 'vip_search_indexing_object_queued', 2, 'post', array( 'foo' => 'bar' ), 1 );
 		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 2 ); // Non-active version, should have no effect
 
-		do_action( 'shutdown' );
+		// Rather than run shutdown, which has side effects, ensure that we are hooked, then run just the shutdown callback
+		// NOTE - has_action() returns the priority if hooked, or false if not
+		$this->assertEquals( 10, has_action( 'shutdown', array( self::$version_instance, 'action__shutdown' ) ) );
+
+		self::$version_instance->action__shutdown();
 
 		$expected_jobs = array(
 			array(
@@ -709,8 +713,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 		);
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
-
-		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
 		$jobs = $wpdb->get_results(
 			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
