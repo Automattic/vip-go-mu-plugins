@@ -36,7 +36,12 @@ class Versioning {
 		// the Queue to take over EP's queue, at which point we don't need to insert them here, as they are handled during Queue::queue_object())
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'filter__pre_ep_index_sync_queue' ], 100, 3 );
 
+		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
+	}
+
+	public function action__plugins_loaded() {
 		// Hook into the delete action of all known indexables, to replicate those deletes out to all inactive index versions
+		// NOTE - runs on plugins_loaded so Indexables are properly registered beforehand
 		$all_indexables = \ElasticPress\Indexables::factory()->get_all();
 		
 		foreach ( $all_indexables as $indexable ) {
