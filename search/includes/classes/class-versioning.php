@@ -357,7 +357,10 @@ class Versioning {
 			$this->queued_objects_by_type_and_version[ $object_type ][ $index_version ] = array();
 		}
 
-		$this->queued_objects_by_type_and_version[ $object_type ][ $index_version ][] = array( $object_id, $options );
+		$this->queued_objects_by_type_and_version[ $object_type ][ $index_version ][] = array(
+			'object_id' => $object_id,
+			'options' => $options,
+		);
 	}
 
 	/**
@@ -411,8 +414,8 @@ class Versioning {
 				$this->set_current_version_number( $indexable, $version['number'] );
 
 				foreach ( $objects_by_version[ $active_version_number ] as $entry ) {
-					$object_id = $entry[0];
-					$options = is_array( $entry[1] ) ? $entry[1] : array();
+					$object_id = $entry['object_id'];
+					$options = is_array( $entry['options'] ) ? $entry['options'] : array();
 
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];

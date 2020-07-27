@@ -650,23 +650,23 @@ class Versioning_Test extends \WP_UnitTestCase {
 						// Active version
 						1 => array(
 							array(
-								1, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 1, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 							array(
-								9000, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 9000, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 						),
 						// Some other random version, should have no effect on replicated jobs
 						9999 => array(
 							array(
-								1, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 1, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 							array(
-								9000, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 9000, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 						),
 					),
@@ -705,23 +705,23 @@ class Versioning_Test extends \WP_UnitTestCase {
 						// Inactive version
 						2 => array(
 							array(
-								1, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 1, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 							array(
-								9000, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 9000, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 						),
 						// Some other random version, should have no effect on replicated jobs
 						9999 => array(
 							array(
-								1, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 1, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 							array(
-								9000, // Object id
-								array(), // Additional options it was originally queued with
+								'object_id' => 9000, // Object id
+								'options' => array(), // Additional options it was originally queued with
 							),
 						),
 					),
