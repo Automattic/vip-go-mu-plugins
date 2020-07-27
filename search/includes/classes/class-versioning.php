@@ -21,6 +21,11 @@ class Versioning {
 	 */
 	private $queued_objects_by_type_and_version = array();
 
+	/**
+	 * Internal flag to prevent infinite loops when handling object deletions
+	 */
+	private $is_doing_object_delete;
+
 	public function __construct() {
 		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
 		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
@@ -30,6 +35,13 @@ class Versioning {
 		// NOTE - the priority is very important, and must come _after_ the Queue class's pre_ep_index_sync_queue hook, so we don't duplicate effort (to allow
 		// the Queue to take over EP's queue, at which point we don't need to insert them here, as they are handled during Queue::queue_object())
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'filter__pre_ep_index_sync_queue' ], 100, 3 );
+
+		// Hook into the delete action of all known indexables, to replicate those deletes out to all inactive index versions
+		$all_indexables = \ElasticPress\Indexables::factory()->get_all();
+		
+		foreach ( $all_indexables as $indexable ) {
+			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
+		}
 	}
 
 	/**
@@ -463,5 +475,47 @@ class Versioning {
 		return $bail;
 	}
 
-	// TODO handle deletes
+	/**
+	 * When an item is deleted from an index, replicate that delete out to all other index versions
+	 * 
+	 * NOTE - this behaves differently than action__vip_search_indexing_object_queued() because it doesn't collect
+	 * all the deletions during the request, then process them on shutdown. That would be an over optimization here
+	 * since deletes are comparatively much less frequent, so the savings of preventing back-and-forth switching between
+	 * index versions is not as great. We also process the deletes immediately, b/c the queue system currently does not
+	 * support deletes (just indexing)
+	 */
+	public function action__ep_delete_indexable( $object_id, $object_type ) {
+		// Prevent infinite loops :)
+		if ( $this->is_doing_object_delete ) {
+			return;
+		}
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		// If it's not a valid indexable, just skip
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$inactive_versions = $this->get_inactive_versions( $indexable );
+
+		// If there are no inactive versions or nothing in the queue, we can just skip
+		if ( empty( $inactive_versions ) || empty( $sync_manager->sync_queue ) ) {
+			return;
+		}
+
+		// Set the flag to prevent infinite loops
+		$this->is_doing_object_delete = true;
+
+		foreach ( $inactive_versions as $version ) {
+			$this->set_current_version_number( $indexable, $version['number'] );
+
+			$indexable->delete( $object_id );
+			
+			$this->reset_current_version_number( $indexable );
+		}
+
+		// Clear the flag to return to normal
+		$this->is_doing_object_delete = false;
+	}
 }
