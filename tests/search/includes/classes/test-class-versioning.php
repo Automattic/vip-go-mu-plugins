@@ -846,4 +846,16 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
 	}
+
+	/**
+	 * Helper function for accessing protected properties.
+	 */
+	protected static function get_property( $name, $object ) {
+		$class = new \ReflectionObject( $object );
+
+		$property = $class->getProperty( $name );
+		$property->setAccessible( true );
+
+		return $property;
+	}
 }
