@@ -640,6 +640,30 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
 	}
 
+	public function test_action__vip_search_indexing_object_queued() {
+		self::$version_instance->action__vip_search_indexing_object_queued( 1, 'post', array( 'foo' => 'bar' ), 1 );
+		self::$version_instance->action__vip_search_indexing_object_queued( 1, 'post', array( 'foo' => 'bar' ), 2 );
+
+		$expected_queued_objects_by_type_and_version = array(
+			'post' => array(
+				1 => array(
+					array(
+						'object_id' => 1,
+						'options' => array( 'foo' => 'bar' ),
+					),
+				),
+				1 => array(
+					array(
+						'object_id' => 1,
+						'options' => array( 'foo' => 'bar' ),
+					),
+				),
+			),
+		);
+
+		$this->assertEquals( $expected_queued_objects_by_type_and_version, $this->get_property( 'queued_objects_by_type_and_version', self::$version_instance ) );
+	}
+
 	public function replicate_queued_objects_to_other_versions_data() {
 		return array(
 			// Replicates queued items on the active index to a single non-active indexe
