@@ -11,16 +11,24 @@ class Versioning_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static $version_instance;
+	public static $search;
 
 	public static function setUpBeforeClass() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		) );
+
 		require_once __DIR__ . '/../../../../search/search.php';
 
-		$search = \Automattic\VIP\Search\Search::instance();
+		self::$search = \Automattic\VIP\Search\Search::instance();
+
+		self::$search->queue->schema->prepare_table();
 
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
 
-		self::$version_instance = $search->versioning;
+		self::$version_instance = self::$search->versioning;
 	}
 
 	public function get_next_version_number_data() {
@@ -630,6 +638,133 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// Back to the active index
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
+	}
+
+	public function replicate_queued_objects_to_other_versions_data() {
+		return array(
+			// Replicates queued items on the active index to a single non-active indexe
+			array(
+				// Input
+				array(
+					'post' => array(
+						// Active version
+						1 => array(
+							array(
+								1, // Object id
+								array(), // Additional options it was originally queued with
+							),
+							array(
+								9000, // Object id
+								array(), // Additional options it was originally queued with
+							),
+						),
+						// Some other random version, should have no effect on replicated jobs
+						9999 => array(
+							array(
+								1, // Object id
+								array(), // Additional options it was originally queued with
+							),
+							array(
+								9000, // Object id
+								array(), // Additional options it was originally queued with
+							),
+						),
+					),
+				),
+
+				// Expected queued jobs
+				array(
+					array(
+						'object_id' => 1,
+						'object_type' => 'post',
+						'index_version' => 2,
+					),
+					array(
+						'object_id' => 9000,
+						'object_type' => 'post',
+						'index_version' => 2,
+					),
+					array(
+						'object_id' => 1,
+						'object_type' => 'post',
+						'index_version' => 3,
+					),
+					array(
+						'object_id' => 9000,
+						'object_type' => 'post',
+						'index_version' => 3,
+					),
+				),
+			),
+
+			// Does not replicate queued items on non-active indexes
+			array(
+				// Input
+				array(
+					'post' => array(
+						// Inactive version
+						2 => array(
+							array(
+								1, // Object id
+								array(), // Additional options it was originally queued with
+							),
+							array(
+								9000, // Object id
+								array(), // Additional options it was originally queued with
+							),
+						),
+						// Some other random version, should have no effect on replicated jobs
+						9999 => array(
+							array(
+								1, // Object id
+								array(), // Additional options it was originally queued with
+							),
+							array(
+								9000, // Object id
+								array(), // Additional options it was originally queued with
+							),
+						),
+					),
+				),
+
+				// Expected queued jobs
+				array(),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider replicate_queued_objects_to_other_versions_data
+	 */
+	public function test_replicate_queued_objects_to_other_versions( $input, $expected_jobs ) {
+		global $wpdb;
+
+		self::$search->queue->empty_queue();
+
+		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
+		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
+		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+
+		$queue_table_name = self::$search->queue->schema->get_table_name();
+
+		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
+
+		$jobs = $wpdb->get_results(
+			"SELECT * FROM {$queue_table_name}",
+			ARRAY_A
+		);
+
+		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
+
+		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
+		foreach ( $expected_jobs as $index => $job ) {
+			$keys = array_keys( $job );
+
+			foreach( $keys as $key ) {
+				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
+			}
+		}
 	}
 
 	public function normalize_version_data() {
