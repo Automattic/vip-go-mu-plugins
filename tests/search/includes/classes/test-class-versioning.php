@@ -652,7 +652,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'options' => array( 'foo' => 'bar' ),
 					),
 				),
-				1 => array(
+				2 => array(
 					array(
 						'object_id' => 1,
 						'options' => array( 'foo' => 'bar' ),
@@ -661,7 +661,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 			),
 		);
 
-		$this->assertEquals( $expected_queued_objects_by_type_and_version, $this->get_property( 'queued_objects_by_type_and_version', self::$version_instance ) );
+		$current_queued_objects = $this->get_property( 'queued_objects_by_type_and_version' )->getValue( self::$version_instance );
+
+		$this->assertEquals( $expected_queued_objects_by_type_and_version, $current_queued_objects );
 	}
 
 	/**
@@ -913,8 +915,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 	/**
 	 * Helper function for accessing protected properties.
 	 */
-	protected static function get_property( $name, $object ) {
-		$class = new \ReflectionObject( $object );
+	protected static function get_property( $name ) {
+		$class = new \ReflectionClass( __NAMESPACE__ . '\Versioning' );
 
 		$property = $class->getProperty( $name );
 		$property->setAccessible( true );
