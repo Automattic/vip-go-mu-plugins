@@ -751,7 +751,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
 		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}",
+			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
 			ARRAY_A
 		);
 
@@ -761,7 +761,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 		foreach ( $expected_jobs as $index => $job ) {
 			$keys = array_keys( $job );
 
-			foreach( $keys as $key ) {
+			foreach ( $keys as $key ) {
 				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
 			}
 		}
