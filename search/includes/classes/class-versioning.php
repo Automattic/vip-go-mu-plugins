@@ -392,7 +392,7 @@ class Versioning {
 			$versions = $this->get_versions( $indexable );
 
 			// Do we have any other index versions for this type? If not, nothing to do.
-			if ( ! $versions || count( $versions ) <= 1 ) {
+			if ( ! $versions || empty( $versions ) ) {
 				continue;
 			}
 
