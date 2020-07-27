@@ -856,6 +856,81 @@ class Versioning_Test extends \WP_UnitTestCase {
 		}
 	}
 
+	public function test_replicate_indexed_objects_to_other_versions() {
+		global $wpdb;
+
+		self::$search->queue->empty_queue();
+
+		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
+		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
+		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$sync_manager = $indexable->sync_manager;
+
+		// Fake some changed posts
+		$sync_manager->sync_queue = array( 1, 2, 3 );
+
+		// Then fire pre_ep_index_sync_queue to simulate EP performing indexing
+		$result = apply_filters( 'pre_ep_index_sync_queue', false, $sync_manager, 'post' );
+
+		// Should not be bailing (the $result)
+		$this->assertFalse( $result );
+
+		// And check what's in the queue table - should be jobs for all the edited posts, on the non-active versions
+
+		$queue_table_name = self::$search->queue->schema->get_table_name();
+
+		$jobs = $wpdb->get_results(
+			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
+			ARRAY_A
+		);
+
+		$expected_jobs = array(
+			array(
+				'object_id' => 1,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
+				'object_id' => 1,
+				'object_type' => 'post',
+				'index_version' => 3,
+			),
+			array(
+				'object_id' => 2,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
+				'object_id' => 2,
+				'object_type' => 'post',
+				'index_version' => 3,
+			),
+			array(
+				'object_id' => 3,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
+				'object_id' => 3,
+				'object_type' => 'post',
+				'index_version' => 3,
+			),
+		);
+
+		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
+		foreach ( $expected_jobs as $index => $job ) {
+			$keys = array_keys( $job );
+
+			foreach ( $keys as $key ) {
+				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
+			}
+		}
+	}
+
 	public function normalize_version_data() {
 		return array(
 			// No data at all

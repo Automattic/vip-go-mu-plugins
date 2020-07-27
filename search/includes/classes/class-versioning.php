@@ -24,6 +24,11 @@ class Versioning {
 	public function __construct() {
 		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
 		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
+		
+		// When objects are indexed normally, they go into the EP "sync_queue", which we need to replicate out to the non-active index versions
+		// NOTE - the priority is very important, and must come _after_ the Queue class's pre_ep_index_sync_queue hook, so we don't duplicate effort (to allow
+		// the Queue to take over EP's queue, at which point we don't need to insert them here, as they are handled during Queue::queue_object())
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'filter__pre_ep_index_sync_queue' ], 100, 3 );
 	}
 
 	/**
@@ -427,4 +432,35 @@ class Versioning {
 			}
 		}
 	}
+
+	public function filter__pre_ep_index_sync_queue( $bail, $sync_manager, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		// If it's not a valid indexable, just skip
+		if ( ! $indexable ) {
+			return $bail;
+		}
+
+		$inactive_versions = $this->get_inactive_versions( $indexable );
+
+		// If there are no inactive versions or nothing in the queue, we can just skip
+		if ( empty( $inactive_versions ) || empty( $sync_manager->sync_queue ) ) {
+			return $bail;
+		}
+
+		foreach ( $inactive_versions as $version ) {
+			foreach ( $sync_manager->sync_queue as $object_id ) {
+				$options = array(
+					'index_version' => $version['number'],
+				);
+
+				\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $indexable_slug, $options );
+			}
+		}
+
+		// We're not altering $bail, just transparently hooking in to re-index these items on the non-active index versions
+		return $bail;
+	}
+
+	// TODO handle deletes
 }
