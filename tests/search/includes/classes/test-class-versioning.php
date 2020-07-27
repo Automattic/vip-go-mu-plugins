@@ -948,6 +948,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
 			}
+
+			// For linting, always have to return something
+			return null;
 		}, 10, 4 );
 
 		$indexable->delete( 1 );
