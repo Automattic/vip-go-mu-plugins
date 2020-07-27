@@ -6,6 +6,8 @@ workflows:
       - php73-build-singlesite
       - php74-build-multisite
       - php74-build-singlesite
+      - php73-build-multisite-nightly
+      - php73-build-singlesite-nightly
 
 version: 2
 
