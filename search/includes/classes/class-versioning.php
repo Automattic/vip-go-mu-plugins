@@ -484,7 +484,7 @@ class Versioning {
 	 * index versions is not as great. We also process the deletes immediately, b/c the queue system currently does not
 	 * support deletes (just indexing)
 	 */
-	public function action__ep_delete_indexable( $object_id, $object_type ) {
+	public function action__ep_delete_indexable( $object_id, $indexable_slug ) {
 		// Prevent infinite loops :)
 		if ( $this->is_doing_object_delete ) {
 			return;
@@ -500,7 +500,7 @@ class Versioning {
 		$inactive_versions = $this->get_inactive_versions( $indexable );
 
 		// If there are no inactive versions or nothing in the queue, we can just skip
-		if ( empty( $inactive_versions ) || empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $inactive_versions ) ) {
 			return;
 		}
 
