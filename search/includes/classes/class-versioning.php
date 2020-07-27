@@ -405,11 +405,11 @@ class Versioning {
 				$this->set_current_version_number( $indexable, $version['number'] );
 
 				foreach ( $objects_by_version[ $active_version_number ] as $entry ) {
-					$object_id = $entry[ 0 ];
-					$options = $entry[ 1 ];
+					$object_id = $entry[0];
+					$options = $entry[1];
 
 					// Override the index version in the options
-					$options[ 'index_version'] = $version['number'];
+					$options['index_version'] = $version['number'];
 
 					\Automattic\VIP\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
 				}
