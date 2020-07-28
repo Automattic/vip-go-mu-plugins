@@ -119,7 +119,10 @@ class API_Cache_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__get_file_stats__invalid__same_file_different_path() {
-		$expected = [ 'size' => '123', 'mtime' => '123456779' ];
+		$expected = [
+			'size' => '123',
+			'mtime' => '123456779',
+		];
 
 		$prop = self::get_property( $this->cache, 'file_stats' );
 		$prop->setValue( $this->cache, [ 'test.jpg' => $expected ] );
@@ -138,7 +141,7 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$files = $prop->getValue( $this->cache );
 
-		$this->assertTrue( isset( $files[ '/test/path/test.txt' ] ) );
+		$this->assertTrue( isset( $files['/test/path/test.txt'] ) );
 	}
 
 	public function test__cache_file__update_cache() {
@@ -159,8 +162,8 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$files = $prop->getValue( $this->cache );
 
-		$this->assertTrue( isset( $files[ '/test/path/test.jpg' ] ) );
-		$this->assertEquals( $expected, file_get_contents( $files[ '/test/path/test.jpg' ] ) );
+		$this->assertTrue( isset( $files['/test/path/test.jpg'] ) );
+		$this->assertEquals( $expected, file_get_contents( $files['/test/path/test.jpg'] ) );
 	}
 
 	public function test__cache_file_stats() {
@@ -171,22 +174,30 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$stats = $prop->getValue( $this->cache );
 
-		$this->assertTrue( isset( $stats[ '/test/path/test.txt' ] ) );
-		$this->assertEquals( $expected, $stats[ '/test/path/test.txt' ] );
+		$this->assertTrue( isset( $stats['/test/path/test.txt'] ) );
+		$this->assertEquals( $expected, $stats['/test/path/test.txt'] );
 	}
 
 	public function test__cache_file_stats__update_cache() {
 		$prop = self::get_property( $this->cache, 'file_stats' );
-		$prop->setValue( $this->cache, [ '/test/path/test.jpg' => [ 'size' => '234', 'mtime' => '123456779' ] ] );
+		$prop->setValue( $this->cache, [
+			'/test/path/test.jpg' => [
+				'size' => '234',
+				'mtime' => '123456779',
+			],
+		] );
 
-		$expected = [ 'size' => '411', 'mtime' => '123459001'];
+		$expected = [
+			'size' => '411',
+			'mtime' => '123459001'
+		];
 
 		$this->cache->cache_file_stats( '/test/path/test.jpg', $expected );
 
 		$stats = $prop->getValue( $this->cache );
 
-		$this->assertTrue( isset( $stats[ '/test/path/test.jpg' ] ) );
-		$this->assertEquals( $expected, $stats[ '/test/path/test.jpg' ] );
+		$this->assertTrue( isset( $stats['/test/path/test.jpg'] ) );
+		$this->assertEquals( $expected, $stats['/test/path/test.jpg'] );
 	}
 
 	public function test__copy_to_cache() {
@@ -218,8 +229,8 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$files = $prop->getValue( $this->cache );
 
-		$this->assertTrue( isset( $files[ '/test/path/test.jpg' ] ) );
-		$this->assertEquals( $expected, file_get_contents( $files[ '/test/path/test.jpg' ] ) );
+		$this->assertTrue( isset( $files['/test/path/test.jpg'] ) );
+		$this->assertEquals( $expected, file_get_contents( $files['/test/path/test.jpg'] ) );
 	}
 
 	public function test__remove_file() {
@@ -227,32 +238,42 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		file_put_contents( $test_file, 'test data' );
 
-		$filesProp = self::get_property( $this->cache, 'files' );
-		$filesProp->setValue( $this->cache, [ '/test/path/test.jpg' => $test_file ] );
+		$files_prop = self::get_property( $this->cache, 'files' );
+		$files_prop->setValue( $this->cache, [ '/test/path/test.jpg' => $test_file ] );
 
-		$statsProp = self::get_property( $this->cache, 'file_stats' );
-		$statsProp->setValue( $this->cache, [ '/test/path/test.jpg' => [ 'size' => '24', 'mtime' => '123456779' ] ] );
+		$stats_prop = self::get_property( $this->cache, 'file_stats' );
+		$stats_prop->setValue( $this->cache, [
+			'/test/path/test.jpg' => [
+				'size' => '24',
+				'mtime' => '123456779',
+			],
+		] );
 
 		$this->cache->remove_file( '/test/path/test.jpg' );
 
-		$files = $filesProp->getValue( $this->cache );
+		$files = $files_prop->getValue( $this->cache );
 
 		$this->assertEmpty( $files );
 		$this->assertFalse( file_exists( $test_file ) );
 
-		$stats = $statsProp->getValue( $this->cache );
+		$stats = $stats_prop->getValue( $this->cache );
 
 		$this->assertEmpty( $stats );
 	}
 
 	public function test__remove_stats() {
 		$prop = self::get_property( $this->cache, 'file_stats' );
-		$prop->setValue( $this->cache, [ '/test/path/test.jpg' => [ 'size' => '234', 'mtime' => '123456779' ] ] );
+		$prop->setValue( $this->cache, [
+			'/test/path/test.jpg' => [
+				'size' => '234',
+				'mtime' => '123456779',
+			],
+		] );
 
 		$this->cache->remove_stats( '/test/path/test.jpg' );
 
 		$stats = $prop->getValue( $this->cache );
 
-		$this->assertFalse( isset( $stats[ '/test/path/test.jpg' ] ) );
+		$this->assertFalse( isset( $stats['/test/path/test.jpg'] ) );
 	}
 }
