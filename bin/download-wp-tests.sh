@@ -20,7 +20,10 @@ download() {
     fi
 }
 
-if [[ $WP_VERSION =~ [0-9]+\.[0-9]+(\.[0-9]+)? ]]; then
+
+if [[ $WP_VERSION == 'nightly' ]]; then
+	WP_TESTS_TAG="trunk"
+elif [[ $WP_VERSION =~ [0-9]+\.[0-9]+(\.[0-9]+)? ]]; then
 	WP_TESTS_TAG="tags/$WP_VERSION"
 else
 	# http serves a single offer, whereas https serves multiple. we only want one
@@ -60,9 +63,18 @@ install_wp() {
 		local ARCHIVE_NAME="wordpress-$WP_VERSION"
 	fi
 
-	download https://wordpress.org/${ARCHIVE_NAME}.tar.gz  /tmp/wordpress.tar.gz
-	tar --strip-components=1 -zxmf /tmp/wordpress.tar.gz -C $WP_CORE_DIR_ACTUAL
-
+	if [ $WP_VERSION == 'nightly' ]; then
+		local ARCHIVE_NAME='nightly-builds/wordpress-latest'
+		download https://wordpress.org/${ARCHIVE_NAME}.zip  /tmp/wordpress.zip
+		unzip -qq /tmp/wordpress.zip -d /tmp
+		cd /tmp/wordpress
+		cp -r . $WP_CORE_DIR_ACTUAL
+		rm -rf /tmp/wordpress
+	else
+		download https://wordpress.org/${ARCHIVE_NAME}.tar.gz  /tmp/wordpress.tar.gz
+		tar --strip-components=1 -zxmf /tmp/wordpress.tar.gz -C $WP_CORE_DIR_ACTUAL
+	fi
+	
 	download https://raw.github.com/markoheijnen/wp-mysqli/master/db.php $WP_CORE_DIR_ACTUAL/wp-content/db.php
 }
 
