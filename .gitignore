@@ -13,7 +13,7 @@ phpdoc
 
 # Composer
 /vendor/
-output
+/output/
 
 # npm
 node_modules
