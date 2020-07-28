@@ -189,7 +189,7 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$expected = [
 			'size' => '411',
-			'mtime' => '123459001'
+			'mtime' => '123459001',
 		];
 
 		$this->cache->cache_file_stats( '/test/path/test.jpg', $expected );
@@ -208,7 +208,7 @@ class API_Cache_Test extends \WP_UnitTestCase {
 
 		$files = $prop->getValue( $this->cache );
 
-		$this->assertTrue( isset( $files[ '/test/path/test.txt' ] ) );
+		$this->assertTrue( isset( $files['/test/path/test.txt'] ) );
 	}
 
 	public function test__copy_to_cache__update_cache() {
