@@ -10,6 +10,7 @@
 1. [Versioning](versioning.md)
     1. [Naming Convention](versioning.md#naming-convention)
     1. [Active vs. Current](versioning.md#active-vs-current)
+    1. [Keeping Versions In Sync](versioning.md#in-sync)
     1. [CLI Commands](versioning.md#commands)
     1. [Internals](versioning.md#internals)
 1. [Ratelimiting](ratelimiting.md)
