@@ -897,6 +897,16 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'index_version' => 2,
 			),
 			array(
+				'object_id' => 2,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
+				'object_id' => 3,
+				'object_type' => 'post',
+				'index_version' => 2,
+			),
+			array(
 				'object_id' => 1,
 				'object_type' => 'post',
 				'index_version' => 3,
@@ -904,17 +914,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				'object_id' => 2,
 				'object_type' => 'post',
-				'index_version' => 2,
-			),
-			array(
-				'object_id' => 2,
-				'object_type' => 'post',
 				'index_version' => 3,
-			),
-			array(
-				'object_id' => 3,
-				'object_type' => 'post',
-				'index_version' => 2,
 			),
 			array(
 				'object_id' => 3,
