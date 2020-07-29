@@ -467,7 +467,7 @@ class Versioning {
 		}
 
 		foreach ( $inactive_versions as $version ) {
-			foreach ( $sync_manager->sync_queue as $object_id ) {
+			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
 				$options = array(
 					'index_version' => $version['number'],
 				);
