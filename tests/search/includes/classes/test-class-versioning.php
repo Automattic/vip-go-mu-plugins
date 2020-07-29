@@ -928,6 +928,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			$keys = array_keys( $job );
 
 			foreach ( $keys as $key ) {
+				$this->assertEquals( $expected_jobs[ $index ][ $key ], $jobs[ $index ][ $key ], "The job at index {$index} has the wrong value for key {$key}" );
 			}
 		}
 	}
