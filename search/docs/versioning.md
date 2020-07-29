@@ -30,6 +30,12 @@ Setting the *current* index is not permanent and can be done with `\Automattic\V
 
 To switch back to the current active index, just call the reset function: `\Automattic\VIP\Search\Search::instance()->versioning->resut_current_version_number( $indexable )`.
 
+## Keeping Additional Versions in Sync <a name="in-sync"></a>
+
+Having additional index versions is only useful if their contents do not drift from the active index.
+
+VIP Search automatically replicates any indexing (or delete) operations to the non-active indexes to keep them in sync. For regular indexing, this is done by queueing a new job in the queue and for deletes, the documents are deleted right away (because the queue does not currently support deletes).
+
 ## Commands <a name="commands"></a>
 
 Index versions can be managed with the following commands. For more details, see `wp help vip-search index-versions`.
