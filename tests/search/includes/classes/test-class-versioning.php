@@ -685,7 +685,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// Rather than run shutdown, which has side effects, ensure that we are hooked, then run just the shutdown callback
 		// NOTE - has_action() returns the priority if hooked, or false if not
-		$this->assertEquals( 10, has_action( 'shutdown', array( self::$version_instance, 'action__shutdown' ) ) );
+		$this->assertEquals( 100, has_action( 'shutdown', array( self::$version_instance, 'action__shutdown' ) ) );
 
 		self::$version_instance->action__shutdown();
 
