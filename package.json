@@ -7,9 +7,9 @@
     "phplint": "bin/php-lint.sh",
     "phpcs": "vendor/bin/phpcs",
     "phpcs:changed:remote": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet",
-	"phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
-	"lint": "npm run phplint && npm run phpcs:changed:remote",
-	"update-subtrees": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash"
+    "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
+    "lint": "npm run phplint && npm run phpcs:changed:remote",
+    "update-subtrees": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash"
   },
   "author": "Automattic",
   "devDependencies": {
