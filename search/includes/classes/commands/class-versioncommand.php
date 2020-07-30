@@ -48,7 +48,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( 'Failed to register the new index version' );
 		}
 
-		WP_CLI::success( sprintf( 'Registered new index version %d. The new index has not yet been created', $new_version['number'] ) );
+		WP_CLI::success( sprintf( 'Registered and created new index version %d', $new_version['number'] ) );
 	}
 
 	/**
