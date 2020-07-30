@@ -263,7 +263,26 @@ class Versioning {
 			return $result;
 		}
 
+		// Setup the index + mapping so that it's available for immediate use (as changes will start getting replicated here)
+		$this->create_versioned_index_with_mapping( $indexable, $new_version_number );
+
 		return $new_version;
+	}
+
+	/**
+	 * Create the index in ES and put the mapping
+	 * 
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to create the new versioned index
+	 * @param int $version_number The index version number to create
+	 */
+	public function create_versioned_index_with_mapping( $indexable, $version_number ) {
+		$this->set_current_version_number( $indexable, $version_number );
+
+		$result = $indexable->put_mapping();
+
+		$this->reset_current_version_number( $indexable );
+
+		return $result;
 	}
 
 	/**
