@@ -40,15 +40,15 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		$new_version = $search->versioning->add_version( $indexable );
 
-		if ( is_wp_error( $result ) ) {
+		if ( is_wp_error( $new_version ) ) {
 			return WP_CLI::error( $result->get_error_message() );
 		}
 
-		if ( false === $result ) {
+		if ( false === $new_version ) {
 			return WP_CLI::error( 'Failed to register the new index version' );
 		}
 
-		WP_CLI::success( sprintf( 'Registered new index version %d. The new index has not yet been created', $new_version['number'] ) );
+		WP_CLI::success( sprintf( 'Registered and created new index version %d', $new_version['number'] ) );
 	}
 
 	/**
