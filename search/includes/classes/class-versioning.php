@@ -16,6 +16,40 @@ class Versioning {
 	private $current_index_version_by_type = array();
 
 	/**
+	 * An internal record of every object that has been queued up (via Queue::queue_object()) so that we can replicate those jobs
+	 * to the other index versions at the end of the request
+	 */
+	private $queued_objects_by_type_and_version = array();
+
+	/**
+	 * Internal flag to prevent infinite loops when handling object deletions
+	 */
+	private $is_doing_object_delete;
+
+	public function __construct() {
+		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
+		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
+		add_action( 'shutdown', [ $this, 'action__shutdown' ], 100 ); // Must always run _after_ EP's own shutdown hooks, so that pre_ep_index_sync_queue has fired
+		
+		// When objects are indexed normally, they go into the EP "sync_queue", which we need to replicate out to the non-active index versions
+		// NOTE - the priority is very important, and must come _after_ the Queue class's pre_ep_index_sync_queue hook, so we don't duplicate effort (to allow
+		// the Queue to take over EP's queue, at which point we don't need to insert them here, as they are handled during Queue::queue_object())
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'filter__pre_ep_index_sync_queue' ], 100, 3 );
+
+		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
+	}
+
+	public function action__plugins_loaded() {
+		// Hook into the delete action of all known indexables, to replicate those deletes out to all inactive index versions
+		// NOTE - runs on plugins_loaded so Indexables are properly registered beforehand
+		$all_indexables = \ElasticPress\Indexables::factory()->get_all();
+		
+		foreach ( $all_indexables as $indexable ) {
+			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
+		}
+	}
+
+	/**
 	 * Set the current (not active) version for a given Indexable. This allows us to work on other index versions without making
 	 * that index active
 	 * 
@@ -107,6 +141,15 @@ class Versioning {
 		}
 
 		return $active_version['number'];
+	}
+
+	public function get_inactive_versions( Indexable $indexable ) {
+		$versions = $this->get_versions( $indexable );
+		$active_version_number = $this->get_active_version_number( $indexable );
+
+		unset( $versions[ $active_version_number ] );
+
+		return $versions;
 	}
 
 	/**
@@ -334,5 +377,169 @@ class Versioning {
 	 */
 	public function get_version_stats( Indexable $indexable, $version ) {
 		// Need helper function in \ElasticPress\Elasticsearch
+	}
+
+	/**
+	 * Implements the vip_search_indexing_object_queued action to keep track of queued objects so that we can transparently
+	 * replicate the queued job to the non-active index versions
+	 * 
+	 *
+	 * @param int $object_id Object id
+	 * @param string $object_type Object type (the Indexable slug)
+	 * @param array $options The options passed to queue_object()
+	 * @param int $index_version The index version that was used when queuing the object
+	 */
+	public function action__vip_search_indexing_object_queued( $object_id, $object_type, $options, $index_version ) {
+		// Each time an object is queued, we keep track of that by version + type, so on shutdown, we can process them all in bulk
+		if ( ! isset( $this->queued_objects_by_type_and_version[ $object_type ] ) ) {
+			$this->queued_objects_by_type_and_version[ $object_type ] = array();
+		}
+
+		if ( ! isset( $this->queued_objects_by_type_and_version[ $object_type ][ $index_version ] ) ) {
+			$this->queued_objects_by_type_and_version[ $object_type ][ $index_version ] = array();
+		}
+
+		$this->queued_objects_by_type_and_version[ $object_type ][ $index_version ][] = array(
+			'object_id' => $object_id,
+			'options' => $options,
+		);
+	}
+
+	/**
+	 * When the request finishes, find all items that had been queued up on the active index and replicate those jobs out to each non-active index version
+	 * 
+	 * This ensures that the active index version is treated as The Truth, and non-active index versions follow it (and not the other way around)
+	 */
+	public function action__shutdown() {
+		$this->replicate_queued_objects_to_other_versions( $this->queued_objects_by_type_and_version );
+	}
+
+	/**
+	 * Given an array of object types and the objects queued by version, replicate those jobs to the
+	 * _other_ index versions to keep them in sync
+	 * 
+	 * @param $queued_objects Multidimensional array of queued objects, keyed first by type, then index version
+	 */
+	public function replicate_queued_objects_to_other_versions( $queued_objects ) {
+		if ( ! is_array( $queued_objects ) || empty( $queued_objects ) ) {
+			return;
+		}
+
+		// Loop over every type of object that was changed
+		foreach ( $queued_objects as $object_type => $objects_by_version ) {
+			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
+
+			// If it's not a valid indexable, just skip
+			if ( ! $indexable ) {
+				continue;
+			}
+
+			$versions = $this->get_versions( $indexable );
+
+			// Do we have any other index versions for this type? If not, nothing to do.
+			if ( ! $versions || empty( $versions ) ) {
+				continue;
+			}
+
+			$active_version_number = $this->get_active_version_number( $indexable );
+
+			// Were there any changes to the active version? If not, we skip - we don't keep replicate non-active indexes to others
+			if ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) {
+				continue;
+			}
+
+			// Other index versions, besides active
+			$inactive_versions = $this->get_inactive_versions( $indexable );
+
+			// There were changes for active version - now we need to loop over every object that was queued for the active version and replicate that job to the other versions
+			foreach ( $inactive_versions as $version ) {
+				$this->set_current_version_number( $indexable, $version['number'] );
+
+				foreach ( $objects_by_version[ $active_version_number ] as $entry ) {
+					$object_id = $entry['object_id'];
+					$options = is_array( $entry['options'] ) ? $entry['options'] : array();
+
+					// Override the index version in the options
+					$options['index_version'] = $version['number'];
+
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
+				}
+
+				$this->reset_current_version_number( $indexable );
+			}
+		}
+	}
+
+	public function filter__pre_ep_index_sync_queue( $bail, $sync_manager, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		// If it's not a valid indexable, just skip
+		if ( ! $indexable ) {
+			return $bail;
+		}
+
+		$inactive_versions = $this->get_inactive_versions( $indexable );
+
+		// If there are no inactive versions or nothing in the queue, we can just skip
+		if ( empty( $inactive_versions ) || empty( $sync_manager->sync_queue ) ) {
+			return $bail;
+		}
+
+		foreach ( $inactive_versions as $version ) {
+			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
+				$options = array(
+					'index_version' => $version['number'],
+				);
+
+				\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $indexable_slug, $options );
+			}
+		}
+
+		// We're not altering $bail, just transparently hooking in to re-index these items on the non-active index versions
+		return $bail;
+	}
+
+	/**
+	 * When an item is deleted from an index, replicate that delete out to all other index versions
+	 * 
+	 * NOTE - this behaves differently than action__vip_search_indexing_object_queued() because it doesn't collect
+	 * all the deletions during the request, then process them on shutdown. That would be an over optimization here
+	 * since deletes are comparatively much less frequent, so the savings of preventing back-and-forth switching between
+	 * index versions is not as great. We also process the deletes immediately, b/c the queue system currently does not
+	 * support deletes (just indexing)
+	 */
+	public function action__ep_delete_indexable( $object_id, $indexable_slug ) {
+		// Prevent infinite loops :)
+		if ( $this->is_doing_object_delete ) {
+			return;
+		}
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		// If it's not a valid indexable, just skip
+		if ( ! $indexable ) {
+			return;
+		}
+
+		$inactive_versions = $this->get_inactive_versions( $indexable );
+
+		// If there are no inactive versions or nothing in the queue, we can just skip
+		if ( empty( $inactive_versions ) ) {
+			return;
+		}
+
+		// Set the flag to prevent infinite loops
+		$this->is_doing_object_delete = true;
+
+		foreach ( $inactive_versions as $version ) {
+			$this->set_current_version_number( $indexable, $version['number'] );
+
+			$indexable->delete( $object_id );
+			
+			$this->reset_current_version_number( $indexable );
+		}
+
+		// Clear the flag to return to normal
+		$this->is_doing_object_delete = false;
 	}
 }
