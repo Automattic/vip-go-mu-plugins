@@ -610,6 +610,118 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( wp_list_pluck( $versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
 	}
 
+	public function delete_version_data() {
+		return array(
+			// No index marked active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to delete
+				2,
+				// Expected new versions
+				array(
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+			),
+
+			// Current version is 2
+			array(
+				// Input array of versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to delete
+				1,
+				// Expected new versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider delete_version_data
+	 */
+	public function test_delete_version( $start_versions, $indexable_slug, $version_number, $expected_versions ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		$indexable_mock = $this->getMockBuilder( get_class( $indexable ) )
+			->setMethods( [ 'delete_index' ] )
+			->getMock();
+
+		$indexable_mock->expects( $this->once() )
+			->method( 'delete_index' )
+			->willReturn( true );
+
+		self::$version_instance->update_versions( $indexable, $start_versions );
+
+		// Delete the version
+		$delete_result = self::$version_instance->delete_version( $indexable_mock, $version_number );
+
+		$this->assertEquals( true, $delete_result, 'The index version was not deleted' );
+
+		$versions = self::$version_instance->get_versions( $indexable );
+
+		// Can only compare the deterministic parts of the version info (not created_time, for example)
+		$this->assertEquals( wp_list_pluck( $expected_versions, 'number' ), wp_list_pluck( $versions, 'number' ), 'New version numbers do not match expected values' );
+		$this->assertEquals( wp_list_pluck( $expected_versions, 'active' ), wp_list_pluck( $versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+	}
+
+	public function test_delete_version_invalid() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$result = self::$version_instance->delete_version( $indexable, 99999 );
+
+		$this->assertEquals( true, is_wp_error( $result ) );
+		$this->assertEquals( 'invalid-version-number', $result->get_error_code() );
+	}
+
+	public function test_delete_version_while_active() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$active_version_number = self::$version_instance->get_active_version_number( $indexable );
+
+		$result = self::$version_instance->delete_version( $indexable, $active_version_number );
+
+		$this->assertEquals( true, is_wp_error( $result ) );
+		$this->assertEquals( 'cannot-delete-active-index-version', $result->get_error_code() );
+	}
+
 	public function test_current_version_number_overrides() {
 		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 
