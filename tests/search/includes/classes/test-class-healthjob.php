@@ -218,4 +218,19 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 		$this->assertFalse( $enabled );
 	}
+
+		/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_vip_search_healthjob_is_disabled_when_app_id_matches_disabled_list() {
+		define( 'VIP_GO_APP_ID', 2341 );
+
+		$job = new \Automattic\VIP\Search\HealthJob();
+		$job->health_check_disabled_sites[] = VIP_GO_APP_ID;
+
+		$enabled = $job->is_enabled();
+
+		$this->assertFalse( $enabled );
+	}
 }

@@ -23,7 +23,7 @@ class HealthJob {
 	 */
 	const CRON_INTERVAL = 60 * 30; // 30 minutes in seconds
 
-	const HEALTH_CHECK_DISABLED_SITES = array();
+	public $health_check_disabled_sites = array();
 
 	/**
 	 * Initialize the job class
@@ -196,7 +196,7 @@ class HealthJob {
 		}
 
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, self::HEALTH_CHECK_DISABLED_SITES, true ) ) {
+			if ( in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
 				return false;
 			}
 		}
