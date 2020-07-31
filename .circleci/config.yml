@@ -47,8 +47,7 @@ job-references:
           name: "Run Tests"
           command: |
             if [[ "$RUN_EXTRA" == "1" ]]; then
-              npm run phplint
-              npm run phpcs:changed:remote
+              npm run lint
             fi
             rm -rf $WP_TESTS_DIR $WP_CORE_DIR
             bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
