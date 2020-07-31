@@ -186,6 +186,59 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Delete a version of an index. This will unregister the index version and delete it from Elasticsearch
+	 *
+	 * ## OPTIONS
+	 * 
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 * 
+	 * <version_number>
+	 * : The version number of the index to delete
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search index-versions delete post 2
+	 *
+	 * @subcommand delete
+	 */
+	public function delete( $args, $assoc_args ) {
+		$type = $args[0];
+		$version_number = intval( $args[1] );
+
+		if ( $version_number <= 0 ) {
+			return WP_CLI::error( 'New version number must be a positive int' );
+		}
+	
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+
+		$active_version_number = $search->versioning->get_active_version_number( $indexable );
+
+		if ( $active_version_number === $version_number ) {
+			return WP_CLI::error( sprintf( 'Index version %d is active for type %s and cannot be deleted', $version_number, $type ) );
+		}
+
+		WP_CLI::confirm( sprintf( 'Are you sure you want to delete index version %d for type %s?', $version_number, $type ), $assoc_args );
+
+		$result = $search->versioning->delete_version( $indexable, $version_number );
+
+		if ( is_wp_error( $result ) ) {
+			return WP_CLI::error( $result->get_error_message() );
+		}
+
+		if ( ! $result ) {
+			return WP_CLI::error( sprintf( 'Failed to delete index version %d for type %s', $version_number, $type ) );
+		}
+
+		WP_CLI::success( sprintf( 'Successfully deleted index version %d for type %s', $version_number, $type ) );
+	}
+
+	/**
 	 * Get details about the currently active index version
 	 *
 	 * ## OPTIONS
