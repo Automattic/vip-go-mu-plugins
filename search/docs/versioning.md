@@ -50,7 +50,7 @@ List the available index versions.
 wp vip-search index-versions add <type>
 ```
 
-Add a new index version. This does not actually create the ES index, but registers the new version with VIP Search so that the new ES index can be created.
+Add a new index version and creates it (with mapping) on Elasticsearch. _NOTE_ - this does not do any bulk indexing of content, but it _will_ start the indexing of incremental changes to the new version.
 
 ```
 wp vip-search index-versions get <type> <version_number>
