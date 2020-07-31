@@ -23,11 +23,7 @@ class HealthJob {
 	 */
 	const CRON_INTERVAL = 60 * 30; // 30 minutes in seconds
 
-	const HEALTH_CHECK_DISABLED_SITES = array(
-		2341,
-		1076,
-		2624,
-	);
+	const HEALTH_CHECK_DISABLED_SITES = array();
 
 	/**
 	 * Initialize the job class
