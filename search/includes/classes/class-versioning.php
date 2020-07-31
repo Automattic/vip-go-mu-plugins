@@ -369,6 +369,55 @@ class Versioning {
 	}
 
 	/**
+	 * Delete the version of an index and remove the index from Elasticsearch
+	 * 
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
+	 * @param int $version_number The index version to delete
+	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
+	 */
+	public function delete_version( Indexable $indexable, $version_number ) {
+		// Can't delete active version
+		$active_version_number = $this->get_active_version_number( $indexable );
+
+		if ( $active_version_number === $version_number ) {
+			return new WP_Error( 'cannot-delete-active-index-version', 'The active index version cannot be deleted' );
+		}
+
+		$versions = $this->get_versions( $indexable );
+
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return new WP_Error( 'invalid-version-number', sprintf( 'The version %d does not exist for indexable %s', $version_number, $indexable->slug ) );
+		}
+
+		$delete_result = $this->delete_versioned_index( $indexable, $version_number );
+
+		if ( ! $delete_result ) {
+			return new WP_Error( 'failed-to-delete-index', sprintf( 'Failed to delete index version %d for indexable %s from Elasticsearch', $version_number, $indexable->slug ) );
+		}
+
+		unset( $versions[ $version_number ] );
+
+		return $this->update_versions( $indexable, $versions );
+	}
+
+	/**
+	 * Delete the versioned index from Elasticsearch
+	 * 
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
+	 * @param int $version_number The index version to delete
+	 * @return bool Boolean indicating success or failure 
+	 */
+	public function delete_versioned_index( $indexable, $version_number ) {
+		$this->set_current_version_number( $indexable, $version_number );
+
+		$result = $indexable->delete_index();
+
+		$this->reset_current_version_number( $indexable );
+
+		return $result;
+	}
+
+	/**
 	 * Get stats for a given index version, such as how many documents it contains
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
