@@ -90,22 +90,41 @@ class Health {
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function validate_index_users_count() {
+	public static function validate_index_users_count( $options = array() ) {
 		$users = Indexables::factory()->get( 'user' );
+
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $users ) {
-			return new WP_Error( 'es_users_query_error', 'failure retrieving user documents from ES #vip-search' );
+			return new WP_Error( 'es_users_query_error', 'failure retrieving user indexable from ES #vip-search' );
 		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( $options['index_version'] ) {
+			$version_result = $search->versioning->set_current_version_number( $users, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$index_version = $search->versioning->get_current_version_number( $users );
 
 		$query_args = [
 			'order' => 'asc',
 		];
 
 		$result = self::validate_index_entity_count( $query_args, $users );
+
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-search', $result->get_error_message() ) );
 		}
+
+		$result['index_version'] = $index_version;
+	
+		$search->versioning->reset_current_version_number( $users );
+
 		return array( $result );
 	}
 

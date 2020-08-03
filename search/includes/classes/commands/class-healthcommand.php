@@ -44,6 +44,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	/**
 	 * ## OPTIONS
 	 *
+	 * [--version=<int>]
+	 * : Index version to validate - defaults to all
 	 *
 	 * ## EXAMPLES
 	 *     wp vip-es health validate-users-count
@@ -53,12 +55,33 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_users_count( $args, $assoc_args ) {
 		WP_CLI::line( sprintf( "Validating users count\n" ) );
 
-		$users_results = \Automattic\VIP\Search\Health::validate_index_users_count();
-		if ( is_wp_error( $users_results ) ) {
-			WP_CLI::warning( $users_results->get_error_message() );
-			return;
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$versions = [];
+
+		if ( isset( $assoc_args['version'] ) ) {
+			$versions[] = intval( $assoc_args['version'] );
+		} else {
+			// Defaults to all versions
+			$indexable = \ElasticPress\Indexables::factory()->get( 'user' );
+
+			$version_objects = $search->versioning->get_versions( $indexable );
+
+			$versions = wp_list_pluck( $version_objects, 'number' );
 		}
-		$this->render_results( $users_results );
+
+		foreach( $versions as $version_number ) {
+			$users_results = \Automattic\VIP\Search\Health::validate_index_users_count( array(
+				'index_version' => $version_number,
+			) );
+
+			if ( is_wp_error( $users_results ) ) {
+				WP_CLI::warning( $users_results->get_error_message() );
+				return;
+			}
+
+			$this->render_results( $users_results );
+		}
 	}
 
 	/**

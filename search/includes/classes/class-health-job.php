@@ -104,22 +104,29 @@ class HealthJob {
 			return;
 		}
 
+		$search = \Automattic\VIP\Search\Search::instance();
+
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
-			$user_results = Health::validate_index_users_count();
+			$users_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
 
-			$this->process_results( $user_results );
+			$users_versions = $search->versioning->get_versions( $users_indexable );
+
+			foreach( $users_versions as $version ) {
+				$user_results = Health::validate_index_users_count( array(
+					'index_version' => $version['number'],
+				) );
+
+				$this->process_results( $user_results );
+			}
 		}
-
-		// Check all versions
-		$search = \Automattic\VIP\Search\Search::instance();
 
 		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$versions = $search->versioning->get_versions( $post_indexable );
+		$posts_versions = $search->versioning->get_versions( $post_indexable );
 
-		foreach( $versions as $version ) {
+		foreach( $posts_versions as $version ) {
 			$post_results = Health::validate_index_posts_count( array(
 				'index_version' => $version['number'],
 			) );
