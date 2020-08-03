@@ -121,7 +121,7 @@ class Health {
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $posts ) {
-			return new WP_Error( 'es_users_query_error', 'failure retrieving post documents from ES #vip-search' );
+			return new WP_Error( 'es_users_query_error', 'failure retrieving post indexable from ES #vip-search' );
 		}
 
 		$post_types = $posts->get_indexable_post_types();
