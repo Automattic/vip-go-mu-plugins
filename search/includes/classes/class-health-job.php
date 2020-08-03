@@ -120,7 +120,9 @@ class HealthJob {
 		$versions = $search->versioning->get_versions( $post_indexable );
 
 		foreach( $versions as $version ) {
-			$post_results = Health::validate_index_posts_count( $version['number'] );
+			$post_results = Health::validate_index_posts_count( array(
+				'index_version' => $version['number'],
+			) );
 
 			$this->process_results( $post_results );
 		}
