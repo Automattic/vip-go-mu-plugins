@@ -114,7 +114,7 @@ class Health {
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function validate_index_posts_count() {
+	public static function validate_index_posts_count( $options = array() ) {
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
 
@@ -128,7 +128,19 @@ class Health {
 
 		$results = [];
 
-		foreach( $post_types as $post_type ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( $options['index_version'] ) {
+			$version_result = $search->versioning->set_current_version_number( $posts, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$index_version = $search->versioning->get_current_version_number( $posts );
+
+		foreach ( $post_types as $post_type ) {
 			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
 
 			$query_args = [
@@ -138,19 +150,25 @@ class Health {
 
 			$result = self::validate_index_entity_count( $query_args, $posts );
 
+			$result['index_version'] = $index_version;
+
 			// In case of error skip to the next post type
 			// Not returning an error, otherwise there is no visibility on other post types
 			if ( is_wp_error( $result ) ) {
 				$result = [
 					'entity' => $posts->slug,
 					'type' => $post_type,
-					'error' => $result->get_error_message()
+					'error' => $result->get_error_message(),
+					'index_version' => $index_version,
 				];
 			}
 
 			$results[] = $result;
 
 		}
+			
+		$search->versioning->reset_current_version_number( $posts );
+
 		return $results;
 	}
 
