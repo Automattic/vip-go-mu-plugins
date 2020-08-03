@@ -90,9 +90,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			$versions = wp_list_pluck( $version_objects, 'number' );
 		}
 
-		foreach( $versions as $version ) {
+		foreach( $versions as $version_number ) {
 			$posts_results = \Automattic\VIP\Search\Health::validate_index_posts_count( array(
-				'index_version' => $version,
+				'index_version' => $version_number,
 			) );
 
 			if ( is_wp_error( $posts_results ) ) {
