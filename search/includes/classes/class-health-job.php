@@ -112,9 +112,18 @@ class HealthJob {
 			$this->process_results( $user_results );
 		}
 
-		$post_results = Health::validate_index_posts_count();
+		// Check all versions
+		$search = \Automattic\VIP\Search\Search::instance();
 
-		$this->process_results( $post_results );
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$versions = $search->versioning->get_versions( $post_indexable );
+
+		foreach( $versions as $version ) {
+			$post_results = Health::validate_index_posts_count( $version['number'] );
+
+			$this->process_results( $post_results );
+		}
 	}
 
 	/**
@@ -144,10 +153,11 @@ class HealthJob {
 			// Only alert if inconsistencies found
 			if ( isset( $result[ 'diff' ] ) && 0 !== $result[ 'diff' ] ) {
 				$message = sprintf(
-					'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
+					'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
 					$result[ 'entity' ],
 					$result[ 'type' ],
+					$result['index_version'],
 					$result[ 'db_total' ],
 					$result[ 'es_total' ],
 					$result[ 'diff' ]
