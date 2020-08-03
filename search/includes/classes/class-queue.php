@@ -137,10 +137,6 @@ class Queue {
 		 */
 		do_action( 'vip_search_indexing_object_queued', $object_id, $object_type, $options, $index_version );
 
-		if ( false !== $result ) {
-			$this->record_added_to_queue_stat( 1, $object_type );
-		}
-
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
@@ -165,6 +161,8 @@ class Queue {
 		foreach ( $object_ids as $object_id ) {
 			$this->queue_object( $object_id, $object_type, $options );
 		}
+
+		$this->record_added_to_queue_stat( count( $object_ids ), $object_type );
 	}
 
 	/**
@@ -622,7 +620,7 @@ class Queue {
 		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->increment( $per_site_stat, $count );
+		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	/**
@@ -665,11 +663,7 @@ class Queue {
 			return $bail;
 		}
 	
-		// TODO add function to bulk insert
-
-		foreach ( array_keys( $sync_manager->sync_queue ) as $object_id ) {
-			$this->queue_object( $object_id, $indexable_slug );
-		}
+		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
 		if ( ! self::is_indexing_ratelimited() ) {

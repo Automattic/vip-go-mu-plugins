@@ -180,9 +180,7 @@ class Cron {
 		// Iterate pagination
 		while ( $args['paged'] <= $posts->max_num_pages ) {
 			// Queue all posts for page 
-			foreach ( $posts->posts as $post ) {
-				$this->queue->queue_object( $post );
-			}
+			$this->queue->queue_objects( $posts->posts, 'post' );
 
 			// Go to the next page and reset $posts
 			$args['paged'] = intval( $args['paged'] ) + 1;

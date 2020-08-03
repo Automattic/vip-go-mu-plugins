@@ -514,6 +514,8 @@ class Versioning {
 					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
 				}
 
+				\Automattic\VIP\Search\Search::instance()->queue->record_added_to_queue_stat( count( $objects_by_version[ $active_version_number ] ), $indexable->slug );
+
 				$this->reset_current_version_number( $indexable );
 			}
 		}
