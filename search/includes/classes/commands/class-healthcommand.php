@@ -64,6 +64,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	/**
 	 * ## OPTIONS
 	 *
+	 * [--version=<int>]
+	 * : Index version to validate - defaults to all
 	 *
 	 * ## EXAMPLES
 	 *     wp vip-es health validate-posts-count
@@ -73,8 +75,32 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_posts_count( $args, $assoc_args ) {
 		WP_CLI::line( "Validating posts count\n" );
 
-		$posts_results = \Automattic\VIP\Search\Health::validate_index_posts_count();
-		$this->render_results( $posts_results );
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$versions = [];
+
+		if ( isset( $assoc_args['version'] ) ) {
+			$versions[] = intval( $assoc_args['version'] );
+		} else {
+			// Defaults to all versions
+			$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+			$version_objects = $search->versioning->get_versions( $indexable );
+
+			$versions = wp_list_pluck( $version_objects, 'number' );
+		}
+
+		foreach( $versions as $version ) {
+			$posts_results = \Automattic\VIP\Search\Health::validate_index_posts_count( array(
+				'index_version' => $version,
+			) );
+
+			if ( is_wp_error( $posts_results ) ) {
+				return WP_CLI::error( $posts_results->get_error_message() );
+			}
+
+			$this->render_results( $posts_results );
+		}
 	}
 
 	/**
@@ -98,7 +124,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				$message = 'no' . $message;
 			}
 
-			$message = sprintf( '%s %s when counting entity: %s, type: %s (DB: %s, ES: %s, Diff: %s)', $icon, $message, $result[ 'entity' ], $result[ 'type' ], $result[ 'db_total' ], $result[ 'es_total' ], $result[ 'diff' ] );
+			$message = sprintf( '%s %s when counting entity: %s, type: %s, index_version: %d - (DB: %s, ES: %s, Diff: %s)', $icon, $message, $result['entity'], $result['type'], $result['index_version'], $result['db_total'], $result['es_total'], $result['diff'] );
 			WP_CLI::line( $message );
 		}
 	}
