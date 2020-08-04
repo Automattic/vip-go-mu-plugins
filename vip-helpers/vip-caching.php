@@ -742,15 +742,17 @@ function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 function wpcom_vip_flush_object_cache() {
 	global $wp_object_cache;
 
-	if ( !is_object( $wp_object_cache ) )
+	if ( ! is_object( $wp_object_cache ) ) {
 		return;
+	}
 
 	$wp_object_cache->group_ops = array();
 	$wp_object_cache->memcache_debug = array();
 	$wp_object_cache->cache = array();
 
-	if ( is_callable( $wp_object_cache, '__remoteset' ) )
+	if ( is_callable( $wp_object_cache, '__remoteset' ) ) {
 		$wp_object_cache->__remoteset(); // important
+	}
 }
 
 /**
