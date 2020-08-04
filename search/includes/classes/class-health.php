@@ -169,8 +169,6 @@ class Health {
 
 			$result = self::validate_index_entity_count( $query_args, $posts );
 
-			$result['index_version'] = $index_version;
-
 			// In case of error skip to the next post type
 			// Not returning an error, otherwise there is no visibility on other post types
 			if ( is_wp_error( $result ) ) {
@@ -181,6 +179,8 @@ class Health {
 					'index_version' => $index_version,
 				];
 			}
+
+			$result['index_version'] = $index_version;
 
 			$results[] = $result;
 
