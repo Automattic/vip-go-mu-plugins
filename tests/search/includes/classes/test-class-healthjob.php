@@ -72,6 +72,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type' => 'post',
 				'db_total' => 1000,
 				'es_total' => 900,
+				'index_version' => 111,
 				'diff' => -100,
 			),
 			array(
@@ -79,6 +80,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type' => 'custom_type',
 				'db_total' => 100,
 				'es_total' => 200,
+				'index_version' => 222,
 				'diff' => 100,
 			),
 			array(
@@ -86,6 +88,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type' => 'N/A',
 				'db_total' => 100,
 				'es_total' => 100,
+				'index_version' => 333,
 				'diff' => 0,
 			),
 			array(
@@ -108,10 +111,11 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				array(
 					'#vip-go-es-alerts',
 					sprintf(
-						'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
+						'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 						home_url(),
 						$results[0]['entity'],
 						$results[0]['type'],
+						$results[0]['index_version'],
 						$results[0]['db_total'],
 						$results[0]['es_total'],
 						$results[0]['diff']
@@ -122,10 +126,11 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				array(
 					'#vip-go-es-alerts',
 					sprintf(
-						'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
+						'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 						home_url(),
 						$results[1]['entity'],
 						$results[1]['type'],
+						$results[1]['index_version'],
 						$results[1]['db_total'],
 						$results[1]['es_total'],
 						$results[1]['diff']
