@@ -113,7 +113,7 @@ class HealthJob {
 
 			$users_versions = $search->versioning->get_versions( $users_indexable );
 
-			foreach( $users_versions as $version ) {
+			foreach ( $users_versions as $version ) {
 				$user_results = Health::validate_index_users_count( array(
 					'index_version' => $version['number'],
 				) );
@@ -126,7 +126,7 @@ class HealthJob {
 
 		$posts_versions = $search->versioning->get_versions( $post_indexable );
 
-		foreach( $posts_versions as $version ) {
+		foreach ( $posts_versions as $version ) {
 			$post_results = Health::validate_index_posts_count( array(
 				'index_version' => $version['number'],
 			) );
