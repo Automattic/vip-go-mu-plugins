@@ -240,9 +240,7 @@ class Health {
 			}
 
 			// Cleanup WordPress object cache to keep memory usage under control
-			global $wp_object_cache;
-			$wp_object_cache->flush();
-			$wp_object_cache->group_ops = array();
+			wpcom_vip_flush_object_cache();
 
 			if ( $is_cli && ! $silent ) {
 				echo sprintf( "...%s\n", empty( $result ) ? '✅' : '❌' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
