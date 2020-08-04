@@ -3,8 +3,21 @@
 namespace Automattic\VIP\Search;
 
 class HealthJob_Test extends \WP_UnitTestCase {
-	public function setUp() {
+	public static function setUpBeforeClass() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+
 		require_once __DIR__ . '/../../../../search/search.php';
+
+		\Automattic\VIP\Search\Search::instance();
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
+	}
+
+	public function setUp() {
 		require_once __DIR__ . '/../../../../search/includes/classes/class-health-job.php';
 	}
 
