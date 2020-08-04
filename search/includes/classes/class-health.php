@@ -239,6 +239,11 @@ class Health {
 				$last_post_id = self::get_last_post_id();
 			}
 
+			// Cleanup WordPress object cache to keep memory usage under control
+			global $wp_object_cache;
+			$wp_object_cache->flush();
+			$wp_object_cache->group_ops = array();
+
 			if ( $is_cli && ! $silent ) {
 				echo sprintf( "...%s\n", empty( $result ) ? '✅' : '❌' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
