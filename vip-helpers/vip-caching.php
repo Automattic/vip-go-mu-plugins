@@ -735,11 +735,12 @@ function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 }
 
 /**
- * Flush WordPress object cache
+ * Reset the local WordPress object cache
  *
- * Some of these are also done by wp_cache_flush(), but this is more complete
+ * This only cleans the local cache in WP_Object_Cache, without
+ * affecting memcache
  */
-function wpcom_vip_flush_object_cache() {
+function vip_reset_local_object_cache() {
 	global $wp_object_cache;
 
 	if ( ! is_object( $wp_object_cache ) ) {
@@ -756,9 +757,9 @@ function wpcom_vip_flush_object_cache() {
 }
 
 /**
- * Flush WP DB query log
+ * Reset the WordPress DB query log
  */
-function wpcom_vip_flush_db_query_log() {
+function vip_reset_db_query_log() {
 	global $wpdb;
 
 	$wpdb->queries = array();

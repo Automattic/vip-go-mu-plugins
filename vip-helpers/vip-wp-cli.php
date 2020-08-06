@@ -6,8 +6,8 @@ class WPCOM_VIP_CLI_Command extends WP_CLI_Command {
 	 *  Clear all of the caches for memory management
 	 */
 	protected function stop_the_insanity() {
-		wpcom_vip_flush_db_query_log();
-		wpcom_vip_flush_object_cache();
+		vip_reset_db_query_log();
+		vip_reset_local_object_cache();
 	}
 
 	/**
