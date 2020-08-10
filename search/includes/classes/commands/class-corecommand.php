@@ -23,6 +23,8 @@ class CoreCommand extends \ElasticPress\Command {
 				return WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
 			}
 
+			$search = \Automattic\VIP\Search\Search::instance();
+
 			// Additionally, --version is not compatible with --network-wide in non-network mode, because subsites will also have different versions
 			if ( isset( $assoc_args['network-wide'] ) && ! $search->is_network_mode() ) {
 				return WP_CLI::error( 'The --network-wide argument is not compatible with --version when not using network mode (the `EP_IS_NETWORK` constant), as subsites can have differing index versions' );
@@ -30,8 +32,6 @@ class CoreCommand extends \ElasticPress\Command {
 
 			// For each indexable specified, override the version
 			$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
-
-			$search = \Automattic\VIP\Search\Search::instance();
 
 			foreach ( $indexable_slugs as $slug ) {
 				$indexable = \ElasticPress\Indexables::factory()->get( $slug );
