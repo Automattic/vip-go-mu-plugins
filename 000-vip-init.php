@@ -203,9 +203,13 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	$environment_name = VIP_GO_APP_ENVIRONMENT;
 
 	// Adapt some VIP environment names to the WordPress standards
-	switch( $environment_name ) {
-		case 'develop': $environment_name = 'development'; break;
-		case 'stage': $environment_name = 'staging'; break;
+	switch ( $environment_name ) {
+		case 'develop':
+			$environment_name = 'development';
+			break;
+		case 'stage':
+			$environment_name = 'staging';
+			break;
 	}
 
 	define( 'WP_ENVIRONMENT_TYPE', $environment_name );
