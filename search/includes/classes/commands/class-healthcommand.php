@@ -196,6 +196,14 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
+		// Disable DB and ES query logs to keep memory usage under control
+		if ( ! defined( 'SAVEQUERIES' ) ) {
+			define( 'SAVEQUERIES', false );
+		}
+		if ( ! defined( 'EP_QUERY_LOG' ) ) {
+			define( 'EP_QUERY_LOG', false );
+		}
+
 		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ) );
 
 		if ( is_wp_error( $results ) ) {
