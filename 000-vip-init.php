@@ -198,6 +198,37 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	}
 }
 
+// Set WordPress >5.5 environment name
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+	$environment_name = VIP_GO_APP_ENVIRONMENT;
+
+	// Adapt some VIP environment names to the WordPress standards
+	switch( $environment_name ) {
+		case 'develop': $environment_name = 'development'; break;
+		case 'stage': $environment_name = 'staging'; break;
+	}
+
+	define( 'WP_ENVIRONMENT_TYPE', $environment_name );
+
+	if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
+		// Basic set of VIP environments (WP ones plus 'testing' and 'preprod')
+		$environment_types = array(
+			'development',
+			'testing',
+			'staging',
+			'preprod',
+			'production',
+		);
+
+		// Add the environment to the environment type list if it's a non standard name
+		if ( ! in_array( $environment_name, $environment_types ) ) {
+			$environment_types[] = $environment_name;
+		}
+
+		define( 'WP_ENVIRONMENT_TYPES', $environment_types );
+	}
+}
+
 // Load config related helpers
 require_once( __DIR__ . '/config/class-sync.php' );
 
