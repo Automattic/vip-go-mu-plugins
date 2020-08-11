@@ -198,39 +198,23 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	}
 }
 
-// Set WordPress >5.5 environment name
+// Set WordPress >5.5 environment type
+// Map VIP environments to 'production' and 'development' types, and use 'staging' for any other
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
-	$environment_name = VIP_GO_APP_ENVIRONMENT;
-
-	// Adapt some VIP environment names to the WordPress standards
-	switch ( $environment_name ) {
+	switch ( VIP_GO_APP_ENVIRONMENT ) {
+		case 'production':
+			$environment_type = 'production';
+			break;
 		case 'develop':
-			$environment_name = 'development';
+		case 'development':
+			$environment_type = 'development';
 			break;
-		case 'stage':
-			$environment_name = 'staging';
+		default:
+			$environment_type = 'staging';
 			break;
 	}
 
-	define( 'WP_ENVIRONMENT_TYPE', $environment_name );
-
-	if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
-		// Basic set of VIP environments (WP ones plus 'testing' and 'preprod')
-		$environment_types = array(
-			'development',
-			'testing',
-			'staging',
-			'preprod',
-			'production',
-		);
-
-		// Add the environment to the environment type list if it's a non standard name
-		if ( ! in_array( $environment_name, $environment_types ) ) {
-			$environment_types[] = $environment_name;
-		}
-
-		define( 'WP_ENVIRONMENT_TYPES', $environment_types );
-	}
+	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 }
 
 // Load config related helpers
