@@ -735,6 +735,37 @@ function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 }
 
 /**
+ * Reset the local WordPress object cache
+ *
+ * This only cleans the local cache in WP_Object_Cache, without
+ * affecting memcache
+ */
+function vip_reset_local_object_cache() {
+	global $wp_object_cache;
+
+	if ( ! is_object( $wp_object_cache ) ) {
+		return;
+	}
+
+	$wp_object_cache->group_ops = array();
+	$wp_object_cache->memcache_debug = array();
+	$wp_object_cache->cache = array();
+
+	if ( is_callable( $wp_object_cache, '__remoteset' ) ) {
+		$wp_object_cache->__remoteset(); // important
+	}
+}
+
+/**
+ * Reset the WordPress DB query log
+ */
+function vip_reset_db_query_log() {
+	global $wpdb;
+
+	$wpdb->queries = array();
+}
+
+/**
 * Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
 *
 * This cannot be included inside Jetpack because it ships with caching disabled by default.
