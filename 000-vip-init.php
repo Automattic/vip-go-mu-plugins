@@ -230,4 +230,10 @@ add_filter( 'wp_headers', function( $headers ) {
 // https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
 add_filter( 'wp_sitemaps_enabled', '__return_false' );
 
+// Decrease the batch size to 10
+add_filter( 'wp_update_comment_type_batch_size', function() { return 10; } );
+// Completely disable comment upgrade routine
+add_filter( 'option_finished_updating_comment_type', '__return_true' );
+remove_action( 'admin_init', '_wp_check_for_scheduled_update_comment_type' );
+
 do_action( 'vip_loaded' );
