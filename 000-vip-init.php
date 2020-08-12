@@ -225,4 +225,9 @@ add_filter( 'wp_headers', function( $headers ) {
 	return $headers;
 } );
 
+// Disable core sitemaps
+//
+// https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
+add_filter( 'wp_sitemaps_enabled', '__return_false' );
+
 do_action( 'vip_loaded' );
