@@ -233,7 +233,11 @@ add_filter( 'wp_sitemaps_enabled', '__return_false' );
 // Decrease the batch size to 10
 add_filter( 'wp_update_comment_type_batch_size', function() { return 10; } );
 // Completely disable comment upgrade routine
-add_filter( 'option_finished_updating_comment_type', '__return_true' );
+
 remove_action( 'admin_init', '_wp_check_for_scheduled_update_comment_type' );
+
+add_action( 'admin_init', function() {
+	wp_unschedule_hook( 'wp_update_comment_type_batch' );
+} );
 
 do_action( 'vip_loaded' );
