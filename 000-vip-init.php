@@ -238,8 +238,11 @@ add_filter( 'wp_update_comment_type_batch_size', function() {
 
 remove_action( 'admin_init', '_wp_check_for_scheduled_update_comment_type' );
 
-add_action( 'admin_init', function() {
-	wp_unschedule_hook( 'wp_update_comment_type_batch' );
-} );
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	// @phpcs:ignore PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket, PEAR.Functions.FunctionCallSignature.MultipleArguments
+	add_action( 'init', function() {
+		wp_unschedule_hook( 'wp_update_comment_type_batch' );
+	} );
+}
 
 do_action( 'vip_loaded' );
