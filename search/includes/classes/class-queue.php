@@ -21,9 +21,9 @@ class Queue {
 	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
-	public static $max_indexing_op_count = 3000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
+	public static $max_indexing_op_count = 6000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
 	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
-	private const INDEX_QUEUEING_TTL = 15 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 15 minutes once ratelimiting is triggered
+	private const INDEX_QUEUEING_TTL = 5 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 10 minutes once ratelimiting is triggered
 
 	private const MAX_SYNC_INDEXING_COUNT = 10000;
 
