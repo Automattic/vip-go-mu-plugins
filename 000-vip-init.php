@@ -231,7 +231,9 @@ add_filter( 'wp_headers', function( $headers ) {
 add_filter( 'wp_sitemaps_enabled', '__return_false' );
 
 // Decrease the batch size to 10
-add_filter( 'wp_update_comment_type_batch_size', function() { return 10; } );
+add_filter( 'wp_update_comment_type_batch_size', function() {
+	return 10;
+} );
 // Completely disable comment upgrade routine
 
 remove_action( 'admin_init', '_wp_check_for_scheduled_update_comment_type' );
