@@ -137,4 +137,16 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals( $expected, $enabled );
 	}
+
+	public function test_is_enabled_by_percentage_with_undefined_feature() {
+		Feature::$site_id = 1;
+
+		Feature::$feature_percentages = array(
+			'foo' => 1,
+		);
+
+		$enabled = Feature::is_enabled_by_percentage( 'bar' );
+
+		$this->assertEquals( false, $enabled );
+	}
 }
