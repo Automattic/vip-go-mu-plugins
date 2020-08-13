@@ -3,9 +3,7 @@
 namespace Automattic\VIP;
 
 class Feature {
-	public static $feature_percentages = array(
-
-	);
+	public static $feature_percentages = array();
 
 	public static $site_id = FILES_CLIENT_SITE_ID;
 
