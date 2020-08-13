@@ -133,7 +133,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 			$feature => $percentage,
 		);
 
-		$enabled = Feature::is_enabled_by_percentage( $feature, $percentage );
+		$enabled = Feature::is_enabled_by_percentage( $feature );
 
 		$this->assertEquals( $expected, $enabled );
 	}
