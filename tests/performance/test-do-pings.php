@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Performance;
 
-class do_pings_Test extends \WP_UnitTestCase {
+class Do_Pings_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 	}
