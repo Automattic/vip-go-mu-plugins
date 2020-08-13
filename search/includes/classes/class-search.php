@@ -1364,7 +1364,7 @@ class Search {
 
 	public function filter__ep_prepare_meta_allowed_protected_keys( $keys ) {
 		return \apply_filters( 'vip_search_post_meta_allow_list', $keys );
-	}	
+	}
 
 	/*
 	 * Increment the number of queries that have been passed through VIP Search
