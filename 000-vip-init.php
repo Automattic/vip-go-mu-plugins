@@ -207,7 +207,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 				'production',
 				'development',
 				'staging',
-				$env
+				$env,
 			) );
 		}
 	}
