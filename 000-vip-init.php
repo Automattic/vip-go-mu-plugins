@@ -198,23 +198,21 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	}
 }
 
-// Set WordPress >5.5 environment type
-// Map VIP environments to 'production' and 'development' types, and use 'staging' for any other
+// Set WordPress environment type to the VIP Go environment name
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
-	switch ( VIP_GO_APP_ENVIRONMENT ) {
-		case 'production':
-			$environment_type = 'production';
-			break;
-		case 'develop':
-		case 'development':
-			$environment_type = 'development';
-			break;
-		default:
-			$environment_type = 'staging';
-			break;
+	$env = VIP_GO_APP_ENVIRONMENT;
+	if ( $env != 'production' && $env != 'development' && $env != 'staging' ) {
+		if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
+			define( 'WP_ENVIRONMENT_TYPES', array(
+				'production',
+				'development',
+				'staging',
+				$env
+			) );
+		}
 	}
 
-	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
+	define( 'WP_ENVIRONMENT_TYPE', $env );
 }
 
 // Load config related helpers
