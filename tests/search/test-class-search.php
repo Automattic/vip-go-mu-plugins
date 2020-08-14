@@ -2053,6 +2053,42 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_be_empty_if_post_meta_allow_list_is_empty() {
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array();
+			},
+			PHP_INT_MAX
+		);
+
+		\Automattic\VIP\Search\Search::instance();
+
+		$this->assertEmpty( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ) ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_equal_post_meta_allow_list() {
+		\add_filter(
+			'vip_search_post_meta_allow_list',
+			function() {
+				return array( 'different', 'stuff' );
+			},
+			PHP_INT_MAX
+		);
+
+		\Automattic\VIP\Search\Search::instance();
+
+		$this->assertEquals( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ) ), array( 'different', 'stuff' ) );
+	}
+
+	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
