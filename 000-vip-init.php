@@ -201,7 +201,7 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 // Set WordPress environment type to the VIP Go environment name
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
 	$env = VIP_GO_APP_ENVIRONMENT;
-	if ( $env != 'production' && $env != 'development' && $env != 'staging' ) {
+	if ( 'production' !== $env && 'development' !== $env && 'staging' !== $env ) {
 		if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
 			define( 'WP_ENVIRONMENT_TYPES', array(
 				'production',
