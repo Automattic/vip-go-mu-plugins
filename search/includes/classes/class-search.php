@@ -214,7 +214,7 @@ class Search {
 		add_filter( 'ep_skip_post_meta_sync', array( $this, 'filter__ep_skip_post_meta_sync' ), PHP_INT_MAX, 5 );
 
 		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list 
-		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX );
+		//add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX );
 	}
 
 	protected function load_commands() {
