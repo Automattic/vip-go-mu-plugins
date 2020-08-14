@@ -93,6 +93,11 @@ class API_Client {
 			return new WP_Error( 'upload_file-failed-invalid_path', sprintf( __( 'Failed to upload file `%1$s` to `%2$s`; the file does not exist.' ), $local_path, $upload_path ) );
 		}
 
+		// Clear stat caches for the file.
+		// The various stat-related functions below are cached.
+		// The cached values can then lead to unexpected behavior even after the file has changed (e.g. in Curl_Streamer).
+		clearstatcache( false, $local_path );
+
 		$file_size = filesize( $local_path );
 		$file_name = basename( $local_path );
 		$file_info = wp_check_filetype( $file_name );
