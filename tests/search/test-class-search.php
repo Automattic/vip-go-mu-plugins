@@ -2057,6 +2057,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_be_empty_if_post_meta_allow_list_is_empty() {
+		$this->markTestSkipped();
+	
 		\add_filter(
 			'vip_search_post_meta_allow_list',
 			function() {
@@ -2075,6 +2077,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_equal_post_meta_allow_list() {
+		$this->markTestSkipped();
+
 		\add_filter(
 			'vip_search_post_meta_allow_list',
 			function() {
