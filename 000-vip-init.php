@@ -151,6 +151,9 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Feature flags
+require_once( __DIR__ . '/lib/feature/class-feature.php' );
+
 // Logging
 require_once( __DIR__ . '/logstash/logstash.php' );
 require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
