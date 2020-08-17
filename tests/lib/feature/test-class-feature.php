@@ -9,6 +9,16 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 		require_once( __DIR__ . '/../../../lib/feature/class-feature.php' );
 	}
 
+	/**
+	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
+	 * use something like this when generating test data:
+	 * 
+	 * for( $i = 1; $i < 1000; $i++ ) {
+	 *     echo $i . ' - ' . crc32( 'foo-feature-' . $i ) % 100 . PHP_EOL;
+	 * }
+	 * 
+	 * The above will give you a list of site IDs that fall above or below your target threshold
+	 */
 	public function is_enabled_by_percentage_data() {
 		return array(
 			// Site ID bucketed within the percentage threshold, enabled
@@ -18,7 +28,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				// Enabled percentage
 				0.25,
 				// Site id
-				1,
+				6, // hashes to 4
 				// Expected enabled/disabled
 				true,
 			),
@@ -29,7 +39,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				// Enabled percentage
 				0.25,
 				// Site id
-				101,
+				37, // hashes to 3
 				// Expected enabled/disabled
 				true,
 			),
@@ -40,7 +50,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				// Enabled percentage
 				0.25,
 				// Site id
-				125,
+				20, // hashes to 25
 				// Expected enabled/disabled
 				false,
 			),
@@ -51,7 +61,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				// Enabled percentage
 				0.25,
 				// Site id
-				124,
+				995, // hashes to 24
 				// Expected enabled/disabled
 				true,
 			),
@@ -62,7 +72,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				// Enabled percentage
 				0.25,
 				// Site id
-				126,
+				7, // hashes to 26
 				// Expected enabled/disabled
 				false,
 			),
@@ -72,7 +82,7 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				// Enabled percentage
 				0.25,
 				// Site id
-				126,
+				21, // hashes to 91
 				// Expected enabled/disabled
 				false,
 			),
@@ -117,6 +127,18 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 				0,
 				// Site id
 				999999,
+				// Expected enabled/disabled
+				false,
+			),
+
+			// Different feature name, should _not_ have the same bucket as the same id from earlier
+			array(
+				// Feature name
+				'bar-feature',
+				// Enabled percentage
+				0.25,
+				// Site id
+				37, // hashes to 90
 				// Expected enabled/disabled
 				false,
 			),

@@ -18,8 +18,9 @@ class Feature {
 
 		$percentage = static::$feature_percentages[ $feature ];
 
-		// Which bucket is the site in - 100 possibilites, one for each percentage
-		$bucket = static::$site_id % 100;
+		// Which bucket is the site in - 100 possibilites, one for each percentage. We run this through crc32 with
+		// the feature name so that the same sites aren't always the canaries
+		$bucket = crc32( $feature . '-' . static::$site_id ) % 100;
 
 		// Is the bucket enabled?
 		$threshold = $percentage * 100; // $percentage is decimal
