@@ -214,7 +214,7 @@ class Search {
 		add_filter( 'ep_skip_post_meta_sync', array( $this, 'filter__ep_skip_post_meta_sync' ), PHP_INT_MAX, 5 );
 
 		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list 
-		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX );
+		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
 	}
 
 	protected function load_commands() {
@@ -1362,8 +1362,8 @@ class Search {
 		return $post_meta_allow_list;
 	}
 
-	public function filter__ep_prepare_meta_allowed_protected_keys( $keys ) {
-		return \apply_filters( 'vip_search_post_meta_allow_list', $keys );
+	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
+		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
 	}
 
 	/*
