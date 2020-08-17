@@ -111,6 +111,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				switch_to_blog( $site['blog_id'] );
 
 				$this->validate_indexable_count_for_site( $indexable_slug, $version );
+				
+				restore_current_blog();
 			}
 		} else {
 			WP_CLI::line( "Validating $indexable_slug count\n" );
