@@ -2057,8 +2057,8 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_be_empty_if_post_meta_allow_list_is_empty() {
-		$this->markTestSkipped();
-	
+		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+
 		\add_filter(
 			'vip_search_post_meta_allow_list',
 			function() {
@@ -2069,7 +2069,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		\Automattic\VIP\Search\Search::instance();
 
-		$this->assertEmpty( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ) ) );
+		$this->assertEmpty( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ) );
 	}
 
 	/**
@@ -2077,7 +2077,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_equal_post_meta_allow_list() {
-		$this->markTestSkipped();
+		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
@@ -2089,7 +2089,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		\Automattic\VIP\Search\Search::instance();
 
-		$this->assertEquals( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ) ), array( 'different', 'stuff' ) );
+		$this->assertEquals( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ), array( 'different', 'stuff' ) );
 	}
 
 	/**
