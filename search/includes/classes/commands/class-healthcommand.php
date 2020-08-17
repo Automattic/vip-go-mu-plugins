@@ -93,7 +93,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			$version = null;
 		}
 
-		if ( isset( $assoc_args['network-wide'] ) && is_multisite() && $search->is_network_mode() ) {
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
 			if ( isset( $version ) ) {
 				return WP_CLI::error( 'The --network-wide argument is not compatible with --version when not using network mode (the `EP_IS_NETWORK` constant), as subsites  can have differing index versions' );
 			}
