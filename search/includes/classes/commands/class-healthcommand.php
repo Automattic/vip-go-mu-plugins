@@ -47,41 +47,16 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * [--version=<int>]
 	 * : Index version to validate - defaults to all
 	 *
+	 * [--network-wide]
+	 * : Validate all sites in a multisite network
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-es health validate-users-count
 	 *
 	 * @subcommand validate-users-count
 	 */
 	public function validate_users_count( $args, $assoc_args ) {
-		WP_CLI::line( sprintf( "Validating users count\n" ) );
-
-		$search = \Automattic\VIP\Search\Search::instance();
-
-		$versions = [];
-
-		if ( isset( $assoc_args['version'] ) ) {
-			$versions[] = intval( $assoc_args['version'] );
-		} else {
-			// Defaults to all versions
-			$indexable = \ElasticPress\Indexables::factory()->get( 'user' );
-
-			$version_objects = $search->versioning->get_versions( $indexable );
-
-			$versions = wp_list_pluck( $version_objects, 'number' );
-		}
-
-		foreach ( $versions as $version_number ) {
-			$users_results = \Automattic\VIP\Search\Health::validate_index_users_count( array(
-				'index_version' => $version_number,
-			) );
-
-			if ( is_wp_error( $users_results ) ) {
-				WP_CLI::warning( $users_results->get_error_message() );
-				return;
-			}
-
-			$this->render_results( $users_results );
-		}
+		$this->validate_indexable_count( 'user', $assoc_args );
 	}
 
 	/**
@@ -90,23 +65,81 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * [--version=<int>]
 	 * : Index version to validate - defaults to all
 	 *
+	 * [--network-wide]
+	 * : Validate all sites in a multisite network
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-es health validate-posts-count
 	 *
 	 * @subcommand validate-posts-count
 	 */
 	public function validate_posts_count( $args, $assoc_args ) {
-		WP_CLI::line( "Validating posts count\n" );
+		$this->validate_indexable_count( 'post', $assoc_args );
+	}
 
+	/**
+	 * Generic internal function to validate counts on any indexable,
+	 * supporting multisite installations
+	 *
+	 * @param string $indexable_slug Slug of the indexable to validate
+	 * @param array $assoc_args CLI arguments
+	 */
+	private function validate_indexable_count( $indexable_slug, $assoc_args ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( isset( $assoc_args['version'] ) ) {
+			$version = intval( $assoc_args['version'] );
+		} else {
+			$version = null;
+		}
+
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() && $search->is_network_mode() ) {
+			if ( isset( $version ) ) {
+				return WP_CLI::error( 'The --network-wide argument is not compatible with --version when not using network mode (the `EP_IS_NETWORK` constant), as subsites  can have differing index versions' );
+			}
+
+			$sites = \ElasticPress\Utils\get_sites();
+
+			foreach ( $sites as $site ) {
+				if ( ! \ElasticPress\Utils\is_site_indexable( $site['blog_id'] ) ) {
+					WP_CLI::line( 'Skipping site ' . $site['blog_id'] . ' as it\'s not indexable\n\n' );
+					continue;
+				}
+
+				WP_CLI::line( "\nValidating $indexable_slug count for site " . $site['blog_id'] . ' (' . $site['domain'] . $site['path'] . ')\n' );
+
+				switch_to_blog( $site['blog_id'] );
+
+				$this->validate_indexable_count_for_site( $indexable_slug, $version );
+			}
+		} else {
+			WP_CLI::line( "Validating $indexable_slug count\n" );
+
+			$this->validate_indexable_count_for_site( $indexable_slug, $version );
+		}
+	}
+
+	/**
+	 * Validate counts for an indexable on a single site
+	 *
+	 * @param string $indexable_slug Slug of the indexable to validate
+	 * @param int $version Validate only a specific version instead of all of them
+	 */
+	private function validate_indexable_count_for_site( $indexable_slug, $version = null ) {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$versions = [];
 
-		if ( isset( $assoc_args['version'] ) ) {
-			$versions[] = intval( $assoc_args['version'] );
+		if ( isset( $version ) ) {
+			$versions[] = $version;
 		} else {
 			// Defaults to all versions
-			$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+			$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+			if ( ! $indexable ) {
+				WP_CLI::line( "Cannot find indexable '$indexable_slug', probably the feature is not enabled" );
+				return;
+			}
 
 			$version_objects = $search->versioning->get_versions( $indexable );
 
@@ -114,15 +147,24 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		}
 
 		foreach ( $versions as $version_number ) {
-			$posts_results = \Automattic\VIP\Search\Health::validate_index_posts_count( array(
-				'index_version' => $version_number,
-			) );
-
-			if ( is_wp_error( $posts_results ) ) {
-				return WP_CLI::error( $posts_results->get_error_message() );
+			switch ( $indexable_slug ) {
+				case 'post':
+					$results = \Automattic\VIP\Search\Health::validate_index_posts_count( array(
+						'index_version' => $version_number,
+					) );
+					break;
+				case 'user':
+					$results = \Automattic\VIP\Search\Health::validate_index_users_count( array(
+						'index_version' => $version_number,
+					) );
+					break;
 			}
 
-			$this->render_results( $posts_results );
+			if ( is_wp_error( $results ) ) {
+				return WP_CLI::error( $results->get_error_message() );
+			}
+
+			$this->render_results( $results );
 		}
 	}
 
@@ -132,15 +174,15 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @param array $results Array of results generated by index verification functions
 	 */
 	private function render_results( array $results ) {
-		foreach( $results as $result ) {
+		foreach ( $results as $result ) {
 			// If it's an error, print out a warning and go to the next iteration
 			if ( array_key_exists( 'error', $result ) ) {
-				WP_CLI::warning( 'Error while validating count: ' . $result[ 'error' ]);
+				WP_CLI::warning( 'Error while validating count: ' . $result['error'] );
 				continue;
 			}
 
 			$message = ' inconsistencies found';  
-			if ( $result[ 'diff' ] ) {
+			if ( $result['diff'] ) {
 				$icon = self::FAILURE_ICON;
 			} else {
 				$icon = self::SUCCESS_ICON;
