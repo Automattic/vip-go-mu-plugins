@@ -216,6 +216,11 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	}
 
 	define( 'WP_ENVIRONMENT_TYPE', $env );
+
+	// VIP sites should not be set as staging in Jetpack
+	// since it breaks SSO and prevents data from being passed to
+	// WordPress.com 
+	add_filter( 'jetpack_is_staging_site', '__return_false' );
 }
 
 // Load config related helpers
