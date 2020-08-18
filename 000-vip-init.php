@@ -250,19 +250,16 @@ add_filter( 'wp_headers', function( $headers ) {
 // https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
 add_filter( 'wp_sitemaps_enabled', '__return_false' );
 
-// Decrease the batch size to 10
-add_filter( 'wp_update_comment_type_batch_size', function() {
-	return 10;
-} );
-// Completely disable comment upgrade routine
+// Completely disable comment upgrade routine for a subset of sites
+if ( ! \Automattic\VIP\Feature::is_enabled( 'comment_type_update_cron' ) ) {
+	remove_action( 'admin_init', '_wp_check_for_scheduled_update_comment_type' );
 
-remove_action( 'admin_init', '_wp_check_for_scheduled_update_comment_type' );
-
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	// @phpcs:ignore PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket, PEAR.Functions.FunctionCallSignature.MultipleArguments
-	add_action( 'init', function() {
-		wp_unschedule_hook( 'wp_update_comment_type_batch' );
-	} );
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		// @phpcs:ignore PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket, PEAR.Functions.FunctionCallSignature.MultipleArguments
+		add_action( 'init', function() {
+			wp_unschedule_hook( 'wp_update_comment_type_batch' );
+		} );
+	}
 }
 
 do_action( 'vip_loaded' );
