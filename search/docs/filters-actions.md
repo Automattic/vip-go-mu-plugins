@@ -43,7 +43,7 @@ The purpose of this filter is to allow the controlling of which terms are indexe
 | `Returns`                 | An array or associative array of post meta                                                                |
  ---------------------------------------------------------------------------------------------------------------------------------------
 
-The purpose of this filter is to only allow indexing of meta that will actually be used for querying. This is to keep each indexes field count in check and to prevent reindexing of posts when a meta that isn't involved in querying is changed.
+The purpose of this filter is to only allow indexing of meta that will actually be used for querying. This is to keep each indexes field count in check and to prevent reindexing of posts when a meta that isn't involved in querying is changed. **Overrides `ep_prepare_meta_allowed_protected_keys` with its value.**
 
 ### Automattic/ElasticPress <a name="a-ep-filters"></a>
 

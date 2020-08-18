@@ -7,7 +7,7 @@ When migrating or onboarding new sites there are a number of considerations that
 1. What post meta do you use for queries?
     - During onboarding of certain sites, it became apparent that some sites may have enough post meta to exceed the max field count in Elasticsearch and cause issues. The solution was to institute an allow list for clients to use.
     - This functionality can also be bypassed on a site-by-site basis via `Search::DISABLE_POST_META_ALLOW_LIST`. This should be avoided or used as a stopgap measure toward getting a proper allow list in place ASAP.
-    - Important since we do have a post meta allow list filter(`vip_search_post_meta_allow_list`) for indexing.
+    - Important since we do have a post meta allow list filter(`vip_search_post_meta_allow_list`) for indexing. **It overrides `ep_prepare_meta_allowed_protected_keys` with its value.**
     - Without adding anything to the post meta allow list, no post meta will be indexed and all Elasticsearch queries referencing that post meta will fail
     - Some ways issues with the post meta allow list may manifest are:
         - Queries that used to work prior to migration/onboarding no longer work despite the index being consistent
@@ -25,6 +25,8 @@ When migrating or onboarding new sites there are a number of considerations that
         - Are these private taxonomy okay to index and use in results?
             - If so, they must be added to the filter.
             - If not, the clients code will need to be reworked by them in order for it to work without those private taxonomy.
+
+**Note:** The value of `vip_search_post_meta_allow_list` overrides the value of `ep_prepare_meta_allowed_protected_keys`. If `vip_search_post_meta_allow_list` is empty, `ep_prepare_meta_allowed_protected_keys` is empty.
 
 ## Index Field Count <a name='index-field-count'></a>
 
