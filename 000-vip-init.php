@@ -151,6 +151,9 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Feature flags
+require_once( __DIR__ . '/lib/feature/class-feature.php' );
+
 // Logging
 require_once( __DIR__ . '/logstash/logstash.php' );
 require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
@@ -196,6 +199,23 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
 		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
 	}
+}
+
+// Set WordPress environment type to the VIP Go environment name
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+	$env = VIP_GO_APP_ENVIRONMENT;
+	if ( 'production' !== $env && 'development' !== $env && 'staging' !== $env ) {
+		if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
+			define( 'WP_ENVIRONMENT_TYPES', array(
+				'production',
+				'development',
+				'staging',
+				$env,
+			) );
+		}
+	}
+
+	define( 'WP_ENVIRONMENT_TYPE', $env );
 }
 
 // Load config related helpers
