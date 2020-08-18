@@ -201,6 +201,23 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	}
 }
 
+// Set WordPress environment type to the VIP Go environment name
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+	$env = VIP_GO_APP_ENVIRONMENT;
+	if ( 'production' !== $env && 'development' !== $env && 'staging' !== $env ) {
+		if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
+			define( 'WP_ENVIRONMENT_TYPES', array(
+				'production',
+				'development',
+				'staging',
+				$env,
+			) );
+		}
+	}
+
+	define( 'WP_ENVIRONMENT_TYPE', $env );
+}
+
 // Load config related helpers
 require_once( __DIR__ . '/config/class-sync.php' );
 
