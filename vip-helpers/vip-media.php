@@ -114,7 +114,7 @@ function wpcom_vip_set_image_quality_for_url( $attachment_url, $quality = 100, $
 		return $attachment_url;
 
 	if ( isset( $url['query'] ) )
-		$query = parse_str( $url['query'] );
+		parse_str( $url['query'], $query );
 
 	$query['quality'] = absint( $quality );
 
