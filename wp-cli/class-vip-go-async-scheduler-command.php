@@ -5,7 +5,7 @@
 
 use \Automattic\WP\Cron_Control\Events_Store;
 
-class VIP_Go_Scheduler_Command extends WPCOM_VIP_CLI_Command {
+class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 
 	// Key for object cache entry that stores the timestamp for the event
 	const SCHEDULE_TIMESTAMP_KEY = 'vip_go_async_cmd_ts';
@@ -31,7 +31,7 @@ class VIP_Go_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 		$command   = self::normalize_command( $assoc_args['cmd'] );
 		$cache_key = md5( $command );
 
-		$timestamp = $assoc_args['when'] === 'now' ? time() + 1 : $assoc_args['when'];
+		$timestamp = 'now' === $assoc_args['when'] ? time() + 1 : $assoc_args['when'];
 
 		$events = self::get_commands( $command );
 
@@ -117,7 +117,7 @@ class VIP_Go_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 			WP_CLI::warning( $result->stderr );
 		}
 
-		if ( $result->return_code !== 0 ) {
+		if ( 0 !== $result->return_code ) {
 			WP_CLI::warning( sprintf( 'The scheduled command `%s` has non-zero exit code', $command, $result->return_code ) );
 		}
 	}
@@ -169,7 +169,7 @@ class VIP_Go_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 
 WP_CLI::add_command(
 	'vip cmd-scheduler',
-	'VIP_Go_Scheduler_Command',
+	'VIP_Go_Async_Scheduler_Command',
 	[
 		'before_invoke' => function() {
 			// Cron Control is a hard dependency, so let's just bail right away if it's not available
@@ -180,4 +180,4 @@ WP_CLI::add_command(
 	]
 );
 
-add_action( VIP_Go_Scheduler_Command::SCHEDULE_EVENT_KEY, [ 'VIP_Go_Scheduler_Command', 'runner' ] );
+add_action( VIP_Go_Async_Scheduler_Command::SCHEDULE_EVENT_KEY, [ 'VIP_Go_Async_Scheduler_Command', 'runner' ] );
