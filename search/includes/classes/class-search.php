@@ -215,6 +215,9 @@ class Search {
 
 		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list 
 		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
+
+		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
+		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
 	}
 
 	protected function load_commands() {
