@@ -2,15 +2,17 @@
 /**
  * Thin helper to assist with scheduling long-running CLI commands asynchronously.
  */
+namespace Automattic\VIP\Commands;
 
+use \WP_CLI;
 use \Automattic\WP\Cron_Control\Events_Store;
 
-class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
+class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 
-	// Key for object cache entry that stores the timestamp for the event
-	const SCHEDULE_TIMESTAMP_KEY = 'vip_go_async_cmd_ts';
+	// Key for object cache entry that stores the timestamp for the event.
+	const COMMAND_TIMESTAMP_CACHE_GROUP = 'vip_go_async_cmd_ts';
 	// Cron event hook
-	const SCHEDULE_EVENT_KEY = 'vip_go_async_cmd_run';
+	const COMMAND_CRON_EVENT_KEY = 'vip_go_async_cmd_run';
 	/**
 	 * Schedule an arbitrary CLI command to be executed later as a single event.
 	 *
@@ -44,8 +46,8 @@ class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 
 		if ( ! $scheduled_or_running ) {
 			WP_CLI::line( 'Scheduling the command: ' . $command );
-			wp_schedule_single_event( $timestamp, self::SCHEDULE_EVENT_KEY, [ $command ] );
-			wp_cache_set( $cache_key, $timestamp, self::SCHEDULE_TIMESTAMP_KEY );
+			wp_schedule_single_event( $timestamp, self::COMMAND_CRON_EVENT_KEY, [ $command ] );
+			wp_cache_set( $cache_key, $timestamp, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 		} else {
 			WP_CLI::error( 'This command is already scheduled or running.' );
 		}
@@ -68,7 +70,7 @@ class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 		$cache_key = md5( $command );
 
 		// This is not guaranteed to exist, but worth a shot.
-		$timestamp = wp_cache_get( $cache_key, self::SCHEDULE_TIMESTAMP_KEY );
+		$timestamp = wp_cache_get( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 
 		$events = self::get_commands( $command );
 
@@ -111,7 +113,7 @@ class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 			]
 		);
 
-		wp_cache_delete( $cache_key, self::SCHEDULE_TIMESTAMP_KEY );
+		wp_cache_delete( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 
 		if ( $result->stderr ) {
 			WP_CLI::warning( $result->stderr );
@@ -135,7 +137,7 @@ class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 		$events_store = Events_Store::instance();
 
 		// phpcs:ignore 
-		$events = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$events_store->get_table_name()} WHERE action = %s AND args = %s LIMIT 10", self::SCHEDULE_EVENT_KEY, maybe_serialize( [ $command ] ) ) );
+		$events = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$events_store->get_table_name()} WHERE action = %s AND args = %s LIMIT 10", self::COMMAND_CRON_EVENT_KEY, maybe_serialize( [ $command ] ) ) );
 
 		return $events;
 	}
@@ -169,7 +171,7 @@ class VIP_Go_Async_Scheduler_Command extends WPCOM_VIP_CLI_Command {
 
 WP_CLI::add_command(
 	'vip cmd-scheduler',
-	'VIP_Go_Async_Scheduler_Command',
+	'\Automattic\VIP\Commands\Async_Scheduler_Command',
 	[
 		'before_invoke' => function() {
 			// Cron Control is a hard dependency, so let's just bail right away if it's not available
@@ -180,4 +182,4 @@ WP_CLI::add_command(
 	]
 );
 
-add_action( VIP_Go_Async_Scheduler_Command::SCHEDULE_EVENT_KEY, [ 'VIP_Go_Async_Scheduler_Command', 'runner' ] );
+add_action( Async_Scheduler_Command::COMMAND_CRON_EVENT_KEY, [ '\Automattic\VIP\Commands\Async_Scheduler_Command', 'runner' ] );
