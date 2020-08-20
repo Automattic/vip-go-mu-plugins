@@ -45,7 +45,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 		);
 
 		if ( ! $scheduled_or_running ) {
-			WP_CLI::line( 'Scheduling the command: ' . $command );
+			WP_CLI::line( sprintf( 'Scheduling the command: `%s` (timestamp: %d)', $command, $timestamp ) );
 			wp_schedule_single_event( $timestamp, self::COMMAND_CRON_EVENT_KEY, [ $command ] );
 			wp_cache_set( $cache_key, $timestamp, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 		} else {
@@ -106,9 +106,10 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 		$result = WP_CLI::runcommand(
 			$command,
 			[
-				// Grab an object that includes STDERR, STDOUT and exit code
+				// We need to be able to clean up and process success/errors and implement logging (if need be):
+				// 1. Grab an object that includes STDERR, STDOUT and exit code.
+				// 2. Prevent the runner command termination on WP_CLI::error() in the child command.
 				'return'     => 'all',
-				// Do not exit on error
 				'exit_error' => false,
 			]
 		);
