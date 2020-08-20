@@ -33,6 +33,10 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 		$command   = self::normalize_command( $assoc_args['cmd'] );
 		$cache_key = md5( $command );
 
+		if ( ! isset( $assoc_args['when'] ) ) {
+			$assoc_args['when'] = time() + 1;
+		}
+
 		$timestamp = 'now' === $assoc_args['when'] ? time() + 1 : $assoc_args['when'];
 
 		$events = self::get_commands( $command );
@@ -60,6 +64,9 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
+	 * [--when]
+	 * : A timestamp to check for a specific command
+	 *
 	 * [--cmd]
 	 * : command to run on schedule, without `wp`
 	 */
@@ -69,8 +76,9 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 		$command   = self::normalize_command( $assoc_args['cmd'] );
 		$cache_key = md5( $command );
 
-		// This is not guaranteed to exist, but worth a shot.
-		$timestamp = wp_cache_get( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
+		// Try to use a flag if it present or fallback to cached value.
+		// Cached value is not guaranteed to exist, especially for long-running commands.
+		$timestamp = $assoc_args['when'] ?? wp_cache_get( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 
 		$events = self::get_commands( $command );
 
