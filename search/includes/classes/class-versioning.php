@@ -56,7 +56,7 @@ class Versioning {
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to temporarily set the current index version
 	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
-	public function set_current_version_number( Indexable $indexable, int $version_number ) {
+	public function set_current_version_number( Indexable $indexable, $version_number ) {
 		// Validate that the requested version is known
 		$versions = $this->get_versions( $indexable );
 
@@ -219,7 +219,7 @@ class Versioning {
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve the index version
 	 * @return array Array of index versions
 	 */
-	public function get_version( Indexable $indexable, int $version_number ) {
+	public function get_version( Indexable $indexable, $version_number ) {
 		$slug = $indexable->slug;
 	
 		$versions = $this->get_versions( $indexable );
@@ -273,7 +273,7 @@ class Versioning {
 	 * Create the index in ES and put the mapping
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to create the new versioned index
-	 * @param int $version_number The index version number to create
+	 * @param int|string $version_number The index version number to create
 	 */
 	public function create_versioned_index_with_mapping( $indexable, $version_number ) {
 		$this->set_current_version_number( $indexable, $version_number );
@@ -340,10 +340,10 @@ class Versioning {
 	 * Verifies that the new target index does in-fact exist, then marks it as active
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
-	 * @param int $version_number The new index version to activate
+	 * @param int|string $version_number The new index version to activate
 	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
-	public function activate_version( Indexable $indexable, int $version_number ) {
+	public function activate_version( Indexable $indexable, $version_number ) {
 		$versions = $this->get_versions( $indexable );
 
 		// If this wasn't a valid version, abort with error
@@ -372,7 +372,7 @@ class Versioning {
 	 * Delete the version of an index and remove the index from Elasticsearch
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
-	 * @param int $version_number The index version to delete
+	 * @param int|string $version_number The index version to delete
 	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
 	public function delete_version( Indexable $indexable, $version_number ) {
@@ -404,7 +404,7 @@ class Versioning {
 	 * Delete the versioned index from Elasticsearch
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
-	 * @param int $version_number The index version to delete
+	 * @param int|string $version_number The index version to delete
 	 * @return bool Boolean indicating success or failure 
 	 */
 	public function delete_versioned_index( $indexable, $version_number ) {
