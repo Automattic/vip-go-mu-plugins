@@ -190,5 +190,3 @@ WP_CLI::add_command(
 		},
 	]
 );
-
-add_action( Async_Scheduler_Command::COMMAND_CRON_EVENT_KEY, [ '\Automattic\VIP\Commands\Async_Scheduler_Command', 'runner' ] );

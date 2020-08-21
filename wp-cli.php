@@ -74,3 +74,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require( $command );
 	}
 }
+
+/**
+ * Register the Async Command Scheduler Runner hook.
+ */
+add_action( \Automattic\VIP\Commands\Async_Scheduler_Command::COMMAND_CRON_EVENT_KEY, [ '\Automattic\VIP\Commands\Async_Scheduler_Command', 'runner' ] );
