@@ -78,28 +78,28 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 
 		// Try to use a flag if it present or fallback to cached value.
 		// Cached value is not guaranteed to exist, especially for long-running commands.
-		$timestamp = $assoc_args['when'] ?? wp_cache_get( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
+		$timestamp = (string) ( $assoc_args['when'] ?? wp_cache_get( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP ) );
 
 		$events = self::get_commands( $command );
 
 		if ( ! $events ) {
 			WP_CLI::error( 'No events found' );
-		}
-
-		// phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found,Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure
-		if ( $timestamp ) {
-			$event_idx = array_search( (string) $timestamp, array_column( $events, 'timestamp' ) );
-
-			if ( null !== $event_idx && isset( $events[ $event_idx ] ) ) {
-				WP_CLI::success( sprintf( 'Found event, status: %s; created: %s; last modified: %s', $events[ $event_idx ]->status, $events[ $event_idx ]->created, $events[ $event_idx ]->last_modified ) );
-				exit;
-			}
 		} else {
-			WP_CLI::warning( "Exact match couldn't be found, but there are commands with the same arguments:" );
-			foreach ( $events as $event ) {
-				WP_CLI::line( sprintf( 'Status: %s; created: %s; last modified: %s', $event->status, $event->created, $event->last_modified ) );
-			}
+			WP_CLI::success( 'Found matching events' );
 		}
+
+		$events = array_map( function( $event ) use ( $timestamp ) {
+			return [
+				'ID'              => $event->ID,
+				'status'          => $event->status,
+				'created'         => $event->created,
+				'modified'        => $event->last_modified,
+				'timestamp'       => $event->timestamp,
+				'timestamp_match' => $timestamp && $event->timestamp === $timestamp ? 'yes' : 'no',
+			];
+		}, $events );
+
+		WP_CLI\Utils\format_items( 'table', $events, [ 'ID', 'status', 'created', 'modified', 'timestamp', 'timestamp_match' ] );
 	}
 
 	/**
