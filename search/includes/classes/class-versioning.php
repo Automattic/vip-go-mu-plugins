@@ -214,6 +214,28 @@ class Versioning {
 	}
 
 	/**
+	 * Given a version number, normalize it by translating any aliases into actual version numbers
+	 * 
+	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
+	 */
+	public function normalize_version_number( $version_number ) {
+		if ( is_int( $version_number ) ) {
+			return $version_number;
+		}
+
+		$version_number = trim( $version_number );
+
+		switch( $version_number ) {
+			case 'next':
+
+			case 'previous':
+
+			default:
+				return new WP_Error( 'invalid-version-number-alias', 'Unknown version number alias. Please use "next" or "previous"' );
+		}
+	}                              
+
+	/**
 	 * Retrieve details about a given index version
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve the index version
