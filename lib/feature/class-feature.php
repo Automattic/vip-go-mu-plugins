@@ -3,9 +3,7 @@
 namespace Automattic\VIP;
 
 class Feature {
-	public static $feature_percentages = array(
-		'comment_type_update_cron' => 0.75, // Percent of sites that can run the comment type update batch jobs
-	);
+	public static $feature_percentages = array();
 
 	public static $site_id = FILES_CLIENT_SITE_ID;
 
