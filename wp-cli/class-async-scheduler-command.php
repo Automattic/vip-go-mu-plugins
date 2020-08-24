@@ -50,7 +50,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 
 		if ( ! $scheduled_or_running ) {
 			WP_CLI::line( sprintf( 'Scheduling the command: `%s` (timestamp: %d)', $command, $timestamp ) );
-			wp_schedule_single_event( $timestamp, self::COMMAND_CRON_EVENT_KEY, [ $command ] );
+			\Automattic\WP\Cron_Control\schedule_event( $timestamp, self::COMMAND_CRON_EVENT_KEY, [ 'args' => [ $command ] ] );
 			wp_cache_set( $cache_key, $timestamp, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 		} else {
 			WP_CLI::error( 'This command is already scheduled or running.' );
