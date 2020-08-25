@@ -196,6 +196,9 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * <version_number>
 	 * : The version number of the index to delete
 	 *
+	 * [--skip-confirm]
+	 * : Skip confirmation
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions delete post 2
 	 *
@@ -223,7 +226,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( sprintf( 'Index version %d is active for type %s and cannot be deleted', $version_number, $type ) );
 		}
 
-		WP_CLI::confirm( sprintf( 'Are you sure you want to delete index version %d for type %s?', $version_number, $type ), $assoc_args );
+		CoreCommand::confirm_destructive_operation( $assoc_args );
 
 		$result = $search->versioning->delete_version( $indexable, $version_number );
 

@@ -60,17 +60,51 @@ class CoreCommand extends \ElasticPress\Command {
 	 * [--version]
 	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version
 	 *
-	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version]
+	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm]
 	 *
 	 * @param array $args Positional CLI args.
 	 * @since 0.1.2
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function index( $args, $assoc_args ) {
+		if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
+			self::confirm_destructive_operation( $assoc_args );
+		}
+
 		$this->_maybe_setup_index_version( $assoc_args );
 
 		array_unshift( $args, 'elasticpress', 'index' );
 
 		WP_CLI::run_command( $args, $assoc_args );
+	}
+
+	/**
+	 * Add document mappings for every indexable
+	 *
+	 * @synopsis [--network-wide] [--indexables] [--ep-host] [--ep-prefix] [--skip-confirm]
+	 * @subcommand put-mapping
+
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function put_mapping( $args, $assoc_args ) {
+		self::confirm_destructive_operation( $assoc_args );
+		parent::put_mapping( $args, $assoc_args );
+	}
+
+	/**
+	 * Certain operations might result in data loss (deleting an index version or putting a new mapping).
+	 *
+	 * We need to make sure we get a user's confirmation before proceeding with a destructive operation
+	 *
+	 * @param array $assoc_args arguments that were passed to the caller command.
+	 * @return void
+	 */
+	public static function confirm_destructive_operation( array $assoc_args ) {
+		if ( isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'] ) {
+			return;
+		}
+
+		WP_CLI::confirm( '⚠️  You are about to run ' . WP_CLI::colorize( '%ra destructive operation%n' ) . '. Are you sure?' );
 	}
 }
