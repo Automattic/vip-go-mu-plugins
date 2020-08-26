@@ -45,11 +45,8 @@ function init_privacy_compat_cleanup() {
  *  - It uploads the generated zip to the Go Files Service.
  */
 function generate_personal_data_export_file( $request_id ) {
-	$request = wp_get_user_request_data( $request_id );
-
-	// Get the export file URL.
-	$exports_url      = wp_privacy_exports_url();
-	$export_file_name = get_post_meta( $request_id, '_export_file_name', true );
+	// Get the request.
+	$request = wp_get_user_request( $request_id );
 
 	if ( ! $request || 'export_personal_data' !== $request->action_name ) {
 		wp_send_json_error( __( 'Invalid request ID when generating export file.' ) );
@@ -66,9 +63,8 @@ function generate_personal_data_export_file( $request_id ) {
 	$exports_url = wp_privacy_exports_url();
 	$temp_dir = get_temp_dir();
 
-	$result = wp_mkdir_p( $exports_dir );
-	if ( is_wp_error( $result ) ) {
-		wp_send_json_error( $result->get_error_message() );
+	if ( ! wp_mkdir_p( $exports_dir ) ) {
+		wp_send_json_error( __( 'Unable to create export folder.' ) );
 	}
 
 	// We don't care about the extrenuous index.html file.
@@ -76,54 +72,33 @@ function generate_personal_data_export_file( $request_id ) {
 	$stripped_email       = str_replace( '@', '-at-', $email_address );
 	$stripped_email       = sanitize_title( $stripped_email ); // slugify the email address
 	$obscura              = wp_generate_password( 32, false, false );
-	$file_basename        = 'wp-personal-data-file-' . $stripped_email . '-' . $obscura;
-	$html_report_filename = $file_basename . '.html';
-	// Use temp_dir because we don't want the file generated remotely yet.
+	$file_basename        = 'wp-personal-data-file-' . $stripped_email . '-' . $obscura;;
+	$html_report_filename = wp_unique_filename( $temp_dir, $file_basename . '.html' );
 	$html_report_pathname = wp_normalize_path( $temp_dir . $html_report_filename );
+	$json_report_filename = $file_basename . '.json';
+	$json_report_pathname = wp_normalize_path( $temp_dir . $json_report_filename ); // Use temp_dir because we don't want the file generated remotely yet.
 
-	$file = fopen( $html_report_pathname, 'w' );
-	if ( false === $file ) {
-		wp_send_json_error( __( 'Unable to open export file (HTML report) for writing.' ) );
-	}
+	/*
+	 * Gather general data needed.
+	 */
 
+	// Title.
 	$title = sprintf(
-		/* translators: %s: user's e-mail address */
+		/* translators: %s: User's email address. */
 		__( 'Personal Data Export for %s' ),
 		$email_address
 	);
-
-	// Open HTML.
-	fwrite( $file, "<!DOCTYPE html>\n" );
-	fwrite( $file, "<html>\n" );
-
-	// Head.
-	fwrite( $file, "<head>\n" );
-	fwrite( $file, "<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />\n" );
-	fwrite( $file, "<style type='text/css'>" );
-	fwrite( $file, "body { color: black; font-family: Arial, sans-serif; font-size: 11pt; margin: 15px auto; width: 860px; }" );
-	fwrite( $file, "table { background: #f0f0f0; border: 1px solid #ddd; margin-bottom: 20px; width: 100%; }" );
-	fwrite( $file, "th { padding: 5px; text-align: left; width: 20%; }" );
-	fwrite( $file, "td { padding: 5px; }" );
-	fwrite( $file, "tr:nth-child(odd) { background-color: #fafafa; }" );
-	fwrite( $file, "</style>" );
-	fwrite( $file, "<title>" );
-	fwrite( $file, esc_html( $title ) );
-	fwrite( $file, "</title>" );
-	fwrite( $file, "</head>\n" );
-
-	// Body.
-	fwrite( $file, "<body>\n" );
-
-	// Heading.
-	fwrite( $file, "<h1>" . esc_html__( 'Personal Data Export' ) . "</h1>" );
 
 	// And now, all the Groups.
 	$groups = get_post_meta( $request_id, '_export_data_grouped', true );
 
 	// First, build an "About" group on the fly for this report.
 	$about_group = array(
-		'group_label' => __( 'About' ),
-		'items'       => array(
+		/* translators: Header for the About section in a personal data export. */
+		'group_label'       => _x( 'About', 'personal data group label' ),
+		/* translators: Description for the About section in a personal data export. */
+		'group_description' => _x( 'Overview of export report.', 'personal data group description' ),
+		'items'             => array(
 			'about-1' => array(
 				array(
 					'name'  => _x( 'Report generated for', 'email address' ),
@@ -148,78 +123,137 @@ function generate_personal_data_export_file( $request_id ) {
 	// Merge in the special about group.
 	$groups = array_merge( array( 'about' => $about_group ), $groups );
 
+	$groups_count = count( $groups );
+
+	// Convert the groups to JSON format.
+	$groups_json = wp_json_encode( $groups );
+
+	/*
+	 * Handle the JSON export.
+	 */
+	$file = fopen( $json_report_pathname, 'w' );
+
+	if ( false === $file ) {
+		wp_send_json_error( __( 'Unable to open export file (JSON report) for writing.' ) );
+	}
+
+	fwrite( $file, '{' );
+	fwrite( $file, '"' . $title . '":' );
+	fwrite( $file, $groups_json );
+	fwrite( $file, '}' );
+	fclose( $file );
+
+	/*
+	 * Handle the HTML export.
+	 */
+	$file = fopen( $html_report_pathname, 'w' );
+
+	if ( false === $file ) {
+		wp_send_json_error( __( 'Unable to open export file (HTML report) for writing.' ) );
+	}
+
+	fwrite( $file, "<!DOCTYPE html>\n" );
+	fwrite( $file, "<html>\n" );
+	fwrite( $file, "<head>\n" );
+	fwrite( $file, "<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />\n" );
+	fwrite( $file, "<style type='text/css'>" );
+	fwrite( $file, 'body { color: black; font-family: Arial, sans-serif; font-size: 11pt; margin: 15px auto; width: 860px; }' );
+	fwrite( $file, 'table { background: #f0f0f0; border: 1px solid #ddd; margin-bottom: 20px; width: 100%; }' );
+	fwrite( $file, 'th { padding: 5px; text-align: left; width: 20%; }' );
+	fwrite( $file, 'td { padding: 5px; }' );
+	fwrite( $file, 'tr:nth-child(odd) { background-color: #fafafa; }' );
+	fwrite( $file, '.return-to-top { text-align: right; }' );
+	fwrite( $file, '</style>' );
+	fwrite( $file, '<title>' );
+	fwrite( $file, esc_html( $title ) );
+	fwrite( $file, '</title>' );
+	fwrite( $file, "</head>\n" );
+	fwrite( $file, "<body>\n" );
+	fwrite( $file, '<h1 id="top">' . esc_html__( 'Personal Data Export' ) . '</h1>' );
+
+	// Create TOC.
+	if ( $groups_count > 1 ) {
+		fwrite( $file, '<div id="table_of_contents">' );
+		fwrite( $file, '<h2>' . esc_html__( 'Table of Contents' ) . '</h2>' );
+		fwrite( $file, '<ul>' );
+		foreach ( (array) $groups as $group_id => $group_data ) {
+			$group_label       = esc_html( $group_data['group_label'] );
+			$group_id_attr     = sanitize_title_with_dashes( $group_data['group_label'] . '-' . $group_id );
+			$group_items_count = count( (array) $group_data['items'] );
+			if ( $group_items_count > 1 ) {
+				$group_label .= sprintf( ' <span class="count">(%d)</span>', $group_items_count );
+			}
+			fwrite( $file, '<li>' );
+			fwrite( $file, '<a href="#' . esc_attr( $group_id_attr ) . '">' . $group_label . '</a>' );
+			fwrite( $file, '</li>' );
+		}
+		fwrite( $file, '</ul>' );
+		fwrite( $file, '</div>' );
+	}
+
 	// Now, iterate over every group in $groups and have the formatter render it in HTML.
 	foreach ( (array) $groups as $group_id => $group_data ) {
-		fwrite( $file, wp_privacy_generate_personal_data_export_group_html( $group_data ) );
+		fwrite( $file, wp_privacy_generate_personal_data_export_group_html( $group_data, $group_id, $groups_count ) );
 	}
 
 	fwrite( $file, "</body>\n" );
-
-	// Close HTML.
 	fwrite( $file, "</html>\n" );
 	fclose( $file );
 
 	/*
 	 * Now, generate the ZIP.
 	 *
-	 * If an archive has already been generated, then remove it and reuse the
-	 * filename, to avoid breaking any URLs that may have been previously sent
-	 * via email.
+	 * If an archive has already been generated, then remove it and reuse the filename,
+	 * to avoid breaking any URLs that may have been previously sent via email.
 	 */
 	$error = false;
 
-	// This postmeta is used from version 5.4.
+	// This meta value is used from version 5.5.
 	$archive_filename = get_post_meta( $request_id, '_export_file_name', true );
 
-	// These are used for backwards compatibility.
-	$archive_url      = get_post_meta( $request_id, '_export_file_url', true );
+	// This one stored an absolute path and is used for backward compatibility.
 	$archive_pathname = get_post_meta( $request_id, '_export_file_path', true );
-	// If archive_filename exists, make sure to remove deprecated postmeta.
+
+	// If a filename meta exists, use it.
 	if ( ! empty( $archive_filename ) ) {
 		$archive_pathname = $exports_dir . $archive_filename;
-		$archive_url      = $exports_url . $archive_filename;
-
-		// Remove the deprecated postmeta.
-		delete_post_meta( $request_id, '_export_file_url' );
-		delete_post_meta( $request_id, '_export_file_path' );
 	} elseif ( ! empty( $archive_pathname ) ) {
-		// Check if archive_pathname exists. If not, create the new postmeta and remove the deprecated.
+		// If a full path meta exists, use it and create the new meta value.
 		$archive_filename = basename( $archive_pathname );
-		$archive_url      = $exports_url . $archive_filename;
 
-		// Add the new postmeta that is used since version 5.4.
-		update_post_meta( $request_id, '_export_file_name', wp_normalize_path( $archive_filename ) );
+		update_post_meta( $request_id, '_export_file_name', $archive_filename );
 
-		// Remove the deprecated postmeta.
+		// Remove the back-compat meta values.
 		delete_post_meta( $request_id, '_export_file_url' );
 		delete_post_meta( $request_id, '_export_file_path' );
 	} else {
-		// If there's no archive_filename or archive_pathname create a new one.
+		// If there's no filename or full path stored, create a new file.
 		$archive_filename = $file_basename . '.zip';
-		$archive_url      = $exports_url . $archive_filename;
 		$archive_pathname = $exports_dir . $archive_filename;
 
-		// Add the new postmeta that is used since version 5.4.
-		update_post_meta( $request_id, '_export_file_name', wp_normalize_path( $archive_filename ) );
+		update_post_meta( $request_id, '_export_file_name', $archive_filename );
+	}
 
-		// Remove the deprecated postmeta.
-		delete_post_meta( $request_id, '_export_file_url' );
-		delete_post_meta( $request_id, '_export_file_path' );
+	$archive_url = $exports_url . $archive_filename;
+
+	if ( ! empty( $archive_pathname ) && file_exists( $archive_pathname ) ) {
+		wp_delete_file( $archive_pathname );
 	}
 
 	// Track generated time to simplify deletions.
 	// We can't currently iterate through files in the Files Service so we need a way to query exports by date.
 	update_post_meta( $request_id, '_vip_export_generated_time', time() );
 
-	$local_archive_pathname = $archive_pathname;
 	// Hack: ZipArchive and PclZip don't support streams.
 	// So, let's force the path to use a local one in the temp dir, which will work.
 	// All other references (meta) will still use the correct stream URL. 
+	$local_archive_pathname = $archive_pathname;
+
 	if ( 0 === strpos( $local_archive_pathname, 'vip://' ) ) {
 		$local_archive_pathname = get_temp_dir() . substr( $archive_pathname, 6 );
 
-		// Create the folder path
-		$local_archive_dirname = dirname( $local_archive_pathname );
+		// Create the folder path.
+		$local_archive_dirname     = dirname( $local_archive_pathname );
 		$local_archive_dir_created = wp_mkdir_p( $local_archive_dirname );
 		if ( is_wp_error( $local_archive_dir_created ) ) {
 			wp_send_json_error( $local_archive_dir_created->get_error_message() );
@@ -231,29 +265,44 @@ function generate_personal_data_export_file( $request_id ) {
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
 	if ( class_exists( '\ZipArchive' ) ) {
-		$zip_result = _ziparchive_create_file( $local_archive_pathname, $html_report_pathname );
+		$zip = new \ZipArchive;
+		if ( true === $zip->open( $local_archive_pathname, \ZipArchive::CREATE ) ) {
+			if ( ! $zip->addFile( $json_report_pathname, 'export.json' ) ) {
+				$error = __( 'Unable to add data to JSON file.' );
+			}
+
+			if ( ! $zip->addFile( $html_report_pathname, 'index.html' ) ) {
+				$error = __( 'Unable to add data to HTML file.' );
+			}
+
+			$zip->close();
+		} else {
+			$error = __( 'Unable to open export file (archive) for writing.' );
+		}
 	} else {
-		$zip_result = _pclzip_create_file( $local_archive_pathname, $html_report_pathname );
+		$zip = _pclzip_create_file( $local_archive_pathname, $html_report_pathname );
+
+		if ( is_wp_error( $zip ) ) {
+			$error = __( 'Unable to open export file (archive) for writing.' );
+		}
 	}
 
-	// Remove the HTML file since it's not needed anymore.
+	// Remove the JSON file.
+	unlink( $json_report_pathname );
+
+	// Remove the HTML file.
 	unlink( $html_report_pathname );
 
-	if ( is_wp_error( $zip_result ) ) {
-		/* translators: %s: error message */
-		$error = sprintf( __( 'Unable to generate export file (archive) for writing: %s' ), $zip_result->get_error_message() );
+	if ( $error ) {
+		wp_send_json_error( $error );
 	} else {
 		/** This filter is documented in wp-admin/includes/file.php */
-		do_action( 'wp_privacy_personal_data_export_file_created', $local_archive_pathname, $archive_url, $html_report_pathname, $request_id );
+		do_action( 'wp_privacy_personal_data_export_file_created', $local_archive_pathname, $archive_url, $html_report_pathname, $request_id, $json_report_pathname );
 
 		$upload_result = _upload_archive_file( $local_archive_pathname );
 		if ( is_wp_error( $upload_result ) ) {
 			$error = sprintf( __( 'Failed to upload export file (archive): %s' ), $upload_result->get_error_message() );
 		}
-	}
-
-	if ( $error ) {
-		wp_send_json_error( $error );
 	}
 }
 
