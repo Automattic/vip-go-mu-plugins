@@ -474,10 +474,10 @@ class Health {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
-				break;
+					break;
 				case 'extra_in_index':
 					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );
-				break;
+					break;
 			}
 		}
 	}
