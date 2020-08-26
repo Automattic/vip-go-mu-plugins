@@ -460,6 +460,28 @@ class Health {
 		return $diff;
 	}
 
+	/**
+	 * Iterate over an array of inconsistencies and address accordingly.
+	 *
+	 * If an object is missing from the index - add it to the queue for the sweep.
+	 *
+	 * If an object is missing from the DB, remove it from the index.
+	 *
+	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index> ].
+	 */
+	public static function reconcile_diff( array $diff ) {
+		foreach ( $diff as $key => $obj_to_reconcile ) {
+			switch ( $obj_to_reconcile['issue'] ) {
+				case 'missing_from_index':
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+				break;
+				case 'extra_in_index':
+					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );
+				break;
+			}
+		}
+	}
+
 	public static function get_last_post_id() {
 		global $wpdb;
 
