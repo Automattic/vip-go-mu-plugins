@@ -93,6 +93,21 @@ class CoreCommand extends \ElasticPress\Command {
 	}
 
 	/**
+	 * Delete the index for each indexable. !!Warning!! This removes your elasticsearch index(s)
+	 * for the entire site.
+	 *
+	 * @synopsis [--index-name] [--network-wide] [--skip-confirm]
+	 * @subcommand delete-index
+	 *
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function delete_index( $args, $assoc_args ) {
+		self::confirm_destructive_operation( $assoc_args );
+		parent::delete_index( $args, $assoc_args );
+	}
+
+	/**
 	 * Certain operations might result in data loss (deleting an index version or putting a new mapping).
 	 *
 	 * We need to make sure we get a user's confirmation before proceeding with a destructive operation
