@@ -72,7 +72,7 @@ function generate_personal_data_export_file( $request_id ) {
 	$stripped_email       = str_replace( '@', '-at-', $email_address );
 	$stripped_email       = sanitize_title( $stripped_email ); // slugify the email address
 	$obscura              = wp_generate_password( 32, false, false );
-	$file_basename        = 'wp-personal-data-file-' . $stripped_email . '-' . $obscura;;
+	$file_basename        = 'wp-personal-data-file-' . $stripped_email . '-' . $obscura;
 	$html_report_filename = wp_unique_filename( $temp_dir, $file_basename . '.html' );
 	$html_report_pathname = wp_normalize_path( $temp_dir . $html_report_filename );
 	$json_report_filename = $file_basename . '.json';
