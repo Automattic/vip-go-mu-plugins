@@ -265,7 +265,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
 	if ( class_exists( '\ZipArchive' ) ) {
-		$zip = new \ZipArchive;
+		$zip = new \ZipArchive; // phpcs:ignore WordPress.Classes.ClassInstantiation.MissingParenthesis
 		if ( true === $zip->open( $local_archive_pathname, \ZipArchive::CREATE ) ) {
 			if ( ! $zip->addFile( $json_report_pathname, 'export.json' ) ) {
 				$error = __( 'Unable to add data to JSON file.' );
