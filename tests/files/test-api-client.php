@@ -65,6 +65,12 @@ class API_Client_Test extends \WP_UnitTestCase {
 		return $method;
 	}
 
+	public static function get_property( $object, $name ) {
+		$property = new \ReflectionProperty( get_class( $object ), $name );
+		$property->setAccessible( true );
+		return $property;
+	}
+
 	public function get_test_data__is_valid_path() {
 		return [
 			'other path' => [
