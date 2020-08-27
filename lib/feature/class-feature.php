@@ -29,6 +29,7 @@ class Feature {
 	}
 
 	public static function site_id() {
+		// This is used in tests, so the site id can be easily changed
 		if ( static::$site_id ) {
 			return static::$site_id;
 		}
