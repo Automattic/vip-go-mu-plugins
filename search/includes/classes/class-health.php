@@ -282,7 +282,7 @@ class Health {
 			vip_reset_local_object_cache();
 
 			if ( $is_cli && ! $silent ) {
-				echo sprintf( "...%s %s\n", empty( $result ) ? '✅' : '❌', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo sprintf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 		} while ( $start_post_id <= $last_post_id );
 
