@@ -486,9 +486,22 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
 		$upload_path = '/wp-content/uploads/file.txt';
 
+		$cache = self::get_property( $this->api_client, 'cache' )->getValue( $this->api_client );
+
+		// To test that upload_file() properly clears the cache, we'll set some data to start
+		$cache->cache_file_stats( 'wp-content/uploads/file.txt', array(
+			'size' => 0,
+			'mtime' => 12345,
+		) );
+
 		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
 
-		$this->assertEquals( $upload_path, $actual_result );
+		$this->assertEquals( $upload_path, $actual_result, 'Invalid result from upload_file()' );
+
+		$cachedStats = $cache->get_file_stats( 'wp-content/uploads/file.txt' );
+
+		// Should be cleared out of stats cache
+		$this->assertFalse( $cachedStats, 'Expected false from the file stat cache after upload' );
 	}
 
 	public function get_test_data__get_unique_filename() {
