@@ -160,6 +160,20 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( $expected, $enabled );
 	}
 
+	public function test_is_enabled_by_percentage_using_constant() {
+		Feature::$site_id = false;
+
+		// Feature will use FILES_CLIENT_SITE_ID, which is 123 in tests, when it isn't set on the class
+
+		Feature::$feature_percentages = array(
+			'foo-feature' => 0.75,
+		);
+
+		$enabled = Feature::is_enabled_by_percentage( 'foo-feature' );
+
+		$this->assertEquals( true, $enabled );
+	}
+
 	public function test_is_enabled_by_percentage_with_undefined_feature() {
 		Feature::$site_id = 1;
 
