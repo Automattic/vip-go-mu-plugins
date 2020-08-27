@@ -498,10 +498,10 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $upload_path, $actual_result, 'Invalid result from upload_file()' );
 
-		$cachedStats = $cache->get_file_stats( 'wp-content/uploads/file.txt' );
+		$cached_stats = $cache->get_file_stats( 'wp-content/uploads/file.txt' );
 
 		// Should be cleared out of stats cache
-		$this->assertFalse( $cachedStats, 'Expected false from the file stat cache after upload' );
+		$this->assertFalse( $cached_stats, 'Expected false from the file stat cache after upload' );
 	}
 
 	public function get_test_data__get_unique_filename() {
