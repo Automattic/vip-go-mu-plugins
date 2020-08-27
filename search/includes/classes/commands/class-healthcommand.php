@@ -231,8 +231,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * default: csv
 	 * ---
 	 *
-	 * [--heal]
-	 * : Optional try to correct the issue (either index missing or remove extra from an index)
+	 * [--do-not-heal]
+	 * : Optional Don't try to correct inconsistencies
 	 *
 	 * [--silent]
 	 * : Optional silences all non-error output except for the final results
@@ -251,40 +251,30 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			define( 'EP_QUERY_LOG', false );
 		}
 
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ) );
+		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ), isset( $assoc_args['do-not-heal'] ) );
 		
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
 
 			if ( ! empty( $diff ) ) {
 				$this->render_contents_diff( $diff, $assoc_args['format'], $assoc_args['max_diff_size'] );
-
-				if ( isset( $assoc_args['heal'] ) && $assoc_args['heal'] ) {
-					WP_CLI::line( 'Reconciling the differences!' );
-					\Automattic\VIP\Search\Health::reconcile_diff( $diff );
-				}
 			}
 
 			WP_CLI::error( $results->get_error_message() );
 		}
 
 		if ( empty( $results ) ) {
-			
+
 			if ( ! isset( $assoc_args['silent'] ) ) {
 				WP_CLI::success( 'No inconsistencies found!' );
 			}
-			
+
 			exit();
 		}
 
 		if ( ! isset( $assoc_args['silent'] ) ) {
 			// Not empty, so inconsistencies were found...
 			WP_CLI::warning( 'Inconsistencies found!' );
-		}
-
-		if ( isset( $assoc_args['heal'] ) && $assoc_args['heal'] ) {
-			WP_CLI::line( 'Reconciling the differences!' );
-			\Automattic\VIP\Search\Health::reconcile_diff( $results );
 		}
 
 		$this->render_contents_diff( $results, $assoc_args['format'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ) );
