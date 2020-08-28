@@ -145,8 +145,9 @@ class API_Client {
 		// save to cache
 		$this->cache->copy_to_cache( $response_data->filename, $local_path );
 
-		// reset file stats cache if any
-		$this->cache->remove_stats( $response_data->filename );
+		// Reset file stats cache, if any.
+		// Note: the ltrim is because we store the path without the leading slash but the API returns the path with it.
+		$this->cache->remove_stats( ltrim( $response_data->filename, '/' ) );
 
 		return $response_data->filename;
 	}
