@@ -690,82 +690,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 					),
 				),
 			),
-
-			// "next" alias
-			array(
-				// Input array of versions
-				array(
-					2 => array(
-						'number' => 2,
-						'active' => true,
-					),
-					3 => array(
-						'number' => 3,
-						'active' => false,
-					),
-					4 => array(
-						'number' => 4,
-						'active' => false,
-					),
-				),
-				// Indexable slug
-				'post',
-				// Version to activate
-				'next',
-				// Expected new versions
-				array(
-					2 => array(
-						'number' => 2,
-						'active' => false,
-					),
-					3 => array(
-						'number' => 3,
-						'active' => true,
-					),
-					4 => array(
-						'number' => 4,
-						'active' => false,
-					),
-				),
-			),
-
-			// "previous" alias
-			array(
-				// Input array of versions
-				array(
-					2 => array(
-						'number' => 2,
-						'active' => false,
-					),
-					3 => array(
-						'number' => 3,
-						'active' => false,
-					),
-					4 => array(
-						'number' => 4,
-						'active' => true,
-					),
-				),
-				// Indexable slug
-				'post',
-				// Version to activate
-				'previous',
-				// Expected new versions
-				array(
-					2 => array(
-						'number' => 2,
-						'active' => false,
-					),
-					3 => array(
-						'number' => 3,
-						'active' => true,
-					),
-					4 => array(
-						'number' => 4,
-						'active' => false,
-					),
-				),
-			),
 		);
 	}
 
@@ -835,36 +759,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'post',
 				// Version to activate
 				1,
-			),
-
-			// "next" alias when there is no next index registered
-			array(
-				// Input array of versions
-				array(
-					2 => array(
-						'number' => 2,
-						'active' => true,
-					),
-				),
-				// Indexable slug
-				'post',
-				// Version to activate
-				'next',
-			),
-
-			// "previous" alias when there is no previous index registered
-			array(
-				// Input array of versions
-				array(
-					2 => array(
-						'number' => 2,
-						'active' => true,
-					),
-				),
-				// Indexable slug
-				'post',
-				// Version to activate
-				'previous',
 			),
 		);
 	}
