@@ -218,22 +218,87 @@ class Versioning {
 	 * 
 	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
 	 */
-	public function normalize_version_number( $version_number ) {
+	public function normalize_version_number( Indexable $indexable, $version_number ) {
 		if ( is_int( $version_number ) ) {
 			return $version_number;
 		}
 
 		$version_number = trim( $version_number );
 
-		switch( $version_number ) {
+		switch ( $version_number ) {
+			case 'active':
+				return $this->get_active_version_number( $indexable );
+
 			case 'next':
+				return $this->get_next_existing_version_number( $indexable );
 
 			case 'previous':
+				return $this->get_previous_existing_version_number( $indexable );
 
 			default:
 				return new WP_Error( 'invalid-version-number-alias', 'Unknown version number alias. Please use "next" or "previous"' );
 		}
-	}                              
+	}
+
+	public function get_next_existing_version_number( Indexable $indexable ) {
+		$active_version_number = $this->get_active_version_number( $indexable );
+
+		$versions = $this->get_versions( $indexable );
+
+		if ( empty( $versions ) ) {
+			return null;
+		}
+
+		// The next existing is the lowest index number after $active_version_number that exists, or null
+		$version_numbers = array_keys( $versions );
+		
+		sort( $version_numbers );
+
+		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
+
+		if ( false === $active_version_array_index ) {
+			return null;
+		}
+
+		$target_array_index = $active_version_array_index + 1;
+
+		// Is there another?
+		if ( ! isset( $version_numbers[ $target_array_index ] ) ) {
+			return null;
+		}
+
+		return $version_numbers[ $target_array_index ];
+	}
+
+	public function get_previous_existing_version_number( Indexable $indexable ) {
+		$active_version_number = $this->get_active_version_number( $indexable );
+
+		$versions = $this->get_versions( $indexable );
+
+		if ( empty( $versions ) ) {
+			return null;
+		}
+
+		// The next existing is the lowest index number after $active_version_number that exists, or null
+		$version_numbers = array_keys( $versions );
+		
+		sort( $version_numbers );
+
+		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
+
+		if ( false === $active_version_array_index ) {
+			return null;
+		}
+
+		$target_array_index = $active_version_array_index - 1;
+
+		// Is there another?
+		if ( ! isset( $version_numbers[ $target_array_index ] ) ) {
+			return null;
+		}
+
+		return $version_numbers[ $target_array_index ];
+	}
 
 	/**
 	 * Retrieve details about a given index version

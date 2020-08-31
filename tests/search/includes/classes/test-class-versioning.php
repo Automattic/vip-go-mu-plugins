@@ -279,6 +279,182 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_inactive_versions, $inactive_versions );
 	}
 
+	public function normalize_version_number_data() {
+		return array(
+			// Regular, 'next'
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'next',
+				// Expected normalized version number
+				3,
+			),
+
+			// Regular, 'previous'
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'previous',
+				// Expected normalized version number
+				1,
+			),
+
+			// Regular, 'active'
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'active',
+				// Expected normalized version number
+				2,
+			),
+
+			// No previous
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'previous',
+				// Expected normalized version number
+				null,
+			),
+
+			// No next
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'next',
+				// Expected normalized version number
+				null,
+			),
+
+			// No active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'active',
+				// Expected active version
+				null,
+			),
+
+			// No active, trying to get next
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'next',
+				// Expected active version
+				null,
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider normalize_version_number_data
+	 */
+	public function test_normalize_version_number( $versions, $indexable_slug, $version_string, $expected_version_number ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		self::$version_instance->update_versions( $indexable, $versions );
+
+		$normalized_version_number = self::$version_instance->normalize_version_number( $indexable, $version_string );
+
+		$this->assertEquals( $expected_version_number, $normalized_version_number );
+	}
+
 	public function add_version_data() {
 		return array(
 			// No index marked active
