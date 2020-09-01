@@ -279,7 +279,7 @@ class Versioning {
 			return null;
 		}
 
-		// The next existing is the lowest index number after $active_version_number that exists, or null
+		// The previous existing is the highest index number before $active_version_number that exists, or null
 		$version_numbers = array_keys( $versions );
 		
 		sort( $version_numbers );
