@@ -201,21 +201,23 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	}
 }
 
-// Set WordPress environment type to the VIP Go environment name
+// Set WordPress environment type
+// Map some VIP environments to 'production' and 'development', and use 'staging' for any other
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
-	$env = VIP_GO_APP_ENVIRONMENT;
-	if ( 'production' !== $env && 'development' !== $env && 'staging' !== $env ) {
-		if ( ! defined( 'WP_ENVIRONMENT_TYPES' ) ) {
-			define( 'WP_ENVIRONMENT_TYPES', array(
-				'production',
-				'development',
-				'staging',
-				$env,
-			) );
-		}
+	switch ( VIP_GO_APP_ENVIRONMENT ) {
+		case 'production':
+			$environment_type = 'production';
+			break;
+		case 'develop':
+		case 'development':
+			$environment_type = 'development';
+			break;
+		default:
+			$environment_type = 'staging';
+			break;
 	}
 
-	define( 'WP_ENVIRONMENT_TYPE', $env );
+	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 
 	// VIP sites should not be set as staging in Jetpack
 	// since it breaks SSO and prevents data from being passed to
