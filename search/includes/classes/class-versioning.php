@@ -236,7 +236,7 @@ class Versioning {
 				return $this->get_previous_existing_version_number( $indexable );
 
 			default:
-				return new WP_Error( 'invalid-version-number-alias', 'Unknown version number alias. Please use "next" or "previous"' );
+				return new WP_Error( 'invalid-version-number-alias', 'Unknown version number alias. Please use "active", "next" or "previous"' );
 		}
 	}
 
