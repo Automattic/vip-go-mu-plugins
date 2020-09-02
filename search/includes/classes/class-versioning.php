@@ -243,6 +243,11 @@ class Versioning {
 	public function get_next_existing_version_number( Indexable $indexable ) {
 		$active_version_number = $this->get_active_version_number( $indexable );
 
+		// If there is no active version, we can't determine what next is
+		if ( ! $active_version_number ) {
+			return null;
+		}
+
 		$versions = $this->get_versions( $indexable );
 
 		if ( empty( $versions ) ) {
@@ -272,6 +277,11 @@ class Versioning {
 
 	public function get_previous_existing_version_number( Indexable $indexable ) {
 		$active_version_number = $this->get_active_version_number( $indexable );
+
+		// If there is no active version, we can't determine what previous is
+		if ( ! $active_version_number ) {
+			return null;
+		}
 
 		$versions = $this->get_versions( $indexable );
 
