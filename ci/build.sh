@@ -31,10 +31,12 @@ function build {
 
 # push the image to the registry
 function push {
-  docker push "${image}"
+  # as a test, push only the latest image
+  # @@@ TODO: also push tagged image
+  #docker push "${image}"
   docker push "${latest}"
 }
 
 prepare
 build
-#push
+push
