@@ -1,19 +1,17 @@
 #!/bin/bash
 #
-# CI script to build and push the container image
+# Usage: $0 <image-base-name>
+#  e.g. $0 registry.example.com/mu-plugins
 #
-# requires the following environment variables:
-# REGISTRY: docker registry e.g. hub.docker.com
+# build and push the container image
+# - run this from the directory with the Dockerfile
+# - supply image basename as the first argument
+# - image will be tagged with the commit sha and the latest tag
 #
 set -euo pipefail
 set -x
 
-if [[ -z ${REGISTRY+x} ]]; then
-  echo "REGISTRY must be set to the docker registry url" >&2
-  exit 1
-fi
-
-image_base="${1:-${REGISTRY}/mu-plugins}"
+image_base="${1:-mu-plugins}"
 tag=$(git describe --always --tags HEAD)
 image="${image_base}:${tag}"
 latest="${image_base}:latest"
