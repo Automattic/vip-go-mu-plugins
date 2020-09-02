@@ -1,4 +1,5 @@
 .deployignore
+.dockerignore
 
 .ackrc
 .babelrc
@@ -30,6 +31,7 @@ composer.json
 composer.lock
 CONTRIBUTING.md
 dangerfile.js
+Dockerfile
 Gruntfile.js
 gulpfile.babel.js
 install-wp-tests.sh
