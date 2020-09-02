@@ -39,7 +39,7 @@
 	url = https://github.com/Automattic/gutenberg-ramp.git
 [submodule "cron-control-next"]
 	path = cron-control-next
-	url = git@github.com:Automattic/Cron-Control.git
+	url = https://github.com/Automattic/Cron-Control.git
 [submodule "elasticsearch/elasticpress"]
 	path = search/elasticpress
 	url = https://github.com/Automattic/ElasticPress.git
