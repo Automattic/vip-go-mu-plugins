@@ -69,8 +69,13 @@ class Cron {
 		// Add the custom cron schedule
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
-		// Hook into init action to ensure cron-control has already been loaded
-		add_action( 'init', [ $this, 'schedule_sweeper_job' ] );
+		// Hook into init actions(except for init) to ensure cron-control has already been loaded
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			add_action( 'wp_loaded', [ $this, 'schedule_sweeper_job' ], 0 );
+		} else {
+			add_action( 'admin_init', [ $this, 'schedule_sweeper_job' ], 0 );
+			add_action( 'rest_api_init', [ $this, 'schedule_sweeper_job' ], 0 );
+		}
 	}
 
 	/**
@@ -179,7 +184,7 @@ class Cron {
 
 		// Iterate pagination
 		while ( $args['paged'] <= $posts->max_num_pages ) {
-			// Queue all posts for page 
+			// Queue all posts for page
 			$this->queue->queue_objects( $posts->posts, 'post' );
 
 			// Go to the next page and reset $posts
@@ -223,7 +228,7 @@ class Cron {
 			$this->schedule_batch_job();
 
 			$i++;
-		} while ( $this->get_processor_job_count() < self::MAX_PROCESSOR_JOB_COUNT ); 
+		} while ( $this->get_processor_job_count() < self::MAX_PROCESSOR_JOB_COUNT );
 		// Prevent continuing if the current processor job count goes over the max allowed job count
 	}
 
