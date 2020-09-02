@@ -416,7 +416,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Version string to be normalized
 				'active',
 				// Expected active version
-				null,
+				1, // NOTE - expect 1 because get_active_version_number() returns 1 by default. This behavior is likely to change
 			),
 
 			// No active, trying to get next
