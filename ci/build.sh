@@ -1,22 +1,16 @@
 #!/bin/bash
 #
-# Usage: $0 <image-base-name>
-#  e.g. $0 registry.example.com/mu-plugins
+# Usage: $0 <image-name>
 #
-# build and push the container image
-# - run this from the directory with the Dockerfile
-# - supply image basename as the first argument
-# - image will be tagged with the commit sha and the latest tag
+# build and tag the container image as <image-name>:latest
 #
-set -euo pipefail
-set -x
+set -euxo pipefail
 
+sha=$(git describe --always --tags HEAD)
 image_base="${1:-mu-plugins}"
-tag=$(git describe --always --tags HEAD)
-image="${image_base}:${tag}"
-latest="${image_base}:latest"
+image="${image_base}:${sha}"
 
-# prepare repo
+# update all submodules
 function prepare {
   # git checkout master
   # git pull
@@ -26,17 +20,8 @@ function prepare {
 
 # build the image
 function build {
-  docker build --pull -t "${image}" -t "${latest}" .
-}
-
-# push the image to the registry
-function push {
-  # as a test, push only the latest image
-  # @@@ TODO: also push tagged image
-  #docker push "${image}"
-  docker push "${latest}"
+  docker build --pull -t "${image}" .
 }
 
 prepare
 build
-push
