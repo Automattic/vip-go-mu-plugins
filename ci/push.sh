@@ -17,10 +17,8 @@ if [[ $# != 2 ]]; then
   exit 1
 fi
 
-sha=$(git describe --always --tags HEAD)
-
-source="$1:${sha}"
-image_sha="$2:${sha}"
+source="$1:${SHA}"
+image_sha="$2:${SHA}"
 image_latest="$2:latest"
 
 # tag and push latest image

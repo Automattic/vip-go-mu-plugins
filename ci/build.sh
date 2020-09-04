@@ -6,9 +6,8 @@
 #
 set -euxo pipefail
 
-sha=$(git describe --always --tags HEAD)
 image_base="${1:-mu-plugins}"
-image="${image_base}:${sha}"
+image_sha="${image_base}:${SHA}"
 
 # update all submodules
 function prepare {
@@ -20,7 +19,7 @@ function prepare {
 
 # build the image
 function build {
-  docker build --pull -t "${image}" .
+  docker build --pull -t "${image_sha}" .
 }
 
 prepare
