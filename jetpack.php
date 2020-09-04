@@ -69,6 +69,17 @@ add_action( 'jetpack_verify_signature_error', 'vip_jetpack_token_send_signature_
 
 $jetpack_to_load = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
 
+if ( defined( 'VIP_JETPACK_PINNED_VERSION' ) ) {
+	// Set an old Jetpack version inside mu-plugins
+	$jetpack_version = 'jetpack-' . VIP_JETPACK_PINNED_VERSION;
+	$jetpack_to_test = WPMU_PLUGIN_DIR . "/$jetpack_version/jetpack.php";
+
+	// Test that our proposed Jetpack exists, otherwise do not use it
+	if ( file_exists( $jetpack_to_test ) ) {
+		$jetpack_to_load = $jetpack_to_test;
+	}
+}
+
 if ( defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && WPCOM_VIP_JETPACK_LOCAL ) {
 	// Set a specific alternative Jetpack
 	$jetpack_to_test = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
