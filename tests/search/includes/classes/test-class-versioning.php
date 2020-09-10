@@ -281,6 +281,31 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 	public function normalize_version_number_data() {
 		return array(
+			// Regular, normalizes string representation of a version into an int
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'2',
+				// Expected normalized version number
+				2,
+			),
+
 			// Regular, 'next'
 			array(
 				// Input array of versions
