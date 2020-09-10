@@ -245,13 +245,13 @@ class Versioning {
 
 		// If there is no active version, we can't determine what next is
 		if ( ! $active_version_number ) {
-			return null;
+			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
 		}
 
 		$versions = $this->get_versions( $indexable );
 
 		if ( empty( $versions ) ) {
-			return null;
+			return new WP_Error( 'no-index-versions-found', 'No index versions found' );
 		}
 
 		// The next existing is the lowest index number after $active_version_number that exists, or null
@@ -262,14 +262,14 @@ class Versioning {
 		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
 
 		if ( false === $active_version_array_index ) {
-			return null;
+			return new WP_Error( 'active-index-not-found-in-versions-list', 'Active index not found in list of index versions' );
 		}
 
 		$target_array_index = $active_version_array_index + 1;
 
 		// Is there another?
 		if ( ! isset( $version_numbers[ $target_array_index ] ) ) {
-			return null;
+			return new WP_Error( 'no-next-version', 'There is no "next" index version defined' );
 		}
 
 		return $version_numbers[ $target_array_index ];
@@ -280,13 +280,13 @@ class Versioning {
 
 		// If there is no active version, we can't determine what previous is
 		if ( ! $active_version_number ) {
-			return null;
+			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
 		}
 
 		$versions = $this->get_versions( $indexable );
 
 		if ( empty( $versions ) ) {
-			return null;
+			return new WP_Error( 'no-index-versions-found', 'No index versions found' );
 		}
 
 		// The previous existing is the highest index number before $active_version_number that exists, or null
@@ -297,14 +297,14 @@ class Versioning {
 		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
 
 		if ( false === $active_version_array_index ) {
-			return null;
+			return new WP_Error( 'active-index-not-found-in-versions-list', 'Active index not found in list of index versions' );
 		}
 
 		$target_array_index = $active_version_array_index - 1;
 
 		// Is there another?
 		if ( ! isset( $version_numbers[ $target_array_index ] ) ) {
-			return null;
+			return new WP_Error( 'no-previous-version', 'There is no "previous" index version defined' );
 		}
 
 		return $version_numbers[ $target_array_index ];
