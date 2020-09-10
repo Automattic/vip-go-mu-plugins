@@ -236,6 +236,11 @@ class Versioning {
 				return $this->get_previous_existing_version_number( $indexable );
 
 			default:
+				// Was it a number, but passed through as a string? return it as an ant
+				if ( ctype_digit( strval( $version_number ) ) ) {
+					return intval( $version_number );
+				}
+
 				return new WP_Error( 'invalid-version-number-alias', 'Unknown version number alias. Please use "active", "next" or "previous"' );
 		}
 	}
