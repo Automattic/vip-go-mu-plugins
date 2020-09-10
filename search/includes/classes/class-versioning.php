@@ -57,6 +57,12 @@ class Versioning {
 	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
 	public function set_current_version_number( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		// Validate that the requested version is known
 		$versions = $this->get_versions( $indexable );
 
@@ -323,6 +329,12 @@ class Versioning {
 	 */
 	public function get_version( Indexable $indexable, $version_number ) {
 		$slug = $indexable->slug;
+
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
 	
 		$versions = $this->get_versions( $indexable );
 
@@ -378,6 +390,12 @@ class Versioning {
 	 * @param int|string $version_number The index version number to create
 	 */
 	public function create_versioned_index_with_mapping( $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		$this->set_current_version_number( $indexable, $version_number );
 
 		$result = $indexable->put_mapping();
@@ -446,6 +464,12 @@ class Versioning {
 	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
 	public function activate_version( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		$versions = $this->get_versions( $indexable );
 
 		// If this wasn't a valid version, abort with error
@@ -478,6 +502,12 @@ class Versioning {
 	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
 	public function delete_version( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		// Can't delete active version
 		$active_version_number = $this->get_active_version_number( $indexable );
 
@@ -510,6 +540,12 @@ class Versioning {
 	 * @return bool Boolean indicating success or failure 
 	 */
 	public function delete_versioned_index( $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		$this->set_current_version_number( $indexable, $version_number );
 
 		$result = $indexable->delete_index();
