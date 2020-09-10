@@ -308,7 +308,7 @@ class Versioning {
 		$target_array_index = $active_version_array_index - 1;
 
 		// Is there another?
-		if ( ! isset( $version_numbers[ $target_array_index ] ) ) {
+		if ( 0 > $target_array_index || ! isset( $version_numbers[ $target_array_index ] ) ) {
 			return new WP_Error( 'no-previous-version', 'There is no "previous" index version defined' );
 		}
 
