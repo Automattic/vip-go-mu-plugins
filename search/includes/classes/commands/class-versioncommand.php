@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
+use \ElasticPress\Indexable as Indexable;
 
 /**
  * Commands to view and manage index versions
@@ -22,21 +23,51 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * <type>
 	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
 	 *
+	 * [--network-wide]
+	 * : Optional - add a new version to all subsites
+	 * 
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions add post
+	 *     wp vip-search index-versions add post --network-wide
 	 *
 	 * @subcommand add
 	 */
 	public function add( $args, $assoc_args ) {
 		$type = $args[0];
-	
-		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
+
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
+				$assoc_args['network-wide'] = 0;
+			}
+
+			$sites = \ElasticPress\Utils\get_sites( $assoc_args['network-wide'] );
+
+			foreach ( $sites as $site ) {
+				switch_to_blog( $site['blog_id'] );
+
+				$new_version = $this->add_helper( $indexable );
+
+				restore_current_blog();
+
+				WP_CLI::line( sprintf( 'Registered and created new index version %d on blog %d (%s)', $new_version['number'], $site['blog_id'], $site['domain'] . $site['path'] ) );
+			}
+
+			WP_CLI::success( 'Done!' );
+		} else {
+			$new_version = $this->add_helper( $indexable );
+
+			WP_CLI::success( sprintf( 'Registered and created new index version %d', $new_version['number'] ) );
+		}
+	}
+
+	protected function add_helper( Indexable $indexable ) {
+		$search = \Automattic\VIP\Search\Search::instance();
 
 		$new_version = $search->versioning->add_version( $indexable );
 
@@ -48,7 +79,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( 'Failed to register the new index version' );
 		}
 
-		WP_CLI::success( sprintf( 'Registered and created new index version %d', $new_version['number'] ) );
+		return $new_version;
 	}
 
 	/**
