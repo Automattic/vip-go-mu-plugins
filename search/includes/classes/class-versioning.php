@@ -242,7 +242,7 @@ class Versioning {
 				return $this->get_previous_existing_version_number( $indexable );
 
 			default:
-				// Was it a number, but passed through as a string? return it as an ant
+				// Was it a number, but passed through as a string? return it as an int
 				if ( ctype_digit( strval( $version_number ) ) ) {
 					return intval( $version_number );
 				}
