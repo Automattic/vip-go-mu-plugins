@@ -174,6 +174,9 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * 
 	 * <version_number>
 	 * : The version number of the index to activate
+	 * 
+	 * [--network-wide]
+	 * : Optional - activate the version to all subsites. Best used with version aliases like `next` instead of individual version numbers
 	 *
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions activate post
@@ -182,19 +185,66 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function activate( $args, $assoc_args ) {
 		$type = $args[0];
-	
-		$search = \Automattic\VIP\Search\Search::instance();
+		$desired_version_number = $args[1];
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
-	
-		$new_version_number = $search->versioning->normalize_version_number( $indexable, $args[1] );
+
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			WP_CLI::confirm( sprintf( 'Are you sure you want to activate index version %s for type %s on all sites in this network?', $desired_version_number, $type ), $assoc_args );
+
+			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
+				$assoc_args['network-wide'] = 0;
+			}
+
+			$sites = \ElasticPress\Utils\get_sites( $assoc_args['network-wide'] );
+
+			foreach ( $sites as $site ) {
+				switch_to_blog( $site['blog_id'] );
+
+				$result = $this->activate_helper( $indexable, $desired_version_number );
+
+				restore_current_blog();
+
+				if ( is_wp_error( $result ) ) {
+					return WP_CLI::error( sprintf( 'Received error for index version %s on site %s - %s', $desired_version_number, $site['domain'] . $site['path'], $result->get_error_message() ) );
+				}
+
+				if ( ! $result ) {
+					return WP_CLI::error( sprintf( 'Failed to activate index version %s for type %s on blog %d (%s)', $desired_version_number, $type, $site['domain'] . $site['path'] ) );
+				}
+
+				WP_CLI::line( sprintf( 'Successfully activated index version %s for type %s on blog %d (%s)', $desired_version_number, $type, $site['blog_id'], $site['domain'] . $site['path'] ) );
+			}
+
+			WP_CLI::success( 'Done!' );
+		} else {
+			WP_CLI::confirm( sprintf( 'Are you sure you want to activate index version %s for type %s?', $desired_version_number, $type ), $assoc_args );
+
+			$result = $this->activate_helper( $indexable, $desired_version_number );
+
+			if ( is_wp_error( $result ) ) {
+				return WP_CLI::error( sprintf( 'Received error for index version %s - %s', $desired_version_number, $result->get_error_message() ) );
+			}
+
+			if ( ! $result ) {
+				return WP_CLI::error( sprintf( 'Failed to activate index version %s for type %s', $desired_version_number, $type ) );
+			}
+
+			WP_CLI::success( sprintf( 'Successfully activated index version %s for type %s', $desired_version_number, $type ) );
+		}
+	}
+
+	protected function activate_helper( Indexable $indexable, $version_number_to_activate ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$new_version_number = $search->versioning->normalize_version_number( $indexable, $version_number_to_activate );
 
 		if ( is_wp_error( $new_version_number ) ) {
-			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $args[1], $new_version_number->get_error_message() ) );
+			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $version_number_to_activate, $new_version_number->get_error_message() ) );
 		}
 
 		$active_version_number = $search->versioning->get_active_version_number( $indexable );
@@ -203,19 +253,9 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( sprintf( 'Index version %d is already active for type %s', $new_version_number, $type ) );
 		}
 
-		WP_CLI::confirm( sprintf( 'Are you sure you want to activate index version %d for type %s?', $new_version_number, $type ), $assoc_args );
-
 		$result = $search->versioning->activate_version( $indexable, $new_version_number );
 
-		if ( is_wp_error( $result ) ) {
-			return WP_CLI::error( $result->get_error_message() );
-		}
-
-		if ( ! $result ) {
-			return WP_CLI::error( sprintf( 'Failed to activate index version %d for type %s', $new_version_number, $type ) );
-		}
-
-		WP_CLI::success( sprintf( 'Successfully activated index version %d for type %s', $new_version_number, $type ) );
+		return $result;
 	}
 
 	/**
