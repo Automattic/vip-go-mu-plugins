@@ -43,12 +43,12 @@ class DocumentCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
 
-		$document = $indexable->get($object_id);
+		$document = $indexable->get( $object_id );
 	
 		if ( ! $document ) {
 			return WP_CLI::error( sprintf( 'Document with ID %s of type %s was not found.', $object_id, $type ) );
 		}
 
-		\WP_CLI::success(print_r($document, true));
+		\WP_CLI::success( print_r( $document, true ) );
 	}
 }
