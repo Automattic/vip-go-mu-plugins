@@ -15,7 +15,8 @@ function disable_pings( $event ) {
 
 	return $event;
 }
-add_action( 'schedule_event', __NAMESPACE__ . '\disable_pings' );
+add_action( 'pre_schedule_event', __NAMESPACE__ . '\disable_pings', 20 );
+add_action( 'schedule_event', __NAMESPACE__ . '\disable_pings', 20 );
 
 // Don't allow new _encloseme metas
 function block_encloseme_metadata_filter( $should_update, $object_id, $meta_key, $meta_value, $unique ) {
