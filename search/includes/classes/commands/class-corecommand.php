@@ -16,7 +16,7 @@ class CoreCommand extends \ElasticPress\Command {
 
 	protected function _maybe_setup_index_version( &$assoc_args ) {
 		if ( $assoc_args['version'] ) {
-			$desired_version_number = $assoc_args['version'];
+			$version_number = $assoc_args['version'];
 
 			// If version is specified, the indexable must also be specified, as different indexables can have different versions
 			if ( ! isset( $assoc_args['indexables'] ) ) {
@@ -35,13 +35,7 @@ class CoreCommand extends \ElasticPress\Command {
 					return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?' ) );
 				}
 
-				$new_version_number = $search->versioning->normalize_version_number( $indexable, $desired_version_number );
-
-				if ( is_wp_error( $new_version_number ) ) {
-					return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $desired_version_number, $new_version_number->get_error_message() ) );
-				}
-
-				$result = $search->versioning->set_current_version_number( $indexable, $new_version_number );
+				$result = $search->versioning->set_current_version_number( $indexable, $version_number );
 
 				if ( is_wp_error( $result ) ) {
 					return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
