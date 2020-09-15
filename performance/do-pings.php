@@ -15,9 +15,9 @@ function disable_pings( $event ) {
 
 	return $event;
 }
-// Hooking on priority 20 to ensure they run after Cron Control (or anything else that hooks on the default priority)
-add_action( 'pre_schedule_event', __NAMESPACE__ . '\disable_pings', 20 );
-add_action( 'schedule_event', __NAMESPACE__ . '\disable_pings', 20 );
+// Hooking at 0 to get in before cron control on pre_schedule_event
+add_filter( 'pre_schedule_event', __NAMESPACE__ . '\disable_pings', 0 );
+add_action( 'schedule_event', __NAMESPACE__ . '\disable_pings' );
 
 // Don't allow new _encloseme metas
 function block_encloseme_metadata_filter( $should_update, $object_id, $meta_key, $meta_value, $unique ) {
