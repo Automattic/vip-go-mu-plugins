@@ -167,11 +167,7 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable ) {
-		if ( Search::is_network_mode() ) {
-			$versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
-		} else {
-			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
-		}
+		$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 
 		$slug = $indexable->slug;
 
