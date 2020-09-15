@@ -26,6 +26,9 @@ class DocumentCommand extends \WPCOM_VIP_CLI_Command {
 	 * <object_id>
 	 * : The ID of the object
 	 * 
+	 * [--format=<string>]
+	 * : Optional one of: table json csv yaml ids count
+	 * 
 	 * ## EXAMPLES
 	 *     wp vip-search documents get post 2
 	 *
@@ -49,6 +52,7 @@ class DocumentCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( sprintf( 'Document with ID %s of type %s was not found.', $object_id, $type ) );
 		}
 
-		\WP_CLI::success( print_r( $document, true ) );
+		$keys = array_keys( $document );
+		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $document ), $keys );
 	}
 }
