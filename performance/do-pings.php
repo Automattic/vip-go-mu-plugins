@@ -15,6 +15,8 @@ function disable_pings( $event ) {
 
 	return $event;
 }
+// Hooking at 0 to get in before cron control on pre_schedule_event
+add_filter( 'pre_schedule_event', __NAMESPACE__ . '\disable_pings', 0 );
 add_action( 'schedule_event', __NAMESPACE__ . '\disable_pings' );
 
 // Don't allow new _encloseme metas
