@@ -231,6 +231,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * default: csv
 	 * ---
 	 *
+	 * [--do-not-heal]
+	 * : Optional Don't try to correct inconsistencies
+	 *
 	 * [--silent]
 	 * : Optional silences all non-error output except for the final results
 	 *
@@ -248,8 +251,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			define( 'EP_QUERY_LOG', false );
 		}
 
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ) );
-
+		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ), isset( $assoc_args['do-not-heal'] ) );
+		
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
 
@@ -261,11 +264,11 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		}
 
 		if ( empty( $results ) ) {
-			
+
 			if ( ! isset( $assoc_args['silent'] ) ) {
 				WP_CLI::success( 'No inconsistencies found!' );
 			}
-			
+
 			exit();
 		}
 
@@ -277,7 +280,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$this->render_contents_diff( $results, $assoc_args['format'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ) );
 	}
 
-	public function render_contents_diff( $diff, $format = 'csv', $max_diff_size, $silent = false ) {
+	private function render_contents_diff( $diff, $format = 'csv', $max_diff_size, $silent = false ) {
 		if ( ! is_array( $diff ) || empty( $diff ) || 0 >= $max_diff_size ) {
 			return;
 		}

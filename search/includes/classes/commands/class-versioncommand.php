@@ -69,11 +69,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function get( $args, $assoc_args ) {
 		$type = $args[0];
-		$version_number = intval( $args[1] );
-
-		if ( $version_number <= 0 ) {
-			return WP_CLI::error( 'New version number must be a positive int' );
-		}
 	
 		$search = \Automattic\VIP\Search\Search::instance();
 
@@ -81,6 +76,12 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+	
+		$version_number = $search->versioning->normalize_version_number( $indexable, $args[1] );
+
+		if ( is_wp_error( $version_number ) ) {
+			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $args[1], $version_number->get_error_message() ) );
 		}
 
 		$version = $search->versioning->get_version( $indexable, $version_number );
@@ -150,11 +151,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function activate( $args, $assoc_args ) {
 		$type = $args[0];
-		$new_version_number = intval( $args[1] );
-
-		if ( $new_version_number <= 0 ) {
-			return WP_CLI::error( 'New version number must be a positive int' );
-		}
 	
 		$search = \Automattic\VIP\Search\Search::instance();
 
@@ -162,6 +158,12 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+	
+		$new_version_number = $search->versioning->normalize_version_number( $indexable, $args[1] );
+
+		if ( is_wp_error( $new_version_number ) ) {
+			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $args[1], $new_version_number->get_error_message() ) );
 		}
 
 		$active_version_number = $search->versioning->get_active_version_number( $indexable );
@@ -196,6 +198,9 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * <version_number>
 	 * : The version number of the index to delete
 	 *
+	 * [--skip-confirm]
+	 * : Skip confirmation
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions delete post 2
 	 *
@@ -203,11 +208,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function delete( $args, $assoc_args ) {
 		$type = $args[0];
-		$version_number = intval( $args[1] );
-
-		if ( $version_number <= 0 ) {
-			return WP_CLI::error( 'New version number must be a positive int' );
-		}
 	
 		$search = \Automattic\VIP\Search\Search::instance();
 
@@ -216,6 +216,12 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
+	
+		$version_number = $search->versioning->normalize_version_number( $indexable, $args[1] );
+
+		if ( is_wp_error( $version_number ) ) {
+			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $args[1], $version_number->get_error_message() ) );
+		}
 
 		$active_version_number = $search->versioning->get_active_version_number( $indexable );
 
@@ -223,7 +229,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( sprintf( 'Index version %d is active for type %s and cannot be deleted', $version_number, $type ) );
 		}
 
-		WP_CLI::confirm( sprintf( 'Are you sure you want to delete index version %d for type %s?', $version_number, $type ), $assoc_args );
+		CoreCommand::confirm_destructive_operation( $assoc_args );
 
 		$result = $search->versioning->delete_version( $indexable, $version_number );
 

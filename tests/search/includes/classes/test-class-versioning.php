@@ -279,6 +279,213 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_inactive_versions, $inactive_versions );
 	}
 
+	public function normalize_version_number_data() {
+		return array(
+			// Regular, normalizes string representation of a version into an int
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'2',
+				// Expected normalized version number
+				2,
+			),
+
+			// Regular, 'next'
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'next',
+				// Expected normalized version number
+				3,
+			),
+
+			// Regular, 'previous'
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'previous',
+				// Expected normalized version number
+				1,
+			),
+
+			// Regular, 'active'
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'active',
+				// Expected normalized version number
+				2,
+			),
+
+			// No previous
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'previous',
+				// Expected normalized version number
+				new \WP_Error( 'no-previous-version' ),
+			),
+
+			// No next
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'next',
+				// Expected normalized version number
+				new \WP_Error( 'no-next-version' ),
+			),
+
+			// No active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'active',
+				// Expected active version
+				1, // NOTE - expect 1 because get_active_version_number() returns 1 by default. This behavior is likely to change
+			),
+
+			// No active, trying to get next
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'next',
+				// Expected active version
+				new \WP_Error( 'active-index-not-found-in-versions-list' ), // NOTE - like above, this is because the default active version is 1, even if it doesn't exist in the list. Likely to change
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider normalize_version_number_data
+	 */
+	public function test_normalize_version_number( $versions, $indexable_slug, $version_string, $expected_version_number ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		self::$version_instance->update_versions( $indexable, $versions );
+
+		$normalized_version_number = self::$version_instance->normalize_version_number( $indexable, $version_string );
+
+		if ( is_wp_error( $expected_version_number ) ) {
+			// Just validate the code on WP_Errors
+			$this->assertTrue( is_wp_error( $normalized_version_number ), 'Expected normalized version to be a WP_Error' );
+			$this->assertEquals( $expected_version_number->get_error_code(), $normalized_version_number->get_error_code(), 'Unexpected WP_Error code' );
+		} else {
+			$this->assertEquals( $expected_version_number, $normalized_version_number );
+		}
+	}
+
 	public function add_version_data() {
 		return array(
 			// No index marked active
