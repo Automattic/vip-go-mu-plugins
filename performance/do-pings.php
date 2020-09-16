@@ -15,9 +15,21 @@ function disable_pings( $event ) {
 
 	return $event;
 }
-// Hooking at 0 to get in before cron control on pre_schedule_event
-add_filter( 'pre_schedule_event', __NAMESPACE__ . '\disable_pings', 0 );
 add_action( 'schedule_event', __NAMESPACE__ . '\disable_pings' );
+
+function pre_disable_pings( $scheduled, $event ) {
+	if ( null !== $scheduled ) {
+		return $scheduled;
+	}
+	
+	if ( 'do_pings' === $event->hook ) {
+		return false;
+	}
+	
+	return $scheduled;
+}
+// Hooking at 0 to get in before cron control on pre_schedule_event
+add_filter( 'pre_schedule_event', __NAMESPACE__ . '\pre_disable_pings', 0, 2 );
 
 // Don't allow new _encloseme metas
 function block_encloseme_metadata_filter( $should_update, $object_id, $meta_key, $meta_value, $unique ) {
