@@ -164,12 +164,15 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	// Strip invalid characters from the address
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 
-	$ip_username_cache_key  = $ip . '|' . $username;
-	$ip_cache_key           = $ip;
-	$key3                   = $username;
-	$ip_username_count      = wp_cache_get( $ip_username_cache_key, $cache_group );
-	$ip_count               = wp_cache_get( $ip_cache_key, $cache_group );
-	$count3                 = wp_cache_get( $key3, $cache_group);
+	$ip_username_cache_key   = $ip . '|' . $username;
+	$ip_username_count = wp_cache_get( $ip_username_cache_key, $cache_group );
+
+	$ip_cache_key   = $ip;
+	$ip_count = wp_cache_get( $ip_cache_key, $cache_group );
+
+	$key3   = $username;
+	$count3 = wp_cache_get( $key3, $cache_group );
+
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 	$threshold3             = 5;
 
