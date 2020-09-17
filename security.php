@@ -163,11 +163,15 @@ add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit' );
 function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 
-	$key1                   = $ip . '|' . $username;
-	$key2                   = $ip;
-	$key3                   = $username;
-	$count1                 = wp_cache_get( $key1, $cache_group );
-	$count3                 = wp_cache_get( $key3, $cache_group );
+	$key1   = $ip . '|' . $username;
+	$count1 = wp_cache_get( $key1, $cache_group );
+
+	$key2   = $ip;
+	$count2 = wp_cache_get( $key2, $cache_group );
+
+	$key3   = $username;
+	$count3 = wp_cache_get( $key3, $cache_group );
+
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 	$threshold2             = 50;
 	$threshold3             = 5;
@@ -180,8 +184,6 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	} else {
 		$threshold1 = 5;
 	}
-
-	$count2 = wp_cache_get( $key2, $cache_group );
 
 	if ( $count1 >= $threshold1 || $count2 >= $threshold2 || $count3 >= $threshold3 ) {
 
