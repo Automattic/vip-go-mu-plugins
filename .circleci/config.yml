@@ -2,8 +2,10 @@ workflows:
   version: 2
   main:
     jobs:
+      - php73-lint
       - php73-build-multisite
       - php73-build-singlesite
+      - php74-lint
       - php74-build-multisite
       - php74-build-singlesite
       - php74-build-multisite-nightly
@@ -26,7 +28,7 @@ job-references:
     command: |
       sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
       sudo -E docker-php-ext-install mysqli
-      npm install
+      npm ci
       composer install -n
 
   prepare_repo: &prepare_repo
@@ -46,19 +48,30 @@ job-references:
       - run:
           name: "Run Tests"
           command: |
-            if [[ "$RUN_EXTRA" == "1" ]]; then
-              npm run lint
-            fi
             rm -rf $WP_TESTS_DIR $WP_CORE_DIR
             bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
             vendor/bin/phpunit --version
             vendor/bin/phpunit
 
+  lint_job: &lint_job
+    steps:
+      - checkout
+      - run: *prepare_repo
+      - run: npm ci
+      - run: composer install -n
+      - run: 
+          name: "Lint"
+          command: npm run lint
+
 jobs:
+  php73-lint:
+    <<: *lint_job
+    docker:
+      - image: circleci/php:7.3-node
+
   php73-build-multisite:
     <<: *php_job
     environment:
-      - RUN_EXTRA: "1"
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
@@ -73,6 +86,11 @@ jobs:
     docker:
       - image: circleci/php:7.3-node
       - image: *db_image
+
+  php74-lint:
+    <<: *lint_job
+    docker:
+      - image: circleci/php:7.4-node
 
   php74-build-multisite:
     <<: *php_job
@@ -95,7 +113,6 @@ jobs:
   php74-build-multisite-nightly:
     <<: *php_job
     environment:
-      - RUN_EXTRA: "1"
       - WP_MULTISITE: "1"
       - WP_VERSION: "nightly"
     docker:
