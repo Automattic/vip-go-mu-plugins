@@ -133,7 +133,7 @@ function vip_es_field_map( $es_map ) {
 			'post_date_gmt.second'          => 'date_gmt_terms.second',
 			'post_content'                  => 'post_content',
 			'post_content.analyzed'         => 'post_content',
-			'post_title'                    => 'post_title',
+			'post_title'                    => 'post_title.raw',
 			'post_title.analyzed'           => 'post_title',
 			'post_type'                     => 'post_type.raw',
 			'post_excerpt'                  => 'post_excerpt',
