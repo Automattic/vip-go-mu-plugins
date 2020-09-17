@@ -3,6 +3,7 @@ workflows:
   main:
     jobs:
       - php73-lint
+      - php73-core-tests
       - php73-build-multisite
       - php73-build-singlesite
       - php74-lint
@@ -11,7 +12,37 @@ workflows:
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
 
-version: 2
+version: 2.1
+
+parameters:
+  wp_test_dir:
+    type: string
+    default: /tmp/wordpress-tests-lib
+  wp_core_dir:
+    type: string
+    default: /tmp/wordpress/
+  wp_core_develop_dir:
+    type: string
+    default: /tmp/wordpress-develop
+  phpunit_report_file:
+    type: string
+    default: /tmp/phpunit-report.xml
+  phpunit_report_file_including_mu_plugins:
+    type: string
+    default: /tmp/phpunit-report-including-mu-plugins.xml
+  db_host:
+    type: string
+    default: 127.0.0.1
+  db_name:
+    type: string
+    default: wordpress_test
+  db_user:
+    type: string
+    default: root
+  db_pass:
+    type: string
+    default: ""
+
 
 job-references:
   db_image: &db_image
@@ -37,9 +68,6 @@ job-references:
       git submodule update --init --recursive
 
   php_job: &php_job
-    environment:
-      - WP_TESTS_DIR: "/tmp/wordpress-tests-lib"
-      - WP_CORE_DIR: "/tmp/wordpress/"
     steps:
       - checkout
       - run: *setup_environment
@@ -48,10 +76,32 @@ job-references:
       - run:
           name: "Run Tests"
           command: |
-            rm -rf $WP_TESTS_DIR $WP_CORE_DIR
-            bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
+            rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
+            bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
             vendor/bin/phpunit --version
             vendor/bin/phpunit
+
+  php_core_job: &php_core_job
+    steps:
+      - checkout
+      - run: *setup_environment
+      - run: *install_dependencies
+      - run: *prepare_repo
+      - run:
+          name: "Run Tests"
+          command: |
+            rm -rf << pipeline.parameters.wp_core_develop_dir >>
+            bash bin/install-wp-develop.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            cd << pipeline.parameters.wp_core_develop_dir >>
+            npm ci
+            npm run grunt build
+            export WP_TESTS_DIR=<< pipeline.parameters.wp_core_develop_dir >>/tests/phpunit
+            echo "test EN"
+            echo $WP_TESTS_DIR
+            ~/project/vendor/bin/phpunit --log-junit << pipeline.parameters.phpunit_report_file >> || true
+            ~/project/vendor/bin/phpunit --bootstrap ~/project/tests/bootstrap.php --log-junit << pipeline.parameters.phpunit_report_file_including_mu_plugins >> || true
+            diff <(cat << pipeline.parameters.phpunit_report_file >> | grep -o '<testsuite name="".*time=') <(cat << pipeline.parameters.phpunit_report_file_including_mu_plugins >> | grep -o '<testsuite name="".*time=')
+
 
   lint_job: &lint_job
     steps:
@@ -68,6 +118,15 @@ jobs:
     <<: *lint_job
     docker:
       - image: circleci/php:7.3-node
+
+  php73-core-tests:
+    <<: *php_core_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.3-node
+      - image: *db_image
 
   php73-build-multisite:
     <<: *php_job
