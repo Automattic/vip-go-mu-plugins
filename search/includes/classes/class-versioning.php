@@ -57,19 +57,20 @@ class Versioning {
 	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
 	public function set_current_version_number( Indexable $indexable, $version_number ) {
-		$version_number = $this->normalize_version_number( $indexable, $version_number );
+		$actual_version_number = $this->normalize_version_number( $indexable, $version_number );
 
-		if ( is_wp_error( $version_number ) ) {
-			return $version_number;
+		if ( is_wp_error( $actual_version_number ) ) {
+			return $actual_version_number;
 		}
 
 		// Validate that the requested version is known
 		$versions = $this->get_versions( $indexable );
 
-		if ( ! isset( $versions[ $version_number ] ) ) {
+		if ( ! isset( $versions[ $actual_version_number ] ) ) {
 			return new WP_Error( 'invalid-index-version', sprintf( 'The requested index version %d does not exist', $version_number ) );
 		}
 
+		// Store as $version_number (not $actual_version_number) so that we can resolve aliases like next/previous at runtime in get_current_version_number()
 		$this->current_index_version_by_type[ $indexable->slug ] = $version_number;
 
 		return true;
@@ -106,8 +107,9 @@ class Versioning {
 	public function get_current_version_number( $indexable ) {
 		$override = isset( $this->current_index_version_by_type[ $indexable->slug ] ) ? $this->current_index_version_by_type[ $indexable->slug ] : null;
 
-		if ( is_int( $override ) ) {
-			return $override;
+		// If an override is specified, normalize it (in case it's an alias) and return
+		if ( $override ) {
+			return $this->normalize_version_number( $indexable, $override );
 		}
 
 		return $this->get_active_version_number( $indexable );
@@ -165,11 +167,7 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable ) {
-		if ( Search::is_network_mode() ) {
-			$versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
-		} else {
-			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
-		}
+		$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 
 		$slug = $indexable->slug;
 
