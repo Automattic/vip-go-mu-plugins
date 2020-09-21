@@ -138,7 +138,7 @@ function vip_es_field_map( $es_map ) {
 			'post_type'                     => 'post_type.raw',
 			'post_excerpt'                  => 'post_excerpt',
 			'post_password'                 => 'post_password',  // This isn't indexed on VIP.
-			'post_name'                     => 'post_name',
+			'post_name'                     => 'post_name.raw',
 			'post_modified'                 => 'post_modified',
 			'post_modified.year'            => 'modified_date_terms.year',
 			'post_modified.month'           => 'modified_date_terms.month',
