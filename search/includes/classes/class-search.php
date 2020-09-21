@@ -22,9 +22,7 @@ class Search {
 
 	private const MAX_SEARCH_LENGTH = 255;
 
-	private const DISABLE_POST_META_ALLOW_LIST = array(
-		2341,
-	);
+	private const DISABLE_POST_META_ALLOW_LIST = array();
 
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	// sites
