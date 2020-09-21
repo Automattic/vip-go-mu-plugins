@@ -30,6 +30,12 @@ parameters:
   phpunit_report_file_including_mu_plugins:
     type: string
     default: /tmp/phpunit-report-including-mu-plugins.xml
+  phpunit_core_failures_margin:
+    type: integer
+    default: 60
+  phpunit_core_errors_margin:
+    type: integer
+    default: 50
   db_host:
     type: string
     default: 127.0.0.1
@@ -96,12 +102,9 @@ job-references:
             npm ci
             npm run grunt build
             export WP_TESTS_DIR=<< pipeline.parameters.wp_core_develop_dir >>/tests/phpunit
-            echo "test EN"
-            echo $WP_TESTS_DIR
             ~/project/vendor/bin/phpunit --log-junit << pipeline.parameters.phpunit_report_file >> || true
             ~/project/vendor/bin/phpunit --bootstrap ~/project/tests/bootstrap.php --log-junit << pipeline.parameters.phpunit_report_file_including_mu_plugins >> || true
-            diff <(cat << pipeline.parameters.phpunit_report_file >> | grep -o '<testsuite name="".*time=') <(cat << pipeline.parameters.phpunit_report_file_including_mu_plugins >> | grep -o '<testsuite name="".*time=')
-
+            ~/project/bin/compare-wp-develop-test-runs.sh << pipeline.parameters.phpunit_report_file >> << pipeline.parameters.phpunit_report_file_including_mu_plugins >> << pipeline.parameters.phpunit_core_failures_margin >> << pipeline.parameters.phpunit_core_errors_margin >>
 
   lint_job: &lint_job
     steps:
