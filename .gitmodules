@@ -16,9 +16,6 @@
 [submodule "http-concat"]
 	path = http-concat
 	url = https://github.com/Automattic/nginx-http-concat.git
-[submodule "query-monitor"]
-	path = query-monitor
-	url = https://github.com/johnbillion/query-monitor.git
 [submodule "cron-control"]
 	path = cron-control
 	url = https://github.com/Automattic/Cron-Control.git
@@ -42,4 +39,10 @@
 	url = https://github.com/Automattic/gutenberg-ramp.git
 [submodule "cron-control-next"]
 	path = cron-control-next
-	url = git@github.com:Automattic/Cron-Control.git
+	url = https://github.com/Automattic/Cron-Control.git
+[submodule "elasticsearch/elasticpress"]
+	path = search/elasticpress
+	url = https://github.com/Automattic/ElasticPress.git
+[submodule "elasticsearch/debug-bar-elasticpress"]
+	path = search/debug-bar-elasticpress
+	url = https://github.com/10up/debug-bar-elasticpress.git

@@ -449,5 +449,5 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 		}
 	}
 
-    return $es_query_args;
+	return $es_query_args;
 }

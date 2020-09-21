@@ -685,8 +685,8 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	return $link;
 }
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
-	// Don't bother if slug hasn't changed.
-	if ( $post->post_name == $post_before->post_name ) {
+	// Don't bother if the slug or date hasn't changed.
+	if ( $post->post_name == $post_before->post_name && $post->post_date == $post_before->post_date ) {
 		return;
 	}
 
@@ -707,20 +707,62 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
 }
 
 /**
- * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text
- * These then cause really slow lookups inside of wp_old_slug_redirect, since wp_old_slug redirect does not match on full urls but rather former slugs it's safe to skip the lookup for these. (Most of the calls are from bad ad providers that generate random urls)
+ * Potentially skip redirect for old slugs.
+ *
+ * We're seeing an increase of URLs that match this pattern: http://example.com/http://othersite.com/random_text.
+ *
+ * These then cause really slow lookups inside of wp_old_slug_redirect. Since wp_old_slug redirect does not match
+ * on full URLs but rather former slugs, it's safe to skip the lookup for these. Most of the calls are from bad ad
+ * providers that generate random URLs.
  */
-function wpcom_vip_maybe_skip_old_slug_redirect(){
+function wpcom_vip_maybe_skip_old_slug_redirect() {
+	if ( ! is_404() ) {
+		return;
+	}
 
-	//We look to see if a malformed url (represented by 'http:' ) is right after the starting / in DOCUMENT_URI hence position 1
-	if ( is_404() && ( 1 === strpos( $_SERVER['DOCUMENT_URI'], 'http:' ) || 1 === strpos( $_SERVER['DOCUMENT_URI'], 'https:' ) ) ) {
+	if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		return;
+	}
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/http:' ) || 0 === strpos( $_SERVER['REQUEST_URI'], '/https:' ) ) {
 		remove_action( 'template_redirect', 'wp_old_slug_redirect' );
 		remove_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
 	}
-
 }
+
 function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 	add_action( 'template_redirect', 'wpcom_vip_maybe_skip_old_slug_redirect', 7 ); //Run this before wpcom_vip_wp_old_slug_redirect so we can also remove our caching helper
+}
+
+/**
+ * Reset the local WordPress object cache
+ *
+ * This only cleans the local cache in WP_Object_Cache, without
+ * affecting memcache
+ */
+function vip_reset_local_object_cache() {
+	global $wp_object_cache;
+
+	if ( ! is_object( $wp_object_cache ) ) {
+		return;
+	}
+
+	$wp_object_cache->group_ops = array();
+	$wp_object_cache->memcache_debug = array();
+	$wp_object_cache->cache = array();
+
+	if ( is_callable( $wp_object_cache, '__remoteset' ) ) {
+		$wp_object_cache->__remoteset(); // important
+	}
+}
+
+/**
+ * Reset the WordPress DB query log
+ */
+function vip_reset_db_query_log() {
+	global $wpdb;
+
+	$wpdb->queries = array();
 }
 
 /**

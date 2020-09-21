@@ -4,75 +4,63 @@ This is the development repo for mu-plugins on [VIP Go](http://vip.wordpress.com
 
 ## Development
 
+### Local Dev
+
+We recommend using the Lando-based development environment for local development: https://github.com/Automattic/vip-go-mu-dev
+
+Follow the instructions in the `vip-go-mu-dev` repo to get set up (it includes a clone of this repo).
+
+### Tests
+
+##### PHP Lint
+
+```bash
+npm run phplint
+```
+
+##### PHPCS
+
+We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`).
+
+This is also run on Circle CI for all PRs.
+
+If you want too scan the entire codebase:
+
+```bash
+npm run phpcs
+```
+
+##### PHPUnit
+
+If you're using the Lando-based environvment and it's already running, you can run unit tests by calling:
+
+```bash
+lando test
+```
+
+If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
+
+```bash
+./bin/phpunit-docker.sh [wp-version]
+```
+
+You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
+
+You can also pass the path to a specific test as well as extra PHPUnit arguments:
+
+```bash
+./bin/phpunit-docker.sh tests/path/to/the/test-something.php --stop-on-failure [...args]
+```
+
+##### CI
+
+PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. See [`.circleci/config.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.circleci/config.yml) for more.
+
 ### PHPDoc
 
 You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
 
 These are generated via CI by the [`generate-docs.sh`]() script.
-
-### Tests
-
-#### PHP Lint
-
-```bash
-make lint
-```
-
-#### PHPUnit
-
-##### Docker
-
-We have a script that runs unit tests in a self-contained Docker environment.
-
-```
-usage: ./bin/phpunit-docker.sh [wp-version]
-```
-
-You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
-
-##### VVV
-
-1. Set up VVV and your vagrant environment
-
-2. Navigate to your `wp-content` folder and clone this repo into `mu-plugins`:
-
-```bash
-$ git clone https://github.com/Automattic/vip-go-mu-plugins.git mu-plugins
-```
-
-3. SSH into your box and navigate to the `mu-plugins` folder:
-
-```bash
-$ vagrant ssh
-vagrant@vvv:~$cd /path/to/wp-content/mu-plugins
-```
-
-4. Setup the WordPress tests:
-
-```bash
-vagrant@vvv:
-vagrant@vvv:/wp-content/mu-plugins$ ./bin/install-wp-tests.sh %empty_DB_name% %db_user% %db_name%
-```
-
-Note: you need to replace the `%placeholder%` strings above with the appropriate values. Use a separate test database for this as the contents will get trashed during testing.
-
-5. Install dependencies
-
-Note: need to have composer pre-installed.
-
-```bash
-composer install
-```
-
-6. Run tests:
-
-```bash
-vagrant@vvv:/wp-content/mu-plugins$ vendor/bin/phpunit
-```
-
-#### Travis
-
-PHP Linting and PHPUnit tests are also run by Travis as part of PRs and merges. See the `script` section of [`.travis.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.travis.yml).
 
 ## Deployment
 
@@ -82,7 +70,7 @@ PHP Linting and PHPUnit tests are also run by Travis as part of PRs and merges. 
 
 ### vip-go-mu-plugins-built
 
-This is a repo primarily meant for local non-development use. It e
+This is a repo primarily meant for local non-development use.
 
 Every commit merged into `master` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh) script, which builds pushes a copy of this repo and expanded submodules.
 

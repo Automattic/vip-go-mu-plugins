@@ -4,6 +4,10 @@ workflows:
     jobs:
       - php73-build-multisite
       - php73-build-singlesite
+      - php74-build-multisite
+      - php74-build-singlesite
+      - php74-build-multisite-nightly
+      - php74-build-singlesite-nightly
 
 version: 2
 
@@ -20,10 +24,9 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
       sudo -E docker-php-ext-install mysqli
-      sudo sh -c "printf '\ndeb http://ftp.us.debian.org/debian sid main\n' >> /etc/apt/sources.list"
-      sudo apt-get update && sudo apt-get install mysql-client
+      npm install
       composer install -n
 
   prepare_repo: &prepare_repo
@@ -43,7 +46,9 @@ job-references:
       - run:
           name: "Run Tests"
           command: |
-            make lint
+            if [[ "$RUN_EXTRA" == "1" ]]; then
+              npm run lint
+            fi
             rm -rf $WP_TESTS_DIR $WP_CORE_DIR
             bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
             vendor/bin/phpunit --version
@@ -53,10 +58,11 @@ jobs:
   php73-build-multisite:
     <<: *php_job
     environment:
+      - RUN_EXTRA: "1"
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.3
+      - image: circleci/php:7.3-node
       - image: *db_image
 
   php73-build-singlesite:
@@ -65,5 +71,42 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.3
+      - image: circleci/php:7.3-node
+      - image: *db_image
+
+  php74-build-multisite:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-multisite-nightly:
+    <<: *php_job
+    environment:
+      - RUN_EXTRA: "1"
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "nightly"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-nightly:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "nightly"
+    docker:
+      - image: circleci/php:7.4-node
       - image: *db_image

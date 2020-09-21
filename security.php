@@ -10,11 +10,17 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 require_once( __DIR__ . '/security/class-lockout.php' );
 require_once( __DIR__ . '/security/machine-user.php' );
+require_once( __DIR__ . '/security/class-private-sites.php' );
 
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'login_limit' );
 define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'lost_password_limit' );
 define( 'ERROR_CODE_LOGIN_LIMIT_EXCEEDED', 'login_limit_exceeded' );
 define( 'ERROR_CODE_LOST_PASSWORD_LIMIT_EXCEEDED', 'lost_password_limit_exceeded' );
+
+// If the site has any privacy restrictions (enabled by constant, ip restriction, http basic auth), initialize the Private_Sites module
+if ( \Automattic\VIP\Security\Private_Sites::has_privacy_restrictions() ) {
+	\Automattic\VIP\Security\Private_Sites::instance();
+}
 
 function wpcom_vip_is_restricted_username( $username ) {
 	return 'admin' === $username
@@ -115,6 +121,12 @@ function wpcom_vip_login_limit_xmlrpc_error( $error, $user ) {
 }
 add_filter( 'xmlrpc_login_error', 'wpcom_vip_login_limit_xmlrpc_error', 10, 2 );
 
+function wpcom_set_status_header_on_xmlrpc_failed_login_requests( $error ) {
+	header( "X-XMLRPC-Error-Code: {$error->code}" );
+	return $error;
+}
+add_action( 'xmlrpc_login_error', 'wpcom_set_status_header_on_xmlrpc_failed_login_requests' );
+
 function wpcom_vip_lost_password_limit( $errors ) {
 	// Don't bother checking if we're already error-ing out
 	if ( $errors->get_error_code() ) {
@@ -178,20 +190,3 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 
 	return false;
 }
-
-/**
- * On otherwise cacheable requests, we need to ensure we're varying on Origin
- * so that the cache cannot be poisoned and prevent CORS requests
- *
- * NOTE - we hook into the `http_origin` filter instead of the `send_headers` action,
- * because the REST API doesn't call send_headers
- */
-function vip_maybe_vary_http_origin( $origin ) {
-	if ( ! headers_sent() && 'GET' === $_SERVER['REQUEST_METHOD'] && ! is_user_logged_in() ) {
-		header( 'Vary: Origin', false );
-	}
-
-	return $origin;
-}
-
-add_filter( 'http_origin', 'vip_maybe_vary_http_origin' );

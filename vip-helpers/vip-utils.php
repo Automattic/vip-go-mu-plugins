@@ -718,38 +718,62 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
 }
 
 /**
- * This is a sophisticated extended version of wp_remote_get(). It is designed to more gracefully handle failure than wpcom_vip_file_get_contents() does.
+ * This is a sophisticated extended version of wp_remote_request(). It is designed to more gracefully handle failure than wpcom_vip_file_get_contents() does.
  *
- * Note that like wp_remote_get(), this function does not cache.
+ * Note that like wp_remote_request(), this function does not cache.
  *
- * @author tottdev
  * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
- * @param string $url URL to fetch
+ * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
  * @param int $threshold Optional. The number of fails required before subsequent requests automatically return the fallback value. Defaults to 3, with a maximum of 10.
- * @param int $timeout Optional. Number of seconds before the request times out. Valid values 1-3; defaults to 1.
+ * @param int $timeout Optional. Number of seconds before the request times out. Valid values 1-5; defaults to 1.
  * @param int $retry Optional. Number of seconds before resetting the fail counter and the number of seconds to delay making new requests after the fail threshold is reached. Defaults to 20, with a minimum of 10.
- * @param array Optional. Set other arguments to be passed to wp_remote_get().
+ * @param array Optional. Set other arguments to be passed to wp_remote_request().
  * @return string|WP_Error|array Array of results. If fail counter is met, returns the $fallback_value, otherwise return WP_Error.
- * @see wp_remote_get()
+ * @see wp_remote_request()
  */
-function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
+function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
 	global $blog_id;
 
-	$cache_group = "$blog_id:vip_safe_wp_remote_get";
-	$cache_key = 'disable_remote_get_' . md5( parse_url( $url, PHP_URL_HOST ) );
+	$default_args = array( 'method' => 'GET' );
+	$parsed_args = wp_parse_args( $args, $default_args );
+
+	$cache_group = "$blog_id:vip_safe_wp_remote_request";
+	$cache_key = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args[ 'method' ] );
 
 	// valid url
-	if ( empty( $url ) || !parse_url( $url ) )
+	if ( empty( $url ) || !parse_url( $url ) ) {
 		return ( $fallback_value ) ? $fallback_value : new WP_Error('invalid_url', $url );
+	}
 
 	// Ensure positive values
 	$timeout   = abs( $timeout );
 	$retry     = abs( $retry );
 	$threshold = abs( $threshold );
 
-	// timeouts > 3 seconds are just not reasonable for production usage
-	$timeout = ( (int) $timeout > 3 ) ? 3 : (int) $timeout;
+	// Default max timeout is 5s. 
+	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things. 
+	$timeout = (int) $timeout;
+	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
+
+	if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+		if ( 30 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
+			$timeout = 30;
+		}
+	} elseif ( \is_admin() && $is_post_request ) {
+		if ( 15 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
+			$timeout = 15;
+		}
+	} else {
+		if ( $timeout > 5 ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+			$timeout = 5;
+		}
+	}
+
 	// retry time < 10 seconds will default to 10 seconds.
 	$retry =  ( (int) $retry < 10 ) ? 10 : (int) $retry;
 	// more than 10 faulty hits seem to be to much
@@ -759,34 +783,40 @@ function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeou
 
 	// check if the timeout was hit and obey the option and return the fallback value
 	if ( false !== $option && time() - $option['time'] < $retry ) {
-		if ( $option['hits'] >= $threshold )
-			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_get_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
+		if ( $option['hits'] >= $threshold ) {
+			if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
+				trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} has been throttled after {$option['hits']} attempts. Not reattempting until after $retry seconds", E_USER_WARNING );
+			}
+
+			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
+		}
 	}
 
 	$start = microtime( true );
-	$response = wp_remote_get( $url, array_merge( $args, array( 'timeout' => $timeout ) ) );
+	$response = wp_remote_request( $url, array_merge( $parsed_args, array( 'timeout' => $timeout ) ) );
 	$end = microtime( true );
 
 	$elapsed = ( $end - $start ) > $timeout;
 	if ( true === $elapsed ) {
-		if ( false !== $option && $option['hits'] < $threshold )
+		if ( false !== $option && $option['hits'] < $threshold ) {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $option['hits']+1 ), $cache_group, $retry );
-		else if ( false !== $option && $option['hits'] == $threshold )
+		} else if ( false !== $option && $option['hits'] == $threshold ) {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $threshold ), $cache_group, $retry );
-		else
+		} else {
 			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => 1 ), $cache_group, $retry );
+		}
 	}
 	else {
-		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry )
+		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
 			wp_cache_set( $cache_key, array( 'time' => $option['time'], 'hits' => $option['hits']-1 ), $cache_group, $retry );
-		else
+		} else {
 			wp_cache_delete( $cache_key, $cache_group);
+		}
 	}
 
 	if ( is_wp_error( $response ) ) {
-		// Log errors for internal WP.com debugging
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			error_log( "vip_safe_wp_remote_get: Blog ID {$blog_id}: Fetching $url with a timeout of $timeout failed. Result: " . maybe_serialize( $response ) );
+			trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} and a timeout of $timeout failed. Result: " . maybe_serialize( $response ), E_USER_WARNING );
 		}
 		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 
@@ -794,6 +824,23 @@ function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeou
 	}
 
 	return $response;
+}
+
+/**
+ * This is a convenience method for vip_safe_wp_remote_request() and behaves the same
+ *
+ * Note that like wp_remote_get(), this function does not cache.
+ *
+ * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
+ * @see vip_safe_wp_remote_request()
+ * @see wp_remote_get()
+ */
+function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
+	// Same defaults as WP_HTTP::get() https://developer.wordpress.org/reference/classes/wp_http/get/
+	$default_args = array( 'method' => 'GET' );
+	$parsed_args = wp_parse_args( $args, $default_args );
+
+	return vip_safe_wp_remote_request( $url, $fallback_value, $threshold, $timeout, $retry, $parsed_args );
 }
 
 /**
@@ -987,6 +1034,12 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		_doing_it_wrong( __FUNCTION__, 'The specified $folder should not be "plugins", which is the default location', '2.0.0' );
 	}
 
+	// Plugins should be loaded before the `plugins_loaded` hook.
+	// Ideally, in client-mu-plugins or via wp-admin > Plugins.
+	if ( did_action( 'plugins_loaded' ) ) {
+		_doing_it_wrong( __FUNCTION__, sprintf( '`wpcom_vip_load_plugin( %s, %s )` was called after the `plugins_loaded` hook. For best results, we recommend loading your plugins earlier from `client-mu-plugins`.', esc_html( $plugin ), esc_html( $folder ) ), null );
+	}
+
 	// Shared plugins are being deprecated.
 	// This can be removed once shared plugins have all been removed.
 	// https://vip.wordpress.com/documentation/vip-go/deprecating-shared-plugins-on-vip-go/
@@ -1082,27 +1135,6 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 				// We found what we were looking for, break from both loops
 				break 2;
 			}
-		}
-	}
-
-	// For WordPress 5.0+, any environments that want to use the Gutenberg plugin need to define a specific constant.
-	// Without the constant in place, we skip loading the plugin and fallback to the core block editor.
-	// This will also facilitate the upgrade path where core disables the Gutenberg plugin as part of the upgrade.
-	if ( 'gutenberg' === $plugin ) {
-		$db_version = absint( get_option( 'db_version' ) );
-		$is_50_plus = $db_version >= 43764;
-
-		$should_load_gutenberg = true;
-		if ( ! defined( 'GUTENBERG_USE_PLUGIN' ) ) {
-			$should_load_gutenberg = false;
-		} elseif ( true !== GUTENBERG_USE_PLUGIN ) {
-			$should_load_gutenberg = false;
-		}
-
-		if ( $is_50_plus && ! $should_load_gutenberg ) {
-			trigger_error( 'wpcom_vip_load_plugin: Skipped loading Gutenberg plugin. Please add `define( \'GUTENBERG_USE_PLUGIN\', true );` if you would like to use the plugin over the Core Block Editor. For details, see https://vip.wordpress.com/documentation/vip-go/loading-gutenberg/', E_USER_WARNING );
-
-			return;
 		}
 	}
 	
@@ -1269,6 +1301,9 @@ function _wpcom_vip_include_plugin( $file ) {
 	// Start by marking down the currently defined variables (so we can exclude them later)
 	$pre_include_variables = get_defined_vars();
 
+	// Support symlinks
+	wp_register_plugin_realpath( $file );
+
 	// Now include
 	include_once( $file );
 
@@ -1345,7 +1380,7 @@ function is_automattician( $user_id = false ) {
  * @return bool True, if the current request is made via the Automattic proxy
  */
 function is_proxied_automattician() {
-	return A8C_PROXIED_REQUEST && is_automattician();
+	return is_proxied_request() && is_automattician();
 }
 
 /**
@@ -1371,7 +1406,7 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
-	// Simple UA check to filter out most
+	// Simple UA check to filter out most.
 	if ( false === stripos( $_SERVER[ 'HTTP_USER_AGENT' ], 'jetpack' ) ) {
 		return false;
 	}
@@ -1380,17 +1415,23 @@ function vip_is_jetpack_request() {
 
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
+	// Or https://jetpack.com/ips-v4.json
 	$jetpack_ips = array(
-		'122.248.245.244',
-		'54.217.201.243',
-		'54.232.116.4',
+		'122.248.245.244/32',
+		'54.217.201.243/32',
+		'54.232.116.4/32',
 		'192.0.80.0/20',
 		'192.0.96.0/20',
 		'192.0.112.0/20',
 		'195.234.108.0/22',
+		'192.0.96.202/32',
+		'192.0.98.138/32',
+		'192.0.102.71/32',
+		'192.0.102.95/32',
 	);
 
-	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
 /**

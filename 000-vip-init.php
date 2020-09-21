@@ -6,7 +6,7 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * Remember vip-init.php? This is like that, but better! 
+ * Remember vip-init.php? This is like that, but better!
  */
 
 /**
@@ -38,13 +38,17 @@ if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_
 			return 1;
 		}, 9999 );
 	} else {
-		http_response_code( 503 );
+		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+		require_once __DIR__ . '/vip-helpers/vip-utils.php';
+		if ( ! vip_is_jetpack_request() ) {
+			http_response_code( 503 );
 
-		header( 'X-VIP-Go-Maintenance: true' );
+			header( 'X-VIP-Go-Maintenance: true' );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
 
-		echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
-
-		exit;
+			exit;
+		}
 	}
 }
 
@@ -73,7 +77,7 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 }
 
 define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
@@ -147,8 +151,16 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Feature flags
+require_once( __DIR__ . '/lib/feature/class-feature.php' );
+
+// Logging
+require_once( __DIR__ . '/logstash/logstash.php' );
+require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
+
 // Debugging Tools
 require_once( __DIR__ . '/000-debug/0-load.php' );
+require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
@@ -174,10 +186,63 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 }
 
+// Load elasticsearch helpers
+if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
+	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	require_once( __DIR__ . '/search/search.php' );
+
+	$search_plugin = \Automattic\VIP\Search\Search::instance();
+
+	// If VIP Search query integration is enabled, disable Jetpack Search
+	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
+		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
+		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
+		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
+	}
+}
+
+// Set WordPress environment type
+// Map some VIP environments to 'production' and 'development', and use 'staging' for any other
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+	switch ( VIP_GO_APP_ENVIRONMENT ) {
+		case 'production':
+			$environment_type = 'production';
+			break;
+		case 'develop':
+		case 'development':
+			$environment_type = 'development';
+			break;
+		default:
+			$environment_type = 'staging';
+			break;
+	}
+
+	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
+
+	// VIP sites should not be set as staging in Jetpack
+	// since it breaks SSO and prevents data from being passed to
+	// WordPress.com 
+	add_filter( 'jetpack_is_staging_site', '__return_false' );
+}
+
+// Load config related helpers
+require_once( __DIR__ . '/config/class-sync.php' );
+
+add_action( 'init', function() {
+	\Automattic\VIP\Config\Sync::instance();
+} );
+
+// Load _encloseme meta cleanup scheduler
+require_once( __DIR__ . '/lib/class-vip-encloseme-cleanup.php' );
+
+$encloseme_cleaner = new VIP_Encloseme_Cleanup();
+$encloseme_cleaner->init();
+
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
-	$headers['X-Powered-By'] = 'WordPress.com VIP <https://wpvip.com>';
+	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
+	$headers['Host-Header'] = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
 	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
@@ -186,5 +251,10 @@ add_filter( 'wp_headers', function( $headers ) {
 
 	return $headers;
 } );
+
+// Disable core sitemaps
+//
+// https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
+add_filter( 'wp_sitemaps_enabled', '__return_false' );
 
 do_action( 'vip_loaded' );

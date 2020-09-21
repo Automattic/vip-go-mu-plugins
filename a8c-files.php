@@ -68,9 +68,7 @@ class A8C_Files {
 
 		// Conditionally load either the new Stream Wrapper implementation or old school a8c-files.
 		// The old school implementation will be phased out soon.
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER
-			// NOTE: Temporarily disable Stream Wrapper loading for sites on AMS as it's not ready for use there
-			&& 'ams-files.vipv2.net' !== FILE_SERVICE_ENDPOINT ) {
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
 			$this->init_vip_filesystem();
 		} else {
 			$this->init_legacy_filesystem();
@@ -1001,23 +999,26 @@ class A8C_Files {
 
 class A8C_Files_Utils {
 	public static function filter_photon_domain( $photon_url, $image_url ) {
-			$home_url = home_url();
-			$site_url = site_url();
+		$home_url = home_url();
+		$site_url = site_url();
 
-			if ( wp_startswith( $image_url, $home_url ) ) {
-				return $home_url;
-			}
+		$image_url_parsed = parse_url( $image_url );
+		$home_url_parsed = parse_url( $home_url );
+		$site_url_parsed = parse_url( $site_url );
 
-			if ( wp_startswith( $image_url, $site_url ) ) {
-				return $site_url;
-			}
+		if ( $image_url_parsed['host'] === $home_url_parsed['host'] ) {
+			return $home_url;
+		}
 
-			$image_url_parsed = parse_url( $image_url );
-			if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
-				return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
-			}
+		if ( $image_url_parsed['host'] === $site_url_parsed['host'] ) {
+			return $site_url;
+		}
 
-			return $photon_url;
+		if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
+			return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
+		}
+
+		return $photon_url;
 	}
 
 	public static function strip_dimensions_from_url_path( $url ) {

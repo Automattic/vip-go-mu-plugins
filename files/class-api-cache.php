@@ -18,6 +18,11 @@ class API_Cache {
 	private $files = [];
 
 	/**
+	 * @var array   Array of cached file stats
+	 */
+	private $file_stats = [];
+
+	/**
 	 * @var string  Temp directory to cache file in
 	 */
 	private $tmp_dir = '/tmp';
@@ -40,7 +45,7 @@ class API_Cache {
 	}
 
 	public function clear_tmp_files() {
-		if ( empty( $this->files ) ) {
+		if ( empty( $this->files ) && empty( $this->file_stats ) ) {
 			return;
 		}
 
@@ -48,52 +53,64 @@ class API_Cache {
 			unlink( $path );
 			unset( $this->files[ $name ] );
 		}
+
+		// empty file stats cache
+		$this->file_stats = [];
 	}
 
 	public function get_file( $filepath ) {
-		$file_name = basename( $filepath );
-
-		if ( isset( $this->files[ $file_name ] ) ) {
-			return file_get_contents( $this->files[ $file_name ] );
+		if ( isset( $this->files[ $filepath ] ) ) {
+			return $this->files[ $filepath ];
 		}
 
 		return false;
 	}
 
-	public function cache_file( $filepath, $data ) {
-		$file_name = basename( $filepath );
-
-		if ( ! isset( $this->files[ $file_name ] ) ) {
-			// create file with unique filename
-			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
-
-			$this->files[ $file_name ] = $tmp_file;
+	public function get_file_stats( $filepath ) {
+		if ( isset( $this->file_stats[ $filepath ] ) ) {
+			return $this->file_stats[ $filepath ];
 		}
 
-		// This will overwrite existing file if any
-		file_put_contents( $this->files[ $file_name ], $data );
+		return false;
+	}
+
+	public function cache_file( $filepath, $local_file ) {
+		$this->files[ $filepath ] = $local_file;
+	}
+
+	public function cache_file_stats( $filepath, $info ) {
+		// This will overwrite existing stats if any
+		$this->file_stats[ $filepath ] = $info;
 	}
 
 	public function copy_to_cache( $dst, $src ) {
-		$file_name = basename( $dst );
-
-		if ( ! isset( $this->files[ $file_name ] ) ) {
+		if ( ! isset( $this->files[ $dst ] ) ) {
 			// create file with unique filename
-			$tmp_file = tempnam( $this->tmp_dir, 'vip' );
+			$tmp_file = $this->create_tmp_file();
 
-			$this->files[ $file_name ] = $tmp_file;
+			$this->files[ $dst ] = $tmp_file;
 		}
 
 		// This will overwrite existing file if any
-		copy( $src, $this->files[ $file_name ] );
+		copy( $src, $this->files[ $dst ] );
 	}
 
 	public function remove_file( $filepath ) {
-		$file_name = basename( $filepath );
-
-		if ( isset( $this->files[ $file_name ] ) ) {
-			unlink( $this->files[ $file_name ] );
-			unset( $this->files[ $file_name ] );
+		if ( isset( $this->files[ $filepath ] ) ) {
+			unlink( $this->files[ $filepath ] );
+			unset( $this->files[ $filepath ] );
 		}
+
+		// Remove cached stats too if any
+		unset( $this->file_stats[ $filepath ] );
+	}
+
+	public function remove_stats( $filepath ) {
+		// Remove cached stats if any
+		unset( $this->file_stats[ $filepath ] );
+	}
+
+	public function create_tmp_file() {
+		return tempnam( $this->tmp_dir, 'vip' );
 	}
 }
