@@ -15,7 +15,7 @@ class Search {
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
-	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip_search_enabled';
+	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
@@ -635,7 +635,7 @@ class Search {
 	 *
 	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
 	 *
-	 * The integration can be tested at any time by setting an `es` query argument (?vip_search_enabled=true).
+	 * The integration can be tested at any time by setting an `es` query argument (?vip-search-enabled=true).
 	 * 
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
