@@ -42,6 +42,21 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 	public function test__set_env_and_core() {
 		global $wp_version;
 
+		$plugins = array(
+			'hello.php' => array(
+				'Name' => 'Hello Tests',
+				'Version' => '4.5',
+			),
+			'world.php' => array(
+				'Name' => 'Testing World',
+				'Version' => '8.6',
+			)
+		);
+
+		// Set the cache for plugins and the option for enabling a plugin	
+		wp_cache_set( 'plugins', array( '' => $plugins ), 'plugins' );
+		update_option( 'active_plugins', array( 'world.php' ) );
+
 		$site_details = Site_Details_Index::instance( 100 )->set_env_and_core( array() );
 
 		$this->assertTrue( array_key_exists( 'timestamp', $site_details ), 'timestamp should exist' );
@@ -62,6 +77,23 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 
 		$this->assertTrue( array_key_exists( 'plugins', $site_details ), 'plugins should exist' );
 		$this->assertTrue( is_array( $site_details['plugins'] ), 'plugins should be array' );
+		$this->assertEquals(
+			array(
+				array(
+					'name' => 'Hello Tests',
+					'version' => '4.5',
+					'active' => false,
+					'enabled_via_code' => false,
+				),
+				array(
+					'name' => 'Testing World',
+					'version' => '8.6',
+					'active' => true,
+					'enabled_via_code' => false,
+				),
+			),	
+			$site_details['plugins'] 
+		);
 
 		$this->assertTrue( array_key_exists( 'core', $site_details ), 'core should exist' );
 		$this->assertTrue( is_array( $site_details['core'] ), 'core should be array' );
@@ -86,6 +118,21 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 	public function test__vip_site_details_index_data() {
 		global $wp_version;
 
+		$plugins = array(
+			'hello.php' => array(
+				'Name' => 'Hello Tests',
+				'Version' => '4.5',
+			),
+			'world.php' => array(
+				'Name' => 'Testing World',
+				'Version' => '8.6',
+			)
+		);
+
+		// Set the cache for plugins and the option for enabling a plugin	
+		wp_cache_set( 'plugins', array( '' => $plugins ), 'plugins' );
+		update_option( 'active_plugins', array( 'hello.php' ) );
+
 		Site_Details_Index::instance( 100 );
 
 		$site_details = apply_filters( 'vip_site_details_index_data', array() );
@@ -108,6 +155,23 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 
 		$this->assertTrue( array_key_exists( 'plugins', $site_details ), 'plugins should exist' );
 		$this->assertTrue( is_array( $site_details['plugins'] ), 'plugins should be array' );
+		$this->assertEquals(
+			array(
+				array(
+					'name' => 'Hello Tests',
+					'version' => '4.5',
+					'active' => true,
+					'enabled_via_code' => false,
+				),
+				array(
+					'name' => 'Testing World',
+					'version' => '8.6',
+					'active' => false,
+					'enabled_via_code' => false,
+				),
+			),	
+			$site_details['plugins'] 
+		);
 
 		$this->assertTrue( array_key_exists( 'core', $site_details ), 'core should exist' );
 		$this->assertTrue( is_array( $site_details['core'] ), 'core should be array' );
