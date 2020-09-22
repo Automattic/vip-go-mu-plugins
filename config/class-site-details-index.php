@@ -5,11 +5,18 @@ namespace Automattic\VIP\Config;
 class Site_Details_Index {
 	private static $_instance;
 
-	private const LOG_FEATURE_NAME = 'site_details_index';
+	private $timestamp = null;
 
-	public static function instance() {
+	/**
+	 * Standard singleton except accept a timestamp for mocking purposes
+	 *
+	 * @param {mixed} $timestamp A fixed point in time to use for mocking
+	 * @return {Site_Details_Index} A Site_Details_Index object
+	 */
+	public static function instance( $timestamp = null ) {
 		if ( ! ( static::$_instance instanceof Site_Details_Index ) ) {
 			static::$_instance = new Site_Details_Index();
+			static::$_instance->set_current_timestamp( $timestamp );
 			static::$_instance->init();
 		}
 
@@ -38,13 +45,22 @@ class Site_Details_Index {
 			}
 		}
 
+		$environment_name = '';
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && VIP_GO_APP_ENVIRONMENT ) {
+			$environment_name = strval( VIP_GO_APP_ENVIRONMENT );
+		} else {
+			if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) {
+				$environment_name = strval( VIP_GO_ENV );
+			}
+		}
+
 		// log2logstash has it's own timestamp field as well. However, if/when we ever decide
 		// to swap indexes, we'll need our own. Added here so that the migration will be easier
 		// and all the fields we need are included in the actual site details index data.
-		$site_details['timestamp'] = time();
+		$site_details['timestamp'] = $this->get_current_timestamp();
 		$site_details['client_site_id'] = $site_id;
 		$site_details['environment_id'] = $site_id;
-		$site_details['environment_name'] = strval( get_bloginfo( 'name' ) );
+		$site_details['environment_name'] = $environment_name;
 		$site_details['plugins'] = $this->get_plugin_info();
 		$site_details['core']['wp_version'] = strval( $wp_version );
 		$site_details['core']['blog_id'] = get_current_blog_id();
@@ -116,19 +132,26 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Builds the site details structure and then puts it into logstash
+	 * Returns the current value of $this->timestamp or time() if null.
+	 *
+	 * Used for mocking in tests.
+	 *
+	 * @return {int} The current timestamp or the value of $this->timestamp
 	 */
-	public function put_site_details_in_logstash() {
-		$site_details = $this->get_site_details();
+	public function get_current_timestamp() {
+		return $this->timestamp ?? time();
+	}
 
-		\Automattic\VIP\Logstash\log2logstash(
-			array(
-				'severity' => 'info',
-				'feature' => self::LOG_FEATURE_NAME,
-				'message' => 'Site details update',
-				'extra' => $site_details,
-			)
-		);
+	/**
+	 * Given a value, set the current timestamp to provided value if it's an integer
+	 *
+	 * Used for mocking in tests.
+	 */
+	public function set_current_timestamp( $timestamp ) {
+		if ( ! is_int( $timestamp ) ) {
+			return;
+		}
+
+		$this->timestamp = $timestamp;
 	}
 }
-
