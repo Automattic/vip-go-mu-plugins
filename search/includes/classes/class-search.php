@@ -550,14 +550,14 @@ class Search {
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+		$response = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
 
 		$duration = ( $end_time - $start_time ) * 1000;
 
-		if ( is_wp_error( $request ) ) {
-			$error_messages = $request->get_error_messages();
+		if ( is_wp_error( $response ) ) {
+			$error_messages = $response->get_error_messages();
 			
 			foreach ( $error_messages as $error_message ) {
 				// Default stat for errors is 'error'
@@ -572,21 +572,22 @@ class Search {
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
-			$response_body = wp_remote_retrieve_body( $request );
-			$response = json_decode( $response_body, true );
+			$response_body_json = wp_remote_retrieve_body( $response );
+			$response_body = json_decode( $response_body_json, true );
 
-			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
-				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
-				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
+			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
+				$statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
+				$statsd->timing( $statsd_per_site_prefix . '.engine', $response_body['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
 			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
 
-			// Check for errors in the response and log them
-			$response_code = (int) wp_remote_retrieve_response_code( $request );
+			$response_code = (int) wp_remote_retrieve_response_code( $response );
+
+			// Check for an error HTTP code and log the Elasticsearch error
 			if ( $response_code >= 400 ) {
-				$response_error = $response['error'];
+				$response_error = $response_body['error'];
 				$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 				\Automattic\VIP\Logstash\log2logstash( array(
 					'severity' => 'error',
@@ -599,8 +600,9 @@ class Search {
 				) );
 			}
 
-			// Check for the 'Warning' header in the response and log it
-			$response_headers = wp_remote_retrieve_headers( $request );
+			$response_headers = wp_remote_retrieve_headers( $response );
+
+			// Check for the 'Warning' header and log it
 			if ( isset( $response_headers['warning'] ) ) {
 				$warning_message = $response_headers['warning'];
 				\Automattic\VIP\Logstash\log2logstash( array(
@@ -612,7 +614,7 @@ class Search {
 
 		}
 	
-		return $request;
+		return $response;
 	}
 
 	/*
