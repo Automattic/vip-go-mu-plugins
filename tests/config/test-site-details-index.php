@@ -50,7 +50,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 			'world.php' => array(
 				'Name' => 'Testing World',
 				'Version' => '8.6',
-			)
+			),
 		);
 
 		// Set the cache for plugins and the option for enabling a plugin	
@@ -91,7 +91,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'active' => true,
 					'enabled_via_code' => false,
 				),
-			),	
+			),
 			$site_details['plugins'] 
 		);
 
@@ -126,7 +126,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 			'world.php' => array(
 				'Name' => 'Testing World',
 				'Version' => '8.6',
-			)
+			),
 		);
 
 		// Set the cache for plugins and the option for enabling a plugin	
@@ -169,7 +169,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'active' => false,
 					'enabled_via_code' => false,
 				),
-			),	
+			),
 			$site_details['plugins'] 
 		);
 
