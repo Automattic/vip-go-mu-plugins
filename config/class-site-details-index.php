@@ -80,16 +80,19 @@ class Site_Details_Index {
 
 		$all_plugins = get_plugins();
 		$active_plugins = get_option( 'active_plugins' );
+		$plugins_enabled_via_code = wpcom_vip_get_filtered_loaded_plugins();
 
 		$plugin_info = array();
 
 		foreach ( $all_plugins as $key => $value ) {
 			$active = in_array( $key, $active_plugins, true );
+			$enabled_via_code = in_array( $key, $plugins_enabled_via_code, true );
 
 			$plugin_info[] = array(
 				'name' => $value['Name'],
 				'version' => $value['Version'],
 				'active' => $active,
+				'enabled_via_code' => $enabled_via_code,
 			);
 		}
 
