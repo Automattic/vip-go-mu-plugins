@@ -321,7 +321,6 @@ class Search {
 	 * @return boolean
 	 */
 	public static function should_load_es_wp_query() {
-		require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
 		// Don't load if plugin already loaded elsewhere.
 		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
 			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'es-wp-query', but another copy is already loaded. Please disable your copy of 'es-wp-query'.", '1.0' );
