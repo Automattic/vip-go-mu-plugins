@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Config;
 
-class SiteDetailsIndex_Test extends \WP_UnitTestCase {
+class Site_Details_Index_Test extends \WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
@@ -11,7 +11,7 @@ class SiteDetailsIndex_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public function setUp() {
-		require_once __DIR__ . '/../../config/class-sitedetailsindex.php';
+		require_once __DIR__ . '/../../config/class-site-details-index.php';
 	}
 
 	/**
@@ -19,7 +19,7 @@ class SiteDetailsIndex_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__cron_event_should_not_be_hooked_if_no_init() {
-		$sdi = new SiteDetailsIndex();
+		$sdi = new Site_Details_Index();
 
 		$this->assertFalse( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) );
 	}
@@ -30,7 +30,7 @@ class SiteDetailsIndex_Test extends \WP_UnitTestCase {
 	 */
 	public function test__cron_event_should_be_hooked_if_init() {
 		// Getting the instance should call init which should add set_env_and_core to the hook
-		$sdi = SiteDetailsIndex::instance();
+		$sdi = Site_Details_Index::instance();
 		
 		$this->assertTrue( is_integer( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) ) );
 	}
@@ -40,7 +40,7 @@ class SiteDetailsIndex_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__set_env_and_core() {
-		$site_details = SiteDetailsIndex::instance()->set_env_and_core( array() );
+		$site_details = Site_Details_Index::instance()->set_env_and_core( array() );
 
 		$this->assertTrue( array_key_exists( 'timestamp', $site_details ), 'timestamp should exist' );
 		$this->assertTrue( is_integer( $site_details['timestamp'] ), 'timestamp should be int' );
@@ -75,7 +75,7 @@ class SiteDetailsIndex_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_site_details_index_data() {
-		SiteDetailsIndex::instance();
+		Site_Details_Index::instance();
 
 		$site_details = apply_filters( 'vip_site_details_index_data', array() );
 

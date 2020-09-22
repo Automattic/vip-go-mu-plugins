@@ -2,14 +2,14 @@
 
 namespace Automattic\VIP\Config;
 
-class SiteDetailsIndex {
+class Site_Details_Index {
 	private static $_instance;
 
 	private const LOG_FEATURE_NAME = 'site_details_index';
 
 	public static function instance() {
-		if ( ! ( static::$_instance instanceof SiteDetailsIndex ) ) {
-			static::$_instance = new SiteDetailsIndex();
+		if ( ! ( static::$_instance instanceof Site_Details_Index ) ) {
+			static::$_instance = new Site_Details_Index();
 			static::$_instance->init();
 		}
 

@@ -125,9 +125,9 @@ class Sync {
 	}
 
 	public function put_site_details() {
-		require_once( 'class-sitedetailsindex.php' );
+		require_once( 'class-site-details-index.php' );
 
-		SiteDetailsIndex::instance()->put_site_details_in_logstash();
+		Site_Details_Index::instance()->put_site_details_in_logstash();
 	}
 
 	public function log( $severity, $message, $extra = array() ) {
