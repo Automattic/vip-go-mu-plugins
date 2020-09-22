@@ -611,7 +611,6 @@ class Search {
 					'message' => $warning_message,
 				) );
 			}
-
 		}
 	
 		return $response;
