@@ -582,6 +582,34 @@ class Search {
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
 			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
+
+			// Check for errors in the response and log them
+			$response_code = (int) wp_remote_retrieve_response_code( $request );
+			if ( $response_code >= 400 ) {
+				$response_error = $response['error'];
+				$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+				\Automattic\VIP\Logstash\log2logstash( array(
+					'severity' => 'error',
+					'feature' => 'vip_search_query_error',
+					'message' => $error_message,
+					'extra' => array(
+						'error_type' => $response_error['type'] ?? 'Unknown error type',
+						'root_cause' => $response_error['root_cause'] ?? null,
+					),
+				) );
+			}
+
+			// Check for the 'Warning' header in the response and log it
+			$response_headers = wp_remote_retrieve_headers( $request );
+			if ( isset( $response_headers['warning'] ) ) {
+				$warning_message = $response_headers['warning'];
+				\Automattic\VIP\Logstash\log2logstash( array(
+					'severity' => 'warning',
+					'feature' => 'vip_search_es_warning',
+					'message' => $warning_message,
+				) );
+			}
+
 		}
 	
 		return $request;
