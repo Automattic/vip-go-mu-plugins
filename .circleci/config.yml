@@ -67,6 +67,13 @@ job-references:
       sudo -E docker-php-ext-install mysqli
       npm ci
       composer install -n
+  
+  install_dependencies2: &install_dependencies2
+    name: "Install Dependencies"
+    command: |
+      sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
+      sudo npm install npm@latest -g
+      composer install -n
 
   prepare_repo: &prepare_repo
     name: "Prepare Repo"
@@ -90,8 +97,7 @@ job-references:
   php_core_job: &php_core_job
     steps:
       - checkout
-      - run: *setup_environment
-      - run: *install_dependencies
+      - run: *install_dependencies2
       - run: *prepare_repo
       - run:
           name: "Run Tests"
@@ -102,9 +108,7 @@ job-references:
             npm ci
             npm run grunt build
             export WP_TESTS_DIR=<< pipeline.parameters.wp_core_develop_dir >>/tests/phpunit
-            ~/project/vendor/bin/phpunit --log-junit << pipeline.parameters.phpunit_report_file >> || true
-            ~/project/vendor/bin/phpunit --bootstrap ~/project/tests/bootstrap.php --log-junit << pipeline.parameters.phpunit_report_file_including_mu_plugins >> || true
-            ~/project/bin/compare-wp-develop-test-runs.sh << pipeline.parameters.phpunit_report_file >> << pipeline.parameters.phpunit_report_file_including_mu_plugins >> << pipeline.parameters.phpunit_core_failures_margin >> << pipeline.parameters.phpunit_core_errors_margin >>
+            ~/project/vendor/bin/phpunit
 
   lint_job: &lint_job
     steps:
@@ -128,7 +132,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.3-node
+      - image: wordpressdevelop/php:7.3-fpm
       - image: *db_image
 
   php73-build-multisite:

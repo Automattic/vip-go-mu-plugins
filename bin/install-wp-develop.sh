@@ -53,6 +53,7 @@ if [ ! -d $WP_CORE_DEVELOP_DIR ]; then
 	# set up testing suite
 	mkdir -p $WP_CORE_DEVELOP_DIR
 	svn co --quiet --ignore-externals https://develop.svn.wordpress.org/${WP_TESTS_TAG} $WP_CORE_DEVELOP_DIR
+	svn co -r 2170172 --quiet https://plugins.svn.wordpress.org/wordpress-importer/trunk/ ${WP_CORE_DEVELOP_DIR}/tests/phpunit/data/plugins/wordpress-importer
 fi
 
 cd $WP_CORE_DEVELOP_DIR
