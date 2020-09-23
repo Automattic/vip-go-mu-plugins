@@ -11,7 +11,7 @@ class Site_Details_Index {
 	 * Standard singleton except accept a timestamp for mocking purposes
 	 *
 	 * @param mixed $timestamp A fixed point in time to use for mocking.
-	 * @return {Site_Details_Index} A Site_Details_Index object
+	 * @return Site_Details_Index A Site_Details_Index object
 	 */
 	public static function instance( $timestamp = null ) {
 		if ( ! ( static::$_instance instanceof Site_Details_Index ) ) {
@@ -30,8 +30,8 @@ class Site_Details_Index {
 	/**
 	 * Given the site details from the vip_site_details_index_data filter, set the environment and core values
 	 *
-	 * @param {array} $site_details The current site details
-	 * @return {array} The new site details
+	 * @param array $site_details The current site details
+	 * @return array The new site details
 	 */
 	public function set_env_and_core( $site_details ) {
 		global $wp_version;
@@ -140,7 +140,7 @@ class Site_Details_Index {
 	 *
 	 * Used for mocking in tests.
 	 *
-	 * @return {int} The current timestamp or the value of $this->timestamp
+	 * @return int The current timestamp or the value of $this->timestamp
 	 */
 	public function get_current_timestamp() {
 		return $this->timestamp ?? time();
