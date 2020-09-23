@@ -1234,6 +1234,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 		require_once __DIR__ . '/../../search/es-wp-query/es-wp-query.php';
 
+		$this->expectException( \PHPUnit\Framework\Error\Notice::class );
+
 		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
 
 		$this->assertFalse( $should );
