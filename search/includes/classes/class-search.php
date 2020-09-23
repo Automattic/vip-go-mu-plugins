@@ -605,6 +605,7 @@ class Search {
 			// Check for the 'Warning' header and log it
 			if ( isset( $response_headers['warning'] ) ) {
 				$warning_message = $response_headers['warning'];
+				trigger_error( $warning_message, \E_USER_WARNING );
 				\Automattic\VIP\Logstash\log2logstash( array(
 					'severity' => 'warning',
 					'feature' => 'vip_search_es_warning',
