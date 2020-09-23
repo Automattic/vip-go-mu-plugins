@@ -4,6 +4,34 @@ namespace Automattic\VIP\Core\Privacy;
 
 use WP_Error;
 
+// Disable the VIP Privacy policy by default while we work on the rollout.
+// Priority is set to 0 to allow for easier overrides.
+add_filter( 'vip_show_login_privacy_policy', '__return_false', 0 );
+
+// Display a link to the VIP/Automattic Privacy Policy if the site doesn't already define one.
+add_action( 'the_privacy_policy_link', __NAMESPACE__ . '\the_vip_privacy_policy_link', PHP_INT_MAX, 2 ); // Hook in later so we don't override existing filters
+
+function the_vip_privacy_policy_link( $link, $privacy_policy_url ) {
+	// Don't change if the link has already been rendered.
+	if ( $link ) {
+		return $link;
+	}
+
+	// Allow customers to opt-out of the privacy notice.
+	$show_vip_privacy_policy = apply_filters( 'vip_show_login_privacy_policy', true );
+	if ( ! $show_vip_privacy_policy ) {
+		return;
+	}
+
+	$link = sprintf(
+		'%s<br/><a href="https://automattic.com/privacy/">%s</a>',
+		esc_html__( 'Powered by WordPress VIP' ),
+		esc_html__( 'Privacy Policy' )
+	);
+
+	return $link;
+}
+
 /**
  * Core privacy data export handler doesn't work by default on Go.
  *

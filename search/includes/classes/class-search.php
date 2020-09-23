@@ -15,16 +15,14 @@ class Search {
 
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
-	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip_search_enabled';
+	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
 
 	private const MAX_SEARCH_LENGTH = 255;
 
-	private const DISABLE_POST_META_ALLOW_LIST = array(
-		2341,
-	);
+	private const DISABLE_POST_META_ALLOW_LIST = array();
 
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	// sites
@@ -91,6 +89,7 @@ class Search {
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
 			require_once __DIR__ . '/commands/class-versioncommand.php';
+			require_once __DIR__ . '/commands/class-documentcommand.php';
 
 			// Remove elasticpress command. Need a better way.
 			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
@@ -225,6 +224,7 @@ class Search {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
+			WP_CLI::add_command( 'vip-search documents', __NAMESPACE__ . '\Commands\DocumentCommand' );
 			WP_CLI::add_command( 'vip-search', __NAMESPACE__ . '\Commands\CoreCommand' );
 		}
 	}
@@ -633,7 +633,7 @@ class Search {
 	 *
 	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
 	 *
-	 * The integration can be tested at any time by setting an `es` query argument (?vip_search_enabled=true).
+	 * The integration can be tested at any time by setting an `es` query argument (?vip-search-enabled=true).
 	 * 
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
