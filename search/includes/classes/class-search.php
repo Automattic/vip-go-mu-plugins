@@ -303,6 +303,7 @@ class Search {
 		// To fail gracefully we simply won't try to load our adapter.
 		// But we also need to surface the error.
 		if ( class_exists( '\\ES_WP_Query' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'vip-search' adapter, but another adapter is already loaded. Please disable standalone 'es-wp-query' and remove calls to 'es_wp_query_load_adapter' in your code.", null );
 		}
 
@@ -323,6 +324,7 @@ class Search {
 	public static function should_load_es_wp_query() {
 		// Don't load if plugin already loaded elsewhere.
 		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'es-wp-query', but another copy is already loaded. Please disable your copy of 'es-wp-query'.", null );
 			return false;
 		}
