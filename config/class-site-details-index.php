@@ -10,7 +10,7 @@ class Site_Details_Index {
 	/**
 	 * Standard singleton except accept a timestamp for mocking purposes
 	 *
-	 * @param {mixed} $timestamp A fixed point in time to use for mocking
+	 * @param mixed $timestamp A fixed point in time to use for mocking.
 	 * @return {Site_Details_Index} A Site_Details_Index object
 	 */
 	public static function instance( $timestamp = null ) {
