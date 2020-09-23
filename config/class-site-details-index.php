@@ -103,7 +103,8 @@ class Site_Details_Index {
 	 * Get the site details for the site the code is running on
 	 */
 	public function get_site_details() {
-		/* Filter that can be hooked on to provide information to the Site Details Index
+		/**
+		 * Filter that can be hooked on to provide information to the Site Details Index.
 		 *
 		 * Example:
 		 *
