@@ -191,7 +191,11 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 		 * wp_cache_get
 		 */
 		public function wp_cache_get( $value, $id, $flag, $force ) {
-			// TODO: Bypass APCU if $force === true
+			if ( true === $force ) {
+				// Don't intercept if we're explicitly bypassing local caches
+				return false;
+			}
+			
 			$intercept = $this->do_intercept_key( $id, $flag );
 			if ( ! $intercept ) {
 				return $value;
