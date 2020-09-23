@@ -144,7 +144,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 			return false;
 		}
 
-		function quick_check_key_intercept( $key, $group ) {
+		protected function quick_check_key_intercept( $key, $group ) {
 			if ( '__key__' === $group ) {
 				return false; // never handle __key__ which is part of mcremote
 			}
@@ -323,7 +323,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 			if ( ! defined( 'WPCOM_SANDBOXED' ) || ! WPCOM_SANDBOXED ) {
 				return;
 			}
-			error_log( call_user_func_array( 'sprintf', func_get_args() ) );
+			error_log( call_user_func_array( 'sprintf', func_get_args() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- This is for local/sandbox debugging only
 		}
 
 		public function add_callback( $cb, $func ) {
@@ -456,7 +456,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 						'<tr><td>regex</td><td>%s</td><td>%s<td>%d</td></tr>',
 						esc_html( $group ),
 						esc_html( $key ),
-						$details['ttl']
+						intval( $details['ttl'] )
 					);
 				}
 			}
