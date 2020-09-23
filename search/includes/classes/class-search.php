@@ -299,16 +299,33 @@ class Search {
 
 		require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
 
-		// If no other adapter has loaded, load ours. This is to prevent fatals (duplicate function/class definitions) if other
-		// adapters were somehow loaded before ours
+		// There's another adapter loaded already, this should be avoided.
+		// To fail gracefully we simply won't try to load our adapter.
+		// But we also need to surface the error.
+		if ( class_exists( '\\ES_WP_Query' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'vip-search' adapter, but another adapter is already loaded. Please disable standalone 'es-wp-query' and remove calls to 'es_wp_query_load_adapter' in your code.", null );
+		}
+
+		// If no other adapter has already been loaded, load ours.
+		// This is to prevent fatals (duplicate function/class definitions),
+		// if other adapters were somehow loaded before ours.
 		if ( ! class_exists( '\\ES_WP_Query' ) && function_exists( 'es_wp_query_load_adapter' ) ) {
 			es_wp_query_load_adapter( 'vip-search' );
 		}
 	}
 
+	/**
+	 * Helper to determine whether to load the bundled version of `es-wp-query`:
+	 * we only need to load it if either query mirroring or query integration enabled.
+	 *
+	 * @return boolean
+	 */
 	public static function should_load_es_wp_query() {
-		// Don't load if plugin already loaded elsewhere
+		// Don't load if plugin already loaded elsewhere.
 		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'es-wp-query', but another copy is already loaded. Please disable your copy of 'es-wp-query'.", null );
 			return false;
 		}
 
