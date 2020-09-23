@@ -1,7 +1,11 @@
+#!/usr/bin/env bash
+
 if [ $# -lt 3 ]; then
 	echo "usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version]"
 	exit 1
 fi
+
+source "$(dirname $0)"/utils.sh
 
 DB_NAME=$1
 DB_USER=$2
@@ -12,9 +16,9 @@ WP_VERSION=${5-latest}
 WP_CORE_DEVELOP_DIR="${WP_CORE_DEVELOP_DIR-/tmp/wordpress-develop}"
 
 download() {
-    if [ `which curl` ]; then
+    if [ "$(which curl)" ]; then
         curl -s "$1" > "$2";
-    elif [ `which wget` ]; then
+    elif [ "$(which wget)" ]; then
         wget -nv -O "$2" "$1"
     fi
 }
@@ -36,7 +40,7 @@ else
 	WP_TESTS_TAG="tags/$WP_VERSION"
 fi
 
-echo $WP_VERSION
+echo "WP version: $WP_VERSION"
 
 set -ex
 shopt -s extglob;
@@ -49,14 +53,14 @@ else
 fi
 
 # set up testing suite if it doesn't yet exist
-if [ ! -d $WP_CORE_DEVELOP_DIR ]; then
+if [ ! -d "$WP_CORE_DEVELOP_DIR" ]; then
 	# set up testing suite
-	mkdir -p $WP_CORE_DEVELOP_DIR
-	svn co --quiet --ignore-externals https://develop.svn.wordpress.org/${WP_TESTS_TAG} $WP_CORE_DEVELOP_DIR
-	svn co -r 2170172 --quiet https://plugins.svn.wordpress.org/wordpress-importer/trunk/ ${WP_CORE_DEVELOP_DIR}/tests/phpunit/data/plugins/wordpress-importer
+	mkdir -p "$WP_CORE_DEVELOP_DIR"
+	svn co --quiet --ignore-externals https://develop.svn.wordpress.org/"${WP_TESTS_TAG}" "$WP_CORE_DEVELOP_DIR"
+	svn co -r 2170172 --quiet https://plugins.svn.wordpress.org/wordpress-importer/trunk/ "${WP_CORE_DEVELOP_DIR}"/tests/phpunit/data/plugins/wordpress-importer
 fi
 
-cd $WP_CORE_DEVELOP_DIR
+cd "$WP_CORE_DEVELOP_DIR"
 
 if [ ! -f wp-tests-config.php ]; then
 	cp wp-tests-config-sample.php wp-tests-config.php
@@ -66,26 +70,4 @@ if [ ! -f wp-tests-config.php ]; then
 	sed $IOPTION "s|localhost|${DB_HOST}|" wp-tests-config.php
 fi
 
-
-install_db() {
-	# parse DB_HOST for port or socket references
-	local PARTS=(${DB_HOST//\:/ })
-	local DB_HOSTNAME=${PARTS[0]};
-	local DB_SOCK_OR_PORT=${PARTS[1]};
-	local EXTRA=""
-
-	if ! [ -z $DB_HOSTNAME ] ; then
-		if [ $(echo $DB_SOCK_OR_PORT | grep -e '^[0-9]\{1,\}$') ]; then
-			EXTRA=" --host=$DB_HOSTNAME --port=$DB_SOCK_OR_PORT --protocol=tcp"
-		elif ! [ -z $DB_SOCK_OR_PORT ] ; then
-			EXTRA=" --socket=$DB_SOCK_OR_PORT"
-		elif ! [ -z $DB_HOSTNAME ] ; then
-			EXTRA=" --host=$DB_HOSTNAME --protocol=tcp"
-		fi
-	fi
-
-	# create database
-	mysqladmin create $DB_NAME --user="$DB_USER" --password="$DB_PASS"$EXTRA
-}
-
-install_db
+install_db "$DB_NAME" "$DB_USER" "$DB_PASS" "$DB_HOST"

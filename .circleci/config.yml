@@ -24,18 +24,6 @@ parameters:
   wp_core_develop_dir:
     type: string
     default: /tmp/wordpress-develop
-  phpunit_report_file:
-    type: string
-    default: /tmp/phpunit-report.xml
-  phpunit_report_file_including_mu_plugins:
-    type: string
-    default: /tmp/phpunit-report-including-mu-plugins.xml
-  phpunit_core_failures_margin:
-    type: integer
-    default: 60
-  phpunit_core_errors_margin:
-    type: integer
-    default: 50
   db_host:
     type: string
     default: 127.0.0.1
@@ -68,7 +56,7 @@ job-references:
       npm ci
       composer install -n
   
-  install_dependencies2: &install_dependencies2
+  install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
       sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
@@ -97,7 +85,7 @@ job-references:
   php_core_job: &php_core_job
     steps:
       - checkout
-      - run: *install_dependencies2
+      - run: *install_core_tests_dependencies
       - run: *prepare_repo
       - run:
           name: "Run Tests"
