@@ -8,10 +8,10 @@ class Site_Details_Index {
 	private $timestamp = null;
 
 	/**
-	 * Standard singleton except accept a timestamp for mocking purposes
+	 * Standard singleton except accept a timestamp for mocking purposes.
 	 *
 	 * @param mixed $timestamp A fixed point in time to use for mocking.
-	 * @return Site_Details_Index A Site_Details_Index object
+	 * @return Site_Details_Index A Site_Details_Index object.
 	 */
 	public static function instance( $timestamp = null ) {
 		if ( ! ( static::$_instance instanceof Site_Details_Index ) ) {
@@ -28,12 +28,16 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Given the site details from the vip_site_details_index_data filter, set the environment and core values
+	 * Given the site details from the vip_site_details_index_data filter, set the environment and core values.
 	 *
-	 * @param array $site_details The current site details
-	 * @return array The new site details
+	 * @param array $site_details The current site details.
+	 * @return array The new site details.
 	 */
 	public function set_env_and_core( $site_details ) {
+		if ( ! is_array( $site_details ) ) {
+			$site_details = array();
+		}
+		
 		global $wp_version;
 
 		$site_id = 0;
@@ -72,7 +76,7 @@ class Site_Details_Index {
 	/**
 	 * Gather up all the information about all the plugins.
 	 *
-	 * Does not contain anything from vip-go-mu-plugins
+	 * Does not contain anything from vip-go-mu-plugins.
 	 */
 	public function get_plugin_info() {
 		// Needed or get_plugins can't be found in some instances
@@ -100,7 +104,7 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Get the site details for the site the code is running on
+	 * Get the site details for the site the code is running on.
 	 */
 	public function get_site_details() {
 		/**
@@ -127,8 +131,8 @@ class Site_Details_Index {
 		 * )
 		 *
 		 * @hook vip_site_details_index_data
-		 * @param {array} $site_details Default value for site details
-		 * @return {array} A nested array of site details
+		 * @param {array} $site_details Default value for site details.
+		 * @return {array} A nested array of site details.
 		 */
 		$site_details = apply_filters( 'vip_site_details_index_data', array() );
 
@@ -140,14 +144,14 @@ class Site_Details_Index {
 	 *
 	 * Used for mocking in tests.
 	 *
-	 * @return int The current timestamp or the value of $this->timestamp
+	 * @return int The current timestamp or the value of $this->timestamp.
 	 */
 	public function get_current_timestamp() {
 		return $this->timestamp ?? time();
 	}
 
 	/**
-	 * Given a value, set the current timestamp to provided value if it's an integer
+	 * Given a value, set the current timestamp to provided value if it's an integer.
 	 *
 	 * Used for mocking in tests.
 	 */
