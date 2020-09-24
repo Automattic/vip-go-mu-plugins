@@ -7,11 +7,22 @@
 
 class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_PHP_Errors Collector.
+	 */
+	protected $collector;
+
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
 		add_filter( 'qm/output/menus', array( $this, 'admin_menu' ), 10 );
 		add_filter( 'qm/output/panel_menus', array( $this, 'panel_menu' ), 10 );
 		add_filter( 'qm/output/menu_class', array( $this, 'admin_class' ) );
+	}
+
+	public function name() {
+		return __( 'PHP Errors', 'query-monitor' );
 	}
 
 	public function output() {
@@ -22,7 +33,7 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 			return;
 		}
 
-		$levels = array(
+		$levels     = array(
 			'Warning',
 			'Notice',
 			'Strict',
@@ -57,15 +68,19 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 					continue;
 				}
 
-				foreach ( $data[ $error_group ][ $type ] as $error ) {
+				foreach ( $data[ $error_group ][ $type ] as $error_key => $error ) {
 
-					$component = $error['trace']->get_component();
-					$row_attr  = array();
-					$row_attr['data-qm-component'] = $component->name;
+					$row_attr                      = array();
 					$row_attr['data-qm-type']      = ucfirst( $type );
+					$row_attr['data-qm-key']       = $error_key;
 
-					if ( 'core' !== $component->context ) {
-						$row_attr['data-qm-component'] .= ' non-core';
+					if ( $error['trace'] ) {
+						$component                     = $error['trace']->get_component();
+						$row_attr['data-qm-component'] = $component->name;
+
+						if ( 'core' !== $component->context ) {
+							$row_attr['data-qm-component'] .= ' non-core';
+						}
 					}
 
 					$attr = '';
@@ -98,36 +113,43 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 					echo '<td class="qm-num">' . esc_html( number_format_i18n( $error['calls'] ) ) . '</td>';
 
 					$stack          = array();
-					$filtered_trace = $error['trace']->get_display_trace();
 
-					// debug_backtrace() (used within QM_Backtrace) doesn't like being used within an error handler so
-					// we need to handle its somewhat unreliable stack trace items.
-					// https://bugs.php.net/bug.php?id=39070
-					// https://bugs.php.net/bug.php?id=64987
-					foreach ( $filtered_trace as $i => $item ) {
-						if ( isset( $item['file'] ) && isset( $item['line'] ) ) {
-							$stack[] = self::output_filename( $item['display'], $item['file'], $item['line'] );
-						} elseif ( 0 === $i ) {
-							$stack[] = self::output_filename( $item['display'], $error['file'], $error['line'] );
-						} else {
-							$stack[] = $item['display'] . '<br><span class="qm-info qm-supplemental"><em>' . __( 'Unknown location', 'query-monitor' ) . '</em></span>';
+					if ( $error['trace'] ) {
+						$filtered_trace = $error['trace']->get_display_trace();
+
+						// debug_backtrace() (used within QM_Backtrace) doesn't like being used within an error handler so
+						// we need to handle its somewhat unreliable stack trace items.
+						// https://bugs.php.net/bug.php?id=39070
+						// https://bugs.php.net/bug.php?id=64987
+						foreach ( $filtered_trace as $i => $item ) {
+							if ( isset( $item['file'] ) && isset( $item['line'] ) ) {
+								$stack[] = self::output_filename( $item['display'], $item['file'], $item['line'] );
+							} elseif ( 0 === $i ) {
+								$stack[] = self::output_filename( $item['display'], $error['file'], $error['line'] );
+							} else {
+								$stack[] = $item['display'] . '<br><span class="qm-info qm-supplemental"><em>' . __( 'Unknown location', 'query-monitor' ) . '</em></span>';
+							}
 						}
 					}
 
-					echo '<td class="qm-row-caller qm-row-stack qm-nowrap qm-ltr qm-has-toggle"><ol class="qm-toggler qm-numbered">';
+					echo '<td class="qm-row-caller qm-row-stack qm-nowrap qm-ltr qm-has-toggle">';
 
-					echo self::build_toggler(); // WPCS: XSS ok;
 					if ( ! empty( $stack ) ) {
-						echo '<div class="qm-toggled"><li>' . implode( '</li><li>', $stack ) . '</li></div>'; // WPCS: XSS ok.
+						echo self::build_toggler(); // WPCS: XSS ok;
 					}
 
+					echo '<ol>';
 					echo '<li>';
 					echo self::output_filename( $error['filename'] . ':' . $error['line'], $error['file'], $error['line'], true ); // WPCS: XSS ok.
 					echo '</li>';
 
+					if ( ! empty( $stack ) ) {
+						echo '<div class="qm-toggled"><li>' . implode( '</li><li>', $stack ) . '</li></div>'; // WPCS: XSS ok.
+					}
+
 					echo '</ol></td>';
 
-					if ( $component ) {
+					if ( ! empty( $component ) ) {
 						echo '<td class="qm-nowrap">' . esc_html( $component->name ) . '</td>';
 					} else {
 						echo '<td><em>' . esc_html__( 'Unknown', 'query-monitor' ) . '</em></td>';
@@ -159,7 +181,7 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 
 	public function admin_menu( array $menu ) {
 
-		$data = $this->collector->get_data();
+		$data       = $this->collector->get_data();
 		$menu_label = array();
 
 		$types = array(
@@ -173,26 +195,26 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 			'warning'    => _nx_noop( '%s Warning', '%s Warnings', 'PHP error level', 'query-monitor' ),
 		);
 
-		$key = 'quiet';
+		$key     = 'quiet';
 		$generic = false;
 
 		foreach ( $types as $type => $label ) {
 
-			$count = 0;
+			$count      = 0;
 			$has_errors = false;
 
 			if ( isset( $data['suppressed'][ $type ] ) ) {
 				$has_errors = true;
-				$generic = true;
+				$generic    = true;
 			}
 			if ( isset( $data['silenced'][ $type ] ) ) {
 				$has_errors = true;
-				$generic = true;
+				$generic    = true;
 			}
 			if ( isset( $data['errors'][ $type ] ) ) {
 				$has_errors = true;
-				$key   = $type;
-				$count += array_sum( wp_list_pluck( $data['errors'][ $type ], 'calls' ) );
+				$key        = $type;
+				$count     += array_sum( wp_list_pluck( $data['errors'][ $type ], 'calls' ) );
 			}
 
 			if ( ! $has_errors ) {
@@ -200,7 +222,7 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 			}
 
 			if ( $count ) {
-				$label = sprintf(
+				$label        = sprintf(
 					translate_nooped_plural(
 						$label,
 						$count,
@@ -216,7 +238,7 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 			return $menu;
 		}
 
-		/* translators: %s: Number of PHP errors */
+		/* translators: %s: List of PHP error types */
 		$title = __( 'PHP Errors (%s)', 'query-monitor' );
 
 		/* translators: used between list items, there is a space after the comma */
@@ -231,7 +253,7 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 			$title = __( 'PHP Errors', 'query-monitor' );
 		}
 
-		$menu['php_errors'] = $this->menu( array(
+		$menu[ $this->collector->id() ] = $this->menu( array(
 			'id'    => "query-monitor-{$key}s",
 			'title' => $title,
 		) );
@@ -240,9 +262,31 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 	}
 
 	public function panel_menu( array $menu ) {
-		if ( isset( $menu['php_errors'] ) ) {
-			$menu['php_errors']['title'] = __( 'PHP Errors', 'query-monitor' );
+		if ( ! isset( $menu[ $this->collector->id() ] ) ) {
+			return $menu;
 		}
+
+		$data  = $this->collector->get_data();
+		$count = 0;
+		$types = array(
+			'suppressed',
+			'silenced',
+			'errors',
+		);
+
+		foreach ( $types as $type ) {
+			if ( ! empty( $data[ $type ] ) ) {
+				foreach ( $data[ $type ] as $errors ) {
+					$count += array_sum( wp_list_pluck( $errors, 'calls' ) );
+				}
+			}
+		}
+
+		$menu[ $this->collector->id() ]['title'] = esc_html( sprintf(
+			/* translators: %s: Number of errors */
+			__( 'PHP Errors (%s)', 'query-monitor' ),
+			number_format_i18n( $count )
+		) );
 
 		return $menu;
 	}
@@ -250,7 +294,8 @@ class QM_Output_Html_PHP_Errors extends QM_Output_Html {
 }
 
 function register_qm_output_html_php_errors( array $output, QM_Collectors $collectors ) {
-	if ( $collector = QM_Collectors::get( 'php_errors' ) ) {
+	$collector = QM_Collectors::get( 'php_errors' );
+	if ( $collector ) {
 		$output['php_errors'] = new QM_Output_Html_PHP_Errors( $collector );
 	}
 	return $output;

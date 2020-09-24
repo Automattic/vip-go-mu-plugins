@@ -13,7 +13,7 @@ class QM_Timer {
 	protected $laps  = array();
 
 	public function start( array $data = null ) {
-		$this->trace = new QM_Backtrace;
+		$this->trace = new QM_Backtrace();
 		$this->start = array(
 			'time'   => microtime( true ),
 			'memory' => memory_get_usage(),
@@ -65,7 +65,8 @@ class QM_Timer {
 			$lap['time_used']   = $lap['time'] - $prev['time'];
 			$lap['memory_used'] = $lap['memory'] - $prev['memory'];
 
-			$laps[ $lap_id ] = $prev = $lap;
+			$laps[ $lap_id ] = $lap;
+			$prev            = $lap;
 
 		}
 
@@ -79,6 +80,22 @@ class QM_Timer {
 
 	public function get_memory() {
 		return $this->end['memory'] - $this->start['memory'];
+	}
+
+	public function get_start_time() {
+		return $this->start['time'];
+	}
+
+	public function get_start_memory() {
+		return $this->start['memory'];
+	}
+
+	public function get_end_time() {
+		return $this->end['time'];
+	}
+
+	public function get_end_memory() {
+		return $this->end['memory'];
 	}
 
 	public function get_trace() {
