@@ -299,16 +299,33 @@ class Search {
 
 		require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
 
-		// If no other adapter has loaded, load ours. This is to prevent fatals (duplicate function/class definitions) if other
-		// adapters were somehow loaded before ours
+		// There's another adapter loaded already, this should be avoided.
+		// To fail gracefully we simply won't try to load our adapter.
+		// But we also need to surface the error.
+		if ( class_exists( '\\ES_WP_Query' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'vip-search' adapter, but another adapter is already loaded. Please disable standalone 'es-wp-query' and remove calls to 'es_wp_query_load_adapter' in your code.", null );
+		}
+
+		// If no other adapter has already been loaded, load ours.
+		// This is to prevent fatals (duplicate function/class definitions),
+		// if other adapters were somehow loaded before ours.
 		if ( ! class_exists( '\\ES_WP_Query' ) && function_exists( 'es_wp_query_load_adapter' ) ) {
 			es_wp_query_load_adapter( 'vip-search' );
 		}
 	}
 
+	/**
+	 * Helper to determine whether to load the bundled version of `es-wp-query`:
+	 * we only need to load it if either query mirroring or query integration enabled.
+	 *
+	 * @return boolean
+	 */
 	public static function should_load_es_wp_query() {
-		// Don't load if plugin already loaded elsewhere
+		// Don't load if plugin already loaded elsewhere.
 		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'es-wp-query', but another copy is already loaded. Please disable your copy of 'es-wp-query'.", null );
 			return false;
 		}
 
@@ -548,14 +565,14 @@ class Search {
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+		$response = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
 
 		$duration = ( $end_time - $start_time ) * 1000;
 
-		if ( is_wp_error( $request ) ) {
-			$error_messages = $request->get_error_messages();
+		if ( is_wp_error( $response ) ) {
+			$error_messages = $response->get_error_messages();
 			
 			foreach ( $error_messages as $error_message ) {
 				// Default stat for errors is 'error'
@@ -570,19 +587,49 @@ class Search {
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
-			$response_body = wp_remote_retrieve_body( $request );
-			$response = json_decode( $response_body, true );
+			$response_body_json = wp_remote_retrieve_body( $response );
+			$response_body = json_decode( $response_body_json, true );
 
-			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
-				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
-				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
+			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
+				$statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
+				$statsd->timing( $statsd_per_site_prefix . '.engine', $response_body['took'] );
 			}
 
 			$statsd->timing( $statsd_prefix . '.total', $duration );
 			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
+
+			$response_code = (int) wp_remote_retrieve_response_code( $response );
+
+			// Check for an error HTTP code and log the Elasticsearch error
+			if ( $response_code >= 400 ) {
+				$response_error = $response_body['error'];
+				$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+				\Automattic\VIP\Logstash\log2logstash( array(
+					'severity' => 'error',
+					'feature' => 'vip_search_query_error',
+					'message' => $error_message,
+					'extra' => array(
+						'error_type' => $response_error['type'] ?? 'Unknown error type',
+						'root_cause' => $response_error['root_cause'] ?? null,
+					),
+				) );
+			}
+
+			$response_headers = wp_remote_retrieve_headers( $response );
+
+			// Check for the 'Warning' header and log it
+			if ( isset( $response_headers['warning'] ) ) {
+				$warning_message = $response_headers['warning'];
+				trigger_error( esc_html( $warning_message ), \E_USER_WARNING );
+				\Automattic\VIP\Logstash\log2logstash( array(
+					'severity' => 'warning',
+					'feature' => 'vip_search_es_warning',
+					'message' => $warning_message,
+				) );
+			}
 		}
 	
-		return $request;
+		return $response;
 	}
 
 	/*
