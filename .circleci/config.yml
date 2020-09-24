@@ -4,6 +4,7 @@ workflows:
     jobs:
       - php73-lint
       - php73-core-tests
+      - php73-core-tests-mu-plugins
       - php73-build-multisite
       - php73-build-singlesite
       - php74-lint
@@ -96,6 +97,69 @@ job-references:
             npm ci
             npm run grunt build
             export WP_TESTS_DIR=<< pipeline.parameters.wp_core_develop_dir >>/tests/phpunit
+            if [[ "$INCLUDE_MU_TESTS" == "1" ]]; then
+              sed -i "s|bootstrap=\"tests/phpunit/includes/bootstrap.php\"|bootstrap=\"$HOME/project/tests/bootstrap.php\"|" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/filesystem/findFolder.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/user/capabilities.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/term/wpGetObjectTerms.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/term/getTheTerms.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/term/getTerm.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/term/wpGetObjectTerms</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/sitemaps/sitemaps.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/sitemaps/functions.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/rest-api/rest-schema-setup.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/term/cache.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/query/search.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/privacy/wpPrivacySendRequestConfirmationNotification.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/privacy/wpPrivacySendPersonalDataExportEmail.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/privacy/wpPrivacySendErasureFulfillmentNotification.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/post/getLastPostModified.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/feed/rss2.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/mail.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/dbdelta.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/date/getFeedBuildDate.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/comment/wpCountComments.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/includes/testcase-canonical.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getProfile.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPosts.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/phpunit/tests/xmlrpc/wp/getPostTypes.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/user/wpSendUserRequest.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/rest-api/rest-attachments-controller.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/canonical/sitemaps.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/phpunit/tests/xmlrpc/wp/restoreRevision.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/newTerm.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/newPost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getUsers.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/restoreRevision.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getUser.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getTerms.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getTaxonomy.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getRevisions.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPostTypes.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPages.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getTerm.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPostType.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPageList.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getPage.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getOptions.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getMediaItem.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getComments.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/editTerm.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/editProfile.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/editPost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/deleteTerm.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/deletePost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/mw/newPost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/mw/getRecentPosts.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/mw/getPost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/mw/editPost.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/feed/atom.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getTaxonomies.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/wp/getComment.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/mt/getRecentPostTitles.php</exclude>" phpunit.xml.dist
+              sed -i "/<testsuite name=\"default\">/a <exclude>tests/phpunit/tests/xmlrpc/basic.php</exclude>" phpunit.xml.dist
+            fi
             ~/project/vendor/bin/phpunit
 
   lint_job: &lint_job
@@ -117,6 +181,16 @@ jobs:
   php73-core-tests:
     <<: *php_core_job
     environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+    docker:
+      - image: wordpressdevelop/php:7.3-fpm
+      - image: *db_image
+
+  php73-core-tests-mu-plugins:
+    <<: *php_core_job
+    environment:
+      - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
