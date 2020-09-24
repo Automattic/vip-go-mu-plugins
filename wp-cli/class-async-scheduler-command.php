@@ -115,6 +115,9 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 	public static function runner( $command ) {
 		$cache_key = md5( $command );
 		$start = time();
+
+		Alerts::chat( self::SLACK_NOTIFY_CHANNEL, sprintf( 'Kicking off `%s` on `%s`', $command, gethostname() ), 5 );
+
 		$result = WP_CLI::runcommand(
 			$command,
 			[
@@ -154,7 +157,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 			$result->stderr
 		);
 
-		// Successful command has INFORMATION level, an errored one is WARNING.
+		// A successfully executed command messaeg has INFORMATION level, an errored one is WARNING.
 		$log_level = 0 === (int) $result->return_code ? 5 : 1;
 
 		Alerts::chat( self::SLACK_NOTIFY_CHANNEL, $formatted_message, $log_level );
