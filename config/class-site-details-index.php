@@ -34,6 +34,7 @@ class Site_Details_Index {
 	 * @return array The new site details.
 	 */
 	public function set_env_and_core( $site_details ) {
+		// If site details isn't an array, treat it as a blank array
 		if ( ! is_array( $site_details ) ) {
 			$site_details = array();
 		}
@@ -43,24 +44,13 @@ class Site_Details_Index {
 		$site_id = 0;
 		if ( defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID ) {
 			$site_id = VIP_GO_APP_ID;
-		} else {
-			if ( defined( 'FILES_CLIENT_SITE_ID' ) && FILES_CLIENT_SITE_ID ) {
-				$site_id = FILES_CLIENT_SITE_ID;
-			}
 		}
 
 		$environment_name = '';
 		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && VIP_GO_APP_ENVIRONMENT ) {
 			$environment_name = strval( VIP_GO_APP_ENVIRONMENT );
-		} else {
-			if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) {
-				$environment_name = strval( VIP_GO_ENV );
-			}
 		}
 
-		// log2logstash has it's own timestamp field as well. However, if/when we ever decide
-		// to swap indexes, we'll need our own. Added here so that the migration will be easier
-		// and all the fields we need are included in the actual site details index data.
 		$site_details['timestamp'] = $this->get_current_timestamp();
 		$site_details['client_site_id'] = $site_id;
 		$site_details['environment_id'] = $site_id;
