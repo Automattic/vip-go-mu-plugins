@@ -130,9 +130,8 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 		);
 		$took_seconds = time() - $start;
 		wp_cache_delete( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
-
 		$formatted_message = sprintf(
-			"The scheduled command `%s` has finished execution in %d seconds (exit code: %d)
+			'The scheduled command `%s` has finished execution in %d seconds (exit code: %d)
 
 			*Hostname*: %s
 
@@ -145,7 +144,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 			```
 			%s
 			```
-			",
+			',
 			$command,
 			$took_seconds,
 			$result->return_code,
