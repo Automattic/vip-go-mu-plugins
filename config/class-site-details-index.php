@@ -3,8 +3,19 @@
 namespace Automattic\VIP\Config;
 
 class Site_Details_Index {
+	/**
+	 * Variable to hold the instance for the singleton.
+	 *
+	 * @var Site_Details_Index
+	 */
 	private static $_instance;
 
+	/**
+	 * The timestamp that will be used to determine the value of Site_Details_Index::get_current_timestamp().
+	 * Used for mocking. Integer values set the timestamp for the instance to that value. Null means it uses the current timestamp.
+	 *
+	 * @var int|null
+	 */
 	private $timestamp = null;
 
 	/**
