@@ -314,7 +314,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 			// If we should not be hooking then there's no reason to add overhead to actions and filters
 			if ( defined( 'WP_OBJ_CACHE_HOOKS' ) && WP_OBJ_CACHE_HOOKS ) {
 				do_action( 'apcu_hot_cache_init', $this );
-				add_filter( 'wp_cache_get_pre', array( $this, 'wp_cache_get' ), 1, 4 );
+				add_filter( 'pre_wp_cache_get', array( $this, 'wp_cache_get' ), 1, 4 );
 			}
 		}
 
