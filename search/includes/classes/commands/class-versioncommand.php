@@ -169,6 +169,9 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * [--format=<string>]
 	 * : Optional one of: table json csv yaml ids count
 	 *
+	 * [--network-wide]
+	 * : Optional - list all registered versions in all subsites
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions list post
 	 *
@@ -185,13 +188,44 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
 
-		$versions = $search->versioning->get_versions( $indexable );
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
+				$assoc_args['network-wide'] = 0;
+			}
 
-		if ( is_wp_error( $versions ) ) {
-			return WP_CLI::error( $result->get_error_message() );
+			$versions = array();
+
+			$sites = \ElasticPress\Utils\get_sites( $assoc_args['network-wide'] );
+
+			foreach ( $sites as $site ) {
+				switch_to_blog( $site['blog_id'] );
+
+				$site_versions = $search->versioning->get_versions( $indexable );
+
+				restore_current_blog();
+
+				if ( is_wp_error( $site_versions ) ) {
+					return WP_CLI::error( $result->get_error_message() );
+				}
+
+				foreach ( $site_versions as &$version ) {
+					$version['blog_id'] = $site['blog_id'];
+					$version['url'] = $site['domain'] . $site['path'];
+				}
+
+				$versions = array_merge( $versions, $site_versions );
+			}
+
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'blog_id', 'url', 'number', 'active', 'created_time', 'activated_time' ) );
+		} else {
+			$versions = $search->versioning->get_versions( $indexable );
+
+			if ( is_wp_error( $versions ) ) {
+				return WP_CLI::error( $result->get_error_message() );
+			}
+
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
 		}
-
-		\WP_CLI\Utils\format_items( $assoc_args['format'], $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
 	}
 
 	/**
