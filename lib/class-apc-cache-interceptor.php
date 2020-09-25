@@ -89,7 +89,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 		}
 
 		public function add_passive_rx( $group, $pattern, $ttl ) {
-			$this->run_callbacks( 'config', array( 'passive-rx', $group, $key, $ttl ) );
+			$this->run_callbacks( 'config', array( 'passive-rx', $group, $pattern, $ttl ) );
 			if ( ! array_key_exists( $group, $this->regex_keys ) ) {
 				$this->regex_keys[ $group ] = array();
 			}
