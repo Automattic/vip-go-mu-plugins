@@ -18,7 +18,7 @@ class QM_Dispatcher_AJAX extends QM_Dispatcher {
 
 	public function init() {
 
-		if ( ! $this->user_can_view() ) {
+		if ( ! self::user_can_view() ) {
 			return;
 		}
 
@@ -26,6 +26,7 @@ class QM_Dispatcher_AJAX extends QM_Dispatcher {
 			ob_start();
 		}
 
+		parent::init();
 	}
 
 	public function dispatch() {
@@ -36,7 +37,6 @@ class QM_Dispatcher_AJAX extends QM_Dispatcher {
 
 		$this->before_output();
 
-		/* @var QM_Output_Headers[] */
 		foreach ( $this->get_outputters( 'headers' ) as $id => $output ) {
 			$output->output();
 		}
@@ -69,7 +69,7 @@ class QM_Dispatcher_AJAX extends QM_Dispatcher {
 			return false;
 		}
 
-		if ( ! $this->user_can_view() ) {
+		if ( ! self::user_can_view() ) {
 			return false;
 		}
 

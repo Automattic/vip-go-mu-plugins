@@ -7,9 +7,20 @@
 
 class QM_Output_Html_Transients extends QM_Output_Html {
 
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_Transients Collector.
+	 */
+	protected $collector;
+
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
 		add_filter( 'qm/output/menus', array( $this, 'admin_menu' ), 100 );
+	}
+
+	public function name() {
+		return __( 'Transients', 'query-monitor' );
 	}
 
 	public function output() {
@@ -23,7 +34,7 @@ class QM_Output_Html_Transients extends QM_Output_Html {
 			echo '<thead>';
 			echo '<tr>';
 			echo '<th scope="col">' . esc_html__( 'Updated Transient', 'query-monitor' ) . '</th>';
-			if ( is_multisite() ) {
+			if ( $data['has_type'] ) {
 				echo '<th scope="col">' . esc_html_x( 'Type', 'transient type', 'query-monitor' ) . '</th>';
 			}
 			echo '<th scope="col">' . esc_html__( 'Expiration', 'query-monitor' ) . '</th>';
@@ -36,19 +47,14 @@ class QM_Output_Html_Transients extends QM_Output_Html {
 			echo '<tbody>';
 
 			foreach ( $data['trans'] as $row ) {
-				$transient = str_replace( array(
-					'_site_transient_',
-					'_transient_',
-				), '', $row['transient'] );
-
-				$component = $row['trace']->get_component();
+				$component = $row['component'];
 
 				echo '<tr>';
 				printf(
 					'<td class="qm-ltr"><code>%s</code></td>',
-					esc_html( $transient )
+					esc_html( $row['name'] )
 				);
-				if ( is_multisite() ) {
+				if ( $data['has_type'] ) {
 					printf(
 						'<td class="qm-ltr qm-nowrap">%s</td>',
 						esc_html( $row['type'] )
@@ -64,34 +70,37 @@ class QM_Output_Html_Transients extends QM_Output_Html {
 					printf(
 						'<td class="qm-nowrap">%s <span class="qm-info">(~%s)</span></td>',
 						esc_html( $row['expiration'] ),
-						esc_html( human_time_diff( 0, $row['expiration'] ) )
+						esc_html( $row['exp_diff'] )
 					);
 				}
 
 				printf(
 					'<td class="qm-nowrap">~%s</td>',
-					esc_html( size_format( $row['size'] ) )
+					esc_html( $row['size_formatted'] )
 				);
 
-				$stack          = array();
-				$filtered_trace = $row['trace']->get_display_trace();
-				array_pop( $filtered_trace ); // remove do_action('setted_(site_)?transient')
-				array_pop( $filtered_trace ); // remove set_(site_)?transient()
+				$stack = array();
 
-				foreach ( $filtered_trace as $item ) {
+				foreach ( $row['filtered_trace'] as $item ) {
 					$stack[] = self::output_filename( $item['display'], $item['calling_file'], $item['calling_line'] );
 				}
 
-				echo '<td class="qm-has-toggle qm-nowrap qm-ltr"><ol class="qm-toggler qm-numbered">';
+				$caller = array_shift( $stack );
 
-				$caller = array_pop( $stack );
+				echo '<td class="qm-has-toggle qm-nowrap qm-ltr">';
 
 				if ( ! empty( $stack ) ) {
 					echo self::build_toggler(); // WPCS: XSS ok;
+				}
+
+				echo '<ol>';
+
+				echo "<li>{$caller}</li>"; // WPCS: XSS ok.
+
+				if ( ! empty( $stack ) ) {
 					echo '<div class="qm-toggled"><li>' . implode( '</li><li>', $stack ) . '</li></div>'; // WPCS: XSS ok.
 				}
 
-				echo "<li>{$caller}</li>"; // WPCS: XSS ok.
 				echo '</ol></td>';
 
 				printf(
@@ -124,7 +133,7 @@ class QM_Output_Html_Transients extends QM_Output_Html {
 			/* translators: %s: Number of transient values that were updated */
 			: __( 'Transient Updates (%s)', 'query-monitor' );
 
-		$menu[] = $this->menu( array(
+		$menu[ $this->collector->id() ] = $this->menu( array(
 			'title' => esc_html( sprintf(
 				$title,
 				number_format_i18n( $count )
@@ -137,7 +146,8 @@ class QM_Output_Html_Transients extends QM_Output_Html {
 }
 
 function register_qm_output_html_transients( array $output, QM_Collectors $collectors ) {
-	if ( $collector = QM_Collectors::get( 'transients' ) ) {
+	$collector = QM_Collectors::get( 'transients' );
+	if ( $collector ) {
 		$output['transients'] = new QM_Output_Html_Transients( $collector );
 	}
 	return $output;

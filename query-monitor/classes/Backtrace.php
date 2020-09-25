@@ -54,12 +54,14 @@ class QM_Backtrace {
 	protected $calling_line    = 0;
 	protected $calling_file    = '';
 
-	public function __construct( array $args = array() ) {
+	public function __construct( array $args = array(), array $trace = null ) {
+		$this->trace = ( null === $trace ) ? debug_backtrace( false ) : $trace;
+
 		$args = array_merge( array(
 			'ignore_current_filter' => true,
 			'ignore_frames'         => 0,
 		), $args );
-		$this->trace = debug_backtrace( false );
+
 		$this->ignore( 1 ); # Self-awareness
 
 		/**
@@ -121,36 +123,16 @@ class QM_Backtrace {
 		$components = array();
 
 		foreach ( $this->trace as $frame ) {
-			try {
+			$component = self::get_frame_component( $frame );
 
-				if ( isset( $frame['class'] ) ) {
-					if ( ! class_exists( $frame['class'], false ) ) {
-						continue;
-					}
-					if ( ! method_exists( $frame['class'], $frame['function'] ) ) {
-						continue;
-					}
-					$ref = new ReflectionMethod( $frame['class'], $frame['function'] );
-					$file = $ref->getFileName();
-				} elseif ( isset( $frame['function'] ) && function_exists( $frame['function'] ) ) {
-					$ref = new ReflectionFunction( $frame['function'] );
-					$file = $ref->getFileName();
-				} elseif ( isset( $frame['file'] ) ) {
-					$file = $frame['file'];
-				} else {
-					continue;
-				}
-
-				$comp = QM_Util::get_file_component( $file );
-				$components[ $comp->type ] = $comp;
-
-				if ( 'plugin' === $comp->type ) {
+			if ( $component ) {
+				if ( 'plugin' === $component->type ) {
 					// If the component is a plugin then it can't be anything else,
 					// so short-circuit and return early.
-					return $comp;
+					return $component;
 				}
-			} catch ( ReflectionException $e ) {
-				# nothing
+
+				$components[ $component->type ] = $component;
 			}
 		}
 
@@ -164,12 +146,40 @@ class QM_Backtrace {
 
 	}
 
+	public static function get_frame_component( array $frame ) {
+			try {
+
+				if ( isset( $frame['class'] ) ) {
+					if ( ! class_exists( $frame['class'], false ) ) {
+						return null;
+					}
+					if ( ! method_exists( $frame['class'], $frame['function'] ) ) {
+						return null;
+					}
+					$ref = new ReflectionMethod( $frame['class'], $frame['function'] );
+					$file = $ref->getFileName();
+				} elseif ( isset( $frame['function'] ) && function_exists( $frame['function'] ) ) {
+					$ref = new ReflectionFunction( $frame['function'] );
+					$file = $ref->getFileName();
+				} elseif ( isset( $frame['file'] ) ) {
+					$file = $frame['file'];
+				} else {
+					return null;
+				}
+
+				return QM_Util::get_file_component( $file );
+
+			} catch ( ReflectionException $e ) {
+				return null;
+			}
+	}
+
 	public function get_trace() {
 		return $this->trace;
 	}
 
 	public function get_display_trace() {
-		return array_reverse( $this->get_filtered_trace() );
+		return $this->get_filtered_trace();
 	}
 
 	public function get_filtered_trace() {
@@ -200,7 +210,7 @@ class QM_Backtrace {
 	}
 
 	public function ignore( $num ) {
-		for ( $i = 0; $i < absint( $num ); $i++ ) {
+		for ( $i = 0; $i < $num; $i++ ) {
 			unset( $this->trace[ $i ] );
 		}
 		$this->trace = array_values( $this->trace );
@@ -209,7 +219,7 @@ class QM_Backtrace {
 
 	public function ignore_current_filter() {
 
-		if ( isset( $this->trace[2] ) and isset( $this->trace[2]['function'] ) ) {
+		if ( isset( $this->trace[2] ) && isset( $this->trace[2]['function'] ) ) {
 			if ( in_array( $this->trace[2]['function'], array( 'apply_filters', 'do_action' ), true ) ) {
 				$this->ignore( 3 ); # Ignore filter and action callbacks
 			}
@@ -219,13 +229,50 @@ class QM_Backtrace {
 
 	public function filter_trace( array $trace ) {
 
-		if ( ! self::$filtered and function_exists( 'did_action' ) and did_action( 'plugins_loaded' ) ) {
+		if ( ! self::$filtered && function_exists( 'did_action' ) && did_action( 'plugins_loaded' ) ) {
 
-			# Only run apply_filters on these once
+			/**
+			 * Filters which classes to ignore when constructing user-facing call stacks.
+			 *
+			 * @since 2.7.0
+			 *
+			 * @param bool[] $ignore_class Array of class names to ignore. The array keys are class names to ignore,
+			 *                             the array values are whether to ignore the class or not (usually true).
+			 */
 			self::$ignore_class  = apply_filters( 'qm/trace/ignore_class',  self::$ignore_class );
+
+			/**
+			 * Filters which class methods to ignore when constructing user-facing call stacks.
+			 *
+			 * @since 2.7.0
+			 *
+			 * @param bool[] $ignore_method Array of method names to ignore. The array keys are method names to ignore,
+			 *                              the array values are whether to ignore the method or not (usually true).
+			 */
 			self::$ignore_method = apply_filters( 'qm/trace/ignore_method', self::$ignore_method );
+
+			/**
+			 * Filters which functions to ignore when constructing user-facing call stacks.
+			 *
+			 * @since 2.7.0
+			 *
+			 * @param bool[] $ignore_func Array of function names to ignore. The array keys are function names to ignore,
+			 *                            the array values are whether to ignore the function or not (usually true).
+			 */
 			self::$ignore_func   = apply_filters( 'qm/trace/ignore_func',   self::$ignore_func );
+
+			/**
+			 * Filters the number of argument values to show for the given function name when constructing user-facing
+			 * call stacks.
+			 *
+			 * @since 2.7.0
+			 *
+			 * @param (int|string)[] $show_args The number of argument values to show for the given function name. The
+			 *                                  array keys are function names, the array values are either integers or
+			 *                                  "dir" to specifically treat the function argument as a directory path.
+			 */
 			self::$show_args     = apply_filters( 'qm/trace/show_args',     self::$show_args );
+
 			self::$filtered = true;
 
 		}

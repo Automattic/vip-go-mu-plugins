@@ -9,13 +9,10 @@ class QM_Collector_DB_Callers extends QM_Collector {
 
 	public $id = 'db_callers';
 
-	public function name() {
-		return __( 'Queries by Caller', 'query-monitor' );
-	}
-
 	public function process() {
+		$dbq = QM_Collectors::get( 'db_queries' );
 
-		if ( $dbq = QM_Collectors::get( 'db_queries' ) ) {
+		if ( $dbq ) {
 			if ( isset( $dbq->data['times'] ) ) {
 				$this->data['times'] = $dbq->data['times'];
 				QM_Util::rsort( $this->data['times'], 'ltime' );
@@ -30,7 +27,7 @@ class QM_Collector_DB_Callers extends QM_Collector {
 }
 
 function register_qm_collector_db_callers( array $collectors, QueryMonitor $qm ) {
-	$collectors['db_callers'] = new QM_Collector_DB_Callers;
+	$collectors['db_callers'] = new QM_Collector_DB_Callers();
 	return $collectors;
 }
 

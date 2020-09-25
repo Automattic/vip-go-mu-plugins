@@ -585,9 +585,9 @@ class Vary_Cache {
 			$sent_vary = true;
 
 			if ( self::is_encryption_enabled() ) {
-				header( 'Vary: X-VIP-Go-Auth' );
+				header( 'Vary: X-VIP-Go-Auth', false );
 			} else {
-				header( 'Vary: X-VIP-Go-Segmentation' );
+				header( 'Vary: X-VIP-Go-Segmentation', false );
 			}
 
 			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
