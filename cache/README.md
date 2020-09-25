@@ -227,7 +227,7 @@ And finally, we need to send a signal to the VIP CDN that this request should be
 
 ```
 // Make sure our reverse proxy respects the cookie.
-header( 'Vary: X-VIP-Go-Segmentation' );
+header( 'Vary: X-VIP-Go-Segmentation', false );
 ```
 
 ### Step 6: Run the scans
