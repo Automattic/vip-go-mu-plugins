@@ -66,11 +66,35 @@ class CoreCommand extends \ElasticPress\Command {
 			self::confirm_destructive_operation( $assoc_args );
 		}
 
-		$this->_maybe_setup_index_version( $assoc_args );
+		/**
+		 * EP's `--network-wide` mode uses switch_to_blog to index the content,
+		 * that may not be reliable if the codebase differs between subsites.
+		 *
+		 * Side-step the issue by spawning child proccesses for each subsite.
+		 */
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			$start = microtime( true );
+			WP_CLI::line( 'Operating in network mode!' );
 
-		array_unshift( $args, 'elasticpress', 'index' );
+			unset( $assoc_args['network-wide'] );
 
-		WP_CLI::run_command( $args, $assoc_args );
+			foreach ( get_sites() as $site ) {
+				switch_to_blog( $site->blog_id );
+				$assoc_args['url'] = home_url();
+				$this->_maybe_setup_index_version( $assoc_args );
+
+				WP_CLI::line( 'Indexing ' . $assoc_args['url'] );
+				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ) );
+				Utils\wp_clear_object_cache();
+			}
+
+			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) )  . '%n' ) );
+			restore_current_blog();
+		} else {
+			$this->_maybe_setup_index_version( $assoc_args );
+			array_unshift( $args, 'elasticpress', 'index' );
+			WP_CLI::run_command( $args, $assoc_args );
+		}
 	}
 
 	/**
