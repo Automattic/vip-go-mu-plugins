@@ -93,6 +93,9 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * <version_number>
 	 * : The version number to retrieve
 	 *
+	 * [--network-wide]
+	 * : Optional - get version details for all subsites. Best used with version aliases like `next` instead of individual version numbers
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions get post 2
 	 *
@@ -108,24 +111,51 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
-	
-		$version_number = $search->versioning->normalize_version_number( $indexable, $args[1] );
 
-		if ( is_wp_error( $version_number ) ) {
-			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $args[1], $version_number->get_error_message() ) );
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
+				$assoc_args['network-wide'] = 0;
+			}
+
+			$sites = \ElasticPress\Utils\get_sites( $assoc_args['network-wide'] );
+
+			$versions = array();
+
+			foreach ( $sites as $site ) {
+				switch_to_blog( $site['blog_id'] );
+
+				$version = $search->versioning->get_version( $indexable, $args[1] );
+
+				restore_current_blog();
+
+				if ( is_wp_error( $version ) ) {
+					return WP_CLI::error( sprintf( 'Index version "%s" for type %s is not valid on blog %d: %s', $args[1], $type, $site['blog_id'], $version->get_error_message() ) );
+				}
+
+				if ( ! $version ) {
+					return WP_CLI::error( sprintf( 'Failed to get index version "%s" for type %s on blog %d. Does it exist?', $args[1], $type, $site['blog_id'] ) );
+				}
+
+				$version['blog_id'] = $site['blog_id'];
+				$version['url'] = $site['domain'] . $site['path'];
+
+				$versions[] = $version;
+			}
+
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'blog_id', 'url', 'number', 'active', 'created_time', 'activated_time' ) );
+		} else {
+			$version = $search->versioning->get_version( $indexable, $args[1] );
+
+			if ( is_wp_error( $version ) ) {
+				return WP_CLI::error( sprintf( 'Index version "%s" for type %s is not valid: %s', $args[1], $type, $version->get_error_message() ) );
+			}
+
+			if ( ! $version ) {
+				return WP_CLI::error( sprintf( 'Failed to get index version "%s" for type %s. Does it exist?', $args[1], $type ) );
+			}
+
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', array( $version ), array( 'number', 'active', 'created_time', 'activated_time' ) );
 		}
-
-		$version = $search->versioning->get_version( $indexable, $version_number );
-
-		if ( is_wp_error( $version ) ) {
-			return WP_CLI::error( $result->get_error_message() );
-		}
-
-		if ( ! $version ) {
-			return WP_CLI::error( sprintf( 'Failed to get index version %d for type %s. Does it exist?', $version_number, $type ) );
-		}
-
-		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $version ), array( 'number', 'active', 'created_time', 'activated_time' ) );
 	}
 
 	/**
