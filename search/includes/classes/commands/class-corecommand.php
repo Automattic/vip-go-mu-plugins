@@ -88,7 +88,7 @@ class CoreCommand extends \ElasticPress\Command {
 				Utils\wp_clear_object_cache();
 			}
 
-			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) )  . '%n' ) );
+			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 			restore_current_blog();
 		} else {
 			$this->_maybe_setup_index_version( $assoc_args );
