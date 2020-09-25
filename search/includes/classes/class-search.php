@@ -413,15 +413,21 @@ class Search {
 
 			$response_headers = wp_remote_retrieve_headers( $response );
 
-			// Check for the 'Warning' header and log it
+			// Check for 'Warning' headers and log them
 			if ( isset( $response_headers['warning'] ) ) {
-				$warning_message = $response_headers['warning'];
-				trigger_error( esc_html( $warning_message ), \E_USER_WARNING );
-				\Automattic\VIP\Logstash\log2logstash( array(
-					'severity' => 'warning',
-					'feature' => 'vip_search_es_warning',
-					'message' => $warning_message,
-				) );
+				$warning_messages = $response_headers['warning'];
+				if ( ! is_array( $warning_messages ) ) {
+					$warning_messages = array( $warning_messages );
+				}
+
+				foreach ( $warning_messages as $message ) {
+					trigger_error( esc_html( $message ), \E_USER_WARNING );
+					\Automattic\VIP\Logstash\log2logstash( array(
+						'severity' => 'warning',
+						'feature' => 'vip_search_es_warning',
+						'message' => $message,
+					) );
+				}
 			}
 		}
 	
