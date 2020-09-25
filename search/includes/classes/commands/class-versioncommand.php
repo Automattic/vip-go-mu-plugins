@@ -354,6 +354,8 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
+
+		CoreCommand::confirm_destructive_operation( $assoc_args );
 	
 		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
 			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
@@ -361,8 +363,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			}
 
 			$sites = \ElasticPress\Utils\get_sites( $assoc_args['network-wide'] );
-
-			CoreCommand::confirm_destructive_operation( $assoc_args );
 
 			foreach ( $sites as $site ) {
 				switch_to_blog( $site['blog_id'] );
@@ -411,8 +411,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			if ( $version['active'] ) {
 				return WP_CLI::error( sprintf( 'Index version %d is active for type %s and cannot be deleted', $version['number'], $type ) );
 			}
-
-			CoreCommand::confirm_destructive_operation( $assoc_args );
 
 			$result = $search->versioning->delete_version( $indexable, $args[1] );
 
