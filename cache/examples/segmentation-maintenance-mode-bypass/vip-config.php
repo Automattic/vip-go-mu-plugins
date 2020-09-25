@@ -22,7 +22,7 @@ function x_maybe_enable_maintenance_mode() {
 	define( 'VIP_MAINTENANCE_MODE', $enable_maintenance_mode );
 
 	// Make sure our reverse proxy respects the cookie.
-	header( 'Vary: X-VIP-Go-Segmentation' );
+	header( 'Vary: X-VIP-Go-Segmentation', false );
 }
 
 x_maybe_enable_maintenance_mode();

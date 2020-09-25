@@ -7,10 +7,21 @@
 
 class QM_Output_Html_Logger extends QM_Output_Html {
 
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_Logger Collector.
+	 */
+	protected $collector;
+
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
 		add_filter( 'qm/output/menus', array( $this, 'admin_menu' ), 12 );
 		add_filter( 'qm/output/menu_class', array( $this, 'admin_class' ) );
+	}
+
+	public function name() {
+		return __( 'Logger', 'query-monitor' );
 	}
 
 	public function output() {
@@ -43,7 +54,7 @@ class QM_Output_Html_Logger extends QM_Output_Html {
 		foreach ( $data['logs'] as $row ) {
 			$component = $row['trace']->get_component();
 
-			$row_attr  = array();
+			$row_attr                      = array();
 			$row_attr['data-qm-component'] = $component->name;
 			$row_attr['data-qm-type']      = ucfirst( $row['level'] );
 
@@ -61,7 +72,7 @@ class QM_Output_Html_Logger extends QM_Output_Html {
 				$class = '';
 			}
 
-			echo '<tr ' . $attr . 'class="' . esc_attr( $class ) . '">'; // WPCS: XSS ok.
+			echo '<tr' . $attr . ' class="' . esc_attr( $class ) . '">'; // WPCS: XSS ok.
 
 			echo '<td scope="row" class="qm-nowrap">';
 
@@ -74,10 +85,17 @@ class QM_Output_Html_Logger extends QM_Output_Html {
 			echo esc_html( ucfirst( $row['level'] ) );
 			echo '</td>';
 
-			printf(
-				'<td>%s</td>',
-				esc_html( $row['message'] )
-			);
+			if ( 'dump' === $row['type'] ) {
+				printf(
+					'<td><pre>%s</pre></td>',
+					esc_html( $row['message'] )
+				);
+			} else {
+				printf(
+					'<td>%s</td>',
+					esc_html( $row['message'] )
+				);
+			}
 
 			$stack          = array();
 			$filtered_trace = $row['trace']->get_display_trace();
@@ -86,16 +104,22 @@ class QM_Output_Html_Logger extends QM_Output_Html {
 				$stack[] = self::output_filename( $item['display'], $item['calling_file'], $item['calling_line'] );
 			}
 
-			echo '<td class="qm-has-toggle qm-nowrap qm-ltr"><ol class="qm-toggler qm-numbered">';
+			$caller = array_shift( $stack );
 
-			$caller = array_pop( $stack );
+			echo '<td class="qm-has-toggle qm-nowrap qm-ltr">';
 
 			if ( ! empty( $stack ) ) {
 				echo self::build_toggler(); // WPCS: XSS ok;
+			}
+
+			echo '<ol>';
+
+			echo "<li>{$caller}</li>"; // WPCS: XSS ok.
+
+			if ( ! empty( $stack ) ) {
 				echo '<div class="qm-toggled"><li>' . implode( '</li><li>', $stack ) . '</li></div>'; // WPCS: XSS ok.
 			}
 
-			echo "<li>{$caller}</li>"; // WPCS: XSS ok.
 			echo '</ol></td>';
 
 			printf(
@@ -145,9 +169,17 @@ class QM_Output_Html_Logger extends QM_Output_Html {
 			}
 		}
 
-		$menu[] = $this->menu( array(
+		$count = count( $data['logs'] );
+
+		/* translators: %s: Number of logs that are available */
+		$label = __( 'Logs (%s)', 'query-monitor' );
+
+		$menu[ $this->collector->id() ] = $this->menu( array(
 			'id'    => "query-monitor-logger-{$key}",
-			'title' => esc_html__( 'Logs', 'query-monitor' ),
+			'title' => esc_html( sprintf(
+				$label,
+				number_format_i18n( $count )
+			) ),
 		) );
 
 		return $menu;
@@ -156,7 +188,8 @@ class QM_Output_Html_Logger extends QM_Output_Html {
 }
 
 function register_qm_output_html_logger( array $output, QM_Collectors $collectors ) {
-	if ( $collector = QM_Collectors::get( 'logger' ) ) {
+	$collector = QM_Collectors::get( 'logger' );
+	if ( $collector ) {
 		$output['logger'] = new QM_Output_Html_Logger( $collector );
 	}
 	return $output;
