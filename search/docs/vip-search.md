@@ -27,4 +27,7 @@
 1. [Indexing](indexing.md)
     1. [What does VIP Search index?](indexing.md#what-does-vip-search-index)
     1. [A reindex is NOT a sync!!](indexing.md#reindex-is-not-sync)
+1. [Health](health.md)
+    1. [Validate Counts](health.md#validate-counts)
+    1. [Validate Contents](health.md#validate-contents)
 1. [Local Development](local-development.md)

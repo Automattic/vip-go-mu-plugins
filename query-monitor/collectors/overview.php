@@ -9,10 +9,6 @@ class QM_Collector_Overview extends QM_Collector {
 
 	public $id = 'overview';
 
-	public function name() {
-		return __( 'Overview', 'query-monitor' );
-	}
-
 	public function process() {
 
 		$this->data['time_taken'] = self::timer_stop_float();
@@ -62,7 +58,7 @@ class QM_Collector_Overview extends QM_Collector {
 }
 
 function register_qm_collector_overview( array $collectors, QueryMonitor $qm ) {
-	$collectors['overview'] = new QM_Collector_Overview;
+	$collectors['overview'] = new QM_Collector_Overview();
 	return $collectors;
 }
 

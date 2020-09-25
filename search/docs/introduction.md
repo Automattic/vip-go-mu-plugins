@@ -2,7 +2,7 @@
 
 ## What is VIP Search?
 
-VIP Search is a solution to allow the usage of Elasticsearch to provide both a search solution and a performance-enhancing layer existing WordPress search and queries.
+VIP Search is a solution to allow the usage of Elasticsearch to provide both a search solution and a performance-enhancing layer to existing WordPress searches and queries.
 
 Currently this means a fork of ElasticPress provides Elasticsearch indexing and search while a fork of es-wp-query provides query offloading capabilities via a VIP Search adapter.
 

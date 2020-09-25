@@ -56,14 +56,21 @@ class Versioning {
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to temporarily set the current index version
 	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
-	public function set_current_version_number( Indexable $indexable, int $version_number ) {
+	public function set_current_version_number( Indexable $indexable, $version_number ) {
+		$actual_version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $actual_version_number ) ) {
+			return $actual_version_number;
+		}
+
 		// Validate that the requested version is known
 		$versions = $this->get_versions( $indexable );
 
-		if ( ! isset( $versions[ $version_number ] ) ) {
+		if ( ! isset( $versions[ $actual_version_number ] ) ) {
 			return new WP_Error( 'invalid-index-version', sprintf( 'The requested index version %d does not exist', $version_number ) );
 		}
 
+		// Store as $version_number (not $actual_version_number) so that we can resolve aliases like next/previous at runtime in get_current_version_number()
 		$this->current_index_version_by_type[ $indexable->slug ] = $version_number;
 
 		return true;
@@ -100,8 +107,9 @@ class Versioning {
 	public function get_current_version_number( $indexable ) {
 		$override = isset( $this->current_index_version_by_type[ $indexable->slug ] ) ? $this->current_index_version_by_type[ $indexable->slug ] : null;
 
-		if ( is_int( $override ) ) {
-			return $override;
+		// If an override is specified, normalize it (in case it's an alias) and return
+		if ( $override ) {
+			return $this->normalize_version_number( $indexable, $override );
 		}
 
 		return $this->get_active_version_number( $indexable );
@@ -159,11 +167,7 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable ) {
-		if ( Search::is_network_mode() ) {
-			$versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
-		} else {
-			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
-		}
+		$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 
 		$slug = $indexable->slug;
 
@@ -214,13 +218,121 @@ class Versioning {
 	}
 
 	/**
+	 * Given a version number, normalize it by translating any aliases into actual version numbers
+	 * 
+	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
+	 */
+	public function normalize_version_number( Indexable $indexable, $version_number ) {
+		if ( is_int( $version_number ) ) {
+			return $version_number;
+		}
+
+		$version_number = trim( $version_number );
+
+		switch ( $version_number ) {
+			case 'active':
+				return $this->get_active_version_number( $indexable );
+
+			case 'next':
+				return $this->get_next_existing_version_number( $indexable );
+
+			case 'previous':
+				return $this->get_previous_existing_version_number( $indexable );
+
+			default:
+				// Was it a number, but passed through as a string? return it as an int
+				if ( ctype_digit( strval( $version_number ) ) ) {
+					return intval( $version_number );
+				}
+
+				return new WP_Error( 'invalid-version-number-alias', 'Unknown version number alias. Please use "active", "next" or "previous"' );
+		}
+	}
+
+	public function get_next_existing_version_number( Indexable $indexable ) {
+		$active_version_number = $this->get_active_version_number( $indexable );
+
+		// If there is no active version, we can't determine what next is
+		if ( ! $active_version_number ) {
+			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
+		}
+
+		$versions = $this->get_versions( $indexable );
+
+		if ( empty( $versions ) ) {
+			return new WP_Error( 'no-index-versions-found', 'No index versions found' );
+		}
+
+		// The next existing is the lowest index number after $active_version_number that exists, or null
+		$version_numbers = array_keys( $versions );
+		
+		sort( $version_numbers );
+
+		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
+
+		if ( false === $active_version_array_index ) {
+			return new WP_Error( 'active-index-not-found-in-versions-list', 'Active index not found in list of index versions' );
+		}
+
+		$target_array_index = $active_version_array_index + 1;
+
+		// Is there another?
+		if ( ! isset( $version_numbers[ $target_array_index ] ) ) {
+			return new WP_Error( 'no-next-version', 'There is no "next" index version defined' );
+		}
+
+		return $version_numbers[ $target_array_index ];
+	}
+
+	public function get_previous_existing_version_number( Indexable $indexable ) {
+		$active_version_number = $this->get_active_version_number( $indexable );
+
+		// If there is no active version, we can't determine what previous is
+		if ( ! $active_version_number ) {
+			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
+		}
+
+		$versions = $this->get_versions( $indexable );
+
+		if ( empty( $versions ) ) {
+			return new WP_Error( 'no-index-versions-found', 'No index versions found' );
+		}
+
+		// The previous existing is the highest index number before $active_version_number that exists, or null
+		$version_numbers = array_keys( $versions );
+		
+		sort( $version_numbers );
+
+		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
+
+		if ( false === $active_version_array_index ) {
+			return new WP_Error( 'active-index-not-found-in-versions-list', 'Active index not found in list of index versions' );
+		}
+
+		$target_array_index = $active_version_array_index - 1;
+
+		// Is there another?
+		if ( 0 > $target_array_index || ! isset( $version_numbers[ $target_array_index ] ) ) {
+			return new WP_Error( 'no-previous-version', 'There is no "previous" index version defined' );
+		}
+
+		return $version_numbers[ $target_array_index ];
+	}
+
+	/**
 	 * Retrieve details about a given index version
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve the index version
 	 * @return array Array of index versions
 	 */
-	public function get_version( Indexable $indexable, int $version_number ) {
+	public function get_version( Indexable $indexable, $version_number ) {
 		$slug = $indexable->slug;
+
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
 	
 		$versions = $this->get_versions( $indexable );
 
@@ -273,9 +385,15 @@ class Versioning {
 	 * Create the index in ES and put the mapping
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to create the new versioned index
-	 * @param int $version_number The index version number to create
+	 * @param int|string $version_number The index version number to create
 	 */
 	public function create_versioned_index_with_mapping( $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		$this->set_current_version_number( $indexable, $version_number );
 
 		$result = $indexable->put_mapping();
@@ -340,10 +458,16 @@ class Versioning {
 	 * Verifies that the new target index does in-fact exist, then marks it as active
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
-	 * @param int $version_number The new index version to activate
+	 * @param int|string $version_number The new index version to activate
 	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
-	public function activate_version( Indexable $indexable, int $version_number ) {
+	public function activate_version( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		$versions = $this->get_versions( $indexable );
 
 		// If this wasn't a valid version, abort with error
@@ -372,10 +496,16 @@ class Versioning {
 	 * Delete the version of an index and remove the index from Elasticsearch
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
-	 * @param int $version_number The index version to delete
+	 * @param int|string $version_number The index version to delete
 	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
 	 */
 	public function delete_version( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		// Can't delete active version
 		$active_version_number = $this->get_active_version_number( $indexable );
 
@@ -404,10 +534,16 @@ class Versioning {
 	 * Delete the versioned index from Elasticsearch
 	 * 
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
-	 * @param int $version_number The index version to delete
+	 * @param int|string $version_number The index version to delete
 	 * @return bool Boolean indicating success or failure 
 	 */
 	public function delete_versioned_index( $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
 		$this->set_current_version_number( $indexable, $version_number );
 
 		$result = $indexable->delete_index();

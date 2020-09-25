@@ -12,9 +12,9 @@
  * @package query-monitor
  */
 
-defined( 'ABSPATH' ) or die();
+defined( 'ABSPATH' ) || die();
 
-if ( defined( 'QM_DISABLED' ) and QM_DISABLED ) {
+if ( defined( 'QM_DISABLED' ) && QM_DISABLED ) {
 	return;
 }
 
@@ -66,7 +66,7 @@ class QM_DB extends wpdb {
 	/**
 	 * Class constructor
 	 */
-	function __construct( $dbuser, $dbpassword, $dbname, $dbhost ) {
+	public function __construct( $dbuser, $dbpassword, $dbname, $dbhost ) {
 
 		foreach ( $this->qm_php_vars as $setting => &$val ) {
 			$val = ini_get( $setting );
@@ -84,7 +84,7 @@ class QM_DB extends wpdb {
 	 * @param string $query Database query
 	 * @return int|false Number of rows affected/selected or false on error
 	 */
-	function query( $query ) {
+	public function query( $query ) {
 		if ( ! $this->ready ) {
 			if ( isset( $this->check_current_query ) ) {
 				// This property was introduced in WP 4.2
@@ -120,6 +120,8 @@ class QM_DB extends wpdb {
 				}
 			} else {
 				if ( is_resource( $this->dbh ) ) {
+					// Please do not report this code as a PHP 7 incompatibility. Observe the surrounding logic.
+					// phpcs:ignore
 					$code = mysql_errno( $this->dbh );
 				}
 			}
@@ -133,4 +135,5 @@ class QM_DB extends wpdb {
 
 }
 
+// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 $wpdb = new QM_DB( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );

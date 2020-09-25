@@ -8,7 +8,7 @@
 if ( ! class_exists( 'QM_Collectors' ) ) {
 class QM_Collectors implements IteratorAggregate {
 
-	private $items = array();
+	private $items     = array();
 	private $processed = false;
 
 	public function getIterator() {
@@ -17,22 +17,29 @@ class QM_Collectors implements IteratorAggregate {
 
 	public static function add( QM_Collector $collector ) {
 		$collectors = self::init();
+
 		$collectors->items[ $collector->id ] = $collector;
 	}
 
+	/**
+	 * Fetches a collector instance.
+	 *
+	 * @param string $id The collector ID.
+	 * @return QM_Collector|null The collector object.
+	 */
 	public static function get( $id ) {
 		$collectors = self::init();
 		if ( isset( $collectors->items[ $id ] ) ) {
 			return $collectors->items[ $id ];
 		}
-		return false;
+		return null;
 	}
 
 	public static function init() {
 		static $instance;
 
 		if ( ! $instance ) {
-			$instance = new QM_Collectors;
+			$instance = new QM_Collectors();
 		}
 
 		return $instance;
@@ -47,10 +54,11 @@ class QM_Collectors implements IteratorAggregate {
 		foreach ( $this as $collector ) {
 			$collector->tear_down();
 
-			$timer = new QM_Timer;
+			$timer = new QM_Timer();
 			$timer->start();
 
 			$collector->process();
+			$collector->process_concerns();
 
 			$collector->set_timer( $timer->stop() );
 		}

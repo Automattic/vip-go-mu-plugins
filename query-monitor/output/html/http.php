@@ -7,25 +7,26 @@
 
 class QM_Output_Html_HTTP extends QM_Output_Html {
 
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_HTTP Collector.
+	 */
+	protected $collector;
+
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
 		add_filter( 'qm/output/menus', array( $this, 'admin_menu' ), 90 );
 		add_filter( 'qm/output/menu_class', array( $this, 'admin_class' ) );
 	}
 
+	public function name() {
+		return __( 'HTTP API Calls', 'query-monitor' );
+	}
+
 	public function output() {
 
 		$data = $this->collector->get_data();
-
-		$total_time = 0;
-
-		$vars = array();
-
-		if ( ! empty( $data['vars'] ) ) {
-			foreach ( $data['vars'] as $key => $value ) {
-				$vars[] = $key . ': ' . $value;
-			}
-		}
 
 		if ( ! empty( $data['http'] ) ) {
 			$statuses   = array_keys( $data['types'] );
@@ -34,6 +35,19 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 			usort( $statuses, 'strcasecmp' );
 			usort( $components, 'strcasecmp' );
 
+			$status_output = array();
+
+			foreach ( $statuses as $key => $status ) {
+				if ( -1 === $status ) {
+					$status_output[-1] = __( 'Error', 'query-monitor' );
+				} elseif ( -2 === $status ) {
+					/* translators: A non-blocking HTTP API request */
+					$status_output[-2] = __( 'Non-blocking', 'query-monitor' );
+				} else {
+					$status_output[] = $status;
+				}
+			}
+
 			$this->before_tabular_output();
 
 			echo '<thead>';
@@ -41,7 +55,7 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 			echo '<th scope="col">' . esc_html__( 'Method', 'query-monitor' ) . '</th>';
 			echo '<th scope="col">' . esc_html__( 'URL', 'query-monitor' ) . '</th>';
 			echo '<th scope="col" class="qm-filterable-column">';
-			echo $this->build_filter( 'type', $statuses, __( 'Status', 'query-monitor' ) ); // WPCS: XSS ok.
+			echo $this->build_filter( 'type', $status_output, __( 'Status', 'query-monitor' ) ); // WPCS: XSS ok.
 			echo '</th>';
 			echo '<th scope="col">' . esc_html__( 'Caller', 'query-monitor' ) . '</th>';
 			echo '<th scope="col" class="qm-filterable-column">';
@@ -69,8 +83,8 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 					/* translators: A non-blocking HTTP API request */
 					$response = __( 'Non-blocking', 'query-monitor' );
 				} else {
-					$code     = wp_remote_retrieve_response_code( $row['response'] );
-					$msg      = wp_remote_retrieve_response_message( $row['response'] );
+					$code = wp_remote_retrieve_response_code( $row['response'] );
+					$msg  = wp_remote_retrieve_response_message( $row['response'] );
 
 					if ( intval( $code ) >= 400 ) {
 						$is_error = true;
@@ -84,8 +98,10 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 					$css = 'qm-warn';
 				}
 
-				$url = self::format_url( $row['url'] );
+				$url  = self::format_url( $row['url'] );
 				$info = '';
+
+				$url = preg_replace( '|^http:|', '<span class="qm-warn">http</span>:', $url );
 
 				if ( 'https' === parse_url( $row['url'], PHP_URL_SCHEME ) ) {
 					if ( empty( $row['args']['sslverify'] ) && empty( $row['args']['local'] ) ) {
@@ -162,7 +178,7 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 
 				if ( ! empty( $row['redirected_to'] ) ) {
 					$url .= sprintf(
-						'<br><span class="qm-warn">%1$s</span><br>%2$s',
+						'<br><span class="qm-warn"><span class="dashicons dashicons-warning" aria-hidden="true"></span>%1$s</span><br>%2$s',
 						/* translators: An HTTP API request redirected to another URL */
 						__( 'Redirected to:', 'query-monitor' ),
 						self::format_url( $row['redirected_to'] )
@@ -177,7 +193,7 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 
 				$show_toggle = ( ! empty( $row['transport'] ) && ! empty( $row['info'] ) );
 
-				echo '<td class="qm-has-toggle qm-col-status"><div class="qm-toggler">';
+				echo '<td class="qm-has-toggle qm-col-status">';
 				if ( $is_error ) {
 					echo '<span class="dashicons dashicons-warning" aria-hidden="true"></span>';
 				}
@@ -253,16 +269,22 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 
 				echo '</td>';
 
-				echo '<td class="qm-has-toggle qm-nowrap qm-ltr"><ol class="qm-toggler qm-numbered">';
+				$caller = array_shift( $stack );
 
-				$caller = array_pop( $stack );
+				echo '<td class="qm-has-toggle qm-nowrap qm-ltr">';
 
 				if ( ! empty( $stack ) ) {
 					echo self::build_toggler(); // WPCS: XSS ok;
+				}
+
+				echo '<ol>';
+
+				echo "<li>{$caller}</li>"; // WPCS: XSS ok.
+
+				if ( ! empty( $stack ) ) {
 					echo '<div class="qm-toggled"><li>' . implode( '</li><li>', $stack ) . '</li></div>'; // WPCS: XSS ok.
 				}
 
-				echo "<li>{$caller}</li>"; // WPCS: XSS ok.
 				echo '</ol></td>';
 
 				printf(
@@ -291,16 +313,16 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 			echo '<tfoot>';
 
 			$total_stime = number_format_i18n( $data['ltime'], 4 );
+			$count       = count( $data['http'] );
 
 			echo '<tr>';
 			printf(
-				'<td colspan="6">%1$s<br>%2$s</td>',
+				'<td colspan="6">%s</td>',
 				sprintf(
 					/* translators: %s: Number of HTTP API requests */
-					esc_html_x( 'Total: %s', 'HTTP API calls', 'query-monitor' ),
-					'<span class="qm-items-number">' . esc_html( number_format_i18n( count( $data['http'] ) ) ) . '</span>'
-				),
-				implode( '<br>', array_map( 'esc_html', $vars ) )
+					esc_html( _nx( 'Total: %s', 'Total: %s', $count, 'HTTP API calls', 'query-monitor' ) ),
+					'<span class="qm-items-number">' . esc_html( number_format_i18n( $count ) ) . '</span>'
+				)
 			);
 			echo '<td class="qm-num qm-items-time">' . esc_html( $total_stime ) . '</td>';
 			echo '</tr>';
@@ -357,7 +379,7 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 			$args['meta']['classname'] = 'qm-warning';
 		}
 
-		$menu[] = $this->menu( $args );
+		$menu[ $this->collector->id() ] = $this->menu( $args );
 
 		return $menu;
 
@@ -366,7 +388,8 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 }
 
 function register_qm_output_html_http( array $output, QM_Collectors $collectors ) {
-	if ( $collector = QM_Collectors::get( 'http' ) ) {
+	$collector = QM_Collectors::get( 'http' );
+	if ( $collector ) {
 		$output['http'] = new QM_Output_Html_HTTP( $collector );
 	}
 	return $output;
