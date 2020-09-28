@@ -46,9 +46,3 @@
 [submodule "elasticsearch/debug-bar-elasticpress"]
 	path = search/debug-bar-elasticpress
 	url = https://github.com/10up/debug-bar-elasticpress.git
-[submodule "jetpack-8.7.1"]
-	path = jetpack-8.7.1
-	url = https://github.com/Automattic/jetpack.git
-[submodule "jetpack-8.8.2"]
-	path = jetpack-8.8.2
-	url = https://github.com/Automattic/jetpack.git
