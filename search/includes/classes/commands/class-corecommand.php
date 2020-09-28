@@ -85,7 +85,9 @@ class CoreCommand extends \ElasticPress\Command {
 				$assoc_args['url'] = home_url();
 
 				WP_CLI::line( 'Indexing ' . $assoc_args['url'] );
-				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ) );
+				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ), [
+					'exit_error' => false,
+				] );
 				Utils\wp_clear_object_cache();
 				restore_current_blog();
 			}
