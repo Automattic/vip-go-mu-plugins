@@ -87,10 +87,10 @@ class CoreCommand extends \ElasticPress\Command {
 				WP_CLI::line( 'Indexing ' . $assoc_args['url'] );
 				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ) );
 				Utils\wp_clear_object_cache();
+				restore_current_blog();
 			}
 
 			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
-			restore_current_blog();
 		} else {
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
