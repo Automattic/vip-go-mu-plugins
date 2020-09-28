@@ -65,7 +65,7 @@ wp vip-search index-versions activate <type> <version_number>
 Make the given index version active. The active index is the one that serves site traffic, so be sure the target index is ready for production before switching.
 
 ```
-wp vip-search index-versions get-active <type>
+wp vip-search index-versions get <type> active
 ```
 
 Get the currently active index version.
