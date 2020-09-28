@@ -24,9 +24,14 @@
  * }
  */
 function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = false ) {
-
 	// Check Jetpack is present and active
 	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() ) {
+		
+		// WordPress.com stats defaults to current UTC date, default to site's local date instead
+		if ( ! $end_date ) {
+			$end_date = current_datetime()->format( 'Y-m-d' );
+		}
+		
 		$args = array(
 			'days'  => $num_days,
 			'limit' => $limit,

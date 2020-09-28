@@ -16,7 +16,7 @@ class CoreCommand extends \ElasticPress\Command {
 
 	protected function _maybe_setup_index_version( &$assoc_args ) {
 		if ( $assoc_args['version'] ) {
-			$version = intval( $assoc_args['version'] );
+			$version_number = $assoc_args['version'];
 
 			// If version is specified, the indexable must also be specified, as different indexables can have different versions
 			if ( ! isset( $assoc_args['indexables'] ) ) {
@@ -24,11 +24,6 @@ class CoreCommand extends \ElasticPress\Command {
 			}
 
 			$search = \Automattic\VIP\Search\Search::instance();
-
-			// Additionally, --version is not compatible with --network-wide in non-network mode, because subsites will also have different versions
-			if ( isset( $assoc_args['network-wide'] ) && ! $search->is_network_mode() ) {
-				return WP_CLI::error( 'The --network-wide argument is not compatible with --version when not using network mode (the `EP_IS_NETWORK` constant), as subsites can have differing index versions' );
-			}
 
 			// For each indexable specified, override the version
 			$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
@@ -40,7 +35,7 @@ class CoreCommand extends \ElasticPress\Command {
 					return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?' ) );
 				}
 
-				$result = $search->versioning->set_current_version_number( $indexable, $version );
+				$result = $search->versioning->set_current_version_number( $indexable, $version_number );
 
 				if ( is_wp_error( $result ) ) {
 					return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );

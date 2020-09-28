@@ -281,6 +281,31 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 	public function normalize_version_number_data() {
 		return array(
+			// Regular, normalizes string representation of a version into an int
+			array(
+				// Input array of versions
+				array(
+					1 => array( 
+						'number' => 1,
+						'active' => false,
+					),
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'2',
+				// Expected normalized version number
+				2,
+			),
+
 			// Regular, 'next'
 			array(
 				// Input array of versions
@@ -374,7 +399,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Version string to be normalized
 				'previous',
 				// Expected normalized version number
-				null,
+				new \WP_Error( 'no-previous-version' ),
 			),
 
 			// No next
@@ -395,7 +420,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Version string to be normalized
 				'next',
 				// Expected normalized version number
-				null,
+				new \WP_Error( 'no-next-version' ),
 			),
 
 			// No active
@@ -437,7 +462,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Version string to be normalized
 				'next',
 				// Expected active version
-				null,
+				new \WP_Error( 'active-index-not-found-in-versions-list' ), // NOTE - like above, this is because the default active version is 1, even if it doesn't exist in the list. Likely to change
 			),
 		);
 	}
@@ -452,7 +477,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$normalized_version_number = self::$version_instance->normalize_version_number( $indexable, $version_string );
 
-		$this->assertEquals( $expected_version_number, $normalized_version_number );
+		if ( is_wp_error( $expected_version_number ) ) {
+			// Just validate the code on WP_Errors
+			$this->assertTrue( is_wp_error( $normalized_version_number ), 'Expected normalized version to be a WP_Error' );
+			$this->assertEquals( $expected_version_number->get_error_code(), $normalized_version_number->get_error_code(), 'Unexpected WP_Error code' );
+		} else {
+			$this->assertEquals( $expected_version_number, $normalized_version_number );
+		}
 	}
 
 	public function add_version_data() {

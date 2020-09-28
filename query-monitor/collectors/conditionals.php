@@ -9,12 +9,15 @@ class QM_Collector_Conditionals extends QM_Collector {
 
 	public $id = 'conditionals';
 
-	public function name() {
-		return __( 'Conditionals', 'query-monitor' );
-	}
-
 	public function process() {
 
+		/**
+		 * Allows users to filter the names of conditional functions that are exposed by QM.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param string[] $conditionals The list of conditional function names.
+		 */
 		$conds = apply_filters( 'qm/collect/conditionals', array(
 			'is_404',
 			'is_admin',
@@ -28,6 +31,7 @@ class QM_Collector_Conditionals extends QM_Collector {
 			'is_date',
 			'is_day',
 			'is_embed',
+			'is_favicon',
 			'is_feed',
 			'is_front_page',
 			'is_home',
@@ -40,6 +44,7 @@ class QM_Collector_Conditionals extends QM_Collector {
 			'is_paged',
 			'is_post_type_archive',
 			'is_preview',
+			'is_privacy_policy',
 			'is_robots',
 			'is_rtl',
 			'is_search',
@@ -54,17 +59,28 @@ class QM_Collector_Conditionals extends QM_Collector {
 			'is_user_admin',
 			'is_year',
 		) );
+
+		/**
+		 * This filter is deprecated. Please use `qm/collect/conditionals` instead.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param string[] $conditionals The list of conditional function names.
+		 */
 		$conds = apply_filters( 'query_monitor_conditionals', $conds );
 
-		$true = $false = $na = array();
+		$true  = array();
+		$false = array();
+		$na    = array();
 
 		foreach ( $conds as $cond ) {
 			if ( function_exists( $cond ) ) {
-				if ( ( 'is_sticky' === $cond ) and ! get_post( $id = null ) ) {
+				$id = null;
+				if ( ( 'is_sticky' === $cond ) && ! get_post( $id ) ) {
 					# Special case for is_sticky to prevent PHP notices
 					$false[] = $cond;
 				} elseif ( ! is_multisite() && in_array( $cond, array( 'is_main_network', 'is_main_site' ), true ) ) {
-					# Special case for multisite conditionals to prevent them from being annoying on single site installs
+					# Special case for multisite conditionals to prevent them from being annoying on single site installations
 					$na[] = $cond;
 				} else {
 					if ( call_user_func( $cond ) ) {
@@ -84,7 +100,7 @@ class QM_Collector_Conditionals extends QM_Collector {
 }
 
 function register_qm_collector_conditionals( array $collectors, QueryMonitor $qm ) {
-	$collectors['conditionals'] = new QM_Collector_Conditionals;
+	$collectors['conditionals'] = new QM_Collector_Conditionals();
 	return $collectors;
 }
 
