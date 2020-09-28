@@ -13,12 +13,27 @@
  * $hc->hardcode( 'global', 'global:apcu-test-key', 'works' );
  */
 function do_apcu_hot_cache_init( $hc ) {
+	// Don't offload to apcu in WP_CLI
+	// Every command runs as a new process, so the benefits
+	// of apc are very minimal when combined with our regular
+	// object cache dropin
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		return;
+	}
 
 	// Cache the wpcomvip user ID
 	$hc->add_passive_rx( 'userlogins', '/userlogins:wpcomvip$/', 300 );
 
-	// Cache subsite information for 10 seconds
-	$hc->add_passive_rx( 'sites', '/sites:\d+$/', 10 );
+	// Bypass APCu offloading in the REST API for some cases where there could
+	// be concerns about stale data after writes
+	if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+		
+		// Cache subsite information for 10 seconds unless we're in the
+		// network admin, where we may be editing this information.
+		if ( ! function_exists( 'is_network_admin' ) || ! is_network_admin() ) {
+			$hc->add_passive_rx( 'sites', '/sites:\d+$/', 10 );
+		}
+	}
 }
 
 if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
