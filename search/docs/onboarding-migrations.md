@@ -56,7 +56,7 @@ The filter for setting the post taxonomy allow list is `vip_search_post_taxonomi
 1. Add two new constants to `wp-config.php` or other analog:
 	1. `define( 'VIP_ENABLE_VIP_SEARCH', true );`
 	1. `define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );`
-	1. If you are indexing a multisite, also add `define( 'EP_IS_NETWORK', true );`
+    1. If you are indexing a multisite, also add `define( 'EP_IS_NETWORK', true );`
 1. Disable and remove all other Elasticsearch-backed functionality. VIP Search uses forks of `es-wp-query` and `ElasticPress` that are loaded automatically. No other Elasticsearch backed functionality is supported while VIP Search is enabled.
 1. Commit/deploy those changes if applicable.
 1. Test it to make sure everything works.

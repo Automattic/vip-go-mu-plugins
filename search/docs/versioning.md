@@ -30,6 +30,12 @@ Setting the *current* index is not permanent and can be done with `\Automattic\V
 
 To switch back to the current active index, just call the reset function: `\Automattic\VIP\Search\Search::instance()->versioning->resut_current_version_number( $indexable )`.
 
+## Aliases <a name="aliases"></a>
+
+For convenience, the *next*, *active*, and *previous* index versions can be referred to with an alias. This is particularly useful for bulk operations where the exact version number may not be known ahead of time, such as with network-wide operations on multisites.
+
+Simply use `next`, `active`, or `previous` in place of a version number in CLI commands or code to dynamically resolve the actual version number at runtime.
+
 ## Keeping Additional Versions in Sync <a name="in-sync"></a>
 
 Having additional index versions is only useful if their contents do not drift from the active index.
