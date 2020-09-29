@@ -154,7 +154,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 			// Truncate to last 10 lines - this should be enough for audit purposes.
 			$result->stdout ? join( "\n", array_slice( explode( "\n", $result->stdout ), -10, 10 ) ) : 'empty',
 			// By contrast, stderr is critical for debugging.
-			$result->stderr ?: 'empty'
+			$result->stderr ?: 'empty' // phpcs:ignore WordPress.PHP.DisallowShortTernary.Found -- Elvis is cool
 		);
 
 		// Trim leading/trailing whitespaces.
