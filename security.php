@@ -153,13 +153,26 @@ function wpcom_vip_lost_password_limit( $errors ) {
 add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit' );
 
 function wpcom_vip_username_is_limited( $username, $cache_group ) {
+	// Strip invalid characters from the address
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 
 	$ip_username_cache_key = $ip . '|' . $username;
 	$ip_cache_key = $ip;
 	
-	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 5 );
-	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 50 );
+	/**
+	 * Login Limiting IP Username Threshold
+	 *
+	 * @param string $ip IP address of the login request
+	 * @param string $username Username of the login request
+	 */
+	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 5, $ip, $username );
+
+	/**
+	 * Login Limiting IP Threshold
+	 *
+	 * @param string $ip IP address of the login request
+	 */
+	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 50, $ip );
 	
 	$ip_username_count = wp_cache_get( $ip_username_cache_key, $cache_group );
 	$ip_count = wp_cache_get( $ip_cache_key, $cache_group );
