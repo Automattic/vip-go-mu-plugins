@@ -102,7 +102,7 @@ function vip_jetpack_load() {
 
 	// Walk through all versions to test, and load the first one that exists
 	foreach ( $jetpack_to_test as $version ) {
-		if ( $version == 'local' ) {
+		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} else {
 			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
