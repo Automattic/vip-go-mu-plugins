@@ -87,6 +87,7 @@ job-references:
 
   php_core_job: &php_core_job
     steps:
+      - run: sudo apt-get update && sudo apt-get -y install git ssh
       - checkout
       - run: *install_core_tests_dependencies
       - run: *prepare_repo
