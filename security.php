@@ -56,9 +56,6 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) 
 	wp_cache_incr( $ip_username_cache_key, 1, $cache_group );
 	wp_cache_incr( $ip_cache_key, 1, $cache_group );
 	wp_cache_incr( $username_cache_key, 1, $cache_group );
-
-	if ( 'lost_password_limit' === $cache_group ) { // Only track username for password resets
-	}
 }
 
 function wpcom_vip_login_limiter( $username ) {
