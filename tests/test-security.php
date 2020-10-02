@@ -143,7 +143,10 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		$myxmlrpcserver->callbacks = $myxmlrpcserver->methods;
 
+		$this->_error_level = error_reporting();
+		error_reporting( $this->_error_level & ~E_WARNING );
 		$result = $myxmlrpcserver->multiCall( $method_calls );
+		error_reporting( $this->_error_level );
 
 		$this->assertEquals( 403, $result[ $last_threshold_index ]['faultCode'] );
 		$this->assertEquals( 429, $result[ $last_threshold_index + 1 ]['faultCode'] );
