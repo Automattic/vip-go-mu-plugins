@@ -130,17 +130,18 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 		);
 		$took_seconds = time() - $start;
 		wp_cache_delete( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
+
 		$formatted_message = sprintf(
 			'The scheduled command `%s` has finished execution in %d seconds (exit code: %d)
 
 			*Hostname*: %s
 
-			*Stdout* (truncated):
+			*STDOUT* (truncated):
 			```
 			%s
 			```
 
-			*Stderr*:
+			*STDERR*:
 			```
 			%s
 			```
@@ -151,10 +152,13 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 			gethostname(),
 			// Stdout can be quite lengthy, we don't really need ALL of it,
 			// Truncate to last 10 lines - this should be enough for audit purposes.
-			join( "\n", array_map( 'trim', array_slice( explode( "\n", $result->stdout ), -10, 10 ) ) ),
+			$result->stdout ? join( "\n", array_slice( explode( "\n", $result->stdout ), -10, 10 ) ) : 'empty',
 			// By contrast, stderr is critical for debugging.
-			$result->stderr
+			$result->stderr ?: 'empty' // phpcs:ignore WordPress.PHP.DisallowShortTernary.Found -- Elvis is cool
 		);
+
+		// Trim leading/trailing whitespaces.
+		$formatted_message = join( "\n", array_map( 'trim', explode( "\n", $formatted_message ) ) );
 
 		// A successfully executed command messaeg has INFORMATION level, an errored one is WARNING.
 		$log_level = 0 === (int) $result->return_code ? 5 : 1;
