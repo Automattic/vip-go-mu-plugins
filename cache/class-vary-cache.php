@@ -5,14 +5,15 @@ namespace Automattic\VIP\Cache;
 use WP_Error;
 
 class Vary_Cache {
-	private const COOKIE_NOCACHE = 'vip-go-cb';
-	private const COOKIE_SEGMENT = 'vip-go-seg';
-	private const COOKIE_AUTH = 'vip-go-auth';
+	const COOKIE_NOCACHE = 'vip-go-cb';
+	const COOKIE_SEGMENT = 'vip-go-seg';
+	const COOKIE_AUTH = 'vip-go-auth';
+	const HEADER_AUTH = 'HTTP_X_VIP_GO_AUTH';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
-	private const GROUP_SEPARATOR = '---__';
-	private const VALUE_SEPARATOR = '_--_';
-	private const VERSION_PREFIX = 'vc-v1__';
+	const GROUP_SEPARATOR = '---__';
+	const VALUE_SEPARATOR = '_--_';
+	const VERSION_PREFIX = 'vc-v1__';
 
 	/**
 	 * Flag to indicate if this an encrypted group request
@@ -95,6 +96,11 @@ class Vary_Cache {
 	 * Add nocache cookie for the user.
 	 *
 	 * This bypasses all requests from the VIP Cache.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return boolean|WP_Error
 	 */
 	public static function set_nocache_for_user() {
 		if ( self::$did_send_headers ) {
@@ -111,6 +117,11 @@ class Vary_Cache {
 	 * Clears the nocache cookie for the user.
 	 *
 	 * Restores caching behaviour for all future requests.
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 *
+	 * @return boolean|WP_Error
 	 */
 	public static function remove_nocache_for_user() {
 		if ( self::$did_send_headers ) {
@@ -125,6 +136,8 @@ class Vary_Cache {
 
 	/**
 	 * Convenience function to init the class.
+	 *
+	 * @access private
 	 */
 	public static function load() {
 		self::clear_groups();
@@ -135,6 +148,8 @@ class Vary_Cache {
 	 * Convenience function to reset the class.
 	 *
 	 * Primarily used to unit tests.
+	 *
+	 * @access private
 	 */
 	public static function unload() {
 		self::remove_filters();
@@ -149,11 +164,21 @@ class Vary_Cache {
 		self::$cookie_expiry = MONTH_IN_SECONDS;
 	}
 
+	/**
+	 * Adds custom filters required at the beginning and end of the plugin lifecycle
+	 *
+	 * @access private
+	 */
 	protected static function add_filters() {
 		add_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		add_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
 	}
 
+	/**
+	 * Removes the custom filters
+	 *
+	 * @access private
+	 */
 	protected static function remove_filters() {
 		remove_action( 'init', [ Vary_Cache::class, 'parse_cookies' ] );
 		remove_action( 'send_headers', [ Vary_Cache::class, 'send_headers' ], PHP_INT_MAX );
@@ -195,7 +220,7 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param  string $groups A group to vary on.
+	 * @param  string $group A group to vary on.
 	 * @return boolean
 	 */
 	public static function register_group( string $group ) {
@@ -203,12 +228,9 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Clears out the groups and values
-	 *
-	 * @since   1.0.0
-	 * @access  public
+	 * Clears out the groups and values.
 	 */
-	public static function clear_groups() {
+	private static function clear_groups() {
 		self::$groups = [];
 	}
 
@@ -229,12 +251,16 @@ class Vary_Cache {
 
 		$validate_group_result = self::validate_cookie_value( $group );
 		if ( is_wp_error( $validate_group_result ) ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to register group (%s): %s', $group, $validate_group_result->get_error_message() ) );
+			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to set group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
 
 		$validate_value_result = self::validate_cookie_value( $value );
 		if ( is_wp_error( $validate_value_result ) ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to register group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
+			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to set group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
+		}
+
+		if ( ! array_key_exists( $group, self::$groups ) ) {
+			return new WP_Error( 'invalid_vary_group_notregistered', sprintf( 'Failed to set group (%s): Must register the group with register_group( <groupname> ) first. ', $group ) );
 		}
 
 		self::$groups[ $group ] = $value;
@@ -246,6 +272,9 @@ class Vary_Cache {
 
 	/**
 	 * Checks if the request has a group cookie matching a given group, regardless of segment value.
+	 *
+	 * @since   1.0.0
+	 * @access  public
 	 *
 	 * @param  string $group Group name.
 	 *
@@ -262,6 +291,9 @@ class Vary_Cache {
 
 	/**
 	 * Checks if the request has a group cookie matching a given group and segment. e.g. 'dev-group', 'yes'
+	 *
+	 * @since   1.0.0
+	 * @access  public
 	 *
 	 * @param  string $group Group name.
 	 * @param  string $segment Which segment within the group to check.
@@ -299,7 +331,6 @@ class Vary_Cache {
 	 * @return WP_Error|null
 	 */
 	public static function enable_encryption() {
-
 		// Validate that we have the secret values.
 		if ( ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
@@ -324,9 +355,6 @@ class Vary_Cache {
 	/**
 	 * Encrypts a string using the auth credentials for the site.
 	 *
-	 * @since   1.0.0
-	 * @access  private
-	 *
 	 * @param string $value cookie text value.
 	 * @throws string If credentials ENV Variables aren't defined.
 	 * @return string encrypted version of string
@@ -334,7 +362,7 @@ class Vary_Cache {
 	private static function encrypt_cookie_value( $value ) {
 		$client_key = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv = constant( 'VIP_GO_AUTH_COOKIE_IV' );
-		$cookie_value = random_bytes( 32 ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
+		$cookie_value = random_int( 0,  PHP_INT_MAX ) . '|' . $value . '|' . ( time() + self::$cookie_expiry );
 		$cipher_cookie = openssl_encrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 
 		return $cipher_cookie;
@@ -342,9 +370,6 @@ class Vary_Cache {
 
 	/**
 	 * Decrypts a string using the auth credentials for the site.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 *
 	 * @param string $cookie_value the encrypted string.
 	 * @throws string If credentials ENV Variables aren't defined.
@@ -366,19 +391,15 @@ class Vary_Cache {
 	 * Parses our nocache and group cookies.
 	 *
 	 * @since   1.0.0
-	 * @access  public
+	 * @access  private
 	 */
 	public static function parse_cookies() {
 		self::parse_nocache_cookie();
-
 		self::parse_group_cookie();
 	}
 
 	/**
 	 * Parses the nocache cookie to see if nocache mode is enabled.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function parse_nocache_cookie() {
 		if ( isset( $_COOKIE[ self::COOKIE_NOCACHE ] ) ) {
@@ -390,13 +411,26 @@ class Vary_Cache {
 
 	/**
 	 * Parses the group/segment cookie into the local groups array of key-values.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function parse_group_cookie() {
-		if ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
-			$cookie_value = self::decrypt_cookie_value( $_COOKIE[ self::COOKIE_AUTH ] );
+		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
+		if ( self::is_encryption_enabled() && isset( $_SERVER[ self::HEADER_AUTH ] ) &&  ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
+			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
+		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) ) {
+			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
+			$auth_cookie = null;
+			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
+			foreach( explode( '; ', $_SERVER[ 'HTTP_COOKIE' ] ) as $rawcookie ) {
+				list( $k, $v ) = explode( '=', $rawcookie, 2 );
+				if( self::COOKIE_AUTH === $k ) {
+					$auth_cookie = $v;
+					break;
+				}
+			}
+
+			$value = ltrim( $auth_cookie, VIP_GO_APP_ID . '.' ); // remove the site prefix
+			$cookie_value = self::decrypt_cookie_value( $value );
+
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
@@ -408,6 +442,9 @@ class Vary_Cache {
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
 		$groups = explode( self::GROUP_SEPARATOR, $cookie_value );
 		foreach ( $groups as $group ) {
+			if ( empty( $group ) ) {
+				continue;
+			}
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 			self::$groups[ $group_name ] = $group_value ?? '';
 		}
@@ -416,23 +453,34 @@ class Vary_Cache {
 	/**
 	 * Flattens the 2D array into a serialized string compatible with the cookie format.
 	 *
-	 * @since   1.0.0
-	 * @access  private
-	 *
-	 * @return string A string representation of the groups
+	 * @return null|string A string representation of the groups
 	 */
 	private static function stringify_groups() {
+		if ( empty( self::$groups ) ) {
+			return;
+		}
+
 		ksort( self::$groups ); // make sure the string order is the same every time.
-		$flatten = function ( $key, $value ) {
-			return $key . self::VALUE_SEPARATOR . $value;
-		};
-		$flattened = array_map( $flatten, array_keys( self::$groups ), self::$groups );
+		$flattened = [];
+		foreach ( self::$groups as $key => $value ) {
+			if ( '' === trim( $value ) ) {
+				continue;
+			}
+			$flattened[] = $key . self::VALUE_SEPARATOR . $value;
+		}
+
+		if ( empty( $flattened ) ) {
+			return;
+		}
 
 		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
 	}
 
 	/**
-	 * Adjust the default cookie expiry
+	 * Adjust the default cookie expiry.
+	 *
+	 * @since   1.0.0
+	 * @access  public
 	 *
 	 * @param int $expiry Seconds in the future when the cookie should expire (e.g. MONTH_IN_SECONDS). Must be more than 1 hour.
 	 */
@@ -449,7 +497,7 @@ class Vary_Cache {
 	 * Sends headers (if needed).
 	 *
 	 * @since   1.0.0
-	 * @access  public
+	 * @access  private
 	 */
 	public static function send_headers() {
 		if ( ! self::$did_send_headers ) {
@@ -477,9 +525,6 @@ class Vary_Cache {
 	/**
 	 * Determines if cookies need to be set and then sets them.
 	 *
-	 * @since   1.0.0
-	 * @access  public
-	 *
 	 * @return boolean Was at least one cookie set?
 	 */
 	private static function set_cookies() {
@@ -502,24 +547,23 @@ class Vary_Cache {
 
 	/**
 	 * Sets the group/segment cookie based on the user's current groupings.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function set_group_cookie() {
+		$group_string = self::stringify_groups();
+		if ( empty( $group_string ) ) {
+			return;
+		}
+
 		if ( self::is_encryption_enabled() ) {
-			$cookie_value = self::encrypt_cookie_value( self::stringify_groups() );
-			self::set_cookie( self::COOKIE_AUTH, $cookie_value );
+			$cookie_value = self::encrypt_cookie_value( $group_string );
+			self::set_cookie( self::COOKIE_AUTH, VIP_GO_APP_ID . '.' . $cookie_value );
 		} else {
-			self::set_cookie( self::COOKIE_SEGMENT, self::stringify_groups() );
+			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
 	}
 
 	/**
 	 * Sets (or unsets) the group/segment cookie.
-	 *
-	 * @since   1.0.0
-	 * @access  private
 	 */
 	private static function set_nocache_cookie() {
 		if ( self::$is_user_in_nocache ) {
@@ -532,9 +576,6 @@ class Vary_Cache {
 	/**
 	 * Add the vary cache headers to indicate that the response should be cached
 	 *
-	 * @since 1.0.0
-	 * @access private
-	 *
 	 * @return boolean Was at least one cookie set?
 	 */
 	private static function send_vary_headers() {
@@ -544,9 +585,9 @@ class Vary_Cache {
 			$sent_vary = true;
 
 			if ( self::is_encryption_enabled() ) {
-				header( 'Vary: X-VIP-Go-Auth' );
+				header( 'Vary: X-VIP-Go-Auth', false );
 			} else {
-				header( 'Vary: X-VIP-Go-Segmentation' );
+				header( 'Vary: X-VIP-Go-Segmentation', false );
 			}
 
 			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
@@ -565,7 +606,8 @@ class Vary_Cache {
 	 */
 	private static function set_cookie( $name, $value ) {
 		$expiry = time() + self::$cookie_expiry;
-		setcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		// Need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
+		setrawcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
 	}
 
 	/**
@@ -593,6 +635,9 @@ class Vary_Cache {
 
 		return true;
 	}
+
+
+
 }
 
 Vary_Cache::load();

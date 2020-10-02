@@ -15,6 +15,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_COOKIE = $_COOKIE;
+		$this->original_SERVER = $_SERVER;
 
 		Vary_Cache::load();
 	}
@@ -23,6 +24,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_COOKIE;
+		$_SERVER = $this->original_SERVER;
 
 		parent::tearDown();
 	}
@@ -327,6 +329,9 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__set_group_for_user__valid() {
+
+		Vary_Cache::register_group( 'dev-group' );
+
 		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
 
 		$this->assertTrue( $actual_result, 'Return value was not true' );
@@ -345,6 +350,18 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		do_action( 'send_headers' );
 
 		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
+	}
+
+	public function test__set_group_for_user_group_not_registered( ) {
+
+		$expected_error_code = 'invalid_vary_group_notregistered';
+
+		$actual_result  = Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
+
+		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+
+		$actual_error_code = $actual_result->get_error_code();
+		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
 	/**
@@ -470,6 +487,21 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
+	public function test__send_vary_headers__dont_override_headers() {
+		header( 'Vary: yay' );
+
+		Vary_Cache::register_group( 'dev-group' );
+
+		do_action( 'send_headers' );
+
+		$this->assertContains( 'Vary: X-VIP-Go-Segmentation', xdebug_get_headers() );
+		$this->assertContains( 'Vary: yay', xdebug_get_headers() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__send_vary_headers__sent_for_group_with_encryption() {
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
 		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
@@ -565,4 +597,148 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
 	}
+
+
+
+	public function get_test_data__stringify_groups() {
+		return [
+			'values_for_all_groups' => [
+				[
+					'dev-group',
+					'design-group',
+				],
+				[
+					'dev-group' => 'yes',
+					'design-group' => 'no',
+				],
+				'vc-v1__design-group_--_no---__dev-group_--_yes'
+			],
+			'values_for_only_nonempty_groups' => [
+				[
+					'dev-group',
+					'design-group'
+				],
+				[
+					'dev-group' => 'yes',
+				],
+				'vc-v1__dev-group_--_yes'
+			],
+			'values_for_all_empty_groups' => [
+				[
+				],
+				[
+				],
+				null
+			],
+
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__stringify_groups
+	 */
+	public function test__stringify_groups_valid( $groups, $group_values, $expected_result ) {
+		$get_stringify_groups_method = self::get_vary_cache_method( 'stringify_groups' );
+		Vary_Cache::register_groups( $groups );
+		foreach($group_values as $key => $value) {
+			Vary_Cache::set_group_for_user($key, $value);
+		}
+
+		$actual_result = $get_stringify_groups_method->invokeArgs(null, [ ] );
+
+		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	public function get_test_data__parse_group_cookies() {
+		return [
+			'values_regular_group' => [
+				[],
+				[
+					'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
+				],
+				[],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_encrypted_group_header' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+					'siteid' => 123,
+				],
+				[
+				],
+				[
+					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes'
+				],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_encrypted_group_no_header' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+					'siteid' => 123,
+				],
+				[
+					'vip-go-auth' => '123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
+				],
+				[
+					'HTTP_COOKIE' => 'vip-go-auth=123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I;',
+				],
+				[
+					'design-group' => 'no' ,
+					'dev-group' => 'yes'
+				],
+			],
+			'values_regular_nogroup' => [
+				[],
+				[
+					'vip-go-seg' => 'vc-v1__',
+				],
+				[],
+				[
+				],
+			],
+			'values_encrypted_nogroup' => [
+				[	'key' => 'abc',
+					'iv' => '1231231231231234',
+					'siteid' => 123,
+				],
+				[
+				],
+				[
+					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_yes---__dev-group_--_no'
+				],
+				[
+					'design-group' => 'yes' ,
+					'dev-group' => 'no'
+				],
+			],
+		];
+
+	}
+
+	/**
+	 * @dataProvider get_test_data__parse_group_cookies
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result )
+	{
+		$_SERVER = array_merge( $_SERVER, $headers );
+		$_COOKIE = $initial_cookie;
+		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
+		if ( ! empty( $secrets ) ) {
+			define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets[ 'key' ] );
+			define( 'VIP_GO_AUTH_COOKIE_IV', $secrets[ 'iv' ] );
+			define( 'VIP_GO_APP_ID', $secrets[ 'siteid' ]);
+			Vary_Cache::enable_encryption();
+		}
+		$get_parse_group_cookie_method->invokeArgs(null, [ ] );
+		$this->assertEquals( $expected_result, Vary_Cache::get_groups() );
+	}
+
 }

@@ -4,7 +4,7 @@
  Plugin URI: https://wordpress.org/plugins/debug-bar/
  Description: Adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information.
  Author: wordpressdotorg
- Version: 0.9
+ Version: 1.0.1
  Author URI: https://wordpress.org/
  Text Domain: debug-bar
  */
@@ -39,11 +39,11 @@ class Debug_Bar {
 
 		load_plugin_textdomain( 'debug-bar' );
 
-		add_action( 'admin_bar_menu',   array( $this, 'admin_bar_menu' ), 1000 );
-		add_action( 'admin_footer',     array( $this, 'render' ), 1000 );
-		add_action( 'wp_footer',        array( $this, 'render' ), 1000 );
-		add_action( 'wp_head',          array( $this, 'ensure_ajaxurl' ), 1 );
-		add_filter( 'body_class',       array( $this, 'body_class' ) );
+		add_action( 'wp_before_admin_bar_render',   array( $this, 'wp_before_admin_bar_render' ), 1000000 );
+		add_action( 'admin_footer',                 array( $this, 'render' ), 1000 );
+		add_action( 'wp_footer',                    array( $this, 'render' ), 1000 );
+		add_action( 'wp_head',                      array( $this, 'ensure_ajaxurl' ), 1 );
+		add_filter( 'body_class',                   array( $this, 'body_class' ) );
 		add_filter( 'admin_body_class', array( $this, 'body_class' ) );
 
 		$this->requirements();
@@ -150,7 +150,7 @@ class Debug_Bar {
 		return function_exists( 'memory_get_peak_usage' ) ? memory_get_peak_usage() : memory_get_usage();
 	}
 
-	function admin_bar_menu() {
+	function wp_before_admin_bar_render() {
 		global $wp_admin_bar;
 
 		$classes = apply_filters( 'debug_bar_classes', array() );

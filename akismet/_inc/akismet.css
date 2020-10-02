@@ -79,13 +79,6 @@ table.comments td.comment p a:after {
 .checkforspam {
     display: inline-block !important;
 }
-.checkforspam-progress {
-	padding-left: 1ex;
-	display: none;
-}
-.checkforspam.button-disabled .checkforspam-progress {
-	display: inline;
-}
 
 .checkforspam-spinner {
     display: inline-block;
@@ -246,7 +239,6 @@ table.comments td.comment p a:after {
 	font-size: 140px;
 	color: #769F33;
 	font-family: Georgia, "Times New Roman", Times, serif;
-	z-index: 1;
 }
 
 .akismet_activate .aa_button {
@@ -312,7 +304,6 @@ table.comments td.comment p a:after {
 	margin-left: 25px;
 	color: #E5F2B1;
 	font-size: 15px;
-	z-index: 1000;
 }
 
 .akismet_activate .aa_description strong {
@@ -546,6 +537,44 @@ table.comments td.comment p a:after {
 	margin-top: 1.5rem;
 }
 
+.akismet-box-header {
+	max-width: 700px;
+	margin: 0 auto 40px auto;
+	line-height: 1.5;
+}
+
+.akismet-box-header h2 {
+	margin: 1.5rem 10% 0;
+	font-size: 1.375rem;
+	font-weight: 700;
+	color: #000;
+}
+
+.akismet-box .centered {
+	text-align: center;
+}
+
+.akismet-enter-api-key-box {
+	margin: 1.5rem 0;
+}
+
+.akismet-box .enter-api-key {
+	display: none;
+	margin-top: 1.5rem;
+}
+
+.akismet-box .akismet-toggles {
+	margin: 3rem 0;
+}
+
+.akismet-box .akismet-ak-connect, .akismet-box .toggle-jp-connect {
+	display: none;
+}
+
+.akismet-box .enter-api-key p {
+	padding: 0 1.5rem;
+}
+
 .akismet-button, .akismet-button:hover, .akismet-button:visited {
 	background: white;
 	border-color: #c8d7e1;
@@ -622,4 +651,12 @@ table.comments td.comment p a:after {
 
 .akismet-section-header__actions {
 	line-height: 1.75rem;
+}
+
+.akismet-setup-instructions {
+	text-align: center;
+}
+
+.akismet-setup-instructions form {
+	padding-bottom: 1.5rem;
 }

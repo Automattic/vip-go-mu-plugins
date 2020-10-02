@@ -12,6 +12,11 @@ class VIP_Filesystem {
 	const PROTOCOL = 'vip';
 
 	/**
+	 * Max length allowed for file paths in the Files Service.
+	 */
+	const MAX_FILE_PATH_LENGTH = 255;
+
+	/**
 	 * The unique identifier of this plugin.
 	 *
 	 * @since    1.0.0
@@ -89,10 +94,12 @@ class VIP_Filesystem {
 	private function add_filters() {
 
 		add_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10, 1 );
-		add_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10, 4 );
+		add_filter( 'wp_handle_upload_prefilter', [ $this, 'filter_validate_file' ] );
+		add_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_validate_file' ] );
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
 		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
+		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 	}
 
 	/**
@@ -104,10 +111,12 @@ class VIP_Filesystem {
 	private function remove_filters() {
 
 		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10 );
-		remove_filter( 'wp_check_filetype_and_ext', [ $this, 'filter_filetype_check' ], 10 );
+		remove_filter( 'wp_handle_upload_prefilter', [ $this, 'filter_validate_file' ] );
+		remove_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_validate_file' ] );
 		remove_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20 );
 		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ] );
+		remove_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 	}
 
 	/**
@@ -152,33 +161,45 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * Check filetype support against VIP Filesystem API
+	 * Validate the file before we allow uploading it.
 	 *
-	 * Leverages VIP Filesystem API, which will return a 406 or other non-200 code if the filetype is unsupported
-	 *
-	 * @since   1.0.0
-	 * @access  public
-	 *
-	 * @param   array   $filetype_data
-	 * @param   string  $file
-	 * @param   string  $filename
-	 * @param   array   $mimes
-	 *
-	 * @return  array
+	 * @param  string[]  An array of data for a single file.
 	 */
-	public function filter_filetype_check( $filetype_data, $file, $filename, $mimes ) {
-		$filename = sanitize_file_name( $filename );
+	public function filter_validate_file( $file ) {
+		$file_name = $file['name'];
+		$upload_path = trailingslashit( $this->get_upload_path() );
+		$file_path = $upload_path . $file_name;
 
-		// Setting `ext` and `type` to empty will fail the upload because Go doesn't allow unfiltered uploads
-		// See `_wp_handle_upload()`
-		if ( ! $this->check_filetype_with_backend( $filename ) ) {
-			$filetype_data['ext']             = '';
-			$filetype_data['type']            = '';
-			// Never set this true, which leaves filename changing to dedicated methods in this class
-			$filetype_data['proper_filename'] = false;
+		// TODO: run through unique filename?
+
+		$check_type = $this->validate_file_type( $file_path );
+		if ( is_wp_error( $check_type ) ) {
+			$file['error'] = $check_type->get_error_message();
+
+			return $file;
 		}
 
-		return $filetype_data;
+		$check_length = $this->validate_file_path_length( $file_path );
+		if ( is_wp_error( $check_length ) ) {
+			$file['error'] = $check_length->get_error_message();
+
+			return $file;
+		}
+
+		return $file;
+	}
+
+	/**
+	 * Check if file path in within the allowed length.
+	 *
+	 * @param  string  Path starting with /wp-content/uploads
+	 */
+	protected function validate_file_path_length( $file_path ) {
+		if ( mb_strlen( $file_path ) > self::MAX_FILE_PATH_LENGTH ) {
+			return new WP_Error( 'path-too-long', sprintf( 'The file name and path cannot exceed %d characters. Please rename the file to something shorter and try again.', self::MAX_FILE_PATH_LENGTH ) );
+		}
+
+		return true;
 	}
 
 	/**
@@ -190,15 +211,11 @@ class VIP_Filesystem {
 	 * @since   1.0.0
 	 * @access  protected
 	 *
-	 * @param   string      $filename
+	 * @param   string      $file_path   Path starting with /wp-content/uploads
 	 *
-	 * @return  bool        True if filetype is supported. Else false
+	 * @return  WP_Error|bool        True if filetype is supported. Else WP_Error.
 	 */
-	protected function check_filetype_with_backend( $filename ) {
-		$upload_path = $this->get_upload_path();
-
-		$file_path = $upload_path . $filename;
-
+	protected function validate_file_type( $file_path ) {
 		$result = $this->stream_wrapper->client->get_unique_filename( $file_path );
 
 		if ( is_wp_error( $result ) ) {
@@ -208,7 +225,7 @@ class VIP_Filesystem {
 					E_USER_WARNING
 				);
 			}
-			return false;
+			return $result;
 		}
 
 		return true;
@@ -290,11 +307,18 @@ class VIP_Filesystem {
 			$file_path = substr( $file_path, strlen( $upload_path['basedir'] ) + 1 );
 		}
 
+		// Strip any query params that snuck through
+		$queryStringStart = strpos( $file_path, '?' );
+
+		if ( false !== $queryStringStart ) {
+			$file_path = substr( $file_path, 0, $queryStringStart );
+		}
+
 		return $file_path;
 	}
 
 	/**
-	 * Filters the generated attachment metdata
+	 * Filters the generated attachment metadata
 	 *
 	 * @return array
 	 */
@@ -384,5 +408,35 @@ class VIP_Filesystem {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Exif compat for Streams.
+	 *
+	 * The iptc and exif functions don't always work with streams.
+	 *
+	 * So, download a local copy of the file and use that to read the exif data instead.
+	 *
+	 * Props S3-Uploads and humanmade for the fix
+	 *
+	 * https://github.com/humanmade/S3-Uploads
+	 */
+	public function filter_wp_read_image_metadata( $meta, $file ) {
+		if ( ! wp_is_stream( $file ) ) {
+			return $meta;
+		}
+
+		remove_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10 );
+
+		// Save a local copy and read metadata from that
+		$temp_file = wp_tempnam();
+		file_put_contents( $temp_file, file_get_contents( $file ) );
+		$meta = wp_read_image_metadata( $temp_file );
+
+		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
+
+		unlink( $temp_file );
+
+		return $meta;
 	}
 }
