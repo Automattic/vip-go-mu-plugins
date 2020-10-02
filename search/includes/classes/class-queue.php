@@ -506,10 +506,14 @@ class Queue {
 
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
-				// Increment first to prevent overrunning ratelimiting
-				self::index_count_incr( count( $ids ) );
+				// If the index version no longer exists, skip incrementing the ratelimiting counter and don't index the ids
+				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
+				if ( array_key_exists( intval( $index_version ), $index_versions ) ) {
+					// Increment first to prevent overrunning ratelimiting
+					self::index_count_incr( count( $ids ) );
 
-				$indexable->bulk_index( $ids );
+					$indexable->bulk_index( $ids );
+				}
 
 				// TODO handle errors
 		
