@@ -66,11 +66,23 @@ class CoreCommand extends \ElasticPress\Command {
 			self::confirm_destructive_operation( $assoc_args );
 		}
 
-		$this->_maybe_setup_index_version( $assoc_args );
+		$statsd = new \Automattic\VIP\StatsD();
+		$es = \Automattic\VIP\Search\Search::instance();
 
-		array_unshift( $args, 'elasticpress', 'index' );
+		$url = $es->get_current_host();
+		$statsd_mode = 'indexing';
+		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
 
-		WP_CLI::run_command( $args, $assoc_args );
+		$statsd->time(
+			$stat,
+			function() use ( $args, $assoc_args ) {
+				$this->_maybe_setup_index_version( $assoc_args );
+
+				array_unshift( $args, 'elasticpress', 'index' );
+
+				WP_CLI::run_command( $args, $assoc_args );
+			}
+		);
 	}
 
 	/**
