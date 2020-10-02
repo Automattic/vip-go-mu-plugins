@@ -525,6 +525,8 @@ class Versioning {
 			return new WP_Error( 'failed-to-delete-index', sprintf( 'Failed to delete index version %d for indexable %s from Elasticsearch', $version_number, $indexable->slug ) );
 		}
 
+		\Automattic\VIP\Search\Search::instance()->queue->delete_jobs_for_index_version( $indexable->slug, $version_number );
+		
 		unset( $versions[ $version_number ] );
 
 		return $this->update_versions( $indexable, $versions );
