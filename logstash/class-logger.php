@@ -485,9 +485,15 @@ class Logger {
 				return;
 			}
 
-			// Log to file
-			// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( $json_data . "\n", 3, ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log' );
+			if ( ! defined( 'LOG2LOGSTASH_SYSLOG' ) || ! LOG2LOGSTASH_SYSLOG ) {
+				// Log to file
+				// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( $json_data . "\n", 3, ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log' );
+			} else {
+				// Forward logs to regular php error logs, used by k8s and similar.
+				// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'log2logstash: ' . $json_data, 0 );
+			}
 		}
 	}
 
