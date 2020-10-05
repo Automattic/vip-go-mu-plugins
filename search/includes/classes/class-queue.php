@@ -72,7 +72,7 @@ class Queue {
 			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
 
 			if ( ! $indexable ) {
-				return new WP_Error( sprintf( 'Indexable not found for type %s', 'invalid-indexable', $object_type ) );
+				return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $object_type ) );
 			}
 
 			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
