@@ -72,7 +72,7 @@ class Queue {
 			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
 
 			if ( ! $indexable ) {
-				return new WP_Error( sprintf( 'Indexable not found for type %s', 'invalid-indexable', $object_type ) );
+				return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $object_type ) );
 			}
 
 			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
@@ -825,6 +825,42 @@ class Queue {
 		}
 
 		return intval( $average_wait_time );
+	}
+
+	/**
+	 * Given an indexable slug and an index version, delete all matching jobs from the queue.
+	 *
+	 * Used to clean up after an index version deletion and prevent processing jobs that don't need to be processed.
+	 *
+	 * @param string $indexable_slug An indexable slug.
+	 * @param int | string $index_version An index version.
+	 * @return null | WP_Error | object Either null if the queue isn't enabled, a WP_Error if the parameters are incorrect, or the results of wpdb::get_results().
+	 */
+	public function delete_jobs_for_index_version( $indexable_slug, $index_version ) {
+		global $wpdb;
+
+		// If run without having the queue enabled, queue wait times are 0
+		if ( ! $this->is_enabled() ) {
+			return null;
+		}
+
+		if ( ! is_string( $indexable_slug ) ) {
+			return new WP_Error( 'invalid-slug-for-queue-cleanup-on-delete', sprintf( 'Invalid indexable slug \'%s\'', $indexable_slug ) );
+		} 
+		
+		if ( ! is_numeric( $index_version ) ) {
+			return new WP_Error( 'invalid-version-for-queue-cleanup-on-delete', sprintf( 'Invalid version \'%d\'', $index_version ) );
+		}
+
+		// If schema is null, init likely not run yet
+		// Happens when cron is scheduled/run via wp commands
+		if ( is_null( $this->schema ) ) {
+			$this->init();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->get_results( $wpdb->prepare( "DELETE FROM `{$table_name}` WHERE `object_type` = %s AND `index_version` = %d", $indexable_slug, $index_version ) ); // @codingStandardsIgnoreLine
 	}
 
 	/*
