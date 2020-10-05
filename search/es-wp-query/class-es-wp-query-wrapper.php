@@ -44,6 +44,19 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 	abstract protected function query_es( $es_args );
 
 	/**
+	 * Override default WP_Query->is_main_query() to support
+	 * this conditional when the main query has been overridden
+	 * by this class.
+	 *
+	 * @fixes #38
+	 *
+	 * @return bool
+	 */
+	public function is_main_query() {
+		return $this->get( 'es_is_main_query', false );
+	}	
+
+	/**
 	 * Maps a field to its Elasticsearch context.
 	 *
 	 * @param string $field The field to map.
