@@ -502,8 +502,16 @@ class Queue {
 			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
 
-				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
+				// If the index version no longer exists, just delete the jobs and don't bother with stats or anything
+				// since the jobs weren't actually processed
+				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
+				if ( ! array_key_exists( intval( $index_version ), $index_versions ) ) {
+					$this->delete_jobs( $jobs );
+					continue;
+				}
 
+				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
+	
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
@@ -512,7 +520,7 @@ class Queue {
 				$indexable->bulk_index( $ids );
 
 				// TODO handle errors
-		
+
 				// Mark them as done in queue
 				$this->delete_jobs( $jobs );
 
