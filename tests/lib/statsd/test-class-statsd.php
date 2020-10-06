@@ -5,32 +5,32 @@ use \WP_Query;
 
 class StatsD_Test extends \WP_UnitTestCase {
 
-	const STATS_KEY = "stats.example";
+	const STATS_KEY = 'stats.example';
 
 	public function setUp() {
 		require_once __DIR__ . '/../../../lib/statsd/class-statsd.php';
 	}
 
 	public function test__time__calls_timed() {
-		$taskDurationMillis = 1;
-		$taskDurationNanos = $taskDurationMillis * 1000 * 1000;
+		$task_duration_millis = 1;
+		$task_duration_nanos = $task_duration_millis * 1000 * 1000;
 
-		$partiallyMockedStatsD = $this->getMockBuilder( StatsD::class )
+		$partially_mocked_statsd = $this->getMockBuilder( StatsD::class )
 			->setMethods( [ 'timing' ] )
 			->getMock();
 
 
-		$partiallyMockedStatsD->expects( $this->once() )
+		$partially_mocked_statsd->expects( $this->once() )
 			->method( 'timing' )
 			->with(
-				$this->STATS_KEY,
-				$this->greaterThan( $taskDurationMillis )
+				self::STATS_KEY,
+				$this->greaterThan( $task_duration_millis )
 			);
 
-		$partiallyMockedStatsD->time(
-			$this->STATS_KEY,
-			function () use ( $taskDurationNanos ) {
-				time_nanosleep( 0, $taskDurationNanos );
+		$partially_mocked_statsd->time(
+			self::STATS_KEY,
+			function () use ( $task_duration_nanos ) {
+				time_nanosleep( 0, $task_duration_nanos );
 			}
 		);
 	}

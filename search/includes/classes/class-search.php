@@ -20,6 +20,7 @@ class Search {
 	public $field_count_gauge;
 	public $queue_wait_time;
 	public $queue;
+	public $statsd;
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -76,6 +77,11 @@ class Search {
 		// Index versioning
 		require_once __DIR__ . '/class-versioning.php';
 		$this->versioning = new Versioning();
+
+		// StatsD - can be set in advance of init for mocking purposes
+		if ( ! $this->statsd ) {
+			$this->statsd = new \Automattic\VIP\StatsD();
+		}
 
 		/**
 		 * Load CLI commands
@@ -139,7 +145,7 @@ class Search {
 
 		// Round-robin retry hosts if connection to a host fails
 		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
-		
+
 		add_filter( 'ep_valid_response', array( $this, 'filter__ep_valid_response' ), 10, 4 );
 
 		// Allow querying while a bulk index is running
@@ -172,17 +178,17 @@ class Search {
 
 		// Better replica counts
 		add_filter( 'ep_default_index_number_of_replicas', array( $this, 'filter__ep_default_index_number_of_replicas' ) );
-	
+
 		// Date relevancy defaults. Taken from Jetpack Search.
 		// Set to 'gauss'
 		add_filter( 'epwr_decay_function', array( $this, 'filter__epwr_decay_function' ), 0, 3 );
-		// Set to '360d'	
+		// Set to '360d'
 		add_filter( 'epwr_scale', array( $this, 'filter__epwr_scale' ), 0, 3 );
-		// Set to .9 
+		// Set to .9
 		add_filter( 'epwr_decay', array( $this, 'filter__epwr_decay' ), 0, 3 );
 		// Set to '0d'
 		add_filter( 'epwr_offset', array( $this, 'filter__epwr_offset' ), 0, 3 );
-		// Set to 'multiply'	
+		// Set to 'multiply'
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
@@ -198,11 +204,11 @@ class Search {
 
 		// Try to prevent the field limit from being set too high
 		add_filter( 'ep_total_field_limit', array( $this, 'limit_field_limit' ), PHP_INT_MAX );
-	
+
 		// Check if meta is on allow list. If not, don't re-index
 		add_filter( 'ep_skip_post_meta_sync', array( $this, 'filter__ep_skip_post_meta_sync' ), PHP_INT_MAX, 5 );
 
-		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list 
+		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list
 		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
 
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
@@ -221,7 +227,7 @@ class Search {
 
 	protected function setup_healthchecks() {
 		$this->healthcheck = new HealthJob();
-	
+
 		// Hook into init action to ensure cron-control has already been loaded
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
@@ -349,13 +355,8 @@ class Search {
 
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
-		$statsd = new \Automattic\VIP\StatsD();
-
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
-		$statsd_index_name = $this->get_statsd_index_name_for_url( $query['url'] );
-
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
-		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
 
@@ -369,17 +370,16 @@ class Search {
 
 		if ( is_wp_error( $response ) ) {
 			$error_messages = $response->get_error_messages();
-			
+
 			foreach ( $error_messages as $error_message ) {
 				// Default stat for errors is 'error'
 				$stat = '.error';
-				// If curl error 28(timeout), the stat should be 'timeout'	
+				// If curl error 28(timeout), the stat should be 'timeout'
 				if ( $this->is_curl_timeout( $error_message ) ) {
 					$stat = '.timeout';
 				}
 
-				$statsd->increment( $statsd_prefix . $stat );
-				$statsd->increment( $statsd_per_site_prefix . $stat );
+				$this->statsd->increment( $statsd_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
@@ -387,12 +387,10 @@ class Search {
 			$response_body = json_decode( $response_body_json, true );
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
-				$statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
-				$statsd->timing( $statsd_per_site_prefix . '.engine', $response_body['took'] );
+				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
 			}
 
-			$statsd->timing( $statsd_prefix . '.total', $duration );
-			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
+			$this->statsd->timing( $statsd_prefix . '.total', $duration );
 
 			$response_code = (int) wp_remote_retrieve_response_code( $response );
 
@@ -430,7 +428,7 @@ class Search {
 				}
 			}
 		}
-	
+
 		return $response;
 	}
 
@@ -438,7 +436,7 @@ class Search {
 	 * Given an error message, determine if it's from curl error 28(timeout)
 	 */
 	private function is_curl_timeout( $error_message ) {
-		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
+		return false !== strpos( strtolower( $error_message ), 'curl error 28' );
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
@@ -483,7 +481,7 @@ class Search {
 	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
 	 *
 	 * The integration can be tested at any time by setting an `es` query argument (?vip-search-enabled=true).
-	 * 
+	 *
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
@@ -516,7 +514,7 @@ class Search {
 
 	/**
 	 * Whether the site is in "network" mode, meaning subsites should be indexed into the same index
-	 * 
+	 *
 	 */
 	public static function is_network_mode() {
 		// NOTE - Not using strict equality check here so that we match EP
@@ -596,7 +594,7 @@ class Search {
 
 		// Can't use $this in static context
 		$es = self::instance();
-		
+
 		$statsd_mode = 'query_ratelimited';
 		$statsd_index_name = $indexable->get_index_name();
 
@@ -706,7 +704,7 @@ class Search {
 	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
 	 */
 	public function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			return $host;
 		}
 
@@ -726,9 +724,9 @@ class Search {
 	 */
 	public function get_next_host( $failures ) {
 		$this->current_host_index += $failures;
-		
+
 		return $this->get_current_host();
-	} 
+	}
 
 	/**
 	 * Given a list of hosts, randomly select one for load balancing purposes.
@@ -808,7 +806,7 @@ class Search {
 
 	/**
 	 * Set the number of shards in the index settings
-	 * 
+	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
 	 */
 	public function filter__ep_default_index_number_of_shards( $shards ) {
@@ -832,7 +830,7 @@ class Search {
 
 	/**
 	 * Given an ES url, determine the "mode" of the request for stats purposes
-	 * 
+	 *
 	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
 	 */
 	public function get_statsd_request_mode_for_request( $url, $args ) {
@@ -885,7 +883,7 @@ class Search {
 
 		// Bulk indexing
 		if ( '_bulk' === end( $path ) ) {
-			return 'index';
+			return 'bulk_index';
 		}
 
 		// Unknown
@@ -983,7 +981,7 @@ class Search {
 			$search = $query->get( 's' );
 
 			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
-			
+
 			$query->set( 's', $truncated_search );
 		}
 	}
@@ -1001,7 +999,7 @@ class Search {
 	public function filter__epwr_scale( $scale, $formatted_args, $args ) {
 		return '360d';
 	}
-	
+
 	/*
 	 * Filter for setting decay for date relevancy in ElasticPress
 	 */
@@ -1099,7 +1097,7 @@ class Search {
 		if ( \is_wp_error( $post ) || ! is_object( $post ) ) {
 			return $current_meta;
 		}
-		
+
 		$client_post_meta_allow_list = $this->get_post_meta_allow_list( $post );
 
 		// Since we're comparing result of get_post_meta(as $current_meta), we need to do an array_intersect_key since $current_meta should be an assoc array
@@ -1192,9 +1190,9 @@ class Search {
 
 		// If post meta allow list is an associative array
 		if ( array_keys( $post_meta_allow_list ) !== range( 0, count( $post_meta_allow_list ) - 1 ) ) {
-			/* 
+			/*
 			 * Filter out values not set to true since the current format of the allow list as an associative array is:
-			 * 
+			 *
 			 * array (
 			 * 		'key' => true,
 			 * );
