@@ -38,6 +38,8 @@ function wpcom_vip_is_restricted_username( $username ) {
  * @param string $cache_expiry The number in seconds of the cache expiry.
  */
 function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) {
+	// Ensure that the username is sanitized before we use it in a cache key.
+	$username = sanitize_user( $username );
 	$ip   = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$ip_username_cache_key = $ip . '|' . $username; // IP + username
 	$ip_cache_key = $ip; // IP only
@@ -59,8 +61,6 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) 
 }
 
 function wpcom_vip_login_limiter( $username ) {
-	// Ensure that the username is sanitized before we use it in a cache key.
-	$username = sanitize_user( $username );
 	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT, MINUTE_IN_SECONDS * 5 );
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
@@ -91,8 +91,6 @@ function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) )
 		return $user;
 
-	// Ensure that the username is sanitized before we use it in a cache key.
-	$username = sanitize_user( $username );
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOGIN_LIMIT );
 	if ( is_wp_error( $is_login_limited ) ) {
 		return $is_login_limited;
@@ -167,6 +165,9 @@ add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit' );
 function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	// Strip invalid characters from the address
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
+
+	// Ensure that the username is sanitized before we use it in a cache key.
+	$username = sanitize_user( $username );
 
 	$ip_username_cache_key   = $ip . '|' . $username;
 	$ip_username_count       = wp_cache_get( $ip_username_cache_key, $cache_group );
