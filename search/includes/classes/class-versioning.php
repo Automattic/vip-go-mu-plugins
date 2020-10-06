@@ -12,7 +12,7 @@ class Versioning {
 	/**
 	 * The maximum number of index versions that can exist for any indexable.
 	 */
-	const MAX_VERSIONS = 2;
+	const MAX_NUMBER_OF_VERSIONS = 2;
 	
 	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
@@ -365,14 +365,14 @@ class Versioning {
 		}
 
 		$current_version_count = count( $versions );
-		if ( ( $current_version_count ) >= self::MAX_VERSIONS ) {
+		if ( ( $current_version_count ) >= self::MAX_NUMBER_OF_VERSIONS ) {
 			return new WP_Error(
 				'too-many-index-versions',
 				sprintf(
 					'Currently, %d versions exist for indexable %s. Only %d versions allowed per indexable.',
 					$current_version_count,
 					$indexable->slug,
-					self::MAX_VERSIONS
+					self::MAX_NUMBER_OF_VERSIONS
 				)
 			);
 		}
