@@ -72,7 +72,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		$new_version = $search->versioning->add_version( $indexable );
 
 		if ( is_wp_error( $new_version ) ) {
-			return WP_CLI::error( $result->get_error_message() );
+			return WP_CLI::error( $new_version->get_error_message() );
 		}
 
 		if ( false === $new_version ) {
