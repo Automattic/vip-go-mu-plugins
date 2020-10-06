@@ -365,7 +365,7 @@ class Versioning {
 		}
 
 		$current_version_count = count( $versions );
-		if ( ( $current_version_count + 1 ) > self::MAX_VERSIONS ) {
+		if ( ( $current_version_count ) >= self::MAX_VERSIONS ) {
 			return new WP_Error(
 				'too-many-index-versions',
 				sprintf(
