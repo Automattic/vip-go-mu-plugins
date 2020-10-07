@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search;
 
+use \WP_Error as WP_Error;
+
 class Versioning_Test extends \WP_UnitTestCase {
 	/**
 	* Make tests run in separate processes since we're testing state
@@ -496,10 +498,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'number' => 2,
 						'active' => false,
 					),
-					3 => array(
-						'number' => 3,
-						'active' => false,
-					),
 				),
 				// Indexable slug
 				'post',
@@ -510,48 +508,28 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'active' => false,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-					),
-					4 => array(
-						'number' => 4,
+						'number' => 3, 
 						'active' => false,
 					),
 				),
 			),
-
-			// Current version is 2
 			array(
 				// Input array of versions
 				array(
-					1 => array(
-						'number' => 1,
-						'active' => false,
-					),
-					2 => array(
-						'number' => 2,
-						'active' => true,
-					),
-				),
-				// Indexable slug
-				'post',
-				// Expected new versions
-				array(
-					1 => array(
-						'number' => 1,
-						'active' => false,
-					),
 					2 => array(
 						'number' => 2,
 						'active' => true,
 					),
 					3 => array(
-						'number' => 3,
+						'number' => 3, 
 						'active' => false,
 					),
 				),
+				// Indexable slug
+				'post',
+				// WP_Error due to too many index versions
+				new WP_Error( 'too-many-index-versions', 'Currently, 2 versions exist for indexable post. Only 2 versions allowed per indexable.' ),
 			),
-
 			// No versions tracked
 			array(
 				// Input array of versions
@@ -585,15 +563,19 @@ class Versioning_Test extends \WP_UnitTestCase {
 		// Add the new version
 		$new_version = self::$version_instance->add_version( $indexable );
 
-		$expected_new_version = end( $expected_new_versions );
+		if ( is_wp_error( $new_version ) ) {
+			$this->assertEquals( $expected_new_versions, $new_version, 'The WP_Error thrown should match the expected WP_Error' );
+		} else {
+			$expected_new_version = end( $expected_new_versions );
 
-		$this->assertEquals( $expected_new_version['number'], $new_version['number'], 'The returned new version does not match the expected new version' );
+			$this->assertEquals( $expected_new_version['number'], $new_version['number'], 'The returned new version does not match the expected new version' );
 
-		$new_versions = self::$version_instance->get_versions( $indexable );
+			$new_versions = self::$version_instance->get_versions( $indexable );
 
-		// Can only compare the deterministic parts of the version info (not created_time, for example)
-		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
-		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+			// Can only compare the deterministic parts of the version info (not created_time, for example)
+			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
+			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+		}
 	}
 
 	public function activate_version_data() {
@@ -996,7 +978,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
 		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
 		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
 
 		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 1 );
 		do_action( 'vip_search_indexing_object_queued', 2, 'post', array( 'foo' => 'bar' ), 1 );
@@ -1015,19 +996,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 1,
-				'object_type' => 'post',
-				'index_version' => 3,
-			),
-			array(
 				'object_id' => 2,
 				'object_type' => 'post',
 				'index_version' => 2,
-			),
-			array(
-				'object_id' => 2,
-				'object_type' => 'post',
-				'index_version' => 3,
 			),
 		);
 
@@ -1094,16 +1065,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'object_type' => 'post',
 						'index_version' => 2,
 					),
-					array(
-						'object_id' => 1,
-						'object_type' => 'post',
-						'index_version' => 3,
-					),
-					array(
-						'object_id' => 9000,
-						'object_type' => 'post',
-						'index_version' => 3,
-					),
 				),
 			),
 
@@ -1154,7 +1115,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
 		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
 		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
@@ -1184,7 +1144,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
 		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
 		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
@@ -1229,21 +1188,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'object_type' => 'post',
 				'index_version' => 2,
 			),
-			array(
-				'object_id' => 1,
-				'object_type' => 'post',
-				'index_version' => 3,
-			),
-			array(
-				'object_id' => 2,
-				'object_type' => 'post',
-				'index_version' => 3,
-			),
-			array(
-				'object_id' => 3,
-				'object_type' => 'post',
-				'index_version' => 3,
-			),
 		);
 
 		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
@@ -1262,7 +1206,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
 		self::$version_instance->update_versions( $indexable, array() ); // Reset them
 		self::$version_instance->add_version( $indexable );
-		self::$version_instance->add_version( $indexable );
 
 		// Add a filter that we can use to count how many deletes are actually sent to ES
 		$delete_count = 0;
@@ -1278,7 +1221,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$indexable->delete( 1 );
 
-		$this->assertEquals( $delete_count, 3 );
+		$this->assertEquals( $delete_count, 2 );
 	}
 
 	public function normalize_version_data() {

@@ -9,6 +9,10 @@ use \WP_Error as WP_Error;
 
 class Versioning {
 	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
+	/**
+	 * The maximum number of index versions that can exist for any indexable.
+	 */
+	const MAX_NUMBER_OF_VERSIONS = 2;
 	
 	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
@@ -360,6 +364,19 @@ class Versioning {
 			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
 		}
 
+		$current_version_count = count( $versions );
+		if ( $current_version_count >= self::MAX_NUMBER_OF_VERSIONS ) {
+			return new WP_Error(
+				'too-many-index-versions',
+				sprintf(
+					'Currently, %d versions exist for indexable %s. Only %d versions allowed per indexable.',
+					$current_version_count,
+					$indexable->slug,
+					self::MAX_NUMBER_OF_VERSIONS
+				)
+			);
+		}
+
 		$new_version = array(
 			'number' => $new_version_number,
 			'active' => false,
@@ -436,7 +453,6 @@ class Versioning {
 	 */
 	public function get_next_version_number( $versions ) {
 		$new_version = null;
-
 
 		if ( ! empty( $versions ) && is_array( $versions ) ) {
 			$new_version = max( array_keys( $versions ) );
@@ -525,6 +541,8 @@ class Versioning {
 			return new WP_Error( 'failed-to-delete-index', sprintf( 'Failed to delete index version %d for indexable %s from Elasticsearch', $version_number, $indexable->slug ) );
 		}
 
+		\Automattic\VIP\Search\Search::instance()->queue->delete_jobs_for_index_version( $indexable->slug, $version_number );
+		
 		unset( $versions[ $version_number ] );
 
 		return $this->update_versions( $indexable, $versions );

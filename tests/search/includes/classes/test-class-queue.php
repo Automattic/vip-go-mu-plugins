@@ -877,6 +877,114 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $organized );
 	}
 
+	public function test__delete_jobs_for_index_version() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = array(
+			array(
+				'id' => 1,
+				'type' => 'post',
+				'version' => 1,
+			),
+			array(
+				'id' => 2,
+				'type' => 'post',
+				'version' => 1,
+			),
+			array(
+				'id' => 3,
+				'type' => 'post',
+				'version' => 2,
+			),
+			array(
+				'id' => 4,
+				'type' => 'post',
+				'version' => 3,
+			),
+		);
+
+		foreach ( $objects as $object ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO $table_name ( `object_id`, `object_type`, `status`, `index_version`, `queued_time` ) VALUES ( %d, %s, %s, %d, %s )", // @codingStandardsIgnoreLine
+					$object['id'],
+					$object['type'],
+					'queued',
+					$object['version'],
+					'2020-10-31 00:00:00'
+				)
+			);
+		}
+
+		$this->queue->delete_jobs_for_index_version( 'post', 2 );
+
+		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' ); // @codingStandardsIgnoreLine
+
+		$this->assertEquals(
+			array(
+				array(
+					'job_id' => '1',
+					'object_id' => '1',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '1',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+				array(
+					'job_id' => '2',
+					'object_id' => '2',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '1',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+				array(
+					'job_id' => '4',
+					'object_id' => '4',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '3',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+			),
+			$results,
+			'should match what you\'d expect from deleting index version 2'
+		);
+
+		$this->queue->delete_jobs_for_index_version( 'post', 1 );
+
+		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' ); // @codingStandardsIgnoreLine
+
+		$this->assertEquals(
+			array(
+				array(
+					'job_id' => '4',
+					'object_id' => '4',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '3',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+			),
+			$results,
+			'should match what you\'d expect from deleting index version 1 and index version 2'
+		);
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
