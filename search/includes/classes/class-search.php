@@ -16,11 +16,14 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 
+	private const LINES_PER_DOCUMENT_IN_BULK_INDEX = 3;
+
 	public $healthcheck;
 	public $field_count_gauge;
 	public $queue_wait_time;
 	public $queue;
 	public $statsd;
+	public $indexables;
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -78,9 +81,14 @@ class Search {
 		require_once __DIR__ . '/class-versioning.php';
 		$this->versioning = new Versioning();
 
-		// StatsD - can be set in advance of init for mocking purposes
+		// StatsD - can be set explicitly for mocking purposes
 		if ( ! $this->statsd ) {
 			$this->statsd = new \Automattic\VIP\StatsD();
+		}
+
+		// Indexables - can be set explicitly init for mocking purposes
+		if ( ! $this->indexables ) {
+			$this->indexables = \ElasticPress\Indexables::factory();
 		}
 
 		/**
@@ -883,11 +891,39 @@ class Search {
 
 		// Bulk indexing
 		if ( '_bulk' === end( $path ) ) {
-			return 'bulk_index';
+			return $this->is_full_index( $path, $args ) ? 'full_index' : 'index';
 		}
 
 		// Unknown
 		return 'other';
+	}
+
+	/**
+	 * From the path will parse what type of indaxable is it. From the body of the request how many documents we are indexing.
+	 *
+	 * If the number of documents matches the number of corresponding objects in DB, will return true, false otherwise.
+	 */
+	private function is_full_index( array $path, array $args ) {
+		$body = $args['body'] ?? '';
+		$body_lines = explode( "\n", $body );
+
+		if ( $body_lines && is_array( $body_lines ) ) {
+			$doc_count = floor( count( $body_lines ) / self::LINES_PER_DOCUMENT_IN_BULK_INDEX );
+			$indexable_type_path = $path[ count( $path ) - 2 ];
+
+			$all_indexables = $this->indexables->get_all();
+			foreach ( $all_indexables as $indexable ) {
+				if ( strpos( $indexable_type_path, $indexable->slug ) !== false ) {
+					$indexable_db_result = $indexable->query_db( array() );
+					$total_items_db = $indexable_db_result['total_objects'];
+
+					if ( $total_items_db == $doc_count ) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
