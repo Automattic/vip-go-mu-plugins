@@ -20,23 +20,6 @@ class StatsD {
 	}
 
 	/**
-	 * Tracks time of callback and then sets one or more timing values
-	 *
-	 * @param string|array $stats The metric(s) to set.
-	 * @param callback $callback to be tracked
-	 **/
-	public function time( $stats, $callback ) {
-		$start_time = microtime( true );
-
-		call_user_func( $callback );
-
-		$end_time = microtime( true );
-		$duration = ( $end_time - $start_time ) * 1000;
-
-		$this->timing( $stats, $duration );
-	}
-
-	/**
 	 * Sets one or more gauges to a value
 	 *
 	 * @param string|array $stats The metric(s) to set.
