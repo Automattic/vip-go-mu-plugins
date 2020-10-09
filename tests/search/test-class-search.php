@@ -902,17 +902,17 @@ class Search_Test extends \WP_UnitTestCase {
 			array(
 				'https://host/_bulk',
 				'post',
-				'index_per_post',
+				'index_per_doc',
 			),
 			array(
 				'https://host/index-name/_bulk',
 				'post',
-				'index_per_post',
+				'index_per_doc',
 			),
 			array(
 				'https://host/index-name/_bulk?foo=bar',
 				'post',
-				'index_per_post',
+				'index_per_doc',
 			),
 		);
 	}
@@ -1772,6 +1772,46 @@ class Search_Test extends \WP_UnitTestCase {
 			->with(
 				"$stats_prefix.total",
 				$this->greaterThan( 0 )
+			);
+
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+	}
+
+	public function test__filter__ep_do_intercept_request__records_statsd_per_doc() {
+		$query = [ 'url' => 'https://foo.bar' ];
+		$args = [];
+		$stats_request_mode = 'index_per_doc';
+		$stats_prefix = 'foo';
+		$mocked_response_body = [
+			'took' => 100,
+			'items' => [ [], [] ]
+		];
+		$mocked_response = [
+			'body' => json_encode( $mocked_response_body )
+		];
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix' ] )
+			->getMock();
+		$partially_mocked_search->method( 'get_statsd_request_mode_for_request' )
+			->willReturn( $stats_request_mode );
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_prefix );
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->init();
+
+		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $mocked_response );
+
+
+		$expected_time_per_doc = $mocked_response_body['took'] / count( $mocked_response_body['items'] );
+		$statsd_mock->expects( $this->exactly(2) )
+			->method( 'timing' )
+			->withConsecutive(
+				[ "$stats_prefix.engine", $expected_time_per_doc ],
+				[ "$stats_prefix.total", $this->greaterThan(0) ]
 			);
 
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );

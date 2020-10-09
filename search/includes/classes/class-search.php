@@ -16,8 +16,6 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 
-	private const LINES_PER_DOCUMENT_IN_BULK_INDEX = 3;
-
 	public $healthcheck;
 	public $field_count_gauge;
 	public $queue_wait_time;
@@ -364,6 +362,7 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$is_per_doc_metric = strpos( $statsd_mode, 'per_doc' ) !== false;
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		$start_time = microtime( true );
@@ -394,11 +393,14 @@ class Search {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
 
-			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
-				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
+			$divider = 1;
+			if ( $is_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
+				$divider = count( $response_body['items'] );
 			}
-
-			$this->statsd->timing( $statsd_prefix . '.total', $duration );
+			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
+				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] / $divider );
+			}
+			$this->statsd->timing( $statsd_prefix . '.total', $duration / $divider );
 
 			$response_code = (int) wp_remote_retrieve_response_code( $response );
 
@@ -891,7 +893,7 @@ class Search {
 
 		// Bulk indexing
 		if ( '_bulk' === end( $path ) ) {
-			return 'index_per_post';
+			return 'index_per_doc';
 		}
 
 		// Unknown
