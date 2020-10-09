@@ -5,7 +5,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Bring the power of the WordPress.com cloud to your self-hosted WordPress. Jetpack enables you to connect your blog to a WordPress.com account to use the powerful features normally only available to WordPress.com users.
  * Author: Automattic
- * Version: 8.9.1
+ * Version: 9.0.1
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -13,7 +13,7 @@
  */
 
 if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
-	define( 'VIP_JETPACK_DEFAULT_VERSION', '8.9' );
+	define( 'VIP_JETPACK_DEFAULT_VERSION', '9.0' );
 }
 
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
@@ -29,10 +29,10 @@ if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
 
 /**
  * Add JP broken connection debug headers
- * 
+ *
  * NOTE - this _must_ come _before_ jetpack/jetpack.php is loaded, b/c the signature verification is
  * performed in __construct() of the Jetpack class, so hooking after it has been loaded is too late
- * 
+ *
  * $error is a WP_Error (always) and contains a "signature_details" data property with this structure:
  * The error_code has one of the following values:
  * - malformed_token
