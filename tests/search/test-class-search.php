@@ -1784,10 +1784,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$stats_prefix = 'foo';
 		$mocked_response_body = [
 			'took' => 100,
-			'items' => [ [], [] ]
+			'items' => [ [], [] ],
 		];
 		$mocked_response = [
-			'body' => json_encode( $mocked_response_body )
+			'body' => json_encode( $mocked_response_body ),
 		];
 
 		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
@@ -1807,11 +1807,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 
 		$expected_time_per_doc = $mocked_response_body['took'] / count( $mocked_response_body['items'] );
-		$statsd_mock->expects( $this->exactly(2) )
+		$statsd_mock->expects( $this->exactly( 2 ) )
 			->method( 'timing' )
 			->withConsecutive(
 				[ "$stats_prefix.engine", $expected_time_per_doc ],
-				[ "$stats_prefix.total", $this->greaterThan(0) ]
+				[ "$stats_prefix.total", $this->greaterThan( 0 ) ]
 			);
 
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
