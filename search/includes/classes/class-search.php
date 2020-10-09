@@ -356,7 +356,7 @@ class Search {
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
-		$is_per_doc_metric = strpos( $statsd_mode, 'per_doc' ) !== false;
+		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		$start_time = microtime( true );
@@ -387,14 +387,17 @@ class Search {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
 
-			$divider = 1;
-			if ( $is_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
-				$divider = count( $response_body['items'] );
-			}
+
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
-				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] / $divider );
+				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
 			}
-			$this->statsd->timing( $statsd_prefix . '.total', $duration / $divider );
+			$this->statsd->timing( $statsd_prefix . '.total', $duration  );
+
+			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
+				$doc_count = count( $response_body['items'] );
+				$statsd_per_doc = $this->get_statsd_prefix( $query['url'], $statsd_mode . '_per_doc' );
+				$this->statsd->timing( $statsd_per_doc, $duration / $doc_count );
+			}
 
 			$response_code = (int) wp_remote_retrieve_response_code( $response );
 
@@ -860,7 +863,7 @@ class Search {
 			}
 
 			if ( 'put' === $method ) {
-				return 'partial_index';
+				return 'index';
 			}
 		}
 
@@ -872,26 +875,34 @@ class Search {
 		// Creating new docs
 		if ( '_create' === $path[ count( $path ) - 2 ] ) {
 			if ( 'put' === $method || 'post' === $method ) {
-				return 'partial_index';
+				return 'index';
 			}
 		}
 
 		if ( '_doc' === end( $path ) && 'post' === $method ) {
-			return 'partial_index';
+			return 'index';
 		}
 
 		// Updating existing doc (supports partial update)
 		if ( '_update' === $path[ count( $path ) - 2 ] ) {
-			return 'partial_index';
+			return 'index';
 		}
 
 		// Bulk indexing
-		if ( '_bulk' === end( $path ) ) {
-			return 'index_per_doc';
+		if ( $this->is_bulk_url( $url ) ) {
+			return 'index';
 		}
 
 		// Unknown
 		return 'other';
+	}
+
+	public function is_bulk_url(string $url) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', $parsed['path'] );
+
+		return '_bulk' === end( $path );
 	}
 
 	/**

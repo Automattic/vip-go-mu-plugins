@@ -875,44 +875,44 @@ class Search_Test extends \WP_UnitTestCase {
 			array(
 				'https://host/index-name/_doc/12345',
 				'put',
-				'partial_index',
+				'index',
 			),
 			array(
 				'https://host/index-name/_doc',
 				'post',
-				'partial_index',
+				'index',
 			),
 			array(
 				'https://host/index-name/_create/12345',
 				'post',
-				'partial_index',
+				'index',
 			),
 			array(
 				'https://host/index-name/_create/12345',
 				'put',
-				'partial_index',
+				'index',
 			),
 			array(
 				'https://host/index-name/_update/12345',
 				'post',
-				'partial_index',
+				'index',
 			),
 
 			// Bulk indexing
 			array(
 				'https://host/_bulk',
 				'post',
-				'index_per_doc',
+				'index',
 			),
 			array(
 				'https://host/index-name/_bulk',
 				'post',
-				'index_per_doc',
+				'index',
 			),
 			array(
 				'https://host/index-name/_bulk?foo=bar',
 				'post',
-				'index_per_doc',
+				'index',
 			),
 		);
 	}
@@ -1750,40 +1750,42 @@ class Search_Test extends \WP_UnitTestCase {
 		$query = [ 'url' => 'https://foo.bar' ];
 		$args = [];
 		$stats_prefix = 'foo';
+		$mocked_response_body = [
+			'took' => 100,
+		];
+		$mocked_response = [
+			'body' => json_encode( $mocked_response_body ),
+		];
 
 		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
 
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix' ] )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
 			->getMock();
 		$partially_mocked_search->method( 'get_statsd_prefix' )
 			->willReturn( $stats_prefix );
 		$partially_mocked_search->statsd = $statsd_mock;
 		$partially_mocked_search->init();
 
-		$mocked_response = [];
 		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
 			->willReturn( $mocked_response );
 
-
-
-		$statsd_mock->expects( $this->once() )
+		$statsd_mock->expects( $this->exactly( 2 ) )
 			->method( 'timing' )
-			->with(
-				"$stats_prefix.total",
-				$this->greaterThan( 0 )
+			->withConsecutive(
+				[ "$stats_prefix.engine", $mocked_response_body['took'] ],
+				[ "$stats_prefix.total", $this->greaterThan( 0 ) ]
 			);
 
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_per_doc() {
-		$query = [ 'url' => 'https://foo.bar' ];
+		$query = [ 'url' => 'https://foo.bar/' ];
 		$args = [];
-		$stats_request_mode = 'index_per_doc';
 		$stats_prefix = 'foo';
+		$stats_prefix_per_doc = 'bar';
 		$mocked_response_body = [
-			'took' => 100,
 			'items' => [ [], [] ],
 		];
 		$mocked_response = [
@@ -1793,25 +1795,23 @@ class Search_Test extends \WP_UnitTestCase {
 		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
 
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix' ] )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
 			->getMock();
-		$partially_mocked_search->method( 'get_statsd_request_mode_for_request' )
-			->willReturn( $stats_request_mode );
+		$partially_mocked_search->method( 'is_bulk_url' )
+			->willReturn( true );
 		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_prefix );
+			->will( $this->onConsecutiveCalls( $stats_prefix, $stats_prefix_per_doc ) );
 		$partially_mocked_search->statsd = $statsd_mock;
 		$partially_mocked_search->init();
 
 		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
 			->willReturn( $mocked_response );
 
-
-		$expected_time_per_doc = $mocked_response_body['took'] / count( $mocked_response_body['items'] );
 		$statsd_mock->expects( $this->exactly( 2 ) )
 			->method( 'timing' )
 			->withConsecutive(
-				[ "$stats_prefix.engine", $expected_time_per_doc ],
-				[ "$stats_prefix.total", $this->greaterThan( 0 ) ]
+				[ "$stats_prefix.total", $this->greaterThan( 0 ) ],
+				[ "$stats_prefix_per_doc", $this->greaterThan( 0 ) ]
 			);
 
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
