@@ -875,44 +875,44 @@ class Search_Test extends \WP_UnitTestCase {
 			array(
 				'https://host/index-name/_doc/12345',
 				'put',
-				'index',
+				'partial_index',
 			),
 			array(
 				'https://host/index-name/_doc',
 				'post',
-				'index',
+				'partial_index',
 			),
 			array(
 				'https://host/index-name/_create/12345',
 				'post',
-				'index',
+				'partial_index',
 			),
 			array(
 				'https://host/index-name/_create/12345',
 				'put',
-				'index',
+				'partial_index',
 			),
 			array(
 				'https://host/index-name/_update/12345',
 				'post',
-				'index',
+				'partial_index',
 			),
 
 			// Bulk indexing
 			array(
 				'https://host/_bulk',
 				'post',
-				'index',
+				'index_per_post',
 			),
 			array(
 				'https://host/index-name/_bulk',
 				'post',
-				'index',
+				'index_per_post',
 			),
 			array(
 				'https://host/index-name/_bulk?foo=bar',
 				'post',
-				'index',
+				'index_per_post',
 			),
 		);
 	}
@@ -929,62 +929,6 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->search_instance->init();
 		$args = array(
 			'method' => $method,
-		);
-
-		$mode = $this->search_instance->get_statsd_request_mode_for_request( $url, $args );
-
-		$this->assertEquals( $expected_mode, $mode );
-	}
-
-	public function get_statsd_request_mode_for_request_data_and_payload() {
-		return array(
-			// Bulk indexing
-			array(
-				'https://host/_bulk',
-				'{}',
-				2,
-				'index',
-			),
-			array(
-				'https://host/index-name/_bulk',
-				'malformed',
-				2,
-				'index',
-			),
-			array(
-				'https://host/vip-200508-post-1/_bulk',
-				"{}\n{}\n\n{}\n{}\n\n",
-				2,
-				'full_index',
-			),
-			array(
-				'https://host/vip-200508-post-1/_bulk',
-				"{}\n{}\n\n{}\n{}\n\n",
-				3,
-				'index',
-			),
-		);
-	}
-
-	/**
-	 * Test that we correctly determine the full index vs partial index for a given ES url and data
-	 *
-	 * @dataProvider get_statsd_request_mode_for_request_data_and_payload()
-	 */
-	public function test_get_statsd_request_mode_for_request_and_data( $url, $body, $total_objects, $expected_mode ) {
-		$this->search_instance->init();
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-		$this->search_instance->indexables = $indexables_mock;
-
-		$indexables_mock->method( 'get_all' )->willReturn( [ $indexable_mock ] );
-
-		$indexable_mock->slug = 'post';
-		$indexable_mock->method( 'query_db' )->willReturn( [ 'total_objects' => $total_objects ] );
-
-		$args = array(
-			'method' => 'post',
-			'body' => $body,
 		);
 
 		$mode = $this->search_instance->get_statsd_request_mode_for_request( $url, $args );

@@ -864,7 +864,7 @@ class Search {
 			}
 
 			if ( 'put' === $method ) {
-				return 'index';
+				return 'partial_index';
 			}
 		}
 
@@ -876,54 +876,26 @@ class Search {
 		// Creating new docs
 		if ( '_create' === $path[ count( $path ) - 2 ] ) {
 			if ( 'put' === $method || 'post' === $method ) {
-				return 'index';
+				return 'partial_index';
 			}
 		}
 
 		if ( '_doc' === end( $path ) && 'post' === $method ) {
-			return 'index';
+			return 'partial_index';
 		}
 
 		// Updating existing doc (supports partial update)
 		if ( '_update' === $path[ count( $path ) - 2 ] ) {
-			return 'index';
+			return 'partial_index';
 		}
 
 		// Bulk indexing
 		if ( '_bulk' === end( $path ) ) {
-			return $this->is_full_index( $path, $args ) ? 'full_index' : 'index';
+			return 'index_per_post';
 		}
 
 		// Unknown
 		return 'other';
-	}
-
-	/**
-	 * From the path will parse what type of indaxable is it. From the body of the request how many documents we are indexing.
-	 *
-	 * If the number of documents matches the number of corresponding objects in DB, will return true, false otherwise.
-	 */
-	private function is_full_index( array $path, array $args ) {
-		$body = $args['body'] ?? '';
-		$body_lines = explode( "\n", $body );
-
-		if ( $body_lines && is_array( $body_lines ) ) {
-			$doc_count = floor( count( $body_lines ) / self::LINES_PER_DOCUMENT_IN_BULK_INDEX );
-			$indexable_type_path = $path[ count( $path ) - 2 ];
-
-			$all_indexables = $this->indexables->get_all();
-			foreach ( $all_indexables as $indexable ) {
-				if ( strpos( $indexable_type_path, $indexable->slug ) !== false ) {
-					$indexable_db_result = $indexable->query_db( array() );
-					$total_items_db = $indexable_db_result['total_objects'];
-
-					if ( $total_items_db == $doc_count ) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
 	}
 
 	/**
