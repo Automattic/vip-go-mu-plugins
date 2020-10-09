@@ -21,7 +21,6 @@ class Search {
 	public $queue_wait_time;
 	public $queue;
 	public $statsd;
-	public $indexables;
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -82,11 +81,6 @@ class Search {
 		// StatsD - can be set explicitly for mocking purposes
 		if ( ! $this->statsd ) {
 			$this->statsd = new \Automattic\VIP\StatsD();
-		}
-
-		// Indexables - can be set explicitly init for mocking purposes
-		if ( ! $this->indexables ) {
-			$this->indexables = \ElasticPress\Indexables::factory();
 		}
 
 		/**
