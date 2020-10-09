@@ -391,12 +391,11 @@ class Search {
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
 				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
 			}
-			$this->statsd->timing( $statsd_prefix . '.total', $duration  );
+			$this->statsd->timing( $statsd_prefix . '.total', $duration );
 
 			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
 				$doc_count = count( $response_body['items'] );
-				$statsd_per_doc = $this->get_statsd_prefix( $query['url'], $statsd_mode . '_per_doc' );
-				$this->statsd->timing( $statsd_per_doc, $duration / $doc_count );
+				$this->statsd->timing( $statsd_prefix . '.per_doc', $duration / $doc_count );
 			}
 
 			$response_code = (int) wp_remote_retrieve_response_code( $response );
@@ -897,7 +896,7 @@ class Search {
 		return 'other';
 	}
 
-	public function is_bulk_url(string $url) {
+	public function is_bulk_url( string $url ) {
 		$parsed = parse_url( $url );
 
 		$path = explode( '/', $parsed['path'] );

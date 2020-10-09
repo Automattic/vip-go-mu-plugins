@@ -1800,7 +1800,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$partially_mocked_search->method( 'is_bulk_url' )
 			->willReturn( true );
 		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->will( $this->onConsecutiveCalls( $stats_prefix, $stats_prefix_per_doc ) );
+			->willReturn( $stats_prefix );
 		$partially_mocked_search->statsd = $statsd_mock;
 		$partially_mocked_search->init();
 
@@ -1811,7 +1811,7 @@ class Search_Test extends \WP_UnitTestCase {
 			->method( 'timing' )
 			->withConsecutive(
 				[ "$stats_prefix.total", $this->greaterThan( 0 ) ],
-				[ "$stats_prefix_per_doc", $this->greaterThan( 0 ) ]
+				[ "$stats_prefix.per_doc", $this->greaterThan( 0 ) ]
 			);
 
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
