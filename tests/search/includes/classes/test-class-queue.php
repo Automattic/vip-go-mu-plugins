@@ -143,8 +143,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 
 			// Now it should only exist once
-			$results = $wpdb->get_results( 
-				$wpdb->prepare( 
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object['id'],
 					$object['type']
@@ -178,15 +178,15 @@ class Queue_Test extends \WP_UnitTestCase {
 			$this->queue->queue_object( $object['id'], $object['type'] );
 			$this->queue->checkout_jobs( 10 ); // Sets it to running
 			$this->queue->set_last_index_time( $object['id'], $object['type'], $now );
-			
+
 			// Requeue the job
 			$this->queue->queue_object( $object['id'], $object['type'] );
 
 			// Since it was already running, we should now have a new queued entry with a start_time
 			// that is now() + min interval - this is the rate limit
 
-			$row = $wpdb->get_row( 
-				$wpdb->prepare( 
+			$row = $wpdb->get_row(
+				$wpdb->prepare(
 					"SELECT `start_time` FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object['id'],
 					$object['type']
@@ -234,7 +234,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		foreach ( $objects as $object ) {
 			$this->queue->queue_object( $object['id'], $object['type'] );
 		}
-			
+
 		$expected_scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
 		$jobs = $this->queue->checkout_jobs( 10 );
@@ -316,7 +316,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	public function test_delete_jobs() {
 		$this->queue->queue_object( 1, 'post' );
 		$this->queue->queue_object( 2, 'post' );
-	
+
 		$job1 = $this->queue->get_next_job_for_object( 1, 'post' );
 		$job2 = $this->queue->get_next_job_for_object( 2, 'post' );
 
@@ -458,7 +458,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$table_name = $this->queue->schema->get_table_name();
 
 		$objects = range( 10, 20 );
-		
+
 		$this->queue->queue_objects( $objects );
 
 		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -472,7 +472,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$table_name = $this->queue->schema->get_table_name();
 
 		$objects = range( 10, 20 );
-		
+
 		$this->queue->queue_objects( $objects, 'post', array( 'index_version' => 2 ) );
 
 		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE `index_version` = 2" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -598,7 +598,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	public function test_ratelimit_indexing_cache_count_should_not_exist_onload() {
 		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist prior to first function call' );
 	}
-	
+
 	/**
 	 * Ensure that the count in the cache doesn't exist if the ratelimit_indexing returns early
 	 */
@@ -630,8 +630,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
 
 		foreach ( $sync_manager->sync_queue as $object_id ) {
-			$results = $wpdb->get_results( 
-				$wpdb->prepare( 
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object_id
 				)
@@ -647,8 +647,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
 
 		foreach ( $sync_manager->sync_queue as $object_id ) {
-			$results = $wpdb->get_results( 
-				$wpdb->prepare( 
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object_id
 				)
@@ -676,8 +676,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
 
 		foreach ( $sync_manager->sync_queue as $object_id ) {
-			$results = $wpdb->get_results( 
-				$wpdb->prepare( 
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object_id
 				)
@@ -693,8 +693,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
 
 		foreach ( $sync_manager->sync_queue as $object_id ) {
-			$results = $wpdb->get_results( 
-				$wpdb->prepare( 
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
 					$object_id
 				)
@@ -702,6 +702,28 @@ class Queue_Test extends \WP_UnitTestCase {
 
 			$this->assertCount( 1, $results, "should be 0 occurrences of post id #$object_id in queue table" );
 		}
+	}
+
+	public function test__record_ratelimited_stat__records_statsd() {
+		$increment = 14;
+		$indexable_slug = 'post';
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+
+		$indexables_mock->method( 'get' )
+			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
+
+		$statsd_mock->expects( $this->once() )
+			->method( 'increment' )
+			->with( 'com.wordpress.elasticsearch.unknown.unknown.index_ratelimited', $increment );
+
+		$queue = new \Automattic\VIP\Search\Queue();
+		$queue->init();
+		$queue->statsd = $statsd_mock;
+		$queue->indexables = $indexables_mock;
+
+		$queue->record_ratelimited_stat( $increment, $indexable_slug );
 	}
 
 	/**

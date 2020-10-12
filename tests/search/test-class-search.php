@@ -1876,5 +1876,5 @@ class Search_Test extends \WP_UnitTestCase {
  * Overwriting global function so that no real remote request is called
  */
 function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
-	return Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
 }
