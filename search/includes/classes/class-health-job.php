@@ -23,9 +23,7 @@ class HealthJob {
 	 */
 	const CRON_INTERVAL = 60 * 30; // 30 minutes in seconds
 
-	const HEALTH_CHECK_DISABLED_SITES = array(
-		2341,
-	);
+	public $health_check_disabled_sites = array();
 
 	/**
 	 * Initialize the job class
@@ -106,17 +104,35 @@ class HealthJob {
 			return;
 		}
 
+		$search = \Automattic\VIP\Search\Search::instance();
+
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
-			$user_results = Health::validate_index_users_count();
+			$users_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
 
-			$this->process_results( $user_results );
+			$users_versions = $search->versioning->get_versions( $users_indexable );
+
+			foreach ( $users_versions as $version ) {
+				$user_results = Health::validate_index_users_count( array(
+					'index_version' => $version['number'],
+				) );
+
+				$this->process_results( $user_results );
+			}
 		}
 
-		$post_results = Health::validate_index_posts_count();
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$this->process_results( $post_results );
+		$posts_versions = $search->versioning->get_versions( $post_indexable );
+
+		foreach ( $posts_versions as $version ) {
+			$post_results = Health::validate_index_posts_count( array(
+				'index_version' => $version['number'],
+			) );
+
+			$this->process_results( $post_results );
+		}
 	}
 
 	/**
@@ -146,10 +162,11 @@ class HealthJob {
 			// Only alert if inconsistencies found
 			if ( isset( $result[ 'diff' ] ) && 0 !== $result[ 'diff' ] ) {
 				$message = sprintf(
-					'Index inconsistencies found for %s: (entity: %s, type: %s, DB count: %s, ES count: %s, Diff: %s)',
+					'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
 					$result[ 'entity' ],
 					$result[ 'type' ],
+					$result['index_version'],
 					$result[ 'db_total' ],
 					$result[ 'es_total' ],
 					$result[ 'diff' ]
@@ -198,7 +215,7 @@ class HealthJob {
 		}
 
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, self::HEALTH_CHECK_DISABLED_SITES, true ) ) {
+			if ( in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
 				return false;
 			}
 		}

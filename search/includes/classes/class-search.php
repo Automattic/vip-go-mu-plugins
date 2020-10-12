@@ -5,32 +5,27 @@ namespace Automattic\VIP\Search;
 use \WP_CLI;
 
 class Search {
+	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
+	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
+	// sites.
+	public const POST_META_DEFAULT_ALLOW_LIST = array();
+
+	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds.
+	private const MAX_SEARCH_LENGTH = 255;
+	private const DISABLE_POST_META_ALLOW_LIST = array();
+
 	public $healthcheck;
 	public $field_count_gauge;
 	public $queue_wait_time;
-
 	public $queue;
-	private $mirrored_wp_query_queue = array();
-	private $current_host_index = 0;
-
-	public const QUERY_COUNT_CACHE_KEY = 'query_count';
-	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
-	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip_search_enabled';
+	public $statsd;
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
-	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds 
-
-	private const MAX_SEARCH_LENGTH = 255;
-
-	private const DISABLE_POST_META_ALLOW_LIST = array(
-		2341,
-	);
-
-	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
-	// sites
-	public const POST_META_DEFAULT_ALLOW_LIST = array();
 
 	private static $_instance;
+	private $current_host_index = 0;
 
 	/**
 	 * Initialize the VIP Search plugin
@@ -83,14 +78,20 @@ class Search {
 		require_once __DIR__ . '/class-versioning.php';
 		$this->versioning = new Versioning();
 
+		// StatsD - can be set explicitly for mocking purposes
+		if ( ! $this->statsd ) {
+			$this->statsd = new \Automattic\VIP\StatsD();
+		}
+
 		/**
 		 * Load CLI commands
 		 */
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			require_once __DIR__ . '/commands/class-corecommand.php';
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
 			require_once __DIR__ . '/commands/class-versioncommand.php';
-			require_once __DIR__ . '/commands/class-corecommand.php';
+			require_once __DIR__ . '/commands/class-documentcommand.php';
 
 			// Remove elasticpress command. Need a better way.
 			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
@@ -144,7 +145,7 @@ class Search {
 
 		// Round-robin retry hosts if connection to a host fails
 		add_filter( 'ep_pre_request_host', array( $this, 'filter__ep_pre_request_host' ), PHP_INT_MAX, 4 );
-		
+
 		add_filter( 'ep_valid_response', array( $this, 'filter__ep_valid_response' ), 10, 4 );
 
 		// Allow querying while a bulk index is running
@@ -177,26 +178,20 @@ class Search {
 
 		// Better replica counts
 		add_filter( 'ep_default_index_number_of_replicas', array( $this, 'filter__ep_default_index_number_of_replicas' ) );
-	
+
 		// Date relevancy defaults. Taken from Jetpack Search.
 		// Set to 'gauss'
 		add_filter( 'epwr_decay_function', array( $this, 'filter__epwr_decay_function' ), 0, 3 );
-		// Set to '360d'	
+		// Set to '360d'
 		add_filter( 'epwr_scale', array( $this, 'filter__epwr_scale' ), 0, 3 );
-		// Set to .9 
+		// Set to .9
 		add_filter( 'epwr_decay', array( $this, 'filter__epwr_decay' ), 0, 3 );
 		// Set to '0d'
 		add_filter( 'epwr_offset', array( $this, 'filter__epwr_offset' ), 0, 3 );
-		// Set to 'multiply'	
+		// Set to 'multiply'
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
-
-		// For testing, mirror certain WP_Query's on certain sites
-		if ( self::is_query_mirroring_enabled() ) {
-			add_filter( 'the_posts', array( $this, 'filter__the_posts' ), 10, 2 );
-			add_action( 'shutdown', array( $this, 'action__shutdown_do_mirrored_wp_queries' ) );
-		}
 
 		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
 		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
@@ -209,9 +204,15 @@ class Search {
 
 		// Try to prevent the field limit from being set too high
 		add_filter( 'ep_total_field_limit', array( $this, 'limit_field_limit' ), PHP_INT_MAX );
-	
+
 		// Check if meta is on allow list. If not, don't re-index
 		add_filter( 'ep_skip_post_meta_sync', array( $this, 'filter__ep_skip_post_meta_sync' ), PHP_INT_MAX, 5 );
+
+		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list
+		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
+
+		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
+		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
 	}
 
 	protected function load_commands() {
@@ -219,13 +220,14 @@ class Search {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
+			WP_CLI::add_command( 'vip-search documents', __NAMESPACE__ . '\Commands\DocumentCommand' );
 			WP_CLI::add_command( 'vip-search', __NAMESPACE__ . '\Commands\CoreCommand' );
 		}
 	}
 
 	protected function setup_healthchecks() {
 		$this->healthcheck = new HealthJob();
-	
+
 		// Hook into init action to ensure cron-control has already been loaded
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
 	}
@@ -273,17 +275,6 @@ class Search {
 		if ( isset( $_GET[ self::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] ) ) {
 			return;
 		}
-
-		// Temp functionality for testing phase.
-		// If this was a regular search page and VIP Search was _not_ used, and if the site is configured to do so,
-		// re-run the same query, but with `es=true`, via JS to test both systems in parallel
-		if ( is_search() && ! isset( $wp_query->elasticsearch_success ) ) {
-			$is_mirroring_enabled = self::is_query_mirroring_enabled();
-
-			if ( $is_mirroring_enabled ) {
-				add_action( 'shutdown', [ $this, 'do_mirror_search_request' ] );
-			}
-		}
 	}
 
 	public function maybe_load_es_wp_query() {
@@ -293,203 +284,37 @@ class Search {
 
 		require_once __DIR__ . '/../../es-wp-query/es-wp-query.php';
 
-		// If no other adapter has loaded, load ours. This is to prevent fatals (duplicate function/class definitions) if other
-		// adapters were somehow loaded before ours
+		// There's another adapter loaded already, this should be avoided.
+		// To fail gracefully we simply won't try to load our adapter.
+		// But we also need to surface the error.
+		if ( class_exists( '\\ES_WP_Query' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'vip-search' adapter, but another adapter is already loaded. Please disable standalone 'es-wp-query' and remove calls to 'es_wp_query_load_adapter' in your code.", null );
+		}
+
+		// If no other adapter has already been loaded, load ours.
+		// This is to prevent fatals (duplicate function/class definitions),
+		// if other adapters were somehow loaded before ours.
 		if ( ! class_exists( '\\ES_WP_Query' ) && function_exists( 'es_wp_query_load_adapter' ) ) {
 			es_wp_query_load_adapter( 'vip-search' );
 		}
 	}
 
-	public static function should_load_es_wp_query() {
-		// Don't load if plugin already loaded elsewhere
-		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
-			return false;
-		}
-
-		$mirroring_enabled = self::is_query_mirroring_enabled();
-		$integration_enabled = self::is_query_integration_enabled();
-
-		return $mirroring_enabled || $integration_enabled;
-	}
-
-	public static function is_query_mirroring_enabled() {
-		$is_enabled_by_constant = defined( 'VIP_ENABLE_SEARCH_QUERY_MIRRORING' ) && true === VIP_ENABLE_SEARCH_QUERY_MIRRORING;
-
-		$option_value = get_option( 'vip_enable_search_query_mirroring' );
-		$is_enabled_by_option = in_array( $option_value, array( true, 'true', 'yes', 1, '1' ), true );
-
-		$is_mirroring_enabled = $is_enabled_by_constant || $is_enabled_by_option;
-
-		return $is_mirroring_enabled;
-	}
-
-	public function do_mirror_search_request() {
-		fastcgi_finish_request();
-
-		$vip_search_url = home_url( add_query_arg( self::QUERY_INTEGRATION_FORCE_ENABLE_KEY, 'true' ) );
-
-		wp_remote_request( $vip_search_url, [
-			'user-agent' => sprintf( 'VIP Search Query Mirror; %s', home_url() ),
-			'blocking' => false,
-			// Shouldn't take this long but give it some breathing room.
-			// Also not necessary with blocking=>false, but just in case.
-			'timeout' => 3,
-		] );
-	}
-
 	/**
-	 * Filter that runs at the end of WP_Query, used to transparently mirror certain WP_Query's on certain sites
-	 * for testing / evaluation
+	 * Helper to determine whether to load the bundled version of `es-wp-query`:
+	 * we only need to load it if query integration enabled.
+	 *
+	 * @return boolean
 	 */
-	public function filter__the_posts( $posts, $query ) {
-		// If this query is one that should be transparently mirrored, run the mirroring
-		$should_mirror = $this->should_mirror_wp_query( $query );
-
-		if ( $should_mirror ) {
-			$this->queue_mirrored_wp_query( $query );
-		}
-
-		return $posts;
-	}
-
-	public function should_mirror_wp_query( $query ) {
-		// If this was already an ES query, don't mirror
-		if ( isset( $query->query_vars['es'] ) || isset( $query->query_vars['ep_integrate'] ) || isset( $query->query_vars['vip_search_mirrored'] ) || isset( $query->elasticsearch_success ) ) {
+	public static function should_load_es_wp_query() {
+		// Don't load if plugin already loaded elsewhere.
+		if ( class_exists( '\\ES_WP_Query_Shoehorn' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_doing_it_wrong( self::class . '::' . __FUNCTION__, "Search: tried to load 'es-wp-query', but another copy is already loaded. Please disable your copy of 'es-wp-query'.", null );
 			return false;
 		}
 
-		// If mirroring is not enabled at all, skip
-		if ( ! self::is_query_mirroring_enabled() ) {
-			return false;
-		}
-
-		// Is this one of the targeted queries?
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( 2160 === VIP_GO_APP_ID && $query->is_main_query() && ( $query->is_category() || $query->is_archive() ) ) {
-				return true;
-			}
-
-			$offload_main_tax_site_ids = array(
-				929,
-				1281,
-				1284,
-				1286,
-				1513,
-				2161,
-			);
-
-			if ( in_array( VIP_GO_APP_ID, $offload_main_tax_site_ids, true ) && $query->is_main_query() && ! $query->is_search() && ( $query->is_category() || $query->is_tax() || $query->is_tag() ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	public function queue_mirrored_wp_query( $query ) {
-		$this->mirrored_wp_query_queue[] = $query;
-	}
-
-	public function do_mirror_wp_query( $query ) {
-		$mirrored_query = $this->get_mirrored_wp_query( $query );
-
-		$statsd_mode = 'mirrored_wp_query';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = \ElasticPress\Indexables::factory()->get( 'post' )->get_index_name();
-
-		$url = $this->get_current_host();
-		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
-		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-
-		$statsd->increment( $stat );
-		$statsd->increment( $per_site_stat );
-
-		$diff = $this->diff_mirrored_wp_query_results( $query->posts, $mirrored_query->posts );
-
-		if ( ! empty( $diff ) ) {
-			$this->log_mirrored_wp_query_diff( $query, $diff );
-
-			// Record a stat for the diff
-			$statsd_mode = 'mirrored_wp_query_inconsistent';
-
-			$stat = $this->get_statsd_prefix( $url, $statsd_mode );
-			$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-			$statsd->increment( $stat );
-			$statsd->increment( $per_site_stat );
-		}
-	}
-
-	public function action__shutdown_do_mirrored_wp_queries() {
-		if ( ! self::is_query_mirroring_enabled() ) {
-			return;
-		}
-
-		if ( empty( $this->mirrored_wp_query_queue ) || ! is_array( $this->mirrored_wp_query_queue ) ) {
-			return;
-		}
-
-		fastcgi_finish_request();
-
-		foreach ( $this->mirrored_wp_query_queue as $query ) {
-			$this->do_mirror_wp_query( $query );
-		}
-	}
-
-	public function get_mirrored_wp_query( $query ) {
-		$mirrored_vars = $query->query_vars; // Arrays are passed by value so won't be affecting originals
-
-		// Enable ES integration
-		$mirrored_vars['es'] = true;
-
-		// Mark this as a mirrored query (passes check in filter__ep_skip_query_integration() when query integration is otherwise disabled)
-		$mirrored_vars['vip_search_mirrored'] = true;
-
-		$mirrored_query = new \WP_Query( $mirrored_vars );
-
-		return $mirrored_query;
-	}
-
-	public function diff_mirrored_wp_query_results( $original_posts, $mirrored_posts ) {
-		// Normalize
-		if ( ! is_array( $original_posts ) ) {
-			$original_posts = array();
-		}
-
-		if ( ! is_array( $mirrored_posts ) ) {
-			$mirrored_posts = array();
-		}
-		
-		$original_post_ids = wp_list_pluck( $original_posts, 'ID' );
-		$mirrored_post_ids = wp_list_pluck( $mirrored_posts, 'ID' );
-
-		$missing = array_diff( $original_post_ids, $mirrored_post_ids );
-		$extra = array_diff( $mirrored_post_ids, $original_post_ids );
-
-		if ( empty( $missing ) && empty( $extra ) ) {
-			return null;
-		}
-
-		return array(
-			'missing' => array_values( $missing ),
-			'extra' => array_values( $extra ),
-		);
-	}
-
-	public function log_mirrored_wp_query_diff( $query, $diff ) {
-		\Automattic\VIP\Logstash\log2logstash( array(
-			'severity' => 'warning',
-			'feature' => 'vip_search_wp_query_mirroring',
-			'message' => 'Inconsistent mirrored offloaded WP_Query results detected',
-			'extra' => array(
-				'query_vars' => $query->query_vars,
-				'diff' => $diff,
-				'uri' => isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null,
-			),
-		) );
+		return self::is_query_integration_enabled();
 	}
 
 	/**
@@ -530,60 +355,94 @@ class Search {
 
 		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
 
-		$statsd = new \Automattic\VIP\StatsD();
-
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
-		$statsd_index_name = $this->get_statsd_index_name_for_url( $query['url'] );
-
+		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
-		$statsd_per_site_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
 		$start_time = microtime( true );
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$request = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+		$response = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
 
 		$duration = ( $end_time - $start_time ) * 1000;
 
-		if ( is_wp_error( $request ) ) {
-			$error_messages = $request->get_error_messages();
-			
+		if ( is_wp_error( $response ) ) {
+			$error_messages = $response->get_error_messages();
+
 			foreach ( $error_messages as $error_message ) {
 				// Default stat for errors is 'error'
 				$stat = '.error';
-				// If curl error 28(timeout), the stat should be 'timeout'	
+				// If curl error 28(timeout), the stat should be 'timeout'
 				if ( $this->is_curl_timeout( $error_message ) ) {
 					$stat = '.timeout';
 				}
 
-				$statsd->increment( $statsd_prefix . $stat );
-				$statsd->increment( $statsd_per_site_prefix . $stat );
+				$this->statsd->increment( $statsd_prefix . $stat );
 			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
-			$response_body = wp_remote_retrieve_body( $request );
-			$response = json_decode( $response_body, true );
+			$response_body_json = wp_remote_retrieve_body( $response );
+			$response_body = json_decode( $response_body_json, true );
 
-			if ( $response && isset( $response['took'] ) && is_int( $response['took'] ) ) {
-				$statsd->timing( $statsd_prefix . '.engine', $response['took'] );
-				$statsd->timing( $statsd_per_site_prefix . '.engine', $response['took'] );
+
+			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
+				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
+			}
+			$this->statsd->timing( $statsd_prefix . '.total', $duration );
+
+			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
+				$doc_count = count( $response_body['items'] );
+				$this->statsd->timing( $statsd_prefix . '.per_doc', $duration / $doc_count );
 			}
 
-			$statsd->timing( $statsd_prefix . '.total', $duration );
-			$statsd->timing( $statsd_per_site_prefix . '.total', $duration );
+			$response_code = (int) wp_remote_retrieve_response_code( $response );
+
+			// Check for an error HTTP code and log the Elasticsearch error
+			if ( $response_code >= 400 ) {
+				$response_error = $response_body['error'];
+				$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+				\Automattic\VIP\Logstash\log2logstash( array(
+					'severity' => 'error',
+					'feature' => 'vip_search_query_error',
+					'message' => $error_message,
+					'extra' => array(
+						'error_type' => $response_error['type'] ?? 'Unknown error type',
+						'root_cause' => $response_error['root_cause'] ?? null,
+					),
+				) );
+			}
+
+			$response_headers = wp_remote_retrieve_headers( $response );
+
+			// Check for 'Warning' headers and log them
+			if ( isset( $response_headers['warning'] ) ) {
+				$warning_messages = $response_headers['warning'];
+				if ( ! is_array( $warning_messages ) ) {
+					$warning_messages = array( $warning_messages );
+				}
+
+				foreach ( $warning_messages as $message ) {
+					trigger_error( esc_html( $message ), \E_USER_WARNING );
+					\Automattic\VIP\Logstash\log2logstash( array(
+						'severity' => 'warning',
+						'feature' => 'vip_search_es_warning',
+						'message' => $message,
+					) );
+				}
+			}
 		}
-	
-		return $request;
+
+		return $response;
 	}
 
 	/*
 	 * Given an error message, determine if it's from curl error 28(timeout)
 	 */
 	private function is_curl_timeout( $error_message ) {
-		return false !== strpos( strtolower( $error_message ), 'curl error 28' ); 
+		return false !== strpos( strtolower( $error_message ), 'curl error 28' );
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
@@ -627,8 +486,8 @@ class Search {
 	 *
 	 * This function determines if VIP Search should take over queries (search, 'ep_integrate' => true, and 'es' => true)
 	 *
-	 * The integration can be tested at any time by setting an `es` query argument (?vip_search_enabled=true).
-	 * 
+	 * The integration can be tested at any time by setting an `es` query argument (?vip-search-enabled=true).
+	 *
 	 * When the index is ready to serve requests in production, the `VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION`
 	 * constant should be set to `true`, which will enable query integration for all requests
 	 */
@@ -661,7 +520,7 @@ class Search {
 
 	/**
 	 * Whether the site is in "network" mode, meaning subsites should be indexed into the same index
-	 * 
+	 *
 	 */
 	public static function is_network_mode() {
 		// NOTE - Not using strict equality check here so that we match EP
@@ -741,7 +600,7 @@ class Search {
 
 		// Can't use $this in static context
 		$es = self::instance();
-		
+
 		$statsd_mode = 'query_ratelimited';
 		$statsd_index_name = $indexable->get_index_name();
 
@@ -851,7 +710,7 @@ class Search {
 	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
 	 */
 	public function filter__ep_pre_request_host( $host, $failures, $path, $args ) {
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { 
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			return $host;
 		}
 
@@ -871,9 +730,9 @@ class Search {
 	 */
 	public function get_next_host( $failures ) {
 		$this->current_host_index += $failures;
-		
+
 		return $this->get_current_host();
-	} 
+	}
 
 	/**
 	 * Given a list of hosts, randomly select one for load balancing purposes.
@@ -953,7 +812,7 @@ class Search {
 
 	/**
 	 * Set the number of shards in the index settings
-	 * 
+	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
 	 */
 	public function filter__ep_default_index_number_of_shards( $shards ) {
@@ -977,7 +836,7 @@ class Search {
 
 	/**
 	 * Given an ES url, determine the "mode" of the request for stats purposes
-	 * 
+	 *
 	 * Possible modes (matching wp.com) are manage|analyze|status|langdetect|index|delete_query|get|scroll|search
 	 */
 	public function get_statsd_request_mode_for_request( $url, $args ) {
@@ -1029,12 +888,20 @@ class Search {
 		}
 
 		// Bulk indexing
-		if ( '_bulk' === end( $path ) ) {
+		if ( $this->is_bulk_url( $url ) ) {
 			return 'index';
 		}
 
 		// Unknown
 		return 'other';
+	}
+
+	public function is_bulk_url( string $url ) {
+		$parsed = parse_url( $url );
+
+		$path = explode( '/', $parsed['path'] );
+
+		return '_bulk' === end( $path );
 	}
 
 	/**
@@ -1128,7 +995,7 @@ class Search {
 			$search = $query->get( 's' );
 
 			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
-			
+
 			$query->set( 's', $truncated_search );
 		}
 	}
@@ -1146,7 +1013,7 @@ class Search {
 	public function filter__epwr_scale( $scale, $formatted_args, $args ) {
 		return '360d';
 	}
-	
+
 	/*
 	 * Filter for setting decay for date relevancy in ElasticPress
 	 */
@@ -1244,7 +1111,7 @@ class Search {
 		if ( \is_wp_error( $post ) || ! is_object( $post ) ) {
 			return $current_meta;
 		}
-		
+
 		$client_post_meta_allow_list = $this->get_post_meta_allow_list( $post );
 
 		// Since we're comparing result of get_post_meta(as $current_meta), we need to do an array_intersect_key since $current_meta should be an assoc array
@@ -1337,9 +1204,9 @@ class Search {
 
 		// If post meta allow list is an associative array
 		if ( array_keys( $post_meta_allow_list ) !== range( 0, count( $post_meta_allow_list ) - 1 ) ) {
-			/* 
+			/*
 			 * Filter out values not set to true since the current format of the allow list as an associative array is:
-			 * 
+			 *
 			 * array (
 			 * 		'key' => true,
 			 * );
@@ -1357,6 +1224,10 @@ class Search {
 		}
 
 		return $post_meta_allow_list;
+	}
+
+	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
+		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
 	}
 
 	/*

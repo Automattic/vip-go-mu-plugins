@@ -59,69 +59,55 @@ class API_Cache {
 	}
 
 	public function get_file( $filepath ) {
-		$file_name = basename( $filepath );
-
-		if ( isset( $this->files[ $file_name ] ) ) {
-			return $this->files[ $file_name ];
+		if ( isset( $this->files[ $filepath ] ) ) {
+			return $this->files[ $filepath ];
 		}
 
 		return false;
 	}
 
 	public function get_file_stats( $filepath ) {
-		$file_name = basename( $filepath );
-
-		if ( isset( $this->file_stats[ $file_name ] ) ) {
-			return $this->file_stats[ $file_name ];
+		if ( isset( $this->file_stats[ $filepath ] ) ) {
+			return $this->file_stats[ $filepath ];
 		}
 
 		return false;
 	}
 
 	public function cache_file( $filepath, $local_file ) {
-		$file_name = basename( $filepath );
-
-		$this->files[ $file_name ] = $local_file;
+		$this->files[ $filepath ] = $local_file;
 	}
 
 	public function cache_file_stats( $filepath, $info ) {
-		$file_name = basename( $filepath );
-
 		// This will overwrite existing stats if any
-		$this->file_stats[ $file_name ] = $info;
+		$this->file_stats[ $filepath ] = $info;
 	}
 
 	public function copy_to_cache( $dst, $src ) {
-		$file_name = basename( $dst );
-
-		if ( ! isset( $this->files[ $file_name ] ) ) {
+		if ( ! isset( $this->files[ $dst ] ) ) {
 			// create file with unique filename
 			$tmp_file = $this->create_tmp_file();
 
-			$this->files[ $file_name ] = $tmp_file;
+			$this->files[ $dst ] = $tmp_file;
 		}
 
 		// This will overwrite existing file if any
-		copy( $src, $this->files[ $file_name ] );
+		copy( $src, $this->files[ $dst ] );
 	}
 
 	public function remove_file( $filepath ) {
-		$file_name = basename( $filepath );
-
-		if ( isset( $this->files[ $file_name ] ) ) {
-			unlink( $this->files[ $file_name ] );
-			unset( $this->files[ $file_name ] );
+		if ( isset( $this->files[ $filepath ] ) ) {
+			unlink( $this->files[ $filepath ] );
+			unset( $this->files[ $filepath ] );
 		}
 
 		// Remove cached stats too if any
-		unset( $this->file_stats[ $file_name ] );
+		unset( $this->file_stats[ $filepath ] );
 	}
 
 	public function remove_stats( $filepath ) {
-		$file_name = basename( $filepath );
-
 		// Remove cached stats if any
-		unset( $this->file_stats[ $file_name ] );
+		unset( $this->file_stats[ $filepath ] );
 	}
 
 	public function create_tmp_file() {

@@ -55,6 +55,6 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 		$header = $mailer->get_sent()->header;
 
-		$this->assertRegExp( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+\n/', $header );
+		$this->assertRegExp( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 }

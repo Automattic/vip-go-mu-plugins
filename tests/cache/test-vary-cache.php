@@ -487,6 +487,21 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
+	public function test__send_vary_headers__dont_override_headers() {
+		header( 'Vary: yay' );
+
+		Vary_Cache::register_group( 'dev-group' );
+
+		do_action( 'send_headers' );
+
+		$this->assertContains( 'Vary: X-VIP-Go-Segmentation', xdebug_get_headers() );
+		$this->assertContains( 'Vary: yay', xdebug_get_headers() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__send_vary_headers__sent_for_group_with_encryption() {
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
 		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );

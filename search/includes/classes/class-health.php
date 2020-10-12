@@ -90,22 +90,41 @@ class Health {
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function validate_index_users_count() {
+	public static function validate_index_users_count( $options = array() ) {
 		$users = Indexables::factory()->get( 'user' );
+
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $users ) {
-			return new WP_Error( 'es_users_query_error', 'failure retrieving user documents from ES #vip-search' );
+			return new WP_Error( 'es_users_query_error', 'failure retrieving user indexable from ES #vip-search' );
 		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( $options['index_version'] ) {
+			$version_result = $search->versioning->set_current_version_number( $users, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$index_version = $search->versioning->get_current_version_number( $users );
 
 		$query_args = [
 			'order' => 'asc',
 		];
 
 		$result = self::validate_index_entity_count( $query_args, $users );
+
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-search', $result->get_error_message() ) );
 		}
+
+		$result['index_version'] = $index_version;
+	
+		$search->versioning->reset_current_version_number( $users );
+
 		return array( $result );
 	}
 
@@ -114,21 +133,33 @@ class Health {
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
 	 */
-	public static function validate_index_posts_count() {
+	public static function validate_index_posts_count( $options = array() ) {
 		// Get indexable objects
 		$posts = Indexables::factory()->get( 'post' );
 
 		// Indexables::factory()->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $posts ) {
-			return new WP_Error( 'es_users_query_error', 'failure retrieving post documents from ES #vip-search' );
+			return new WP_Error( 'es_users_query_error', 'failure retrieving post indexable from ES #vip-search' );
 		}
 
 		$post_types = $posts->get_indexable_post_types();
 
 		$results = [];
 
-		foreach( $post_types as $post_type ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( $options['index_version'] ) {
+			$version_result = $search->versioning->set_current_version_number( $posts, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$index_version = $search->versioning->get_current_version_number( $posts );
+
+		foreach ( $post_types as $post_type ) {
 			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
 
 			$query_args = [
@@ -144,13 +175,19 @@ class Health {
 				$result = [
 					'entity' => $posts->slug,
 					'type' => $post_type,
-					'error' => $result->get_error_message()
+					'error' => $result->get_error_message(),
+					'index_version' => $index_version,
 				];
 			}
+
+			$result['index_version'] = $index_version;
 
 			$results[] = $result;
 
 		}
+			
+		$search->versioning->reset_current_version_number( $posts );
+
 		return $results;
 	}
 
@@ -159,7 +196,7 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false ) {
+	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false, $do_not_heal = false ) {
 		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
@@ -216,6 +253,8 @@ class Health {
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
+			} elseif ( count( $result ) && ! $do_not_heal ) {
+					self::reconcile_diff( $result );
 			}
 
 			$results = array_merge( $results, $result );
@@ -239,8 +278,11 @@ class Health {
 				$last_post_id = self::get_last_post_id();
 			}
 
+			// Cleanup WordPress object cache to keep memory usage under control
+			vip_reset_local_object_cache();
+
 			if ( $is_cli && ! $silent ) {
-				echo sprintf( "...%s\n", empty( $result ) ? '✅' : '❌' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo sprintf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 		} while ( $start_post_id <= $last_post_id );
 
@@ -418,6 +460,29 @@ class Health {
 		}
 
 		return $diff;
+	}
+
+	/**
+	 * Iterate over an array of inconsistencies and address accordingly.
+	 *
+	 * If an object is missing from the index or inconsistent - add it to the queue for the sweep.
+	 *
+	 * If an object is missing from the DB, remove it from the index.
+	 *
+	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index|inconsistent> ].
+	 */
+	public static function reconcile_diff( array $diff ) {
+		foreach ( $diff as $key => $obj_to_reconcile ) {
+			switch ( $obj_to_reconcile['issue'] ) {
+				case 'missing_from_index':
+				case 'inconsistent':
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					break;
+				case 'extra_in_index':
+					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );
+					break;
+			}
+		}
 	}
 
 	public static function get_last_post_id() {

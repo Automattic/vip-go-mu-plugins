@@ -3,6 +3,27 @@
 namespace Automattic\VIP\Search;
 
 class Queue_Test extends \WP_UnitTestCase {
+	/**
+	* Make tests run in separate processes since we're testing state
+	* related to plugin init, including various constants.
+	*/
+	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+
+	public static function setUpBeforeClass() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+
+		require_once __DIR__ . '/../../../../search/search.php';
+
+		\Automattic\VIP\Search\Search::instance();
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
+	}
+
 	public function setUp() {
 		global $wpdb;
 
@@ -21,6 +42,80 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->schema->prepare_table();
 
 		$this->queue->empty_queue();
+	}
+
+	public function get_index_version_number_from_options_data() {
+		return array(
+			// Specified in options
+			array(
+				// Object type
+				'post',
+				// Options
+				array(
+					'index_version' => 2,
+				),
+				// Expected
+				2,
+			),
+
+			// Not specified, defaults to current index version
+			array(
+				// Object type
+				'post',
+				// Options
+				array(),
+				// Expected
+				1,
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_index_version_number_from_options_data
+	 */
+	public function test_get_index_version_number_from_options( $object_type, $options, $expected_version_number ) {
+		$version_number = $this->queue->get_index_version_number_from_options( $object_type, $options );
+
+		$this->assertEquals( $expected_version_number, $version_number );
+	}
+
+	public function get_last_index_time_cache_key_data() {
+		return array(
+			// Index version specified in options
+			array(
+				// Object id
+				1,
+				// Object type
+				'post',
+				// Options
+				array(
+					'index_version' => 2,
+				),
+				// Expected
+				'post-1-v2',
+			),
+
+			// Index version not specified, defaults to current index version
+			array(
+				// Object id
+				9999,
+				// Object type
+				'post',
+				// Options
+				array(),
+				// Expected
+				'post-9999-v1',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_last_index_time_cache_key_data
+	 */
+	public function test_get_last_index_time_cache_key( $object_id, $object_type, $options, $expected_cache_key ) {
+		$cache_key = $this->queue->get_last_index_time_cache_key( $object_id, $object_type, $options );
+
+		$this->assertEquals( $expected_cache_key, $cache_key );
 	}
 
 	public function test_deduplication_of_repeat_indexing() {
@@ -155,7 +250,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		// Should not have received post 1, because it is currently running, then scheduled again for the future
 		$expected_object_ids = array( 2, 3, 1000 );
 
-		$this->assertEquals( $expected_object_ids, $object_ids );
+		$this->assertEquals( $expected_object_ids, $object_ids, 'Checked out jobs ids do not match what was expected' );
 
 		// And each of those should be now marked as "running"
 		$ids_escaped = array_map( 'esc_sql', $expected_object_ids );
@@ -272,6 +367,18 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 2, $count );
 	}
 
+	public function test_count_jobs_by_version() {
+		$this->queue->queue_object( 1, 'post', array( 'index_version' => 2 ) );
+		$this->queue->queue_object( 2, 'post', array( 'index_version' => 2 ) );
+		$this->queue->queue_object( 3, 'post', array( 'index_version' => 1 ) );
+
+		$count_default = $this->queue->count_jobs( 'queued', 'post' );
+		$count_version_2 = $this->queue->count_jobs( 'queued', 'post', array( 'index_version' => 2 ) );
+
+		$this->assertEquals( 1, $count_default, 'Wrong count for default index version' );
+		$this->assertEquals( 2, $count_version_2, 'Wrong count for index version 2' );
+	}
+
 	public function test_get_next_job_for_object() {
 		$this->queue->queue_object( 1, 'post' );
 
@@ -281,6 +388,20 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'post', $job->object_type );
 		$this->assertEquals( 'queued', $job->status );
 		$this->assertEquals( null, $job->start_time );
+	}
+
+	public function test_get_next_job_for_object_with_version() {
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->queue_object( 1, 'post', array( 'index_version' => 2 ) );
+
+		$job = $this->queue->get_next_job_for_object( 1, 'post', array( 'index_version' => 2 ) );
+
+		$this->assertEquals( 2, $job->job_id );
+		$this->assertEquals( 1, $job->object_id );
+		$this->assertEquals( 'post', $job->object_type );
+		$this->assertEquals( 'queued', $job->status );
+		$this->assertEquals( null, $job->start_time );
+		$this->assertEquals( 2, $job->index_version );
 	}
 
 	public function test_process_jobs() {
@@ -341,6 +462,20 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->queue_objects( $objects );
 
 		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
+	}
+
+	public function test_queue_objects_with_specific_index_version() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = range( 10, 20 );
+		
+		$this->queue->queue_objects( $objects, 'post', array( 'index_version' => 2 ) );
+
+		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE `index_version` = 2" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
 	}
@@ -646,6 +781,208 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 13, $this->queue->count_jobs( 'all', 'all' ), 'total queue size should be 13' );
 		$this->assertEquals( 3, $this->queue->count_jobs( 'all', 'random object type' ), "queue size for 'random object type' should be 3" );
+	}
+
+	public function organize_jobs_by_index_version_and_type_data() {
+		return array(
+			array(
+				// Input
+				array(
+					(object) array(
+						'object_id' => 1,
+						'object_type' => 'post',
+						'index_version' => 1,
+					),
+					(object) array(
+						'object_id' => 2,
+						'object_type' => 'post',
+						'index_version' => 1,
+					),
+					(object) array(
+						'object_id' => 3,
+						'object_type' => 'post',
+						'index_version' => 2,
+					),
+					(object) array(
+						'object_id' => 4,
+						'object_type' => 'post',
+						'index_version' => 2,
+					),
+					(object) array(
+						'object_id' => 1,
+						'object_type' => 'user',
+						'index_version' => 1,
+					),
+					(object) array(
+						'object_id' => 2,
+						'object_type' => 'user',
+						'index_version' => 2,
+					),
+				),
+				// Expected
+				array(
+					1 => array(
+						'post' => array(
+							(object) array(
+								'object_id' => 1,
+								'object_type' => 'post',
+								'index_version' => 1,
+							),
+							(object) array(
+								'object_id' => 2,
+								'object_type' => 'post',
+								'index_version' => 1,
+							),
+						),
+						'user' => array(
+							(object) array(
+								'object_id' => 1,
+								'object_type' => 'user',
+								'index_version' => 1,
+							),
+						),
+					),
+					2 => array(
+						'post' => array(
+							(object) array(
+								'object_id' => 3,
+								'object_type' => 'post',
+								'index_version' => 2,
+							),
+							(object) array(
+								'object_id' => 4,
+								'object_type' => 'post',
+								'index_version' => 2,
+							),
+						),
+						'user' => array(
+							(object) array(
+								'object_id' => 2,
+								'object_type' => 'user',
+								'index_version' => 2,
+							),
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider organize_jobs_by_index_version_and_type_data
+	 */
+	public function test_organize_jobs_by_index_version_and_type( $input, $expected ) {
+		$organized = $this->queue->organize_jobs_by_index_version_and_type( $input );
+
+		$this->assertEquals( $expected, $organized );
+	}
+
+	public function test__delete_jobs_for_index_version() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$objects = array(
+			array(
+				'id' => 1,
+				'type' => 'post',
+				'version' => 1,
+			),
+			array(
+				'id' => 2,
+				'type' => 'post',
+				'version' => 1,
+			),
+			array(
+				'id' => 3,
+				'type' => 'post',
+				'version' => 2,
+			),
+			array(
+				'id' => 4,
+				'type' => 'post',
+				'version' => 3,
+			),
+		);
+
+		foreach ( $objects as $object ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO $table_name ( `object_id`, `object_type`, `status`, `index_version`, `queued_time` ) VALUES ( %d, %s, %s, %d, %s )", // @codingStandardsIgnoreLine
+					$object['id'],
+					$object['type'],
+					'queued',
+					$object['version'],
+					'2020-10-31 00:00:00'
+				)
+			);
+		}
+
+		$this->queue->delete_jobs_for_index_version( 'post', 2 );
+
+		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' ); // @codingStandardsIgnoreLine
+
+		$this->assertEquals(
+			array(
+				array(
+					'job_id' => '1',
+					'object_id' => '1',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '1',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+				array(
+					'job_id' => '2',
+					'object_id' => '2',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '1',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+				array(
+					'job_id' => '4',
+					'object_id' => '4',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '3',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+			),
+			$results,
+			'should match what you\'d expect from deleting index version 2'
+		);
+
+		$this->queue->delete_jobs_for_index_version( 'post', 1 );
+
+		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' ); // @codingStandardsIgnoreLine
+
+		$this->assertEquals(
+			array(
+				array(
+					'job_id' => '4',
+					'object_id' => '4',
+					'object_type' => 'post',
+					'priority' => '5',
+					'start_time' => null,
+					'status' => 'queued',
+					'index_version' => '3',
+					'queued_time' => '2020-10-31 00:00:00',
+					'scheduled_time' => null,
+				),
+			),
+			$results,
+			'should match what you\'d expect from deleting index version 1 and index version 2'
+		);
 	}
 
 	/**

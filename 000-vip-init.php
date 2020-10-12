@@ -151,6 +151,9 @@ if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
 
+// Feature flags
+require_once( __DIR__ . '/lib/feature/class-feature.php' );
+
 // Logging
 require_once( __DIR__ . '/logstash/logstash.php' );
 require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
@@ -198,6 +201,30 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	}
 }
 
+// Set WordPress environment type
+// Map some VIP environments to 'production' and 'development', and use 'staging' for any other
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+	switch ( VIP_GO_APP_ENVIRONMENT ) {
+		case 'production':
+			$environment_type = 'production';
+			break;
+		case 'develop':
+		case 'development':
+			$environment_type = 'development';
+			break;
+		default:
+			$environment_type = 'staging';
+			break;
+	}
+
+	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
+
+	// VIP sites should not be set as staging in Jetpack
+	// since it breaks SSO and prevents data from being passed to
+	// WordPress.com 
+	add_filter( 'jetpack_is_staging_site', '__return_false' );
+}
+
 // Load config related helpers
 require_once( __DIR__ . '/config/class-sync.php' );
 
@@ -224,5 +251,10 @@ add_filter( 'wp_headers', function( $headers ) {
 
 	return $headers;
 } );
+
+// Disable core sitemaps
+//
+// https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
+add_filter( 'wp_sitemaps_enabled', '__return_false' );
 
 do_action( 'vip_loaded' );
