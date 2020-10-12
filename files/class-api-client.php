@@ -203,7 +203,7 @@ class API_Client {
 
 	public function delete_file( $file_path ) {
 		$response = $this->call_api( $file_path, 'DELETE', [
-			'timeout' => 2,
+			'timeout' => 5,
 		] );
 
 		if ( is_wp_error( $response ) ) {
