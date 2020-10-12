@@ -10,10 +10,16 @@ class Search_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = FALSE;
 	protected $runTestInSeparateProcess = TRUE;
 
+	public static $mock_global_functions;
+
 	public function setUp() {
 		require_once __DIR__ . '/../../search/search.php';
 
 		$this->search_instance = new \Automattic\VIP\Search\Search();
+
+		self::$mock_global_functions = $this->getMockBuilder( self::class )
+			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
+			->getMock();
 	}
 
 	public function test_query_es_with_invalid_type() {
@@ -130,9 +136,9 @@ class Search_Test extends \WP_UnitTestCase {
 	 * Test `ep_index_name` filter with versioning
 	 *
 	 * When current version is 1, the index name should not have a version applied to it
-	 * 
+	 *
 	 * @dataProvider vip_search_filter_ep_index_name_with_versions_data
-	 * 
+	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
@@ -241,7 +247,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that given an EP Feature slug, that feature is always disabled
-	 * 
+	 *
 	 * @dataProvider vip_search_enforces_disabled_features_data
 	 */
 	public function test__vip_search_enforces_disabled_features( $slug ) {
@@ -311,7 +317,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that the ES config constants are _not_ set automatically when already defined and VIP-provided configs are present
-	 * 
+	 *
 	 */
 	public function test__vip_search_connection_constants_with_overrides() {
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
@@ -484,7 +490,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that we correctly calculate the HTTP request timeout value for ES requests
-	 * 
+	 *
 	 * @dataProvider vip_search_get_http_timeout_for_query_data()
 	 */
 	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
@@ -534,8 +540,8 @@ class Search_Test extends \WP_UnitTestCase {
 		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
 		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
 
-		define( 
-			'VIP_ELASTICSEARCH_ENDPOINTS', 
+		define(
+			'VIP_ELASTICSEARCH_ENDPOINTS',
 			array(
 				'endpoint1',
 				'endpoint2',
@@ -543,7 +549,7 @@ class Search_Test extends \WP_UnitTestCase {
 				'endpoint4',
 				'endpoint5',
 				'endpoint6',
-			) 
+			)
 		);
 
 		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
@@ -556,7 +562,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__vip_search_filter__ep_pre_request_host_empty_endpoint() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-		
+
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array() );
 
 		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
@@ -568,9 +574,9 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__vip_search_filter__ep_pre_request_host_endpoint_not_array() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-		
+
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
-	
+
 		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
 	}
 
@@ -595,7 +601,7 @@ class Search_Test extends \WP_UnitTestCase {
 			array(
 				'test0',
 				'test1',
-				'test2', 
+				'test2',
 				'test3',
 			)
 		);
@@ -613,7 +619,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$hosts = array(
 			'test0',
 			'test1',
-			'test2', 
+			'test2',
 			'test3',
 		);
 		$es = new \Automattic\VIP\Search\Search();
@@ -629,15 +635,15 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-		
+
 		$_GET['ep_debug'] = true;
-		
+
 		apply_filters( 'ep_valid_response', array(), array(), array(), array(), null );
-		
+
 		do_action( 'send_headers' );
 
 		unset( $_GET['ep_debug'] );
-		
+
 		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
 	}
 
@@ -720,7 +726,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that our active modules filter works as expected
-	 * 
+	 *
 	 * @dataProvider vip_search_filter__jetpack_active_modules
 	 */
 	public function test__vip_search_filter__jetpack_active_modules( $input, $expected ) {
@@ -775,7 +781,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that the widgets filter works as expected
-	 * 
+	 *
 	 * @dataProvider vip_search_filter__jetpack_widgets_to_include_data
 	 */
 	public function test__vip_search_filter__jetpack_widgets_to_include( $input, $expected ) {
@@ -914,12 +920,13 @@ class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * Test that we correctly determine the right stat (referred to as "mode" on wpcom)
 	 * for a given ES url
-	 * 
+	 *
 	 * manage|analyze|status|langdetect|index|delete_query|get|scroll|search
-	 * 
+	 *
 	 * @dataProvider get_statsd_request_mode_for_request_data()
 	 */
 	public function test_get_statsd_request_mode_for_request( $url, $method, $expected_mode ) {
+		$this->search_instance->init();
 		$args = array(
 			'method' => $method,
 		);
@@ -963,7 +970,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test that we correctly determine the index name from an ES API url for stats purposes
-	 * 
+	 *
 	 * @dataProvider get_statsd_index_name_for_url_data()
 	 */
 	public function test_get_statsd_index_name_for_url( $url, $expected_index_name ) {
@@ -1096,7 +1103,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 */
 	public function test__is_query_integration_enabled_via_option() {
 		update_option( 'vip_enable_vip_search_query_integration', true );
-	
+
 		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
 
 		delete_option( 'vip_enable_vip_search_query_integration' );
@@ -1172,7 +1179,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__ep_skip_query_integration_filter() {
 		// Set constants to enable query integration
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-		
+
 		// We pass in `true` as the starting value for the filter, indicating it should be skipped. We expect that `true` comes back out,
 		// even though query integration is enabled, which indicates that we're properly respecting other filters that have already decided
 		// this query should be skipped
@@ -1316,7 +1323,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__ep_total_field_limit_should_limit_total_fields() {
 		// Don't trigger an error since it's expected
 		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
-	
+
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -1327,7 +1334,7 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) ); 
+		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) );
 	}
 
 	/**
@@ -1469,7 +1476,7 @@ class Search_Test extends \WP_UnitTestCase {
 		// Should now not include the removed taxonomies
 		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
 	}
-	
+
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -1739,6 +1746,77 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ), array( 'different', 'stuff' ) );
 	}
 
+	public function test__filter__ep_do_intercept_request__records_statsd() {
+		$query = [ 'url' => 'https://foo.bar' ];
+		$args = [];
+		$stats_prefix = 'foo';
+		$mocked_response_body = [
+			'took' => 100,
+		];
+		$mocked_response = [
+			'body' => json_encode( $mocked_response_body ),
+		];
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
+			->getMock();
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_prefix );
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->init();
+
+		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $mocked_response );
+
+		$statsd_mock->expects( $this->exactly( 2 ) )
+			->method( 'timing' )
+			->withConsecutive(
+				[ "$stats_prefix.engine", $mocked_response_body['took'] ],
+				[ "$stats_prefix.total", $this->greaterThan( 0 ) ]
+			);
+
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+	}
+
+	public function test__filter__ep_do_intercept_request__records_statsd_per_doc() {
+		$query = [ 'url' => 'https://foo.bar/' ];
+		$args = [];
+		$stats_prefix = 'foo';
+		$stats_prefix_per_doc = 'bar';
+		$mocked_response_body = [
+			'items' => [ [], [] ],
+		];
+		$mocked_response = [
+			'body' => json_encode( $mocked_response_body ),
+		];
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
+			->getMock();
+		$partially_mocked_search->method( 'is_bulk_url' )
+			->willReturn( true );
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_prefix );
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->init();
+
+		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $mocked_response );
+
+		$statsd_mock->expects( $this->exactly( 2 ) )
+			->method( 'timing' )
+			->withConsecutive(
+				[ "$stats_prefix.total", $this->greaterThan( 0 ) ],
+				[ "$stats_prefix.per_doc", $this->greaterThan( 0 ) ]
+			);
+
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
@@ -1760,4 +1838,15 @@ class Search_Test extends \WP_UnitTestCase {
 
 		return $property;
 	}
+
+	public function mock_vip_safe_wp_remote_request() {
+
+	}
+}
+
+/**
+ * Overwriting global function so that no real remote request is called
+ */
+function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
+	return Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
 }
