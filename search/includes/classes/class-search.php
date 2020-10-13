@@ -16,7 +16,8 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
-	private const STALE_QUEUE_ALERT_SLACK_CHAT = '#vip-platform-cantina';
+	private const STALE_QUEUE_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	private const STALE_QUEUE_ALERT_LEVEL = 2; // Level 2 = 'alert'
 
 	public $healthcheck;
 	public $field_count_gauge;
@@ -644,7 +645,7 @@ class Search {
 				home_url(),
 				$average_wait_time
 			);
-			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message );
+			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message, self::STALE_QUEUE_ALERT_LEVEL );
 		}
 	}
 

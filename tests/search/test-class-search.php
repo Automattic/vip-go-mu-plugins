@@ -1823,6 +1823,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$application_url = 'http://example.org';
 		$average_queue_value = 3601;
 		$expected_message = "Average index queue wait time for application $application_id - $application_url is currently $average_queue_value seconds";
+		$expected_level = 2;
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
@@ -1842,7 +1843,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$alerts_mocked->expects( $this->once() )
 			->method( 'send_to_chat' )
-			->with( '#vip-platform-cantina', $expected_message );
+			->with( '#vip-go-es-alerts', $expected_message, $expected_level );
 
 		$es->maybe_alert_for_average_queue_time();
 	}
