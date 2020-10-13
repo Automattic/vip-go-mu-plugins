@@ -15,12 +15,16 @@ class Search {
 	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds.
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
+	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
+	private const STALE_QUEUE_ALERT_SLACK_CHAT = '#vip-platform-cantina';
 
 	public $healthcheck;
 	public $field_count_gauge;
 	public $queue_wait_time;
 	public $queue;
 	public $statsd;
+	public $indexables;
+	public $alerts;
 	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
 	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -81,6 +85,16 @@ class Search {
 		// StatsD - can be set explicitly for mocking purposes
 		if ( ! $this->statsd ) {
 			$this->statsd = new \Automattic\VIP\StatsD();
+		}
+
+		// Indexables - can be set explicitly for mocking purposes
+		if ( ! $this->indexables ) {
+			$this->indexables = \ElasticPress\Indexables::factory();
+		}
+
+		// Alerts - can be set explicitly for mocking purposes
+		if ( ! $this->alerts ) {
+			$this->alerts = \Automattic\VIP\Utils\Alerts::instance();
 		}
 
 		/**
@@ -614,8 +628,8 @@ class Search {
 		$statsd->increment( $per_site_stat );
 	}
 
-	public function set_queue_wait_time_gauge() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+	public function maybe_alert_for_average_queue_time() {
+		$indexable = $this->indexables->get( 'post' );
 
 		if ( ! $indexable ) {
 			return;
@@ -623,15 +637,15 @@ class Search {
 
 		$average_wait_time = $this->queue->get_average_queue_wait_time();
 
-		$statsd_mode = 'queue_wait_time';
-		$statsd_index_name = $indexable->get_index_name();
-
-		$url = $this->get_current_host();
-		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-
-		$statsd->gauge( $per_site_stat, $average_wait_time );
+		if ( $average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
+			$message = sprintf(
+				'Average index queue time for application %d, exceeded %d seconds with %d seconds',
+				FILES_CLIENT_SITE_ID,
+				self::STALE_QUEUE_WAIT_LIMIT,
+				$average_wait_time
+			);
+			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message );
+		}
 	}
 
 	/**

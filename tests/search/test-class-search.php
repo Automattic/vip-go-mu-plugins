@@ -1817,6 +1817,36 @@ class Search_Test extends \WP_UnitTestCase {
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
 	}
 
+
+	public function test__maybe_alert_for_average_queue_time__sends_notification() {
+		$application_id = 123;
+		$stale_queue_value_limit = 3600; // 1 hour
+		$average_queue_value = 3601;
+		$expected_message = "Average index queue time for application $application_id, exceeded $stale_queue_value_limit seconds with $average_queue_value seconds";
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+		$queue_mocked = $this->createMock( \Automattic\VIP\Search\Queue::class );
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+
+		$es->queue = $queue_mocked;
+		$es->indexables = $indexables_mock;
+		$es->alerts = $alerts_mocked;
+
+		$indexables_mock->method( 'get' )
+			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
+
+		$queue_mocked->method( 'get_average_queue_wait_time' )->willReturn( $average_queue_value );
+
+		$alerts_mocked->expects( $this->once() )
+			->method( 'send_to_chat' )
+			->with( '#vip-platform-cantina', $expected_message );
+
+		$es->maybe_alert_for_average_queue_time();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
