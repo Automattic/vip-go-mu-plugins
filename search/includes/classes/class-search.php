@@ -384,6 +384,8 @@ class Search {
 
 		$duration = ( $end_time - $start_time ) * 1000;
 
+		$this->statsd->increment( $statsd_prefix . '.total' );
+
 		if ( is_wp_error( $response ) ) {
 			$error_messages = $response->get_error_messages();
 
