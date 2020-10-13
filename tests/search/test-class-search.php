@@ -1820,9 +1820,9 @@ class Search_Test extends \WP_UnitTestCase {
 
 	public function test__maybe_alert_for_average_queue_time__sends_notification() {
 		$application_id = 123;
-		$stale_queue_value_limit = 3600; // 1 hour
+		$application_url = 'http://example.org';
 		$average_queue_value = 3601;
-		$expected_message = "Average index queue time for application $application_id, exceeded $stale_queue_value_limit seconds with $average_queue_value seconds";
+		$expected_message = "Average index queue wait time for application $application_id - $application_url is currently $average_queue_value seconds";
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();

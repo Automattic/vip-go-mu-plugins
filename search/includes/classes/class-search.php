@@ -639,9 +639,9 @@ class Search {
 
 		if ( $average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
 			$message = sprintf(
-				'Average index queue time for application %d, exceeded %d seconds with %d seconds',
+				'Average index queue wait time for application %d - %s is currently %d seconds',
 				FILES_CLIENT_SITE_ID,
-				self::STALE_QUEUE_WAIT_LIMIT,
+				home_url(),
 				$average_wait_time
 			);
 			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message );
