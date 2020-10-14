@@ -167,8 +167,6 @@ class Queue {
 		foreach ( $object_ids as $object_id ) {
 			$this->queue_object( $object_id, $object_type, $options );
 		}
-
-		$this->record_added_to_queue_stat( count( $object_ids ), $object_type );
 	}
 
 	/**
@@ -530,10 +528,6 @@ class Queue {
 				// Mark them as done in queue
 				$this->delete_jobs( $jobs );
 
-				$this->record_processed_from_queue_stat( count( $ids ), $indexable );
-
-				$this->record_queue_count_stat( $indexable );
-
 				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
 			}
 		}
@@ -563,78 +557,6 @@ class Queue {
 		}
 
 		return $organized;
-	}
-
-	public function record_processed_from_queue_stat( $count, $indexable ) {
-		if ( ! $indexable ) {
-			return;
-		}
-
-		if ( ! is_int( $count ) ) {
-			$count = intval( $count );
-		}
-
-		$statsd_mode = 'processed_from_queue';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url = $es->get_current_host();
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
-	}
-
-	public function record_queue_count_stat( $indexable ) {
-		if ( ! $indexable ) {
-			return;
-		}
-
-		$statsd_mode = 'queue_size';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url = $es->get_current_host();
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$count = $this->count_jobs( 'all', $indexable->slug );
-
-		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->gauge( $per_site_stat, $count );
-	}
-
-	public function record_added_to_queue_stat( $count, $object_type ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
-
-		if ( ! $indexable ) {
-			return;
-		}
-
-		if ( ! is_int( $count ) ) {
-			$count = intval( $count );
-		}
-
-		$statsd_mode = 'added_to_queue';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url = $es->get_current_host();
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	/**

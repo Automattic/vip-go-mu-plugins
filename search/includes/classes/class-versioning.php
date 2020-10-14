@@ -13,7 +13,7 @@ class Versioning {
 	 * The maximum number of index versions that can exist for any indexable.
 	 */
 	const MAX_NUMBER_OF_VERSIONS = 2;
-	
+
 	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
@@ -34,7 +34,7 @@ class Versioning {
 		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
 		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
 		add_action( 'shutdown', [ $this, 'action__shutdown' ], 100 ); // Must always run _after_ EP's own shutdown hooks, so that pre_ep_index_sync_queue has fired
-		
+
 		// When objects are indexed normally, they go into the EP "sync_queue", which we need to replicate out to the non-active index versions
 		// NOTE - the priority is very important, and must come _after_ the Queue class's pre_ep_index_sync_queue hook, so we don't duplicate effort (to allow
 		// the Queue to take over EP's queue, at which point we don't need to insert them here, as they are handled during Queue::queue_object())
@@ -47,7 +47,7 @@ class Versioning {
 		// Hook into the delete action of all known indexables, to replicate those deletes out to all inactive index versions
 		// NOTE - runs on plugins_loaded so Indexables are properly registered beforehand
 		$all_indexables = \ElasticPress\Indexables::factory()->get_all();
-		
+
 		foreach ( $all_indexables as $indexable ) {
 			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
 		}
@@ -56,7 +56,7 @@ class Versioning {
 	/**
 	 * Set the current (not active) version for a given Indexable. This allows us to work on other index versions without making
 	 * that index active
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to temporarily set the current index version
 	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
@@ -82,7 +82,7 @@ class Versioning {
 
 	/**
 	 * Reset the current version for a given Indexable. This will default back to the active index, with no override
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to reset the current index version
 	 * @return bool|WP_Error True on success
 	 */
@@ -94,18 +94,18 @@ class Versioning {
 
 	/**
 	 * Get the current index version number
-	 * 
+	 *
 	 * The current index number is the index that should be used for requests. It is different than the active index, which is the index
 	 * that has been designated as the default for all requests. The current index can be overridden to make requests to other indexs, such as
 	 * for indexing content on them while they are still inactive
-	 * 
+	 *
 	 * This defaults to the active index, but can be overridden by calling Versioning::set_current_version_number()
-	 * 
-	 * NOTE - purposefully not adding a typehint due to a warning emitted by our very old version of PHPUnit on PHP 7.4 
+	 *
+	 * NOTE - purposefully not adding a typehint due to a warning emitted by our very old version of PHPUnit on PHP 7.4
 	 * (Function ReflectionType::__toString() is deprecated), because we mock this function, which causes __toString() to be called for params
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to get the current version number
-	 * 
+	 *
 	 * @return int The current version number
 	 */
 	public function get_current_version_number( $indexable ) {
@@ -121,7 +121,7 @@ class Versioning {
 
 	/**
 	 * Retrieve the active index version for a given Indexable
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to get the active index version
 	 * @return int The currently active index version
 	 */
@@ -141,7 +141,7 @@ class Versioning {
 
 	/**
 	 * Grab just the version number for the active version
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable to get the active version number for
 	 * @return int The currently active version number
 	 */
@@ -166,7 +166,7 @@ class Versioning {
 
 	/**
 	 * Retrieve details about available index versions
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve index versions
 	 * @return array Array of index versions
 	 */
@@ -192,9 +192,9 @@ class Versioning {
 
 	/**
 	 * Normalize the fields of a version, to handle old or incomplete data
-	 * 
+	 *
 	 * This is important to keep the data stored in the option consistent and current when changes to the structure are needed
-	 * 
+	 *
 	 * @param array The index version to normalize
 	 * @return array The index version, with all data normalized
 	 */
@@ -223,7 +223,7 @@ class Versioning {
 
 	/**
 	 * Given a version number, normalize it by translating any aliases into actual version numbers
-	 * 
+	 *
 	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
 	 */
 	public function normalize_version_number( Indexable $indexable, $version_number ) {
@@ -269,7 +269,7 @@ class Versioning {
 
 		// The next existing is the lowest index number after $active_version_number that exists, or null
 		$version_numbers = array_keys( $versions );
-		
+
 		sort( $version_numbers );
 
 		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
@@ -304,7 +304,7 @@ class Versioning {
 
 		// The previous existing is the highest index number before $active_version_number that exists, or null
 		$version_numbers = array_keys( $versions );
-		
+
 		sort( $version_numbers );
 
 		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
@@ -325,7 +325,7 @@ class Versioning {
 
 	/**
 	 * Retrieve details about a given index version
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve the index version
 	 * @return array Array of index versions
 	 */
@@ -337,7 +337,7 @@ class Versioning {
 		if ( is_wp_error( $version_number ) ) {
 			return $version_number;
 		}
-	
+
 		$versions = $this->get_versions( $indexable );
 
 		if ( ! isset( $versions[ $version_number ] ) ) {
@@ -349,13 +349,13 @@ class Versioning {
 
 	/**
 	 * Retrieve details about available index versions
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to create a new version
 	 * @return bool Boolean indicating if the new version was successfully added or not
 	 */
 	public function add_version( Indexable $indexable ) {
 		$slug = $indexable->slug;
-	
+
 		$versions = $this->get_versions( $indexable );
 
 		$new_version_number = $this->get_next_version_number( $versions );
@@ -400,7 +400,7 @@ class Versioning {
 
 	/**
 	 * Create the index in ES and put the mapping
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to create the new versioned index
 	 * @param int|string $version_number The index version number to create
 	 */
@@ -422,7 +422,7 @@ class Versioning {
 
 	/**
 	 * Save details about available index versions
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to update versions
 	 * @param array Array of version information for the given Indexable
 	 * @return bool Boolean indicating if the version information was saved successfully or not
@@ -435,7 +435,7 @@ class Versioning {
 		}
 
 		$current_versions[ $indexable->slug ] = $versions;
-	
+
 		if ( Search::is_network_mode() ) {
 			return update_site_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
 		}
@@ -445,9 +445,9 @@ class Versioning {
 
 	/**
 	 * Determine what the next index version number is, based on an array of existing index versions
-	 * 
+	 *
 	 * Versions start at 1
-	 * 
+	 *
 	 * @param array $versions Array of existing versions from which to calculate the next version
 
 	 */
@@ -470,12 +470,12 @@ class Versioning {
 
 	/**
 	 * Activate a new version of an index
-	 * 
+	 *
 	 * Verifies that the new target index does in-fact exist, then marks it as active
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
 	 * @param int|string $version_number The new index version to activate
-	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
+	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error
 	 */
 	public function activate_version( Indexable $indexable, $version_number ) {
 		$version_number = $this->normalize_version_number( $indexable, $version_number );
@@ -510,10 +510,10 @@ class Versioning {
 
 	/**
 	 * Delete the version of an index and remove the index from Elasticsearch
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
 	 * @param int|string $version_number The index version to delete
-	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error 
+	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error
 	 */
 	public function delete_version( Indexable $indexable, $version_number ) {
 		$version_number = $this->normalize_version_number( $indexable, $version_number );
@@ -542,7 +542,7 @@ class Versioning {
 		}
 
 		\Automattic\VIP\Search\Search::instance()->queue->delete_jobs_for_index_version( $indexable->slug, $version_number );
-		
+
 		unset( $versions[ $version_number ] );
 
 		return $this->update_versions( $indexable, $versions );
@@ -550,10 +550,10 @@ class Versioning {
 
 	/**
 	 * Delete the versioned index from Elasticsearch
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
 	 * @param int|string $version_number The index version to delete
-	 * @return bool Boolean indicating success or failure 
+	 * @return bool Boolean indicating success or failure
 	 */
 	public function delete_versioned_index( $indexable, $version_number ) {
 		$version_number = $this->normalize_version_number( $indexable, $version_number );
@@ -573,7 +573,7 @@ class Versioning {
 
 	/**
 	 * Get stats for a given index version, such as how many documents it contains
-	 * 
+	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to activate the new index
 	 * @param int The index version to get stats for
 	 * @return array Array of index stats
@@ -585,7 +585,7 @@ class Versioning {
 	/**
 	 * Implements the vip_search_indexing_object_queued action to keep track of queued objects so that we can transparently
 	 * replicate the queued job to the non-active index versions
-	 * 
+	 *
 	 *
 	 * @param int $object_id Object id
 	 * @param string $object_type Object type (the Indexable slug)
@@ -610,7 +610,7 @@ class Versioning {
 
 	/**
 	 * When the request finishes, find all items that had been queued up on the active index and replicate those jobs out to each non-active index version
-	 * 
+	 *
 	 * This ensures that the active index version is treated as The Truth, and non-active index versions follow it (and not the other way around)
 	 */
 	public function action__shutdown() {
@@ -620,7 +620,7 @@ class Versioning {
 	/**
 	 * Given an array of object types and the objects queued by version, replicate those jobs to the
 	 * _other_ index versions to keep them in sync
-	 * 
+	 *
 	 * @param $queued_objects Multidimensional array of queued objects, keyed first by type, then index version
 	 */
 	public function replicate_queued_objects_to_other_versions( $queued_objects ) {
@@ -668,8 +668,6 @@ class Versioning {
 					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
 				}
 
-				\Automattic\VIP\Search\Search::instance()->queue->record_added_to_queue_stat( count( $objects_by_version[ $active_version_number ] ), $indexable->slug );
-
 				$this->reset_current_version_number( $indexable );
 			}
 		}
@@ -706,7 +704,7 @@ class Versioning {
 
 	/**
 	 * When an item is deleted from an index, replicate that delete out to all other index versions
-	 * 
+	 *
 	 * NOTE - this behaves differently than action__vip_search_indexing_object_queued() because it doesn't collect
 	 * all the deletions during the request, then process them on shutdown. That would be an over optimization here
 	 * since deletes are comparatively much less frequent, so the savings of preventing back-and-forth switching between
@@ -740,7 +738,7 @@ class Versioning {
 			$this->set_current_version_number( $indexable, $version['number'] );
 
 			$indexable->delete( $object_id );
-			
+
 			$this->reset_current_version_number( $indexable );
 		}
 
