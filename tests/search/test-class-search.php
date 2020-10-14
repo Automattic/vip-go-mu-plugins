@@ -1770,6 +1770,9 @@ class Search_Test extends \WP_UnitTestCase {
 		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
 			->willReturn( $mocked_response );
 
+		$statsd_mock->expects( $this->once() )
+			->method( 'increment' )
+			->with( "$stats_prefix.total" );
 		$statsd_mock->expects( $this->exactly( 2 ) )
 			->method( 'timing' )
 			->withConsecutive(
