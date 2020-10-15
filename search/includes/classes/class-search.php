@@ -120,6 +120,7 @@ class Search {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
+		add_filter( 'ep_global_alias', [ $this, 'filter__ep_global_alias' ], PHP_INT_MAX, 2 );
 
 		// Override default per page value set in elasticpress/includes/classes/Indexable.php
 		add_filter( 'ep_bulk_items_per_page', [ $this, 'filter__ep_bulk_items_per_page' ], PHP_INT_MAX );
@@ -330,6 +331,16 @@ class Search {
 		}
 
 		return $index_name;
+	}
+
+	/**
+	 * Filter ElasticPress global index alias (for cross-subsite searching)
+	 */
+	public function filter__ep_global_alias( $alias_name, $indexable ) {
+		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
+		$alias_name = sprintf( 'vip-%s-%s-all', FILES_CLIENT_SITE_ID, $indexable->slug );
+
+		return $alias_name;
 	}
 
 	/**
