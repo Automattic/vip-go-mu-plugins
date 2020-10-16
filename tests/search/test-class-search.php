@@ -201,6 +201,19 @@ class Search_Test extends \WP_UnitTestCase {
 		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 	}
 
+	public function test__vip_search_filter__ep_global_alias() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		$alias_name = $indexable->get_network_alias();
+
+		$this->assertEquals( 'vip-123-post-all', $alias_name );
+	}
+
 	public function test__vip_search_filter_ep_default_index_number_of_shards() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
