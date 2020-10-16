@@ -26,7 +26,25 @@ class Manager {
 	const SECRETS_EXPIRED        = 'secrets_expired';
 	const SECRETS_OPTION_NAME    = 'jetpack_secrets';
 	const MAGIC_NORMAL_TOKEN_KEY = ';normal;';
-	const JETPACK_MASTER_USER    = true;
+
+	/**
+	 * Constant used to fetch the master user token. Deprecated.
+	 *
+	 * @deprecated 9.0.0
+	 * @see Manager::CONNECTION_OWNER
+	 * @var boolean
+	 */
+	const JETPACK_MASTER_USER = true; //phpcs:ignore ..Jetpack_Sniffs_MasterUserConstant.ShouldNotBeUsed
+
+	/**
+	 * For internal use only. If you need to get the connection owner, use the provided methods
+	 * get_connection_owner_id, get_connection_owner and is_get_connection_owner
+	 *
+	 * @todo Add private visibility once PHP 7.1 is the minimum supported verion.
+	 *
+	 * @var boolean
+	 */
+	const CONNECTION_OWNER = true;
 
 	/**
 	 * The procedure that should be run to generate secrets.
@@ -79,7 +97,12 @@ class Manager {
 	public static function configure() {
 		$manager = new self();
 
-		Utils::init_default_constants();
+		add_filter(
+			'jetpack_constant_default_value',
+			__NAMESPACE__ . '\Utils::jetpack_api_constant_filter',
+			10,
+			2
+		);
 
 		$manager->setup_xmlrpc_handlers(
 			$_GET, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -94,6 +117,11 @@ class Manager {
 		}
 
 		add_action( 'rest_api_init', array( $manager, 'initialize_rest_api_registration_connector' ) );
+
+		add_action( 'jetpack_clean_nonces', array( $manager, 'clean_nonces' ) );
+		if ( ! wp_next_scheduled( 'jetpack_clean_nonces' ) ) {
+			wp_schedule_event( time(), 'hourly', 'jetpack_clean_nonces' );
+		}
 
 		add_action( 'plugins_loaded', __NAMESPACE__ . '\Plugin_Storage::configure', 100 );
 
@@ -446,7 +474,7 @@ class Manager {
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		// Use up the nonce regardless of whether the signature matches.
-		if ( ! Nonce_Handler::add( $timestamp, $nonce ) ) {
+		if ( ! $this->add_nonce( $timestamp, $nonce ) ) {
 			return new \WP_Error(
 				'invalid_nonce',
 				'Could not add nonce',
@@ -494,7 +522,7 @@ class Manager {
 	 * @return Boolean is the site connected?
 	 */
 	public function is_active() {
-		return (bool) $this->get_access_token( self::JETPACK_MASTER_USER );
+		return (bool) $this->get_access_token( self::CONNECTION_OWNER );
 	}
 
 	/**
@@ -546,7 +574,7 @@ class Manager {
 	 * @return string|int Returns the ID of the connection owner or False if no connection owner found.
 	 */
 	public function get_connection_owner_id() {
-		$user_token       = $this->get_access_token( self::JETPACK_MASTER_USER );
+		$user_token       = $this->get_access_token( self::CONNECTION_OWNER );
 		$connection_owner = false;
 		if ( $user_token && is_object( $user_token ) && isset( $user_token->external_user_id ) ) {
 			$connection_owner = $user_token->external_user_id;
@@ -621,7 +649,7 @@ class Manager {
 	 * @return object|false False if no connection owner found.
 	 */
 	public function get_connection_owner() {
-		$user_token = $this->get_access_token( self::JETPACK_MASTER_USER );
+		$user_token = $this->get_access_token( self::CONNECTION_OWNER );
 
 		$connection_owner = false;
 		if ( $user_token && is_object( $user_token ) && isset( $user_token->external_user_id ) ) {
@@ -643,7 +671,7 @@ class Manager {
 			$user_id = get_current_user_id();
 		}
 
-		$user_token = $this->get_access_token( self::JETPACK_MASTER_USER );
+		$user_token = $this->get_access_token( self::CONNECTION_OWNER );
 
 		return $user_token && is_object( $user_token ) && isset( $user_token->external_user_id ) && $user_id === $user_token->external_user_id;
 	}
@@ -1020,28 +1048,73 @@ class Manager {
 	 * @param int    $timestamp the current request timestamp.
 	 * @param string $nonce the nonce value.
 	 * @return bool whether the nonce is unique or not.
-	 *
-	 * @deprecated since 9.0.0
 	 */
 	public function add_nonce( $timestamp, $nonce ) {
-		_deprecated_function( __METHOD__, 'jetpack-9.0.0', 'Automattic\\Jetpack\\Connection\\Nonce_Handler::add' );
+		global $wpdb;
+		static $nonces_used_this_request = array();
 
-		return Nonce_Handler::add( $timestamp, $nonce );
+		if ( isset( $nonces_used_this_request[ "$timestamp:$nonce" ] ) ) {
+			return $nonces_used_this_request[ "$timestamp:$nonce" ];
+		}
+
+		// This should always have gone through Jetpack_Signature::sign_request() first to check $timestamp an $nonce.
+		$timestamp = (int) $timestamp;
+		$nonce     = esc_sql( $nonce );
+
+		// Raw query so we can avoid races: add_option will also update.
+		$show_errors = $wpdb->show_errors( false );
+
+		$old_nonce = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM `$wpdb->options` WHERE option_name = %s", "jetpack_nonce_{$timestamp}_{$nonce}" )
+		);
+
+		if ( is_null( $old_nonce ) ) {
+			$return = $wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, %s)",
+					"jetpack_nonce_{$timestamp}_{$nonce}",
+					time(),
+					'no'
+				)
+			);
+		} else {
+			$return = false;
+		}
+
+		$wpdb->show_errors( $show_errors );
+
+		$nonces_used_this_request[ "$timestamp:$nonce" ] = $return;
+
+		return $return;
 	}
 
 	/**
 	 * Cleans nonces that were saved when calling ::add_nonce.
 	 *
+	 * @todo Properly prepare the query before executing it.
+	 *
 	 * @param bool $all whether to clean even non-expired nonces.
-	 *
-	 * @deprecated since 9.0.0
-	 *
-	 * @see Nonce_Handler::clean_all()
 	 */
 	public function clean_nonces( $all = false ) {
-		_deprecated_function( __METHOD__, 'jetpack-9.0.0', 'Automattic\\Jetpack\\Connection\\Nonce_Handler::clean_all' );
+		global $wpdb;
 
-		Nonce_Handler::clean_all( $all ? PHP_INT_MAX : time() - Nonce_Handler::LIFETIME );
+		$sql      = "DELETE FROM `$wpdb->options` WHERE `option_name` LIKE %s";
+		$sql_args = array( $wpdb->esc_like( 'jetpack_nonce_' ) . '%' );
+
+		if ( true !== $all ) {
+			$sql       .= ' AND CAST( `option_value` AS UNSIGNED ) < %d';
+			$sql_args[] = time() - 3600;
+		}
+
+		$sql .= ' ORDER BY `option_id` LIMIT 100';
+
+		$sql = $wpdb->prepare( $sql, $sql_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		for ( $i = 0; $i < 1000; $i++ ) {
+			if ( ! $wpdb->query( $sql ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				break;
+			}
+		}
 	}
 
 	/**
@@ -2191,7 +2264,7 @@ class Manager {
 			if ( ! $user_tokens ) {
 				return $suppress_errors ? false : new \WP_Error( 'no_user_tokens', __( 'No user tokens found', 'jetpack' ) );
 			}
-			if ( self::JETPACK_MASTER_USER === $user_id ) {
+			if ( self::CONNECTION_OWNER === $user_id ) {
 				$user_id = \Jetpack_Options::get_option( 'master_user' );
 				if ( ! $user_id ) {
 					return $suppress_errors ? false : new \WP_Error( 'empty_master_user_option', __( 'No primary user defined', 'jetpack' ) );

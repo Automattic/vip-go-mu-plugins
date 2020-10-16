@@ -2,6 +2,14 @@
 
 **This is a list detailing changes for all Jetpack releases.**
 
+= 9.0.1 =
+
+* Release date: October 6, 2020
+
+**Bug fixes**
+
+* General: remove a database optimization task that could potentially cause database issues.
+
 = 9.0 =
 
 * Release date: October 6, 2020
@@ -42,6 +50,7 @@
 * Contact Form: add more integration settings for a better compatibility with Jetpack CRM.
 * Contact Form: ensure that forms are displayed correctly in legacy AMP Reader views.
 * Dashboard: remove plugin autoupdate settings from the dashboard now that WordPress itself handles this feature.
+* Embeds: ensure that Instagram and Facebook embeds are always available, to avoid breaking embeds on existing posts.
 * Embeds: solve PHP 8 compatibility issues with Crowdsignal embeds.
 * EventBrite Block: ensure full compatibility with the AMP plugin.
 * Google Calendar Block: ensure full compatibility with the AMP plugin.
@@ -58,6 +67,7 @@
 **Bug fixes**
 
 * Activity Log: avoid potential duplicate entries.
+* Beautiful Math: resolve incorrectly rendered LaTeX images cached during a server migration.
 * Connection Flow: resolve conflicts where "staging" connection errors were wrongly detected for some sites.
 * Copy Post: ensure categories can be copied properly on sites using an old database schema.
 * Donations / Payments: fix link to WordPress.com on sites where WordPress is installed in a subdirectory.

@@ -15,8 +15,8 @@ class StatsD {
 	 * @param string|array $stats The metric(s) to set.
 	 * @param float $time The elapsed time (ms) to log
 	 **/
-	public static function timing( $stats, $time ) {
-		self::update_stats( $stats, $time, 1, 'ms' );
+	public function timing( $stats, $time ) {
+		$this->update_stats( $stats, $time, 1, 'ms' );
 	}
 
 	/**
@@ -25,8 +25,8 @@ class StatsD {
 	 * @param string|array $stats The metric(s) to set.
 	 * @param float $value The value for the stats.
 	 **/
-	public static function gauge( $stats, $value ) {
-		self::update_stats( $stats, $value, 1, 'g' );
+	public function gauge( $stats, $value ) {
+		$this->update_stats( $stats, $value, 1, 'g' );
 	}
 
 	/**
@@ -43,8 +43,8 @@ class StatsD {
 	 * @param string|array $stats The metric(s) to set.
 	 * @param float $value The value for the stats.
 	 **/
-	public static function set( $stats, $value ) {
-		self::update_stats( $stats, $value, 1, 's' );
+	public function set( $stats, $value ) {
+		$this->update_stats( $stats, $value, 1, 's' );
 	}
 
 	/**
@@ -54,8 +54,8 @@ class StatsD {
 	 * @param float|1 $sample_rate the rate (0-1) for sampling.
 	 * @return boolean
 	 **/
-	public static function increment( $stats, $sample_rate = 1 ) {
-		self::update_stats( $stats, 1, $sample_rate, 'c' );
+	public function increment( $stats, $sample_rate = 1 ) {
+		$this->update_stats( $stats, 1, $sample_rate, 'c' );
 	}
 
 	/**
@@ -65,8 +65,8 @@ class StatsD {
 	 * @param float|1 $sample_rate the rate (0-1) for sampling.
 	 * @return boolean
 	 **/
-	public static function decrement( $stats, $sample_rate = 1 ) {
-		self::update_stats( $stats, -1, $sample_rate, 'c' );
+	public function decrement( $stats, $sample_rate = 1 ) {
+		$this->update_stats( $stats, -1, $sample_rate, 'c' );
 	}
 
 	/**
@@ -78,9 +78,9 @@ class StatsD {
 	 * @param string|c $metric The metric type ("c" for count, "ms" for timing, "g" for gauge, "s" for set)
 	 * @return boolean
 	 **/
-	public static function update_stats( $stats, $delta = 1, $sample_rate = 1, $metric = 'c' ) {
+	public function update_stats( $stats, $delta = 1, $sample_rate = 1, $metric = 'c' ) {
 		if ( ! is_array( $stats ) ) {
-			$stats = array( $stats ); 
+			$stats = array( $stats );
 		}
 
 		$data = array();
@@ -89,13 +89,13 @@ class StatsD {
 			$data[ $stat ] = "$delta|$metric";
 		}
 
-		self::send( $data, $sample_rate );
+		$this->send( $data, $sample_rate );
 	}
 
 	/*
 	 * Send the metrics over UDP
 	 **/
-	public static function send( $data, $sample_rate = 1 ) {
+	public function send( $data, $sample_rate = 1 ) {
 		// Disables StatsD logging for test environments
 		if ( defined( 'VIP_DISABLE_STATSD' ) && VIP_DISABLE_STATSD ) {
 			return;
@@ -107,8 +107,8 @@ class StatsD {
 				trigger_error( 'VIP_STATSD_HOST not set, no data sent to statsd', \E_USER_WARNING );
 			}
 			return;
-		} 
-		
+		}
+
 		if ( ! defined( 'VIP_STATSD_PORT' ) || ! VIP_STATSD_PORT ) {
 			if ( true === WPCOM_IS_VIP_ENV ) {
 				trigger_error( 'VIP_STATSD_PORT not set, no data sent to statsd', \E_USER_WARNING );

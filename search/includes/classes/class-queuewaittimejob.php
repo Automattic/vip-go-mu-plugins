@@ -9,13 +9,13 @@ class QueueWaitTimeJob {
 
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_EVENT_NAME, [ $this, 'set_queue_wait_time_gauge' ] );
+		add_action( self::CRON_EVENT_NAME, [ $this, 'maybe_alert_for_average_queue_time' ] );
 	}
 
 	/**
-	 * Set the queue wait time gauge for posts for the current site 
+	 * Set the queue wait time gauge for posts for the current site
 	 */
-	public function set_queue_wait_time_gauge() {
-		\Automattic\VIP\Search\Search::instance()->set_queue_wait_time_gauge();
+	public function maybe_alert_for_average_queue_time() {
+		\Automattic\VIP\Search\Search::instance()->maybe_alert_for_average_queue_time();
 	}
 }
