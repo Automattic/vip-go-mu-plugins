@@ -458,7 +458,7 @@ class Queue {
 		$deadlocked_time = time() - self::DEADLOCK_TIME;
 
 		$jobs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 			$count
 		) );
