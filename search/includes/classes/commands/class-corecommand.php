@@ -55,7 +55,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * [--version]
 	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version
 	 *
-	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm]
+	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--start-object-id] [--end-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm]
 	 *
 	 * @param array $args Positional CLI args.
 	 * @since 0.1.2
