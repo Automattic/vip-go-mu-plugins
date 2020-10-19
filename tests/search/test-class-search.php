@@ -1220,8 +1220,8 @@ class Search_Test extends \WP_UnitTestCase {
 		define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
 		$_GET[ \Automattic\VIP\Search\Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
 
-		$this->assertFalse( $es::rate_limit_ep_query_integration( false ), 'the default value should be false' );
-		$this->assertTrue( $es::rate_limit_ep_query_integration( true ), 'should honor filters that skip query integrations' );
+		$this->assertFalse( $es->rate_limit_ep_query_integration( false ), 'the default value should be false' );
+		$this->assertTrue( $es->rate_limit_ep_query_integration( true ), 'should honor filters that skip query integrations' );
 
 		// Force ratelimiting to apply
 		$es::$max_query_count = 0;
@@ -1230,7 +1230,35 @@ class Search_Test extends \WP_UnitTestCase {
 		$es::$query_db_fallback_value = 11;
 
 		// ep_skip_query_integration should be true if ratelimited
-		$this->assertTrue( $es::rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
+		$this->assertTrue( $es->rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
+	}
+
+
+	public function test__record_ratelimited_query_stat__records_statsd() {
+		$stats_key = 'foo';
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_prefix' ] )
+			->getMock();
+		$partially_mocked_search->init();
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->indexables = $indexables_mock;
+
+		$indexables_mock->method( 'get' )
+			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
+
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_key );
+
+		$statsd_mock->expects( $this->once() )
+			->method( 'increment' )
+			->with( "$stats_key" );
+
+		$partially_mocked_search->record_ratelimited_query_stat();
 	}
 
 	/**
@@ -1895,5 +1923,5 @@ class Search_Test extends \WP_UnitTestCase {
  * Overwriting global function so that no real remote request is called
  */
 function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
-	return Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
 }

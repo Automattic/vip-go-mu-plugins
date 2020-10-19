@@ -154,7 +154,7 @@ class Search {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		// Rate limit query integration
-		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
+		add_filter( 'ep_skip_query_integration', array( $this, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -600,7 +600,7 @@ class Search {
 	 * @param $skip current ep_skip_query_integration value
 	 * @return bool new value of ep_skip_query_integration
 	 */
-	public static function rate_limit_ep_query_integration( $skip ) {
+	public function rate_limit_ep_query_integration( $skip ) {
 		// Honor previous filters that skip query integration
 		if ( $skip ) {
 			return true;
@@ -611,7 +611,7 @@ class Search {
 		if ( self::query_count_incr() > self::$max_query_count ) {
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
-				self::record_ratelimited_query_stat();
+				$this->record_ratelimited_query_stat();
 				return true;
 			}
 		}
@@ -619,27 +619,19 @@ class Search {
 		return false;
 	}
 
-	public static function record_ratelimited_query_stat() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+	public function record_ratelimited_query_stat() {
+		$indexable = $this->indexables->get( 'post' );
 
 		if ( ! $indexable ) {
 			return;
 		}
 
-		// Can't use $this in static context
-		$es = self::instance();
-
 		$statsd_mode = 'query_ratelimited';
-		$statsd_index_name = $indexable->get_index_name();
 
-		$url = $es->get_current_host();
-		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
+		$url = $this->get_current_host();
+		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
 
-		$statsd = new \Automattic\VIP\StatsD();
-
-		$statsd->increment( $stat );
-		$statsd->increment( $per_site_stat );
+		$this->statsd->increment( $stat );
 	}
 
 	public function maybe_alert_for_average_queue_time() {

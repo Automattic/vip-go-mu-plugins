@@ -17,6 +17,8 @@ class Queue {
 	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
 	public $schema;
+	public $statsd;
+	public $indexables;
 
 	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
@@ -42,6 +44,10 @@ class Queue {
 		$this->cron->init();
 		$this->cron->queue = $this;
 
+		$this->statsd = new \Automattic\VIP\StatsD();
+
+		$this->indexables = \ElasticPress\Indexables::factory();
+
 		$this->setup_hooks();
 	}
 
@@ -61,7 +67,7 @@ class Queue {
 
 	/**
 	 * Given an array of queue operation options, determine the correct index version number
-	 * 
+	 *
 	 * This returns $options['index_version'] if set, or defaults to the current index version. Extracted
 	 * here b/c it is reused all over
 	 */
@@ -167,13 +173,13 @@ class Queue {
 
 	/**
 	 * Retrieve the unix timestamp representing the soonest time that a given object can be indexed
-	 * 
+	 *
 	 * This provides rate limiting by checking the cached timestamp of the last successful indexing operation
 	 * and applying the defined minimum interval between successive indexing jobs
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return int The soonest unix timestamp when the object can be indexed again
 	 */
 	public function get_next_index_time( $object_id, $object_type, $options = array() ) {
@@ -191,10 +197,10 @@ class Queue {
 
 	/**
 	 * Retrieve the unix timestamp representing the most recent time an object was indexed
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return int The unix timestamp when the object was last indexed
 	 */
 	public function get_last_index_time( $object_id, $object_type, $options = array() ) {
@@ -211,7 +217,7 @@ class Queue {
 
 	/**
 	 * Set the unix timestamp when the object was last indexed
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 * @param int $time Unix timestamp when the object was last indexed
@@ -227,12 +233,12 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return string The cache key to use for the object's last indexed timestamp
 	 */
 	public function get_last_index_time_cache_key( $object_id, $object_type, $options = array() ) {
 		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
-	
+
 		return sprintf( '%s-%d-v%d', $object_type, $object_id, $index_version );
 	}
 
@@ -241,7 +247,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return int Minimum number of seconds between re-indexes
 	 */
 	public function get_index_interval_time( $object_id, $object_type, $options = array() ) {
@@ -319,7 +325,7 @@ class Queue {
 			}
 		}
 
-		// If query has not already been set, it's a "normal" query. This is done after b/c the index version lookup will fail 
+		// If query has not already been set, it's a "normal" query. This is done after b/c the index version lookup will fail
 		// when $object_type is equal to 'all' since this is not a valid Indexable
 		if ( ! $query ) {
 			$index_version = $this->get_index_version_number_from_options( $object_type, $options );
@@ -382,13 +388,13 @@ class Queue {
 		$escaped_ids = implode( ', ', $job_ids );
 
 		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
-		
+
 		return $jobs;
 	}
 
 	/**
 	 * Grab $count jobs that are due now and mark them as running
-	 * 
+	 *
 	 * @param {int} $count How many jobs to check out
 	 * @return array Array of jobs (db rows) that were checked out
 	 */
@@ -430,7 +436,7 @@ class Queue {
 			$job->status = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
 
-			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
+			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
 			// between the time we check out the job and the cron processor actually runs
 			$this->set_last_index_time( $job->object_id, $job->object_type, time() );
@@ -441,7 +447,7 @@ class Queue {
 
 	/**
 	 * Find any jobs that are considered "deadlocked"
-	 * 
+	 *
 	 * A deadlocked job is one that has been scheduled for processing, but has
 	 * not completed within the defined time period
 	 */
@@ -458,7 +464,7 @@ class Queue {
 			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 			$count
 		) );
-		
+
 		return $jobs;
 	}
 
@@ -493,10 +499,10 @@ class Queue {
 		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
 
 		$indexables = \ElasticPress\Indexables::factory();
-	
+
 		// Organize by version and type, so we can process each unique batch in bulk
 		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
-		
+
 		// Batch process each type using the indexable
 		foreach ( $jobs_by_version_and_type as $index_version => $jobs_by_type ) {
 			foreach ( $jobs_by_type as $type => $jobs ) {
@@ -511,7 +517,7 @@ class Queue {
 				}
 
 				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
-	
+
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
@@ -535,9 +541,9 @@ class Queue {
 
 	/**
 	 * Given an array of jobs, sort them into sub arrays by type and index version
-	 * 
+	 *
 	 * This helps us minimize the cost of switching between versions and types (Indexables) when processing a list of jobs
-	 * 
+	 *
 	 * @param array Array of jobs to sort
 	 * @return array Multi-dimensional array of jobs, first keyed by version, then by type
 	 */
@@ -670,14 +676,14 @@ class Queue {
 		if ( empty( $sync_manager->sync_queue ) ) {
 			return $bail;
 		}
-	
+
 		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
 		if ( ! self::is_indexing_ratelimited() ) {
 			$this->cron->schedule_batch_job();
 		}
-		
+
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
 
@@ -685,7 +691,7 @@ class Queue {
 	}
 
 	/**
-	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled, 
+	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled,
 	 * queue all of the posts for indexing.
 	 *
 	 * @param {array} $document_ids IDs of the documents that were to be indexed
@@ -749,7 +755,7 @@ class Queue {
 	}
 
 	public function record_ratelimited_stat( $count, $indexable_slug ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = $this->indexables->get( $indexable_slug );
 
 		if ( ! $indexable ) {
 			return;
@@ -766,12 +772,8 @@ class Queue {
 
 		$url = $es->get_current_host();
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
-		$statsd = new \Automattic\VIP\StatsD();
-
-		$statsd->increment( $stat, $count );
-		$statsd->increment( $per_site_stat, $count );
+		$this->statsd->increment( $stat, $count );
 	}
 
 	/**
@@ -819,7 +821,7 @@ class Queue {
 			)
 		);
 
-		// Null value will usually mean empty table 
+		// Null value will usually mean empty table
 		if ( is_null( $average_wait_time ) || ! is_numeric( $average_wait_time ) ) {
 			return 0;
 		}
@@ -846,8 +848,8 @@ class Queue {
 
 		if ( ! is_string( $indexable_slug ) ) {
 			return new WP_Error( 'invalid-slug-for-queue-cleanup-on-delete', sprintf( 'Invalid indexable slug \'%s\'', $indexable_slug ) );
-		} 
-		
+		}
+
 		if ( ! is_numeric( $index_version ) ) {
 			return new WP_Error( 'invalid-version-for-queue-cleanup-on-delete', sprintf( 'Invalid version \'%d\'', $index_version ) );
 		}
