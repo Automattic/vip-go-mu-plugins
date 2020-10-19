@@ -26,10 +26,12 @@ class VIP_Request_Block {
 	 */
 	public static function ip( string $value ) {
 		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		if ( isset( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) && $value === $_SERVER['HTTP_TRUE_CLIENT_IP'] ) {
 			return self::block_and_log( $value, 'true-client-ip' );
 		}
 
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && $value === $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
 			return self::block_and_log( $value, 'x-forwarded-for' );
 		}
@@ -42,7 +44,7 @@ class VIP_Request_Block {
 	 * @return void
 	 */
 	public static function ua( string $user_agent ) {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		if ( $user_agent === $_SERVER['HTTP_USER_AGENT'] ) {
 			self::block_and_log( $user_agent, 'user-agent' );
 		}
