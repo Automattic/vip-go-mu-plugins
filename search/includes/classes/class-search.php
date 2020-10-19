@@ -664,21 +664,8 @@ class Search {
 			return;
 		}
 
-		$current_field_count = $this->get_current_field_count( $indexable );
-
-		if ( is_null( $current_field_count ) ) {
-			return;
-		}
-
-		$statsd_mode = 'field_count';
-		$statsd_index_name = $indexable->get_index_name();
-
-		$url = $this->get_current_host();
-		$per_site_stat = $this->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-
-		$statsd->gauge( $per_site_stat, $current_field_count );
+		// TODO implement alert - PLAT-2324
+		// $current_field_count = $this->get_current_field_count( $indexable );
 	}
 
 	/**
@@ -947,7 +934,7 @@ class Search {
 	/**
 	 * Get the statsd stat prefix for a given "mode"
 	 */
-	public function get_statsd_prefix( $url, $mode = 'other', $app_id = null, $index_name = null ) {
+	public function get_statsd_prefix( $url, $mode = 'other' ) {
 		$key_parts = array(
 			'com.wordpress', // Global prefix
 			'elasticsearch', // Service name
@@ -968,15 +955,6 @@ class Search {
 
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
-
-		// If app id / index name passed, include those too
-		if ( is_int( $app_id ) ) {
-			$key_parts[] = $app_id;
-		}
-
-		if ( is_string( $index_name ) && ! empty( $index_name ) ) {
-			$key_parts[] = $index_name;
-		}
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );

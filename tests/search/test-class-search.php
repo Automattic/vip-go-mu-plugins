@@ -1016,49 +1016,6 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $prefix );
 	}
 
-	public function get_statsd_prefix_with_site_and_index_data() {
-		return array(
-			array(
-				'https://es-ha-bur.vipv2.net:1234',
-				'search',
-				1,
-				'vip-1-post',
-				'com.wordpress.elasticsearch.bur.ha1234_vipgo.search.1.vip-1-post',
-			),
-			array(
-				'https://es-ha-dca.vipv2.net:4321',
-				'index',
-				2,
-				'vip-2-post-2',
-				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.2.vip-2-post-2',
-			),
-			array(
-				'https://es-ha-dca.vipv2.net:4321',
-				'index',
-				3,
-				'vip-3-post-2-2',
-				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.3.vip-3-post-2-2',
-			),
-			// New naming convention
-			array(
-				'https://es-ha.dca.vipv2.net:4321',
-				'index',
-				3,
-				'vip-3-post-2-2',
-				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index.3.vip-3-post-2-2',
-			),
-		);
-	}
-
-	/**
-	 * @dataProvider get_statsd_prefix_with_site_and_index_data
-	 */
-	public function test_get_statsd_prefix_with_site_and_index( $url, $mode, $app_id, $index_name, $expected ) {
-		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode, $app_id, $index_name );
-
-		$this->assertEquals( $expected, $prefix );
-	}
-
 	/**
 	 * Test formatted args structure checks
 	 */
