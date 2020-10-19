@@ -6,6 +6,7 @@ use \WP_CLI;
 
 class Search {
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'rate_limited_start';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
@@ -18,6 +19,9 @@ class Search {
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
 	private const STALE_QUEUE_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	private const STALE_QUEUE_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const QUERY_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	private const QUERY_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
 
 	public $healthcheck;
 	public $field_count_gauge;
@@ -609,11 +613,16 @@ class Search {
 		// If the query count has exceeded the maximum
 		// only allow half of the queries to use VIP Search
 		if ( self::query_count_incr() > self::$max_query_count ) {
+			$this->handle_query_limiting_start_timestamp();
+			$this->maybe_alert_for_prolonged_query_limiting();
+
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
 				return true;
 			}
+		} else {
+			$this->clear_query_limiting_start_timestamp();
 		}
 
 		return false;
@@ -651,6 +660,26 @@ class Search {
 				$average_wait_time
 			);
 			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message, self::STALE_QUEUE_ALERT_LEVEL );
+		}
+	}
+
+	public function maybe_alert_for_prolonged_query_limiting() {
+		$query_limiting_start =  wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
+
+
+		if ( $query_limiting_start ) {
+			$query_limiting_time = time() - $query_limiting_start;
+
+			if ( $query_limiting_time > self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
+
+				$message = sprintf(
+					'Application %d - %s is query limited for %d seconds',
+					FILES_CLIENT_SITE_ID,
+					home_url(),
+					$query_limiting_time
+				);
+				$this->alerts->send_to_chat( self::QUERY_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::QUERY_RATE_LIMITING_ALERT_LEVEL );
+			}
 		}
 	}
 
@@ -1237,5 +1266,19 @@ class Search {
 		}
 
 		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::QUERY_COUNT_CACHE_GROUP );
+	}
+
+	/*
+	 * Checks if the query limiting start timestamp is set, set it otherwise
+	 */
+	public function handle_query_limiting_start_timestamp() {
+		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+			$start_timestamp = time();
+			wp_cache_set(self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP);
+		}
+	}
+
+	public function clear_query_limiting_start_timestamp() {
+		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
 	}
 }
