@@ -405,7 +405,28 @@ class Queue_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_process_jobs() {
-		// TODO
+		$job_ids = array(
+			'12',
+			'45',
+			'89',
+			'246',
+		);
+
+		// Add some jobs to the queue
+		$this->queue->queue_objects( $job_ids );
+
+		// Have to get by job id and not by object id
+		$jobs = $this->queue->get_jobs( array_keys( $job_ids ) );
+
+		$job_count = $this->queue->count_jobs( 'all' );
+
+		$this->assertEquals( $job_count, count( $job_ids ), 'job count in database should match jobs added to queue' );
+
+		$this->queue->process_jobs( $jobs );
+
+		$jobs = $this->queue->get_jobs( array_keys( $job_ids ) );
+
+		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
 
 	public function test_intercept_ep_sync_manager_indexing() {
