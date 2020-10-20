@@ -1892,9 +1892,9 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
 		$expected_level = 2;
 
-		if ( $difference !== false ) {
+		if ( false !== $difference ) {
 			$query_limited_start = time() - $difference;
-			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start , Search::QUERY_COUNT_CACHE_GROUP );
+			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::QUERY_COUNT_CACHE_GROUP );
 		}
 
 		$es = new \Automattic\VIP\Search\Search();
@@ -1906,7 +1906,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
 			->method( 'send_to_chat' )
-			->with( '#vip-go-es-alerts', $this->anything() , $expected_level );
+			->with( '#vip-go-es-alerts', $this->anything(), $expected_level );
 
 		$es->maybe_alert_for_prolonged_query_limiting();
 	}

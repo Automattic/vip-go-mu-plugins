@@ -664,23 +664,26 @@ class Search {
 	}
 
 	public function maybe_alert_for_prolonged_query_limiting() {
-		$query_limiting_start =  wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
+		$query_limiting_start = wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
 
-
-		if ( $query_limiting_start ) {
-			$query_limiting_time = time() - $query_limiting_start;
-
-			if ( $query_limiting_time > self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
-
-				$message = sprintf(
-					'Application %d - %s is query limited for %d seconds',
-					FILES_CLIENT_SITE_ID,
-					home_url(),
-					$query_limiting_time
-				);
-				$this->alerts->send_to_chat( self::QUERY_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::QUERY_RATE_LIMITING_ALERT_LEVEL );
-			}
+		if ( false === $query_limiting_start ) {
+			return;
 		}
+		
+		$query_limiting_time = time() - $query_limiting_start;
+		
+		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
+			return;
+		}
+
+		$message = sprintf(
+			'Application %d - %s is query limited for %d seconds',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$query_limiting_time
+		);
+
+		$this->alerts->send_to_chat( self::QUERY_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::QUERY_RATE_LIMITING_ALERT_LEVEL );
 	}
 
 	/**
@@ -1274,7 +1277,7 @@ class Search {
 	public function handle_query_limiting_start_timestamp() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
 			$start_timestamp = time();
-			wp_cache_set(self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP);
+			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP );
 		}
 	}
 
