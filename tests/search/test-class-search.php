@@ -1849,6 +1849,45 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_alert_for_average_queue_time();
 	}
 
+	public function maybe_alert_for_field_count_data() {
+		return [
+			[ 5000, false ],
+			[ 5001, true ],
+		];
+	}
+
+	/**
+	 * @dataProvider maybe_alert_for_field_count_data
+	 */
+	public function test__maybe_alert_for_field_count( $field_count, $should_alert ) {
+		$application_id = 123;
+		$application_url = 'http://example.org';
+		$expected_message = "The field count for post index for application $application_id - $application_url is too damn high - $field_count";
+		$expected_level = 2;
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_current_field_count' ] )
+			->getMock();
+		$partially_mocked_search->init();
+
+		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+
+		$partially_mocked_search->indexables = $indexables_mock;
+		$partially_mocked_search->alerts = $alerts_mocked;
+
+		$indexables_mock->method( 'get' )
+			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
+
+		$partially_mocked_search->method( 'get_current_field_count' )->willReturn( $field_count );
+
+		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
+			->method( 'send_to_chat' )
+			->with( '#vip-go-es-alerts', $expected_message, $expected_level );
+
+		$partially_mocked_search->maybe_alert_for_field_count();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
