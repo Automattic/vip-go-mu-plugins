@@ -6,7 +6,7 @@ use \WP_CLI;
 
 class Search {
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
-	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'rate_limited_start';
+	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
@@ -669,9 +669,9 @@ class Search {
 		if ( false === $query_limiting_start ) {
 			return;
 		}
-		
+
 		$query_limiting_time = time() - $query_limiting_start;
-		
+
 		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
 			return;
 		}
@@ -1272,7 +1272,7 @@ class Search {
 	}
 
 	/*
-	 * Checks if the query limiting start timestamp is set, set it otherwise
+	 * Checks if the query limiting start timestamp is set, set it otherwise\
 	 */
 	public function handle_query_limiting_start_timestamp() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
