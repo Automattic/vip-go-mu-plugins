@@ -110,7 +110,7 @@ function vip_es_field_map( $es_map ) {
 	return wp_parse_args(
 		array(
 			'post_author'                   => 'post_author.id',
-			'post_author.user_nicename'     => 'post_author.display_name',
+			'post_author.user_nicename'     => 'post_author.login.raw',
 			'post_date'                     => 'post_date',
 			'post_date.year'                => 'date_terms.year',
 			'post_date.month'               => 'date_terms.month',

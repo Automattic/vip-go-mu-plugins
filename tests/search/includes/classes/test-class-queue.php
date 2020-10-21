@@ -522,7 +522,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME - ( 3 * DAY_IN_SECONDS );
 
 		$this->queue->update_job( $job2->job_id, array(
-			'status' => 'scheduled',
+			'status' => 'running',
 			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 		) );
 
