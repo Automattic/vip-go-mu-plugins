@@ -66,11 +66,6 @@ class CoreCommand extends \ElasticPress\Command {
 			self::confirm_destructive_operation( $assoc_args );
 		}
 
-		// Disable ES query logs to keep memory usage under control
-		if ( ! defined( 'EP_QUERY_LOG' ) ) {
-			define( 'EP_QUERY_LOG', false );
-		}
-
 		$this->_maybe_setup_index_version( $assoc_args );
 
 		/**
