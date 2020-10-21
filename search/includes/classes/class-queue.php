@@ -22,10 +22,14 @@ class Queue {
 
 	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
 	public static $max_indexing_op_count = 6000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
 	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
 	private const INDEX_QUEUEING_TTL = 5 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 5 minutes once ratelimiting is triggered
+	private const INDEX_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const INDEX_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	private const INDEX_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
 
 	private const MAX_SYNC_INDEXING_COUNT = 10000;
 
@@ -660,12 +664,17 @@ class Queue {
 		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
 			$this->record_ratelimited_stat( $increment, $indexable_slug );
 
+			$this->handle_index_limiting_start_timestamp();
+			$this->maybe_alert_for_prolonged_index_limiting();
+
 			// Offload indexing to async queue
 			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 
 			if ( ! self::is_indexing_ratelimited() ) {
 				self::turn_on_index_ratelimiting();
 			}
+		} else {
+			$this->clear_index_limiting_start_timestamp();
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
@@ -696,6 +705,29 @@ class Queue {
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
 
 		$this->statsd->increment( $stat, $count );
+	}
+
+	public function maybe_alert_for_prolonged_index_limiting() {
+		$index_limiting_start = wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+
+		if ( false === $index_limiting_start ) {
+			return;
+		}
+
+		$index_limiting_time = time() - $index_limiting_start;
+
+		if ( $index_limiting_time < self::INDEX_RATE_LIMITED_ALERT_LIMIT ) {
+			return;
+		}
+
+		$message = sprintf(
+			'Application %d - %s is index limited for %d seconds',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$index_limiting_time
+		);
+
+		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
 	}
 
 	/**
@@ -796,5 +828,19 @@ class Queue {
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/*
+	 * Checks if the index limiting start timestamp is set, set it otherwise
+	 */
+	public function handle_index_limiting_start_timestamp() {
+		if ( false === wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			$start_timestamp = time();
+			wp_cache_set( self::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::INDEX_COUNT_CACHE_GROUP );
+		}
+	}
+
+	public function clear_index_limiting_start_timestamp() {
+		wp_cache_delete( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
 	}
 }

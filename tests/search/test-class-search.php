@@ -1169,7 +1169,7 @@ class Search_Test extends \WP_UnitTestCase {
 	/*
 	 * Ensure ratelimiting works prioperly with ep_skip_query_integration filter
 	 */
-	public function test__rate_limit_ep_query_integration() {
+	public function test__rate_limit_ep_query_integration__trigers() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -1190,6 +1190,34 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( $es->rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
 	}
 
+	public function test__rate_limit_ep_query_integration__handles_start_correctly() {
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'handle_query_limiting_start_timestamp', 'maybe_alert_for_prolonged_query_limiting' ] )
+			->getMock();
+		$partially_mocked_search->init();
+
+		// Force ratelimiting to apply
+		$partially_mocked_search::$max_query_count = 0;
+
+		// Force this request to be ratelimited
+		$partially_mocked_search::$query_db_fallback_value = 11;
+
+		$partially_mocked_search->expects( $this->once() )->method( 'handle_query_limiting_start_timestamp' );
+		$partially_mocked_search->expects( $this->once() )->method( 'maybe_alert_for_prolonged_query_limiting' );
+
+		$partially_mocked_search->rate_limit_ep_query_integration( false );
+	}
+
+	public function test__rate_limit_ep_query_integration__clears_start_correctly() {
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'clear_query_limiting_start_timestamp' ] )
+			->getMock();
+		$partially_mocked_search->init();
+
+		$partially_mocked_search->expects( $this->once() )->method( 'clear_query_limiting_start_timestamp' );
+
+		$partially_mocked_search->rate_limit_ep_query_integration( false );
+	}
 
 	public function test__record_ratelimited_query_stat__records_statsd() {
 		$stats_key = 'foo';
@@ -1886,6 +1914,40 @@ class Search_Test extends \WP_UnitTestCase {
 			->with( '#vip-go-es-alerts', $expected_message, $expected_level );
 
 		$partially_mocked_search->maybe_alert_for_field_count();
+	}
+  
+	public function maybe_alert_for_prolonged_query_limiting_data() {
+		return [
+			[ false, false ],
+			[ 0, false ],
+			[ 12, false ],
+			[ 7201, true ],
+		];
+	}
+  
+	/**
+	 * @dataProvider maybe_alert_for_prolonged_query_limiting_data
+	 */
+	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
+		$expected_level = 2;
+
+		if ( false !== $difference ) {
+			$query_limited_start = time() - $difference;
+			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::QUERY_COUNT_CACHE_GROUP );
+		}
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+
+		$es->alerts = $alerts_mocked;
+
+		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
+			->method( 'send_to_chat' )
+			->with( '#vip-go-es-alerts', $this->anything(), $expected_level );
+
+		$es->maybe_alert_for_prolonged_query_limiting();
 	}
 
 	/**
