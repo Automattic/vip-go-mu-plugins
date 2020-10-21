@@ -138,6 +138,17 @@ class Search {
 		if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
 			define( 'EP_DASHBOARD_SYNC', false );
 		}
+
+		// Disable DB and ES query logs for CLI commands to keep memory under control
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			if ( ! defined( 'SAVEQUERIES' ) ) {
+				define( 'SAVEQUERIES', false );
+			}
+
+			if ( ! defined( 'EP_QUERY_LOG' ) ) {
+				define( 'EP_QUERY_LOG', false );
+			}
+		}
 	}
 
 	protected function setup_hooks() {
