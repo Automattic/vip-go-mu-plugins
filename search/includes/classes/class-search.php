@@ -17,11 +17,10 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
-	private const STALE_QUEUE_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const STALE_QUEUE_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	private const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const POST_FIELD_COUNT_LIMIT = 5000;
 	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
-	private const QUERY_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const QUERY_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
 
 	public $healthcheck;
 	public $field_count_gauge;
@@ -659,7 +658,7 @@ class Search {
 				home_url(),
 				$average_wait_time
 			);
-			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message, self::STALE_QUEUE_ALERT_LEVEL );
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 		}
 	}
 
@@ -683,21 +682,30 @@ class Search {
 			$query_limiting_time
 		);
 
-		$this->alerts->send_to_chat( self::QUERY_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::QUERY_RATE_LIMITING_ALERT_LEVEL );
+		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 	}
 
 	/**
-	 * Set a gauge in statsd with the field count of the sites post index
+	 * Alerts if field count of the sites post index is too high
 	 */
-	public function set_field_count_gauge() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+	public function maybe_alert_for_field_count() {
+		$indexable = $this->indexables->get( 'post' );
 
 		if ( ! $indexable ) {
 			return;
 		}
 
-		// TODO implement alert - PLAT-2324
-		// $current_field_count = $this->get_current_field_count( $indexable );
+		$current_field_count = $this->get_current_field_count( $indexable );
+
+		if ( $current_field_count > self::POST_FIELD_COUNT_LIMIT ) {
+			$message = sprintf(
+				'The field count for post index for application %d - %s is too damn high - %d',
+				FILES_CLIENT_SITE_ID,
+				home_url(),
+				$current_field_count
+			);
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		}
 	}
 
 	/**
