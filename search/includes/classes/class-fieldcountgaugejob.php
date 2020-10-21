@@ -9,13 +9,13 @@ class FieldCountGaugeJob {
 
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( \Automattic\VIP\Config\Sync::CRON_EVENT_NAME, [ $this, 'set_field_count_gauge' ] );
+		add_action( \Automattic\VIP\Config\Sync::CRON_EVENT_NAME, [ $this, 'maybe_alert_for_field_count' ] );
 	}
 
 	/**
-	 * Set the field count gauge for posts for the current site 
+	 * Set the field count gauge for posts for the current site
 	 */
-	public function set_field_count_gauge() {
-		\Automattic\VIP\Search\Search::instance()->set_field_count_gauge();
+	public function maybe_alert_for_field_count() {
+		\Automattic\VIP\Search\Search::instance()->maybe_alert_for_field_count();
 	}
 }
