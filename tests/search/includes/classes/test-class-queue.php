@@ -725,6 +725,42 @@ class Queue_Test extends \WP_UnitTestCase {
 		}
 	}
 
+	public function test__ratelimit_indexing__handles_start_correctly() {
+		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
+			->setMethods( [
+				'handle_index_limiting_start_timestamp',
+				'maybe_alert_for_prolonged_index_limiting',
+				'record_ratelimited_stat',
+				'intercept_ep_sync_manager_indexing',
+			] )
+			->getMock();
+
+		$sync_manager = new \stdClass();
+		$sync_manager->sync_queue = range( 3, 9 );
+
+		$partially_mocked_queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
+
+		$partially_mocked_queue->expects( $this->once() )->method( 'handle_index_limiting_start_timestamp' );
+		$partially_mocked_queue->expects( $this->once() )->method( 'maybe_alert_for_prolonged_index_limiting' );
+
+		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
+	}
+
+	public function test__ratelimit_indexing__clears_start_correctly() {
+		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
+			->setMethods( [
+				'clear_index_limiting_start_timestamp',
+			] )
+			->getMock();
+
+		$partially_mocked_queue->expects( $this->once() )->method( 'clear_index_limiting_start_timestamp' );
+
+		$sync_manager = new \stdClass();
+		$sync_manager->sync_queue = range( 3, 9 );
+
+		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
+	}
+
 	public function test__record_ratelimited_stat__records_statsd() {
 		$increment = 14;
 		$indexable_slug = 'post';

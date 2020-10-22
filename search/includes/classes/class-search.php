@@ -6,6 +6,7 @@ use \WP_CLI;
 
 class Search {
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
@@ -16,8 +17,10 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
-	private const STALE_QUEUE_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const STALE_QUEUE_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	private const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const POST_FIELD_COUNT_LIMIT = 5000;
+	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 
 	public $healthcheck;
 	public $field_count_gauge;
@@ -134,6 +137,17 @@ class Search {
 		// The Dashboard is hidden anyway but just in case.
 		if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
 			define( 'EP_DASHBOARD_SYNC', false );
+		}
+
+		// Disable DB and ES query logs for CLI commands to keep memory under control
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			if ( ! defined( 'SAVEQUERIES' ) ) {
+				define( 'SAVEQUERIES', false );
+			}
+
+			if ( ! defined( 'EP_QUERY_LOG' ) ) {
+				define( 'EP_QUERY_LOG', false );
+			}
 		}
 	}
 
@@ -609,11 +623,16 @@ class Search {
 		// If the query count has exceeded the maximum
 		// only allow half of the queries to use VIP Search
 		if ( self::query_count_incr() > self::$max_query_count ) {
+			$this->handle_query_limiting_start_timestamp();
+			$this->maybe_alert_for_prolonged_query_limiting();
+
 			// Should be roughly half over time
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
 				return true;
 			}
+		} else {
+			$this->clear_query_limiting_start_timestamp();
 		}
 
 		return false;
@@ -650,22 +669,54 @@ class Search {
 				home_url(),
 				$average_wait_time
 			);
-			$this->alerts->send_to_chat( self::STALE_QUEUE_ALERT_SLACK_CHAT, $message, self::STALE_QUEUE_ALERT_LEVEL );
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 		}
 	}
 
+	public function maybe_alert_for_prolonged_query_limiting() {
+		$query_limiting_start = wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
+
+		if ( false === $query_limiting_start ) {
+			return;
+		}
+
+		$query_limiting_time = time() - $query_limiting_start;
+
+		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
+			return;
+		}
+
+		$message = sprintf(
+			'Application %d - %s is query limited for %d seconds',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$query_limiting_time
+		);
+
+		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+	}
+
 	/**
-	 * Set a gauge in statsd with the field count of the sites post index
+	 * Alerts if field count of the sites post index is too high
 	 */
-	public function set_field_count_gauge() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+	public function maybe_alert_for_field_count() {
+		$indexable = $this->indexables->get( 'post' );
 
 		if ( ! $indexable ) {
 			return;
 		}
 
-		// TODO implement alert - PLAT-2324
-		// $current_field_count = $this->get_current_field_count( $indexable );
+		$current_field_count = $this->get_current_field_count( $indexable );
+
+		if ( $current_field_count > self::POST_FIELD_COUNT_LIMIT ) {
+			$message = sprintf(
+				'The field count for post index for application %d - %s is too damn high - %d',
+				FILES_CLIENT_SITE_ID,
+				home_url(),
+				$current_field_count
+			);
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		}
 	}
 
 	/**
@@ -1237,5 +1288,19 @@ class Search {
 		}
 
 		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::QUERY_COUNT_CACHE_GROUP );
+	}
+
+	/*
+	 * Checks if the query limiting start timestamp is set, set it otherwise\
+	 */
+	public function handle_query_limiting_start_timestamp() {
+		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+			$start_timestamp = time();
+			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP );
+		}
+	}
+
+	public function clear_query_limiting_start_timestamp() {
+		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
 	}
 }
