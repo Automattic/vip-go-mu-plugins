@@ -37,7 +37,7 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 		if ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) {
 			WP_CLI::line( 'This has only purged the Varnish cache on your sandbox. If you need to purge the production caches, please un-sandbox first and then run this command again..' );
 		}
-		WP_CLI::success( 'URL purged from Varnish!' );
+		WP_CLI::success( 'URL purged from the VIP page cache.' );
 	}
 }
 
