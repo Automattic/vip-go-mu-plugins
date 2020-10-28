@@ -1,8 +1,8 @@
 === Debug Bar ===
 Contributors: wordpressdotorg, ryan, westi, koopersmith, duck_, mitchoyoshitaka, dd32, jrf, obenland, nacin, evansolomon, Otto42, aidvu
 Tags: debug
-Tested up to: 5.4.1
-Stable tag: 1.0.1
+Tested up to: 5.5.1
+Stable tag: 1.1
 Requires at least: 3.4
 
 Adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information.
@@ -28,6 +28,12 @@ Add a PHP/MySQL console with the [Debug Bar Console plugin](https://wordpress.or
 There are numerous other add-ons available to get more insight into, for instance, the registered Post Types, Shortcodes, WP Cron, Language file loading, Actions and Filters and so on. Just [search the plugin directory for 'Debug Bar'](https://wordpress.org/plugins/search/debug+bar/).
 
 == Upgrade Notice ==
+
+= 1.1 =
+Add a new panel for HTTP requests using the native WP methods.
+AMP dev mode compatibility.
+Change cache busters to use `filemtime` instead of hardcoded values.
+Minor CSS updates, so theems don't override the <pre> styles.
 
 = 1.0.1 =
 Update object cache panel CSS to be ready for new object-cache.php release with better stats()

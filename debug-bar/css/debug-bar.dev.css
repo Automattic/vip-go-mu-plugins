@@ -175,6 +175,7 @@ body.debug-bar-maximized.debug-bar-visible {
 }
 
 #querylist pre {
+	text-align: left;
 	font-size: 12px;
 	padding: 10px;
 }
