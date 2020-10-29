@@ -168,7 +168,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 				return ( array_key_exists( 'default', $this->specific_keys ) || array_key_exists( 'default', $this->regex_keys ) );
 			}
 
-			if ( is_numeric( $group{0} ) ) {
+			if ( is_numeric( $group[0] ) ) {
 				return true; // Requires deep check
 			}
 
