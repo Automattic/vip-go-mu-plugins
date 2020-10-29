@@ -301,48 +301,56 @@ class Akismet {
 		// as was checked by auto_check_comment
 		if ( is_object( $comment ) && !empty( self::$last_comment ) && is_array( self::$last_comment ) ) {
 			if ( self::matches_last_comment( $comment ) ) {
-					
-					load_plugin_textdomain( 'akismet' );
-					
-					// normal result: true or false
-					if ( self::$last_comment['akismet_result'] == 'true' ) {
-						update_comment_meta( $comment->comment_ID, 'akismet_result', 'true' );
-						self::update_comment_history( $comment->comment_ID, '', 'check-spam' );
-						if ( $comment->comment_approved != 'spam' )
-							self::update_comment_history(
-								$comment->comment_ID,
-								'',
-								'status-changed-'.$comment->comment_approved
-							);
-					}
-					elseif ( self::$last_comment['akismet_result'] == 'false' ) {
-						update_comment_meta( $comment->comment_ID, 'akismet_result', 'false' );
-						self::update_comment_history( $comment->comment_ID, '', 'check-ham' );
-						// Status could be spam or trash, depending on the WP version and whether this change applies:
-						// https://core.trac.wordpress.org/changeset/34726
-						if ( $comment->comment_approved == 'spam' || $comment->comment_approved == 'trash' ) {
-							if ( wp_blacklist_check($comment->comment_author, $comment->comment_author_email, $comment->comment_author_url, $comment->comment_content, $comment->comment_author_IP, $comment->comment_agent) )
-								self::update_comment_history( $comment->comment_ID, '', 'wp-blacklisted' );
-							else
-								self::update_comment_history( $comment->comment_ID, '', 'status-changed-'.$comment->comment_approved );
-						}
-					} // abnormal result: error
-					else {
-						update_comment_meta( $comment->comment_ID, 'akismet_error', time() );
+				load_plugin_textdomain( 'akismet' );
+
+				// normal result: true or false
+				if ( self::$last_comment['akismet_result'] == 'true' ) {
+					update_comment_meta( $comment->comment_ID, 'akismet_result', 'true' );
+					self::update_comment_history( $comment->comment_ID, '', 'check-spam' );
+					if ( $comment->comment_approved != 'spam' ) {
 						self::update_comment_history(
 							$comment->comment_ID,
 							'',
-							'check-error',
-							array( 'response' => substr( self::$last_comment['akismet_result'], 0, 50 ) )
+							'status-changed-' . $comment->comment_approved
 						);
 					}
+				} elseif ( self::$last_comment['akismet_result'] == 'false' ) {
+					update_comment_meta( $comment->comment_ID, 'akismet_result', 'false' );
+					self::update_comment_history( $comment->comment_ID, '', 'check-ham' );
+					// Status could be spam or trash, depending on the WP version and whether this change applies:
+					// https://core.trac.wordpress.org/changeset/34726
+					if ( $comment->comment_approved == 'spam' || $comment->comment_approved == 'trash' ) {
+						if ( function_exists( 'wp_check_comment_disallowed_list' ) ) {
+							if ( wp_check_comment_disallowed_list( $comment->comment_author, $comment->comment_author_email, $comment->comment_author_url, $comment->comment_content, $comment->comment_author_IP, $comment->comment_agent ) ) {
+								self::update_comment_history( $comment->comment_ID, '', 'wp-disallowed' );
+							} else {
+								self::update_comment_history( $comment->comment_ID, '', 'status-changed-' . $comment->comment_approved );
+							}
+						} else if ( function_exists( 'wp_blacklist_check' ) && wp_blacklist_check( $comment->comment_author, $comment->comment_author_email, $comment->comment_author_url, $comment->comment_content, $comment->comment_author_IP, $comment->comment_agent ) ) {
+							self::update_comment_history( $comment->comment_ID, '', 'wp-blacklisted' );
+						} else {
+							self::update_comment_history( $comment->comment_ID, '', 'status-changed-' . $comment->comment_approved );
+						}
+					}
+				} else {
+					 // abnormal result: error
+					update_comment_meta( $comment->comment_ID, 'akismet_error', time() );
+					self::update_comment_history(
+						$comment->comment_ID,
+						'',
+						'check-error',
+						array( 'response' => substr( self::$last_comment['akismet_result'], 0, 50 ) )
+					);
+				}
 
-					// record the complete original data as submitted for checking
-					if ( isset( self::$last_comment['comment_as_submitted'] ) )
-						update_comment_meta( $comment->comment_ID, 'akismet_as_submitted', self::$last_comment['comment_as_submitted'] );
+				// record the complete original data as submitted for checking
+				if ( isset( self::$last_comment['comment_as_submitted'] ) ) {
+					update_comment_meta( $comment->comment_ID, 'akismet_as_submitted', self::$last_comment['comment_as_submitted'] );
+				}
 
-					if ( isset( self::$last_comment['akismet_pro_tip'] ) )
-						update_comment_meta( $comment->comment_ID, 'akismet_pro_tip', self::$last_comment['akismet_pro_tip'] );
+				if ( isset( self::$last_comment['akismet_pro_tip'] ) ) {
+					update_comment_meta( $comment->comment_ID, 'akismet_pro_tip', self::$last_comment['akismet_pro_tip'] );
+				}
 			}
 		}
 	}
@@ -486,6 +494,7 @@ class Akismet {
 		$history[] = array( 'time' => 445856404, 'event' => 'recheck-ham' );
 		$history[] = array( 'time' => 445856405, 'event' => 'check-ham' );
 		$history[] = array( 'time' => 445856406, 'event' => 'wp-blacklisted' );
+		$history[] = array( 'time' => 445856406, 'event' => 'wp-disallowed' );
 		$history[] = array( 'time' => 445856407, 'event' => 'report-spam' );
 		$history[] = array( 'time' => 445856408, 'event' => 'report-spam', 'user' => 'sam' );
 		$history[] = array( 'message' => 'sam reported this comment as spam (hardcoded message).', 'time' => 445856400, 'event' => 'report-spam', 'user' => 'sam' );
