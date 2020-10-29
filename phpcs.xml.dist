@@ -19,6 +19,7 @@
 	<exclude-pattern>gutenberg-ramp/*</exclude-pattern>
 	<exclude-pattern>http-concat/*</exclude-pattern>
 	<exclude-pattern>jetpack/*</exclude-pattern>
+	<exclude-pattern>jetpack-*/*</exclude-pattern>
 	<exclude-pattern>lightweight-term-count-update/*</exclude-pattern>
 	<exclude-pattern>query-monitor/*</exclude-pattern>
 	<exclude-pattern>rewrite-rules-inspector/*</exclude-pattern>
