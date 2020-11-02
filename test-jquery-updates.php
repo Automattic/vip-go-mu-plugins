@@ -16,4 +16,6 @@
  * Network: true
  */
 
-require_once( __DIR__ . '/test-jquery-updates/wp-jquery-update-test.php' );
+if ( ( defined( 'VIP_ENABLE_TEST_JQUERY_UPDATES' ) && VIP_ENABLE_TEST_JQUERY_UPDATES ) ) {
+    require_once( __DIR__ . '/test-jquery-updates/wp-jquery-update-test.php' );
+}
