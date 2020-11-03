@@ -92,6 +92,7 @@ exclude_core_tests() {
 		"tests/xmlrpc/wp/getMediaItem.php"
 		"tests/xmlrpc/wp/getComments.php"
 		"tests/xmlrpc/wp/getComment.php"
+		"tests/xmlrpc/wp/newComment.php"
 		"tests/xmlrpc/wp/editTerm.php"
 		"tests/xmlrpc/wp/editProfile.php"
 		"tests/xmlrpc/wp/editPost.php"

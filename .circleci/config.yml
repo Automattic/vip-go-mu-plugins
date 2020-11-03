@@ -60,7 +60,7 @@ job-references:
       echo "Downgrade to Composer 1 due to compat issues"
       sudo composer self-update --1
       composer install -n
-  
+
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
@@ -127,7 +127,7 @@ job-references:
       - run: echo "Downgrade to Composer 1 due to compat issues"
       - run: sudo composer self-update --1
       - run: composer install -n
-      - run: 
+      - run:
           name: "Lint"
           command: npm run lint
 
@@ -164,7 +164,7 @@ jobs:
     docker:
       - image: wordpressdevelop/php:7.3-fpm
       - image: *db_image
-    
+
   php73-core-multisite-tests-mu-plugins:
     <<: *php_core_job
     environment:

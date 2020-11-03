@@ -66,7 +66,7 @@ To investigate failing test locally you can do following (buckle up as this is n
 
 1. Switch to where you want to checkout core code e.g. `cd ~/svn/wp`
 
-1. Checkout the core code: `svn co --quiet --ignore-externals https://develop.svn.wordpress.org/trunk .`
+1. Checkout the core code (pick the latest version): `svn co --quiet --ignore-externals https://develop.svn.wordpress.org/tags/5.5.3 .`
 
 1. Create test config: `cp wp-tests-config-sample.php wp-tests-config.php && sed -i 's/youremptytestdbnamehere/wordpress_test/; s/yourusernamehere/root/; s/yourpasswordhere//; s/localhost/127.0.0.1/' wp-tests-config.php`
 
