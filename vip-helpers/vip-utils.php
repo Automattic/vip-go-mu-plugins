@@ -63,9 +63,9 @@ function wpcom_vip_noncdn_uri( $path ) {
 }
 
 /**
- * Returns a link the WordPress.com VIP site wrapped around an image (the VIP logo).
+ * Returns a link the WordPress VIP site wrapped around an image (the WordPress VIP logo).
  *
- * @param int $image Which variant of the VIP logo to use; between 1-6.
+ * @param int $image Which variant of the WordPress VIP logo to use; between 1-6.
  * @return string HTML
  */
 function vip_powered_wpcom_img_html( $image ) {
@@ -80,24 +80,23 @@ function vip_powered_wpcom_img_html( $image ) {
 		);
 
 		if ( array_key_exists( $image, $vip_powered_wpcom_images ) )
-			return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[$image][0], __FILE__ ) ) . '" width="' . esc_attr( $vip_powered_wpcom_images[$image][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[$image][2] ) . '" alt="'. esc_attr__( 'Powered by WordPress.com VIP', 'vip-helpers' ) .'" /></a>';
+			return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[$image][0], __FILE__ ) ) . '" width="' . esc_attr( $vip_powered_wpcom_images[$image][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[$image][2] ) . '" alt="'. esc_attr__( 'Powered by WordPress VIP', 'vip-helpers' ) .'" /></a>';
 		else
 			return '';
 }
 
 /**
- * Returns the "Powered by WordPress.com VIP" widget's content.
+ * Returns the "Powered by WordPress VIP" widget's content.
  *
- * @link http://vip.wordpress.com/documentation/code-and-theme-review-process/ Code Review
- * @link http://vip.wordpress.com/documentation/powered-by-wordpress-com-vip/ Powered By WordPress.com VIP
- * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the VIP link. Otherwise, just return the link.
- * @param string $before_text Optional. Text to go in front of the VIP link. Defaults to 'Powered by '.
+ * @link https://wpvip.com/documentation/vip-go/powered-by-wordpress-com-vip/ Powered By WordPress VIP
+ * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the WordPress VIP link. Otherwise, just return the link.
+ * @param string $before_text Optional. Text to go in front of the WordPress VIP link. Defaults to 'Powered by '.
  * @return string HTML
  */
 function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
 	switch ($display) {
 		case 'text':
-			$output = $before_text . '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom">WordPress.com VIP</a>';
+			$output = $before_text . '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom">WordPress VIP</a>';
 			break;
 		case 1:
 		case 2:
@@ -115,7 +114,7 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
 }
 
 /**
- * Returns the URL to the WordPress.com VIP site
+ * Returns the URL to the WordPress VIP site
  *
  * @return string
  */
