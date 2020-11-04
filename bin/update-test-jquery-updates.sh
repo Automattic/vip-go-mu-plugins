@@ -1,26 +1,45 @@
 #!/bin/sh
 
-if [ $# -gt 1 ]; then
-  echo "Syntax: $0 <revision/branch>"
+usage() {
+  echo "Syntax: $0 -v 5.5 -r b9e54c55bbadcb21fb606fa185146f314262b3c8"
   echo
-  echo "Revision can be left blank, which will update to the top of trunk branch"
+  echo "  -v  Target version of WordPress."
+  echo "  -r  OPTIONAL: Revision from source. Defaults to 'trunk'"
   echo
-  echo "Example: $0"
-  echo "This will update the test-jquery-updates plugin to latest code"
   exit 1
-fi
+}
 
-print_heading()
-{
+print_heading() {
   echo "\n* $1"
 }
 
 revision="trunk"
-if [ "$1" ]; then
-  revision=$1
+
+while getopts ":v:r:" opt; do
+  case ${opt} in
+    v )
+      version=$OPTARG
+      ;;
+    r )
+      revision=$OPTARG
+      ;;
+    \? )
+      echo "Invalid option: $OPTARG\n\n"
+      usage
+      ;;
+    : )
+      echo "Invalid option: $OPTARG requires an argument"
+      usage
+      ;;
+  esac
+done
+
+if [ -z "$version" ]; then
+  echo "Version (-v) needs to be set\n\n";
+  usage
 fi
 
-directory="test-jquery-updates"
+directory="debug/test-jquery-updates/$version"
 
 if [ -d "$directory" ]; then
   print_heading "Removing $directory directory before update"
@@ -36,4 +55,4 @@ print_heading "Change capability required from install_plugins (not allowed on V
 sed -i 's/install_plugins/activate_plugins/g' "$directory/class_wp_jquery_update_test.php"
 git commit -avm "Updates capability needed for test-jquery-updates"
 
-echo "\n\nDONE  --- Don't forget to update the loader's version\n"
+echo "\n\nDONE\n"
