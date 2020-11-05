@@ -10,7 +10,9 @@
  *
  * There are multiple versions per WordpressVersion the loader tries to pick the most recent one
  */
-if ( ( defined( 'VIP_ENABLE_TEST_JQUERY_UPDATES' ) && VIP_ENABLE_TEST_JQUERY_UPDATES ) ) {
+$has_test_jquery_param = isset( $_GET['vip_load_test_jquery_updates'] );
+$has_test_jquery_constant = defined( 'VIP_ENABLE_TEST_JQUERY_UPDATES' ) && true === VIP_ENABLE_TEST_JQUERY_UPDATES;
+if ( $has_test_jquery_param || $has_test_jquery_constant ) {
 	$base_folder = __DIR__ . '/debug/test-jquery-updates';
 	$entrypoint_script = 'wp-jquery-update-test.php';
 
@@ -26,3 +28,5 @@ if ( ( defined( 'VIP_ENABLE_TEST_JQUERY_UPDATES' ) && VIP_ENABLE_TEST_JQUERY_UPD
 	}
 	require_once( "$base_folder/$best_fit/$entrypoint_script" );
 }
+
+unset( $has_test_jquery_param, $has_test_jquery_constant );
