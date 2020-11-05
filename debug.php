@@ -18,7 +18,7 @@ if ( $has_test_jquery_param || $has_test_jquery_constant ) {
 
 	$avaiable_options = array_diff( scandir( $base_folder ), [ '.', '..' ] );
 
-	$best_fit;
+	$best_fit = '';
 	foreach ( $avaiable_options as $candidate ) {
 		if ( version_compare( $GLOBALS['wp_version'], $candidate, '>=' ) ) {
 			if ( ! $best_fit || version_compare( $candidate, $best_fit, '>' ) ) {
