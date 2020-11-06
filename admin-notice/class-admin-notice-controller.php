@@ -2,30 +2,16 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
-// function sample_admin_notice__error() {
-//     $class = 'notice notice-info';
-//     $message = __( 'Irks! An error has occurred.', 'sample-text-domain' );
-
-//     printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
-// }
-// add_action( 'admin_notices', 'sample_admin_notice__error' );
-
-
-require_once __DIR__ . '/class-admin-notice.php';
-
-
 class Admin_Notice_Controller {
 	private $notice_class = 'notice notice-info';
-	public $all_notices = [];
+	private $all_notices = [];
 
-	public static function init() {
-		$instance = new Admin_Notice_Controller();
+	public function init() {
+		add_action( 'admin_notices', [ $this, 'display_notices' ] );
+	}
 
-		add_action( 'admin_notices', [ $instance, 'display_notices' ] );
-
-		$instance->all_notices = [
-			new Admin_Notice( 'WordPress 5.5.2 will be released on Friday, October 30th', '01-07-2020', '30-10-2020 15:00' ),
-		];
+	public function add( Admin_Notice $notice ) {
+		array_push( $this->all_notices, $notice );
 	}
 
 	public function display_notices() {
@@ -34,7 +20,7 @@ class Admin_Notice_Controller {
 		$html_notices = array_map( [ $this, 'convert_notice_to_html' ], $filtered_notices );
 
 		foreach ( $html_notices as $html_notice ) {
-			echo( $html_notice . "\n" );
+			echo( wp_kses_post( $html_notice ) . "\n" );
 		}
 	}
 
