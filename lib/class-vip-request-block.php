@@ -32,8 +32,15 @@ class VIP_Request_Block {
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && $value === $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
-			return self::block_and_log( $value, 'x-forwarded-for' );
+		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+			$ips = explode( ',', $value );
+			$ips = array_map( 'trim', $ips );
+			foreach ( $ips as $ip ) {
+				if ( $value === $ip ) {
+					return self::block_and_log( $value, 'x-forwarded-for' );
+				}
+			}
+			
 		}
 	}
 
