@@ -8,11 +8,11 @@ class Admin_Notice {
 	public $end_date;
 
 	/**
-	 * Create AdminNotice
+	 * Create AdminNotice.
 	 *
-	 * @param {string} $message - the text to be displayed
-	 * @param {string} $start_date - the date* since the notice should start to show up
-	 * @param {string} $end_date - the date* till the notice should show up
+	 * @param string $message The text to be displayed.
+	 * @param string $start_date The date* since the notice should start to show up.
+	 * @param string $end_date The date* till the notice should show up.
 	 *
 	 * * Date Format should follow 'Day-Month-Year Hour:Minute' format.
 	 */
