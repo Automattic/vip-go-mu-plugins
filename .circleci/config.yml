@@ -57,8 +57,6 @@ job-references:
       sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
       sudo -E docker-php-ext-install mysqli
       npm ci
-      echo "Downgrade to Composer 1 due to compat issues"
-      sudo composer self-update --1
       composer install -n
 
   install_core_tests_dependencies: &install_core_tests_dependencies
@@ -66,8 +64,6 @@ job-references:
     command: |
       sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
       sudo npm install npm@latest -g
-      echo "Downgrade to Composer 1 due to compat issues"
-      sudo composer self-update --1
       composer install -n
 
   prepare_repo: &prepare_repo
@@ -124,8 +120,6 @@ job-references:
       - checkout
       - run: *prepare_repo
       - run: npm ci
-      - run: echo "Downgrade to Composer 1 due to compat issues"
-      - run: sudo composer self-update --1
       - run: composer install -n
       - run:
           name: "Lint"
