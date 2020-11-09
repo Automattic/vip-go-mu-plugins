@@ -4,21 +4,30 @@ namespace Automattic\VIP\Admin_Notice;
 
 class Admin_Notice {
 	public $message;
-	public $start_date;
-	public $end_date;
+	public $conditions;
 
 	/**
 	 * Create AdminNotice.
 	 *
 	 * @param string $message The text to be displayed.
-	 * @param string $start_date The date* since the notice should start to show up.
-	 * @param string $end_date The date* till the notice should show up.
-	 *
-	 * * Date Format should follow 'Day-Month-Year Hour:Minute' format.
+	 * @param Admin_Notice_Condition[] $conditions Conditions to pass in order to show the notice.
 	 */
-	public function __construct( string $message, string $start_date, string $end_date ) {
+	public function __construct( string $message, array $conditions = [] ) {
 		$this->message = $message;
-		$this->start_date = new \DateTime( $start_date, new \DateTimeZone( 'UTC' ) );
-		$this->end_date = new \DateTime( $end_date, new \DateTimeZone( 'UTC' ) );
+		$this->conditions = $conditions;
+	}
+
+	public function to_html() {
+		return sprintf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $this->message ) );
+	}
+
+	public function should_render() {
+		foreach ( $this->conditions as $condition ) {
+			if ( ! $condition->evaluate() ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
