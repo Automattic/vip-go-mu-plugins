@@ -54,8 +54,8 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
-      sudo -E docker-php-ext-install mysqli
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
+      sudo -E docker-php-ext-install mysqli gd
       npm ci
       composer install -n
 
