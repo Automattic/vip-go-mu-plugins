@@ -17,9 +17,10 @@ class Admin_Notice {
 		$this->conditions = $conditions;
 	}
 
-	public function to_html() {
-		return sprintf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $this->message ) );
+	public function display() {
+		return printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $this->message ) );
 	}
+
 
 	public function should_render() {
 		foreach ( $this->conditions as $condition ) {

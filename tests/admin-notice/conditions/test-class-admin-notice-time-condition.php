@@ -5,7 +5,7 @@ namespace Automattic\VIP\Admin_Notice;
 require_once __DIR__ . '/../../../admin-notice/conditions/interface-condition.php';
 require_once __DIR__ . '/../../../admin-notice/conditions/class-date-condition.php';
 
-class Date_Condition_Test extends \WP_UnitTestCase {
+class Date_Condition_Test extends \PHPUnit\Framework\TestCase {
 
 	public function filter_notices_by_time_data() {
 

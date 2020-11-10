@@ -3,7 +3,7 @@
  * Plugin Name: Admin Notice
  * Description: Adds dismissible notice in admin area
  * Version:     0.1.0
- * Author:      Automattic VIP
+ * Author:      WordPress VIP
  * Author URI:  https://wpvip.com
  * License:     GPLv2 or later
  *

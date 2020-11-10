@@ -12,7 +12,8 @@ require_once __DIR__ . '/conditions/interface-condition.php';
 require_once __DIR__ . '/conditions/class-date-condition.php';
 
 $admin_notice_controller = new Admin_Notice_Controller();
-$admin_notice_controller->init();
+
+add_action( 'admin_notices', [ $admin_notice_controller, 'display_notices' ] );
 
 $admin_notice_controller->add(
 	new Admin_Notice(

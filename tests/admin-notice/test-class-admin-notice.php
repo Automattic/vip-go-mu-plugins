@@ -5,16 +5,16 @@ namespace Automattic\VIP\Admin_Notice;
 require_once __DIR__ . '/../../admin-notice/class-admin-notice.php';
 require_once __DIR__ . '/../../admin-notice/conditions/interface-condition.php';
 
-class Admin_Notice_Test extends \WP_UnitTestCase {
+class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 
-	public function test__to_html() {
+	public function test__display() {
 		$message = 'Test Message';
 		$expected_html = "<div class=\"notice notice-info\"><p>$message</p></div>";
 		$notice = new Admin_Notice( $message );
 
-		$html = $notice->to_html();
+		$this->expectOutputString( $expected_html );
 
-		$this->assertEquals( $expected_html, $html );
+		$notice->display();
 	}
 
 	public function should_render_data() {
