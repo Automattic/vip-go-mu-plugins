@@ -1846,6 +1846,88 @@ class Search_Test extends \WP_UnitTestCase {
 		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
 	}
 
+	public function test__filter__ep_do_intercept_request__records_statsd_on_non_200_response() {
+		$query = [ 'url' => 'https://foo.bar' ];
+		$args = [];
+		$stats_prefix = 'foo';
+		$mocked_response = [
+			'response' => [
+				'code' => 400,
+			],
+		];
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
+			->getMock();
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_prefix );
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->init();
+
+		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $mocked_response );
+
+		$statsd_mock->expects( $this->exactly( 2 ) )
+			->method( 'increment' )
+			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.error" ] );
+
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+	}
+
+	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_per_msg() {
+		$query = [ 'url' => 'https://foo.bar' ];
+		$args = [];
+		$stats_prefix = 'foo';
+		$mocked_response = new \WP_Error( 'code1', 'msg1' );
+		$mocked_response->add( 'code2', 'msg2' );
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
+			->getMock();
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_prefix );
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->init();
+
+		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $mocked_response );
+
+		$statsd_mock->expects( $this->exactly( 3 ) )
+			->method( 'increment' )
+			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.error" ], [ "$stats_prefix.error" ] );
+
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+	}
+
+	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_timeout() {
+		$query = [ 'url' => 'https://foo.bar' ];
+		$args = [];
+		$stats_prefix = 'foo';
+		$mocked_response = new \WP_Error( 'code1', 'curl error 28' );
+
+		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
+			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url' ] )
+			->getMock();
+		$partially_mocked_search->method( 'get_statsd_prefix' )
+			->willReturn( $stats_prefix );
+		$partially_mocked_search->statsd = $statsd_mock;
+		$partially_mocked_search->init();
+
+		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $mocked_response );
+
+		$statsd_mock->expects( $this->exactly( 2 ) )
+			->method( 'increment' )
+			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.timeout" ] );
+
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+	}
 
 	public function test__maybe_alert_for_average_queue_time__sends_notification() {
 		$application_id = 123;
@@ -1915,7 +1997,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_search->maybe_alert_for_field_count();
 	}
-  
+
 	public function maybe_alert_for_prolonged_query_limiting_data() {
 		return [
 			[ false, false ],
@@ -1924,7 +2006,7 @@ class Search_Test extends \WP_UnitTestCase {
 			[ 7201, true ],
 		];
 	}
-  
+
 	/**
 	 * @dataProvider maybe_alert_for_prolonged_query_limiting_data
 	 */
