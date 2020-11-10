@@ -54,20 +54,16 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
-      sudo -E docker-php-ext-install mysqli
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
+      sudo -E docker-php-ext-install mysqli gd
       npm ci
-      echo "Downgrade to Composer 1 due to compat issues"
-      sudo composer self-update --1
       composer install -n
-  
+
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
       sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
       sudo npm install npm@latest -g
-      echo "Downgrade to Composer 1 due to compat issues"
-      sudo composer self-update --1
       composer install -n
 
   prepare_repo: &prepare_repo
@@ -110,6 +106,7 @@ job-references:
               cp -r $HOME/project/ build/wp-content/mu-plugins
               rm -rf tests/phpunit/data/plugins/wordpress-importer
               source $HOME/project/bin/utils.sh
+              update_core_tests "$WP_TESTS_DIR"
               exclude_core_tests tests/phpunit/multisite.xml
               exclude_core_tests phpunit.xml.dist tests/phpunit/
             fi
@@ -124,10 +121,8 @@ job-references:
       - checkout
       - run: *prepare_repo
       - run: npm ci
-      - run: echo "Downgrade to Composer 1 due to compat issues"
-      - run: sudo composer self-update --1
       - run: composer install -n
-      - run: 
+      - run:
           name: "Lint"
           command: npm run lint
 
@@ -164,7 +159,7 @@ jobs:
     docker:
       - image: wordpressdevelop/php:7.3-fpm
       - image: *db_image
-    
+
   php73-core-multisite-tests-mu-plugins:
     <<: *php_core_job
     environment:
