@@ -18,11 +18,15 @@ class Admin_Notice {
 	}
 
 	public function display() {
-		return printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $this->message ) );
+		printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $this->message ) );
 	}
 
-
-	public function should_render() {
+	/**
+	 * Validates if the notice should be rendered based on conditions.
+	 *
+	 * @return bool
+	 */
+	public function should_render() : bool {
 		foreach ( $this->conditions as $condition ) {
 			if ( ! $condition->evaluate() ) {
 				return false;

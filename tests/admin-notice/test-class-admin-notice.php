@@ -25,6 +25,8 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 			[ [ true ], true ],
 			[ [ true, true ], true ],
 			[ [ true, false ], false ],
+			[ [ false, true ], false ],
+			[ [ false, false ], false ],
 		];
 	}
 
