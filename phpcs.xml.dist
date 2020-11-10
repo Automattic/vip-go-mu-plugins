@@ -27,7 +27,7 @@
 	<exclude-pattern>vip-support/*</exclude-pattern>
 
 	<!-- Other directories -->
-	<exclude-pattern>.git/*</exclude-pattern>
+	<exclude-pattern>\.git/*</exclude-pattern>
 	<exclude-pattern>akismet/*</exclude-pattern>
 	<exclude-pattern>bin/*</exclude-pattern>
 	<exclude-pattern>debug-bar/*</exclude-pattern>
@@ -70,7 +70,7 @@
 		https://github.com/Automattic/VIP-Coding-Standards/ -->
 	<rule ref="WordPress-VIP-Go">
 		<exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.internal_wpcom_vip_irc"/>
-		
+
 		<!-- These disallow anonymous functions as action callbacks -->
 		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
 		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments" />
@@ -79,5 +79,5 @@
 		<!-- Allow short array syntax -->
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
 	</rule>
-	
+
 </ruleset>
