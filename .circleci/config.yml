@@ -106,6 +106,7 @@ job-references:
               cp -r $HOME/project/ build/wp-content/mu-plugins
               rm -rf tests/phpunit/data/plugins/wordpress-importer
               source $HOME/project/bin/utils.sh
+              update_core_tests "$WP_TESTS_DIR"
               exclude_core_tests tests/phpunit/multisite.xml
               exclude_core_tests phpunit.xml.dist tests/phpunit/
             fi
