@@ -54,11 +54,11 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
-      sudo -E docker-php-ext-install mysqli
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
+      sudo -E docker-php-ext-install mysqli gd
       npm ci
       composer install -n
-  
+
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
@@ -121,7 +121,7 @@ job-references:
       - run: *prepare_repo
       - run: npm ci
       - run: composer install -n
-      - run: 
+      - run:
           name: "Lint"
           command: npm run lint
 
@@ -158,7 +158,7 @@ jobs:
     docker:
       - image: wordpressdevelop/php:7.3-fpm
       - image: *db_image
-    
+
   php73-core-multisite-tests-mu-plugins:
     <<: *php_core_job
     environment:
