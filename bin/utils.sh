@@ -112,5 +112,31 @@ exclude_core_tests() {
 	done
 }
 
+update_core_tests() {
+	local wp_tests_dir="$1"
+
+	if [ -z "$wp_tests_dir" ]; then
+		echo "WP_TESTS_DIR was not passed in";
+		exit 1;
+	fi
+
+
+	local header_handling_locations=(
+		"$wp_tests_dir/tests/xmlrpc/wp/newComment.php:Tests_XMLRPC_wp_newComment"
+	)
+
+	local header_handling='\/**\n * @runTestsInSeparateProcesses\n * @preserveGlobalState disabled\n *\/'
+
+	for location in "${header_handling_locations[@]}"; do
+		local location_data=(${location//:/ })
+		local file="${location_data[0]}"
+		local test_class_name="${location_data[1]}"
+
+		echo "Updating ${file} - ${test_class_name} for header test"
+		sed -i "s/\\(class $test_class_name\\)/${header_handling}\\n\\1/" "$file"
+	done
+}
+
 export -f install_db
 export -f exclude_core_tests
+export -f update_core_tests
