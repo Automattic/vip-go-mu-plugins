@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../../admin-notice/conditions/class-date-condition.p
 
 class Date_Condition_Test extends \PHPUnit\Framework\TestCase {
 
-	public function filter_notices_by_time_data() {
+	public function evaluate_data() {
 
 		return [
 			[ $this->build_condition( '-1 day', '+1 day' ), true ],
@@ -17,9 +17,9 @@ class Date_Condition_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * @dataProvider filter_notices_by_time_data
+	 * @dataProvider evaluate_data
 	 */
-	public function test__filter_notices_by_time( $condition, $expected_result ) {
+	public function test__evaluate( $condition, $expected_result ) {
 		$this->assertEquals( $expected_result, $condition->evaluate() );
 	}
 
