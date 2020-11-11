@@ -10,6 +10,7 @@ require_once __DIR__ . '/class-admin-notice.php';
 require_once __DIR__ . '/class-admin-notice-controller.php';
 require_once __DIR__ . '/conditions/interface-condition.php';
 require_once __DIR__ . '/conditions/class-date-condition.php';
+require_once __DIR__ . '/conditions/class-capability-condition.php';
 
 $admin_notice_controller = new Admin_Notice_Controller();
 
