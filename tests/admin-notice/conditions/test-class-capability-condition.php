@@ -49,5 +49,5 @@ class Capability_Condition_Test extends \PHPUnit\Framework\TestCase {
  * Overwriting global function so that no real remote request is called
  */
 function current_user_can( string $capability, ...$args ) {
-	return is_null( Capability_Condition_Test::$mock_global_functions ) ? null : Capability_Condition_Test::$mock_global_functions->mock_current_user_can($capability, $args);
+	return is_null( Capability_Condition_Test::$mock_global_functions ) ? null : Capability_Condition_Test::$mock_global_functions->mock_current_user_can( $capability, $args );
 }
