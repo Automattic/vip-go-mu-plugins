@@ -19,19 +19,19 @@ class Admin_Notice {
 	public function __construct( string $message, array $conditions = [], string $dismiss_identifier = '' ) {
 		$position = strpos( $dismiss_identifier, self::COOKIE_DELIMETER );
 		if ( false !== $position ) {
-			\trigger_error( esc_html( "Admin Notice dissmiss identifier - $dismiss_identifier can't contain delimeter - " . self::COOKIE_DELIMETER ) );
+			\trigger_error( esc_html( "Admin Notice dismiss identifier - $dismiss_identifier can't contain delimeter - " . self::COOKIE_DELIMETER ) );
 		}
 
 		$this->message = $message;
 		$this->conditions = $conditions;
-		$this->dismiss_identifier = $dismiss_identifier ? $dismiss_identifier : '';
+		$this->dismiss_identifier = $dismiss_identifier;
 	}
 
 	public function display() {
 		printf( '<div data-vip-admin-notice="%s" class="notice notice-info vip-notice">', esc_html( $this->dismiss_identifier ) );
 		printf( '<p>%s</p>', esc_html( $this->message ) );
 		if ( $this->dismiss_identifier ) {
-			printf( '<button type="button" class="notice-dismiss vip-notice-dismiss"></button>' );
+			printf( '<button type="button" class="notice-dismiss vip-notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>' );
 		}
 		printf( '</div>' );
 	}

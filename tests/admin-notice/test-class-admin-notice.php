@@ -22,7 +22,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		$dismiss_id = 'dismiss_id';
 		$notice = new Admin_Notice( $message, [], $dismiss_id );
 
-		$expected_html = '#<button type="button" class="notice-dismiss vip-notice-dismiss"></button>#';
+		$expected_html = '#<button type="button" class="notice-dismiss vip-notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>#';
 		$this->expectOutputRegex( $expected_html );
 
 		$notice->display();
