@@ -1,0 +1,8 @@
+.vip-notice {
+    display: flex;
+    justify-content: space-between;
+}
+
+.vip-notice-dismiss {
+    position: unset;
+}

@@ -18,4 +18,13 @@ class Admin_Notice_Controller {
 			$notice->display();
 		}
 	}
+
+	public function print_styles() {
+		wp_register_style( 'vip-admin-notice-style', plugins_url( '/css/style.css', __FILE__ ) , '1.0' );
+		wp_enqueue_style( 'vip-admin-notice-style' );
+	}
+
+	public function enqueue_scripts() {
+		wp_enqueue_script( 'vip-admin-notice-script', plugins_url( '/js/script.js', __FILE__ ) );
+	}
 }
