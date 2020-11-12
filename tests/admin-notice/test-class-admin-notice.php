@@ -22,7 +22,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		$dismiss_id = 'dismiss_id';
 		$notice = new Admin_Notice( $message, [], $dismiss_id );
 
-		$expected_html = "#<button type=\"button\" class=\"notice-dismiss vip-notice-dismiss\"></button>#";
+		$expected_html = '#<button type="button" class="notice-dismiss vip-notice-dismiss"></button>#';
 		$this->expectOutputRegex( $expected_html );
 
 		$notice->display();
@@ -53,30 +53,6 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		}, $condition_results);
 
 		$notice = new Admin_Notice( 'foo', $conditions );
-
-		$result = $notice->should_render();
-
-		$this->assertEquals( $expected_result, $result );
-	}
-
-	public function should_render__false_cookie_data() {
-
-		return [
-			[ 'a', 'a', false ],
-			[ 'a|b', 'a', false ],
-			[ 'c|b', 'a', true ],
-			[ 'b', 'a', true ],
-			[ '', 'a', true ],
-		];
-	}
-
-	/**
-	 * @dataProvider should_render__false_cookie_data
-	 */
-	public function test__should_render__false_cookie( $cookie_value, $identifier, $expected_result ) {
-		$notice = new Admin_Notice( 'foo', [], $identifier );
-
-		$_COOKIE[ Admin_Notice::COOKIE_NAME ] = $cookie_value;
 
 		$result = $notice->should_render();
 

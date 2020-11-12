@@ -15,6 +15,12 @@ function getCookie() {
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
+function getDismissedNotices() {
+    const cookie_value = getCookie() || '';
+    return cookie_value.split(vipAdminNoticeCookieDelimeter);
+
+}
+
 function emitDismissedCookie(containerElement) {
     const dismissIdentifier = containerElement?.getAttribute(vipAdminNoticeDataAttribute);
     if (dismissIdentifier) {
@@ -27,10 +33,14 @@ function emitDismissedCookie(containerElement) {
     }
 }
 
+function hideNotice(notice) {
+    notice.style.display = 'none';
+}
+
 function onDismissClicked(event) {
     const noticeContainer = tryGetNoticeContainer(event?.target);
     if (noticeContainer) {
-        noticeContainer.style.display = 'none';
+        hideNotice(noticeContainer);
         emitDismissedCookie(noticeContainer);
     }
 }
@@ -42,9 +52,21 @@ function registerDismissHooks() {
     }
 }
 
+function hideDismissedNotices() {
+    const notices = document.getElementsByClassName("vip-notice");
+    const dismissed_notices = getDismissedNotices();
+    for (const notice of notices) {
+        const identifier = notice.getAttribute(vipAdminNoticeDataAttribute);
+        if (identifier && dismissed_notices.includes(identifier)) {
+            hideNotice(notice);
+        }
+    }
+}
+
 window.onload = (function (oldLoad) {
     return function () {
         oldLoad && oldLoad();
+        hideDismissedNotices();
         registerDismissHooks();
     }
 })(window.onload)
