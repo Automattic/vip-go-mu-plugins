@@ -28,11 +28,14 @@ class Admin_Notice {
 	}
 
 	public function display() {
-		printf( '<div data-vip-admin-notice="%s" class="notice notice-info vip-notice">', esc_html( $this->dismiss_identifier ) );
-		printf( '<p>%s</p>', esc_html( $this->message ) );
+		$notice_class = 'notice notice-info vip-notice';
+
 		if ( $this->dismiss_identifier ) {
-			printf( '<button type="button" class="notice-dismiss vip-notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>' );
+			$notice_class .= ' is-dismissible';
 		}
+
+		printf( '<div data-vip-admin-notice="%s" class="%s">', esc_html( $this->dismiss_identifier ), esc_html( $notice_class ) );
+		printf( '<p>%s</p>', esc_html( $this->message ) );
 		printf( '</div>' );
 	}
 

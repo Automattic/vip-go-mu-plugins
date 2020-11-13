@@ -16,7 +16,6 @@ require_once __DIR__ . '/conditions/class-wp-version-condition.php';
 $admin_notice_controller = new Admin_Notice_Controller();
 
 add_action( 'admin_notices', [ $admin_notice_controller, 'display_notices' ] );
-add_action( 'admin_print_styles', [ $admin_notice_controller, 'print_styles' ] );
 add_action( 'admin_enqueue_scripts', [ $admin_notice_controller, 'enqueue_scripts' ] );
 
 $admin_notice_controller->add(

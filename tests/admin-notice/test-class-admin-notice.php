@@ -17,12 +17,12 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		$notice->display();
 	}
 
-	public function test__display_with_button() {
+	public function test__display_dissmissible() {
 		$message = 'Test Message';
 		$dismiss_id = 'dismiss_id';
 		$notice = new Admin_Notice( $message, [], $dismiss_id );
 
-		$expected_html = '#<button type="button" class="notice-dismiss vip-notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>#';
+		$expected_html = "#<div data-vip-admin-notice=\"$dismiss_id\" class=\"notice notice-info vip-notice is-dismissible\"><p>$message</p></div>#";
 		$this->expectOutputRegex( $expected_html );
 
 		$notice->display();

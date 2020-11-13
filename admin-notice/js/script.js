@@ -37,18 +37,18 @@ function hideNotice(notice) {
     notice.style.display = 'none';
 }
 
-function onDismissClicked(event) {
+function onDismissed(event) {
     const noticeContainer = tryGetNoticeContainer(event?.target);
     if (noticeContainer) {
-        hideNotice(noticeContainer);
         emitDismissedCookie(noticeContainer);
     }
 }
 
 function registerDismissHooks() {
-    const dismissButtons = document.getElementsByClassName("vip-notice-dismiss");
-    for (const button of dismissButtons) {
-        button.onclick = onDismissClicked;
+    const notices = document.getElementsByClassName("vip-notice");
+    for (const notice of notices) {
+        // Hooking up on the event caused by the core implementation of is-dismissible class, which generates dismiss button.
+        notice.addEventListener("DOMNodeRemoved", onDismissed);
     }
 }
 
