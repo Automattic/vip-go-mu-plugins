@@ -7,7 +7,7 @@ class Admin_Notice {
 	public $conditions;
 	public $dismiss_identifier;
 
-	const COOKIE_DELIMETER = '|';
+	const DISMISS_DATA_ATTRIBUTE = 'data-vip-admin-notice';
 
 	/**
 	 * Create AdminNotice.
@@ -17,11 +17,6 @@ class Admin_Notice {
 	 * @param string $dismiss_identifier if provided the dismiss will become dissmisible
 	 */
 	public function __construct( string $message, array $conditions = [], string $dismiss_identifier = '' ) {
-		$position = strpos( $dismiss_identifier, self::COOKIE_DELIMETER );
-		if ( false !== $position ) {
-			\trigger_error( esc_html( "Admin Notice dismiss identifier - $dismiss_identifier can't contain delimeter - " . self::COOKIE_DELIMETER ) );
-		}
-
 		$this->message = $message;
 		$this->conditions = $conditions;
 		$this->dismiss_identifier = $dismiss_identifier;
@@ -34,7 +29,7 @@ class Admin_Notice {
 			$notice_class .= ' is-dismissible';
 		}
 
-		printf( '<div data-vip-admin-notice="%s" class="%s">', esc_html( $this->dismiss_identifier ), esc_html( $notice_class ) );
+		printf( '<div %s="%s" class="%s">', esc_html( self::DISMISS_DATA_ATTRIBUTE ), esc_html( $this->dismiss_identifier ), esc_html( $notice_class ) );
 		printf( '<p>%s</p>', esc_html( $this->message ) );
 		printf( '</div>' );
 	}

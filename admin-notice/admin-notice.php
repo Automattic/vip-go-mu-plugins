@@ -17,6 +17,7 @@ $admin_notice_controller = new Admin_Notice_Controller();
 
 add_action( 'admin_notices', [ $admin_notice_controller, 'display_notices' ] );
 add_action( 'admin_enqueue_scripts', [ $admin_notice_controller, 'enqueue_scripts' ] );
+add_action( 'wp_ajax_dismiss_vip_notice', [ $admin_notice_controller, 'dismiss_vip_notice' ] );
 
 $admin_notice_controller->add(
 	new Admin_Notice(

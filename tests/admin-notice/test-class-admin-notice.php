@@ -17,7 +17,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		$notice->display();
 	}
 
-	public function test__display_dissmissible() {
+	public function test__display_dismissible() {
 		$message = 'Test Message';
 		$dismiss_id = 'dismiss_id';
 		$notice = new Admin_Notice( $message, [], $dismiss_id );
