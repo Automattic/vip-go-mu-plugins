@@ -63,7 +63,7 @@ function l( $stuff = null ) {
 	if ( is_null( $stuff ) ) {
 		// Log the file and line number
 		$backtrace = debug_backtrace( false );
-		while ( isset( $backtrace[1]['function'] ) && $backtrace[1]['function'] == __FUNCTION__ ) {
+		while ( isset( $backtrace[1]['function'] ) &&  __FUNCTION__ == $backtrace[1]['function'] ) {
 			array_shift( $backtrace );
 		}
 		$log = sprintf( '%s line %d', $backtrace[0]['file'], $backtrace[0]['line'] );
@@ -87,7 +87,7 @@ function l( $stuff = null ) {
 				$obs[] = $ob['name'];
 			}
 			// This is not perfect: anonymous handlers appear as default.
-			if ( $obs == array( 'default output handler' ) ) {
+			if ( array( 'default output handler' ) == $obs ) {
 				break;
 			}
 			$backtrace = debug_backtrace( false );
@@ -155,14 +155,14 @@ function l_json_encode_pretty( $data ) {
 				case '{':
 				case '[':
 					$new_json .= $char . "\n" . str_repeat( $tab, ++$indent_level );
-					break; 
+					break;
 				case '}':
 				case ']':
 					$new_json .= "\n" . str_repeat( $tab, --$indent_level ) . $char;
 					break;
 				case ',':
 					$new_json .= ",\n" . str_repeat( $tab, $indent_level );
-					break; 
+					break;
 				case ':':
 					$new_json .= ': ';
 					break;
@@ -183,7 +183,7 @@ function l_json_encode_pretty( $data ) {
 		}
 	}
 
-	return $new_json; 
+	return $new_json;
 }
 
 /**
@@ -216,7 +216,7 @@ function vip_timer( $name = '' ) {
  */
 function vip_timer_l( $name = '' ) {
 	$elapsed = vip_timer( $name );
-	if ( $elapsed !== null ) {
+	if ( null !== $elapsed ) {
 		l( sprintf( "%9.6f vip_timer('%s')", $elapsed, $name ) );
 	}
 	return $elapsed;
@@ -234,7 +234,7 @@ function t() {
 	}
 
 	$backtrace = debug_backtrace( false );
-	while ( isset( $backtrace[1]['function'] ) && $backtrace[1]['function'] == __FUNCTION__ ) {
+	while ( isset( $backtrace[1]['function'] ) && __FUNCTION__ == $backtrace[1]['function'] ) {
 		array_shift( $backtrace );
 	}
 
