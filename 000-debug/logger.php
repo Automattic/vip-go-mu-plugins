@@ -57,13 +57,15 @@ function l( $stuff = null ) {
 		} else {
 			$hint = php_sapi_name();
 		}
+		// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( sprintf( '[%s-%s => %s]', $pageload, getmypid(), $hint ) );
+		// phpcs:enable
 	}
 	$pid = $pageload . '-' . getmypid();
 	if ( is_null( $stuff ) ) {
 		// Log the file and line number
 		$backtrace = debug_backtrace( false );
-		while ( isset( $backtrace[1]['function'] ) &&  __FUNCTION__ == $backtrace[1]['function'] ) {
+		while ( isset( $backtrace[1]['function'] ) && __FUNCTION__ == $backtrace[1]['function'] ) {
 			array_shift( $backtrace );
 		}
 		$log = sprintf( '%s line %d', $backtrace[0]['file'], $backtrace[0]['line'] );
@@ -109,7 +111,9 @@ function l( $stuff = null ) {
 			$log = print_r( $stuff, true );
 		}
 	}
+	// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	error_log( sprintf( '[%s] %s', $pid, $log ) );
+	// phpcs:enable
 	return $stuff;
 }
 
