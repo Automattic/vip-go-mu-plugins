@@ -406,29 +406,18 @@ class Search {
 		$response = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
-
 		$duration = ( $end_time - $start_time ) * 1000;
 
 		$this->statsd->increment( $statsd_prefix . '.total' );
 
-		if ( is_wp_error( $response ) ) {
-			$error_messages = $response->get_error_messages();
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
-			foreach ( $error_messages as $error_message ) {
-				// Default stat for errors is 'error'
-				$stat = '.error';
-				// If curl error 28(timeout), the stat should be 'timeout'
-				if ( $this->is_curl_timeout( $error_message ) ) {
-					$stat = '.timeout';
-				}
-
-				$this->statsd->increment( $statsd_prefix . $stat );
-			}
+		if ( is_wp_error( $response ) || $response_code >= 400 ) {
+			$this->ep_handle_failed_request( $response, $statsd_prefix );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
-
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
 				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
@@ -438,23 +427,6 @@ class Search {
 			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
 				$doc_count = count( $response_body['items'] );
 				$this->statsd->timing( $statsd_prefix . '.per_doc', $duration / $doc_count );
-			}
-
-			$response_code = (int) wp_remote_retrieve_response_code( $response );
-
-			// Check for an error HTTP code and log the Elasticsearch error
-			if ( $response_code >= 400 ) {
-				$response_error = $response_body['error'];
-				$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-				\Automattic\VIP\Logstash\log2logstash( array(
-					'severity' => 'error',
-					'feature' => 'vip_search_query_error',
-					'message' => $error_message,
-					'extra' => array(
-						'error_type' => $response_error['type'] ?? 'Unknown error type',
-						'root_cause' => $response_error['root_cause'] ?? null,
-					),
-				) );
 			}
 
 			$response_headers = wp_remote_retrieve_headers( $response );
@@ -478,6 +450,38 @@ class Search {
 		}
 
 		return $response;
+	}
+
+	private function ep_handle_failed_request( $response, $statsd_prefix ) {
+		$response_error = [];
+
+		if ( is_wp_error( $response ) ) {
+			$error_messages = $response->get_error_messages();
+			$response_error['reason'] = implode( ';', $error_messages );
+
+			foreach ( $error_messages as $error_message ) {
+				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
+
+				$this->statsd->increment( $statsd_prefix . $stat );
+			}
+		} else {
+			$response_body_json = wp_remote_retrieve_body( $response );
+			$response_body = json_decode( $response_body_json, true );
+			$response_error = $response_body ? $response_body['error'] : $response_body;
+
+			$this->statsd->increment( $statsd_prefix . '.error' );
+		}
+
+		$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+		\Automattic\VIP\Logstash\log2logstash( array(
+			'severity' => 'error',
+			'feature' => 'vip_search_query_error',
+			'message' => $error_message,
+			'extra' => array(
+				'error_type' => $response_error['type'] ?? 'Unknown error type',
+				'root_cause' => $response_error['root_cause'] ?? null,
+			),
+		) );
 	}
 
 	/*
