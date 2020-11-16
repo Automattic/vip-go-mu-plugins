@@ -27,7 +27,7 @@
 	<exclude-pattern>vip-support/*</exclude-pattern>
 
 	<!-- Other directories -->
-	<exclude-pattern>.git/*</exclude-pattern>
+	<exclude-pattern>\.git/*</exclude-pattern>
 	<exclude-pattern>akismet/*</exclude-pattern>
 	<exclude-pattern>bin/*</exclude-pattern>
 	<exclude-pattern>debug-bar/*</exclude-pattern>
