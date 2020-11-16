@@ -783,9 +783,9 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 	$retry     = abs( $retry );
 	$threshold = abs( $threshold );
 
-	// Default max timeout is 5s. 
+	// Default max timeout is 5s.
 	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
-	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things. 
+	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things.
 	$timeout         = (int) $timeout;
 	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
 
@@ -1186,7 +1186,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 			}
 		}
 	}
-	
+
 	if ( $includepath && file_exists( $includepath ) ) {
 		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}/{$file}" );
 
@@ -1376,12 +1376,9 @@ function _wpcom_vip_include_plugin( $file ) {
 	$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
 
 	// global each new variable
-	foreach ( $new_variables as $new_variable => $devnull ) {
-		global $$new_variable;
+	foreach ( $new_variables as $new_variable => $value ) {
+		$GLOBALS[ $new_variable ] = $value;
 	}
-
-	// Set the values again on those new globals
-	extract( $new_variables );
 
 	return true;
 }
@@ -1451,10 +1448,10 @@ function is_proxied_request() {
 
 /**
  * Is the current request being made from Jetpack servers?
- * 
+ *
  * NOTE - This checks the REMOTE_ADDR against known JP IPs. The IP can still be spoofed,
  * (but usually an attacker cannot receive the response), so it is important to treat it accordingly
- * 
+ *
  * @return bool Bool indicating if the current request came from JP servers
  */
 function vip_is_jetpack_request() {
