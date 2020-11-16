@@ -29,7 +29,7 @@ class Admin_Notice {
 			$notice_class .= ' is-dismissible';
 		}
 
-		printf( '<div %s="%s" class="%s">', esc_html( self::DISMISS_DATA_ATTRIBUTE ), esc_html( $this->dismiss_identifier ), esc_html( $notice_class ) );
+		printf( '<div %s="%s" class="%s">', esc_html( self::DISMISS_DATA_ATTRIBUTE ), esc_attr( $this->dismiss_identifier ), esc_attr( $notice_class ) );
 		printf( '<p>%s</p>', esc_html( $this->message ) );
 		printf( '</div>' );
 	}

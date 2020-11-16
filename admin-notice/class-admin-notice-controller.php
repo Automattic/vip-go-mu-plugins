@@ -41,7 +41,7 @@ class Admin_Notice_Controller {
 		check_ajax_referer( self::DISMISS_NONCE_ACTION );
 
 		if ( isset( $_POST[ self::DISMISS_IDENTIFIER_KEY ] ) ) {
-			update_user_meta( get_current_user_id(), self::DISMISS_USER_META, esc_html( $_POST[ self::DISMISS_IDENTIFIER_KEY ] ) );
+			update_user_meta( get_current_user_id(), self::DISMISS_USER_META, sanitize_text_field( $_POST[ self::DISMISS_IDENTIFIER_KEY ] ) );
 		}
 		die();
 	}
