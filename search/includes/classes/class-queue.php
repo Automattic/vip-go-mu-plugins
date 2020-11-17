@@ -721,7 +721,7 @@ class Queue {
 		}
 
 		$message = sprintf(
-			'Application %d - %s has had it\'s Elasticsearch indexing rate limited for %d seconds. Large batch indexing operations are being queued for indexing in batches over time.',
+			'Application %d - %s has had its Elasticsearch indexing rate limited for %d seconds. Large batch indexing operations are being queued for indexing in batches over time.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$index_limiting_time

@@ -691,7 +691,7 @@ class Search {
 		}
 
 		$message = sprintf(
-			'Application %d - %s has had it\'s Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+			'Application %d - %s has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$query_limiting_time
