@@ -2029,7 +2029,8 @@ class Search_Test extends \WP_UnitTestCase {
 			->method( 'send_to_chat' )
 			->with( '#vip-go-es-alerts', $this->anything(), $expected_level );
 
-		$es->maybe_alert_for_prolonged_query_limiting();
+		// Surpress the trigger_error warning since it will always happens and causes execution to fail
+		@$es->maybe_alert_for_prolonged_query_limiting();
 	}
 
 	/**
