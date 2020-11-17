@@ -56,7 +56,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 	if ( empty( $plugins ) ) {
 		?>
 		<div class="notice notice-error">
-			<p><?php _e( 'Unable to display VIP featured plugins; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
+			<p><?php esc_html_e( 'Unable to display VIP Featured Technology Partners; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
 		</div>
 		<?php
 		return;
@@ -64,7 +64,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 
 	?>
 	<div class="featured-plugins notice">
-		<h3><?php _e( 'VIP Featured Plugins', 'vip-plugins-dashboard' ); ?></h3>
+		<h3><?php esc_html_e( 'VIP Featured Technology Partners', 'vip-plugins-dashboard' ); ?></h3>
 		<?php
 		foreach ( $plugins as $key => $plugin ) {
 			?>
