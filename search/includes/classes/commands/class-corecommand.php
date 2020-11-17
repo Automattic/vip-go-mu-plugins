@@ -94,6 +94,9 @@ class CoreCommand extends \ElasticPress\Command {
 
 			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
+			// Unset skip-confirm since it doesn't exist in ElasticPress and causes
+			// an error for indexing operations exclusively for some reason.
+			unset( $assoc_args['skip-confirm'] );
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
 		}
