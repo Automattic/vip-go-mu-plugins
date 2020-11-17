@@ -16,6 +16,8 @@ require_once __DIR__ . '/conditions/class-wp-version-condition.php';
 $admin_notice_controller = new Admin_Notice_Controller();
 
 add_action( 'admin_notices', [ $admin_notice_controller, 'display_notices' ] );
+add_action( 'admin_enqueue_scripts', [ $admin_notice_controller, 'enqueue_scripts' ] );
+add_action( 'wp_ajax_dismiss_vip_notice', [ $admin_notice_controller, 'dismiss_vip_notice' ] );
 
 $admin_notice_controller->add(
 	new Admin_Notice(
@@ -23,5 +25,6 @@ $admin_notice_controller->add(
 		[
 			new Date_Condition( '2020-07-01', '2020-10-30 15:00' ),
 			new WP_Version_Condition( '5.5.1', '5.5.2' ),
-		]
+		],
+		'wp-5.5.2'
 ) );
