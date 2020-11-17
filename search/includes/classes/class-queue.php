@@ -721,13 +721,15 @@ class Queue {
 		}
 
 		$message = sprintf(
-			'Application %d - %s is index limited for %d seconds',
+			'Application %d - %s has had it\'s Elasticsearch indexing rate limited for %d seconds. Large batch indexing operations are being queued for indexing in batches over time.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$index_limiting_time
 		);
 
 		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
+
+		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
