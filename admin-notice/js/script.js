@@ -6,7 +6,7 @@ function tryGetNoticeContainer(currentElement) {
 }
 
 function persistDismissedNotice(containerElement) {
-    const dismissIdentifier = containerElement?.getAttribute(dismissal_data.data_attribute);
+    const dismissIdentifier = containerElement && containerElement.getAttribute(dismissal_data.data_attribute);
     if (dismissIdentifier) {
         var formData = new FormData();
 
@@ -22,7 +22,7 @@ function persistDismissedNotice(containerElement) {
 }
 
 function onDismissed(event) {
-    const noticeContainer = tryGetNoticeContainer(event?.target);
+    const noticeContainer = tryGetNoticeContainer(event && event.target);
     if (noticeContainer) {
         persistDismissedNotice(noticeContainer);
     }
