@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Retrieve featured plugins from the wpvip.com API
@@ -69,15 +69,15 @@ function wpcom_vip_render_vip_featured_plugins() {
 		foreach ( $plugins as $key => $plugin ) {
 			?>
 			<div class="plugin">
-				<a class="fp-content" href="<?php echo esc_attr( $plugin->meta->plugin_url ); ?>" target="_blank">
+				<a class="fp-content" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
 					<img src="<?php echo esc_attr( $plugin->meta->listing_logo ); ?>" alt="<?php echo esc_attr( $plugin->post_title ); ?>" />
 					<h4><?php echo esc_html( $plugin->post_title ); ?></h4>
 					<p><?php echo esc_html( $plugin->meta->listing_description ); ?></p>
 				</a>
-				<a class="fp-overlay" href="<?php echo esc_attr( $plugin->meta->plugin_url ); ?>" target="_blank">
+				<a class="fp-overlay" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
 					<div class="fp-overlay-inner">
 						<div class="fp-overlay-cell">
-							<span>	
+							<span>
 								<?php _e( 'More Information', 'vip-plugins-dashboard' ); ?>
 							</span>
 						</div>
