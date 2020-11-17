@@ -9,7 +9,8 @@
     "phpcs:changed:remote": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet",
     "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
     "lint": "npm run phplint && npm run phpcs:changed:remote",
-    "update-subtrees": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash"
+    "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
+    "update-test-jquery-updates": "./bin/update-test-jquery-updates.sh"
   },
   "author": "Automattic",
   "devDependencies": {
