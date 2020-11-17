@@ -691,13 +691,21 @@ class Search {
 		}
 
 		$message = sprintf(
-			'Application %d - %s is query limited for %d seconds',
+			'Application %d - %s has had it\'s Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$query_limiting_time
 		);
 
 		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'warning',
+				'feature' => 'vip_search_query_rate_limiting',
+				'message' => $message,
+			)
+		);
 	}
 
 	/**
