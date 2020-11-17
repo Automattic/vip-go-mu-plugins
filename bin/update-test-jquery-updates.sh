@@ -52,7 +52,7 @@ git subtree add --squash -P $directory git@github.com:WordPress/wp-jquery-update
 
 
 print_heading "Change capability required from install_plugins (not allowed on VIP platform) to activate_plugins"
-sed -i 's/install_plugins/activate_plugins/g' "$directory/class_wp_jquery_update_test.php"
+sed -i.bak 's/install_plugins/activate_plugins/g' "$directory/class_wp_jquery_update_test.php"
 git commit -avm "Updates capability needed for test-jquery-updates"
 
 echo "\n\nDONE\n"
