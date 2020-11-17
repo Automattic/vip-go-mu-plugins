@@ -21,7 +21,7 @@ class HealthJob {
 	/**
 	 * Custom cron interval value
 	 */
-	const CRON_INTERVAL = 60 * 30; // 30 minutes in seconds
+	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
 
 	public $health_check_disabled_sites = array();
 
