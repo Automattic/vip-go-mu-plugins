@@ -121,11 +121,12 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  * @return string
  */
 function vip_powered_wpcom_url() {
+	$utm_term = isset( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '';
 	$args = array(
 		'utm_source'   => 'vip_powered_wpcom',
 		'utm_medium'   => 'web',
 		'utm_campaign' => 'VIP Footer Credit',
-		'utm_term'     => sanitize_text_field( $_SERVER['HTTP_HOST'] ),
+		'utm_term'     => sanitize_text_field( $utm_term ),
 	);
 
 	return add_query_arg( $args, 'https://wpvip.com/' );
@@ -352,7 +353,7 @@ endif;
 
 if ( ! function_exists( 'wp_endswith' ) ) :
 	function wp_endswith( $haystack, $needle ) {
-		return $needle === substr( $haystack, -strlen( $needle ) );
+		return substr( $haystack, -strlen( $needle ) ) === $needle;
 	}
 endif;
 
@@ -416,15 +417,16 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 		return;
 	}
 
+	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
 	// Don't do anything for the homepage
-	if ( '/' == $_SERVER['REQUEST_URI'] ) {
+	if ( '/' == $request_uri ) {
 		return;
 	}
 
 	foreach ( $vip_redirects_array as $old_path => $new_url ) {
-		if ( substr( $_SERVER['REQUEST_URI'], 0, strlen( $old_path ) ) == $old_path ) {
+		if ( substr( $request_uri, 0, strlen( $old_path ) ) == $old_path ) {
 			if ( $append_old_uri ) {
-				$new_url .= str_replace( $old_path, '', $_SERVER['REQUEST_URI'] );
+				$new_url .= str_replace( $old_path, '', $request_uri );
 			}
 			wp_redirect( $new_url, 301 );
 			exit();
@@ -518,12 +520,14 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 
 	// Let's see if we have an existing cache already
 	// Empty strings are okay, false means no cache
-	if ( false !== $cache = wp_cache_get( $cache_key, $cache_group ) ) {
+	$cache = wp_cache_get( $cache_key, $cache_group );
+	if ( false !== $cache ) {
 		return $cache;
 	}
 
 	// Legacy
-	if ( false !== $cache = wp_cache_get( $old_cache_key, $cache_group ) ) {
+	$cache = wp_cache_get( $old_cache_key, $cache_group );
+	if ( false !== $cache ) {
 		return $cache;
 	}
 
@@ -683,7 +687,11 @@ function wpcom_vip_is_feedservice_ua() {
 			header( 'X-Accel-Expires: 0' );
 	}
 
-	return (bool) preg_match( '/feedburner|feedvalidator|MediafedMetrics/i', $_SERVER['HTTP_USER_AGENT'] );
+
+	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+	$http_user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '';
+
+	return (bool) preg_match( '/feedburner|feedvalidator|MediafedMetrics/i', $http_user_agent );
 }
 
 /**
@@ -1460,8 +1468,10 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
+	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+	$http_user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '';
 	// Simple UA check to filter out most.
-	if ( false === stripos( $_SERVER['HTTP_USER_AGENT'], 'jetpack' ) ) {
+	if ( false === stripos( $http_user_agent, 'jetpack' ) ) {
 		return false;
 	}
 
@@ -1543,6 +1553,7 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 	}
 
 	if ( is_array( $message ) || is_object( $message ) ) {
+		//phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( "Invalid \$message: wpcom_vip_irc( '$channel_or_user', " . print_r( $message, true ) . ' );' );
 
 		return false;
