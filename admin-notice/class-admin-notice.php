@@ -29,15 +29,8 @@ class Admin_Notice {
 			$notice_class .= ' is-dismissible';
 		}
 
-		$allowed_html = array(
-			'a' => array(
-				'href' => array(),
-				'target' => array(),
-			),
-		);
-
 		printf( '<div %s="%s" class="%s">', esc_html( self::DISMISS_DATA_ATTRIBUTE ), esc_attr( $this->dismiss_identifier ), esc_attr( $notice_class ) );
-		printf( '<p>%s</p>', wp_kses( $this->message, $allowed_html ) );
+		printf( '<p>%s</p>', esc_html( $this->message ) );
 		printf( '</div>' );
 	}
 
