@@ -22,7 +22,7 @@ add_action( 'wp_ajax_dismiss_vip_notice', [ $admin_notice_controller, 'dismiss_v
 // WP 5.6 RC1 (released Nov 17, 2020)
 $admin_notice_controller->add(
 	new Admin_Notice(
-		'WordPress 5.6 will be released on December 8th, 2020. Please ensure your sites have been tested against the current Release Candidate',
+		'VIP Go will be upgraded to WordPress 5.6 on December 8th, 2020. Please ensure your sites have been tested against the current Release Candidate prior to this time. More details can be found in <a href="https://lobby.vip.wordpress.com/2020/11/17/call-for-testing-wordpress-5-6-release-candidate/" target="_blank">our Lobby Post announcement</a>.',
 		[
 			new Date_Condition( '2020-11-17', '2020-12-09' ),
 			new WP_Version_Condition( '1.0.0', '5.6' ),
