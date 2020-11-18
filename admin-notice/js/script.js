@@ -29,10 +29,11 @@ function onDismissed(event) {
 }
 
 function registerDismissHooks() {
-    const buttons = document.getElementsByClassName("notice-dismiss");
-    for (const button of buttons) {
-        button.onclick = onDismissed;
-    }
+	const notices = document.querySelectorAll( '.vip-notice .notice-dismiss' );
+
+	for ( const notice of notices ) {
+		notice.addEventListener( "click", onDismissed );
+	}
 }
 
 window.onload = (function (oldLoad) {
