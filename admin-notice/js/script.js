@@ -29,10 +29,9 @@ function onDismissed(event) {
 }
 
 function registerDismissHooks() {
-    const notices = document.getElementsByClassName("vip-notice");
-    for (const notice of notices) {
-        // Hooking up on the event caused by the core implementation of is-dismissible class, which generates dismiss button.
-        notice.addEventListener("DOMNodeRemoved", onDismissed);
+    const buttons = document.getElementsByClassName("notice-dismiss");
+    for (const button of buttons) {
+        button.onclick = onDismissed;
     }
 }
 
