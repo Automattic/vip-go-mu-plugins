@@ -19,12 +19,14 @@ add_action( 'admin_notices', [ $admin_notice_controller, 'display_notices' ] );
 add_action( 'admin_enqueue_scripts', [ $admin_notice_controller, 'enqueue_scripts' ] );
 add_action( 'wp_ajax_dismiss_vip_notice', [ $admin_notice_controller, 'dismiss_vip_notice' ] );
 
+// WP 5.6 RC1 (released Nov 17, 2020)
 $admin_notice_controller->add(
 	new Admin_Notice(
-		'WordPress 5.5.2 will be released on Friday, October 30th',
+		'VIP Go will be upgraded to WordPress 5.6 on December 8th, 2020. Please ensure your sites have been tested against the current Release Candidate prior to this time. More details can be found in <a href="https://lobby.vip.wordpress.com/2020/11/17/call-for-testing-wordpress-5-6-release-candidate/" target="_blank">our Lobby Post announcement</a>.',
 		[
-			new Date_Condition( '2020-07-01', '2020-10-30 15:00' ),
-			new WP_Version_Condition( '5.5.1', '5.5.2' ),
+			new Date_Condition( '2020-11-17', '2020-12-09' ),
+			new WP_Version_Condition( '1.0.0', '5.6' ),
+			new Capability_Condition( 'manage_options' ),
 		],
-		'wp-5.5.2'
+		'wp-5.6-rc1'
 ) );
