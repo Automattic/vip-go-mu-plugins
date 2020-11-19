@@ -7,9 +7,6 @@
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
 	url = https://github.com/Automattic/advanced-post-cache.git
-[submodule "jetpack"]
-	path = jetpack
-	url = https://github.com/Automattic/jetpack.git
 [submodule "rewrite-rules-inspector"]
 	path = rewrite-rules-inspector
 	url = https://github.com/Automattic/rewrite-rules-inspector
