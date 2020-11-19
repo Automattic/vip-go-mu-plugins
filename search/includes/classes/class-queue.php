@@ -728,6 +728,8 @@ class Queue {
 		);
 
 		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
+
+		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		
 		\Automattic\VIP\Logstash\log2logstash(
 			array(

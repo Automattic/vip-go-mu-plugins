@@ -698,6 +698,8 @@ class Search {
 		);
 
 		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
