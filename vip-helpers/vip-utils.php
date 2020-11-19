@@ -121,7 +121,7 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  * @return string
  */
 function vip_powered_wpcom_url() {
-	$utm_term = isset( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '';
+	$utm_term = $_SERVER['HTTP_HOST'] ?? '';
 	$args = array(
 		'utm_source'   => 'vip_powered_wpcom',
 		'utm_medium'   => 'web',
