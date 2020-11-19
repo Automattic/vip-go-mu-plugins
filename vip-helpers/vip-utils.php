@@ -417,7 +417,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 		return;
 	}
 
-	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+	$request_uri = $_SERVER['REQUEST_URI'] ) ?? '';
 	// Don't do anything for the homepage
 	if ( '/' == $request_uri ) {
 		return;
@@ -689,7 +689,7 @@ function wpcom_vip_is_feedservice_ua() {
 
 
 	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-	$http_user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '';
+	$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
 	return (bool) preg_match( '/feedburner|feedvalidator|MediafedMetrics/i', $http_user_agent );
 }
@@ -1469,7 +1469,7 @@ function vip_is_jetpack_request() {
 	}
 
 	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-	$http_user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '';
+	$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 	// Simple UA check to filter out most.
 	if ( false === stripos( $http_user_agent, 'jetpack' ) ) {
 		return false;
