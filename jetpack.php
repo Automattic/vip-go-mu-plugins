@@ -114,6 +114,19 @@ function vip_jetpack_load() {
 			break;
 		}
 	}
+
+	/**
+	 * Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
+	 *
+	 * This cannot be included inside Jetpack because it ships with caching disabled by default.
+	 * By enabling caching it's possible to save time in uncached page renders.
+	 *
+	 * We need Jetpack to be loaded as this has been deprecated in version 9.1, and if the filter is
+	 * added in that version or newer, a warning is shown on every WordPress request
+	 */
+	if ( version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
+		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
+	}
 }
 
 vip_jetpack_load();
