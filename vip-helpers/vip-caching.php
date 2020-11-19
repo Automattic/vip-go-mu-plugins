@@ -764,11 +764,3 @@ function vip_reset_db_query_log() {
 
 	$wpdb->queries = array();
 }
-
-/**
-* Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
-*
-* This cannot be included inside Jetpack because it ships with caching disabled by default.
-* By enabling caching it's possible to save time in uncached page renders.
-**/
-add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
