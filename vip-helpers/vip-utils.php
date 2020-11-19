@@ -417,7 +417,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 		return;
 	}
 
-	$request_uri = $_SERVER['REQUEST_URI'] ) ?? '';
+	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 	// Don't do anything for the homepage
 	if ( '/' == $request_uri ) {
 		return;
