@@ -40,6 +40,7 @@
 	<exclude-pattern>vendor/*</exclude-pattern>
 	<exclude-pattern>wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>wp-cron-control/*</exclude-pattern>
+	<exclude-pattern>test-jquery-updates/*</exclude-pattern>
 
 	<!-- How to scan -->
 	<!-- Strip the file paths down to the relevant bit -->
