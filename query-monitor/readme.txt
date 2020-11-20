@@ -2,10 +2,11 @@
 Contributors: johnbillion
 Tags: debug, debug-bar, debugging, development, developer, performance, profiler, queries, query monitor, rest-api
 Requires at least: 3.7
-Tested up to: 5.5
-Stable tag: 3.6.4
+Tested up to: 5.6
+Stable tag: 3.6.5
 License: GPLv2 or later
 Requires PHP: 5.3
+Donate link: https://johnblackbourn.com/donations/
 
 Query Monitor is the developer tools panel for WordPress.
 
@@ -86,6 +87,10 @@ In addition, Query Monitor transparently supports add-ons for the Debug Bar plug
 
 Please use [the issue tracker on Query Monitor's GitHub repo](https://github.com/johnbillion/query-monitor/issues) as it's easier to keep track of issues there, rather than on the wordpress.org support forums.
 
+= Is Query Monitor available on Altis? =
+
+Yes, the [Altis Developer Tools](https://www.altis-dxp.com/resources/developer-docs/dev-tools/) are built on top of Query Monitor.
+
 = Is Query Monitor available on WordPress.com VIP Go? =
 
 Yes, it's included as part of the VIP Go platform. However, a user needs to be granted the `view_query_monitor` capability to see Query Monitor even if they're an administrator.
@@ -109,13 +114,28 @@ Yes. You can enable this on the Settings panel.
 
 = Do you accept donations? =
 
-No, I do not accept donations. If you like the plugin, I'd love for you to [leave a review](https://wordpress.org/support/view/plugin-reviews/query-monitor). Tell all your friends about the plugin too!
+### Do you accept donations?
+
+[I am accepting sponsorships via the GitHub Sponsors program](https://johnblackbourn.com/donations/) and any support you can give will help me maintain this plugin and keep it free for everyone.
+
+In addition, if you like the plugin then I'd love for you to [leave a review](https://wordpress.org/support/view/plugin-reviews/query-monitor). Tell all your friends about it too!
 
 ## Changelog ##
 
+### 3.6.5 ###
+
+* Always show the Logs panel, with a link to help docs.
+* Whole bunch of improvements to QM's "broken" state handling.
+* Remove usage of deprecated jQuery methods.
+* Add support for Altis dependencies as components.
+* Add `innodb_buffer_pool_size` variable to the mysql environment list.
+* Preformat the Logger output
+* Fix the PHP version check.
+
+
 ### 3.6.4 ###
 
-* Correct an error introduced in 3.6.3 with the extra early error handling (ironic).
+* Correct an error introduced in 3.6.2 with the extra early error handling (ironic).
 
 ### 3.6.3 ###
 
@@ -448,15 +468,3 @@ New features! Read about them here: https://querymonitor.com/blog/2019/02/new-fe
 * Add a bit of vertical breathing room.
 * Various improvements to terminology.
 * Coding standards.
-
-### 2.14.0 ###
-
-* Some more inline documentation about clickable stack traces.
-* Output a more complete list of error levels and their status.
-* Internationalisation fixes.
-* Add some wrapping to the Request and Theme output so posts with long unbroken slugs don't break the layout.
-* PHP error handler: Add new hook `qm/collect/new_php_error`
-* Built-in collectors: Add new `qm/built-in-collectors` filter on files before including them
-* More defensive CSS.
-* Fix the size of the expand/contract buttons.
-* Avoid showing two unnecessary functions in the call stack for textdomain loading.
