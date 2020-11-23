@@ -63,7 +63,7 @@ class Queue {
 		return true;
 	}
 
-	protected function apply_settings() {
+	public function apply_settings() {
 		/**
 		 * The period with which the Elasticsearch indexing rate limiting threshold is set.
 		 *
@@ -120,16 +120,6 @@ class Queue {
 
 		self::$max_indexing_op_count = intval( self::$max_indexing_op_count );
 
-		if ( ( ( self::$index_count_ttl * 250 ) + 1 ) < self::$max_indexing_op_count ) {
-			_doing_it_wrong(
-				'add_filter',
-				'vip_search_max_indexing_op_count should not exceed 250 queries per second.',
-				'5.5.3'
-			);
-
-			self::$max_indexing_op_count = ( self::$index_count_ttl * 250 ) + 1;
-		}
-
 		if ( ( ( self::$index_count_ttl * 10 ) + 1 ) > self::$max_indexing_op_count ) {
 			_doing_it_wrong(
 				'add_filter',
@@ -138,6 +128,16 @@ class Queue {
 			);
 
 			self::$max_indexing_op_count = ( self::$index_count_ttl * 10 ) + 1;
+		}
+
+		if ( ( ( self::$index_count_ttl * 250 ) + 1 ) < self::$max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_op_count should not exceed 250 queries per second.',
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = ( self::$index_count_ttl * 250 ) + 1;
 		}
 		
 		/**
@@ -189,13 +189,14 @@ class Queue {
 		 * to prevent hanging / timeouts in the UI and related bad UX.
 		 *
 		 * @hook vip_search_max_indexing_count
+		 * @param int $max_count The maximum number of objects that can be synchronously indexed.
 		 */
 		self::$max_sync_indexing_count = apply_filters( 'vip_search_max_indexing_count', 10000 );
 
 		if ( ! is_numeric( self::$max_sync_indexing_count ) ) {
 			_doing_it_wrong(
-				'vip_search_max_sync_indexing_count',
-				'vip_search_max_sync_indexing_count should be an integer.',
+				'add_filter',
+				'vip_search_max_indexing_count should be an integer.',
 				'5.5.3'
 			);
 
@@ -204,24 +205,24 @@ class Queue {
 
 		self::$max_sync_indexing_count = intval( self::$max_sync_indexing_count );
 
-		if ( 25000 < self::$max_sync_indexing_count ) {
-			_doing_it_wrong(
-				'vip_search_max_sync_indexing_count',
-				'vip_search_max_sync_indexing_count should not be above 25000.',
-				'5.5.3'
-			);
-
-			self::$max_sync_indexing_count = 25000;
-		}
-
 		if ( 2500 > self::$max_sync_indexing_count ) {
 			_doing_it_wrong(
-				'vip_search_max_sync_indexing_count',
+				'add_filter',
 				'vip_search_max_sync_indexing_count should not be below 2500.',
 				'5.5.3'
 			);
 
 			self::$max_sync_indexing_count = 2500;
+		}
+
+		if ( 25000 < self::$max_sync_indexing_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_sync_indexing_count should not be above 25000.',
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = 25000;
 		}
 	}
 

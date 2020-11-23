@@ -119,7 +119,7 @@ class Search {
 		}
 	}
 
-	protected function apply_settings() {
+	public function apply_settings() {
 		/**
 		 * The period with which the Elasticsearch query rate limiting threshold is set.
 		 *
@@ -174,16 +174,6 @@ class Search {
 
 		self::$max_query_count = intval( self::$max_query_count );
 
-		if ( ( ( self::$query_count_ttl * 500 ) + 1 ) < self::$max_query_count ) {
-			_doing_it_wrong(
-				'add_filter',
-				'vip_search_max_query_count should not exceed 500 queries per second.',
-				'5.5.3'
-			);
-
-			self::$max_query_count = ( self::$query_count_ttl * 500 ) + 1;
-		}
-
 		if ( ( ( self::$query_count_ttl * 10 ) + 1 ) > self::$max_query_count ) {
 			_doing_it_wrong(
 				'add_filter',
@@ -192,6 +182,16 @@ class Search {
 			);
 
 			self::$max_query_count = ( self::$query_count_ttl * 10 ) + 1;
+		}
+
+		if ( ( ( self::$query_count_ttl * 500 ) + 1 ) < self::$max_query_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_query_count should not exceed 500 queries per second.',
+				'5.5.3'
+			);
+
+			self::$max_query_count = ( self::$query_count_ttl * 500 ) + 1;
 		}
 
 		/**
@@ -206,7 +206,7 @@ class Search {
 
 		if ( ! is_numeric( self::$query_db_fallback_value ) ) {
 			_doing_it_wrong(
-				'vip_search_query_db_fallback_value',
+				'add_filter',
 				'vip_search_query_db_fallback_value should be an integer.',
 				'5.5.3'
 			);
@@ -218,7 +218,7 @@ class Search {
 
 		if ( 0 >= self::$query_db_fallback_value || 10 <= self::$query_db_fallback_value ) {
 			_doing_it_wrong(
-				'vip_search_query_db_fallback_value',
+				'add_filter',
 				'vip_search_query_db_fallback_value should be between 1 and 9.',
 				'5.5.3'
 			);
