@@ -75,6 +75,28 @@ class Queue {
 		 */
 		self::$index_count_ttl = apply_filters( 'vip_search_index_count_period', 5 * MINUTE_IN_SECONDS );
 
+		if ( ! is_numeric( self::$index_count_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_count_period should be an integer.',
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = 5 * \MINUTE_IN_SECONDS;
+		}
+
+		self::$index_count_ttl = intval( self::$index_count_ttl );
+
+		if ( self::$index_count_ttl < 1 * \MINUTE_IN_SECONDS ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_count_period should not be set below 1 minute.',
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = 1 * \MINUTE_IN_SECONDS;
+		}
+
 		/**
 		 * The number of indexing operations allowed per period before Elasticsearch rate limiting takes effect.
 		 *
@@ -85,6 +107,38 @@ class Queue {
 		 * @param int $ratelimit_threshold The threshold to trigger rate limiting for the period.
 		 */
 		self::$max_indexing_op_count = apply_filters( 'vip_search_max_indexing_op_count', 6000 + 1 );
+
+		if ( ! is_numeric( self::$max_indexing_op_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_op_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = 6000 + 1;
+		}
+
+		self::$max_indexing_op_count = intval( self::$max_indexing_op_count );
+
+		if ( ( ( self::$index_count_ttl * 250 ) + 1 ) < self::$max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_op_count should not exceed 250 queries per second.',
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = ( self::$index_count_ttl * 250 ) + 1;
+		}
+
+		if ( ( ( self::$index_count_ttl * 10 ) + 1 ) > self::$max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_op_count should not be below 10 queries per second.',
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = ( self::$index_count_ttl * 10 ) + 1;
+		}
 		
 		/**
 		 * The length of time Elasticsearch indexing rate limiting will be active once triggered.
@@ -96,6 +150,38 @@ class Queue {
 		 */
 		self::$index_queueing_ttl = apply_filters( 'vip_search_index_ratelimiting_duration', 5 * MINUTE_IN_SECONDS );
 
+		if ( ! is_numeric( self::$index_queueing_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_ratelimiting_duration should be an integer.',
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = 5 * \MINUTE_IN_SECONDS;
+		}
+
+		self::$index_queueing_ttl = intval( self::$index_queueing_ttl );
+
+		if ( self::$index_queueing_ttl < 1 * \MINUTE_IN_SECONDS ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_ratelimiting_duration should not be set below 1 minute.',
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = 1 * \MINUTE_IN_SECONDS;
+		}
+
+		if ( self::$index_queueing_ttl > 20 * \MINUTE_IN_SECONDS ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_ratelimiting_duration should not be set above 20 minutes.',
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = 20 * \MINUTE_IN_SECONDS;
+		}
+
 		/**
 		 * The maximum number of objects that can be synchronously indexing in Search.
 		 *
@@ -105,6 +191,38 @@ class Queue {
 		 * @hook vip_search_max_indexing_count
 		 */
 		self::$max_sync_indexing_count = apply_filters( 'vip_search_max_indexing_count', 10000 );
+
+		if ( ! is_numeric( self::$max_sync_indexing_count ) ) {
+			_doing_it_wrong(
+				'vip_search_max_sync_indexing_count',
+				'vip_search_max_sync_indexing_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = 10000;
+		}
+
+		self::$max_sync_indexing_count = intval( self::$max_sync_indexing_count );
+
+		if ( 25000 < self::$max_sync_indexing_count ) {
+			_doing_it_wrong(
+				'vip_search_max_sync_indexing_count',
+				'vip_search_max_sync_indexing_count should not be above 25000.',
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = 25000;
+		}
+
+		if ( 2500 > self::$max_sync_indexing_count ) {
+			_doing_it_wrong(
+				'vip_search_max_sync_indexing_count',
+				'vip_search_max_sync_indexing_count should not be below 2500.',
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = 2500;
+		}
 	}
 
 	public function setup_hooks() {

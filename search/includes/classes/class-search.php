@@ -130,6 +130,28 @@ class Search {
 		 */
 		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', 5 * \MINUTE_IN_SECONDS );
 
+		if ( ! is_numeric( self::$query_count_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_ratelimit_period should be an integer.',
+				'5.5.3'
+			);
+
+			self::$query_count_ttl = 5 * \MINUTE_IN_SECONDS;
+		}
+
+		self::$query_count_ttl = intval( self::$query_count_ttl );
+
+		if ( self::$query_count_ttl < 1 * \MINUTE_IN_SECONDS ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_ratelimit_period should not be set below 1 minute.',
+				'5.5.3'
+			);
+
+			self::$query_count_ttl = 1 * \MINUTE_IN_SECONDS;
+		}
+
 		/**
 		 * The number of queries allowed per period before Elasticsearch rate limiting takes effect.
 		 *
@@ -140,6 +162,38 @@ class Search {
 		 */
 		self::$max_query_count = apply_filters( 'vip_search_max_query_count', 50000 + 1 );
 
+		if ( ! is_numeric( self::$max_query_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_query_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_query_count = 50000 + 1;
+		}
+
+		self::$max_query_count = intval( self::$max_query_count );
+
+		if ( ( ( self::$query_count_ttl * 500 ) + 1 ) < self::$max_query_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_query_count should not exceed 500 queries per second.',
+				'5.5.3'
+			);
+
+			self::$max_query_count = ( self::$query_count_ttl * 500 ) + 1;
+		}
+
+		if ( ( ( self::$query_count_ttl * 10 ) + 1 ) > self::$max_query_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_query_count should not be below 10 queries per second.',
+				'5.5.3'
+			);
+
+			self::$max_query_count = ( self::$query_count_ttl * 10 ) + 1;
+		}
+
 		/**
 		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate limited.
 		 *
@@ -149,6 +203,33 @@ class Search {
 		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate limited.
 		 */
 		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', 5 );
+
+		if ( ! is_numeric( self::$query_db_fallback_value ) ) {
+			_doing_it_wrong(
+				'vip_search_query_db_fallback_value',
+				'vip_search_query_db_fallback_value should be an integer.',
+				'5.5.3'
+			);
+
+			self::$query_db_fallback_value = 5;
+		}
+
+		self::$query_db_fallback_value = intval( self::$query_db_fallback_value );
+
+		if ( 0 >= self::$query_db_fallback_value || 10 <= self::$query_db_fallback_value ) {
+			_doing_it_wrong(
+				'vip_search_query_db_fallback_value',
+				'vip_search_query_db_fallback_value should be between 1 and 9.',
+				'5.5.3'
+			);
+
+			// If the value is set to the higher bound, set it to 9. Otherwise set it to 1.
+			if ( 5 <= self::$query_db_fallback_value ) {
+				self::$query_db_fallback_value = 9;
+			} else {
+				self::$query_db_fallback_value = 1;
+			}
+		}
 	}
 
 	protected function setup_constants() {
