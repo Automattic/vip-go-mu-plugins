@@ -1064,6 +1064,111 @@ class Queue_Test extends \WP_UnitTestCase {
 		);
 	}
 
+
+	/* Format:
+	 * [
+	 * 		[
+	 * 			$filter,
+	 * 			$too_low_message,
+	 * 			$too_high_message,
+	 * 		]
+	 * ]
+	 */
+	public function vip_search_ratelimiting_filter_data() {
+		return array(
+			[
+				'vip_search_index_count_period',
+				'vip_search_index_count_period should not be set below 1 minute.',
+				'',
+			],
+			[
+				'vip_search_max_indexing_op_count',
+				'vip_search_max_indexing_op_count should not be below 10 queries per second.',
+				'vip_search_max_indexing_op_count should not exceed 250 queries per second.',
+			],
+			[
+				'vip_search_index_ratelimiting_duration',
+				'vip_search_index_ratelimiting_duration should not be set below 1 minute.',
+				'vip_search_index_ratelimiting_duration should not be set above 20 minutes.',
+			],
+			[
+				'vip_search_max_indexing_count',
+				'vip_search_max_sync_indexing_count should not be below 2500.',
+				'vip_search_max_sync_indexing_count should not be above 25000.',
+			],
+		);
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return '30.ffr';
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$filter
+			)
+		);
+
+		$this->queue->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return 0;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_low_message
+			)
+		);
+
+		$this->queue->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
+		if ( empty( $too_high_message ) ) {
+			$this->markTestSkipped( "$filter doesn't have a too high message" );
+		}
+
+		add_filter(
+			$filter,
+			function() {
+				return PHP_INT_MAX;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_high_message
+			)
+		);
+
+		$this->queue->apply_settings();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

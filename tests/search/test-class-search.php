@@ -2045,6 +2045,105 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_alert_for_prolonged_query_limiting();
 	}
 
+	/* Format:
+	 * [
+	 * 		[
+	 * 			$filter,
+	 * 			$too_low_message,
+	 * 			$too_high_message,
+	 * 		]
+	 * ]
+	 */
+	public function vip_search_ratelimiting_filter_data() {
+		return array(
+			[
+				'vip_search_ratelimit_period',
+				'vip_search_ratelimit_period should not be set below 1 minute.',
+				'',
+			],
+			[
+				'vip_search_max_query_count',
+				'vip_search_max_query_count should not be below 10 queries per second.',
+				'vip_search_max_query_count should not exceed 500 queries per second.',
+			],
+			[
+				'vip_search_query_db_fallback_value',
+				'vip_search_query_db_fallback_value should be between 1 and 9.',
+				'vip_search_query_db_fallback_value should be between 1 and 9.',
+			],
+		);
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return '30.ffr';
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$filter
+			)
+		);
+
+		$this->search_instance->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return 0;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_low_message
+			)
+		);
+
+		$this->search_instance->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
+		if ( empty( $too_high_message ) ) {
+			$this->markTestSkipped( "$filter doesn't have a too high message" );
+		}
+
+		add_filter(
+			$filter,
+			function() {
+				return PHP_INT_MAX;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_high_message
+			)
+		);
+
+		$this->search_instance->apply_settings();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
