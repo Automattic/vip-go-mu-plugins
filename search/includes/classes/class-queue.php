@@ -24,19 +24,23 @@ class Queue {
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
-	public static $max_indexing_op_count = 6000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
-	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
-	private const INDEX_QUEUEING_TTL = 5 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 5 minutes once ratelimiting is triggered
+
+	public static $max_indexing_op_count;
+
 	private const INDEX_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 	private const INDEX_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	private const INDEX_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
 
-	private const MAX_SYNC_INDEXING_COUNT = 10000;
+	private static $index_count_ttl;
+	private static $index_queueing_ttl;
+	private static $max_sync_indexing_count;
 
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
+
+		$this->apply_settings();
 
 		require_once( __DIR__ . '/queue/class-schema.php' );
 		require_once( __DIR__ . '/queue/class-cron.php' );
@@ -57,6 +61,50 @@ class Queue {
 
 	public function is_enabled() {
 		return true;
+	}
+
+	protected function apply_settings() {
+		/**
+		 * The period with which the Elasticsearch indexing rate limiting threshold is set.
+		 *
+		 * A set amount of indexing requests are allowed per period. After rate limiting is triggered, it occurs for a set amount of time and bulk indexing operations
+		 * are queued for asynchronous processing over time.
+		 *
+		 * @hook vip_search_index_count_period
+		 * @param int $period The period, in seconds, for Elasticsearch indexing rate limiting checks.
+		 */
+		self::$index_count_ttl = apply_filters( 'vip_search_index_count_period', 5 * MINUTE_IN_SECONDS );
+
+		/**
+		 * The number of indexing operations allowed per period before Elasticsearch rate limiting takes effect.
+		 *
+		 * Ratelimiting works by being triggered and then persisting for a set period. During this period, all bulk indexing operations are added to a queue and are
+		 * processed asynchronously.
+		 *
+		 * @hook vip_search_max_indexing_op_count
+		 * @param int $ratelimit_threshold The threshold to trigger rate limiting for the period.
+		 */
+		self::$max_indexing_op_count = apply_filters( 'vip_search_max_indexing_op_count', 6000 + 1 );
+		
+		/**
+		 * The length of time Elasticsearch indexing rate limiting will be active once triggered.
+		 *
+		 * During this period, all bulk indexing operations will be queued for asynchronous processing over time.
+		 *
+		 * @hook vip_search_index_ratelimiting_duration
+		 * @param int $duration The duration that Elasticsearch indexing rate limiting will be in effect.
+		 */
+		self::$index_queueing_ttl = apply_filters( 'vip_search_index_ratelimiting_duration', 5 * MINUTE_IN_SECONDS );
+
+		/**
+		 * The maximum number of objects that can be synchronously indexing in Search.
+		 *
+		 * Any indexing operations with more objects than this will have the operation queued for asynchronous processing to avoid overloading the cluster and
+		 * to prevent hanging / timeouts in the UI and related bad UX.
+		 *
+		 * @hook vip_search_max_indexing_count
+		 */
+		self::$max_sync_indexing_count = apply_filters( 'vip_search_max_indexing_count', 10000 );
 	}
 
 	public function setup_hooks() {
@@ -584,7 +632,7 @@ class Queue {
 		}
 
 		// If the number of affected posts is low enough, process them now rather than send them to cron
-		if ( $term->count <= self::MAX_SYNC_INDEXING_COUNT ) {
+		if ( $term->count <= self::$max_sync_indexing_count ) {
 			$this->offload_indexing_to_queue();
 			return;
 		}
@@ -755,7 +803,7 @@ class Queue {
 	 * @return {bool} True on success, false on failure
 	 */
 	public static function turn_on_index_ratelimiting() {
-		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
 	}
 
 	/**
@@ -834,7 +882,7 @@ class Queue {
 	 */
 	private static function index_count_incr( $increment = 1 ) {
 		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
-			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_COUNT_TTL );
+			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
