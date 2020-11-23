@@ -6,12 +6,12 @@
  * @package   query-monitor
  * @link      https://github.com/johnbillion/query-monitor
  * @author    John Blackbourn <john@johnblackbourn.com>
- * @copyright 2009-2018 John Blackbourn
+ * @copyright 2009-2020 John Blackbourn
  * @license   GPL v2 or later
  *
  * Plugin Name:  Query Monitor
- * Description:  The Developer Tools panel for WordPress.
- * Version:      3.6.4
+ * Description:  The Developer Tools Panel for WordPress.
+ * Version:      3.6.5
  * Plugin URI:   https://github.com/johnbillion/query-monitor
  * Author:       John Blackbourn & contributors
  * Author URI:   https://github.com/johnbillion/query-monitor/graphs/contributors

@@ -2009,6 +2009,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 	/**
 	 * @dataProvider maybe_alert_for_prolonged_query_limiting_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
 		$expected_level = 2;
@@ -2028,6 +2030,17 @@ class Search_Test extends \WP_UnitTestCase {
 		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
 			->method( 'send_to_chat' )
 			->with( '#vip-go-es-alerts', $this->anything(), $expected_level );
+
+		// trigger_error is only called if an alert should happen
+		if ( $should_alert ) {
+			$this->expectException( 'PHPUnit_Framework_Error_Warning' );
+			$this->expectExceptionMessage(
+				sprintf(
+					'Application 123 - http://example.org has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+					$difference
+				)
+			);
+		}
 
 		$es->maybe_alert_for_prolonged_query_limiting();
 	}
