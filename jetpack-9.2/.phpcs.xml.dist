@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<ruleset>
+
+	<!-- Load configuration. -->
+	<rule ref="./.phpcs.config.xml" />
+
+	<!-- Default ruleset. -->
+	<rule ref="Jetpack" />
+
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis">
+		<!-- Template files use extracted variables. -->
+		<exclude-pattern>/extensions/blocks/podcast-player/templates/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array" value="jetpack" />
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.Utils.I18nTextDomainFixer">
+		<properties>
+			<property name="old_text_domain" type="array" />
+			<property name="new_text_domain" value="jetpack" />
+		</properties>
+	</rule>
+
+	<!-- WordPress-Extra pulls this in. But PHP linting can be run more efficiently via bin/parallel-lint.sh than by having phpcs shell out to `php -l`. -->
+	<rule ref="Generic.PHP.Syntax">
+		<exclude name="Generic.PHP.Syntax" />
+	</rule>
+
+</ruleset>
