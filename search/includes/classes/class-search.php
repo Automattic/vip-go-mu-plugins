@@ -23,6 +23,18 @@ class Search {
 	private const POST_FIELD_COUNT_LIMIT = 5000;
 	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 
+	private const DEFAULT_QUERY_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const LOWER_BOUND_QUERY_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
+	private const UPPER_BOUND_QUERY_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
+		
+	private const DEFAULT_MAX_QUERY_COUNT = 50000 + 1;
+	private const LOWER_BOUND_QUERIES_PER_SECOND = 10;
+	private const UPPER_BOUND_QUERIES_PER_SECOND = 500;
+	
+	private const DEFAULT_QUERY_DB_FALLBACK_VALUE = 5;
+	private const LOWER_BOUND_QUERY_DB_FALLBACK_VALUE = 1;
+	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
+
 	public $healthcheck;
 	public $field_count_gauge;
 	public $queue_wait_time;
@@ -128,7 +140,7 @@ class Search {
 		 * @hook vip_search_ratelimit_period
 		 * @param int $period The period, in seconds, for Elasticsearch query rate limiting checks.
 		 */
-		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', 5 * \MINUTE_IN_SECONDS );
+		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', self::DEFAULT_QUERY_COUNT_TTL );
 
 		if ( ! is_numeric( self::$query_count_ttl ) ) {
 			_doing_it_wrong(
@@ -137,19 +149,29 @@ class Search {
 				'5.5.3'
 			);
 
-			self::$query_count_ttl = 5 * \MINUTE_IN_SECONDS;
+			self::$query_count_ttl = self::DEFAULT_QUERY_COUNT_TTL;
 		}
 
 		self::$query_count_ttl = intval( self::$query_count_ttl );
 
-		if ( self::$query_count_ttl < 1 * \MINUTE_IN_SECONDS ) {
+		if ( self::$query_count_ttl < self::LOWER_BOUND_QUERY_COUNT_TTL ) {
 			_doing_it_wrong(
 				'add_filter',
-				'vip_search_ratelimit_period should not be set below 1 minute.',
+				sprintf( 'vip_search_ratelimit_period should not be set below %d seconds.', self::LOWER_BOUND_QUERY_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				'5.5.3'
 			);
 
-			self::$query_count_ttl = 1 * \MINUTE_IN_SECONDS;
+			self::$query_count_ttl = self::LOWER_BOUND_QUERY_COUNT_TTL;
+		}
+
+		if ( self::$query_count_ttl > self::UPPER_BOUND_QUERY_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_ratelimit_period should not be set above %d seconds.', self::UPPER_BOUND_QUERY_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$query_count_ttl = self::UPPER_BOUND_QUERY_COUNT_TTL;
 		}
 
 		/**
@@ -160,7 +182,7 @@ class Search {
 		 * @hook vip_search_max_query_count
 		 * @param int $ratelimit_threshold The threshold to trigger ratelimiting for the period.
 		 */
-		self::$max_query_count = apply_filters( 'vip_search_max_query_count', 50000 + 1 );
+		self::$max_query_count = apply_filters( 'vip_search_max_query_count', self::DEFAULT_MAX_QUERY_COUNT );
 
 		if ( ! is_numeric( self::$max_query_count ) ) {
 			_doing_it_wrong(
@@ -169,29 +191,33 @@ class Search {
 				'5.5.3'
 			);
 
-			self::$max_query_count = 50000 + 1;
+			self::$max_query_count = self::DEFAULT_MAX_QUERY_COUNT;
 		}
 
 		self::$max_query_count = intval( self::$max_query_count );
 
-		if ( ( ( self::$query_count_ttl * 10 ) + 1 ) > self::$max_query_count ) {
+		$lower_bound_max_query_count = ( self::$query_count_ttl * self::LOWER_BOUND_QUERIES_PER_SECOND ) + 1;
+
+		if ( self::$max_query_count < $lower_bound_max_query_count ) {
 			_doing_it_wrong(
 				'add_filter',
-				'vip_search_max_query_count should not be below 10 queries per second.',
+				sprintf( 'vip_search_max_query_count should not be below %d queries per second.', self::LOWER_BOUND_QUERIES_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				'5.5.3'
 			);
 
-			self::$max_query_count = ( self::$query_count_ttl * 10 ) + 1;
+			self::$max_query_count = $lower_bound_max_query_count;
 		}
 
-		if ( ( ( self::$query_count_ttl * 500 ) + 1 ) < self::$max_query_count ) {
+		$upper_bound_max_query_count = ( self::$query_count_ttl * self::UPPER_BOUND_QUERIES_PER_SECOND ) + 1;
+
+		if ( self::$max_query_count > $upper_bound_max_query_count ) {
 			_doing_it_wrong(
 				'add_filter',
-				'vip_search_max_query_count should not exceed 500 queries per second.',
+				sprintf( 'vip_search_max_query_count should not exceed %d queries per second.', self::UPPER_BOUND_QUERIES_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				'5.5.3'
 			);
 
-			self::$max_query_count = ( self::$query_count_ttl * 500 ) + 1;
+			self::$max_query_count = $upper_bound_max_query_count;
 		}
 
 		/**
@@ -202,7 +228,7 @@ class Search {
 		 * @hook vip_search_query_db_fallback_value
 		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate limited.
 		 */
-		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', 5 );
+		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', self::DEFAULT_QUERY_DB_FALLBACK_VALUE );
 
 		if ( ! is_numeric( self::$query_db_fallback_value ) ) {
 			_doing_it_wrong(
@@ -211,24 +237,20 @@ class Search {
 				'5.5.3'
 			);
 
-			self::$query_db_fallback_value = 5;
+			self::$query_db_fallback_value = self::DEFAULT_QUERY_DB_FALLBACK_VALUE;
 		}
 
 		self::$query_db_fallback_value = intval( self::$query_db_fallback_value );
 
-		if ( 0 >= self::$query_db_fallback_value || 10 <= self::$query_db_fallback_value ) {
+		if ( self::$query_db_fallback_value < self::LOWER_BOUND_QUERY_DB_FALLBACK_VALUE || self::$query_db_fallback_value > self::UPPER_BOUND_QUERY_DB_FALLBACK_VALUE ) {
 			_doing_it_wrong(
 				'add_filter',
-				'vip_search_query_db_fallback_value should be between 1 and 9.',
+				sprintf( 'vip_search_query_db_fallback_value should be between %d and %d.', self::LOWER_BOUND_QUERY_DB_FALLBACK_VALUE, self::UPPER_BOUND_QUERY_DB_FALLBACK_VALUE ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				'5.5.3'
 			);
 
-			// If the value is set to the higher bound, set it to 9. Otherwise set it to 1.
-			if ( 5 <= self::$query_db_fallback_value ) {
-				self::$query_db_fallback_value = 9;
-			} else {
-				self::$query_db_fallback_value = 1;
-			}
+			// Set to default rather than to one of the bounds since this setting has serious performance and user impact.
+			self::$query_db_fallback_value = self::DEFAULT_QUERY_DB_FALLBACK_VALUE;
 		}
 	}
 

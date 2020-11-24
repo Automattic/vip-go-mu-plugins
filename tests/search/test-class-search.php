@@ -2058,8 +2058,8 @@ class Search_Test extends \WP_UnitTestCase {
 		return array(
 			[
 				'vip_search_ratelimit_period',
-				'vip_search_ratelimit_period should not be set below 1 minute.',
-				'',
+				'vip_search_ratelimit_period should not be set below 60 seconds.',
+				'vip_search_ratelimit_period should not be set above 7200 seconds.',
 			],
 			[
 				'vip_search_max_query_count',
@@ -2068,8 +2068,8 @@ class Search_Test extends \WP_UnitTestCase {
 			],
 			[
 				'vip_search_query_db_fallback_value',
-				'vip_search_query_db_fallback_value should be between 1 and 9.',
-				'vip_search_query_db_fallback_value should be between 1 and 9.',
+				'vip_search_query_db_fallback_value should be between 1 and 10.',
+				'vip_search_query_db_fallback_value should be between 1 and 10.',
 			],
 		);
 	}
@@ -2122,10 +2122,6 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @dataProvider vip_search_ratelimiting_filter_data
 	 */
 	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
-		if ( empty( $too_high_message ) ) {
-			$this->markTestSkipped( "$filter doesn't have a too high message" );
-		}
-
 		add_filter(
 			$filter,
 			function() {

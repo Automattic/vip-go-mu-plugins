@@ -1078,8 +1078,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		return array(
 			[
 				'vip_search_index_count_period',
-				'vip_search_index_count_period should not be set below 1 minute.',
-				'',
+				'vip_search_index_count_period should not be set below 60 seconds.',
+				'vip_search_index_count_period should not be set above 7200 seconds.',
 			],
 			[
 				'vip_search_max_indexing_op_count',
@@ -1088,8 +1088,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			],
 			[
 				'vip_search_index_ratelimiting_duration',
-				'vip_search_index_ratelimiting_duration should not be set below 1 minute.',
-				'vip_search_index_ratelimiting_duration should not be set above 20 minutes.',
+				'vip_search_index_ratelimiting_duration should not be set below 60 seconds.',
+				'vip_search_index_ratelimiting_duration should not be set above 1200 seconds.',
 			],
 			[
 				'vip_search_max_indexing_count',
