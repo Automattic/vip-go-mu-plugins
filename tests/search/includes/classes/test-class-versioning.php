@@ -9,7 +9,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 	* Make tests run in separate processes since we're testing state
 	* related to plugin init, including various constants.
 	*/
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static $version_instance;
@@ -105,7 +105,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 					'two' => array(
 						'number' => 'two',
 					),
-					3 => array(
+					3     => array(
 						'number' => 3,
 					),
 				),
@@ -195,15 +195,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Input array of versions
 				array(
 					2 => array(
-						'number' => 2,
-						'active' => false,
-						'created_time' => 1,
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => 1,
 						'activated_time' => null,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => 2,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => 2,
 						'activated_time' => null,
 					),
 				),
@@ -212,15 +212,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected inactive versions
 				array(
 					2 => array(
-						'number' => 2,
-						'active' => false,
-						'created_time' => 1,
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => 1,
 						'activated_time' => null,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => 2,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => 2,
 						'activated_time' => null,
 					),
 				),
@@ -241,15 +241,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Input array of versions
 				array(
 					2 => array(
-						'number' => 2,
-						'active' => true,
-						'created_time' => 1,
+						'number'         => 2,
+						'active'         => true,
+						'created_time'   => 1,
 						'activated_time' => 1,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					),
 				),
@@ -258,9 +258,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected inactive versions
 				array(
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					),
 				),
@@ -287,7 +287,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -312,7 +312,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -337,7 +337,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -362,7 +362,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -504,11 +504,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected new versions
 				array(
 					2 => array(
-						'number' => 2, 
+						'number' => 2,
 						'active' => false,
 					),
 					3 => array(
-						'number' => 3, 
+						'number' => 3,
 						'active' => false,
 					),
 				),
@@ -521,7 +521,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'active' => true,
 					),
 					3 => array(
-						'number' => 3, 
+						'number' => 3,
 						'active' => false,
 					),
 				),
@@ -950,13 +950,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 				1 => array(
 					array(
 						'object_id' => 1,
-						'options' => array( 'foo' => 'bar' ),
+						'options'   => array( 'foo' => 'bar' ),
 					),
 				),
 				2 => array(
 					array(
 						'object_id' => 1,
-						'options' => array( 'foo' => 'bar' ),
+						'options'   => array( 'foo' => 'bar' ),
 					),
 				),
 			),
@@ -991,13 +991,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$expected_jobs = array(
 			array(
-				'object_id' => 1,
-				'object_type' => 'post',
+				'object_id'     => 1,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 2,
-				'object_type' => 'post',
+				'object_id'     => 2,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 		);
@@ -1029,25 +1029,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				array(
 					'post' => array(
 						// Active version
-						1 => array(
+						1    => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 						// Some other random version, should have no effect on replicated jobs
 						9999 => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 					),
@@ -1056,13 +1056,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected queued jobs
 				array(
 					array(
-						'object_id' => 1,
-						'object_type' => 'post',
+						'object_id'     => 1,
+						'object_type'   => 'post',
 						'index_version' => 2,
 					),
 					array(
-						'object_id' => 9000,
-						'object_type' => 'post',
+						'object_id'     => 9000,
+						'object_type'   => 'post',
 						'index_version' => 2,
 					),
 				),
@@ -1074,25 +1074,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				array(
 					'post' => array(
 						// Inactive version
-						2 => array(
+						2    => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 						// Some other random version, should have no effect on replicated jobs
 						9999 => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 					),
@@ -1174,18 +1174,18 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$expected_jobs = array(
 			array(
-				'object_id' => 1,
-				'object_type' => 'post',
+				'object_id'     => 1,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 2,
-				'object_type' => 'post',
+				'object_id'     => 2,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 3,
-				'object_type' => 'post',
+				'object_id'     => 3,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 		);
@@ -1232,10 +1232,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 				array(),
 				// Expected (normalized) version
 				array(
-					'number' => null,
-					'active' => null,
+					'number'         => null,
+					'active'         => null,
 					'activated_time' => null,
-					'created_time' => null,
+					'created_time'   => null,
 				),
 			),
 
@@ -1248,10 +1248,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 				),
 				// Expected (normalized) version
 				array(
-					'number' => 2,
-					'active' => false,
+					'number'         => 2,
+					'active'         => false,
 					'activated_time' => null,
-					'created_time' => null,
+					'created_time'   => null,
 				),
 			),
 		);
@@ -1278,6 +1278,97 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$new_retrieved = self::$version_instance->get_version( $indexable, $new['number'] );
 
 		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
+	}
+
+	public function is_versioning_valid_data() {
+		return [
+			[
+				null,
+				false,
+			],
+			[
+				'some string',
+				false,
+			],
+			[
+				[],
+				false,
+			],
+			[
+				[
+					'post' => [
+						[
+							'number' => 1,
+							'active' => true,
+						],
+					],
+				],
+				true,
+			],
+			[
+				[
+					'post' => [
+						[
+							'number' => 1,
+							'active' => false,
+						],
+						[
+							'number' => 2,
+							'active' => true,
+						],
+					],
+				],
+				true,
+			],
+			[
+				// Invalid slug
+				[
+					'post'         => [
+						[
+							'number' => 1,
+							'active' => true,
+						],
+					],
+					'invalid_slug' => [
+						[
+							'number' => 1,
+							'active' => true,
+						],
+					],
+				],
+				false,
+			],
+			[
+				// No active version
+				[
+					'post' => [
+						[
+							'number' => 1,
+							'active' => false,
+						],
+					],
+				],
+				false,
+			],
+			[
+				// No valid versions
+				[
+					'post' => 'invalid versions value',
+				],
+				false,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider is_versioning_valid_data
+	 */
+	public function test__is_versioning_valid( $versioning, $expected ) {
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
+
+		$result = self::$version_instance->is_versioning_valid();
+
+		$this->assertEquals( $expected, $result );
 	}
 
 	/**

@@ -41,6 +41,8 @@ class Versioning {
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'filter__pre_ep_index_sync_queue' ], 100, 3 );
 
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
+
+		$this->maybe_self_heal();
 	}
 
 	public function action__plugins_loaded() {
@@ -744,5 +746,47 @@ class Versioning {
 
 		// Clear the flag to return to normal
 		$this->is_doing_object_delete = false;
+	}
+
+	/**
+	 * Check if the versions are persisted correctly. If not recreate them.
+	 */
+	public function maybe_self_heal() {
+		if ( $this->is_versioning_valid() ) {
+			return;
+		}
+
+		// Well, self heal
+	}
+
+	public function is_versioning_valid() {
+		$all_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+
+		if ( ! is_array( $all_versions ) || count( $all_versions ) == 0 ) {
+			return false;
+		}
+
+		$valid_slugs = \ElasticPress\Indexables::factory()->get_all( null, true );
+
+
+		foreach ( $all_versions as $slug => $versions ) {
+			if ( ! in_array( $slug, $valid_slugs ) ) {
+				return false;
+			}
+
+			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
+				return false;
+			}
+
+			$active_statuses = wp_list_pluck( $versions, 'active' );
+
+			$array_index = array_search( true, $active_statuses, true );
+
+			if ( false === $array_index ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
