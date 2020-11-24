@@ -51,6 +51,9 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
 
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
+		add_action( 'admin_bar_menu', [ $this, 'admin_bar_callback' ], 100, 1 );
+		add_action( 'wp_enqueue_scripts', [ $this, 'button_enqueue_scripts' ] );
+		add_action( 'wp_ajax_vip_purge_page_cache', [ $this, 'ajax_vip_purge_page_cache' ] );
 	}
 
 	public function get_queued_purge_urls() {
@@ -59,6 +62,79 @@ class WPCOM_VIP_Cache_Manager {
 
 	public function clear_queued_purge_urls() {
 		$this->purge_urls = [];
+	}
+
+	/**
+	 * Display a button to purge the cache for the specific URL and its assets
+	 *
+	 * @return void
+	 */
+	public function admin_bar_callback( WP_Admin_Bar $admin_bar ) {
+		if ( is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$admin_bar->add_menu(
+			[
+				'id'     => 'vip-purge-page',
+				'parent' => null,
+				'group'  => null,
+				'title'  => 'Flush Cache for Page',
+				'href'   => '#',
+				'meta'   => [
+					'title' => 'Flush Page cache for this page and its assets',
+				],
+			]
+		);
+	}
+
+	/**
+	 * Enqueue the button for users who have the needed caps.
+	 *
+	 * @return void
+	 */
+	public function button_enqueue_scripts() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.1', true );
+		wp_localize_script( 'purge-page-cache-btn', 'VIPPageFlush', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ), 
+			),
+		] );
+	}
+
+	/**
+	 * AJAX callback that performs basic security checks and payload validation and queues urls for the purge.
+	 *
+	 * @return void
+	 */
+	public function ajax_vip_purge_page_cache() {
+		$req = json_decode( file_get_contents( 'php://input' ) );
+
+		if ( json_last_error() ) {
+			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
+		}
+
+		if ( ! ( current_user_can( 'manage_options' ) && isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'purge-page' ) ) ) {
+			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
+		}
+
+		$urls = is_array( $req->urls ) && ! empty( $req->urls ) ? $req->urls : [];
+
+		// URLs are validated in queue_purge_url.
+		foreach ( $urls as $url_to_purge ) {
+			$this->queue_purge_url( $url_to_purge );
+		}
+
+		// Optimistically tell that the operation is successful and bail.
+		wp_send_json_success(
+			[
+				'result' => sprintf( '✅ %d URLS purged', count( $urls ) ),
+			]
+		);
 	}
 
 	public function get_manual_purge_link() {
@@ -333,9 +409,8 @@ class WPCOM_VIP_Cache_Manager {
 
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
-		     'revision' === $post->post_type ||
-		     ! in_array( get_post_status( $post_id ), array( 'publish', 'inherit', 'trash' ), true ) )
-		{
+				'revision' === $post->post_type ||
+				! in_array( get_post_status( $post_id ), array( 'publish', 'inherit', 'trash' ), true ) ) {
 			return false;
 		}
 
