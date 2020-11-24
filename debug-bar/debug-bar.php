@@ -4,7 +4,7 @@
  Plugin URI: https://wordpress.org/plugins/debug-bar/
  Description: Adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information.
  Author: wordpressdotorg
- Version: 1.0.1
+ Version: 1.1.2
  Author URI: https://wordpress.org/
  Text Domain: debug-bar
  */
@@ -25,11 +25,27 @@ class Debug_Bar {
 			add_action( 'admin_init', array( $this, 'init_ajax' ) );
 		}
 		add_action( 'admin_bar_init', array( $this, 'init' ) );
+
+		// Stop the removal of important assets in AMP dev mode
+		add_filter( 'amp_dev_mode_element_xpaths', array( $this, 'amp_dev_mode_element_xpaths' ) );
 	}
 
 	function Debug_Bar() {
 		_deprecated_constructor( __METHOD__, '0.8.3', __CLASS__ );
 		self::__construct();
+	}
+
+	// Runs immediately after constructor
+	function early_init() {
+		$path = plugin_dir_path( __FILE__ );
+		$recs = array( 'panel', 'wp-http' );
+		foreach ( $recs as $rec ) {
+			require_once "$path/panels/class-debug-bar-$rec.php";
+		}
+
+		$panel = new Debug_Bar_WP_Http();
+		$this->panels[] = $panel;
+		$panel->early_init();
 	}
 
 	function init() {
@@ -111,9 +127,31 @@ class Debug_Bar {
 	function enqueue() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '.dev' : '';
 
-		wp_enqueue_style( 'debug-bar', plugins_url( "css/debug-bar$suffix.css", __FILE__ ), array(), '20170515' );
+		$style_dependencies = array();
+		$script_dependencies = array( 'jquery' );
+		if ( $this->is_amp() ) {
+			// Add admin-bar dependencies so AMP dev mode will stop removing debug-bar assets
+			// https://weston.ruter.net/2019/09/24/integrating-with-amp-dev-mode-in-wordpress/
+			$style_dependencies[] = 'admin-bar';
+			$script_dependencies[] = 'admin-bar';
+		}
 
-		wp_enqueue_script( 'debug-bar', plugins_url( "js/debug-bar$suffix.js", __FILE__ ), array( 'jquery' ), '20170515', true );
+		$css_filename = "css/debug-bar$suffix.css";
+		wp_enqueue_style(
+			'debug-bar',
+			plugins_url( $css_filename, __FILE__ ),
+			$style_dependencies,
+			filemtime( __DIR__ . '/' . $css_filename )
+		);
+
+		$js_filename = "js/debug-bar$suffix.js";
+		wp_enqueue_script(
+			'debug-bar',
+			plugins_url( $js_filename, __FILE__ ),
+			$script_dependencies,
+			filemtime( __DIR__ . '/' . $js_filename ),
+			true
+		);
 
 		do_action( 'debug_bar_enqueue_scripts' );
 	}
@@ -200,6 +238,27 @@ class Debug_Bar {
 		}
 
 		return $classes;
+	}
+
+	/*
+	 * AMP Compatibility
+	 * Based primarily on approach described in https://weston.ruter.net/2019/09/24/integrating-with-amp-dev-mode-in-wordpress/
+	 */
+	function is_amp() {
+		return function_exists( 'is_amp_endpoint' ) && is_amp_endpoint();
+	}
+
+	function amp_dev_mode_element_xpaths( $xpaths ) {
+		// Add data-ampdevmode to jQuery script tag so it will be left intact
+		$xpaths[] = '//script[ contains( @src, "wp-includes/js/jquery/jquery.js" ) ]';
+
+		// Add data-ampdevmode to object cache scripts used by the debug bar
+		$xpaths[] = '//*[@id = "object-cache-stats"]//script';
+
+		// Add data-ampdevmode to debug-menu-links because AMP is removing inline onclick handlers
+		$xpaths[] = '//*[@class = "debug-menu-links"]//a';
+
+		return $xpaths;
 	}
 
 	function render() {
@@ -324,3 +383,4 @@ class Debug_Bar {
 }
 
 $GLOBALS['debug_bar'] = new Debug_Bar();
+$GLOBALS['debug_bar']->early_init();
