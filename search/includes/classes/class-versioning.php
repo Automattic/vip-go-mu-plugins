@@ -766,6 +766,7 @@ class Versioning {
 
 		$indicies = $this->get_all_accesible_indicies();
 
+
 		// Well, self heal
 	}
 
@@ -825,5 +826,51 @@ class Versioning {
 		}
 
 		return $found_indices;
+	}
+
+	public function reconstruct_versioning( $indicies ) {
+		if ( ! is_array( $indicies ) ) {
+			return [];
+		}
+
+		$versioning = [];
+
+		foreach ( $indicies as $index ) {
+			$index_parts = explode( '-', $index );
+
+			// Proper index is `vip-<env_id>-<indexable-slug>(-<blog_id>)(-v<version>)`
+			if ( count( $index_parts ) >= 3 ) {
+				$slug = $index_parts[2];
+				$last_part = $index_parts[ count( $index_parts ) - 1 ];
+				$version = 1;
+				if ( 'v' === substr( $last_part, 0, 1 ) && is_numeric( substr( $last_part, 1 ) ) ) {
+					$version = intval( substr( $last_part, 1 ) );
+				}
+
+				if ( ! isset( $versioning[ $slug ] ) ) {
+					$versioning[ $slug ] = [];
+				}
+				$versioning[ $slug ][] = $version;
+			}
+		}
+
+		foreach ( $versioning as $slug => $versions ) {
+			sort( $versions );
+			$version_objects = array_map( function( $version ) {
+				return [
+					'number' => $version,
+					'active' => false,
+				];
+			}, $versions);
+
+			if ( count( $version_objects ) > 0 ) {
+				$version_objects[0]['active'] = true;
+			}
+
+			$versioning[ $slug ] = $version_objects;
+		}
+
+
+		return $versioning;
 	}
 }

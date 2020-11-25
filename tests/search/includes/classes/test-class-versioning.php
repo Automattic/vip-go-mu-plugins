@@ -1426,6 +1426,79 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
+	public function reconstruct_versioning_data() {
+		return [
+			[
+				[],
+				[],
+			],
+			[
+				'invalid_input',
+				[],
+			],
+			[
+				[ 'invalid_ix_format' ],
+				[],
+			],
+			[
+				// correctly parse and pick the lowest
+				[ 'vip-200508-post-1-v3', 'vip-200508-post-1', 'vip-200508-post-1-v2' ],
+				[
+					'post'         => [
+						[
+							'number' => 1,
+							'active' => true,
+						],
+						[
+							'number' => 2,
+							'active' => false,
+						],
+						[
+							'number' => 3,
+							'active' => false,
+						],
+					],
+				],
+			],
+			[
+				//  handle not blog specific ones mixed
+				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-user', 'vip-200508-post-1-v3' ],
+				[
+					'post'         => [
+						[
+							'number' => 2,
+							'active' => true,
+						],
+						[
+							'number' => 3,
+							'active' => false,
+						],
+					],
+					'user'         => [
+						[
+							'number' => 1,
+							'active' => true,
+						],
+						[
+							'number' => 3,
+							'active' => false,
+						],
+					],
+				],
+			],
+
+		];
+	}
+
+	/**
+	 * @dataProvider reconstruct_versioning_data
+	 */
+	public function test__reconstruct_versioning( $indicies, $expected ) {
+		$result = self::$version_instance->reconstruct_versioning( $indicies );
+
+		$this->assertEquals( $expected, $result );
+	}
+
 	/**
 	 * Helper function for accessing protected properties.
 	 */
