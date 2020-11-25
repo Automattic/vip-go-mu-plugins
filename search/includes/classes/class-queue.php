@@ -899,7 +899,7 @@ class Queue {
 		$url = $es->get_current_host();
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
 
-		$this->statsd->increment( $stat, $count );
+		$this->maybe_update_stat( $stat, $count );
 	}
 
 	public function maybe_alert_for_prolonged_index_limiting() {
@@ -1047,5 +1047,29 @@ class Queue {
 
 	public function clear_index_limiting_start_timestamp() {
 		wp_cache_delete( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/**
+	 * Apply sampling to stats that are directly updated to keep stat sending in check.
+	 *
+	 * @param $stat string The stat to be possibly updated.
+	 * @param $value int The value to possibly update the stat with.
+	 */
+	public function maybe_update_stat( $stat, $value ) {
+		if ( ! is_string( $stat ) ) {
+			return;
+		}
+
+		if ( ! is_numeric( $value ) ) {
+			return;
+		}
+
+		if ( self::$stat_sampling_drop_value <= rand( 1, 10 ) ) {
+			return;
+		}
+
+		$value = intval( $value );
+
+		$this->statsd->update_stats( $stat, $value, 1, 'c' );
 	}
 }

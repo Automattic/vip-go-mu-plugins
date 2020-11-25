@@ -546,7 +546,7 @@ class Search {
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
 
-		$this->statsd->increment( $statsd_prefix . '.total' );
+		$this->maybe_increment_stat( $statsd_prefix . '.total' );
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
@@ -558,13 +558,13 @@ class Search {
 			$response_body = json_decode( $response_body_json, true );
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
-				$this->statsd->timing( $statsd_prefix . '.engine', $response_body['took'] );
+				$this->maybe_send_timing_stat( $statsd_prefix . '.engine', $response_body['took'] );
 			}
-			$this->statsd->timing( $statsd_prefix . '.total', $duration );
+			$this->maybe_send_timing_stat( $statsd_prefix . '.total', $duration );
 
 			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
 				$doc_count = count( $response_body['items'] );
-				$this->statsd->timing( $statsd_prefix . '.per_doc', $duration / $doc_count );
+				$this->maybe_send_timing_stat( $statsd_prefix . '.per_doc', $duration / $doc_count );
 			}
 
 			$response_headers = wp_remote_retrieve_headers( $response );
@@ -600,14 +600,14 @@ class Search {
 			foreach ( $error_messages as $error_message ) {
 				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
 
-				$this->statsd->increment( $statsd_prefix . $stat );
+				$this->maybe_increment_stat( $statsd_prefix . $stat );
 			}
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
 			$response_error = $response_body ? $response_body['error'] : $response_body;
 
-			$this->statsd->increment( $statsd_prefix . '.error' );
+			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 		}
 
 		$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
@@ -792,7 +792,7 @@ class Search {
 		$url = $this->get_current_host();
 		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
 
-		$this->statsd->increment( $stat );
+		$this->maybe_increment_stat( $stat );
 	}
 
 	public function maybe_alert_for_average_queue_time() {
@@ -1454,5 +1454,46 @@ class Search {
 
 	public function clear_query_limiting_start_timestamp() {
 		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
+	}
+
+	/**
+	 * Apply sampling to stats that are incremented to keep stat sending in check.
+	 *
+	 * @param $stat string The stat to be possibly incremented.
+	 */
+	public function maybe_increment_stat( $stat ) {
+		if ( ! is_string( $stat ) ) {
+			return;
+		}
+
+		if ( self::$stat_sampling_drop_value <= rand( 1, 10 ) ) {
+			return;
+		}
+
+		$this->statsd->increment( $stat );
+	}
+
+	/**
+	 * Apply sampling to timing stats to keep stat sending in check.
+	 *
+	 * @param $stat string $the stat to be possibly updated.
+	 * @param $duration int The timing duration to possibly update the stat with.
+	 */
+	public function maybe_send_timing_stat( $stat, $duration ) {
+		if ( ! is_string( $stat ) ) {
+			return;
+		}
+
+		if ( ! is_numeric( $duration ) ) {
+			return;
+		}
+
+		if ( self::$stat_sampling_drop_value <= rand( 1, 10 ) ) {
+			return;
+		}
+
+		$duration = intval( $duration );
+
+		$this->statsd->timing( $stat, $duration );
 	}
 }
