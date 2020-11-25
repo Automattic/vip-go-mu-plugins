@@ -80,3 +80,69 @@ if ( is_admin() ) {
 		return $months;
 	}
 }
+
+/**
+ * Improves performance of all the post listing pages that display the months dropdown filter.
+ * A unique transient is created for each post type.
+ */
+if ( is_admin() ) {
+
+	add_filter( 'edit_months_dropdown', 'wpcom_vip_edit_months_dropdown', 10, 2 );
+	function wpcom_vip_edit_months_dropdown( $post_type, $extra_checks ) {
+		global $wpdb;
+
+		// Don't set a transient for trashed post.
+		if ( "trash" === $_GET['post_status'] ) {
+			return __return_null();
+		}
+
+		$months = get_transient( 'wpcom_vip_edit_months_array_'.$post_type );
+
+		if ( false === $months ) {
+			$months = $wpdb->get_results(
+				$wpdb->prepare(
+					"
+					SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
+					FROM $wpdb->posts
+					WHERE post_type = %s
+					$extra_checks
+					ORDER BY post_date DESC
+					",
+					$post_type
+				)
+			);
+			set_transient( 'wpcom_vip_edit_months_array_'.$post_type, $months );
+		}
+		return $months;
+	}
+}
+/**
+ * Bust the months dropdown cache when needed.
+ */
+add_action( 'save_post', 'wpcom_vip_bust_post_months_cache', 10, 2 );
+function wpcom_vip_bust_post_months_cache( $post_id, $post ) {
+	if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+		return;
+	}
+
+	// Reset the transient if we are untrashing a post
+	if( "untrash" === $_GET['action'] ) {
+		delete_transient( 'wpcom_vip_edit_months_array_'.$post->post_type );
+		return;
+	}
+
+	// Grab the transient to see if it needs updating
+	$post_months = get_transient( 'wpcom_vip_edit_months_array_'.$post->post_type );
+
+	// Make sure month and year exists in transient before comparing
+	$cached_latest_year = ( ! empty( $post_months[0]->year ) ) ? $post_months[0]->year : '';
+	$cached_latest_month = ( ! empty( $post_months[0]->month ) ) ? $post_months[0]->month : '';
+
+	// If the transient exists, and the post doesn't match the first (latest) month or year in the transient, lets clear it.
+	$matches_latest_year = get_the_time( 'Y', $post_id ) === $cached_latest_year;
+	$matches_latest_month = get_the_time( 'n', $post_id ) === $cached_latest_month;
+	if ( false !== $post_months && ( ! $matches_latest_year || ! $matches_latest_month ) ) {
+		// the post is not in the same month/year as the data in our transient
+		delete_transient( 'wpcom_vip_edit_months_array_'.$post->post_type );
+	}
+}
