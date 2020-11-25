@@ -1371,6 +1371,61 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
+	public function get_all_accesible_indicies_data() {
+		return [
+			[
+				new WP_Error( 'Test Error' ),
+				[],
+			],
+			[
+				[ 'response' => [ 'code' => 500 ] ],
+				[],
+			],
+			[
+				[
+					'response' => [ 'code' => 200 ],
+					'body' => 'malformed_body',
+				],
+				[],
+			],
+			[
+				[
+					'response' => [ 'code' => 200 ],
+					'body' => '{"valid_json": "with_invalid_structure"}',
+				],
+				[],
+			],
+			[
+				[
+					'response' => [ 'code' => 200 ],
+					'body' => '[{"index": "ix1"}, {"index": "ix2"}]',
+				],
+				[ 'ix1', 'ix2' ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_all_accesible_indicies_data
+	 */
+	public function test__get_all_accesible_indicies( $response, $expected ) {
+		$es_mock = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+			->setMethods( [ 'remote_request' ] )
+			->getMock();
+		$es_mock->expects( $this->once() )
+			->method( 'remote_request' )
+			->willReturn( $response );
+
+
+		$instance = new Versioning();
+		$instance->elastic_search_instance = $es_mock;
+
+
+		$result = $instance->get_all_accesible_indicies();
+
+		$this->assertEquals( $expected, $result );
+	}
+
 	/**
 	 * Helper function for accessing protected properties.
 	 */

@@ -15,6 +15,11 @@ class Versioning {
 	const MAX_NUMBER_OF_VERSIONS = 2;
 
 	/**
+	 * Injectable instance of \ElasticPress\Elasticsearch
+	 */
+	public $elastic_search_instance;
+
+	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
 	private $current_index_version_by_type = array();
@@ -30,6 +35,7 @@ class Versioning {
 	 */
 	private $is_doing_object_delete;
 
+
 	public function __construct() {
 		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
 		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
@@ -42,7 +48,7 @@ class Versioning {
 
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
-		$this->maybe_self_heal();
+		$this->elastic_search_instance = \ElasticPress\Elasticsearch::factory();
 	}
 
 	public function action__plugins_loaded() {
@@ -53,6 +59,8 @@ class Versioning {
 		foreach ( $all_indexables as $indexable ) {
 			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
 		}
+
+		$this->maybe_self_heal();
 	}
 
 	/**
@@ -756,6 +764,8 @@ class Versioning {
 			return;
 		}
 
+		$indicies = $this->get_all_accesible_indicies();
+
 		// Well, self heal
 	}
 
@@ -788,5 +798,32 @@ class Versioning {
 		}
 
 		return true;
+	}
+
+	public function get_all_accesible_indicies() {
+		$found_indices = [];
+
+		$response = $this->elastic_search_instance->remote_request( '_cat/indices?format=json' );
+
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( is_wp_error( $response ) || $response_code >= 400 ) {
+			return $found_indices;
+		}
+
+		$response_body_json = wp_remote_retrieve_body( $response );
+		$response_body = json_decode( $response_body_json, true );
+
+		if ( ! is_array( $response_body ) ) {
+			return $found_indices;
+		}
+
+		foreach ( $response_body as $index_obj ) {
+			if ( is_array( $index_obj ) && isset( $index_obj['index'] ) ) {
+				$found_indices[] = $index_obj['index'];
+			}
+		}
+
+		return $found_indices;
 	}
 }
