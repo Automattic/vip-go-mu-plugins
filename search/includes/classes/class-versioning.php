@@ -764,10 +764,10 @@ class Versioning {
 			return;
 		}
 
-		$indicies = $this->get_all_accesible_indicies();
+		// $indicies = $this->get_all_accesible_indicies();
+		// $versioning = $this->reconstruct_versioning( $indicies );
 
-
-		// Well, self heal
+		// update_option( self::INDEX_VERSIONS_OPTION, $versioning );
 	}
 
 	public function is_versioning_valid() {
@@ -867,7 +867,13 @@ class Versioning {
 				$version_objects[0]['active'] = true;
 			}
 
-			$versioning[ $slug ] = $version_objects;
+			$version_objects_indexed_by_number = [];
+
+			foreach ( $version_objects as $version_object ) {
+				$version_objects_indexed_by_number[ $version_object['number'] ] = $version_object;
+			}
+
+			$versioning[ $slug ] = $version_objects_indexed_by_number;
 		}
 
 

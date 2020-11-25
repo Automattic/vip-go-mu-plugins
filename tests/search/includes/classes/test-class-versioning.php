@@ -1445,15 +1445,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				[ 'vip-200508-post-1-v3', 'vip-200508-post-1', 'vip-200508-post-1-v2' ],
 				[
 					'post'         => [
-						[
+						1 => [
 							'number' => 1,
 							'active' => true,
 						],
-						[
+						2 => [
 							'number' => 2,
 							'active' => false,
 						],
-						[
+						3 => [
 							'number' => 3,
 							'active' => false,
 						],
@@ -1465,21 +1465,21 @@ class Versioning_Test extends \WP_UnitTestCase {
 				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-user', 'vip-200508-post-1-v3' ],
 				[
 					'post'         => [
-						[
+						2 => [
 							'number' => 2,
 							'active' => true,
 						],
-						[
+						3 => [
 							'number' => 3,
 							'active' => false,
 						],
 					],
 					'user'         => [
-						[
+						1 => [
 							'number' => 1,
 							'active' => true,
 						],
-						[
+						3 => [
 							'number' => 3,
 							'active' => false,
 						],
