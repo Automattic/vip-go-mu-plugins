@@ -24,6 +24,7 @@ class Queue {
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
+	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_indexing_op_count;
 	private const DEFAULT_MAX_INDEXING_OP_COUNT = 6000 + 1;

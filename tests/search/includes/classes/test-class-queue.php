@@ -1167,8 +1167,8 @@ class Queue_Test extends \WP_UnitTestCase {
 		);
 
 		$this->queue->apply_settings();
-  }
-    
+	}
+
 	public function stat_sampling_invalid_stat_param_data() {
 		return [
 			[ array() ],

@@ -42,6 +42,7 @@ class Search {
 	public $statsd;
 	public $indexables;
 	public $alerts;
+	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_query_count;
 	public static $query_db_fallback_value;

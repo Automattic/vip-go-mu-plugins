@@ -2135,8 +2135,8 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 
 		$this->search_instance->apply_settings();
-  }
-    
+	}
+
 	public function stat_sampling_invalid_stat_param_data() {
 		return [
 			[ array() ],
