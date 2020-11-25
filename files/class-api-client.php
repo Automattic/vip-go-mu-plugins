@@ -19,6 +19,7 @@ function new_api_client() {
 class API_Client {
 	const DEFAULT_REQUEST_TIMEOUT = 10;
 
+	private $user_agent;
 	private $api_base;
 	private $files_site_id;
 	private $files_token;
@@ -34,6 +35,17 @@ class API_Client {
 
 		$this->files_site_id = $files_site_id;
 		$this->files_token = $files_token;
+
+		// Add some context to the UA to simplify debugging issues
+		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+			 // current_filter may not be totally accurate but still better than nothing
+			 $current_context = sprint( 'Cron (%s)', current_filter() );
+		} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$current_context = 'WP_CLI';
+		} else {
+			$current_context = add_query_arg( [] );
+		}
+		$this->user_agent = sprintf( 'WPVIP/%s/Files; %s', get_bloginfo( 'version' ), esc_html( $current_context ) );
 
 		$this->cache = $cache;
 	}
@@ -69,9 +81,10 @@ class API_Client {
 		$timeout = $request_args['timeout'] ?? self::DEFAULT_REQUEST_TIMEOUT;
 
 		$request_args = array_merge( $request_args, [
-			'method' => $method,
-			'headers' => $headers,
-			'timeout' => $timeout,
+			'method'     => $method,
+			'headers'    => $headers,
+			'timeout'    => $timeout,
+			'user-agent' => $this->user_agent,
 		] );
 
 		$response = wp_remote_request( $request_url, $request_args );
