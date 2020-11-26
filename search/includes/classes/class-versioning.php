@@ -764,10 +764,13 @@ class Versioning {
 			return;
 		}
 
-		// $indicies = $this->get_all_accesible_indicies();
-		// $versioning = $this->reconstruct_versioning( $indicies );
+		$indicies = $this->get_all_accesible_indicies();
+		if ( is_wp_error( $indicies ) ) {
+			return;
+		}
+		$versioning = $this->reconstruct_versioning_option( $indicies );
 
-		// update_option( self::INDEX_VERSIONS_OPTION, $versioning );
+		update_option( self::INDEX_VERSIONS_OPTION, $versioning );
 	}
 
 	public function is_versioning_valid() {
@@ -777,14 +780,7 @@ class Versioning {
 			return false;
 		}
 
-		$valid_slugs = \ElasticPress\Indexables::factory()->get_all( null, true );
-
-
-		foreach ( $all_versions as $slug => $versions ) {
-			if ( ! in_array( $slug, $valid_slugs ) ) {
-				return false;
-			}
-
+		foreach ( $all_versions as $versions ) {
 			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
 				return false;
 			}
@@ -802,18 +798,24 @@ class Versioning {
 	}
 
 	public function get_all_accesible_indicies() {
-		$found_indices = [];
-
 		$response = $this->elastic_search_instance->remote_request( '_cat/indices?format=json' );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
-		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			return $found_indices;
+		if ( $response_code >= 400 ) {
+			return new \WP_Error(
+				'failed-to-fetch-indicies',
+				sprintf( 'Request failed to fetch indicies with status %s', $response_code )
+			);
 		}
 
 		$response_body_json = wp_remote_retrieve_body( $response );
 		$response_body = json_decode( $response_body_json, true );
+		$found_indices = [];
 
 		if ( ! is_array( $response_body ) ) {
 			return $found_indices;
@@ -828,7 +830,7 @@ class Versioning {
 		return $found_indices;
 	}
 
-	public function reconstruct_versioning( $indicies ) {
+	public function reconstruct_versioning_option( $indicies ) {
 		if ( ! is_array( $indicies ) ) {
 			return [];
 		}
@@ -836,22 +838,22 @@ class Versioning {
 		$versioning = [];
 
 		foreach ( $indicies as $index ) {
-			$index_parts = explode( '-', $index );
+			$index_info = $this->parse_index_name( $index );
 
-			// Proper index is `vip-<env_id>-<indexable-slug>(-<blog_id>)(-v<version>)`
-			if ( count( $index_parts ) >= 3 ) {
-				$slug = $index_parts[2];
-				$last_part = $index_parts[ count( $index_parts ) - 1 ];
-				$version = 1;
-				if ( 'v' === substr( $last_part, 0, 1 ) && is_numeric( substr( $last_part, 1 ) ) ) {
-					$version = intval( substr( $last_part, 1 ) );
-				}
-
-				if ( ! isset( $versioning[ $slug ] ) ) {
-					$versioning[ $slug ] = [];
-				}
-				$versioning[ $slug ][] = $version;
+			if ( is_wp_error( $index_info ) ) {
+				continue;
 			}
+			$blog_id = get_current_blog_id();
+			if ( ! isset( $index_info['blog_id'] ) || $blog_id !== $index_info['blog_id'] ) {
+				continue;
+			}
+
+			$slug = $index_info['slug'];
+
+			if ( ! isset( $versioning[ $slug ] ) ) {
+				$versioning[ $slug ] = [];
+			}
+			$versioning[ $slug ][] = $index_info['version'];
 		}
 
 		foreach ( $versioning as $slug => $versions ) {
@@ -876,7 +878,32 @@ class Versioning {
 			$versioning[ $slug ] = $version_objects_indexed_by_number;
 		}
 
-
 		return $versioning;
+	}
+
+	public function parse_index_name( $index_name ) {
+		$index_info = [];
+		$index_parts = explode( '-', $index_name );
+
+		// Proper index is `vip-<env_id>-<indexable-slug>(-<blog_id>)(-v<version>)`
+		if ( count( $index_parts ) < 3 ) {
+			return new \WP_Error( 'index-name-not-valid', sprintf( 'Index name "%s" is not valid', $index_name ) );
+		}
+
+		if ( is_numeric( $index_parts[1] ) ) {
+			$index_info['environment_id'] = intval( $index_parts[1] );
+		}
+		$index_info['slug'] = $index_parts[2];
+		if ( count( $index_parts ) > 3 && is_numeric( $index_parts[3] ) ) {
+			$index_info['blog_id'] = intval( $index_parts[3] );
+		}
+
+		$last_part = $index_parts[ count( $index_parts ) - 1 ];
+		$index_info['version'] = 1;
+		if ( 'v' === substr( $last_part, 0, 1 ) && is_numeric( substr( $last_part, 1 ) ) ) {
+			$index_info['version'] = intval( substr( $last_part, 1 ) );
+		}
+
+		return $index_info;
 	}
 }

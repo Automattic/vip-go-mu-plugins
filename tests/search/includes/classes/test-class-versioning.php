@@ -1321,24 +1321,6 @@ class Versioning_Test extends \WP_UnitTestCase {
 				true,
 			],
 			[
-				// Invalid slug
-				[
-					'post'         => [
-						[
-							'number' => 1,
-							'active' => true,
-						],
-					],
-					'invalid_slug' => [
-						[
-							'number' => 1,
-							'active' => true,
-						],
-					],
-				],
-				false,
-			],
-			[
 				// No active version
 				[
 					'post' => [
@@ -1375,11 +1357,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 		return [
 			[
 				new WP_Error( 'Test Error' ),
-				[],
+				new WP_Error( 'Test Error' ),
 			],
 			[
 				[ 'response' => [ 'code' => 500 ] ],
-				[],
+				new WP_Error( 'failed-to-fetch-indicies', 'Request failed to fetch indicies with status 500' ),
 			],
 			[
 				[
@@ -1426,7 +1408,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function reconstruct_versioning_data() {
+	public function reconstruct_versioning_option_data() {
 		return [
 			[
 				[],
@@ -1461,7 +1443,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 				],
 			],
 			[
-				//  handle not blog specific ones mixed
+				//  ignore not blog specific ones mixed
 				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-user', 'vip-200508-post-1-v3' ],
 				[
 					'post'         => [
@@ -1474,30 +1456,76 @@ class Versioning_Test extends \WP_UnitTestCase {
 							'active' => false,
 						],
 					],
-					'user'         => [
-						1 => [
-							'number' => 1,
+				],
+			],
+			[
+				//  ignore different blog id
+				[ 'vip-200508-post-1-v2', 'vip-200508-post-2-v3' ],
+				[
+					'post'         => [
+						2 => [
+							'number' => 2,
 							'active' => true,
-						],
-						3 => [
-							'number' => 3,
-							'active' => false,
 						],
 					],
 				],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider reconstruct_versioning_option_data
+	 */
+	public function test__reconstruct_versioning_option( $indicies, $expected ) {
+		$result = self::$version_instance->reconstruct_versioning_option( $indicies );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function parse_index_name_data() {
+		return [
+			[
+				'vip-200-post-1-v3',
+				[
+					'environment_id' => 200,
+					'slug' => 'post',
+					'blog_id' => 1,
+					'version' => 3,
+				],
+			],
+			[
+				'vip-200-post-v3',
+				[
+					'environment_id' => 200,
+					'slug' => 'post',
+					'version' => 3,
+				],
+			],
+			[
+				'vip-200-post',
+				[
+					'environment_id' => 200,
+					'slug' => 'post',
+					'version' => 1,
+				],
+			],
+			[
+				'vip-200',
+				new \WP_Error( 'index-name-not-valid', 'Index name "vip-200" is not valid' ),
 			],
 
 		];
 	}
 
 	/**
-	 * @dataProvider reconstruct_versioning_data
+	 * @dataProvider parse_index_name_data
 	 */
-	public function test__reconstruct_versioning( $indicies, $expected ) {
-		$result = self::$version_instance->reconstruct_versioning( $indicies );
+	public function test__parse_index_name( $index, $expected ) {
+		$result = self::$version_instance->parse_index_name( $index );
 
 		$this->assertEquals( $expected, $result );
 	}
+
 
 	/**
 	 * Helper function for accessing protected properties.
