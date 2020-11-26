@@ -765,22 +765,23 @@ class Queue_Test extends \WP_UnitTestCase {
 		$increment = 14;
 		$indexable_slug = 'post';
 
-		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
+			->setMethods( [ 'maybe_update_stat' ] )
+			->getMock();
+
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
 
-		$statsd_mock->expects( $this->once() )
-			->method( 'increment' )
+		$partially_mocked_queue->expects( $this->once() )
+			->method( 'maybe_update_stat' )
 			->with( 'com.wordpress.elasticsearch.unknown.unknown.index_ratelimited', $increment );
 
-		$queue = new \Automattic\VIP\Search\Queue();
-		$queue->init();
-		$queue->statsd = $statsd_mock;
-		$queue->indexables = $indexables_mock;
+		$partially_mocked_queue->init();
+		$partially_mocked_queue->indexables = $indexables_mock;
 
-		$queue->record_ratelimited_stat( $increment, $indexable_slug );
+		$partially_mocked_queue->record_ratelimited_stat( $increment, $indexable_slug );
 	}
 
 	/**
@@ -1062,6 +1063,92 @@ class Queue_Test extends \WP_UnitTestCase {
 			$results,
 			'should match what you\'d expect from deleting index version 1 and index version 2'
 		);
+	}
+
+	public function stat_sampling_invalid_stat_param_data() {
+		return [
+			[ array() ],
+			[ null ],
+			[ new \stdClass() ],
+			[ 5 ],
+			[ 8.6 ],
+		];
+	}
+
+	public function stat_sampling_invalid_value_param_data() {
+		return [
+			[ array() ],
+			[ null ],
+			[ new \stdClass() ],
+			[ 'random' ],
+		];
+	}
+
+	/**
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_keep() {
+		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->once() )
+			->method( 'update_stats' )
+			->with( 'test', 5, 1, 'c' );
+
+		$this->queue->maybe_update_stat( 'test', 5 );
+	}
+
+	/**
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_drop() {
+		$this->queue::$stat_sampling_drop_value = 0; // Guarantee a sampling drop
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->never() )
+			->method( 'update_stats' );
+
+		$this->queue->maybe_update_stat( 'test', 5 );
+	}
+
+	/**
+	 * @dataProvider stat_sampling_invalid_stat_param_data
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_invalid_stat_param( $stat ) {
+		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->never() )
+			->method( 'update_stats' );
+
+		$this->queue->maybe_update_stat( $stat, 5 );
+	}
+
+	/**
+	 * @dataProvider stat_sampling_invalid_value_param_data
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_invalid_value_param( $value ) {
+		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->never() )
+			->method( 'update_stats' );
+
+		$this->queue->maybe_update_stat( 'test', $value );
 	}
 
 	/**
