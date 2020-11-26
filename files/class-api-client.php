@@ -45,7 +45,7 @@ class API_Client {
 		} else {
 			$current_context = add_query_arg( [] );
 		}
-		$this->user_agent = sprintf( 'WPVIP/%s/Files; %s', get_bloginfo( 'version' ), esc_html( $current_context ) );
+		$this->user_agent = sprintf( 'WPVIP/%s/Files;%s', get_bloginfo( 'version' ), esc_html( $current_context ) );
 
 		$this->cache = $cache;
 	}
