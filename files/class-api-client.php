@@ -38,8 +38,8 @@ class API_Client {
 
 		// Add some context to the UA to simplify debugging issues
 		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-			 // current_filter may not be totally accurate but still better than nothing
-			 $current_context = sprint( 'Cron (%s)', current_filter() );
+			// current_filter may not be totally accurate but still better than nothing
+			$current_context = sprint( 'Cron (%s)', current_filter() );
 		} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$current_context = 'WP_CLI';
 		} else {
