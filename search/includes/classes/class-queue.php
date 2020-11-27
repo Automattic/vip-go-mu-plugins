@@ -24,21 +24,38 @@ class Queue {
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
-	public static $max_indexing_op_count = 6000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
-	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
-	private const INDEX_QUEUEING_TTL = 5 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 5 minutes once ratelimiting is triggered
+	public static $max_indexing_op_count;
+	private const DEFAULT_MAX_INDEXING_OP_COUNT = 6000 + 1;
+	private const LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 10;
+	private const UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 250;
+
 	private const INDEX_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 	private const INDEX_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	private const INDEX_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
 
-	private const MAX_SYNC_INDEXING_COUNT = 10000;
+	private static $index_count_ttl;
+	private const DEFAULT_INDEX_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const LOWER_BOUND_INDEX_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
+	private const UPPER_BOUND_INDEX_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
+
+	private static $index_queueing_ttl;
+	private const DEFAULT_INDEX_QUEUEING_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const LOWER_BOUND_INDEX_QUEUEING_TTL = 1 * \MINUTE_IN_SECONDS;
+	private const UPPER_BOUND_INDEX_QUEUEING_TTL = 20 * \MINUTE_IN_SECONDS;
+
+	private static $max_sync_indexing_count;
+	private const DEFAULT_MAX_SYNC_INDEXING_COUNT = 10000;
+	private const LOWER_BOUND_MAX_SYNC_INDEXING_COUNT = 2500;
+	private const UPPER_BOUND_MAX_SYNC_INDEXING_COUNT = 25000;
 
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
+
+		$this->apply_settings();
 
 		require_once( __DIR__ . '/queue/class-schema.php' );
 		require_once( __DIR__ . '/queue/class-cron.php' );
@@ -59,6 +76,183 @@ class Queue {
 
 	public function is_enabled() {
 		return true;
+	}
+
+	public function apply_settings() {
+		/**
+		 * The period with which the Elasticsearch indexing rate limiting threshold is set.
+		 *
+		 * A set amount of indexing requests are allowed per period. After rate limiting is triggered, it occurs for a set amount of time and bulk indexing operations
+		 * are queued for asynchronous processing over time.
+		 *
+		 * @hook vip_search_index_count_period
+		 * @param int $period The period, in seconds, for Elasticsearch indexing rate limiting checks.
+		 */
+		self::$index_count_ttl = apply_filters( 'vip_search_index_count_period', self::DEFAULT_INDEX_COUNT_TTL );
+
+		if ( ! is_numeric( self::$index_count_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_count_period should be an integer.',
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = self::DEFAULT_INDEX_COUNT_TTL;
+		}
+
+		self::$index_count_ttl = intval( self::$index_count_ttl );
+
+		if ( self::$index_count_ttl < self::LOWER_BOUND_INDEX_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_count_period should not be set below %d seconds.', self::LOWER_BOUND_INDEX_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = self::LOWER_BOUND_INDEX_COUNT_TTL;
+		}
+
+		if ( self::$index_count_ttl > self::UPPER_BOUND_INDEX_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_count_period should not be set above %d seconds.', self::UPPER_BOUND_INDEX_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = self::UPPER_BOUND_INDEX_COUNT_TTL;
+		}
+
+		/**
+		 * The number of indexing operations allowed per period before Elasticsearch rate limiting takes effect.
+		 *
+		 * Ratelimiting works by being triggered and then persisting for a set period. During this period, all bulk indexing operations are added to a queue and are
+		 * processed asynchronously.
+		 *
+		 * @hook vip_search_max_indexing_op_count
+		 * @param int $ratelimit_threshold The threshold to trigger rate limiting for the period.
+		 */
+		self::$max_indexing_op_count = apply_filters( 'vip_search_max_indexing_op_count', self::DEFAULT_MAX_INDEXING_OP_COUNT );
+
+		if ( ! is_numeric( self::$max_indexing_op_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_op_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = self::DEFAULT_MAX_INDEXING_OP_COUNT;
+		}
+
+		self::$max_indexing_op_count = intval( self::$max_indexing_op_count );
+		
+		$lower_bound_max_indexing_op_count = ( self::$index_count_ttl * self::LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND ) + 1;
+		
+		if ( self::$max_indexing_op_count < $lower_bound_max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_indexing_op_count should not be below %d queries per second.', self::LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = $lower_bound_max_indexing_op_count;
+		}
+
+		$upper_bound_max_indexing_op_count = ( self::$index_count_ttl * self::UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND ) + 1;
+
+		if ( self::$max_indexing_op_count > $upper_bound_max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_indexing_op_count should not exceed %d queries per second.', self::UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = $upper_bound_max_indexing_op_count;
+		}
+		
+		/**
+		 * The length of time Elasticsearch indexing rate limiting will be active once triggered.
+		 *
+		 * During this period, all bulk indexing operations will be queued for asynchronous processing over time.
+		 *
+		 * @hook vip_search_index_ratelimiting_duration
+		 * @param int $duration The duration that Elasticsearch indexing rate limiting will be in effect.
+		 */
+		self::$index_queueing_ttl = apply_filters( 'vip_search_index_ratelimiting_duration', self::DEFAULT_INDEX_QUEUEING_TTL );
+
+		if ( ! is_numeric( self::$index_queueing_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_ratelimiting_duration should be an integer.',
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = self::DEFAULT_INDEX_QUEUEING_TTL;
+		}
+
+		self::$index_queueing_ttl = intval( self::$index_queueing_ttl );
+
+		if ( self::$index_queueing_ttl < self::LOWER_BOUND_INDEX_QUEUEING_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_ratelimiting_duration should not be set below %d seconds.', self::LOWER_BOUND_INDEX_QUEUEING_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = self::LOWER_BOUND_INDEX_QUEUEING_TTL;
+		}
+
+		if ( self::$index_queueing_ttl > self::UPPER_BOUND_INDEX_QUEUEING_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_ratelimiting_duration should not be set above %d seconds.', self::UPPER_BOUND_INDEX_QUEUEING_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = self::UPPER_BOUND_INDEX_QUEUEING_TTL;
+		}
+
+		/**
+		 * The maximum number of objects that can be synchronously indexing in Search.
+		 *
+		 * Any indexing operations with more objects than this will have the operation queued for asynchronous processing to avoid overloading the cluster and
+		 * to prevent hanging / timeouts in the UI and related bad UX.
+		 *
+		 * @hook vip_search_max_indexing_count
+		 * @param int $max_count The maximum number of objects that can be synchronously indexed.
+		 */
+		self::$max_sync_indexing_count = apply_filters( 'vip_search_max_indexing_count', self::DEFAULT_MAX_SYNC_INDEXING_COUNT );
+
+		if ( ! is_numeric( self::$max_sync_indexing_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = self::DEFAULT_MAX_SYNC_INDEXING_COUNT;
+		}
+
+		self::$max_sync_indexing_count = intval( self::$max_sync_indexing_count );
+
+		if ( self::$max_sync_indexing_count < self::LOWER_BOUND_MAX_SYNC_INDEXING_COUNT ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_sync_indexing_count should not be below %d.', self::LOWER_BOUND_MAX_SYNC_INDEXING_COUNT ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = self::LOWER_BOUND_MAX_SYNC_INDEXING_COUNT;
+		}
+
+		if ( self::$max_sync_indexing_count > self::UPPER_BOUND_MAX_SYNC_INDEXING_COUNT ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_sync_indexing_count should not be above %d.', self::UPPER_BOUND_MAX_SYNC_INDEXING_COUNT ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = self::UPPER_BOUND_MAX_SYNC_INDEXING_COUNT;
+		}
 	}
 
 	public function setup_hooks() {
@@ -586,7 +780,7 @@ class Queue {
 		}
 
 		// If the number of affected posts is low enough, process them now rather than send them to cron
-		if ( $term->count <= self::MAX_SYNC_INDEXING_COUNT ) {
+		if ( $term->count <= self::$max_sync_indexing_count ) {
 			$this->offload_indexing_to_queue();
 			return;
 		}
@@ -757,7 +951,7 @@ class Queue {
 	 * @return {bool} True on success, false on failure
 	 */
 	public static function turn_on_index_ratelimiting() {
-		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
 	}
 
 	/**
@@ -836,7 +1030,7 @@ class Queue {
 	 */
 	private static function index_count_incr( $increment = 1 ) {
 		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
-			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_COUNT_TTL );
+			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
