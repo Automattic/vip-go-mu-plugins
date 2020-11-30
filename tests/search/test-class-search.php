@@ -2042,6 +2042,101 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_alert_for_prolonged_query_limiting();
 	}
 
+	/* Format:
+	 * [
+	 * 		[
+	 * 			$filter,
+	 * 			$too_low_message,
+	 * 			$too_high_message,
+	 * 		]
+	 * ]
+	 */
+	public function vip_search_ratelimiting_filter_data() {
+		return array(
+			[
+				'vip_search_ratelimit_period',
+				'vip_search_ratelimit_period should not be set below 60 seconds.',
+				'vip_search_ratelimit_period should not be set above 7200 seconds.',
+			],
+			[
+				'vip_search_max_query_count',
+				'vip_search_max_query_count should not be below 10 queries per second.',
+				'vip_search_max_query_count should not exceed 500 queries per second.',
+			],
+			[
+				'vip_search_query_db_fallback_value',
+				'vip_search_query_db_fallback_value should be between 1 and 10.',
+				'vip_search_query_db_fallback_value should be between 1 and 10.',
+			],
+		);
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return '30.ffr';
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$filter
+			)
+		);
+
+		$this->search_instance->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return 0;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_low_message
+			)
+		);
+
+		$this->search_instance->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return PHP_INT_MAX;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_high_message
+			)
+		);
+
+		$this->search_instance->apply_settings();
+	}
+
 	public function stat_sampling_invalid_stat_param_data() {
 		return [
 			[ array() ],
@@ -2197,6 +2292,58 @@ class Search_Test extends \WP_UnitTestCase {
 			->method( 'timing' );
 
 		$es->maybe_send_timing_stat( 'test', $value );
+	}
+
+
+	public function ep_handle_failed_request_data() {
+		return [
+			[
+				[
+					'body' => '{ "error": { "reason": "error text"} }',
+				],
+				'error text',
+			],
+			[
+				[
+					'body' => '{ "error": {} }',
+				],
+				'Unknown Elasticsearch query error',
+			],
+			[
+				[
+					'body' => '{}',
+				],
+				'Unknown Elasticsearch query error',
+			],
+			[
+				[],
+				'Unknown Elasticsearch query error',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider ep_handle_failed_request_data
+	 */
+	public function test__ep_handle_failed_request__log_message( $response, $expected_message ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+
+		$es->logger->expects( $this->once() )
+				->method( 'log' )
+				->with(
+					$this->equalTo( 'error' ),
+					$this->equalTo( 'vip_search_query_error' ),
+					$this->equalTo( $expected_message ),
+					$this->anything()
+				);
+
+		$es->ep_handle_failed_request( $response, '' );
 	}
 
 	/**

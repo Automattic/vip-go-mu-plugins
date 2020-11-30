@@ -13,7 +13,8 @@ class Search {
 	// sites.
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
 
-	private const QUERY_COUNT_TTL = 300; // 5 minutes in seconds.
+	private static $query_count_ttl;
+
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
@@ -22,6 +23,18 @@ class Search {
 	private const POST_FIELD_COUNT_LIMIT = 5000;
 	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 
+	private const DEFAULT_QUERY_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const LOWER_BOUND_QUERY_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
+	private const UPPER_BOUND_QUERY_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
+
+	private const DEFAULT_MAX_QUERY_COUNT = 50000 + 1;
+	private const LOWER_BOUND_QUERIES_PER_SECOND = 10;
+	private const UPPER_BOUND_QUERIES_PER_SECOND = 500;
+
+	private const DEFAULT_QUERY_DB_FALLBACK_VALUE = 5;
+	private const LOWER_BOUND_QUERY_DB_FALLBACK_VALUE = 1;
+	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
+
 	public $healthcheck;
 	public $field_count_gauge;
 	public $queue_wait_time;
@@ -29,9 +42,11 @@ class Search {
 	public $statsd;
 	public $indexables;
 	public $alerts;
-	public static $max_query_count = 50000 + 1; // 10 requests per second plus one for cleanliness of comparing with Search::query_count_incr
-	public static $query_db_fallback_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+	public $logger;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+
+	public static $max_query_count;
+	public static $query_db_fallback_value;
 
 	private static $_instance;
 	private $current_host_index = 0;
@@ -40,6 +55,7 @@ class Search {
 	 * Initialize the VIP Search plugin
 	 */
 	public function init() {
+		$this->apply_settings(); // Applies filters for tweakable Search settings and should run first.
 		$this->setup_constants();
 		$this->setup_hooks();
 		$this->load_dependencies();
@@ -102,6 +118,11 @@ class Search {
 			$this->alerts = \Automattic\VIP\Utils\Alerts::instance();
 		}
 
+		// Logger - can be set explicitly for mocking purposes
+		if ( ! $this->logger ) {
+			$this->logger = new \Automattic\VIP\Logstash\Logger();
+		}
+
 		/**
 		 * Load CLI commands
 		 */
@@ -114,6 +135,129 @@ class Search {
 
 			// Remove elasticpress command. Need a better way.
 			//WP_CLI::add_hook( 'before_add_command:elasticpress', [ $this, 'abort_elasticpress_add_command' ] );
+		}
+	}
+
+	public function apply_settings() {
+		/**
+		 * The period with which the Elasticsearch query rate limiting threshold is set.
+		 *
+		 * A set amount of queries are allowed per-period before Elasticsearch query rate limiting occurs.
+		 *
+		 * @hook vip_search_ratelimit_period
+		 * @param int $period The period, in seconds, for Elasticsearch query rate limiting checks.
+		 */
+		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', self::DEFAULT_QUERY_COUNT_TTL );
+
+		if ( ! is_numeric( self::$query_count_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_ratelimit_period should be an integer.',
+				'5.5.3'
+			);
+
+			self::$query_count_ttl = self::DEFAULT_QUERY_COUNT_TTL;
+		}
+
+		self::$query_count_ttl = intval( self::$query_count_ttl );
+
+		if ( self::$query_count_ttl < self::LOWER_BOUND_QUERY_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_ratelimit_period should not be set below %d seconds.', self::LOWER_BOUND_QUERY_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$query_count_ttl = self::LOWER_BOUND_QUERY_COUNT_TTL;
+		}
+
+		if ( self::$query_count_ttl > self::UPPER_BOUND_QUERY_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_ratelimit_period should not be set above %d seconds.', self::UPPER_BOUND_QUERY_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$query_count_ttl = self::UPPER_BOUND_QUERY_COUNT_TTL;
+		}
+
+		/**
+		 * The number of queries allowed per period before Elasticsearch rate limiting takes effect.
+		 *
+		 * Ratelimiting works by sending a percentage of traffic to the database rather than Elasticsearch to keep the cluster stable.
+		 *
+		 * @hook vip_search_max_query_count
+		 * @param int $ratelimit_threshold The threshold to trigger ratelimiting for the period.
+		 */
+		self::$max_query_count = apply_filters( 'vip_search_max_query_count', self::DEFAULT_MAX_QUERY_COUNT );
+
+		if ( ! is_numeric( self::$max_query_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_query_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_query_count = self::DEFAULT_MAX_QUERY_COUNT;
+		}
+
+		self::$max_query_count = intval( self::$max_query_count );
+
+		$lower_bound_max_query_count = ( self::$query_count_ttl * self::LOWER_BOUND_QUERIES_PER_SECOND ) + 1;
+
+		if ( self::$max_query_count < $lower_bound_max_query_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_query_count should not be below %d queries per second.', self::LOWER_BOUND_QUERIES_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_query_count = $lower_bound_max_query_count;
+		}
+
+		$upper_bound_max_query_count = ( self::$query_count_ttl * self::UPPER_BOUND_QUERIES_PER_SECOND ) + 1;
+
+		if ( self::$max_query_count > $upper_bound_max_query_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_query_count should not exceed %d queries per second.', self::UPPER_BOUND_QUERIES_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_query_count = $upper_bound_max_query_count;
+		}
+
+		/**
+		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate limited.
+		 *
+		 * This value is compared >= rand( 1, 10 ) so a setting of 5 would cause roughly half of requests to go to the database. A setting of 3 would yield a 70% chance of going to the database.
+		 *
+		 * @hook vip_search_query_db_fallback_value
+		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate limited.
+		 */
+		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', self::DEFAULT_QUERY_DB_FALLBACK_VALUE );
+
+		if ( ! is_numeric( self::$query_db_fallback_value ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_query_db_fallback_value should be an integer.',
+				'5.5.3'
+			);
+
+			self::$query_db_fallback_value = self::DEFAULT_QUERY_DB_FALLBACK_VALUE;
+		}
+
+		self::$query_db_fallback_value = intval( self::$query_db_fallback_value );
+
+		if ( self::$query_db_fallback_value < self::LOWER_BOUND_QUERY_DB_FALLBACK_VALUE || self::$query_db_fallback_value > self::UPPER_BOUND_QUERY_DB_FALLBACK_VALUE ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_query_db_fallback_value should be between %d and %d.', self::LOWER_BOUND_QUERY_DB_FALLBACK_VALUE, self::UPPER_BOUND_QUERY_DB_FALLBACK_VALUE ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			// Set to default rather than to one of the bounds since this setting has serious performance and user impact.
+			self::$query_db_fallback_value = self::DEFAULT_QUERY_DB_FALLBACK_VALUE;
 		}
 	}
 
@@ -453,7 +597,7 @@ class Search {
 		return $response;
 	}
 
-	private function ep_handle_failed_request( $response, $statsd_prefix ) {
+	public function ep_handle_failed_request( $response, $statsd_prefix ) {
 		$response_error = [];
 
 		if ( is_wp_error( $response ) ) {
@@ -468,21 +612,21 @@ class Search {
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
-			$response_error = $response_body ? $response_body['error'] : $response_body;
+			$response_error = $response_body['error'] ?? [];
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 		}
 
 		$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-		\Automattic\VIP\Logstash\log2logstash( array(
-			'severity' => 'error',
-			'feature' => 'vip_search_query_error',
-			'message' => $error_message,
-			'extra' => array(
+		$this->logger->log(
+			'error',
+			'vip_search_query_error',
+			$error_message,
+			[
 				'error_type' => $response_error['type'] ?? 'Unknown error type',
 				'root_cause' => $response_error['root_cause'] ?? null,
-			),
-		) );
+			]
+		);
 	}
 
 	/*
@@ -701,7 +845,7 @@ class Search {
 		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		
+
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
@@ -1299,7 +1443,7 @@ class Search {
 	 */
 	private static function query_count_incr() {
 		if ( false === wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
-			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::QUERY_COUNT_CACHE_GROUP, self::QUERY_COUNT_TTL );
+			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::QUERY_COUNT_CACHE_GROUP, self::$query_count_ttl );
 		}
 
 		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::QUERY_COUNT_CACHE_GROUP );

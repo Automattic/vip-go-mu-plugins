@@ -138,3 +138,23 @@ function wpcom_vip_qm_disable_on_404() {
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
 
+
+// We are putting dispatchers as last so that QM still can catch other operations in shutdown action
+function change_dispatchers_shutdown_priority( array $dispatchers ) {
+	if ( is_array( $dispatchers ) ) {
+		if ( isset( $dispatchers['html'] ) ) {
+			$html_dispatcher = $dispatchers['html'];
+			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
+			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX );
+		}
+		if ( isset( $dispatchers['ajax'] ) ) {
+			$ajax_dispatcher = $dispatchers['ajax'];
+			remove_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), 0 );
+			add_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), PHP_INT_MAX );
+
+		}
+	}
+
+	return $dispatchers;
+}
+add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
