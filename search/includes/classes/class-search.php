@@ -26,11 +26,11 @@ class Search {
 	private const DEFAULT_QUERY_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_QUERY_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
 	private const UPPER_BOUND_QUERY_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
-		
+
 	private const DEFAULT_MAX_QUERY_COUNT = 50000 + 1;
 	private const LOWER_BOUND_QUERIES_PER_SECOND = 10;
 	private const UPPER_BOUND_QUERIES_PER_SECOND = 500;
-	
+
 	private const DEFAULT_QUERY_DB_FALLBACK_VALUE = 5;
 	private const LOWER_BOUND_QUERY_DB_FALLBACK_VALUE = 1;
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
@@ -42,6 +42,7 @@ class Search {
 	public $statsd;
 	public $indexables;
 	public $alerts;
+	public $logger;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_query_count;
@@ -115,6 +116,11 @@ class Search {
 		// Alerts - can be set explicitly for mocking purposes
 		if ( ! $this->alerts ) {
 			$this->alerts = \Automattic\VIP\Utils\Alerts::instance();
+		}
+
+		// Logger - can be set explicitly for mocking purposes
+		if ( ! $this->logger ) {
+			$this->logger = new \Automattic\VIP\Logstash\Logger();
 		}
 
 		/**
@@ -591,7 +597,7 @@ class Search {
 		return $response;
 	}
 
-	private function ep_handle_failed_request( $response, $statsd_prefix ) {
+	public function ep_handle_failed_request( $response, $statsd_prefix ) {
 		$response_error = [];
 
 		if ( is_wp_error( $response ) ) {
@@ -606,21 +612,21 @@ class Search {
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
-			$response_error = $response_body ? $response_body['error'] : $response_body;
+			$response_error = $response_body['error'] ?? [];
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 		}
 
 		$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-		\Automattic\VIP\Logstash\log2logstash( array(
-			'severity' => 'error',
-			'feature' => 'vip_search_query_error',
-			'message' => $error_message,
-			'extra' => array(
+		$this->logger->log(
+			'error',
+			'vip_search_query_error',
+			$error_message,
+			[
 				'error_type' => $response_error['type'] ?? 'Unknown error type',
 				'root_cause' => $response_error['root_cause'] ?? null,
-			),
-		) );
+			]
+		);
 	}
 
 	/*
@@ -839,7 +845,7 @@ class Search {
 		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		
+
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
