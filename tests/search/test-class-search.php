@@ -2294,6 +2294,58 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_send_timing_stat( 'test', $value );
 	}
 
+
+	public function ep_handle_failed_request_data() {
+		return [
+			[
+				[
+					'body' => '{ "error": { "reason": "error text"} }',
+				],
+				'error text',
+			],
+			[
+				[
+					'body' => '{ "error": {} }',
+				],
+				'Unknown Elasticsearch query error',
+			],
+			[
+				[
+					'body' => '{}',
+				],
+				'Unknown Elasticsearch query error',
+			],
+			[
+				[],
+				'Unknown Elasticsearch query error',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider ep_handle_failed_request_data
+	 */
+	public function test__ep_handle_failed_request__log_message( $response, $expected_message ) {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+
+		$es->logger->expects( $this->once() )
+				->method( 'log' )
+				->with(
+					$this->equalTo( 'error' ),
+					$this->equalTo( 'vip_search_query_error' ),
+					$this->equalTo( $expected_message ),
+					$this->anything()
+				);
+
+		$es->ep_handle_failed_request( $response, '' );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
