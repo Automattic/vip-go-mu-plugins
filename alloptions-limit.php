@@ -118,7 +118,6 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 		// Send to IRC, if we have a host configured
 		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
-			wpcom_vip_irc( '#nagios-vip', $to_irc, $irc_alert_level, 'a8c-alloptions' );
 			if ( 'production' === $environment ) {
 				wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
 
