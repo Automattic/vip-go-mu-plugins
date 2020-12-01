@@ -11,7 +11,7 @@ class Versioning {
 	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
-	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 300; // 5 minutes in seconds.
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
 
 	/**
 	 * The maximum number of index versions that can exist for any indexable.
@@ -768,10 +768,6 @@ class Versioning {
 		wp_cache_set( self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY, 1, self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP, self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL );
 	}
 
-	private function mark_self_heal_finished() {
-		wp_cache_delete( self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY, self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP );
-	}
-
 	/**
 	 * Check if the versions are persisted correctly. If not recreate them.
 	 */
@@ -782,20 +778,16 @@ class Versioning {
 		$this->mark_self_heal_ongoing();
 
 		if ( $this->is_versioning_valid() ) {
-			$this->mark_self_heal_finished();
 			return;
 		}
 
 		$indicies = $this->get_all_accesible_indicies();
 		if ( is_wp_error( $indicies ) ) {
-			$this->mark_self_heal_finished();
 			return;
 		}
 		$versioning = $this->reconstruct_versioning_option( $indicies );
 
 		update_option( self::INDEX_VERSIONS_OPTION, $versioning );
-
-		$this->mark_self_heal_finished();
 	}
 
 	public function is_versioning_valid() {
