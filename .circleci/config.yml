@@ -14,6 +14,11 @@ workflows:
       - php74-build-singlesite
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
+      - php8-lint
+      - php8-build-multisite
+      - php8-build-singlesite
+      - php8-build-multisite-nightly
+      - php8-build-singlesite-nightly
 
 version: 2.1
 
@@ -227,4 +232,45 @@ jobs:
       - WP_VERSION: "nightly"
     docker:
       - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php8-lint:
+    <<: *lint_job
+    docker:
+      - image: circleci/php:8.0-node
+
+  php8-build-multisite:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:8.0-node
+      - image: *db_image
+
+  php8-build-singlesite:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:8.0-node
+      - image: *db_image
+
+  php8-build-multisite-nightly:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "nightly"
+    docker:
+      - image: circleci/php:8.0-node
+      - image: *db_image
+
+  php8-build-singlesite-nightly:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "nightly"
+    docker:
+      - image: circleci/php:8.0-node
       - image: *db_image
