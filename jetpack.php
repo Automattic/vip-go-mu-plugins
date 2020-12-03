@@ -12,6 +12,8 @@
  * Domain Path: /languages/
  */
 
+// Choose an appropriate default Jetpack version, ensuring that older WordPress versions
+// are not using a too modern Jetpack version that is not compatible with it
 if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
 	if ( version_compare( $wp_version, '5.5', '<' ) ) {
 		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.1' );
