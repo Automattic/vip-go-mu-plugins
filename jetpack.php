@@ -13,7 +13,11 @@
  */
 
 if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
-	define( 'VIP_JETPACK_DEFAULT_VERSION', '9.2' );
+	if ( version_compare( $wp_version, '5.5', '<' ) ) {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.1' );
+	} else {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.2' );
+	}
 }
 
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
