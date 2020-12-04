@@ -592,7 +592,12 @@ class Search {
 			}
 		}
 
-		return $response;
+		if ( is_wp_error( $response ) ) {
+			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
+			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
+		} else {
+			return $response;
+		}
 	}
 
 	public function ep_handle_failed_request( $response, $statsd_prefix ) {
