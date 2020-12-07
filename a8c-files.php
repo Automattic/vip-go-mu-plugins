@@ -92,6 +92,10 @@ class A8C_Files {
 			// Schedule meta update job
 			$this->schedule_update_job();
 		}
+		
+		// Filter images in the content
+		// Run this before `wp_filter_content_tags`
+		add_filter( 'the_content', array( $this, 'filter_content_tags'), 5 );
 	}
 
 	/**
@@ -994,7 +998,130 @@ class A8C_Files {
 
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 	}
+	
+	/**
+	 * Modified version of wp_filter_content_tags() to filter images within the_content
+	 * @see https://github.com/Automattic/vip-go-mu-plugins/issues/1391
+	 */
+	function filter_content_tags( $content, $context = null ) {
+		if ( null === $context ) {
+			$context = current_filter();
+		}
 
+		// Return early if content was not built with the Block Editor
+		if ( ! has_blocks( $content ) ) {
+			return $content;
+		}
+	
+		if ( false === strpos( $content, '<img' ) ) {
+			return $content;
+		}
+	
+		if ( ! preg_match_all( '/<img\s[^>]+>/', $content, $matches ) ) {
+			return $content;
+		}
+	
+		// List of the unique `img` tags found in $content.
+		$images = array();
+	
+		foreach ( $matches[0] as $image ) {
+			if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
+				$attachment_id = absint( $class_id[1] );
+	
+				if ( $attachment_id ) {
+					// If exactly the same image tag is used more than once, overwrite it.
+					// All identical tags will be replaced later with 'str_replace()'.
+					$images[ $image ] = $attachment_id;
+					continue;
+				}
+			}
+	
+			$images[ $image ] = 0;
+		}
+	
+		// Reduce the array to unique attachment IDs.
+		$attachment_ids = array_unique( array_filter( array_values( $images ) ) );
+
+		if ( count( $attachment_ids ) > 1 ) {
+			/*
+			 * Warm the object cache with post and meta information for all found
+			 * images to avoid making individual database calls.
+			 */
+			_prime_post_caches( $attachment_ids, false, true );
+		}
+	
+		foreach ( $images as $image => $attachment_id ) {
+			$filtered_image = $image;		
+			
+			// Add 'width' and 'height' attributes if applicable.
+			if ( $attachment_id > 0 && false === strpos( $filtered_image, ' width=' ) && false === strpos( $filtered_image, ' height=' ) ) {
+				$filtered_image = $this->img_tag_add_width_and_height_attr( $filtered_image, $context, $attachment_id );
+			}
+
+			if ( $filtered_image !== $image ) {
+				$content = str_replace( $image, $filtered_image, $content );
+			}
+		}
+	
+		return $content;
+	}
+
+	/**
+	 * Modified version of wp_img_tag_add_width_and_height_attr()
+	 */
+	function img_tag_add_width_and_height_attr ( $image, $context, $attachment_id ) {
+		$image_src = preg_match( '/src="([^"]+)"/', $image, $match_src ) ? $match_src[1] : '';
+		list( $image_src, $query_string ) = explode( '?', $image_src );
+
+		// Return early if we couldn't get the image source or query_string.
+		if ( ! $image_src || ! $query_string ) {
+			return $image;
+		}
+
+		// Get the image width from the Photon query args 
+		parse_str( htmlspecialchars_decode( $query_string ), $args );
+		$image_width = isset( $args['w'] ) ?  intval( $args['w'] ) : null; 
+
+		if ( ! $image_width ) {
+			return $image;
+		}
+
+		$add = apply_filters( 'wp_img_tag_add_width_and_height_attr', true, $image, $context, $attachment_id );
+
+		if ( true !== $add ) {
+			return $image;
+		}
+				
+		$image_meta = wp_get_attachment_metadata( $attachment_id );
+
+		$widths = array();
+
+		if ( ! empty( $image_meta['sizes'] ) ) {
+			foreach ( $image_meta['sizes'] as $image_size_data ) {
+				$widths[] = $image_size_data['width'];
+
+				// if `w` query parameter matches a width in attachment meta `sizes`, set the width and corresponding height from meta
+				if ( $image_width === $image_size_data['width'] ) {
+					$hw = trim( image_hwstring( $image_size_data['width'], $image_size_data['height'] ) );
+					return str_replace( '<img', "<img {$hw}", $image );
+				}
+			}
+		}
+
+		// Catch any sizes that aren't in attachment meta (e.g. where an image was resized to the $content_width global)
+		// In this scenario we only know the width, so get the proportional height from full size image dimensions
+		if ( ! in_array( $image_width, $widths, true ) && isset( $image_meta['height'], $image_meta['width'] ) ) {
+			$w = $image_meta['width'];
+			$h = $image_meta['height'];
+
+			list( $w, $h ) = wp_constrain_dimensions( $w, $h, $image_width );
+			
+			$hw = trim( image_hwstring( $w, $h ) );
+			return str_replace( '<img', "<img {$hw}", $image );
+		}
+
+		return $image;
+	}
 }
 
 class A8C_Files_Utils {
