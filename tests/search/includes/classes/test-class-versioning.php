@@ -1318,7 +1318,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'active' => true,
 						'created_time' => null,
 						'activated_time' => null,
-					]
+					],
 				],
 			],
 			[
@@ -1373,7 +1373,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'active' => true,
 						'created_time' => null,
 						'activated_time' => null,
-					]
+					],
 				],
 			],
 			[
@@ -1395,6 +1395,71 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 
 		$result = self::$version_instance->get_versions( $indexable, false );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function is_versioning_valid_data() {
+		return [
+			[
+				[],
+				[],
+				true,
+			],
+			[
+				[ 'post', 'user' ],
+				[
+					'post' => [
+						1 => [],
+					],
+					'user' => [
+						1 => [],
+					],
+				],
+				true,
+			],
+			[
+				// empty user versions
+				[ 'post', 'user' ],
+				[
+					'post' => [
+						1 => [],
+					],
+					'user' => [],
+				],
+				false,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider is_versioning_valid_data
+	 */
+	public function test__is_versioning_valid( $indexables, $versioning, $expected ) {
+		$indexables_mocks = array_map( function( $slug ) {
+			$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+			$indexable_mock->slug = $slug;
+			return $indexable_mock;
+		}, $indexables);
+
+		$indexables_mock = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get_all' ] )
+			->getMock();
+		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
+
+		$partially_mocked_versioning = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
+			->setMethods( [ 'get_versions' ] )
+			->getMock();
+
+		$partially_mocked_versioning
+			->method( 'get_versions' )
+			->will( $this->returnCallback( function( $indexable ) use ( $versioning ) {
+					return $versioning[ $indexable->slug ];
+			} ) );
+
+		$partially_mocked_versioning->elastic_search_indexables = $indexables_mock;
+
+		$result = $partially_mocked_versioning->is_versioning_valid();
 
 		$this->assertEquals( $expected, $result );
 	}

@@ -803,10 +803,14 @@ class Versioning {
 	}
 
 	public function is_versioning_valid() {
-		$all_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 
-		if ( ! is_array( $all_versions ) || count( $all_versions ) == 0 ) {
-			return false;
+		$indexables = $this->elastic_search_indexables->get_all();
+
+		foreach ( $indexables as $indexable ) {
+			$versions = $this->get_versions( $indexable );
+			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
+				return false;
+			}
 		}
 
 		return true;
