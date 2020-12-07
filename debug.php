@@ -19,7 +19,7 @@ if ( $has_test_jquery_param || $has_test_jquery_constant ) {
 	$settings_key = 'wp-jquery-test-settings';
 	$default_settings = [];
 
-	if ( version_compare( $GLOBALS['wp_version'], '5.6', '<' ) ) {
+	if ( version_compare( $GLOBALS['wp_version'], '5.6-alpha', '<' ) ) {
 		$version = '5.5';
 		$default_settings = [
 			'version'   => '3.5.1',
