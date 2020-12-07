@@ -23,6 +23,12 @@ class Versioning {
 	 */
 	public $elastic_search_instance;
 
+
+	/**
+	 * Injectable instance of \ElasticPress\Indexables
+	 */
+	public $elastic_search_indexables;
+
 	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
@@ -53,6 +59,7 @@ class Versioning {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
 		$this->elastic_search_instance = \ElasticPress\Elasticsearch::factory();
+		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
 	}
 
 	public function action__plugins_loaded() {
@@ -182,22 +189,27 @@ class Versioning {
 	 * Retrieve details about available index versions
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve index versions
+	 * @param bool $provide_default If on corrupted or incomplete versioning default version 1 should be provided
 	 * @return array Array of index versions
 	 */
-	public function get_versions( Indexable $indexable ) {
+	public function get_versions( Indexable $indexable, bool $provide_default = true ) {
 		$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 
 		$slug = $indexable->slug;
 
 		if ( ! isset( $versions[ $slug ] ) || ! is_array( $versions[ $slug ] ) || empty( $versions[ $slug ] ) ) {
-			return array(
-				1 => array(
-					'number' => 1,
-					'active' => true,
-					'created_time' => null, // We don't know when it was actually created
-					'activated_time' => null,
-				),
-			);
+			if ( $provide_default ) {
+				return array(
+					1 => array(
+						'number' => 1,
+						'active' => true,
+						'created_time' => null, // We don't know when it was actually created
+						'activated_time' => null,
+					),
+				);
+			} else {
+				return [];
+			}
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
@@ -795,20 +807,6 @@ class Versioning {
 
 		if ( ! is_array( $all_versions ) || count( $all_versions ) == 0 ) {
 			return false;
-		}
-
-		foreach ( $all_versions as $versions ) {
-			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
-				return false;
-			}
-
-			$active_statuses = wp_list_pluck( $versions, 'active' );
-
-			$array_index = array_search( true, $active_statuses, true );
-
-			if ( false === $array_index ) {
-				return false;
-			}
 		}
 
 		return true;

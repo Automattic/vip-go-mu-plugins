@@ -1280,75 +1280,121 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
 	}
 
-	public function is_versioning_valid_data() {
+	private $default_versions = [
+		1 => [
+			'number' => 1,
+			'active' => true,
+			'created_time' => null,
+			'activated_time' => null,
+		],
+	];
+
+	public function get_versions_default_data() {
 		return [
 			[
 				null,
-				false,
+				$this->default_versions,
 			],
 			[
 				'some string',
-				false,
+				$this->default_versions,
 			],
 			[
 				[],
-				false,
+				$this->default_versions,
 			],
 			[
 				[
 					'post' => [
-						[
-							'number' => 1,
-							'active' => true,
-						],
-					],
-				],
-				true,
-			],
-			[
-				[
-					'post' => [
-						[
-							'number' => 1,
-							'active' => false,
-						],
-						[
+						2 => [
 							'number' => 2,
 							'active' => true,
 						],
 					],
 				],
-				true,
-			],
-			[
-				// No active version
 				[
-					'post' => [
-						[
-							'number' => 1,
-							'active' => false,
-						],
-					],
+					2 => [
+						'number' => 2,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					]
 				],
-				false,
 			],
 			[
 				// No valid versions
 				[
 					'post' => 'invalid versions value',
 				],
-				false,
+				$this->default_versions,
 			],
 		];
 	}
 
 	/**
-	 * @dataProvider is_versioning_valid_data
+	 * @dataProvider get_versions_default_data
 	 */
-	public function test__is_versioning_valid( $versioning, $expected ) {
+	public function test__get_versions_default( $versioning, $expected ) {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$result = self::$version_instance->is_versioning_valid();
+
+		$result = self::$version_instance->get_versions( $indexable );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function get_versions_data() {
+		return [
+			[
+				null,
+				[],
+			],
+			[
+				'some string',
+				[],
+			],
+			[
+				[],
+				[],
+			],
+			[
+				[
+					'post' => [
+						2 => [
+							'number' => 2,
+							'active' => true,
+						],
+					],
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					]
+				],
+			],
+			[
+				// No valid versions
+				[
+					'post' => 'invalid versions value',
+				],
+				[],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_versions_data
+	 */
+	public function test__get_versions( $versioning, $expected ) {
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+
+		$result = self::$version_instance->get_versions( $indexable, false );
 
 		$this->assertEquals( $expected, $result );
 	}
