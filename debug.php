@@ -29,7 +29,7 @@ if ( $has_test_jquery_param || $has_test_jquery_constant ) {
 	} else {
 		$version = '5.6';
 		$default_settings = [
-			'version'   => '1.12.4',
+			'version'   => 'default',
 			'migrate'   => 'enable',
 		];
 	}
