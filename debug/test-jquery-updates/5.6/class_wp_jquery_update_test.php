@@ -123,7 +123,7 @@ class WP_Jquery_Update_Test {
 		}
 
 		if (
-			! current_user_can( 'install_plugins' ) ||
+			! current_user_can( 'activate_plugins' ) ||
 			! wp_verify_nonce( $_POST['wp-jquery-test-save'], 'wp-jquery-test-settings' )
 		) {
 			wp_die( 'Invalid URL.' );
@@ -276,13 +276,13 @@ class WP_Jquery_Update_Test {
 
 	public static function add_menu_item() {
 		$menu_title = __( 'Test jQuery Updates', 'wp-jquery-update-test' );
-		add_plugins_page( $menu_title, $menu_title, 'install_plugins', self::$plugin_dir_name, array( __CLASS__, 'settings_ui' ) );
+		add_plugins_page( $menu_title, $menu_title, 'activate_plugins', self::$plugin_dir_name, array( __CLASS__, 'settings_ui' ) );
 	}
 
 	public static function add_settings_link( $links, $file ) {
 		$plugin_basename = self::$plugin_dir_name . '/wp-jquery-update-test.php';
 
-		if ( $file === $plugin_basename && current_user_can( 'install_plugins' ) ) {
+		if ( $file === $plugin_basename && current_user_can( 'activate_plugins' ) ) {
 			// Prevent PHP warnings when a plugin uses this filter incorrectly.
 			$links = (array) $links;
 
