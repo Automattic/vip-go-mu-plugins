@@ -8,7 +8,7 @@
 /**
  * Test Jquery Updates
  *
- * There are multiple versions per WordpressVersion the loader tries to pick the most recent one
+ * There are multiple versions per WordPress version the loader tries to pick the most recent one
  */
 $has_test_jquery_param = isset( $_GET['vip_load_test_jquery_updates'] );
 $has_test_jquery_constant = defined( 'VIP_ENABLE_TEST_JQUERY_UPDATES' ) && true === VIP_ENABLE_TEST_JQUERY_UPDATES;
