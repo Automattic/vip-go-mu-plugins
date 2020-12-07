@@ -45,7 +45,6 @@ class Versioning {
 	 */
 	private $is_doing_object_delete;
 
-
 	public function __construct() {
 		// When objects are added to the queue, we want to replicate that out to all index versions, to keep them in sync
 		add_action( 'vip_search_indexing_object_queued', [ $this, 'action__vip_search_indexing_object_queued' ], 10, 4 );
@@ -789,6 +788,7 @@ class Versioning {
 		}
 		$this->mark_self_heal_ongoing();
 
+		// TODO detect/reconstruct per indexable - e.g. if `post` are corrupted don't reconstruct `user`
 		if ( $this->is_versioning_valid() ) {
 			return;
 		}
@@ -799,15 +799,17 @@ class Versioning {
 		}
 		$versioning = $this->reconstruct_versioning_option( $indicies );
 
-		update_option( self::INDEX_VERSIONS_OPTION, $versioning );
+		foreach ( $versioning as $slug => $versions ) {
+			$indexable = $this->elastic_search_indexables->get( $slug );
+			$this->update_versions( $indexable, $versions );
+		}
 	}
 
 	public function is_versioning_valid() {
 
 		$indexables = $this->elastic_search_indexables->get_all();
-
 		foreach ( $indexables as $indexable ) {
-			$versions = $this->get_versions( $indexable );
+			$versions = $this->get_versions( $indexable, false );
 			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
 				return false;
 			}
