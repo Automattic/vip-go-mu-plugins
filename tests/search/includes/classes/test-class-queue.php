@@ -765,22 +765,23 @@ class Queue_Test extends \WP_UnitTestCase {
 		$increment = 14;
 		$indexable_slug = 'post';
 
-		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
+		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
+			->setMethods( [ 'maybe_update_stat' ] )
+			->getMock();
+
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
 
-		$statsd_mock->expects( $this->once() )
-			->method( 'increment' )
+		$partially_mocked_queue->expects( $this->once() )
+			->method( 'maybe_update_stat' )
 			->with( 'com.wordpress.elasticsearch.unknown.unknown.index_ratelimited', $increment );
 
-		$queue = new \Automattic\VIP\Search\Queue();
-		$queue->init();
-		$queue->statsd = $statsd_mock;
-		$queue->indexables = $indexables_mock;
+		$partially_mocked_queue->init();
+		$partially_mocked_queue->indexables = $indexables_mock;
 
-		$queue->record_ratelimited_stat( $increment, $indexable_slug );
+		$partially_mocked_queue->record_ratelimited_stat( $increment, $indexable_slug );
 	}
 
 	/**
@@ -1062,6 +1063,196 @@ class Queue_Test extends \WP_UnitTestCase {
 			$results,
 			'should match what you\'d expect from deleting index version 1 and index version 2'
 		);
+	}
+
+	/* Format:
+	 * [
+	 * 		[
+	 * 			$filter,
+	 * 			$too_low_message,
+	 * 			$too_high_message,
+	 * 		]
+	 * ]
+	 */
+	public function vip_search_ratelimiting_filter_data() {
+		return array(
+			[
+				'vip_search_index_count_period',
+				'vip_search_index_count_period should not be set below 60 seconds.',
+				'vip_search_index_count_period should not be set above 7200 seconds.',
+			],
+			[
+				'vip_search_max_indexing_op_count',
+				'vip_search_max_indexing_op_count should not be below 10 queries per second.',
+				'vip_search_max_indexing_op_count should not exceed 250 queries per second.',
+			],
+			[
+				'vip_search_index_ratelimiting_duration',
+				'vip_search_index_ratelimiting_duration should not be set below 60 seconds.',
+				'vip_search_index_ratelimiting_duration should not be set above 1200 seconds.',
+			],
+			[
+				'vip_search_max_indexing_count',
+				'vip_search_max_sync_indexing_count should not be below 2500.',
+				'vip_search_max_sync_indexing_count should not be above 25000.',
+			],
+		);
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return '30.ffr';
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$filter
+			)
+		);
+
+		$this->queue->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return 0;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_low_message
+			)
+		);
+
+		$this->queue->apply_settings();
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
+		if ( empty( $too_high_message ) ) {
+			$this->markTestSkipped( "$filter doesn't have a too high message" );
+		}
+
+		add_filter(
+			$filter,
+			function() {
+				return PHP_INT_MAX;
+			}
+		);
+
+		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
+		$this->expectExceptionMessage(
+			sprintf(
+				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
+				$too_high_message
+			)
+		);
+
+		$this->queue->apply_settings();
+	}
+
+	public function stat_sampling_invalid_stat_param_data() {
+		return [
+			[ array() ],
+			[ null ],
+			[ new \stdClass() ],
+			[ 5 ],
+			[ 8.6 ],
+		];
+	}
+
+	public function stat_sampling_invalid_value_param_data() {
+		return [
+			[ array() ],
+			[ null ],
+			[ new \stdClass() ],
+			[ 'random' ],
+		];
+	}
+
+	/**
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_keep() {
+		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->once() )
+			->method( 'update_stats' )
+			->with( 'test', 5, 1, 'c' );
+
+		$this->queue->maybe_update_stat( 'test', 5 );
+	}
+
+	/**
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_drop() {
+		$this->queue::$stat_sampling_drop_value = 0; // Guarantee a sampling drop
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->never() )
+			->method( 'update_stats' );
+
+		$this->queue->maybe_update_stat( 'test', 5 );
+	}
+
+	/**
+	 * @dataProvider stat_sampling_invalid_stat_param_data
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_invalid_stat_param( $stat ) {
+		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->never() )
+			->method( 'update_stats' );
+
+		$this->queue->maybe_update_stat( $stat, 5 );
+	}
+
+	/**
+	 * @dataProvider stat_sampling_invalid_value_param_data
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_update_stat_sampling_invalid_value_param( $value ) {
+		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
+
+		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
+
+		$this->queue->statsd = $statsd_mocked;
+
+		$statsd_mocked->expects( $this->never() )
+			->method( 'update_stats' );
+
+		$this->queue->maybe_update_stat( 'test', $value );
 	}
 
 	/**

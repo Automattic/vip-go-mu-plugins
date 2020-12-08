@@ -10,7 +10,7 @@ Query ratelimiting limits the amount of queries that can be passed through VIP S
 
 A query in this context can mean either a search request or an offloaded WordPress request(posts, user, taxonomy, etc...). It does not include indexing requests.
 
-The specifics of the query ratelimiting are implemented in [Automattic/vip-go-mu-plugins](https://github.com/Automattic/vip-go-mu-plugins). Specifically in [search/includes/classes/class-search.php](https://github.com/Automattic/vip-go-mu-plugins/blob/master/search/includes/classes/class-search.php). The limit for a period is set by `public static $max_query_count` and the period is set by `private const QUERY_COUNT_TTL`. Those values will be the same as those used in productions and should be referenced if you need to know what their value.
+The specifics of the query ratelimiting are implemented in [Automattic/vip-go-mu-plugins](https://github.com/Automattic/vip-go-mu-plugins). Specifically in [search/includes/classes/class-search.php](https://github.com/Automattic/vip-go-mu-plugins/blob/master/search/includes/classes/class-search.php). The limit for a period is set by `public static $max_query_count` and the period is set by `private static $query_count_ttl`. Those values will be the same as those used in productions and should be referenced if you need to know what their value.
 
 Those variables are also useful for testing. Setting `public static $max_query_count` to 1 allows you to easily trigger the query rate limiting for testing that functionality.
 
@@ -25,9 +25,9 @@ Index ratelimiting limits the amount of indexing operations that can occur synch
 
 An indexing operation is any operation that triggers the creation, deletion, or modification of a document in Elasticsearch. This can be roughly assigned to creating, deleting, or modifying posts, users, taxonomy, etc.... 
 
-The specifics of index ratelimiting are implemented in [Automattic/vip-go-mu-plugins](https://github.com/Automattic/vip-go-mu-plugins). Specifically in [search/includes/classes/class-queue.php)](https://github.com/Automattic/vip-go-mu-plugins/blob/master/search/includes/classes/class-queue.php). The limit for a period is set by `public static $max_indexing_op_count`, the period is set by `private const INDEX_COUNT_TTL`, and the length of time all queries will be queued up for processing asynchronously is set by `private const INDEX_QUEUEING_TTL`.
+The specifics of index ratelimiting are implemented in [Automattic/vip-go-mu-plugins](https://github.com/Automattic/vip-go-mu-plugins). Specifically in [search/includes/classes/class-queue.php)](https://github.com/Automattic/vip-go-mu-plugins/blob/master/search/includes/classes/class-queue.php). The limit for a period is set by `public static $max_indexing_op_count`, the period is set by `private static $index_count_ttl`, and the length of time all queries will be queued up for processing asynchronously is set by `private static $index_queueing_ttl`.
 
-Editing a taxonomy with a lot of posts can also trigger this functionality without triggering rate limiting. This is more for user experience and preventling pages from hanging. The limit for this sort of operation is set by `private const MAX_SYNC_INDEXING_COUNT`, which means editing a taxonomy with more posts than is set there will result in all the posts for the taxonomy being queued for eventual reindexing.
+Editing a taxonomy with a lot of posts can also trigger this functionality without triggering rate limiting. This is more for user experience and preventling pages from hanging. The limit for this sort of operation is set by `private static $max_sync_indexing_count`, which means editing a taxonomy with more posts than is set there will result in all the posts for the taxonomy being queued for eventual reindexing.
 
 These variables are useful for testing. Setting `public static $max_indexing_op_count` to 0 means all posts are always queued before being reindexed. So doing that and running `wp vip-search index` is a great way to test the queueing and sweeping functionality.
 
