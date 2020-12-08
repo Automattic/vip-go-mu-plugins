@@ -62,7 +62,7 @@ job-references:
       sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
       sudo -E docker-php-ext-install mysqli gd
       npm ci
-      composer install -n
+      composer install -n --ignore-platform-reqs
 
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
