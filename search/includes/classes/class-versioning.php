@@ -12,6 +12,7 @@ class Versioning {
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
 
 	/**
 	 * The maximum number of index versions that can exist for any indexable.
@@ -781,8 +782,15 @@ class Versioning {
 		return 1 === wp_cache_get( self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY, self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP );
 	}
 
-	private function mark_self_heal_ongoing() {
-		wp_cache_set( self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY, 1, self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP, self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL );
+	private function mark_self_heal_ongoing( $failure_ttl = false ) {
+		$ttl = $failure_ttl ? self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE : self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL;
+
+		wp_cache_set(
+			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY,
+			1,
+			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP,
+			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL
+		);
 	}
 
 	/**
@@ -818,13 +826,29 @@ class Versioning {
 
 			$versions = $this->reconstruct_versions_for_indexable( $indicies, $indexable );
 
-			$this->update_versions( $indexable, $versions );
+			if ( empty( $versions ) ) {
+				$this->mark_self_heal_ongoing( true );
+				$this->alert_for_index_self_healing_failed( $indexable->slug );
+			} else {
+				$this->update_versions( $indexable, $versions );
+			}
 		}
 	}
 
 	public function alert_for_index_self_healing( string $slug ) {
 		$message = sprintf(
 			'Application %d - %s has had its vip-search versioning corrupted for "%s" indexable, will try to reconstruct',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$slug
+		);
+
+		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
+	}
+
+	public function alert_for_index_self_healing_failed( string $slug ) {
+		$message = sprintf(
+			'Application %d - %s vip-search versioning FAILED to reconstruct',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$slug
