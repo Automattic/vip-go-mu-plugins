@@ -115,10 +115,21 @@ class WPCOM_VIP_Cache_Manager {
 		$req = json_decode( file_get_contents( 'php://input' ) );
 
 		if ( json_last_error() ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-go-cache-manager-action' => 'user-url-purge',
+				'vip-go-cache-manager-site'   => VIP_GO_APP_ID,
+				'vip-go-cache-manager-status' => 'bad-payload',
+			] );
 			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
 		}
 
 		if ( ! ( current_user_can( 'manage_options' ) && isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'purge-page' ) ) ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-go-cache-manager-action' => 'user-url-purge',
+				'vip-go-cache-manager-site'   => VIP_GO_APP_ID,
+				'vip-go-cache-manager-status' => 'deny',
+			] );
+
 			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
 		}
 
@@ -128,6 +139,12 @@ class WPCOM_VIP_Cache_Manager {
 		foreach ( $urls as $url_to_purge ) {
 			$this->queue_purge_url( $url_to_purge );
 		}
+
+		\Automattic\VIP\Stats\send_pixel( [
+			'vip-go-cache-manager-action' => 'user-url-purge',
+			'vip-go-cache-manager-site'   => VIP_GO_APP_ID,
+			'vip-go-cache-manager-status' => 'success',
+		] );
 
 		// Optimistically tell that the operation is successful and bail.
 		wp_send_json_success(
