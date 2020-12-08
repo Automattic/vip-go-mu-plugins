@@ -30,6 +30,11 @@ class Versioning {
 	public $elastic_search_indexables;
 
 	/**
+	 * Injectable instance of \Automattic\VIP\Utils\Alerts
+	 */
+	public $alerts;
+
+	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
 	private $current_index_version_by_type = array();
@@ -59,6 +64,7 @@ class Versioning {
 
 		$this->elastic_search_instance = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
+		$this->alerts = \Automattic\VIP\Utils\Alerts::instance();
 	}
 
 	public function action__plugins_loaded() {
@@ -788,8 +794,17 @@ class Versioning {
 		}
 		$this->mark_self_heal_ongoing();
 
-		// TODO detect/reconstruct per indexable - e.g. if `post` are corrupted don't reconstruct `user`
-		if ( $this->is_versioning_valid() ) {
+		$indexables = $this->elastic_search_indexables->get_all();
+
+		$indexables_to_heal = [];
+		foreach ( $indexables as $indexable ) {
+			$versions = $this->get_versions( $indexable, false );
+			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
+				$indexables_to_heal[] = $indexable;
+			}
+		}
+
+		if ( empty( $indexables_to_heal ) ) {
 			return;
 		}
 
@@ -797,25 +812,25 @@ class Versioning {
 		if ( is_wp_error( $indicies ) ) {
 			return;
 		}
-		$versioning = $this->reconstruct_versioning_option( $indicies );
 
-		foreach ( $versioning as $slug => $versions ) {
-			$indexable = $this->elastic_search_indexables->get( $slug );
+		foreach ( $indexables_to_heal as $indexable ) {
+			$this->alert_for_index_self_healing( $indexable->slug );
+
+			$versions = $this->reconstruct_versions_for_indexable( $indicies, $indexable );
+
 			$this->update_versions( $indexable, $versions );
 		}
 	}
 
-	public function is_versioning_valid() {
+	public function alert_for_index_self_healing( string $slug ) {
+		$message = sprintf(
+			'Application %d - %s has had its vip-search versioning corrupted for "%s" indexable, will try to reconstruct',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$slug
+		);
 
-		$indexables = $this->elastic_search_indexables->get_all();
-		foreach ( $indexables as $indexable ) {
-			$versions = $this->get_versions( $indexable, false );
-			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
-				return false;
-			}
-		}
-
-		return true;
+		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
 	}
 
 	public function get_all_accesible_indicies() {
@@ -851,12 +866,12 @@ class Versioning {
 		return $found_indices;
 	}
 
-	public function reconstruct_versioning_option( $indicies ) {
+	public function reconstruct_versions_for_indexable( $indicies, $indexable ) {
 		if ( ! is_array( $indicies ) ) {
 			return [];
 		}
 
-		$versioning = [];
+		$versions = [];
 
 		foreach ( $indicies as $index ) {
 			$index_info = $this->parse_index_name( $index );
@@ -864,42 +879,42 @@ class Versioning {
 			if ( is_wp_error( $index_info ) ) {
 				continue;
 			}
+
 			$blog_id = get_current_blog_id();
-			if ( ! isset( $index_info['blog_id'] ) || $blog_id !== $index_info['blog_id'] ) {
+			$blog_id_exists_and_matches = isset( $index_info['blog_id'] ) && $blog_id === $index_info['blog_id'];
+			if ( $indexable->global && isset( $index_info['blog_id'] ) ) {
+				continue;
+			}
+			if ( ! $indexable->global && ! $blog_id_exists_and_matches ) {
 				continue;
 			}
 
-			$slug = $index_info['slug'];
-
-			if ( ! isset( $versioning[ $slug ] ) ) {
-				$versioning[ $slug ] = [];
+			if ( $index_info['slug'] !== $indexable->slug ) {
+				continue;
 			}
-			$versioning[ $slug ][] = $index_info['version'];
+
+			$versions[] = $index_info['version'];
 		}
 
-		foreach ( $versioning as $slug => $versions ) {
-			sort( $versions );
-			$version_objects = array_map( function( $version ) {
-				return [
-					'number' => $version,
-					'active' => false,
-				];
-			}, $versions);
+		sort( $versions );
+		$version_objects = array_map( function( $version ) {
+			return [
+				'number' => $version,
+				'active' => false,
+			];
+		}, $versions);
 
-			if ( count( $version_objects ) > 0 ) {
-				$version_objects[0]['active'] = true;
-			}
-
-			$version_objects_indexed_by_number = [];
-
-			foreach ( $version_objects as $version_object ) {
-				$version_objects_indexed_by_number[ $version_object['number'] ] = $version_object;
-			}
-
-			$versioning[ $slug ] = $version_objects_indexed_by_number;
+		if ( count( $version_objects ) > 0 ) {
+			$version_objects[0]['active'] = true;
 		}
 
-		return $versioning;
+		$version_objects_indexed_by_number = [];
+
+		foreach ( $version_objects as $version_object ) {
+			$version_objects_indexed_by_number[ $version_object['number'] ] = $version_object;
+		}
+
+		return $version_objects_indexed_by_number;
 	}
 
 	public function parse_index_name( $index_name ) {

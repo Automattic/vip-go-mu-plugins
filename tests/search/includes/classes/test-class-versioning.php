@@ -1399,12 +1399,12 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function is_versioning_valid_data() {
+	public function maybe_self_heal_reconstruct_data() {
 		return [
 			[
 				[],
 				[],
-				true,
+				[],
 			],
 			[
 				[ 'post', 'user' ],
@@ -1416,7 +1416,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 						1 => [],
 					],
 				],
-				true,
+				[],
 			],
 			[
 				// empty user versions
@@ -1427,15 +1427,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 					],
 					'user' => [],
 				],
-				false,
+				[ 'user' ],
 			],
 		];
 	}
 
 	/**
-	 * @dataProvider is_versioning_valid_data
+	 * @dataProvider maybe_self_heal_reconstruct_data
 	 */
-	public function test__is_versioning_valid( $indexables, $versioning, $expected ) {
+	public function test__maybe_self_heal_reconstruct( $indexables, $versioning, $expected_reconstructions ) {
 		$indexables_mocks = array_map( function( $slug ) {
 			$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
 			$indexable_mock->slug = $slug;
@@ -1448,7 +1448,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
 
 		$partially_mocked_versioning = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
-			->setMethods( [ 'get_versions' ] )
+			->setMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
 			->getMock();
 
 		$partially_mocked_versioning
@@ -1457,11 +1457,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 					return $versioning[ $indexable->slug ];
 			} ) );
 
+		$partially_mocked_versioning->expects( $this->exactly( count( $expected_reconstructions ) ) )
+			->method( 'reconstruct_versions_for_indexable' );
+
 		$partially_mocked_versioning->elastic_search_indexables = $indexables_mock;
+		$partially_mocked_versioning->alerts = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
 
-		$result = $partially_mocked_versioning->is_versioning_valid();
-
-		$this->assertEquals( $expected, $result );
+		$partially_mocked_versioning->maybe_self_heal();
 	}
 
 	public function get_all_accesible_indicies_data() {
@@ -1519,53 +1521,69 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function reconstruct_versioning_option_data() {
+	public function reconstruct_versions_for_indexable_data() {
 		return [
 			[
 				[],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
 				[],
 			],
 			[
 				'invalid_input',
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
 				[],
 			],
 			[
 				[ 'invalid_ix_format' ],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
 				[],
 			],
 			[
 				// correctly parse and pick the lowest
 				[ 'vip-200508-post-1-v3', 'vip-200508-post-1', 'vip-200508-post-1-v2' ],
 				[
-					'post'         => [
-						1 => [
-							'number' => 1,
-							'active' => true,
-						],
-						2 => [
-							'number' => 2,
-							'active' => false,
-						],
-						3 => [
-							'number' => 3,
-							'active' => false,
-						],
+					'slug' => 'post',
+					'global' => false,
+				],
+				[
+					1 => [
+						'number' => 1,
+						'active' => true,
+					],
+					2 => [
+						'number' => 2,
+						'active' => false,
+					],
+					3 => [
+						'number' => 3,
+						'active' => false,
 					],
 				],
 			],
 			[
-				//  ignore not blog specific ones mixed
-				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-user', 'vip-200508-post-1-v3' ],
+				//  ignore other indexables
+				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-post2-1-v5', 'vip-200508-post-1-v3' ],
 				[
-					'post'         => [
-						2 => [
-							'number' => 2,
-							'active' => true,
-						],
-						3 => [
-							'number' => 3,
-							'active' => false,
-						],
+					'slug' => 'post',
+					'global' => false,
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+					],
+					3 => [
+						'number' => 3,
+						'active' => false,
 					],
 				],
 			],
@@ -1573,11 +1591,31 @@ class Versioning_Test extends \WP_UnitTestCase {
 				//  ignore different blog id
 				[ 'vip-200508-post-1-v2', 'vip-200508-post-2-v3' ],
 				[
-					'post'         => [
-						2 => [
-							'number' => 2,
-							'active' => true,
-						],
+					'slug' => 'post',
+					'global' => false,
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+					],
+				],
+			],
+			[
+				//  handle globals correctly (ignores the ones with blog_id)
+				[ 'vip-200508-user', 'vip-200508-user-1-v2', 'vip-200508-user-v3' ],
+				[
+					'slug' => 'user',
+					'global' => true,
+				],
+				[
+					1 => [
+						'number' => 1,
+						'active' => true,
+					],
+					3 => [
+						'number' => 3,
+						'active' => false,
 					],
 				],
 			],
@@ -1585,10 +1623,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider reconstruct_versioning_option_data
+	 * @dataProvider reconstruct_versions_for_indexable_data
 	 */
-	public function test__reconstruct_versioning_option( $indicies, $expected ) {
-		$result = self::$version_instance->reconstruct_versioning_option( $indicies );
+	public function test__reconstruct_versions_for_indexable( $indicies, $indexable_data, $expected ) {
+		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock->slug = $indexable_data['slug'];
+		$indexable_mock->global = $indexable_data['global'];
+
+		$result = self::$version_instance->reconstruct_versions_for_indexable( $indicies, $indexable_mock );
 
 		$this->assertEquals( $expected, $result );
 	}
