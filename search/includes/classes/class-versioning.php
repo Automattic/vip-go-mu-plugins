@@ -807,7 +807,7 @@ class Versioning {
 		$indexables_to_heal = [];
 		foreach ( $indexables as $indexable ) {
 			$versions = $this->get_versions( $indexable, false );
-			if ( ! is_array( $versions ) || count( $versions ) == 0 ) {
+			if ( ! is_array( $versions ) || count( $versions ) === 0 ) {
 				$indexables_to_heal[] = $indexable;
 			}
 		}

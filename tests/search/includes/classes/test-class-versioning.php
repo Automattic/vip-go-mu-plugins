@@ -29,6 +29,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
+		do_action( 'init' );
 
 		self::$version_instance = self::$search->versioning;
 	}
