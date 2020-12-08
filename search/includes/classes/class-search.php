@@ -531,8 +531,6 @@ class Search {
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
-		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
-
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -548,7 +546,7 @@ class Search {
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$response = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
@@ -594,7 +592,12 @@ class Search {
 			}
 		}
 
-		return $response;
+		if ( is_wp_error( $response ) ) {
+			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
+			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
+		} else {
+			return $response;
+		}
 	}
 
 	public function ep_handle_failed_request( $response, $statsd_prefix ) {
@@ -602,31 +605,36 @@ class Search {
 
 		if ( is_wp_error( $response ) ) {
 			$error_messages = $response->get_error_messages();
-			$response_error['reason'] = implode( ';', $error_messages );
 
 			foreach ( $error_messages as $error_message ) {
 				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
 
 				$this->maybe_increment_stat( $statsd_prefix . $stat );
 			}
+
+			$this->logger->log(
+				'error',
+				'vip_search_http_error',
+				implode( ';', $error_messages )
+			);
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
 			$response_error = $response_body['error'] ?? [];
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
-		}
 
-		$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-		$this->logger->log(
-			'error',
-			'vip_search_query_error',
-			$error_message,
-			[
-				'error_type' => $response_error['type'] ?? 'Unknown error type',
-				'root_cause' => $response_error['root_cause'] ?? null,
-			]
-		);
+			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+			$this->logger->log(
+				'error',
+				'vip_search_query_error',
+				$error_message,
+				[
+					'error_type' => $response_error['type'] ?? 'Unknown error type',
+					'root_cause' => $response_error['root_cause'] ?? null,
+				]
+			);
+		}
 	}
 
 	/*

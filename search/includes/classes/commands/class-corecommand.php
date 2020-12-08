@@ -15,36 +15,38 @@ class CoreCommand extends \ElasticPress\Command {
 	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
 
 	protected function _maybe_setup_index_version( &$assoc_args ) {
-		if ( $assoc_args['version'] ) {
-			$version_number = $assoc_args['version'];
+		if ( array_key_exists( 'version', $assoc_args ) ) {
+			if ( $assoc_args['version'] ) {
+				$version_number = $assoc_args['version'];
 
-			// If version is specified, the indexable must also be specified, as different indexables can have different versions
-			if ( ! isset( $assoc_args['indexables'] ) ) {
-				return WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
-			}
-
-			$search = \Automattic\VIP\Search\Search::instance();
-
-			// For each indexable specified, override the version
-			$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
-
-			foreach ( $indexable_slugs as $slug ) {
-				$indexable = \ElasticPress\Indexables::factory()->get( $slug );
-
-				if ( ! $indexable ) {
-					return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?' ) );
+				// If version is specified, the indexable must also be specified, as different indexables can have different versions
+				if ( ! isset( $assoc_args['indexables'] ) ) {
+					return WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
 				}
 
-				$result = $search->versioning->set_current_version_number( $indexable, $version_number );
+				$search = \Automattic\VIP\Search\Search::instance();
 
-				if ( is_wp_error( $result ) ) {
-					return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+				// For each indexable specified, override the version
+				$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
+
+				foreach ( $indexable_slugs as $slug ) {
+					$indexable = \ElasticPress\Indexables::factory()->get( $slug );
+
+					if ( ! $indexable ) {
+						return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+					}
+
+					$result = $search->versioning->set_current_version_number( $indexable, $version_number );
+
+					if ( is_wp_error( $result ) ) {
+						return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+					}
 				}
 			}
+
+			// Unset our --version param, otherwise WP_CLI complains that it's unknown
+			unset( $assoc_args['version'] );
 		}
-
-		// Unset our --version param, otherwise WP_CLI complains that it's unknown
-		unset( $assoc_args['version'] );
 	}
 
 	/**
