@@ -69,7 +69,7 @@ job-references:
     command: |
       sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
       sudo npm install npm@latest -g
-      composer install -n
+      composer install -n --ignore-platform-reqs
 
   prepare_repo: &prepare_repo
     name: "Prepare Repo"
@@ -126,7 +126,7 @@ job-references:
       - checkout
       - run: *prepare_repo
       - run: npm ci
-      - run: composer install -n
+      - run: composer install -n --ignore-platform-reqs
       - run:
           name: "Lint"
           command: npm run lint
