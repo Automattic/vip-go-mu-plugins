@@ -93,8 +93,8 @@ class A8C_Files {
 			$this->schedule_update_job();
 		}
 
-		// Filter images in the content
-		// Run this before `wp_filter_content_tags`.
+		// Filter images in the post content.
+		// Run this before `wp_filter_content_tags()`.
 		add_filter( 'the_content', array( $this, 'filter_content_tags' ), 5 );
 	}
 
@@ -1000,7 +1000,8 @@ class A8C_Files {
 	}
 
 	/**
-	 * Modified version of wp_filter_content_tags() to filter images within the_content
+	 * Copy of `wp_filter_content_tags()` with VIP modifications where indicated.
+	 *
 	 * @see https://github.com/Automattic/vip-go-mu-plugins/issues/1391
 	 */
 	public function filter_content_tags( $content, $context = null ) {
@@ -1008,7 +1009,7 @@ class A8C_Files {
 			$context = current_filter();
 		}
 
-		// Return early if content was not built with the Block Editor.
+		// VIP modifications: return early if content was not built with the Block Editor.
 		if ( ! has_blocks( $content ) ) {
 			return $content;
 		}
@@ -1053,7 +1054,8 @@ class A8C_Files {
 		foreach ( $images as $image => $attachment_id ) {
 			$filtered_image = $image;
 
-			// Add 'width' and 'height' attributes if applicable.
+			// VIP modifications: call our own function to add 'width' and 'height' attributes if they don't already exist.
+			// Removed 'srcset', 'sizes', and 'loading' attribute filtering; `wp_filter_content_tags()` will handle these.
 			if ( $attachment_id > 0 && false === strpos( $filtered_image, ' width=' ) && false === strpos( $filtered_image, ' height=' ) ) {
 				$filtered_image = $this->img_tag_add_width_and_height_attr( $filtered_image, $context, $attachment_id );
 			}
@@ -1067,13 +1069,16 @@ class A8C_Files {
 	}
 
 	/**
-	 * Modified version of wp_img_tag_add_width_and_height_attr()
+	 * Filter the image tag to add the height and width attrs.
+	 *
+	 * Borrows from `wp_img_tag_add_width_and_height_attr()` where indicated.
 	 */
 	public function img_tag_add_width_and_height_attr( $image, $context, $attachment_id ) {
+		// Via `wp_img_tag_add_width_and_height_attr()`: Get image src and query string from the image tag.
 		$image_src = preg_match( '/src="([^"]+)"/', $image, $match_src ) ? $match_src[1] : '';
 		list( $image_src, $query_string ) = explode( '?', $image_src );
 
-		// Return early if we couldn't get the image source or query_string.
+		// Return early if we couldn't get the image src or query string.
 		if ( ! $image_src || ! $query_string ) {
 			return $image;
 		}
@@ -1082,10 +1087,12 @@ class A8C_Files {
 		parse_str( htmlspecialchars_decode( $query_string ), $args );
 		$image_width = isset( $args['w'] ) ? intval( $args['w'] ) : null;
 
+		// Return early if we don't know the image width.
 		if ( ! $image_width ) {
 			return $image;
 		}
 
+		// Via `wp_img_tag_add_width_and_height_attr()`: allow this behaviour to be disabled.
 		$add = apply_filters( 'wp_img_tag_add_width_and_height_attr', true, $image, $context, $attachment_id );
 
 		if ( true !== $add ) {
@@ -1096,11 +1103,11 @@ class A8C_Files {
 
 		$widths = array();
 
+		// If `w` query parameter matches a width in attachment meta `sizes`, set the width and height from meta.
 		if ( ! empty( $image_meta['sizes'] ) ) {
 			foreach ( $image_meta['sizes'] as $image_size_data ) {
 				$widths[] = $image_size_data['width'];
 
-				// if `w` query parameter matches a width in attachment meta `sizes`, set the width and corresponding height from meta.
 				if ( $image_width === $image_size_data['width'] ) {
 					$hw = trim( image_hwstring( $image_size_data['width'], $image_size_data['height'] ) );
 					return str_replace( '<img', "<img {$hw}", $image );
