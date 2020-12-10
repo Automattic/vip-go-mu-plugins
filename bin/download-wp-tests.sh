@@ -98,6 +98,9 @@ install_test_suite() {
 
 	cd $WP_TESTS_DIR_ACTUAL
 
+	# Always start from a clean config
+	rm -f wp-tests-config.php
+
 	if [ ! -f wp-tests-config.php ]; then
 		download https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
 		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR':" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
