@@ -1559,14 +1559,20 @@ class Versioning_Test extends \WP_UnitTestCase {
 					1 => [
 						'number' => 1,
 						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 					2 => [
 						'number' => 2,
 						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 					3 => [
 						'number' => 3,
 						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 				],
 			],
@@ -1581,10 +1587,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 					2 => [
 						'number' => 2,
 						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 					3 => [
 						'number' => 3,
 						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 				],
 			],
@@ -1599,6 +1609,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 					2 => [
 						'number' => 2,
 						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 				],
 			],
@@ -1613,10 +1625,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 					1 => [
 						'number' => 1,
 						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 					3 => [
 						'number' => 3,
 						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
 					],
 				],
 			],

@@ -922,10 +922,11 @@ class Versioning {
 
 		sort( $versions );
 		$version_objects = array_map( function( $version ) {
-			return [
+			$version_object = [
 				'number' => $version,
 				'active' => false,
 			];
+			return $this->normalize_version( $version_object );
 		}, $versions);
 
 		if ( count( $version_objects ) > 0 ) {
