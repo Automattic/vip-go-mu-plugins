@@ -29,6 +29,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
+		do_action( 'init' );
 
 		self::$version_instance = self::$search->versioning;
 	}
@@ -287,7 +288,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -312,7 +313,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -337,7 +338,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -362,7 +363,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			array(
 				// Input array of versions
 				array(
-					1 => array( 
+					1 => array(
 						'number' => 1,
 						'active' => false,
 					),
@@ -504,11 +505,11 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected new versions
 				array(
 					2 => array(
-						'number' => 2, 
+						'number' => 2,
 						'active' => false,
 					),
 					3 => array(
-						'number' => 3, 
+						'number' => 3,
 						'active' => false,
 					),
 				),
@@ -521,7 +522,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 						'active' => true,
 					),
 					3 => array(
-						'number' => 3, 
+						'number' => 3,
 						'active' => false,
 					),
 				),
