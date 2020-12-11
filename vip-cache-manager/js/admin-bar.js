@@ -13,7 +13,7 @@
 	}
 
 	// Indicates whether there's a purge request happening
-	let purgeQueried = false;
+	let purgeInProgress = false;
 	// Stores the ref to the DOM node
 	let btn;
 
@@ -34,7 +34,7 @@
 	 * @param {Event} e
 	 */
 	async function onClickHandler( e ) {
-		if ( purgeQueried ) {
+		if ( purgeInProgress ) {
 			return;
 		}
 
@@ -44,7 +44,7 @@
 			alert( 'VIP Cache Manager: page cache purging disabled' );
 		}
 
-		purgeQueried = true;
+		purgeInProgress = true;
 
 		const urls = getURLsToPurge();
 
@@ -56,7 +56,7 @@
 			btn.disabled = true;
 			btn.removeEventListener( 'click', onClickHandler );
 		} catch ( err ) {
-			purgeQueried = false;
+			purgeInProgress = false;
 			btn.textContent = '❌ Cache Purge Failed';
 		}
 	}
