@@ -121,9 +121,17 @@ class WPCOM_VIP_Cache_Manager {
 			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
 		}
 
-		if ( ! ( current_user_can( 'manage_options' ) && isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'purge-page' ) ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
-				'vip-go-cache-manager-url-purge-status' => 'deny',
+				'vip-go-cache-manager-url-purge-status' => 'deny-permissions',
+			] );
+
+			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
+		}
+
+		if ( ! ( isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'purge-page' ) ) ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-go-cache-manager-url-purge-status' => 'deny-nonce',
 			] );
 
 			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
