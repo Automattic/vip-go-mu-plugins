@@ -7,8 +7,11 @@ class Search_Test extends \WP_UnitTestCase {
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
 	 */
-	protected $preserveGlobalState = FALSE;
-	protected $runTestInSeparateProcess = TRUE;
+
+	// phpcs:disable WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false;
+	protected $runTestInSeparateProcess = true;
+	// phpcs:enable
 
 	public static $mock_global_functions;
 
@@ -635,7 +638,7 @@ class Search_Test extends \WP_UnitTestCase {
 			'test2',
 			'test3',
 		);
-		$es = new \Automattic\VIP\Search\Search();
+		$es    = new \Automattic\VIP\Search\Search();
 
 		$this->assertContains( $es->get_random_host( $hosts ), $hosts );
 	}
@@ -1287,7 +1290,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * Ensure the incrementor for tracking request counts behaves properly
 	 */
 	public function test__query_count_incr() {
-		$es = new \Automattic\VIP\Search\Search();
+		$es               = new \Automattic\VIP\Search\Search();
 		$query_count_incr = self::get_method( 'query_count_incr' );
 
 		// Reset cache key
@@ -1415,7 +1418,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $input_taxonomies, $post );
 
-		$input_taxonomy_names = wp_list_pluck( $input_taxonomies, 'name' );
+		$input_taxonomy_names    = wp_list_pluck( $input_taxonomies, 'name' );
 		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
 
 		// No change expected
@@ -1524,17 +1527,17 @@ class Search_Test extends \WP_UnitTestCase {
 			'random_post_meta' => array(
 				'Random value',
 			),
-			'another_one' => array(
+			'another_one'      => array(
 				'4656784',
 			),
-			'third' => array(
+			'third'            => array(
 				'true',
 			),
 		);
 
 		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
-		$post = new \WP_Post( new \StdClass() );
+		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
 
 		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
@@ -1556,11 +1559,11 @@ class Search_Test extends \WP_UnitTestCase {
 			function() {
 				return array(
 					'random_post_meta' => true,
-					'another_one' => true,
-					'skipped' => false,
-					'skipped_another' => 4,
-					'skipped_string' => 'Wooo',
-					'third' => true,
+					'another_one'      => true,
+					'skipped'          => false,
+					'skipped_another'  => 4,
+					'skipped_string'   => 'Wooo',
+					'third'            => true,
 				);
 			}
 		);
@@ -1570,26 +1573,26 @@ class Search_Test extends \WP_UnitTestCase {
 			'random_post_meta' => array(
 				'Random value',
 			),
-			'another_one' => array(
+			'another_one'      => array(
 				'4656784',
 			),
-			'skipped' => array(
+			'skipped'          => array(
 				'Skip',
 			),
-			'skipped_another' => array(
+			'skipped_another'  => array(
 				'Skip',
 			),
-			'skipped_string' => array(
+			'skipped_string'   => array(
 				'Skip',
 			),
-			'third' => array(
+			'third'            => array(
 				'true',
 			),
 		);
 
 		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
-		$post = new \WP_Post( new \StdClass() );
+		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
 
 		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
@@ -1600,10 +1603,10 @@ class Search_Test extends \WP_UnitTestCase {
 				'random_post_meta' => array(
 					'Random value',
 				),
-				'another_one' => array(
+				'another_one'      => array(
 					'4656784',
 				),
-				'third' => array(
+				'third'            => array(
 					'true',
 				),
 			)
@@ -1771,13 +1774,13 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd() {
-		$query = [ 'url' => 'https://foo.bar' ];
-		$args = [];
-		$stats_prefix = 'foo';
+		$query                = [ 'url' => 'https://foo.bar' ];
+		$args                 = [];
+		$stats_prefix         = 'foo';
 		$mocked_response_body = [
 			'took' => 100,
 		];
-		$mocked_response = [
+		$mocked_response      = [
 			'body' => json_encode( $mocked_response_body ),
 		];
 
@@ -1808,14 +1811,14 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_per_doc() {
-		$query = [ 'url' => 'https://foo.bar/' ];
-		$args = [];
-		$stats_prefix = 'foo';
+		$query                = [ 'url' => 'https://foo.bar/' ];
+		$args                 = [];
+		$stats_prefix         = 'foo';
 		$stats_prefix_per_doc = 'bar';
 		$mocked_response_body = [
 			'items' => [ [], [] ],
 		];
-		$mocked_response = [
+		$mocked_response      = [
 			'body' => json_encode( $mocked_response_body ),
 		];
 
@@ -1842,9 +1845,9 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_on_non_200_response() {
-		$query = [ 'url' => 'https://foo.bar' ];
-		$args = [];
-		$stats_prefix = 'foo';
+		$query           = [ 'url' => 'https://foo.bar' ];
+		$args            = [];
+		$stats_prefix    = 'foo';
 		$mocked_response = [
 			'response' => [
 				'code' => 400,
@@ -1872,9 +1875,9 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_per_msg() {
-		$query = [ 'url' => 'https://foo.bar' ];
-		$args = [];
-		$stats_prefix = 'foo';
+		$query           = [ 'url' => 'https://foo.bar' ];
+		$args            = [];
+		$stats_prefix    = 'foo';
 		$mocked_response = new \WP_Error( 'code1', 'msg1' );
 		$mocked_response->add( 'code2', 'msg2' );
 
@@ -1902,9 +1905,9 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_timeout() {
-		$query = [ 'url' => 'https://foo.bar' ];
-		$args = [];
-		$stats_prefix = 'foo';
+		$query           = [ 'url' => 'https://foo.bar' ];
+		$args            = [];
+		$stats_prefix    = 'foo';
 		$mocked_response = new \WP_Error( 'code1', 'curl error 28' );
 
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
@@ -1927,22 +1930,22 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__maybe_alert_for_average_queue_time__sends_notification() {
-		$application_id = 123;
-		$application_url = 'http://example.org';
+		$application_id      = 123;
+		$application_url     = 'http://example.org';
 		$average_queue_value = 3601;
-		$expected_message = "Average index queue wait time for application $application_id - $application_url is currently $average_queue_value seconds";
-		$expected_level = 2;
+		$expected_message    = "Average index queue wait time for application $application_id - $application_url is currently $average_queue_value seconds";
+		$expected_level      = 2;
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
-		$queue_mocked = $this->createMock( \Automattic\VIP\Search\Queue::class );
+		$alerts_mocked   = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+		$queue_mocked    = $this->createMock( \Automattic\VIP\Search\Queue::class );
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 
-		$es->queue = $queue_mocked;
+		$es->queue      = $queue_mocked;
 		$es->indexables = $indexables_mock;
-		$es->alerts = $alerts_mocked;
+		$es->alerts     = $alerts_mocked;
 
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
@@ -1967,21 +1970,21 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @dataProvider maybe_alert_for_field_count_data
 	 */
 	public function test__maybe_alert_for_field_count( $field_count, $should_alert ) {
-		$application_id = 123;
-		$application_url = 'http://example.org';
+		$application_id   = 123;
+		$application_url  = 'http://example.org';
 		$expected_message = "The field count for post index for application $application_id - $application_url is too damn high - $field_count";
-		$expected_level = 2;
+		$expected_level   = 2;
 
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_current_field_count' ] )
 			->getMock();
 		$partially_mocked_search->init();
 
-		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+		$alerts_mocked   = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 
 		$partially_mocked_search->indexables = $indexables_mock;
-		$partially_mocked_search->alerts = $alerts_mocked;
+		$partially_mocked_search->alerts     = $alerts_mocked;
 
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
@@ -2350,7 +2353,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\Search' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
