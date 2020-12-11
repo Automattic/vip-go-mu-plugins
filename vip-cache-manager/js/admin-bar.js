@@ -1,14 +1,14 @@
-(async () => {
-	async function postData(url = '', data = {}) {
+( async () => {
+	async function postData( url = '', data = {} ) {
 		// Default options are marked with *
-		const response = await fetch(url, {
+		const response = await fetch( url, {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ ...data })
-		});
+			body: JSON.stringify( { ...data } )
+		} );
 		return response.json();
 	}
 
@@ -22,10 +22,10 @@
 	 */
 	const getURLsToPurge = () => {
 		return [document.location.toString()].concat(
-			Array.from(document.querySelectorAll('script[src]')).map(({ src }) => src),
-			Array.from(document.querySelectorAll('link[rel=stylesheet]')).map(({ href }) => href)
+			Array.from( document.querySelectorAll( 'script[src]' ) ).map( ( { src } ) => src ),
+			Array.from( document.querySelectorAll( 'link[rel=stylesheet]' ) ).map( ( { href } ) => href )
 		)
-			.filter(url => url.includes(document.location.hostname));
+			.filter( url => url.includes( document.location.hostname ) );
 	}
 
 	/**
@@ -33,15 +33,15 @@
 	 * 
 	 * @param {Event} e
 	 */
-	async function onClickHandler(e) {
-		if (purgeQueried) {
+	async function onClickHandler( e ) {
+		if ( purgeQueried ) {
 			return;
 		}
 
 		let { nonce = '', ajaxurl = '' } = window.VIPPageFlush || {};
 
-		if (!(nonce && ajaxurl)) {
-			alert('VIP Cache Manager: page cache purging disabled');
+		if ( !( nonce && ajaxurl ) ) {
+			alert( 'VIP Cache Manager: page cache purging disabled' );
 		}
 
 		purgeQueried = true;
@@ -49,21 +49,21 @@
 		const urls = getURLsToPurge();
 
 		try {
-			const res = await postData(ajaxurl, { nonce, urls });
+			const res = await postData( ajaxurl, { nonce, urls } );
 			const { success, data } = res;
 
 			btn.textContent = data.result || 'Success';
 			btn.disabled = true;
-			btn.removeEventListener('click', onClickHandler);
-		} catch (err) {
+			btn.removeEventListener( 'click', onClickHandler );
+		} catch ( err ) {
 			purgeQueried = false;
 			btn.textContent = '❌ Cache Purge Failed';
 		}
 	}
 
-	btn = document.querySelector('#wp-admin-bar-vip-purge-page > .ab-item')
-	if (btn) {
-		btn.addEventListener('click', onClickHandler);
+	btn = document.querySelector( '#wp-admin-bar-vip-purge-page > .ab-item' )
+	if ( btn ) {
+		btn.addEventListener( 'click', onClickHandler );
 	}
 
-})();
+} )();
