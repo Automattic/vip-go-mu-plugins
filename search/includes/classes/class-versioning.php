@@ -12,6 +12,7 @@ class Versioning {
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_TEMPORARY_HIGH_FOR_DRY_RUN = 60 * 10;
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
 
 	/**
@@ -783,13 +784,13 @@ class Versioning {
 	}
 
 	private function mark_self_heal_ongoing( $failure_ttl = false ) {
-		$ttl = $failure_ttl ? self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE : self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL;
+		$ttl = $failure_ttl ? self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE : self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_TEMPORARY_HIGH_FOR_DRY_RUN;
 
 		wp_cache_set(
 			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY,
 			1,
 			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP,
-			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL
+			$ttl
 		);
 	}
 
@@ -830,12 +831,35 @@ class Versioning {
 				$this->mark_self_heal_ongoing( true );
 				$this->alert_for_index_self_healing_failed( $indexable->slug );
 			} else {
-				$this->update_versions( $indexable, $versions );
+
+				// Running in dry-run mode to asses the impact
+				// $this->update_versions( $indexable, $versions );
+
+
+				$message = sprintf(
+					"Application %d - %s would update versions for '%s' indexable:\n%s",
+					FILES_CLIENT_SITE_ID,
+					home_url(),
+					$indexable->slug,
+					print_r( $versions, true )
+				);
+
+				\Automattic\VIP\Logstash\log2logstash(
+					array(
+						'severity' => 'warning',
+						'feature' => 'vip_search_versioning',
+						'message' => $message,
+					)
+				);
 			}
 		}
 	}
 
 	public function alert_for_index_self_healing( string $slug ) {
+		if ( ! isset( $this->alert ) ) {
+			return;
+		}
+
 		$message = sprintf(
 			'Application %d - %s has had its vip-search versioning corrupted for "%s" indexable, will try to reconstruct',
 			FILES_CLIENT_SITE_ID,
@@ -847,6 +871,10 @@ class Versioning {
 	}
 
 	public function alert_for_index_self_healing_failed( string $slug ) {
+		if ( ! isset( $this->alert ) ) {
+			return;
+		}
+
 		$message = sprintf(
 			'Application %d - %s vip-search versioning FAILED to reconstruct',
 			FILES_CLIENT_SITE_ID,
