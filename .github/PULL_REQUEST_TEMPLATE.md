@@ -17,7 +17,7 @@ Please don't include internal or private links :)
 
 ## Changelog Description
 <!--
-A description of the context of the change for a change log. It should have a title, link to the PR, examples(if applicable), and why the change was made.
+A description of the context of the change for a changelog. It should have a title, link to the PR, examples(if applicable), and why the change was made.
 
 Example for a plugin upgrade:
 
@@ -72,7 +72,7 @@ Please make sure the items below have been covered before requesting a review:
 - [ ] This change works and has been tested on a Go sandbox.
 - [ ] This change has relevant unit tests (if applicable).
 - [ ] This change has relevant documentation additions / updates (if applicable).
-- [ ] (For Automatticians) I've created a change log draft. 
+- [ ] (For Automatticians) I've created a changelog draft. 
 
 ## Steps to Test
 <!--
