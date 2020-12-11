@@ -49,7 +49,7 @@
 		const urls = getURLsToPurge();
 
 		try {
-			const res = await postData(`${ajaxurl}`, { nonce, urls });
+			const res = await postData(ajaxurl, { nonce, urls });
 			const { success, data } = res;
 
 			btn.textContent = data.result || 'Success';
