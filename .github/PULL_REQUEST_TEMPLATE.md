@@ -15,7 +15,7 @@ Should include any special considerations, decisions, and links to relevant GitH
 Please don't include internal or private links :)
 -->
 
-## Change Log Description
+## Changelog Description
 <!--
 A description of the context of the change for a change log. It should have a title, link to the PR, examples(if applicable), and why the change was made.
 
