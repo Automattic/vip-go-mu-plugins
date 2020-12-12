@@ -5,7 +5,7 @@
 
 ### BEFORE YOU PROCEED!!
 
-If you’re editing a feature without changing the spirit of the implementation, fixing bugs, improving security, or performing upgrades proceed!
+If you’re editing a feature without changing the spirit of the implementation, fixing bugs, improving security, or performing upgrades, then please proceed!
 
 If you’re adding a feature or changing the spirit of an existing implementation, please create a proposal in P2 using the MU Plugins Proposal P2tenberg Pattern. Please mention the [CODEOWNERS](.github/CODEOWNERS) of this repository and relevant stakeholders in your proposal :). Please do not PR until your proposal has been approved. Thank you :bow:!
 
