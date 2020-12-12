@@ -43,7 +43,6 @@ exclude_core_tests() {
 		"tests/feed/atom.php"
 		"tests/feed/rss2.php"
 		"tests/filesystem/base.php"
-		"tests/filesystem/base.php"
 		"tests/filesystem/findFolder.php"
 		"tests/import/import.php"
 		"tests/import/parser.php"
