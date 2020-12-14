@@ -20,9 +20,9 @@ if ( is_array( $validated_file_path ) ) {
 require __DIR__ . '/../../../wp-load.php';
 
 /**
- * Fires prior to the attachment lookup for a given file path.
+ * Hook in here to define the visibility of a given file.
  *
- * Useful for early handling of files when we don't care about the path <=> attachment connection.
+ * @access private 
  *
  * @param string|boolean $file_visibility Return one of Automattic\VIP\Files\Acl\(FILE_IS_PUBLIC | FILE_IS_PRIVATE_AND_ALLOWED | FILE_IS_PRIVATE_AND_DENIED | FILE_NOT_FOUND) to set visibility.
  * @param string $validated_file_path The requested file path (note: on multisite subdirectory installs, this does not includes the subdirectory).
