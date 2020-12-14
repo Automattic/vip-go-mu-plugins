@@ -8,7 +8,11 @@
  */
 
 // We don't want concat running outside VIP Go environments.
-if ( true === WPCOM_IS_VIP_ENV ) {
+if ( ! defined( 'VIP_GO_ENABLE_HTTP_CONCAT' ) ) {
+	define( 'VIP_GO_ENABLE_HTTP_CONCAT', true === WPCOM_IS_VIP_ENV );
+}
+
+if ( true === VIP_GO_ENABLE_HTTP_CONCAT ) {
 	// Activate concatenation
 	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
 		require __DIR__ .'/http-concat/jsconcat.php';
