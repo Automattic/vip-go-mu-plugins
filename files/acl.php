@@ -105,12 +105,16 @@ function send_visibility_headers( $file_visibility, $file_path ) {
  *
  * @return (int) The found attachment ID, or 0 on failure.
  */
-function file_path_to_attachment_id( $path ) {
+function get_file_path_from_attachment_id( $path ) {
 	global $wpdb;
 
-	$attachment_id = 0;
+	$cache_key = 'path_' . md5( $path );
+	$attachment_id = wp_cache_get( $cache_key, 'files-acl' );
+	if ( false !== $attachment_id ) {
+		return $attachment_id;
+	}
 
-	// TODO: caching?
+	$attachment_id = 0;
 
 	$results = $wpdb->get_results(
 		$wpdb->prepare(
@@ -132,6 +136,8 @@ function file_path_to_attachment_id( $path ) {
 			}
 		}
 	}
+
+	wp_cache_set( $cache_key, $attachment_id, 'files-acl', MINUTE_IN_SECONDS );
 
 	return $attachment_id;
 }
