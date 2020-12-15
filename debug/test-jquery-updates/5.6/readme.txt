@@ -1,9 +1,9 @@
 === Test jQuery Updates ===
 Contributors: wordpressdotorg, azaozz
 Tags: jquery
-Requires at least: 5.6
+Requires at least: 5.6-alpha
 Tested up to: 5.6
-Stable tag: 2.0.0
+Stable tag: 1.0.2
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -28,6 +28,10 @@ When activated this plugin will not disable jQuery Migrate. When testing it can 
 * Update for use in WordPress 5.6.
 * Remove testing of different versions of jQuery and jQuery UI.
 * Change the default for jQuery Migrate to "enabled".
+
+= 1.0.2 =
+* Update jQuery Migrate to 3.3.2.
+* Use the non-minified, debug versions of jQuery 3.5.1 and jQuery Migrate 3.3.2.
 
 = 1.0.1 =
 Update for compatibility with WordPress 5.5-beta1 and newer, allows re-enabling of jQuery Migrate 1.4.1.
