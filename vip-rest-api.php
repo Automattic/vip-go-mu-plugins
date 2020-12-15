@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: REST API Enhancements
-Plugin URI: https://vip.wordpress.com/
-Description: Add custom REST API endpoints for VIP requests; these endpoints are private and only for the use of WordPress.com VIP
+Plugin URI: https://wpvip.com
+Description: Add custom REST API endpoints for VIP requests; these endpoints are private and only for the use of WordPress VIP
 Author: Erick Hitter, Automattic
 Version: 0.1
 */

@@ -2,7 +2,7 @@
 
 This is the mu-plugins folder for VIP Go, assembled without submodules for convenience.
 
-Please see our documentation on setting up your [local development environment](https://vip.wordpress.com/documentation/vip-go/local-vip-go-development-environment/).
+Please see our documentation on setting up your [local development environment](https://docs.wpvip.com/how-tos/set-up-a-vip-go-local-development-site/).
 
 ## Pull Requests
 
