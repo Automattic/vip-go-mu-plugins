@@ -139,6 +139,14 @@ class WPCOM_VIP_Cache_Manager {
 
 		$urls = is_array( $req->urls ) && ! empty( $req->urls ) ? $req->urls : [];
 
+		if ( empty( $urls ) ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-go-cache-manager-url-purge-status' => 'deny-no-urls',
+			] );
+
+			wp_send_json_error( [ 'error' => 'No URLs' ], 400 );
+		}
+
 		// URLs are validated in queue_purge_url.
 		foreach ( $urls as $url_to_purge ) {
 			$this->queue_purge_url( $url_to_purge );
