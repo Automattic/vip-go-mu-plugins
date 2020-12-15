@@ -8,7 +8,7 @@
 /**
  * Test Jquery Updates
  *
- * There are multiple versions per WordpressVersion the loader tries to pick the most recent one
+ * There are multiple versions per WordPress version the loader tries to pick the most recent one
  */
 $has_test_jquery_param = isset( $_GET['vip_load_test_jquery_updates'] );
 $has_test_jquery_constant = defined( 'VIP_ENABLE_TEST_JQUERY_UPDATES' ) && true === VIP_ENABLE_TEST_JQUERY_UPDATES;
@@ -19,7 +19,7 @@ if ( $has_test_jquery_param || $has_test_jquery_constant ) {
 	$settings_key = 'wp-jquery-test-settings';
 	$default_settings = [];
 
-	if ( version_compare( $GLOBALS['wp_version'], '5.6', '<' ) ) {
+	if ( version_compare( $GLOBALS['wp_version'], '5.6-alpha', '<' ) ) {
 		$version = '5.5';
 		$default_settings = [
 			'version'   => '3.5.1',
@@ -29,7 +29,7 @@ if ( $has_test_jquery_param || $has_test_jquery_constant ) {
 	} else {
 		$version = '5.6';
 		$default_settings = [
-			'version'   => '1.12.4',
+			'version'   => 'default',
 			'migrate'   => 'enable',
 		];
 	}
