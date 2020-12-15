@@ -61,9 +61,11 @@
 		}
 	}
 
-	btn = document.querySelector( '#wp-admin-bar-vip-purge-page > .ab-item' )
-	if ( btn ) {
-		btn.addEventListener( 'click', onClickHandler );
-	}
+	document.addEventListener( 'DOMContentLoaded', () => {
+		btn = document.querySelector( '#wp-admin-bar-vip-purge-page > .ab-item' )
+		if ( btn ) {
+			btn.addEventListener( 'click', onClickHandler );
+		}
+	} );
 
 } )();
