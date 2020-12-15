@@ -21,7 +21,7 @@ A description of the context of the change for a changelog. It should have a tit
 
 Example for a plugin upgrade:
 
-### Jetpack 9.2.1
+### Plugin Updated: Jetpack 9.2.1
 
 We upgraded Jetpack 9.2 to Jetpack 9.2.1.
 
@@ -63,6 +63,11 @@ add_filter( 'wpcom_vip_ip_username_login_threshold', function( $threshold, $ip, 
 
 https://github.com/Automattic/vip-go-mu-plugins/pull/1782
 -->
+### The title of my changelog entry(See examples in the comments above)
+
+Look at my sweet description of my changes with examples, screen shots, etc... that demonstrate the functionality.
+
+https://github.com/Automattic/vip-go-mu-plugins/pull/this-pr
 
 ## Checklist
 
