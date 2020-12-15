@@ -93,7 +93,7 @@ add_action( 'all_admin_notices', function() {
 
 	<p><strong>Your editor of choice has not been changed</strong>.</p>
 
-	<p>Read more about the new editor below, learn about <a href="https://vip.wordpress.com/documentation/gutenberg-at-vip/" rel="noopener noreferrer" target="_blank">how it's configured on VIP</a>, or <a href="https://testgutenberg.com/" rel="noopener noreferrer" target="_blank">try it out in your browser</a>.</p>
+	<p>Read more about the new editor below, learn about <a href="https://docs.wpvip.com/technical-references/plugins/loading-gutenberg-on-vip/" rel="noopener noreferrer" target="_blank">how it's configured on VIP</a>, or <a href="https://testgutenberg.com/" rel="noopener noreferrer" target="_blank">try it out in your browser</a>.</p>
 
 	<?php if ( ! $is_using_gutenberg ) : ?>
 		<p>Need help planning your transition? The <a href="<?php echo admin_url( 'admin.php?page=vip-dashboard' ); ?>">VIP Support team is ready to help</a>!</p>
