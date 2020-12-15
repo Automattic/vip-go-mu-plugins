@@ -13,26 +13,33 @@ echo "Will test with WP_VERSION=$WP_VERSION and WP_MULTISITE=$WP_MULTISITE"
 echo "--------------"
 echo
 
+MARIADB_VERSION="10.3"
+UUID=`date +%s000`
+NETWORK_NAME="tests-$UUID"
+DB_CONTAINER_NAME="db-$UUID"
 MYSQL_ROOT_PASSWORD='wordpress'
-docker network create tests
-db=$(docker run --network tests --name db -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -d mariadb)
+
+docker network create $NETWORK_NAME
+
+db=$(docker run --network $NETWORK_NAME --name $DB_CONTAINER_NAME -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -d mariadb/server:$MARIADB_VERSION)
 function cleanup() {
+	echo "cleanup!"
 	docker rm -f $db
-	docker network rm tests
+	docker network rm $NETWORK_NAME
 }
 trap cleanup EXIT
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-WP_VERSION=$($DIR/download-wp-tests.sh wordpress_test root "$MYSQL_ROOT_PASSWORD" "db" "$WP_VERSION")
+WP_VERSION=$($DIR/download-wp-tests.sh wordpress_test root "$MYSQL_ROOT_PASSWORD" "$DB_CONTAINER_NAME" "$WP_VERSION")
 
 ## Ensure there's a database connection for the rest of the steps
-until docker exec -it $db mysql -u root -h db --password="wordpress" -e 'CREATE DATABASE wordpress_test' > /dev/null; do
+until docker exec -it $db mysql -u root -h $DB_CONTAINER_NAME --password="wordpress" -e 'CREATE DATABASE wordpress_test' > /dev/null; do
 	echo "Waiting for database connection..."
 	sleep 5
 done
 
 docker run \
- 	--network tests \
+	--network $NETWORK_NAME \
 	-e WP_MULTISITE="$WP_MULTISITE" \
 	-v $(pwd):/app \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
