@@ -34,6 +34,8 @@
 	 * @param {Event} e
 	 */
 	async function onClickHandler( e ) {
+		e.preventDefault();
+
 		if ( purgeInProgress ) {
 			return;
 		}
