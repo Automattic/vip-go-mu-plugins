@@ -2349,6 +2349,43 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->ep_handle_failed_request( $response, '' );
 	}
 
+	public function test__maybe_log_query_ratelimiting_start_should_do_nothing_if_ratelimiting_already_started() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		wp_cache_set( $es::QUERY_RATE_LIMITED_START_CACHE_KEY, time(), $es::QUERY_COUNT_CACHE_GROUP );
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$es->logger->expects( $this->never() )->method( 'log' );
+
+		$es->maybe_log_query_ratelimiting_start();
+	}
+
+	public function test__maybe_log_query_ratelimiting_start_should_log_if_ratelimiting_not_already_started() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$es->logger->expects( $this->once() )
+				->method( 'log' )
+				->with(
+					$this->equalTo( 'warning' ),
+					$this->equalTo( 'vip_search_query_rate_limiting' ),
+					$this->equalTo(
+						'Application 123 - http://example.org has triggered Elasticsearch query rate limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.'
+					),
+					$this->anything()
+				);
+
+		$es->maybe_log_query_ratelimiting_start();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

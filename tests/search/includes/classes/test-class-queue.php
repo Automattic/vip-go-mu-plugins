@@ -1255,6 +1255,25 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->maybe_update_stat( 'test', $value );
 	}
 
+	public function test__log_index_ratelimiting_start() {
+		$this->queue->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$this->queue->logger->expects( $this->once() )
+				->method( 'log' )
+				->with(
+					$this->equalTo( 'warning' ),
+					$this->equalTo( 'vip_search_indexing_rate_limiting' ),
+					$this->equalTo(
+						'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
+					),
+					$this->anything()
+				);
+
+		$this->queue->log_index_ratelimiting_start();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

@@ -19,6 +19,7 @@ class Queue {
 	public $schema;
 	public $statsd;
 	public $indexables;
+	public $logger;
 
 	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
@@ -70,6 +71,11 @@ class Queue {
 		$this->statsd = new \Automattic\VIP\StatsD();
 
 		$this->indexables = \ElasticPress\Indexables::factory();
+
+		// Logger - can be set explicitly for mocking purposes
+		if ( ! $this->logger ) {
+			$this->logger = new \Automattic\VIP\Logstash\Logger();
+		}
 
 		$this->setup_hooks();
 	}
@@ -868,6 +874,7 @@ class Queue {
 
 			if ( ! self::is_indexing_ratelimited() ) {
 				self::turn_on_index_ratelimiting();
+				self::log_index_ratelimiting_start();
 			}
 		} else {
 			$this->clear_index_limiting_start_timestamp();
@@ -1072,5 +1079,23 @@ class Queue {
 		$value = intval( $value );
 
 		$this->statsd->update_stats( $stat, $value, 1, 'c' );
+	}
+
+	/**
+	 * When indexing rate limting first begins, log this information and surface as a PHP warning
+	 */
+	public function log_index_ratelimiting_start() {
+		$message = sprintf(
+			'Application %d - %s has triggered Elasticsearch indexing rate limiting, which will last for %d seconds. Large batch indexing operations are being queued for indexing in batches over time.',
+			FILES_CLIENT_SITE_ID,
+			\home_url(),
+			self::$index_queueing_ttl
+		);
+
+		$this->logger->log(
+			'warning',
+			'vip_search_indexing_rate_limiting',
+			$message
+		);
 	}
 }
