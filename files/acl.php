@@ -1,5 +1,8 @@
 <?php
 
+// Note: this file is loaded very early in WP boot process.
+// Probably should be split up :)
+
 namespace Automattic\VIP\Files\Acl;
 
 const FILE_IS_PUBLIC = 'FILE_IS_PUBLIC';
@@ -12,50 +15,46 @@ const FILE_NOT_FOUND = 'FILE_NOT_FOUND';
  * 
  * Note: As the function name suggests, this is called before WordPress is loaded.
  *
- * @param string $file_request_uri
+ * @param string $file_path
  */
-function pre_wp_validate_request( $file_request_uri ) {
+function pre_wp_validate_path( $file_path ) {
 	// Note: cannot use WordPress functions here.
 
-	if ( ! $file_request_uri ) {
-		return [ 400, 'missing-uri' ];
-	}
-
-	// strpos since we can have subsite / subdirectory paths.
-	if ( false === strpos( $file_request_uri, '/wp-content/uploads/' ) ) {
-		return [ 400, 'invalid-path' ];
-	}
-
-	// Strip off non-path elements (scheme/host/querystring).
-	$file_path = parse_url( $file_request_uri, PHP_URL_PATH );
 	if ( ! $file_path ) {
-		return [ 400, 'parse-error' ];
+		trigger_error( 'VIP Files ACL failed due to empty path', E_USER_WARNING );
+
+		return false;
 	}
 
-	if ( 0 !== strpos( $file_path, '/' ) ) {
-		return [ 400, 'relative-path' ];
+	// Relative path not allowed
+	if ( '/' !== $file_path[ 0 ] ) {
+		trigger_error( sprintf( 'VIP Files ACL failed due to relative path (for %s)', $file_path ), E_USER_WARNING );
+
+		return false;
 	}
 
+	// Missing `/wp-content/uploads/`.
+	// Using `strpos` since we can have subsite / subdirectory paths.
+	if ( false === strpos( $file_path, '/wp-content/uploads/' ) ) {
+		trigger_error( sprintf( 'VIP Files ACL failed due to invalid path (for %s)', $file_path ), E_USER_WARNING );
+
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Sanitize the path by stripping off the wp-content/uploads bits.
+ *
+ * Note: called before WordPress is loaded.
+ */
+function pre_wp_sanitize_path( $file_path ) {
 	// Strip off subdirectory (i.e. /en/wp-content/ <= remove `/en` )
 	$wp_content_index = strpos( $file_path, '/wp-content/uploads/' );
 	$file_path = substr( $file_path, $wp_content_index + strlen( '/wp-content/uploads/' ) );
 
 	return $file_path;
-}
-
-/**
- * Helper function to send error headers.
- *
- * Called before WordPress is loaded.
- *
- * @param array $error Array containing [ (int) status code, (string) error message ]
- */
-function pre_wp_send_error_headers( $error ) {
-	list( $error_code, $error_message ) = $error;
-
-	http_response_code( $error_code );
-
-	header( 'X-Reason: ' . $error_message );
 }
 
 function send_visibility_headers( $file_visibility, $file_path ) {
@@ -80,9 +79,8 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 
 		case FILE_NOT_FOUND:
 			// This is a signal for the server to pass the request through to the Files Service.
-			// Even though the attachment was not found, it may still be a physical file in the Files Service.
+			// Even though the attachment was not found within WordPress, it may still be a physical file in the Files Service.
 			$status_code = 202;
-			$header = 'X-Reason: attachment-not-found';
 			break;
 
 		default:
@@ -137,7 +135,7 @@ function get_file_path_from_attachment_id( $path ) {
 		}
 	}
 
-	wp_cache_set( $cache_key, $attachment_id, 'files-acl', MINUTE_IN_SECONDS );
+	wp_cache_set( $cache_key, $attachment_id, 'files-acl', 5 * MINUTE_IN_SECONDS );
 
 	return $attachment_id;
 }
