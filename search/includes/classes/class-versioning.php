@@ -12,7 +12,7 @@ class Versioning {
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
-	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_TEMPORARY_HIGH_FOR_DRY_RUN = 60 * 10;
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_TEMPORARY_HIGH_FOR_DRY_RUN = 60 * 120; // 2 hours
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
 
 	/**
@@ -784,7 +784,9 @@ class Versioning {
 	}
 
 	private function mark_self_heal_ongoing( $failure_ttl = false ) {
-		$ttl = $failure_ttl ? self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE : self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_TEMPORARY_HIGH_FOR_DRY_RUN;
+		// TODO replace with shorter ttl bellow. It is no temporary high for dry run mode to avoid too many logs
+		// $ttl = $failure_ttl ? self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE : self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL;
+		$ttl = self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_TEMPORARY_HIGH_FOR_DRY_RUN;
 
 		wp_cache_set(
 			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY,
