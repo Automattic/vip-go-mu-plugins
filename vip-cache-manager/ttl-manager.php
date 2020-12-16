@@ -2,7 +2,7 @@
 
 /*
 Plugin name: TTL Manager
-Description: Sets cache TTLs for site responses, see https://vip.wordpress.com/documentation/vip-go/controlling-vip-go-page-cache/
+Description: Sets cache TTLs for site responses, see https://docs.wpvip.com/technical-references/caching/page-cache/
 Author: Automattic
 Author URI: https://automattic.com/
 Version: 1.0
