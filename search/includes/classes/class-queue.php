@@ -874,7 +874,7 @@ class Queue {
 
 			if ( ! self::is_indexing_ratelimited() ) {
 				self::turn_on_index_ratelimiting();
-				self::log_index_ratelimiting_start();
+				$this->log_index_ratelimiting_start();
 			}
 		} else {
 			$this->clear_index_limiting_start_timestamp();
