@@ -101,8 +101,7 @@ class WPCOM_VIP_Cache_Manager {
 		wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.1', true );
 		wp_localize_script( 'purge-page-cache-btn', 'VIPPageFlush', [
 			'nonce' => wp_create_nonce( 'purge-page' ),
-			'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ), 
-			),
+			'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
 		] );
 	}
 
