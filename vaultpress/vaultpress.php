@@ -2988,7 +2988,7 @@ JS;
 		}
 
 		// Report back to VaultPress
-		add_action( 'shutdown', array( $this, 'do_pings' ) );
+		// VIP hotfix add_action( 'shutdown', array( $this, 'do_pings' ) );
 
 		// VaultPress likes being first in line
 		add_filter( 'pre_update_option_active_plugins', array( $this, 'load_first' ) );
