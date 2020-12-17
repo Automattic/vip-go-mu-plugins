@@ -780,7 +780,11 @@ class Search {
 		// If the query count has exceeded the maximum
 		// only allow half of the queries to use VIP Search
 		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Go first so that cache entries aren't set yet for first occurrence.
+			$this->maybe_log_query_ratelimiting_start();
+
 			$this->handle_query_limiting_start_timestamp();
+
 			$this->maybe_alert_for_prolonged_query_limiting();
 
 			// Should be roughly half over time
@@ -1510,5 +1514,21 @@ class Search {
 		$duration = intval( $duration );
 
 		$this->statsd->timing( $stat, $duration );
+	}
+
+	/**
+	 * When query rate limting first begins, log this information and surface as a PHP warning
+	 */
+	public function maybe_log_query_ratelimiting_start() {
+		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+			$message = sprintf(
+				'Application %d - %s has triggered Elasticsearch query rate limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.',
+				FILES_CLIENT_SITE_ID,
+				\home_url(),
+				self::$query_count_ttl
+			);
+
+			$this->logger->log( 'warning', 'vip_search_query_rate_limiting', $message );
+		}
 	}
 }
