@@ -9,6 +9,8 @@ class Search {
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
+	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	// sites.
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
@@ -18,8 +20,6 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
-	private const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	private const POST_FIELD_COUNT_LIMIT = 5000;
 	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 
