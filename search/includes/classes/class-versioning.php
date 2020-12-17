@@ -839,11 +839,10 @@ class Versioning {
 
 
 				$message = sprintf(
-					"Application %d - %s would update versions for '%s' indexable:\n%s",
+					"Application %d - %s would update versions for '%s' indexable",
 					FILES_CLIENT_SITE_ID,
 					home_url(),
-					$indexable->slug,
-					print_r( $versions, true )
+					$indexable->slug
 				);
 
 				\Automattic\VIP\Logstash\log2logstash(
@@ -851,6 +850,7 @@ class Versioning {
 						'severity' => 'warning',
 						'feature' => 'vip_search_versioning',
 						'message' => $message,
+						'extra' => $versions,
 					)
 				);
 			}
