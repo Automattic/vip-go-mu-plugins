@@ -6,6 +6,7 @@
   "scripts": {
     "phplint": "bin/php-lint.sh",
     "phpcs": "vendor/bin/phpcs",
+    "phpcs:errors": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --processors enforce --quiet",
     "phpcs:changed:remote": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet",
     "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
     "lint": "npm run phplint && npm run phpcs:changed:remote",

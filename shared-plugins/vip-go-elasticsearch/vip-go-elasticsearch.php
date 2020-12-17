@@ -476,7 +476,7 @@ class WPCOM_elasticsearch {
 	/**
 	 * Set any additional blogs to query along with the current blog
 	 *
-	 * This method accepts an array of additional blog names, in the format of vip.wordpress.com,
+	 * This method accepts an array of additional blog names, in the format of example.com,
 	 * that should be queried.
 	 *
 	 * @param array $domains The additional blogs to query

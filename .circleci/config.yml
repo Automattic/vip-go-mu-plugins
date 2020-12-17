@@ -4,9 +4,7 @@ workflows:
     jobs:
       - php73-lint
       - php73-core-tests
-      - php73-core-tests-mu-plugins
       - php73-core-multisite-tests
-      - php73-core-multisite-tests-mu-plugins
       - php73-build-multisite
       - php73-build-singlesite
       - php74-lint
@@ -135,15 +133,6 @@ jobs:
   php73-core-tests:
     <<: *php_core_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-    docker:
-      - image: wordpressdevelop/php:7.3-fpm
-      - image: *db_image
-
-  php73-core-tests-mu-plugins:
-    <<: *php_core_job
-    environment:
       - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
@@ -152,15 +141,6 @@ jobs:
       - image: *db_image
 
   php73-core-multisite-tests:
-    <<: *php_core_job
-    environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
-    docker:
-      - image: wordpressdevelop/php:7.3-fpm
-      - image: *db_image
-
-  php73-core-multisite-tests-mu-plugins:
     <<: *php_core_job
     environment:
       - INCLUDE_MU_TESTS: "1"
