@@ -40,6 +40,10 @@ class WPCOM_VIP_Cache_Manager {
 
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-go-cache-action' => 'dashboard-site-purge',
+				'vip-go-cache-url-purge-by-site'   => VIP_GO_APP_ID,
+			] );
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
 
