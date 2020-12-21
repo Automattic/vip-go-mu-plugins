@@ -1400,6 +1400,79 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
+	private $get_versions__combine_globals_local = [
+		'foo' => [
+			1 => [
+				'number' => 1,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+		'foo2' => [
+			1 => [
+				'number' => 1,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+	];
+	private $get_versions__combine_globals_global = [
+		'foo' => [
+			2 => [
+				'number' => 2,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+		'bar' => [
+			1 => [
+				'number' => 1,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+	];
+	public function get_versions__combine_globals_data() {
+		return [
+			[
+				// foo is overwritten in globals
+				'foo',
+				$this->get_versions__combine_globals_global['foo'],
+			],
+			[
+				// foo2 comes from locals
+				'foo2',
+				$this->get_versions__combine_globals_local['foo2'],
+			],
+			[
+				// bar comes from globals
+				'bar',
+				$this->get_versions__combine_globals_global['bar'],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_versions__combine_globals_data
+	 */
+	public function test__get_versions__combine_globals( $slug, $expected ) {
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $this->get_versions__combine_globals_local );
+		update_site_option( Versioning::INDEX_VERSIONS_OPTION_GLOBAL, $this->get_versions__combine_globals_global );
+
+		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock->slug = $slug;
+
+
+
+		$result = self::$version_instance->get_versions( $indexable_mock );
+
+		$this->assertEquals( $expected, $result );
+	}
+
 	public function maybe_self_heal_reconstruct_data() {
 		return [
 			[

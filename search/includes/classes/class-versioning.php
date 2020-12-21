@@ -9,6 +9,7 @@ use \WP_Error as WP_Error;
 
 class Versioning {
 	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
+	const INDEX_VERSIONS_OPTION_GLOBAL = 'vip_search_global_index_versions';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
@@ -200,7 +201,11 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable, bool $provide_default = true ) {
-		$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+		$per_site_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+		$deprecated_multisite_storage = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
+		$global_versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
+
+		$versions = array_merge( $deprecated_multisite_storage, $per_site_versions, $global_versions );
 
 		$slug = $indexable->slug;
 
@@ -461,19 +466,19 @@ class Versioning {
 	 * @return bool Boolean indicating if the version information was saved successfully or not
 	 */
 	public function update_versions( Indexable $indexable, $versions ) {
-		if ( Search::is_network_mode() ) {
-			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
+		if ( $indexable->global ) {
+			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
 		} else {
 			$current_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 		}
 
 		$current_versions[ $indexable->slug ] = $versions;
 
-		if ( Search::is_network_mode() ) {
-			return update_site_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
+		if ( $indexable->global ) {
+			return update_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, $current_versions, 'no' );
+		} else {
+			return update_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
 		}
-
-		return update_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
 	}
 
 	/**
