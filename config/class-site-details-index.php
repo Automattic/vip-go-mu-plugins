@@ -63,12 +63,17 @@ class Site_Details_Index {
 
 		$site_details['timestamp'] = $this->get_current_timestamp();
 		$site_details['client_site_id'] = $site_id;
-		$site_details['environment_id'] = $site_id;
 		$site_details['environment_name'] = $environment_name;
-		$site_details['plugins'] = $this->get_plugin_info();
 		$site_details['core']['wp_version'] = strval( $wp_version );
 		$site_details['core']['blog_id'] = get_current_blog_id();
+		$site_details['core']['site_url'] = get_site_url();
 		$site_details['core']['is_multisite'] = is_multisite();
+
+		$site_details['plugins'] = $this->get_plugin_info();
+
+		if ( class_exists( 'Jetpack' ) ) {
+			$site_details['jetpack'] = $this->get_jetpack_info();
+		}
 		
 		return $site_details;
 	}
@@ -93,6 +98,7 @@ class Site_Details_Index {
 			$enabled_via_code = in_array( $key, $plugins_enabled_via_code, true );
 
 			$plugin_info[] = array(
+				'path' => $key,
 				'name' => $value['Name'],
 				'version' => $value['Version'],
 				'active' => $active,
@@ -101,6 +107,23 @@ class Site_Details_Index {
 		}
 
 		return $plugin_info;
+	}
+
+	/**
+	 * Gather all the information about Jetpack
+	 */
+	public function get_jetpack_info() {
+		$jetpack_info = array();
+
+		$jetpack_info['active'] = \Jetpack::is_active();
+		$jetpack_info['id'] = \Jetpack::get_option( 'id' );
+		$jetpack_info['version'] = JETPACK__VERSION;
+		if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
+			$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
+		}
+		$jetpack_info['active_modules'] = \Jetpack::get_active_modules();
+
+		return $jetpack_info;
 	}
 
 	/**
