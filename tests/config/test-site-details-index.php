@@ -76,12 +76,14 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
+					'path' => 'hello.php',
 					'name' => 'Hello Tests',
 					'version' => '4.5',
 					'active' => false,
 					'enabled_via_code' => false,
 				),
 				array(
+					'path' => 'world.php',
 					'name' => 'Testing World',
 					'version' => '8.6',
 					'active' => true,
@@ -154,12 +156,14 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
+					'path' => 'hello.php',
 					'name' => 'Hello Tests',
 					'version' => '4.5',
 					'active' => true,
 					'enabled_via_code' => false,
 				),
 				array(
+					'path' => 'world.php',
 					'name' => 'Testing World',
 					'version' => '8.6',
 					'active' => false,
