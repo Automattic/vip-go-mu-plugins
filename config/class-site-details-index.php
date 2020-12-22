@@ -19,6 +19,11 @@ class Site_Details_Index {
 	private $timestamp = null;
 
 	/**
+	 * Name of the logstash feature to use for log2logstash call
+	 */
+	private const LOG_FEATURE_NAME = 'site_details';
+
+	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
 	 *
 	 * @param mixed $timestamp A fixed point in time to use for mocking.
@@ -137,6 +142,22 @@ class Site_Details_Index {
 		$site_details = apply_filters( 'vip_site_details_index_data', array() );
 
 		return $site_details;
+	}
+
+	/**
+	 * Builds the site details structure and then puts it into logstash
+	 */
+	public function put_site_details_in_logstash() {
+		$site_details = $this->get_site_details();
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature' => self::LOG_FEATURE_NAME,
+				'message' => 'Site details update',
+				'extra' => $site_details,
+			)
+		);
 	}
 
 	/**
