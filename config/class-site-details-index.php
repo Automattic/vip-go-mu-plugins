@@ -71,6 +71,8 @@ class Site_Details_Index {
 
 		$site_details['plugins'] = $this->get_plugin_info();
 
+		$site_details['search'] = $this->get_search_info();
+
 		if ( class_exists( 'Jetpack' ) ) {
 			$site_details['jetpack'] = $this->get_jetpack_info();
 		}
@@ -107,6 +109,21 @@ class Site_Details_Index {
 		}
 
 		return $plugin_info;
+	}
+
+	/**
+	 * Gather basic information about VIP Search for a site
+	 */
+	public function get_search_info() {
+		$search_info = array();
+
+		$search_info['enabled'] = ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) ||
+			( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH );
+
+		$search_info['query_integration'] = ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION ) ||
+			( defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION );
+
+		return $search_info;
 	}
 
 	/**
