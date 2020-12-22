@@ -70,12 +70,8 @@ class Site_Details_Index {
 		$site_details['core']['is_multisite'] = is_multisite();
 
 		$site_details['plugins'] = $this->get_plugin_info();
-
 		$site_details['search'] = $this->get_search_info();
-
-		if ( class_exists( 'Jetpack' ) ) {
-			$site_details['jetpack'] = $this->get_jetpack_info();
-		}
+		$site_details['jetpack'] = $this->get_jetpack_info();
 		
 		return $site_details;
 	}
@@ -134,13 +130,18 @@ class Site_Details_Index {
 	public function get_jetpack_info() {
 		$jetpack_info = array();
 
-		$jetpack_info['active'] = \Jetpack::is_active();
-		$jetpack_info['id'] = \Jetpack::get_option( 'id' );
-		$jetpack_info['version'] = JETPACK__VERSION;
-		if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
-			$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
+		if ( class_exists( 'Jetpack' ) ) {
+			$jetpack_info['available'] = true;
+			$jetpack_info['active'] = \Jetpack::is_active();
+			$jetpack_info['id'] = \Jetpack::get_option( 'id' );
+			$jetpack_info['version'] = JETPACK__VERSION;
+			if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
+				$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
+			}
+			$jetpack_info['active_modules'] = \Jetpack::get_active_modules();
+		} else {
+			$jetpack_info['available'] = false;
 		}
-		$jetpack_info['active_modules'] = \Jetpack::get_active_modules();
 
 		return $jetpack_info;
 	}
