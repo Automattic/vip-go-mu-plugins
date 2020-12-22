@@ -117,11 +117,13 @@ class Site_Details_Index {
 	public function get_search_info() {
 		$search_info = array();
 
-		$search_info['enabled'] = ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) ||
-			( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH );
-
-		$search_info['query_integration'] = ( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION ) ||
-			( defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION );
+		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
+			$search_info['enabled'] = true;
+			$search_info['query_integration_enabled'] = \Automattic\VIP\Search\Search::is_query_integration_enabled();
+		} else {
+			$search_info['enabled'] = false;
+			$search_info['query_integration_enabled'] = false;
+		}
 
 		return $search_info;
 	}
