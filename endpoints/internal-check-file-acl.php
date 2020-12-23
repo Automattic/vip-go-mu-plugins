@@ -34,6 +34,8 @@ require __DIR__ . '/../../../wp-load.php';
 /**
  * Hook in here to define the visibility of a given file.
  *
+ * Note: this is currently for VIP internal use only.
+ *
  * @access private 
  *
  * @param string|boolean $file_visibility Return one of Automattic\VIP\Files\Acl\(FILE_IS_PUBLIC | FILE_IS_PRIVATE_AND_ALLOWED | FILE_IS_PRIVATE_AND_DENIED | FILE_NOT_FOUND) to set visibility.
