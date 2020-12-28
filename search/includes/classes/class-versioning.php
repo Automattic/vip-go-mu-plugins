@@ -201,11 +201,19 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable, bool $provide_default = true ) {
-		$per_site_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
-		$deprecated_multisite_storage = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
-		$global_versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
+		$sources = [
+			'per_site_versions' => get_option( self::INDEX_VERSIONS_OPTION, array() ),
+			'deprecated_multisite_storage' => get_site_option( self::INDEX_VERSIONS_OPTION, array() ),
+			'global_versions' => get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() ),
+		];
 
-		$versions = array_merge( $deprecated_multisite_storage, $per_site_versions, $global_versions );
+		$versions = [];
+
+		foreach ( $sources as $source ) {
+			if ( is_array( $source ) ) {
+				$versions = array_merge( $versions, $source );
+			}
+		}
 
 		$slug = $indexable->slug;
 
