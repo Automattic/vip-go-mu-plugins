@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title><% preact.title %></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+		<% preact.headEnd %>
+	</head>
+	<body>
+		<script>
+			window.VIPSearchDevTools = {
+				status: 'enabled',
+				information: [
+					{
+						label: 'Elasticsearch Version',
+						value: '7.8.0'
+					},
+					{
+						label: 'Is in network mode?',
+						value: 'no'
+					},
+					{
+						label: 'Rate-limiting active',
+						value: '❌ yes'
+					},
+				],
+				queries: [
+					{
+						query: '{"some": { "query": [] }}',
+						results: '{ "hits": 0 }'
+					}
+				],
+			};
+		</script>
+		<div data-widget-host="vip-search-dev-tools"></div>
+		<% preact.bodyEnd %>
+	</body>
+</html>
