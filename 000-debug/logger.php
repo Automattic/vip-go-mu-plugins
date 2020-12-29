@@ -34,7 +34,7 @@
  *
  * A null argument will log the file and line number of the l() call.
  */
-function l( $stuff = null ) {
+function l( $stuff = null, ...$rest ) {
 	// Do nothing on production hosts.
 	if ( true === WPCOM_IS_VIP_ENV
 		&& ( ! defined( 'WPCOM_SANDBOXED' ) || ! WPCOM_SANDBOXED ) ) {
@@ -42,8 +42,9 @@ function l( $stuff = null ) {
 	}
 	static $pageload;
 	// Call l() on each argument
-	if ( func_num_args() > 1 ) {
-		foreach ( func_get_args() as $arg ) {
+	if ( count( $rest ) > 0 ) {
+		l( $stuff );
+		foreach ( $rest as $arg ) {
 			l( $arg );
 		}
 		return $stuff;
@@ -64,6 +65,7 @@ function l( $stuff = null ) {
 	$pid = $pageload . '-' . getmypid();
 	if ( is_null( $stuff ) ) {
 		// Log the file and line number
+		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
 		$backtrace = debug_backtrace( false );
 		while ( isset( $backtrace[1]['function'] ) && __FUNCTION__ == $backtrace[1]['function'] ) {
 			array_shift( $backtrace );
@@ -92,6 +94,7 @@ function l( $stuff = null ) {
 			if ( array( 'default output handler' ) == $obs ) {
 				break;
 			}
+			// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
 			$backtrace = debug_backtrace( false );
 			foreach ( $backtrace as $level ) {
 				$caller = '';
@@ -111,14 +114,14 @@ function l( $stuff = null ) {
 			$log = print_r( $stuff, true );
 		}
 	}
-	// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	error_log( sprintf( '[%s] %s', $pid, $log ) );
-	// phpcs:enable
+
 	return $stuff;
 }
 
 // Log only once (suppresses logging on subsequent calls from the same file+line)
-function lo( $stuff ) {
+function lo( $stuff, ...$rest ) {
 	static $callers = array();
 	$backtrace      = debug_backtrace( false );
 	$caller         = md5( $backtrace[0]['file'] . $backtrace[0]['line'] );
@@ -126,7 +129,7 @@ function lo( $stuff ) {
 		return $stuff;
 	}
 	$callers[ $caller ] = true;
-	$args               = func_get_args();
+	$args               = array_merge( [ $stuff ], $rest );
 	return call_user_func_array( 'l', $args );
 }
 
