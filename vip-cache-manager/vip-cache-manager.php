@@ -40,6 +40,10 @@ class WPCOM_VIP_Cache_Manager {
 
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-cache-action' => 'dashboard-site-purge',
+				'vip-cache-url-purge-by-site'   => VIP_GO_APP_ID,
+			] );
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
 
@@ -115,14 +119,14 @@ class WPCOM_VIP_Cache_Manager {
 
 		if ( json_last_error() ) {
 			\Automattic\VIP\Stats\send_pixel( [
-				'vip-go-cache-manager-url-purge-status' => 'bad-payload',
+				'vip-cache-url-purge-status' => 'bad-payload',
 			] );
 			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
-				'vip-go-cache-manager-url-purge-status' => 'deny-permissions',
+				'vip-cache-url-purge-status' => 'deny-permissions',
 			] );
 
 			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
@@ -130,7 +134,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		if ( ! ( isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'purge-page' ) ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
-				'vip-go-cache-manager-url-purge-status' => 'deny-nonce',
+				'vip-cache-url-purge-status' => 'deny-nonce',
 			] );
 
 			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
@@ -140,7 +144,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		if ( empty( $urls ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
-				'vip-go-cache-manager-url-purge-status' => 'deny-no-urls',
+				'vip-cache-url-purge-status' => 'deny-no-urls',
 			] );
 
 			wp_send_json_error( [ 'error' => 'No URLs' ], 400 );
@@ -152,9 +156,9 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		\Automattic\VIP\Stats\send_pixel( [
-			'vip-go-cache-manager-action' => 'user-url-purge',
-			'vip-go-cache-manager-url-purge-by-site'   => VIP_GO_APP_ID,
-			'vip-go-cache-manager-url-purge-status' => 'success',
+			'vip-cache-action' => 'user-url-purge',
+			'vip-cache-url-purge-by-site'   => VIP_GO_APP_ID,
+			'vip-cache-url-purge-status' => 'success',
 		] );
 
 		// Optimistically tell that the operation is successful and bail.
