@@ -19,6 +19,11 @@ class Site_Details_Index {
 	private $timestamp = null;
 
 	/**
+	 * Name of the logstash feature to use for log2logstash call
+	 */
+	private const LOG_FEATURE_NAME = 'site_details';
+
+	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
 	 *
 	 * @param mixed $timestamp A fixed point in time to use for mocking.
@@ -63,12 +68,15 @@ class Site_Details_Index {
 
 		$site_details['timestamp'] = $this->get_current_timestamp();
 		$site_details['client_site_id'] = $site_id;
-		$site_details['environment_id'] = $site_id;
 		$site_details['environment_name'] = $environment_name;
-		$site_details['plugins'] = $this->get_plugin_info();
 		$site_details['core']['wp_version'] = strval( $wp_version );
 		$site_details['core']['blog_id'] = get_current_blog_id();
+		$site_details['core']['site_url'] = get_site_url();
 		$site_details['core']['is_multisite'] = is_multisite();
+
+		$site_details['plugins'] = $this->get_plugin_info();
+		$site_details['search'] = $this->get_search_info();
+		$site_details['jetpack'] = $this->get_jetpack_info();
 		
 		return $site_details;
 	}
@@ -93,6 +101,7 @@ class Site_Details_Index {
 			$enabled_via_code = in_array( $key, $plugins_enabled_via_code, true );
 
 			$plugin_info[] = array(
+				'path' => $key,
 				'name' => $value['Name'],
 				'version' => $value['Version'],
 				'active' => $active,
@@ -101,6 +110,45 @@ class Site_Details_Index {
 		}
 
 		return $plugin_info;
+	}
+
+	/**
+	 * Gather basic information about VIP Search for a site
+	 */
+	public function get_search_info() {
+		$search_info = array();
+
+		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
+			$search_info['enabled'] = true;
+			$search_info['query_integration_enabled'] = \Automattic\VIP\Search\Search::is_query_integration_enabled();
+		} else {
+			$search_info['enabled'] = false;
+			$search_info['query_integration_enabled'] = false;
+		}
+
+		return $search_info;
+	}
+
+	/**
+	 * Gather all the information about Jetpack
+	 */
+	public function get_jetpack_info() {
+		$jetpack_info = array();
+
+		if ( class_exists( 'Jetpack' ) ) {
+			$jetpack_info['available'] = true;
+			$jetpack_info['active'] = \Jetpack::is_active();
+			$jetpack_info['id'] = \Jetpack::get_option( 'id' );
+			$jetpack_info['version'] = JETPACK__VERSION;
+			if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
+				$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
+			}
+			$jetpack_info['active_modules'] = \Jetpack::get_active_modules();
+		} else {
+			$jetpack_info['available'] = false;
+		}
+
+		return $jetpack_info;
 	}
 
 	/**
@@ -137,6 +185,22 @@ class Site_Details_Index {
 		$site_details = apply_filters( 'vip_site_details_index_data', array() );
 
 		return $site_details;
+	}
+
+	/**
+	 * Builds the site details structure and then puts it into logstash
+	 */
+	public function put_site_details_in_logstash() {
+		$site_details = $this->get_site_details();
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature' => self::LOG_FEATURE_NAME,
+				'message' => 'Site details update',
+				'extra' => $site_details,
+			)
+		);
 	}
 
 	/**
