@@ -43,12 +43,17 @@ function validate_path( $file_path ) {
 /**
  * Sanitize the path by stripping off the wp-content/uploads bits.
  *
- * @param string $file_path The file path to sanitize.
+ * @param array $file_paths Indexed array with two entries: 0 is the path before `/wp-content/uploads/` and 1 is the path + file after.
  */
-function sanitize_path( $file_path ) {
+function sanitize_and_split_path( $file_path ) {
 	// Strip off subdirectory (i.e. /en/wp-content/ <= remove `/en` )
 	$wp_content_index = strpos( $file_path, '/wp-content/uploads/' );
-	$file_path = substr( $file_path, $wp_content_index + strlen( '/wp-content/uploads/' ) );
 
-	return $file_path;
+	$pre_wpcontent_path = substr( $file_path, 0, $wp_content_index );
+	$post_wpcontent_path = substr( $file_path, $wp_content_index + strlen( '/wp-content/uploads/' ) );
+
+	return [
+		$pre_wpcontent_path,
+		$post_wpcontent_path,
+	];
 }

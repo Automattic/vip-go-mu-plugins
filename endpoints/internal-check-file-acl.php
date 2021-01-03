@@ -23,13 +23,20 @@ if ( ! $is_valid_path ) {
 	exit;
 }
 
-$sanitized_file_path = Pre_WP_Utils\sanitize_path( $file_path );
+list( $subdirectory, $sanitized_file_path ) = Pre_WP_Utils\sanitize_and_split_path( $file_path );
 
-// TODO: make sure HTTP HOST and path have subdir set for multisite
+if ( $subdirectory ) {
+	$_SERVER['REQUEST_URI'] = $subdirectory . $_SERVER['REQUEST_URI'];
+}
+
+// Unset vars we no longer need, so they don't leak into global scope.
+// Should probably move the logic above into a function :)
+unset( $file_request_uri, $file_path, $is_valid_path, $subdirectory );
 
 // Bootstap WordPress
 require __DIR__ . '/../../../wp-load.php';
 
+// Load the ACL lib
 require_once __DIR__ . '/../files/acl.php';
 
 /**

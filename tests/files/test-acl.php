@@ -158,7 +158,7 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_status_code, http_response_code(), 'Status code does not match expected' );
 
-		// Not ideal to have a branch in , but good enough.
+		// Not ideal to have a branch in tests, but good enough.
 		if ( $should_have_private_header ) {
 			$this->assertContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers do not include X-Private header' );
 		} else {
