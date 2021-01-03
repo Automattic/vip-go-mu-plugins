@@ -8,7 +8,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../files/acl/pre-wp-utils.php' );
+		require_once( __DIR__ . '/../../../files/acl/pre-wp-utils.php' );
 	}
 
 	public function get_data__validate_path__invalid() {
@@ -57,32 +57,6 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 		];
 	}
 
-	public function get_data__sanitize_path() {
-		return [
-			'valid-path' => [
-				'/wp-content/uploads/kittens.gif',
-				'kittens.gif',
-			],
-
-			'valid-path-nested' => [
-				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
-				'subfolder/2099/12/cats.jpg',
-			],
-
-			'valid-path-subsite' => [
-				'/subsite/wp-content/uploads/puppies.png',
-				'puppies.png',
-			],
-
-			/* TODO: not supported yet
-			'resized-image' => [
-				'/wp-content/uploads/2021/01/dinos-100x100.jpg',
-				'dinos.jpg',
-			],
-			*/
-		];
-	}
-
 	/**
 	 * @dataProvider get_data__validate_path__invalid
 	 */
@@ -104,11 +78,46 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 		$this->assertTrue( $actual_is_valid );
 	}
 
+	public function get_data__sanitize_and_split_path() {
+		return [
+			'valid-path' => [
+				'/wp-content/uploads/kittens.gif',
+				[
+					'',
+					'kittens.gif',
+				],
+			],
+
+			'valid-path-nested' => [
+				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
+				[
+					'',
+					'subfolder/2099/12/cats.jpg',
+				],
+			],
+
+			'valid-path-subsite' => [
+				'/subsite/wp-content/uploads/puppies.png',
+				[
+					'/subsite',
+					'puppies.png',
+				],
+			],
+
+			/* TODO: not supported yet
+			'resized-image' => [
+				'/wp-content/uploads/2021/01/dinos-100x100.jpg',
+				'dinos.jpg',
+			],
+			*/
+		];
+	}
+
 	/**
-	 * @dataProvider get_data__sanitize_path
+	 * @dataProvider get_data__sanitize_and_split_path
 	 */
-	public function test__sanitize_path( $file_path, $expected_path ) {
-		$actual_path = sanitize_path( $file_path );
+	public function test__sanitize_and_split_path( $file_path, $expected_path ) {
+		$actual_path = sanitize_and_split_path( $file_path );
 
 		$this->assertEquals( $actual_path, $expected_path );
 	}
