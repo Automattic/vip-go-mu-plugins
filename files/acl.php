@@ -1,61 +1,11 @@
 <?php
 
-// Note: this file is loaded very early in WP boot process.
-// Probably should be split up :)
-
 namespace Automattic\VIP\Files\Acl;
 
 const FILE_IS_PUBLIC = 'FILE_IS_PUBLIC';
 const FILE_IS_PRIVATE_AND_ALLOWED = 'FILE_IS_PRIVATE_AND_ALLOWED';
 const FILE_IS_PRIVATE_AND_DENIED = 'FILE_IS_PRIVATE_AND_DENIED';
 const FILE_NOT_FOUND = 'FILE_NOT_FOUND';
-
-/**
- * Validate the incoming files request.
- * 
- * Note: As the function name suggests, this is called before WordPress is loaded.
- *
- * @param string $file_path
- */
-function pre_wp_validate_path( $file_path ) {
-	// Note: cannot use WordPress functions here.
-
-	if ( ! $file_path ) {
-		trigger_error( 'VIP Files ACL failed due to empty path', E_USER_WARNING );
-
-		return false;
-	}
-
-	// Relative path not allowed
-	if ( '/' !== $file_path[ 0 ] ) {
-		trigger_error( sprintf( 'VIP Files ACL failed due to relative path (for %s)', $file_path ), E_USER_WARNING );
-
-		return false;
-	}
-
-	// Missing `/wp-content/uploads/`.
-	// Using `strpos` since we can have subsite / subdirectory paths.
-	if ( false === strpos( $file_path, '/wp-content/uploads/' ) ) {
-		trigger_error( sprintf( 'VIP Files ACL failed due to invalid path (for %s)', $file_path ), E_USER_WARNING );
-
-		return false;
-	}
-
-	return true;
-}
-
-/**
- * Sanitize the path by stripping off the wp-content/uploads bits.
- *
- * Note: called before WordPress is loaded.
- */
-function pre_wp_sanitize_path( $file_path ) {
-	// Strip off subdirectory (i.e. /en/wp-content/ <= remove `/en` )
-	$wp_content_index = strpos( $file_path, '/wp-content/uploads/' );
-	$file_path = substr( $file_path, $wp_content_index + strlen( '/wp-content/uploads/' ) );
-
-	return $file_path;
-}
 
 function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
