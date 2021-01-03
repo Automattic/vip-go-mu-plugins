@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Files\Acl;
 
-require_once __DIR__ . '/../files/acl.php';
+require_once __DIR__ . '/../files/acl/pre-wp-utils.php';
 
 $file_request_uri = $_SERVER['HTTP_X_ORIGINAL_URI'] ?? null;
 
@@ -16,23 +16,24 @@ if ( ! $file_request_uri ) {
 
 $file_path = parse_url( $file_request_uri, PHP_URL_PATH );
 
-$is_valid_path = pre_wp_validate_path( $file_path );
+$is_valid_path = Pre_WP_Utils\validate_path( $file_path );
 if ( ! $is_valid_path ) {
 	http_response_code( 500 );
 
 	exit;
 }
 
-$sanitized_file_path = pre_wp_sanitize_path( $file_path );
+$sanitized_file_path = Pre_WP_Utils\sanitize_path( $file_path );
 
 // TODO: make sure HTTP HOST and path have subdir set for multisite
-// TODO: handle resized files (e.g. file-200x200.jpg)
 
 // Bootstap WordPress
 require __DIR__ . '/../../../wp-load.php';
 
+require_once __DIR__ . '/../files/acl.php';
+
 /**
- * Hook in here to define the visibility of a given file.
+ * Hook in here to adjust the visibility of a given file.
  *
  * Note: this is currently for VIP internal use only.
  *
