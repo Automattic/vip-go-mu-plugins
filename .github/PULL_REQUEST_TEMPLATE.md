@@ -78,7 +78,6 @@ Please make sure the items below have been covered before requesting a review:
 - [ ] This change has relevant unit tests (if applicable).
 - [ ] This change has relevant documentation additions / updates (if applicable).
 - [ ] (For Automatticians) I've created a changelog draft. 
-- [ ] (For Automatticians) I've received approval for this change / I'm performing a proposal-exempt action.
 
 ## Steps to Test
 <!--
