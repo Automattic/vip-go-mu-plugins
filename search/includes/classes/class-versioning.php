@@ -201,39 +201,68 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable, bool $provide_default = true ) {
-		$sources = [
-			'per_site_versions' => get_option( self::INDEX_VERSIONS_OPTION, array() ),
-			'deprecated_multisite_storage' => get_site_option( self::INDEX_VERSIONS_OPTION, array() ),
-			'global_versions' => get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() ),
-		];
-
 		$versions = [];
 
-		foreach ( $sources as $source ) {
-			if ( is_array( $source ) ) {
-				$versions = array_merge( $versions, $source );
-			}
+		if ( $indexable->global ) {
+			$versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
+		} else {
+			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 		}
 
 		$slug = $indexable->slug;
 
-		if ( ! isset( $versions[ $slug ] ) || ! is_array( $versions[ $slug ] ) || empty( $versions[ $slug ] ) ) {
-			if ( $provide_default ) {
-				return array(
-					1 => array(
-						'number' => 1,
-						'active' => true,
-						'created_time' => null, // We don't know when it was actually created
-						'activated_time' => null,
-					),
-				);
-			} else {
-				return [];
-			}
-		}
+		if ( ! $this->_get_versions_is_slug_defined( $versions, $slug ) ) {
+			// Check deprecated location
+			$deprecated_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
 
-		// Normalize the versions to ensure consistency (have all fields, etc)
-		return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
+			if ( $this->_get_versions_is_slug_defined( $deprecated_versions, $slug ) ) {
+				// Versions are only stored in the deprecated network storage
+				// TODO remove this deprecated check if it is not executed to simplify the code.
+
+				$message = sprintf(
+					"Application %d - %s found index versions in deprecated global storage for '%s' indexable. I will store versions in correct storage based on global flag.",
+					FILES_CLIENT_SITE_ID,
+					home_url(),
+					$slug
+				);
+
+				\Automattic\VIP\Logstash\log2logstash(
+					array(
+						'severity' => 'warning',
+						'feature' => 'vip_search_versioning',
+						'message' => $message,
+					)
+				);
+
+				$normalized_versions = array_map( array( $this, 'normalize_version' ), $deprecated_versions[ $slug ] );
+
+				// Store versions in correct place to avoid triggering this code again
+				$this->update_versions( $indexable, $normalized_versions );
+
+				return $normalized_versions;
+			} else {
+
+				if ( $provide_default ) {
+					return array(
+						1 => array(
+							'number' => 1,
+							'active' => true,
+							'created_time' => null, // We don't know when it was actually created
+							'activated_time' => null,
+						),
+					);
+				} else {
+					return [];
+				}
+			}
+		} else {
+			// Normalize the versions to ensure consistency (have all fields, etc)
+			return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
+		}
+	}
+
+	private function _get_versions_is_slug_defined( $versions, $slug ) {
+		return is_array( $versions ) && isset( $versions[ $slug ] ) && is_array( $versions[ $slug ] ) && ! empty( $versions[ $slug ] );
 	}
 
 	/**
