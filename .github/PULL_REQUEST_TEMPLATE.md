@@ -3,8 +3,13 @@
 
 :wave: Just a quick reminder that this is a public repo. Please don't include any internal links or sensitive data (like PII, private code, client names, site URLs, etc. If you're not sure if something is safe to share, please just ask!
 
-If you're not an Automattician, welcome! We look forward to your contribution! :heart:
+### BEFORE YOU PROCEED!!
 
+If you’re editing a feature without changing the spirit of the implementation, fixing bugs, improving security, or performing upgrades, then please proceed!
+
+If you’re adding a feature or changing the spirit of an existing implementation, please create a proposal in P2 using the MU Plugins Proposal P2tenberg Pattern. Please mention the [CODEOWNERS](.github/CODEOWNERS) of this repository and relevant stakeholders in your proposal :). Please do not PR until your proposal has been approved. Thank you :bow:!
+
+If you're not an Automattician, welcome! We look forward to your contribution! :heart:
 -->
 ## Description
 <!--
