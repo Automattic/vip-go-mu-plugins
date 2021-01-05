@@ -18,3 +18,7 @@ phpdoc
 
 # npm
 node_modules
+
+# Jetpack dev files
+jetpack-*/tools
+jetpack-*/bin
