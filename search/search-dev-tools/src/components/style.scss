@@ -1,0 +1,20 @@
+.vip_search_dev_tools {
+	padding: 20px;
+}
+
+.query {
+	&_wrap {
+		margin-bottom: 20px;
+		border: 1px solid red;
+		padding: 10px;
+	}
+	&_val,
+	&_result
+	 {
+		white-space: pre;
+		max-height: 300px;
+		width: 100%;
+		overflow-y: scroll;
+		margin-bottom: 20px;
+	}
+}

@@ -19,5 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/classes/class-search.php';
+require_once __DIR__ . '/search-dev-tools/search-dev-tools.php';
 
 do_action( 'vip_search_loaded' );

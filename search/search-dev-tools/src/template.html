@@ -1,41 +1,376 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<title><% preact.title %></title>
-		<meta name="viewport" content="width=device-width,initial-scale=1">
-		<meta name="mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
-		<% preact.headEnd %>
-	</head>
-	<body>
-		<script>
-			window.VIPSearchDevTools = {
-				status: 'enabled',
-				information: [
-					{
-						label: 'Elasticsearch Version',
-						value: '7.8.0'
+
+<head>
+	<meta charset="utf-8">
+	<title><% preact.title %></title>
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+	<% preact.headEnd %>
+</head>
+
+<body>
+	<script>
+		window.VIPSearchDevTools = {
+			"status": "enabled",
+			"queries": [{
+					"time_start": 1609957890.420908,
+					"time_finish": 1609957890.440334,
+					"args": {
+						"method": "GET",
+						"headers": {
+							"Content-Type": "application\/json"
+						},
+						"body": null
 					},
-					{
-						label: 'Is in network mode?',
-						value: 'no'
+					"blocking": true,
+					"failed_hosts": [],
+					"request": {
+						"headers": {},
+						"body": [{
+							"health": "yellow",
+							"status": "open",
+							"index": "vip-200508-post-1",
+							"uuid": "SVaZ6_6FS5CFDF3WaXmjfQ",
+							"pri": "1",
+							"rep": "2",
+							"docs.count": "2",
+							"docs.deleted": "1",
+							"store.size": "32.3kb",
+							"pri.store.size": "32.3kb"
+						}],
+						"response": {
+							"code": 200,
+							"message": "OK"
+						},
+						"cookies": [],
+						"filename": null,
+						"http_response": {
+							"data": null,
+							"headers": null,
+							"status": null
+						}
 					},
-					{
-						label: 'Rate-limiting active',
-						value: '❌ yes'
+					"host": "http:\/\/vip-search:9200",
+					"query_args": [],
+					"url": "http:\/\/vip-search:9200\/_cat\/indices?format=json"
+				},
+				{
+					"time_start": 1609957890.445082,
+					"time_finish": 1609957890.472912,
+					"args": {
+						"body": {
+							"from": 0,
+							"size": 10,
+							"sort": [{
+								"_score": {
+									"order": "desc"
+								}
+							}],
+							"query": {
+								"function_score": {
+									"query": {
+										"bool": {
+											"should": [{
+													"bool": {
+														"must": [{
+															"bool": {
+																"must": [{
+																		"multi_match": {
+																			"query": "test",
+																			"type": "phrase",
+																			"fields": [
+																				"post_title^1",
+																				"post_excerpt^1",
+																				"post_content^1",
+																				"post_author.display_name^1",
+																				"terms.post_tag.name^1",
+																				"terms.category.name^1",
+																				"terms.ep_custom_result.name^9999"
+																			],
+																			"boost": 4,
+																			"operator": "AND"
+																		}
+																	},
+																	{
+																		"multi_match": {
+																			"query": "test",
+																			"fields": [
+																				"post_title^1",
+																				"post_excerpt^1",
+																				"post_content^1",
+																				"post_author.display_name^1",
+																				"terms.post_tag.name^1",
+																				"terms.category.name^1",
+																				"terms.ep_custom_result.name^9999"
+																			],
+																			"boost": 2,
+																			"fuzziness": 0,
+																			"operator": "and"
+																		}
+																	},
+																	{
+																		"multi_match": {
+																			"query": "test",
+																			"fields": [
+																				"post_title^1",
+																				"post_excerpt^1",
+																				"post_content^1",
+																				"post_author.display_name^1",
+																				"terms.post_tag.name^1",
+																				"terms.category.name^1",
+																				"terms.ep_custom_result.name^9999"
+																			],
+																			"fuzziness": 0
+																		}
+																	}
+																]
+															}
+														}],
+														"filter": [{
+															"match": {
+																"post_type.raw": "post"
+															}
+														}]
+													}
+												},
+												{
+													"bool": {
+														"must": [{
+															"bool": {
+																"must": [{
+																		"multi_match": {
+																			"query": "test",
+																			"type": "phrase",
+																			"fields": [
+																				"post_title^1",
+																				"post_excerpt^1",
+																				"post_content^1",
+																				"post_author.display_name^1",
+																				"terms.ep_custom_result.name^9999"
+																			],
+																			"boost": 4,
+																			"operator": "AND"
+																		}
+																	},
+																	{
+																		"multi_match": {
+																			"query": "test",
+																			"fields": [
+																				"post_title^1",
+																				"post_excerpt^1",
+																				"post_content^1",
+																				"post_author.display_name^1",
+																				"terms.ep_custom_result.name^9999"
+																			],
+																			"boost": 2,
+																			"fuzziness": 0,
+																			"operator": "and"
+																		}
+																	},
+																	{
+																		"multi_match": {
+																			"query": "test",
+																			"fields": [
+																				"post_title^1",
+																				"post_excerpt^1",
+																				"post_content^1",
+																				"post_author.display_name^1",
+																				"terms.ep_custom_result.name^9999"
+																			],
+																			"fuzziness": 0
+																		}
+																	}
+																]
+															}
+														}],
+														"filter": [{
+															"match": {
+																"post_type.raw": "page"
+															}
+														}]
+													}
+												}
+											]
+										}
+									},
+									"functions": [{
+										"gauss": {
+											"post_date_gmt": {
+												"scale": "360d",
+												"decay": 0.9,
+												"offset": "0d"
+											}
+										}
+									}],
+									"score_mode": "multiply",
+									"boost_mode": "multiply"
+								}
+							},
+							"post_filter": {
+								"bool": {
+									"must": [{
+											"terms": {
+												"post_type.raw": [
+													"post",
+													"page"
+												]
+											}
+										},
+										{
+											"terms": {
+												"post_status": [
+													"publish"
+												]
+											}
+										}
+									]
+								}
+							},
+							"track_total_hits": true
+						},
+						"method": "POST",
+						"headers": {
+							"Content-Type": "application\/json",
+							"EP-Search-Term": "test"
+						}
 					},
-				],
-				queries: [
-					{
-						query: '{"some": { "query": [] }}',
-						results: '{ "hits": 0 }'
-					}
-				],
-			};
-		</script>
-		<div data-widget-host="vip-search-dev-tools"></div>
-		<% preact.bodyEnd %>
-	</body>
+					"blocking": true,
+					"failed_hosts": [],
+					"request": {
+						"headers": {},
+						"body": {
+							"took": 10,
+							"timed_out": false,
+							"_shards": {
+								"total": 1,
+								"successful": 1,
+								"skipped": 0,
+								"failed": 0
+							},
+							"hits": {
+								"total": {
+									"value": 0,
+									"relation": "eq"
+								},
+								"max_score": null,
+								"hits": []
+							}
+						},
+						"response": {
+							"code": 200,
+							"message": "OK"
+						},
+						"cookies": [],
+						"filename": null,
+						"http_response": {
+							"data": null,
+							"headers": null,
+							"status": null
+						}
+					},
+					"host": "http:\/\/vip-search:9200",
+					"query_args": {
+						"s": "test",
+						"error": "",
+						"m": "",
+						"p": 0,
+						"post_parent": "",
+						"subpost": "",
+						"subpost_id": "",
+						"attachment": "",
+						"attachment_id": 0,
+						"name": "",
+						"pagename": "",
+						"page_id": 0,
+						"second": "",
+						"minute": "",
+						"hour": "",
+						"day": 0,
+						"monthnum": 0,
+						"year": 0,
+						"w": 0,
+						"category_name": "",
+						"tag": "",
+						"cat": "",
+						"tag_id": "",
+						"author": "",
+						"author_name": "",
+						"feed": "",
+						"tb": "",
+						"paged": 0,
+						"meta_key": "",
+						"meta_value": "",
+						"preview": "",
+						"sentence": "",
+						"title": "",
+						"fields": "",
+						"menu_order": "",
+						"embed": "",
+						"category__in": [],
+						"category__not_in": [],
+						"category__and": [],
+						"post__in": [],
+						"post__not_in": [],
+						"post_name__in": [],
+						"tag__in": [],
+						"tag__not_in": [],
+						"tag__and": [],
+						"tag_slug__in": [],
+						"tag_slug__and": [],
+						"post_parent__in": [],
+						"post_parent__not_in": [],
+						"author__in": [],
+						"author__not_in": [],
+						"cache_results": false,
+						"ignore_sticky_posts": false,
+						"suppress_filters": false,
+						"update_post_term_cache": true,
+						"lazy_load_term_meta": true,
+						"update_post_meta_cache": true,
+						"post_type": "any",
+						"posts_per_page": 10,
+						"nopaging": false,
+						"comments_per_page": "50",
+						"no_found_rows": false,
+						"search_terms_count": 1,
+						"search_terms": [
+							"test"
+						],
+						"search_orderby_title": [
+							"wp_posts.post_title LIKE '{71448905dfb15645ca869506cc0e0f6c4da489632f2e528333a40c00e78b0126}test{71448905dfb15645ca869506cc0e0f6c4da489632f2e528333a40c00e78b0126}'"
+						],
+						"order": "DESC"
+					},
+					"url": "http:\/\/vip-search:9200\/vip-200508-post-1\/_search"
+				}
+			],
+    "information": [
+			{
+			"label": "Currently ratelimited?",
+			"value": "no"
+			},
+			{
+			"label": "Indexable post types",
+			"value": "post, page"
+			},
+			{
+			"label": "Indexable post status",
+			"value": "publish"
+			},
+			{
+			"label": "Meta Key Allow List",
+			"value": "x-custom-key"
+			}
+    ],
+			"nonce": "9a709a2c93",
+			"ajaxurl": "http:\/\/vip-go-dev.lndo.site\/index.php?rest_route=\/vip\/v1\/search\/repl&XDEBUG_SESSION_START=LANDO"
+		};
+	</script>
+	<div data-widget-host="vip-search-dev-tools"></div>
+	<% preact.bodyEnd %>
+</body>
+
 </html>
