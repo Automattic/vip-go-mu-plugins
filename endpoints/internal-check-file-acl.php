@@ -26,7 +26,7 @@ if ( ! $is_valid_path ) {
 list( $subdirectory, $sanitized_file_path ) = Pre_WP_Utils\sanitize_and_split_path( $file_path );
 
 if ( $subdirectory ) {
-	$_SERVER['REQUEST_URI'] = $subdirectory . $_SERVER['REQUEST_URI'];
+	$_SERVER['REQUEST_URI'] = $subdirectory . ( $_SERVER['REQUEST_URI'] ?? '' );
 }
 
 // Unset vars we no longer need, so they don't leak into global scope.
@@ -47,7 +47,7 @@ require_once __DIR__ . '/../files/acl.php';
  * @access private 
  *
  * @param string|boolean $file_visibility Return one of Automattic\VIP\Files\Acl\(FILE_IS_PUBLIC | FILE_IS_PRIVATE_AND_ALLOWED | FILE_IS_PRIVATE_AND_DENIED | FILE_NOT_FOUND) to set visibility.
- * @param string $validated_file_path The requested file path (note: on multisite subdirectory installs, this does not includes the subdirectory).
+ * @param string $sanitized_file_path The requested file path (note: on multisite subdirectory installs, this does not includes the subdirectory).
  */
 $file_visibility = apply_filters( 'vip_files_acl_file_visibility', FILE_IS_PUBLIC, $sanitized_file_path );
 

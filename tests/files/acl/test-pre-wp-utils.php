@@ -25,12 +25,12 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	
 			'path-no-wp-content' => [
 				'/a/path/to/a/file.jpg',
-				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)'
+				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
 			],
 	
 			'relative-url-with-wp-content' => [
 				'en/wp-content/uploads/file.png',
-				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)'
+				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)',
 			],
 		];
 	}

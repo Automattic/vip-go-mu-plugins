@@ -23,8 +23,9 @@ function validate_path( $file_path ) {
 	}
 
 	// Relative path not allowed
-	if ( '/' !== $file_path[ 0 ] ) {
-		trigger_error( sprintf( 'VIP Files ACL failed due to relative path (for %s)', $file_path ), E_USER_WARNING );
+	if ( '/' !== $file_path[0] ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		trigger_error( sprintf( 'VIP Files ACL failed due to relative path (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
 
 		return false;
 	}
@@ -32,7 +33,8 @@ function validate_path( $file_path ) {
 	// Missing `/wp-content/uploads/`.
 	// Using `strpos` since we can have subsite / subdirectory paths.
 	if ( false === strpos( $file_path, '/wp-content/uploads/' ) ) {
-		trigger_error( sprintf( 'VIP Files ACL failed due to invalid path (for %s)', $file_path ), E_USER_WARNING );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		trigger_error( sprintf( 'VIP Files ACL failed due to invalid path (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
 
 		return false;
 	}
