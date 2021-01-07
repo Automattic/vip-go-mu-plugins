@@ -21,7 +21,7 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase
      */
     public function testIpv4($matches, $remoteAddr, $cidr)
     {
-        $this->assertSame($matches, IpUtils::checkIp($remoteAddr, $cidr));
+        $this->assertSame($matches, IpUtils::check_ip($remoteAddr, $cidr));
     }
 
     public function testIpv4Provider()
@@ -51,7 +51,7 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase
             $this->markTestSkipped('Only works when PHP is compiled without the option "disable-ipv6".');
         }
 
-        $this->assertSame($matches, IpUtils::checkIp($remoteAddr, $cidr));
+        $this->assertSame($matches, IpUtils::check_ip($remoteAddr, $cidr));
     }
 
     public function testIpv6Provider()
@@ -80,6 +80,6 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase
             $this->markTestSkipped('Only works when PHP is compiled with the option "disable-ipv6".');
         }
 
-        IpUtils::checkIp('2a01:198:603:0:396e:4789:8e99:890f', '2a01:198:603:0::/65');
+        IpUtils::check_ip('2a01:198:603:0:396e:4789:8e99:890f', '2a01:198:603:0::/65');
     }
 }
