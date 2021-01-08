@@ -4,9 +4,7 @@ workflows:
     jobs:
       - php73-lint
       - php73-core-tests
-      - php73-core-tests-mu-plugins
       - php73-core-multisite-tests
-      - php73-core-multisite-tests-mu-plugins
       - php73-build-multisite
       - php73-build-singlesite
       - php74-lint
@@ -54,11 +52,11 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
-      sudo -E docker-php-ext-install mysqli
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
+      sudo -E docker-php-ext-install mysqli gd
       npm ci
       composer install -n
-  
+
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
@@ -106,6 +104,7 @@ job-references:
               cp -r $HOME/project/ build/wp-content/mu-plugins
               rm -rf tests/phpunit/data/plugins/wordpress-importer
               source $HOME/project/bin/utils.sh
+              update_core_tests "$WP_TESTS_DIR"
               exclude_core_tests tests/phpunit/multisite.xml
               exclude_core_tests phpunit.xml.dist tests/phpunit/
             fi
@@ -121,7 +120,7 @@ job-references:
       - run: *prepare_repo
       - run: npm ci
       - run: composer install -n
-      - run: 
+      - run:
           name: "Lint"
           command: npm run lint
 
@@ -134,15 +133,6 @@ jobs:
   php73-core-tests:
     <<: *php_core_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-    docker:
-      - image: wordpressdevelop/php:7.3-fpm
-      - image: *db_image
-
-  php73-core-tests-mu-plugins:
-    <<: *php_core_job
-    environment:
       - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
@@ -151,15 +141,6 @@ jobs:
       - image: *db_image
 
   php73-core-multisite-tests:
-    <<: *php_core_job
-    environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
-    docker:
-      - image: wordpressdevelop/php:7.3-fpm
-      - image: *db_image
-    
-  php73-core-multisite-tests-mu-plugins:
     <<: *php_core_job
     environment:
       - INCLUDE_MU_TESTS: "1"

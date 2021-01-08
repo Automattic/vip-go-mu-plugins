@@ -1,6 +1,6 @@
 # VIP Go mu-plugins
 
-This is the development repo for mu-plugins on [VIP Go](http://vip.wordpress.com/documentation/vip-go/),
+This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/documentation/vip-go/),
 
 ## Development
 
@@ -55,6 +55,32 @@ You can also pass the path to a specific test as well as extra PHPUnit arguments
 ##### CI
 
 PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. See [`.circleci/config.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.circleci/config.yml) for more.
+
+##### Core tests
+
+We run core tests as part of the CI pipeline. We run core tests both with and without mu-plugins installed. There are many failures when running with mu-plugins so we had to ignore several tests. To add another test there chack `bin/utils.sh`.
+
+To investigate failing test locally you can do following (buckle up as this is not so easy:()):
+
+1. While in your mu-plugins folder do `MU_PLUGINS_DIR=$(pwd)`
+
+1. Switch to where you want to checkout core code e.g. `cd ~/svn/wp`
+
+1. Checkout the core code (pick the latest version): `svn co --quiet --ignore-externals https://develop.svn.wordpress.org/tags/5.5.3 .`
+
+1. Create test config: `cp wp-tests-config-sample.php wp-tests-config.php && sed -i 's/youremptytestdbnamehere/wordpress_test/; s/yourusernamehere/root/; s/yourpasswordhere//; s/localhost/127.0.0.1/' wp-tests-config.php`
+
+1. Build core `npm ci && npm run build`
+
+1. Export env variable `export WP_TESTS_DIR="$(pwd)/tests/phpunit"`
+
+1. Start local DB: `docker run -d -p 3306:3306 circleci/mariadb:10.2`
+
+1. Create empty DB `mysqladmin create wordpress_test --user="root" --password="" --host="127.0.0.1" --protocol=tcp`
+
+1. Copy over MU-plugins `cp -r $MU_PLUGINS_DIR build/wp-content/mu-plugins`
+
+1. Run the test you want (in this case `test_allowed_anon_comments`) `$MU_PLUGINS_DIR/vendor/bin/phpunit --filter test_allowed_anon_comments`
 
 ### PHPDoc
 
