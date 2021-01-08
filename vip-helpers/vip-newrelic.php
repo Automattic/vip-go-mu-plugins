@@ -24,7 +24,7 @@ function wpcom_vip_disable_new_relic_js() {
 
 
 /**
- * The following functions are for platform level changes and should only be changed after consulting with WordPress.com VIP
+ * The following functions are for platform level changes and should only be changed after consulting with WordPress VIP
  */
 
 if ( extension_loaded( 'newrelic' ) ){

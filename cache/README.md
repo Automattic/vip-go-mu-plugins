@@ -1,10 +1,10 @@
 # VIP Cache Personalization API
 
-The [VIP CDN](https://vip.wordpress.com/documentation/vip-go/caching-on-vip-go/) has been designed for low-latency and high performance and achieves that by serving the same cached content to as many users as possible.
+The [VIP CDN](https://docs.wpvip.com/technical-references/caching/) has been designed for low-latency and high performance and achieves that by serving the same cached content to as many users as possible.
 
-For cases where a one-size-fits-all approach doesn't work, the [VIP Cache Personalization API](https://vip.wordpress.com/?p=33575) can help customize the caching behaviour of the CDN while still leveraging the power and scale that it provides.
+For cases where a one-size-fits-all approach doesn't work, the [VIP Cache Personalization API](https://docs.wpvip.com/technical-references/caching/the-vip-cache-personalization-api/) can help customize the caching behaviour of the CDN while still leveraging the power and scale that it provides.
 
-In this README, we go through some real-world examples on how to use the Cache Personalization API in your applications. Before reading ahead, make sure you've [read the docs](https://vip.wordpress.com/?p=33575) to get a better understanding of the API and its capabilities.
+In this README, we go through some real-world examples on how to use the Cache Personalization API in your applications. Before reading ahead, make sure you've [read the docs](https://docs.wpvip.com/technical-references/caching/the-vip-cache-personalization-api/) to get a better understanding of the API and its capabilities.
 
 ## Tutorial (Cache Segmentation): Beta Opt-in
 
