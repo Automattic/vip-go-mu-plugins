@@ -9,4 +9,4 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
-require_once( __DIR__ . '/vip-plugins/vip-plugins.php' );
+require_once __DIR__ . '/vip-plugins/vip-plugins.php';
