@@ -2015,13 +2015,16 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
 		$expected_level = 2;
 
+		$time = time();
+
 		if ( false !== $difference ) {
-			$query_limited_start = time() - $difference;
+			$query_limited_start = $time - $difference;
 			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::QUERY_COUNT_CACHE_GROUP );
 		}
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
+		$es->set_time( $time );
 
 		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
 
@@ -2043,6 +2046,7 @@ class Search_Test extends \WP_UnitTestCase {
 		}
 
 		$es->maybe_alert_for_prolonged_query_limiting();
+		$es->reset_time();
 	}
 
 	/* Format:
