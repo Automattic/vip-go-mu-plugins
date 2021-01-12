@@ -85,6 +85,12 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @param array $assoc_args CLI arguments
 	 */
 	private function validate_indexable_count( $indexable_slug, $assoc_args ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		if ( ! $indexable ) {
+			WP_CLI::line( "Cannot find indexable '$indexable_slug', probably the feature is not enabled\n" );
+			return;
+		}
+
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		if ( isset( $assoc_args['version'] ) ) {
@@ -106,6 +112,12 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 					continue;
 				}
 
+				if ( ! $indexable->index_exists( $site['blog_id'] ) ) {
+					$blog_id = $site['blog_id'];
+					WP_CLI::line( "Skipping validation of '$indexable_slug' index for site $blog_id as it doesn't exist.\n\n" );
+					continue;
+				}
+
 				WP_CLI::line( "\nValidating $indexable_slug count for site " . $site['blog_id'] . ' (' . $site['domain'] . $site['path'] . ')\n' );
 
 				switch_to_blog( $site['blog_id'] );
@@ -115,6 +127,11 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				restore_current_blog();
 			}
 		} else {
+			if ( ! $indexable->index_exists() ) {
+				WP_CLI::line( "Skipping validation of '$indexable_slug' index as it doesn't exist.\n" );
+				return;
+			}
+
 			WP_CLI::line( "Validating $indexable_slug count\n" );
 
 			$this->validate_indexable_count_for_site( $indexable_slug, $version );

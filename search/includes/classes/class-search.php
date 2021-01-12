@@ -43,6 +43,7 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_query_count;
@@ -413,6 +414,37 @@ class Search {
 
 		$this->queue_wait_time = new QueueWaitTimeJob();
 		$this->queue_wait_time->init();
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, set the time used in functionality.
+	 *
+	 * @param int $time The fixed time you want to use in testing.
+	 */ 
+	public function set_time( $time ) {
+		if ( is_numeric( $time ) ) {
+			$this->time = intval( $time );
+		}
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, get the fixed time if set or return the current time.
+	 *
+	 * @return int Either the fixed time previously set if defined or the current timestamp
+	 */
+	public function get_time() {
+		if ( isset( $this->time ) && is_numeric( $this->time ) ) {
+			return intval( $this->time );
+		}
+
+		return time();
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, allow fixed times to be reset to current time.
+	 */
+	public function reset_time() {
+		$this->time = null;
 	}
 
 	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
@@ -841,7 +873,7 @@ class Search {
 			return;
 		}
 
-		$query_limiting_time = time() - $query_limiting_start;
+		$query_limiting_time = $this->get_time() - $query_limiting_start;
 
 		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
 			return;
@@ -1466,7 +1498,7 @@ class Search {
 	 */
 	public function handle_query_limiting_start_timestamp() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
-			$start_timestamp = time();
+			$start_timestamp = $this->get_time();
 			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP );
 		}
 	}
