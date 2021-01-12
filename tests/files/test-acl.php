@@ -68,7 +68,7 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__send_visibility_headers__invaid_visibility() {
+	public function test__send_visibility_headers__invalid_visibility() {
 		define( 'NOT_A_VISIBILITY', 'NOT_A_VISIBILITY' );
 
 		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
