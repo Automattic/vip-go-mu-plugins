@@ -44,9 +44,17 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 			'valid-path-nested' => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 			],
-	
-			'valid-path-subsite' => [
+
+			'valid-single-directory-subsite' => [
 				'/subsite/wp-content/uploads/puppies.png',
+			],
+
+			'valid-multi-directory-subsite' => [
+				'/sub/site/wp-content/uploads/fishies.png',
+			],
+
+			'multi-wp-content-directories' => [
+				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 			],
 	
 			/* TODO: not supported yet
