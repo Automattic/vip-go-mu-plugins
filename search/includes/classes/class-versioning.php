@@ -9,6 +9,7 @@ use \WP_Error as WP_Error;
 
 class Versioning {
 	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
+	const INDEX_VERSIONS_OPTION_GLOBAL = 'vip_search_global_index_versions';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
@@ -199,11 +200,50 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_versions( Indexable $indexable, bool $provide_default = true ) {
-		$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+		$versions = [];
+
+		if ( $indexable->global ) {
+			$versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
+		} else {
+			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+		}
 
 		$slug = $indexable->slug;
 
-		if ( ! isset( $versions[ $slug ] ) || ! is_array( $versions[ $slug ] ) || empty( $versions[ $slug ] ) ) {
+		if ( ! $this->versions_array_has_slug( $versions, $slug ) ) {
+
+			if ( Search::is_network_mode() ) {
+				// Check deprecated location
+				$deprecated_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
+
+				if ( $this->versions_array_has_slug( $deprecated_versions, $slug ) ) {
+					// Versions are only stored in the deprecated network storage
+					// TODO remove this deprecated check if it is not executed to simplify the code.
+
+					$message = sprintf(
+						"Application %d - %s found index versions in deprecated global storage for '%s' indexable. I will store versions in correct storage based on global flag.",
+						FILES_CLIENT_SITE_ID,
+						home_url(),
+						$slug
+					);
+
+					\Automattic\VIP\Logstash\log2logstash(
+						array(
+							'severity' => 'warning',
+							'feature' => 'vip_search_versioning',
+							'message' => $message,
+						)
+					);
+
+					$normalized_versions = array_map( array( $this, 'normalize_version' ), $deprecated_versions[ $slug ] );
+
+					// Store versions in correct place to avoid triggering this code again
+					$this->update_versions( $indexable, $normalized_versions );
+
+					return $normalized_versions;
+				}
+			}
+
 			if ( $provide_default ) {
 				return array(
 					1 => array(
@@ -216,10 +256,15 @@ class Versioning {
 			} else {
 				return [];
 			}
+
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
 		return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
+	}
+
+	private function versions_array_has_slug( $versions, $slug ) {
+		return is_array( $versions ) && isset( $versions[ $slug ] ) && is_array( $versions[ $slug ] ) && ! empty( $versions[ $slug ] );
 	}
 
 	/**
@@ -460,19 +505,19 @@ class Versioning {
 	 * @return bool Boolean indicating if the version information was saved successfully or not
 	 */
 	public function update_versions( Indexable $indexable, $versions ) {
-		if ( Search::is_network_mode() ) {
-			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
+		if ( $indexable->global ) {
+			$current_versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
 		} else {
 			$current_versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
 		}
 
 		$current_versions[ $indexable->slug ] = $versions;
 
-		if ( Search::is_network_mode() ) {
-			return update_site_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
+		if ( $indexable->global ) {
+			return update_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, $current_versions, 'no' );
+		} else {
+			return update_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
 		}
-
-		return update_option( self::INDEX_VERSIONS_OPTION, $current_versions, 'no' );
 	}
 
 	/**
