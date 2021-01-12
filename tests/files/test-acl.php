@@ -35,13 +35,6 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 				403,
 				true,
 			],
-
-			'file-not-found' => [
-				'FILE_NOT_FOUND',
-				'/wp-content/uploads/404.jpg',
-				202,
-				false,
-			],
 		];
 	}
 

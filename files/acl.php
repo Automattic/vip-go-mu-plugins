@@ -5,7 +5,6 @@ namespace Automattic\VIP\Files\Acl;
 const FILE_IS_PUBLIC = 'FILE_IS_PUBLIC';
 const FILE_IS_PRIVATE_AND_ALLOWED = 'FILE_IS_PRIVATE_AND_ALLOWED';
 const FILE_IS_PRIVATE_AND_DENIED = 'FILE_IS_PRIVATE_AND_DENIED';
-const FILE_NOT_FOUND = 'FILE_NOT_FOUND';
 
 function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
@@ -25,12 +24,6 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 		case FILE_IS_PRIVATE_AND_DENIED:
 			$status_code = 403;
 			$header = 'X-Private: true';
-			break;
-
-		case FILE_NOT_FOUND:
-			// This is a signal for the server to pass the request through to the Files Service.
-			// Even though the attachment was not found within WordPress, it may still be a physical file in the Files Service.
-			$status_code = 202;
 			break;
 
 		default:
