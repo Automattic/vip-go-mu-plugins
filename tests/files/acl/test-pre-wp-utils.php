@@ -96,11 +96,27 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				],
 			],
 
-			'valid-path-subsite' => [
+			'valid-single-directory-subsite' => [
 				'/subsite/wp-content/uploads/puppies.png',
 				[
 					'/subsite',
 					'puppies.png',
+				],
+			],
+
+			'valid-multi-directory-subsite' => [
+				'/sub/site/wp-content/uploads/fishies.png',
+				[
+					'/sub/site',
+					'fishies.png',
+				],
+			],
+
+			'multi-wp-content-directories' => [
+				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
+				[
+					'',
+					'path/to/wp-content/uploads/otters.png',
 				],
 			],
 

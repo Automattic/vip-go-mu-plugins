@@ -45,14 +45,12 @@ function validate_path( $file_path ) {
 /**
  * Sanitize the path by stripping off the wp-content/uploads bits.
  *
+ * For example, given a path like `/en/wp-content/file.jpg`, we'll get back `/en` and `file.jpg`
+ *
  * @param array $file_paths Indexed array with two entries: 0 is the path before `/wp-content/uploads/` and 1 is the path + file after.
  */
 function sanitize_and_split_path( $file_path ) {
-	// Strip off subdirectory (i.e. /en/wp-content/ <= remove `/en` )
-	$wp_content_index = strpos( $file_path, '/wp-content/uploads/' );
-
-	$pre_wpcontent_path = substr( $file_path, 0, $wp_content_index );
-	$post_wpcontent_path = substr( $file_path, $wp_content_index + strlen( '/wp-content/uploads/' ) );
+	list( $pre_wpcontent_path, $post_wpcontent_path ) = explode( '/wp-content/uploads/', $file_path, 2 );
 
 	return [
 		$pre_wpcontent_path,
