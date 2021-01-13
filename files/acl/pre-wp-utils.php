@@ -9,13 +9,40 @@
 namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
 /**
+ * Validates and sanitizes the submitted file URI.
+ *
+ * Encapsulates the logic into a helper function to avoid executing this in a global context and make it testable.
+ *
+ * @param string $file_request_uri The unvalidated / unsanitized file path.
+ *
+ * @return boolean|array false on invalid request, otherwise returns value from Pre_WP_Utils\sanitize_and_split_path
+ */
+function pre_wp_prepare_request( $file_request_uri ) {
+	if ( ! $file_request_uri ) {
+		trigger_error( 'VIP Files ACL failed due to empty URI', E_USER_WARNING );
+
+		return false;
+	}
+
+	$file_path = parse_url( $file_request_uri, PHP_URL_PATH );
+
+	$is_valid_path = validate_path( $file_path );
+	if ( ! $is_valid_path ) {
+		// validate_path calls trigger_error so no need to do it here
+		return false;
+	}
+
+	return sanitize_and_split_path( $file_path );
+}
+
+/**
  * Validate the incoming files request.
  *
  * @param string $file_path The file path to validate.
+ *
+ * @return boolean is the path valid?
  */
 function validate_path( $file_path ) {
-	// Note: cannot use WordPress functions here.
-
 	if ( ! $file_path ) {
 		trigger_error( 'VIP Files ACL failed due to empty path', E_USER_WARNING );
 
@@ -47,7 +74,9 @@ function validate_path( $file_path ) {
  *
  * For example, given a path like `/en/wp-content/file.jpg`, we'll get back `/en` and `file.jpg`
  *
- * @param array $file_paths Indexed array with two entries: 0 is the path before `/wp-content/uploads/` and 1 is the path + file after.
+ * @param string $file_path The path for the file.
+ *
+ * @return array $file_paths Indexed array with two entries: 0 is the path before `/wp-content/uploads/` and 1 is the path + file after.
  */
 function sanitize_and_split_path( $file_path ) {
 	list( $pre_wpcontent_path, $post_wpcontent_path ) = explode( '/wp-content/uploads/', $file_path, 2 );
