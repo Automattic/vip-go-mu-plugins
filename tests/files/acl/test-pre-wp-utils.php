@@ -11,6 +11,40 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 		require_once( __DIR__ . '/../../../files/acl/pre-wp-utils.php' );
 	}
 
+	public function test__pre_wp_prepare_request__empty_request_uri() {
+		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectExceptionMessage( 'VIP Files ACL failed due to empty URI' );
+
+		$request_uri = '';
+
+		$actual_result = pre_wp_prepare_request( $request_uri );
+
+		$this->assertFalse( $actual_result );
+	}
+
+	public function test__pre_wp_prepare_request__invalid_request_uri() {
+		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectExceptionMessage( 'VIP Files ACL failed due to relative path (for invalid/path.jpg)' );
+
+		$request_uri = 'invalid/path.jpg';
+
+		$actual_result = pre_wp_prepare_request( $request_uri );
+
+		$this->assertFalse( $actual_result );
+	}
+
+	public function test__pre_wp_prepare_request__valid() {
+		$request_uri = '/sub/wp-content/uploads/file.jpg';
+		$expected_result = [
+			'/sub',
+			'file.jpg',
+		];
+
+		$actual_result = pre_wp_prepare_request( $request_uri );
+
+		$this->assertEquals( $actual_result, $expected_result );
+	}
+
 	public function get_data__validate_path__invalid() {
 		return [
 			'null-uri' => [
