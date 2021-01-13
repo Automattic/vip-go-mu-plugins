@@ -19,7 +19,7 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 		return false;
 	}
 
-	require_once( __DIR__ . '/class-iputils.php' );
+	require_once( __DIR__ . '/ip-utils.php' );
 
 	// Verify that the remote proxy matches our whitelist
 	$is_whitelisted_proxy_ip = IpUtils::check_ip( $remote_proxy_ip, $proxy_ip_whitelist );
