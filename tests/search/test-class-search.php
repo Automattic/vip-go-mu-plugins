@@ -2390,6 +2390,84 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_log_query_ratelimiting_start();
 	}
 
+	public function test__filter__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 'testing', $es->filter__ep_indexable_post_types( 'testing' ) );
+		$this->assertEquals( 65, $es->filter__ep_indexable_post_types( 65 ) );
+		$this->assertEquals( null, $es->filter__ep_indexable_post_types( null ) );
+		$this->assertEquals( new \StdClass(), $es->filter__ep_indexable_post_types( new \StdClass() ) );
+	}
+
+	public function test__filter__ep_indexable_post_types_should_append_attachment_to_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' ), $es->filter__ep_indexable_post_types( array() ) );
+		$this->assertEquals( array( 'test', 'one', 'attachment' ), $es->filter__ep_indexable_post_types( array( 'test', 'one' ) ) );
+	}
+
+	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		// Since ElasticPress isn't available until after VIP Search init, we need to add the protected_content feature via options.
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			update_site_option( 'ep_feature_settings', array( 'protected_content' => array( 'active' => true ) ) );
+		} else {
+			update_option( 'ep_feature_settings', array( 'protected_content' => array( 'active' => true ) ) );
+		}
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
+		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
+		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
+		$this->assertEquals( new \StdClass(), apply_filters( 'ep_indexable_post_types', new \StdClass() ) );
+	}
+
+	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
+		// Since ElasticPress isn't available until after VIP Search init, we need to add the protected_content feature via options.
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			update_site_option( 'ep_feature_settings', array( 'protected_content' => array( 'active' => true ) ) );
+		} else {
+			update_option( 'ep_feature_settings', array( 'protected_content' => array( 'active' => true ) ) );
+		}
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
+		$this->assertEquals( array( 'test', 'one', 'attachment' ), apply_filters( 'ep_indexable_post_types', array( 'test', 'one' ) ) );
+	}
+
+	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
+		// Since ElasticPress isn't available until after VIP Search init, we need to add the protected_content feature via options.
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			update_site_option( 'ep_feature_settings', array() );
+		} else {
+			update_option( 'ep_feature_settings', array() );
+		}
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertFalse( $es->is_protected_content_enabled() );
+	}
+
+	public function test__is_protected_content_enabled_should_return_true_if_protected_content_enabled() {
+		// Since ElasticPress isn't available until after VIP Search init, we need to add the protected_content feature via options.
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			update_site_option( 'ep_feature_settings', array( 'protected_content' => array( 'active' => true ) ) );
+		} else {
+			update_option( 'ep_feature_settings', array( 'protected_content' => array( 'active' => true ) ) );
+		}
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertTrue( $es->is_protected_content_enabled() );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

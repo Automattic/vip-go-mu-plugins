@@ -389,6 +389,13 @@ class Search {
 
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
+
+		// If protected content is enabled, ensure that the attachment post type is an indexable post type.
+		// Set the priority to PHP_INT_MAX - 1 so customers can use PHP_INT_MAX to unset it if needed.
+		if ( false !== $this->is_protected_content_enabled() ) {
+			$priority = PHP_INT_MAX - 1;
+			add_filter( 'ep_indexable_post_types', array( $this, 'filter__ep_indexable_post_types' ), $priority );
+		}
 	}
 
 	protected function load_commands() {
@@ -1482,6 +1489,26 @@ class Search {
 		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
 	}
 
+	/**
+	 * Since we've established that enabling the protected content feature causes attachments
+	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if
+	 * protected content is enabled.
+	 *
+	 * @param array $indexable_post_types Current list indexable post types in VIP Search.
+	 * @return array New list of indexable post types in VIP Search.
+	 */
+	public function filter__ep_indexable_post_types( $indexable_post_types ) {
+		if ( ! is_array( $indexable_post_types ) ) {
+			return $indexable_post_types;
+		}
+		
+		if ( ! in_array( 'attachment', $indexable_post_types, true ) ) {
+			$indexable_post_types[] = 'attachment';
+		}
+
+		return $indexable_post_types;
+	}
+
 	/*
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
@@ -1562,5 +1589,33 @@ class Search {
 
 			$this->logger->log( 'warning', 'vip_search_query_rate_limiting', $message );
 		}
+	}
+
+	/**
+	 * Check if the protected content feature is enabled in ElasticPress.
+	 *
+	 * Done via options since the \ElasticPress\Feature::is_active() function isn't
+	 * reliable in all contexts.
+	 */
+	public function is_protected_content_enabled() {
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			$enabled_features = get_site_option( 'ep_feature_settings', [] );
+		} else {
+			$enabled_features = get_option( 'ep_feature_settings', [] );
+		}
+
+		if ( ! is_array( $enabled_features ) ) {
+			return false;
+		}
+
+		if ( ! array_key_exists( 'protected_content', $enabled_features ) ) {
+			return false;
+		}
+		
+		if ( ! array_key_exists( 'active', $enabled_features['protected_content'] ) ) {
+			return false;
+		}
+
+		return $enabled_features['protected_content']['active'];
 	}
 }
