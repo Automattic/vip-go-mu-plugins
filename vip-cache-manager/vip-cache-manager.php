@@ -40,6 +40,10 @@ class WPCOM_VIP_Cache_Manager {
 
 		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
 			$this->purge_site_cache();
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-cache-action' => 'dashboard-site-purge',
+				'vip-cache-url-purge-by-site'   => VIP_GO_APP_ID,
+			] );
 			add_action( 'admin_notices' , array( $this, 'manual_purge_message' ) );
 		}
 
@@ -51,6 +55,9 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
 
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
+		add_action( 'admin_bar_menu', [ $this, 'admin_bar_callback' ], 100, 1 );
+		add_action( 'wp_enqueue_scripts', [ $this, 'button_enqueue_scripts' ] );
+		add_action( 'wp_ajax_vip_purge_page_cache', [ $this, 'ajax_vip_purge_page_cache' ] );
 	}
 
 	public function get_queued_purge_urls() {
@@ -59,6 +66,107 @@ class WPCOM_VIP_Cache_Manager {
 
 	public function clear_queued_purge_urls() {
 		$this->purge_urls = [];
+	}
+
+	/**
+	 * Display a button to purge the cache for the specific URL and its assets
+	 *
+	 * @return void
+	 */
+	public function admin_bar_callback( WP_Admin_Bar $admin_bar ) {
+		if ( is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$admin_bar->add_menu(
+			[
+				'id'     => 'vip-purge-page',
+				'parent' => null,
+				'group'  => null,
+				'title'  => 'Flush Cache for Page',
+				'href'   => '#',
+				'meta'   => [
+					'title' => 'Flush Page cache for this page and its assets',
+				],
+			]
+		);
+	}
+
+	/**
+	 * Enqueue the button for users who have the needed caps.
+	 *
+	 * @return void
+	 */
+	public function button_enqueue_scripts() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.1', true );
+		wp_localize_script( 'purge-page-cache-btn', 'VIPPageFlush', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
+		] );
+	}
+
+	/**
+	 * AJAX callback that performs basic security checks and payload validation and queues urls for the purge.
+	 *
+	 * @return void
+	 */
+	public function ajax_vip_purge_page_cache() {
+		$req = json_decode( file_get_contents( 'php://input' ) );
+
+		if ( json_last_error() ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-cache-url-purge-status' => 'bad-payload',
+			] );
+			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-cache-url-purge-status' => 'deny-permissions',
+			] );
+
+			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
+		}
+
+		if ( ! ( isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'purge-page' ) ) ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-cache-url-purge-status' => 'deny-nonce',
+			] );
+
+			wp_send_json_error( [ 'error' => 'Unauthorized' ], 403 );
+		}
+
+		$urls = is_array( $req->urls ) && ! empty( $req->urls ) ? $req->urls : [];
+
+		if ( empty( $urls ) ) {
+			\Automattic\VIP\Stats\send_pixel( [
+				'vip-cache-url-purge-status' => 'deny-no-urls',
+			] );
+
+			wp_send_json_error( [ 'error' => 'No URLs' ], 400 );
+		}
+
+		// URLs are validated in queue_purge_url.
+		foreach ( $urls as $url_to_purge ) {
+			$this->queue_purge_url( $url_to_purge );
+		}
+
+		\Automattic\VIP\Stats\send_pixel( [
+			'vip-cache-action' => 'user-url-purge',
+			'vip-cache-url-purge-by-site'   => VIP_GO_APP_ID,
+			'vip-cache-url-purge-status' => 'success',
+		] );
+
+		// Optimistically tell that the operation is successful and bail.
+		wp_send_json_success(
+			[
+				'result' => sprintf( '✅ %d URLS purged', count( $urls ) ),
+			]
+		);
 	}
 
 	public function get_manual_purge_link() {
@@ -333,9 +441,8 @@ class WPCOM_VIP_Cache_Manager {
 
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
-		     'revision' === $post->post_type ||
-		     ! in_array( get_post_status( $post_id ), array( 'publish', 'inherit', 'trash' ), true ) )
-		{
+				'revision' === $post->post_type ||
+				! in_array( get_post_status( $post_id ), array( 'publish', 'inherit', 'trash' ), true ) ) {
 			return false;
 		}
 

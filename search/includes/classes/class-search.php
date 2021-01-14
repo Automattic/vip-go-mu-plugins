@@ -9,6 +9,8 @@ class Search {
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
+	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	// sites.
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
@@ -18,8 +20,6 @@ class Search {
 	private const MAX_SEARCH_LENGTH = 255;
 	private const DISABLE_POST_META_ALLOW_LIST = array();
 	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
-	private const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	private const POST_FIELD_COUNT_LIMIT = 5000;
 	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 
@@ -43,6 +43,7 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_query_count;
@@ -415,6 +416,37 @@ class Search {
 		$this->queue_wait_time->init();
 	}
 
+	/**
+	 * To allow consistent testing against timestamps, set the time used in functionality.
+	 *
+	 * @param int $time The fixed time you want to use in testing.
+	 */ 
+	public function set_time( $time ) {
+		if ( is_numeric( $time ) ) {
+			$this->time = intval( $time );
+		}
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, get the fixed time if set or return the current time.
+	 *
+	 * @return int Either the fixed time previously set if defined or the current timestamp
+	 */
+	public function get_time() {
+		if ( isset( $this->time ) && is_numeric( $this->time ) ) {
+			return intval( $this->time );
+		}
+
+		return time();
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, allow fixed times to be reset to current time.
+	 */
+	public function reset_time() {
+		$this->time = null;
+	}
+
 	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
@@ -531,8 +563,6 @@ class Search {
 	}
 
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures ) {
-		$fallback_error = new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
-
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -548,7 +578,7 @@ class Search {
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$response = vip_safe_wp_remote_request( $query['url'], $fallback_error, 3, $timeout, 20, $args );
+		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
@@ -594,7 +624,12 @@ class Search {
 			}
 		}
 
-		return $response;
+		if ( is_wp_error( $response ) ) {
+			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
+			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
+		} else {
+			return $response;
+		}
 	}
 
 	public function ep_handle_failed_request( $response, $statsd_prefix ) {
@@ -602,31 +637,36 @@ class Search {
 
 		if ( is_wp_error( $response ) ) {
 			$error_messages = $response->get_error_messages();
-			$response_error['reason'] = implode( ';', $error_messages );
 
 			foreach ( $error_messages as $error_message ) {
 				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
 
 				$this->maybe_increment_stat( $statsd_prefix . $stat );
 			}
+
+			$this->logger->log(
+				'error',
+				'vip_search_http_error',
+				implode( ';', $error_messages )
+			);
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body = json_decode( $response_body_json, true );
 			$response_error = $response_body['error'] ?? [];
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
-		}
 
-		$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-		$this->logger->log(
-			'error',
-			'vip_search_query_error',
-			$error_message,
-			[
-				'error_type' => $response_error['type'] ?? 'Unknown error type',
-				'root_cause' => $response_error['root_cause'] ?? null,
-			]
-		);
+			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+			$this->logger->log(
+				'error',
+				'vip_search_query_error',
+				$error_message,
+				[
+					'error_type' => $response_error['type'] ?? 'Unknown error type',
+					'root_cause' => $response_error['root_cause'] ?? null,
+				]
+			);
+		}
 	}
 
 	/*
@@ -772,7 +812,11 @@ class Search {
 		// If the query count has exceeded the maximum
 		// only allow half of the queries to use VIP Search
 		if ( self::query_count_incr() > self::$max_query_count ) {
+			// Go first so that cache entries aren't set yet for first occurrence.
+			$this->maybe_log_query_ratelimiting_start();
+
 			$this->handle_query_limiting_start_timestamp();
+
 			$this->maybe_alert_for_prolonged_query_limiting();
 
 			// Should be roughly half over time
@@ -829,7 +873,7 @@ class Search {
 			return;
 		}
 
-		$query_limiting_time = time() - $query_limiting_start;
+		$query_limiting_time = $this->get_time() - $query_limiting_start;
 
 		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
 			return;
@@ -1454,7 +1498,7 @@ class Search {
 	 */
 	public function handle_query_limiting_start_timestamp() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
-			$start_timestamp = time();
+			$start_timestamp = $this->get_time();
 			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP );
 		}
 	}
@@ -1502,5 +1546,21 @@ class Search {
 		$duration = intval( $duration );
 
 		$this->statsd->timing( $stat, $duration );
+	}
+
+	/**
+	 * When query rate limting first begins, log this information and surface as a PHP warning
+	 */
+	public function maybe_log_query_ratelimiting_start() {
+		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+			$message = sprintf(
+				'Application %d - %s has triggered Elasticsearch query rate limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.',
+				FILES_CLIENT_SITE_ID,
+				\home_url(),
+				self::$query_count_ttl
+			);
+
+			$this->logger->log( 'warning', 'vip_search_query_rate_limiting', $message );
+		}
 	}
 }

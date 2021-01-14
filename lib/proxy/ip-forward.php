@@ -6,7 +6,7 @@ namespace Automattic\VIP\Proxy;
  * Verify the remote proxy from a whitelist of IP addresses, and set the
  * end user IP if verification succeeds.
  *
- * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
+ * @see https://docs.wpvip.com/how-tos/configure-a-reverse-proxy/
  *
  * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
  * @param (string) $remote_proxy_ip IP Address of the remote proxy.
@@ -22,7 +22,7 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
 	require_once( __DIR__ . '/ip-utils.php' );
 
 	// Verify that the remote proxy matches our whitelist
-	$is_whitelisted_proxy_ip = IpUtils::checkIp( $remote_proxy_ip, $proxy_ip_whitelist );
+	$is_whitelisted_proxy_ip = IpUtils::check_ip( $remote_proxy_ip, $proxy_ip_whitelist );
 
 	if ( ! $is_whitelisted_proxy_ip ) {
 		return false;
@@ -41,7 +41,7 @@ function fix_remote_address( $user_ip, $remote_proxy_ip, $proxy_ip_whitelist ) {
  *
  * Only two levels of proxies are supported.
  *
- * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
+ * @see https://docs.wpvip.com/how-tos/configure-a-reverse-proxy/
  *
  * @param (string) $ip_trail Comma-separated list of IPs (something like `user_ip, proxy_ip`)
  * @param (string|array) $proxy_ip_whitelist Whitelisted IP addresses for the remote proxy. Supports IPv4 and IPv6, including CIDR format.
@@ -63,7 +63,7 @@ function fix_remote_address_from_ip_trail( $ip_trail, $proxy_ip_whitelist ) {
  * Verify the remote proxy via a secret verification key, and set the
  * end user IP if verification succeeds.
  *
- * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
+ * @see https://docs.wpvip.com/how-tos/configure-a-reverse-proxy/
  *
  * @param (string) $user_ip IP Address of the end-user passed through by the proxy.
  * @param (string) $submitted_verification_key Verification key passed through request headers
@@ -92,7 +92,7 @@ function fix_remote_address_with_verification_key( $user_ip, $submitted_verifica
  *
  * Only two levels of proxies are supported.
  *
- * @see https://vip.wordpress.com/documentation/vip-go/reverse-proxies-and-vip-go/
+ * @see https://docs.wpvip.com/how-tos/configure-a-reverse-proxy/
  *
  * @param (string) $ip_trail Comma-separated list of IPs (something like `user_ip, proxy_ip`)
  * @param (string) $submitted_verification_key Verification key passed through request headers
