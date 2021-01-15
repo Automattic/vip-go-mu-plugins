@@ -2404,8 +2404,20 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$this->assertEquals( array( 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
-		$this->assertEquals( array( 'test', 'one', 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array( 'test', 'one' ) ) );
+		$this->assertEquals( array( 'attachment' => 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
+		$this->assertEquals(
+			array(
+				'test' => 'test',
+				'one' => 'one',
+				'attachment' => 'attachment',
+			),
+			$es->add_attachment_to_ep_indexable_post_types(
+				array(
+					'test' => 'test',
+					'one' => 'one',
+				)
+			)
+		);
 	}
 
 	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
@@ -2436,8 +2448,21 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$this->assertEquals( array( 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
-		$this->assertEquals( array( 'test', 'one', 'attachment' ), apply_filters( 'ep_indexable_post_types', array( 'test', 'one' ) ) );
+		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
+		$this->assertEquals(
+			array(
+				'test' => 'test',
+				'one' => 'one',
+				'attachment' => 'attachment',
+			),
+			apply_filters(
+				'ep_indexable_post_types',
+				array(
+					'test' => 'test',
+					'one' => 'one',
+				)
+			)
+		);
 	}
 
 	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
