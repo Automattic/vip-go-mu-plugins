@@ -1608,11 +1608,11 @@ class Search {
 			return false;
 		}
 
-		if ( ! array_key_exists( 'protected_content', $enabled_features ) ) {
+		if ( ! isset( $enabled_features['protected_content'] ) ) {
 			return false;
 		}
 		
-		if ( ! array_key_exists( 'active', $enabled_features['protected_content'] ) ) {
+		if ( ! isset( $enabled_features['protected_content']['active'] ) ) {
 			return false;
 		}
 
