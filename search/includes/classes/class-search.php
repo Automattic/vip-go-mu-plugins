@@ -1502,7 +1502,7 @@ class Search {
 			return $indexable_post_types;
 		}
 		
-		if ( ! in_array( 'attachment', array_keys( $indexable_post_types ), true ) ) {
+		if ( ! isset( $indexable_post_types['attachment'] ) ) {
 			$indexable_post_types['attachment'] = 'attachment';
 		}
 
