@@ -391,10 +391,10 @@ class Search {
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
 
 		// If protected content is enabled, ensure that the attachment post type is an indexable post type.
-		// Set the priority to PHP_INT_MAX - 1 so customers can use PHP_INT_MAX to unset it if needed.
+		// Set the priority to 9999 so customers can unset it if needed.
+		// The current usages of this filter have priority 10 in ElasticPress. May need to be adjusted if this changes.
 		if ( false !== $this->is_protected_content_enabled() ) {
-			$priority = PHP_INT_MAX - 1;
-			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), $priority );
+			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
 		}
 	}
 
