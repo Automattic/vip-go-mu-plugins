@@ -2390,22 +2390,22 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_log_query_ratelimiting_start();
 	}
 
-	public function test__filter__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+	public function test__add_attachment_to_ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$this->assertEquals( 'testing', $es->filter__ep_indexable_post_types( 'testing' ) );
-		$this->assertEquals( 65, $es->filter__ep_indexable_post_types( 65 ) );
-		$this->assertEquals( null, $es->filter__ep_indexable_post_types( null ) );
-		$this->assertEquals( new \StdClass(), $es->filter__ep_indexable_post_types( new \StdClass() ) );
+		$this->assertEquals( 'testing', $es->add_attachment_to_ep_indexable_post_types( 'testing' ) );
+		$this->assertEquals( 65, $es->add_attachment_to_ep_indexable_post_types( 65 ) );
+		$this->assertEquals( null, $es->add_attachment_to_ep_indexable_post_types( null ) );
+		$this->assertEquals( new \StdClass(), $es->add_attachment_to_ep_indexable_post_types( new \StdClass() ) );
 	}
 
-	public function test__filter__ep_indexable_post_types_should_append_attachment_to_array() {
+	public function test__add_attachment_to_ep_indexable_post_types_should_append_attachment_to_array() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$this->assertEquals( array( 'attachment' ), $es->filter__ep_indexable_post_types( array() ) );
-		$this->assertEquals( array( 'test', 'one', 'attachment' ), $es->filter__ep_indexable_post_types( array( 'test', 'one' ) ) );
+		$this->assertEquals( array( 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
+		$this->assertEquals( array( 'test', 'one', 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array( 'test', 'one' ) ) );
 	}
 
 	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {

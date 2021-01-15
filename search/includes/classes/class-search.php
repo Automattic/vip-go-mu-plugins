@@ -394,7 +394,7 @@ class Search {
 		// Set the priority to PHP_INT_MAX - 1 so customers can use PHP_INT_MAX to unset it if needed.
 		if ( false !== $this->is_protected_content_enabled() ) {
 			$priority = PHP_INT_MAX - 1;
-			add_filter( 'ep_indexable_post_types', array( $this, 'filter__ep_indexable_post_types' ), $priority );
+			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), $priority );
 		}
 	}
 
@@ -1497,7 +1497,7 @@ class Search {
 	 * @param array $indexable_post_types Current list indexable post types in VIP Search.
 	 * @return array New list of indexable post types in VIP Search.
 	 */
-	public function filter__ep_indexable_post_types( $indexable_post_types ) {
+	public function add_attachment_to_ep_indexable_post_types( $indexable_post_types ) {
 		if ( ! is_array( $indexable_post_types ) ) {
 			return $indexable_post_types;
 		}
