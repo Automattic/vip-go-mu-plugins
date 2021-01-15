@@ -58,8 +58,8 @@ class Search {
 	public function init() {
 		$this->apply_settings(); // Applies filters for tweakable Search settings and should run first.
 		$this->setup_constants();
-		$this->setup_hooks();
 		$this->load_dependencies();
+		$this->setup_hooks();
 		$this->load_commands();
 		$this->setup_healthchecks();
 		$this->setup_regular_stat_collection();
@@ -1598,24 +1598,12 @@ class Search {
 	 * reliable in all contexts.
 	 */
 	public function is_protected_content_enabled() {
-		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
-			$enabled_features = get_site_option( 'ep_feature_settings', [] );
-		} else {
-			$enabled_features = get_option( 'ep_feature_settings', [] );
-		}
+		$protected_content_feature = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
 
-		if ( ! is_array( $enabled_features ) ) {
+		if ( false === $protected_content_feature ) {
 			return false;
 		}
 
-		if ( ! isset( $enabled_features['protected_content'] ) ) {
-			return false;
-		}
-		
-		if ( ! isset( $enabled_features['protected_content']['active'] ) ) {
-			return false;
-		}
-
-		return $enabled_features['protected_content']['active'];
+		return $protected_content_feature->is_active();
 	}
 }
