@@ -1593,9 +1593,6 @@ class Search {
 
 	/**
 	 * Check if the protected content feature is enabled in ElasticPress.
-	 *
-	 * Done via options since the \ElasticPress\Feature::is_active() function isn't
-	 * reliable in all contexts.
 	 */
 	public function is_protected_content_enabled() {
 		$protected_content_feature = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
