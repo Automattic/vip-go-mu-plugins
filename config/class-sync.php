@@ -126,13 +126,9 @@ class Sync {
 
 	public function put_site_details() {
 		// This is a temporary workaround while the full Site Details implementation is finished
-		// In order to reduce the amount of stored documents, we increase the execution interval
-		// from 30 minutes to approximately 4 hours
-		if ( 1 === rand( 1, 8 ) ) {
-			require_once( __DIR__ . '/class-site-details-index.php' );
+		require_once( __DIR__ . '/class-site-details-index.php' );
 
-			Site_Details_Index::instance()->put_site_details_in_logstash();
-		}
+		Site_Details_Index::instance()->put_site_details_in_logstash();
 	}
 
 	public function log( $severity, $message, $extra = array() ) {
