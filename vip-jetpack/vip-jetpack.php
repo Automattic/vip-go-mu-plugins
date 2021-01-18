@@ -372,3 +372,11 @@ function vip_jetpack_admin_enqueue_scripts() {
 }
 
 add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
+
+/**
+ * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
+ */
+add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value, $option_name, $default ) {
+	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
+	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
+}, 10, 3 );
