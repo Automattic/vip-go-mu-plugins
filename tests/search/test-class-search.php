@@ -2390,6 +2390,105 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->maybe_log_query_ratelimiting_start();
 	}
 
+	public function test__add_attachment_to_ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 'testing', $es->add_attachment_to_ep_indexable_post_types( 'testing' ) );
+		$this->assertEquals( 65, $es->add_attachment_to_ep_indexable_post_types( 65 ) );
+		$this->assertEquals( null, $es->add_attachment_to_ep_indexable_post_types( null ) );
+		$this->assertEquals( new \StdClass(), $es->add_attachment_to_ep_indexable_post_types( new \StdClass() ) );
+	}
+
+	public function test__add_attachment_to_ep_indexable_post_types_should_append_attachment_to_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' => 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
+		$this->assertEquals(
+			array(
+				'test' => 'test',
+				'one' => 'one',
+				'attachment' => 'attachment',
+			),
+			$es->add_attachment_to_ep_indexable_post_types(
+				array(
+					'test' => 'test',
+					'one' => 'one',
+				)
+			)
+		);
+	}
+
+	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		// Load ElasticPress so we can activate the protected content feature before Search inits
+		require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
+		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
+		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
+		$this->assertEquals( new \StdClass(), apply_filters( 'ep_indexable_post_types', new \StdClass() ) );
+	}
+
+	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
+		// Load ElasticPress so we can activate the protected content feature before Search inits
+		require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
+		$this->assertEquals(
+			array(
+				'test' => 'test',
+				'one' => 'one',
+				'attachment' => 'attachment',
+			),
+			apply_filters(
+				'ep_indexable_post_types',
+				array(
+					'test' => 'test',
+					'one' => 'one',
+				)
+			)
+		);
+	}
+
+	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $es->is_protected_content_enabled() );
+	}
+
+	public function test__is_protected_content_enabled_should_return_true_if_protected_content_enabled() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$this->assertTrue( $es->is_protected_content_enabled() );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

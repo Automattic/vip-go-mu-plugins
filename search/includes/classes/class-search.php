@@ -58,8 +58,8 @@ class Search {
 	public function init() {
 		$this->apply_settings(); // Applies filters for tweakable Search settings and should run first.
 		$this->setup_constants();
-		$this->setup_hooks();
 		$this->load_dependencies();
+		$this->setup_hooks();
 		$this->load_commands();
 		$this->setup_healthchecks();
 		$this->setup_regular_stat_collection();
@@ -389,6 +389,13 @@ class Search {
 
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
+
+		// If protected content is enabled, ensure that the attachment post type is an indexable post type.
+		// Set the priority to 9999 so customers can unset it if needed.
+		// The current usages of this filter have priority 10 in ElasticPress. May need to be adjusted if this changes.
+		if ( false !== $this->is_protected_content_enabled() ) {
+			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
+		}
 	}
 
 	protected function load_commands() {
@@ -1482,6 +1489,26 @@ class Search {
 		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
 	}
 
+	/**
+	 * Since we've established that enabling the protected content feature causes attachments
+	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if
+	 * protected content is enabled.
+	 *
+	 * @param array $indexable_post_types Current list indexable post types in VIP Search.
+	 * @return array New list of indexable post types in VIP Search.
+	 */
+	public function add_attachment_to_ep_indexable_post_types( $indexable_post_types ) {
+		if ( ! is_array( $indexable_post_types ) ) {
+			return $indexable_post_types;
+		}
+		
+		if ( ! isset( $indexable_post_types['attachment'] ) ) {
+			$indexable_post_types['attachment'] = 'attachment';
+		}
+
+		return $indexable_post_types;
+	}
+
 	/*
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
@@ -1562,5 +1589,18 @@ class Search {
 
 			$this->logger->log( 'warning', 'vip_search_query_rate_limiting', $message );
 		}
+	}
+
+	/**
+	 * Check if the protected content feature is enabled in ElasticPress.
+	 */
+	public function is_protected_content_enabled() {
+		$protected_content_feature = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
+
+		if ( false === $protected_content_feature ) {
+			return false;
+		}
+
+		return $protected_content_feature->is_active();
 	}
 }
