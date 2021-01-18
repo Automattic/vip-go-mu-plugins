@@ -53,7 +53,7 @@ The filter for setting the post taxonomy allow list is `vip_search_post_taxonomi
 
 ## How to enable VIP Search? <a name='https://github.com/Automattic/vip-docs/pull/39'></a>
 
-1. Ensure that an Elasticsearch user has been provisioned for the corresponding site. To see if the elasticsearch user was provisioned check site's meta fields fro `vip_elasticsearch_settings` field in [VIP admin](https://admin.wpvip.com/#/).
+1. Ensure that an Elasticsearch user has been provisioned for the corresponding site. To see if the elasticsearch user was provisioned check site's meta fields for the `vip_elasticsearch_settings` field in [VIP admin](https://admin.wpvip.com/#/).
 1. Add two new constants to `wp-config.php` or other analog:
 	1. `define( 'VIP_ENABLE_VIP_SEARCH', true );`
 	1. `define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );`
