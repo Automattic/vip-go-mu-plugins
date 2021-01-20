@@ -17,7 +17,7 @@ namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
  *
  * @return boolean|array false on invalid request, otherwise returns value from Pre_WP_Utils\sanitize_and_split_path
  */
-function pre_wp_prepare_request( $file_request_uri ) {
+function prepare_request( $file_request_uri ) {
 	if ( ! $file_request_uri ) {
 		trigger_error( 'VIP Files ACL failed due to empty URI', E_USER_WARNING );
 

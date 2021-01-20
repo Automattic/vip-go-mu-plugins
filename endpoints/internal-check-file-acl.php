@@ -4,7 +4,7 @@ namespace Automattic\VIP\Files\Acl;
 
 require_once __DIR__ . '/../files/acl/pre-wp-utils.php';
 
-$vip_files_acl_paths = pre_wp_prepare_request( $_SERVER['HTTP_X_ORIGINAL_URI'] ?? null );
+$vip_files_acl_paths = Pre_WP_Utils\prepare_request( $_SERVER['HTTP_X_ORIGINAL_URI'] ?? null );
 
 if ( ! $vip_files_acl_paths ) {
 	// TODO: verify code to return
