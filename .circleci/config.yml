@@ -12,6 +12,12 @@ workflows:
       - php74-build-singlesite
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
+  changelog:
+    jobs:
+      - create-changelog-draft:
+          filters:
+            branches:
+              only: master
 
 version: 2.1
 
@@ -208,3 +214,11 @@ jobs:
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
+
+  create-changelog-draft:
+    docker:
+      - image: circleci/php:7.4-node
+    steps:
+      - checkout
+      - run: composer install
+      - run: php $HOME/project/bin/github-changelog.php
