@@ -16,7 +16,10 @@ function fetch_last_PR() {
     $data = curl_exec($ch);
     curl_close($ch);
 
-    return json_decode($data, true)[0];
+    $last_prs = json_decode($data, true);
+    $merged_prs = array_filter( $last_prs, function ( $pr ) { return $pr['merged_at'] ?? ''; } );
+
+    return $merged_prs[0];
 }
 
 function get_changelog_section_in_description_html( $description ) {
