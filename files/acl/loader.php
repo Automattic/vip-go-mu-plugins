@@ -8,6 +8,8 @@
  * Version: 1.0
  */
 
+// TODO: need to load this from mu-plugins
+
 namespace Automattic\VIP\Files\Acl;
 
 function maybe_load_restrictions() {
@@ -41,6 +43,6 @@ function get_option_as_bool( $option_name, $default = false ) {
 		'true',
 		'yes',
 		1,
-		'1'
+		'1',
 	], true );
 }
