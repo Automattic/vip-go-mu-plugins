@@ -39,7 +39,8 @@ function get_changelog_section_in_description_html( $description ) {
 
 function get_changelog_html( $pr ) {
     $Parsedown = new Parsedown();
-    $description_html =  $Parsedown->text( $pr['body'] );
+    $body = preg_replace( '/<!--(.|\s)*?-->/', '', $pr['body'] );
+    $description_html =  $Parsedown->text( $body );
 
     $changelog_html = get_changelog_section_in_description_html( $description_html );
 
