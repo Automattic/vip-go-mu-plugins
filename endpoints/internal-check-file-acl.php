@@ -22,6 +22,12 @@ if ( $vip_files_acl_subsite_path ) {
 // Bootstap WordPress
 require __DIR__ . '/../../../wp-load.php';
 
+// Temp transitional check
+if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV
+	&& true !== WPCOM_SANDBOXED ) {
+	die( 'Sorry, internal testing only.' );
+}
+
 // Load the ACL lib
 require_once __DIR__ . '/../files/acl.php';
 
