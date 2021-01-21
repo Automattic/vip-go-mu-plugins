@@ -126,7 +126,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
-	}	
+	}
 
 	public function test__get_attachment_id_from_file_path__attachment_not_found() {
 		$attachment_path = '/2020/12/not-an-attachment.pdf';
@@ -197,3 +197,4 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
 		return substr( $path, strlen( '/wp-content/uploads/' ) );
 	}
 }
+

@@ -18,21 +18,26 @@ add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
 	$is_files_acl_enabled = defined( 'VIP_FILES_ACL_ENABLED' ) && VIP_FILES_ACL_ENABLED;
+	$is_restrict_all_enabled = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
+	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
+
 	if ( ! $is_files_acl_enabled ) {
+		// Throw warning if restrictions are enabled but ACL constant is not set.
+		// This is probably a sign that options were copied between sites or someone missed a setup step.
+		if ( $is_restrict_all_enabled || $is_restrict_unpublished_enabled ) {
+			trigger_error( 'File ACL restrictions are enabled without server configs (missing `VIP_FILES_ACL_ENABLED` constant).', E_USER_WARNING );
+		}
+
 		return;
 	}
 
-	$is_restrict_all_enabled = get_option_as_bool( 'vip_files_acl_restrict_all_enabled', false );
 	if ( $is_restrict_all_enabled ) {
 		require_once( __DIR__ . '/files/acl/restrict-all-files.php' );
-
 		return;
 	}
 
-	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled', false );
 	if ( $is_restrict_unpublished_enabled ) {
 		require_once( __DIR__ . '/files/acl/restrict-unpublished-files.php' );
-
 		return;
 	}
 }
