@@ -2,8 +2,9 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable wpcalypso/import-docblock */
-import { createContext, h } from 'preact';
+import { createContext, Fragment, h } from 'preact';
 import { useContext, useEffect, useState } from 'preact/hooks';
+import Overlay from './overlay';
 
 import style from './style.scss';
 
@@ -98,13 +99,24 @@ const Queries = () => {
 };
 
 const App = props => {
+	const [ visible, setVisible ] = useState(false);
+	const closeOverlay = e => setVisible(false);
+	const openOverlay = e => setVisible(true);
+	const toggleOverlay = () => setVisible( ! visible );
+
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
-		<div className={style.vip_search_dev_tools}>
-			<h1>Search Dev Tools</h1>
-			<GeneralInformation />
-			<Queries />
-		</div>
+	<Fragment>
+		<button onClick={ toggleOverlay }>Open Search Dev Tools</button>
+		<Overlay isVisible={ visible } closeOverlay={closeOverlay} opacity="100">
+			<div className={style.vip_search_dev_tools}>
+				<h1>Search Dev Tools</h1>
+				<GeneralInformation />
+				<Queries />
+			</div>
+		</Overlay>
+	</Fragment>
 	</SearchContext.Provider>
+	
 	);
 };
 export default App;

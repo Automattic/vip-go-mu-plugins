@@ -1,0 +1,42 @@
+// @import '../lib/style-helpers';
+
+$overlay-horizontal-padding: 1em;
+$overlay-horizontal-padding-small-viewport: 0.5em;
+:global {
+.search-dev-tools__overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 9999999999999;
+	width: 100vw;
+	height: 100vh;
+	padding: 2rem;
+	background: rgba( 255, 255, 255, 0.975 );
+	overflow-y: auto;
+	overflow-x: hidden;
+	transition: opacity 0.15s ease-in-out;
+	box-sizing: border-box;
+
+	// @include break-small() {
+	// 	padding: $overlay-vertical-padding $overlay-horizontal-padding;
+	// }
+
+	&.is-hidden {
+		transform: translateX( 100vw );
+	}
+
+	&.search-dev-tools__overlay--light {
+		background: #fff;
+	}
+
+	&.search-dev-tools__overlay--dark {
+		background: #777777;
+	}
+
+	*,
+	*:before,
+	*:after {
+		box-sizing: inherit;
+	}
+}
+}
