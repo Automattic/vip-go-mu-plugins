@@ -29,7 +29,7 @@ if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV
 }
 
 // Load the ACL lib
-require_once __DIR__ . '/../files/acl.php';
+require_once __DIR__ . '/../files/acl/acl.php';
 
 /**
  * Hook in here to adjust the visibility of a given file.
