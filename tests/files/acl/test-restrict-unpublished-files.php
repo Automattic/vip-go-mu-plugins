@@ -57,7 +57,10 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
 		$post_id = $this->factory->post->create();
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
-		wp_update_post( $attachment_id, [ 'post_status' => 'publish' ] );
+		wp_update_post( [
+			'ID' => $attachment_id,
+			'post_status' => 'publish',
+		] );
 
 		$file_visibility = false;
 		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
