@@ -8,7 +8,7 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../files/acl.php' );
+		require_once( __DIR__ . '/../../../files/acl/acl.php' );
 	}
 
 	public function get_data__send_visibility_headers() {
