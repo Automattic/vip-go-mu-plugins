@@ -6,6 +6,10 @@
 
 namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 
+use const Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
+use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
+use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
+
 const CACHE_GROUP = 'vip-files-acl';
 
 function check_file_visibility( $file_visibility, $file_path ) {
@@ -37,7 +41,7 @@ function check_file_visibility( $file_visibility, $file_path ) {
 		return FILE_IS_PRIVATE_AND_DENIED;
 	}
 
-	return $file_visibility;
+	return FILE_IS_PUBLIC;
 }
 
 // TODO: move these to loader?

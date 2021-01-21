@@ -8,18 +8,18 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../../files/acl.php' );
-		require_once( __DIR__ . '/../../../files/acl/restrict-all-files.php' );
+		require_once __DIR__ . '/../../../files/acl/acl.php';
+		require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
 	}
 
 	public function setUp() {
 		parent::setUp();
 
-		$this->original_current_user = get_current_user_id();
+		$this->original_current_user_id = get_current_user_id();
 	}
 
 	public function tearDown() {
-		wp_set_current_user( $this->original_current_user );
+		wp_set_current_user( $this->original_current_user_id );
 
 		parent::tearDown();
 	}
@@ -58,7 +58,6 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
 		$file_path = '2021/01/kittens.jpg';
 
 		$test_user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		$user = new \WP_User( $test_user_id );
 		wp_set_current_user( $test_user_id );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );

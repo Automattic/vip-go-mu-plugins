@@ -1,0 +1,199 @@
+<?php
+
+namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
+
+use WP_Error;
+
+class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
+	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
+
+	public static function setUpBeforeClass() {
+		parent::setUpBeforeClass();
+
+		require_once __DIR__ . '/../../../files/acl/acl.php';
+		require_once __DIR__ . '/../../../files/acl/restrict-unpublished-files.php';
+	}
+
+	public function setUp() {
+		parent::setUp();
+
+		$this->original_current_user_id = get_current_user_id();
+	}
+
+	public function tearDown() {
+		wp_set_current_user( $this->original_current_user_id );
+
+		parent::tearDown();
+	}
+
+	public function test__check_file_visibility__attachment_not_found() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
+
+		$file_visibility = false;
+		$file_path = '2021/01/kittens.jpg';
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_without_post() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
+
+		// post meta entry exists but points to non-existent post
+		update_post_meta( PHP_INT_MAX, '_wp_attached_file', '2021/01/kittens.jpg' );
+
+		$file_visibility = false;
+		$file_path = '2021/01/kittens.jpg';
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_not_inherit() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
+
+		$post_id = $this->factory->post->create();
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
+
+		wp_update_post( $attachment_id, [ 'post_status' => 'publish' ] );
+
+		$file_visibility = false;
+		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_no_parent() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
+
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+
+		$file_visibility = false;
+		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_with_draft_parent_and_without_user() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
+
+		$post_id = $this->factory->post->create( [ 'post_status' => 'draft' ] );
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
+
+		$file_visibility = false;
+		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_with_draft_parent_and_without_user_permissions() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
+
+		$post_id = $this->factory->post->create( [ 'post_status' => 'draft' ] );
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
+
+		$test_user_id = $this->factory->user->create( array( 'role' => 'contributor' ) ); // will not have access to post
+		wp_set_current_user( $test_user_id );
+
+		$file_visibility = false;
+		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_with_draft_parent_and_with_user_permissions() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
+
+		$post_id = $this->factory->post->create( [ 'post_status' => 'draft' ] );
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
+
+		$test_user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $test_user_id );
+
+		$file_visibility = false;
+		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}	
+
+	public function test__get_attachment_id_from_file_path__attachment_not_found() {
+		$attachment_path = '/2020/12/not-an-attachment.pdf';
+		$expected_attachment_id = 0;
+
+		// Run the test.
+		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
+
+		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
+	}
+
+	public function test__get_attachment_id_from_file_path__attachment_only_one_result() {
+		// Set up a test attachment.
+		$expected_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
+		$attachment_path = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path = $this->strip_wpcontent_uploads( $attachment_path );
+
+		// Run the test.
+		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
+
+		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
+	}
+
+	public function test__get_attachment_id_from_file_path__attachment_multiple_results_first_in_list() {
+		// Set up the first attachment.
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+
+		// Create a second attachment with the same file path.
+		$duplicate_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
+		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', $duplicate_attachment_file );
+
+		// Look up the first one in the list.
+		$expected_attachment_id = $attachment_id;
+		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
+		$attachment_path = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path = $this->strip_wpcontent_uploads( $attachment_path );
+
+		// Run the test.
+		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
+
+		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
+	}
+
+	public function test__get_attachment_id_from_file_path__attachment_multiple_results_exact_match_first() {
+		// Set up the first attachment.
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+
+		// Create a second attachment with the same file path.
+		$duplicate_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
+		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', strtoupper( $duplicate_attachment_file ) );
+
+		// Look up the second one in the list.
+		$expected_attachment_id = $duplicate_attachment_id;
+		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
+		$attachment_path = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path = $this->strip_wpcontent_uploads( $attachment_path );
+
+		// Run the test.
+		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
+
+		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
+	}
+
+	private function strip_wpcontent_uploads( $path ) {
+		return substr( $path, strlen( '/wp-content/uploads/' ) );
+	}
+}
