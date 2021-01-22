@@ -43,8 +43,6 @@ Not a lot of significant changes in this patch release, just bugfixes and compat
 - WordPress.com Toolbar: avoid Fatal errors when the feature is not active.
 - WordPress.com Toolbar: avoid 404 errors when loading the toolbar.
 
-https://github.com/Automattic/vip-go-mu-plugins/pull/1905
-
 Example for a feature change:
 
 ### New Filters: Adjust Brute Force Thresholds
@@ -65,14 +63,10 @@ add_filter( 'wpcom_vip_ip_username_login_threshold', function( $threshold, $ip, 
     return $threshold;
 }, 10, 3 );
 ```
-
-https://github.com/Automattic/vip-go-mu-plugins/pull/1782
 -->
 ### The title of my changelog entry(See examples in the comments above)
 
 Look at my sweet description of my changes with examples, screen shots, etc... that demonstrate the functionality.
-
-https://github.com/Automattic/vip-go-mu-plugins/pull/this-pr
 
 ## Checklist
 
@@ -82,7 +76,7 @@ Please make sure the items below have been covered before requesting a review:
 - [ ] This change works and has been tested on a Go sandbox.
 - [ ] This change has relevant unit tests (if applicable).
 - [ ] This change has relevant documentation additions / updates (if applicable).
-- [ ] (For Automatticians) I've created a changelog draft. 
+- [ ] I've created a changelog description that aligns with the provided examples. 
 
 ## Steps to Test
 <!--
