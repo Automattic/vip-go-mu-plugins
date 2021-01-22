@@ -628,6 +628,7 @@ class Search {
 						'message' => $message,
 						'extra' => [
 							'query' => $query,
+							'backtrace' => wp_debug_backtrace_summary(),
 						],
 					) );
 				}
@@ -675,6 +676,7 @@ class Search {
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
 					'query' => $query,
+					'backtrace' => wp_debug_backtrace_summary(),
 				]
 			);
 		}
