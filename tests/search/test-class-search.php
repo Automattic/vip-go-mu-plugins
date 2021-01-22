@@ -1618,24 +1618,24 @@ class Search_Test extends \WP_UnitTestCase {
 			[
 				null, // Default Keys
 				null, // Jetpack filter added
-				[]  // expected
+				[],  // expected
 			],
 			[
 				[ 'foo' ], // Default Keys
 				null, // Jetpack filter added
-				[ 'foo' ]  // expected
+				[ 'foo' ],  // expected
 			],
 			[
 				// default keys provided so jetpack is ignored
 				[ 'foo' ], // Default Keys
 				[ 'bar' ], // Jetpack filter added
-				[ 'foo' ]  // expected
+				[ 'foo' ],  // expected
 			],
 			[
 				// default keys provided (even empty) so jetpack is ignored
-				[ ], // Default Keys
+				[], // Default Keys
 				[ 'bar' ], // Jetpack filter added
-				[ ]  // expected
+				[],  // expected
 			],
 			[
 				// no default keys provided and jetpack filter defined we should take jetpack defaults and run it through the filter
@@ -1657,7 +1657,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
 
-		if ( is_array($jetpack_added) ) {
+		if ( is_array( $jetpack_added ) ) {
 			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
 				return array_merge( $post_meta, $jetpack_added );
 			}, 0, 1);
@@ -1672,21 +1672,21 @@ class Search_Test extends \WP_UnitTestCase {
 		return [
 			[
 				[ 'foo' ], // input
-				[ 'foo' ]  // expected
+				[ 'foo' ],  // expected
 			],
 			[
 				'non-array', // input
-				[]  // expected
+				[],  // expected
 			],
 			[
 				// assoc array -> only true goes
 				[
-					'foo' => true,
-					'bar' => false,
+					'foo'         => true,
+					'bar'         => false,
 					'string-true' => 'true',
-					'number' => 1
+					'number'      => 1,
 				],
-				[ 'foo' ]  // expected
+				[ 'foo' ],  // expected
 			],
 		];
 	}
@@ -2510,14 +2510,14 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( array( 'attachment' => 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
 		$this->assertEquals(
 			array(
-				'test' => 'test',
-				'one' => 'one',
+				'test'       => 'test',
+				'one'        => 'one',
 				'attachment' => 'attachment',
 			),
 			$es->add_attachment_to_ep_indexable_post_types(
 				array(
 					'test' => 'test',
-					'one' => 'one',
+					'one'  => 'one',
 				)
 			)
 		);
@@ -2556,15 +2556,15 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
 		$this->assertEquals(
 			array(
-				'test' => 'test',
-				'one' => 'one',
+				'test'       => 'test',
+				'one'        => 'one',
 				'attachment' => 'attachment',
 			),
 			apply_filters(
 				'ep_indexable_post_types',
 				array(
 					'test' => 'test',
-					'one' => 'one',
+					'one'  => 'one',
 				)
 			)
 		);
