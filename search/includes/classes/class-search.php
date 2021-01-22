@@ -11,9 +11,54 @@ class Search {
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
-	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
-	// sites.
+	/**
+	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
+	 * sites.
+	 */
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
+	/**
+	 * Jetpack Default Allow list to make migration path easier. See usage to see how is jetpack allow_list used.
+	 */
+	public const JETPACK_POST_META_DEFAULT_ALLOW_LIST = array(
+		'_feedback_akismet_values',
+		'_feedback_email',
+		'_feedback_extra_fields',
+		'_g_feedback_shortcode',
+		'_jetpack_post_thumbnail',
+		'_menu_item_classes',
+		'_menu_item_menu_item_parent',
+		'_menu_item_object',
+		'_menu_item_object_id',
+		'_menu_item_orphaned',
+		'_menu_item_type',
+		'_menu_item_xfn',
+		'_publicize_facebook_user',
+		'_publicize_twitter_user',
+		'_thumbnail_id',
+		'_wp_attached_file',
+		'_wp_attachment_backup_sizes',
+		'_wp_attachment_context',
+		'_wp_attachment_image_alt',
+		'_wp_attachment_is_custom_background',
+		'_wp_attachment_is_custom_header',
+		'_wp_attachment_metadata',
+		'_wp_page_template',
+		'_wp_trash_meta_comments_status',
+		'_wpas_mess',
+		'content_width',
+		'custom_css_add',
+		'custom_css_preprocessor',
+		'enclosure',
+		'imagedata',
+		'nova_price',
+		'publicize_results',
+		'sharing_disabled',
+		'switch_like_status',
+		'videopress_guid',
+		'vimeo_poster_image',
+		'advanced_seo_description',
+	);
+
 
 	private static $query_count_ttl;
 
@@ -427,7 +472,7 @@ class Search {
 	 * To allow consistent testing against timestamps, set the time used in functionality.
 	 *
 	 * @param int $time The fixed time you want to use in testing.
-	 */ 
+	 */
 	public function set_time( $time ) {
 		if ( is_numeric( $time ) ) {
 			$this->time = intval( $time );
@@ -1445,7 +1490,24 @@ class Search {
 		return false;
 	}
 
-	public function get_post_meta_allow_list( $post ) {
+	/**
+	 * Processes vip_search_post_meta_allow_list. This method serves two purposes. Fistly handles assoc array convertion and secondly handles
+	 * default keys creation. To make migration from jetpack search easier this might mean leveraging jetpack_sync_post_meta_whitelist filter.
+	 * In case we already have some default keys defined we skip defualt key generation.
+	 *
+	 * @param {WP_Post} $post The post whose meta data is being prepared
+	 * @param {array | null} $default_keys Optional parameter to skip default keys generation (used as part of ep_prepare_meta_allowed_protected_keys processing).
+	 * @return {array} The new allow list for post_meta_indexing
+	 */
+	public function parse_vip_search_post_meta_allow_list_filter( $post, $default_keys = null ) {
+		if ( is_array( $default_keys ) ) {
+			$default_allow_list = $default_keys;
+		} else if ( \has_filter( 'jetpack_sync_post_meta_whitelist' ) ) {
+			$default_allow_list = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
+		} else {
+			$default_allow_list = self::POST_META_DEFAULT_ALLOW_LIST;
+		}
+
 		/**
 		 * Filters the allow list used for post meta indexing
 		 *
@@ -1454,7 +1516,7 @@ class Search {
 		 * @param {WP_Post} $post The post whose meta data is being prepared
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
-		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
+		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', $default_allow_list, $post );
 
 		// If post meta allow list is not an array, treat it like an empty array.
 		if ( ! is_array( $post_meta_allow_list ) ) {
@@ -1485,8 +1547,12 @@ class Search {
 		return $post_meta_allow_list;
 	}
 
+	public function get_post_meta_allow_list( $post ) {
+		return $this->parse_vip_search_post_meta_allow_list_filter( $post );
+	}
+
 	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
-		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
+		return $this->parse_vip_search_post_meta_allow_list_filter( $post, $keys );
 	}
 
 	/**
@@ -1501,7 +1567,7 @@ class Search {
 		if ( ! is_array( $indexable_post_types ) ) {
 			return $indexable_post_types;
 		}
-		
+
 		if ( ! isset( $indexable_post_types['attachment'] ) ) {
 			$indexable_post_types['attachment'] = 'attachment';
 		}

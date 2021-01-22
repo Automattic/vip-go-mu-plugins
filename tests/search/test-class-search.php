@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
+require_once __DIR__ . '/../../search/search.php';
 class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
@@ -16,7 +17,6 @@ class Search_Test extends \WP_UnitTestCase {
 	public static $mock_global_functions;
 
 	public function setUp() {
-		require_once __DIR__ . '/../../search/search.php';
 
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
@@ -1613,6 +1613,104 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
+	public function parse_vip_search_post_meta_allow_list_filter__default_keys_data() {
+		return [
+			[
+				null, // Default Keys
+				null, // Jetpack filter added
+				[]  // expected
+			],
+			[
+				[ 'foo' ], // Default Keys
+				null, // Jetpack filter added
+				[ 'foo' ]  // expected
+			],
+			[
+				// default keys provided so jetpack is ignored
+				[ 'foo' ], // Default Keys
+				[ 'bar' ], // Jetpack filter added
+				[ 'foo' ]  // expected
+			],
+			[
+				// default keys provided (even empty) so jetpack is ignored
+				[ ], // Default Keys
+				[ 'bar' ], // Jetpack filter added
+				[ ]  // expected
+			],
+			[
+				// no default keys provided and jetpack filter defined we should take jetpack defaults and run it through the filter
+				null, // Default Keys
+				[ 'bar' ], // Jetpack filter added
+				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider parse_vip_search_post_meta_allow_list_filter__default_keys_data
+	 */
+	public function test__parse_vip_search_post_meta_allow_list_filter__default_keys( $default_keys, $jetpack_added, $expected ) {
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		if ( is_array($jetpack_added) ) {
+			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+				return array_merge( $post_meta, $jetpack_added );
+			}, 0, 1);
+		}
+
+		$result = $es->parse_vip_search_post_meta_allow_list_filter( $post, $default_keys );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function parse_vip_search_post_meta_allow_list_filter__processing_array_data() {
+		return [
+			[
+				[ 'foo' ], // input
+				[ 'foo' ]  // expected
+			],
+			[
+				'non-array', // input
+				[]  // expected
+			],
+			[
+				// assoc array -> only true goes
+				[
+					'foo' => true,
+					'bar' => false,
+					'string-true' => 'true',
+					'number' => 1
+				],
+				[ 'foo' ]  // expected
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider parse_vip_search_post_meta_allow_list_filter__processing_array_data
+	 */
+	public function test__parse_vip_search_post_meta_allow_list_filter__processing_array( $returned_by_filter, $expected ) {
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		\add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
+			return $returned_by_filter;
+		}, 0);
+
+		$result = $es->parse_vip_search_post_meta_allow_list_filter( $post );
+
+		$this->assertEquals( $expected, $result );
+	}
+
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -1733,44 +1831,49 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', true, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_be_empty_if_post_meta_allow_list_is_empty() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
-
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function() {
-				return array();
-			},
-			PHP_INT_MAX
-		);
-
-		\Automattic\VIP\Search\Search::instance();
-
-		$this->assertEmpty( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ) );
+	public function filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data() {
+		return [
+			[
+				[], // default
+				[], // new
+				[], // expected
+			],
+			[
+				[ 'foo' ], // default
+				[ 'bar' ], // new
+				[ 'foo', 'bar' ], // expected
+			],
+			[
+				// should handle assoc array
+				[], // default
+				[
+					'foo' => true,
+					'bar' => false,
+				],
+				[ 'foo' ], // expected
+			],
+		];
 	}
 
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @dataProvider filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data
 	 */
-	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_equal_post_meta_allow_list() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_keys, $added_keys, $expected ) {
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
 
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function() {
-				return array( 'different', 'stuff' );
-			},
-			PHP_INT_MAX
-		);
+		\add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
+			return array_merge( $meta_keys, $added_keys );
+		}, 0);
+
 
 		\Automattic\VIP\Search\Search::instance();
 
-		$this->assertEquals( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ), array( 'different', 'stuff' ) );
+		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_keys, $post );
+
+		$this->assertEquals( $expected, $result );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd() {
