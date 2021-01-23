@@ -21,5 +21,3 @@ function check_file_visibility( $file_visibility, $file_path ) {
 
 	return FILE_IS_PRIVATE_AND_ALLOWED;
 }
-
-add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\check_file_visibility', 10, 2 );

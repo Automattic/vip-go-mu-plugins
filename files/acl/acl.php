@@ -33,8 +33,12 @@ function maybe_load_restrictions() {
 
 	if ( $is_restrict_all_enabled ) {
 		require_once( __DIR__ . '/restrict-all-files.php' );
+
+		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
 	} elseif ( $is_restrict_unpublished_enabled ) {
 		require_once( __DIR__ . '/restrict-unpublished-files.php' );
+
+		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 	}
 }
 
