@@ -6,6 +6,19 @@ const FILE_IS_PUBLIC = 'FILE_IS_PUBLIC';
 const FILE_IS_PRIVATE_AND_ALLOWED = 'FILE_IS_PRIVATE_AND_ALLOWED';
 const FILE_IS_PRIVATE_AND_DENIED = 'FILE_IS_PRIVATE_AND_DENIED';
 
+/**
+ * Sends the correct response code and headers based on the specified file availability.
+ *
+ * Note: the nginx module for using for the subrequest limits what status codes can be returned.
+ *
+ * Specifically, we can only send 2xx, 401, and 403. Everything else is sent to the client as a 500.
+ *
+ * Also note: for success responses, it's very important to not use 200 since that can be returned by
+ * fatal errors as well which could result in leaking data.
+ *
+ * @param string $file_visibility One of the allowed visibility constants.
+ * @param string $file_path Path to the file, minus the wp-content/uploads/ bits.
+ */
 function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
 	$status_code = 500;
