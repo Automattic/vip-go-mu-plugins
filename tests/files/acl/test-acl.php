@@ -11,7 +11,139 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 		require_once( __DIR__ . '/../../../files/acl/acl.php' );
 	}
 
-	public function get_data__send_visibility_headers() {
+	public function test__maybe_load_restrictions__no_constant_and_no_options() {
+		// no setup
+
+		maybe_load_restrictions();
+
+		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+	}
+
+	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
+		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
+
+		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectExceptionMessage( 'File ACL restrictions are enabled without server configs' );
+
+		maybe_load_restrictions();
+
+		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_load_restrictions__constant_and_restrict_all_option() {
+		define( 'VIP_FILES_ACL_ENABLED', true );
+		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
+
+		maybe_load_restrictions();
+
+		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'File visibility filter has no callbacks attached' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option() {
+		define( 'VIP_FILES_ACL_ENABLED', true );
+		update_option( 'vip_files_acl_restrict_unpublished_enabled', 1 );
+
+		maybe_load_restrictions();
+
+		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'File visibility filter has no callbacks attached' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_load_restrictions__constant_and_restrict_all_option_false() {
+		define( 'VIP_FILES_ACL_ENABLED', true );
+		update_option( 'vip_files_acl_restrict_all_enabled', false );
+
+		maybe_load_restrictions();
+
+		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option_false() {
+		define( 'VIP_FILES_ACL_ENABLED', true );
+		update_option( 'vip_files_acl_restrict_unpublished_enabled', false );
+
+		maybe_load_restrictions();
+
+		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+	}
+
+	public function test__get_option_as_bool__option_not_exists() {
+		$actual_value = get_option_as_bool( 'my_test_get_option_as_bool_option_not_exists' );
+
+		$this->assertEquals( false, $actual_value );
+	}
+
+	public function data_provider__get_option_as_bool__option_exists() {
+		return [
+			// true
+			'bool true' => [
+				true,
+				true,
+			],
+			'string true' => [
+				'true',
+				true,
+			],
+			'string yes' => [
+				'yes',
+				true,
+			],
+			'int 1' => [
+				1,
+				true,
+			],
+			'string 1' => [
+				'1',
+				true,
+			],
+
+			// false
+			'bool false' => [
+				false,
+				false,
+			],
+			'string false' => [
+				'false',
+				false,
+			],
+			'other number' => [
+				'1231412312',
+				false,
+			],
+			'other string' => [
+				'awdasnasd',
+				false,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider data_provider__get_option_as_bool__option_exists
+	 */
+	public function test__get_option_as_bool__option_exists( $option_value, $expected_value ) {
+		update_option( 'my_test_get_option_as_bool_option', $option_value );
+
+		$actual_value = get_option_as_bool( 'my_test_get_option_as_bool_option' );
+
+		$this->assertEquals( $expected_value, $actual_value );
+	}
+
+	public function data_provider__send_visibility_headers() {
 		return [
 			'public-file' => [
 				'FILE_IS_PUBLIC',
@@ -40,7 +172,7 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 *
-	 * @dataProvider get_data__send_visibility_headers
+	 * @dataProvider data_provider__send_visibility_headers
 	 */
 	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $should_have_private_header ) {
 		send_visibility_headers( $file_visibility, $file_path );

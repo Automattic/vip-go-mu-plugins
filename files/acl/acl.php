@@ -17,7 +17,7 @@ const FILE_IS_PRIVATE_AND_DENIED = 'FILE_IS_PRIVATE_AND_DENIED';
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
-	$is_files_acl_enabled = defined( 'VIP_FILES_ACL_ENABLED' ) && VIP_FILES_ACL_ENABLED;
+	$is_files_acl_enabled = defined( 'VIP_FILES_ACL_ENABLED' ) && true === VIP_FILES_ACL_ENABLED;
 	$is_restrict_all_enabled = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
 	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
 
@@ -32,18 +32,14 @@ function maybe_load_restrictions() {
 	}
 
 	if ( $is_restrict_all_enabled ) {
-		require_once( __DIR__ . '/files/acl/restrict-all-files.php' );
-		return;
-	}
-
-	if ( $is_restrict_unpublished_enabled ) {
-		require_once( __DIR__ . '/files/acl/restrict-unpublished-files.php' );
-		return;
+		require_once( __DIR__ . '/restrict-all-files.php' );
+	} elseif ( $is_restrict_unpublished_enabled ) {
+		require_once( __DIR__ . '/restrict-unpublished-files.php' );
 	}
 }
 
 function get_option_as_bool( $option_name, $default = false ) {
-	$value = get_option_as_bool( 'vip_files_acl_restrict_all_enabled', false );
+	$value = get_option( $option_name, false );
 
 	return in_array( $value, [
 		true,
