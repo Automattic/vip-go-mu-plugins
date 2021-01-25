@@ -17,7 +17,7 @@ class Search {
 	 */
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
 	/**
-	 * Jetpack Default Allow list to make migration path easier. See usage to see how is jetpack allow_list used.
+	 * Jetpack default post meta allow list to make migration path easier. See usage of jetpack_sync_post_meta_whitelist to see how this is used.
 	 */
 	public const JETPACK_POST_META_DEFAULT_ALLOW_LIST = array(
 		'_feedback_akismet_values',
@@ -1497,13 +1497,13 @@ class Search {
 	}
 
 	/**
-	 * Processes vip_search_post_meta_allow_list. This method serves two purposes. Fistly handles assoc array convertion and secondly handles
+	 * Processes vip_search_post_meta_allow_list. This method serves two purposes. Firstly handles assoc array conversion and secondly handles
 	 * default keys creation. To make migration from jetpack search easier this might mean leveraging jetpack_sync_post_meta_whitelist filter.
-	 * In case we already have some default keys defined we skip defualt key generation.
+	 * In case we already have some default keys defined we skip default key generation.
 	 *
-	 * @param {WP_Post} $post The post whose meta data is being prepared
+	 * @param {WP_Post} $post The post whose meta data is being prepared.
 	 * @param {array | null} $default_keys Optional parameter to skip default keys generation (used as part of ep_prepare_meta_allowed_protected_keys processing).
-	 * @return {array} The new allow list for post_meta_indexing
+	 * @return {array} The new allow list for post_meta_indexing.
 	 */
 	public function parse_vip_search_post_meta_allow_list_filter( $post, $default_keys = null ) {
 		if ( is_array( $default_keys ) ) {
