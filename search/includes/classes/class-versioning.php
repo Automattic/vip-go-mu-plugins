@@ -8,11 +8,11 @@ use \ElasticPress\Indexables as Indexables;
 use \WP_Error as WP_Error;
 
 class Versioning {
-	const INDEX_VERSIONS_OPTION = 'vip_search_index_versions';
-	const INDEX_VERSIONS_OPTION_GLOBAL = 'vip_search_global_index_versions';
-	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY = 'index_versions_self_heal_lock';
-	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP = 'vip_search';
-	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL = 10;
+	const INDEX_VERSIONS_OPTION                              = 'vip_search_index_versions';
+	const INDEX_VERSIONS_OPTION_GLOBAL                       = 'vip_search_global_index_versions';
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY            = 'index_versions_self_heal_lock';
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP          = 'vip_search';
+	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL            = 10;
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
 
 	/**
@@ -64,9 +64,9 @@ class Versioning {
 
 		add_action( 'init', [ $this, 'action__elasticpress_loaded' ], PHP_INT_MAX );
 
-		$this->elastic_search_instance = \ElasticPress\Elasticsearch::factory();
+		$this->elastic_search_instance   = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
-		$this->alerts = \Automattic\VIP\Utils\Alerts::instance();
+		$this->alerts                    = \Automattic\VIP\Utils\Alerts::instance();
 	}
 
 	public function action__elasticpress_loaded() {
@@ -184,7 +184,7 @@ class Versioning {
 	}
 
 	public function get_inactive_versions( Indexable $indexable ) {
-		$versions = $this->get_versions( $indexable );
+		$versions              = $this->get_versions( $indexable );
 		$active_version_number = $this->get_active_version_number( $indexable );
 
 		unset( $versions[ $active_version_number ] );
@@ -230,8 +230,8 @@ class Versioning {
 					\Automattic\VIP\Logstash\log2logstash(
 						array(
 							'severity' => 'warning',
-							'feature' => 'vip_search_versioning',
-							'message' => $message,
+							'feature'  => 'vip_search_versioning',
+							'message'  => $message,
 						)
 					);
 
@@ -247,16 +247,15 @@ class Versioning {
 			if ( $provide_default ) {
 				return array(
 					1 => array(
-						'number' => 1,
-						'active' => true,
-						'created_time' => null, // We don't know when it was actually created
+						'number'         => 1,
+						'active'         => true,
+						'created_time'   => null, // We don't know when it was actually created
 						'activated_time' => null,
 					),
 				);
 			} else {
 				return [];
-			}
-
+			}       
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
@@ -455,9 +454,9 @@ class Versioning {
 		}
 
 		$new_version = array(
-			'number' => $new_version_number,
-			'active' => false,
-			'created_time' => time(),
+			'number'         => $new_version_number,
+			'active'         => false,
+			'created_time'   => time(),
 			'activated_time' => null,
 		);
 
@@ -571,7 +570,7 @@ class Versioning {
 		// Mark all others as inactive, activate the new one
 		foreach ( $versions as &$version ) {
 			if ( $version_number === $version['number'] ) {
-				$version['active'] = true;
+				$version['active']         = true;
 				$version['activated_time'] = time();
 			} else {
 				$version['active'] = false;
@@ -681,7 +680,7 @@ class Versioning {
 
 		$this->queued_objects_by_type_and_version[ $object_type ][ $index_version ][] = array(
 			'object_id' => $object_id,
-			'options' => $options,
+			'options'   => $options,
 		);
 	}
 
@@ -737,7 +736,7 @@ class Versioning {
 
 				foreach ( $objects_by_version[ $active_version_number ] as $entry ) {
 					$object_id = $entry['object_id'];
-					$options = is_array( $entry['options'] ) ? $entry['options'] : array();
+					$options   = is_array( $entry['options'] ) ? $entry['options'] : array();
 
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];
@@ -887,9 +886,9 @@ class Versioning {
 				\Automattic\VIP\Logstash\log2logstash(
 					array(
 						'severity' => 'info',
-						'feature' => 'vip_search_versioning',
-						'message' => $message,
-						'extra' => $versions,
+						'feature'  => 'vip_search_versioning',
+						'message'  => $message,
+						'extra'    => $versions,
 					)
 				);
 			}
@@ -943,8 +942,8 @@ class Versioning {
 		}
 
 		$response_body_json = wp_remote_retrieve_body( $response );
-		$response_body = json_decode( $response_body_json, true );
-		$found_indices = [];
+		$response_body      = json_decode( $response_body_json, true );
+		$found_indices      = [];
 
 		if ( ! is_array( $response_body ) ) {
 			return $found_indices;
@@ -973,7 +972,7 @@ class Versioning {
 				continue;
 			}
 
-			$blog_id = get_current_blog_id();
+			$blog_id                    = get_current_blog_id();
 			$blog_id_exists_and_matches = isset( $index_info['blog_id'] ) && $blog_id === $index_info['blog_id'];
 			if ( $indexable->global && isset( $index_info['blog_id'] ) ) {
 				continue;
@@ -1012,7 +1011,7 @@ class Versioning {
 	}
 
 	public function parse_index_name( $index_name ) {
-		$index_info = [];
+		$index_info  = [];
 		$index_parts = explode( '-', $index_name );
 
 		// Proper index is `vip-<env_id>-<indexable-slug>(-<blog_id>)(-v<version>)`
@@ -1028,7 +1027,7 @@ class Versioning {
 			$index_info['blog_id'] = intval( $index_parts[3] );
 		}
 
-		$last_part = $index_parts[ count( $index_parts ) - 1 ];
+		$last_part             = $index_parts[ count( $index_parts ) - 1 ];
 		$index_info['version'] = 1;
 		if ( 'v' === substr( $last_part, 0, 1 ) && is_numeric( substr( $last_part, 1 ) ) ) {
 			$index_info['version'] = intval( substr( $last_part, 1 ) );
