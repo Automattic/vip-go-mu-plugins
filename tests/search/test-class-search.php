@@ -2453,7 +2453,7 @@ class Search_Test extends \WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$es->ep_handle_failed_request( $response, '' );
+		$es->ep_handle_failed_request( $response, [], '' );
 	}
 
 	public function test__maybe_log_query_ratelimiting_start_should_do_nothing_if_ratelimiting_already_started() {

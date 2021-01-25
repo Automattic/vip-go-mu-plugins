@@ -640,7 +640,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $response, $statsd_prefix );
+			$this->ep_handle_failed_request( $response, $query, $statsd_prefix );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -671,6 +671,10 @@ class Search {
 						'severity' => 'warning',
 						'feature' => 'vip_search_es_warning',
 						'message' => $message,
+						'extra' => [
+							'query' => $query,
+							'backtrace' => wp_debug_backtrace_summary(),
+						],
 					) );
 				}
 			}
@@ -684,7 +688,7 @@ class Search {
 		}
 	}
 
-	public function ep_handle_failed_request( $response, $statsd_prefix ) {
+	public function ep_handle_failed_request( $response, $query, $statsd_prefix ) {
 		$response_error = [];
 
 		if ( is_wp_error( $response ) ) {
@@ -716,6 +720,8 @@ class Search {
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
+					'query' => $query,
+					'backtrace' => wp_debug_backtrace_summary(),
 				]
 			);
 		}
