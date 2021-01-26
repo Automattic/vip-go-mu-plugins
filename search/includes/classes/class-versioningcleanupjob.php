@@ -1,0 +1,146 @@
+<?php
+
+namespace Automattic\VIP\Search;
+
+class VersioningCleanupJob {
+
+	/**
+	 * The name of the scheduled cron event to run the versioning cleanup.
+	 */
+	const CRON_EVENT_NAME = 'vip_search_versioning_cleanup';
+
+	const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
+
+	const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	/**
+	 * Initialize the job class.
+	 *
+	 * @access  public
+	 */
+	public function init() {
+		$this->load_dependencies();
+
+		add_action( self::CRON_EVENT_NAME, [ $this, 'versioning_cleanup' ] );
+
+		$this->schedule_job();
+	}
+
+
+
+	protected function load_dependencies() {
+		// Load ElasticPress
+		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+		$this->indexables = \ElasticPress\Indexables::factory();
+
+		// Index versioning
+		require_once __DIR__ . '/class-versioning.php';
+		$this->versioning = new Versioning();
+	}
+
+	/**
+	 * Schedule class versioning job.
+	 *
+	 * Add the event name to WP cron schedule and then add the action.
+	 */
+	public function schedule_job() {
+		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_NAME );
+		}
+	}
+
+	/**
+	 * Process versioning cleanup.
+	 */
+	public function versioning_cleanup() {
+		$indexables = $this->indexables->get_all();
+
+		foreach ( $indexables as $indexable ) {
+			$inactive_versions = $this->get_inactive_versions( $indexable );
+
+			foreach ( $inactive_versions as $version ) {
+				if ( ! ( $version['active'] ?? false ) ) {
+					// double check that it is not active
+					$this->send_notification( $indexable->slug, $version['number'] );
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Retrieve inactive versions to be deleted
+	 *
+	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve index versions
+	 * @return array Array of inactive index versions
+	 */
+	public function get_inactive_versions( \ElasticPress\Indexable $indexable ) {
+		$versions = $this->versioning->get_versions( $indexable );
+
+		if ( ! $versions && ! is_array( $versions ) ) {
+			return [];
+		}
+
+		$active_version = null;
+		foreach ( $versions as $version ) {
+			if ( ( $version['active'] ?? false ) && ( $version['activated_time'] ?? false ) ) {
+				$active_version = $version;
+				break;
+			}
+		}
+
+		if ( ! $active_version ) {
+			return [];
+		}
+
+		$week_ago_breakpoint            = time() - self::WEEK_IN_SECONDS;
+		$was_activated_in_the_last_week = $active_version['activated_time'] > $week_ago_breakpoint;
+		if ( $was_activated_in_the_last_week ) {
+			return [];
+		}
+
+		$inactive_versions = [];
+		foreach ( $versions as $version ) {
+			if ( $version['active'] ?? false ) {
+				continue;
+			}
+
+			if ( ( $version['created_time'] ?? time() ) > $week_ago_breakpoint ) {
+				// If the version was created within last week it is not inactive
+				continue;
+			}
+
+			array_push( $inactive_versions, $version );
+		}
+
+		return $inactive_versions;
+	}
+
+	/**
+	 * Send a notification about version to be deleted
+	 *
+	 * @param string $indexable_slug The slug of indexable
+	 * @param int $version The version number
+	 *
+	 * @return bool Bool indicating if sending succeeded, failed or skipped
+	 */
+	public function send_notification( $indexable_slug, $version ) {
+
+		$message = sprintf(
+			"Application %d - %s we would delete inactive index version %s for '%s' indexable",
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$version,
+			$indexable_slug
+		);
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'vip_search_versioning',
+				'message'  => $message,
+			)
+		);
+
+		\Automattic\VIP\Utils\Alerts::chat( self::SEARCH_ALERT_SLACK_CHAT, $message );
+	}
+}

@@ -61,7 +61,7 @@ class Search {
 		$this->load_dependencies();
 		$this->setup_hooks();
 		$this->load_commands();
-		$this->setup_healthchecks();
+		$this->setup_cron_jobs();
 		$this->setup_regular_stat_collection();
 	}
 
@@ -81,6 +81,8 @@ class Search {
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
 
+		// Load versioning cleanup job
+		require_once __DIR__ . '/class-versioningcleanupjob.php';
 
 		// Load field count gauge cron job
 		require_once __DIR__ . '/class-fieldcountgaugejob.php';
@@ -408,11 +410,13 @@ class Search {
 		}
 	}
 
-	protected function setup_healthchecks() {
+	protected function setup_cron_jobs() {
 		$this->healthcheck = new HealthJob();
+		$versioning_cleanup = new VersioningCleanupJob();
 
 		// Hook into init action to ensure cron-control has already been loaded
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
+		add_action( 'init', [ $versioning_cleanup, 'init' ] );
 	}
 
 	protected function setup_regular_stat_collection() {
@@ -427,7 +431,7 @@ class Search {
 	 * To allow consistent testing against timestamps, set the time used in functionality.
 	 *
 	 * @param int $time The fixed time you want to use in testing.
-	 */ 
+	 */
 	public function set_time( $time ) {
 		if ( is_numeric( $time ) ) {
 			$this->time = intval( $time );
@@ -1507,7 +1511,7 @@ class Search {
 		if ( ! is_array( $indexable_post_types ) ) {
 			return $indexable_post_types;
 		}
-		
+
 		if ( ! isset( $indexable_post_types['attachment'] ) ) {
 			$indexable_post_types['attachment'] = 'attachment';
 		}
