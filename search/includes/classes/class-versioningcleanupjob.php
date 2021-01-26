@@ -28,13 +28,10 @@ class VersioningCleanupJob {
 
 
 	protected function load_dependencies() {
-		// Load ElasticPress
-		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
-		$this->indexables = \ElasticPress\Indexables::factory();
+		$search = \Automattic\VIP\Search\Search::instance();
 
-		// Index versioning
-		require_once __DIR__ . '/class-versioning.php';
-		$this->versioning = new Versioning();
+		$this->indexables = $search->indexables;
+		$this->versioning = $search->versioning;
 	}
 
 	/**
