@@ -22,6 +22,7 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 
 
 		$partially_mocked_instance = $this->getMockBuilder( \Automattic\VIP\Search\VersioningCleanupJob::class )
+			->disableOriginalConstructor()
 			->setMethods( [ 'send_notification', 'get_inactive_versions' ] )
 			->getMock();
 
@@ -107,8 +108,6 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_inactive_versions_data
 	 */
 	public function test__get_inactive_versions( $input_versions, $expected_numbers ) {
-		$instance = new \Automattic\VIP\Search\VersioningCleanupJob();
-
 		$versions = $input_versions;
 
 		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
@@ -117,7 +116,7 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 			->setMethods( [ 'get_versions' ] )
 			->getMock();
 		$versioning_mock->method( 'get_versions' )->willReturn( $versions );
-		$instance->versioning = $versioning_mock;
+		$instance = new \Automattic\VIP\Search\VersioningCleanupJob( null, $versioning_mock );
 
 		$result = $instance->get_inactive_versions( $indexable_mock );
 

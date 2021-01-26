@@ -412,7 +412,7 @@ class Search {
 
 	protected function setup_cron_jobs() {
 		$this->healthcheck = new HealthJob();
-		$versioning_cleanup = new VersioningCleanupJob();
+		$versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
 		// Hook into init action to ensure cron-control has already been loaded
 		add_action( 'init', [ $this->healthcheck, 'init' ] );

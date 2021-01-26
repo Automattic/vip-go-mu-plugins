@@ -12,26 +12,21 @@ class VersioningCleanupJob {
 	const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
 
 	const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+
+	public function __construct( $indexables, $versioning ) {
+		$this->indexables = $indexables;
+		$this->versioning = $versioning;
+	}
+
 	/**
 	 * Initialize the job class.
 	 *
 	 * @access  public
 	 */
 	public function init() {
-		$this->load_dependencies();
-
 		add_action( self::CRON_EVENT_NAME, [ $this, 'versioning_cleanup' ] );
 
 		$this->schedule_job();
-	}
-
-
-
-	protected function load_dependencies() {
-		$search = \Automattic\VIP\Search\Search::instance();
-
-		$this->indexables = $search->indexables;
-		$this->versioning = $search->versioning;
 	}
 
 	/**
