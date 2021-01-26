@@ -2,12 +2,13 @@
 
 namespace Automattic\VIP\Files\Acl;
 
-require_once __DIR__ . '/../files/acl/pre-wp-utils.php';
+require_once __DIR__ . '/pre-wp-utils.php';
 
 $vip_files_acl_paths = Pre_WP_Utils\prepare_request( $_SERVER['HTTP_X_ORIGINAL_URI'] ?? null );
 
 if ( ! $vip_files_acl_paths ) {
-	// TODO: verify code to return
+	// Note: a 400 might be more appropriate but we're limited in terms of response codes.
+	// See `send_visibility_headers()` for more details.
 	http_response_code( 500 );
 
 	exit;
@@ -19,17 +20,20 @@ if ( $vip_files_acl_subsite_path ) {
 	$_SERVER['REQUEST_URI'] = $vip_files_acl_subsite_path . ( $_SERVER['REQUEST_URI'] ?? '' );
 }
 
-// Bootstap WordPress
-require __DIR__ . '/../../../wp-load.php';
+// Load WordPress
+require __DIR__ . '/../../../../wp-load.php';
 
-// Temp transitional check
+// START == Temporary Check ==
+// Can be removed once nginx configs to restrict direct access to this file are in place.
 if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV
 	&& true !== WPCOM_SANDBOXED ) {
 	die( 'Sorry, internal testing only.' );
 }
+// END == Temporary Check ==
 
 // Load the ACL lib
-require_once __DIR__ . '/../files/acl/acl.php';
+// TODO: not needed after https://github.com/Automattic/vip-go-mu-plugins/pull/1948
+require_once __DIR__ . '/acl.php';
 
 /**
  * Hook in here to adjust the visibility of a given file.
