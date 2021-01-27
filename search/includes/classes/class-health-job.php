@@ -28,7 +28,7 @@ class HealthJob {
 	/**
 	 * Initialize the job class
 	 *
-	 * @access	public
+	 * @access  public
 	 */
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
@@ -50,7 +50,7 @@ class HealthJob {
 	 * Add the event name to WP cron schedule and then add the action
 	 */
 	public function schedule_job() {
-		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME )  ) {
+		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
 	}
@@ -71,9 +71,9 @@ class HealthJob {
 	 *
 	 * Add the custom interval to WP cron schedule
 	 *
-	 * @param		array	$schedule
+	 * @param       array   $schedule
 	 *
-	 * @return	mixed
+	 * @return  mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
 		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
@@ -82,7 +82,7 @@ class HealthJob {
 
 		$schedule[ self::CRON_INTERVAL_NAME ] = [
 			'interval' => self::CRON_INTERVAL,
-			'display' => __( 'VIP Search Healthcheck time interval' ),
+			'display'  => __( 'VIP Search Healthcheck time interval' ),
 		];
 
 		return $schedule;
@@ -138,12 +138,12 @@ class HealthJob {
 	/**
 	 * Process the health check result
 	 *
-	 * @access	protected
-	 * @param	array		$result		Array of results from Health index validation
+	 * @access  protected
+	 * @param   array       $result     Array of results from Health index validation
 	 */
 	public function process_results( $results ) {
 		// If the whole thing failed, error
-		if( is_wp_error( $results ) ) {
+		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
 
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
@@ -151,25 +151,25 @@ class HealthJob {
 			return;
 		}
 
-		foreach( $results as $result ) {
+		foreach ( $results as $result ) {
 			// If there's an error, alert
-			if( array_key_exists( 'error', $result ) ) {
+			if ( array_key_exists( 'error', $result ) ) {
 				$message = sprintf( 'Error while validating index for %s: %s', home_url(), $result['error'] );
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
 
 			// Only alert if inconsistencies found
-			if ( isset( $result[ 'diff' ] ) && 0 !== $result[ 'diff' ] ) {
+			if ( isset( $result['diff'] ) && 0 !== $result['diff'] ) {
 				$message = sprintf(
 					'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
-					$result[ 'entity' ],
-					$result[ 'type' ],
+					$result['entity'],
+					$result['type'],
 					$result['index_version'],
-					$result[ 'db_total' ],
-					$result[ 'es_total' ],
-					$result[ 'diff' ]
+					$result['db_total'],
+					$result['es_total'],
+					$result['diff']
 				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$result['entity']}:{$result['type']}" );
