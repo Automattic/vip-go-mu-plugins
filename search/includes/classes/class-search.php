@@ -36,6 +36,7 @@ class Search {
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
 	public $healthcheck;
+	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
 	public $queue;
@@ -412,11 +413,11 @@ class Search {
 
 	protected function setup_cron_jobs() {
 		$this->healthcheck = new HealthJob();
-		$versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
+		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
 		// Hook into init action to ensure cron-control has already been loaded
 		add_action( 'init', [ $this->healthcheck, 'init' ] );
-		add_action( 'init', [ $versioning_cleanup, 'init' ] );
+		add_action( 'init', [ $this->versioning_cleanup, 'init' ] );
 	}
 
 	protected function setup_regular_stat_collection() {
