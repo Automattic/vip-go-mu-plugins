@@ -415,9 +415,19 @@ class Search {
 		$this->healthcheck = new HealthJob();
 		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
-		// Hook into init action to ensure cron-control has already been loaded
-		add_action( 'init', [ $this->healthcheck, 'init' ] );
-		add_action( 'init', [ $this->versioning_cleanup, 'init' ] );
+		$event = 'admin_init';
+
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			$event = 'wp_loaded';
+		}
+
+		/**
+		 * Hook into admin_init action to ensure cron-control has already been loaded.
+		 *
+		 * Hook into wp_loaded in WPCLI contexts.
+		 */
+		add_action( $event, [ $this->healthcheck, 'init' ] );
+		add_action( $event, [ $this->versioning_cleanup, 'init' ] );
 	}
 
 	protected function setup_regular_stat_collection() {
