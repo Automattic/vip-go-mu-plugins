@@ -23,14 +23,6 @@ if ( $vip_files_acl_subsite_path ) {
 // Load WordPress
 require __DIR__ . '/../../../../wp-load.php';
 
-// START == Temporary Check ==
-// Can be removed once nginx configs to restrict direct access to this file are in place.
-if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV
-	&& true !== WPCOM_SANDBOXED ) {
-	die( 'Sorry, internal testing only.' );
-}
-// END == Temporary Check ==
-
 /**
  * Hook in here to adjust the visibility of a given file.
  *
