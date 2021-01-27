@@ -31,10 +31,6 @@ if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV
 }
 // END == Temporary Check ==
 
-// Load the ACL lib
-// TODO: not needed after https://github.com/Automattic/vip-go-mu-plugins/pull/1948
-require_once __DIR__ . '/acl.php';
-
 /**
  * Hook in here to adjust the visibility of a given file.
  *
