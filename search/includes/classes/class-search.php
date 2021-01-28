@@ -1520,7 +1520,7 @@ class Search {
 	 * @param {WP_Post} $post The post whose meta data is being prepared.
 	 * @return {array} The new allow list for post_meta_indexing.
 	 */
-	public function parse_vip_search_post_meta_allow_list_filter( $post ) {
+	public function get_post_meta_allow_list( $post ) {
 		/**
 		 * Filters the allow list used for post meta indexing
 		 *
@@ -1560,12 +1560,8 @@ class Search {
 		return $post_meta_allow_list;
 	}
 
-	public function get_post_meta_allow_list( $post ) {
-		return $this->parse_vip_search_post_meta_allow_list_filter( $post );
-	}
-
 	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
-		$vip_search_allow_list_keys = $this->parse_vip_search_post_meta_allow_list_filter( $post );
+		$vip_search_allow_list_keys = $this->get_post_meta_allow_list( $post );
 
 		return array_merge( $keys, $vip_search_allow_list_keys );
 	}

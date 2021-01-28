@@ -1613,7 +1613,7 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
-	public function parse_vip_search_post_meta_allow_list_filter__combinations_data() {
+	public function get_post_meta_allow_list__combinations_data() {
 		return [
 			[
 				null, // Vip search
@@ -1649,9 +1649,9 @@ class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
-	 * @dataProvider parse_vip_search_post_meta_allow_list_filter__combinations_data
+	 * @dataProvider get_post_meta_allow_list__combinations_data
 	 */
-	public function test__parse_vip_search_post_meta_allow_list_filter__combinations( $vip_search_keys, $jetpack_added, $expected ) {
+	public function test__get_post_meta_allow_list__combinations( $vip_search_keys, $jetpack_added, $expected ) {
 		$es = \Automattic\VIP\Search\Search::instance();
 
 		$post     = new \WP_Post( new \StdClass() );
@@ -1669,12 +1669,12 @@ class Search_Test extends \WP_UnitTestCase {
 			});
 		}
 
-		$result = $es->parse_vip_search_post_meta_allow_list_filter( $post );
+		$result = $es->get_post_meta_allow_list( $post );
 
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function parse_vip_search_post_meta_allow_list_filter__processing_array_data() {
+	public function get_post_meta_allow_list__processing_array_data() {
 		return [
 			[
 				[ 'foo' ], // input
@@ -1700,9 +1700,9 @@ class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
-	 * @dataProvider parse_vip_search_post_meta_allow_list_filter__processing_array_data
+	 * @dataProvider get_post_meta_allow_list__processing_array_data
 	 */
-	public function test__parse_vip_search_post_meta_allow_list_filter__processing_array( $returned_by_filter, $expected ) {
+	public function test__get_post_meta_allow_list__processing_array( $returned_by_filter, $expected ) {
 		$es = \Automattic\VIP\Search\Search::instance();
 
 		$post     = new \WP_Post( new \StdClass() );
@@ -1717,7 +1717,7 @@ class Search_Test extends \WP_UnitTestCase {
 			return $returned_by_filter;
 		}, 0);
 
-		$result = $es->parse_vip_search_post_meta_allow_list_filter( $post );
+		$result = $es->get_post_meta_allow_list( $post );
 
 		$this->assertEquals( $expected, $result );
 	}
