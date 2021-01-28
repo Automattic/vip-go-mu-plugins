@@ -82,6 +82,7 @@ class VersioningCleanupJob {
 		$week_ago_breakpoint            = time() - self::WEEK_IN_SECONDS;
 		$was_activated_in_the_last_week = $active_version['activated_time'] > $week_ago_breakpoint;
 		if ( $was_activated_in_the_last_week ) {
+			// We want to keep the old version for a period of time, even if it's older than 1 week, while the new version proves stable
 			return [];
 		}
 
