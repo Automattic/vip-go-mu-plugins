@@ -13,6 +13,10 @@ use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 const CACHE_GROUP = 'vip-files-acl';
 
 function check_file_visibility( $file_visibility, $file_path ) {
+	if ( 0 === strpos( $file_path, 'sites/' ) ) {
+		$file_path = preg_replace( '#^sites\/\d+\/#', '', $file_path );
+	}
+
 	// Reverse lookup for the attachment ID
 	$attachment_id = get_attachment_id_from_file_path( $file_path );
 
