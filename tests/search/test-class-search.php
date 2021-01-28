@@ -1613,33 +1613,33 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
-	public function parse_vip_search_post_meta_allow_list_filter__default_keys_data() {
+	public function parse_vip_search_post_meta_allow_list_filter__combinations_data() {
 		return [
 			[
-				null, // Default Keys
+				null, // Vip search
 				null, // Jetpack filter added
-				[],  // expected
+				\Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST,  // expected
 			],
 			[
-				[ 'foo' ], // Default Keys
+				[ 'foo' ], // Vip search
 				null, // Jetpack filter added
-				[ 'foo' ],  // expected
+				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ),  // expected
 			],
 			[
 				// default keys provided so jetpack is ignored
-				[ 'foo' ], // Default Keys
+				[ 'foo' ], // Vip search
 				[ 'bar' ], // Jetpack filter added
-				[ 'foo' ],  // expected
+				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ),  // expected
 			],
 			[
 				// default keys provided (even empty) so jetpack is ignored
-				[], // Default Keys
+				[], // Vip search
 				[ 'bar' ], // Jetpack filter added
-				[],  // expected
+				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
 			],
 			[
 				// no default keys provided and jetpack filter defined we should take jetpack defaults and run it through the filter
-				null, // Default Keys
+				null, // Vip search
 				[ 'bar' ], // Jetpack filter added
 				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
 			],
@@ -1649,21 +1649,27 @@ class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
-	 * @dataProvider parse_vip_search_post_meta_allow_list_filter__default_keys_data
+	 * @dataProvider parse_vip_search_post_meta_allow_list_filter__combinations_data
 	 */
-	public function test__parse_vip_search_post_meta_allow_list_filter__default_keys( $default_keys, $jetpack_added, $expected ) {
+	public function test__parse_vip_search_post_meta_allow_list_filter__combinations( $vip_search_keys, $jetpack_added, $expected ) {
 		$es = \Automattic\VIP\Search\Search::instance();
 
 		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
 
+		if ( is_array( $vip_search_keys ) ) {
+			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+				return array_merge( $post_meta, $vip_search_keys );
+			});
+		}
+
 		if ( is_array( $jetpack_added ) ) {
 			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
 				return array_merge( $post_meta, $jetpack_added );
-			}, 0, 1);
+			});
 		}
 
-		$result = $es->parse_vip_search_post_meta_allow_list_filter( $post, $default_keys );
+		$result = $es->parse_vip_search_post_meta_allow_list_filter( $post );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -1701,6 +1707,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
+
+		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
+		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
+			return [];
+		} );
 
 		\add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
 			return $returned_by_filter;
@@ -1860,18 +1871,22 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 * @dataProvider filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data
 	 */
-	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_keys, $added_keys, $expected ) {
+	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_ep_protected_keys, $added_keys, $expected ) {
 		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
+
+		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
+		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
+			return [];
+		} );
 
 		\add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
 			return array_merge( $meta_keys, $added_keys );
 		}, 0);
 
-
 		\Automattic\VIP\Search\Search::instance();
 
-		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_keys, $post );
+		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $post );
 
 		$this->assertEquals( $expected, $result );
 	}

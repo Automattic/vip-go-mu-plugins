@@ -441,6 +441,8 @@ class Search {
 		if ( false !== $this->is_protected_content_enabled() ) {
 			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
 		}
+
+		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'vip_search_post_meta_allow_list_defaults' ) );
 	}
 
 	protected function load_commands() {
@@ -1497,23 +1499,27 @@ class Search {
 	}
 
 	/**
-	 * Processes vip_search_post_meta_allow_list. This method serves two purposes. Firstly handles assoc array conversion and secondly handles
-	 * default keys creation. To make migration from jetpack search easier this might mean leveraging jetpack_sync_post_meta_whitelist filter.
-	 * In case we already have some default keys defined we skip default key generation.
+	 * Adds default values for vip_search_post_meta_allow_list by combining vip-search defaults with jetpack values (to ease migration).
+	 *
+	 * @param {array} $keys Input post meta keys.
+	 * @return {array} Post meta keys enhanced by default values.
+	 */
+	public function vip_search_post_meta_allow_list_defaults( $keys ) {
+		$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
+
+		if ( is_array( $keys ) ) {
+			return array_merge( $keys, self::POST_META_DEFAULT_ALLOW_LIST, $default_jetpack );
+		}
+		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $default_jetpack );
+	}
+
+	/**
+	 * Processes vip_search_post_meta_allow_list. This method handles assoc array conversion if needed.
 	 *
 	 * @param {WP_Post} $post The post whose meta data is being prepared.
-	 * @param {array | null} $default_keys Optional parameter to skip default keys generation (used as part of ep_prepare_meta_allowed_protected_keys processing).
 	 * @return {array} The new allow list for post_meta_indexing.
 	 */
-	public function parse_vip_search_post_meta_allow_list_filter( $post, $default_keys = null ) {
-		if ( is_array( $default_keys ) ) {
-			$default_allow_list = $default_keys;
-		} else if ( \has_filter( 'jetpack_sync_post_meta_whitelist' ) ) {
-			$default_allow_list = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
-		} else {
-			$default_allow_list = self::POST_META_DEFAULT_ALLOW_LIST;
-		}
-
+	public function parse_vip_search_post_meta_allow_list_filter( $post ) {
 		/**
 		 * Filters the allow list used for post meta indexing
 		 *
@@ -1522,7 +1528,7 @@ class Search {
 		 * @param {WP_Post} $post The post whose meta data is being prepared
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
-		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', $default_allow_list, $post );
+		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', [], $post );
 
 		// If post meta allow list is not an array, treat it like an empty array.
 		if ( ! is_array( $post_meta_allow_list ) ) {
@@ -1558,7 +1564,9 @@ class Search {
 	}
 
 	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
-		return $this->parse_vip_search_post_meta_allow_list_filter( $post, $keys );
+		$vip_search_allow_list_keys = $this->parse_vip_search_post_meta_allow_list_filter( $post );
+
+		return array_merge( $keys, $vip_search_allow_list_keys );
 	}
 
 	/**
