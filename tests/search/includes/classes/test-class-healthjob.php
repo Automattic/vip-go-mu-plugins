@@ -7,7 +7,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
 	 */
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static function setUpBeforeClass() {
@@ -75,28 +75,28 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test__vip_search_healthjob_process_results_with_inconsistencies() {
 		$results = array(
 			array(
-				'entity' => 'post',
-				'type' => 'post',
-				'db_total' => 1000,
-				'es_total' => 900,
+				'entity'        => 'post',
+				'type'          => 'post',
+				'db_total'      => 1000,
+				'es_total'      => 900,
 				'index_version' => 111,
-				'diff' => -100,
+				'diff'          => -100,
 			),
 			array(
-				'entity' => 'post',
-				'type' => 'custom_type',
-				'db_total' => 100,
-				'es_total' => 200,
+				'entity'        => 'post',
+				'type'          => 'custom_type',
+				'db_total'      => 100,
+				'es_total'      => 200,
 				'index_version' => 222,
-				'diff' => 100,
+				'diff'          => 100,
 			),
 			array(
-				'entity' => 'users',
-				'type' => 'N/A',
-				'db_total' => 100,
-				'es_total' => 100,
+				'entity'        => 'users',
+				'type'          => 'N/A',
+				'db_total'      => 100,
+				'es_total'      => 100,
 				'index_version' => 333,
-				'diff' => 0,
+				'diff'          => 0,
 			),
 			array(
 				'error' => 'Foo Error',
@@ -149,7 +149,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				array(
 					'#vip-go-es-alerts',
 					'Error while validating index for http://example.org: Foo Error',
-					2
+					2,
 				)
 			)
 			->will( $this->returnValue( true ) );
@@ -251,7 +251,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test_vip_search_healthjob_is_disabled_when_app_id_matches_disabled_list() {
 		define( 'VIP_GO_APP_ID', 2341 );
 
-		$job = new \Automattic\VIP\Search\HealthJob();
+		$job                                = new \Automattic\VIP\Search\HealthJob();
 		$job->health_check_disabled_sites[] = VIP_GO_APP_ID;
 
 		$enabled = $job->is_enabled();
