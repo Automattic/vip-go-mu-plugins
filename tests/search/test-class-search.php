@@ -1616,30 +1616,30 @@ class Search_Test extends \WP_UnitTestCase {
 	public function get_post_meta_allow_list__combinations_data() {
 		return [
 			[
-				null, // Vip search
+				null, // VIP search
 				null, // Jetpack filter added
 				\Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST,  // expected
 			],
 			[
-				[ 'foo' ], // Vip search
+				[ 'foo' ], // VIP search
 				null, // Jetpack filter added
 				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ),  // expected
 			],
 			[
-				// default keys provided so jetpack is ignored
-				[ 'foo' ], // Vip search
+				// keys provided by VIP and JP filters
+				[ 'foo' ], // VIP search
 				[ 'bar' ], // Jetpack filter added
 				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ),  // expected
 			],
 			[
-				// default keys provided (even empty) so jetpack is ignored
-				[], // Vip search
+				// keys from empty VIP filter, JP filter
+				[], // VIP search
 				[ 'bar' ], // Jetpack filter added
 				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
 			],
 			[
-				// no default keys provided and jetpack filter defined we should take jetpack defaults and run it through the filter
-				null, // Vip search
+				// No VIP filter, JP filter
+				null, // VIP search
 				[ 'bar' ], // Jetpack filter added
 				array_merge( \Automattic\VIP\Search\Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
 			],
