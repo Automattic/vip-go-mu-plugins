@@ -23,18 +23,6 @@ if ( $vip_files_acl_subsite_path ) {
 // Load WordPress
 require __DIR__ . '/../../../../wp-load.php';
 
-// START == Temporary Check ==
-// Can be removed once nginx configs to restrict direct access to this file are in place.
-if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV
-	&& true !== WPCOM_SANDBOXED ) {
-	die( 'Sorry, internal testing only.' );
-}
-// END == Temporary Check ==
-
-// Load the ACL lib
-// TODO: not needed after https://github.com/Automattic/vip-go-mu-plugins/pull/1948
-require_once __DIR__ . '/acl.php';
-
 /**
  * Hook in here to adjust the visibility of a given file.
  *
