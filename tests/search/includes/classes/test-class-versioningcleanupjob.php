@@ -101,6 +101,23 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 				],
 				[],
 			],
+			[
+				// Versions without created_time (possibly recovered by self-healing) won't be reported as inactive
+				[
+					1 => [
+						'number'         => 1,
+						'active'         => true,
+						'created_time'   => null,
+						'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+					],
+					2 => [
+						'number'       => 2,
+						'active'       => false,
+						'created_time' => null,
+					],
+				],
+				[],
+			],
 		];
 	}
 

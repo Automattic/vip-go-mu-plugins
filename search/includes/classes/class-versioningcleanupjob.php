@@ -97,7 +97,7 @@ class VersioningCleanupJob {
 			}
 
 			if ( ( $version['created_time'] ?? time() ) > $week_ago_breakpoint ) {
-				// If the version was created within last week it is not inactive
+				// If the version was created within last week OR doen't have created_time defined it is not inactive
 				continue;
 			}
 
