@@ -90,7 +90,7 @@ function get_changelog_tags( $github_labels ) {
     ];
 
     foreach ( $github_labels as $label ) {
-        preg_match('/ChangelogID:\s*(\d+)/', $label['description'], $matches);
+        preg_match('/ChangelogTagID:\s*(\d+)/', $label['description'], $matches);
         if ( $matches ) {
             array_push( $tags, $matches[1] );
         }
