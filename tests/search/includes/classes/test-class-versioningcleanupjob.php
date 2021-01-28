@@ -23,11 +23,11 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_instance = $this->getMockBuilder( \Automattic\VIP\Search\VersioningCleanupJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_notification', 'get_inactive_versions' ] )
+			->setMethods( [ 'send_notification', 'get_stale_inactive_versions' ] )
 			->getMock();
 
 		$partially_mocked_instance
-			->method( 'get_inactive_versions' )
+			->method( 'get_stale_inactive_versions' )
 			->willReturn( [ [ 'number' => 1 ], [ 'number' => 2 ] ] );
 
 		$partially_mocked_instance->indexables = $indexables_mock;
@@ -45,9 +45,10 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 		$partially_mocked_instance->versioning_cleanup();
 	}
 
-	public function get_inactive_versions_data() {
+	public function get_stale_inactive_versions_data() {
 		return [
 			[
+				[],
 				[],
 				[],
 			],
@@ -64,6 +65,12 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 						'active'       => false,
 						'created_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
 					],
+				],
+				[
+					'number'         => 1,
+					'active'         => true,
+					'created_time'   => null,
+					'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
 				],
 				[ 2 ],
 			],
@@ -82,6 +89,12 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 						'created_time' => time() - ( 2 * 24 * 60 * 60 ), // 2 days ago
 					],
 				],
+				[
+					'number'         => 1,
+					'active'         => true,
+					'created_time'   => null,
+					'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+				],
 				[],
 			],
 			[
@@ -99,22 +112,28 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 						'created_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
 					],
 				],
+				[
+					'number'         => 1,
+					'active'         => true,
+					'created_time'   => null,
+					'activated_time' => time() - ( 2 * 24 * 60 * 60 ), // 2 days ago
+				],
 				[],
 			],
 			[
 				// Versions without created_time (possibly recovered by self-healing) won't be reported as inactive
 				[
-					1 => [
-						'number'         => 1,
-						'active'         => true,
-						'created_time'   => null,
-						'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
-					],
 					2 => [
 						'number'       => 2,
 						'active'       => false,
 						'created_time' => null,
 					],
+				],
+				[
+					'number'         => 1,
+					'active'         => true,
+					'created_time'   => null,
+					'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
 				],
 				[],
 			],
@@ -122,20 +141,21 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_inactive_versions_data
+	 * @dataProvider get_stale_inactive_versions_data
 	 */
-	public function test__get_inactive_versions( $input_versions, $expected_numbers ) {
+	public function test__get_stale_inactive_versions( $input_versions, $active_version, $expected_numbers ) {
 		$versions = $input_versions;
 
 		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
 
 		$versioning_mock = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
-			->setMethods( [ 'get_versions' ] )
+			->setMethods( [ 'get_versions', 'get_active_version' ] )
 			->getMock();
 		$versioning_mock->method( 'get_versions' )->willReturn( $versions );
+		$versioning_mock->method( 'get_active_version' )->willReturn( $active_version );
 		$instance = new \Automattic\VIP\Search\VersioningCleanupJob( null, $versioning_mock );
 
-		$result = $instance->get_inactive_versions( $indexable_mock );
+		$result = $instance->get_stale_inactive_versions( $indexable_mock );
 
 		$result_numbers = array_map( function( $element ) {
 			return $element['number'];

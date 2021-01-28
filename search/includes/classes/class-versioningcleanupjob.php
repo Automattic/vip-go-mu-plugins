@@ -47,7 +47,7 @@ class VersioningCleanupJob {
 		$indexables = $this->indexables->get_all();
 
 		foreach ( $indexables as $indexable ) {
-			$inactive_versions = $this->get_inactive_versions( $indexable );
+			$inactive_versions = $this->get_stale_inactive_versions( $indexable );
 
 			foreach ( $inactive_versions as $version ) {
 				if ( ! ( $version['active'] ?? false ) ) {
@@ -65,22 +65,17 @@ class VersioningCleanupJob {
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve index versions
 	 * @return array Array of inactive index versions
 	 */
-	public function get_inactive_versions( \ElasticPress\Indexable $indexable ) {
+	public function get_stale_inactive_versions( \ElasticPress\Indexable $indexable ) {
 		$versions = $this->versioning->get_versions( $indexable );
 
 		if ( ! $versions && ! is_array( $versions ) ) {
 			return [];
 		}
 
-		$active_version = null;
-		foreach ( $versions as $version ) {
-			if ( ( $version['active'] ?? false ) && ( $version['activated_time'] ?? false ) ) {
-				$active_version = $version;
-				break;
-			}
-		}
+		$active_version = $this->versioning->get_active_version( $indexable );
 
-		if ( ! $active_version ) {
+		if ( ! $active_version || ! $active_version['activated_time'] ) {
+			// No active version or active version doesn't have activated time making it impossible to determine if it was activated recently or not
 			return [];
 		}
 
