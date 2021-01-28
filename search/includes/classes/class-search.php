@@ -1505,12 +1505,13 @@ class Search {
 	 * @return {array} Post meta keys enhanced by default values.
 	 */
 	public function filter__vip_search_post_meta_allow_list_defaults( $keys ) {
+		if ( ! is_array( $keys ) ) {
+			$keys = [];
+		}
+
 		$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
 
-		if ( is_array( $keys ) ) {
-			return array_merge( $keys, self::POST_META_DEFAULT_ALLOW_LIST, $default_jetpack );
-		}
-		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $default_jetpack );
+		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $default_jetpack, $keys );
 	}
 
 	/**
