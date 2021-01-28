@@ -442,7 +442,7 @@ class Search {
 			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
 		}
 
-		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'vip_search_post_meta_allow_list_defaults' ) );
+		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
 	}
 
 	protected function load_commands() {
@@ -1504,7 +1504,7 @@ class Search {
 	 * @param {array} $keys Input post meta keys.
 	 * @return {array} Post meta keys enhanced by default values.
 	 */
-	public function vip_search_post_meta_allow_list_defaults( $keys ) {
+	public function filter__vip_search_post_meta_allow_list_defaults( $keys ) {
 		$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
 
 		if ( is_array( $keys ) ) {
