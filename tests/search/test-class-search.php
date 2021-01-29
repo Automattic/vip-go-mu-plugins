@@ -1618,30 +1618,30 @@ class Search_Test extends \WP_UnitTestCase {
 			[
 				null, // VIP search
 				null, // Jetpack filter added
-				Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST,  // expected
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST ), // expected
 			],
 			[
 				[ 'foo' ], // VIP search
 				null, // Jetpack filter added
-				array_merge( Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ),  // expected
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
 			],
 			[
 				// keys provided by VIP and JP filters
 				[ 'foo' ], // VIP search
 				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ),  // expected
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ), // expected
 			],
 			[
 				// keys from empty VIP filter, JP filter
 				[], // VIP search
 				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
 			],
 			[
 				// No VIP filter, JP filter
 				null, // VIP search
 				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ),
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
 			],
 		];
 	}
