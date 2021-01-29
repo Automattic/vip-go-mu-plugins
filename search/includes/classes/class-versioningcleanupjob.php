@@ -9,8 +9,6 @@ class VersioningCleanupJob {
 	 */
 	const CRON_EVENT_NAME = 'vip_search_versioning_cleanup';
 
-	const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
-
 	const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 
 	public function __construct( $indexables, $versioning ) {
@@ -79,10 +77,10 @@ class VersioningCleanupJob {
 			return [];
 		}
 
-		$week_ago_breakpoint            = time() - self::WEEK_IN_SECONDS;
-		$was_activated_in_the_last_week = $active_version['activated_time'] > $week_ago_breakpoint;
-		if ( $was_activated_in_the_last_week ) {
-			// We want to keep the old version for a period of time, even if it's older than 1 week, while the new version proves stable
+		$time_ago_breakpoint            = time() - \MONTH_IN_SECONDS;
+		$was_activated_recently = $active_version['activated_time'] > $time_ago_breakpoint;
+		if ( $was_activated_recently ) {
+			// We want to keep the old version for a period of time, even if it's older than the cutoff time period, while the new version proves stable
 			return [];
 		}
 
@@ -92,8 +90,8 @@ class VersioningCleanupJob {
 				continue;
 			}
 
-			if ( ( $version['created_time'] ?? time() ) > $week_ago_breakpoint ) {
-				// If the version was created within last week OR doen't have created_time defined it is not inactive
+			if ( ( $version['created_time'] ?? time() ) > $time_ago_breakpoint ) {
+				// If the version was created within within the cutoff period OR doen't have created_time defined it is not inactive
 				continue;
 			}
 
