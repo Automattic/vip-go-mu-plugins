@@ -105,7 +105,7 @@ const App = props => {
 	const toggleOverlay = () => setVisible( ! visible );
 
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
-	<Fragment>
+	<div className="search-dev-tools__wrapper">
 		<button onClick={ toggleOverlay }>Open Search Dev Tools</button>
 		<Overlay isVisible={ visible } closeOverlay={closeOverlay} opacity="100">
 			<div className={style.vip_search_dev_tools}>
@@ -114,7 +114,7 @@ const App = props => {
 				<Queries />
 			</div>
 		</Overlay>
-	</Fragment>
+	</div>
 	</SearchContext.Provider>
 	
 	);

@@ -12,9 +12,14 @@ export default {
 	 * @param {object} options - this is mainly relevant for plugins (will always be empty in the config), default to an empty object
 	 **/
 	webpack(config, env, helpers, options) {
+		/**
+		 * Drop the hash part to simplify the assets including logic for JS and CSS with wp_enqueue_scripts.
+		 */
 		config.output.filename = '[name].js';
 		config.output.chunkFilename = '[name].chunk.js';
 
-		/** you can change the config here **/
+		const [ cssExtract ] = helpers.getPluginsByName( config, 'MiniCssExtractPlugin' );
+		cssExtract.plugin.options.filename = '[name].css';
+		cssExtract.plugin.options.chunkFilename = '[name].chunk.css';
 	},
 };

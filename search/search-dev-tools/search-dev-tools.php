@@ -80,8 +80,18 @@ function is_ratelimited(): bool {
 	return wp_cache_get( Search::QUERY_COUNT_CACHE_KEY, Search::QUERY_COUNT_CACHE_GROUP ) > Search::$max_query_count;
 }
 
+add_action( 'wp_enqueue_scripts', function() {
+	if ( ! should_enable_search_dev_tools() ) {
+		return;
+	}
+
+	// @todo: remove cachebusting arg.
+	wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], current_time( 'timestamp' ), true );
+	wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], current_time( 'timestamp' ) );
+}, 11 );
+
 add_action(
-	'wp_footer',
+	'wp_body_open',
 	function() {
 		if ( ! should_enable_search_dev_tools() ) {
 			return;
@@ -133,6 +143,8 @@ add_action(
 	<script>
 		var VIPSearchDevTools = <?php echo wp_json_encode( $data, JSON_PRETTY_PRINT ); ?>;
 	</script>
+	<div id="vip-search-dev-tools-mount" data-widget-host="vip-search-dev-tools"></div>
 		<?php
-	}
+	},
+	5
 );
