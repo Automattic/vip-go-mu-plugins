@@ -58,19 +58,19 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 						'number'         => 1,
 						'active'         => true,
 						'created_time'   => null,
-						'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+						'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 					],
 					2 => [
 						'number'       => 2,
 						'active'       => false,
-						'created_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+						'created_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 					],
 				],
 				[
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+					'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 				],
 				[ 2 ],
 			],
@@ -81,19 +81,19 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 						'number'         => 1,
 						'active'         => true,
 						'created_time'   => null,
-						'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+						'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 					],
 					2 => [
 						'number'       => 2,
 						'active'       => false,
-						'created_time' => time() - ( 2 * 24 * 60 * 60 ), // 2 days ago
+						'created_time' => time() - ( 2 * \DAY_IN_SECONDS ),
 					],
 				],
 				[
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+					'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 				],
 				[],
 			],
@@ -104,19 +104,19 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 						'number'         => 1,
 						'active'         => true,
 						'created_time'   => null,
-						'activated_time' => time() - ( 2 * 24 * 60 * 60 ), // 2 days ago
+						'activated_time' => time() - ( 2 * \DAY_IN_SECONDS ),
 					],
 					2 => [
 						'number'       => 2,
 						'active'       => false,
-						'created_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+						'created_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 					],
 				],
 				[
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 2 * 24 * 60 * 60 ), // 2 days ago
+					'activated_time' => time() - ( 2 * \DAY_IN_SECONDS ),
 				],
 				[],
 			],
@@ -133,7 +133,7 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 10 * 24 * 60 * 60 ), // 10 days ago
+					'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
 				],
 				[],
 			],
