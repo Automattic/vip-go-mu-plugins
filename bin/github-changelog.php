@@ -87,7 +87,7 @@ function create_draft_changelog( $title, $content, $tags ) {
     echo "\nHttpCode: $http_code";
 
     if ( $http_code >= 400 ) {
-        echo "\n\nFailed to create changelog post\n";
+        echo "\n\nFailed to create changelog draft post\n";
         exit( 1 );
     }
 }
