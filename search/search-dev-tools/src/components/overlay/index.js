@@ -15,11 +15,12 @@ import {callOnEscapeKey} from '../../utils';
 
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme, isVisible, opacity } = props;
+	const closeWithEscape = callOnEscapeKey(closeOverlay);
 	useEffect( () => {
-		window.addEventListener('keydown', callOnEscapeKey( closeOverlay ) );
+		window.addEventListener( 'keydown', closeWithEscape );
 		return () => {
 			// Cleanup after event
-			window.removeEventListener('keydown', callOnEscapeKey( closeOverlay ) );
+			window.removeEventListener('keydown', closeWithEscape );
 		};
 	}, [] );
 

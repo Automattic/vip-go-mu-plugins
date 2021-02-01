@@ -5,38 +5,61 @@
 import { createContext, Fragment, h } from 'preact';
 import { useContext, useEffect, useState } from 'preact/hooks';
 import Overlay from './overlay';
-
 import style from './style.scss';
 
-const SearchContext = createContext( null );
+// TODO: switch to async imports
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-json';
+import 'prismjs/themes/prism.css';
 
+// Global state as Context.
+const SearchContext = createContext( null );
+/**
+ *  Async Helper
+ * @param {String} url Request URL
+ * @param {Object} data Any
+ * @param {String} nonce 
+ */
 async function postData( url = '', data = {}, nonce = '' ) {
-	const response = await fetch( url, {
-		method: 'POST',
-		credentials: 'same-origin',
-		headers: {
-			'Content-Type': 'application/json',
-			// 'X-WP-Nonce': nonce,
-		},
-		body: JSON.stringify( data ),
-	} );
-	return response.json();
+	try {
+		const response = await fetch( url, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				'Content-Type': 'application/json',
+				// 'X-WP-Nonce': nonce,
+			},
+			body: JSON.stringify( data ),
+		} );
+		return response.json();
+	} catch( e ) {
+		// TODO: handle erros
+	}
 }
 
+/**
+ * 
+ * @returns {Preact.Component} General useful debug info.
+ */
 const GeneralInformation = () => {
 	const { status, queries, information } = useContext( SearchContext );
 	return <div>
-		<h2>General Info</h2>
-		<h4>Status: {status}</h4>
-		<h4>Query count: {queries.length}</h4>
-		<h3>Debug Information</h3>
+		<h4>General Info</h4>
+		<h5>Status: {status}</h5>
+		<h5>Query count: {queries.length}</h5>
+		<h4 style="margin-top: 20px;">Debug Information</h4>
 		<ul>
-			{information.map( ( info, idx ) => ( <li key={idx}><strong>{info.label}</strong>: { info.value} </li> ) )}
+			{information.map( ( info, idx ) => ( <li key={idx}><strong>{info.label}</strong>: { info.value } </li> ) )}
 		</ul>
-
 	</div>;
 };
 
+/**
+ * A single query
+ *
+ * @returns {Preact.Component} A query component.
+ */
 const Query = ( { args, request, url } ) => {
 	const txtQuery = JSON.stringify( args.body, null, 2 );
 	const txtResult = JSON.stringify( request.body, null, 2 );
@@ -68,24 +91,39 @@ const Query = ( { args, request, url } ) => {
 			return setState( initialState );
 		}
 
-		fetchForQuery( state.query, url );
-	}, [ state.query ] );
+		if ( ! state.editing ) {
+			fetchForQuery( state.query, url );
+		}
+	}, [ state.query, state.editing ] );
 
 	return ( <div className={style.query_wrap}>
-		<h3>URL: {url}</h3>
-		<h3>Request</h3>
-		{ ! state.editing
-			? ( <div className={style.query_val} onClick={e => setState( { ...state, editing: true } )}>{state.query}</div> )
-			: ( <textarea rows="50" className={style.query_val} onBlur={e => setState( { ...state, result: '', editing: false, query: e.target.value } )}>{state.query}</textarea> )
-		}
+		<h5>URL: {url}</h5>
+		<h5>Request</h5>
+		<Editor
+			value={state.query}
+			onValueChange={code => setState( { ...state, query: code, editing: true } ) }
+			onBlur={e => setState( { ...state, editing: false } )}
+			highlight={ code => highlight( code, languages.json )}
+			padding={10}
+			style={{
+				fontSize: 14,
+			}}
+		/>
 
-		<button onClick={() => setState( initialState )}>Reset</button>
+		<div className={style.query_actions}>
+			<button>Run</button>
+			<button onClick={() => setState( initialState )}>Reset</button>
+		</div>
+
 
 		<h3>Response</h3>
-		<div className={style.query_result}>{state.result}</div>
+		<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight( state.result, languages.json ) }}></div>
 	</div> );
 };
 
+/**
+ * Query list
+ */
 const Queries = () => {
 	const { queries } = useContext( SearchContext );
 
@@ -98,25 +136,27 @@ const Queries = () => {
 	</div> );
 };
 
+/**
+ * Main app component
+ */
 const App = props => {
-	const [ visible, setVisible ] = useState(false);
-	const closeOverlay = e => setVisible(false);
-	const openOverlay = e => setVisible(true);
+	const [ visible, setVisible ] = useState( false );
+	const closeOverlay = e => setVisible( false );
+	const openOverlay = e => setVisible( true );
 	const toggleOverlay = () => setVisible( ! visible );
 
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
-	<div className="search-dev-tools__wrapper">
-		<button onClick={ toggleOverlay }>Open Search Dev Tools</button>
-		<Overlay isVisible={ visible } closeOverlay={closeOverlay} opacity="100">
-			<div className={style.vip_search_dev_tools}>
-				<h1>Search Dev Tools</h1>
-				<GeneralInformation />
-				<Queries />
-			</div>
-		</Overlay>
-	</div>
+		<div className="search-dev-tools__wrapper">
+			<button onClick={ toggleOverlay }>Open Search Dev Tools</button>
+			{ visible ? ( <Overlay isVisible={ visible } closeOverlay={closeOverlay} opacity="100">
+				<div className={style.vip_search_dev_tools}>
+					<h3>Search Dev Tools</h3>
+					<GeneralInformation />
+					<Queries />
+				</div>
+			</Overlay> ) : null }
+		</div>
 	</SearchContext.Provider>
-	
 	);
 };
 export default App;

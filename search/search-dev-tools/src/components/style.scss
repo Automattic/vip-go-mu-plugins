@@ -12,13 +12,17 @@
 
 .vip_search_dev_tools {
 	padding: 20px;
+	> * {
+		margin-bottom: 20px;
+	}
 }
 
 .query {
 	&_wrap {
 		margin-bottom: 20px;
-		border: 1px solid red;
+		border-bottom: 1px solid #999999;
 		padding: 10px;
+		overflow: scroll;
 	}
 	&_val,
 	&_result
@@ -28,5 +32,13 @@
 		width: 100%;
 		overflow-y: scroll;
 		margin-bottom: 20px;
+		font-size: 14px;
+	}
+	&_actions {
+		margin: 20px 0;
+
+		button {
+			margin-right: 20px;
+		}
 	}
 }

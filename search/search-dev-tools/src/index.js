@@ -6,9 +6,11 @@ import habitat from 'preact-habitat';
 
 import Widget from './components/app';
 
-let _habitat = habitat( Widget );
+window.addEventListener( 'DOMContentLoaded', () => {
+	const _habitat = habitat( Widget );
 
-_habitat.render({
-	selector: '[data-widget-host="vip-search-dev-tools"]',
-	clean: true
-});
+	_habitat.render( {
+		selector: '[data-widget-host="vip-search-dev-tools"]',
+		clean: true,
+	} );
+} );
