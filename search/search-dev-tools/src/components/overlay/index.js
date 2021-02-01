@@ -2,7 +2,6 @@
 /**
  * External dependencies
  */
-// import { __ } from '@wordpress/i18n';
 import { h } from 'preact';
 import { useEffect } from 'preact/hooks';
 
