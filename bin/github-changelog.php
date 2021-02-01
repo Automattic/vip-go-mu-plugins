@@ -79,9 +79,18 @@ function create_draft_changelog( $title, $content, $tags ) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [ 'Authorization:Bearer ' . WP_CHANGELOG_AUTH_TOKEN ] );
     curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
     $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     curl_close($ch);
+
+
     echo "Response:\n";
     echo $response;
+    echo "\nHttpCode: $http_code";
+
+    if ( $http_code >= 400 ) {
+        echo "\n\nFailed to create changelog post\n";
+        exit( 1 );
+    }
 }
 
 function get_changelog_tags( $github_labels ) {
