@@ -82,7 +82,6 @@ function create_draft_changelog( $title, $content, $tags ) {
     $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     curl_close($ch);
 
-
     echo "Response:\n";
     echo $response;
     echo "\nHttpCode: $http_code";
