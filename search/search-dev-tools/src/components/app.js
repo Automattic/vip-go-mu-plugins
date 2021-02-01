@@ -62,6 +62,7 @@ const Query = ( { args, request, url } ) => {
 
 			setState( { ...state, result: res.result.body } );
 		} catch ( err ) {
+			// eslint-disable-next-line no-console
 			console.log( err );
 		}
 	};
