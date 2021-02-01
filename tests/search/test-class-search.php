@@ -529,8 +529,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// Should not have fataled (class was included)
 
-		// Should have registered the init action to setup the health check
-		$this->assertEquals( true, has_action( 'init', [ $es->healthcheck, 'init' ] ) );
+		// Ensure it returns the priority set. Easiest way to to ensure it's not false
+		$this->assertTrue( false !== has_action( 'admin_init', [ $es->healthcheck, 'init' ] ) );
 	}
 
 	/**

@@ -81,6 +81,7 @@ class Search {
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
 	public $healthcheck;
+	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
 	public $queue;
@@ -106,7 +107,7 @@ class Search {
 		$this->load_dependencies();
 		$this->setup_hooks();
 		$this->load_commands();
-		$this->setup_healthchecks();
+		$this->setup_cron_jobs();
 		$this->setup_regular_stat_collection();
 	}
 
@@ -126,6 +127,8 @@ class Search {
 		// Load health check cron job
 		require_once __DIR__ . '/class-health-job.php';
 
+		// Load versioning cleanup job
+		require_once __DIR__ . '/class-versioningcleanupjob.php';
 
 		// Load field count gauge cron job
 		require_once __DIR__ . '/class-fieldcountgaugejob.php';
@@ -455,11 +458,22 @@ class Search {
 		}
 	}
 
-	protected function setup_healthchecks() {
+	protected function setup_cron_jobs() {
 		$this->healthcheck = new HealthJob();
+		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
-		// Hook into init action to ensure cron-control has already been loaded
-		add_action( 'init', [ $this->healthcheck, 'init' ] );
+		/**
+		 * Hook into admin_init action to ensure cron-control has already been loaded.
+		 *
+		 * Hook into wp_loaded in WPCLI contexts.
+		 */
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
+			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
+		} else {
+			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
+			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
+		}
 	}
 
 	protected function setup_regular_stat_collection() {
