@@ -17,9 +17,13 @@ $overlay-horizontal-padding-small-viewport: 0.5em;
 	transition: opacity 0.15s ease-in-out;
 	box-sizing: border-box;
 
-	// @include break-small() {
-	// 	padding: $overlay-vertical-padding $overlay-horizontal-padding;
-	// }
+
+	&::after {
+		content: url('../../assets/close.svg');
+		position: absolute;
+		top: 30px;
+		right: 30px;
+	}
 
 	&.is-hidden {
 		transform: translateX( 100vw );
