@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 if [ $# -lt 3 ]; then
 	echo "usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version]"
 	exit 1
@@ -20,7 +22,10 @@ download() {
     fi
 }
 
-if [[ $WP_VERSION =~ [0-9]+\.[0-9]+(\.[0-9]+)? ]]; then
+
+if [[ $WP_VERSION == 'nightly' ]]; then
+	WP_TESTS_TAG="trunk"
+elif [[ $WP_VERSION =~ [0-9]+\.[0-9]+(\.[0-9]+)? ]]; then
 	WP_TESTS_TAG="tags/$WP_VERSION"
 else
 	# http serves a single offer, whereas https serves multiple. we only want one
@@ -60,9 +65,18 @@ install_wp() {
 		local ARCHIVE_NAME="wordpress-$WP_VERSION"
 	fi
 
-	download https://wordpress.org/${ARCHIVE_NAME}.tar.gz  /tmp/wordpress.tar.gz
-	tar --strip-components=1 -zxmf /tmp/wordpress.tar.gz -C $WP_CORE_DIR_ACTUAL
-
+	if [ $WP_VERSION == 'nightly' ]; then
+		local ARCHIVE_NAME='nightly-builds/wordpress-latest'
+		download https://wordpress.org/${ARCHIVE_NAME}.zip  /tmp/wordpress.zip
+		unzip -qq /tmp/wordpress.zip -d /tmp
+		cd /tmp/wordpress
+		cp -r . $WP_CORE_DIR_ACTUAL
+		rm -rf /tmp/wordpress
+	else
+		download https://wordpress.org/${ARCHIVE_NAME}.tar.gz  /tmp/wordpress.tar.gz
+		tar --strip-components=1 -zxmf /tmp/wordpress.tar.gz -C $WP_CORE_DIR_ACTUAL
+	fi
+	
 	download https://raw.github.com/markoheijnen/wp-mysqli/master/db.php $WP_CORE_DIR_ACTUAL/wp-content/db.php
 }
 
@@ -84,14 +98,16 @@ install_test_suite() {
 
 	cd $WP_TESTS_DIR_ACTUAL
 
-	if [ ! -f wp-tests-config.php ]; then
-		download https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR':" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-		sed $ioption "s/youremptytestdbnamehere/$DB_NAME/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-		sed $ioption "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-		sed $ioption "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-		sed $ioption "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-	fi
+	# Always start from a clean config
+	rm -f wp-tests-config.php
+
+	# Set up the config file
+	download https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
+	sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR':" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
+	sed $ioption "s/youremptytestdbnamehere/$DB_NAME/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
+	sed $ioption "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
+	sed $ioption "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
+	sed $ioption "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
 
 }
 

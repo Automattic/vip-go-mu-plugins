@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Retrieve featured plugins from the wpvip.com API
@@ -56,7 +56,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 	if ( empty( $plugins ) ) {
 		?>
 		<div class="notice notice-error">
-			<p><?php _e( 'Unable to display VIP featured plugins; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
+			<p><?php esc_html_e( 'Unable to display VIP Featured Technology Partners; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
 		</div>
 		<?php
 		return;
@@ -64,20 +64,20 @@ function wpcom_vip_render_vip_featured_plugins() {
 
 	?>
 	<div class="featured-plugins notice">
-		<h3><?php _e( 'VIP Featured Plugins', 'vip-plugins-dashboard' ); ?></h3>
+		<h3><?php esc_html_e( 'VIP Featured Technology Partners', 'vip-plugins-dashboard' ); ?></h3>
 		<?php
 		foreach ( $plugins as $key => $plugin ) {
 			?>
 			<div class="plugin">
-				<a class="fp-content" href="<?php echo esc_attr( $plugin->meta->plugin_url ); ?>" target="_blank">
+				<a class="fp-content" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
 					<img src="<?php echo esc_attr( $plugin->meta->listing_logo ); ?>" alt="<?php echo esc_attr( $plugin->post_title ); ?>" />
 					<h4><?php echo esc_html( $plugin->post_title ); ?></h4>
 					<p><?php echo esc_html( $plugin->meta->listing_description ); ?></p>
 				</a>
-				<a class="fp-overlay" href="<?php echo esc_attr( $plugin->meta->plugin_url ); ?>" target="_blank">
+				<a class="fp-overlay" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
 					<div class="fp-overlay-inner">
 						<div class="fp-overlay-cell">
-							<span>	
+							<span>
 								<?php _e( 'More Information', 'vip-plugins-dashboard' ); ?>
 							</span>
 						</div>
@@ -272,6 +272,10 @@ add_action( 'admin_enqueue_scripts', 'wpcom_vip_plugins_ui_admin_enqueue_scripts
  */
 function wpcom_vip_include_active_plugins() {
 	$retired_plugins_option = get_option( 'wpcom_vip_active_plugins', array() );
+
+	if ( ! is_array( $retired_plugins_option ) ) {
+		return;
+	}
 
 	foreach ( $retired_plugins_option as $plugin ) {
 		 wpcom_vip_load_plugin( $plugin );

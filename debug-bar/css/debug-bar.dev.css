@@ -175,6 +175,7 @@ body.debug-bar-maximized.debug-bar-visible {
 }
 
 #querylist pre {
+	text-align: left;
 	font-size: 12px;
 	padding: 10px;
 }
@@ -252,12 +253,48 @@ body.debug-bar-maximized.debug-bar-visible {
 	margin-bottom: inherit;
 }
 
+/* =========================================================================
+ *   Object cache styling
+ * ========================================================================= */
 #object-cache-stats h2 {
 	border: none;
-	float: none;
+	float: left;
 	text-align: left;
 	font-size: 22px;
 	margin-bottom: 0;
+}
+
+
+#object-cache-stats ul.debug-menu-links,
+#object-cache-stats-menu-targets {
+       clear: both;
+}
+
+.object-cache-stats-menu-target pre {
+       white-space: pre-wrap;
+       margin: 1rem 0;
+}
+
+#object-cache-stats ul.debug-menu-links li {
+       float: left;
+       margin: 0 10px 10px 0;
+       background: none;
+       border: 1px solid #eee;
+       color: #4b5259;
+       list-style: none;
+}
+
+#object-cache-stats ul.debug-menu-links li:hover {
+       border-color: #ddd;
+}
+
+#object-cache-stats ul.debug-menu-links li a {
+       background: none;
+       color: #4b5259;
+       overflow: hidden;
+       display: block;
+       padding: 5px 9px;
+       text-decoration: none;
 }
 
 #querylist h3 {

@@ -19,6 +19,16 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
 }
 
 /**
+ * Woocommerce log location
+ *
+ * @constant WC_LOG_DIR Write Woocommerce logs to the /tmp directory to prevent
+ * them from being copied to the Files Service.
+ */
+if ( ! defined( 'WC_LOG_DIR' ) ) {
+	define( 'WC_LOG_DIR', '/tmp' );
+}
+
+/**
  * AMP for WordPress (https://github.com/ampproject/amp-wp)
  * Make sure the `amp` query var has an explicit value.
  * Avoids issues when filtering the deprecated `query_string` hook.

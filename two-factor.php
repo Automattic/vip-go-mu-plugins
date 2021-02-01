@@ -12,6 +12,9 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
+// Do not allow API requests from 2fa users.
+add_filter( 'two_factor_user_api_login_enable', '__return_false', 1 ); // Hook in early to allow overrides
+
 function wpcom_vip_should_force_two_factor() {
 
 	// Don't force 2FA by default in local environments
@@ -29,7 +32,7 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	if ( Two_Factor_Core::is_user_using_two_factor() ) {
+	if ( apply_filters( 'wpcom_vip_is_user_using_two_factor', false ) ) {
 		return false;
 	}
 
@@ -44,17 +47,32 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	// Don't force 2FA for OneLogin SSO
-	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
-		return false;
-	}
-
-	// Don't force 2FA for SimpleSaml
-	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
+	// Allow custom SSO solutions
+	if ( wpcom_vip_use_custom_sso() ) {
 		return false;
 	}
 
 	return true;
+}
+
+function wpcom_vip_use_custom_sso() {
+
+	$custom_sso_enabled = apply_filters( 'wpcom_vip_use_custom_sso', null );
+	if( null !== $custom_sso_enabled ) {
+		return $custom_sso_enabled;
+	}
+
+	// Check for OneLogin SSO
+	if ( function_exists( 'is_saml_enabled' ) && is_saml_enabled() ) {
+		return true;
+	}
+
+	// Check for SimpleSaml
+	if ( function_exists( '\HumanMade\SimpleSaml\instance' ) && \HumanMade\SimpleSaml\instance() ) {
+		return true;
+	}
+
+	return false;
 }
 
 function wpcom_vip_is_jetpack_authorize_request() {
@@ -121,6 +139,17 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			return $limited;
 		}, 9 );
 
+		// Calcuate two factor authentication support outside map_meta_cap to avoid callback loop
+		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
+		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
+
+		add_filter( 
+			'wpcom_vip_is_user_using_two_factor',
+			function() use ( $is_user_using_two_factor ) {
+				return $is_user_using_two_factor;
+			}
+		);
+
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
 	}
@@ -133,7 +162,9 @@ function wpcom_enable_two_factor_plugin() {
 		return;	
 	}
 
-	wpcom_vip_load_plugin( 'two-factor' );
+	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
+	// Switching to require_once so it no longer gets skipped
+	require_once( WPMU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php' );
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
@@ -144,7 +175,7 @@ function wpcom_enable_two_factor_plugin() {
  */
 function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 	// If the machine user is not defined or the current user is not the machine user, don't filter caps.
-	if ( wpcom_vip_is_two_factor_forced() && ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || $user_id !== WPCOM_VIP_MACHINE_USER_ID ) ) {
+	if ( ( ! defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || WPCOM_VIP_MACHINE_USER_ID !== $user_id ) && wpcom_vip_is_two_factor_forced() ) {
 		// Use a hard-coded list of caps that give just enough access to set up 2FA
 		$subscriber_caps = [
 			'read',
@@ -154,6 +185,26 @@ function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 		// You can edit your own user account (required to set up 2FA)
 		if ( $cap === 'edit_user' && ! empty( $args ) && $user_id === $args[ 0 ] ) {
 			$subscriber_caps[] = 'edit_user';
+		}
+
+		// WooCommerce caps to check
+		$woocommerce_caps = [
+			'edit_posts',
+			'manage_woocommerce',
+			'view_admin_dashboard',
+		];
+
+		// Track whether or not we've already granted this user wp-admin access based on WC standards.
+		static $user_should_have_wc_admin_access = false;
+
+		// If we haven't granted access yet, and this $cap is a WC cap to check.
+		if ( ! $user_should_have_wc_admin_access && in_array( $cap, $woocommerce_caps ) ) {
+
+			// If this user has this $cap and it's `true`, grant this user wp-admin access.
+			if ( isset( wp_get_current_user()->allcaps[ $cap ] ) && true === wp_get_current_user()->allcaps[ $cap ] ) {
+				$user_should_have_wc_admin_access = true;
+				add_filter( 'woocommerce_prevent_admin_access', '__return_false' );
+			}
 		}
 
 		if ( ! in_array( $cap, $subscriber_caps, true ) ) {

@@ -6,12 +6,12 @@
  * @package   query-monitor
  * @link      https://github.com/johnbillion/query-monitor
  * @author    John Blackbourn <john@johnblackbourn.com>
- * @copyright 2009-2018 John Blackbourn
+ * @copyright 2009-2020 John Blackbourn
  * @license   GPL v2 or later
  *
  * Plugin Name:  Query Monitor
- * Description:  The Developer Tools panel for WordPress.
- * Version:      3.1.1
+ * Description:  The Developer Tools Panel for WordPress.
+ * Version:      3.6.5
  * Plugin URI:   https://github.com/johnbillion/query-monitor
  * Author:       John Blackbourn & contributors
  * Author URI:   https://github.com/johnbillion/query-monitor/graphs/contributors
@@ -34,8 +34,9 @@
  * Determines if Query Monitor should be enabled. We don't
  * want to load it if we don't have to.
  *
- *  - If a QM_COOKIE is detected, Query monitor is enabled
- *  - If the WPCOM_VIP_QM_ENABLE constant is true, Query Monitor is enabled
+ *  - If logged-in user has the `view_query_monitor`
+ *    capability, Query Monitor is enabled.
+ *  - If a QM_COOKIE is detected, Query Monitor is enabled.
  *
  * Note that we have to set the value for QM_COOKIE here,
  * in order to detect it.
@@ -137,3 +138,26 @@ function wpcom_vip_qm_disable_on_404() {
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
 
+
+// We are putting dispatchers as last so that QM still can catch other operations in shutdown action
+function change_dispatchers_shutdown_priority( array $dispatchers ) {
+	if ( is_array( $dispatchers ) ) {
+		if ( isset( $dispatchers['html'] ) ) {
+			$html_dispatcher = $dispatchers['html'];
+			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
+		}
+		if ( isset( $dispatchers['ajax'] ) ) {
+			$ajax_dispatcher = $dispatchers['ajax'];
+			remove_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), 0 );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
+		}
+	}
+
+	return $dispatchers;
+}
+add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
