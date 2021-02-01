@@ -1523,9 +1523,17 @@ class Search {
 			$keys = [];
 		}
 
-		$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
+		if ( $this->is_jetpack_migration() ) {
+			$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
 
-		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $default_jetpack, $keys );
+			$keys = array_merge( $default_jetpack, $keys );
+		}
+
+		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $keys );
+	}
+
+	public function is_jetpack_migration() {
+		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === VIP_SEARCH_MIGRATION_SOURCE;
 	}
 
 	/**

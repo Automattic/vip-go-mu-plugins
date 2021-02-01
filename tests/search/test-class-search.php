@@ -1508,6 +1508,34 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
+	public function test__is_jetpack_migration() {
+		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
+
+		$this->assertTrue( $this->search_instance->is_jetpack_migration() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_jetpack_migration__no_constant() {
+		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_jetpack_migration__different_value() {
+		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'foo' );
+
+		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
 		$es = new \Automattic\VIP\Search\Search();
 
@@ -1613,7 +1641,7 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
-	public function get_post_meta_allow_list__combinations_data() {
+	public function get_post_meta_allow_list__combinations_for_jetpack_migration_data() {
 		return [
 			[
 				null, // VIP search
@@ -1649,9 +1677,72 @@ class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
-	 * @dataProvider get_post_meta_allow_list__combinations_data
+	 * @dataProvider get_post_meta_allow_list__combinations_for_jetpack_migration_data
 	 */
-	public function test__get_post_meta_allow_list__combinations( $vip_search_keys, $jetpack_added, $expected ) {
+	public function test__get_post_meta_allow_list__combinations_for_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
+		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		if ( is_array( $vip_search_keys ) ) {
+			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+				return array_merge( $post_meta, $vip_search_keys );
+			});
+		}
+
+		if ( is_array( $jetpack_added ) ) {
+			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+				return array_merge( $post_meta, $jetpack_added );
+			});
+		}
+
+		$result = $es->get_post_meta_allow_list( $post );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function get_post_meta_allow_list__combinations_not_jetpack_migration_data() {
+		return [
+			[
+				null, // VIP search
+				null, // Jetpack filter added
+				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
+			],
+			[
+				[ 'foo' ], // VIP search
+				null, // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
+			],
+			[
+				// keys provided by VIP and JP filters
+				[ 'foo' ], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
+			],
+			[
+				// keys from empty VIP filter, JP filter
+				[], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
+			],
+			[
+				// No VIP filter, JP filter
+				null, // VIP search
+				[ 'bar' ], // Jetpack filter added
+				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_post_meta_allow_list__combinations_not_jetpack_migration_data
+	 */
+	public function test__get_post_meta_allow_list__combinations_not_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
 		$es = \Automattic\VIP\Search\Search::instance();
 
 		$post     = new \WP_Post( new \StdClass() );
