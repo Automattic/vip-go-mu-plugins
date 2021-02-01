@@ -1,6 +1,5 @@
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable wpcalypso/import-docblock */
-import './style';
 import { h } from 'preact';
 import habitat from 'preact-habitat';
 
