@@ -9,7 +9,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 	* Make tests run in separate processes since we're testing state
 	* related to plugin init, including various constants.
 	*/
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static $version_instance;
@@ -106,7 +106,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 					'two' => array(
 						'number' => 'two',
 					),
-					3 => array(
+					3     => array(
 						'number' => 3,
 					),
 				),
@@ -196,15 +196,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Input array of versions
 				array(
 					2 => array(
-						'number' => 2,
-						'active' => false,
-						'created_time' => 1,
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => 1,
 						'activated_time' => null,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => 2,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => 2,
 						'activated_time' => null,
 					),
 				),
@@ -213,15 +213,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected inactive versions
 				array(
 					2 => array(
-						'number' => 2,
-						'active' => false,
-						'created_time' => 1,
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => 1,
 						'activated_time' => null,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => 2,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => 2,
 						'activated_time' => null,
 					),
 				),
@@ -242,15 +242,15 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Input array of versions
 				array(
 					2 => array(
-						'number' => 2,
-						'active' => true,
-						'created_time' => 1,
+						'number'         => 2,
+						'active'         => true,
+						'created_time'   => 1,
 						'activated_time' => 1,
 					),
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					),
 				),
@@ -259,9 +259,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected inactive versions
 				array(
 					3 => array(
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					),
 				),
@@ -951,13 +951,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 				1 => array(
 					array(
 						'object_id' => 1,
-						'options' => array( 'foo' => 'bar' ),
+						'options'   => array( 'foo' => 'bar' ),
 					),
 				),
 				2 => array(
 					array(
 						'object_id' => 1,
-						'options' => array( 'foo' => 'bar' ),
+						'options'   => array( 'foo' => 'bar' ),
 					),
 				),
 			),
@@ -992,13 +992,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$expected_jobs = array(
 			array(
-				'object_id' => 1,
-				'object_type' => 'post',
+				'object_id'     => 1,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 2,
-				'object_type' => 'post',
+				'object_id'     => 2,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 		);
@@ -1030,25 +1030,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				array(
 					'post' => array(
 						// Active version
-						1 => array(
+						1    => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 						// Some other random version, should have no effect on replicated jobs
 						9999 => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 					),
@@ -1057,13 +1057,13 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// Expected queued jobs
 				array(
 					array(
-						'object_id' => 1,
-						'object_type' => 'post',
+						'object_id'     => 1,
+						'object_type'   => 'post',
 						'index_version' => 2,
 					),
 					array(
-						'object_id' => 9000,
-						'object_type' => 'post',
+						'object_id'     => 9000,
+						'object_type'   => 'post',
 						'index_version' => 2,
 					),
 				),
@@ -1075,25 +1075,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				array(
 					'post' => array(
 						// Inactive version
-						2 => array(
+						2    => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 						// Some other random version, should have no effect on replicated jobs
 						9999 => array(
 							array(
 								'object_id' => 1, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 							array(
 								'object_id' => 9000, // Object id
-								'options' => array(), // Additional options it was originally queued with
+								'options'   => array(), // Additional options it was originally queued with
 							),
 						),
 					),
@@ -1175,18 +1175,18 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$expected_jobs = array(
 			array(
-				'object_id' => 1,
-				'object_type' => 'post',
+				'object_id'     => 1,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 2,
-				'object_type' => 'post',
+				'object_id'     => 2,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 			array(
-				'object_id' => 3,
-				'object_type' => 'post',
+				'object_id'     => 3,
+				'object_type'   => 'post',
 				'index_version' => 2,
 			),
 		);
@@ -1233,10 +1233,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 				array(),
 				// Expected (normalized) version
 				array(
-					'number' => null,
-					'active' => null,
+					'number'         => null,
+					'active'         => null,
 					'activated_time' => null,
-					'created_time' => null,
+					'created_time'   => null,
 				),
 			),
 
@@ -1249,10 +1249,10 @@ class Versioning_Test extends \WP_UnitTestCase {
 				),
 				// Expected (normalized) version
 				array(
-					'number' => 2,
-					'active' => false,
+					'number'         => 2,
+					'active'         => false,
 					'activated_time' => null,
-					'created_time' => null,
+					'created_time'   => null,
 				),
 			),
 		);
@@ -1280,6 +1280,489 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
 	}
+
+	private $default_versions = [
+		1 => [
+			'number' => 1,
+			'active' => true,
+			'created_time' => null,
+			'activated_time' => null,
+		],
+	];
+
+	public function get_versions_default_data() {
+		return [
+			[
+				null,
+				$this->default_versions,
+			],
+			[
+				'some string',
+				$this->default_versions,
+			],
+			[
+				[],
+				$this->default_versions,
+			],
+			[
+				[
+					'post' => [
+						2 => [
+							'number' => 2,
+							'active' => true,
+						],
+					],
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+				],
+			],
+			[
+				// No valid versions
+				[
+					'post' => 'invalid versions value',
+				],
+				$this->default_versions,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_versions_default_data
+	 */
+	public function test__get_versions_default( $versioning, $expected ) {
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+
+		$result = self::$version_instance->get_versions( $indexable );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function get_versions_data() {
+		return [
+			[
+				null,
+				[],
+			],
+			[
+				'some string',
+				[],
+			],
+			[
+				[],
+				[],
+			],
+			[
+				[
+					'post' => [
+						2 => [
+							'number' => 2,
+							'active' => true,
+						],
+					],
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+				],
+			],
+			[
+				// No valid versions
+				[
+					'post' => 'invalid versions value',
+				],
+				[],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_versions_data
+	 */
+	public function test__get_versions( $versioning, $expected ) {
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+
+		$result = self::$version_instance->get_versions( $indexable, false );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	private $get_versions__combine_globals_local = [
+		'foo' => [
+			1 => [
+				'number' => 1,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+	];
+	private $get_versions__combine_globals_global = [
+		'foo' => [
+			2 => [
+				'number' => 2,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+		'bar' => [
+			1 => [
+				'number' => 1,
+				'active' => true,
+				'created_time' => null,
+				'activated_time' => null,
+			],
+		],
+	];
+	public function get_versions__combine_globals_data() {
+		return [
+			[
+				// foo in globals
+				'foo',
+				true,
+				$this->get_versions__combine_globals_global['foo'],
+			],
+			[
+				// foo in locals
+				'foo',
+				false,
+				$this->get_versions__combine_globals_local['foo'],
+			],
+			[
+				// bar comes from globals
+				'bar',
+				true,
+				$this->get_versions__combine_globals_global['bar'],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_versions__combine_globals_data
+	 */
+	public function test__get_versions__combine_globals( $slug, $global, $expected ) {
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $this->get_versions__combine_globals_local );
+		update_site_option( Versioning::INDEX_VERSIONS_OPTION_GLOBAL, $this->get_versions__combine_globals_global );
+
+		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock->slug = $slug;
+		$indexable_mock->global = $global;
+
+		$result = self::$version_instance->get_versions( $indexable_mock );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function maybe_self_heal_reconstruct_data() {
+		return [
+			[
+				[],
+				[],
+				[],
+			],
+			[
+				[ 'post', 'user' ],
+				[
+					'post' => [
+						1 => [],
+					],
+					'user' => [
+						1 => [],
+					],
+				],
+				[],
+			],
+			[
+				// empty user versions
+				[ 'post', 'user' ],
+				[
+					'post' => [
+						1 => [],
+					],
+					'user' => [],
+				],
+				[ 'user' ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider maybe_self_heal_reconstruct_data
+	 */
+	public function test__maybe_self_heal_reconstruct( $indexables, $versioning, $expected_reconstructions ) {
+		$indexables_mocks = array_map( function( $slug ) {
+			$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+			$indexable_mock->slug = $slug;
+			return $indexable_mock;
+		}, $indexables);
+
+		$indexables_mock = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get_all' ] )
+			->getMock();
+		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
+
+		$partially_mocked_versioning = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
+			->setMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
+			->getMock();
+
+		$partially_mocked_versioning
+			->method( 'get_versions' )
+			->will( $this->returnCallback( function( $indexable ) use ( $versioning ) {
+					return $versioning[ $indexable->slug ];
+			} ) );
+
+		$partially_mocked_versioning->expects( $this->exactly( count( $expected_reconstructions ) ) )
+			->method( 'reconstruct_versions_for_indexable' );
+
+		$partially_mocked_versioning->elastic_search_indexables = $indexables_mock;
+		$partially_mocked_versioning->alerts = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+
+		$partially_mocked_versioning->maybe_self_heal();
+	}
+
+	public function get_all_accesible_indicies_data() {
+		return [
+			[
+				new WP_Error( 'Test Error' ),
+				new WP_Error( 'Test Error' ),
+			],
+			[
+				[ 'response' => [ 'code' => 500 ] ],
+				new WP_Error( 'failed-to-fetch-indicies', 'Request failed to fetch indicies with status 500' ),
+			],
+			[
+				[
+					'response' => [ 'code' => 200 ],
+					'body' => 'malformed_body',
+				],
+				[],
+			],
+			[
+				[
+					'response' => [ 'code' => 200 ],
+					'body' => '{"valid_json": "with_invalid_structure"}',
+				],
+				[],
+			],
+			[
+				[
+					'response' => [ 'code' => 200 ],
+					'body' => '[{"index": "ix1"}, {"index": "ix2"}]',
+				],
+				[ 'ix1', 'ix2' ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_all_accesible_indicies_data
+	 */
+	public function test__get_all_accesible_indicies( $response, $expected ) {
+		$es_mock = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+			->setMethods( [ 'remote_request' ] )
+			->getMock();
+		$es_mock->expects( $this->once() )
+			->method( 'remote_request' )
+			->willReturn( $response );
+
+
+		$instance = new Versioning();
+		$instance->elastic_search_instance = $es_mock;
+
+
+		$result = $instance->get_all_accesible_indicies();
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function reconstruct_versions_for_indexable_data() {
+		return [
+			[
+				[],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
+				[],
+			],
+			[
+				'invalid_input',
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
+				[],
+			],
+			[
+				[ 'invalid_ix_format' ],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
+				[],
+			],
+			[
+				// correctly parse and pick the lowest
+				[ 'vip-200508-post-1-v3', 'vip-200508-post-1', 'vip-200508-post-1-v2' ],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
+				[
+					1 => [
+						'number' => 1,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+					2 => [
+						'number' => 2,
+						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+					3 => [
+						'number' => 3,
+						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+				],
+			],
+			[
+				//  ignore other indexables
+				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-post2-1-v5', 'vip-200508-post-1-v3' ],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+					3 => [
+						'number' => 3,
+						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+				],
+			],
+			[
+				//  ignore different blog id
+				[ 'vip-200508-post-1-v2', 'vip-200508-post-2-v3' ],
+				[
+					'slug' => 'post',
+					'global' => false,
+				],
+				[
+					2 => [
+						'number' => 2,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+				],
+			],
+			[
+				//  handle globals correctly (ignores the ones with blog_id)
+				[ 'vip-200508-user', 'vip-200508-user-1-v2', 'vip-200508-user-v3' ],
+				[
+					'slug' => 'user',
+					'global' => true,
+				],
+				[
+					1 => [
+						'number' => 1,
+						'active' => true,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+					3 => [
+						'number' => 3,
+						'active' => false,
+						'created_time' => null,
+						'activated_time' => null,
+					],
+				],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider reconstruct_versions_for_indexable_data
+	 */
+	public function test__reconstruct_versions_for_indexable( $indicies, $indexable_data, $expected ) {
+		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock->slug = $indexable_data['slug'];
+		$indexable_mock->global = $indexable_data['global'];
+
+		$result = self::$version_instance->reconstruct_versions_for_indexable( $indicies, $indexable_mock );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function parse_index_name_data() {
+		return [
+			[
+				'vip-200-post-1-v3',
+				[
+					'environment_id' => 200,
+					'slug' => 'post',
+					'blog_id' => 1,
+					'version' => 3,
+				],
+			],
+			[
+				'vip-200-post-v3',
+				[
+					'environment_id' => 200,
+					'slug' => 'post',
+					'version' => 3,
+				],
+			],
+			[
+				'vip-200-post',
+				[
+					'environment_id' => 200,
+					'slug' => 'post',
+					'version' => 1,
+				],
+			],
+			[
+				'vip-200',
+				new \WP_Error( 'index-name-not-valid', 'Index name "vip-200" is not valid' ),
+			],
+
+		];
+	}
+
+	/**
+	 * @dataProvider parse_index_name_data
+	 */
+	public function test__parse_index_name( $index, $expected ) {
+		$result = self::$version_instance->parse_index_name( $index );
+
+		$this->assertEquals( $expected, $result );
+	}
+
 
 	/**
 	 * Helper function for accessing protected properties.

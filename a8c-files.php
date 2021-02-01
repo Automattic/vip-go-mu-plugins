@@ -25,6 +25,8 @@ require_once( __DIR__ . '/files/init-filesystem.php' );
 
 require_once( __DIR__ . '/files/class-vip-filesystem.php' );
 
+require_once( __DIR__ . '/files/acl/acl.php' );
+
 /**
  * The class use to update attachment meta data
  */

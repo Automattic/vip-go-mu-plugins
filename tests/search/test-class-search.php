@@ -529,8 +529,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// Should not have fataled (class was included)
 
-		// Should have registered the init action to setup the health check
-		$this->assertEquals( true, has_action( 'init', [ $es->healthcheck, 'init' ] ) );
+		// Ensure it returns the priority set. Easiest way to to ensure it's not false
+		$this->assertTrue( false !== has_action( 'admin_init', [ $es->healthcheck, 'init' ] ) );
 	}
 
 	/**
@@ -2015,13 +2015,16 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
 		$expected_level = 2;
 
+		$time = time();
+
 		if ( false !== $difference ) {
-			$query_limited_start = time() - $difference;
+			$query_limited_start = $time - $difference;
 			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::QUERY_COUNT_CACHE_GROUP );
 		}
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
+		$es->set_time( $time );
 
 		$alerts_mocked = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
 
@@ -2043,6 +2046,7 @@ class Search_Test extends \WP_UnitTestCase {
 		}
 
 		$es->maybe_alert_for_prolonged_query_limiting();
+		$es->reset_time();
 	}
 
 	/* Format:
@@ -2346,7 +2350,143 @@ class Search_Test extends \WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$es->ep_handle_failed_request( $response, '' );
+		$es->ep_handle_failed_request( $response, [], '' );
+	}
+
+	public function test__maybe_log_query_ratelimiting_start_should_do_nothing_if_ratelimiting_already_started() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		wp_cache_set( $es::QUERY_RATE_LIMITED_START_CACHE_KEY, time(), $es::QUERY_COUNT_CACHE_GROUP );
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$es->logger->expects( $this->never() )->method( 'log' );
+
+		$es->maybe_log_query_ratelimiting_start();
+	}
+
+	public function test__maybe_log_query_ratelimiting_start_should_log_if_ratelimiting_not_already_started() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$es->logger->expects( $this->once() )
+				->method( 'log' )
+				->with(
+					$this->equalTo( 'warning' ),
+					$this->equalTo( 'vip_search_query_rate_limiting' ),
+					$this->equalTo(
+						'Application 123 - http://example.org has triggered Elasticsearch query rate limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.'
+					),
+					$this->anything()
+				);
+
+		$es->maybe_log_query_ratelimiting_start();
+	}
+
+	public function test__add_attachment_to_ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 'testing', $es->add_attachment_to_ep_indexable_post_types( 'testing' ) );
+		$this->assertEquals( 65, $es->add_attachment_to_ep_indexable_post_types( 65 ) );
+		$this->assertEquals( null, $es->add_attachment_to_ep_indexable_post_types( null ) );
+		$this->assertEquals( new \StdClass(), $es->add_attachment_to_ep_indexable_post_types( new \StdClass() ) );
+	}
+
+	public function test__add_attachment_to_ep_indexable_post_types_should_append_attachment_to_array() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' => 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
+		$this->assertEquals(
+			array(
+				'test' => 'test',
+				'one' => 'one',
+				'attachment' => 'attachment',
+			),
+			$es->add_attachment_to_ep_indexable_post_types(
+				array(
+					'test' => 'test',
+					'one' => 'one',
+				)
+			)
+		);
+	}
+
+	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		// Load ElasticPress so we can activate the protected content feature before Search inits
+		require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
+		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
+		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
+		$this->assertEquals( new \StdClass(), apply_filters( 'ep_indexable_post_types', new \StdClass() ) );
+	}
+
+	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
+		// Load ElasticPress so we can activate the protected content feature before Search inits
+		require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
+		$this->assertEquals(
+			array(
+				'test' => 'test',
+				'one' => 'one',
+				'attachment' => 'attachment',
+			),
+			apply_filters(
+				'ep_indexable_post_types',
+				array(
+					'test' => 'test',
+					'one' => 'one',
+				)
+			)
+		);
+	}
+
+	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $es->is_protected_content_enabled() );
+	}
+
+	public function test__is_protected_content_enabled_should_return_true_if_protected_content_enabled() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$this->assertTrue( $es->is_protected_content_enabled() );
 	}
 
 	/**
