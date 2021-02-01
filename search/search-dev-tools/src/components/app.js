@@ -2,41 +2,22 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable wpcalypso/import-docblock */
-import { createContext, Fragment, h } from 'preact';
+import { createContext, h } from 'preact';
 import { useContext, useEffect, useState } from 'preact/hooks';
-import Overlay from './overlay';
-import style from './style.scss';
 
-// TODO: switch to async imports
+// TODO: switch Editor to an async import
 import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-json';
 import 'prismjs/themes/prism.css';
 
+import Overlay from './overlay';
+import style from './style.scss';
+
+import { postData } from '../utils';
+
 // Global state as Context.
 const SearchContext = createContext( null );
-/**
- *  Async Helper
- * @param {String} url Request URL
- * @param {Object} data Any
- * @param {String} nonce 
- */
-async function postData( url = '', data = {}, nonce = '' ) {
-	try {
-		const response = await fetch( url, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: {
-				'Content-Type': 'application/json',
-				// 'X-WP-Nonce': nonce,
-			},
-			body: JSON.stringify( data ),
-		} );
-		return response.json();
-	} catch( e ) {
-		// TODO: handle erros
-	}
-}
 
 /**
  * 
@@ -50,7 +31,7 @@ const GeneralInformation = () => {
 		<h5>Query count: {queries.length}</h5>
 		<h4 style="margin-top: 20px;">Debug Information</h4>
 		<ul>
-			{information.map( ( info, idx ) => ( <li key={idx}><strong>{info.label}</strong>: { info.value } </li> ) )}
+			{information.map( ( info, idx ) => ( <li key={ idx }><strong>{ info.label }</strong>: { info.value } </li> ) )}
 		</ul>
 	</div>;
 };
@@ -81,7 +62,7 @@ const Query = ( { args, request, url } ) => {
 
 			setState( { ...state, result: res.result.body } );
 		} catch ( err ) {
-
+			console.log( err );
 		}
 	};
 

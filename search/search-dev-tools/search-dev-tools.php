@@ -21,9 +21,9 @@ add_action(
 					'POST',
 				],
 				'callback'            => __NAMESPACE__ . '\rest_callback',
-				// 'permission_callback' =>  __NAMESPACE__ . '\should_enable_search_dev_tools',
-				// TODO: remove the testing calback
-				'permission_callback' => '__return_true',
+				'permission_callback' =>  __NAMESPACE__ . '\should_enable_search_dev_tools',
+				// Uncomment this for testing with `npm run dev`
+				// 'permission_callback' => '__return_true',
 				'args'                => [
 					'url'   => [
 						'type'              => 'string',
