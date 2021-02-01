@@ -4,7 +4,7 @@
  */
 import { h } from 'preact';
 import { useEffect } from 'preact/hooks';
-
+import close from '../../assets/close.svg';
 /**
  * Internal dependencies
  */
@@ -34,6 +34,7 @@ const Overlay = props => {
 			role="dialog"
 			style={{ opacity: isVisible ? opacity / 100 : 0 }}
 		>
+			<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } /></button>
 			{ children }
 		</div>
 	);

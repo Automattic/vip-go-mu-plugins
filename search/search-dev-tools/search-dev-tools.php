@@ -137,6 +137,7 @@ add_action(
 			],
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
 			'ajaxurl'     => rest_url( 'vip/v1/search/repl' ),
+			'__webpack_public_path__' => plugin_dir_url( __FILE__ ) . 'build',
 		];
 
 		?>

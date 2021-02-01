@@ -1,5 +1,7 @@
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable wpcalypso/import-docblock */
+import './webpack-public-path';
+
 import { h } from 'preact';
 import habitat from 'preact-habitat';
 

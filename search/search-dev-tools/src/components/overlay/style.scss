@@ -7,7 +7,7 @@ $overlay-horizontal-padding-small-viewport: 0.5em;
 	position: fixed;
 	top: 0;
 	left: 0;
-	z-index: 9999999999999;
+	z-index: 999;
 	width: 100vw;
 	height: 100vh;
 	padding: 2rem;
@@ -18,11 +18,12 @@ $overlay-horizontal-padding-small-viewport: 0.5em;
 	box-sizing: border-box;
 
 
-	&::after {
-		content: url('../../assets/close.svg');
+	&__close {
+		background: transparent;
+		border: 0;
 		position: absolute;
-		top: 30px;
-		right: 30px;
+		top: 50px;
+		right: 50px;
 	}
 
 	&.is-hidden {

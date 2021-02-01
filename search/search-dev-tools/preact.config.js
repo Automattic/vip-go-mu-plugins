@@ -18,6 +18,16 @@ export default {
 		config.output.filename = '[name].js';
 		config.output.chunkFilename = '[name].chunk.js';
 
+		/**
+		 * Since we're loading in WP we need to set the path at runtime,
+		 * due to preact-cli architectural choices (MiniCssExtractPlugin), the only way to do so is to use postTransformPublicPath
+		 */
+		const { rule } = helpers.getLoadersByName(config, 'file-loader')[0];
+		rule.options = {
+			publicPath: '/',
+			postTransformPublicPath: p => `__webpack_public_path__ + ${ p }`,
+		};
+
 		const [ cssExtract ] = helpers.getPluginsByName( config, 'MiniCssExtractPlugin' );
 		cssExtract.plugin.options.filename = '[name].css';
 		cssExtract.plugin.options.chunkFilename = '[name].chunk.css';
