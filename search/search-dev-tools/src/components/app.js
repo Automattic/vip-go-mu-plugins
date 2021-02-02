@@ -79,27 +79,35 @@ const Query = ( { args, request, url } ) => {
 	}, [ state.query, state.editing ] );
 
 	return ( <div className={style.query_wrap}>
-		<h5>URL: {url}</h5>
-		<h5>Request</h5>
-		<Editor
-			value={state.query}
-			onValueChange={code => setState( { ...state, query: code, editing: true } ) }
-			onBlur={e => setState( { ...state, editing: false } )}
-			highlight={ code => highlight( code, languages.json )}
-			padding={10}
-			style={{
-				fontSize: 14,
-			}}
-		/>
+		<h5 stylw="width:100%;">URL: {url}</h5>
+		<div className={style.query_actions}>
+			<button>Run</button>
+			<button onClick={() => setState(initialState)}>Reset</button>
+		</div>
+		<div className={style.query_pane}>
+			<h5>Request</h5>
+			<Editor
+				value={state.query}
+				onValueChange={code => setState( { ...state, query: code, editing: true } ) }
+				onBlur={e => setState( { ...state, editing: false } )}
+				highlight={ code => highlight( code, languages.json )}
+				padding={10}
+				style={{
+					fontSize: 14,
+				}}
+			/>
+		</div>
+
+		<div className={style.query_pane}>
+			<h5>Response</h5>
+			<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight(state.result, languages.json) }}></div>
+		</div>
 
 		<div className={style.query_actions}>
 			<button>Run</button>
 			<button onClick={() => setState( initialState )}>Reset</button>
 		</div>
 
-
-		<h3>Response</h3>
-		<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight( state.result, languages.json ) }}></div>
 	</div> );
 };
 
