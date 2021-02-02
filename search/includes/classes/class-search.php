@@ -125,7 +125,7 @@ class Search {
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
-		require_once __DIR__ . '/class-health-job.php';
+		require_once __DIR__ . '/class-healthjob.php';
 
 		// Load versioning cleanup job
 		require_once __DIR__ . '/class-versioningcleanupjob.php';
