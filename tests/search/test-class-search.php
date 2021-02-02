@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
+require_once __DIR__ . '/../../search/search.php';
 class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
@@ -16,7 +17,6 @@ class Search_Test extends \WP_UnitTestCase {
 	public static $mock_global_functions;
 
 	public function setUp() {
-		require_once __DIR__ . '/../../search/search.php';
 
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
@@ -1508,6 +1508,34 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
+	public function test__is_jetpack_migration() {
+		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
+
+		$this->assertTrue( $this->search_instance->is_jetpack_migration() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_jetpack_migration__no_constant() {
+		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__is_jetpack_migration__different_value() {
+		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'foo' );
+
+		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
 		$es = new \Automattic\VIP\Search\Search();
 
@@ -1611,6 +1639,178 @@ class Search_Test extends \WP_UnitTestCase {
 				),
 			)
 		);
+	}
+
+	public function get_post_meta_allow_list__combinations_for_jetpack_migration_data() {
+		return [
+			[
+				null, // VIP search
+				null, // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST ), // expected
+			],
+			[
+				[ 'foo' ], // VIP search
+				null, // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
+			],
+			[
+				// keys provided by VIP and JP filters
+				[ 'foo' ], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ), // expected
+			],
+			[
+				// keys from empty VIP filter, JP filter
+				[], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
+			],
+			[
+				// No VIP filter, JP filter
+				null, // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_post_meta_allow_list__combinations_for_jetpack_migration_data
+	 */
+	public function test__get_post_meta_allow_list__combinations_for_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
+		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
+
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		if ( is_array( $vip_search_keys ) ) {
+			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+				return array_merge( $post_meta, $vip_search_keys );
+			});
+		}
+
+		if ( is_array( $jetpack_added ) ) {
+			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+				return array_merge( $post_meta, $jetpack_added );
+			});
+		}
+
+		$result = $es->get_post_meta_allow_list( $post );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function get_post_meta_allow_list__combinations_not_jetpack_migration_data() {
+		return [
+			[
+				null, // VIP search
+				null, // Jetpack filter added
+				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
+			],
+			[
+				[ 'foo' ], // VIP search
+				null, // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
+			],
+			[
+				// keys provided by VIP and JP filters
+				[ 'foo' ], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
+			],
+			[
+				// keys from empty VIP filter, JP filter
+				[], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
+			],
+			[
+				// No VIP filter, JP filter
+				null, // VIP search
+				[ 'bar' ], // Jetpack filter added
+				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_post_meta_allow_list__combinations_not_jetpack_migration_data
+	 */
+	public function test__get_post_meta_allow_list__combinations_not_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		if ( is_array( $vip_search_keys ) ) {
+			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+				return array_merge( $post_meta, $vip_search_keys );
+			});
+		}
+
+		if ( is_array( $jetpack_added ) ) {
+			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+				return array_merge( $post_meta, $jetpack_added );
+			});
+		}
+
+		$result = $es->get_post_meta_allow_list( $post );
+
+		$this->assertEquals( $expected, $result );
+	}
+
+	public function get_post_meta_allow_list__processing_array_data() {
+		return [
+			[
+				[ 'foo' ], // input
+				[ 'foo' ],  // expected
+			],
+			[
+				'non-array', // input
+				[],  // expected
+			],
+			[
+				// assoc array -> only true goes
+				[
+					'foo'         => true,
+					'bar'         => false,
+					'string-true' => 'true',
+					'number'      => 1,
+				],
+				[ 'foo' ],  // expected
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_post_meta_allow_list__processing_array_data
+	 */
+	public function test__get_post_meta_allow_list__processing_array( $returned_by_filter, $expected ) {
+		$es = \Automattic\VIP\Search\Search::instance();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
+		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
+			return [];
+		} );
+
+		\add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
+			return $returned_by_filter;
+		}, 0);
+
+		$result = $es->get_post_meta_allow_list( $post );
+
+		$this->assertEquals( $expected, $result );
 	}
 
 	/**
@@ -1733,44 +1933,53 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', true, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_be_empty_if_post_meta_allow_list_is_empty() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
-
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function() {
-				return array();
-			},
-			PHP_INT_MAX
-		);
-
-		\Automattic\VIP\Search\Search::instance();
-
-		$this->assertEmpty( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ) );
+	public function filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data() {
+		return [
+			[
+				[], // default
+				[], // new
+				[], // expected
+			],
+			[
+				[ 'foo' ], // default
+				[ 'bar' ], // new
+				[ 'foo', 'bar' ], // expected
+			],
+			[
+				// should handle assoc array
+				[], // default
+				[
+					'foo' => true,
+					'bar' => false,
+				],
+				[ 'foo' ], // expected
+			],
+		];
 	}
 
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @dataProvider filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data
 	 */
-	public function test__filter__ep_prepare_meta_allowed_protected_keys_should_equal_post_meta_allow_list() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_ep_protected_keys, $added_keys, $expected ) {
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
 
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function() {
-				return array( 'different', 'stuff' );
-			},
-			PHP_INT_MAX
-		);
+		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
+		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
+			return [];
+		} );
+
+		\add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
+			return array_merge( $meta_keys, $added_keys );
+		}, 0);
 
 		\Automattic\VIP\Search\Search::instance();
 
-		$this->assertEquals( \apply_filters( 'ep_prepare_meta_allowed_protected_keys', array( 'test', 'keys' ), $post ), array( 'different', 'stuff' ) );
+		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $post );
+
+		$this->assertEquals( $expected, $result );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd() {
@@ -2407,14 +2616,14 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( array( 'attachment' => 'attachment' ), $es->add_attachment_to_ep_indexable_post_types( array() ) );
 		$this->assertEquals(
 			array(
-				'test' => 'test',
-				'one' => 'one',
+				'test'       => 'test',
+				'one'        => 'one',
 				'attachment' => 'attachment',
 			),
 			$es->add_attachment_to_ep_indexable_post_types(
 				array(
 					'test' => 'test',
-					'one' => 'one',
+					'one'  => 'one',
 				)
 			)
 		);
@@ -2453,15 +2662,15 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
 		$this->assertEquals(
 			array(
-				'test' => 'test',
-				'one' => 'one',
+				'test'       => 'test',
+				'one'        => 'one',
 				'attachment' => 'attachment',
 			),
 			apply_filters(
 				'ep_indexable_post_types',
 				array(
 					'test' => 'test',
-					'one' => 'one',
+					'one'  => 'one',
 				)
 			)
 		);
