@@ -60,12 +60,12 @@ function notoptions_mitigation() {
 			// Send to IRC, if we have a host configured
 			if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 
-				Alerts::send_to_chat( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-notoptions' );
+				$alerts = Alerts::instance();
+				$alerts->send_to_chat( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-notoptions' );
 
 				if ( 'production' === $environment ) {
 
 					// Send to OpsGenie
-					$alerts = Alerts::instance();
 					$alerts->opsgenie(
 						$subject,
 						array(
