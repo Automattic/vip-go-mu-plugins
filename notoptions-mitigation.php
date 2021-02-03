@@ -7,6 +7,7 @@
  */
 
 namespace Automattic\VIP;
+
 use Automattic\VIP\Utils\Alerts;
 
 if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
@@ -17,7 +18,9 @@ function notoptions_mitigation() {
 	$notoptions = wp_cache_get( 'notoptions', 'options' );
 
 	// filter for any values not equal to (bool)true.
-	$not_trues = array_filter( $notoptions, function( $v ) { return $v !== true; } );
+	$not_trues = array_filter( $notoptions, function( $v ) {
+		return $v !== true;
+	} );
 
 	// if they exist, something's borked
 	if ( $not_trues ) {
@@ -41,7 +44,7 @@ function notoptions_mitigation() {
 
 			$subject = sprintf(
 				$subject,
-				esc_url( home_url() ),
+				esc_url( home_url( ) ),
 				esc_html( $environment ),
 				(int) $site_id,
 				( ( 0 !== $wpdb->blogid ) ? ", blog ID {$wpdb->blogid}" : ''),
@@ -54,7 +57,7 @@ function notoptions_mitigation() {
 			// Send to IRC, if we have a host configured
 			if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 				if ( 'production' === $environment ) {
-					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-notoptions' );
+					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-notoptions' );
 
 					// Send to OpsGenie
 					$alerts = Alerts::instance();
@@ -73,9 +76,6 @@ function notoptions_mitigation() {
 
 				}
 			}
-
 		}
-
 	}
-
 }
