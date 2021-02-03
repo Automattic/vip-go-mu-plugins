@@ -26,8 +26,10 @@ function notoptions_mitigation() {
 		return true !== $v;
 	} );
 
+	$total_invalid = count( $not_trues );
+
 	// if they exist, something's borked
-	if ( 1 <= ( $total_invalid = count( $not_trues ) ) ) {
+	if ( 1 <= $total_invalid ) {
 
 		// attempt repair
 		$flushed = wp_cache_delete( 'notoptions', 'options' );
