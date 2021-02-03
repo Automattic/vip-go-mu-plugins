@@ -27,13 +27,12 @@ function notoptions_mitigation() {
 	} );
 
 	// if they exist, something's borked
-	if ( $not_trues ) {
+	if ( 1 <= ( $total_invalid = count( $not_trues ) ) ) {
 
 		// attempt repair
 		$flushed = wp_cache_delete( 'notoptions', 'options' );
 
 		// begin prepping notification
-		$total_invalid = count( $not_trues );
 		$is_vip_env    = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
 		$environment   = ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && VIP_GO_APP_ENVIRONMENT ) ? VIP_GO_APP_ENVIRONMENT : 'unknown' );
 		$site_id       = defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : false;
