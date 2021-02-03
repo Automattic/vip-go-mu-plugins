@@ -19,7 +19,7 @@ function notoptions_mitigation() {
 
 	// filter for any values not equal to (bool)true.
 	$not_trues = array_filter( $notoptions, function( $v ) {
-		return $v !== true;
+		return true !== $v;
 	} );
 
 	// if they exist, something's borked
