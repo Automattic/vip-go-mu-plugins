@@ -17,6 +17,10 @@ if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 function notoptions_mitigation() {
 	$notoptions = wp_cache_get( 'notoptions', 'options' );
 
+	if ( ! is_array( $notoptions ) ) {
+		return;
+	}
+
 	// filter for any values not equal to (bool)true.
 	$not_trues = array_filter( $notoptions, function( $v ) {
 		return true !== $v;
