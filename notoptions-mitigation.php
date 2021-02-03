@@ -44,10 +44,10 @@ function notoptions_mitigation() {
 
 			$subject = sprintf(
 				$subject,
-				esc_url( home_url( ) ),
+				esc_url( home_url() ),
 				esc_html( $environment ),
 				(int) $site_id,
-				( ( 0 !== $wpdb->blogid ) ? ", blog ID {$wpdb->blogid}" : ''),
+				( ( 0 !== $wpdb->blogid ) ? ", blog ID {$wpdb->blogid}" : '' ),
 				$total_invalid,
 				( $flushed ? '' : 'un' )
 			);
