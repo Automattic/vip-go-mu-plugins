@@ -62,7 +62,7 @@ function notoptions_mitigation() {
 				( $flushed ? '' : 'un' )
 			);
 
-			$to_irc = $subject . ' #vipnotoptions';
+			$to_irc = $subject . ' [https://wp.me/PCYsg-vqN] #vipnotoptions';
 
 			// Send to IRC, if we have a host configured
 			if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
