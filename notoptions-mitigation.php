@@ -22,15 +22,19 @@ function notoptions_mitigation() {
 		return;
 	}
 
-	// filter for any values not equal to (bool)true.
-	$not_trues = array_filter( $notoptions, function( $v ) {
-		return true !== $v;
-	} );
+	$invalid = false;
 
-	$total_invalid = count( $not_trues );
+	foreach ( $notoptions as $v ) {
+		// notoptions should never have !true values, see get_option()
+	 	// break on any values not equal to (bool)true.
+		if ( true !== $v ) {
+			$invalid = true;
+			break;
+		}
+	}
 
 	// if they exist, something's borked
-	if ( 1 <= $total_invalid ) {
+	if ( $invalid ) {
 
 		// attempt repair
 		$flushed = wp_cache_delete( 'notoptions', 'options' );
