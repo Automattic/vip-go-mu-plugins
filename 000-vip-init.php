@@ -163,6 +163,7 @@ require_once( __DIR__ . '/000-debug/0-load.php' );
 require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
+require_once( __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php' );
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
 require_once( __DIR__ . '/vip-helpers/vip-newrelic.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
@@ -223,7 +224,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 
 	// VIP sites should not be set as staging in Jetpack
 	// since it breaks SSO and prevents data from being passed to
-	// WordPress.com 
+	// WordPress.com
 	add_filter( 'jetpack_is_staging_site', '__return_false' );
 }
 
