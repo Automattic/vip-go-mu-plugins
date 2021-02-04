@@ -50,7 +50,7 @@ function notoptions_mitigation() {
 			$irc_alert_level = 2; // ALERT
 			$opsgenie_alert_level = 'P4';
 
-			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) %s invalid values found in notoptions. Cache flush was %ssuccessful.';
+			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) - Invalid values found in notoptions. Cache flush was %ssuccessful.';
 
 			$subject = sprintf(
 				$subject,
@@ -58,7 +58,6 @@ function notoptions_mitigation() {
 				esc_html( $environment ),
 				(int) $site_id,
 				( ( 0 !== $wpdb->blogid ) ? ", blog ID {$wpdb->blogid}" : '' ),
-				$total_invalid,
 				( $flushed ? '' : 'un' )
 			);
 
