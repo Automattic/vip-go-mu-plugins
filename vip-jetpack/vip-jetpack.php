@@ -380,3 +380,9 @@ add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $valu
 	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
 	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
 }, 10, 3 );
+
+/**
+ * SSL is always supported on VIP, so avoid unnecessary checks
+ */
+add_filter( 'pre_transient_jetpack_https_test', function() { return 1; } ); // WP doesn't have __return_one (but it does have __return_zero)
+add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
