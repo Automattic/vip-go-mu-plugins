@@ -160,4 +160,12 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_modules, $actual_modules );
 	}
+
+	public function test__jetpack_https_test__transient_filter() {
+		$https_test = apply_filters( 'pre_transient_jetpack_https_test', null );
+		$https_test_message = apply_filters( 'pre_transient_jetpack_https_test_message', null );
+
+		$this->assertEquals( 1, $https_test, 'Value of the jetpack_https_test pre-transient filter is incorrect' );
+		$this->assertEquals( '', $https_test_message, 'Value of the jetpack_https_test_message pre-transient filter is incorrect' );
+	}
 }
