@@ -8,7 +8,7 @@ if ( ! $_tests_dir ) {
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
-define( 'WPMU_PLUGIN_DIR', '/app' );
+define( 'WPMU_PLUGIN_DIR', getcwd() );
 
 // Constant configs
 // Ideally we'd have a way to mock these
