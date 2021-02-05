@@ -8,6 +8,8 @@ if ( ! $_tests_dir ) {
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
+define( 'WPMU_PLUGIN_DIR', '/app' );
+
 
 // Constant configs
 // Ideally we'd have a way to mock these
@@ -26,7 +28,6 @@ function _manually_load_plugin() {
 
 	require_once( __DIR__ . '/../schema.php' );
 
-	require_once( __DIR__ . '/../jetpack.php' );
 	require_once( __DIR__ . '/../vip-jetpack/vip-jetpack.php' );
 
 	// Proxy lib
