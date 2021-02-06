@@ -55,6 +55,32 @@ function get_option_as_bool( $option_name, $default = false ) {
 }
 
 /**
+ * Check if the path is allowed for the current context.
+ *
+ * @param string $file_path Path to the file, including the `/wp-content/uploads/` bit.
+ */
+function is_valid_path_for_site( $file_path ) {
+	if ( ! is_multisite() ) {
+		return true;
+	}
+
+	// If main site, don't allow access to /sites/ subdirectories.
+	if ( is_main_network() && is_main_site() ) {
+		if ( 0 === strpos( $file_path, 'sites/' ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	// Strip upload dir to start from /wp-content/
+	$upload_base_dir = trailingslashit( wp_get_upload_dir()['basedir'] );
+	list( , $upload_base_dir ) = explode( '/wp-content/uploads/', $upload_base_dir, 2 );
+
+	return 0 === strpos( $file_path, $upload_base_dir );
+}
+
+/**
  * Sends the correct response code and headers based on the specified file availability.
  *
  * Note: the nginx module for using for the subrequest limits what status codes can be returned.
