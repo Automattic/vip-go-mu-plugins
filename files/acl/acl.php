@@ -87,7 +87,6 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 		case FILE_IS_PRIVATE_AND_DENIED:
 			$status_code = 403;
 			$is_private = true;
-			$header = 'X-Private: true';
 			break;
 
 		default:
