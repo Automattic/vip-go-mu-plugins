@@ -162,22 +162,6 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				],
 			],
 
-			'subsite-path-with-sites-dir-non-numeric-id' => [
-				'/wp-content/uploads/sites/id-would-go-here/path/to/horses.txt',
-				[
-					'',
-					'sites/id-would-go-here/path/to/horses.txt',
-				],
-			],
-
-			'subsite-path-with-sites-dir-and-id' => [
-				'/wp-content/uploads/sites/123/path/to/horses.txt',
-				[
-					'',
-					'path/to/horses.txt',
-				],
-			],
-
 			/* TODO: not supported yet
 			'resized-image' => [
 				'/wp-content/uploads/2021/01/dinos-100x100.jpg',
