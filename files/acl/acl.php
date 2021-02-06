@@ -73,11 +73,9 @@ function is_valid_path_for_site( $file_path ) {
 		return true;
 	}
 
-	// Strip upload dir to start from /wp-content/
-	$upload_base_dir = trailingslashit( wp_get_upload_dir()['basedir'] );
-	list( , $upload_base_dir ) = explode( '/wp-content/uploads/', $upload_base_dir, 2 );
+	$base_path = sprintf( 'sites/%d', get_current_blog_id() );
 
-	return 0 === strpos( $file_path, $upload_base_dir );
+	return 0 === strpos( $file_path, $base_path );
 }
 
 /**
