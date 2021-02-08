@@ -376,4 +376,66 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $result, $error );
 	}
+
+	public function test_validate_index_entity_count__returns_all_data() {
+		$expected_result = [
+			'entity'   => 'foo',
+			'type'     => 'N/A',
+			'db_total' => 10,
+			'es_total' => 8,
+			'diff'     => -2,
+			'skipped'  => false,
+		];
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping' ] )
+			->getMock();
+
+		$mocked_indexable->slug = $expected_result['entity'];
+		$mocked_indexable->method( 'query_db' )
+			->willReturn( [
+				'total_objects' => $expected_result['db_total'],
+			] );
+
+
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'get_index_entity_count_from_elastic_search' ] )
+			->getMock();
+
+		$patrtially_mocked_health->method( 'get_index_entity_count_from_elastic_search' )
+			->willReturn( $expected_result['es_total'] );
+
+		$result = $patrtially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
+
+		$this->assertEquals( $result, $expected_result );
+	}
+
+	public function test_validate_index_entity_count__skipping_non_initialized_indexes() {
+		$expected_result = [
+			'entity'   => 'foo',
+			'type'     => 'N/A',
+			'db_total' => 'N/A',
+			'es_total' => 0,
+			'diff'     => 'N/A',
+			'skipped'  => true,
+		];
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping' ] )
+			->getMock();
+
+		$mocked_indexable->slug = $expected_result['entity'];
+
+
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'get_index_entity_count_from_elastic_search' ] )
+			->getMock();
+
+		$patrtially_mocked_health->method( 'get_index_entity_count_from_elastic_search' )
+			->willReturn( $expected_result['es_total'] );
+
+		$result = $patrtially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
+
+		$this->assertEquals( $result, $expected_result );
+	}
 }
