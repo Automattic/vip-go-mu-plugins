@@ -47,8 +47,8 @@ function notoptions_mitigation() {
 		// Send notices to VIP staff if this is happening on VIP-hosted sites
 		if ( $is_vip_env && $site_id ) {
 
-			$irc_alert_level = 2; // ALERT
-			$opsgenie_alert_level = 'P4';
+			$irc_alert_level = 3; // CRITICAL
+			$opsgenie_alert_level = 'P3';
 
 			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) - Invalid values found in notoptions. Cache flush was %ssuccessful.';
 
