@@ -75,11 +75,11 @@ function notoptions_mitigation() {
 					$alerts->opsgenie(
 						$subject,
 						array(
-							'alias'       => 'notoptions/' . $site_id,
+							'alias'       => 'notoptions/cache-corruption/' . $site_id,
 							'description' => 'Invalid values found in notoptions cache',
 							'entity'      => (string) $site_id,
 							'priority'    => $opsgenie_alert_level,
-							'source'      => 'sites/notoptions-value',
+							'source'      => 'sites/notoptions-value-monitor',
 						),
 						'notoptions-value-alert',
 						'10'
