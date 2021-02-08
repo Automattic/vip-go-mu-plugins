@@ -163,7 +163,6 @@ require_once( __DIR__ . '/000-debug/0-load.php' );
 require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
-require_once( __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php' );
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
 require_once( __DIR__ . '/vip-helpers/vip-newrelic.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
