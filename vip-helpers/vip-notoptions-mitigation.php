@@ -26,7 +26,7 @@ function notoptions_mitigation() {
 
 	foreach ( $notoptions as $v ) {
 		// notoptions should never have !true values, see get_option()
-	 	// break on any values not equal to (bool)true.
+		// break on any values not equal to (bool)true.
 		if ( true !== $v ) {
 			$invalid = true;
 			break;
