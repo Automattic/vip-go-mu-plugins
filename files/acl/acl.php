@@ -57,7 +57,7 @@ function get_option_as_bool( $option_name, $default = false ) {
 /**
  * Check if the path is allowed for the current context.
  *
- * @param string $file_path Path to the file, including the `/wp-content/uploads/` bit.
+ * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit. It's the second portion returned by `Pre_Wp_Utils\prepare_request()`
  */
 function is_valid_path_for_site( $file_path ) {
 	if ( ! is_multisite() ) {
