@@ -152,6 +152,11 @@ class HealthJob {
 		}
 
 		foreach ( $results as $result ) {
+			if ( array_key_exists( 'skipped', $result ) && $result['skipped'] ) {
+				// We don't want to alert for skipped indexes
+				continue;
+			}
+
 			// If there's an error, alert
 			if ( array_key_exists( 'error', $result ) ) {
 				$message = sprintf( 'Error while validating index for %s: %s', home_url(), $result['error'] );
