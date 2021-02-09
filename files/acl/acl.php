@@ -55,6 +55,30 @@ function get_option_as_bool( $option_name, $default = false ) {
 }
 
 /**
+ * Check if the path is allowed for the current context.
+ *
+ * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit. It's the second portion returned by `Pre_Wp_Utils\prepare_request()`
+ */
+function is_valid_path_for_site( $file_path ) {
+	if ( ! is_multisite() ) {
+		return true;
+	}
+
+	// If main site, don't allow access to /sites/ subdirectories.
+	if ( is_main_network() && is_main_site() ) {
+		if ( 0 === strpos( $file_path, 'sites/' ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	$base_path = sprintf( 'sites/%d', get_current_blog_id() );
+
+	return 0 === strpos( $file_path, $base_path );
+}
+
+/**
  * Sends the correct response code and headers based on the specified file availability.
  *
  * Note: the nginx module for using for the subrequest limits what status codes can be returned.
@@ -71,20 +95,22 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
 	$status_code = 500;
 	$header = false;
+	$is_private = null;
 
 	switch ( $file_visibility ) {
 		case FILE_IS_PUBLIC:
 			$status_code = 202;
+			$is_private = false;
 			break;
 
 		case FILE_IS_PRIVATE_AND_ALLOWED:
 			$status_code = 202;
-			$header = 'X-Private: true';
+			$is_private = true;
 			break;
 
 		case FILE_IS_PRIVATE_AND_DENIED:
 			$status_code = 403;
-			$header = 'X-Private: true';
+			$is_private = true;
 			break;
 
 		default:
@@ -95,7 +121,8 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 
 	http_response_code( $status_code );
 
-	if ( $header ) {
-		header( $header );
+	if ( null !== $is_private ) {
+		$private_header_value = $is_private ? 'true' : 'false';
+		header( sprintf( 'X-Private: %s', $private_header_value ) );
 	}
 }
