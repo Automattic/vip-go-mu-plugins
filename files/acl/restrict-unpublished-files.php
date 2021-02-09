@@ -12,7 +12,20 @@ use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 
 const CACHE_GROUP = 'vip-files-acl';
 
+
+/**
+ * Given a path determine whether the file is private or public
+ *
+ * @param string $file_visibility one of Automattic\VIP\Files\Acl\(FILE_IS_PUBLIC | FILE_IS_PRIVATE_AND_ALLOWED | FILE_IS_PRIVATE_AND_DENIED).
+ * @param string $file_path path to file to be checked for visibility.
+ * @return string one of Automattic\VIP\Files\Acl\(FILE_IS_PUBLIC | FILE_IS_PRIVATE_AND_ALLOWED | FILE_IS_PRIVATE_AND_DENIED)
+ */
 function check_file_visibility( $file_visibility, $file_path ) {
+	// Strip the `sites/ID` part for multisite URLs, because _wp_attached_file meta doesn't store it.
+	if ( 0 === strpos( $file_path, 'sites/' ) ) {
+		$file_path = preg_replace( '#^sites/\d+/#', '', $file_path );
+	}
+
 	// Reverse lookup for the attachment ID
 	$attachment_id = get_attachment_id_from_file_path( $file_path );
 

@@ -70,10 +70,33 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
-	public function test__check_file_visibility__attachment_no_parent() {
+	public function test__check_file_visibility__multisite_subsite_attachment_with_sites_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 
+		// Switch to a subsite
+		$subsite_id = $this->factory->blog->create();
+		switch_to_blog( $subsite_id );
+
+		// Create attachment
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+
+		$file_visibility = false;
+		$file_path = sprintf( 'sites/%d/%s', $subsite_id, get_post_meta( $attachment_id, '_wp_attached_file', true ) );
+
+		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
+
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__attachment_with_publish_parent() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
+
+		$post_id = $this->factory->post->create( [ 'post_status' => 'publish' ] );
+		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
 		$file_visibility = false;
 		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
