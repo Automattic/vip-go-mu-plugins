@@ -71,20 +71,22 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
 	$status_code = 500;
 	$header = false;
+	$is_private = null;
 
 	switch ( $file_visibility ) {
 		case FILE_IS_PUBLIC:
 			$status_code = 202;
+			$is_private = false;
 			break;
 
 		case FILE_IS_PRIVATE_AND_ALLOWED:
 			$status_code = 202;
-			$header = 'X-Private: true';
+			$is_private = true;
 			break;
 
 		case FILE_IS_PRIVATE_AND_DENIED:
 			$status_code = 403;
-			$header = 'X-Private: true';
+			$is_private = true;
 			break;
 
 		default:
@@ -95,7 +97,8 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 
 	http_response_code( $status_code );
 
-	if ( $header ) {
-		header( $header );
+	if ( null !== $is_private ) {
+		$private_header_value = $is_private ? 'true' : 'false';
+		header( sprintf( 'X-Private: %s', $private_header_value ) );
 	}
 }
