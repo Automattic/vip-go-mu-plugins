@@ -386,3 +386,12 @@ add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $valu
  */
 add_filter( 'pre_transient_jetpack_https_test', function() { return 1; } ); // WP doesn't have __return_one (but it does have __return_zero)
 add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
+
+// And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
+add_filter( 'jetpack_options', function( $value, $name ) {
+	if ( 'fallback_no_verify_ssl_certs' === $name ) {
+		$value = 0;
+	}
+
+	return $value;
+}, 10, 2 );

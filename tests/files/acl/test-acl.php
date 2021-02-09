@@ -149,21 +149,21 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 				'FILE_IS_PUBLIC',
 				'/wp-content/uploads/public.jpg',
 				202,
-				false,
+				'false',
 			],
 
 			'private-and-allowed-file' => [
 				'FILE_IS_PRIVATE_AND_ALLOWED',
 				'/wp-content/uploads/allowed.jpg',
 				202,
-				true,
+				'true',
 			],
 
 			'private-and-denied-file' => [
 				'FILE_IS_PRIVATE_AND_DENIED',
 				'/wp-content/uploads/denied.jpg',
 				403,
-				true,
+				'true',
 			],
 		];
 	}
@@ -174,17 +174,12 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	 *
 	 * @dataProvider data_provider__send_visibility_headers
 	 */
-	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $should_have_private_header ) {
+	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $private_header_value ) {
 		send_visibility_headers( $file_visibility, $file_path );
 
 		$this->assertEquals( $expected_status_code, http_response_code(), 'Status code does not match expected' );
 
-		// Not ideal to have a branch in tests, but good enough.
-		if ( $should_have_private_header ) {
-			$this->assertContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers do not include X-Private header' );
-		} else {
-			$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include the X-Private header' );
-		}
+		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), xdebug_get_headers(), 'Sent headers do not include X-Private header or its value is unexpected' );
 	}
 
 	/**
@@ -201,7 +196,8 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 500, http_response_code(), 'Status code does not match expected' );
 
-		$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include X-Private header but should not.' );
+		$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include X-Private: true header but should not.' );
+		$this->assertNotContains( 'X-Private: false', xdebug_get_headers(), 'Sent headers include X-Private:false header but should not.' );
 	}
 
 	public function test__is_valid_path_for_site__always_true_for_not_multisite() {
