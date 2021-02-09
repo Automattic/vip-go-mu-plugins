@@ -14,7 +14,7 @@ const CACHE_GROUP = 'vip-files-acl';
 
 function check_file_visibility( $file_visibility, $file_path ) {
 	if ( 0 === strpos( $file_path, 'sites/' ) ) {
-		$file_path = preg_replace( '#^sites\/\d+\/#', '', $file_path );
+		$file_path = preg_replace( '#^sites/\d+/#', '', $file_path );
 	}
 
 	// Reverse lookup for the attachment ID
