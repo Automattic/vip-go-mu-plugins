@@ -118,3 +118,25 @@ add_filter(
 	20,
 	2
 );
+
+/**
+ * Prevent invalid query args from causing php errors & a limitless query.
+ *
+ * This patch can be removed when the following core ticket is resolved:
+ * @see https://core.trac.wordpress.org/ticket/17737
+ */
+function vip_prevent_invalid_core_query_args() {
+	if ( is_admin() ) {
+		return;
+	}
+
+	if ( isset( $_GET['name'] ) && ! is_string( $_GET['name'] ) ) {
+		unset( $_GET['name'] );
+	}
+
+	if ( isset( $_GET['pagename'] ) && ! is_string( $_GET['pagename'] ) ) {
+		unset( $_GET['pagename'] );
+	}
+}
+
+add_action( 'wp_loaded', 'vip_prevent_invalid_core_query_args', 1 );
