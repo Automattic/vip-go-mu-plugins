@@ -120,13 +120,13 @@ function get_attachment_id_from_file_path( $path ) {
 function purge_attachments_for_post( $urls, $post_id ) {
 	$post = get_post( $post_id );
 
-    if ( empty( $post ) ) {
-        return $urls;
+	if ( empty( $post ) ) {
+		return $urls;
 	}
 
 	$attachment_ids = get_posts( [
-        'post_parent'    => $post->ID,
-        'post_type'      => 'attachment',
+		'post_parent'    => $post->ID,
+		'post_type'      => 'attachment',
 		'posts_per_page' => 100, // Set a reasonably high limit (instead of -1 as default)
 		'orderby' => 'ID', // For performance (instead of `date` as default)
 		'order' => 'ASC',
@@ -142,5 +142,5 @@ function purge_attachments_for_post( $urls, $post_id ) {
 		$urls[] = wp_get_attachment_url( $attachment_id );
 	}
 
-    return $urls;
+	return $urls;
 }
