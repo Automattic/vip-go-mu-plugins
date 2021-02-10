@@ -12,7 +12,6 @@ use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 
 const CACHE_GROUP = 'vip-files-acl';
 
-
 /**
  * Given a path determine whether the file is private or public
  *
@@ -104,4 +103,44 @@ function get_attachment_id_from_file_path( $path ) {
 	wp_cache_set( $cache_key, $attachment_id, CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 
 	return $attachment_id;
+}
+
+/**
+ * PURGE all attachments for a given post.
+ *
+ * This is to allow us to propagate visibility changes ASAP to the edges
+ * and also to allow us to cache public files for much longer (which comes
+ * some performance benefits).
+ *
+ * @param array urls Array of URLs to be purged
+ * @param int post_id The ID of the post for which we're purging URLs
+ *
+ * @return array An array of URLs to be purged
+ */
+function purge_attachments_for_post( $urls, $post_id ) {
+	$post = get_post( $post_id );
+
+    if ( empty( $post ) ) {
+        return $urls;
+	}
+
+	$attachment_ids = get_posts( [
+        'post_parent'    => $post->ID,
+        'post_type'      => 'attachment',
+		'posts_per_page' => 100, // Set a reasonably high limit (instead of -1 as default)
+		'orderby' => 'ID', // For performance (instead of `date` as default)
+		'order' => 'ASC',
+		'fields' => 'ids',
+		'suppress_filters' => false,
+	] );
+
+	if ( empty( $attachment_ids ) ) {
+		return $urls;
+	}
+
+	foreach ( $attachment_ids as $attachment_id ) {
+		$urls[] = wp_get_attachment_url( $attachment_id );
+	}
+
+    return $urls;
 }
