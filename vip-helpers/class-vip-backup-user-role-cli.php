@@ -35,7 +35,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $backup_roles as $time => $roles ) {
 			$data[] = [
 				'time_key'  => $time,
-				'time_h'    => date('Y-m-d H:i:s', $time ),
+				'time_h'    => gmdate( 'Y-m-d H:i:s', $time ),
 				'num_roles' => count( $roles ),
 			];
 		}
