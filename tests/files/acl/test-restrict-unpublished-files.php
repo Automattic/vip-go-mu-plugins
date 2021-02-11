@@ -222,5 +222,62 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
 	private function strip_wpcontent_uploads( $path ) {
 		return substr( $path, strlen( '/wp-content/uploads/' ) );
 	}
+
+	public function test__purge_attachments_for_post__invalid_post() {
+		// Input and output are the same; no change
+		$input_urls = [
+			'https://example.com',
+		];
+		$expected_urls = [
+			'https://example.com',
+		];
+
+		// Set a highly unlikely post ID
+		$test_post_id = PHP_INT_MAX;
+
+		$actual_urls = purge_attachments_for_post( $input_urls, $test_post_id );
+
+		$this->assertEquals( $expected_urls, $actual_urls );
+	}
+
+	public function test__purge_attachments_for_post__post_with_no_attachments() {
+		// Input and output are the same; no change
+		$input_urls = [
+			'https://example.com',
+		];
+		$expected_urls = [
+			'https://example.com',
+		];
+
+		// No attachments for post
+		$test_post_id = $this->factory->post->create();
+
+		$actual_urls = purge_attachments_for_post( $input_urls, $test_post_id );
+
+		$this->assertEquals( $expected_urls, $actual_urls );
+	}
+
+	public function test__purge_attachments_for_post__post_with_some_attachments() {
+		$input_urls = [
+			'https://example.com',
+		];
+
+		$test_post_id = $this->factory->post->create();
+		$attachment_id_1 = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $test_post_id );
+		$attachment_id_2 = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $test_post_id );
+		$attachment_id_3 = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $test_post_id );
+
+		// Output should include new attachment URLs
+		$expected_urls = [
+			'https://example.com',
+			wp_get_attachment_url( $attachment_id_1 ),
+			wp_get_attachment_url( $attachment_id_2 ),
+			wp_get_attachment_url( $attachment_id_3 ),
+		];
+
+		$actual_urls = purge_attachments_for_post( $input_urls, $test_post_id );
+
+		$this->assertEquals( $expected_urls, $actual_urls );
+	}
 }
 
