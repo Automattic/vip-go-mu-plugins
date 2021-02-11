@@ -131,7 +131,7 @@ function purge_attachments_for_post( $urls, $post_id ) {
 		'orderby' => 'ID', // For performance (instead of `date` as default)
 		'order' => 'ASC',
 		'fields' => 'ids',
-		'suppress_filters' => false,
+		'suppress_filters' => true,
 	] );
 
 	if ( empty( $attachment_ids ) ) {
