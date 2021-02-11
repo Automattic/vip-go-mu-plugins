@@ -127,10 +127,11 @@ function purge_attachments_for_post( $urls, $post_id ) {
 	$attachment_ids = get_posts( [
 		'post_parent'    => $post->ID,
 		'post_type'      => 'attachment',
-		'posts_per_page' => 250, // Set a reasonably high limit (instead of -1 as default)
-		'orderby' => 'ID', // For performance (instead of `date` as default)
-		'order' => 'ASC',
-		'fields' => 'ids',
+		'posts_per_page' => 250,            // Set a reasonably high limit (instead of -1 as default)
+		'orderby'        => 'ID',           // For performance (instead of `date` as default)
+		'order'          => 'ASC',
+		'fields'         => 'ids',
+		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
 		'suppress_filters' => true,
 	] );
 
