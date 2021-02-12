@@ -1642,6 +1642,60 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * This tests the correct implementaton of the ep_$indexable_mapping filters, but note that these filters
+	 * operate on the mapping and settings together - EP doesn't yet distinguish between them
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_indexable_mapping() {
+		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+
+		$this->search_instance->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		// Should apply to all indexables
+		$indexables = \ElasticPress\Indexables::factory()->get_all();
+
+		// Make sure the above worked
+		$this->assertNotEmpty( $indexables, 'Indexables array was empty' );
+
+		foreach ( $indexables as $indexable ) {
+			$settings = $indexable->build_settings();
+
+			$this->assertEquals( 'foo', $settings['index.routing.allocation.include.dc'], 'Indexable ' . $indexable->slug . ' has the wrong routing allocation' );
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_indexable_mapping_invalid_datacenter() {
+		define( 'VIP_ORIGIN_DATACENTER', null );
+
+		$this->search_instance->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		// Should apply to all indexables
+		$indexables = \ElasticPress\Indexables::factory()->get_all();
+
+		// Make sure the above worked
+		$this->assertNotEmpty( $indexables, 'Indexables array was empty' );
+
+		foreach ( $indexables as $indexable ) {
+			$settings = $indexable->build_settings();
+
+			// Datacenter was invalid, so it should not have added the allocation settings
+			$this->assertArrayNotHasKey( 'index.routing.allocation.include.dc', $settings, 'Indexable ' . $indexable->slug . ' incorrectly defined the allocation settings' );
+		}
+	}
+
+	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
