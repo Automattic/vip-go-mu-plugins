@@ -304,7 +304,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$expected_count = 42;
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping' ] )
+			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'foo';
