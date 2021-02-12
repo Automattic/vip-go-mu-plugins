@@ -1600,7 +1600,7 @@ class Search {
 	 * Note that this hook receives the mapping and settings together
 	 */
 	public function filter__ep_indexable_mapping( $mapping ) {
-		if ( ! isset( $mapping[ 'settings' ] ) ) {
+		if ( ! isset( $mapping['settings'] ) ) {
 			return $mapping;
 		}
 
@@ -1624,7 +1624,7 @@ class Search {
 		$matches = array();
 
 		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
-			$dc = $matches[ 1 ];
+			$dc = $matches[1];
 		}
 
 		return strtolower( $dc );
