@@ -1588,6 +1588,18 @@ class Search {
 		return array_merge( $keys, $vip_search_allow_list_keys );
 	}
 
+	public function get_origin_dc_from_es_host( $host ) {
+		$dc = null;
+
+		$matches = array();
+
+		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
+			$dc = $matches[ 1 ];
+		}
+
+		return strtolower( $dc );
+	}
+
 	/**
 	 * Since we've established that enabling the protected content feature causes attachments
 	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if

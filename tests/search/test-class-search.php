@@ -1641,6 +1641,38 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
+	public function get_origin_dc_from_es_host_data() {
+		return array(
+			array(
+				'https://es-ha-bur.vipv2.net:1234',
+				'bur',
+			),
+			array(
+				'https://es-ha-dca.vipv2.net:4321',
+				'dca',
+			),
+			array(
+				'https://es-ha-DCA.vipv2.net:4321',
+				'dca',
+			),
+			array(
+				'https://es-ha.dfw.vipv2.net:4321',
+				'dfw',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_origin_dc_from_es_host_data
+	 */
+	public function test__get_origin_dc_from_es_host( $host, $expected ) {
+		$this->search_instance->init();
+
+		$origin_dc = $this->search_instance->get_origin_dc_from_es_host( $host );
+
+		$this->assertEquals( $expected, $origin_dc );
+	}
+
 	public function get_post_meta_allow_list__combinations_for_jetpack_migration_data() {
 		return [
 			[
