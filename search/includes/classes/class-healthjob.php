@@ -99,6 +99,10 @@ class HealthJob {
 			return;
 		}
 
+		$this->check_document_count_health();
+	}
+
+	public function check_document_count_health() {
 		// Don't run the checks if the index is not built.
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
 			return;
@@ -118,7 +122,7 @@ class HealthJob {
 					'index_version' => $version['number'],
 				) );
 
-				$this->process_results( $user_results );
+				$this->process_document_count_health_results( $user_results );
 			}
 		}
 
@@ -131,7 +135,7 @@ class HealthJob {
 				'index_version' => $version['number'],
 			) );
 
-			$this->process_results( $post_results );
+			$this->process_document_count_health_results( $post_results );
 		}
 	}
 
@@ -141,7 +145,7 @@ class HealthJob {
 	 * @access  protected
 	 * @param   array       $result     Array of results from Health index validation
 	 */
-	public function process_results( $results ) {
+	public function process_document_count_health_results( $results ) {
 		// If the whole thing failed, error
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
