@@ -99,15 +99,20 @@ class HealthJob {
 			return;
 		}
 
-		$this->check_document_count_health();
-	}
-
-	public function check_document_count_health() {
 		// Don't run the checks if the index is not built.
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
 			return;
 		}
 
+		$this->check_index_settings_health();
+		$this->check_document_count_health();
+	}
+
+	public function check_index_settings_health() {
+
+	}
+
+	public function check_document_count_health() {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
