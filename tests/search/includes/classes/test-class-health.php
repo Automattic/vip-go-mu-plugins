@@ -325,7 +325,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$health = new \Automattic\VIP\Search\Health();
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping' ] )
+			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'foo';
@@ -342,7 +342,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$health = new \Automattic\VIP\Search\Health();
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping' ] )
+			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'foo';
@@ -359,7 +359,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$error = new \WP_Error( 'test error' );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'foo';
@@ -388,7 +388,7 @@ class Health_Test extends \WP_UnitTestCase {
 		];
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
 			->getMock();
 
 		$mocked_indexable->slug = $expected_result['entity'];
@@ -421,7 +421,7 @@ class Health_Test extends \WP_UnitTestCase {
 		];
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
 			->getMock();
 
 		$mocked_indexable->slug = $expected_result['entity'];

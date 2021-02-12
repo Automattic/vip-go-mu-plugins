@@ -16,7 +16,7 @@ class VersioningCleanupJob_Test extends \WP_UnitTestCase {
 		}, [ 'foo', 'bar' ] );
 
 		$indexables_mock = $this->getMockBuilder( \ElasticPress\Indexables::class )
-			->setMethods( [ 'get_all', 'build_mapping', 'build_settings' ] )
+			->setMethods( [ 'get_all' ] )
 			->getMock();
 		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
 
