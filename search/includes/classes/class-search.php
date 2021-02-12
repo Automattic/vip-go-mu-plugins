@@ -1588,6 +1588,10 @@ class Search {
 		return array_merge( $keys, $vip_search_allow_list_keys );
 	}
 
+	public function get_index_routing_allocation_include_dc() {
+		return defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_host( $this->get_current_host() );
+	}
+
 	public function get_origin_dc_from_es_host( $host ) {
 		$dc = null;
 

@@ -1641,6 +1641,35 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__get_index_routing_allocation_include_dc_from_constant() {
+		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+
+		$this->search_instance->init();
+
+		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
+
+		$this->assertEquals( 'foo', $origin_dc );
+	}
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__get_index_routing_allocation_include_dc_from_endpoints() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-ha.bar.baz.com:1234',
+		) );
+
+		$this->search_instance->init();
+
+		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
+
+		$this->assertEquals( 'bar', $origin_dc );
+	}
+	
 	public function get_origin_dc_from_es_host_data() {
 		return array(
 			array(
