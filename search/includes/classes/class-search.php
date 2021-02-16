@@ -728,6 +728,8 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
+			$query_for_logging = $this->sanitize_es_query_for_logging( $query );
+
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
 				'error',
@@ -736,11 +738,24 @@ class Search {
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
-					'query' => $query,
+					'query' => $query_for_logging,
 					'backtrace' => wp_debug_backtrace_summary(),
 				]
 			);
 		}
+	}
+
+	/**
+	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
+	 */
+	public function sanitize_es_query_for_logging( $query ) {
+		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
+			return $query;
+		}
+
+		$query['args']['headers']['Authorization'] = '<redacted>';
+
+		return $query;
 	}
 
 	/*
