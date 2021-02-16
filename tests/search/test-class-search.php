@@ -1727,15 +1727,15 @@ class Search_Test extends \WP_UnitTestCase {
 	public function get_origin_dc_from_es_host_data() {
 		return array(
 			array(
-				'https://es-ha-bur.vipv2.net:1234',
+				'https://es-ha.bur.vipv2.net:1234',
 				'bur',
 			),
 			array(
-				'https://es-ha-dca.vipv2.net:4321',
+				'https://es-ha.dca.vipv2.net:4321',
 				'dca',
 			),
 			array(
-				'https://es-ha-DCA.vipv2.net:4321',
+				'https://es-ha.DCA.vipv2.net:4321',
 				'dca',
 			),
 			array(

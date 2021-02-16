@@ -1284,7 +1284,7 @@ class Search {
 
 		// Assume all host names are in the format es-ha-$dc.vipv2.net
 		$matches = array();
-		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
+		if ( preg_match( '/^es-ha\.(.*)\.vipv2\.net$/', $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
 			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
 		} else {
@@ -1634,7 +1634,7 @@ class Search {
 
 		$matches = array();
 
-		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
+		if ( preg_match( '/^es-ha\.(.*)\.vipv2\.net$/', $host, $matches ) ) {
 			$dc = $matches[1];
 		}
 
