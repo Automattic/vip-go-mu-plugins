@@ -1649,7 +1649,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_indexable_mapping() {
-		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+		define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
 
 		$this->search_instance->init();
 
@@ -1665,7 +1665,7 @@ class Search_Test extends \WP_UnitTestCase {
 		foreach ( $indexables as $indexable ) {
 			$settings = $indexable->build_settings();
 
-			$this->assertEquals( 'foo', $settings['index.routing.allocation.include.dc'], 'Indexable ' . $indexable->slug . ' has the wrong routing allocation' );
+			$this->assertEquals( 'dfw', $settings['index.routing.allocation.include.dc'], 'Indexable ' . $indexable->slug . ' has the wrong routing allocation' );
 		}
 	}
 
@@ -1674,7 +1674,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_indexable_mapping_invalid_datacenter() {
-		define( 'VIP_ORIGIN_DATACENTER', null );
+		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
 
 		$this->search_instance->init();
 
@@ -1700,13 +1700,13 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__get_index_routing_allocation_include_dc_from_constant() {
-		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+		define( 'VIP_ORIGIN_DATACENTER', 'dca' );
 
 		$this->search_instance->init();
 
 		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
 
-		$this->assertEquals( 'foo', $origin_dc );
+		$this->assertEquals( 'dca', $origin_dc );
 	}
 	/**
 	 * @runInSeparateProcess

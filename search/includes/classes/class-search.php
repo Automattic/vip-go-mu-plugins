@@ -59,6 +59,11 @@ class Search {
 		'advanced_seo_description',
 	);
 
+	public const ALLOWED_DATACENTERS = [
+		'dca',
+		'dfw',
+		'bur',
+	];
 
 	private static $query_count_ttl;
 
@@ -1615,7 +1620,13 @@ class Search {
 	}
 
 	public function get_index_routing_allocation_include_dc() {
-		return defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_host( $this->get_current_host() );
+		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
+
+		if ( ! in_array( $dc, self::ALLOWED_DATACENTERS ) ) {
+			return null;
+		}
+
+		return $dc;
 	}
 
 	public function get_origin_dc_from_es_host( $host ) {
