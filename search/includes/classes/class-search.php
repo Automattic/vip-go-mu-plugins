@@ -1632,6 +1632,10 @@ class Search {
 	public function get_origin_dc_from_es_endpoint( $url ) {
 		$dc = null;
 
+		if ( ! $url ) {
+			return null;
+		}
+
 		$matches = array();
 
 		// The url from the VIP_ELASTICSEARCH_ENDPOINTS constant can contain a port - so parse out just the hostname
