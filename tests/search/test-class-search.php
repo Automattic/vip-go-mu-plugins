@@ -2563,7 +2563,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es->ep_handle_failed_request( $response, [], '' );
 	}
 
-	public function get_sanitize_es_query_for_logging_data() {
+	public function get_sanitize_ep_query_for_logging_data() {
 		return array(
 			// No Auth header present
 			array(
@@ -2607,10 +2607,10 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_sanitize_es_query_for_logging_data
+	 * @dataProvider get_sanitize_ep_query_for_logging_data
 	 */
-	public function test__sanitize_es_query_for_logging( $input, $expected ) {
-		$sanitized = $this->search_instance->sanitize_es_query_for_logging( $input );
+	public function test__sanitize_ep_query_for_logging( $input, $expected ) {
+		$sanitized = $this->search_instance->sanitize_ep_query_for_logging( $input );
 
 		$this->assertEquals( $expected, $sanitized );
 	}

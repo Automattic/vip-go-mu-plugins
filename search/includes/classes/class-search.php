@@ -728,7 +728,7 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
-			$query_for_logging = $this->sanitize_es_query_for_logging( $query );
+			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
 
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
@@ -748,7 +748,7 @@ class Search {
 	/**
 	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
 	 */
-	public function sanitize_es_query_for_logging( $query ) {
+	public function sanitize_ep_query_for_logging( $query ) {
 		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
 			return $query;
 		}
