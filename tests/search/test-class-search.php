@@ -1708,20 +1708,60 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 'dca', $origin_dc );
 	}
+
+	public function get_index_routing_allocation_include_dc_from_endpoints_data() {
+		return array(
+			// Valid
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://es-ha.dfw.vipv2.net:1234',
+				),
+				// Expected datacenter
+				'dfw',
+			),
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://es-ha.bur.vipv2.net/some/path',
+				),
+				// Expected datacenter
+				'bur',
+			),
+			// Unknown dc
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://es-ha.bar.vipv2.net:1234',
+				),
+				// Expected datacenter
+				null,
+			),
+			// Weird format
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://test:test@foo.com/bar/baz',
+				),
+				// Expected datacenter
+				null,
+			),
+		);
+	}
+
 	/**
+	 * @dataProvider get_index_routing_allocation_include_dc_from_endpoints_data
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__get_index_routing_allocation_include_dc_from_endpoints() {
-		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-ha.bar.baz.com:1234',
-		) );
+	public function test__get_index_routing_allocation_include_dc_from_endpoints( $endpoints, $expected ) {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', $endpoints );
 
 		$this->search_instance->init();
 
 		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
 
-		$this->assertEquals( 'bar', $origin_dc );
+		$this->assertEquals( $expected, $origin_dc );
 	}
 	
 	public function get_origin_dc_from_es_endpoint_data() {
