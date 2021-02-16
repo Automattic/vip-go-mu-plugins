@@ -1600,7 +1600,7 @@ class Search {
 	 * Note that this hook receives the mapping and settings together
 	 */
 	public function filter__ep_indexable_mapping( $mapping ) {
-		if ( ! isset( $mapping['settings'] ) ) {
+		if ( ! is_array( $mapping['settings'] ) ) {
 			return $mapping;
 		}
 
