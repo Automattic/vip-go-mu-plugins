@@ -1724,7 +1724,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'bar', $origin_dc );
 	}
 	
-	public function get_origin_dc_from_es_host_data() {
+	public function get_origin_dc_from_es_endpoint_data() {
 		return array(
 			array(
 				'https://es-ha.bur.vipv2.net:1234',
@@ -1746,12 +1746,12 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_origin_dc_from_es_host_data
+	 * @dataProvider get_origin_dc_from_es_endpoint_data
 	 */
-	public function test__get_origin_dc_from_es_host( $host, $expected ) {
+	public function test__get_origin_dc_from_es_endpoint( $host, $expected ) {
 		$this->search_instance->init();
 
-		$origin_dc = $this->search_instance->get_origin_dc_from_es_host( $host );
+		$origin_dc = $this->search_instance->get_origin_dc_from_es_endpoint( $host );
 
 		$this->assertEquals( $expected, $origin_dc );
 	}

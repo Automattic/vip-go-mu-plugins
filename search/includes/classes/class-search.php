@@ -1629,16 +1629,21 @@ class Search {
 		return $dc;
 	}
 
-	public function get_origin_dc_from_es_host( $host ) {
+	public function get_origin_dc_from_es_endpoint( $url ) {
 		$dc = null;
 
 		$matches = array();
+
+		// The url from the VIP_ELASTICSEARCH_ENDPOINTS constant can contain a port - so parse out just the hostname
+		$host = parse_url( $url, \PHP_URL_HOST );
 
 		if ( preg_match( '/^es-ha\.(.*)\.vipv2\.net$/', $host, $matches ) ) {
 			$dc = $matches[1];
 		}
 
-		return strtolower( $dc );
+		$dc = strtolower( $dc );
+
+		return $dc;
 	}
 
 	/**
