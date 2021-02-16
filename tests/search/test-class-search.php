@@ -2549,7 +2549,6 @@ class Search_Test extends \WP_UnitTestCase {
 				->setMethods( [ 'log' ] )
 				->getMock();
 
-
 		$es->logger->expects( $this->once() )
 				->method( 'log' )
 				->with(
@@ -2559,7 +2558,61 @@ class Search_Test extends \WP_UnitTestCase {
 					$this->anything()
 				);
 
+
+
 		$es->ep_handle_failed_request( $response, [], '' );
+	}
+
+	public function get_sanitize_ep_query_for_logging_data() {
+		return array(
+			// No Auth header present
+			array(
+				// The "query" from ElasticPress
+				array(
+					'args' => array(
+						'headers' => array(
+							'some' => 'header',
+						),
+					),
+				),
+				// Expected sanitized value
+				array(
+					'args' => array(
+						'headers' => array(
+							'some' => 'header',
+						),
+					),
+				),
+			),
+			// Auth header present, should be sanitized
+			array(
+				array(
+					'args' => array(
+						'headers' => array(
+							'Authorization' => 'foo',
+							'some' => 'header',
+						),
+					),
+				),
+				array(
+					'args' => array(
+						'headers' => array(
+							'Authorization' => '<redacted>',
+							'some' => 'header',
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_sanitize_ep_query_for_logging_data
+	 */
+	public function test__sanitize_ep_query_for_logging( $input, $expected ) {
+		$sanitized = $this->search_instance->sanitize_ep_query_for_logging( $input );
+
+		$this->assertEquals( $expected, $sanitized );
 	}
 
 	public function test__maybe_log_query_ratelimiting_start_should_do_nothing_if_ratelimiting_already_started() {
