@@ -268,7 +268,15 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ), isset( $assoc_args['do-not-heal'] ) );
+		$results = \Automattic\VIP\Search\Health::validate_index_posts_content(
+			$assoc_args['start_post_id'] ?? 1,
+			$assoc_args['last_post_id'] ?? null,
+			$assoc_args['batch_size'] ?? null,
+			$assoc_args['max_diff_size'] ?? null,
+			isset( $assoc_args['silent'] ),
+			isset( $assoc_args['inspect'] ),
+			isset( $assoc_args['do-not-heal'] )
+		);
 
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
