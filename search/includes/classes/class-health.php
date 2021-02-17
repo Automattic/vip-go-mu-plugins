@@ -25,6 +25,10 @@ class Health {
 		'time',
 	);
 
+	public function __construct() {
+		$this->indexables = \ElasticPress\Indexables::factory();
+	}
+
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
 	 * Entities can be either posts or users.
@@ -255,9 +259,9 @@ class Health {
 		}
 
 		// Get indexable objects
-		$indexable = Indexables::factory()->get( 'post' );
+		$indexable = $this->indexables->get( 'post' );
 
-		// Indexables::factory()->get() returns boolean|array
+		// Indexables::get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $indexable ) {
 			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
@@ -292,7 +296,7 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
-			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
+			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
@@ -336,21 +340,21 @@ class Health {
 		return $results;
 	}
 
-	private function is_validate_content_ongoing(): bool {
+	public function is_validate_content_ongoing(): bool {
 		$is_locked = get_transient( self::CONTENT_VALIDATION_LOCK_NAME, false );
 
 		return (bool) $is_locked;
 	}
 
-	private function reset_validate_content_ongoing() {
+	public function reset_validate_content_ongoing() {
 		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, self::CONTENT_VALIDATION_LOCK_TIMEOUT );
 	}
 
-	private function delete_validate_content_ongoing() {
+	public function delete_validate_content_ongoing() {
 		delete_transient( self::CONTENT_VALIDATION_LOCK_NAME );
 	}
 
-	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
+	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
 		global $wpdb;
 
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );

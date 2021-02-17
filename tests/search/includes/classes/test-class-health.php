@@ -438,4 +438,42 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $result, $expected_result );
 	}
+
+	public function test_validate_index_posts_content__ongoing_results_in_error() {
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'is_validate_content_ongoing' ] )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$patrtially_mocked_health->method( 'is_validate_content_ongoing' )
+			->willReturn( true );
+
+		$result = $patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
+
+		$this->assertTrue( is_wp_error( $result ) );
+	}
+
+	public function test_validate_index_posts_content__should_set_and_clear_lock() {
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'reset_validate_content_ongoing', 'delete_validate_content_ongoing', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->once() )->method( 'reset_validate_content_ongoing' );
+		$patrtially_mocked_health->expects( $this->once() )->method( 'delete_validate_content_ongoing' );
+
+		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
+	}
 }
