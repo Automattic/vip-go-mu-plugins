@@ -136,7 +136,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function now( $args, $assoc_args ) {
 
-		\WP_CLI::confirm( 'This will remove the oldest backup. Ok?' );
+		$backup_roles = get_option( 'vip_backup_user_roles', [] );
+		if ( count( $backup_roles ) >= USER_ROLE_BACKUP_LENGTH ) {
+			\WP_CLI::confirm( 'This will remove the oldest backup. Ok?' );
+		}
 
 		\Automattic\VIP\do_user_role_backup();
 

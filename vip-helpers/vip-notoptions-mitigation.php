@@ -10,6 +10,8 @@ namespace Automattic\VIP;
 
 use Automattic\VIP\Utils\Alerts;
 
+define( 'USER_ROLE_BACKUP_LENGTH', 3 );
+
 if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 	add_action( 'muplugins_loaded', __NAMESPACE__ . '\notoptions_mitigation', -999 );
 	add_action( 'init', __NAMESPACE__ . '\user_role_backup_scheduling' );
@@ -111,7 +113,7 @@ function do_user_role_backup() {
 	$backup_roles  = get_option( 'vip_backup_user_roles', [] );
 
 	$backup_roles[ time() ] = $current_roles; // adds to end of array
-	$backup_roles = array_slice( $backup_roles, -3, null, true ); // retain last 3
+	$backup_roles = array_slice( $backup_roles, ( USER_ROLE_BACKUP_LENGTH * -1 ), null, true ); // retain last 3
 
 	update_option( 'vip_backup_user_roles', $backup_roles, 'no' );
 }
