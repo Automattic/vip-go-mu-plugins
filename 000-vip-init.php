@@ -185,7 +185,6 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
-	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
 }
 
 // Load elasticsearch helpers
