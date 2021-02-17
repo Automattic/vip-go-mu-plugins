@@ -14,7 +14,7 @@ define( 'USER_ROLE_BACKUP_LENGTH', 3 );
 
 if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 	add_action( 'muplugins_loaded', __NAMESPACE__ . '\notoptions_mitigation', -999 );
-	add_action( 'init', __NAMESPACE__ . '\user_role_backup_scheduling' );
+	add_action( 'wp_loaded', __NAMESPACE__ . '\user_role_backup_scheduling' );
 }
 add_action( __NAMESPACE__ . '-backup_roles', __NAMESPACE__ . '\do_user_role_backup' );
 
