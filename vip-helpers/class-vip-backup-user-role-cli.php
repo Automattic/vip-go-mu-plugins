@@ -175,27 +175,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		);
 
 		if ( $show_diff ) {
-			\WP_CLI::log(
-				\WP_CLI::colorize(
-					'Diff roles. %G<added%n %R>removed%n'
-				)
-			);
-
-			if ( ! class_exists( 'Text_Diff' ) ) {
-				require ABSPATH . WPINC . '/Text/Diff.php';
-			}
-			if ( ! class_exists( 'Text_Diff_Renderer' ) ) {
-				require ABSPATH . WPINC . '/Text/Diff/Renderer.php';
-			}
-
-			$text_diff = new Text_Diff( 'shell', [ $backup_count_caps, $current_roles_count_caps ] );
-			$renderer  = new Text_Diff_Renderer( [ 'leading_context_lines' => 2 ] );
-			$diff      = $renderer->render( $text_diff );
-
-			$diff = preg_replace( '/(^>.*?$)/m', '%R$1%n', $diff );
-			$diff = preg_replace( '/(^<.*?$)/m', '%G$1%n', $diff );
-
-			\WP_CLI::log( \WP_CLI::colorize( $diff ) );
+			\WP_CLI::run_command( [ 'vip', 'role-backup', 'diff', $key ] );
 		}
 
 		\WP_CLI::confirm( 'Okay to proceed with restoration?', $assoc_args );
