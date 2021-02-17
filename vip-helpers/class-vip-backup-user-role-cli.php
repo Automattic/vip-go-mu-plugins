@@ -34,13 +34,14 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		foreach ( $backup_roles as $time => $roles ) {
 			$data[] = [
-				'time_key'  => $time,
-				'time_h'    => gmdate( 'Y-m-d H:i:s', $time ),
-				'num_roles' => count( $roles ),
+				'time_key'   => $time,
+				'time_h'     => gmdate( 'Y-m-d H:i:s', $time ),
+				'num_roles'  => count( $roles ),
+				'role_names' => implode( ', ', array_keys( $roles ) ),
 			];
 		}
 
-		$formatter = new \WP_CLI\Formatter( $assoc_args, [ 'time_key', 'time_h', 'num_roles' ], 'role_backups' );
+		$formatter = new \WP_CLI\Formatter( $assoc_args, [ 'time_key', 'time_h', 'num_roles', 'role_names' ], 'role_backups' );
 		$formatter->display_items( $data );
 
 	}
