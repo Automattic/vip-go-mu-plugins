@@ -144,12 +144,12 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$current_roles_count_caps = [];
 		$backup_count_caps        = [];
 
-		foreach( $current_roles as $name => $role ) {
+		foreach ( $current_roles as $name => $role ) {
 			$current_roles_count_caps[] = sprintf( '%s (%d)', $name, count( $role['capabilities'] ) );
 		}
 
 
-		foreach( $backup as $name => $role ) {
+		foreach ( $backup as $name => $role ) {
 			$backup_count_caps[] = sprintf( '%s (%d)', $name, count( $role['capabilities'] ) );
 		}
 
@@ -249,7 +249,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		\WP_CLI::log(
 			\WP_CLI::colorize(
-				"Diff roles. %G<added%n %R>removed%n"
+				'Diff roles. %G<added%n %R>removed%n'
 			)
 		);
 
