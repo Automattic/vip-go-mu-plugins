@@ -113,14 +113,58 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 
 		if ( 'latest' === $key ) {
+			$date   = gmdate( 'Y-m-d H:i:s', array_key_last( $backup_roles ) );
 			$backup = array_pop( $backup_roles );
 		} else {
 			if ( isset( $backup_roles[ $key ] ) ) {
+				$date   = gmdate( 'Y-m-d H:i:s', $key );
 				$backup = $backup_roles[ $key ];
 			} else {
 				\WP_CLI::error( 'Specified backup time_key not found.' );
 			}
 		}
+
+		$current_roles = get_option( $wpdb->prefix . 'user_roles' );
+
+		if ( $current_roles === $backup ) {
+			WP_CLI::log( 'Selected backup matches existing roles.' );
+			exit;
+		}
+
+		$current_roles_count_caps = [];
+		$backup_count_caps        = [];
+
+		foreach( $current_roles as $name => $role ) {
+			$current_roles_count_caps[] = sprintf( '%s (%d)', $name, count( $role['capabilities'] ) );
+		}
+
+
+		foreach( $backup as $name => $role ) {
+			$backup_count_caps[] = sprintf( '%s (%d)', $name, count( $role['capabilities'] ) );
+		}
+
+		\WP_CLI::log(
+			\WP_CLI::colorize(
+				"%WNumber of caps per role shown in parentheses%n"
+			)
+		);
+
+		\WP_CLI::log(
+			\WP_CLI::colorize(
+				sprintf( "%%bCurrent roles: %%n %s", implode( ', ', $current_roles_count_caps ) )
+			)
+		);
+
+		\WP_CLI::log(
+			\WP_CLI::colorize(
+				sprintf( "%%mNew roles [%s]: %%n %s",
+					$date,
+					implode( ', ', $backup_count_caps )
+				)
+			)
+		);
+
+		\WP_CLI::confirm( 'Okay to proceed with restoration?' );
 
 		update_option( $wpdb->prefix . 'user_roles', $backup );
 
