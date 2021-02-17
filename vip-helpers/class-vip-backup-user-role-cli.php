@@ -107,6 +107,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 	 * [--diff]
 	 * : Show more diff
 	 *
+	 * [--yes]
+	 * : Skip confirmation prompt
 	 */
 	public function restore( $args, $assoc_args ) {
 
@@ -196,7 +198,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 			\WP_CLI::log( \WP_CLI::colorize( $diff ) );
 		}
 
-		\WP_CLI::confirm( 'Okay to proceed with restoration?' );
+		\WP_CLI::confirm( 'Okay to proceed with restoration?', $assoc_args );
 
 		update_option( $wpdb->prefix . 'user_roles', $backup );
 
@@ -294,12 +296,14 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
+	 * [--yes]
+	 * : Skip confirmation prompt
 	 */
 	public function now( $args, $assoc_args ) {
 
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( count( $backup_roles ) >= USER_ROLE_BACKUP_LENGTH ) {
-			\WP_CLI::confirm( 'This will remove the oldest backup. Ok?' );
+			\WP_CLI::confirm( 'This will remove the oldest backup. Ok?', $assoc_args );
 		}
 
 		\Automattic\VIP\do_user_role_backup();
