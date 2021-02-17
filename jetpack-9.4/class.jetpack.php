@@ -1404,7 +1404,7 @@ class Jetpack {
 			if ( count( $admins ) > 1 ) {
 				$available = array();
 				foreach ( $admins as $admin ) {
-					if ( self::is_user_connected( $admin->ID ) ) {
+					if ( self::connection()->is_user_connected( $admin->ID ) ) {
 						$available[] = $admin->ID;
 					}
 				}
@@ -1781,6 +1781,7 @@ class Jetpack {
 	 * Is a given user (or the current user if none is specified) linked to a WordPress.com user?
 	 */
 	public static function is_user_connected( $user_id = false ) {
+		_deprecated_function( __METHOD__, 'jetpack-9.5', 'Automattic\\Jetpack\\Connection\\Manager\\is_user_connected' );
 		return self::connection()->is_user_connected( $user_id );
 	}
 
@@ -1788,30 +1789,8 @@ class Jetpack {
 	 * Get the wpcom user data of the current|specified connected user.
 	 */
 	public static function get_connected_user_data( $user_id = null ) {
-		// TODO: remove in favor of Connection_Manager->get_connected_user_data
-		if ( ! $user_id ) {
-			$user_id = get_current_user_id();
-		}
-
-		$transient_key = "jetpack_connected_user_data_$user_id";
-
-		if ( $cached_user_data = get_transient( $transient_key ) ) {
-			return $cached_user_data;
-		}
-
-		$xml = new Jetpack_IXR_Client(
-			array(
-				'user_id' => $user_id,
-			)
-		);
-		$xml->query( 'wpcom.getUser' );
-		if ( ! $xml->isError() ) {
-			$user_data = $xml->getResponse();
-			set_transient( $transient_key, $xml->getResponse(), DAY_IN_SECONDS );
-			return $user_data;
-		}
-
-		return false;
+		_deprecated_function( __METHOD__, 'jetpack-9.5', 'Automattic\\Jetpack\\Connection\\Manager\\get_connected_user_data' );
+		return self::connection()->get_connected_user_data( $user_id );
 	}
 
 	/**
@@ -3569,7 +3548,8 @@ p {
 		$is_offline_mode = ( new Status() )->is_offline_mode();
 		if ( ! self::is_active() && ! $is_offline_mode ) {
 			Jetpack_Connection_Banner::init();
-		} elseif ( false === Jetpack_Options::get_option( 'fallback_no_verify_ssl_certs' ) ) {
+			/** Already documented in automattic/jetpack-connection::src/class-client.php */
+		} elseif ( ( false === Jetpack_Options::get_option( 'fallback_no_verify_ssl_certs' ) ) && ! apply_filters( 'jetpack_client_verify_ssl_certs', false ) ) {
 			// Upgrade: 1.1 -> 1.1.1
 			// Check and see if host can verify the Jetpack servers' SSL certificate
 			$args = array();
@@ -4155,7 +4135,7 @@ p {
 			// @todo: Add validation against a known allowed list.
 			$from = ! empty( $_GET['from'] ) ? $_GET['from'] : 'iframe';
 			// User clicked in the iframe to link their accounts
-			if ( ! self::is_user_connected() ) {
+			if ( ! self::connection()->is_user_connected() ) {
 				$redirect = ! empty( $_GET['redirect_after_auth'] ) ? $_GET['redirect_after_auth'] : false;
 
 				add_filter( 'allowed_redirect_hosts', array( &$this, 'allow_wpcom_environments' ) );
@@ -7093,7 +7073,7 @@ endif;
 	 * Show Jetpack icon if the user is linked.
 	 */
 	function jetpack_show_user_connected_icon( $val, $col, $user_id ) {
-		if ( 'user_jetpack' == $col && self::is_user_connected( $user_id ) ) {
+		if ( 'user_jetpack' === $col && self::connection()->is_user_connected( $user_id ) ) {
 			$jetpack_logo = new Jetpack_Logo();
 			$emblem_html  = sprintf(
 				'<a title="%1$s" class="jp-emblem-user-admin">%2$s</a>',
