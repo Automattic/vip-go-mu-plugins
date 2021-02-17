@@ -104,11 +104,19 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 	 * [<time_key>]
 	 * : See `vip role-backup list`. Defaults to latest
 	 *
+	 * [--diff]
+	 * : Show more diff
+	 *
 	 */
 	public function restore( $args, $assoc_args ) {
 
 		global $wpdb;
 		$key = $args[0] ?? 'latest';
+		$show_diff = WP_CLI\Utils\get_flag_value(
+			$assoc_args,
+			'diff',
+			false
+		);
 
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 
@@ -163,6 +171,30 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 				)
 			)
 		);
+
+		if ( $show_diff ) {
+			\WP_CLI::log(
+				\WP_CLI::colorize(
+					"Diff roles. %G<added%n %R>removed%n"
+				)
+			);
+
+			if ( ! class_exists( 'Text_Diff' ) ) {
+				require ABSPATH . WPINC . '/Text/Diff.php';
+			}
+			if ( ! class_exists( 'Text_Diff_Renderer' ) ) {
+				require ABSPATH . WPINC . '/Text/Diff/Renderer.php';
+			}
+
+			$text_diff = new Text_Diff( 'shell', [ $backup_count_caps, $current_roles_count_caps ] );
+			$renderer  = new Text_Diff_Renderer( [ 'leading_context_lines' => 2 ] );
+			$diff      = $renderer->render( $text_diff );
+
+			$diff = preg_replace( '/(^>.*?$)/m', '%R$1%n', $diff );
+			$diff = preg_replace( '/(^<.*?$)/m', '%G$1%n', $diff );
+
+			\WP_CLI::log( \WP_CLI::colorize( $diff ) );
+		}
 
 		\WP_CLI::confirm( 'Okay to proceed with restoration?' );
 
