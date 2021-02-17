@@ -153,19 +153,19 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		\WP_CLI::log(
 			\WP_CLI::colorize(
-				"%WNumber of caps per role shown in parentheses%n"
+				'%WNumber of caps per role shown in parentheses%n'
 			)
 		);
 
 		\WP_CLI::log(
 			\WP_CLI::colorize(
-				sprintf( "%%bCurrent roles: %%n %s", implode( ', ', $current_roles_count_caps ) )
+				sprintf( '%%bCurrent roles: %%n %s', implode( ', ', $current_roles_count_caps ) )
 			)
 		);
 
 		\WP_CLI::log(
 			\WP_CLI::colorize(
-				sprintf( "%%mNew roles [%s]: %%n %s",
+				sprintf( '%%mNew roles [%s]: %%n %s',
 					$date,
 					implode( ', ', $backup_count_caps )
 				)
@@ -175,7 +175,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		if ( $show_diff ) {
 			\WP_CLI::log(
 				\WP_CLI::colorize(
-					"Diff roles. %G<added%n %R>removed%n"
+					'Diff roles. %G<added%n %R>removed%n'
 				)
 			);
 
@@ -201,6 +201,91 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		update_option( $wpdb->prefix . 'user_roles', $backup );
 
 		\WP_CLI::success( sprintf( 'Restored %s backup with %d roles', $key, count( $backup ) ) );
+
+	}
+
+
+	/**
+	 * Get diff of selected backup compared to current roles
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<time_key>]
+	 * : See `vip role-backup list`. Defaults to latest
+	 *
+	 */
+	public function diff( $args, $assoc_args ) {
+
+		global $wpdb;
+		$key = $args[0] ?? 'latest';
+
+		$backup_roles = get_option( 'vip_backup_user_roles', [] );
+
+		if ( 'latest' === $key ) {
+			$date   = gmdate( 'Y-m-d H:i:s', array_key_last( $backup_roles ) );
+			$backup = array_pop( $backup_roles );
+		} else {
+			if ( isset( $backup_roles[ $key ] ) ) {
+				$date   = gmdate( 'Y-m-d H:i:s', $key );
+				$backup = $backup_roles[ $key ];
+			} else {
+				\WP_CLI::error( 'Specified backup time_key not found.' );
+			}
+		}
+
+		$current_roles = get_option( $wpdb->prefix . 'user_roles' );
+
+		if ( $current_roles === $backup ) {
+			WP_CLI::log( 'Selected backup matches existing roles.' );
+			exit;
+		}
+
+		$current_roles_as_text_block = [];
+		$backup_as_text_block        = [];
+
+		ksort( $current_roles );
+		ksort( $backup );
+
+		foreach ( $current_roles as $name => $role ) {
+			$role['capabilities'] = array_keys( $role['capabilities'] );
+			ksort( $role['capabilities'] );
+			$current_roles_as_text_block[] = "Role: $name";
+			foreach ( $role['capabilities'] as $cap ) {
+				$current_roles_as_text_block[] = "Role-cap: $name: $cap";
+			}
+		}
+
+
+		foreach ( $backup as $name => $role ) {
+			$role['capabilities'] = array_keys( $role['capabilities'] );
+			ksort( $role['capabilities'] );
+			$backup_as_text_block[] = "Role: $name";
+			foreach ( $role['capabilities'] as $cap ) {
+				$backup_as_text_block[] = "Role-cap: $name: $cap";
+			}
+		}
+
+		\WP_CLI::log(
+			\WP_CLI::colorize(
+				"Diff roles. %G<added%n %R>removed%n"
+			)
+		);
+
+		if ( ! class_exists( 'Text_Diff' ) ) {
+			require ABSPATH . WPINC . '/Text/Diff.php';
+		}
+		if ( ! class_exists( 'Text_Diff_Renderer' ) ) {
+			require ABSPATH . WPINC . '/Text/Diff/Renderer.php';
+		}
+
+		$text_diff = new Text_Diff( 'shell', [ $backup_as_text_block, $current_roles_as_text_block ] );
+		$renderer  = new Text_Diff_Renderer( [ 'leading_context_lines' => 2 ] );
+		$diff      = $renderer->render( $text_diff );
+
+		$diff = preg_replace( '/(^>.*?$)/m', '%R$1%n', $diff );
+		$diff = preg_replace( '/(^<.*?$)/m', '%G$1%n', $diff );
+
+		\WP_CLI::log( \WP_CLI::colorize( $diff ) );
 
 	}
 
