@@ -12,6 +12,8 @@ use \WP_Error as WP_Error;
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE    = 500;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
+	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_ongoing';
+	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
 	const DOCUMENT_IGNORED_KEYS            = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
 		// that run during normal indexing and this validator
@@ -233,6 +235,9 @@ class Health {
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
 	public static function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false, $do_not_heal = false ) {
+		if ( self::is_validate_content_ongoing() ) {
+			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
+		}
 		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
@@ -275,6 +280,8 @@ class Health {
 		}
 
 		do {
+			self::reset_validate_content_ongoing();
+
 			$next_batch_post_id = $start_post_id + $batch_size;
 
 			if ( $last_post_id < $next_batch_post_id ) {
@@ -303,6 +310,8 @@ class Health {
 
 				$error->add_data( $results, 'diff' );
 
+				self::delete_validate_content_ongoing();
+
 				return $error;
 			}
 
@@ -322,7 +331,23 @@ class Health {
 			}
 		} while ( $start_post_id <= $last_post_id );
 
+		self::delete_validate_content_ongoing();
+
 		return $results;
+	}
+
+	private static function is_validate_content_ongoing(): bool {
+		$is_locked = get_transient( self::CONTENT_VALIDATION_LOCK_NAME, false );
+
+		return (bool) $is_locked;
+	}
+
+	private static function reset_validate_content_ongoing() {
+		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, self::CONTENT_VALIDATION_LOCK_TIMEOUT );
+	}
+
+	private static function delete_validate_content_ongoing() {
+		delete_transient( self::CONTENT_VALIDATION_LOCK_NAME );
 	}
 
 	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
