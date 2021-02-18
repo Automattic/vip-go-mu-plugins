@@ -172,6 +172,8 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__vip_search_filter_ep_index_name_with_overridden_version() {
+		define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -1763,7 +1765,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $origin_dc );
 	}
-	
+
 	public function get_origin_dc_from_es_endpoint_data() {
 		return array(
 			array(
