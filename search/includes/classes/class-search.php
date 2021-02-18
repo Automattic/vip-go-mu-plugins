@@ -11,9 +11,54 @@ class Search {
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
-	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
-	// sites.
+	/**
+	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
+	 * sites.
+	 */
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
+	/**
+	 * Jetpack default post meta allow list to make migration path easier. See usage of jetpack_sync_post_meta_whitelist to see how this is used.
+	 */
+	public const JETPACK_POST_META_DEFAULT_ALLOW_LIST = array(
+		'_feedback_akismet_values',
+		'_feedback_email',
+		'_feedback_extra_fields',
+		'_g_feedback_shortcode',
+		'_jetpack_post_thumbnail',
+		'_menu_item_classes',
+		'_menu_item_menu_item_parent',
+		'_menu_item_object',
+		'_menu_item_object_id',
+		'_menu_item_orphaned',
+		'_menu_item_type',
+		'_menu_item_xfn',
+		'_publicize_facebook_user',
+		'_publicize_twitter_user',
+		'_thumbnail_id',
+		'_wp_attached_file',
+		'_wp_attachment_backup_sizes',
+		'_wp_attachment_context',
+		'_wp_attachment_image_alt',
+		'_wp_attachment_is_custom_background',
+		'_wp_attachment_is_custom_header',
+		'_wp_attachment_metadata',
+		'_wp_page_template',
+		'_wp_trash_meta_comments_status',
+		'_wpas_mess',
+		'content_width',
+		'custom_css_add',
+		'custom_css_preprocessor',
+		'enclosure',
+		'imagedata',
+		'nova_price',
+		'publicize_results',
+		'sharing_disabled',
+		'switch_like_status',
+		'videopress_guid',
+		'vimeo_poster_image',
+		'advanced_seo_description',
+	);
+
 
 	private static $query_count_ttl;
 
@@ -80,7 +125,7 @@ class Search {
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
-		require_once __DIR__ . '/class-health-job.php';
+		require_once __DIR__ . '/class-healthjob.php';
 
 		// Load versioning cleanup job
 		require_once __DIR__ . '/class-versioningcleanupjob.php';
@@ -399,6 +444,8 @@ class Search {
 		if ( false !== $this->is_protected_content_enabled() ) {
 			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
 		}
+
+		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
 	}
 
 	protected function load_commands() {
@@ -681,6 +728,8 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
+			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
+
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
 				'error',
@@ -689,11 +738,24 @@ class Search {
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
-					'query' => $query,
+					'query' => $query_for_logging,
 					'backtrace' => wp_debug_backtrace_summary(),
 				]
 			);
 		}
+	}
+
+	/**
+	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
+	 */
+	public function sanitize_ep_query_for_logging( $query ) {
+		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
+			return $query;
+		}
+
+		$query['args']['headers']['Authorization'] = '<redacted>';
+
+		return $query;
 	}
 
 	/*
@@ -1465,6 +1527,36 @@ class Search {
 		return false;
 	}
 
+	/**
+	 * Adds default values for vip_search_post_meta_allow_list by combining vip-search defaults with jetpack values (to ease migration).
+	 *
+	 * @param {array} $keys Input post meta keys.
+	 * @return {array} Post meta keys enhanced by default values.
+	 */
+	public function filter__vip_search_post_meta_allow_list_defaults( $keys ) {
+		if ( ! is_array( $keys ) ) {
+			$keys = [];
+		}
+
+		if ( $this->is_jetpack_migration() ) {
+			$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
+
+			$keys = array_merge( $default_jetpack, $keys );
+		}
+
+		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $keys );
+	}
+
+	public function is_jetpack_migration() {
+		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === VIP_SEARCH_MIGRATION_SOURCE;
+	}
+
+	/**
+	 * Processes vip_search_post_meta_allow_list. This method handles assoc array conversion if needed.
+	 *
+	 * @param {WP_Post} $post The post whose meta data is being prepared.
+	 * @return {array} The new allow list for post_meta_indexing.
+	 */
 	public function get_post_meta_allow_list( $post ) {
 		/**
 		 * Filters the allow list used for post meta indexing
@@ -1474,7 +1566,7 @@ class Search {
 		 * @param {WP_Post} $post The post whose meta data is being prepared
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
-		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
+		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', [], $post );
 
 		// If post meta allow list is not an array, treat it like an empty array.
 		if ( ! is_array( $post_meta_allow_list ) ) {
@@ -1506,7 +1598,9 @@ class Search {
 	}
 
 	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
-		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
+		$vip_search_allow_list_keys = $this->get_post_meta_allow_list( $post );
+
+		return array_merge( $keys, $vip_search_allow_list_keys );
 	}
 
 	/**
