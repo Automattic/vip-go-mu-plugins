@@ -145,13 +145,16 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 		if ( isset( $dispatchers['html'] ) ) {
 			$html_dispatcher = $dispatchers['html'];
 			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
-			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
 		}
 		if ( isset( $dispatchers['ajax'] ) ) {
 			$ajax_dispatcher = $dispatchers['ajax'];
 			remove_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), 0 );
-			add_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), PHP_INT_MAX );
 
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
 		}
 	}
 

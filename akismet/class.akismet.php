@@ -207,7 +207,15 @@ class Akismet {
 		do_action( 'akismet_comment_check_response', $response );
 
 		$commentdata['comment_as_submitted'] = array_intersect_key( $comment, self::$comment_as_submitted_allowed_keys );
-		$commentdata['akismet_result']       = $response[1];
+
+		// Also include any form fields we inject into the comment form, like ak_js
+		foreach ( $_POST as $key => $value ) {
+			if ( is_string( $value ) && strpos( $key, 'ak_' ) === 0 ) {
+				$commentdata['comment_as_submitted'][ 'POST_' . $key ] = $value;
+			}
+		}
+
+		$commentdata['akismet_result'] = $response[1];
 
 		if ( isset( $response[0]['x-akismet-pro-tip'] ) )
 	        $commentdata['akismet_pro_tip'] = $response[0]['x-akismet-pro-tip'];
@@ -1284,10 +1292,9 @@ class Akismet {
 		return preg_replace( '/^<script /i', '<script async="async" ', $tag );
 	}
 	
-	public static function inject_ak_js( $fields ) {
-		echo '<p style="display: none;">';
+	public static function inject_ak_js( $post_id ) {
 		echo '<input type="hidden" id="ak_js" name="ak_js" value="' . mt_rand( 0, 250 ) . '"/>';
-		echo '</p>';
+		echo '<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100" style="display: none !important;"></textarea>';
 	}
 
 	private static function bail_on_activation( $message, $deactivate = true ) {
@@ -1470,8 +1477,17 @@ p {
 		$meta_value = (array) $meta_value;
 
 		foreach ( $meta_value as $key => $value ) {
-			if ( ! isset( self::$comment_as_submitted_allowed_keys[$key] ) || ! is_scalar( $value ) ) {
-				unset( $meta_value[$key] );
+			if ( ! is_scalar( $value ) ) {
+				unset( $meta_value[ $key ] );
+			} else {
+				// These can change, so they're not explicitly listed in comment_as_submitted_allowed_keys.
+				if ( strpos( $key, 'POST_ak_' ) === 0 ) {
+					continue;
+				}
+
+				if ( ! isset( self::$comment_as_submitted_allowed_keys[ $key ] ) ) {
+					unset( $meta_value[ $key ] );
+				}
 			}
 		}
 
