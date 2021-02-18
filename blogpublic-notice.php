@@ -1,6 +1,4 @@
 <?php
-/**
- */
 
 namespace Automattic\VIP\Blog_Public;
 
