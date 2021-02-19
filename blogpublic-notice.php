@@ -2,8 +2,10 @@
 
 namespace Automattic\VIP\Blog_Public;
 
-if ( 'production' === VIP_GO_APP_ENVIRONMENT ) {
-	return;
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+	if ( 'production' === VIP_GO_APP_ENVIRONMENT ) {
+		return;
+	}
 }
 
 /**
