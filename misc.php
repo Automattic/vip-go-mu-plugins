@@ -102,7 +102,10 @@ function _wpcom_vip_maybe_clear_notoptions_cache( $option ) {
 	}
 }
 
-add_action( 'add_option', '_wpcom_vip_maybe_clear_notoptions_cache' );
+// Just testing for now
+if ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'production' !== WP_ENVIRONMENT_TYPE ) {
+	add_action( 'add_option', '_wpcom_vip_maybe_clear_notoptions_cache' );
+}
 
 /**
  * On Go, all API usage must be over HTTPS for security
