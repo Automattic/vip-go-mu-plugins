@@ -81,7 +81,7 @@ class VIP_Filesystem {
 
 		// Create and register stream
 		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( new_api_client(),
-			self::PROTOCOL );
+		self::PROTOCOL );
 		$this->stream_wrapper->register();
 	}
 
@@ -140,21 +140,21 @@ class VIP_Filesystem {
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-				strlen( LOCAL_UPLOADS ) );
-			$params['basedir']    = substr_replace( $params['basedir'],
+			strlen( LOCAL_UPLOADS ) );
+			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-				strlen( LOCAL_UPLOADS ) );
+			strlen( LOCAL_UPLOADS ) );
 		} else {
-			$pos = stripos( $params['path'], WP_CONTENT_DIR );
+			$pos               = stripos( $params['path'], WP_CONTENT_DIR );
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-				strlen( WP_CONTENT_DIR ) );
-			$params['basedir']    = substr_replace( $params['basedir'],
+			strlen( WP_CONTENT_DIR ) );
+			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-				strlen( WP_CONTENT_DIR ) );
+			strlen( WP_CONTENT_DIR ) );
 		}
 
 		return $params;
@@ -166,9 +166,9 @@ class VIP_Filesystem {
 	 * @param  string[]  An array of data for a single file.
 	 */
 	public function filter_validate_file( $file ) {
-		$file_name = $file['name'];
+		$file_name   = $file['name'];
 		$upload_path = trailingslashit( $this->get_upload_path() );
-		$file_path = $upload_path . $file_name;
+		$file_path   = $upload_path . $file_name;
 
 		// TODO: run through unique filename?
 
@@ -263,7 +263,7 @@ class VIP_Filesystem {
 
 		$file_path = $this->clean_file_path( $file_path );
 
-		$file_uri  = $this->get_file_uri_path( $file_path );
+		$file_uri = $this->get_file_uri_path( $file_path );
 
 		if ( in_array( $file_uri, $deleted_uris, true ) ) {
 			// This file has already been successfully deleted from the file service in this request
@@ -403,8 +403,8 @@ class VIP_Filesystem {
 	public function filter_get_attached_file( $file, $attachment_id ) {
 		$uploads = wp_get_upload_dir();
 
-		if ( $file && false !== strpos( $file, $uploads[ 'baseurl' ] ) ) {
-			$file = str_replace( $uploads[ 'baseurl' ] . '/', '', $file );
+		if ( $file && false !== strpos( $file, $uploads['baseurl'] ) ) {
+			$file = str_replace( $uploads['baseurl'] . '/', '', $file );
 		}
 
 		return $file;
