@@ -238,10 +238,11 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public function validate_index_posts_content( $start_post_id = 1, $last_post_id = null, $batch_size, $max_diff_size, $silent, $inspect = false, $do_not_heal = false ) {
+	public function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal ) {
 		if ( $this->is_validate_content_ongoing() ) {
 			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
+
 		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {

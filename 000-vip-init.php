@@ -185,6 +185,7 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
+	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
 }
 
 // Load elasticsearch helpers
@@ -224,7 +225,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 
 	// VIP sites should not be set as staging in Jetpack
 	// since it breaks SSO and prevents data from being passed to
-	// WordPress.com 
+	// WordPress.com
 	add_filter( 'jetpack_is_staging_site', '__return_false' );
 }
 
