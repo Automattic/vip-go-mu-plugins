@@ -40,7 +40,8 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		maybe_load_restrictions();
 
-		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'File visibility filter has no callbacks attached' );
+		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'Restrict_All_Files\check_file_visibility() is not defined; restrict-all-files.php may not have been require-d correctly' );
+		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have the correct callback attached' );
 	}
 
 	/**
@@ -53,7 +54,9 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		maybe_load_restrictions();
 
-		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'File visibility filter has no callbacks attached' );
+		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'Restrict_Unpublished_Files\check_file_visibility() is not defined; restrict-unpublished-files.php may not have been require-d correctly' );
+		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have correct callback attached' );
+		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
 	}
 
 	/**

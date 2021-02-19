@@ -104,6 +104,7 @@ class Search {
 	public function init() {
 		$this->apply_settings(); // Applies filters for tweakable Search settings and should run first.
 		$this->setup_constants();
+		$this->maybe_enable_ep_query_logging();
 		$this->load_dependencies();
 		$this->setup_hooks();
 		$this->load_commands();
@@ -345,6 +346,31 @@ class Search {
 		}
 	}
 
+	/**
+	 * Query logging in ElasticPress must be enabled via defining WP_EP_DEBUG as true before ElasticPress is instantiated.
+	 * This is separate from setup_hooks because some parts of setup_hooks require ElasticPress.
+	 */
+	protected function maybe_enable_ep_query_logging() {
+		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_debug_bar_or_query_monitor_enabled' ] );
+	}
+
+	/**
+	 * Check if query monitor or debug bar are enabled. If so, define WP_EP_DEBUG as true so ElasticPress enables query logging and then load the ElasticPress debug bar panel.
+	 */
+	public function enable_ep_query_logging_if_debug_bar_or_query_monitor_enabled() {
+		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+			if ( ! defined( 'WP_EP_DEBUG' ) ) {
+				define( 'WP_EP_DEBUG', true );
+			}
+
+			// Load query log override function to remove Authorization header from requests
+			require_once __DIR__ . '/../functions/ep-get-query-log.php';
+
+			// Load ElasticPress Debug Bar
+			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
+		}
+	}
+
 	protected function setup_hooks() {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
@@ -526,20 +552,6 @@ class Search {
 	}
 
 	public function action__plugins_loaded() {
-		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
-		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
-		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
-			// Must be set to true to enable saving of queries in \ElasticPress\Elasticsearch
-			if ( ! defined( 'WP_EP_DEBUG' ) ) {
-				define( 'WP_EP_DEBUG', true );
-			}
-
-			// Load query log override function to remove Authorization header from requests
-			require_once __DIR__ . '/../functions/ep-get-query-log.php';
-			// Load ElasticPress Debug Bar
-			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
-		}
-
 		$this->maybe_load_es_wp_query();
 	}
 
@@ -728,6 +740,8 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
+			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
+
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
 				'error',
@@ -736,11 +750,24 @@ class Search {
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
-					'query' => $query,
+					'query' => $query_for_logging,
 					'backtrace' => wp_debug_backtrace_summary(),
 				]
 			);
 		}
+	}
+
+	/**
+	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
+	 */
+	public function sanitize_ep_query_for_logging( $query ) {
+		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
+			return $query;
+		}
+
+		$query['args']['headers']['Authorization'] = '<redacted>';
+
+		return $query;
 	}
 
 	/*

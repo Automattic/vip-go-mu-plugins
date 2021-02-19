@@ -374,7 +374,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
@@ -401,7 +401,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -425,7 +425,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -446,7 +446,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should not exist
 		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -2549,7 +2549,6 @@ class Search_Test extends \WP_UnitTestCase {
 				->setMethods( [ 'log' ] )
 				->getMock();
 
-
 		$es->logger->expects( $this->once() )
 				->method( 'log' )
 				->with(
@@ -2559,7 +2558,61 @@ class Search_Test extends \WP_UnitTestCase {
 					$this->anything()
 				);
 
+
+
 		$es->ep_handle_failed_request( $response, [], '' );
+	}
+
+	public function get_sanitize_ep_query_for_logging_data() {
+		return array(
+			// No Auth header present
+			array(
+				// The "query" from ElasticPress
+				array(
+					'args' => array(
+						'headers' => array(
+							'some' => 'header',
+						),
+					),
+				),
+				// Expected sanitized value
+				array(
+					'args' => array(
+						'headers' => array(
+							'some' => 'header',
+						),
+					),
+				),
+			),
+			// Auth header present, should be sanitized
+			array(
+				array(
+					'args' => array(
+						'headers' => array(
+							'Authorization' => 'foo',
+							'some' => 'header',
+						),
+					),
+				),
+				array(
+					'args' => array(
+						'headers' => array(
+							'Authorization' => '<redacted>',
+							'some' => 'header',
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_sanitize_ep_query_for_logging_data
+	 */
+	public function test__sanitize_ep_query_for_logging( $input, $expected ) {
+		$sanitized = $this->search_instance->sanitize_ep_query_for_logging( $input );
+
+		$this->assertEquals( $expected, $sanitized );
 	}
 
 	public function test__maybe_log_query_ratelimiting_start_should_do_nothing_if_ratelimiting_already_started() {
@@ -2696,6 +2749,73 @@ class Search_Test extends \WP_UnitTestCase {
 		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
 
 		$this->assertTrue( $es->is_protected_content_enabled() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_no_debug_tools_enabled() {
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( defined( 'WP_EP_DEBUG' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_qm_enabled() {
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( WP_EP_DEBUG );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_debug_bar_enabled() {
+		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'debug_bar_enable', '__return_true' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( WP_EP_DEBUG );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_debug_bar_and_qm_enabled() {
+		add_filter( 'debug_bar_enable', '__return_true' );
+		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( WP_EP_DEBUG );
 	}
 
 	/**

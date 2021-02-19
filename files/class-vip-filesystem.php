@@ -81,7 +81,7 @@ class VIP_Filesystem {
 
 		// Create and register stream
 		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( new_api_client(),
-			self::PROTOCOL );
+		self::PROTOCOL );
 		$this->stream_wrapper->register();
 	}
 
@@ -140,21 +140,21 @@ class VIP_Filesystem {
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-				strlen( LOCAL_UPLOADS ) );
-			$params['basedir']    = substr_replace( $params['basedir'],
+			strlen( LOCAL_UPLOADS ) );
+			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-				strlen( LOCAL_UPLOADS ) );
+			strlen( LOCAL_UPLOADS ) );
 		} else {
-			$pos = stripos( $params['path'], WP_CONTENT_DIR );
+			$pos               = stripos( $params['path'], WP_CONTENT_DIR );
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-				strlen( WP_CONTENT_DIR ) );
-			$params['basedir']    = substr_replace( $params['basedir'],
+			strlen( WP_CONTENT_DIR ) );
+			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-				strlen( WP_CONTENT_DIR ) );
+			strlen( WP_CONTENT_DIR ) );
 		}
 
 		return $params;
@@ -166,9 +166,9 @@ class VIP_Filesystem {
 	 * @param  string[]  An array of data for a single file.
 	 */
 	public function filter_validate_file( $file ) {
-		$file_name = $file['name'];
+		$file_name   = $file['name'];
 		$upload_path = trailingslashit( $this->get_upload_path() );
-		$file_path = $upload_path . $file_name;
+		$file_path   = $upload_path . $file_name;
 
 		// TODO: run through unique filename?
 
@@ -221,6 +221,7 @@ class VIP_Filesystem {
 		if ( is_wp_error( $result ) ) {
 			if ( 'invalid-file-type' !== $result->get_error_code() ) {
 				trigger_error(
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					sprintf( '%s #vip-go-streams', $result->get_error_message() ),
 					E_USER_WARNING
 				);
@@ -263,7 +264,7 @@ class VIP_Filesystem {
 
 		$file_path = $this->clean_file_path( $file_path );
 
-		$file_uri  = $this->get_file_uri_path( $file_path );
+		$file_uri = $this->get_file_uri_path( $file_path );
 
 		if ( in_array( $file_uri, $deleted_uris, true ) ) {
 			// This file has already been successfully deleted from the file service in this request
@@ -308,10 +309,10 @@ class VIP_Filesystem {
 		}
 
 		// Strip any query params that snuck through
-		$queryStringStart = strpos( $file_path, '?' );
+		$query_string_start = strpos( $file_path, '?' );
 
-		if ( false !== $queryStringStart ) {
-			$file_path = substr( $file_path, 0, $queryStringStart );
+		if ( false !== $query_string_start ) {
+			$file_path = substr( $file_path, 0, $query_string_start );
 		}
 
 		return $file_path;
@@ -379,10 +380,13 @@ class VIP_Filesystem {
 		$invalidation_url = get_site_url() . $file_uri;
 
 		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 			trigger_error(
+				/* translators: invalidation url */
 				sprintf( __( 'Error purging %s from the cache service #vip-go-streams' ), $invalidation_url ),
 				E_USER_WARNING
 			);
+			// phpcs:enable
 		}
 	}
 
@@ -403,8 +407,8 @@ class VIP_Filesystem {
 	public function filter_get_attached_file( $file, $attachment_id ) {
 		$uploads = wp_get_upload_dir();
 
-		if ( $file && false !== strpos( $file, $uploads[ 'baseurl' ] ) ) {
-			$file = str_replace( $uploads[ 'baseurl' ] . '/', '', $file );
+		if ( $file && false !== strpos( $file, $uploads['baseurl'] ) ) {
+			$file = str_replace( $uploads['baseurl'] . '/', '', $file );
 		}
 
 		return $file;
