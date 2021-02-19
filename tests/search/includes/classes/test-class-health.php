@@ -455,7 +455,7 @@ class Health_Test extends \WP_UnitTestCase {
 
 	public function test_validate_index_posts_content__should_set_and_clear_lock() {
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
-			->setMethods( [ 'reset_validate_content_ongoing', 'delete_validate_content_ongoing', 'validate_index_posts_content_batch' ] )
+			->setMethods( [ 'set_validate_content_lock', 'remove_validate_content_lock', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
 			->getMock();
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
@@ -471,8 +471,8 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
 
-		$patrtially_mocked_health->expects( $this->once() )->method( 'reset_validate_content_ongoing' );
-		$patrtially_mocked_health->expects( $this->once() )->method( 'delete_validate_content_ongoing' );
+		$patrtially_mocked_health->expects( $this->once() )->method( 'set_validate_content_lock' );
+		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_lock' );
 
 		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
 	}

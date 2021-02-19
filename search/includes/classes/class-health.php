@@ -12,7 +12,7 @@ use \WP_Error as WP_Error;
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE    = 500;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
-	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_ongoing';
+	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_lock';
 	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
 	const DOCUMENT_IGNORED_KEYS            = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
@@ -284,7 +284,7 @@ class Health {
 		}
 
 		do {
-			$this->reset_validate_content_ongoing();
+			$this->set_validate_content_lock();
 
 			$next_batch_post_id = $start_post_id + $batch_size;
 
@@ -314,7 +314,7 @@ class Health {
 
 				$error->add_data( $results, 'diff' );
 
-				$this->delete_validate_content_ongoing();
+				$this->remove_validate_content_lock();
 
 				return $error;
 			}
@@ -335,7 +335,7 @@ class Health {
 			}
 		} while ( $start_post_id <= $last_post_id );
 
-		$this->delete_validate_content_ongoing();
+		$this->remove_validate_content_lock();
 
 		return $results;
 	}
@@ -346,11 +346,11 @@ class Health {
 		return (bool) $is_locked;
 	}
 
-	public function reset_validate_content_ongoing() {
+	public function set_validate_content_lock() {
 		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, self::CONTENT_VALIDATION_LOCK_TIMEOUT );
 	}
 
-	public function delete_validate_content_ongoing() {
+	public function remove_validate_content_lock() {
 		delete_transient( self::CONTENT_VALIDATION_LOCK_NAME );
 	}
 
