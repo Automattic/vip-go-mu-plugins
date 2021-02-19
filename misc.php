@@ -91,7 +91,7 @@ add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
  * Further updates trying to store the same value would then fail to change any row and therefore not clear the notoptions key.
  * The solution is that we clear notoptions BEFORE the DB operation as well.
  */
-function _wpcom_vip_maybe_clear_notoptions_cache( $option ) {
+function _vip_maybe_clear_notoptions_cache( $option ) {
 	if ( ! wp_installing() ) {
 		$notoptions = wp_cache_get( 'notoptions', 'options' );
 
@@ -104,7 +104,7 @@ function _wpcom_vip_maybe_clear_notoptions_cache( $option ) {
 
 // Just testing for now
 if ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'production' !== WP_ENVIRONMENT_TYPE ) {
-	add_action( 'add_option', '_wpcom_vip_maybe_clear_notoptions_cache' );
+	add_action( 'add_option', '_vip_maybe_clear_notoptions_cache' );
 }
 
 /**
