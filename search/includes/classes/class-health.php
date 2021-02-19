@@ -261,7 +261,7 @@ class Health {
 		// Get indexable objects
 		$indexable = $this->indexables->get( 'post' );
 
-		// Indexables::get() returns boolean|array
+		// $this->indexables->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $indexable ) {
 			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
