@@ -374,7 +374,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
@@ -401,7 +401,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -425,7 +425,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -446,7 +446,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should not exist
 		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -2749,6 +2749,73 @@ class Search_Test extends \WP_UnitTestCase {
 		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
 
 		$this->assertTrue( $es->is_protected_content_enabled() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_no_debug_tools_enabled() {
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( defined( 'WP_EP_DEBUG' ) );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_qm_enabled() {
+		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( WP_EP_DEBUG );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_debug_bar_enabled() {
+		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+		add_filter( 'debug_bar_enable', '__return_true' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( WP_EP_DEBUG );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_debug_bar_and_qm_enabled() {
+		add_filter( 'debug_bar_enable', '__return_true' );
+		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( WP_EP_DEBUG );
 	}
 
 	/**
