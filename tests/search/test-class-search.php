@@ -374,7 +374,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
@@ -401,7 +401,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -425,7 +425,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should now exist
 		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
@@ -446,7 +446,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$es->action__plugins_loaded();
+		do_action( 'plugins_loaded' );
 
 		// Class should not exist
 		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
