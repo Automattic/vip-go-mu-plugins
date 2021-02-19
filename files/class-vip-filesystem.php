@@ -221,6 +221,7 @@ class VIP_Filesystem {
 		if ( is_wp_error( $result ) ) {
 			if ( 'invalid-file-type' !== $result->get_error_code() ) {
 				trigger_error(
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					sprintf( '%s #vip-go-streams', $result->get_error_message() ),
 					E_USER_WARNING
 				);
@@ -308,10 +309,10 @@ class VIP_Filesystem {
 		}
 
 		// Strip any query params that snuck through
-		$queryStringStart = strpos( $file_path, '?' );
+		$query_string_start = strpos( $file_path, '?' );
 
-		if ( false !== $queryStringStart ) {
-			$file_path = substr( $file_path, 0, $queryStringStart );
+		if ( false !== $query_string_start ) {
+			$file_path = substr( $file_path, 0, $query_string_start );
 		}
 
 		return $file_path;
@@ -379,10 +380,13 @@ class VIP_Filesystem {
 		$invalidation_url = get_site_url() . $file_uri;
 
 		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 			trigger_error(
+				/* translators: invalidation url */
 				sprintf( __( 'Error purging %s from the cache service #vip-go-streams' ), $invalidation_url ),
 				E_USER_WARNING
 			);
+			// phpcs:enable
 		}
 	}
 
