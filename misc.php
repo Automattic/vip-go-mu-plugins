@@ -95,9 +95,8 @@ function _vip_maybe_clear_notoptions_cache( $option ) {
 	if ( ! wp_installing() ) {
 		$notoptions = wp_cache_get( 'notoptions', 'options' );
 
-			unset( $notoptions[ $option ] );
-			wp_cache_set( 'notoptions', $notoptions, 'options' );
 		if ( isset( $notoptions[ $option ] ) ) {
+			wp_cache_delete( 'notoptions', 'options' );
 		}
 	}
 }
