@@ -34,7 +34,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 		
 		$args = array(
 			'days'  => $num_days,
-			'limit' => 100,
+			'limit' => 100, // Due to caching, we request max limit and only return requested $limit below. See PR 1998
 			'end'   => $end_date,
 		);
 
