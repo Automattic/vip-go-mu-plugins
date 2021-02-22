@@ -74,7 +74,6 @@ class Cron {
 			add_action( 'wp_loaded', [ $this, 'schedule_sweeper_job' ], 0 );
 		} else {
 			add_action( 'admin_init', [ $this, 'schedule_sweeper_job' ], 0 );
-			add_action( 'rest_api_init', [ $this, 'schedule_sweeper_job' ], 0 );
 		}
 	}
 
