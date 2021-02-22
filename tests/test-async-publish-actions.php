@@ -202,7 +202,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm no events are scheduled when there are no active hooks.
 	 */
-	function test_events_are_not_scheduled_when_not_needed() {
+	public function test_events_are_not_scheduled_when_not_needed() {
 		remove_action( 'async_transition_post_status', '__return_true' );
 
 		$post = [
