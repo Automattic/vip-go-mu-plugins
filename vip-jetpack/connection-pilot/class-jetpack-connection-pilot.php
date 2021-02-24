@@ -203,13 +203,13 @@ class Connection_Pilot {
 	 *
 	 * @param string   $message optional.
 	 * @param \WP_Error $wp_error optional.
-	 * @param array    $last_heartbeat optional.
 	 *
 	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
 	 */
-	protected function send_alert( $message = '', $wp_error = null, $last_heartbeat = null ) {
+	protected function send_alert( $message = '', $wp_error = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
+		$last_heartbeat = $this->last_heartbeat;
 		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
