@@ -26,11 +26,11 @@ class Connection_Pilot {
 	 * See the a8c_cron_control_clean_legacy_data event for more details.
 	 */
 	const CRON_SCHEDULE = 'hourly';
-	
+
 	/**
 	 * The healtcheck option's current data.
 	 *
-	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
+	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'hashed_site_url' => '371a92eb7d5d63007db216dbd3b49187', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
 	 *
 	 * @var mixed False if doesn't exist, else an array with the data shown above.
 	 */
@@ -38,7 +38,7 @@ class Connection_Pilot {
 
 	/**
 	 * Singleton
-	 * 
+	 *
 	 * @var Connection_Pilot Singleton instance
 	 */
 	private static $instance = null;
@@ -49,7 +49,7 @@ class Connection_Pilot {
 		}
 
 		$this->init_actions();
-		
+
 		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
@@ -148,6 +148,7 @@ class Connection_Pilot {
 	public function update_heartbeat() {
 		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
+			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
 			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id' ),
 			'timestamp' => time(),
 		), false );
@@ -176,10 +177,10 @@ class Connection_Pilot {
 		}
 
 		// 2) Check the last heartbeat to see if the URLs match.
-		if ( ! empty( $this->last_heartbeat['site_url'] ) ) {
-			if ( $this->last_heartbeat['site_url'] === get_site_url() ) {
+		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
+			if ( $this->last_heartbeat['hashed_site_url'] === md5( get_site_url() ) ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
-	
+
 				return true;
 			}
 
@@ -220,8 +221,8 @@ class Connection_Pilot {
 			$message .= sprintf( ' Jetpack connection error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
 		}
 
-		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) || 
-			( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) || 
+		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) ||
+			( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) ||
 			( defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS ) ) {
 			error_log( $message );
 
@@ -240,13 +241,13 @@ class Connection_Pilot {
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
 		}
-		
+
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
 	}
 
 	/**
 	 * Checks if a reconnection should be attempted
-	 * 
+	 *
 	 * @param $error \WP_Error Optional error thrown by the connection check
 	 * @return bool True if a reconnect should be attempted
 	 */
@@ -254,7 +255,7 @@ class Connection_Pilot {
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
-		
+
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
 	}
 }
