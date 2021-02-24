@@ -69,7 +69,12 @@ class Connection_Pilot {
 	 */
 	public function init_actions() {
 		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
-		add_action( 'init', array( $this, 'schedule_cron' ) );
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			add_action( 'wp_loaded', array( $this, 'schedule_cron' ) );
+		} else {
+			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
+		}
+
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
