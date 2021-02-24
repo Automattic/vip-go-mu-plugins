@@ -229,7 +229,12 @@ class Connection_Pilot {
 		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) ||
 			( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) ||
 			( defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS ) ) {
-			error_log( $message );
+		\Automattic\VIP\Logstash\log2logstash( [
+			'severity' => 'error',
+			'feature' => 'jetpack-connection-pilot',
+			'message' => $message,
+			'extra' => [], 
+		] );
 
 			return $message; // Just return the message, as posting to IRC won't work.
 		}
