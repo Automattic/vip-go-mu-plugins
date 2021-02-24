@@ -199,7 +199,7 @@ class Connection_Pilot {
 	}
 
 	/**
-	 * Send an alert to IRC and Slack.
+	 * Send an alert to IRC/Slack, and add to logs.
 	 *
 	 * Example message:
 	 * Jetpack is disconnected, but was previously connected under the same domain.
@@ -209,7 +209,7 @@ class Connection_Pilot {
 	 * @param string   $message optional.
 	 * @param \WP_Error $wp_error optional.
 	 *
-	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed or silenced, will just return the message string.
+	 * @return mixed True if the message was sent to IRC, false if it failed. If silenced, will just return the message string.
 	 */
 	protected function send_alert( $message = '', $wp_error = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
@@ -226,18 +226,14 @@ class Connection_Pilot {
 			$message .= sprintf( ' Jetpack connection error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
 		}
 
+		\Automattic\VIP\Logstash\log2logstash( [
+			'severity' => 'error',
+			'feature' => 'jetpack-connection-pilot',
+			'message' => $message,
+		] );
+
 		$should_silence_alerts = defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS;
-		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) || $should_silence_alerts ) {
-			\Automattic\VIP\Logstash\log2logstash( [
-				'severity' => 'error',
-				'feature' => 'jetpack-connection-pilot',
-				'message' => $message,
-			] );
-
-			return $message;
-		}
-
-		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
+		return $should_silence_alerts ? $message : wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
 	}
 
 	/**
