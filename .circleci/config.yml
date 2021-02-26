@@ -84,6 +84,7 @@ job-references:
       - run:
           name: "Run Tests"
           command: |
+            echo "xdebug.mode = coverage" >> /opt/circleci/php/$(phpenv global)/etc/php.ini
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
             vendor/bin/phpunit --version
