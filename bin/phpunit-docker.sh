@@ -45,4 +45,5 @@ docker run \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
 	--rm phpunit/phpunit \
-	--bootstrap /app/tests/bootstrap.php "$@"
+	--bootstrap /app/tests/bootstrap.php \
+	--coverage-text "$@"

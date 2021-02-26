@@ -87,7 +87,7 @@ job-references:
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
             vendor/bin/phpunit --version
-            vendor/bin/phpunit
+            vendor/bin/phpunit --coverage-text
 
   php_core_job: &php_core_job
     steps:

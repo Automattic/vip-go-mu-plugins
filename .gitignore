@@ -12,6 +12,9 @@ jetpack-private.php
 phpdoc.xml
 phpdoc
 
+# Test coverage
+/coverage
+
 # Composer
 /vendor/
 /output/

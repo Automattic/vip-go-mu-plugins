@@ -11,4 +11,18 @@
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>
+	<filter>
+		<whitelist addUncoveredFilesFromWhitelist="true" processUncoveredFilesFromWhitelist="false">
+			<directory suffix=".php">./</directory>
+			<exclude>
+				<directory suffix=".php">./jetpack</directory>
+				<directory suffix=".php">./node_modules</directory>
+				<directory suffix=".php">./tests</directory>
+				<directory suffix=".php">./vendor</directory>
+				<directory suffix=".php">./search/elasticpress</directory>
+				<directory suffix=".php">./search/debug-bar-elasticpress</directory>
+				<directory suffix=".php">./search/es-wp-query</directory>
+			</exclude>
+		</whitelist>
+	</filter>
 </phpunit>
