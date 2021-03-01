@@ -653,7 +653,7 @@ class Search {
 			[
 				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
 				'X-Client-Env' => VIP_GO_ENV,
-				'Accept-Encoding' => 'gzip, br',
+				'Accept-Encoding' => 'gzip, deflate',
 			]
 		);
 
