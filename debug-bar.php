@@ -15,7 +15,7 @@ add_filter( 'debug_bar_enable', function( $enable ) {
 		return true;
 	}
 
-	if ( defined( 'VIP_GO_ENV' ) && 'local' === VIP_GO_ENV ) {
+	if ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' === WP_ENVIRONMENT_TYPE ) {
 		return true;
 	}
 
