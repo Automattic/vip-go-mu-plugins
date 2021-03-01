@@ -15,6 +15,10 @@ add_filter( 'debug_bar_enable', function( $enable ) {
 		return true;
 	}
 
+	if ( defined( 'VIP_GO_ENV' ) && 'local' === VIP_GO_ENV ) {
+		return true;
+	}
+
 	return $enable;
 }, PHP_INT_MAX );
 

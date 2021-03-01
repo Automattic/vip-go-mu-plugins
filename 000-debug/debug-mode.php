@@ -39,8 +39,9 @@ function is_debug_mode_enabled() {
 	$is_nocache = isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb'];
 	$is_debug = isset( $_COOKIE['a8c-debug'] ) && '1' === $_COOKIE['a8c-debug'];
 	$is_proxied = \is_proxied_request();
+	$is_local = ( ( defined( 'VIP_GO_ENV' ) && 'local' === VIP_GO_ENV ) ? true : false );
 
-	if ( $is_nocache && $is_debug && $is_proxied ) {
+	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
 		return true;
 	}
 
