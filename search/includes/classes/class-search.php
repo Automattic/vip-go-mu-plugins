@@ -648,7 +648,14 @@ class Search {
 			$args['headers'] = [];
 		}
 
-		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
+		$args['headers'] = array_merge(
+			$args['headers'],
+			[
+				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
+				'X-Client-Env' => VIP_GO_ENV,
+				'Accept-Encoding' => 'gzip, br',
+			]
+		);
 
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
