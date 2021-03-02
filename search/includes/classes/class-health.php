@@ -565,4 +565,53 @@ class Health {
 	private static function get_post_key( $id ) {
 		return sprintf( '%s_%d', 'post', $id );
 	}
+
+	public static function get_index_settings_health_for_all_indexables() {
+		// For each indexable, we want to ensure that the desired index settings match the actual index settings
+		$indexables = \ElasticPress\Indexables::factory()->get_all();
+
+		if ( ! is_array( $indexables ) ) {
+			$message = sprintf( 'Unable to find indexables to check index settings on %s for environment %d', home_url(), FILES_CLIENT_SITE_ID );
+
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		}
+
+		$unhealthy = array();
+
+		foreach( $indexables as $indexable ) {
+			$diff = Health::get_index_settings_diff_for_indexable( $indexable );
+
+			if ( is_wp_error( $diff ) ) {
+				// TODO handle error
+				$unhealthy[ $indexable->slug ] = $diff;
+				
+				continue;
+			}
+			
+			if ( empty( $diff ) ) {
+				continue;
+			}
+
+			$unhealthy[ $indexable->slug ] = $diff;
+		}
+
+		return $unhealthy;
+	}
+
+	public static function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
+		$desired_settings = $indexable->build_settings();
+
+		$actual_settings = $indexable->get_settings();
+
+		// What's the diff?
+		$diff = $this->diff_index_settings( $actual_settings, $desired_settings );
+
+		return $diff;
+	}
+
+	public static function get_index_settings_diff( array $actual_settings, array $desired_settings ) {
+		$diff = array();
+
+		return $diff;
+	}
 }

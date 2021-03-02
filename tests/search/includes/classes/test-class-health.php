@@ -438,4 +438,70 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $result, $expected_result );
 	}
+
+	public function test_get_index_settings_diff_for_indexable() {
+
+	}
+
+	public function get_index_settings_diff_data() {
+		return array(
+			// No diff expected, empty arrays
+			array(
+				// Actual settings of index in Elasticsearch
+				array(),
+				// Desired index settings from ElasticPress
+				array(),
+				// Expected diff
+				array(),
+			),
+			// No diff expected, equal arrays
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 4,
+					'index.number_of_replicas' => 2,
+				),
+				// Expected diff
+				array(),
+			),
+			// Diff expected, mismatched settings
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 1,
+				),
+				// Expected diff
+				array(
+					'index.number_of_shards' => array(
+						'expected' => 4,
+						'actual' => 1,
+					),
+					'index.number_of_replicas' => array(
+						'expected' => 1,
+						'actual' => 2,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_index_settings_diff_data
+	 */
+	public function test_get_index_settings_diff( $actual, $desired, $expected_diff ) {
+		$actual_diff = Health::get_index_settings_diff( $actual, $desired );
+
+		$this->assertEquals( $actual_diff, $expected_diff );
+	}
 }

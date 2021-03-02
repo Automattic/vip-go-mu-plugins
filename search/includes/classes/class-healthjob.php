@@ -104,12 +104,24 @@ class HealthJob {
 			return;
 		}
 
-		$this->check_index_settings_health();
+		// TODO do we want to run on all index versions? probably...
+		$this->check_all_indexables_settings_health();
+
 		$this->check_document_count_health();
 	}
 
-	public function check_index_settings_health() {
+	public function check_all_indexables_settings_health() {
+		$unhealthy_indexables = Health::get_index_settings_health_for_all_indexables();
 
+		if ( empty( $unhealthy_indexables ) ) {
+			return;
+		}
+
+		// Diff not empty, take action
+
+		// Format diff to message
+
+		// Send to alert channels
 	}
 
 	public function check_document_count_health() {
