@@ -1207,7 +1207,7 @@ function a8c_files_maybe_inject_dimensions( $value, $image, $context, $attachmen
 		return $dimensions;
 
 	}, 10, 4 );
-    return true;
+	return true;
 }
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
