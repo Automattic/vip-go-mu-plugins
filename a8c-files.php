@@ -1185,9 +1185,9 @@ function a8c_files_maybe_inject_dimensions( $value, $image, $context, $attachmen
 			$dimensions = array(
 				(int) $image_meta['width'],
 				(int) $image_meta['height'],
-		);
-		// If it's not Full Size, let's use our calculated Aspect Ratio to output proper dimensions according to the size
 		} else if ( 
+			);
+		// If it's not Full Size, let's use our calculated Aspect Ratio to output proper dimensions according to the size.
 			isset( $url['query'] ) &&
 			strpos( $image_src, $image_meta['file'] ) !== false 
 		) {
@@ -1195,7 +1195,7 @@ function a8c_files_maybe_inject_dimensions( $value, $image, $context, $attachmen
 				$dimensions = array(
 					(int) $query_args['w'],
 					(int) $query_args['h'],
-			);
+				);
 			}
 			if ( ! isset( $query_args['h'] ) ) {
 				$dimensions = array(
