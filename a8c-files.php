@@ -1166,48 +1166,51 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
  */
 function a8c_files_maybe_inject_dimensions( $value, $image, $context, $attachment_id ) {
 	$vipgo_img_src = preg_match( '/src="([^"]+)"/', $image, $match_src ) ? $match_src[1] : '';
-
+	
 	/** This filter is documented in wp-admin/includes/media.php */
-	add_filter( 'wp_image_src_get_dimensions', function( $dimensions, $image_src, $image_meta, $attachment_id ) use ( $vipgo_img_src ){
-		$url = wp_parse_url( $vipgo_img_src );
-		if ( isset( $url['query'] ) ) {
-			parse_str( htmlspecialchars_decode($url['query']), $query_args );
-		}
-
-		// Let's calculate the aspect ratio of the image:
-		$aspect_ratio =  $image_meta['height'] / $image_meta['width'];
-
-		// Is it a Full Size image?  We're checking for sizes in query arguments
-		if ( 
-			! isset( $url['query'] ) &&
-			strpos( $image_src, $image_meta['file'] ) !== false
-		) {
-			$dimensions = array(
-				(int) $image_meta['width'],
-				(int) $image_meta['height'],
-			);
-		// If it's not Full Size, let's use our calculated Aspect Ratio to output proper dimensions according to the size.
-		} elseif ( 
-			isset( $url['query'] ) &&
-			strpos( $image_src, $image_meta['file'] ) !== false 
-		) {
-			if ( isset( $query_args['w'] ) && isset( $query_args['h'] ) ) {
-				$dimensions = array(
-					(int) $query_args['w'],
-					(int) $query_args['h'],
-				);
-			}
-			if ( ! isset( $query_args['h'] ) ) {
-				$dimensions = array(
-					(int) $query_args['w'],
-					(int) ceil( $query_args['w'] * $aspect_ratio ),
-				);
-			}	
-		}
-		return $dimensions;
-
+	add_filter( 'wp_image_src_get_dimensions', function( $dimensions, $image_src, $image_meta, $attachment_id ) use ( $vipgo_img_src ) {
+		return a8c_files_calculate_image_src_dimensions( $dimensions, $image_src, $image_meta, $attachment_id, $vipgo_img_src );
 	}, 10, 4 );
 	return true;
+}
+
+function a8c_files_calculate_image_src_dimensions( $dimensions, $image_src, $image_meta, $attachment_id, $vipgo_img_src ) {
+	$url = wp_parse_url( $vipgo_img_src );
+	if ( isset( $url['query'] ) ) {
+		parse_str( htmlspecialchars_decode($url['query']), $query_args );
+	}
+
+	// Let's calculate the aspect ratio of the image:
+	$aspect_ratio =  $image_meta['height'] / $image_meta['width'];
+
+	// Is it a Full Size image?  We're checking for sizes in query arguments
+	if ( 
+		! isset( $url['query'] ) &&
+		strpos( $image_src, $image_meta['file'] ) !== false
+	) {
+		$dimensions = array(
+			(int) $image_meta['width'],
+			(int) $image_meta['height'],
+		);
+	// If it's not Full Size, let's use our calculated Aspect Ratio to output proper dimensions according to the size.
+	} elseif ( 
+		isset( $url['query'] ) &&
+		strpos( $image_src, $image_meta['file'] ) !== false 
+	) {
+		if ( isset( $query_args['w'] ) && isset( $query_args['h'] ) ) {
+			$dimensions = array(
+				(int) $query_args['w'],
+				(int) $query_args['h'],
+			);
+		}
+		if ( ! isset( $query_args['h'] ) ) {
+			$dimensions = array(
+				(int) $query_args['w'],
+				(int) ceil( $query_args['w'] * $aspect_ratio ),
+			);
+		}	
+	}
+	return $dimensions;
 }
 
 if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
