@@ -1,6 +1,6 @@
 <?php
 
-namespace Automattic\VIP\Core\Plugins;
+namespace Automattic\VIP\Core\Updates;
 
 /**
  * Show plugin update notices on the plugins page.
@@ -20,7 +20,7 @@ function show_plugin_update_notices() {
 	if ( isset( $plugins->response ) && is_array( $plugins->response ) ) {
 		$plugins = array_keys( $plugins->response );
 		foreach ( $plugins as $plugin_file ) {
-			add_action( "after_plugin_row_{$plugin_file}", 'wp_plugin_update_row', 10, 2 );
+			add_action( sprintf( 'after_plugin_row_%s', $plugin_file ), 'wp_plugin_update_row', 10, 2 );
 		}
 	}
 }
