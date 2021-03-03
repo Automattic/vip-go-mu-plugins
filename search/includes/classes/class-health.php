@@ -573,16 +573,15 @@ class Health {
 		if ( ! is_array( $indexables ) ) {
 			$message = sprintf( 'Unable to find indexables to check index settings on %s for environment %d', home_url(), FILES_CLIENT_SITE_ID );
 
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			return new \WP_Error( 'no-indexables-found', $message );
 		}
 
 		$unhealthy = array();
 
-		foreach( $indexables as $indexable ) {
-			$diff = Health::get_index_settings_diff_for_indexable( $indexable );
+		foreach ( $indexables as $indexable ) {
+			$diff = self::get_index_settings_diff_for_indexable( $indexable );
 
 			if ( is_wp_error( $diff ) ) {
-				// TODO handle error
 				$unhealthy[ $indexable->slug ] = $diff;
 				
 				continue;
@@ -603,8 +602,7 @@ class Health {
 
 		$actual_settings = $indexable->get_settings();
 
-		// What's the diff?
-		$diff = $this->diff_index_settings( $actual_settings, $desired_settings );
+		$diff = self::diff_index_settings( $actual_settings, $desired_settings );
 
 		return $diff;
 	}
