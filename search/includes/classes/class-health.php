@@ -603,6 +603,8 @@ class Health {
 	}
 
 	public static function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
+		// We pass flat_settings here as that query param returns keys in the form of 'index.routing.allocation...' rather than nested arrays,
+		// which makes it easier to specify exactly which settings we monitor via self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS
 		$actual_settings = $indexable->get_index_settings( array( 'flat_settings' => true ) );
 
 		$desired_settings = $indexable->build_settings();
