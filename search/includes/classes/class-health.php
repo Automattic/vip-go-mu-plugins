@@ -22,6 +22,11 @@ class Health {
 		'date',
 		'time',
 	);
+	const INDEX_SETTINGS_HEALTH_MONITORED_KEYS = array(
+		'number_of_replicas',
+		'number_of_shards',
+		'routing',
+	);
 
 	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
@@ -598,17 +603,43 @@ class Health {
 	}
 
 	public static function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$desired_settings = $indexable->build_settings();
-
 		$actual_settings = $indexable->get_settings();
 
-		$diff = self::diff_index_settings( $actual_settings, $desired_settings );
+		$desired_settings = $indexable->build_settings();
+
+		// We only monitor certain settings
+		$actual_settings_to_check = self::limit_index_settings_to_monitored_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$desired_settings_to_check = self::limit_index_settings_to_monitored_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+
+		$diff = self::diff_index_settings( $actual_settings_to_check, $desired_settings_to_check );
 
 		return $diff;
 	}
 
+	public static function limit_index_settings_to_monitored_keys( $settings, $keys ) {
+		// array_intersect_key() expects 2 associative arrays, so convert the allowed $keys to associative
+		$assoc_keys = array_fill_keys( $keys, true );
+
+		return array_intersect_key( $settings, $assoc_keys );
+	}
+
 	public static function get_index_settings_diff( array $actual_settings, array $desired_settings ) {
 		$diff = array();
+
+		foreach ( $desired_settings as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$recursive_diff = self::get_index_settings_diff( $actual_settings[ $key ], $desired_settings[ $key ] );
+
+				if ( ! empty( $recursive_diff ) ) {
+					$diff[ $key ] = $recursive_diff;
+				}
+			} elseif ( $actual_settings[ $key ] != $desired_settings[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				$diff[ $key ] = array(
+					'expected' => $desired_settings[ $key ],
+					'actual'   => $actual_settings[ $key ],
+				);
+			}
+		}
 
 		return $diff;
 	}

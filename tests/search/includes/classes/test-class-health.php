@@ -443,6 +443,38 @@ class Health_Test extends \WP_UnitTestCase {
 
 	}
 
+	public function limit_index_settings_to_monitored_keys_data() {
+		return array(
+			// Mix of monitored and not monitored keys
+			array(
+				// Input
+				array(
+					'foo' => 1,
+					'bar' => 2,
+					'baz' => 3,
+				),
+				// Monitored keys
+				array(
+					'foo',
+					'fubar',
+				),
+				// Expected resulting array
+				array(
+					'foo' => 1,
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider limit_index_settings_to_monitored_keys_data
+	 */
+	public function test_limit_index_settings_to_monitored_keys( $input, $keys, $expected ) {
+		$limited_settings = Health::limit_index_settings_to_monitored_keys( $input, $keys );
+
+		$this->assertEquals( $expected, $limited_settings );
+	}
+
 	public function get_index_settings_diff_data() {
 		return array(
 			// No diff expected, empty arrays
@@ -458,13 +490,13 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => 1,
-					'index.number_of_replicas' => 2,
+					'number_of_shards' => 1,
+					'number_of_replicas' => 2,
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 4,
-					'index.number_of_replicas' => 2,
+					'number_of_shards' => 1,
+					'number_of_replicas' => 2,
 				),
 				// Expected diff
 				array(),
@@ -473,23 +505,63 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => 1,
-					'index.number_of_replicas' => 2,
+					'number_of_shards' => 1,
+					'number_of_replicas' => 2,
+					'foo' => 'bar',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
-					'index.number_of_replicas' => 1,
+					'number_of_shards' => 1,
+					'number_of_replicas' => 1,
+					'foo' => 'baz',
 				),
 				// Expected diff
 				array(
-					'index.number_of_shards' => array(
-						'expected' => 4,
-						'actual' => 1,
-					),
-					'index.number_of_replicas' => array(
+					'number_of_replicas' => array(
 						'expected' => 1,
 						'actual' => 2,
+					),
+					'foo' => array(
+						'expected' => 'baz',
+						'actual' => 'bar',
+					),
+				),
+			),
+			// Nested settings
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'number_of_shards' => 1,
+					'routing' => array(
+						'allocation' => array(
+							'include' => array(
+								'dc' => 'dfw,bur',
+							),
+						),
+					),
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'number_of_shards' => 1,
+					'routing' => array(
+						'allocation' => array(
+							'include' => array(
+								'dc' => 'bur',
+							),
+						),
+					),
+				),
+				// Expected diff
+				array(
+					'routing' => array(
+						'allocation' => array(
+							'include' => array(
+								'dc' => array(
+									'expected' => 'bur',
+									'actual' => 'dfw,bur',
+								),
+							),
+						),
 					),
 				),
 			),
