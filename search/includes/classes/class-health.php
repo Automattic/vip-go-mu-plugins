@@ -603,7 +603,7 @@ class Health {
 	}
 
 	public static function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$actual_settings = $indexable->get_settings( array( 'flat_settings' => true ) );
+		$actual_settings = $indexable->get_index_settings( array( 'flat_settings' => true ) );
 
 		$desired_settings = $indexable->build_settings();
 
