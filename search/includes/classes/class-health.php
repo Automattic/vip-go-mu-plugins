@@ -23,9 +23,9 @@ class Health {
 		'time',
 	);
 	const INDEX_SETTINGS_HEALTH_MONITORED_KEYS = array(
-		'number_of_replicas',
-		'number_of_shards',
-		'routing',
+		'index.number_of_replicas',
+		'index.number_of_shards',
+		'index.routing.allocation.include.dc',
 	);
 
 	/**
@@ -603,7 +603,7 @@ class Health {
 	}
 
 	public static function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$actual_settings = $indexable->get_settings();
+		$actual_settings = $indexable->get_settings( array( 'flat_settings' => true ) );
 
 		$desired_settings = $indexable->build_settings();
 
