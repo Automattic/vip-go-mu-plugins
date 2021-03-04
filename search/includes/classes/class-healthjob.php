@@ -118,11 +118,46 @@ class HealthJob {
 			return;
 		}
 
-		// Diff not empty, take action
+		$this->process_indexables_settings_health_results( $unhealthy_indexables );
+	}
 
-		// Format diff to message
+	public function process_indexables_settings_health_results( $results ) {
+		// If the whole thing failed, error
+		if ( is_wp_error( $results ) ) {
+			$message = sprintf( 'Error while validating index settings for %s: %s', home_url(), $results->get_error_message() );
 
-		// Send to alert channels
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		foreach ( $results as $indexable_slug => $versions ) {
+			// If there's an error, alert
+			if ( is_wp_error( $result ) ) {
+				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $result->get_error_message() );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			}
+
+			// Each individual entry in $versions is an array of results, one per index version
+			foreach ( $versions as $result ) {
+				// Only alert if inconsistencies found
+				if ( empty( $result[ 'diff' ] ) ) {
+					continue;
+				}
+
+				$message = sprintf(
+					'Index inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					home_url(),
+					$indexable_slug,
+					$result['index_version'],
+					$result['index_name'],
+					var_export( $result['diff'], true )
+				);
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+			}
+		}
 	}
 
 	public function check_document_count_health() {
