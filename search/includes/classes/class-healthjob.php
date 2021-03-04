@@ -142,7 +142,7 @@ class HealthJob {
 			// Each individual entry in $versions is an array of results, one per index version
 			foreach ( $versions as $result ) {
 				// Only alert if inconsistencies found
-				if ( empty( $result[ 'diff' ] ) ) {
+				if ( empty( $result['diff'] ) ) {
 					continue;
 				}
 
