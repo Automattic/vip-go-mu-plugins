@@ -147,7 +147,7 @@ class HealthJob {
 				}
 
 				$message = sprintf(
-					'Index inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 					home_url(),
 					$indexable_slug,
 					$result['index_version'],
