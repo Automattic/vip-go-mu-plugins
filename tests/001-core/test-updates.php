@@ -54,7 +54,7 @@ class Updates_Test extends \WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	function test__show_plugin_update_notices__is_hooked() {
+	public function test__show_plugin_update_notices__is_hooked() {
 		$expected_has_action = true;
 
 		$actual_has_action = has_action( 'load-plugins.php', __NAMESPACE__ . '\show_plugin_update_notices' );
