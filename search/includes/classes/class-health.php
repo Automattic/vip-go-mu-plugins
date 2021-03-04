@@ -620,6 +620,7 @@ class Health {
 
 			$diff[] = array(
 				'index_version' => $version['number'],
+				'index_name' => $indexable->get_index_name(),
 				'diff' => $version_diff,
 			);
 		}
