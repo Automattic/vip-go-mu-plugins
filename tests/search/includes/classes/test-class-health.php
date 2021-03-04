@@ -501,6 +501,41 @@ class Health_Test extends \WP_UnitTestCase {
 				// Expected diff
 				array(),
 			),
+			// No diff expected, type juggling
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'number_of_shards' => '1',
+					'number_of_replicas' => '2',
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'number_of_shards' => 1,
+					'number_of_replicas' => 2,
+				),
+				// Expected diff
+				array(),
+			),
+			// Diff expected, type juggling
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'number_of_shards' => '1',
+					'number_of_replicas' => '2',
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'number_of_shards' => 1,
+					'number_of_replicas' => 3,
+				),
+				// Expected diff
+				array(
+					'number_of_replicas' => array(
+						'expected' => 3,
+						'actual' => '2',
+					),
+				),
+			),
 			// Diff expected, mismatched settings
 			array(
 				// Actual settings of index in Elasticsearch
