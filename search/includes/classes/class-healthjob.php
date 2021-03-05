@@ -133,8 +133,8 @@ class HealthJob {
 
 		foreach ( $results as $indexable_slug => $versions ) {
 			// If there's an error, alert
-			if ( is_wp_error( $result ) ) {
-				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $result->get_error_message() );
+			if ( is_wp_error( $versions ) ) {
+				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
