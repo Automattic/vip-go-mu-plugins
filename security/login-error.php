@@ -9,11 +9,13 @@ function use_ambiguous_login_error( $error ) {
 		'invalid_username',
 		'invalid_email',
 		'incorrect_password',
+		'invalidcombo',
 	];
 
 	foreach ( $err_types as $err ) {
 		if ( in_array( $err, $err_codes, true ) ) {
-			$error = '<strong>ERROR</strong>: Invalid login name or password.';
+			$error = '<strong>ERROR</strong>: Invalid credentials. Please try again.';
+			break;
 		}
 	}
  
