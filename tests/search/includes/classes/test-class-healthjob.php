@@ -57,12 +57,12 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 		// Mock the health job
 		$job = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
-			->setMethods( array( 'process_results' ) )
+			->setMethods( array( 'process_document_count_health_results' ) )
 			->getMock();
 
 		// Only expect it to process 1 set of results (for regular posts)
 		$job->expects( $this->exactly( 1 ) )
-			->method( 'process_results' );
+			->method( 'process_document_count_health_results' );
 
 		$job->check_health();
 
@@ -154,7 +154,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			)
 			->will( $this->returnValue( true ) );
 
-		$stub->process_results( $results );
+		$stub->process_document_count_health_results( $results );
 	}
 
 	/**
@@ -181,7 +181,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			)
 			->will( $this->returnValue( true ) );
 
-		$stub->process_results( $results );
+		$stub->process_document_count_health_results( $results );
 	}
 
 	public function test_vip_search_healthjob_is_not_enabled_when_indexing_is_occuring() {
