@@ -104,7 +104,7 @@ class HealthJob {
 			return;
 		}
 
-		if ( Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_health_monitor' ) ) {
+		if ( \Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_health_monitor' ) ) {
 			$this->check_all_indexables_settings_health();
 		}
 
