@@ -258,4 +258,110 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 		$this->assertFalse( $enabled );
 	}
+
+	/**
+	 * Test that we correctly handle the results of index settings health checks when inconsistencies are found
+	 */
+	public function test__vip_search_healthjob_process_indexables_settings_health_results() {
+		$results = array(
+			'post' => array(
+				array(
+					'index_version' => 1,
+					'index_name' => 'foo',
+					'diff' => array(
+						'bar' => array(
+							'expected' => 1,
+							'actual' => '2',
+						),
+					),
+				),
+				array(
+					'index_version' => 1,
+					'index_name' => 'foo',
+					'diff' => array(
+						'bar' => array(
+							'expected' => 3,
+							'actual' => '4',
+						),
+					),
+				),
+			),
+			'user' => array(
+				array(
+					'index_version' => 1,
+					'index_name' => 'foo',
+					'diff' => array(
+						'bar' => array(
+							'expected' => 5,
+							'actual' => '6',
+						),
+					),
+				),
+			),
+			'foo' => new \WP_Error( 'foo-error', 'foo message' ),
+		);
+
+		// We have to test under the assumption that the main class has been loaded and initialized,
+		// as it does various setup tasks like including dependencies
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
+			->setMethods( [ 'send_alert' ] )
+			->getMock();
+
+		$stub->expects( $this->exactly( 4 ) )
+			->method( 'send_alert' )
+			->withConsecutive(
+				array(
+					'#vip-go-es-alerts',
+					
+					sprintf(
+						'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+						home_url(),
+						'post',
+						$results['post'][0]['index_version'],
+						$results['post'][0]['index_name'],
+						var_export( $results['post'][0]['diff'], true )
+					),
+					2,
+					"post",
+				),
+				array(
+					'#vip-go-es-alerts',
+					sprintf(
+						'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+						home_url(),
+						'post',
+						$results['post'][1]['index_version'],
+						$results['post'][1]['index_name'],
+						var_export( $results['post'][1]['diff'], true )
+					),
+					2,
+					"post",
+				),
+				array(
+					'#vip-go-es-alerts',
+					
+					sprintf(
+						'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+						home_url(),
+						'user',
+						$results['user'][0]['index_version'],
+						$results['user'][0]['index_name'],
+						var_export( $results['user'][0]['diff'], true )
+					),
+					2,
+					"user",
+				),
+				array(
+					'#vip-go-es-alerts',
+					sprintf( 'Error while validating index settings for indexable %s on %s: %s', 'foo', home_url(), 'foo message' ),
+					2,
+				)
+			)
+			->will( $this->returnValue( true ) );
+
+		$stub->process_indexables_settings_health_results( $results );
+	}
 }
