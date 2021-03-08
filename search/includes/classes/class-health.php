@@ -13,7 +13,7 @@ class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE    = 500;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
 	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_lock';
-	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
+	const CONTENT_VALIDATION_LOCK_TIMEOUT_PER_100 = 1; // Dynamic timeout set to 1 for each 100 docs - e.g. 5s for batch_size of 500
 	const DOCUMENT_IGNORED_KEYS            = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
 		// that run during normal indexing and this validator
@@ -285,7 +285,7 @@ class Health {
 		}
 
 		do {
-			$this->set_validate_content_lock();
+			$this->set_validate_content_lock_by_batch_size( $batch_size );
 
 			$next_batch_post_id = $start_post_id + $batch_size;
 
@@ -347,8 +347,14 @@ class Health {
 		return (bool) $is_locked;
 	}
 
-	public function set_validate_content_lock() {
-		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, self::CONTENT_VALIDATION_LOCK_TIMEOUT );
+	public function set_validate_content_lock_by_batch_size( $batch_size ) {
+		$timeout = self::CONTENT_VALIDATION_LOCK_TIMEOUT_PER_100;
+
+		if ( $batch_size > 100 ) {
+			$timeout = self::CONTENT_VALIDATION_LOCK_TIMEOUT_PER_100 * ceil( $batch_size / 100 );
+		}
+
+		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, $timeout );
 	}
 
 	public function remove_validate_content_lock() {
