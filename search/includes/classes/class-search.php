@@ -1109,8 +1109,8 @@ class Search {
 	 * Given a list of hosts, randomly select one for load balancing purposes.
 	 */
 	public function get_random_host( $hosts ) {
-		if ( ! is_array( $hosts ) ) {
-			return $hosts;
+		if ( ! $hosts || ! is_array( $hosts ) ) {
+			return null;
 		}
 
 		return $hosts[ array_rand( $hosts ) ];
