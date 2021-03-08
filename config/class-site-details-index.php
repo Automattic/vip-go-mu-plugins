@@ -70,6 +70,7 @@ class Site_Details_Index {
 		$site_details['client_site_id'] = $site_id;
 		$site_details['environment_name'] = $environment_name;
 		$site_details['core']['wp_version'] = strval( $wp_version );
+		$site_details['core']['php_version'] = phpversion();
 		$site_details['core']['blog_id'] = get_current_blog_id();
 		$site_details['core']['site_url'] = get_site_url();
 		$site_details['core']['is_multisite'] = is_multisite();

@@ -472,6 +472,8 @@ class Search {
 		}
 
 		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
+
+		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 	}
 
 	protected function load_commands() {
@@ -1107,8 +1109,8 @@ class Search {
 	 * Given a list of hosts, randomly select one for load balancing purposes.
 	 */
 	public function get_random_host( $hosts ) {
-		if ( ! is_array( $hosts ) ) {
-			return $hosts;
+		if ( ! $hosts || ! is_array( $hosts ) ) {
+			return null;
 		}
 
 		return $hosts[ array_rand( $hosts ) ];

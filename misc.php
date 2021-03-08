@@ -101,10 +101,7 @@ function _vip_maybe_clear_notoptions_cache( $option ) {
 	}
 }
 
-// Just testing for now
-if ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'production' !== WP_ENVIRONMENT_TYPE ) {
-	add_action( 'add_option', '_vip_maybe_clear_notoptions_cache' );
-}
+add_action( 'add_option', '_vip_maybe_clear_notoptions_cache' );
 
 /**
  * On Go, all API usage must be over HTTPS for security
