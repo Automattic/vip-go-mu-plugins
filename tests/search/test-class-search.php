@@ -2751,6 +2751,18 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( $es->is_protected_content_enabled() );
 	}
 
+    public function test__get_random_host_return_null_if_no_host() {
+        $es = new \Automattic\VIP\Search\Search();
+
+        $this->assertSame( null, $es->get_random_host( array() ) );
+    }
+
+    public function test__get_random_host_return_null_if_hosts_is_not_array() {
+        $es = new \Automattic\VIP\Search\Search();
+
+        $this->assertSame( null, $es->get_random_host( false ) );
+    }
+
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
