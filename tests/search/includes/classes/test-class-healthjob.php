@@ -325,7 +325,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 						var_export( $results['post'][0]['diff'], true )
 					),
 					2,
-					"post",
+					'post',
 				),
 				array(
 					'#vip-go-es-alerts',
@@ -338,7 +338,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 						var_export( $results['post'][1]['diff'], true )
 					),
 					2,
-					"post",
+					'post',
 				),
 				array(
 					'#vip-go-es-alerts',
@@ -352,7 +352,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 						var_export( $results['user'][0]['diff'], true )
 					),
 					2,
-					"user",
+					'user',
 				),
 				array(
 					'#vip-go-es-alerts',
