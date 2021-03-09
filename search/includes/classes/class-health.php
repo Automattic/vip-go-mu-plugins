@@ -638,7 +638,7 @@ class Health {
 	}
 
 	public function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable, $options = array() ) {
-		if ( $options['index_version'] ) {
+		if ( isset( $options['index_version'] ) ) {
 			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
 
 			if ( is_wp_error( $version_result ) ) {
