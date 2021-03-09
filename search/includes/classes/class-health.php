@@ -29,6 +29,17 @@ class Health {
 	);
 
 	/**
+	 * Instance of Search class
+	 * 
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $search;
+
+	public function __construct() {
+		$this->search = \Automattic\VIP\Search\Search::instance();
+	}
+
+	/**
 	 * Verify the difference in number for a given entity between the DB and the index.
 	 * Entities can be either posts or users.
 	 *
@@ -571,7 +582,7 @@ class Health {
 		return sprintf( '%s_%d', 'post', $id );
 	}
 
-	public static function get_index_settings_health_for_all_indexables() {
+	public function get_index_settings_health_for_all_indexables() {
 		// For each indexable, we want to ensure that the desired index settings match the actual index settings
 		$indexables = \ElasticPress\Indexables::factory()->get_all();
 
@@ -584,7 +595,7 @@ class Health {
 		$unhealthy = array();
 
 		foreach ( $indexables as $indexable ) {
-			$diff = self::get_index_versions_settings_diff_for_indexable( $indexable );
+			$diff = $this->get_index_versions_settings_diff_for_indexable( $indexable );
 
 			if ( is_wp_error( $diff ) ) {
 				$unhealthy[ $indexable->slug ] = $diff;
@@ -602,15 +613,13 @@ class Health {
 		return $unhealthy;
 	}
 
-	public static function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$search = \Automattic\VIP\Search\Search::instance();
-
-		$versions = $search->versioning->get_versions( $indexable );
+	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
+		$versions = $this->search->versioning->get_versions( $indexable );
 
 		$diff = array();
 
 		foreach ( $versions as $version ) {
-			$version_diff = self::get_index_settings_diff_for_indexable( $indexable, array(
+			$version_diff = $this->get_index_settings_diff_for_indexable( $indexable, array(
 				'index_version' => $version['number'],
 			) );
 
@@ -628,11 +637,9 @@ class Health {
 		return $diff;
 	}
 
-	public static function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable, $options = array() ) {
-		$search = \Automattic\VIP\Search\Search::instance();
-
+	public function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable, $options = array() ) {
 		if ( $options['index_version'] ) {
-			$version_result = $search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
 
 			if ( is_wp_error( $version_result ) ) {
 				return $version_result;
@@ -642,7 +649,7 @@ class Health {
 		$actual_settings = $indexable->get_index_settings();
 
 		if ( is_wp_error( $actual_settings ) ) {
-			$search->versioning->reset_current_version_number( $indexable );
+			$this->search->versioning->reset_current_version_number( $indexable );
 
 			return $actual_settings;
 		}
@@ -655,7 +662,7 @@ class Health {
 
 		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 
-		$search->versioning->reset_current_version_number( $indexable );
+		$this->search->versioning->reset_current_version_number( $indexable );
 
 		return $diff;
 	}

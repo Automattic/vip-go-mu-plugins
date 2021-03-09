@@ -470,7 +470,9 @@ class Health_Test extends \WP_UnitTestCase {
 	 * @dataProvider limit_index_settings_to_monitored_keys_data
 	 */
 	public function test_limit_index_settings_to_monitored_keys( $input, $keys, $expected ) {
-		$limited_settings = Health::limit_index_settings_to_monitored_keys( $input, $keys );
+		$health = new Health();
+	
+		$limited_settings = $health->limit_index_settings_to_monitored_keys( $input, $keys );
 
 		$this->assertEquals( $expected, $limited_settings );
 	}
@@ -607,7 +609,9 @@ class Health_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_data
 	 */
 	public function test_get_index_settings_diff( $actual, $desired, $expected_diff ) {
-		$actual_diff = Health::get_index_settings_diff( $actual, $desired );
+		$health = new Health();
+
+		$actual_diff = $health->get_index_settings_diff( $actual, $desired );
 
 		$this->assertEquals( $actual_diff, $expected_diff );
 	}

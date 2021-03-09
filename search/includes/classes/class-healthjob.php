@@ -26,6 +26,17 @@ class HealthJob {
 	public $health_check_disabled_sites = array();
 
 	/**
+	 * Instance of the Health class
+	 * 
+	 * Useful for overriding in tests via dependency injection
+	 */
+	public $health;
+
+	public function __construct() {
+		$this->health = new Health();
+	}
+
+	/**
 	 * Initialize the job class
 	 *
 	 * @access  public
@@ -112,7 +123,7 @@ class HealthJob {
 	}
 
 	public function check_all_indexables_settings_health() {
-		$unhealthy_indexables = Health::get_index_settings_health_for_all_indexables();
+		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
 		if ( empty( $unhealthy_indexables ) ) {
 			return;
