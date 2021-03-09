@@ -300,7 +300,7 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_get_index_entity_count_from_elastic_search__returns_result() {
-		$health         = new \Automattic\VIP\Search\Health();
+		$health         = new \Automattic\VIP\Search\Health( Search::instance() );
 		$expected_count = 42;
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
@@ -322,7 +322,7 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_get_index_entity_count_from_elastic_search__exception() {
-		$health = new \Automattic\VIP\Search\Health();
+		$health = new \Automattic\VIP\Search\Health( Search::instance() );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
 			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
@@ -339,7 +339,7 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_get_index_entity_count_from_elastic_search__failed_query() {
-		$health = new \Automattic\VIP\Search\Health();
+		$health = new \Automattic\VIP\Search\Health( Search::instance() );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
 			->setMethods( [ 'query_es', 'format_args', 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
@@ -366,6 +366,7 @@ class Health_Test extends \WP_UnitTestCase {
 
 
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setConstructorArgs( [ Search::instance() ] )
 			->setMethods( [ 'get_index_entity_count_from_elastic_search' ] )
 			->getMock();
 
@@ -399,6 +400,7 @@ class Health_Test extends \WP_UnitTestCase {
 
 
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setConstructorArgs( [ Search::instance() ] )
 			->setMethods( [ 'get_index_entity_count_from_elastic_search' ] )
 			->getMock();
 
@@ -428,6 +430,7 @@ class Health_Test extends \WP_UnitTestCase {
 
 
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setConstructorArgs( [ Search::instance() ] )
 			->setMethods( [ 'get_index_entity_count_from_elastic_search' ] )
 			->getMock();
 
@@ -565,13 +568,16 @@ class Health_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_for_indexable_data
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
-		$health = new Health();
-
 		// Mock search and the versioning instance
-		$mock_search = new \stdClass();
+		$mock_search = $this->getMockBuilder( Search::class )
+			->setMethods( [] )
+			->getMock();
+
 		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
 			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
 			->getMock();
+
+		$health = new Health( $mock_search );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
 			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings' ] )
@@ -617,7 +623,7 @@ class Health_Test extends \WP_UnitTestCase {
 	 * @dataProvider limit_index_settings_to_monitored_keys_data
 	 */
 	public function test_limit_index_settings_to_monitored_keys( $input, $keys, $expected ) {
-		$health = new Health();
+		$health = new Health( Search::instance() );
 	
 		$limited_settings = $health->limit_index_settings_to_monitored_keys( $input, $keys );
 
@@ -756,7 +762,7 @@ class Health_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_data
 	 */
 	public function test_get_index_settings_diff( $actual, $desired, $expected_diff ) {
-		$health = new Health();
+		$health = new Health( Search::instance() );
 
 		$actual_diff = $health->get_index_settings_diff( $actual, $desired );
 

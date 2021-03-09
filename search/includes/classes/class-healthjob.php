@@ -32,8 +32,15 @@ class HealthJob {
 	 */
 	public $health;
 
-	public function __construct() {
-		$this->health = new Health();
+	/**
+	 * Instance of Search class
+	 * 
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $search;
+
+	public function __construct( \Automattic\VIP\Search\Search $search ) {
+		$this->health = new Health( $search );
 	}
 
 	/**

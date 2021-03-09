@@ -34,7 +34,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$job = new \Automattic\VIP\Search\HealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob( $es );
 
 		$job->check_health();
 	}
@@ -187,7 +187,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test_vip_search_healthjob_is_not_enabled_when_indexing_is_occuring() {
 		add_filter( 'ep_is_indexing', '__return_true' );
 
-		$job = new \Automattic\VIP\Search\HealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob( $es );
 
 		$enabled = $job->is_enabled();
 
@@ -199,7 +199,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test_vip_search_healthjob_is_not_enabled_before_first_index() {
 		add_filter( 'ep_last_sync', '__return_false' );
 
-		$job = new \Automattic\VIP\Search\HealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob( $es );
 
 		$enabled = $job->is_enabled();
 
@@ -219,7 +219,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 
 		add_filter( 'vip_search_healthchecks_enabled_environments', $enabled_environments );
 
-		$job = new \Automattic\VIP\Search\HealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob( $es );
 
 		$enabled = $job->is_enabled();
 
@@ -237,7 +237,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test_vip_search_healthjob_is_disabled_when_constant_is_set() {
 		define( 'DISABLE_VIP_SEARCH_HEALTHCHECKS', true );
 
-		$job = new \Automattic\VIP\Search\HealthJob();
+		$job = new \Automattic\VIP\Search\HealthJob( $es );
 
 		$enabled = $job->is_enabled();
 
@@ -251,7 +251,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	public function test_vip_search_healthjob_is_disabled_when_app_id_matches_disabled_list() {
 		define( 'VIP_GO_APP_ID', 2341 );
 
-		$job                                = new \Automattic\VIP\Search\HealthJob();
+		$job                                = new \Automattic\VIP\Search\HealthJob( $es );
 		$job->health_check_disabled_sites[] = VIP_GO_APP_ID;
 
 		$enabled = $job->is_enabled();

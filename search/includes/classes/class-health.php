@@ -35,8 +35,8 @@ class Health {
 	 */
 	public $search;
 
-	public function __construct() {
-		$this->search = \Automattic\VIP\Search\Search::instance();
+	public function __construct( \Automattic\VIP\Search\Search $search ) {
+		$this->search = $search;
 	}
 
 	/**
