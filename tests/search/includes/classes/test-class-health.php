@@ -439,8 +439,155 @@ class Health_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $result, $expected_result );
 	}
 
-	public function test_get_index_settings_diff_for_indexable() {
+	public function get_index_settings_diff_for_indexable_data() {
+		return array(
+			// No diff expected, empty arrays
+			array(
+				// Actual settings of index in Elasticsearch
+				array(),
+				// Desired index settings from ElasticPress
+				array(),
+				// Options
+				array(),
+				// Expected diff
+				array(),
+			),
+			// No diff expected, equal arrays
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+				),
+				// Options
+				array(),
+				// Expected diff
+				array(),
+			),
+			// No diff expected, type juggling
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => '1',
+					'index.number_of_replicas' => '2',
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+				),
+				// Options
+				array(),
+				// Expected diff
+				array(),
+			),
+			// Diff expected, type juggling
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => '1',
+					'index.number_of_replicas' => '2',
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 3,
+				),
+				// Options
+				array(),
+				// Expected diff
+				array(
+					'index.number_of_replicas' => array(
+						'expected' => 3,
+						'actual' => '2',
+					),
+				),
+			),
+			// Diff expected, mismatched settings
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+					'foo' => 'bar',
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 1,
+					'foo' => 'baz',
+				),
+				// Options
+				array(),
+				// Expected diff
+				array(
+					'index.number_of_replicas' => array(
+						'expected' => 1,
+						'actual' => 2,
+					),
+				),
+			),
+			// Diff expected, mismatched settings with specific index version
+			array(
+				// Actual settings of index in Elasticsearch
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 2,
+					'foo' => 'bar',
+				),
+				// Desired index settings from ElasticPress
+				array(
+					'index.number_of_shards' => 1,
+					'index.number_of_replicas' => 1,
+					'foo' => 'baz',
+				),
+				// Options
+				array(
+					'version_number' => 2,
+				),
+				// Expected diff
+				array(
+					'index.number_of_replicas' => array(
+						'expected' => 1,
+						'actual' => 2,
+					),
+				),
+			),
+		);
+	}
 
+	/**
+	 * @dataProvider get_index_settings_diff_for_indexable_data
+	 */
+	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
+		$health = new Health();
+
+		// Mock search and the versioning instance
+		$mock_search = new \stdClass();
+		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
+			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+
+		$mocked_indexable->method( 'get_index_settings' )
+			->willReturn( $actual );
+
+		$mocked_indexable->method( 'build_settings' )
+			->willReturn( $desired );
+
+		$actual_diff = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
+
+		$this->assertEquals( $actual_diff, $expected_diff );
 	}
 
 	public function limit_index_settings_to_monitored_keys_data() {
