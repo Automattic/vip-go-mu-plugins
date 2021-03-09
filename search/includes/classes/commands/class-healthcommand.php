@@ -262,6 +262,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * [--silent]
 	 * : Optional silences all non-error output except for the final results
 	 *
+	 * [--force-parallel-execution]
+	 * : Optional Force execution even if the process is already ongoing
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search health validate-contents
 	 *
@@ -269,6 +272,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function validate_contents( $args, $assoc_args ) {
 		$health = new \Automattic\VIP\Search\Health();
+
 		$results = $health->validate_index_posts_content(
 			$assoc_args['start_post_id'] ?? 1,
 			$assoc_args['last_post_id'] ?? null,
@@ -276,7 +280,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			$assoc_args['max_diff_size'] ?? null,
 			isset( $assoc_args['silent'] ),
 			isset( $assoc_args['inspect'] ),
-			isset( $assoc_args['do-not-heal'] )
+			isset( $assoc_args['do-not-heal'] ),
+			isset( $assoc_args['force-parallel-execution'] )
 		);
 
 		if ( is_wp_error( $results ) ) {

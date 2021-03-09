@@ -238,8 +238,9 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal ) {
-		if ( $this->is_validate_content_ongoing() ) {
+	public function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal, $force_parallel_execution = false ) {
+		$process_parallel_execution_lock = ! $force_parallel_execution;
+		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
 			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
 
@@ -285,7 +286,9 @@ class Health {
 		}
 
 		do {
-			$this->set_validate_content_lock();
+			if ( $process_parallel_execution_lock ) {
+				$this->set_validate_content_lock();
+			}
 
 			$next_batch_post_id = $start_post_id + $batch_size;
 
@@ -315,7 +318,9 @@ class Health {
 
 				$error->add_data( $results, 'diff' );
 
-				$this->remove_validate_content_lock();
+				if ( $process_parallel_execution_lock ) {
+					$this->remove_validate_content_lock();
+				}
 
 				return $error;
 			}
@@ -336,7 +341,9 @@ class Health {
 			}
 		} while ( $start_post_id <= $last_post_id );
 
-		$this->remove_validate_content_lock();
+		if ( $process_parallel_execution_lock ) {
+			$this->remove_validate_content_lock();
+		}
 
 		return $results;
 	}
