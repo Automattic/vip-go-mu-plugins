@@ -210,7 +210,8 @@ class Health {
 
 		$index_version = $search->versioning->get_current_version_number( $posts );
 
-		$health = new self();
+		$health = new self( $search );
+
 		foreach ( $post_types as $post_type ) {
 			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
 
