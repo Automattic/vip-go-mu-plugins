@@ -26,6 +26,24 @@ class HealthJob {
 	public $health_check_disabled_sites = array();
 
 	/**
+	 * Instance of the Health class
+	 * 
+	 * Useful for overriding in tests via dependency injection
+	 */
+	public $health;
+
+	/**
+	 * Instance of Search class
+	 * 
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $search;
+
+	public function __construct( \Automattic\VIP\Search\Search $search ) {
+		$this->health = new Health( $search );
+	}
+
+	/**
 	 * Initialize the job class
 	 *
 	 * @access  public
@@ -104,6 +122,63 @@ class HealthJob {
 			return;
 		}
 
+		if ( \Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_health_monitor' ) ) {
+			$this->check_all_indexables_settings_health();
+		}
+
+		$this->check_document_count_health();
+	}
+
+	public function check_all_indexables_settings_health() {
+		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
+
+		if ( empty( $unhealthy_indexables ) ) {
+			return;
+		}
+
+		$this->process_indexables_settings_health_results( $unhealthy_indexables );
+	}
+
+	public function process_indexables_settings_health_results( $results ) {
+		// If the whole thing failed, error
+		if ( is_wp_error( $results ) ) {
+			$message = sprintf( 'Error while validating index settings for %s: %s', home_url(), $results->get_error_message() );
+
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		foreach ( $results as $indexable_slug => $versions ) {
+			// If there's an error, alert
+			if ( is_wp_error( $versions ) ) {
+				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			}
+
+			// Each individual entry in $versions is an array of results, one per index version
+			foreach ( $versions as $result ) {
+				// Only alert if inconsistencies found
+				if ( empty( $result['diff'] ) ) {
+					continue;
+				}
+
+				$message = sprintf(
+					'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					home_url(),
+					$indexable_slug,
+					$result['index_version'],
+					$result['index_name'],
+					var_export( $result['diff'], true )
+				);
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+			}
+		}
+	}
+
+	public function check_document_count_health() {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
@@ -118,7 +193,7 @@ class HealthJob {
 					'index_version' => $version['number'],
 				) );
 
-				$this->process_results( $user_results );
+				$this->process_document_count_health_results( $user_results );
 			}
 		}
 
@@ -131,7 +206,7 @@ class HealthJob {
 				'index_version' => $version['number'],
 			) );
 
-			$this->process_results( $post_results );
+			$this->process_document_count_health_results( $post_results );
 		}
 	}
 
@@ -141,7 +216,7 @@ class HealthJob {
 	 * @access  protected
 	 * @param   array       $result     Array of results from Health index validation
 	 */
-	public function process_results( $results ) {
+	public function process_document_count_health_results( $results ) {
 		// If the whole thing failed, error
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
