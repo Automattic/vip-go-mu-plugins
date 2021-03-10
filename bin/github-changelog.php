@@ -65,13 +65,13 @@ function parse_changelog_html( $changelog_html ) {
     ];
 }
 
-function create_draft_changelog( $title, $content ) {
+function create_draft_changelog( $title, $content, $tags ) {
     $fields = [
         'title' => $title,
         'content' => $content,
         'excerpt' => $title,
         'status' => 'draft',
-        'tags' => 1784989, // mu-plugins tag
+        'tags' => implode( ',', $tags ),
     ];
     $ch = curl_init( WP_CHANGELOG_ENDPOINT );
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -79,18 +79,42 @@ function create_draft_changelog( $title, $content ) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [ 'Authorization:Bearer ' . WP_CHANGELOG_AUTH_TOKEN ] );
     curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
     $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     curl_close($ch);
+
     echo "Response:\n";
     echo $response;
+    echo "\nHttpCode: $http_code";
+
+    if ( $http_code >= 400 ) {
+        echo "\n\nFailed to create changelog draft post\n";
+        exit( 1 );
+    }
+}
+
+function get_changelog_tags( $github_labels ) {
+    $tags = [
+        '1784989' // mu-plugins
+    ];
+
+    foreach ( $github_labels as $label ) {
+        preg_match('/ChangelogTagID:\s*(\d+)/', $label['description'], $matches);
+        if ( $matches ) {
+            array_push( $tags, $matches[1] );
+        }
+    }
+
+    return $tags;
 }
 
 function create_changelog_for_last_PR() {
     $pr = fetch_last_PR();
 
+    $changelog_tags = get_changelog_tags( $pr['labels'] );
     $changelog_html = get_changelog_html( $pr );
     $changelog_record = parse_changelog_html( $changelog_html );
 
-    create_draft_changelog( $changelog_record['title'], $changelog_record['content'] );
+    create_draft_changelog( $changelog_record['title'], $changelog_record['content'], $changelog_tags );
     echo "\n\nAll done!";
 }
 

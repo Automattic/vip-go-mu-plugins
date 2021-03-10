@@ -11,6 +11,11 @@
  * Domain Path: /languages/
  */
 
+// Avoid loading VaultPress altogether if VIP_VAULTPRESS_SKIP_LOAD is set to true
+if ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD ) {
+	return;
+}
+
 define( 'VIP_VAULTPRESS_SKIP_FILES', [
 	// The following EP files are large and complex and consistently trigger 100% CPU usage on scan.
 	'/elasticpress/dist/js/ordering-script.min.js',

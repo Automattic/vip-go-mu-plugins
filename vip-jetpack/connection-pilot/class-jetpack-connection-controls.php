@@ -57,9 +57,9 @@ class Controls {
 	 * @return mixed bool|\WP_Error True if test connection succeeded, \WP_Error otherwise.
 	 */
 	private static function test_jetpack_connection() {
-		$response = \Jetpack_Client::wpcom_json_api_request_as_blog(
+		$response = \Automattic\Jetpack\Connection\Client::wpcom_json_api_request_as_blog(
 			sprintf( '/jetpack-blogs/%d/test-connection', \Jetpack_Options::get_option( 'id' ) ),
-			\Jetpack_Client::WPCOM_JSON_API_VERSION
+			\Automattic\Jetpack\Connection\Client::WPCOM_JSON_API_VERSION
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -231,7 +231,7 @@ class Controls {
 	 * This helps prevent cache issues for times where the database was directly updated.
 	 */
 	private static function refresh_options_cache() {
-		$options_to_refresh = array( 
+		$options_to_refresh = array(
 			'jetpack_options',
 			'jetpack_private_options',
 			'alloptions',
