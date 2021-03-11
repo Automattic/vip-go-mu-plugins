@@ -658,8 +658,8 @@ class Health {
 		$desired_settings = $indexable->build_settings();
 
 		// We only monitor certain settings
-		$actual_settings_to_check = self::limit_index_settings_to_monitored_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-		$desired_settings_to_check = self::limit_index_settings_to_monitored_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
 
 		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 
@@ -668,7 +668,7 @@ class Health {
 		return $diff;
 	}
 
-	public static function limit_index_settings_to_monitored_keys( $settings, $keys ) {
+	public static function limit_index_settings_to_keys( $settings, $keys ) {
 		// array_intersect_key() expects 2 associative arrays, so convert the allowed $keys to associative
 		$assoc_keys = array_fill_keys( $keys, true );
 
