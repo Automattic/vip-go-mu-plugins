@@ -81,6 +81,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'version' => '4.5',
 					'active' => false,
 					'enabled_via_code' => false,
+					'enabled_sitewide' => false,
 				),
 				array(
 					'path' => 'world.php',
@@ -88,6 +89,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'version' => '8.6',
 					'active' => true,
 					'enabled_via_code' => false,
+					'enabled_sitewide' => false,
 				),
 			),
 			$site_details['plugins'] 
@@ -161,6 +163,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'version' => '4.5',
 					'active' => true,
 					'enabled_via_code' => false,
+					'enabled_sitewide' => false,
 				),
 				array(
 					'path' => 'world.php',
@@ -168,6 +171,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'version' => '8.6',
 					'active' => false,
 					'enabled_via_code' => false,
+					'enabled_sitewide' => false,
 				),
 			),
 			$site_details['plugins'] 
