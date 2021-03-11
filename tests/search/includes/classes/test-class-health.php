@@ -596,7 +596,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $actual_diff, $expected_diff );
 	}
 
-	public function limit_index_settings_to_monitored_keys_data() {
+	public function limit_index_settings_to_keys_data() {
 		return array(
 			// Mix of monitored and not monitored keys
 			array(
@@ -620,12 +620,12 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider limit_index_settings_to_monitored_keys_data
+	 * @dataProvider limit_index_settings_to_keys_data
 	 */
-	public function test_limit_index_settings_to_monitored_keys( $input, $keys, $expected ) {
+	public function test_limit_index_settings_to_keys( $input, $keys, $expected ) {
 		$health = new Health( Search::instance() );
-	
-		$limited_settings = $health->limit_index_settings_to_monitored_keys( $input, $keys );
+
+		$limited_settings = $health->limit_index_settings_to_keys( $input, $keys );
 
 		$this->assertEquals( $expected, $limited_settings );
 	}
