@@ -30,7 +30,8 @@ if ( \Automattic\VIP\Security\Private_Sites::has_privacy_restrictions() ) {
  */
 function wpcom_vip_ensure_strict_username_sanitization( $username ) {
 	if ( is_email( $username ) ) {
-		// We don't want to do this strict filter on email addresses.
+		// We don't want to do this strict filter on email addresses. Sanitize the email and return.
+		$username = sanitize_email( $username );
 		return $username;
 	}
 
@@ -121,13 +122,8 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 		return;
 	}
 
-	$username = $_POST['log'];
-	if ( is_email( $username ) ) {
-		$username = sanitize_email( $username );
-	} else {
-		// Do some extra sanitization on the username.
-		$username = wpcom_vip_ensure_strict_username_sanitization( $username );
-	}
+	// Do some sanitization on the username.
+	$username = wpcom_vip_ensure_strict_username_sanitization( $_POST['log'] );
 
 	if ( $error = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOGIN_LIMIT ) ) {
 		login_header( __( 'Error' ), '', $error );
@@ -166,13 +162,8 @@ function wpcom_vip_lost_password_limit( $errors ) {
 		return $errors;
 	}
 
-	$username = trim( wp_unslash( $_POST['user_login'] ) );
-	if ( is_email( $username ) ) {
-		$username = sanitize_email( $username );
-	} else {
-		// Do some extra sanitization on the username.
-		$username = wpcom_vip_ensure_strict_username_sanitization( $username );
-	}
+	// Do some sanitization on the username.
+	$username         = wpcom_vip_ensure_strict_username_sanitization( $_POST['user_login'] );
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 	if ( is_wp_error( $is_login_limited ) ) {
@@ -237,3 +228,4 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 
 	return false;
 }
+
