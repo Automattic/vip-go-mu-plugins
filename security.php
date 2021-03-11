@@ -121,7 +121,14 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 		return;
 	}
 
-	$username = sanitize_user( $_POST['log'] );
+	$username = $_POST['log'];
+	if ( is_email( $username ) ) {
+		$username = sanitize_email( $username );
+	} else {
+		// Do some extra sanitization on the username.
+		$username = wpcom_vip_ensure_strict_username_sanitization( $username );
+	}
+
 	if ( $error = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOGIN_LIMIT ) ) {
 		login_header( __( 'Error' ), '', $error );
 		login_footer();
