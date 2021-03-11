@@ -163,7 +163,8 @@ function wpcom_vip_lost_password_limit( $errors ) {
 	}
 
 	// Do some sanitization on the username.
-	$username         = vip_strict_sanitize_username( $_POST['user_login'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	// ignoring WordPress.Security.NonceVerification.Missing and WordPress.Security.ValidatedSanitizedInput.InputNotValidated below
+	$username         = vip_strict_sanitize_username( $_POST['user_login'] ); // phpcs:ignore
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 	if ( is_wp_error( $is_login_limited ) ) {
