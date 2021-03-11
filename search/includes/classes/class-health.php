@@ -27,6 +27,10 @@ class Health {
 		'index.number_of_shards',
 		'index.routing.allocation.include.dc',
 	);
+	const INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS = array(
+		'index.number_of_replicas',
+		'index.routing.allocation.include.dc',
+	);
 
 	/**
 	 * Instance of Search class
@@ -694,5 +698,26 @@ class Health {
 		}
 
 		return $diff;
+	}
+
+	public function heal_index_settings_for_indexable( \ElasticPress\Indexable $indexable, array $options = array() ) {
+		if ( isset( $options['index_version'] ) ) {
+			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$desired_settings = $indexable->build_settings();
+
+		// Limit to only the settings that we auto-heal
+		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+
+		$result = $indexable->update_index_settings( $desired_settings_to_heal );
+
+		$this->search->versioning->reset_current_version_number( $indexable );
+
+		return $result;
 	}
 }

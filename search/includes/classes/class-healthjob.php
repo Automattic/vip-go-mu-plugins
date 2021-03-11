@@ -137,6 +137,10 @@ class HealthJob {
 		}
 
 		$this->process_indexables_settings_health_results( $unhealthy_indexables );
+
+		if ( \Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_auto_heal' ) ) {
+			$this->heal_index_settings( $unhealthy_indexables );
+		}
 	}
 
 	public function process_indexables_settings_health_results( $results ) {
@@ -166,6 +170,73 @@ class HealthJob {
 
 				$message = sprintf(
 					'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					home_url(),
+					$indexable_slug,
+					$result['index_version'],
+					$result['index_name'],
+					var_export( $result['diff'], true )
+				);
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+			}
+		}
+	}
+
+	public function heal_index_settings( array $unhealthy_indexables ) {
+		// If the whole thing failed, error
+		if ( is_wp_error( $unhealthy_indexables ) ) {
+			$message = sprintf( 'Error while attempting to heal index settings for %s: %s', home_url(), $unhealthy_indexables->get_error_message() );
+
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		foreach ( $results as $indexable_slug => $versions ) {
+			// If there's an error, alert
+			if ( is_wp_error( $versions ) ) {
+				$message = sprintf( 'Error while attempting to heal index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			}
+
+			$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+			if ( is_wp_error( $indexable ) || ! $indexable ) {
+				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+				continue;
+			}
+
+			// Each individual entry in $versions is an array of results, one per index version
+			foreach ( $versions as $result ) {
+				// Only take action if there are actual inconsistencies
+				if ( empty( $result['diff'] ) ) {
+					continue;
+				}
+
+				$options = array();
+
+				if ( isset( $result['index_version'] ) ) {
+					$options['index_version'] = $result['index_version'];
+				}
+
+				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
+
+				if ( is_wp_error( $result ) ) {
+					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $versions->get_error_message() );
+	
+					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+					continue;
+				}
+
+				// TODO handle $result - check value
+
+				$message = sprintf(
+					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 					home_url(),
 					$indexable_slug,
 					$result['index_version'],
