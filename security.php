@@ -34,10 +34,7 @@ function wpcom_vip_ensure_strict_username_sanitization( $username ) {
 		return $username;
 	}
 
-	// Reduce the username to ASCII. All valid usernames should already be in this format.
-	// This is the equivalent of calling sanitize_user( $username, true ).
-	// https://github.com/WordPress/WordPress/blob/497171a1c8da9e93cac5fbcc75b6f2e3e222dfc9/wp-includes/formatting.php#L2108
-	$username = preg_replace( '|[^a-z0-9 _.\-@]|i', '', $username );
+	$username = sanitize_user( $username, true );
 
 	return $username;
 }
