@@ -123,7 +123,7 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 	}
 
 	// Do some sanitization on the username.
-	$username = vip_strict_sanitize_username( $_POST['log'] );
+	$username = vip_strict_sanitize_username( $_POST['log'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 	if ( $error = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOGIN_LIMIT ) ) {
 		login_header( __( 'Error' ), '', $error );
@@ -163,7 +163,7 @@ function wpcom_vip_lost_password_limit( $errors ) {
 	}
 
 	// Do some sanitization on the username.
-	$username         = vip_strict_sanitize_username( $_POST['user_login'] );
+	$username         = vip_strict_sanitize_username( $_POST['user_login'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 	if ( is_wp_error( $is_login_limited ) ) {
