@@ -20,6 +20,7 @@ class Feature {
 		// https://github.com/Automattic/vip-go-mu-plugins/tree/master/vip-jetpack/connection-pilot
 		'jetpack-cxn-pilot' => 0.25,
 		'search_indexable_settings_health_monitor' => 0.25,
+		'search_indexable_settings_auto_heal' => 0.10,
 	);
 
 	public static $site_id = false;
