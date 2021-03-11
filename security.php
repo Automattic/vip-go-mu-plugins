@@ -28,7 +28,7 @@ if ( \Automattic\VIP\Security\Private_Sites::has_privacy_restrictions() ) {
  * @param string  $username
  * @return string
  */
-function wpcom_vip_ensure_strict_username_sanitization( $username ) {
+function vip_strict_sanitize_username( $username ) {
 	if ( is_email( $username ) ) {
 		// We don't want to do this strict filter on email addresses. Sanitize the email and return.
 		$username = sanitize_email( $username );
@@ -72,7 +72,7 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) 
 
 function wpcom_vip_login_limiter( $username ) {
 	// Do some extra sanitization on the username.
-	$username = wpcom_vip_ensure_strict_username_sanitization( $username );
+	$username = vip_strict_sanitize_username( $username );
 
 	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT, MINUTE_IN_SECONDS * 5 );
 }
@@ -80,7 +80,7 @@ add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
 function wpcom_vip_login_limiter_on_success( $username, $user ) {
 	// Do some extra sanitization on the username.
-	$username = wpcom_vip_ensure_strict_username_sanitization( $username );
+	$username = vip_strict_sanitize_username( $username );
 
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$ip_username_cache_key = $ip . '|' . $username; // IP + username
@@ -106,7 +106,7 @@ function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 		return $user;
 
 	// Do some extra sanitization on the username.
-	$username = wpcom_vip_ensure_strict_username_sanitization( $username );
+	$username = vip_strict_sanitize_username( $username );
 
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOGIN_LIMIT );
 	if ( is_wp_error( $is_login_limited ) ) {
@@ -123,7 +123,7 @@ function wpcom_vip_login_limit_dont_show_login_form() {
 	}
 
 	// Do some sanitization on the username.
-	$username = wpcom_vip_ensure_strict_username_sanitization( $_POST['log'] );
+	$username = vip_strict_sanitize_username( $_POST['log'] );
 
 	if ( $error = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOGIN_LIMIT ) ) {
 		login_header( __( 'Error' ), '', $error );
@@ -163,7 +163,7 @@ function wpcom_vip_lost_password_limit( $errors ) {
 	}
 
 	// Do some sanitization on the username.
-	$username         = wpcom_vip_ensure_strict_username_sanitization( $_POST['user_login'] );
+	$username         = vip_strict_sanitize_username( $_POST['user_login'] );
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 	if ( is_wp_error( $is_login_limited ) ) {
