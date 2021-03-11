@@ -270,21 +270,21 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			'post' => array(
 				array(
 					'index_version' => 1,
-					'index_name' => 'foo',
-					'diff' => array(
+					'index_name'    => 'foo',
+					'diff'          => array(
 						'bar' => array(
 							'expected' => 1,
-							'actual' => '2',
+							'actual'   => '2',
 						),
 					),
 				),
 				array(
 					'index_version' => 1,
-					'index_name' => 'foo',
-					'diff' => array(
+					'index_name'    => 'foo',
+					'diff'          => array(
 						'bar' => array(
 							'expected' => 3,
-							'actual' => '4',
+							'actual'   => '4',
 						),
 					),
 				),
@@ -292,16 +292,16 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			'user' => array(
 				array(
 					'index_version' => 1,
-					'index_name' => 'foo',
-					'diff' => array(
+					'index_name'    => 'foo',
+					'diff'          => array(
 						'bar' => array(
 							'expected' => 5,
-							'actual' => '6',
+							'actual'   => '6',
 						),
 					),
 				),
 			),
-			'foo' => new \WP_Error( 'foo-error', 'foo message' ),
+			'foo'  => new \WP_Error( 'foo-error', 'foo message' ),
 		);
 
 		// We have to test under the assumption that the main class has been loaded and initialized,
@@ -319,7 +319,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->withConsecutive(
 				array(
 					'#vip-go-es-alerts',
-					
+
 					sprintf(
 						'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 						home_url(),
@@ -346,7 +346,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				),
 				array(
 					'#vip-go-es-alerts',
-					
+
 					sprintf(
 						'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 						home_url(),
@@ -367,5 +367,112 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->will( $this->returnValue( true ) );
 
 		$stub->process_indexables_settings_health_results( $results );
+	}
+
+	public function test__heal_index_settings__reports_error() {
+		$error = new \WP_Error( 'foo', 'Bar' );
+
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
+			->disableOriginalConstructor()
+			->setMethods( [ 'send_alert' ] )
+			->getMock();
+
+		$stub->expects( $this->once() )
+			->method( 'send_alert' );
+
+		$stub->heal_index_settings( $error );
+	}
+
+
+	public function test__heal_index_settings__reports_error_per_indexable() {
+		$error                = new \WP_Error( 'foo', 'Bar' );
+		$unhealthy_indexables = [
+			'post' => $error,
+			'user' => $error,
+		];
+
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
+			->disableOriginalConstructor()
+			->setMethods( [ 'send_alert' ] )
+			->getMock();
+
+		$stub->expects( $this->exactly( count( $unhealthy_indexables ) ) )
+			->method( 'send_alert' );
+
+		$stub->heal_index_settings( $unhealthy_indexables );
+	}
+
+	public function test__heal_index_settings__reports_error_per_failed_indexable_retrieval() {
+		$error                = new \WP_Error( 'foo', 'Bar' );
+		$unhealthy_indexables = [
+			'post' => [],
+			'user' => [],
+		];
+
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+		$indexables_mock->method( 'get' )->willReturn( $error );
+
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
+			->disableOriginalConstructor()
+			->setMethods( [ 'send_alert' ] )
+			->getMock();
+
+		$stub->indexables = $indexables_mock;
+
+		$stub->expects( $this->exactly( count( $unhealthy_indexables ) ) )
+			->method( 'send_alert' );
+
+		$stub->heal_index_settings( $unhealthy_indexables );
+	}
+
+	public function test__heal_index_settings__heal_indexables_with_diff() {
+		$indexable_versions_with_non_empty_diff = 2;
+		$unhealthy_indexables                   = [
+			'post' => [
+				[
+					'index_version' => 1,
+					'diff'          => [ 'non-empty' ],
+				],
+				[
+					'index_version' => 2,
+					'diff'          => [],
+				],
+			],
+			'user' => [
+				[
+					'index_version' => 1,
+					'diff'          => [ 'non-empty' ],
+				],
+				[
+					'index_version' => 2,
+					'diff'          => [],
+				],
+			],
+		];
+
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+		$indexables_mock->method( 'get' )->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
+
+
+		$health_mock = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->disableOriginalConstructor()
+			->setMethods( [ 'heal_index_settings_for_indexable' ] )
+			->getMock();
+
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
+			->disableOriginalConstructor()
+			->setMethods( [ 'send_alert' ] )
+			->getMock();
+
+		$stub->indexables = $indexables_mock;
+		$stub->health     = $health_mock;
+
+		$stub->expects( $this->exactly( $indexable_versions_with_non_empty_diff ) )
+			->method( 'send_alert' );
+
+		$health_mock->expects( $this->exactly( $indexable_versions_with_non_empty_diff ) )
+			->method( 'heal_index_settings_for_indexable' );
+
+		$stub->heal_index_settings( $unhealthy_indexables );
 	}
 }

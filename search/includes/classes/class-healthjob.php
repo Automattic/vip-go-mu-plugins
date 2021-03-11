@@ -27,20 +27,29 @@ class HealthJob {
 
 	/**
 	 * Instance of the Health class
-	 * 
+	 *
 	 * Useful for overriding in tests via dependency injection
 	 */
 	public $health;
 
 	/**
 	 * Instance of Search class
-	 * 
+	 *
 	 * Useful for overriding (dependency injection) for tests
 	 */
 	public $search;
 
+	/**
+	 * Instance of \ElasticPress\Indexables
+	 *
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $indexables;
+
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
+		$this->search = $search;
 		$this->health = new Health( $search );
+		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
 	/**
@@ -182,7 +191,7 @@ class HealthJob {
 		}
 	}
 
-	public function heal_index_settings( array $unhealthy_indexables ) {
+	public function heal_index_settings( $unhealthy_indexables ) {
 		// If the whole thing failed, error
 		if ( is_wp_error( $unhealthy_indexables ) ) {
 			$message = sprintf( 'Error while attempting to heal index settings for %s: %s', home_url(), $unhealthy_indexables->get_error_message() );
@@ -192,18 +201,21 @@ class HealthJob {
 			return;
 		}
 
-		foreach ( $results as $indexable_slug => $versions ) {
+		foreach ( $unhealthy_indexables as $indexable_slug => $versions ) {
 			// If there's an error, alert
 			if ( is_wp_error( $versions ) ) {
 				$message = sprintf( 'Error while attempting to heal index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+				continue;
 			}
 
-			$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+			$indexable = $this->indexables->get( $indexable_slug );
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
-				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
+				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
@@ -227,21 +239,19 @@ class HealthJob {
 
 				if ( is_wp_error( $result ) ) {
 					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $versions->get_error_message() );
-	
+
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 					continue;
 				}
 
-				// TODO handle $result - check value
-
 				$message = sprintf(
 					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 					home_url(),
 					$indexable_slug,
-					$result['index_version'],
-					$result['index_name'],
-					var_export( $result['diff'], true )
+					$result['index_version'] ?? '<missing version>',
+					$result['index_name'] ?? '<missing name>',
+					var_export( $result['diff'] ?? '<missing diff>', true )
 				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
@@ -250,14 +260,12 @@ class HealthJob {
 	}
 
 	public function check_document_count_health() {
-		$search = \Automattic\VIP\Search\Search::instance();
-
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
 			$users_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
 
-			$users_versions = $search->versioning->get_versions( $users_indexable );
+			$users_versions = $this->search->versioning->get_versions( $users_indexable );
 
 			foreach ( $users_versions as $version ) {
 				$user_results = Health::validate_index_users_count( array(
@@ -270,7 +278,7 @@ class HealthJob {
 
 		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$posts_versions = $search->versioning->get_versions( $post_indexable );
+		$posts_versions = $this->search->versioning->get_versions( $post_indexable );
 
 		foreach ( $posts_versions as $version ) {
 			$post_results = Health::validate_index_posts_count( array(
