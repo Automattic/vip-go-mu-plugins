@@ -487,7 +487,7 @@ class Search {
 	}
 
 	protected function setup_cron_jobs() {
-		$this->healthcheck = new HealthJob();
+		$this->healthcheck = new HealthJob( $this );
 		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
 		/**
