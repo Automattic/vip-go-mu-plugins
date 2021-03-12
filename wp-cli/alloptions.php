@@ -90,7 +90,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand ack
 	 */
-	public function ack( $args=[], $assoc_args=[] ) {
+	public function ack( $args = [], $assoc_args = [] ) {
 
 		$reason = WP_CLI\Utils\get_flag_value(
 			$assoc_args,
@@ -151,7 +151,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand unack
 	 */
-	public function unack( $args=[], $assoc_args=[] ) {
+	public function unack( $args = [], $assoc_args = [] ) {
 
 		$this->ack_stat();
 
@@ -172,7 +172,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand ack-stat
 	 */
-	public function ack_stat( $args=[], $assoc_args=[] ) {
+	public function ack_stat( $args = [], $assoc_args = [] ) {
 
 		$stat = get_option( 'vip_suppress_alloptions_alert', [] );
 
@@ -181,10 +181,12 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 			return;
 		}
 
-		$log = $this->get_active_ack() ?: WP_CLI::colorize( sprintf(
-			'%%RAck expired%%n. Reason: %s',
-			$stat['reason']
-		) );
+		if ( ! $log = $this->get_active_ack() ) {
+			$log = WP_CLI::colorize( sprintf(
+				'%%RAck expired%%n. Reason: %s',
+				$stat['reason']
+			) );
+		}
 
 
 		WP_CLI::log( $log );
@@ -197,7 +199,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand ack-test
 	 */
-	public function ack_test( $args=[], $assoc_args=[] ) {
+	public function ack_test( $args = [], $assoc_args = [] ) {
 		WP_CLI::log( 'wpcom_vip_alloptions_size_is_acked() value:' );
 		var_dump( wpcom_vip_alloptions_size_is_acked() );
 	}
