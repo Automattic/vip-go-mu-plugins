@@ -237,8 +237,8 @@ class HealthJob {
 
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 
-				if ( is_wp_error( $result ) ) {
-					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $versions->get_error_message() );
+				if ( is_wp_error( $result['result'] ) ) {
+					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
 
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 

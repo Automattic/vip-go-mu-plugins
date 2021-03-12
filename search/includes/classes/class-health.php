@@ -716,8 +716,15 @@ class Health {
 
 		$result = $indexable->update_index_settings( $desired_settings_to_heal );
 
+		$index_name = $indexable->get_index_name();
+		$index_version = $this->search->versioning->get_current_version_number( $indexable );
+
 		$this->search->versioning->reset_current_version_number( $indexable );
 
-		return $result;
+		return array(
+			'index_name' => $index_name,
+			'index_version' => $index_version,
+			'result' => $result,
+		);
 	}
 }
