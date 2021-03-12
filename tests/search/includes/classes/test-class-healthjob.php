@@ -459,6 +459,12 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->setMethods( [ 'heal_index_settings_for_indexable' ] )
 			->getMock();
 
+		$health_mock->method( 'heal_index_settings_for_indexable' )->willReturn( array(
+			'result' => true,
+			'index_version' => 1,
+			'index_name' => 'foo-index',
+		) );
+
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->disableOriginalConstructor()
 			->setMethods( [ 'send_alert' ] )
