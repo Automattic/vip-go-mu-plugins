@@ -22,6 +22,11 @@ export default {
 		 * Since we're loading in WP we need to set the path at runtime,
 		 * due to preact-cli architectural choices (MiniCssExtractPlugin), the only way to do so is to use postTransformPublicPath
 		 */
+		const rules =  helpers.getRules(config);
+
+		const assetsRule = rules.find( rule => rule.index === 7 );
+		assetsRule.rule.loader = 'url-loader';
+
 		if ( helpers.getLoadersByName(config, 'file-loader')[0] ) {
 			const { rule } = helpers.getLoadersByName(config, 'file-loader')[0];
 			rule.options = {

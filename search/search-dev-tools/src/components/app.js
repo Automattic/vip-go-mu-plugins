@@ -127,6 +127,11 @@ const Queries = () => {
 	</div> );
 };
 
+const AdminBarButton = props => {
+	const { queries } = useContext(SearchContext);
+	return (<button {...props}>VIP Search: { queries.length } queries</button>)
+}
+
 /**
  * Main app component
  */
@@ -138,7 +143,7 @@ const App = props => {
 
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
 		<div className="search-dev-tools__wrapper">
-			<button onClick={ toggleOverlay }>VIP Search</button>
+			<AdminBarButton className={style.ab_btn} onClick={ toggleOverlay } />
 
 			{createPortal((<Overlay isVisible={visible} closeOverlay={closeOverlay} opacity="100">
 				<div className={style.vip_search_dev_tools}>

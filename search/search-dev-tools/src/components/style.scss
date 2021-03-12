@@ -61,3 +61,10 @@
 		}
 	}
 }
+
+.ab_btn {
+	&::before {
+		content: url( '../assets/wpvip.svg' );
+	}
+	border: 0;
+}
