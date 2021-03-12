@@ -111,7 +111,8 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 
 		$expiry = time() + ( $hours * HOUR_IN_SECONDS );
 
-		if ( $active = $this->get_active_ack() ) {
+		$active = $this->get_active_ack();
+		if ( $active ) {
 			WP_CLI::log( $active );
 			WP_CLI::confirm( 'Replace existing ack?', $assoc_args );
 		} else {
@@ -133,7 +134,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 
 			return WP_CLI::colorize( sprintf(
 				'%%GActive ack!%%n VIP alerts silenced until %s (in %s). Reason: %s',
-				gmdate('Y-m-d H:i', $stat['expiry'] ),
+				gmdate( 'Y-m-d H:i', $stat['expiry'] ),
 				human_time_diff( $stat['expiry'] ),
 				$stat['reason']
 			) );
@@ -182,7 +183,8 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 			return;
 		}
 
-		if ( ! $log = $this->get_active_ack() ) {
+		$log = $this->get_active_ack();
+		if ( ! $log ) {
 			$log = WP_CLI::colorize( sprintf(
 				'%%RAck expired%%n. Reason: %s',
 				$stat['reason']
