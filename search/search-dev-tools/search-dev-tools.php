@@ -156,6 +156,7 @@ add_action(
 	<script>
 		var VIPSearchDevTools = <?php echo wp_json_encode( $data, JSON_PRETTY_PRINT ); ?>;
 	</script>
+	<div id="search-dev-tools-portal"></div>
 		<?php
 	},
 	5

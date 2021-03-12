@@ -4,6 +4,7 @@
 /* eslint-disable wpcalypso/import-docblock */
 import { createContext, h } from 'preact';
 import { useContext, useEffect, useState } from 'preact/hooks';
+import { createPortal } from 'preact/compat';
 
 // TODO: switch Editor to an async import
 import Editor from 'react-simple-code-editor';
@@ -137,14 +138,15 @@ const App = props => {
 
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
 		<div className="search-dev-tools__wrapper">
-			<button onClick={ toggleOverlay }>Open Search Dev Tools</button>
-			{ visible ? ( <Overlay isVisible={ visible } closeOverlay={closeOverlay} opacity="100">
+			<button onClick={ toggleOverlay }>VIP Search</button>
+
+			{createPortal((<Overlay isVisible={visible} closeOverlay={closeOverlay} opacity="100">
 				<div className={style.vip_search_dev_tools}>
 					<h3>Search Dev Tools</h3>
 					<GeneralInformation />
 					<Queries />
 				</div>
-			</Overlay> ) : null }
+			</Overlay>), document.getElementById('search-dev-tools-portal') ) }
 		</div>
 	</SearchContext.Provider>
 	);

@@ -1,5 +1,7 @@
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable wpcalypso/import-docblock */
+// TODO: disable Preact dev tools for production builds
+require('preact/debug');
 import './webpack-public-path';
 
 import { h } from 'preact';
