@@ -156,8 +156,28 @@ add_action(
 	<script>
 		var VIPSearchDevTools = <?php echo wp_json_encode( $data, JSON_PRETTY_PRINT ); ?>;
 	</script>
-	<div id="vip-search-dev-tools-mount" data-widget-host="vip-search-dev-tools"></div>
 		<?php
 	},
 	5
 );
+
+
+add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
+	if ( ! should_enable_search_dev_tools() )
+		return;
+
+		$admin_bar->add_menu(
+			[
+				'id'     => 'vip-search-dev-tools',
+				'parent' => null,
+				'group'  => null,
+				'title'  => '',
+				'href'   => '#',
+				'meta'   => [
+					'title' => 'Open VIP Search Dev Tools',
+					'class' => 'vip-search-dev-tools-ab',
+					'html'  => '<div id="vip-search-dev-tools-mount" data-widget-host="vip-search-dev-tools"></div>'
+				],
+			]
+		);
+} );
