@@ -120,18 +120,30 @@ add_action(
 				[
 					'label' => 'Currently ratelimited?',
 					'value' => is_ratelimited() ? 'yes' : 'no',
+					'options' => [
+						'collapsible' => false,
+					],
 				],
 				[
 					'label' => 'Indexable post types',
 					'value' => join( ', ', \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
+					'options' => [
+						'collapsible' => true,
+					],
 				],
 				[
 					'label' => 'Indexable post status',
 					'value' => join( ', ', \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
+					'options' => [
+						'collapsible' => true,
+					],
 				],
 				[
 					'label' => 'Meta Key Allow List',
 					'value' => join( ', ', Search::instance()->get_post_meta_allow_list( null ) ),
+					'options' => [
+						'collapsible' => true,
+					],
 				],
 
 			],
