@@ -246,12 +246,11 @@ class HealthJob {
 				}
 
 				$message = sprintf(
-					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s)',
 					home_url(),
 					$indexable_slug,
-					$result['index_version'] ?? '<missing version>',
-					$result['index_name'] ?? '<missing name>',
-					var_export( $result['diff'] ?? '<missing diff>', true )
+					$result['index_version'] ?? '<missing index version>',
+					$result['index_name'] ?? '<missing name>'
 				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
