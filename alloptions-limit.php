@@ -119,13 +119,20 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		// Send to IRC, if we have a host configured
 		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 			if ( 'production' === $environment ) {
-				wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+
+				$suppress_flag = get_option( 'vip_suppress_alloptions_alert', false );
+
+				if ( ! $suppress_flag ||
+					( array_key_exists( 'expiry', $suppress_flag ) && $suppress_flag['expiry'] < time() )
+				) {
+					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+				}
 
 				// Send to OpsGenie
 				$alerts = Alerts::instance();
 				$alerts->opsgenie(
 					$subject,
-					array( 
+					array(
 						'alias'       => 'alloptions/' . $site_id,
 						'description' => 'The size of AllOptions is reaching the max limit of 1 MB.',
 						'entity'      => (string) $site_id,
