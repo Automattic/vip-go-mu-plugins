@@ -55,6 +55,16 @@ function wpcom_vip_sanity_check_alloptions_die() {
 	exit;
 }
 
+function wpcom_vip_alloptions_size_is_acked() {
+	$stat = get_option( 'vip_suppress_alloptions_alert', [] );
+
+	if ( array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
+		return true;
+	}
+
+	return false;
+}
+
 function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 	global $wpdb;
 
@@ -120,11 +130,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 			if ( 'production' === $environment ) {
 
-				$suppress_flag = get_option( 'vip_suppress_alloptions_alert', false );
-
-				if ( ! $suppress_flag ||
-					( array_key_exists( 'expiry', $suppress_flag ) && $suppress_flag['expiry'] < time() )
-				) {
+				if ( ! wpcom_vip_alloptions_size_is_acked() ) {
 					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
 				}
 
