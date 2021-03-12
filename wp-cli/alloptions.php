@@ -69,7 +69,8 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
 		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
 		WP_CLI::line( "\tuse `wp option autoload set <option_name> no` to disable autoload for option" );
-		if ( $active = $this->get_active_ack() ) {
+		$active = $this->get_active_ack();
+		if ( $active ) {
 			WP_CLI::log( $active );
 		}
 	}

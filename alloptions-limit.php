@@ -58,7 +58,7 @@ function wpcom_vip_sanity_check_alloptions_die() {
 function wpcom_vip_alloptions_size_is_acked() {
 	$stat = get_option( 'vip_suppress_alloptions_alert', [] );
 
-	if ( array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
+	if ( is_array( $stat ) && array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
 		return true;
 	}
 
@@ -131,7 +131,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 			if ( 'production' === $environment ) {
 
 				if ( ! wpcom_vip_alloptions_size_is_acked() ) {
-					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-alloptions' );
 				}
 
 				// Send to OpsGenie
