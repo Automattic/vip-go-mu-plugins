@@ -129,7 +129,7 @@ const Queries = () => {
 
 const AdminBarButton = props => {
 	const { queries } = useContext(SearchContext);
-	return (<button {...props}>VIP Search: { queries.length } queries</button>)
+	return (<button {...props}>Search: { queries.length } queries</button>)
 }
 
 /**

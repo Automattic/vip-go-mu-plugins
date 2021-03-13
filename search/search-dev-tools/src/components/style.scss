@@ -65,6 +65,13 @@
 .ab_btn {
 	&::before {
 		content: url( '../assets/wpvip.svg' );
+		margin-right: 7px;
+		height: 31px;
 	}
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: center;
 	border: 0;
+	background-color: transparent;
+	color: #eee;
 }
