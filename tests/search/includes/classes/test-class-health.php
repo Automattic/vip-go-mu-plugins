@@ -640,9 +640,7 @@ class Health_Test extends \WP_UnitTestCase {
 	 */
 	public function test_heal_index_settings_for_indexable( $desired_settings, $options ) {
 		// Mock search and the versioning instance
-		$mock_search = $this->getMockBuilder( Search::class )
-			->setMethods( [] )
-			->getMock();
+		$mock_search = $this->createMock( Search::class );
 
 		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
 			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
