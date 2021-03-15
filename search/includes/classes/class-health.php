@@ -166,7 +166,7 @@ class Health {
 			'order' => 'asc',
 		];
 
-		$result = ( new self() )->validate_index_entity_count( $query_args, $users );
+		$result = ( new self( $search ) )->validate_index_entity_count( $query_args, $users );
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-search', $result->get_error_message() ) );
