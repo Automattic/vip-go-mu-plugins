@@ -27,6 +27,10 @@ class Health {
 		'index.number_of_shards',
 		'index.routing.allocation.include.dc',
 	);
+	const INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS = array(
+		'index.number_of_replicas',
+		'index.routing.allocation.include.dc',
+	);
 
 	/**
 	 * Instance of Search class
@@ -658,8 +662,8 @@ class Health {
 		$desired_settings = $indexable->build_settings();
 
 		// We only monitor certain settings
-		$actual_settings_to_check = self::limit_index_settings_to_monitored_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-		$desired_settings_to_check = self::limit_index_settings_to_monitored_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
 
 		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 
@@ -668,7 +672,7 @@ class Health {
 		return $diff;
 	}
 
-	public static function limit_index_settings_to_monitored_keys( $settings, $keys ) {
+	public static function limit_index_settings_to_keys( $settings, $keys ) {
 		// array_intersect_key() expects 2 associative arrays, so convert the allowed $keys to associative
 		$assoc_keys = array_fill_keys( $keys, true );
 
@@ -694,5 +698,33 @@ class Health {
 		}
 
 		return $diff;
+	}
+
+	public function heal_index_settings_for_indexable( \ElasticPress\Indexable $indexable, array $options = array() ) {
+		if ( isset( $options['index_version'] ) ) {
+			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$desired_settings = $indexable->build_settings();
+
+		// Limit to only the settings that we auto-heal
+		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+
+		$result = $indexable->update_index_settings( $desired_settings_to_heal );
+
+		$index_name = $indexable->get_index_name();
+		$index_version = $this->search->versioning->get_current_version_number( $indexable );
+
+		$this->search->versioning->reset_current_version_number( $indexable );
+
+		return array(
+			'index_name' => $index_name,
+			'index_version' => $index_version,
+			'result' => $result,
+		);
 	}
 }
