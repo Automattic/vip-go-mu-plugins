@@ -164,8 +164,9 @@ add_action(
 
 
 add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
-	if ( ! should_enable_search_dev_tools() )
+	if ( ! should_enable_search_dev_tools() ) {
 		return;
+	}
 
 		$admin_bar->add_menu(
 			[
@@ -177,7 +178,7 @@ add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
 				'meta'   => [
 					'title' => 'Open VIP Search Dev Tools',
 					'class' => 'vip-search-dev-tools-ab',
-					'html'  => '<div id="vip-search-dev-tools-mount" data-widget-host="vip-search-dev-tools"></div>'
+					'html'  => '<div id="vip-search-dev-tools-mount" data-widget-host="vip-search-dev-tools"></div>',
 				],
 			]
 		);
