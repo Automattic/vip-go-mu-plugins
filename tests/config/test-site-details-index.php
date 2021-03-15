@@ -80,7 +80,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'name' => 'Hello Tests',
 					'version' => '4.5',
 					'active' => false,
-					'activated_by' => 'option',
+					'activated_by' => null,
 				),
 				array(
 					'path' => 'world.php',
@@ -167,7 +167,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'name' => 'Testing World',
 					'version' => '8.6',
 					'active' => false,
-					'activated_by' => 'option',
+					'activated_by' => null,
 				),
 			),
 			$site_details['plugins'] 
