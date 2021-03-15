@@ -114,8 +114,6 @@ class Site_Details_Index {
 				'version' => $value['Version'],
 				'active' => null !== $activated_by,
 				'activated_by' => $activated_by,
-				// Legacy
-				'enabled_via_code' => 'code' === $activated_by,
 			);
 		}
 
