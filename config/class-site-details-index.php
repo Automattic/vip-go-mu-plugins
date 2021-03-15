@@ -93,28 +93,29 @@ class Site_Details_Index {
 
 		$all_plugins = get_plugins();
 		$active_plugins = get_option( 'active_plugins' );
-		$sitewide_plugins = get_site_option( 'active_sitewide_plugins' );
-		$plugins_enabled_via_code = wpcom_vip_get_filtered_loaded_plugins();
+		$network_plugins = get_site_option( 'active_sitewide_plugins' );
+		$plugins_activated_via_code = wpcom_vip_get_filtered_loaded_plugins();
 
 		$plugin_info = array();
 
 		foreach ( $all_plugins as $key => $value ) {
-			$enable_method = null;
-			if ( in_array( $key, $plugins_enabled_via_code, true ) ) {
-				$enable_method = 'code';
-			} elseif ( isset( $sitewide_plugins[ $key ] ) ) {
-				$enable_method = 'sitewide';
+			$activated_by = null;
+			if ( in_array( $key, $plugins_activated_via_code, true ) ) {
+				$activated_by = 'code';
+			} elseif ( isset( $network_plugins[ $key ] ) ) {
+				$activated_by = 'network';
 			} elseif ( in_array( $key, $active_plugins, true ) ) {
-				$enable_method = 'local';
+				$activated_by = 'option';
 			}
 
 			$plugin_info[] = array(
 				'path' => $key,
 				'name' => $value['Name'],
 				'version' => $value['Version'],
-				'active' => null !== $enable_method,
-				'enabled_via_code' => 'code' === $enable_method,
-				'enabled_sitewide' => 'sitewide' === $enable_method,
+				'active' => null !== $activated_by,
+				'activated_by' => $activated_by,
+				// Legacy
+				'enabled_via_code' => 'code' === $activated_by,
 			);
 		}
 
