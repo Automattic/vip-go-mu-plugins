@@ -1202,7 +1202,7 @@ class Search {
 	 * Set the number of replicas for the index
 	 */
 	public function filter__ep_default_index_number_of_replicas( $replicas ) {
-		return 2;
+		return 1;
 	}
 
 	/**
