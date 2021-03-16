@@ -63,7 +63,7 @@ function wpcom_vip_noncdn_uri( $path ) {
 }
 
 /**
- * Returns a link the WordPress VIP site wrapped around an image (the VIP logo).
+ * Returns a link the WordPress VIP site wrapped around an image (the WordPress VIP logo).
  *
  * @param int $image Which variant of the WordPress VIP logo to use; between 1-6.
  * @return string HTML
@@ -90,7 +90,7 @@ function vip_powered_wpcom_img_html( $image ) {
  * Returns the "Powered by WordPress VIP" widget's content.
  *
  * @link https://docs.wpvip.com/how-tos/add-powered-by-wordpress-vip-to-your-site/ Powered By WordPress VIP
- * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the VIP link. Otherwise, just return the link.
+ * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the WordPress VIP link. Otherwise, just return the link.
  * @param string $before_text Optional. Text to go in front of the VIP link. Defaults to 'Powered by '.
  * @return string HTML
  */
