@@ -129,6 +129,7 @@ update_core_tests() {
 		"$wp_tests_dir/tests/xmlrpc/mw/getRecentPosts.php:Tests_XMLRPC_mw_getRecentPosts"
 		"$wp_tests_dir/tests/xmlrpc/mw/getPost.php:Tests_XMLRPC_mw_getPost"
 		"$wp_tests_dir/tests/xmlrpc/mw/editPost.php:Tests_XMLRPC_mw_editPost"
+		"$wp_tests_dir/tests/xmlrpc/wp/getMediaItem.php:Tests_XMLRPC_wp_getMediaItem"
 	)
 
 	local header_handling='\/**\n * @runTestsInSeparateProcesses\n * @preserveGlobalState disabled\n *\/'
