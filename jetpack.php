@@ -5,15 +5,23 @@
  * Plugin URI: https://jetpack.com
  * Description: Bring the power of the WordPress.com cloud to your self-hosted WordPress. Jetpack enables you to connect your blog to a WordPress.com account to use the powerful features normally only available to WordPress.com users.
  * Author: Automattic
- * Version: 9.1
+ * Version: 9.5
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
  * Domain Path: /languages/
  */
 
+// Choose an appropriate default Jetpack version, ensuring that older WordPress versions
+// are not using a too modern Jetpack version that is not compatible with it
 if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
-	define( 'VIP_JETPACK_DEFAULT_VERSION', '9.1' );
+	if ( version_compare( $wp_version, '5.5', '<' ) ) {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.1' );
+	} elseif ( version_compare( $wp_version, '5.6', '<' ) ) {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.4' );
+	} else {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.5' );
+	}
 }
 
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
@@ -113,6 +121,19 @@ function vip_jetpack_load() {
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
 		}
+	}
+
+	/**
+	 * Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
+	 *
+	 * This cannot be included inside Jetpack because it ships with caching disabled by default.
+	 * By enabling caching it's possible to save time in uncached page renders.
+	 *
+	 * We need Jetpack to be loaded as this has been deprecated in version 9.1, and if the filter is
+	 * added in that version or newer, a warning is shown on every WordPress request
+	 */
+	if ( version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
+		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
 }
 

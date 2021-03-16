@@ -67,10 +67,6 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertTrue( is_integer( $site_details['client_site_id'] ), 'client_site_id should be int' );
 		$this->assertEquals( 123, $site_details['client_site_id'], 'client_site_id should be 123' );
 
-		$this->assertTrue( array_key_exists( 'environment_id', $site_details ), 'environment_id should exist' );
-		$this->assertTrue( is_integer( $site_details['environment_id'] ), 'environment_id should be int' );
-		$this->assertEquals( 123, $site_details['environment_id'], 'environment_id should be 123' );
-
 		$this->assertTrue( array_key_exists( 'environment_name', $site_details ), 'environment_name should exist' );
 		$this->assertTrue( is_string( $site_details['environment_name'] ), 'environment_name should be string' );
 		$this->assertEquals( '', $site_details['environment_name'], 'environment_name should be blank since it\'s not current set' ); // Not set in test environment currently
@@ -80,16 +76,18 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
+					'path' => 'hello.php',
 					'name' => 'Hello Tests',
 					'version' => '4.5',
 					'active' => false,
-					'enabled_via_code' => false,
+					'activated_by' => null,
 				),
 				array(
+					'path' => 'world.php',
 					'name' => 'Testing World',
 					'version' => '8.6',
 					'active' => true,
-					'enabled_via_code' => false,
+					'activated_by' => 'option',
 				),
 			),
 			$site_details['plugins'] 
@@ -105,6 +103,10 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertTrue( array_key_exists( 'blog_id', $site_details['core'] ), 'blog_id should exist in core' );
 		$this->assertTrue( is_integer( $site_details['core']['blog_id'] ), 'blog_id should be int' );
 		$this->assertEquals( get_current_blog_id(), $site_details['core']['blog_id'], 'blog_id should be equal to get_current_blog_id()' );
+
+		$this->assertTrue( array_key_exists( 'site_url', $site_details['core'] ), 'site_url should exist in core' );
+		$this->assertTrue( is_string( $site_details['core']['site_url'] ), 'site_url should be string' );
+		$this->assertEquals( get_site_url(), $site_details['core']['site_url'], 'site_url should be equal to get_site_url()' );
 
 		$this->assertTrue( array_key_exists( 'is_multisite', $site_details['core'] ), 'is_multisite should exist in core' );
 		$this->assertTrue( is_bool( $site_details['core']['is_multisite'] ), 'is_multisite should be bool' );
@@ -145,10 +147,6 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertTrue( is_integer( $site_details['client_site_id'] ), 'client_site_id should be int' );
 		$this->assertEquals( 123, $site_details['client_site_id'], 'client_site_id should be 123' );
 
-		$this->assertTrue( array_key_exists( 'environment_id', $site_details ), 'environment_id should exist' );
-		$this->assertTrue( is_integer( $site_details['environment_id'] ), 'environment_id should be int' );
-		$this->assertEquals( 123, $site_details['environment_id'], 'environment_id should be 123' );
-		
 		$this->assertTrue( array_key_exists( 'environment_name', $site_details ), 'environment_name should exist' );
 		$this->assertTrue( is_string( $site_details['environment_name'] ), 'environment_name should be string' );
 		$this->assertEquals( '', $site_details['environment_name'], 'environment_name should be blank since it\'s not current set' ); // Not set in test environment currently
@@ -158,16 +156,18 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
+					'path' => 'hello.php',
 					'name' => 'Hello Tests',
 					'version' => '4.5',
 					'active' => true,
-					'enabled_via_code' => false,
+					'activated_by' => 'option',
 				),
 				array(
+					'path' => 'world.php',
 					'name' => 'Testing World',
 					'version' => '8.6',
 					'active' => false,
-					'enabled_via_code' => false,
+					'activated_by' => null,
 				),
 			),
 			$site_details['plugins'] 
@@ -183,6 +183,10 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertTrue( array_key_exists( 'blog_id', $site_details['core'] ), 'blog_id should exist in core' );
 		$this->assertTrue( is_integer( $site_details['core']['blog_id'] ), 'blog_id should be int' );
 		$this->assertEquals( get_current_blog_id(), $site_details['core']['blog_id'], 'blog_id should be equal to get_current_blog_id()' );
+
+		$this->assertTrue( array_key_exists( 'site_url', $site_details['core'] ), 'site_url should exist in core' );
+		$this->assertTrue( is_string( $site_details['core']['site_url'] ), 'site_url should be string' );
+		$this->assertEquals( get_site_url(), $site_details['core']['site_url'], 'site_url should be equal to get_site_url()' );
 
 		$this->assertTrue( array_key_exists( 'is_multisite', $site_details['core'] ), 'is_multisite should exist in core' );
 		$this->assertTrue( is_bool( $site_details['core']['is_multisite'] ), 'is_multisite should be bool' );

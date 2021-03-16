@@ -163,6 +163,7 @@ require_once( __DIR__ . '/000-debug/0-load.php' );
 require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
+require_once( __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php' );
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
 require_once( __DIR__ . '/vip-helpers/vip-newrelic.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
@@ -184,9 +185,12 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
+	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
 }
 
 // Load elasticsearch helpers
+// Warning: Site Details depends on the existence of class Search.
+// If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/search/search.php' );
@@ -221,7 +225,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 
 	// VIP sites should not be set as staging in Jetpack
 	// since it breaks SSO and prevents data from being passed to
-	// WordPress.com 
+	// WordPress.com
 	add_filter( 'jetpack_is_staging_site', '__return_false' );
 }
 

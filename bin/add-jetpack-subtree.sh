@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 if [ $# -lt 2 ]; then
   echo "Syntax: add-jetpack-subtree.sh <tree_version> <jetpack_tag>"
   echo
@@ -19,4 +21,4 @@ fi
 
 echo "Creating new jetpack subtree $tree_dir using jetpack tag $jetpack_tag"
 
-git subtree add --squash -P $tree_dir https://github.com/Automattic/jetpack $jetpack_tag -m "Add jetpack $tree_version subtree with tag $jetpack_tag"
+git subtree add --squash -P $tree_dir https://github.com/Automattic/jetpack-production $jetpack_tag -m "Add jetpack $tree_version subtree with tag $jetpack_tag"
