@@ -131,7 +131,9 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		}
 
 		// Update DB's default charset/collation
-		$convert_db = $wpdb->query( 'ALTER DATABASE ' . DB_NAME . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' );
+		$db_name = $wpdb->get_var( 'SELECT DATABASE() FROM DUAL;' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$convert_db = $wpdb->query( 'ALTER DATABASE ' . $db_name . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' );
 		if ( $convert_db ) {
 			WP_CLI::success( "Set database to utf8mb4" );
 		} else {
