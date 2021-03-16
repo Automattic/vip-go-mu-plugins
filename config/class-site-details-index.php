@@ -93,20 +93,27 @@ class Site_Details_Index {
 
 		$all_plugins = get_plugins();
 		$active_plugins = get_option( 'active_plugins' );
-		$plugins_enabled_via_code = wpcom_vip_get_filtered_loaded_plugins();
+		$network_plugins = get_site_option( 'active_sitewide_plugins' );
+		$plugins_activated_via_code = wpcom_vip_get_filtered_loaded_plugins();
 
 		$plugin_info = array();
 
 		foreach ( $all_plugins as $key => $value ) {
-			$active = in_array( $key, $active_plugins, true );
-			$enabled_via_code = in_array( $key, $plugins_enabled_via_code, true );
+			$activated_by = null;
+			if ( in_array( $key, $plugins_activated_via_code, true ) ) {
+				$activated_by = 'code';
+			} elseif ( isset( $network_plugins[ $key ] ) ) {
+				$activated_by = 'network';
+			} elseif ( in_array( $key, $active_plugins, true ) ) {
+				$activated_by = 'option';
+			}
 
 			$plugin_info[] = array(
 				'path' => $key,
 				'name' => $value['Name'],
 				'version' => $value['Version'],
-				'active' => $active,
-				'enabled_via_code' => $enabled_via_code,
+				'active' => null !== $activated_by,
+				'activated_by' => $activated_by,
 			);
 		}
 
