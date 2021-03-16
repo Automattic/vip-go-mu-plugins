@@ -98,8 +98,6 @@ class API_Client {
 		return $response;
 	}
 
-	// TODO: implement get_unique_filename()
-
 	public function upload_file( $local_path, $upload_path ) {
 		if ( ! file_exists( $local_path ) ) {
 			/* translators: 1: local file path 2: remote upload path */
