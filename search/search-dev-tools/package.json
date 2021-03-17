@@ -33,6 +33,7 @@
     "sirv-cli": "^1.0.3"
   },
   "dependencies": {
+    "pluralize": "^8.0.0",
     "preact": "^10.1.0",
     "preact-habitat": "^3.3.0",
     "preact-render-to-string": "^5.1.2",

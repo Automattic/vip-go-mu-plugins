@@ -13,10 +13,12 @@ import { SearchContext } from '../context';
 import { GeneralInformation } from  './information-pane';
 import { Queries } from './query';
 
+import pluralize from 'pluralize';
+
 
 const AdminBarButton = props => {
 	const { queries } = useContext(SearchContext);
-	return (<button {...props}>Search: { queries.length } queries</button>)
+	return (<button {...props}>Search: { pluralize('query', queries.length, true ) }</button>)
 }
 
 /**
@@ -34,7 +36,7 @@ const App = props => {
 
 			{createPortal((<Overlay isVisible={visible} closeOverlay={closeOverlay} opacity="100">
 				<div className={style.vip_search_dev_tools}>
-					<h3>Search Dev Tools</h3>
+					<h3>VIP Search Dev Tools</h3>
 					<GeneralInformation />
 					<Queries />
 				</div>
