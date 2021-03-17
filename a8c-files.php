@@ -178,7 +178,7 @@ class A8C_Files {
 
 		// Remove this filter from Photon so that we can use VIP filters for srcset
 		// Filter reference: https://github.com/Automattic/jetpack/blob/26db3e436ccca3e16a62d02d95e792a81f38a1e4/projects/plugins/jetpack/class.photon.php#L85
-		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON_WITHOUT_SRCSET' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON_WITHOUT_SRCSET ) {
+		if ( defined( 'WPCOM_VIP_USE_JETPACK_PHOTON_WITHOUT_SRCSET' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON_WITHOUT_SRCSET ) {
 			remove_filter( 'wp_calculate_image_srcset', array( $jetpack_photon, 'filter_srcset_array' ), 10, 5 );
 		}
 
