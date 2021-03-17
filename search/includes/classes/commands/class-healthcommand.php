@@ -271,7 +271,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
-		$health = new \Automattic\VIP\Search\Health();
+		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
 
 		$results = $health->validate_index_posts_content(
 			$assoc_args['start_post_id'] ?? 1,

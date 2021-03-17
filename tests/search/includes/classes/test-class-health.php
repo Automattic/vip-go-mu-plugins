@@ -441,7 +441,7 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $result, $expected_result );
 	}
-  
+
 	public function test_validate_index_posts_content__ongoing_results_in_error() {
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'is_validate_content_ongoing' ] )
@@ -478,8 +478,8 @@ class Health_Test extends \WP_UnitTestCase {
 		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_lock' );
 
 		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
-  }
-    
+	}
+
 	public function get_index_settings_diff_for_indexable_data() {
 		return array(
 			// No diff expected, empty arrays
@@ -717,7 +717,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$mocked_indexable->expects( $this->once() )
 			->method( 'update_index_settings' )
 			->with( $expected_updated_settings );
-	
+
 		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
 
 		$expected_result = array(

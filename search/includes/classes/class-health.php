@@ -36,16 +36,13 @@ class Health {
 
 	/**
 	 * Instance of Search class
-	 * 
+	 *
 	 * Useful for overriding (dependency injection) for tests
 	 */
 	public $search;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search = $search;
-	}
-
-	public function __construct() {
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -641,10 +638,10 @@ class Health {
 
 			if ( is_wp_error( $diff ) ) {
 				$unhealthy[ $indexable->slug ] = $diff;
-				
+
 				continue;
 			}
-			
+
 			if ( empty( $diff ) ) {
 				continue;
 			}
