@@ -24,6 +24,26 @@ class Health {
 		'date',
 		'time',
 	);
+	const INDEX_SETTINGS_HEALTH_MONITORED_KEYS = array(
+		'index.number_of_replicas',
+		'index.number_of_shards',
+		'index.routing.allocation.include.dc',
+	);
+	const INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS = array(
+		'index.number_of_replicas',
+		'index.routing.allocation.include.dc',
+	);
+
+	/**
+	 * Instance of Search class
+	 * 
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $search;
+
+	public function __construct( \Automattic\VIP\Search\Search $search ) {
+		$this->search = $search;
+	}
 
 	public function __construct() {
 		$this->indexables = \ElasticPress\Indexables::factory();
@@ -156,7 +176,7 @@ class Health {
 			'order' => 'asc',
 		];
 
-		$result = ( new self() )->validate_index_entity_count( $query_args, $users );
+		$result = ( new self( $search ) )->validate_index_entity_count( $query_args, $users );
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-search', $result->get_error_message() ) );
@@ -200,7 +220,8 @@ class Health {
 
 		$index_version = $search->versioning->get_current_version_number( $posts );
 
-		$health = new self();
+		$health = new self( $search );
+
 		foreach ( $post_types as $post_type ) {
 			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
 
@@ -601,5 +622,146 @@ class Health {
 
 	private static function get_post_key( $id ) {
 		return sprintf( '%s_%d', 'post', $id );
+	}
+
+	public function get_index_settings_health_for_all_indexables() {
+		// For each indexable, we want to ensure that the desired index settings match the actual index settings
+		$indexables = \ElasticPress\Indexables::factory()->get_all();
+
+		if ( ! is_array( $indexables ) ) {
+			$message = sprintf( 'Unable to find indexables to check index settings on %s for environment %d', home_url(), FILES_CLIENT_SITE_ID );
+
+			return new \WP_Error( 'no-indexables-found', $message );
+		}
+
+		$unhealthy = array();
+
+		foreach ( $indexables as $indexable ) {
+			$diff = $this->get_index_versions_settings_diff_for_indexable( $indexable );
+
+			if ( is_wp_error( $diff ) ) {
+				$unhealthy[ $indexable->slug ] = $diff;
+				
+				continue;
+			}
+			
+			if ( empty( $diff ) ) {
+				continue;
+			}
+
+			$unhealthy[ $indexable->slug ] = $diff;
+		}
+
+		return $unhealthy;
+	}
+
+	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
+		$versions = $this->search->versioning->get_versions( $indexable );
+
+		$diff = array();
+
+		foreach ( $versions as $version ) {
+			$version_diff = $this->get_index_settings_diff_for_indexable( $indexable, array(
+				'index_version' => $version['number'],
+			) );
+
+			if ( empty( $version_diff ) ) {
+				continue;
+			}
+
+			$diff[] = array(
+				'index_version' => $version['number'],
+				'index_name' => $indexable->get_index_name(),
+				'diff' => $version_diff,
+			);
+		}
+
+		return $diff;
+	}
+
+	public function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable, $options = array() ) {
+		if ( isset( $options['index_version'] ) ) {
+			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$actual_settings = $indexable->get_index_settings();
+
+		if ( is_wp_error( $actual_settings ) ) {
+			$this->search->versioning->reset_current_version_number( $indexable );
+
+			return $actual_settings;
+		}
+
+		$desired_settings = $indexable->build_settings();
+
+		// We only monitor certain settings
+		$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+
+		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
+
+		$this->search->versioning->reset_current_version_number( $indexable );
+
+		return $diff;
+	}
+
+	public static function limit_index_settings_to_keys( $settings, $keys ) {
+		// array_intersect_key() expects 2 associative arrays, so convert the allowed $keys to associative
+		$assoc_keys = array_fill_keys( $keys, true );
+
+		return array_intersect_key( $settings, $assoc_keys );
+	}
+
+	public static function get_index_settings_diff( array $actual_settings, array $desired_settings ) {
+		$diff = array();
+
+		foreach ( $desired_settings as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$recursive_diff = self::get_index_settings_diff( $actual_settings[ $key ], $desired_settings[ $key ] );
+
+				if ( ! empty( $recursive_diff ) ) {
+					$diff[ $key ] = $recursive_diff;
+				}
+			} elseif ( $actual_settings[ $key ] != $desired_settings[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				$diff[ $key ] = array(
+					'expected' => $desired_settings[ $key ],
+					'actual'   => $actual_settings[ $key ],
+				);
+			}
+		}
+
+		return $diff;
+	}
+
+	public function heal_index_settings_for_indexable( \ElasticPress\Indexable $indexable, array $options = array() ) {
+		if ( isset( $options['index_version'] ) ) {
+			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$desired_settings = $indexable->build_settings();
+
+		// Limit to only the settings that we auto-heal
+		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+
+		$result = $indexable->update_index_settings( $desired_settings_to_heal );
+
+		$index_name = $indexable->get_index_name();
+		$index_version = $this->search->versioning->get_current_version_number( $indexable );
+
+		$this->search->versioning->reset_current_version_number( $indexable );
+
+		return array(
+			'index_name' => $index_name,
+			'index_version' => $index_version,
+			'result' => $result,
+		);
 	}
 }
