@@ -1070,7 +1070,7 @@ function wpcom_intermediate_sizes( $sizes ) {
  */
 function is_vip_go_srcset_enabled() {
 	// Allow override via querystring for easy testing
-	if ( isset( $_GET['disable_vip_srcset'] ) ) { // phpcs:disable
+	if ( isset( $_GET['disable_vip_srcset'] ) ) {
 		return '0' === $_GET['disable_vip_srcset'];
 	}
 
