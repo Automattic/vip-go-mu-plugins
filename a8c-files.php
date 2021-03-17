@@ -174,7 +174,13 @@ class A8C_Files {
 
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
-		Jetpack_Photon::instance();
+		$jetpack_photon = Jetpack_Photon::instance();
+
+		// Remove this filter from Photon so that we can use VIP filters for srcset
+		// Filter reference: https://github.com/Automattic/jetpack/blob/26db3e436ccca3e16a62d02d95e792a81f38a1e4/projects/plugins/jetpack/class.photon.php#L85
+		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON_WITHOUT_SRCSET' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON_WITHOUT_SRCSET ) {
+			remove_filter( 'wp_calculate_image_srcset', array( $jetpack_photon, 'filter_srcset_array' ), 10, 5 );
+		}
 
 		// Jetpack_Photon's downsize filter doesn't run when is_admin(), so we need to fallback to the Go filters.
 		// This is temporary until Jetpack allows more easily running these filters for is_admin().
@@ -1064,7 +1070,7 @@ function wpcom_intermediate_sizes( $sizes ) {
  */
 function is_vip_go_srcset_enabled() {
 	// Allow override via querystring for easy testing
-	if ( isset( $_GET['disable_vip_srcset'] ) ) {
+	if ( isset( $_GET['disable_vip_srcset'] ) ) { // phpcs:disable
 		return '0' === $_GET['disable_vip_srcset'];
 	}
 
