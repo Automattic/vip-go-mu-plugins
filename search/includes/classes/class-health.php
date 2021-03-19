@@ -387,7 +387,7 @@ class Health {
 	}
 
 	public function update_validate_content_process( $next_post_id ) {
-		update_option( self::CONTENT_VALIDATION_PROCESS_OPTION, $next_post_id );
+		update_option( self::CONTENT_VALIDATION_PROCESS_OPTION, $next_post_id, false );
 	}
 
 	public function remove_validate_content_process() {
