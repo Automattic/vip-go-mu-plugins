@@ -4,6 +4,8 @@ import { h } from 'preact';
 import { useContext } from 'preact/hooks';
 import { SearchContext } from '../../context';
 import pluralize from 'pluralize';
+
+import style from './style.scss';
 /**
  *
  * @returns {Preact.Component} General useful debug info.
@@ -11,7 +13,7 @@ import pluralize from 'pluralize';
 export const GeneralInformation = () => {
 	const { status, queries, information } = useContext(SearchContext);
 	return <div>
-		<h4>{pluralize('query', queries.length, true)} { pluralize( 'was', queries.length ) } run on this page</h4>
+		<h2 class={`vip-h2 ${style.query_count}`}>{pluralize('query', queries.length, true)} { pluralize( 'was', queries.length ) } run on this page</h2>
 
 		<h4 style="margin-top: 20px;">Debug Information</h4>
 		<ul>

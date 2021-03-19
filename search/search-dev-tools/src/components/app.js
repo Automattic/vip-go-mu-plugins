@@ -36,7 +36,7 @@ const App = props => {
 
 			{createPortal((<Overlay isVisible={visible} closeOverlay={closeOverlay} opacity="100">
 				<div className={style.vip_search_dev_tools}>
-					<h3>VIP Search Dev Tools</h3>
+					<h4 class="vip-h4 main_caption">VIP Search Dev Tools</h4>
 					<GeneralInformation />
 					<Queries />
 				</div>

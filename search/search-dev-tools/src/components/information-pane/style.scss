@@ -1,0 +1,8 @@
+.query_count { 
+	&::before {
+		content: url(../../assets/lg.svg);
+		margin-right: 16px;
+	}
+
+	margin: 0 0 24px 0;
+}
