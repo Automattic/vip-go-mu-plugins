@@ -14,6 +14,7 @@ class Health {
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
 	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_lock';
 	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
+	const CONTENT_VALIDATION_PROCESS_OPTION = 'vip_search_content_validation_process_post_id';
 	const DOCUMENT_IGNORED_KEYS            = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
 		// that run during normal indexing and this validator
@@ -261,6 +262,10 @@ class Health {
 		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
 			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
+		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
+		if ( $process_parallel_execution_lock && $interrupted_start_post_id ) {
+			$start_post_id = $interrupted_start_post_id;
+		}
 
 		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
@@ -306,6 +311,8 @@ class Health {
 		do {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
+				// We only work with process if we can guarantee no parallel execution
+				$this->update_validate_content_process( $start_post_id );
 			}
 
 			$next_batch_post_id = $start_post_id + $batch_size;
@@ -338,6 +345,7 @@ class Health {
 
 				if ( $process_parallel_execution_lock ) {
 					$this->remove_validate_content_lock();
+					$this->remove_validate_content_process();
 				}
 
 				return $error;
@@ -361,9 +369,29 @@ class Health {
 
 		if ( $process_parallel_execution_lock ) {
 			$this->remove_validate_content_lock();
+			$this->remove_validate_content_process();
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Method checks if there is an abandoned process stored. This should only happen when the validate_contents process exits unexpectedly.
+	 * In all other cases the process information should have been removed at the end of processing. This tool enables us
+	 * to potentially pick-up where we left of on long running validate contents that got interrupted.
+	 *
+	 * @return int|bool returns the ID of the first post in a batch that was process when process was updated OR false if no such values is saved.
+	 */
+	public function get_validate_content_abandoned_process() {
+		return get_option( self::CONTENT_VALIDATION_PROCESS_OPTION );
+	}
+
+	public function update_validate_content_process( $next_post_id ) {
+		update_option( self::CONTENT_VALIDATION_PROCESS_OPTION, $next_post_id );
+	}
+
+	public function remove_validate_content_process() {
+		delete_option( self::CONTENT_VALIDATION_PROCESS_OPTION );
 	}
 
 	public function is_validate_content_ongoing(): bool {
