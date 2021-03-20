@@ -8,18 +8,16 @@ import close from '../../assets/close.svg';
 /**
  * Internal dependencies
  */
-import style from './style.scss';
-
-import {callOnEscapeKey} from '../../utils';
+import { callOnEscapeKey } from '../../utils';
 
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme, isVisible, opacity } = props;
-	const closeWithEscape = callOnEscapeKey(closeOverlay);
+	const closeWithEscape = callOnEscapeKey( closeOverlay );
 	useEffect( () => {
 		window.addEventListener( 'keydown', closeWithEscape );
 		return () => {
 			// Cleanup after event
-			window.removeEventListener('keydown', closeWithEscape );
+			window.removeEventListener( 'keydown', closeWithEscape );
 		};
 	}, [] );
 

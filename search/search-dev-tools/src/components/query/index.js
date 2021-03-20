@@ -18,56 +18,56 @@ import style from '../../style/style.scss';
  *
  * @returns {Preact.Component} A query component.
  */
-const Query = ({ args, request, url }) => {
-	const txtQuery = JSON.stringify(args.body, null, 2);
-	const txtResult = JSON.stringify(request.body, null, 2);
+const Query = ( { args, request, url } ) => {
+	const txtQuery = JSON.stringify( args.body, null, 2 );
+	const txtResult = JSON.stringify( request.body, null, 2 );
 	const initialState = {
 		editing: false,
 		query: txtQuery,
 		result: txtResult,
 	};
 
-	const [state, setState] = useState(initialState);
+	const [ state, setState ] = useState( initialState );
 
-	const fetchForQuery = async (query, url) => {
+	const fetchForQuery = async ( query, url ) => {
 		try {
-			const res = await postData(window.VIPSearchDevTools.ajaxurl, {
+			const res = await postData( window.VIPSearchDevTools.ajaxurl, {
 				action: window.VIPSearchDevTools.action,
 				url,
 				query,
-			}, window.VIPSearchDevTools.nonce);
+			}, window.VIPSearchDevTools.nonce );
 
-			setState({ ...state, result: res.result.body });
-		} catch (err) {
+			setState( { ...state, result: res.result.body } );
+		} catch ( err ) {
 			// eslint-disable-next-line no-console
-			console.log(err);
+			console.log( err );
 		}
 	};
 
-	useEffect(() => {
+	useEffect( () => {
 		// Skip update
-		if (state.query === initialState.query) {
-			return setState(initialState);
+		if ( state.query === initialState.query ) {
+			return setState( initialState );
 		}
 
-		if (!state.editing) {
-			fetchForQuery(state.query, url);
+		if ( ! state.editing ) {
+			fetchForQuery( state.query, url );
 		}
-	}, [state.query, state.editing]);
+	}, [ state.query, state.editing ] );
 
-	return (<div className={style.query_wrap}>
+	return ( <div className={style.query_wrap}>
 		<h5 stylw="width:100%;">URL: {url}</h5>
 		<div className={style.query_actions}>
 			<button>Run</button>
-			<button onClick={() => setState(initialState)}>Reset</button>
+			<button onClick={() => setState( initialState )}>Reset</button>
 		</div>
 		<div className={style.query_pane}>
 			<h5>Request</h5>
 			<Editor
 				value={state.query}
-				onValueChange={code => setState({ ...state, query: code, editing: true })}
-				onBlur={e => setState({ ...state, editing: false })}
-				highlight={code => highlight(code, languages.json)}
+				onValueChange={code => setState( { ...state, query: code, editing: true } )}
+				onBlur={e => setState( { ...state, editing: false } )}
+				highlight={code => highlight( code, languages.json )}
 				padding={10}
 				style={{
 					fontSize: 14,
@@ -77,29 +77,28 @@ const Query = ({ args, request, url }) => {
 
 		<div className={style.query_pane}>
 			<h5>Response</h5>
-			<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight(state.result, languages.json) }}></div>
+			<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight( state.result, languages.json ) }}></div>
 		</div>
 
 		<div className={style.query_actions}>
 			<button>Run</button>
-			<button onClick={() => setState(initialState)}>Reset</button>
+			<button onClick={() => setState( initialState )}>Reset</button>
 		</div>
 
-	</div>);
+	</div> );
 };
-
 
 /**
  * Query list
  */
 export const Queries = () => {
-	const { queries } = useContext(SearchContext);
+	const { queries } = useContext( SearchContext );
 
-	if (queries.length < 1) {
+	if ( queries.length < 1 ) {
 		return <div>No queries to show</div>;
 	}
 
-	return (<div>
-		{queries.map((q, idx) => <Query key={idx} {...q} />)}
-	</div>);
+	return ( <div>
+		{queries.map( ( q, idx ) => <Query key={idx} {...q} /> )}
+	</div> );
 };
