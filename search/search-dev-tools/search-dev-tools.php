@@ -118,7 +118,7 @@ add_action(
 			'queries'     => $mapped_queries,
 			'information' => [
 				[
-					'label' => 'Currently ratelimited?',
+					'label' => 'Rate limited?',
 					'value' => is_ratelimited() ? 'yes' : 'no',
 					'options' => [
 						'collapsible' => false,

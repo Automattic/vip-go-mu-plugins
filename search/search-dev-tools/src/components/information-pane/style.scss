@@ -1,8 +1,51 @@
-.query_count { 
+.query_count {
 	&::before {
 		content: url(../../assets/lg.svg);
 		margin-right: 16px;
 	}
 
 	margin: 0 0 24px 0;
+}
+
+.info {
+	&_wrapper {
+		display: flex;
+		flex-flow: row;
+	}
+
+	&_label {
+		@include text-h5();
+	}
+
+	&_value {
+		@include text-small();
+	}
+
+	&_block {
+		flex: none;
+		order: 0;
+		flex-grow: 0;
+		margin-right: 32px;
+
+		&_item {
+			@include text-caption();
+
+			/* Auto Layout */
+
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			padding: 4px 8px;
+
+			background: var(--vip-grey-10);
+			border-radius: 2px;
+
+			/* Inside Auto Layout */
+
+			flex: none;
+			order: 0;
+			flex-grow: 0;
+			margin: 0px 4px;
+		}
+	}
 }

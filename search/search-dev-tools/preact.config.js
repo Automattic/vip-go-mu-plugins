@@ -27,6 +27,15 @@ export default {
 		const assetsRule = rules.find( rule => rule.index === 7 );
 		assetsRule.rule.loader = 'url-loader';
 
+		rules.forEach(({ index, rule }) => {
+			// Little trick to not include mixins.scss at the top of each component stylesheet
+			if (String(rule.test) == String(/\.s[ac]ss$/)) {
+				rule.use[0].options.additionalData = `
+				@import "style/mixins.scss";
+				`;
+			}
+		});
+
 		if ( helpers.getLoadersByName(config, 'file-loader')[0] ) {
 			const { rule } = helpers.getLoadersByName(config, 'file-loader')[0];
 			rule.options = {

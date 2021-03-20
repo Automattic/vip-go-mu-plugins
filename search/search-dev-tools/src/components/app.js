@@ -7,7 +7,7 @@ import { useContext, useEffect, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 
 import Overlay from './overlay';
-import style from './style.scss';
+import style from '../style/style.scss';
 
 import { SearchContext } from '../context';
 import { GeneralInformation } from  './information-pane';

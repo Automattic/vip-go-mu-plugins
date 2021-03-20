@@ -12,7 +12,7 @@ import 'prismjs/themes/prism.css';
 import Editor from 'react-simple-code-editor';
 import { postData } from '../../utils';
 
-import style from '../style.scss';
+import style from '../../style/style.scss';
 /**
  * A single query
  *
