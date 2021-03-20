@@ -91,7 +91,7 @@ add_action( 'wp_enqueue_scripts', function() {
 }, 11 );
 
 add_action(
-	'wp_body_open',
+	'wp_footer',
 	function() {
 		if ( ! should_enable_search_dev_tools() ) {
 			return;

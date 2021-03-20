@@ -6,9 +6,12 @@ import { createContext, h } from 'preact';
 import { useContext, useEffect, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 
-import Overlay from './overlay';
-import style from '../style/style.scss';
+// Global styles
+import '../style/style.scss';
 
+
+import style from './style.scss';
+import Overlay from './overlay';
 import { SearchContext } from '../context';
 import { GeneralInformation } from  './information-pane';
 import { Queries } from './query';

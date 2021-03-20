@@ -1,0 +1,38 @@
+.query {
+	&_wrap {
+		margin-bottom: 20px;
+		border-bottom: 1px solid #999999;
+		padding: 10px;
+		overflow: scroll;
+		display: flex;
+		flex-flow: row wrap;
+
+		h5 {
+			margin-bottom: 10px;
+			width: 100%;
+		}
+	}
+
+	&_pane {
+		flex: 0 1 49%;
+		width: 49%;
+	}
+	&_val,
+	&_result
+	 {
+		white-space: pre;
+		width: 100%;
+		overflow-y: scroll;
+		margin-bottom: 20px;
+		font-size: 14px;
+		background-color: rgba( #eeeeee, 0.4 );
+		padding: 20px;
+	}
+	&_actions {
+		margin: 20px 0;
+		width: 100%;
+		button {
+			margin-right: 20px;
+		}
+	}
+}

@@ -5,6 +5,7 @@
 import { h } from 'preact';
 import { useEffect } from 'preact/hooks';
 import close from '../../assets/close.svg';
+import './style.scss';
 /**
  * Internal dependencies
  */
