@@ -12,6 +12,8 @@ use \WP_Error as WP_Error;
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE    = 500;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
+	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_lock';
+	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
 	const DOCUMENT_IGNORED_KEYS            = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
 		// that run during normal indexing and this validator
@@ -27,16 +29,21 @@ class Health {
 		'index.number_of_shards',
 		'index.routing.allocation.include.dc',
 	);
+	const INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS = array(
+		'index.number_of_replicas',
+		'index.routing.allocation.include.dc',
+	);
 
 	/**
 	 * Instance of Search class
-	 * 
+	 *
 	 * Useful for overriding (dependency injection) for tests
 	 */
 	public $search;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search = $search;
+		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
 	/**
@@ -166,7 +173,7 @@ class Health {
 			'order' => 'asc',
 		];
 
-		$result = ( new self() )->validate_index_entity_count( $query_args, $users );
+		$result = ( new self( $search ) )->validate_index_entity_count( $query_args, $users );
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error( 'es_users_query_error', sprintf( 'failure retrieving users from ES: %s #vip-search', $result->get_error_message() ) );
@@ -249,7 +256,12 @@ class Health {
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal ) {
+	public function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal, $force_parallel_execution = false ) {
+		$process_parallel_execution_lock = ! $force_parallel_execution;
+		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
+			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
+		}
+
 		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
@@ -267,9 +279,9 @@ class Health {
 		}
 
 		// Get indexable objects
-		$indexable = Indexables::factory()->get( 'post' );
+		$indexable = $this->indexables->get( 'post' );
 
-		// Indexables::factory()->get() returns boolean|array
+		// $this->indexables->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $indexable ) {
 			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
@@ -292,6 +304,10 @@ class Health {
 		}
 
 		do {
+			if ( $process_parallel_execution_lock ) {
+				$this->set_validate_content_lock();
+			}
+
 			$next_batch_post_id = $start_post_id + $batch_size;
 
 			if ( $last_post_id < $next_batch_post_id ) {
@@ -302,7 +318,7 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
-			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
+			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
@@ -319,6 +335,10 @@ class Health {
 				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
 				$error->add_data( $results, 'diff' );
+
+				if ( $process_parallel_execution_lock ) {
+					$this->remove_validate_content_lock();
+				}
 
 				return $error;
 			}
@@ -339,10 +359,28 @@ class Health {
 			}
 		} while ( $start_post_id <= $last_post_id );
 
+		if ( $process_parallel_execution_lock ) {
+			$this->remove_validate_content_lock();
+		}
+
 		return $results;
 	}
 
-	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
+	public function is_validate_content_ongoing(): bool {
+		$is_locked = get_transient( self::CONTENT_VALIDATION_LOCK_NAME, false );
+
+		return (bool) $is_locked;
+	}
+
+	public function set_validate_content_lock() {
+		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, self::CONTENT_VALIDATION_LOCK_TIMEOUT );
+	}
+
+	public function remove_validate_content_lock() {
+		delete_transient( self::CONTENT_VALIDATION_LOCK_NAME );
+	}
+
+	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
 		global $wpdb;
 
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
@@ -600,10 +638,10 @@ class Health {
 
 			if ( is_wp_error( $diff ) ) {
 				$unhealthy[ $indexable->slug ] = $diff;
-				
+
 				continue;
 			}
-			
+
 			if ( empty( $diff ) ) {
 				continue;
 			}
@@ -658,8 +696,8 @@ class Health {
 		$desired_settings = $indexable->build_settings();
 
 		// We only monitor certain settings
-		$actual_settings_to_check = self::limit_index_settings_to_monitored_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-		$desired_settings_to_check = self::limit_index_settings_to_monitored_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+		$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
 
 		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 
@@ -668,7 +706,7 @@ class Health {
 		return $diff;
 	}
 
-	public static function limit_index_settings_to_monitored_keys( $settings, $keys ) {
+	public static function limit_index_settings_to_keys( $settings, $keys ) {
 		// array_intersect_key() expects 2 associative arrays, so convert the allowed $keys to associative
 		$assoc_keys = array_fill_keys( $keys, true );
 
@@ -694,5 +732,33 @@ class Health {
 		}
 
 		return $diff;
+	}
+
+	public function heal_index_settings_for_indexable( \ElasticPress\Indexable $indexable, array $options = array() ) {
+		if ( isset( $options['index_version'] ) ) {
+			$version_result = $this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$desired_settings = $indexable->build_settings();
+
+		// Limit to only the settings that we auto-heal
+		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+
+		$result = $indexable->update_index_settings( $desired_settings_to_heal );
+
+		$index_name = $indexable->get_index_name();
+		$index_version = $this->search->versioning->get_current_version_number( $indexable );
+
+		$this->search->versioning->reset_current_version_number( $indexable );
+
+		return array(
+			'index_name' => $index_name,
+			'index_version' => $index_version,
+			'result' => $result,
+		);
 	}
 }
