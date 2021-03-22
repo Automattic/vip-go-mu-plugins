@@ -259,11 +259,14 @@ class Health {
 	 */
 	public function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal, $force_parallel_execution = false ) {
 		$process_parallel_execution_lock = ! $force_parallel_execution;
+		// We only work with process if we can guarantee no parallel execution and user did't pick specific start_post_id to avoid unexpected overwriting of that.
+		$track_process = ( ! $start_post_id || 1 === $start_post_id ) && ! $force_parallel_execution;
+
 		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
 			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
 		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
-		if ( $process_parallel_execution_lock && $interrupted_start_post_id ) {
+		if ( $track_process && $interrupted_start_post_id ) {
 			$start_post_id = $interrupted_start_post_id;
 		}
 
@@ -311,7 +314,8 @@ class Health {
 		do {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
-				// We only work with process if we can guarantee no parallel execution
+			}
+			if ( $track_process ) {
 				$this->update_validate_content_process( $start_post_id );
 			}
 
@@ -345,6 +349,8 @@ class Health {
 
 				if ( $process_parallel_execution_lock ) {
 					$this->remove_validate_content_lock();
+				}
+				if ( $track_process ) {
 					$this->remove_validate_content_process();
 				}
 
@@ -369,6 +375,8 @@ class Health {
 
 		if ( $process_parallel_execution_lock ) {
 			$this->remove_validate_content_lock();
+		}
+		if ( $track_process ) {
 			$this->remove_validate_content_process();
 		}
 
