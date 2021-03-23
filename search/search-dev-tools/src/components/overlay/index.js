@@ -25,7 +25,7 @@ const Overlay = props => {
 	return (
 		<div
 			aria-labelledby="search-dev-tools__overlay-title"
-			className={[
+			class={[
 				'search-dev-tools__overlay',
 				`search-dev-tools__overlay--${ colorTheme }`,
 				isVisible ? '' : 'is-hidden',
@@ -33,7 +33,7 @@ const Overlay = props => {
 			role="dialog"
 			style={{ opacity: isVisible ? opacity / 100 : 0 }}
 		>
-			<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } /></button>
+			<button aria-label="Close VIP Search Dev Tools" class="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } /></button>
 			{ children }
 		</div>
 	);

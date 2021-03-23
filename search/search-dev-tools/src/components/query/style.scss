@@ -1,31 +1,22 @@
 .query {
 	&_wrap {
 		margin-bottom: 20px;
-		border-bottom: 1px solid #999999;
-		padding: 10px;
+		border-top: 1px solid rgba(#000, 0.04);
+
 		overflow: scroll;
 		display: flex;
 		flex-flow: row wrap;
 
-		h5 {
-			margin-bottom: 10px;
-			width: 100%;
-		}
 	}
 
-	&_pane {
-		flex: 0 1 49%;
-		width: 49%;
-	}
 	&_val,
-	&_result
-	 {
+	&_result {
 		white-space: pre;
 		width: 100%;
 		overflow-y: scroll;
 		margin-bottom: 20px;
 		font-size: 14px;
-		background-color: rgba( #eeeeee, 0.4 );
+		background-color: rgba(#eeeeee, 0.4);
 		padding: 20px;
 	}
 	&_actions {
@@ -35,4 +26,52 @@
 			margin-right: 20px;
 		}
 	}
+
+	&_collapsed {
+
+	}
+
+	&_handle {
+		margin: 32px 0;
+
+		:global( .vip-h3 ) {
+			margin: 0;
+		}
+	}
 }
+
+
+	.grid_container {
+		border: 1px solid rgba(#000, 0.04);
+		border-radius: 3px;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 0.4fr 9.5fr;
+		gap: 0px 0px;
+		grid-template-areas:
+			'query-src-header query-res-header'
+			'query-src query-res';
+	}
+
+	.query_src_header {
+		grid-area: query-src-header;
+		
+	}
+	.query_res_header {
+		grid-area: query-res-header;
+	}
+	
+	.query_src_header, 
+	.query_res_header {
+		padding: 16px 32px;
+		display: flex;
+		flex-flow: row;
+		align-items: center;
+	}
+
+	.query_src {
+		grid-area: query-src;
+	}
+	.query_res {
+		grid-area: query-res;
+	}

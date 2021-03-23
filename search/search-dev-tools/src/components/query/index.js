@@ -12,6 +12,10 @@ import 'prismjs/themes/prism.css';
 import Editor from 'react-simple-code-editor';
 import { postData } from '../../utils';
 
+import cx from 'classnames';
+
+import pluralize from 'pluralize';
+
 import style from './style.scss';
 /**
  * A single query
@@ -25,6 +29,9 @@ const Query = ( { args, request, url } ) => {
 		editing: false,
 		query: txtQuery,
 		result: txtResult,
+		// raw|wpQueryArgs
+		tab: 'raw',
+		collapsed: true,
 	};
 
 	const [ state, setState ] = useState( initialState );
@@ -55,31 +62,36 @@ const Query = ( { args, request, url } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
-	return ( <div className={style.query_wrap}>
-		<h5 stylw="width:100%;">URL: {url}</h5>
-		<div className={style.query_actions}>
-			<button>Run</button>
-			<button onClick={() => setState( initialState )}>Reset</button>
+	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
+		<div className={style.query_handle}>
+			<h3 className="vip-h3">{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small></h3>
 		</div>
-		<div className={style.query_pane}>
-			<h5>Request</h5>
-			<Editor
-				value={state.query}
-				onValueChange={code => setState( { ...state, query: code, editing: true } )}
-				onBlur={e => setState( { ...state, editing: false } )}
-				highlight={code => highlight( code, languages.json )}
-				padding={10}
-				style={{
-					fontSize: 14,
-				}}
-			/>
+		<div className={style.grid_container}>
+
+			<div className={style.query_src_header}>
+				Request
+			</div>
+			<div className={style.query_res_header}>
+				Response
+			</div>
+			<div className={style.query_src}>
+				<Editor
+					value={state.query}
+					onValueChange={code => setState( { ...state, query: code, editing: true } )}
+					onBlur={e => setState( { ...state, editing: false } )}
+					highlight={code => highlight( code, languages.json )}
+					padding={10}
+					style={{
+						fontSize: 14,
+					}}
+				/>
+			</div>
+			<div className={style.query_res}>
+				<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight( state.result, languages.json ) }}></div>
+			</div>
 		</div>
 
-		<div className={style.query_pane}>
-			<h5>Response</h5>
-			<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight( state.result, languages.json ) }}></div>
-		</div>
-
+		{/* <h5 style="width:100%;">URL: {url}</h5> */}
 		<div className={style.query_actions}>
 			<button>Run</button>
 			<button onClick={() => setState( initialState )}>Reset</button>

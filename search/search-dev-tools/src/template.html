@@ -11,363 +11,452 @@
 	<% preact.headEnd %>
 </head>
 
-<body style="background-color: #eee9e5;">
+<body style="background-color: var(--vip-grey-80);">
 	<script>
-		window.VIPSearchDevTools = {
-			"status": "enabled",
-			"queries": [{
-					"time_start": 1609957890.420908,
-					"time_finish": 1609957890.440334,
-					"args": {
-						"method": "GET",
-						"headers": {
-							"Content-Type": "application\/json"
-						},
-						"body": null
-					},
-					"blocking": true,
-					"failed_hosts": [],
-					"request": {
-						"headers": {},
-						"body": [{
-							"health": "yellow",
-							"status": "open",
-							"index": "vip-200508-post-1",
-							"uuid": "SVaZ6_6FS5CFDF3WaXmjfQ",
-							"pri": "1",
-							"rep": "2",
-							"docs.count": "2",
-							"docs.deleted": "1",
-							"store.size": "32.3kb",
-							"pri.store.size": "32.3kb"
-						}],
-						"response": {
-							"code": 200,
-							"message": "OK"
-						},
-						"cookies": [],
-						"filename": null,
-						"http_response": {
-							"data": null,
-							"headers": null,
-							"status": null
-						}
-					},
-					"host": "http:\/\/vip-search:9200",
-					"query_args": [],
-					"url": "http:\/\/vip-search:9200\/_cat\/indices?format=json"
-				},
-				{
-					"time_start": 1609957890.445082,
-					"time_finish": 1609957890.472912,
-					"args": {
-						"body": {
-							"from": 0,
-							"size": 10,
-							"sort": [{
-								"_score": {
-									"order": "desc"
-								}
-							}],
-							"query": {
-								"function_score": {
-									"query": {
-										"bool": {
-											"should": [{
-													"bool": {
-														"must": [{
-															"bool": {
-																"must": [{
-																		"multi_match": {
-																			"query": "test",
-																			"type": "phrase",
-																			"fields": [
-																				"post_title^1",
-																				"post_excerpt^1",
-																				"post_content^1",
-																				"post_author.display_name^1",
-																				"terms.post_tag.name^1",
-																				"terms.category.name^1",
-																				"terms.ep_custom_result.name^9999"
-																			],
-																			"boost": 4,
-																			"operator": "AND"
-																		}
-																	},
-																	{
-																		"multi_match": {
-																			"query": "test",
-																			"fields": [
-																				"post_title^1",
-																				"post_excerpt^1",
-																				"post_content^1",
-																				"post_author.display_name^1",
-																				"terms.post_tag.name^1",
-																				"terms.category.name^1",
-																				"terms.ep_custom_result.name^9999"
-																			],
-																			"boost": 2,
-																			"fuzziness": 0,
-																			"operator": "and"
-																		}
-																	},
-																	{
-																		"multi_match": {
-																			"query": "test",
-																			"fields": [
-																				"post_title^1",
-																				"post_excerpt^1",
-																				"post_content^1",
-																				"post_author.display_name^1",
-																				"terms.post_tag.name^1",
-																				"terms.category.name^1",
-																				"terms.ep_custom_result.name^9999"
-																			],
-																			"fuzziness": 0
-																		}
-																	}
-																]
-															}
-														}],
-														"filter": [{
-															"match": {
-																"post_type.raw": "post"
-															}
-														}]
-													}
-												},
-												{
-													"bool": {
-														"must": [{
-															"bool": {
-																"must": [{
-																		"multi_match": {
-																			"query": "test",
-																			"type": "phrase",
-																			"fields": [
-																				"post_title^1",
-																				"post_excerpt^1",
-																				"post_content^1",
-																				"post_author.display_name^1",
-																				"terms.ep_custom_result.name^9999"
-																			],
-																			"boost": 4,
-																			"operator": "AND"
-																		}
-																	},
-																	{
-																		"multi_match": {
-																			"query": "test",
-																			"fields": [
-																				"post_title^1",
-																				"post_excerpt^1",
-																				"post_content^1",
-																				"post_author.display_name^1",
-																				"terms.ep_custom_result.name^9999"
-																			],
-																			"boost": 2,
-																			"fuzziness": 0,
-																			"operator": "and"
-																		}
-																	},
-																	{
-																		"multi_match": {
-																			"query": "test",
-																			"fields": [
-																				"post_title^1",
-																				"post_excerpt^1",
-																				"post_content^1",
-																				"post_author.display_name^1",
-																				"terms.ep_custom_result.name^9999"
-																			],
-																			"fuzziness": 0
-																		}
-																	}
-																]
-															}
-														}],
-														"filter": [{
-															"match": {
-																"post_type.raw": "page"
-															}
-														}]
-													}
-												}
-											]
-										}
-									},
-									"functions": [{
-										"gauss": {
-											"post_date_gmt": {
-												"scale": "360d",
-												"decay": 0.9,
-												"offset": "0d"
-											}
-										}
-									}],
-									"score_mode": "multiply",
-									"boost_mode": "multiply"
-								}
-							},
-							"post_filter": {
-								"bool": {
-									"must": [{
-											"terms": {
-												"post_type.raw": [
-													"post",
-													"page"
-												]
-											}
-										},
-										{
-											"terms": {
-												"post_status": [
-													"publish"
-												]
-											}
-										}
-									]
-								}
-							},
-							"track_total_hits": true
-						},
-						"method": "POST",
-						"headers": {
-							"Content-Type": "application\/json",
-							"EP-Search-Term": "test"
-						}
-					},
-					"blocking": true,
-					"failed_hosts": [],
-					"request": {
-						"headers": {},
-						"body": {
-							"took": 10,
-							"timed_out": false,
-							"_shards": {
-								"total": 1,
-								"successful": 1,
-								"skipped": 0,
-								"failed": 0
-							},
-							"hits": {
-								"total": {
-									"value": 0,
-									"relation": "eq"
-								},
-								"max_score": null,
-								"hits": []
-							}
-						},
-						"response": {
-							"code": 200,
-							"message": "OK"
-						},
-						"cookies": [],
-						"filename": null,
-						"http_response": {
-							"data": null,
-							"headers": null,
-							"status": null
-						}
-					},
-					"host": "http:\/\/vip-search:9200",
-					"query_args": {
-						"s": "test",
-						"error": "",
-						"m": "",
-						"p": 0,
-						"post_parent": "",
-						"subpost": "",
-						"subpost_id": "",
-						"attachment": "",
-						"attachment_id": 0,
-						"name": "",
-						"pagename": "",
-						"page_id": 0,
-						"second": "",
-						"minute": "",
-						"hour": "",
-						"day": 0,
-						"monthnum": 0,
-						"year": 0,
-						"w": 0,
-						"category_name": "",
-						"tag": "",
-						"cat": "",
-						"tag_id": "",
-						"author": "",
-						"author_name": "",
-						"feed": "",
-						"tb": "",
-						"paged": 0,
-						"meta_key": "",
-						"meta_value": "",
-						"preview": "",
-						"sentence": "",
-						"title": "",
-						"fields": "",
-						"menu_order": "",
-						"embed": "",
-						"category__in": [],
-						"category__not_in": [],
-						"category__and": [],
-						"post__in": [],
-						"post__not_in": [],
-						"post_name__in": [],
-						"tag__in": [],
-						"tag__not_in": [],
-						"tag__and": [],
-						"tag_slug__in": [],
-						"tag_slug__and": [],
-						"post_parent__in": [],
-						"post_parent__not_in": [],
-						"author__in": [],
-						"author__not_in": [],
-						"cache_results": false,
-						"ignore_sticky_posts": false,
-						"suppress_filters": false,
-						"update_post_term_cache": true,
-						"lazy_load_term_meta": true,
-						"update_post_meta_cache": true,
-						"post_type": "any",
-						"posts_per_page": 10,
-						"nopaging": false,
-						"comments_per_page": "50",
-						"no_found_rows": false,
-						"search_terms_count": 1,
-						"search_terms": [
-							"test"
-						],
-						"search_orderby_title": [
-							"wp_posts.post_title LIKE '{71448905dfb15645ca869506cc0e0f6c4da489632f2e528333a40c00e78b0126}test{71448905dfb15645ca869506cc0e0f6c4da489632f2e528333a40c00e78b0126}'"
-						],
-						"order": "DESC"
-					},
-					"url": "http:\/\/vip-search:9200\/vip-200508-post-1\/_search"
-				}
-			],
-    "information": [
-			{
-			"label": "Currently ratelimited?",
-			"value": "no",
-			},
-			{
-			"label": "Indexable post types",
-			"value": "post, page"
-			},
-			{
-			"label": "Indexable post status",
-			"value": "publish"
-			},
-			{
-			"label": "Meta Key Allow List",
-			"value": "x-custom-key"
-			}
+var VIPSearchDevTools = {
+    "status": "enabled",
+    "queries": [
+        {
+            "time_start": 1616468415.936291,
+            "time_finish": 1616468415.983978,
+            "args": {
+                "body": {
+                    "from": 0,
+                    "size": 10,
+                    "sort": [
+                        {
+                            "_score": {
+                                "order": "desc"
+                            }
+                        }
+                    ],
+                    "query": {
+                        "function_score": {
+                            "query": {
+                                "bool": {
+                                    "should": [
+                                        {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "bool": {
+                                                            "must": [
+                                                                {
+                                                                    "multi_match": {
+                                                                        "query": "hello",
+                                                                        "type": "phrase",
+                                                                        "fields": [
+                                                                            "post_title^1",
+                                                                            "post_excerpt^1",
+                                                                            "post_content^1",
+                                                                            "post_author.display_name^1",
+                                                                            "terms.post_tag.name^1",
+                                                                            "terms.category.name^1",
+                                                                            "terms.ep_custom_result.name^9999"
+                                                                        ],
+                                                                        "boost": 4,
+                                                                        "operator": "AND"
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "multi_match": {
+                                                                        "query": "hello",
+                                                                        "fields": [
+                                                                            "post_title^1",
+                                                                            "post_excerpt^1",
+                                                                            "post_content^1",
+                                                                            "post_author.display_name^1",
+                                                                            "terms.post_tag.name^1",
+                                                                            "terms.category.name^1",
+                                                                            "terms.ep_custom_result.name^9999"
+                                                                        ],
+                                                                        "boost": 2,
+                                                                        "fuzziness": 0,
+                                                                        "operator": "and"
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "multi_match": {
+                                                                        "query": "hello",
+                                                                        "fields": [
+                                                                            "post_title^1",
+                                                                            "post_excerpt^1",
+                                                                            "post_content^1",
+                                                                            "post_author.display_name^1",
+                                                                            "terms.post_tag.name^1",
+                                                                            "terms.category.name^1",
+                                                                            "terms.ep_custom_result.name^9999"
+                                                                        ],
+                                                                        "fuzziness": 0
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "filter": [
+                                                    {
+                                                        "match": {
+                                                            "post_type.raw": "post"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "bool": {
+                                                            "must": [
+                                                                {
+                                                                    "multi_match": {
+                                                                        "query": "hello",
+                                                                        "type": "phrase",
+                                                                        "fields": [
+                                                                            "post_title^1",
+                                                                            "post_excerpt^1",
+                                                                            "post_content^1",
+                                                                            "post_author.display_name^1",
+                                                                            "terms.ep_custom_result.name^9999"
+                                                                        ],
+                                                                        "boost": 4,
+                                                                        "operator": "AND"
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "multi_match": {
+                                                                        "query": "hello",
+                                                                        "fields": [
+                                                                            "post_title^1",
+                                                                            "post_excerpt^1",
+                                                                            "post_content^1",
+                                                                            "post_author.display_name^1",
+                                                                            "terms.ep_custom_result.name^9999"
+                                                                        ],
+                                                                        "boost": 2,
+                                                                        "fuzziness": 0,
+                                                                        "operator": "and"
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "multi_match": {
+                                                                        "query": "hello",
+                                                                        "fields": [
+                                                                            "post_title^1",
+                                                                            "post_excerpt^1",
+                                                                            "post_content^1",
+                                                                            "post_author.display_name^1",
+                                                                            "terms.ep_custom_result.name^9999"
+                                                                        ],
+                                                                        "fuzziness": 0
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "filter": [
+                                                    {
+                                                        "match": {
+                                                            "post_type.raw": "page"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "functions": [
+                                {
+                                    "gauss": {
+                                        "post_date_gmt": {
+                                            "scale": "360d",
+                                            "decay": 0.9,
+                                            "offset": "0d"
+                                        }
+                                    }
+                                }
+                            ],
+                            "score_mode": "multiply",
+                            "boost_mode": "multiply"
+                        }
+                    },
+                    "post_filter": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "terms": {
+                                        "post_type.raw": [
+                                            "post",
+                                            "page"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "terms": {
+                                        "post_status": [
+                                            "publish"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "track_total_hits": true
+                },
+                "method": "POST",
+                "headers": {
+                    "Content-Type": "application\/json",
+                    "EP-Search-Term": "hello"
+                }
+            },
+            "blocking": true,
+            "failed_hosts": [],
+            "request": {
+                "headers": {},
+                "body": {
+                    "took": 9,
+                    "timed_out": false,
+                    "_shards": {
+                        "total": 1,
+                        "successful": 1,
+                        "skipped": 0,
+                        "failed": 0
+                    },
+                    "hits": {
+                        "total": {
+                            "value": 1,
+                            "relation": "eq"
+                        },
+                        "max_score": 4.85203,
+                        "hits": [
+                            {
+                                "_index": "vip-200508-post-1",
+                                "_type": "_doc",
+                                "_id": "1",
+                                "_score": 4.85203,
+                                "_source": {
+                                    "post_id": 1,
+                                    "ID": 1,
+                                    "post_author": {
+                                        "raw": "vipgo",
+                                        "login": "vipgo",
+                                        "display_name": "vipgo",
+                                        "id": 1
+                                    },
+                                    "post_date": "2021-03-22 22:23:58",
+                                    "post_date_gmt": "2021-03-22 22:23:58",
+                                    "post_title": "Hello world!",
+                                    "post_excerpt": "",
+                                    "post_content_filtered": "",
+                                    "post_content": "<!-- wp:paragraph -->\n<p>Welcome to WordPress. This is your first post. Edit or delete it, then start writing!<\/p>\n<!-- \/wp:paragraph -->",
+                                    "post_status": "publish",
+                                    "post_name": "hello-world",
+                                    "post_modified": "2021-03-22 22:23:58",
+                                    "post_modified_gmt": "2021-03-22 22:23:58",
+                                    "post_parent": 0,
+                                    "post_type": "post",
+                                    "post_mime_type": "",
+                                    "permalink": "http:\/\/vip-go-dev.lndo.site\/?p=1",
+                                    "terms": {
+                                        "category": [
+                                            {
+                                                "term_id": 1,
+                                                "slug": "uncategorized",
+                                                "name": "Uncategorized",
+                                                "parent": 0,
+                                                "term_taxonomy_id": 1,
+                                                "term_order": 0
+                                            }
+                                        ]
+                                    },
+                                    "meta": [],
+                                    "date_terms": {
+                                        "year": 2021,
+                                        "month": 3,
+                                        "week": 12,
+                                        "dayofyear": 80,
+                                        "day": 22,
+                                        "dayofweek": 1,
+                                        "dayofweek_iso": 1,
+                                        "hour": 22,
+                                        "minute": 23,
+                                        "second": 58,
+                                        "m": 202103
+                                    },
+                                    "date_gmt_terms": {
+                                        "year": 2021,
+                                        "month": 3,
+                                        "week": 12,
+                                        "dayofyear": 80,
+                                        "day": 22,
+                                        "dayofweek": 1,
+                                        "dayofweek_iso": 1,
+                                        "hour": 22,
+                                        "minute": 23,
+                                        "second": 58,
+                                        "m": 202103
+                                    },
+                                    "modified_date_terms": {
+                                        "year": 2021,
+                                        "month": 3,
+                                        "week": 12,
+                                        "dayofyear": 80,
+                                        "day": 22,
+                                        "dayofweek": 1,
+                                        "dayofweek_iso": 1,
+                                        "hour": 22,
+                                        "minute": 23,
+                                        "second": 58,
+                                        "m": 202103
+                                    },
+                                    "modified_date_gmt_terms": {
+                                        "year": 2021,
+                                        "month": 3,
+                                        "week": 12,
+                                        "dayofyear": 80,
+                                        "day": 22,
+                                        "dayofweek": 1,
+                                        "dayofweek_iso": 1,
+                                        "hour": 22,
+                                        "minute": 23,
+                                        "second": 58,
+                                        "m": 202103
+                                    },
+                                    "comment_count": 1,
+                                    "comment_status": "open",
+                                    "ping_status": "open",
+                                    "menu_order": 0,
+                                    "guid": "http:\/\/vip-go-dev.lndo.site\/?p=1"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "response": {
+                    "code": 200,
+                    "message": "OK"
+                },
+                "cookies": [],
+                "filename": null,
+                "http_response": {
+                    "data": null,
+                    "headers": null,
+                    "status": null
+                }
+            },
+            "host": "http:\/\/vip-search:9200",
+            "query_args": {
+                "s": "hello",
+                "error": "",
+                "m": "",
+                "p": 0,
+                "post_parent": "",
+                "subpost": "",
+                "subpost_id": "",
+                "attachment": "",
+                "attachment_id": 0,
+                "name": "",
+                "pagename": "",
+                "page_id": 0,
+                "second": "",
+                "minute": "",
+                "hour": "",
+                "day": 0,
+                "monthnum": 0,
+                "year": 0,
+                "w": 0,
+                "category_name": "",
+                "tag": "",
+                "cat": "",
+                "tag_id": "",
+                "author": "",
+                "author_name": "",
+                "feed": "",
+                "tb": "",
+                "paged": 0,
+                "meta_key": "",
+                "meta_value": "",
+                "preview": "",
+                "sentence": "",
+                "title": "",
+                "fields": "",
+                "menu_order": "",
+                "embed": "",
+                "category__in": [],
+                "category__not_in": [],
+                "category__and": [],
+                "post__in": [],
+                "post__not_in": [],
+                "post_name__in": [],
+                "tag__in": [],
+                "tag__not_in": [],
+                "tag__and": [],
+                "tag_slug__in": [],
+                "tag_slug__and": [],
+                "post_parent__in": [],
+                "post_parent__not_in": [],
+                "author__in": [],
+                "author__not_in": [],
+                "cache_results": false,
+                "ignore_sticky_posts": false,
+                "suppress_filters": false,
+                "update_post_term_cache": true,
+                "lazy_load_term_meta": true,
+                "update_post_meta_cache": true,
+                "post_type": "any",
+                "posts_per_page": 10,
+                "nopaging": false,
+                "comments_per_page": "50",
+                "no_found_rows": false,
+                "search_terms_count": 1,
+                "search_terms": [
+                    "hello"
+                ],
+                "search_orderby_title": [
+                    "wp_posts.post_title LIKE '{fd277327b0ffb8a29e6483d5033323c500d7cdbe955433a9d105cb71d4bf5ad9}hello{fd277327b0ffb8a29e6483d5033323c500d7cdbe955433a9d105cb71d4bf5ad9}'"
+                ],
+                "order": "DESC"
+            },
+            "url": "http:\/\/vip-search:9200\/vip-200508-post-1\/_search"
+        }
     ],
-			"nonce": "9a709a2c93",
-			"ajaxurl": "http:\/\/vip-go-dev.lndo.site\/index.php?rest_route=\/vip\/v1\/search\/repl&XDEBUG_SESSION_START=LANDO"
-		};
+    "information": [
+        {
+            "label": "Rate limited?",
+            "value": "no",
+            "options": {
+                "collapsible": false
+            }
+        },
+        {
+            "label": "Indexable post types",
+            "value": "post, page",
+            "options": {
+                "collapsible": true
+            }
+        },
+        {
+            "label": "Indexable post status",
+            "value": "publish",
+            "options": {
+                "collapsible": true
+            }
+        },
+        {
+            "label": "Meta Key Allow List",
+            "value": "x-custom-key",
+            "options": {
+                "collapsible": true
+            }
+        }
+    ],
+    "nonce": "1b849ff6d8",
+    "ajaxurl": "http:\/\/vip-go-dev.lndo.site\/index.php?rest_route=\/vip\/v1\/search\/repl",
+    "__webpack_public_path__": "http:\/\/vip-go-dev.lndo.site\/wp-content\/mu-plugins\/search\/search-dev-tools\/build"
+};
 	</script>
 	<div data-widget-host="vip-search-dev-tools"></div>
 	<div id="search-dev-tools-portal"></div>

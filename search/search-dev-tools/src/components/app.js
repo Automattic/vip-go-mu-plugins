@@ -34,11 +34,11 @@ const App = props => {
 	const toggleOverlay = () => setVisible( ! visible );
 
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
-		<div className="search-dev-tools__wrapper">
-			<AdminBarButton className={style.ab_btn} onClick={ toggleOverlay } />
+		<div class="search-dev-tools__wrapper">
+			<AdminBarButton class={style.ab_btn} onClick={ toggleOverlay } />
 
 			{createPortal((<Overlay isVisible={visible} closeOverlay={closeOverlay} opacity="100">
-				<div className={style.vip_search_dev_tools}>
+				<div class={style.vip_search_dev_tools}>
 					<h4 class="vip-h4 main_caption">VIP Search Dev Tools</h4>
 					<GeneralInformation />
 					<Queries />
