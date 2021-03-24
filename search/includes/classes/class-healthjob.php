@@ -140,15 +140,7 @@ class HealthJob {
 			return;
 		}
 
-		$results = $this->health->validate_index_posts_content(
-			1,
-			null,
-			null,
-			null,
-			true, // silent
-			false,
-			false,
-		);
+		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
 
 		if ( is_wp_error( $results ) ) {
 			$message = 'Cron validate-contentes error: ' . $results->get_error_message();
