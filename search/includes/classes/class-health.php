@@ -255,9 +255,48 @@ class Health {
 	/**
 	 * Validate DB and ES index post content
 	 *
+	 * ## OPTIONS
+	 *
+	 * [inspect]
+	 * : Optional gives more verbose output for index inconsistencies
+	 *
+	 * [start_post_id=<int>]
+	 * : Optional starting post id (defaults to 1)
+	 *
+	 * [last_post_id=<int>]
+	 * : Optional last post id to check
+	 *
+	 * [batch_size=<int>]
+	 * : Optional batch size
+	 *
+	 * [max_diff_size=<int>]
+	 * : Optional max count of diff before exiting
+	 *
+	 * [do_not_heal]
+	 * : Optional Don't try to correct inconsistencies
+	 *
+	 * [silent]
+	 * : Optional silences all non-error output except for the final results
+	 *
+	 * [force_parallel_execution]
+	 * : Optional Force execution even if the process is already ongoing
+	 *
+	 *
+	 * @param array $options list of options
+	 *
+	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal, $force_parallel_execution = false ) {
+	public function validate_index_posts_content( $options ) {
+		$start_post_id = $options['start_post_id'] ?? 1;
+		$last_post_id = $options['last_post_id'] ?? null;
+		$batch_size = $options['batch_size'] ?? null;
+		$max_diff_size = $options['max_diff_size'] ?? null;
+		$silent = isset( $options['silent'] );
+		$inspect = isset( $options['inspect'] );
+		$do_not_heal = isset( $options['do_not_heal'] );
+		$force_parallel_execution = isset( $options['force_parallel_execution'] );
+
 		$process_parallel_execution_lock = ! $force_parallel_execution;
 		// We only work with process if we can guarantee no parallel execution and user did't pick specific start_post_id to avoid unexpected overwriting of that.
 		$track_process = ( ! $start_post_id || 1 === $start_post_id ) && ! $force_parallel_execution;

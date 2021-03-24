@@ -481,9 +481,11 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_last_processed() {
-		$first_post_id = 1;
-		$last_post_id = 100;
-		$batch_size = 50;
+		$options = [
+			'start_post_id' => 1,
+			'last_post_id' => 100,
+			'batch_size' => 50,
+		];
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -503,12 +505,12 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$patrtially_mocked_health->expects( $this->exactly( 2 ) )
 			->method( 'update_validate_content_process' )
-			->withConsecutive( [ $first_post_id ], [ $first_post_id + $batch_size ] );
+			->withConsecutive( [ $options['start_post_id'] ], [ $options['start_post_id'] + $options['batch_size'] ] );
 
 		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_process' );
 
 
-		$patrtially_mocked_health->validate_index_posts_content( $first_post_id, $last_post_id, $batch_size, null, false, false, false );
+		$patrtially_mocked_health->validate_index_posts_content( $options );
 	}
 
 	public function test_validate_index_posts_content__should_not_interact_with_process_if_paralel_run() {
@@ -534,8 +536,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$patrtially_mocked_health->expects( $this->never() )->method( 'remove_validate_content_process' );
 
 
-		$allow_running_in_parallel = true;
-		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false, $allow_running_in_parallel );
+		$patrtially_mocked_health->validate_index_posts_content( [ 'force_parallel_execution' => true ] );
 	}
 
 	public function test_validate_index_posts_content__should_not_interact_with_process_if_non_default_start_id_is_sent_in() {
@@ -561,13 +562,12 @@ class Health_Test extends \WP_UnitTestCase {
 		$patrtially_mocked_health->expects( $this->never() )->method( 'remove_validate_content_process' );
 
 
-		$start_post_id = 25;
-		$patrtially_mocked_health->validate_index_posts_content( $start_post_id, null, null, null, false, false, false );
+		$patrtially_mocked_health->validate_index_posts_content( [ 'start_post_id' => 25 ] );
 	}
 
 	public function test_validate_index_posts_content__pick_up_after_interuption() {
 		$interrupted_post_id = 5;
-		$first_post_id = 1;
+		$start_post_id = 1;
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -591,12 +591,12 @@ class Health_Test extends \WP_UnitTestCase {
 			->with( $this->anything(), $interrupted_post_id, $this->anything(), $this->anything() );
 
 
-		$patrtially_mocked_health->validate_index_posts_content( $first_post_id, null, null, null, false, false, false );
+		$patrtially_mocked_health->validate_index_posts_content( $start_post_id, null, null, null, false, false, false );
 	}
 
 	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_running_in_parallel() {
 		$interrupted_post_id = 5;
-		$first_post_id = 1;
+		$start_post_id = 1;
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -617,15 +617,17 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$patrtially_mocked_health->expects( $this->once() )
 			->method( 'validate_index_posts_content_batch' )
-			->with( $this->anything(), $first_post_id, $this->anything(), $this->anything() );
+			->with( $this->anything(), $start_post_id, $this->anything(), $this->anything() );
 
-		$allow_running_in_parallel = true;
-		$patrtially_mocked_health->validate_index_posts_content( $first_post_id, null, null, null, false, false, false, $allow_running_in_parallel );
+		$patrtially_mocked_health->validate_index_posts_content( [
+			'start_post_id' => $start_post_id,
+			'force_parallel_execution' => true,
+		] );
 	}
 
 	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_non_default_start_post_id() {
 		$interrupted_post_id = 5;
-		$first_post_id = 2;
+		$start_post_id = 2;
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -646,9 +648,9 @@ class Health_Test extends \WP_UnitTestCase {
 
 		$patrtially_mocked_health->expects( $this->once() )
 			->method( 'validate_index_posts_content_batch' )
-			->with( $this->anything(), $first_post_id, $this->anything(), $this->anything() );
+			->with( $this->anything(), $start_post_id, $this->anything(), $this->anything() );
 
-		$patrtially_mocked_health->validate_index_posts_content( $first_post_id, null, null, null, false, false, false );
+		$patrtially_mocked_health->validate_index_posts_content( [ 'start_post_id' => $start_post_id ] );
 	}
 
 	public function get_index_settings_diff_for_indexable_data() {
