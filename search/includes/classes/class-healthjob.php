@@ -100,6 +100,9 @@ class HealthJob {
 		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
 		}
+		if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+		}
 	}
 
 	/**
