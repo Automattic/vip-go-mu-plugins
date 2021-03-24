@@ -79,6 +79,7 @@ exclude_core_tests() {
 		"tests/user/wpSendUserRequest.php"
 		"tests/xmlrpc/basic.php"
 		"tests/xmlrpc/wp/getUser.php"
+		"tests/basic.php"
 	);
 
 	for testFile in "${TO_EXCLUDE[@]}"; do

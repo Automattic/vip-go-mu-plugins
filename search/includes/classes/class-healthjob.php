@@ -14,6 +14,11 @@ class HealthJob {
 	const CRON_EVENT_NAME = 'vip_search_healthcheck';
 
 	/**
+	 * The name of the scheduled cron event to run the validate contnets check
+	 */
+	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
+
+	/**
 	 * Custom cron interval name
 	 */
 	const CRON_INTERVAL_NAME = 'vip_search_healthcheck_interval';
@@ -26,6 +31,33 @@ class HealthJob {
 	public $health_check_disabled_sites = array();
 
 	/**
+	 * Instance of the Health class
+	 *
+	 * Useful for overriding in tests via dependency injection
+	 */
+	public $health;
+
+	/**
+	 * Instance of Search class
+	 *
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $search;
+
+	/**
+	 * Instance of \ElasticPress\Indexables
+	 *
+	 * Useful for overriding (dependency injection) for tests
+	 */
+	public $indexables;
+
+	public function __construct( \Automattic\VIP\Search\Search $search ) {
+		$this->search = $search;
+		$this->health = new Health( $search );
+		$this->indexables = \ElasticPress\Indexables::factory();
+	}
+
+	/**
 	 * Initialize the job class
 	 *
 	 * @access  public
@@ -33,6 +65,7 @@ class HealthJob {
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME, [ $this, 'validate_contents' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -53,6 +86,9 @@ class HealthJob {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
+		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
+			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+		}
 	}
 
 	/**
@@ -63,6 +99,9 @@ class HealthJob {
 	public function disable_job() {
 		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+		}
+		if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
 	}
 
@@ -91,6 +130,38 @@ class HealthJob {
 	/**
 	 * Check index health
 	 */
+	public function validate_contents() {
+		// Check if job has been disabled
+		if ( ! $this->is_enabled() ) {
+			$this->disable_job();
+
+			return;
+		}
+
+		if ( ! \Automattic\VIP\Feature::is_enabled( 'search_content_validation_and_auto_heal_cron_job' ) ) {
+			return;
+		}
+
+		// Don't run the checks if the index is not built.
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+			return;
+		}
+
+		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
+
+		if ( is_wp_error( $results ) ) {
+			$message = 'Cron validate-contentes error: ' . $results->get_error_message();
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		} else if ( ! empty( $results ) ) {
+			$message = 'Cron validate-contentes: Autohealing executed: ' . print_r( $results, true );
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		}
+
+	}
+
+	/**
+	 * Check index health
+	 */
 	public function check_health() {
 		// Check if job has been disabled
 		if ( ! $this->is_enabled() ) {
@@ -104,34 +175,158 @@ class HealthJob {
 			return;
 		}
 
-		$search = \Automattic\VIP\Search\Search::instance();
+		$this->check_all_indexables_settings_health();
 
+		$this->check_document_count_health();
+	}
+
+	public function check_all_indexables_settings_health() {
+		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
+
+		if ( empty( $unhealthy_indexables ) ) {
+			return;
+		}
+
+		$this->process_indexables_settings_health_results( $unhealthy_indexables );
+
+		if ( \Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_auto_heal' ) ) {
+			$this->heal_index_settings( $unhealthy_indexables );
+		}
+	}
+
+	public function process_indexables_settings_health_results( $results ) {
+		// If the whole thing failed, error
+		if ( is_wp_error( $results ) ) {
+			$message = sprintf( 'Error while validating index settings for %s: %s', home_url(), $results->get_error_message() );
+
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		foreach ( $results as $indexable_slug => $versions ) {
+			// If there's an error, alert
+			if ( is_wp_error( $versions ) ) {
+				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			}
+
+			// Each individual entry in $versions is an array of results, one per index version
+			foreach ( $versions as $result ) {
+				// Only alert if inconsistencies found
+				if ( empty( $result['diff'] ) ) {
+					continue;
+				}
+
+				$message = sprintf(
+					'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					home_url(),
+					$indexable_slug,
+					$result['index_version'],
+					$result['index_name'],
+					var_export( $result['diff'], true )
+				);
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+			}
+		}
+	}
+
+	public function heal_index_settings( $unhealthy_indexables ) {
+		// If the whole thing failed, error
+		if ( is_wp_error( $unhealthy_indexables ) ) {
+			$message = sprintf( 'Error while attempting to heal index settings for %s: %s', home_url(), $unhealthy_indexables->get_error_message() );
+
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		foreach ( $unhealthy_indexables as $indexable_slug => $versions ) {
+			// If there's an error, alert
+			if ( is_wp_error( $versions ) ) {
+				$message = sprintf( 'Error while attempting to heal index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+				continue;
+			}
+
+			$indexable = $this->indexables->get( $indexable_slug );
+
+			if ( is_wp_error( $indexable ) || ! $indexable ) {
+				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
+				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+				continue;
+			}
+
+			// Each individual entry in $versions is an array of results, one per index version
+			foreach ( $versions as $result ) {
+				// Only take action if there are actual inconsistencies
+				if ( empty( $result['diff'] ) ) {
+					continue;
+				}
+
+				$options = array();
+
+				if ( isset( $result['index_version'] ) ) {
+					$options['index_version'] = $result['index_version'];
+				}
+
+				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
+
+				if ( is_wp_error( $result['result'] ) ) {
+					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
+
+					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+					continue;
+				}
+
+				$message = sprintf(
+					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s)',
+					home_url(),
+					$indexable_slug,
+					$result['index_version'] ?? '<missing index version>',
+					$result['index_name'] ?? '<missing name>'
+				);
+
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+			}
+		}
+	}
+
+	public function check_document_count_health() {
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
 			$users_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
 
-			$users_versions = $search->versioning->get_versions( $users_indexable );
+			$users_versions = $this->search->versioning->get_versions( $users_indexable );
 
 			foreach ( $users_versions as $version ) {
 				$user_results = Health::validate_index_users_count( array(
 					'index_version' => $version['number'],
 				) );
 
-				$this->process_results( $user_results );
+				$this->process_document_count_health_results( $user_results );
 			}
 		}
 
 		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$posts_versions = $search->versioning->get_versions( $post_indexable );
+		$posts_versions = $this->search->versioning->get_versions( $post_indexable );
 
 		foreach ( $posts_versions as $version ) {
 			$post_results = Health::validate_index_posts_count( array(
 				'index_version' => $version['number'],
 			) );
 
-			$this->process_results( $post_results );
+			$this->process_document_count_health_results( $post_results );
 		}
 	}
 
@@ -141,7 +336,7 @@ class HealthJob {
 	 * @access  protected
 	 * @param   array       $result     Array of results from Health index validation
 	 */
-	public function process_results( $results ) {
+	public function process_document_count_health_results( $results ) {
 		// If the whole thing failed, error
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
