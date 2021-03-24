@@ -63,11 +63,10 @@ const Query = ( { args, request, url } ) => {
 	}, [ state.query, state.editing ] );
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
-		<div className={style.query_handle}>
+		<div className={style.query_handle} onClick={ () => setState({...state, collapsed: ! state.collapsed }) }>
 			<h3 className="vip-h3">{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small></h3>
 		</div>
 		<div className={style.grid_container}>
-
 			<div className={style.query_src_header}>
 				Request
 			</div>

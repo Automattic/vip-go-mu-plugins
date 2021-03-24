@@ -27,17 +27,44 @@
 		}
 	}
 
-	&_collapsed {
-
-	}
-
+	
 	&_handle {
 		margin: 32px 0;
-
+		cursor: pointer;
+		
 		:global( .vip-h3 ) {
 			margin: 0;
+
+			&::selection {
+				background-color: initial;
+			}
+			&::before {
+				content: "";
+				background-image: url(../../assets/minus.svg);
+				background-position: center;
+				background-repeat: no-repeat;
+				margin-right: 16px;
+				width: 16px;
+				height: 16px;
+				display: inline-block;
+
+			}
 		}
 	}
+	
+	&_collapsed {
+		.grid_container {
+			display: none;
+		}
+
+		:global( .vip-h3 ) {
+			&::before {
+				content: "";
+				background-image: url(../../assets/plus.svg);
+			}
+		}
+	}
+
 }
 
 
