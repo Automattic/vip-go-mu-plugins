@@ -150,10 +150,10 @@ class HealthJob {
 		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
 
 		if ( is_wp_error( $results ) ) {
-			$message = sprintf( 'Cron validate-contentes error for %s: %s', home_url(), $results->get_error_message() );
+			$message = sprintf( 'Cron validate-contentes error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 		} else if ( ! empty( $results ) ) {
-			$message = sprintf( 'Cron validate-contentes for %s: Autohealing executed for %d records.', home_url(), count( $results ) );
+			$message = sprintf( 'Cron validate-contentes for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 		}
 
