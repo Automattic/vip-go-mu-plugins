@@ -78,7 +78,7 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 
 if ( false !== strpos( gethostname(), '_web_dev_' ) ) {
 	define( 'WPCOM_SANDBOXED', true );
-} elseif ( isset( $_ENV['IS_VIP_SANDBOX_CONTAINER'] ) && $_ENV['IS_VIP_SANDBOX_CONTAINER'] === 'true' ) {
+} elseif ( isset( $_ENV['IS_VIP_SANDBOX_CONTAINER'] ) && 'true' === $_ENV['IS_VIP_SANDBOX_CONTAINER'] ) {
 	define( 'WPCOM_SANDBOXED', true );
 } else {
 	define( 'WPCOM_SANDBOXED', false );
@@ -86,7 +86,7 @@ if ( false !== strpos( gethostname(), '_web_dev_' ) ) {
 
 if ( false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) ) {
 	define( 'VIP_GO_IS_CLI_CONTAINER', true );
-} elseif ( isset( $_ENV['IS_VIP_BATCH_CONTAINER'] ) && $_ENV['IS_VIP_BATCH_CONTAINER'] === 'true' ) {
+} elseif ( isset( $_ENV['IS_VIP_BATCH_CONTAINER'] ) && 'true' === $_ENV['IS_VIP_BATCH_CONTAINER'] ) {
 	define( 'VIP_GO_IS_CLI_CONTAINER', true );
 } else {
 	define( 'VIP_GO_IS_CLI_CONTAINER', false );
