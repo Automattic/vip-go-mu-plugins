@@ -20,6 +20,8 @@ class Feature {
 		// https://github.com/Automattic/vip-go-mu-plugins/tree/master/vip-jetpack/connection-pilot
 		'jetpack-cxn-pilot' => 0.25,
 		'search_indexable_settings_auto_heal' => 0,
+		'remove-gutenberg-ramp' => 0.1,
+		'search_content_validation_and_auto_heal_cron_job' => 0.1,
 	);
 
 	public static $site_id = false;
