@@ -194,10 +194,11 @@ add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
  * @return object
  */
 function sanitize_query_response( object $response_body ): object {
-	if ( ! isset( $response_body->hits->hits ) )
+	if ( ! isset( $response_body->hits->hits ) ) {
 		return $response_body;
+	}
 
-	foreach( $response_body->hits->hits as &$hit ) {
+	foreach ( $response_body->hits->hits as &$hit ) {
 		// Post content tends to be large, breaking the layout and decreasing usability.
 		// TODO: There may be rare cases where it's needed though. Add conditional toggle for that.
 		if ( isset( $hit->_source->post_content ) ) {
