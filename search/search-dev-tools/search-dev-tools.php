@@ -29,7 +29,7 @@ add_action(
 						'type'              => 'string',
 						'required'          => true,
 						'validate_callback' => function( $value, $request, $param ) {
-								return filter_var( $value, FILTER_VALIDATE_URL ) ?: new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid URL', $param ) );
+								return filter_var( $value, FILTER_VALIDATE_URL ) && stripos( $value, '_search' ) !== false ?: new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) );
 						},
 					],
 					'query' => [
@@ -62,7 +62,8 @@ function rest_callback( \WP_REST_Request $request ) {
 			'method' => 'POST',
 		]
 	);
-	$result['body'] = json_encode( json_decode( $result['body'] ), JSON_PRETTY_PRINT );
+
+	$result['body'] = json_encode( sanitize_query_response( json_decode( $result['body'] ) ), JSON_PRETTY_PRINT );
 	return rest_ensure_response( [ 'result' => $result ] );
 }
 
@@ -100,13 +101,13 @@ add_action(
 		$queries = array_filter(
 			ep_get_query_log(),
 			function( $query ) {
-				return false === stripos( $query['url'], '_nodes/plugins' );
+				return false !== stripos( $query['url'], '_search' );
 			}
 		);
 
 		$mapped_queries = array_map(
 			function( $query ) {
-				$query['request']['body'] = json_decode( $query['request']['body'] );
+				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
 				$query['args']['body']    = json_decode( $query['args']['body'] );
 				return $query;
 			},
@@ -183,3 +184,26 @@ add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
 			]
 		);
 }, PHP_INT_MAX );
+
+
+/**
+ * Prepare the query response body for the front-end:
+ * remove the sensitive or not needed data
+ *
+ * @param object $response_body decoded JSON payload containing query result response
+ * @return object
+ */
+function sanitize_query_response( object $response_body ): object {
+	if ( ! isset( $response_body->hits->hits ) )
+		return $response_body;
+
+	foreach( $response_body->hits->hits as &$hit ) {
+		// Post content tends to be large, breaking the layout and decreasing usability.
+		// TODO: There may be rare cases where it's needed though. Add conditional toggle for that.
+		if ( isset( $hit->_source->post_content ) ) {
+			$hit->_source->post_content = '<CONTENT TRUNCATED>';
+		}
+	}
+
+	return $response_body;
+}
