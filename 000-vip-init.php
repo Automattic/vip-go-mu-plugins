@@ -193,18 +193,19 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 // Load elasticsearch helpers
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
-$search_connectivity_constants_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' );
 $search_enabled = ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH;
-if ( $search_enabled && $search_connectivity_constants_defined ) {
+if ( $search_enabled ) {
 	require_once( __DIR__ . '/search/search.php' );
 
-	$search_plugin = \Automattic\VIP\Search\Search::instance();
+	if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
+		$search_plugin = \Automattic\VIP\Search\Search::instance();
 
-	// If VIP Search query integration is enabled, disable Jetpack Search
-	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
-		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
-		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
-		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
+		// If VIP Search query integration is enabled, disable Jetpack Search
+		if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
+			add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
+			add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
+			add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
+		}
 	}
 }
 

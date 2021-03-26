@@ -20,4 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/includes/classes/class-search.php';
 
-do_action( 'vip_search_loaded' );
+if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
+	do_action( 'vip_search_loaded' );
+}
