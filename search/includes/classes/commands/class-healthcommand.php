@@ -256,13 +256,13 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * default: csv
 	 * ---
 	 *
-	 * [--do-not-heal]
+	 * [--do_not_heal]
 	 * : Optional Don't try to correct inconsistencies
 	 *
 	 * [--silent]
 	 * : Optional silences all non-error output except for the final results
 	 *
-	 * [--force-parallel-execution]
+	 * [--force_parallel_execution]
 	 * : Optional Force execution even if the process is already ongoing
 	 *
 	 * ## EXAMPLES
@@ -273,16 +273,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	public function validate_contents( $args, $assoc_args ) {
 		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
 
-		$results = $health->validate_index_posts_content(
-			$assoc_args['start_post_id'] ?? 1,
-			$assoc_args['last_post_id'] ?? null,
-			$assoc_args['batch_size'] ?? null,
-			$assoc_args['max_diff_size'] ?? null,
-			isset( $assoc_args['silent'] ),
-			isset( $assoc_args['inspect'] ),
-			isset( $assoc_args['do-not-heal'] ),
-			isset( $assoc_args['force-parallel-execution'] )
-		);
+		$results = $health->validate_index_posts_content( $assoc_args );
 
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );

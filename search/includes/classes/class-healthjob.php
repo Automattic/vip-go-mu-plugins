@@ -14,6 +14,11 @@ class HealthJob {
 	const CRON_EVENT_NAME = 'vip_search_healthcheck';
 
 	/**
+	 * The name of the scheduled cron event to run the validate contnets check
+	 */
+	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
+
+	/**
 	 * Custom cron interval name
 	 */
 	const CRON_INTERVAL_NAME = 'vip_search_healthcheck_interval';
@@ -60,6 +65,7 @@ class HealthJob {
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME, [ $this, 'validate_contents' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -80,6 +86,9 @@ class HealthJob {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
+		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
+			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+		}
 	}
 
 	/**
@@ -90,6 +99,9 @@ class HealthJob {
 	public function disable_job() {
 		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+		}
+		if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
 	}
 
@@ -113,6 +125,38 @@ class HealthJob {
 		];
 
 		return $schedule;
+	}
+
+	/**
+	 * Check index health
+	 */
+	public function validate_contents() {
+		// Check if job has been disabled
+		if ( ! $this->is_enabled() ) {
+			$this->disable_job();
+
+			return;
+		}
+
+		if ( ! \Automattic\VIP\Feature::is_enabled( 'search_content_validation_and_auto_heal_cron_job' ) ) {
+			return;
+		}
+
+		// Don't run the checks if the index is not built.
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+			return;
+		}
+
+		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
+
+		if ( is_wp_error( $results ) ) {
+			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		} else if ( ! empty( $results ) ) {
+			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		}
+
 	}
 
 	/**
