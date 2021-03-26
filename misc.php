@@ -177,6 +177,6 @@ add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
  * adding 'domain' to the columns to search.
  */
 add_filter( 'site_search_columns', function( $cols ) {
-    $cols[] = 'domain';
-    return $cols;
+	$cols[] = 'domain';
+	return $cols;
 });
