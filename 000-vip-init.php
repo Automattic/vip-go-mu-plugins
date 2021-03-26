@@ -193,8 +193,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 // Load elasticsearch helpers
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
-if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
-	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+$search_connectivity_constants_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' );
+$search_enabled = ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH;
+if ( $search_enabled && $search_connectivity_constants_defined ) {
 	require_once( __DIR__ . '/search/search.php' );
 
 	$search_plugin = \Automattic\VIP\Search\Search::instance();
