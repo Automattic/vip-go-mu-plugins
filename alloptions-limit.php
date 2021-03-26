@@ -36,6 +36,9 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// If it's at least over the warning threshold (will also run when blocked), notify
 	if ( $warning ) {
+		if ( $blocked ) {
+			add_filter( 'alloptions_overrule_ack', '__return_true' );
+		}
 		// NOTE - This function has built-in rate limiting so it's ok to call on every request
 		wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $blocked );
 	}
@@ -56,6 +59,10 @@ function wpcom_vip_sanity_check_alloptions_die() {
 }
 
 function wpcom_vip_alloptions_size_is_acked() {
+	if ( apply_filters( 'alloptions_overrule_ack', false ) ) {
+		return false;
+	}
+
 	$stat = get_option( 'vip_suppress_alloptions_alert', [] );
 
 	if ( is_array( $stat ) && array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
