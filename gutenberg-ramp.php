@@ -16,6 +16,11 @@ if ( defined( 'VIP_GO_DISABLE_RAMP' ) && true === VIP_GO_DISABLE_RAMP ) {
 	return;
 }
 
+/** Effectively remove Gutenberg Ramp plugin for some sites */
+if ( \Automattic\VIP\Feature::is_enabled( 'remove-gutenberg-ramp' ) ) {
+	return;
+}
+
 /** load Gutenberg Ramp **/
 if ( file_exists( __DIR__ . '/gutenberg-ramp/gutenberg-ramp.php' ) ) {
 	require_once( __DIR__ . '/gutenberg-ramp/gutenberg-ramp.php' );

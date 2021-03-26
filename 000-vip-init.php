@@ -56,6 +56,8 @@ if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
 
+require_once __DIR__ . '/lib/environment/class-environment.php';
+
 if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	/**
 	 * @var constant A8C_PROXIED_REQUEST Set to true if the current request is made via the Automattic proxy, which is only available to Automatticians.
@@ -76,8 +78,8 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
-define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) );
+define( 'WPCOM_SANDBOXED', \Automattic\VIP\Environment::is_sandbox_container( gethostname(), $_ENV ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', \Automattic\VIP\Environment::is_batch_container( gethostname(), $_ENV ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
