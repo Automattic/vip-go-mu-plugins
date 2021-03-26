@@ -54,6 +54,9 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// If it's at least over the warning threshold (will also run when blocked), notify
 	if ( $warning ) {
+		if ( $blocked ) {
+			add_filter( 'alloptions_overrule_ack', '__return_true' );
+		}
 		// NOTE - This function has built-in rate limiting so it's ok to call on every request
 		wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $blocked );
 	}
@@ -71,6 +74,20 @@ function wpcom_vip_sanity_check_alloptions_die() {
 	echo file_get_contents( __DIR__ . '/errors/alloptions-limit.html' );
 
 	exit;
+}
+
+function wpcom_vip_alloptions_size_is_acked() {
+	if ( apply_filters( 'alloptions_overrule_ack', false ) ) {
+		return false;
+	}
+
+	$stat = get_option( 'vip_suppress_alloptions_alert', [] );
+
+	if ( is_array( $stat ) && array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
+		return true;
+	}
+
+	return false;
 }
 
 function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
@@ -137,13 +154,16 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		// Send to IRC, if we have a host configured
 		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 			if ( 'production' === $environment ) {
-				wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+
+				if ( ! wpcom_vip_alloptions_size_is_acked() ) {
+					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-alloptions' );
+				}
 
 				// Send to OpsGenie
 				$alerts = Alerts::instance();
 				$alerts->opsgenie(
 					$subject,
-					array( 
+					array(
 						'alias'       => 'alloptions/' . $site_id,
 						'description' => 'The size of AllOptions is reaching the max limit of 1 MB.',
 						'entity'      => (string) $site_id,
