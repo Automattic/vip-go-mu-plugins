@@ -116,7 +116,7 @@ class Search {
 	 * Check if the constants needed for ElasticSearch connection are defined.
 	 */
 	public static function are_es_constants_defined() {
-		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' );
+		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
 		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
 		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
 		return $endpoints_defined && $username_defined && $password_defined;
