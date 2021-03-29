@@ -170,3 +170,13 @@ add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
  * Stop Woocommerce from trying to create files on read-only filesystem
  */
 add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
+
+/**
+ * On Go, multisites are technically subdirectory installs so site search only
+ * searches the 'path' on /network/sites.php. This improves site search results by
+ * adding 'domain' to the columns to search.
+ */
+add_filter( 'site_search_columns', function( $cols ) {
+	$cols[] = 'domain';
+	return $cols;
+});
