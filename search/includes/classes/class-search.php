@@ -1658,6 +1658,8 @@ class Search {
 	public function get_index_routing_allocation_include_dc() {
 		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
 
+		$dc = strtolower( $dc );
+
 		if ( ! in_array( $dc, self::ALLOWED_DATACENTERS, true ) ) {
 			return null;
 		}
