@@ -228,7 +228,8 @@ class HealthJob {
 					var_export( $result['diff'], true )
 				);
 
-				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+				// Temporarily disable the alerting while we roll out the index settings changes (b/c indexes will be inconsistent during)
+				// $this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
 			}
 		}
 	}
