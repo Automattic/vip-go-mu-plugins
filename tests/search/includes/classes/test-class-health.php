@@ -442,6 +442,217 @@ class Health_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $result, $expected_result );
 	}
 
+	public function test_validate_index_posts_content__ongoing_results_in_error() {
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'is_validate_content_ongoing' ] )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$patrtially_mocked_health->method( 'is_validate_content_ongoing' )
+			->willReturn( true );
+
+		$result = $patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
+
+		$this->assertTrue( is_wp_error( $result ) );
+	}
+
+	public function test_validate_index_posts_content__should_set_and_clear_lock() {
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'set_validate_content_lock', 'remove_validate_content_lock', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->once() )->method( 'set_validate_content_lock' );
+		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_lock' );
+
+		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
+	}
+
+	public function test_validate_index_posts_content__should_set_and_clear_last_processed() {
+		$options = [
+			'start_post_id' => 1,
+			'last_post_id' => 100,
+			'batch_size' => 50,
+		];
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->exactly( 2 ) )
+			->method( 'update_validate_content_process' )
+			->withConsecutive( [ $options['start_post_id'] ], [ $options['start_post_id'] + $options['batch_size'] ] );
+
+		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_process' );
+
+
+		$patrtially_mocked_health->validate_index_posts_content( $options );
+	}
+
+	public function test_validate_index_posts_content__should_not_interact_with_process_if_paralel_run() {
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->never() )->method( 'update_validate_content_process' );
+
+		$patrtially_mocked_health->expects( $this->never() )->method( 'remove_validate_content_process' );
+
+
+		$patrtially_mocked_health->validate_index_posts_content( [ 'force_parallel_execution' => true ] );
+	}
+
+	public function test_validate_index_posts_content__should_not_interact_with_process_if_non_default_start_id_is_sent_in() {
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->never() )->method( 'update_validate_content_process' );
+
+		$patrtially_mocked_health->expects( $this->never() )->method( 'remove_validate_content_process' );
+
+
+		$patrtially_mocked_health->validate_index_posts_content( [ 'start_post_id' => 25 ] );
+	}
+
+	public function test_validate_index_posts_content__pick_up_after_interuption() {
+		$interrupted_post_id = 5;
+		$start_post_id = 1;
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+		$patrtially_mocked_health->method( 'get_validate_content_abandoned_process' )->willReturn( $interrupted_post_id );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->once() )
+			->method( 'validate_index_posts_content_batch' )
+			->with( $this->anything(), $interrupted_post_id, $this->anything(), $this->anything() );
+
+
+		$patrtially_mocked_health->validate_index_posts_content( $start_post_id, null, null, null, false, false, false );
+	}
+
+	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_running_in_parallel() {
+		$interrupted_post_id = 5;
+		$start_post_id = 1;
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+		$patrtially_mocked_health->method( 'get_validate_content_abandoned_process' )->willReturn( $interrupted_post_id );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->once() )
+			->method( 'validate_index_posts_content_batch' )
+			->with( $this->anything(), $start_post_id, $this->anything(), $this->anything() );
+
+		$patrtially_mocked_health->validate_index_posts_content( [
+			'start_post_id' => $start_post_id,
+			'force_parallel_execution' => true,
+		] );
+	}
+
+	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_non_default_start_post_id() {
+		$interrupted_post_id = 5;
+		$start_post_id = 2;
+		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
+			->disableOriginalConstructor()
+			->getMock();
+		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+		$patrtially_mocked_health->method( 'get_validate_content_abandoned_process' )->willReturn( $interrupted_post_id );
+
+		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+			->setMethods( [ 'get' ] )
+			->getMock();
+		$patrtially_mocked_health->indexables = $mocked_indexables;
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->getMock();
+
+		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
+
+		$patrtially_mocked_health->expects( $this->once() )
+			->method( 'validate_index_posts_content_batch' )
+			->with( $this->anything(), $start_post_id, $this->anything(), $this->anything() );
+
+		$patrtially_mocked_health->validate_index_posts_content( [ 'start_post_id' => $start_post_id ] );
+	}
+
 	public function get_index_settings_diff_for_indexable_data() {
 		return array(
 			// No diff expected, empty arrays
@@ -679,7 +890,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$mocked_indexable->expects( $this->once() )
 			->method( 'update_index_settings' )
 			->with( $expected_updated_settings );
-	
+
 		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
 
 		$expected_result = array(

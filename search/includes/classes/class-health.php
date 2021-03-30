@@ -12,6 +12,9 @@ use \WP_Error as WP_Error;
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE    = 500;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
+	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_lock';
+	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
+	const CONTENT_VALIDATION_PROCESS_OPTION = 'vip_search_content_validation_process_post_id';
 	const DOCUMENT_IGNORED_KEYS            = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
 		// that run during normal indexing and this validator
@@ -34,13 +37,14 @@ class Health {
 
 	/**
 	 * Instance of Search class
-	 * 
+	 *
 	 * Useful for overriding (dependency injection) for tests
 	 */
 	public $search;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search = $search;
+		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
 	/**
@@ -251,9 +255,60 @@ class Health {
 	/**
 	 * Validate DB and ES index post content
 	 *
+	 * ## OPTIONS
+	 *
+	 * [inspect]
+	 * : Optional gives more verbose output for index inconsistencies
+	 *
+	 * [start_post_id=<int>]
+	 * : Optional starting post id (defaults to 1)
+	 *
+	 * [last_post_id=<int>]
+	 * : Optional last post id to check
+	 *
+	 * [batch_size=<int>]
+	 * : Optional batch size
+	 *
+	 * [max_diff_size=<int>]
+	 * : Optional max count of diff before exiting
+	 *
+	 * [do_not_heal]
+	 * : Optional Don't try to correct inconsistencies
+	 *
+	 * [silent]
+	 * : Optional silences all non-error output except for the final results
+	 *
+	 * [force_parallel_execution]
+	 * : Optional Force execution even if the process is already ongoing
+	 *
+	 *
+	 * @param array $options list of options
+	 *
+	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
-	public static function validate_index_posts_content( $start_post_id, $last_post_id, $batch_size, $max_diff_size, $silent, $inspect, $do_not_heal ) {
+	public function validate_index_posts_content( $options ) {
+		$start_post_id = $options['start_post_id'] ?? 1;
+		$last_post_id = $options['last_post_id'] ?? null;
+		$batch_size = $options['batch_size'] ?? null;
+		$max_diff_size = $options['max_diff_size'] ?? null;
+		$silent = isset( $options['silent'] );
+		$inspect = isset( $options['inspect'] );
+		$do_not_heal = isset( $options['do_not_heal'] );
+		$force_parallel_execution = isset( $options['force_parallel_execution'] );
+
+		$process_parallel_execution_lock = ! $force_parallel_execution;
+		// We only work with process if we can guarantee no parallel execution and user did't pick specific start_post_id to avoid unexpected overwriting of that.
+		$track_process = ( ! $start_post_id || 1 === $start_post_id ) && ! $force_parallel_execution;
+
+		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
+			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
+		}
+		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
+		if ( $track_process && $interrupted_start_post_id ) {
+			$start_post_id = $interrupted_start_post_id;
+		}
+
 		// If batch size value NOT a numeric value over 0 but less than or equal to PHP_INT_MAX, reset to default
 		//     Otherwise, turn it into an int
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
@@ -271,9 +326,9 @@ class Health {
 		}
 
 		// Get indexable objects
-		$indexable = Indexables::factory()->get( 'post' );
+		$indexable = $this->indexables->get( 'post' );
 
-		// Indexables::factory()->get() returns boolean|array
+		// $this->indexables->get() returns boolean|array
 		// False is returned in case of error
 		if ( ! $indexable ) {
 			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
@@ -296,6 +351,13 @@ class Health {
 		}
 
 		do {
+			if ( $process_parallel_execution_lock ) {
+				$this->set_validate_content_lock();
+			}
+			if ( $track_process ) {
+				$this->update_validate_content_process( $start_post_id );
+			}
+
 			$next_batch_post_id = $start_post_id + $batch_size;
 
 			if ( $last_post_id < $next_batch_post_id ) {
@@ -306,7 +368,7 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
-			$result = self::validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
+			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
@@ -323,6 +385,13 @@ class Health {
 				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
 				$error->add_data( $results, 'diff' );
+
+				if ( $process_parallel_execution_lock ) {
+					$this->remove_validate_content_lock();
+				}
+				if ( $track_process ) {
+					$this->remove_validate_content_process();
+				}
 
 				return $error;
 			}
@@ -343,10 +412,50 @@ class Health {
 			}
 		} while ( $start_post_id <= $last_post_id );
 
+		if ( $process_parallel_execution_lock ) {
+			$this->remove_validate_content_lock();
+		}
+		if ( $track_process ) {
+			$this->remove_validate_content_process();
+		}
+
 		return $results;
 	}
 
-	public static function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
+	/**
+	 * Method checks if there is an abandoned process stored. This should only happen when the validate_contents process exits unexpectedly.
+	 * In all other cases the process information should have been removed at the end of processing. This tool enables us
+	 * to potentially pick-up where we left of on long running validate contents that got interrupted.
+	 *
+	 * @return int|bool returns the ID of the first post in a batch that was process when process was updated OR false if no such values is saved.
+	 */
+	public function get_validate_content_abandoned_process() {
+		return get_option( self::CONTENT_VALIDATION_PROCESS_OPTION );
+	}
+
+	public function update_validate_content_process( $next_post_id ) {
+		update_option( self::CONTENT_VALIDATION_PROCESS_OPTION, $next_post_id, false );
+	}
+
+	public function remove_validate_content_process() {
+		delete_option( self::CONTENT_VALIDATION_PROCESS_OPTION );
+	}
+
+	public function is_validate_content_ongoing(): bool {
+		$is_locked = get_transient( self::CONTENT_VALIDATION_LOCK_NAME, false );
+
+		return (bool) $is_locked;
+	}
+
+	public function set_validate_content_lock() {
+		set_transient( self::CONTENT_VALIDATION_LOCK_NAME, true, self::CONTENT_VALIDATION_LOCK_TIMEOUT );
+	}
+
+	public function remove_validate_content_lock() {
+		delete_transient( self::CONTENT_VALIDATION_LOCK_NAME );
+	}
+
+	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
 		global $wpdb;
 
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
@@ -604,10 +713,10 @@ class Health {
 
 			if ( is_wp_error( $diff ) ) {
 				$unhealthy[ $indexable->slug ] = $diff;
-				
+
 				continue;
 			}
-			
+
 			if ( empty( $diff ) ) {
 				continue;
 			}
