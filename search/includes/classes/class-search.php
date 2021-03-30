@@ -59,6 +59,11 @@ class Search {
 		'advanced_seo_description',
 	);
 
+	public const ALLOWED_DATACENTERS = [
+		'dca',
+		'dfw',
+		'bur',
+	];
 
 	private static $query_count_ttl;
 
@@ -460,6 +465,12 @@ class Search {
 
 		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list
 		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
+
+		// Alter the default index mapping/settings for each indexable type (primarily to add index allocation settings)
+		// NOTE - if new indexables are added, they need to be added here. EP doesn't currently have a generic ep_mapping type filter
+		add_filter( 'ep_post_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+		add_filter( 'ep_term_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
 
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
@@ -1622,6 +1633,59 @@ class Search {
 		$vip_search_allow_list_keys = $this->get_post_meta_allow_list( $post );
 
 		return array_merge( $keys, $vip_search_allow_list_keys );
+	}
+
+	/**
+	 * Hooks into the ep_$indexable_mapping hooks to add things like allocation rules
+	 * 
+	 * Note that this hook receives the mapping and settings together
+	 */
+	public function filter__ep_indexable_mapping( $mapping ) {
+		if ( ! is_array( $mapping['settings'] ) ) {
+			return $mapping;
+		}
+
+		$origin_datacenter = $this->get_index_routing_allocation_include_dc();
+
+		if ( $origin_datacenter ) {
+			// We want all indexes to live in the site's origin datacenter
+			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
+		}
+
+		return $mapping;
+	}
+
+	public function get_index_routing_allocation_include_dc() {
+		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
+
+		$dc = strtolower( $dc );
+
+		if ( ! in_array( $dc, self::ALLOWED_DATACENTERS, true ) ) {
+			return null;
+		}
+
+		return $dc;
+	}
+
+	public function get_origin_dc_from_es_endpoint( $url ) {
+		$dc = null;
+
+		if ( ! $url ) {
+			return null;
+		}
+
+		$matches = array();
+
+		// The url from the VIP_ELASTICSEARCH_ENDPOINTS constant can contain a port - so parse out just the hostname
+		$host = parse_url( $url, \PHP_URL_HOST );
+
+		if ( preg_match( '/^es-ha\.(.*)\.vipv2\.net$/', $host, $matches ) ) {
+			$dc = $matches[1];
+		}
+
+		$dc = strtolower( $dc );
+
+		return $dc;
 	}
 
 	/**
