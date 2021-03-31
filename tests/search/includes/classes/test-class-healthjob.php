@@ -65,7 +65,15 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$job->expects( $this->exactly( 1 ) )
 			->method( 'process_document_count_health_results' );
 
+		// Disable auto-healing of index settings b/c it throws a notice currently which breaks the test
+		// Can be removed after https://github.com/10up/ElasticPress/issues/2155
+		$original_percentage = \Automattic\VIP\Feature::$feature_percentages['search_indexable_settings_auto_heal'];
+
+		\Automattic\VIP\Feature::$feature_percentages['search_indexable_settings_auto_heal'] = 0;
+
 		$job->check_health();
+
+		\Automattic\VIP\Feature::$feature_percentages['search_indexable_settings_auto_heal'] = $original_percentage;
 
 		remove_filter( 'enable_vip_search_healthchecks', '__return_true' );
 	}
