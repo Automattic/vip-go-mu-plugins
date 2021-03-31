@@ -42,7 +42,7 @@ export const InfoBlock = ( { label, value, options = { collapsible: false } } ) 
 
 	const isArrayValue = Array.isArray( value );
 	const valueLength = value.length;
-	const hasMore = isArrayValue && valueLength > EXPAND_THRESHOLD ? `+${ pluralize( 'other', valueLength - EXPAND_THRESHOLD, true ) }` : '';
+	const hasMore = isArrayValue && valueLength > EXPAND_THRESHOLD ? `+ ${ pluralize( 'other', valueLength - EXPAND_THRESHOLD, true ) }` : '';
 
 	// This is getting a bit unwieldy
 	return ( <div className={cx( {

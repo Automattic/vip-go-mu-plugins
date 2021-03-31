@@ -29,6 +29,8 @@
 		margin-right: 32px;
 		position: relative;
 
+		@include text-small();
+
 		&_collapsible {
 
 		}
