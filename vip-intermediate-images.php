@@ -99,7 +99,8 @@ class VIP_Intermediate_Images {
 	public static function parse_images_from_html( string $content ): array {
 		$images = array();
 
-		if ( preg_match_all( '#(?P<img_tag><(?:img|amp-img|amp-anim)[^>]*?\s+?src=["|\'](?P<img_url>[^\s]+?)["|\'].*?>)#is', $content, $images ) ) {			foreach ( $images as $key => $unused ) {
+		if ( preg_match_all( '#(?P<img_tag><(?:img|amp-img|amp-anim)[^>]*?\s+?src=["|\'](?P<img_url>[^\s]+?)["|\'].*?>)#is', $content, $images ) ) {
+			foreach ( $images as $key => $unused ) {
 				// Simplify the output as much as possible.
 				if ( is_numeric( $key ) ) {
 					unset( $images[ $key ] );
