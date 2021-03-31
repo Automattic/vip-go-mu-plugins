@@ -1812,10 +1812,6 @@ class Search {
 
 	public function limit_max_result_window( $current_value ) {
 
-		if ( $current_value > self::MAX_RESULT_WINDOW ) {
-			return self::MAX_RESULT_WINDOW;
-		}
-
-		return $current_value;
+		return min( $current_value, self::MAX_RESULT_WINDOW );
 	}
 }
