@@ -489,6 +489,7 @@ class Search {
 		add_filter( 'ep_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
 		add_filter( 'ep_term_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
 		add_filter( 'ep_user_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+
 		// Limit the max result window on query arguments
 		add_filter( 'ep_max_results_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
 
@@ -1812,7 +1813,6 @@ class Search {
 	}
 
 	public function limit_max_result_window( $current_value ) {
-
 		return min( $current_value, self::MAX_RESULT_WINDOW );
 	}
 }
