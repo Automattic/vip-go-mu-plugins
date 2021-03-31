@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 
 /**
  * Class VIP_Intermediate_Images
@@ -13,7 +13,7 @@ class VIP_Intermediate_Images {
 	 *
 	 * @var string[] Allowed extensions must match https://code.trac.wordpress.org/browser/photon/index.php?rev=507#L50
 	 */
-	protected static array $extensions = array(
+	protected static $extensions = array(
 		'gif',
 		'jpg',
 		'jpeg',
@@ -99,9 +99,7 @@ class VIP_Intermediate_Images {
 	public static function parse_images_from_html( string $content ): array {
 		$images = array();
 
-		if ( preg_match_all( '#(?P<img_tag><(?:img|amp-img|amp-anim)[^>]*?\s+?src=["|\'](?P<img_url>[^\s]+?)["|\'].*?>)#is',
-			$content, $images ) ) {
-			foreach ( $images as $key => $unused ) {
+		if ( preg_match_all( '#(?P<img_tag><(?:img|amp-img|amp-anim)[^>]*?\s+?src=["|\'](?P<img_url>[^\s]+?)["|\'].*?>)#is', $content, $images ) ) {			foreach ( $images as $key => $unused ) {
 				// Simplify the output as much as possible.
 				if ( is_numeric( $key ) ) {
 					unset( $images[ $key ] );
@@ -145,7 +143,7 @@ class VIP_Intermediate_Images {
 		}
 
 		if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' )
-		     || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
+			|| wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
 			return true;
 		}
 
