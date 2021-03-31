@@ -17,12 +17,26 @@ import cx from 'classnames';
 import pluralize from 'pluralize';
 
 import style from './style.scss';
+
+
+const Backtrace = ({ trace }) => {
+	const [ visible, setVisible ] = useState( false );
+	const toggle = () => {
+		setState( ! visible );
+	}
+
+	return (<div className="">
+		<strong class="vip-h4" onClick={ toggle }>Toggle backtrace</strong>
+		<ul>{ trace.map( frame => (<li>{frame}</li>) ) }</ul>
+	</div>);
+}
+
 /**
  * A single query
  *
  * @returns {Preact.Component} A query component.
  */
-const Query = ( { args, request, url } ) => {
+const Query = ( { args, request, url, backtrace = null } ) => {
 	const txtQuery = JSON.stringify( args.body, null, 2 );
 	const txtResult = JSON.stringify( request.body, null, 2 );
 	const initialState = {
@@ -64,7 +78,10 @@ const Query = ( { args, request, url } ) => {
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState({...state, collapsed: ! state.collapsed }) }>
-			<h3 className="vip-h3">{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small></h3>
+			<h3 className="vip-h3">
+				{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
+			</h3>
+			{ backtrace ? <Backtrace trace={backtrace} /> : null }
 		</div>
 		<div className={style.grid_container}>
 			<div className={style.query_src_header}>
