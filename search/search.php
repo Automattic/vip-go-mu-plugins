@@ -21,8 +21,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/includes/classes/class-search.php';
 
 if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
-	do_action( 'vip_search_loaded' );
-
 	$search_plugin = \Automattic\VIP\Search\Search::instance();
 
 	// If VIP Search query integration is enabled, disable Jetpack Search
@@ -31,4 +29,6 @@ if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
 		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
 		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
 	}
+
+	do_action( 'vip_search_loaded' );
 }
