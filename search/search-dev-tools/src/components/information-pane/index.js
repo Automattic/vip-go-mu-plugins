@@ -64,3 +64,5 @@ export const InfoBlock = ( { label, value, options = { collapsible: false } } ) 
 			</Fragment> ) : ( <span>{ isArrayValue ? value.join( ', ' ) : value }</span> ) }
 	</div> );
 };
+
+// export const InfoBadge = (props) => {}

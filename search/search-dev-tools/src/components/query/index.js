@@ -22,12 +22,12 @@ import style from './style.scss';
 const Backtrace = ({ trace }) => {
 	const [ visible, setVisible ] = useState( false );
 	const toggle = () => {
-		setState( ! visible );
+		setVisible( ! visible );
 	}
 
-	return (<div className="">
-		<strong class="vip-h4" onClick={ toggle }>Toggle backtrace</strong>
-		<ul>{ trace.map( frame => (<li>{frame}</li>) ) }</ul>
+	return (<div className={ cx( { [style.backtrace]: true, [style.visible]: visible } ) }>
+		<strong class="vip-h4" onClick={ toggle }>Trace ({ `${ trace.length }` })</strong>
+		<ol class={style.backtrace_details}>{ trace.map( frame => (<li>{frame}</li>) ) }</ol>
 	</div>);
 }
 
@@ -81,11 +81,15 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 			<h3 className="vip-h3">
 				{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
 			</h3>
-			{ backtrace ? <Backtrace trace={backtrace} /> : null }
+			
 		</div>
 		<div className={style.grid_container}>
 			<div className={style.query_src_header}>
-				Request
+				<span style="margin-right: auto;">Request</span>
+				<div class={style.query_src_extra}>
+				<span>WP_Query</span>
+					{backtrace ? <Backtrace trace={backtrace} /> : null}
+				</div>
 			</div>
 			<div className={style.query_res_header}>
 				Response
