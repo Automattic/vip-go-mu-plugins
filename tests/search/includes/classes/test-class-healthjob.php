@@ -266,6 +266,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	 * Test that we correctly handle the results of index settings health checks when inconsistencies are found
 	 */
 	public function test__vip_search_healthjob_process_indexables_settings_health_results() {
+		$this->markTestSkipped( 'currently disabled while we have the alert sending disabled' );
+		
 		$results = array(
 			'post' => array(
 				array(
