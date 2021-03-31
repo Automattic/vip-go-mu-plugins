@@ -672,11 +672,13 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 2,
+					'index.max_result_window' => 9000,
 				),
 				// Desired index settings from ElasticPress
 				array(
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 2,
+					'index.max_result_window' => 9000,
 				),
 				// Options
 				array(),
@@ -729,12 +731,14 @@ class Health_Test extends \WP_UnitTestCase {
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 2,
 					'foo' => 'bar',
+					'index.max_result_window' => '1000000',
 				),
 				// Desired index settings from ElasticPress
 				array(
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 1,
 					'foo' => 'baz',
+					'index.max_result_window' => 9000,
 				),
 				// Options
 				array(),
@@ -743,6 +747,10 @@ class Health_Test extends \WP_UnitTestCase {
 					'index.number_of_replicas' => array(
 						'expected' => 1,
 						'actual' => 2,
+					),
+					'index.max_result_window' => array(
+						'expected' => 9000,
+						'actual' => 1000000,
 					),
 				),
 			),
@@ -815,6 +823,7 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 2,
+					'index.max_result_window' => 9000,
 				),
 				// Options
 				array(),
@@ -825,6 +834,7 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 1,
+					'index.max_result_window' => 9000,
 					'foo' => 'baz',
 				),
 				// Options
@@ -836,6 +846,7 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_shards' => 1,
 					'index.number_of_replicas' => 1,
+					'index.max_result_window' => 9000,
 					'foo' => 'baz',
 				),
 				// Options
@@ -1003,12 +1014,14 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'number_of_shards' => 1,
 					'number_of_replicas' => 2,
+					'max_result_window' => '1000000',
 					'foo' => 'bar',
 				),
 				// Desired index settings from ElasticPress
 				array(
 					'number_of_shards' => 1,
 					'number_of_replicas' => 1,
+					'max_result_window' => 9000,
 					'foo' => 'baz',
 				),
 				// Expected diff
@@ -1016,6 +1029,10 @@ class Health_Test extends \WP_UnitTestCase {
 					'number_of_replicas' => array(
 						'expected' => 1,
 						'actual' => 2,
+					),
+					'max_result_window' => array(
+						'expected' => 9000,
+						'actual' => '1000000',
 					),
 					'foo' => array(
 						'expected' => 'baz',

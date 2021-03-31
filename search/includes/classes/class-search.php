@@ -11,6 +11,7 @@ class Search {
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	public const MAX_RESULT_WINDOW = 9000;
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -483,6 +484,14 @@ class Search {
 		}
 
 		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
+
+		// Limit the max result window on index settings
+		add_filter( 'ep_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+		add_filter( 'ep_term_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+		add_filter( 'ep_user_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+
+		// Limit the max result window on query arguments
+		add_filter( 'ep_max_results_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
 
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 	}
@@ -1637,7 +1646,7 @@ class Search {
 
 	/**
 	 * Hooks into the ep_$indexable_mapping hooks to add things like allocation rules
-	 * 
+	 *
 	 * Note that this hook receives the mapping and settings together
 	 */
 	public function filter__ep_indexable_mapping( $mapping ) {
@@ -1801,5 +1810,9 @@ class Search {
 		}
 
 		return $protected_content_feature->is_active();
+	}
+
+	public function limit_max_result_window( $current_value ) {
+		return min( $current_value, self::MAX_RESULT_WINDOW );
 	}
 }
