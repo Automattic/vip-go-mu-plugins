@@ -2994,7 +2994,7 @@ class Search_Test extends \WP_UnitTestCase {
 			],
 			[
 				'input' => 10000,
-				'expected' => 9000,
+				'expected' => 10000,
 			],
 		];
 	}
