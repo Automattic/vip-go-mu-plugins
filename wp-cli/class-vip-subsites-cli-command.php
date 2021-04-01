@@ -27,7 +27,15 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		WP_CLI::line( 'Updating wp_blogs...' );
 
-		$path = WP_CLI\Utils\get_flag_value( $assoc_args, 'subsite-path' );
+		$path = WP_CLI\Utils\get_flag_value( $assoc_args, 'subsite-path', '/' );
+
+		if ( '/' !== substr( $path, 0, 1 ) ) {
+			$path = '/' . $path;
+		}
+
+		if ( '/' !== substr( $path, strlen( $path ) - 1, 1 ) ) {
+			$path = $path . '/';
+		}
 
 		$blog_id = (int) sanitize_key( $args[0] );
 		$domain = $args[1];
@@ -36,8 +44,8 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'ARGUMENTS' );
 		WP_CLI::line( '* blog ID: ' . $blog_id );
 		WP_CLI::line( '* domain: ' . $domain );
-		WP_CLI::line( '* path: ' . ( $path ? $path : 'N/A' ) );
-		WP_CLI::line( '* new subsite URL: ' . $domain . '/' . $path );
+		WP_CLI::line( '* path: ' . $path );
+		WP_CLI::line( '* new subsite URL: ' . $domain . $path );
 		WP_CLI::line( '' );
 
 		$date_now = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
