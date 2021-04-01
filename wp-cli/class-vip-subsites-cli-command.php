@@ -70,5 +70,5 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 }
 
 if ( is_multisite() ) {
-    WP_CLI::add_command( 'vip subsites', '\VIP_Subsites_CLI_Command' );
+	WP_CLI::add_command( 'vip subsites', '\VIP_Subsites_CLI_Command' );
 }
