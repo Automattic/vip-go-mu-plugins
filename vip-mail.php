@@ -8,7 +8,7 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' )  ) {
+if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
 	require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
 	require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
 	require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
@@ -33,7 +33,7 @@ class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
 	}
 }
 global $phpmailer;
-$phpmailer = new VIP_PHPMailer( true );
+$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
 class VIP_Noop_Mailer {
 	function __construct( $phpmailer ) {
