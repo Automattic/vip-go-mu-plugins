@@ -1,17 +1,17 @@
 <!--
 ## For Automatticians!
 
-:wave: Just a quick reminder that this is a public repo. Please don't include any internal links or sensitive data (like PII, private code, client names, site URLs, etc. Any fixes related to security should be discussed with Platform before opening a PR. If you're not sure if something is safe to share, please just ask!
+:wave: Just a quick reminder that this is a public repo. Please don't include any internal links or sensitive data (like PII, private code, customer names, site URLs, etc. Any fixes related to security should be discussed with Platform before opening a PR. If you're not sure if something is safe to share, please just ask!
 
 ### BEFORE YOU PROCEED!!
 
-If you’re editing a feature without changing the spirit of the implementation, fixing bugs, improving security, or performing upgrades, then please proceed!
+If you’re editing a feature without changing the spirit of the implementation, fixing bugs, or performing upgrades, then please proceed!
 
-If you’re adding a feature or changing the spirit of an existing implementation, please create a proposal in Cantina P2 using the MU Plugins Proposal P2tenberg Pattern. Please mention the [CODEOWNERS](.github/CODEOWNERS) of this repository and relevant stakeholders in your proposal :). Please be aware that any unplanned may take some time to get reviewed. Thank you :bow:!
+If you’re adding a feature or changing the spirit of an existing implementation, please create a proposal in Cantina P2 using the MU Plugins Proposal Block Pattern. Please mention the [CODEOWNERS](.github/CODEOWNERS) of this repository and relevant stakeholders in your proposal :). Please be aware that any unplanned work may take some time to get reviewed. Thank you 🙇‍♀️🙇!
 
 ## For external contributors!
 
-Welcome! We look forward to your contribution! :heart:
+Welcome! We look forward to your contribution! ❤️
 -->
 ## Description
 <!--
@@ -33,7 +33,7 @@ Example for a plugin upgrade:
 We upgraded Jetpack 9.2 to Jetpack 9.2.1.
 
 Not a lot of significant changes in this patch release, just bugfixes and compatibility improvements.
-
+-->
 ## Checklist
 
 Please make sure the items below have been covered before requesting a review:
