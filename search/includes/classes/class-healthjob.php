@@ -189,9 +189,7 @@ class HealthJob {
 
 		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 
-		if ( \Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_auto_heal' ) ) {
-			$this->heal_index_settings( $unhealthy_indexables );
-		}
+		$this->heal_index_settings( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {

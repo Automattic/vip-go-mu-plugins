@@ -11,6 +11,7 @@ class Search {
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	public const MAX_RESULT_WINDOW = 10000;
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -59,6 +60,11 @@ class Search {
 		'advanced_seo_description',
 	);
 
+	public const ALLOWED_DATACENTERS = [
+		'dca',
+		'dfw',
+		'bur',
+	];
 
 	private static $query_count_ttl;
 
@@ -461,6 +467,12 @@ class Search {
 		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list
 		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
 
+		// Alter the default index mapping/settings for each indexable type (primarily to add index allocation settings)
+		// NOTE - if new indexables are added, they need to be added here. EP doesn't currently have a generic ep_mapping type filter
+		add_filter( 'ep_post_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+		add_filter( 'ep_term_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
 
@@ -472,6 +484,14 @@ class Search {
 		}
 
 		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
+
+		// Limit the max result window on index settings
+		add_filter( 'ep_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+		add_filter( 'ep_term_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+		add_filter( 'ep_user_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+
+		// Limit the max result window on query arguments
+		add_filter( 'ep_max_results_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
 
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 	}
@@ -1202,7 +1222,7 @@ class Search {
 	 * Set the number of replicas for the index
 	 */
 	public function filter__ep_default_index_number_of_replicas( $replicas ) {
-		return 2;
+		return 1;
 	}
 
 	/**
@@ -1625,6 +1645,59 @@ class Search {
 	}
 
 	/**
+	 * Hooks into the ep_$indexable_mapping hooks to add things like allocation rules
+	 *
+	 * Note that this hook receives the mapping and settings together
+	 */
+	public function filter__ep_indexable_mapping( $mapping ) {
+		if ( ! is_array( $mapping['settings'] ) ) {
+			return $mapping;
+		}
+
+		$origin_datacenter = $this->get_index_routing_allocation_include_dc();
+
+		if ( $origin_datacenter ) {
+			// We want all indexes to live in the site's origin datacenter
+			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
+		}
+
+		return $mapping;
+	}
+
+	public function get_index_routing_allocation_include_dc() {
+		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
+
+		$dc = strtolower( $dc );
+
+		if ( ! in_array( $dc, self::ALLOWED_DATACENTERS, true ) ) {
+			return null;
+		}
+
+		return $dc;
+	}
+
+	public function get_origin_dc_from_es_endpoint( $url ) {
+		$dc = null;
+
+		if ( ! $url ) {
+			return null;
+		}
+
+		$matches = array();
+
+		// The url from the VIP_ELASTICSEARCH_ENDPOINTS constant can contain a port - so parse out just the hostname
+		$host = parse_url( $url, \PHP_URL_HOST );
+
+		if ( preg_match( '/^es-ha\.(.*)\.vipv2\.net$/', $host, $matches ) ) {
+			$dc = $matches[1];
+		}
+
+		$dc = strtolower( $dc );
+
+		return $dc;
+	}
+
+	/**
 	 * Since we've established that enabling the protected content feature causes attachments
 	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if
 	 * protected content is enabled.
@@ -1737,5 +1810,9 @@ class Search {
 		}
 
 		return $protected_content_feature->is_active();
+	}
+
+	public function limit_max_result_window( $current_value ) {
+		return min( $current_value, self::MAX_RESULT_WINDOW );
 	}
 }

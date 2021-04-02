@@ -172,6 +172,8 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__vip_search_filter_ep_index_name_with_overridden_version() {
+		define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -250,9 +252,9 @@ class Search_Test extends \WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
-		$replicas = apply_filters( 'ep_default_index_number_of_replicas', 1 );
+		$replicas = apply_filters( 'ep_default_index_number_of_replicas', 2 );
 
-		$this->assertEquals( 2, $replicas );
+		$this->assertEquals( 1, $replicas );
 	}
 
 	public function vip_search_enforces_disabled_features_data() {
@@ -1641,6 +1643,161 @@ class Search_Test extends \WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * This tests the correct implementaton of the ep_$indexable_mapping filters, but note that these filters
+	 * operate on the mapping and settings together - EP doesn't yet distinguish between them
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_indexable_mapping() {
+		define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+
+		$this->search_instance->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		// Should apply to all indexables
+		$indexables = \ElasticPress\Indexables::factory()->get_all();
+
+		// Make sure the above worked
+		$this->assertNotEmpty( $indexables, 'Indexables array was empty' );
+
+		foreach ( $indexables as $indexable ) {
+			$settings = $indexable->build_settings();
+
+			$this->assertEquals( 'dfw', $settings['index.routing.allocation.include.dc'], 'Indexable ' . $indexable->slug . ' has the wrong routing allocation' );
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__filter__ep_indexable_mapping_invalid_datacenter() {
+		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+
+		$this->search_instance->init();
+
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		// Should apply to all indexables
+		$indexables = \ElasticPress\Indexables::factory()->get_all();
+
+		// Make sure the above worked
+		$this->assertNotEmpty( $indexables, 'Indexables array was empty' );
+
+		foreach ( $indexables as $indexable ) {
+			$settings = $indexable->build_settings();
+
+			// Datacenter was invalid, so it should not have added the allocation settings
+			$this->assertArrayNotHasKey( 'index.routing.allocation.include.dc', $settings, 'Indexable ' . $indexable->slug . ' incorrectly defined the allocation settings' );
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__get_index_routing_allocation_include_dc_from_constant() {
+		define( 'VIP_ORIGIN_DATACENTER', 'dca' );
+
+		$this->search_instance->init();
+
+		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
+
+		$this->assertEquals( 'dca', $origin_dc );
+	}
+
+	public function get_index_routing_allocation_include_dc_from_endpoints_data() {
+		return array(
+			// Valid
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://es-ha.dfw.vipv2.net:1234',
+				),
+				// Expected datacenter
+				'dfw',
+			),
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://es-ha.bur.vipv2.net/some/path',
+				),
+				// Expected datacenter
+				'bur',
+			),
+			// Unknown dc
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://es-ha.bar.vipv2.net:1234',
+				),
+				// Expected datacenter
+				null,
+			),
+			// Weird format
+			array(
+				// Endpoints to define in VIP_ELASTICSEARCH_ENDPOINTS
+				array(
+					'https://test:test@foo.com/bar/baz',
+				),
+				// Expected datacenter
+				null,
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_index_routing_allocation_include_dc_from_endpoints_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__get_index_routing_allocation_include_dc_from_endpoints( $endpoints, $expected ) {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', $endpoints );
+
+		$this->search_instance->init();
+
+		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
+
+		$this->assertEquals( $expected, $origin_dc );
+	}
+
+	public function get_origin_dc_from_es_endpoint_data() {
+		return array(
+			array(
+				'https://es-ha.bur.vipv2.net:1234',
+				'bur',
+			),
+			array(
+				'https://es-ha.dca.vipv2.net:4321',
+				'dca',
+			),
+			array(
+				'https://es-ha.DCA.vipv2.net:4321',
+				'dca',
+			),
+			array(
+				'https://es-ha.dfw.vipv2.net:4321',
+				'dfw',
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider get_origin_dc_from_es_endpoint_data
+	 */
+	public function test__get_origin_dc_from_es_endpoint( $host, $expected ) {
+		$this->search_instance->init();
+
+		$origin_dc = $this->search_instance->get_origin_dc_from_es_endpoint( $host );
+
+		$this->assertEquals( $expected, $origin_dc );
+	}
+
 	public function get_post_meta_allow_list__combinations_for_jetpack_migration_data() {
 		return [
 			[
@@ -2828,6 +2985,29 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
 		$this->assertTrue( WP_EP_DEBUG );
+	}
+	public function limit_max_result_window_data() {
+		return [
+			[
+				'input' => 500,
+				'expected' => 500,
+			],
+			[
+				'input' => 10000,
+				'expected' => 10000,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider limit_max_result_window_data
+	 */
+	public function test__limit_max_result_window( $input, $expected ) {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$result = $es->limit_max_result_window( $input );
+
+		$this->assertEquals( $expected, $result );
 	}
 
 	/**
