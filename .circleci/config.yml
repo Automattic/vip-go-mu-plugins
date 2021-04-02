@@ -5,7 +5,6 @@ workflows:
       - php73-lint
       - php74-core-tests
       - php74-core-multisite-tests
-      - php73-build-singlesite
       - php74-lint
       - php74-build-multisite
       - php74-build-singlesite
