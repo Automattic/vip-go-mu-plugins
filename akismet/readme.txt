@@ -2,8 +2,8 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau
 Tags: comments, spam, antispam, anti-spam, contact form, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 4.6
-Tested up to: 5.6
-Stable tag: 4.1.8
+Tested up to: 5.7
+Stable tag: 4.1.9
 License: GPLv2 or later
 
 The best anti-spam protection to block spam comments and spam in a contact form. The most trusted antispam solution for WordPress and WooCommerce.
@@ -29,6 +29,11 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 4.1.9 =
+*Release Date - 2 March 2021*
+
+* Improved handling of pingbacks in XML-RPC multicalls
 
 = 4.1.8 =
 *Release Date - 6 January 2021*
