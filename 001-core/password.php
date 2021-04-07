@@ -15,18 +15,40 @@ function validate_current_password(&$errors) {
     // we are not changing the password
 }
 
-add_action( 'show_user_profile', 'add_current_password_field', 1);
+add_action( 'show_user_profile', 'add_current_password_field');
 
 function add_current_password_field() { ?>
-    <table class="form-table" role="presentation">
-        <tr id="current-password-confirm">
+    <table id="nojs-current-pass" class="form-table" role="presentation">
+        <tr>
             <th><label for="current_pass"><?php _e('Current Password') ?></label></th>
             <td>
-                <input type="password" name="current_pass" id="current_pass" class="regular-text" value="" autocomplete="off" />
-                <p class="description">
-                    <?php _e('Please, type your current password if you want to change it for a new one') ?>.
-                </p>
+                <div id="current-password-confirm">
+                    <input type="password" name="current_pass" id="current_pass" class="regular-text" value="" autocomplete="off" />
+                    <p class="description">
+                        <?php _e('Please, type your current password if you want to change it for a new one') ?>.
+                    </p>
+                </div>
+
             </td>
         </tr>
     </table>
+<?php }
+
+add_action( 'admin_head', 'reposition_current_password_field' );
+
+function reposition_current_password_field() {
+    $screen = get_current_screen();
+    if ($screen->id != "profile") {
+        return;
+    } ?>
+
+    <script type="text/javascript">
+        (function($) {
+            $(document).ready(function() {
+                $element = $('#current-password-confirm');
+                $element.insertAfter($('#pass-strength-result'));
+                $("#nojs-current-pass").hide();
+            })
+        })(jQuery);
+    </script>
 <?php }
