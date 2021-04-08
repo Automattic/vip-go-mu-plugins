@@ -3,6 +3,8 @@
 add_action( 'user_profile_update_errors', 'validate_current_password', 1, 3 );
 
 function validate_current_password( $errors, $update, $user ) {
+	check_admin_referer( 'update-user_' . $user->ID );
+
 	if ( ! isset( $_POST['pass1'] ) || empty( $_POST['pass1'] ) || ! $update ) {
 		return;
 	}

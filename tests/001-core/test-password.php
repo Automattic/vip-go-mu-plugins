@@ -19,19 +19,21 @@ class Current_Password_Change extends WP_UnitTestCase {
 	}
 
 	public function test__should_return_if_no_pass_update() {
-		$errors = new WP_Error();
-		$user   = get_user_by( 'login', 'john' );
+		$errors               = new WP_Error();
+		$user                 = get_user_by( 'login', 'john' );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$this->assertFalse( $errors->has_errors() );
 	}
 
 	public function test__should_return_error_if_no_current_pass() {
-		$_POST  = [
+		$_POST                = [
 			'pass1' => 'somepassword',
 		];
-		$errors = new WP_Error();
-		$user   = get_user_by( 'login', 'john' );
+		$errors               = new WP_Error();
+		$user                 = get_user_by( 'login', 'john' );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$expected_error = '<strong>ERROR</strong>: Please enter your current password.';
@@ -41,12 +43,13 @@ class Current_Password_Change extends WP_UnitTestCase {
 	}
 
 	public function test__should_return_error_if_current_pass_incorrect() {
-		$_POST  = [
+		$_POST                = [
 			'pass1'        => 'somepassword',
 			'current_pass' => 'incorrect',
 		];
-		$errors = new WP_Error();
-		$user   = get_user_by( 'login', 'john' );
+		$errors               = new WP_Error();
+		$user                 = get_user_by( 'login', 'john' );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$expected_error = '<strong>ERROR</strong>: The entered current password is not correct.';
@@ -56,12 +59,13 @@ class Current_Password_Change extends WP_UnitTestCase {
 	}
 
 	public function test__should_succeed_with_correct_password() {
-		$_POST  = [
+		$_POST                = [
 			'pass1'        => 'somepassword',
 			'current_pass' => 'secret1',
 		];
-		$errors = new WP_Error();
-		$user   = get_user_by( 'login', 'john' );
+		$errors               = new WP_Error();
+		$user                 = get_user_by( 'login', 'john' );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$this->assertFalse( $errors->has_errors() );
