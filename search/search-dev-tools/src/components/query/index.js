@@ -110,7 +110,9 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 					onValueChange={code => setState( { ...state, query: code, editing: true } )}
 					onBlur={e => setState( { ...state, editing: false } )}
 					highlight={
-						{ /** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function - a 'complete' hook doesn't run, so we use a trick here */ }
+						{ /** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
+						 'complete' hook doesn't run, so we use a trick here */ 
+						 }
 						code => highlight( code, languages.json, 'json' )
 							.split('\n')
 							.map(
