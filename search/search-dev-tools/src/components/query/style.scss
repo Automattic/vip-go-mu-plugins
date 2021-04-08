@@ -162,3 +162,26 @@ pre[class*="language-"] {
 			display: block;
 		}
 	}
+
+.container_editor {
+	counter-reset: line;
+	position: relative;
+
+	> textarea,
+	> pre {
+		padding: 32px 64px !important;
+	}
+}
+
+.container_editor_line_number {
+	&::before {
+		position: absolute;
+		right: calc(100% - 56px);
+		margin-right: 12px;
+		text-align: right;
+		opacity: .3;
+		user-select: none;
+		counter-increment: line;
+		content: counter(line);
+	}
+}

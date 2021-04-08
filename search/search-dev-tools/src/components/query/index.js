@@ -109,10 +109,21 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 					value={state.query}
 					onValueChange={code => setState( { ...state, query: code, editing: true } )}
 					onBlur={e => setState( { ...state, editing: false } )}
-					highlight={code => highlight( code, languages.json )}
-					padding={10}
+					highlight={
+						{ /** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function - a 'complete' hook doesn't run, so we use a trick here */ }
+						code => highlight( code, languages.json, 'json' )
+							.split('\n')
+							.map(
+								line =>
+									`<span class="${style.container_editor_line_number}">${line}</span>`
+							)
+							.join('\n')
+						}
+					padding={null}
+					className={style.container_editor}
 					style={{
 						fontSize: 14,
+						// paddingTop: '32px'
 					}}
 				/>
 			</div>
