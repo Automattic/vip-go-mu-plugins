@@ -26,11 +26,13 @@ class Health {
 		'time',
 	);
 	const INDEX_SETTINGS_HEALTH_MONITORED_KEYS = array(
+		'index.max_result_window',
 		'index.number_of_replicas',
 		'index.number_of_shards',
 		'index.routing.allocation.include.dc',
 	);
 	const INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS = array(
+		'index.max_result_window',
 		'index.number_of_replicas',
 		'index.routing.allocation.include.dc',
 	);

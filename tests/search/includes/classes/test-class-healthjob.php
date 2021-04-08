@@ -58,7 +58,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		// Mock the health job
 		$job = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setConstructorArgs( [ $es ] )
-			->setMethods( array( 'process_document_count_health_results' ) )
+			->setMethods( array( 'process_document_count_health_results', 'send_alert' ) )
 			->getMock();
 
 		// Only expect it to process 1 set of results (for regular posts)
@@ -266,6 +266,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	 * Test that we correctly handle the results of index settings health checks when inconsistencies are found
 	 */
 	public function test__vip_search_healthjob_process_indexables_settings_health_results() {
+		$this->markTestSkipped( 'currently disabled while we have the alert sending disabled' );
+		
 		$results = array(
 			'post' => array(
 				array(
