@@ -1,3 +1,10 @@
+
+code[class*="language-"],
+pre[class*="language-"] {
+	font-family: var(--vip-font-family);
+}
+
+
 .query {
 	&_wrap {
 		margin-bottom: 20px;

@@ -2,13 +2,16 @@
 /* eslint-disable wpcalypso/import-docblock */
 
 import { h } from 'preact';
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect, useState, useRef } from 'preact/hooks';
 import { SearchContext } from '../../context';
 
 // TODO: switch Editor to an async import
-import { highlight, languages } from 'prismjs/components/prism-core';
+import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+
 import 'prismjs/components/prism-json';
-import 'prismjs/themes/prism.css';
+import 'prism-themes/themes/prism-ghcolors.css';
 import Editor from 'react-simple-code-editor';
 import { postData } from '../../utils';
 
@@ -24,6 +27,7 @@ const Backtrace = ({ trace }) => {
 	const toggle = () => {
 		setVisible( ! visible );
 	}
+
 
 	return (<div className={ cx( { [style.backtrace]: true, [style.visible]: visible } ) }>
 		<strong class="vip-h4" onClick={ toggle }>Trace ({ `${ trace.length }` })</strong>
@@ -50,6 +54,8 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 
 	const [ state, setState ] = useState( initialState );
 
+	const queryResultRef = useRef(null);
+
 	const fetchForQuery = async ( query, url ) => {
 		try {
 			const res = await postData( window.VIPSearchDevTools.ajaxurl, {
@@ -75,6 +81,10 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 			fetchForQuery( state.query, url );
 		}
 	}, [ state.query, state.editing ] );
+
+	useEffect( () => {
+		highlightElement( queryResultRef.current );
+	}, [ queryResultRef ] );
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState({...state, collapsed: ! state.collapsed }) }>
@@ -107,7 +117,11 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 				/>
 			</div>
 			<div className={style.query_res}>
-				<div className={style.query_result} dangerouslySetInnerHTML={{ __html: highlight( state.result, languages.json ) }}></div>
+				<div className={style.query_result}>
+					<pre class="line-numbers">
+						<code class="language-json" ref={ queryResultRef } dangerouslySetInnerHTML={{ __html: state.result }}></code>
+					</pre>
+				</div>
 			</div>
 		</div>
 
