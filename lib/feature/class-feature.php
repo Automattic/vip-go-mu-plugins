@@ -1,6 +1,7 @@
 <?php
 
 namespace Automattic\VIP;
+
 /**
  * Feature provides a simple interface to gate the functionality by the Go Site Id
  *
@@ -18,9 +19,10 @@ class Feature {
 	 */
 	public static $feature_percentages = array(
 		// https://github.com/Automattic/vip-go-mu-plugins/tree/master/vip-jetpack/connection-pilot
-		'jetpack-cxn-pilot' => 0.25,
-		'remove-gutenberg-ramp' => 0.45,
+		'jetpack-cxn-pilot'                                => 0.25,
+		'remove-gutenberg-ramp'                            => 0.45,
 		'search_content_validation_and_auto_heal_cron_job' => 0.25,
+		'admin-password-change-current'                    => 0.1,
 	);
 
 	public static $site_id = false;
