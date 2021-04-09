@@ -14,7 +14,7 @@ function use_ambiguous_login_error( $error ) {
 
 	foreach ( $err_types as $err ) {
 		if ( in_array( $err, $err_codes, true ) ) {
-			$error = '<strong>ERROR</strong>: The username/e-mail address or password is incorrect. Please try again.';
+			$error = '<strong>Error</strong>: The username/email address or password is incorrect. Please try again.';
 			break;
 		}
 	}
