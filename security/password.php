@@ -42,24 +42,16 @@ function add_current_password_field() { ?>
 	<?php 
 }
 
-add_action( 'admin_head', __NAMESPACE__ . '\reposition_current_password_field' );
+add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\reposition_current_password_field' );
 
+/**
+ * Custom JS to reposition the current password field in admin
+ *
+ * @return null
+ */
 function reposition_current_password_field() {
 	$screen = get_current_screen();
-	if ( 'profile' != $screen->id ) {
-		return;
-	} 
-	?>
-
-	<script type="text/javascript">
-		(function($) {
-			$(document).ready(function() {
-				$element = $('#current-password-confirm');
-				$element.insertBefore($('.password-input-wrapper'));
-				$element.css('margin-bottom', '1em');
-				$("#nojs-current-pass").hide();
-			})
-		})(jQuery);
-	</script>
-	<?php 
+	if ( 'profile' === $screen->id ) {
+		wp_enqueue_script( 'vip-security-password-script', plugins_url( '/js/password.js', __FILE__ ), array( 'jquery' ), '3.0', true );
+	}
 }
