@@ -22,10 +22,28 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		] );
 	}
 
+	public function test__should_return_if_creating_user() {
+		$errors = new WP_Error();
+		$user   = get_user_by( 'login', 'john' );
+		do_action_ref_array( 'user_profile_update_errors', array( &$errors, false, $user ) );
+
+		$this->assertFalse( $errors->has_errors() );
+	}
+
+	public function test__should_return_in_user_edit() {
+		$errors = new WP_Error();
+		$user   = get_user_by( 'login', 'john' );
+		set_current_screen( 'user-edit' );
+		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
+
+		$this->assertFalse( $errors->has_errors() );
+	}
+
 	public function test__should_return_if_no_pass_update() {
 		$errors               = new WP_Error();
 		$user                 = get_user_by( 'login', 'john' );
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
+		set_current_screen( 'profile' );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$this->assertFalse( $errors->has_errors() );
@@ -38,6 +56,7 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$errors               = new WP_Error();
 		$user                 = get_user_by( 'login', 'john' );
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
+		set_current_screen( 'profile' );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$expected_error = '<strong>Error</strong>: Please enter your current password.';
@@ -54,6 +73,7 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$errors               = new WP_Error();
 		$user                 = get_user_by( 'login', 'john' );
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
+		set_current_screen( 'profile' );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$expected_error = '<strong>Error</strong>: The entered current password is not correct.';
@@ -70,6 +90,7 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$errors               = new WP_Error();
 		$user                 = get_user_by( 'login', 'john' );
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
+		set_current_screen( 'profile' );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
 		$this->assertFalse( $errors->has_errors() );

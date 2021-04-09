@@ -5,9 +5,18 @@ namespace Automattic\VIP\Security;
 add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_password', 1, 3 );
 
 function validate_current_password( $errors, $update, $user ) {
+	if ( ! $update ) {
+		return;
+	}
+
+	$screen = get_current_screen();
+	if ( 'profile' != $screen->id ) {
+		return;
+	}
+
 	check_admin_referer( 'update-user_' . $user->ID );
 
-	if ( ! isset( $_POST['pass1'] ) || empty( $_POST['pass1'] ) || ! $update ) {
+	if ( ! isset( $_POST['pass1'] ) || empty( $_POST['pass1'] ) ) {
 		return;
 	}
 
