@@ -2,9 +2,21 @@
 
 namespace Automattic\VIP\Security;
 
+use stdClass;
+use WP_Error;
+
 add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_password', 1, 3 );
 
-function validate_current_password( $errors, $update, $user ) {
+/**
+ * Validate current password in submitted user profile.
+ *
+ * @param WP_Error $errors Error object passed by reference
+ * @param bool $update Whether this is a user update
+ * @param stdClass $user User object (passed by reference)
+ *
+ * @return void
+ */
+function validate_current_password( WP_Error $errors, bool $update, stdClass $user ) {
 	if ( ! $update ) {
 		return;
 	}
@@ -33,6 +45,11 @@ function validate_current_password( $errors, $update, $user ) {
 
 add_action( 'show_user_profile', __NAMESPACE__ . '\add_current_password_field' );
 
+/**
+ * Render input field for current password.
+ *
+ * @return void
+ */
 function add_current_password_field() { ?>
 	<table id="nojs-current-pass" class="form-table" role="presentation">
 		<tr>
@@ -54,9 +71,9 @@ function add_current_password_field() { ?>
 add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\reposition_current_password_field' );
 
 /**
- * Custom JS to reposition the current password field in admin
+ * Custom JS to reposition the current password field in admin.
  *
- * @return null
+ * @return void
  */
 function reposition_current_password_field() {
 	$screen = get_current_screen();
