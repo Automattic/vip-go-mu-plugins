@@ -8,12 +8,12 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-require_once( __DIR__ . '/security/class-lockout.php' );
-require_once( __DIR__ . '/security/machine-user.php' );
-require_once( __DIR__ . '/security/class-private-sites.php' );
+require_once __DIR__ . '/security/class-lockout.php';
+require_once __DIR__ . '/security/machine-user.php';
+require_once __DIR__ . '/security/class-private-sites.php';
 
 if ( \Automattic\VIP\Feature::is_enabled( 'admin-password-change-current' ) ) {
-    require_once( __DIR__ . '/security/password.php' );
+	require_once __DIR__ . '/security/password.php';
 }
 
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'login_limit' );
@@ -57,9 +57,9 @@ function wpcom_vip_is_restricted_username( $username ) {
  * @param string $cache_group The cache group to track the $username to.
  */
 function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) {
-	$ip   = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
+	$ip                    = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$ip_username_cache_key = $ip . '|' . $username; // IP + username
-	$ip_cache_key = $ip; // IP only
+	$ip_cache_key          = $ip; // IP only
 
 	// Longer TTL when logging in as admin, which we don't allow on WP.com
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
@@ -86,9 +86,9 @@ function wpcom_vip_login_limiter_on_success( $username, $user ) {
 	// Do some extra sanitization on the username.
 	$username = vip_strict_sanitize_username( $username );
 
-	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
+	$ip                    = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 	$ip_username_cache_key = $ip . '|' . $username; // IP + username
-	$ip_cache_key = $ip; // IP only
+	$ip_cache_key          = $ip; // IP only
 
 	wp_cache_decr( $ip_username_cache_key, 1, CACHE_GROUP_LOGIN_LIMIT );
 	wp_cache_decr( $ip_cache_key, 1, CACHE_GROUP_LOGIN_LIMIT );
@@ -106,8 +106,9 @@ function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username, $pas
 add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 30, 3 ); // core authenticates on 20
 
 function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
-	if ( empty( $username ) && empty( $password ) )
+	if ( empty( $username ) && empty( $password ) ) {
 		return $user;
+	}
 
 	// Do some extra sanitization on the username.
 	$username = vip_strict_sanitize_username( $username );
@@ -122,7 +123,7 @@ function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 add_filter( 'authenticate', 'wpcom_vip_login_limiter_authenticate', 30, 3 ); // core authenticates on 20
 
 function wpcom_vip_login_limit_dont_show_login_form() {
-	if ( 'post' != strtolower( $_SERVER['REQUEST_METHOD'] ) || !isset( $_POST['log'] ) ) {
+	if ( 'post' != strtolower( $_SERVER['REQUEST_METHOD'] ) || ! isset( $_POST['log'] ) ) {
 		return;
 	}
 
@@ -187,7 +188,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	$ip = preg_replace( '/[^0-9a-fA-F:., ]/', '', $_SERVER['REMOTE_ADDR'] );
 
 	$ip_username_cache_key = $ip . '|' . $username;
-	$ip_cache_key = $ip;
+	$ip_cache_key          = $ip;
 
 	/**
 	 * Login Limiting IP Username Threshold
@@ -205,12 +206,12 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 50, $ip );
 
 	$ip_username_count = wp_cache_get( $ip_username_cache_key, $cache_group );
-	$ip_count = wp_cache_get( $ip_cache_key, $cache_group );
+	$ip_count          = wp_cache_get( $ip_cache_key, $cache_group );
 
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 	if ( 'lost_password_limit' === $cache_group ) {
 		$ip_username_threshold = 3;
-		$ip_threshold = 3;
+		$ip_threshold          = 3;
 	} elseif ( $is_restricted_username ) {
 		$ip_username_threshold = 2;
 	}
