@@ -1,6 +1,8 @@
 <?php
 
-add_action( 'user_profile_update_errors', 'validate_current_password', 1, 3 );
+namespace Automattic\VIP\Security;
+
+add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_password', 1, 3 );
 
 function validate_current_password( $errors, $update, $user ) {
 	check_admin_referer( 'update-user_' . $user->ID );
@@ -20,7 +22,7 @@ function validate_current_password( $errors, $update, $user ) {
 	}
 }
 
-add_action( 'show_user_profile', 'add_current_password_field' );
+add_action( 'show_user_profile', __NAMESPACE__ . '\add_current_password_field' );
 
 function add_current_password_field() { ?>
 	<table id="nojs-current-pass" class="form-table" role="presentation">
@@ -40,7 +42,7 @@ function add_current_password_field() { ?>
 	<?php 
 }
 
-add_action( 'admin_head', 'reposition_current_password_field' );
+add_action( 'admin_head', __NAMESPACE__ . '\reposition_current_password_field' );
 
 function reposition_current_password_field() {
 	$screen = get_current_screen();
