@@ -1,6 +1,6 @@
 <?php
 
-class Current_Password_Change extends WP_UnitTestCase {
+class Current_Password_Change_Test extends WP_UnitTestCase {
 
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
