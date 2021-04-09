@@ -12,13 +12,13 @@ function validate_current_password( $errors, $update, $user ) {
 	}
 
 	if ( ! isset( $_POST['current_pass'] ) || empty( $_POST['current_pass'] ) ) {
-		$errors->add( 'wrong_current_password', __( '<strong>ERROR</strong>: Please enter your current password.' ), array( 'form-field' => 'current_pass' ) );
+		$errors->add( 'empty_current_password', __( '<strong>Error</strong>: Please enter your current password.' ), array( 'form-field' => 'current_pass' ) );
 		return;
 	}
 
 	$error = wp_authenticate( $user->user_login, $_POST['current_pass'] );
 	if ( is_wp_error( $error ) ) {
-		$errors->add( 'wrong_current_password', __( '<strong>ERROR</strong>: The entered current password is not correct.' ), array( 'form-field' => 'current_pass' ) );
+		$errors->add( 'wrong_current_password', __( '<strong>Error</strong>: The entered current password is not correct.' ), array( 'form-field' => 'current_pass' ) );
 	}
 }
 

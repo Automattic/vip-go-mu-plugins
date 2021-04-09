@@ -40,7 +40,7 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
-		$expected_error = '<strong>ERROR</strong>: Please enter your current password.';
+		$expected_error = '<strong>Error</strong>: Please enter your current password.';
 
 		$this->assertTrue( $errors->has_errors() );
 		$this->assertEquals( $expected_error, $errors->get_error_message( 0 ) );
@@ -56,7 +56,7 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$_REQUEST['_wpnonce'] = wp_create_nonce( 'update-user_' . $user->ID );
 		do_action_ref_array( 'user_profile_update_errors', array( &$errors, true, $user ) );
 
-		$expected_error = '<strong>ERROR</strong>: The entered current password is not correct.';
+		$expected_error = '<strong>Error</strong>: The entered current password is not correct.';
 
 		$this->assertTrue( $errors->has_errors() );
 		$this->assertEquals( $expected_error, $errors->get_error_message( 0 ) );
