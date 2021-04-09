@@ -5,7 +5,7 @@ class Current_Password_Change_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once __DIR__ . '/../../001-core/password.php';
+		require_once __DIR__ . '/../../security/password.php';
 	}
 
 	public function setUp() {
