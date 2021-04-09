@@ -4,11 +4,17 @@ pre[class*="language-"] {
 	font-family: var(--vip-font-family);
 }
 
+pre[class*="language-"]  {
+	background-color: unset;
+	border: 0;
+	padding-top: 0;
+	margin-top: 0;
+}
 
 .query {
 	&_wrap {
-		margin-bottom: 20px;
-		border-top: 1px solid rgba(#000, 0.04);
+		margin-bottom: 32px;
+		border-top: 1px solid var(--vip-grey-10);
 
 		overflow: scroll;
 		display: flex;
@@ -21,16 +27,16 @@ pre[class*="language-"] {
 		white-space: pre;
 		width: 100%;
 		overflow-y: scroll;
-		margin-bottom: 20px;
+		margin-bottom: 32px;
 		font-size: 14px;
-		background-color: rgba(#eeeeee, 0.4);
-		padding: 20px;
+		background-color: var(--vip-grey-0);
+		padding: 32px;
 	}
 	&_actions {
-		margin: 20px 0;
+		margin: 32px 0;
 		width: 100%;
 		button {
-			margin-right: 20px;
+			margin-right: 32px;
 		}
 	}
 
@@ -77,7 +83,7 @@ pre[class*="language-"] {
 
 	.grid_container {
 		width: 100%;
-		border: 1px solid rgba(#000, 0.04);
+		border: 1px solid var(--vip-grey-10);
 		border-radius: 3px;
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -93,6 +99,7 @@ pre[class*="language-"] {
 		display: flex;
 		flex-flow: row nowrap;
 		justify-content: space-around;
+		background-color: #FFFFFF;
 		
 	}
 	.query_res_header {
@@ -105,10 +112,12 @@ pre[class*="language-"] {
 		display: flex;
 		flex-flow: row;
 		align-items: center;
+		border-bottom: 1px solid var(--vip-grey-10);
 	}
 
 	.query_src {
 		grid-area: query-src;
+		background-color: #FFFFFF;
 
 		&_extra {
 			@include text-caption();
@@ -160,28 +169,73 @@ pre[class*="language-"] {
 
 		.visible & {
 			display: block;
+			z-index: 1;
 		}
 	}
 
-.container_editor {
-	counter-reset: line;
-	position: relative;
-
-	> textarea,
-	> pre {
-		padding: 32px 64px !important;
+	/**
+	* TODO: We need to make sure we don't leak our Prism customizations
+	*/
+	.query_wrap {
+		.container_editor {
+			counter-reset: line;
+			position: relative;
+		
+			> textarea,
+			> pre {
+				padding: 32px 64px !important;
+			}
+		}
+		.container_editor_line_number {
+		&::before {
+			position: absolute;
+			right: calc(100% - 56px);
+			margin-right: 12px;
+			text-align: right;
+			opacity: .5;
+			user-select: none;
+			counter-increment: line;
+			content: counter(line);
+			color: var(--vip-grey-60);
+		}
 	}
-}
-
-.container_editor_line_number {
-	&::before {
-		position: absolute;
-		right: calc(100% - 56px);
-		margin-right: 12px;
-		text-align: right;
-		opacity: .3;
-		user-select: none;
-		counter-increment: line;
-		content: counter(line);
+	
+	// Line numbers Prism Plugin
+	:global {
+		pre[class*="language-"].line-numbers {
+			position: relative;
+			padding-left: 3.8em;
+			counter-reset: linenumber;
+		}
+	
+		pre[class*="language-"].line-numbers>code {
+			position: relative;
+			white-space: inherit;
+		}
+	
+		.line-numbers .line-numbers-rows {
+			position: absolute;
+			pointer-events: none;
+			top: 0;
+			font-size: 12px;
+			left: -3.8em;
+			width: 3em;
+			user-select: none;
+		}
+	
+		.line-numbers-rows>span {
+			display: block;
+			counter-increment: linenumber;
+		}
+	
+		.line-numbers-rows>span:before {
+			content: counter(linenumber);
+			color: var(--vip-grey-60);
+			opacity: .5;
+			display: block;
+			padding-right: 0.8em;
+			text-align: right;
+		}
+	
 	}
 }

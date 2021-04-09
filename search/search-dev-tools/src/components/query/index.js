@@ -8,7 +8,6 @@ import { SearchContext } from '../../context';
 // TODO: switch Editor to an async import
 import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 
 import 'prismjs/components/prism-json';
 import 'prism-themes/themes/prism-ghcolors.css';
@@ -110,9 +109,8 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 					onValueChange={code => setState( { ...state, query: code, editing: true } )}
 					onBlur={e => setState( { ...state, editing: false } )}
 					highlight={
-						{ /** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
-						 'complete' hook doesn't run, so we use a trick here */ 
-						 }
+						/** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
+						'complete' hook doesn't run, so we use a trick here */
 						code => highlight( code, languages.json, 'json' )
 							.split('\n')
 							.map(
@@ -120,11 +118,11 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 									`<span class="${style.container_editor_line_number}">${line}</span>`
 							)
 							.join('\n')
-						}
+					}
 					padding={null}
 					className={style.container_editor}
 					style={{
-						fontSize: 14,
+						fontSize: 12,
 						// paddingTop: '32px'
 					}}
 				/>
