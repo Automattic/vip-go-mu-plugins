@@ -4,7 +4,7 @@
 Plugin Name: VIP Security
 Description: Various security enhancements
 Author: Automattic
-Version: 1.0
+Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 

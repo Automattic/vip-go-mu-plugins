@@ -1,7 +1,16 @@
 <?php
 namespace Automattic\VIP\Security;
 
-function use_ambiguous_login_error( $error ) {
+/**
+ * Use a login message that does not reveal the type of login error in an attempted brute-force.
+ * 
+ * @param string $error Login error message.
+ * 
+ * @return string $error Login error message.
+ * 
+ * @since 1.1
+ */
+function use_ambiguous_login_error( string $error ): string {
 	global $errors;
 	$err_codes = $errors->get_error_codes();
 
@@ -21,5 +30,5 @@ function use_ambiguous_login_error( $error ) {
  
 	return $error;
 }
-// Use a login message that does not reveal the type of login error in brute-forces.
+
 add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 );
