@@ -30,7 +30,7 @@ function add_current_password_field() { ?>
 				<div id="current-password-confirm">
 					<input type="password" name="current_pass" id="current_pass" class="regular-text" value="" autocomplete="off" />
 					<p class="description">
-						<?php _e( 'Please, type your <strong>current password</strong> to change it for a new one' ); ?>.
+						<?php _e( 'Please type your <strong>current password</strong> to update it' ); ?>.
 					</p>
 				</div>
 
