@@ -33,13 +33,13 @@ function validate_current_password( WP_Error $errors, bool $update, WP_User $use
 	}
 
 	if ( ! isset( $_POST['current_pass'] ) || empty( $_POST['current_pass'] ) ) {
-		$errors->add( 'empty_current_password', __( '<strong>Error</strong>: Please enter your current password.' ), array( 'form-field' => 'current_pass' ) );
+		$errors->add( 'empty_current_password', '<strong>Error</strong>: Please enter your current password.', array( 'form-field' => 'current_pass' ) );
 		return;
 	}
 
 	$error = wp_authenticate( $user->user_login, $_POST['current_pass'] );
 	if ( is_wp_error( $error ) ) {
-		$errors->add( 'wrong_current_password', __( '<strong>Error</strong>: The entered current password is not correct.' ), array( 'form-field' => 'current_pass' ) );
+		$errors->add( 'wrong_current_password', '<strong>Error</strong>: The entered current password is not correct.', array( 'form-field' => 'current_pass' ) );
 	}
 }
 
@@ -53,12 +53,12 @@ add_action( 'show_user_profile', __NAMESPACE__ . '\add_current_password_field' )
 function add_current_password_field() { ?>
 	<table id="nojs-current-pass" class="form-table" role="presentation">
 		<tr>
-			<th><label for="current_pass"><?php _e( 'Current Password' ); ?></label></th>
+			<th><label for="current_pass">Current Password</label></th>
 			<td>
 				<div id="current-password-confirm">
 					<input type="password" name="current_pass" id="current_pass" class="regular-text" value="" autocomplete="off" />
 					<p class="description">
-						<?php _e( 'Please type your <strong>current password</strong> to update it' ); ?>.
+						Please type your <strong>current password</strong> to update it.
 					</p>
 				</div>
 
