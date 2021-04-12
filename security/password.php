@@ -12,7 +12,7 @@ add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_pas
  *
  * @param WP_Error $errors Error object passed by reference
  * @param bool $update Whether this is a user update
- * @param WP_User $user User object (passed by reference)
+ * @param object $user User object (passed by reference)
  *
  * @return void
  */
