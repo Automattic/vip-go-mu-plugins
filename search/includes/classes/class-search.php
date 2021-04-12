@@ -120,6 +120,8 @@ class Search {
 
 	/**
 	 * Check if the constants needed for ElasticSearch connection are defined.
+	 *
+	 * @return bool true if constants are defined, false otherwise
 	 */
 	public static function are_es_constants_defined() {
 		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
