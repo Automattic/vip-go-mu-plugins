@@ -58,7 +58,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		// Mock the health job
 		$job = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setConstructorArgs( [ $es ] )
-			->setMethods( array( 'process_document_count_health_results' ) )
+			->setMethods( array( 'process_document_count_health_results', 'send_alert' ) )
 			->getMock();
 
 		// Only expect it to process 1 set of results (for regular posts)

@@ -2986,6 +2986,29 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( defined( 'WP_EP_DEBUG' ) );
 		$this->assertTrue( WP_EP_DEBUG );
 	}
+	public function limit_max_result_window_data() {
+		return [
+			[
+				'input' => 500,
+				'expected' => 500,
+			],
+			[
+				'input' => 10000,
+				'expected' => 10000,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider limit_max_result_window_data
+	 */
+	public function test__limit_max_result_window( $input, $expected ) {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$result = $es->limit_max_result_window( $input );
+
+		$this->assertEquals( $expected, $result );
+	}
 
 	public function test__are_es_constants_defined__no_constatns() {
 		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();

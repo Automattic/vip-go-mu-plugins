@@ -189,9 +189,7 @@ class HealthJob {
 
 		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 
-		if ( \Automattic\VIP\Feature::is_enabled( 'search_indexable_settings_auto_heal' ) ) {
-			$this->heal_index_settings( $unhealthy_indexables );
-		}
+		$this->heal_index_settings( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {
@@ -228,9 +226,7 @@ class HealthJob {
 					var_export( $result['diff'], true )
 				);
 
-				// Temporarily disable the alerting while we roll out the index settings changes (b/c indexes will be inconsistent during)
-				// Be sure to re-enable the test for this - test__vip_search_healthjob_process_indexables_settings_health_results
-				// $this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
+				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
 			}
 		}
 	}
