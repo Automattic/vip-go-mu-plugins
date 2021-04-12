@@ -119,7 +119,7 @@ class Alerts {
 	 */
 	private function validate_message( $message ) {
 		if ( ! is_string( $message ) || ! trim( $message ) ) {
-			return new WP_Error( 'invalid-alert-message', "Invalid \$message: Alerts\:\:chat( " . print_r( $message, true ) . " );" );
+			return new WP_Error( 'invalid-alert-message', 'Invalid $message: Alerts\:\:chat( ' . print_r( $message, true ) . ' );' );
 		}
 
 		return trim( $message );
@@ -136,16 +136,16 @@ class Alerts {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
-			return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) . " );" );
+			return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
 		}
 
 		foreach ( $details as $key => $value ) {
 			if ( ! in_array( $key, $required_keys ) ) {
-				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) . " );" );
+				return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
 			}
 
 			if ( ! $value ) {
-				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) . " );" );
+				return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
 			}
 		}
 
