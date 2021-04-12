@@ -16,7 +16,7 @@ add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_pas
  *
  * @return void
  */
-function validate_current_password( WP_Error $errors, bool $update, WP_User $user ) {
+function validate_current_password( WP_Error &$errors, bool $update, object &$user ) {
 	if ( ! $update ) {
 		return;
 	}
