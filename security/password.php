@@ -56,7 +56,7 @@ function add_current_password_field() { ?>
 			<th><label for="current_pass">Current Password</label></th>
 			<td>
 				<div id="current-password-confirm">
-					<input type="password" name="current_pass" id="current_pass" class="regular-text" value="" autocomplete="off" />
+					<input type="password" name="current_pass" id="current_pass" placeholder="<?php esc_attr_e( 'Current Password' ) ?>" class="regular-text" value="" autocomplete="off" />
 					<p class="description">
 						Please type your <strong>current password</strong> to update it.
 					</p>
