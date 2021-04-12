@@ -50,16 +50,22 @@ class Alerts {
 	 *
 	 * @return array|WP_Error Response details from wp_remote_post
 	 */
-	private function send( $body ) {
-		$fallback_error = new \WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
+	private function send( array $body ) {
+		$fallback_error = new WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
 
 		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
 			'method' => 'POST',
-			'body' => json_encode( $body ),
+			'body'   => json_encode( $body ),
 		] );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error( 'alert-send-failed', sprintf( 'Error sending alert: %s', $response->get_error_message() ) );
+		}
+
+		// The request got a response
+		$code = $response->response->code;
+		if ( $code >= 400 ) {
+			return new WP_Error( 'alert-send-failed', sprintf( 'The request returned an invalid response: %s', $response->response->message ) );
 		}
 
 		return $response;
@@ -126,20 +132,20 @@ class Alerts {
 	 *
 	 * @return array|WP_Error
 	 */
-	private function validate_opsgenie_details( $details) {
+	private function validate_opsgenie_details( $details ) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
-			return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+			return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) . " );" );
 		}
 
-		foreach( $details as $key => $value ) {
+		foreach ( $details as $key => $value ) {
 			if ( ! in_array( $key, $required_keys ) ) {
-				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) . " );" );
 			}
 
 			if ( ! $value ) {
-				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) ." );" );
+				return new WP_Error( 'invalid-opsgenie-details', "Invalid \$details: Alerts\:\:opsgenie( " . print_r( $details, true ) . " );" );
 			}
 		}
 
@@ -166,7 +172,7 @@ class Alerts {
 	 *
 	 */
 	public function send_to_chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 1 ) {
-		if( '' === $kind ) {
+		if ( '' === $kind ) {
 			// Generate default kind value
 			$kind = $this->generate_kind( $channel_or_user . $message );
 		}
@@ -216,7 +222,7 @@ class Alerts {
 	 * See Alerts::opsgenie()
 	 */
 	public function send_to_opsgenie( $message, $details, $kind = '', $interval = 1 ) {
-		if( '' === $kind ) {
+		if ( '' === $kind ) {
 			// Generate default kind value
 			$kind = $this->generate_kind( $message . json_encode( $details ) );
 		}
@@ -243,7 +249,7 @@ class Alerts {
 			return false;
 		}
 
-		$details[ 'message' ] = $message;
+		$details['message'] = $message;
 
 		$body = [
 			'ops_alert' => $details,
@@ -277,13 +283,13 @@ class Alerts {
 				return new WP_Error( 'missing-service-port', 'Missing alerts service port configuration in ALERT_SERVICE_PORT constant' );
 			}
 
-			if( ! is_int( ALERT_SERVICE_PORT ) || ALERT_SERVICE_PORT > 65535 || ALERT_SERVICE_PORT < 1 ) {
+			if ( ! is_int( ALERT_SERVICE_PORT ) || ALERT_SERVICE_PORT > 65535 || ALERT_SERVICE_PORT < 1 ) {
 				return new WP_Error( 'incorrect-service-port', 'Service port must be an integer value in the 1-65535 range.' );
 			}
 
 			$alerts->service_address = ALERT_SERVICE_ADDRESS;
-			$alerts->service_port = ALERT_SERVICE_PORT;
-			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alert', $alerts->service_address, $alerts->service_port );
+			$alerts->service_port    = ALERT_SERVICE_PORT;
+			$alerts->service_url     = sprintf( 'http://%s:%s/v1.0/alert', $alerts->service_address, $alerts->service_port );
 
 			self::$instance = $alerts;
 		}
@@ -305,10 +311,10 @@ class Alerts {
 	 *
 	 * Example Usage
 	 *
-	 * Alerts::chat( '@testuser', 'test message' );			// send testuser a pm on IRC from "a8c"
-	 * Alerts::chat( '@testuser', 'test message', 3 );	// send testuser a pm on IRC with level 'critical'
-	 * Alerts::chat( 'testing', 'test message' );				// have "a8c" join #testing and say something
-	 * Alerts::chat( 'testing', 'test message', 4 );		// have "a8c-test" join #testing and say something with level 'recovery'
+	 * Alerts::chat( '@testuser', 'test message' );            // send testuser a pm on IRC from "a8c"
+	 * Alerts::chat( '@testuser', 'test message', 3 );    // send testuser a pm on IRC with level 'critical'
+	 * Alerts::chat( 'testing', 'test message' );                // have "a8c" join #testing and say something
+	 * Alerts::chat( 'testing', 'test message', 4 );        // have "a8c-test" join #testing and say something with level 'recovery'
 	 *
 	 * @param $target (string) Channel or Username.  Usernames prefixed with an @, channel optionally prefixed by #.
 	 * @param $message (string) Message
@@ -316,7 +322,7 @@ class Alerts {
 	 * @param $kind string Cache slug
 	 * @param $interval integer Interval in seconds between two messages sent from one DC
 	 *
-	 * @return bool	True if successful. Else, will return false
+	 * @return bool    True if successful. Else, will return false
 	 */
 	public static function chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 1 ) {
 		$alerts = self::instance();
@@ -339,7 +345,7 @@ class Alerts {
 	 * @param $kind string Cache slug
 	 * @param $interval integer Interval in seconds between two messages sent from one DC
 	 *
-	 * @return bool	True if successful. Else, will return false
+	 * @return bool    True if successful. Else, will return false
 	 */
 	public static function opsgenie( $message, $details, $kind = '', $interval = 1 ) {
 		$alerts = self::instance();
