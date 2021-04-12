@@ -3,7 +3,6 @@
 namespace Automattic\VIP\Security;
 
 use WP_Error;
-use WP_User;
 
 add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_password', 1, 3 );
 
@@ -12,7 +11,7 @@ add_action( 'user_profile_update_errors', __NAMESPACE__ . '\validate_current_pas
  *
  * @param WP_Error $errors Error object passed by reference
  * @param bool $update Whether this is a user update
- * @param object $user User object (passed by reference)
+ * @param object $user User object passed by reference
  *
  * @return void
  */
