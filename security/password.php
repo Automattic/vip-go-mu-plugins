@@ -36,7 +36,7 @@ function validate_current_password( WP_Error &$errors, bool $update, &$user ) {
 		return;
 	}
 
-	$error = wp_authenticate( $user->user_login, $_POST['current_pass'] );
+	$auth = wp_authenticate( $user->user_login, $_POST['current_pass'] );
 	if ( is_wp_error( $auth ) ) {
 		$errors->add( 'wrong_current_password', '<strong>Error</strong>: The entered current password is not correct.', array( 'form-field' => 'current_pass' ) );
 	}
