@@ -6,6 +6,10 @@ use Automattic\VIP\Feature;
 use WP_Error;
 
 class Current_Password_Change_Test extends \WP_UnitTestCase {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
@@ -21,10 +25,6 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 			'user_email' => 'john@example.com',
 			'user_pass'  => 'secret1',
 		] );
-
-		Feature::$feature_percentages = array(
-			'admin-password-change-current' => 1.0,
-		);
 	}
 
 	public function test__should_return_if_creating_user() {
