@@ -77,6 +77,6 @@ add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\reposition_current_passwo
 function reposition_current_password_field() {
 	$screen = get_current_screen();
 	if ( 'profile' === $screen->id ) {
-		wp_enqueue_script( 'vip-security-password-script', plugins_url( '/js/password.js', __FILE__ ), array(), '3.0', true );
+		wp_enqueue_script( 'vip-security-password', plugins_url( '/js/password.js', __FILE__ ), array(), '1.0', true );
 	}
 }
