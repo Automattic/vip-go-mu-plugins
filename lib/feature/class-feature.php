@@ -21,6 +21,7 @@ class Feature {
 		'jetpack-cxn-pilot' => 0.25,
 		'remove-gutenberg-ramp' => 0.70,
 		'search_content_validation_and_auto_heal_cron_job' => 0.25,
+		'admin-password-change-current' => 0.1,
 	);
 
 	public static $site_id = false;
