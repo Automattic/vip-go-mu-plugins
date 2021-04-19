@@ -132,7 +132,7 @@ class Alerts {
 	 *
 	 * @return array|WP_Error
 	 */
-	private function validate_opsgenie_details( $details) {
+	private function validate_opsgenie_details( $details ) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
