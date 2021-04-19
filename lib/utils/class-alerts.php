@@ -65,7 +65,7 @@ class Alerts {
 		// The request got a response
 		$code = $response->response->code;
 		if ( $code >= 400 ) {
-			return new WP_Error( 'alert-send-failed', sprintf( 'The request returned an invalid response: %s', $response->response->message ) );
+			return new WP_Error( 'alert-send-failed', sprintf( 'The request returned an invalid response: %s', $response['response']['message'] ) );
 		}
 
 		return $response;
