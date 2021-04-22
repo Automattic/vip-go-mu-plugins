@@ -20,26 +20,24 @@ import pluralize from 'pluralize';
 
 import style from './style.scss';
 
-
-const Backtrace = ({ trace }) => {
+const CollapsibleList = ({ list = [], title = 'View' }) => {
 	const [ visible, setVisible ] = useState( false );
 	const toggle = () => {
 		setVisible( ! visible );
-	}
+	};
 
-
-	return (<div className={ cx( { [style.backtrace]: true, [style.visible]: visible } ) }>
-		<strong class="vip-h4" onClick={ toggle }>Trace ({ `${ trace.length }` })</strong>
-		<ol class={style.backtrace_details}>{ trace.map( frame => (<li>{frame}</li>) ) }</ol>
+	return (<div className={ cx( { [ style.backtrace ]: true, [ style.visible ]: visible } ) }>
+		<strong class="vip-h4" onClick={ list.length ? toggle : null }>{ title } ({ `${ list.length }` })</strong>
+		<ol class={style.backtrace_details}>{list.map( ( frame, i ) => (<li key={i}>{frame}</li>) ) }</ol>
 	</div>);
-}
+};
 
 /**
  * A single query
  *
  * @returns {Preact.Component} A query component.
  */
-const Query = ( { args, request, url, backtrace = null } ) => {
+const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	const txtQuery = JSON.stringify( args.body, null, 2 );
 	const txtResult = JSON.stringify( request.body, null, 2 );
 	const initialState = {
@@ -88,7 +86,7 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState({...state, collapsed: ! state.collapsed }) }>
 			<h3 className="vip-h3">
-				{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
+			{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
 			</h3>
 			
 		</div>
@@ -96,8 +94,8 @@ const Query = ( { args, request, url, backtrace = null } ) => {
 			<div className={style.query_src_header}>
 				<span style="margin-right: auto;">Request</span>
 				<div class={style.query_src_extra}>
-				<span>WP_Query</span>
-					{backtrace ? <Backtrace trace={backtrace} /> : null}
+					<CollapsibleList title="WP_Query" list={ query_args } />
+					<CollapsibleList title="Trace" list={ backtrace } />
 				</div>
 			</div>
 			<div className={style.query_res_header}>
