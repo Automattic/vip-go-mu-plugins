@@ -118,7 +118,7 @@ add_action(
 				$query['query_args'] = array_filter(
 					$query['query_args'],
 					function( $v ) {
-						return is_bool( $v ) || ! ( ! is_bool( $v ) && ! $v );
+						return is_bool( $v ) || ( ! is_bool( $v ) && $v );
 					}
 				);
 				return $query;
