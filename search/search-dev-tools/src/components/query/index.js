@@ -20,16 +20,16 @@ import pluralize from 'pluralize';
 
 import style from './style.scss';
 
-const CollapsibleList = ({ list = [], title = 'View' }) => {
+const CollapsibleList = ( { list = [], title = 'View' } ) => {
 	const [ visible, setVisible ] = useState( false );
 	const toggle = () => {
 		setVisible( ! visible );
 	};
 
-	return (<div className={ cx( { [ style.backtrace ]: true, [ style.visible ]: visible } ) }>
-		<strong class="vip-h4" onClick={ list.length ? toggle : null }>{ title } ({ `${ list.length }` })</strong>
-		<ol class={style.backtrace_details}>{list.map( ( frame, i ) => (<li key={i}>{frame}</li>) ) }</ol>
-	</div>);
+	return ( <div className={ cx( { [ style.backtrace ]: true, [ style.visible ]: visible } ) }>
+		<strong className="vip-h4" onClick={ list.length ? toggle : null }>{ title } ({ `${ list.length }` })</strong>
+		<ol className={style.backtrace_details}>{list.map( ( frame, i ) => ( <li key={i}>{frame}</li> ) ) }</ol>
+	</div> );
 };
 
 /**
@@ -51,7 +51,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 
 	const [ state, setState ] = useState( initialState );
 
-	const queryResultRef = useRef(null);
+	const queryResultRef = useRef( null );
 
 	const fetchForQuery = async ( query, url ) => {
 		try {
@@ -84,16 +84,16 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	}, [ queryResultRef ] );
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
-		<div className={style.query_handle} onClick={ () => setState({...state, collapsed: ! state.collapsed }) }>
+		<div className={style.query_handle} onClick={ () => setState( { ...state, collapsed: ! state.collapsed } ) }>
 			<h3 className="vip-h3">
-			{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
+				{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
 			</h3>
-			
+
 		</div>
 		<div className={style.grid_container}>
 			<div className={style.query_src_header}>
 				<span style="margin-right: auto;">Request</span>
-				<div class={style.query_src_extra}>
+				<div className={style.query_src_extra}>
 					<CollapsibleList title="WP_Query" list={ query_args } />
 					<CollapsibleList title="Trace" list={ backtrace } />
 				</div>
@@ -110,12 +110,12 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 						/** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
 						'complete' hook doesn't run, so we use a trick here */
 						code => highlight( code, languages.json, 'json' )
-							.split('\n')
+							.split( '\n' )
 							.map(
 								line =>
-									`<span class="${style.container_editor_line_number}">${line}</span>`
+									`<span class="${ style.container_editor_line_number }">${ line }</span>`
 							)
-							.join('\n')
+							.join( '\n' )
 					}
 					padding={null}
 					className={style.container_editor}
@@ -127,8 +127,8 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			</div>
 			<div className={style.query_res}>
 				<div className={style.query_result}>
-					<pre class="line-numbers">
-						<code class="language-json" ref={ queryResultRef } dangerouslySetInnerHTML={{ __html: state.result }}></code>
+					<pre className="line-numbers">
+						<code className="language-json" ref={ queryResultRef } dangerouslySetInnerHTML={{ __html: state.result }}></code>
 					</pre>
 				</div>
 			</div>
