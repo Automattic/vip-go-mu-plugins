@@ -1,11 +1,11 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable wpcalypso/import-docblock */
 
-import { h } from 'preact';
+import { Fragment, h } from 'preact';
 import { useContext, useEffect, useState, useRef } from 'preact/hooks';
 import { SearchContext } from '../../context';
 
-// TODO: switch Editor to an async import
 import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 
@@ -44,8 +44,6 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		editing: false,
 		query: txtQuery,
 		result: txtResult,
-		// raw|wpQueryArgs
-		tab: 'raw',
 		collapsed: true,
 	};
 
@@ -61,7 +59,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				query,
 			}, window.VIPSearchDevTools.nonce );
 
-			setState( { ...state, result: res.result.body } );
+			setState({ ...state, result: JSON.stringify( res?.result?.body, null, 2 ) } );
 		} catch ( err ) {
 			// eslint-disable-next-line no-console
 			console.log( err );
@@ -71,7 +69,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	useEffect( () => {
 		// Skip update
 		if ( state.query === initialState.query ) {
-			return setState( initialState );
+			return;
 		}
 
 		if ( ! state.editing ) {
@@ -81,13 +79,13 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 
 	useEffect( () => {
 		highlightElement( queryResultRef.current );
-	}, [ queryResultRef ] );
+	}, [ queryResultRef, state.result ] );
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState( { ...state, collapsed: ! state.collapsed } ) }>
 			<h3 className="vip-h3">
 				{ pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )}
-				<span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms
+				<span style="color: var(--vip-grey-60);"> that took</span> {request.body.took}ms
 				<small> ({request.response.code})</small>
 			</h3>
 		</div>
@@ -105,10 +103,19 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				Response
 			</div>
 			<div className={style.query_src}>
+				<div className={style.query_actions}>
+					{ state.editing || state.result !== txtResult
+						? ( <Fragment>
+							<button onClick={ () => setState( { ...state, editing: false } ) }>RUN</button>
+							<button onClick={ () => setState( { ...initialState, collapsed: false } ) }>RESET</button>
+						</Fragment> )
+						: 'Edit me!'
+					}
+				</div>
+
 				<Editor
 					value={state.query}
 					onValueChange={code => setState( { ...state, query: code, editing: true } )}
-					onBlur={e => setState( { ...state, editing: false } )}
 					highlight={
 						/** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
 						'complete' hook doesn't run, so we use a trick here */
@@ -136,13 +143,6 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				</div>
 			</div>
 		</div>
-
-		{/* <h5 style="width:100%;">URL: {url}</h5> */}
-		<div className={style.query_actions}>
-			<button>Run</button>
-			<button onClick={() => setState( initialState )}>Reset</button>
-		</div>
-
 	</div> );
 };
 

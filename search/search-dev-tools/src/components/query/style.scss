@@ -15,8 +15,6 @@ pre[class*="language-"]  {
 	&_wrap {
 		margin-bottom: 32px;
 		border-top: 1px solid var(--vip-grey-10);
-
-		overflow: scroll;
 		display: flex;
 		flex-flow: row wrap;
 
@@ -33,14 +31,19 @@ pre[class*="language-"]  {
 		padding: 32px;
 	}
 	&_actions {
+		@include text-caption();
+		position: absolute;
+		right: 32px;
 		margin: 32px 0;
-		width: 100%;
+		z-index: 1;
 		button {
-			margin-right: 32px;
+			text-transform: lowercase;
+			&:not(:last-of-type) {
+				margin-right: 32px;
+			}
 		}
 	}
 
-	
 	&_handle {
 		margin: 32px 0;
 		cursor: pointer;
@@ -77,9 +80,7 @@ pre[class*="language-"]  {
 			}
 		}
 	}
-
 }
-
 
 	.grid_container {
 		width: 100%;
@@ -118,6 +119,7 @@ pre[class*="language-"]  {
 	.query_src {
 		grid-area: query-src;
 		background-color: #FFFFFF;
+		position: relative;
 
 		&_extra {
 			@include text-caption();
@@ -169,7 +171,7 @@ pre[class*="language-"]  {
 
 		.visible & {
 			display: block;
-			z-index: 1;
+			z-index: 2;
 		}
 	}
 

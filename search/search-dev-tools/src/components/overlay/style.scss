@@ -42,7 +42,7 @@ $overlay-horizontal-padding-small-viewport: 0.5em;
 	*,
 	*:before,
 	*:after {
-		box-sizing: inherit;
+		box-sizing: border-box;
 	}
 }
 }

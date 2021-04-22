@@ -63,7 +63,7 @@ function rest_callback( \WP_REST_Request $request ) {
 		]
 	);
 
-	$result['body'] = json_encode( sanitize_query_response( json_decode( $result['body'] ) ), JSON_PRETTY_PRINT );
+	$result['body'] = sanitize_query_response( json_decode( $result['body'] ) );
 	return rest_ensure_response( [ 'result' => $result ] );
 }
 
@@ -218,7 +218,7 @@ function sanitize_query_response( object $response_body ): object {
 		// Post content tends to be large, breaking the layout and decreasing usability.
 		// TODO: There may be rare cases where it's needed though. Add conditional toggle for that.
 		if ( isset( $hit->_source->post_content ) ) {
-			$hit->_source->post_content = '<CONTENT TRUNCATED>';
+			$hit->_source->post_content = '#CONTENT TRUNCATED#';
 		}
 	}
 
