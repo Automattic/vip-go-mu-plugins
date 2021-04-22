@@ -1,0 +1,44 @@
+/**
+ *
+ * VIP Dashboard SCSS
+ *
+ * This is an import of all component CSS that is bundled with each component.
+ * Please keep these imports sorted and use specificity to ensure that
+ * stylesheet order does not matter.
+ *
+ * The stylesheets are compiled automatically with gulp.
+ *
+ * CSS Coding Guidelines: https://wpcalypso.wordpress.com/devdocs/docs/coding-guidelines/css.md
+ *
+ */
+
+// shared styles
+@import '_shared/_colors';
+@import '_shared/_variables';
+@import '_shared/_mixins';
+@import '_shared/_genericons';
+@import '_shared/_transitions';
+
+// to be deprecated
+@import '_shared/_wordpress';
+
+// @import '_shared/item';
+// @import '_shared/item';
+// @import '_shared/item';
+
+// charts
+@import 'stats/style';
+@import 'stats-charts/style';
+@import 'stats-numbers/style';
+
+// forms
+
+// header
+@import 'header/style';
+@import 'nav/style';
+
+// widgets
+@import 'widget/style';
+@import 'widget-contact/style';
+@import 'widget-welcome/style';
+@import 'widget-promo/style';
