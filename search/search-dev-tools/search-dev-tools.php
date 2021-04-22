@@ -109,6 +109,9 @@ add_action(
 			function( $query ) {
 				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
 				$query['args']['body']    = json_decode( $query['args']['body'] );
+				// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
+				// Because the full list of core query arguments is > 60 elements long and it doesn't look good on the frontend.
+				$query['query_args'] = array_filter( $query['query_args'], function( $v ) { return is_bool( $v ) || ! ( ! is_bool( $v ) && ! $v ); } );
 				return $query;
 			},
 			$queries

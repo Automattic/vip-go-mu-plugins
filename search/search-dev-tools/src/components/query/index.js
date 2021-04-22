@@ -86,15 +86,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState( { ...state, collapsed: ! state.collapsed } ) }>
 			<h3 className="vip-h3">
-				{pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )} <span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms <small>({request.response.code})</small>
+				{ pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )}
+				<span style="color: var(--vip-grey-60);">that took</span> {request.body.took}ms
+				<small> ({request.response.code})</small>
 			</h3>
-
 		</div>
 		<div className={style.grid_container}>
 			<div className={style.query_src_header}>
 				<span style="margin-right: auto;">Request</span>
 				<div className={style.query_src_extra}>
-					<CollapsibleList title="WP_Query" list={ query_args } />
+					<CollapsibleList title="WP_Query"
+						list={ Object.entries( query_args ).map( ([ key, value ]) => `${ key }: ${ JSON.stringify( value ) }` ) }
+					/>
 					<CollapsibleList title="Trace" list={ backtrace } />
 				</div>
 			</div>
