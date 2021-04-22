@@ -54,8 +54,8 @@ add_action(
  */
 function rest_callback( \WP_REST_Request $request ) {
 
-	$ep             = \ElasticPress\Elasticsearch::factory();
-	$result         = $ep->remote_request(
+	$ep     = \ElasticPress\Elasticsearch::factory();
+	$result = $ep->remote_request(
 		trim( parse_url( $request['url'], PHP_URL_PATH ), '/' ),
 		[
 			'body'   => $request['query'],
@@ -81,15 +81,19 @@ function is_ratelimited(): bool {
 	return wp_cache_get( Search::QUERY_COUNT_CACHE_KEY, Search::QUERY_COUNT_CACHE_GROUP ) > Search::$max_query_count;
 }
 
-add_action( 'wp_enqueue_scripts', function() {
-	if ( ! should_enable_search_dev_tools() ) {
-		return;
-	}
+add_action(
+	'wp_enqueue_scripts',
+	function() {
+		if ( ! should_enable_search_dev_tools() ) {
+			return;
+		}
 
-	// @todo: remove cachebusting arg.
-	wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], current_time( 'timestamp' ), true );
-	wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], current_time( 'timestamp' ) );
-}, 11 );
+		// @todo: remove cachebusting arg.
+		wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], current_time( 'timestamp' ), true );
+		wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], current_time( 'timestamp' ) );
+	},
+	11
+);
 
 add_action(
 	'wp_footer',
@@ -111,48 +115,53 @@ add_action(
 				$query['args']['body']    = json_decode( $query['args']['body'] );
 				// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
 				// Because the full list of core query arguments is > 60 elements long and it doesn't look good on the frontend.
-				$query['query_args'] = array_filter( $query['query_args'], function( $v ) { return is_bool( $v ) || ! ( ! is_bool( $v ) && ! $v ); } );
+				$query['query_args'] = array_filter(
+					$query['query_args'],
+					function( $v ) {
+						return is_bool( $v ) || ! ( ! is_bool( $v ) && ! $v );
+					}
+				);
 				return $query;
 			},
 			$queries
 		);
 
 		$data = [
-			'status'      => 'enabled',
-			'queries'     => $mapped_queries,
-			'information' => [
+			'status'                  => 'enabled',
+			'queries'                 => $mapped_queries,
+			'information'             => [
 				[
-					'label' => 'Rate limited?',
-					'value' => is_ratelimited() ? 'yes' : 'no',
+					'label'   => 'Rate limited?',
+					'value'   => is_ratelimited() ? 'yes' : 'no',
 					'options' => [
 						'collapsible' => false,
 					],
 				],
 				[
-					'label' => 'Indexable post types',
-					'value' => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
+					'label'   => 'Indexable post types',
+					'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
 					'options' => [
 						'collapsible' => true,
 					],
 				],
 				[
-					'label' => 'Indexable post status',
-					'value' => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
+					'label'   => 'Indexable post status',
+					'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
 					'options' => [
 						'collapsible' => true,
 					],
 				],
 				[
-					'label' => 'Meta Key Allow List',
-					'value' => array_values( Search::instance()->get_post_meta_allow_list( null ) ),
+					'label'   => 'Meta Key Allow List',
+					'value'   => array_values( Search::instance()->get_post_meta_allow_list( null ) ),
 					'options' => [
 						'collapsible' => true,
 					],
 				],
 
 			],
-			'nonce'       => wp_create_nonce( 'wp_rest' ),
-			'ajaxurl'     => rest_url( 'vip/v1/search/repl' ),
+			'nonce'                   => wp_create_nonce( 'wp_rest' ),
+			'ajaxurl'                 => rest_url( 'vip/v1/search/repl' ),
 			'__webpack_public_path__' => plugin_dir_url( __FILE__ ) . 'build',
 		];
 
@@ -167,10 +176,12 @@ add_action(
 );
 
 
-add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
-	if ( ! should_enable_search_dev_tools() ) {
-		return;
-	}
+add_action(
+	'admin_bar_menu',
+	function( \WP_Admin_Bar $admin_bar ) {
+		if ( ! should_enable_search_dev_tools() ) {
+			return;
+		}
 
 		$admin_bar->add_menu(
 			[
@@ -186,7 +197,9 @@ add_action( 'admin_bar_menu', function( \WP_Admin_Bar $admin_bar ) {
 				],
 			]
 		);
-}, PHP_INT_MAX );
+	},
+	PHP_INT_MAX
+);
 
 
 /**
