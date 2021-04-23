@@ -3,15 +3,19 @@ workflows:
   main:
     jobs:
       - php73-lint
-      - php73-core-tests
-      - php73-core-multisite-tests
-      - php73-build-multisite
-      - php73-build-singlesite
+      - php74-core-tests
+      - php74-core-multisite-tests
       - php74-lint
       - php74-build-multisite
       - php74-build-singlesite
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
+  changelog:
+    jobs:
+      - create-changelog-draft:
+          filters:
+            branches:
+              only: master
 
 version: 2.1
 
@@ -130,42 +134,24 @@ jobs:
     docker:
       - image: circleci/php:7.3-node
 
-  php73-core-tests:
+  php74-core-tests:
     <<: *php_core_job
     environment:
       - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.3-fpm
+      - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
 
-  php73-core-multisite-tests:
+  php74-core-multisite-tests:
     <<: *php_core_job
     environment:
       - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.3-fpm
-      - image: *db_image
-
-  php73-build-multisite:
-    <<: *php_job
-    environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
-    docker:
-      - image: circleci/php:7.3-node
-      - image: *db_image
-
-  php73-build-singlesite:
-    <<: *php_job
-    environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-    docker:
-      - image: circleci/php:7.3-node
+      - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
 
   php74-lint:
@@ -208,3 +194,11 @@ jobs:
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
+
+  create-changelog-draft:
+    docker:
+      - image: circleci/php:7.4-node
+    steps:
+      - checkout
+      - run: composer install
+      - run: php $HOME/project/bin/github-changelog.php

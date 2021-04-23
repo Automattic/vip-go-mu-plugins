@@ -372,3 +372,26 @@ function vip_jetpack_admin_enqueue_scripts() {
 }
 
 add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
+
+/**
+ * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
+ */
+add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value, $option_name, $default ) {
+	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
+	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
+}, 10, 3 );
+
+/**
+ * SSL is always supported on VIP, so avoid unnecessary checks
+ */
+add_filter( 'pre_transient_jetpack_https_test', function() { return 1; } ); // WP doesn't have __return_one (but it does have __return_zero)
+add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
+
+// And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
+add_filter( 'jetpack_options', function( $value, $name ) {
+	if ( 'fallback_no_verify_ssl_certs' === $name ) {
+		$value = 0;
+	}
+
+	return $value;
+}, 10, 2 );

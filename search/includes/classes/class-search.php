@@ -11,9 +11,60 @@ class Search {
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
-	// Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
-	// sites.
+	public const MAX_RESULT_WINDOW = 10000;
+	/**
+	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
+	 * sites.
+	 */
 	public const POST_META_DEFAULT_ALLOW_LIST = array();
+	/**
+	 * Jetpack default post meta allow list to make migration path easier. See usage of jetpack_sync_post_meta_whitelist to see how this is used.
+	 */
+	public const JETPACK_POST_META_DEFAULT_ALLOW_LIST = array(
+		'_feedback_akismet_values',
+		'_feedback_email',
+		'_feedback_extra_fields',
+		'_g_feedback_shortcode',
+		'_jetpack_post_thumbnail',
+		'_menu_item_classes',
+		'_menu_item_menu_item_parent',
+		'_menu_item_object',
+		'_menu_item_object_id',
+		'_menu_item_orphaned',
+		'_menu_item_type',
+		'_menu_item_xfn',
+		'_publicize_facebook_user',
+		'_publicize_twitter_user',
+		'_thumbnail_id',
+		'_wp_attached_file',
+		'_wp_attachment_backup_sizes',
+		'_wp_attachment_context',
+		'_wp_attachment_image_alt',
+		'_wp_attachment_is_custom_background',
+		'_wp_attachment_is_custom_header',
+		'_wp_attachment_metadata',
+		'_wp_page_template',
+		'_wp_trash_meta_comments_status',
+		'_wpas_mess',
+		'content_width',
+		'custom_css_add',
+		'custom_css_preprocessor',
+		'enclosure',
+		'imagedata',
+		'nova_price',
+		'publicize_results',
+		'sharing_disabled',
+		'switch_like_status',
+		'videopress_guid',
+		'vimeo_poster_image',
+		'advanced_seo_description',
+	);
+
+	public const ALLOWED_DATACENTERS = [
+		'dca',
+		'dfw',
+		'bur',
+	];
 
 	private static $query_count_ttl;
 
@@ -36,6 +87,7 @@ class Search {
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
 	public $healthcheck;
+	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
 	public $queue;
@@ -43,6 +95,7 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_query_count;
@@ -57,11 +110,24 @@ class Search {
 	public function init() {
 		$this->apply_settings(); // Applies filters for tweakable Search settings and should run first.
 		$this->setup_constants();
-		$this->setup_hooks();
+		$this->maybe_enable_ep_query_logging();
 		$this->load_dependencies();
+		$this->setup_hooks();
 		$this->load_commands();
-		$this->setup_healthchecks();
+		$this->setup_cron_jobs();
 		$this->setup_regular_stat_collection();
+	}
+
+	/**
+	 * Check if the constants needed for ElasticSearch connection are defined.
+	 *
+	 * @return bool true if constants are defined, false otherwise
+	 */
+	public static function are_es_constants_defined() {
+		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
+		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
+		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
+		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
 	public static function instance() {
@@ -78,8 +144,10 @@ class Search {
 		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
-		require_once __DIR__ . '/class-health-job.php';
+		require_once __DIR__ . '/class-healthjob.php';
 
+		// Load versioning cleanup job
+		require_once __DIR__ . '/class-versioningcleanupjob.php';
 
 		// Load field count gauge cron job
 		require_once __DIR__ . '/class-fieldcountgaugejob.php';
@@ -296,6 +364,31 @@ class Search {
 		}
 	}
 
+	/**
+	 * Query logging in ElasticPress must be enabled via defining WP_EP_DEBUG as true before ElasticPress is instantiated.
+	 * This is separate from setup_hooks because some parts of setup_hooks require ElasticPress.
+	 */
+	protected function maybe_enable_ep_query_logging() {
+		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_debug_bar_or_query_monitor_enabled' ] );
+	}
+
+	/**
+	 * Check if query monitor or debug bar are enabled. If so, define WP_EP_DEBUG as true so ElasticPress enables query logging and then load the ElasticPress debug bar panel.
+	 */
+	public function enable_ep_query_logging_if_debug_bar_or_query_monitor_enabled() {
+		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+			if ( ! defined( 'WP_EP_DEBUG' ) ) {
+				define( 'WP_EP_DEBUG', true );
+			}
+
+			// Load query log override function to remove Authorization header from requests
+			require_once __DIR__ . '/../functions/ep-get-query-log.php';
+
+			// Load ElasticPress Debug Bar
+			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
+		}
+	}
+
 	protected function setup_hooks() {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
@@ -386,8 +479,33 @@ class Search {
 		// Override value of ep_prepare_meta_allowed_protected_keys with the value of vip_search_post_meta_allow_list
 		add_filter( 'ep_prepare_meta_allowed_protected_keys', array( $this, 'filter__ep_prepare_meta_allowed_protected_keys' ), PHP_INT_MAX, 2 );
 
+		// Alter the default index mapping/settings for each indexable type (primarily to add index allocation settings)
+		// NOTE - if new indexables are added, they need to be added here. EP doesn't currently have a generic ep_mapping type filter
+		add_filter( 'ep_post_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+		add_filter( 'ep_term_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
+
+		// If protected content is enabled, ensure that the attachment post type is an indexable post type.
+		// Set the priority to 9999 so customers can unset it if needed.
+		// The current usages of this filter have priority 10 in ElasticPress. May need to be adjusted if this changes.
+		if ( false !== $this->is_protected_content_enabled() ) {
+			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
+		}
+
+		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
+
+		// Limit the max result window on index settings
+		add_filter( 'ep_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+		add_filter( 'ep_term_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+		add_filter( 'ep_user_max_result_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+
+		// Limit the max result window on query arguments
+		add_filter( 'ep_max_results_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
+
+		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 	}
 
 	protected function load_commands() {
@@ -400,11 +518,22 @@ class Search {
 		}
 	}
 
-	protected function setup_healthchecks() {
-		$this->healthcheck = new HealthJob();
+	protected function setup_cron_jobs() {
+		$this->healthcheck = new HealthJob( $this );
+		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
-		// Hook into init action to ensure cron-control has already been loaded
-		add_action( 'init', [ $this->healthcheck, 'init' ] );
+		/**
+		 * Hook into admin_init action to ensure cron-control has already been loaded.
+		 *
+		 * Hook into wp_loaded in WPCLI contexts.
+		 */
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
+			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
+		} else {
+			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
+			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
+		}
 	}
 
 	protected function setup_regular_stat_collection() {
@@ -413,6 +542,37 @@ class Search {
 
 		$this->queue_wait_time = new QueueWaitTimeJob();
 		$this->queue_wait_time->init();
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, set the time used in functionality.
+	 *
+	 * @param int $time The fixed time you want to use in testing.
+	 */
+	public function set_time( $time ) {
+		if ( is_numeric( $time ) ) {
+			$this->time = intval( $time );
+		}
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, get the fixed time if set or return the current time.
+	 *
+	 * @return int Either the fixed time previously set if defined or the current timestamp
+	 */
+	public function get_time() {
+		if ( isset( $this->time ) && is_numeric( $this->time ) ) {
+			return intval( $this->time );
+		}
+
+		return time();
+	}
+
+	/**
+	 * To allow consistent testing against timestamps, allow fixed times to be reset to current time.
+	 */
+	public function reset_time() {
+		$this->time = null;
 	}
 
 	public function query_es( $type, $es_args = array(), $wp_query_args = array(), $index_name = null ) {
@@ -426,20 +586,6 @@ class Search {
 	}
 
 	public function action__plugins_loaded() {
-		// Conditionally load only if either/both Query Monitor and Debug Bar are loaded and enabled
-		// NOTE - must hook in here b/c the wp_get_current_user function required for checking if debug bar is enabled isn't loaded earlier
-		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
-			// Must be set to true to enable saving of queries in \ElasticPress\Elasticsearch
-			if ( ! defined( 'WP_EP_DEBUG' ) ) {
-				define( 'WP_EP_DEBUG', true );
-			}
-
-			// Load query log override function to remove Authorization header from requests
-			require_once __DIR__ . '/../functions/ep-get-query-log.php';
-			// Load ElasticPress Debug Bar
-			require_once __DIR__ . '/../../debug-bar-elasticpress/debug-bar-elasticpress.php';
-		}
-
 		$this->maybe_load_es_wp_query();
 	}
 
@@ -536,7 +682,14 @@ class Search {
 			$args['headers'] = [];
 		}
 
-		$args['headers'] = array_merge( $args['headers'], array( 'X-Client-Site-ID' => FILES_CLIENT_SITE_ID, 'X-Client-Env' => VIP_GO_ENV ) );
+		$args['headers'] = array_merge(
+			$args['headers'],
+			[
+				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
+				'X-Client-Env' => VIP_GO_ENV,
+				'Accept-Encoding' => 'gzip, deflate',
+			]
+		);
 
 		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
@@ -556,7 +709,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $response, $statsd_prefix );
+			$this->ep_handle_failed_request( $response, $query, $statsd_prefix );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -587,6 +740,10 @@ class Search {
 						'severity' => 'warning',
 						'feature' => 'vip_search_es_warning',
 						'message' => $message,
+						'extra' => [
+							'query' => $query,
+							'backtrace' => wp_debug_backtrace_summary(),
+						],
 					) );
 				}
 			}
@@ -600,7 +757,7 @@ class Search {
 		}
 	}
 
-	public function ep_handle_failed_request( $response, $statsd_prefix ) {
+	public function ep_handle_failed_request( $response, $query, $statsd_prefix ) {
 		$response_error = [];
 
 		if ( is_wp_error( $response ) ) {
@@ -624,6 +781,8 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
+			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
+
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
 				'error',
@@ -632,9 +791,24 @@ class Search {
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
+					'query' => $query_for_logging,
+					'backtrace' => wp_debug_backtrace_summary(),
 				]
 			);
 		}
+	}
+
+	/**
+	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
+	 */
+	public function sanitize_ep_query_for_logging( $query ) {
+		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
+			return $query;
+		}
+
+		$query['args']['headers']['Authorization'] = '<redacted>';
+
+		return $query;
 	}
 
 	/*
@@ -841,7 +1015,7 @@ class Search {
 			return;
 		}
 
-		$query_limiting_time = time() - $query_limiting_start;
+		$query_limiting_time = $this->get_time() - $query_limiting_start;
 
 		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
 			return;
@@ -967,8 +1141,8 @@ class Search {
 	 * Given a list of hosts, randomly select one for load balancing purposes.
 	 */
 	public function get_random_host( $hosts ) {
-		if ( ! is_array( $hosts ) ) {
-			return $hosts;
+		if ( ! $hosts || ! is_array( $hosts ) ) {
+			return null;
 		}
 
 		return $hosts[ array_rand( $hosts ) ];
@@ -1060,7 +1234,7 @@ class Search {
 	 * Set the number of replicas for the index
 	 */
 	public function filter__ep_default_index_number_of_replicas( $replicas ) {
-		return 2;
+		return 1;
 	}
 
 	/**
@@ -1406,6 +1580,36 @@ class Search {
 		return false;
 	}
 
+	/**
+	 * Adds default values for vip_search_post_meta_allow_list by combining vip-search defaults with jetpack values (to ease migration).
+	 *
+	 * @param {array} $keys Input post meta keys.
+	 * @return {array} Post meta keys enhanced by default values.
+	 */
+	public function filter__vip_search_post_meta_allow_list_defaults( $keys ) {
+		if ( ! is_array( $keys ) ) {
+			$keys = [];
+		}
+
+		if ( $this->is_jetpack_migration() ) {
+			$default_jetpack = \apply_filters( 'jetpack_sync_post_meta_whitelist', self::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
+
+			$keys = array_merge( $default_jetpack, $keys );
+		}
+
+		return array_merge( self::POST_META_DEFAULT_ALLOW_LIST, $keys );
+	}
+
+	public function is_jetpack_migration() {
+		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === VIP_SEARCH_MIGRATION_SOURCE;
+	}
+
+	/**
+	 * Processes vip_search_post_meta_allow_list. This method handles assoc array conversion if needed.
+	 *
+	 * @param {WP_Post} $post The post whose meta data is being prepared.
+	 * @return {array} The new allow list for post_meta_indexing.
+	 */
 	public function get_post_meta_allow_list( $post ) {
 		/**
 		 * Filters the allow list used for post meta indexing
@@ -1415,7 +1619,7 @@ class Search {
 		 * @param {WP_Post} $post The post whose meta data is being prepared
 		 * @return {array} $new_allow_list The new allow list for post_meta_indexing
 		 */
-		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', self::POST_META_DEFAULT_ALLOW_LIST, $post );
+		$post_meta_allow_list = \apply_filters( 'vip_search_post_meta_allow_list', [], $post );
 
 		// If post meta allow list is not an array, treat it like an empty array.
 		if ( ! is_array( $post_meta_allow_list ) ) {
@@ -1447,7 +1651,82 @@ class Search {
 	}
 
 	public function filter__ep_prepare_meta_allowed_protected_keys( $keys, $post ) {
-		return \apply_filters( 'vip_search_post_meta_allow_list', $keys, $post );
+		$vip_search_allow_list_keys = $this->get_post_meta_allow_list( $post );
+
+		return array_merge( $keys, $vip_search_allow_list_keys );
+	}
+
+	/**
+	 * Hooks into the ep_$indexable_mapping hooks to add things like allocation rules
+	 *
+	 * Note that this hook receives the mapping and settings together
+	 */
+	public function filter__ep_indexable_mapping( $mapping ) {
+		if ( ! is_array( $mapping['settings'] ) ) {
+			return $mapping;
+		}
+
+		$origin_datacenter = $this->get_index_routing_allocation_include_dc();
+
+		if ( $origin_datacenter ) {
+			// We want all indexes to live in the site's origin datacenter
+			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
+		}
+
+		return $mapping;
+	}
+
+	public function get_index_routing_allocation_include_dc() {
+		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
+
+		$dc = strtolower( $dc );
+
+		if ( ! in_array( $dc, self::ALLOWED_DATACENTERS, true ) ) {
+			return null;
+		}
+
+		return $dc;
+	}
+
+	public function get_origin_dc_from_es_endpoint( $url ) {
+		$dc = null;
+
+		if ( ! $url ) {
+			return null;
+		}
+
+		$matches = array();
+
+		// The url from the VIP_ELASTICSEARCH_ENDPOINTS constant can contain a port - so parse out just the hostname
+		$host = parse_url( $url, \PHP_URL_HOST );
+
+		if ( preg_match( '/^es-ha\.(.*)\.vipv2\.net$/', $host, $matches ) ) {
+			$dc = $matches[1];
+		}
+
+		$dc = strtolower( $dc );
+
+		return $dc;
+	}
+
+	/**
+	 * Since we've established that enabling the protected content feature causes attachments
+	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if
+	 * protected content is enabled.
+	 *
+	 * @param array $indexable_post_types Current list indexable post types in VIP Search.
+	 * @return array New list of indexable post types in VIP Search.
+	 */
+	public function add_attachment_to_ep_indexable_post_types( $indexable_post_types ) {
+		if ( ! is_array( $indexable_post_types ) ) {
+			return $indexable_post_types;
+		}
+
+		if ( ! isset( $indexable_post_types['attachment'] ) ) {
+			$indexable_post_types['attachment'] = 'attachment';
+		}
+
+		return $indexable_post_types;
 	}
 
 	/*
@@ -1466,7 +1745,7 @@ class Search {
 	 */
 	public function handle_query_limiting_start_timestamp() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
-			$start_timestamp = time();
+			$start_timestamp = $this->get_time();
 			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP );
 		}
 	}
@@ -1530,5 +1809,22 @@ class Search {
 
 			$this->logger->log( 'warning', 'vip_search_query_rate_limiting', $message );
 		}
+	}
+
+	/**
+	 * Check if the protected content feature is enabled in ElasticPress.
+	 */
+	public function is_protected_content_enabled() {
+		$protected_content_feature = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
+
+		if ( false === $protected_content_feature ) {
+			return false;
+		}
+
+		return $protected_content_feature->is_active();
+	}
+
+	public function limit_max_result_window( $current_value ) {
+		return min( $current_value, self::MAX_RESULT_WINDOW );
 	}
 }

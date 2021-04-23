@@ -16,7 +16,6 @@
 	<exclude-pattern>cron-control/*</exclude-pattern>
 	<exclude-pattern>cron-control-next/*</exclude-pattern>
 	<exclude-pattern>debug-bar-cron/*</exclude-pattern>
-	<exclude-pattern>gutenberg-ramp/*</exclude-pattern>
 	<exclude-pattern>http-concat/*</exclude-pattern>
 	<exclude-pattern>jetpack/*</exclude-pattern>
 	<exclude-pattern>jetpack-*/*</exclude-pattern>
