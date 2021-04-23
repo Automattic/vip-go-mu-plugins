@@ -1,16 +1,15 @@
-/* eslint-disable react/react-in-jsx-scope */
-/**
- * External dependencies
- */
 import { h } from 'preact';
 import { useEffect } from 'preact/hooks';
-import close from '../../assets/close.svg';
-import './style.scss';
-/**
- * Internal dependencies
- */
-import { callOnEscapeKey } from '../../utils';
 
+import './style.scss';
+import { callOnEscapeKey } from '../../utils';
+import close from '../../assets/close.svg';
+
+/**
+ * Overlay. Borrowed from Jetpack Instant Search.
+ * @param {Object} props
+ * @returns
+ */
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme, isVisible, opacity } = props;
 	const closeWithEscape = callOnEscapeKey( closeOverlay );
@@ -25,7 +24,7 @@ const Overlay = props => {
 	return (
 		<div
 			aria-labelledby="search-dev-tools__overlay-title"
-			class={[
+			className={[
 				'search-dev-tools__overlay',
 				`search-dev-tools__overlay--${ colorTheme }`,
 				isVisible ? '' : 'is-hidden',
@@ -33,7 +32,7 @@ const Overlay = props => {
 			role="dialog"
 			style={{ opacity: isVisible ? opacity / 100 : 0 }}
 		>
-			<button aria-label="Close VIP Search Dev Tools" class="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } /></button>
+			<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } /></button>
 			{ children }
 		</div>
 	);

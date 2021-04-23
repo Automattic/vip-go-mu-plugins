@@ -1,17 +1,12 @@
-/* eslint-disable react/prop-types */
-/* eslint-disable react/react-in-jsx-scope */
-/* eslint-disable wpcalypso/import-docblock */
-
 import { Fragment, h } from 'preact';
 import { useContext, useEffect, useState, useRef } from 'preact/hooks';
-import { SearchContext } from '../../context';
-
 import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-
 import 'prismjs/components/prism-json';
 import 'prism-themes/themes/prism-ghcolors.css';
 import Editor from 'react-simple-code-editor';
+
+import { SearchContext } from '../../context';
 import { postData } from '../../utils';
 
 import cx from 'classnames';
@@ -20,6 +15,12 @@ import pluralize from 'pluralize';
 
 import style from './style.scss';
 
+/**
+ *  Collapsible list of values.
+ *
+ * @param {Object} props: { list, title }
+ * @returns {Preact.Component} a Collapsible list
+ */
 const CollapsibleList = ( { list = [], title = 'View' } ) => {
 	const [ visible, setVisible ] = useState( false );
 	const toggle = () => {
@@ -51,6 +52,11 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 
 	const queryResultRef = useRef( null );
 
+	/**
+	 * 
+	 * @param {Object} query the query to Run
+	 * @param {String} url ES url
+	 */
 	const fetchForQuery = async ( query, url ) => {
 		try {
 			const res = await postData( window.VIPSearchDevTools.ajaxurl, {
@@ -67,7 +73,8 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	};
 
 	useEffect( () => {
-		// Skip update
+		// Skip remote fetching if the query is the same.
+		// (e.g. was just reset to the initial one or wasn't change at all)
 		if ( state.query === initialState.query ) {
 			return;
 		}
@@ -77,6 +84,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
+	// Re-highlight the query on result change (after the response is received).
 	useEffect( () => {
 		highlightElement( queryResultRef.current );
 	}, [ queryResultRef, state.result ] );
@@ -94,7 +102,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				<span style="margin-right: auto;">Request</span>
 				<div className={style.query_src_extra}>
 					<CollapsibleList title="WP_Query"
-						list={ Object.entries( query_args ).map( ([ key, value ]) => `${ key }: ${ JSON.stringify( value ) }` ) }
+						list={ Object.entries( query_args ).map( ( [ key, value ] ) => `${ key }: ${ JSON.stringify( value ) }` ) }
 					/>
 					<CollapsibleList title="Trace" list={ backtrace } />
 				</div>
@@ -131,7 +139,6 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 					className={style.container_editor}
 					style={{
 						fontSize: 12,
-						// paddingTop: '32px'
 					}}
 				/>
 			</div>
@@ -147,7 +154,9 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 };
 
 /**
- * Query list
+ * Query list component
+ * 
+ * @returns {Preact.Component} query list.
  */
 export const Queries = () => {
 	const { queries } = useContext( SearchContext );

@@ -1,12 +1,9 @@
-/* eslint-disable react/react-in-jsx-scope */
-/* eslint-disable wpcalypso/import-docblock */
-
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 import { useContext, useState } from 'preact/hooks';
-import { SearchContext } from '../../context';
 import pluralize from 'pluralize';
 import cx from 'classnames';
 
+import { SearchContext } from '../../context';
 import style from './style.scss';
 
 const EXPAND_THRESHOLD = 2;
@@ -27,6 +24,7 @@ export const GeneralInformation = () => {
 };
 
 /**
+ * Represents a single collaplsible info block.
  *
  * @param {Object} props
  * @returns {Preact.Component} A collapsible block of information.
@@ -34,7 +32,7 @@ export const GeneralInformation = () => {
 export const InfoBlock = ( { label, value, options = { collapsible: false } } ) => {
 	const [ collapsed, setCollapsed ] = useState( true );
 
-	const toggleCollapsed = e => {
+	const toggleCollapsed = () => {
 		if ( options.collapsible ) {
 			setCollapsed( ! collapsed );
 		}
@@ -64,5 +62,3 @@ export const InfoBlock = ( { label, value, options = { collapsible: false } } ) 
 			</Fragment> ) : ( <span>{ isArrayValue ? value.join( ', ' ) : value }</span> ) }
 	</div> );
 };
-
-// export const InfoBadge = (props) => {}
