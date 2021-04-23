@@ -3010,6 +3010,51 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
+	public function test__are_es_constants_defined__no_constatns() {
+		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__are_es_constants_defined__all_constatns() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
+		define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
+
+		$this->assertTrue( $result );
+	}
+
+	public function test__are_es_constants_defined__empty_password() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
+		define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', '' );
+
+		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__are_es_constants_defined__no_username() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__are_es_constants_defined__no_endpoints() {
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', [] );
+		define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
+
+		$this->assertFalse( $result );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
