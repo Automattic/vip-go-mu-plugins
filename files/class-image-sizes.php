@@ -16,6 +16,9 @@ class ImageSizes {
 
 	/** @var Image Image to be resized. */
 	public $image;
+	
+	/** @var int Attachment ID. */
+	public $attachment_id;
 
 	/** @var null|array $sizes Intermediate sizes. */
 	public static $sizes = null;
@@ -27,8 +30,9 @@ class ImageSizes {
 	 * @param array $data          Attachment metadata.
 	 */
 	public function __construct( $attachment_id, $data ) {
-		$this->data = $data;
-		$this->image = new Image( $data, get_post_mime_type( $attachment_id ) );
+		$this->data          = $data;
+		$this->attachment_id = $attachment_id;
+		$this->image         = new Image( $data, get_post_mime_type( $attachment_id ) );
 		$this->generate_sizes();
 	}
 
@@ -53,7 +57,7 @@ class ImageSizes {
 
 		/*
 		 * Remove filter preventing WordPress from reading the sizes, it's meant
-		 * to prevent creation of intermediate files, which are no really being used.
+		 * to prevent creation of intermediate files, which are not really being used.
 		 */
 		remove_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 		$intermediate_image_sizes = get_intermediate_image_sizes();
@@ -99,7 +103,7 @@ class ImageSizes {
 		remove_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
 
 		/** This filter is documented in wp-admin/includes/image.php */
-		$sizes = apply_filters( 'intermediate_image_sizes_advanced', static::$sizes, $this->data );
+		$sizes = apply_filters( 'intermediate_image_sizes_advanced', static::$sizes, $this->data, $this->attachment_id );
 
 		// Re-add the filter removed above.
 		add_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );

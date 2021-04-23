@@ -173,7 +173,7 @@
 							<?php wp_nonce_field(Akismet_Admin::NONCE) ?>
 							<div id="publishing-action">
 								<input type="hidden" name="action" value="enter-key">
-								<input type="submit" name="submit" id="submit" class="akismet-button akismet-is-primary" value="<?php esc_attr_e('Save Changes', 'akismet');?>">
+								<input type="submit" name="submit" id="submit" class="akismet-button akismet-could-be-primary" value="<?php esc_attr_e('Save Changes', 'akismet');?>">
 							</div>
 							<div class="clear"></div>
 						</div>

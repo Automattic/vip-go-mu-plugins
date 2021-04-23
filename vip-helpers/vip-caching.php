@@ -8,7 +8,7 @@
  *
  * @param string $slug Category slug
  * @return object|null|bool Term Row from database. Will return null if $slug doesn't match a term. If taxonomy does not exist then false will be returned.
- * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
+ * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_category_by_slug( $slug ) {
 	return wpcom_vip_get_term_by( 'slug', $slug, 'category' );
@@ -26,7 +26,7 @@ function wpcom_vip_get_category_by_slug( $slug ) {
  * @param string     $output Optional. Constant OBJECT, ARRAY_A, or ARRAY_N
  * @param string     $filter Optional. Default is 'raw' or no WordPress defined filter will applied.
  * @return mixed|null|bool Term Row from database in the type specified by $filter. Will return false if $taxonomy does not exist or $term was not found.
- * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
+ * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_term_by( $field, $value, $taxonomy, $output = OBJECT, $filter = 'raw' ) {
 	// ID lookups are cached
@@ -155,7 +155,7 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
  * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
  * @param string $post_type Optional. Post type; default is 'page'.
  * @return WP_Post|null WP_Post on success or null on failure
- * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
+ * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
 	$cache_key = $post_type . '_' . sanitize_key( $title );
@@ -181,7 +181,7 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
  * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
  * @param string $post_type Optional. Post type; default is 'page'.
  * @return WP_Post|null WP_Post on success or null on failure
- * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
+ * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
 	if ( is_array( $post_type ) ) {
@@ -215,7 +215,7 @@ function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 
  * @param string  $new_status The post's new status
  * @param string  $old_status The post's previous status
  * @param WP_Post $post The post
- * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
+ * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_flush_get_page_by_title_cache( $new_status, $old_status, $post ) {
 	if ( 'publish' === $new_status || 'publish' === $old_status ) {
@@ -231,7 +231,7 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_title_cache',
  * @param string  $old_status The post's previous status
  * @param WP_Post $post       The post
  *
- * @link http://vip.wordpress.com/documentation/uncached-functions/ Uncached Functions
+ * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_flush_get_page_by_path_cache( $new_status, $old_status, $post ) {
 	if ( 'publish' === $new_status || 'publish' === $old_status ) {
@@ -250,20 +250,6 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 
  * @return int Post ID, or 0 on failure.
  */
 function wpcom_vip_url_to_postid( $url ) {
-	// Can only run after init, since home_url() has not been filtered to the mapped domain prior to that,
-	// which will cause url_to_postid to fail
-	// @see https://vip.wordpress.com/documentation/vip-development-tips-tricks/home_url-vs-site_url/
-	if ( ! did_action( 'init' ) ) {
-		_doing_it_wrong( 'wpcom_vip_url_to_postid', 'wpcom_vip_url_to_postid must be called after the init action, as home_url() has not yet been filtered', '' );
-
-		return 0;
-	}
-
-	// Sanity check; no URLs not from this site
-	if ( parse_url( $url, PHP_URL_HOST ) !== wpcom_vip_get_home_host() ) {
-		return 0;
-	}
-
 	$cache_key = md5( $url );
 	$post_id = wp_cache_get( $cache_key, 'url_to_postid' );
 
@@ -590,21 +576,36 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	return $found_post;
 }
 
-function wpcom_vip_attachment_url_to_postid( $url ) {
+function wpcom_vip_attachment_cache_key( $url ) {
+	return 'wpcom_vip_attachment_url_post_id_' . md5( $url );
+}
 
-	$id = wp_cache_get( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) );
+function wpcom_vip_attachment_url_to_postid( $url ) {
+	$cache_key = wpcom_vip_attachment_cache_key( $url );
+	$id        = wp_cache_get( $cache_key );
 	if ( false === $id ) {
 		$id = attachment_url_to_postid( $url );
 		if ( empty( $id ) ) {
-			wp_cache_set( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key , 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
 		} else {
-			wp_cache_set( 'wpcom_vip_attachment_url_post_id_' . md5( $url ) , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key , $id, 'default', 24 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		}
 	} elseif ( 'not_found' === $id ) {
 		return false;
 	}
 	return $id;
 }
+
+/**
+ * Remove cached post ID when attachment post deleted
+ *
+ * @see wpcom_vip_attachment_url_to_postid()
+ */
+add_action( 'delete_attachment', function ( $post_id ) {
+	$url = wp_get_attachment_url( $post_id );
+	$cache_key = wpcom_vip_attachment_cache_key( $url );
+	wp_cache_delete( $cache_key, 'default' );
+} );
 
 /**
  * Use this function to cache the comment counting in the wp menu that can be slow on sites with lots of comments
@@ -684,8 +685,8 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	return $link;
 }
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
-	// Don't bother if slug hasn't changed.
-	if ( $post->post_name == $post_before->post_name ) {
+	// Don't bother if the slug or date hasn't changed.
+	if ( $post->post_name == $post_before->post_name && $post->post_date == $post_before->post_date ) {
 		return;
 	}
 
@@ -706,26 +707,60 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
 }
 
 /**
- * We're seeing an increase of urls that match this pattern: http://example.com/http://othersite.com/random_text
- * These then cause really slow lookups inside of wp_old_slug_redirect, since wp_old_slug redirect does not match on full urls but rather former slugs it's safe to skip the lookup for these. (Most of the calls are from bad ad providers that generate random urls)
+ * Potentially skip redirect for old slugs.
+ *
+ * We're seeing an increase of URLs that match this pattern: http://example.com/http://othersite.com/random_text.
+ *
+ * These then cause really slow lookups inside of wp_old_slug_redirect. Since wp_old_slug redirect does not match
+ * on full URLs but rather former slugs, it's safe to skip the lookup for these. Most of the calls are from bad ad
+ * providers that generate random URLs.
  */
-function wpcom_vip_maybe_skip_old_slug_redirect(){
+function wpcom_vip_maybe_skip_old_slug_redirect() {
+	if ( ! is_404() ) {
+		return;
+	}
 
-	//We look to see if a malformed url (represented by 'http:' ) is right after the starting / in DOCUMENT_URI hence position 1
-	if ( is_404() && ( 1 === strpos( $_SERVER['DOCUMENT_URI'], 'http:' ) || 1 === strpos( $_SERVER['DOCUMENT_URI'], 'https:' ) ) ) {
+	if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		return;
+	}
+
+	if ( 0 === strpos( $_SERVER['REQUEST_URI'], '/http:' ) || 0 === strpos( $_SERVER['REQUEST_URI'], '/https:' ) ) {
 		remove_action( 'template_redirect', 'wp_old_slug_redirect' );
 		remove_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
 	}
-
 }
+
 function wpcom_vip_enable_maybe_skip_old_slug_redirect() {
 	add_action( 'template_redirect', 'wpcom_vip_maybe_skip_old_slug_redirect', 7 ); //Run this before wpcom_vip_wp_old_slug_redirect so we can also remove our caching helper
 }
 
 /**
-* Enables object caching for the response sent by Instagram when querying for Instagram image HTML.
-*
-* This cannot be included inside Jetpack because it ships with caching disabled by default.
-* By enabling caching it's possible to save time in uncached page renders.
-**/
-add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
+ * Reset the local WordPress object cache
+ *
+ * This only cleans the local cache in WP_Object_Cache, without
+ * affecting memcache
+ */
+function vip_reset_local_object_cache() {
+	global $wp_object_cache;
+
+	if ( ! is_object( $wp_object_cache ) ) {
+		return;
+	}
+
+	$wp_object_cache->group_ops = array();
+	$wp_object_cache->memcache_debug = array();
+	$wp_object_cache->cache = array();
+
+	if ( is_callable( $wp_object_cache, '__remoteset' ) ) {
+		$wp_object_cache->__remoteset(); // important
+	}
+}
+
+/**
+ * Reset the WordPress DB query log
+ */
+function vip_reset_db_query_log() {
+	global $wpdb;
+
+	$wpdb->queries = array();
+}

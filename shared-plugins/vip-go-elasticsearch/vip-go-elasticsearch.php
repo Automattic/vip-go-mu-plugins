@@ -476,7 +476,7 @@ class WPCOM_elasticsearch {
 	/**
 	 * Set any additional blogs to query along with the current blog
 	 *
-	 * This method accepts an array of additional blog names, in the format of vip.wordpress.com,
+	 * This method accepts an array of additional blog names, in the format of example.com,
 	 * that should be queried.
 	 *
 	 * @param array $domains The additional blogs to query
@@ -814,7 +814,7 @@ class WPCOM_elasticsearch {
 
 						case 'month':
 							if ( empty( $_GET['year'] ) || empty( $_GET['monthnum'] ) ) {
-								continue;
+								continue 3;
 							}
 
 							$filters[] = array(
@@ -828,7 +828,7 @@ class WPCOM_elasticsearch {
 						case 'day':
 
 							if ( empty( $_GET['year'] ) || empty( $_GET['monthnum'] ) || empty( $_GET['day'] ) ) {
-								continue;
+								continue 3;
 							}
 
 							$filters[] = array(

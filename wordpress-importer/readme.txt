@@ -1,11 +1,12 @@
 === WordPress Importer ===
 Contributors: wordpressdotorg
+Donate link: https://wordpressfoundation.org/donate/
 Tags: importer, wordpress
-Requires at least: 3.0
-Tested up to: 4.6
-Stable tag: 0.6.3
+Requires at least: 3.7
+Tested up to: 5.4
+Stable tag: 0.7
 License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Import posts, pages, comments, custom fields, categories, tags and more from a WordPress export file.
 
@@ -14,12 +15,12 @@ Import posts, pages, comments, custom fields, categories, tags and more from a W
 The WordPress Importer will import the following content from a WordPress export file:
 
 * Posts, pages and other custom post types
-* Comments
+* Comments and comment meta
 * Custom fields and post meta
-* Categories, tags and terms from custom taxonomies
+* Categories, tags and terms from custom taxonomies and term meta
 * Authors
 
-For further information and instructions please see the [Codex page on Importing Content](http://codex.wordpress.org/Importing_Content#WordPress)
+For further information and instructions please see the [documention on Importing Content](https://wordpress.org/support/article/importing-content/#wordpress).
 
 == Installation ==
 
@@ -38,6 +39,25 @@ If you would prefer to do things manually then follow these instructions:
 
 == Changelog ==
 
+= 0.7 =
+* Update minimum WordPress requirement to 3.7 and ensure compatibility with PHP 7.4.
+* Fix bug that caused not importing term meta.
+* Fix bug that caused slashes to be stripped from imported meta data.
+* Fix bug that prevented import of serialized meta data.
+* Fix file size check after download of remote files with HTTP compression enabled.
+* Improve accessibility of form fields by adding missing labels.
+* Improve imports for remote file URLs without name and/or extension.
+* Add support for `wp:base_blog_url` field to allow importing multiple files with WP-CLI.
+* Add support for term meta parsing when using the regular expressions or XML parser.
+* Developers: All PHP classes have been moved into their own files.
+* Developers: Allow to change `IMPORT_DEBUG` via `wp-config.php` and change default value to the value of `WP_DEBUG`.
+
+= 0.6.4 =
+* Improve PHP7 compatibility.
+* Fix bug that caused slashes to be stripped from imported comments.
+* Fix for various deprecation notices including `wp_get_http()` and `screen_icon()`.
+* Fix for importing export files with multiline term meta data.
+
 = 0.6.3 =
 * Add support for import term metadata.
 * Fix bug that caused slashes to be stripped from imported content.
@@ -45,7 +65,7 @@ If you would prefer to do things manually then follow these instructions:
 * Fix PHP notices.
 
 = 0.6.2 =
-* Add wp_import_existing_post filter. See: https://core.trac.wordpress.org/ticket/33721
+* Add `wp_import_existing_post` filter, see [Trac ticket #33721](https://core.trac.wordpress.org/ticket/33721).
 
 = 0.6 =
 * Support for WXR 1.2 and multiple CDATA sections
@@ -68,27 +88,10 @@ an export file is uploaded to a server with bad permissions and WordPress 3.3 or
 = 0.3 =
 * Use an XML Parser if possible
 * Proper import support for nav menus
-* ... and much more, see [Trac ticket #15197](http://core.trac.wordpress.org/ticket/15197)
+* ... and much more, see [Trac ticket #15197](https://core.trac.wordpress.org/ticket/15197)
 
 = 0.1 =
 * Initial release
-
-== Upgrade Notice ==
-
-= 0.6 =
-Support for exports from WordPress 3.4.
-
-= 0.5.2 =
-Fix incorrect error message when the export file could not be uploaded.
-
-= 0.5 =
-Import comment meta and other minor bugfixes and enhancements.
-
-= 0.4 =
-Bug fixes for attachment importing and other small enhancements.
-
-= 0.3 =
-Upgrade for a more robust and reliable experience when importing WordPress export files, and for compatibility with WordPress 3.1.
 
 == Frequently Asked Questions ==
 
@@ -99,7 +102,7 @@ A message like "Fatal error: Allowed memory size of 8388608 bytes exhausted" ind
 
 For those with shared hosting, the best alternative may be to consult hosting support to determine the safest approach for running the import. A host may be willing to temporarily lift the memory limit and/or run the process directly from their end.
 
--- [WordPress Codex: Importing Content](http://codex.wordpress.org/Importing_Content#Before_Importing)
+-- [Support Article: Importing Content](https://wordpress.org/support/article/importing-content/#before-importing)
 
 == Filters ==
 

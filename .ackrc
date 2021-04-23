@@ -1,0 +1,2 @@
+# Don't search through vendor dir
+--ignore-directory=is:vendor

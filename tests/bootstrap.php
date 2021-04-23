@@ -8,11 +8,13 @@ if ( ! $_tests_dir ) {
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
+define( 'WPMU_PLUGIN_DIR', getcwd() );
 
 // Constant configs
 // Ideally we'd have a way to mock these
 define( 'FILES_CLIENT_SITE_ID', 123 );
 define( 'WPCOM_VIP_MAIL_TRACKING_KEY', 'key' );
+define( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING', true );
 
 function _manually_load_plugin() {
 	require_once( __DIR__ . '/../000-vip-init.php' );
@@ -25,9 +27,11 @@ function _manually_load_plugin() {
 
 	require_once( __DIR__ . '/../schema.php' );
 
+	require_once( __DIR__ . '/../vip-jetpack/vip-jetpack.php' );
+
 	// Proxy lib
 	require_once( __DIR__ . '/../lib/proxy/ip-forward.php' );
-	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
+	require_once( __DIR__ . '/../lib/proxy/class-iputils.php' );
 
 	require_once( __DIR__ . '/../vip-cache-manager.php' );
 	require_once( __DIR__ . '/../vip-mail.php' );

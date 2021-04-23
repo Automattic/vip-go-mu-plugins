@@ -8,6 +8,17 @@ Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+class VIP_Noop_Mailer {
+	function __construct( $phpmailer ) {
+		$this->subject = $phpmailer->Subject ?? '[No Subject]';
+		$this->recipients = implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) );
+	}
+
+	function send() {
+		trigger_error( sprintf( '%s: skipped sending email with subject `%s` to %s', __METHOD__, $this->subject, $this->recipients ), E_USER_NOTICE );
+	}
+}
+
 class VIP_SMTP {
 	function init() {
 		add_action( 'phpmailer_init',    array( $this, 'phpmailer_init' ) );
@@ -16,7 +27,12 @@ class VIP_SMTP {
 		add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
 	}
 
-	function phpmailer_init( $phpmailer ) {
+	function phpmailer_init( &$phpmailer ) {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === VIP_BLOCK_WP_MAIL ) {
+			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+			return;
+		}
+
 		global $all_smtp_servers;
 
 		if ( ! is_array( $all_smtp_servers ) || empty( $all_smtp_servers ) ) {

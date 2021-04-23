@@ -42,7 +42,35 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return WP_Filesystem_VIP_Uploads|bool|mixed|WP_Filesystem_Direct
 	 */
 	private function get_transport_for_path( $filename, $context = 'read' ) {
+		// If we're not in a VIP environment, allow some WP_CLI functionality to work.
+		if ( true !== VIP_GO_ENV ) {
+			// Allow access to the maintenance file used by WP-CLI.
+			if ( $this->is_maintenance_file( $filename ) ) {
+				return $this->direct;
+			}
+
+			// Allow core upgrades.
+			// Note: WP_CLI doesn't set WP_INSTALLING so we fallback to checking for the upgrade lock instead.
+			if ( wp_installing() || get_option( 'core_updater.lock' ) ) {
+				return $this->direct;
+			}
+
+			// Allow plugin, theme, and language installs.
+			if ( $this->is_upgrade_path( $filename )
+				|| $this->is_plugins_path( $filename )
+				|| $this->is_themes_path( $filename )
+				|| $this->is_languages_path( $filename ) ) {
+				return $this->direct;
+			}
+		}
+
+		// Uploads paths can just use PHP functions when stream wrapper is enabled.
+		// This is because wp_upload_dir will return a vip:// path.
 		if ( $this->is_uploads_path( $filename ) ) {
+			if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+				return $this->direct;
+			}
+
 			return $this->uploads;
 		} elseif ( $this->is_tmp_path( $filename ) ) {
 			return $this->direct;
@@ -50,8 +78,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return $this->direct;
 		}
 
-		/* Translators: 1) file name 2) class name */
-		$error_msg = sprintf( __( 'The `%1$s` file cannot be managed by the `%2$s` class. Writes are only allowed for the `/uploads` and `/tmp` directories and reads can be performed everywhere.' ), $filename, __CLASS__ );
+		$upload_dir = wp_get_upload_dir()['basedir'];
+		$temp_dir = get_temp_dir();
+
+		/* Translators: 1) file name 2) class name 3) tmp dir path 4) uploads dir path */
+		$error_msg = sprintf( __( 'The `%1$s` file cannot be managed by the `%2$s` class. Writes are only allowed for the `%3$s` and `%4$s` directories and reads can be performed everywhere.' ), $filename, __CLASS__, $temp_dir, $upload_dir );
 
 		$this->errors->add( 'unsupported-filepath', $error_msg );
 
@@ -59,6 +90,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		trigger_error( $error_msg, E_USER_WARNING );
 
 		return false;
+	}
+
+	private function is_maintenance_file( $file_path ) {
+		$maintenance_file = ABSPATH . '.maintenance';
+
+		return $file_path === $maintenance_file;
 	}
 
 	private function is_tmp_path( $file_path ) {
@@ -72,6 +109,27 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$upload_base = $upload_dir['basedir'];
 
 		return 0 === strpos( $file_path, $upload_base );
+	}
+
+	private function is_wp_content_subfolder_path( $file_path, $subfolder ) {
+		$upgrade_base = sprintf( '%s/%s', WP_CONTENT_DIR, $subfolder );
+		return 0 === strpos( $file_path, $upgrade_base . '/' ) || $file_path === $upgrade_base;
+	}
+
+	private function is_upgrade_path( $file_path ) {
+		return $this->is_wp_content_subfolder_path( $file_path, 'upgrade' );
+	}
+
+	private function is_plugins_path( $file_path ) {
+		return $this->is_wp_content_subfolder_path( $file_path, 'plugins' );
+	}
+
+	private function is_themes_path( $file_path ) {
+		return $this->is_wp_content_subfolder_path( $file_path, 'themes' );
+	}
+
+	private function is_languages_path( $file_path ) {
+		return $this->is_wp_content_subfolder_path( $file_path, 'languages' );
 	}
 
 	/**
@@ -214,7 +272,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return = $transport->delete( $file );
+		$return = $transport->delete( $file, $recursive, $type );
 		if ( false === $return ) {
 			$this->errors = $transport->errors;
 			return false;

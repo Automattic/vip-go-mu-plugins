@@ -20,7 +20,7 @@ function init_is_ssl_toggle() {
 function init_is_ssl_toggle_for_multisite() {
 	add_action( 'switch_blog', function( $new_blog_id, $prev_blog_id ) {
 		// Not a strict equality check to match core
-		if ( $new_blog_id == $prev_blog_id ) {
+		if ( ! wp_is_site_initialized( $new_blog_id ) || $new_blog_id == $prev_blog_id ) {
 			return;
 		}
 
@@ -73,4 +73,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	foreach ( glob( __DIR__ . '/wp-cli/*.php' ) as $command ) {
 		require( $command );
 	}
+
+	/**
+	 * Register the Async Command Scheduler Runner hook.
+	 */
+	add_action( \Automattic\VIP\Commands\Async_Scheduler_Command::COMMAND_CRON_EVENT_KEY, [ '\Automattic\VIP\Commands\Async_Scheduler_Command', 'runner' ] );
 }

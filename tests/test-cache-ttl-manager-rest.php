@@ -13,6 +13,7 @@ class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
 		register_rest_route( 'tests/v1', '/endpoint', [
 			'methods' => [ 'GET', 'HEAD', 'POST', 'PUT', 'DELETE' ],
 			'callback' => '__return_null',
+			'permission_callback' => '__return_true',
 		] );
 	}
 

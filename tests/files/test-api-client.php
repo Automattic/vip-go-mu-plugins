@@ -16,7 +16,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 
-		$this->api_client = new API_Client( 'https://files.go-vip.co', 123456, 'super-sekret-token' );
+		$this->init_api_client();
 
 		$this->http_requests = [];
 	}
@@ -27,7 +27,18 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 
+		API_Cache::get_instance()->clear_tmp_files();
+
 		parent::tearDown();
+	}
+
+	private function init_api_client() {
+		$this->api_client = new API_Client(
+			'https://files.go-vip.co',
+			123456,
+			'super-sekret-token',
+			API_Cache::get_instance()
+		);
 	}
 
 	public function mock_http_response( $mocked_response ) {
@@ -36,6 +47,14 @@ class API_Client_Test extends \WP_UnitTestCase {
 				'url' => $url,
 				'args' => $args,
 			];
+
+			if ( $args[ 'stream' ] && 
+				! is_wp_error( $mocked_response ) && 
+				isset( $mocked_response[ 'response' ] ) && 
+				$mocked_response[ 'response' ][ 'code' ] === 200 ) {
+				// Handle streamed requests
+				file_put_contents( $args[ 'filename' ], $mocked_response[ 'body' ] );
+			}
 
 			return $mocked_response;
 		}, 10, 3 );
@@ -49,6 +68,12 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
+	}
+
+	public static function get_property( $object, $name ) {
+		$property = new \ReflectionProperty( get_class( $object ), $name );
+		$property->setAccessible( true );
+		return $property;
 	}
 
 	public function get_test_data__is_valid_path() {
@@ -125,11 +150,37 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/path/to/image.jpg', $actual_http_request['url'], 'Incorrect API URL' );
 		$this->assertEquals( 'POST', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
 		$this->assertEquals( 10, $actual_http_request['args']['timeout'], 'Incorrect timeout' );
+
 		$this->assertEquals( [
 			'X-Client-Site-ID' => 123456,
-			'X-Access-Token' => 'super-sekret-token',
-			'Another-Header' => 'Yay!',
+			'X-Access-Token'   => 'super-sekret-token',
+			'Another-Header'   => 'Yay!',
 		], $actual_http_request['args']['headers'], 'Incorrect headers' );
+	}
+
+	public function test__call_api__user_agent() {
+		$original_request_uri = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- test context; this is safe 
+		$_SERVER['REQUEST_URI'] = ' /path?query';
+
+		// Re-initialize so re-generate UA string
+		$this->init_api_client();
+
+		$expected_response = [ 'foo' => 'bar' ];
+		$this->mock_http_response( $expected_response );
+
+		$call_api_method = self::get_method( 'call_api' );
+
+		$actual_response = $call_api_method->invokeArgs( $this->api_client, [
+			'/wp-content/uploads/path/to/image.jpg',
+			'POST',
+		] );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		// Should be upgraded to assertMatchesRegularExpression in the future
+		$this->assertRegExp( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
+
+		$_SERVER['REQUEST_URI'] = $original_request_uri;
 	}
 
 	public function get_test_data__get_api_url() {
@@ -277,7 +328,17 @@ class API_Client_Test extends \WP_UnitTestCase {
 					],
 					'body' => null,
 				],
-				new WP_Error( 'get_file-failed', 'Failed to get file `/wp-content/uploads/file.jpg` (response code: 404)' ),
+				new WP_Error( 'file-not-found', 'The requested file `/wp-content/uploads/get_file.jpg` does not exist (response code: 404)' ),
+			],
+
+			'other-bad-status' => [
+				[
+					'response' => [
+						'code' => 500,
+					],
+					'body' => null,
+				],
+				new WP_Error( 'get_file-failed', 'Failed to get file `/wp-content/uploads/get_file.jpg` (response code: 500)' ),
 			],
 
 			'file-exists' => [
@@ -298,7 +359,14 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function test__get_file( $mocked_response, $expected_result ) {
 		$this->mock_http_response( $mocked_response );
 
-		$actual_result = $this->api_client->get_file( '/wp-content/uploads/file.jpg' );
+		$file = $this->api_client->get_file( '/wp-content/uploads/get_file.jpg' );
+		
+		if ( is_wp_error( $file ) ) {
+			$actual_result = $file;
+		} else {
+			$actual_result = file_get_contents( $file );
+		}
+
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
@@ -449,9 +517,73 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
 		$upload_path = '/wp-content/uploads/file.txt';
 
+		$cache = self::get_property( $this->api_client, 'cache' )->getValue( $this->api_client );
+
+		// To test that upload_file() properly clears the cache, we'll set some data to start
+		$cache->cache_file_stats( 'wp-content/uploads/file.txt', array(
+			'size' => 0,
+			'mtime' => 12345,
+		) );
+
 		$actual_result = $this->api_client->upload_file( $file_path, $upload_path );
 
-		$this->assertEquals( $upload_path, $actual_result );
+		$this->assertEquals( $upload_path, $actual_result, 'Invalid result from upload_file()' );
+
+		$cached_stats = $cache->get_file_stats( 'wp-content/uploads/file.txt' );
+
+		// Should be cleared out of stats cache
+		$this->assertFalse( $cached_stats, 'Expected false from the file stat cache after upload' );
 	}
 
+	public function get_test_data__get_unique_filename() {
+		return [
+			'new-unique-filename' => [
+				[
+					'response' => [
+						'code' => 200,
+					],
+					'body' => '{"filename":"uniquename.jpg"}',
+				],
+				'uniquename.jpg'
+			],
+			'invalid-type' => [
+				[
+					'response' => [
+						'code' => 406,
+					]
+				],
+				new WP_Error('invalid-file-type',
+					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'),
+			],
+			'WP_Error' => [
+				new WP_Error( 'oh-no', 'Oh no!' ),
+				new WP_Error( 'oh-no', 'Oh no!' ),
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_unique_filename
+	 */
+	public function test__get_unique_filename( $mocked_response, $expected_result ) {
+		$this->mock_http_response( $mocked_response );
+
+		$actual_result = $this->api_client->get_unique_filename( '/wp-content/uploads/file.jpg' );
+
+		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	public function test__get_unique_filename__validate_request() {
+		$this->mock_http_response( [] ); // don't care about the response
+
+		$this->api_client->get_unique_filename( '/wp-content/uploads/file.jpg' );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
+		$this->assertArraySubset( [
+			'X-Action' => 'unique_filename'
+		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
+	}
 }

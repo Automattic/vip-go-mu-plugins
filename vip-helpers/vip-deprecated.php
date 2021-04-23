@@ -4,7 +4,6 @@
  * Loads the shared VIP helper file which defines some helpful functions.
  *
  * @deprecated Not applicable since VIP 2.0.0
- * @link http://vip.wordpress.com/documentation/development-environment/ Setting up your Development Environment
  */
 function wpcom_vip_load_helper() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
@@ -230,8 +229,7 @@ function wpcom_vip_remove_polldaddy_rating() {
 /**
  * Removes the <media:content> tags from the RSS2 feed.
  *
- * You should really call this when creating a custom feed (best to leave them in your normal feed)
- * For details on creating a custom feed, see http://lobby.vip.wordpress.com/custom-made/altering-feeds/
+ * You should really call this when creating a custom feed (best to leave them in your normal feed).
  *
  * @deprecated Not applicable since VIP 2.0.0
  */
@@ -250,8 +248,8 @@ function wpcom_vip_disable_postpost() {
  * Outputs Open Graph tags to various pages on the site
  *
  * @deprecated Deprecated since VIP 2.0.0 - Use the `jetpack_enable_open_graph` filter
- * @link http://vip.wordpress.com/documentation/open-graph/ Adding Open Graph Tags
- * @see http://developers.facebook.com/docs/opengraph/ Open Graph
+ * @link https://developer.jetpack.com/hooks/jetpack_enable_open_graph/
+ * @see https://developers.facebook.com/docs/sharing/opengraph Open Graph
  */
 function wpcom_vip_enable_opengraph() {
 	_deprecated_function( __FUNCTION__, '2.0.0', '`jetpack_enable_open_graph` filter' );
@@ -265,7 +263,6 @@ function wpcom_vip_enable_opengraph() {
  * function forces the invitation email to match the WordPress.com user's email address.
  *
  * @deprecated Not applicable since VIP 2.0.0
- * @link http://vip.wordpress.com/documentation/customizing-invites/ Customizing Invites
  */
 function wpcom_invite_force_matching_email_address() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
@@ -515,7 +512,7 @@ function vary_cache_on_function( $function ) {
  * This is the old deprecated version of wpcom_vip_file_get_contents(). Please don't use this function in any new code.
  *
  * @deprecated
- * @link http://lobby.vip.wordpress.com/best-practices/fetching-remote-data/ Fetching Remote Data
+ * @link https://wpvip.com/documentation/fetching-remote-data/ Fetching Remote Data
  * @param string $url URL to fetch
  * @param bool $echo_content Optional. If true (the default), echo the remote file's contents. If false, return it.
  * @param int $timeout Optional. The timeout limit in seconds; valid values are 1-10. Defaults to 3.
@@ -1120,7 +1117,7 @@ function wpcom_is_vip() {
  * So even though it says "remote", you can use it for attachments hosted by us, etc.
  *
  * @deprecated Deprecated since 2.0.0 - use jetpack_photon_url()
- * @link http://vip.wordpress.com/documentation/image-resizing-and-cropping/ Image Resizing And Cropping
+ * @link https://wpvip.com/documentation/image-resizing-and-cropping/ Image Resizing And Cropping
  * @param string $url The raw URL to the image (URLs that redirect are currently not supported with the exception of http://foobar.wordpress.com/files/ type URLs)
  * @param int $width The desired width of the final image
  * @param int $height The desired height of the final image
@@ -1136,21 +1133,6 @@ function wpcom_vip_get_resized_remote_image_url( $url, $width, $height, $escape 
 	$thumburl = jetpack_photon_url( $url, array( 'resize' => array( $width, $height ) ) );
 
 	return ( $escape ) ? esc_url( $thumburl ) : $thumburl;
-}
-
-/**
- * Helper function for wpcom_vip_load_plugin(); sanitizes plugin folder name.
- *
- * You shouldn't use this function.
- *
- * @param string $folder Folder name
- * @return string Sanitized folder name
- */
-function _wpcom_vip_load_plugin_sanitizer( $folder ) {
-	$folder = preg_replace( '#([^a-zA-Z0-9-_.]+)#', '', $folder );
-	$folder = str_replace( '..', '', $folder ); // To prevent going up directories
-
-	return $folder;
 }
 
 /**
@@ -1236,7 +1218,7 @@ function wpcom_vip_theme_url( $path = '', $theme = '' ) {
 /**
  * Return the directory path for a given VIP theme
  *
- * @link http://vip.wordpress.com/documentation/mobile-theme/ Developing for Mobile Phones and Tablets
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/mobile-theme/ Developing for Mobile Phones and Tablets
  * @param string $theme Optional. Name of the theme folder
  * @return string Path for the specified theme
  */

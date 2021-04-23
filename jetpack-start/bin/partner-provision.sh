@@ -1,10 +1,10 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
 # accepts: partner client ID and secret key, and some site info
 # executes wp-cli command to provision Jetpack site for given partner
 
 # change to script directory so that wp finds the wordpress install part for this Jetpack instance
-SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(/usr/bin/dirname -- "$0")" && pwd -P)
 cd "$SCRIPT_DIR" || exit
 
 usage () {
@@ -59,7 +59,7 @@ if [ -z "$JETPACK_START_API_HOST" ]; then
 fi
 
 # fetch an access token using our client ID/secret
-ACCESS_TOKEN_JSON=$(curl https://$JETPACK_START_API_HOST/oauth2/token --silent --header "Host: public-api.wordpress.com" -d "grant_type=client_credentials&client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&scope=jetpack-partner")
+ACCESS_TOKEN_JSON=$(/usr/bin/curl https://$JETPACK_START_API_HOST/oauth2/token --silent --header "Host: public-api.wordpress.com" -d "grant_type=client_credentials&client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&scope=jetpack-partner")
 
 # set URL arg for multisite compatibility
 if [ ! -z "$SITE_URL" ]; then

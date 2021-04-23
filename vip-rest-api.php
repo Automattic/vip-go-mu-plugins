@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: REST API Enhancements
-Plugin URI: https://vip.wordpress.com/
-Description: Add custom REST API endpoints for VIP requests; these endpoints are private and only for the use of WordPress.com VIP
+Plugin URI: https://wpvip.com
+Description: Add custom REST API endpoints for VIP requests; these endpoints are private and only for the use of WordPress VIP
 Author: Erick Hitter, Automattic
 Version: 0.1
 */
@@ -68,13 +68,39 @@ function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_h
  * @param  string $namespace RESET API route's namespace
  * @return bool
  */
-function wpcom_vip_go_rest_api_request_allowed( $namespace ) {
+function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow' ) {
+	// First check basic auth
+	$basic_auth_user = wpcom_vip_basic_auth_user();
+	if ( $basic_auth_user && ! is_wp_error( $basic_auth_user ) &&
+		$basic_auth_user->ID && $basic_auth_user->ID > 0 ) {
+			$user_id = $basic_auth_user->ID;
+
+			// Check current user has `vip_support` or the required capability.
+			// VIP Support users should be able to do anything on the site, but
+			// this cap check runs before that plugin is loaded.
+			// https://github.com/Automattic/vip-support
+			if ( user_can( $user_id, 'vip_support' ) || user_can( $user_id, $cap ) ) {
+				return true;
+			}
+	}
+
 	// Do we have a header to check?
 	if ( ! isset( $_SERVER['HTTP_AUTHORIZATION'] ) || empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
 		return false;
 	}
 
 	return wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $_SERVER['HTTP_AUTHORIZATION'] );
+}
+
+function wpcom_vip_basic_auth_user() {
+	if ( ! isset( $_SERVER['PHP_AUTH_USER'] ) || ! isset( $_SERVER['PHP_AUTH_PW'] ) ) {
+		return false;
+	}
+
+	$username = $_SERVER['PHP_AUTH_USER'];
+	$password = $_SERVER['PHP_AUTH_PW'];
+
+	return wp_authenticate( $username, $password );
 }
 
 /**

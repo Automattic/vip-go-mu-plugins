@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <phpdoc>
-	<title>WordPress.com VIP – VIP Go Function Documentation</title>
+	<title>WordPress VIP – VIP Go Function Documentation</title>
 	<parser>
 		<!-- This places the cache dirs in the root dir `/phpdoc/` for your site -->
 		<target>phpdoc/</target>
@@ -29,6 +29,7 @@
 		<file>000-vip-init.php</file>
 		<file>lib/proxy/ip-forward.php</file>
 		<file>vip-cache-manager/api.php</file>
+		<file>cache/class-vary-cache.php</file>
 		<directory>vip-helpers</directory>
 	</files>
 </phpdoc>

@@ -13,16 +13,17 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * [--dry-run]
 	 * : Show changes without updating
 	 *
-	 * [--yes]
+	 * [--skip-confirm]
 	 * : Skip the confirmation prompt
 	 */
 	function cleanup( $args, $assoc_args ) {
 		global $wpdb;
 
 		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
+		$skip_confirm = Utils\get_flag_value( $assoc_args, 'skip-confirm' );
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
-		} else {
+		} else if ( ! $skip_confirm ) {
 			$env = defined( 'VIP_GO_ENV' ) ? VIP_GO_ENV : 'unknown';
 			WP_CLI::confirm( sprintf( 'Are you sure you want to run cleanup on the %s environment?', $env ) , $assoc_args );
 		}
@@ -41,7 +42,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			$it = new \WP_CLI\Iterators\Table( $iterator_args );
 			foreach ( $it as $blog ) {
 				$url = $blog->domain . $blog->path;
-				$cmd = "--url={$url} vip migration cleanup";
+				$cmd = "--url={$url} vip migration cleanup --skip-confirm";
 
 				if ( $dry_run ) {
 					$cmd .= ' --dry-run';
@@ -164,19 +165,44 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Iterate over attachments and check to see if they actually exist.
 	 *
+	 * Found files are cached in the /tmp directory for quicker re-checks.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <csv-filename>
+	 * : The CSV file for output.  The CSV file has a header with the following structure: `"url", "status"`
+	 *
+	 * [--extra-check]
+	 * : Checks the attachment's `_wp_attached_image` post meta for an edited image filename with a new URL.  This will be slower as it adds additional SQL queries.
+	 *
+	 * [--disable-cache]
+	 * : Disables the cache by appending a random query argument to each URL.
+	 *
+	 * [--find-empty-files]
+	 * : Logs files that are returned with 0 bytes.  Should probably not be used with `--log-found-files` because they will probably also return a 200.
+	 *
+	 * [--log-found-files]
+	 * : By default, only URLs with a status other than "200" are logged.  This will log found files as well.
+	 *
+	 * [--start_date=<start_date>]
+	 * : The date to start the query from.
+	 *
+	 * [--end_date=<end_date>]
+	 * : The date to end the query with.
+	 *
 	 * @subcommand validate-attachments
-	 * @synopsis <csv-filename> [--log-found-files]
 	 */
 	public function validate_attachments( $args, $assoc_args ) {
 		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
-		$output_file = $args[0];
+		$output_file    = $args[0];
+		$extra_check    = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
+		$find_empty     = WP_CLI\Utils\get_flag_value( $assoc_args, 'find-empty-files', false );
+		$disable_cache  = WP_CLI\Utils\get_flag_value( $assoc_args, 'disable-cache', false );
 
-		$offset = 0;
-		$limit = 500;
-		$output = array();
-
-		$attachment_count = array_sum( (array) wp_count_posts( 'attachment' ) );
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		$offset  = 0;
+		$limit   = 500;
+		$threads = 10;
+		$output  = array( array( 'url', 'status' ) );
 
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
@@ -184,49 +210,175 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		global $wpdb;
+
+		$date_query = '';
+		if ( isset( $assoc_args['start_date'] ) ) {
+			$date_query .= $wpdb->prepare( ' AND post_date > %s ', $assoc_args['start_date'] );
+		}
+
+		if ( isset( $assoc_args['end_date'] ) ) {
+			$date_query .= $wpdb->prepare( ' AND post_date < %s ', $assoc_args['end_date'] );
+		}
+
+		$count_sql        = 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query;
+		$attachment_count = $wpdb->get_row( $count_sql, ARRAY_N )[0];
+		WP_CLI::log( 'Saving output to ' . $output_file );
+
+		if ( $log_found_files ) {
+			WP_CLI::log( 'Logging found files.' );
+		}
+
+		if ( $extra_check ) {
+			WP_CLI::log( 'Running Extra URL Checks.  The total may increase as new URLs are found.' );
+		}
+
+		if ( $find_empty ) {
+			WP_CLI::log( 'Logging Empty Files.' );
+		}
+
+		if ( $disable_cache ) {
+			WP_CLI::log( 'Disabling Varnish Cache.' );
+		}
+		
+		$progress         = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		$upload_dir       = wp_get_upload_dir();
+
+		if ( ! file_exists( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ) ) {
+			$cache = [];
+		} else {
+			$cache = json_decode( file_get_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ), ARRAY_N );
+		}
+
 		do {
-			$sql = $wpdb->prepare( 'SELECT guid FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" LIMIT %d,%d', $offset, $limit );
-			$attachments = $wpdb->get_results( $sql );
+			$extra_count    = 0;
+			$attachments    = [];
+			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
+			$attachment_ids = array_map(
+				function( $attachment_ids ) {
+					return (int) $attachment_ids[0];
+				},
+				$wpdb->get_results( $sql, ARRAY_N ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			);
 
-			foreach ( $attachments as $attachment ) {
-				$log_request = false;
-				$url = $attachment->guid;
+			foreach ( $attachment_ids as $attachment_id ) {
+				$attachment_url = wp_get_attachment_url( $attachment_id );
+				$attachments[]  = $attachment_url;
 
-				/*
-				 * TODO: Switch over to `curl_multi` to do lookups in parallel
-				 * if this turns out to be too slow for large media libraries.
-				 */
-				$request = wp_remote_head( $url );
-				$response_code = wp_remote_retrieve_response_code( $request );
-				$response_message = wp_remote_retrieve_response_message( $request );
+				if ( $extra_check ) {
+					$attached_file = $wpdb->get_results( $wpdb->prepare( 'SELECT meta_value from ' . $wpdb->postmeta . ' WHERE post_id=%d AND meta_key="_wp_attached_file"', $attachment_id ) );
+					if ( ! empty( $attached_file ) ) {
+						$extra_url = $upload_dir['baseurl'] . '/' . $attached_file[0]->meta_value;
+						if ( $extra_url !== $attachment_url ) {
+							$attachments[] = $extra_url;
+							$extra_count++;
+						}
+					}
+				}
+			}
 
-				if ( 200 === $response_code ) {
-					$log_request = $log_found_files;
-				} else {
-					$log_request = true;
+			if ( 0 !== $extra_count ) {
+				$attachment_count += $extra_count;
+				$progress->reset( $attachment_count );
+			}
+
+			$attachments        = array_unique( $attachments ); // Just in case, let's clear out any dupes.
+			$attachments_arrays = array_chunk( $attachments, $threads ); // Break the attachments into groups of maxiumum 10 elements.
+			$mh                 = curl_multi_init();
+
+			// Loop through each block of 10 attachments.
+			foreach ( $attachments_arrays as $attachments_array ) {
+
+				$ch    = array();
+				$index = 0;
+
+				foreach ( $attachments_array as $url ) {
+					if ( isset( $cache['200'] ) && in_array( $url, $cache['200'], true ) ) {
+						continue;
+					}
+
+					// By switching the URLs from http:// to https>// we save a request, since it will be redirected to the SSL url
+					if ( is_ssl() ) {
+						$url = str_replace( 'http://', 'https://', $url );
+					}
+
+					$ch[ $index ] = curl_init();
+					curl_setopt( $ch[ $index ], CURLOPT_RETURNTRANSFER, true );
+
+					if ( $disable_cache ) {
+						curl_setopt( $ch[ $index ], CURLOPT_URL, $url . '?disable-cache=' . mt_rand( 1000000, 9999999 ) );
+					} else {
+						curl_setopt( $ch[ $index ], CURLOPT_URL, $url );
+					}
+					curl_setopt( $ch[ $index ], CURLOPT_FOLLOWLOCATION, true );
+					curl_setopt( $ch[ $index ], CURLOPT_NOBODY, true );
+
+					curl_multi_add_handle( $mh, $ch[ $index ] );
+					$index++;
 				}
 
-				if ( $log_request ) {
-					$output[] = array(
-						$url,
-						$response_code,
-						$response_message,
-					);
+				// Exec the cURL requests.
+				$curl_active = null;
+
+				do {
+					$mrc = curl_multi_exec( $mh, $curl_active );
+				} while ( $curl_active > 0 );
+
+				// Process the responses.
+				foreach ( $ch as $index => $handle ) {
+					$log_request   = false;
+					$response_code = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+					$url           = curl_getinfo( $handle, CURLINFO_EFFECTIVE_URL );
+					$url           = strtok( $url, '?' );
+
+					curl_multi_remove_handle( $mh, $handle );
+
+					$cache[ $response_code ][] = $url;
+
+					if ( 200 === $response_code ) {
+						$log_request = $log_found_files;
+					} else {
+						$log_request = true;
+					}
+
+					if ( $find_empty && curl_getinfo( $handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD ) <= 0 ) {
+						$log_request = true;
+					}
+
+					if ( $log_request ) {
+						$output[] = array(
+							$url,
+							$response_code,
+						);
+					}
 				}
 
-				$progress->tick();
+				$progress->tick( count( $attachments_arrays ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
+
 			}
 
 			// Pause.
 			sleep( 1 );
 
 			$offset += $limit;
-		} while ( count( $attachments ) );
+			$attachment_ids_count = count( $attachment_ids );
+		} while ( $attachment_ids_count );
+
 		$progress->finish();
 		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
-	}
 
+		foreach ( $cache as $response_code => $url_array ) {
+			$cache[ $response_code ] = array_unique( $url_array );
+			WP_CLI::line( 'Found ' . number_format( count( $cache[ $response_code ] ) ) . ' URLs with a response code of ' . $response_code );
+
+			// We only want to cache 200s.
+			if ( 200 != $response_code ) {
+				unset( $cache[ $response_code ] );
+			}
+		}
+
+		file_put_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ), wp_json_encode( $cache ) );
+	}
 	/**
 	 * Import user meta attributes from a CSV file.
 	 *
