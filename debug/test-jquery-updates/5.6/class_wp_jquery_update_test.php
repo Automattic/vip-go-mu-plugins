@@ -11,6 +11,8 @@ if ( ! class_exists( 'WP_Jquery_Update_Test' ) ) :
 class WP_Jquery_Update_Test {
 
 	private static $plugin_dir_name;
+	private static $is_supported;
+
 	private static $default_settings = array(
 		'version'        => 'default',
 		'migrate'        => 'default',
@@ -20,6 +22,22 @@ class WP_Jquery_Update_Test {
 	private function __construct() {}
 
 	public static function init_actions() {
+		self::$plugin_dir_name = basename( __DIR__ );
+
+		// Support WP version 5.6 and 5.7 alpha/beta/RC.
+		self::$is_supported = version_compare( $GLOBALS['wp_version'], '5.7', '<' );
+
+		// Add a link to the plugin's settings in the plugins list table.
+		add_filter( 'plugin_action_links', array( __CLASS__, 'add_settings_link' ), 10, 2 );
+		add_filter( 'network_admin_plugin_action_links', array( __CLASS__, 'add_settings_link' ), 10, 2 );
+
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_item' ) );
+		add_action( 'network_admin_menu', array( __CLASS__, 'add_menu_item' ) );
+
+		if ( ! self::$is_supported ) {
+			return;
+		}
+
 		// To be able to replace the src, scripts should not be concatenated.
 		if ( ! defined( 'CONCATENATE_SCRIPTS' ) ) {
 			define( 'CONCATENATE_SCRIPTS', false );
@@ -27,16 +45,7 @@ class WP_Jquery_Update_Test {
 
 		$GLOBALS['concatenate_scripts'] = false;
 
-		self::$plugin_dir_name = basename( __DIR__ );
-
 		add_action( 'wp_default_scripts', array( __CLASS__, 'replace_scripts' ), -1 );
-
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_item' ) );
-		add_action( 'network_admin_menu', array( __CLASS__, 'add_menu_item' ) );
-
-		// Add a link to the plugin's settings in the plugins list table.
-		add_filter( 'plugin_action_links', array( __CLASS__, 'add_settings_link' ), 10, 2 );
-		add_filter( 'network_admin_plugin_action_links', array( __CLASS__, 'add_settings_link' ), 10, 2 );
 
 		add_action( 'admin_init', array( __CLASS__, 'save_settings' ) );
 
@@ -59,7 +68,7 @@ class WP_Jquery_Update_Test {
 			// Set 'jquery-core' to 1.12.4-wp.
 			self::set_script( $scripts, 'jquery-core', $assets_url . 'jquery-1.12.4-wp.min.js', array(), '1.12.4-wp' );
 			// Set 'jquery-migrate' to 1.4.1.
-			self::set_script( $scripts, 'jquery-migrate', $assets_url . 'jquery-migrate-1.4.1.min.js', array(), '1,4,1' );
+			self::set_script( $scripts, 'jquery-migrate', $assets_url . 'jquery-migrate-1.4.1.js', array(), '1,4,1' );
 
 			$deps = array( 'jquery-core' );
 
@@ -163,79 +172,106 @@ class WP_Jquery_Update_Test {
 
 		<h1><?php _e( 'Test jQuery Updates', 'wp-jquery-update-test' ); ?></h1>
 
-		<?php if ( isset( $_GET['jqtest-settings-saved'] ) ) { ?>
-		<div class="notice notice-success is-dismissible">
-			<p><strong><?php _e( 'Settings saved.', 'wp-jquery-update-test' ); ?></strong></p>
-		</div>
-		<?php } ?>
+		<?php if ( ! self::$is_supported ) { ?>
+			<div class="notice notice-error">
+				<p><strong><?php _e( 'WordPress version not supported.', 'wp-jquery-update-test' ); ?></strong></p>
+			</div>
+			<p>
+				<?php _e( 'This plugin is intended for testing of jQuery and jQuery Migrate in WordPress 5.6.', 'wp-jquery-update-test' ); ?>
+				<?php
 
-		<p>
-			<?php _e( 'This plugin is intended for testing of jQuery and jQuery Migrate in WordPress 5.6.', 'wp-jquery-update-test' ); ?>
-			<?php _e( 'It can also load the previous version of jQuery 1.12.4 (used in WordPress 5.4 and earlier) with or without jQuery Migrate 1.4.1.', 'wp-jquery-update-test' ); ?>
-			<br>
-			<?php _e( 'For testing in WordPress 5.5 or earlier please install version 1.0.1 of the plugin.', 'wp-jquery-update-test' ); ?>
-		</p>
-
-		<p>
-			<?php
 				printf(
-					__( 'If you find a jQuery related bug <a href="%s">please report it</a>.', 'wp-jquery-update-test' ),
-					'https://github.com/WordPress/wp-jquery-update-test'
+					__( 'However your WordPress version appears to be %s.', 'wp-jquery-update-test' ),
+					esc_html( $GLOBALS['wp_version'] )
 				);
-			?>
-			<?php
+
+				?>
+			</p>
+			<p>
+				<?php _e( 'For testing in WordPress 5.5 or earlier please install version 1.0.2 of the plugin.', 'wp-jquery-update-test' ); ?>
+				<?php _e( 'WordPress version 5.7 and newer are not supported yet.', 'wp-jquery-update-test' ); ?>
+			</p>
+		<?php } else { ?>
+
+			<?php if ( isset( $_GET['jqtest-settings-saved'] ) ) { ?>
+			<div class="notice notice-success is-dismissible">
+				<p><strong><?php _e( 'Settings saved.', 'wp-jquery-update-test' ); ?></strong></p>
+			</div>
+			<?php } ?>
+
+			<p>
+				<?php _e( 'This plugin is intended for testing of jQuery and jQuery Migrate in WordPress 5.6.', 'wp-jquery-update-test' ); ?>
+				<strong><?php _e( 'It is not intended for use in production.', 'wp-jquery-update-test' ); ?></strong>
+				<?php
+
 				printf(
-					__( 'If the bug is in a jQuery plugin please also check if there is <a href="%s">a new version on NPM</a>.', 'wp-jquery-update-test' ),
-					'https://www.npmjs.com/search?q=keywords:jquery-plugin'
+					__( 'If you have installed Test jQuery Updates on a live website, please uninstall it and use <a href="%s">Enable jQuery Migrate Helper</a> instead.', 'wp-jquery-update-test' ),
+					esc_url( 'https://wordpress.org/plugins/enable-jquery-migrate-helper/' )
 				);
-			?>
-			<?php _e( 'When reporting an issue please include the versions of jQuery, jQuery Migrate, and jQuery UI.', 'wp-jquery-update-test' ); ?>
-			<?php _e( 'This plugin outputs these versions in the browser console.', 'wp-jquery-update-test' ); ?>
-		</p>
 
-		<form method="post">
-		<?php wp_nonce_field( 'wp-jquery-test-settings', 'wp-jquery-test-save' ); ?>
-		<table class="form-table">
-			<tr class="classic-editor-user-options">
-				<th scope="row"><?php _e( 'jQuery version', 'wp-jquery-update-test' ); ?></th>
-				<td>
-					<p>
-						<input type="radio" name="jquery-test-version" id="version-default" value="default"
-							<?php checked( $settings['version'] === 'default' ); ?>
-						/>
-						<label for="version-default"><?php _e( 'Default', 'wp-jquery-update-test' ); ?></label>
-					</p>
-					<p>
-						<input type="radio" name="jquery-test-version" id="version-1.12.4" value="1.12.4"
-							<?php checked( $settings['version'] === '1.12.4' ); ?>
-						/>
-						<label for="version-1.12.4">1.12.4</label>
-					</p>
-				</td>
-			</tr>
+				?>
+			</p>
 
-			<tr>
-				<th scope="row"><?php _e( 'jQuery Migrate', 'wp-jquery-update-test' ); ?></th>
-				<td>
-					<p>
-						<input type="radio" name="jquery-test-migrate" id="migrate-enable" value="enable"
-							<?php checked( $settings['migrate'] === 'enable' ); ?>
-						/>
-						<label for="migrate-enable"><?php _e( 'Enable', 'wp-jquery-update-test' ); ?></label>
-					</p>
-					<p>
-						<input type="radio" name="jquery-test-migrate" id="migrate-disable" value="disable"
-							<?php checked( $settings['migrate'] === 'disable' ); ?>
-						/>
-						<label for="migrate-disable"><?php _e( 'Disable', 'wp-jquery-update-test' ); ?></label>
-					</p>
-				</td>
-			</tr>
-		</table>
-		<?php submit_button(); ?>
-		</form>
-		</div>
-		<?php
+			<p>
+				<?php
+					printf(
+						__( 'If you find a jQuery related bug <a href="%s">please report it</a>.', 'wp-jquery-update-test' ),
+						'https://github.com/WordPress/wp-jquery-update-test'
+					);
+				?>
+				<?php
+					printf(
+						__( 'If the bug is in a jQuery plugin please also check if there is <a href="%s">a new version on NPM</a>.', 'wp-jquery-update-test' ),
+						'https://www.npmjs.com/search?q=keywords:jquery-plugin'
+					);
+				?>
+				<?php _e( 'When reporting an issue please include the versions of jQuery, jQuery Migrate, and jQuery UI.', 'wp-jquery-update-test' ); ?>
+				<?php _e( 'This plugin outputs these versions in the browser console.', 'wp-jquery-update-test' ); ?>
+			</p>
+
+			<form method="post">
+			<?php wp_nonce_field( 'wp-jquery-test-settings', 'wp-jquery-test-save' ); ?>
+			<table class="form-table">
+				<tr class="classic-editor-user-options">
+					<th scope="row"><?php _e( 'jQuery version', 'wp-jquery-update-test' ); ?></th>
+					<td>
+						<p>
+							<input type="radio" name="jquery-test-version" id="version-default" value="default"
+								<?php checked( $settings['version'] === 'default' ); ?>
+							/>
+							<label for="version-default"><?php _e( 'Default', 'wp-jquery-update-test' ); ?></label>
+						</p>
+						<p>
+							<input type="radio" name="jquery-test-version" id="version-1.12.4" value="1.12.4"
+								<?php checked( $settings['version'] === '1.12.4' ); ?>
+							/>
+							<label for="version-1.12.4">1.12.4</label>
+						</p>
+					</td>
+				</tr>
+
+				<tr>
+					<th scope="row"><?php _e( 'jQuery Migrate', 'wp-jquery-update-test' ); ?></th>
+					<td>
+						<p>
+							<input type="radio" name="jquery-test-migrate" id="migrate-enable" value="enable"
+								<?php checked( $settings['migrate'] === 'enable' || $settings['migrate'] === 'default' ); ?>
+							/>
+							<label for="migrate-enable"><?php _e( 'Enable', 'wp-jquery-update-test' ); ?></label>
+						</p>
+						<p>
+							<input type="radio" name="jquery-test-migrate" id="migrate-disable" value="disable"
+								<?php checked( $settings['migrate'] === 'disable' ); ?>
+							/>
+							<label for="migrate-disable"><?php _e( 'Disable', 'wp-jquery-update-test' ); ?></label>
+						</p>
+					</td>
+				</tr>
+			</table>
+			<?php submit_button(); ?>
+			</form>
+			</div>
+		<?php }
 	}
 
 	public static function add_menu_item() {
@@ -248,9 +284,16 @@ class WP_Jquery_Update_Test {
 
 		if ( $file === $plugin_basename && current_user_can( 'activate_plugins' ) ) {
 			// Prevent PHP warnings when a plugin uses this filter incorrectly.
-			$links   = (array) $links;
-			$url     = self_admin_url( 'plugins.php?page=' . self::$plugin_dir_name );
-			$links[] = sprintf( '<a href="%s">%s</a>', $url, __( 'Settings', 'wp-jquery-update-test' ) );
+			$links = (array) $links;
+
+			if ( ! self::$is_supported ) {
+				$text = __( 'WordPress version not supported.', 'wp-jquery-update-test' );
+				$links['wp-jquery-update-test button-link-delete'] = $text;
+			} else {
+				$url  = self_admin_url( 'plugins.php?page=' . self::$plugin_dir_name );
+				$text = sprintf( '<a href="%s">%s</a>', $url, __( 'Settings', 'wp-jquery-update-test' ) );
+				$links['wp-jquery-update-test'] = $text;
+			}
 		}
 
 		return $links;

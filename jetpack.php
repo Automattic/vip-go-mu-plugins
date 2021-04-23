@@ -5,15 +5,23 @@
  * Plugin URI: https://jetpack.com
  * Description: Bring the power of the WordPress.com cloud to your self-hosted WordPress. Jetpack enables you to connect your blog to a WordPress.com account to use the powerful features normally only available to WordPress.com users.
  * Author: Automattic
- * Version: 9.1
+ * Version: 9.6
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
  * Domain Path: /languages/
  */
 
+// Choose an appropriate default Jetpack version, ensuring that older WordPress versions
+// are not using a too modern Jetpack version that is not compatible with it
 if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
-	define( 'VIP_JETPACK_DEFAULT_VERSION', '9.1' );
+	if ( version_compare( $wp_version, '5.5', '<' ) ) {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.1' );
+	} elseif ( version_compare( $wp_version, '5.6', '<' ) ) {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.4' );
+	} else {
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.6' );
+	}
 }
 
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.

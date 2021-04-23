@@ -4,7 +4,7 @@
  * Plugin URI: https://wordpress.org/plugins/wp-jquery-update-test
  * Description: A feature plugin to help with testing updates of the jQuery JavaScript library (not intended for use in production).
  * Version: 2.0.0
- * Requires at least: 5.6
+ * Requires at least: 5.6-alpha
  * Tested up to: 5.6
  * Requires PHP: 5.6
  * Author: The WordPress Team
@@ -21,9 +21,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Only for WP 5.6.x
-if (
-	version_compare( $GLOBALS['wp_version'], '5.6-alpha', '>' ) &&
-	version_compare( $GLOBALS['wp_version'], '5.7-alpha', '<' )
-) {
+if ( version_compare( $GLOBALS['wp_version'], '5.6-alpha', '>' ) ) {
 	include_once __DIR__ . '/class_wp_jquery_update_test.php';
 }

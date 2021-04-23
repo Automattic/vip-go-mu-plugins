@@ -56,6 +56,8 @@ if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
 
+require_once __DIR__ . '/lib/environment/class-environment.php';
+
 if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	/**
 	 * @var constant A8C_PROXIED_REQUEST Set to true if the current request is made via the Automattic proxy, which is only available to Automatticians.
@@ -76,8 +78,8 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
-define( 'WPCOM_SANDBOXED', false !== strpos( gethostname(), '_web_dev_' ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', false !== strpos( gethostname(), '_wpcli_' ) || false !== strpos( gethostname(), '_wp_cli_' ) );
+define( 'WPCOM_SANDBOXED', \Automattic\VIP\Environment::is_sandbox_container( gethostname(), $_ENV ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', \Automattic\VIP\Environment::is_batch_container( gethostname(), $_ENV ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
@@ -163,6 +165,7 @@ require_once( __DIR__ . '/000-debug/0-load.php' );
 require_once( __DIR__ . '/lib/utils/class-alerts.php' );
 
 // Load our development and environment helpers
+require_once( __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php' );
 require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
 require_once( __DIR__ . '/vip-helpers/vip-newrelic.php' );
 require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
@@ -184,21 +187,15 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
+	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
 }
 
 // Load elasticsearch helpers
+// Warning: Site Details depends on the existence of class Search.
+// If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/search/search.php' );
-
-	$search_plugin = \Automattic\VIP\Search\Search::instance();
-
-	// If VIP Search query integration is enabled, disable Jetpack Search
-	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
-		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
-		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
-		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
-	}
 }
 
 // Set WordPress environment type
@@ -221,7 +218,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 
 	// VIP sites should not be set as staging in Jetpack
 	// since it breaks SSO and prevents data from being passed to
-	// WordPress.com 
+	// WordPress.com
 	add_filter( 'jetpack_is_staging_site', '__return_false' );
 }
 

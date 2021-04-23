@@ -17,16 +17,34 @@ function wpcom_vip_sanity_check_alloptions() {
 	}
 
 	// Warn should *always* be =< die
-	$alloptions_size_warn  =  800000;
-	$alloptions_size_die   = 1000000; // 1000000 ~ 1MB, too big for memcache
+	$alloptions_size_warn = 800000;
+	// 950000 is slightly less than ~ 1MB, which is the Memcached entry limit.
+	// The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large
+	// Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
+	$alloptions_size_die  = 950000;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
 	// Cache miss
 	if ( false === $alloptions_size ) {
-		$alloptions = wp_load_alloptions();
+		$alloptions = serialize( wp_load_alloptions() );
+		$alloptions_size_uncompressed = strlen( $alloptions );
+		// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
+		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
+		$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
 
-		$alloptions_size = strlen( serialize( $alloptions ) );
+		// We only compress the value if it's bigger than 20kb and the savings for the compressed value are more than 20%;
+		// See https://github.com/Automattic/wp-memcached/blob/811243804a892a4609a4581d9479fa80c4e4ac8d/object-cache.php#L782
+		// Make sure to use the correct size.
+		// This is an additional safe-guard, in reality the bigger the value the better the compression,
+		// So it's hard to get into a situation where you have a large value that not going to have at least 20% savings.
+		$diff = $alloptions_size_uncompressed - $alloptions_size_compressed;
+
+		if ( $alloptions_size_uncompressed > 20000 && $diff > $alloptions_size_uncompressed * 0.2 ) {
+			$alloptions_size = $alloptions_size_compressed;
+		} else {
+			$alloptions_size = $alloptions_size_uncompressed;
+		}
 
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
 	}
@@ -36,6 +54,9 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// If it's at least over the warning threshold (will also run when blocked), notify
 	if ( $warning ) {
+		if ( $blocked ) {
+			add_filter( 'alloptions_overrule_ack', '__return_true' );
+		}
 		// NOTE - This function has built-in rate limiting so it's ok to call on every request
 		wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $blocked );
 	}
@@ -53,6 +74,20 @@ function wpcom_vip_sanity_check_alloptions_die() {
 	echo file_get_contents( __DIR__ . '/errors/alloptions-limit.html' );
 
 	exit;
+}
+
+function wpcom_vip_alloptions_size_is_acked() {
+	if ( apply_filters( 'alloptions_overrule_ack', false ) ) {
+		return false;
+	}
+
+	$stat = get_option( 'vip_suppress_alloptions_alert', [] );
+
+	if ( is_array( $stat ) && array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
+		return true;
+	}
+
+	return false;
 }
 
 function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
@@ -118,15 +153,17 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 		// Send to IRC, if we have a host configured
 		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
-			wpcom_vip_irc( '#nagios-vip', $to_irc, $irc_alert_level, 'a8c-alloptions' );
 			if ( 'production' === $environment ) {
-				wpcom_vip_irc( '#vip-deploy-on-call', $to_irc , $irc_alert_level, 'a8c-alloptions' );
+
+				if ( ! wpcom_vip_alloptions_size_is_acked() ) {
+					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-alloptions' );
+				}
 
 				// Send to OpsGenie
 				$alerts = Alerts::instance();
 				$alerts->opsgenie(
 					$subject,
-					array( 
+					array(
 						'alias'       => 'alloptions/' . $site_id,
 						'description' => 'The size of AllOptions is reaching the max limit of 1 MB.',
 						'entity'      => (string) $site_id,

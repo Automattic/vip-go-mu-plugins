@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Duplicate of JP core's script: https://github.com/Automattic/jetpack/blob/ed89a18f91c4a8915c36d63267e0610bda1f515e/bin/partner-provision.sh
+# Duplicate of JP core's script: https://github.com/Automattic/jetpack/blob/e13487d0dbbe4c743739b6f1a3e37c143a8c2614/tools/partner-provision.sh
 # Except for the two changes marked below by "EDIT" comments.
 
 # accepts: partner client ID and secret key, and some site info
@@ -20,7 +20,16 @@ usage () {
 	[--force_connect=1] \
 	[--force_register=1] \
 	[--allow-root] \
-	[--partner-tracking-id=1]'
+	[--partner-tracking-id=1] \
+	[--ssh-host=example.com] \
+	[--ssh-user=user_name] \
+	[--ssh-pass=user_pass] \
+	[--ssh-private-key=/path/to/private_key] \
+	[--ssh-port=22] \
+	[--ftp-host=example.com] \
+	[--ftp-user=user_name] \
+	[--ftp-pass=user_pass] \
+	[--ftp-port=21] '
 }
 
 # Note: this script should always be designed to keep wp-cli OPTIONAL
@@ -30,9 +39,9 @@ WP_CLI_ARGS=""
 
 # EDIT: Added this block for VIP Go compatability
 if [ "$WP_CLI_COMMAND" = "wp" ]; then
-    # change to script directory so that wp finds the wordpress install part for this Jetpack instance
-    SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
-    cd "$SCRIPT_DIR" || exit
+	# change to script directory so that wp finds the wordpress install part for this Jetpack instance
+	SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
+	cd "$SCRIPT_DIR" || exit
 fi
 
 # Default API host that can be overridden.
@@ -91,6 +100,42 @@ for i in "$@"; do
 			;;
 		--partner-tracking-id=* )
 			PROVISION_REQUEST_URL="$PROVISION_REQUEST_URL?partner_tracking_id=${i#*=}" # EDIT: Changed partner-tracking-id to partner_tracking_id
+			shift
+			;;
+		--ssh-host=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ssh_host=${i#*=}"
+			shift
+			;;
+		--ssh-user=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ssh_user=${i#*=}"
+			shift
+			;;
+		--ssh-pass=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ssh_pass=${i#*=}"
+			shift
+			;;
+		--ssh-private-key=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ssh_private_key=<${i#*=}"
+			shift
+			;;
+		--ssh-port=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ssh_port=${i#*=}"
+			shift
+			;;
+		--ftp-host=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ftp_host=${i#*=}"
+			shift
+			;;
+		--ftp-user=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ftp_user=${i#*=}"
+			shift
+			;;
+		--ftp-pass=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ftp_pass=${i#*=}"
+			shift
+			;;
+		--ftp-port=* )
+			PROVISION_REQUEST_ARGS="$PROVISION_REQUEST_ARGS --form ftp_port=${i#*=}"
 			shift
 			;;
 		--allow-root )

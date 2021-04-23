@@ -152,9 +152,9 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 			$user = wp_get_current_user();
 
 			// role
-			$role = Jetpack::translate_current_user_to_role();
-			$signed_role = Jetpack::sign_role( $role );
-
+			$roles_instance = new \Automattic\Jetpack\Roles();
+			$role = $roles_instance->translate_current_user_to_role();
+			$signed_role = Jetpack::connection()->sign_role( $role );
 			$secrets = Jetpack::init()->generate_secrets( 'authorize' );
 
 			// Jetpack auth stuff
