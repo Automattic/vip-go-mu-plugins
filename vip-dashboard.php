@@ -13,4 +13,5 @@
  * Domain Path: /languages/
 */
 
-require_once( __DIR__ . '/vip-dashboard/vip-dashboard.php' );
+// TODO: Enable again once contents are restored
+// require_once( __DIR__ . '/vip-dashboard/vip-dashboard.php' );
