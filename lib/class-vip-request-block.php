@@ -31,10 +31,10 @@ class VIP_Request_Block {
 			return self::block_and_log( $value, 'true-client-ip' );
 		}
 
-		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$position = stripos($_SERVER['HTTP_X_FORWARDED_FOR'], $value);
-			if ($position) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+			$position = stripos( $_SERVER['HTTP_X_FORWARDED_FOR'], $value );
+			if ( $position ) {
 				return self::block_and_log( $value, 'x-forwarded-for' );
 			}
 		}
