@@ -31,6 +31,7 @@ class VIP_Request_Block {
 			return self::block_and_log( $value, 'true-client-ip' );
 		}
 
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 			$position = stripos( $_SERVER['HTTP_X_FORWARDED_FOR'], $value );
