@@ -27,6 +27,7 @@ class VIP_Request_Block {
 	public static function ip( string $value ) {
 		// Don't try to block if the passed value is not a valid IP.
 		if ( ! filter_var( $value, FILTER_VALIDATE_IP ) ) {
+			error_log( 'VIP Request Block: The value passed is not a correct IP address: ' . $value );
 			return;
 		}
 
