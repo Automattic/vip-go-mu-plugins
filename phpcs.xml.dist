@@ -22,7 +22,6 @@
 	<exclude-pattern>lightweight-term-count-update/*</exclude-pattern>
 	<exclude-pattern>query-monitor/*</exclude-pattern>
 	<exclude-pattern>rewrite-rules-inspector/*</exclude-pattern>
-	<exclude-pattern>vip-dashboard/*</exclude-pattern>
 	<exclude-pattern>vip-support/*</exclude-pattern>
 
 	<!-- Other directories -->
