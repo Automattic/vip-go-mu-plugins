@@ -25,6 +25,11 @@ class VIP_Request_Block {
 	 * @param string $value target IP address to be blocked.
 	 */
 	public static function ip( string $value ) {
+		// Don't run validation if the passed value is not a valid IP
+		if ( ! filter_var($value, FILTER_VALIDATE_IP) ) {
+			return;
+		}
+
 		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		if ( isset( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) && $value === $_SERVER['HTTP_TRUE_CLIENT_IP'] ) {
