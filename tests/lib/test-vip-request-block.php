@@ -29,11 +29,15 @@ class VIP_Request_Block_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__error_raised_first_ip_forwarded() {
+		// We're detecting that the block is successful by expecting
+		// "Cannot modify header information" headers already sent by warning
 		$this->expectException( PHPUnit\Framework\Error\Warning::class );
 		VIP_Request_Block::ip( '1.1.1.1' );
 	}
 
 	public function test__error_raised_second_ip_forwarded() {
+		// We're detecting that the block is successful by expecting
+		// "Cannot modify header information" headers already sent by warning
 		$this->expectException( PHPUnit\Framework\Error\Warning::class );
 		VIP_Request_Block::ip( '8.8.8.8' );
 	}
