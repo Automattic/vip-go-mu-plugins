@@ -5,14 +5,14 @@
  * @package   query-monitor
  * @link      https://github.com/johnbillion/query-monitor
  * @author    John Blackbourn <john@johnblackbourn.com>
- * @copyright 2009-2018 John Blackbourn
+ * @copyright 2009-2020 John Blackbourn
  * @license   GPL v2 or later
  *
  * Plugin Name:  Query Monitor
  * Description:  The Developer Tools Panel for WordPress.
- * Version:      3.1.1
+ * Version:      3.6.5
  * Plugin URI:   https://querymonitor.com/
- * Author:       John Blackbourn & contributors
+ * Author:       John Blackbourn
  * Author URI:   https://querymonitor.com/
  * Text Domain:  query-monitor
  * Domain Path:  /languages/
@@ -29,11 +29,16 @@
  * GNU General Public License for more details.
  */
 
-defined( 'ABSPATH' ) or die();
+defined( 'ABSPATH' ) || die();
 
 $qm_dir = dirname( __FILE__ );
 
 require_once "{$qm_dir}/classes/Plugin.php";
+
+if ( ! QM_Plugin::php_version_met() ) {
+	add_action( 'admin_notices', 'QM_Plugin::php_version_nope' );
+	return;
+}
 
 # No autoloaders for us. See https://github.com/johnbillion/query-monitor/issues/7
 foreach ( array( 'Activation', 'Util', 'QM' ) as $qm_class ) {
@@ -46,7 +51,12 @@ if ( ! QM_Plugin::php_version_met() ) {
 	return;
 }
 
-if ( defined( 'QM_DISABLED' ) and QM_DISABLED ) {
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once "{$qm_dir}/classes/CLI.php";
+	QM_CLI::init( __FILE__ );
+}
+
+if ( defined( 'QM_DISABLED' ) && QM_DISABLED ) {
 	return;
 }
 
@@ -61,8 +71,13 @@ if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
 	return;
 }
 
-foreach ( array( 'QueryMonitor', 'Backtrace', 'Collectors', 'Collector', 'Dispatchers', 'Dispatcher', 'Output', 'Timer' ) as $qm_class ) {
+foreach ( array( 'QueryMonitor', 'Backtrace', 'Collectors', 'Collector', 'Dispatchers', 'Dispatcher', 'Hook', 'Output', 'Timer' ) as $qm_class ) {
 	require_once "{$qm_dir}/classes/{$qm_class}.php";
 }
+
+unset(
+	$qm_dir,
+	$qm_class
+);
 
 QueryMonitor::init( __FILE__ );

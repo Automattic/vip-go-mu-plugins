@@ -6,6 +6,7 @@ namespace Automattic\VIP\Commands;
 
 use \WP_CLI;
 use \Automattic\WP\Cron_Control\Events_Store;
+use \Automattic\VIP\Utils\Alerts;
 
 class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 
@@ -13,6 +14,9 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 	const COMMAND_TIMESTAMP_CACHE_GROUP = 'vip_go_async_cmd_ts';
 	// Cron event hook
 	const COMMAND_CRON_EVENT_KEY = 'vip_go_async_cmd_run';
+
+	// Audit messages will be sent to this channel in Slack
+	const SLACK_NOTIFY_CHANNEL = '#vip-go-async-cmd-audit';
 	/**
 	 * Schedule an arbitrary CLI command to be executed later as a single event.
 	 *
@@ -110,6 +114,9 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	public static function runner( $command ) {
 		$cache_key = md5( $command );
+		$start = time();
+
+		Alerts::chat( self::SLACK_NOTIFY_CHANNEL, sprintf( 'Kicking off `%s` on `%s`', $command, gethostname() ), 5 );
 
 		$result = WP_CLI::runcommand(
 			$command,
@@ -121,15 +128,56 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 				'exit_error' => false,
 			]
 		);
-
+		$took_seconds = time() - $start;
 		wp_cache_delete( $cache_key, self::COMMAND_TIMESTAMP_CACHE_GROUP );
 
-		if ( $result->stderr ) {
-			WP_CLI::warning( $result->stderr );
-		}
+		$formatted_message = sprintf(
+			'The scheduled command `%s` has finished execution in %d seconds (exit code: %d)
 
-		if ( 0 !== $result->return_code ) {
-			WP_CLI::warning( sprintf( 'The scheduled command `%s` has non-zero exit code', $command, $result->return_code ) );
+			*Hostname*: %s
+
+			*STDOUT* (truncated):
+			```
+			%s
+			```
+
+			*STDERR*:
+			```
+			%s
+			```
+			',
+			$command,
+			$took_seconds,
+			$result->return_code,
+			gethostname(),
+			// Stdout can be quite lengthy, we don't really need ALL of it,
+			// Truncate to last 10 lines - this should be enough for audit purposes.
+			$result->stdout ? join( "\n", array_slice( explode( "\n", $result->stdout ), -10, 10 ) ) : 'empty',
+			// By contrast, stderr is critical for debugging.
+			$result->stderr ?: 'empty' // phpcs:ignore WordPress.PHP.DisallowShortTernary.Found -- Elvis is cool
+		);
+
+		// Trim leading/trailing whitespaces.
+		$formatted_message = join( "\n", array_map( 'trim', explode( "\n", $formatted_message ) ) );
+
+		// A successfully executed command messaeg has INFORMATION level, an errored one is WARNING.
+		$log_level = 0 === (int) $result->return_code ? 5 : 1;
+
+		Alerts::chat( self::SLACK_NOTIFY_CHANNEL, $formatted_message, $log_level );
+
+		if ( 0 !== $result->return_code || $result->stderr ) {
+			WP_CLI::warning( sprintf( 'The scheduled command `%s` has non-zero exit code or non-empty STDERR', $command, $result->return_code ) );
+			\Automattic\VIP\Logstash\log2logstash( [
+				'severity' => 'warning',
+				'feature'  => 'vip_async_cmd_scheduler',
+				'message'  => 'The scheduled command had non-0 exit code',
+				'extra'    => [
+					'command'   => $command,
+					'stderr'    => $result->stderr,
+					'exit_code' => $result->return_code,
+					'took'      => $took_seconds,
+				],
+			] );
 		}
 	}
 

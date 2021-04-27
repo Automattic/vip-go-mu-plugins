@@ -29,9 +29,10 @@ class QM_Activation extends QM_Plugin {
 	}
 
 	public function activate( $sitewide = false ) {
+		$db = WP_CONTENT_DIR . '/db.php';
 
-		if ( ! file_exists( $db = WP_CONTENT_DIR . '/db.php' ) && function_exists( 'symlink' ) ) {
-			@symlink( plugin_dir_path( $this->file ) . 'wp-content/db.php', $db ); // @codingStandardsIgnoreLine
+		if ( ! file_exists( $db ) && function_exists( 'symlink' ) ) {
+			@symlink( $this->plugin_path( 'wp-content/db.php' ), $db ); // phpcs:ignore
 		}
 
 		if ( $sitewide ) {
@@ -43,15 +44,16 @@ class QM_Activation extends QM_Plugin {
 	}
 
 	public function deactivate() {
+		$admins = QM_Util::get_admins();
 
 		// Remove legacy capability handling:
-		if ( $admins = QM_Util::get_admins() ) {
+		if ( $admins ) {
 			$admins->remove_cap( 'view_query_monitor' );
 		}
 
 		# Only delete db.php if it belongs to Query Monitor
 		if ( file_exists( WP_CONTENT_DIR . '/db.php' ) && class_exists( 'QM_DB' ) ) {
-			unlink( WP_CONTENT_DIR . '/db.php' ); // @codingStandardsIgnoreLine
+			unlink( WP_CONTENT_DIR . '/db.php' ); // phpcs:ignore
 		}
 
 	}
@@ -64,7 +66,7 @@ class QM_Activation extends QM_Plugin {
 			return $plugins;
 		}
 
-		$f = preg_quote( basename( $this->plugin_base() ) );
+		$f = preg_quote( basename( $this->plugin_base() ), '/' );
 
 		return array_merge(
 			preg_grep( '/' . $f . '$/', $plugins ),
@@ -97,9 +99,8 @@ class QM_Activation extends QM_Plugin {
 
 	public function php_notice() {
 		?>
-		<div id="qm_php_notice" class="error">
+		<div id="qm_php_notice" class="notice notice-error">
 			<p>
-				<span class="dashicons dashicons-warning" style="color:#dd3232" aria-hidden="true"></span>
 				<?php
 				echo esc_html( sprintf(
 					/* Translators: 1: Minimum required PHP version, 2: Current PHP version. */

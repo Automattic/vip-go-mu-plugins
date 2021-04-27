@@ -10,19 +10,6 @@ final class QM_Collector_Debug_Bar extends QM_Collector {
 	public $id     = 'debug_bar';
 	private $panel = null;
 
-	public function __construct() {
-		parent::__construct();
-	}
-
-	public function name() {
-		$title = $this->get_panel()->title();
-		return sprintf(
-			/* translators: Debug Bar add-on name */
-			__( 'Debug Bar: %s', 'query-monitor' ),
-			$title
-		);
-	}
-
 	public function set_panel( Debug_Bar_Panel $panel ) {
 		$this->panel = $panel;
 	}
@@ -54,11 +41,11 @@ function register_qm_collectors_debug_bar() {
 	}
 
 	$collectors = QM_Collectors::init();
-	$qm = QueryMonitor::init();
+	$qm         = QueryMonitor::init();
 
 	require_once $qm->plugin_path( 'classes/debug_bar.php' );
 
-	$debug_bar = new Debug_Bar;
+	$debug_bar = new Debug_Bar();
 	$redundant = array(
 		'debug_bar_actions_addon_panel', // Debug Bar Actions and Filters Addon
 		'debug_bar_remote_requests_panel', // Debug Bar Remote Requests
@@ -73,7 +60,7 @@ function register_qm_collectors_debug_bar() {
 			continue;
 		}
 
-		$collector = new QM_Collector_Debug_Bar;
+		$collector = new QM_Collector_Debug_Bar();
 		$collector->set_id( "debug_bar_{$panel_id}" );
 		$collector->set_panel( $panel );
 
@@ -83,7 +70,7 @@ function register_qm_collectors_debug_bar() {
 }
 
 function qm_debug_bar_being_activated() {
-	// @codingStandardsIgnoreStart
+	// phpcs:disable
 
 	if ( ! is_admin() ) {
 		return false;
@@ -116,7 +103,7 @@ function qm_debug_bar_being_activated() {
 	}
 
 	return false;
-	// @codingStandardsIgnoreEnd
+	// phpcs:enable
 }
 
 add_action( 'init', 'register_qm_collectors_debug_bar' );

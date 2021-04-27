@@ -612,7 +612,12 @@ class Akismet_Admin {
 						$message = esc_html( __( 'Akismet cleared this comment.', 'akismet' ) );
 					break;
 					case 'wp-blacklisted':
-						$message = sprintf( esc_html( __( 'Comment was caught by %s.', 'akismet' ) ), '<code>wp_blacklist_check</code>' );
+					case 'wp-disallowed':
+						$message = sprintf(
+							/* translators: The placeholder is a WordPress PHP function name. */
+							esc_html( __( 'Comment was caught by %s.', 'akismet' ) ),
+							function_exists( 'wp_check_comment_disallowed_list' ) ? '<code>wp_check_comment_disallowed_list</code>' : '<code>wp_blacklist_check</code>'
+						);
 					break;
 					case 'report-spam':
 						if ( isset( $row['user'] ) ) {
@@ -1055,7 +1060,8 @@ class Akismet_Admin {
 			if ( get_option( 'akismet_alert_code' ) > 0 )
 				self::display_alert();
 		}
-		elseif ( $hook_suffix == 'plugins.php' && !Akismet::get_api_key() ) {
+		elseif ( ( 'plugins.php' === $hook_suffix || 'edit-comments.php' === $hook_suffix ) && ! Akismet::get_api_key() ) {
+			// Show the "Set Up Akismet" banner on the comments and plugin pages if no API key has been set.
 			self::display_api_key_warning();
 		}
 		elseif ( $hook_suffix == 'edit-comments.php' && wp_next_scheduled( 'akismet_schedule_cron_recheck' ) ) {

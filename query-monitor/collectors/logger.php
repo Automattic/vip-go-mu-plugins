@@ -18,10 +18,6 @@ class QM_Collector_Logger extends QM_Collector {
 	const INFO      = 'info';
 	const DEBUG     = 'debug';
 
-	public function name() {
-		return __( 'Logger', 'query-monitor' );
-	}
-
 	public function __construct() {
 		parent::__construct();
 		foreach ( $this->get_levels() as $level ) {
@@ -32,35 +28,35 @@ class QM_Collector_Logger extends QM_Collector {
 	}
 
 	public function emergency( $message, array $context = array() ) {
-		$this->store( 'emergency', $message, $context );
+		$this->store( self::EMERGENCY, $message, $context );
 	}
 
 	public function alert( $message, array $context = array() ) {
-		$this->store( 'alert', $message, $context );
+		$this->store( self::ALERT, $message, $context );
 	}
 
 	public function critical( $message, array $context = array() ) {
-		$this->store( 'critical', $message, $context );
+		$this->store( self::CRITICAL, $message, $context );
 	}
 
 	public function error( $message, array $context = array() ) {
-		$this->store( 'error', $message, $context );
+		$this->store( self::ERROR, $message, $context );
 	}
 
 	public function warning( $message, array $context = array() ) {
-		$this->store( 'warning', $message, $context );
+		$this->store( self::WARNING, $message, $context );
 	}
 
 	public function notice( $message, array $context = array() ) {
-		$this->store( 'notice', $message, $context );
+		$this->store( self::NOTICE, $message, $context );
 	}
 
 	public function info( $message, array $context = array() ) {
-		$this->store( 'info', $message, $context );
+		$this->store( self::INFO, $message, $context );
 	}
 
 	public function debug( $message, array $context = array() ) {
-		$this->store( 'debug', $message, $context );
+		$this->store( self::DEBUG, $message, $context );
 	}
 
 	public function log( $level, $message, array $context = array() ) {
@@ -72,37 +68,48 @@ class QM_Collector_Logger extends QM_Collector {
 	}
 
 	protected function store( $level, $message, array $context = array() ) {
+		$type  = 'string';
 		$trace = new QM_Backtrace( array(
 			'ignore_frames' => 2,
 		) );
 
 		if ( is_wp_error( $message ) ) {
+			$type    = 'wp_error';
 			$message = sprintf(
-				'%s (%s)',
+				'WP_Error: %s (%s)',
 				$message->get_error_message(),
 				$message->get_error_code()
 			);
 		}
 
-		if ( $message instanceof Exception ) {
-			$message = $message->getMessage();
+		if ( ( $message instanceof Exception ) || ( $message instanceof Throwable ) ) {
+			$type    = 'throwable';
+			$message = get_class( $message ) . ': ' . $message->getMessage();
+		}
+
+		if ( ! QM_Util::is_stringy( $message ) ) {
+			$type    = 'dump';
+			$message = print_r( $message, true );
 		}
 
 		$this->data['logs'][] = array(
-			'message' => $this->interpolate( $message, $context ),
+			'message' => self::interpolate( $message, $context ),
 			'context' => $context,
 			'trace'   => $trace,
 			'level'   => $level,
+			'type'    => $type,
 		);
 	}
 
-	protected function interpolate( $message, array $context = array() ) {
+	protected static function interpolate( $message, array $context = array() ) {
 		// build a replacement array with braces around the context keys
 		$replace = array();
 
 		foreach ( $context as $key => $val ) {
 			// check that the value can be casted to string
-			if ( is_scalar( $val ) || ( is_object( $val ) && method_exists( $val, '__toString' ) ) ) {
+			if ( is_bool( $val ) ) {
+				$replace[ "{{$key}}" ] = ( $val ? 'true' : 'false' );
+			} elseif ( is_scalar( $val ) || QM_Util::is_stringy( $val ) ) {
 				$replace[ "{{$key}}" ] = $val;
 			}
 		}
@@ -119,7 +126,7 @@ class QM_Collector_Logger extends QM_Collector {
 		$components = array();
 
 		foreach ( $this->data['logs'] as $row ) {
-			$component = $row['trace']->get_component();
+			$component                      = $row['trace']->get_component();
 			$components[ $component->name ] = $component->name;
 		}
 
@@ -152,4 +159,4 @@ class QM_Collector_Logger extends QM_Collector {
 }
 
 # Load early in case a plugin wants to log a message early in the bootstrap process
-QM_Collectors::add( new QM_Collector_Logger );
+QM_Collectors::add( new QM_Collector_Logger() );

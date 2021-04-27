@@ -17,20 +17,46 @@ class Queue {
 	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
 	public $schema;
+	public $statsd;
+	public $indexables;
+	public $logger;
 
 	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
-	public static $max_indexing_op_count = 6000 + 1; // 10 requests per second plus one for clealiness of comparing with Search::index_count_incr
-	private const INDEX_COUNT_TTL = 5 * MINUTE_IN_SECONDS; // Period for indexing operations
-	private const INDEX_QUEUEING_TTL = 5 * MINUTE_IN_SECONDS; // Keep indexing op queueing for 5 minutes once ratelimiting is triggered
+	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
-	private const MAX_SYNC_INDEXING_COUNT = 10000;
+	public static $max_indexing_op_count;
+	private const DEFAULT_MAX_INDEXING_OP_COUNT = 6000 + 1;
+	private const LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 10;
+	private const UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 250;
+
+	private const INDEX_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const INDEX_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
+	private const INDEX_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
+
+	private static $index_count_ttl;
+	private const DEFAULT_INDEX_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const LOWER_BOUND_INDEX_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
+	private const UPPER_BOUND_INDEX_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
+
+	private static $index_queueing_ttl;
+	private const DEFAULT_INDEX_QUEUEING_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const LOWER_BOUND_INDEX_QUEUEING_TTL = 1 * \MINUTE_IN_SECONDS;
+	private const UPPER_BOUND_INDEX_QUEUEING_TTL = 20 * \MINUTE_IN_SECONDS;
+
+	private static $max_sync_indexing_count;
+	private const DEFAULT_MAX_SYNC_INDEXING_COUNT = 10000;
+	private const LOWER_BOUND_MAX_SYNC_INDEXING_COUNT = 2500;
+	private const UPPER_BOUND_MAX_SYNC_INDEXING_COUNT = 25000;
 
 	public function init() {
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
+
+		$this->apply_settings();
 
 		require_once( __DIR__ . '/queue/class-schema.php' );
 		require_once( __DIR__ . '/queue/class-cron.php' );
@@ -42,11 +68,197 @@ class Queue {
 		$this->cron->init();
 		$this->cron->queue = $this;
 
+		$this->statsd = new \Automattic\VIP\StatsD();
+
+		$this->indexables = \ElasticPress\Indexables::factory();
+
+		// Logger - can be set explicitly for mocking purposes
+		if ( ! $this->logger ) {
+			$this->logger = new \Automattic\VIP\Logstash\Logger();
+		}
+
 		$this->setup_hooks();
 	}
 
 	public function is_enabled() {
 		return true;
+	}
+
+	public function apply_settings() {
+		/**
+		 * The period with which the Elasticsearch indexing rate limiting threshold is set.
+		 *
+		 * A set amount of indexing requests are allowed per period. After rate limiting is triggered, it occurs for a set amount of time and bulk indexing operations
+		 * are queued for asynchronous processing over time.
+		 *
+		 * @hook vip_search_index_count_period
+		 * @param int $period The period, in seconds, for Elasticsearch indexing rate limiting checks.
+		 */
+		self::$index_count_ttl = apply_filters( 'vip_search_index_count_period', self::DEFAULT_INDEX_COUNT_TTL );
+
+		if ( ! is_numeric( self::$index_count_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_count_period should be an integer.',
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = self::DEFAULT_INDEX_COUNT_TTL;
+		}
+
+		self::$index_count_ttl = intval( self::$index_count_ttl );
+
+		if ( self::$index_count_ttl < self::LOWER_BOUND_INDEX_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_count_period should not be set below %d seconds.', self::LOWER_BOUND_INDEX_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = self::LOWER_BOUND_INDEX_COUNT_TTL;
+		}
+
+		if ( self::$index_count_ttl > self::UPPER_BOUND_INDEX_COUNT_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_count_period should not be set above %d seconds.', self::UPPER_BOUND_INDEX_COUNT_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_count_ttl = self::UPPER_BOUND_INDEX_COUNT_TTL;
+		}
+
+		/**
+		 * The number of indexing operations allowed per period before Elasticsearch rate limiting takes effect.
+		 *
+		 * Ratelimiting works by being triggered and then persisting for a set period. During this period, all bulk indexing operations are added to a queue and are
+		 * processed asynchronously.
+		 *
+		 * @hook vip_search_max_indexing_op_count
+		 * @param int $ratelimit_threshold The threshold to trigger rate limiting for the period.
+		 */
+		self::$max_indexing_op_count = apply_filters( 'vip_search_max_indexing_op_count', self::DEFAULT_MAX_INDEXING_OP_COUNT );
+
+		if ( ! is_numeric( self::$max_indexing_op_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_op_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = self::DEFAULT_MAX_INDEXING_OP_COUNT;
+		}
+
+		self::$max_indexing_op_count = intval( self::$max_indexing_op_count );
+		
+		$lower_bound_max_indexing_op_count = ( self::$index_count_ttl * self::LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND ) + 1;
+		
+		if ( self::$max_indexing_op_count < $lower_bound_max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_indexing_op_count should not be below %d queries per second.', self::LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = $lower_bound_max_indexing_op_count;
+		}
+
+		$upper_bound_max_indexing_op_count = ( self::$index_count_ttl * self::UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND ) + 1;
+
+		if ( self::$max_indexing_op_count > $upper_bound_max_indexing_op_count ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_indexing_op_count should not exceed %d queries per second.', self::UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_indexing_op_count = $upper_bound_max_indexing_op_count;
+		}
+		
+		/**
+		 * The length of time Elasticsearch indexing rate limiting will be active once triggered.
+		 *
+		 * During this period, all bulk indexing operations will be queued for asynchronous processing over time.
+		 *
+		 * @hook vip_search_index_ratelimiting_duration
+		 * @param int $duration The duration that Elasticsearch indexing rate limiting will be in effect.
+		 */
+		self::$index_queueing_ttl = apply_filters( 'vip_search_index_ratelimiting_duration', self::DEFAULT_INDEX_QUEUEING_TTL );
+
+		if ( ! is_numeric( self::$index_queueing_ttl ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_index_ratelimiting_duration should be an integer.',
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = self::DEFAULT_INDEX_QUEUEING_TTL;
+		}
+
+		self::$index_queueing_ttl = intval( self::$index_queueing_ttl );
+
+		if ( self::$index_queueing_ttl < self::LOWER_BOUND_INDEX_QUEUEING_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_ratelimiting_duration should not be set below %d seconds.', self::LOWER_BOUND_INDEX_QUEUEING_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = self::LOWER_BOUND_INDEX_QUEUEING_TTL;
+		}
+
+		if ( self::$index_queueing_ttl > self::UPPER_BOUND_INDEX_QUEUEING_TTL ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_index_ratelimiting_duration should not be set above %d seconds.', self::UPPER_BOUND_INDEX_QUEUEING_TTL ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$index_queueing_ttl = self::UPPER_BOUND_INDEX_QUEUEING_TTL;
+		}
+
+		/**
+		 * The maximum number of objects that can be synchronously indexing in Search.
+		 *
+		 * Any indexing operations with more objects than this will have the operation queued for asynchronous processing to avoid overloading the cluster and
+		 * to prevent hanging / timeouts in the UI and related bad UX.
+		 *
+		 * @hook vip_search_max_indexing_count
+		 * @param int $max_count The maximum number of objects that can be synchronously indexed.
+		 */
+		self::$max_sync_indexing_count = apply_filters( 'vip_search_max_indexing_count', self::DEFAULT_MAX_SYNC_INDEXING_COUNT );
+
+		if ( ! is_numeric( self::$max_sync_indexing_count ) ) {
+			_doing_it_wrong(
+				'add_filter',
+				'vip_search_max_indexing_count should be an integer.',
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = self::DEFAULT_MAX_SYNC_INDEXING_COUNT;
+		}
+
+		self::$max_sync_indexing_count = intval( self::$max_sync_indexing_count );
+
+		if ( self::$max_sync_indexing_count < self::LOWER_BOUND_MAX_SYNC_INDEXING_COUNT ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_sync_indexing_count should not be below %d.', self::LOWER_BOUND_MAX_SYNC_INDEXING_COUNT ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = self::LOWER_BOUND_MAX_SYNC_INDEXING_COUNT;
+		}
+
+		if ( self::$max_sync_indexing_count > self::UPPER_BOUND_MAX_SYNC_INDEXING_COUNT ) {
+			_doing_it_wrong(
+				'add_filter',
+				sprintf( 'vip_search_max_sync_indexing_count should not be above %d.', self::UPPER_BOUND_MAX_SYNC_INDEXING_COUNT ), //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'5.5.3'
+			);
+
+			self::$max_sync_indexing_count = self::UPPER_BOUND_MAX_SYNC_INDEXING_COUNT;
+		}
 	}
 
 	public function setup_hooks() {
@@ -61,7 +273,7 @@ class Queue {
 
 	/**
 	 * Given an array of queue operation options, determine the correct index version number
-	 * 
+	 *
 	 * This returns $options['index_version'] if set, or defaults to the current index version. Extracted
 	 * here b/c it is reused all over
 	 */
@@ -72,7 +284,7 @@ class Queue {
 			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
 
 			if ( ! $indexable ) {
-				return new WP_Error( sprintf( 'Indexable not found for type %s', 'invalid-indexable', $object_type ) );
+				return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $object_type ) );
 			}
 
 			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
@@ -161,19 +373,17 @@ class Queue {
 		foreach ( $object_ids as $object_id ) {
 			$this->queue_object( $object_id, $object_type, $options );
 		}
-
-		$this->record_added_to_queue_stat( count( $object_ids ), $object_type );
 	}
 
 	/**
 	 * Retrieve the unix timestamp representing the soonest time that a given object can be indexed
-	 * 
+	 *
 	 * This provides rate limiting by checking the cached timestamp of the last successful indexing operation
 	 * and applying the defined minimum interval between successive indexing jobs
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return int The soonest unix timestamp when the object can be indexed again
 	 */
 	public function get_next_index_time( $object_id, $object_type, $options = array() ) {
@@ -191,10 +401,10 @@ class Queue {
 
 	/**
 	 * Retrieve the unix timestamp representing the most recent time an object was indexed
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return int The unix timestamp when the object was last indexed
 	 */
 	public function get_last_index_time( $object_id, $object_type, $options = array() ) {
@@ -211,7 +421,7 @@ class Queue {
 
 	/**
 	 * Set the unix timestamp when the object was last indexed
-	 * 
+	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 * @param int $time Unix timestamp when the object was last indexed
@@ -227,12 +437,12 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return string The cache key to use for the object's last indexed timestamp
 	 */
 	public function get_last_index_time_cache_key( $object_id, $object_type, $options = array() ) {
 		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
-	
+
 		return sprintf( '%s-%d-v%d', $object_type, $object_id, $index_version );
 	}
 
@@ -241,7 +451,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
-	 * 
+	 *
 	 * @return int Minimum number of seconds between re-indexes
 	 */
 	public function get_index_interval_time( $object_id, $object_type, $options = array() ) {
@@ -319,7 +529,7 @@ class Queue {
 			}
 		}
 
-		// If query has not already been set, it's a "normal" query. This is done after b/c the index version lookup will fail 
+		// If query has not already been set, it's a "normal" query. This is done after b/c the index version lookup will fail
 		// when $object_type is equal to 'all' since this is not a valid Indexable
 		if ( ! $query ) {
 			$index_version = $this->get_index_version_number_from_options( $object_type, $options );
@@ -382,13 +592,13 @@ class Queue {
 		$escaped_ids = implode( ', ', $job_ids );
 
 		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
-		
+
 		return $jobs;
 	}
 
 	/**
 	 * Grab $count jobs that are due now and mark them as running
-	 * 
+	 *
 	 * @param {int} $count How many jobs to check out
 	 * @return array Array of jobs (db rows) that were checked out
 	 */
@@ -430,7 +640,7 @@ class Queue {
 			$job->status = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
 
-			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but 
+			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
 			// between the time we check out the job and the cron processor actually runs
 			$this->set_last_index_time( $job->object_id, $job->object_type, time() );
@@ -441,7 +651,7 @@ class Queue {
 
 	/**
 	 * Find any jobs that are considered "deadlocked"
-	 * 
+	 *
 	 * A deadlocked job is one that has been scheduled for processing, but has
 	 * not completed within the defined time period
 	 */
@@ -454,11 +664,11 @@ class Queue {
 		$deadlocked_time = time() - self::DEADLOCK_TIME;
 
 		$jobs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table_name} WHERE `status` = 'scheduled' AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 			$count
 		) );
-		
+
 		return $jobs;
 	}
 
@@ -493,14 +703,22 @@ class Queue {
 		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
 
 		$indexables = \ElasticPress\Indexables::factory();
-	
+
 		// Organize by version and type, so we can process each unique batch in bulk
 		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
-		
+
 		// Batch process each type using the indexable
 		foreach ( $jobs_by_version_and_type as $index_version => $jobs_by_type ) {
 			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
+
+				// If the index version no longer exists, just delete the jobs and don't bother with stats or anything
+				// since the jobs weren't actually processed
+				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
+				if ( ! array_key_exists( intval( $index_version ), $index_versions ) ) {
+					$this->delete_jobs( $jobs );
+					continue;
+				}
 
 				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
 
@@ -512,13 +730,9 @@ class Queue {
 				$indexable->bulk_index( $ids );
 
 				// TODO handle errors
-		
+
 				// Mark them as done in queue
 				$this->delete_jobs( $jobs );
-
-				$this->record_processed_from_queue_stat( count( $ids ), $indexable );
-
-				$this->record_queue_count_stat( $indexable );
 
 				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
 			}
@@ -527,9 +741,9 @@ class Queue {
 
 	/**
 	 * Given an array of jobs, sort them into sub arrays by type and index version
-	 * 
+	 *
 	 * This helps us minimize the cost of switching between versions and types (Indexables) when processing a list of jobs
-	 * 
+	 *
 	 * @param array Array of jobs to sort
 	 * @return array Multi-dimensional array of jobs, first keyed by version, then by type
 	 */
@@ -549,78 +763,6 @@ class Queue {
 		}
 
 		return $organized;
-	}
-
-	public function record_processed_from_queue_stat( $count, $indexable ) {
-		if ( ! $indexable ) {
-			return;
-		}
-
-		if ( ! is_int( $count ) ) {
-			$count = intval( $count );
-		}
-
-		$statsd_mode = 'processed_from_queue';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url = $es->get_current_host();
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
-	}
-
-	public function record_queue_count_stat( $indexable ) {
-		if ( ! $indexable ) {
-			return;
-		}
-
-		$statsd_mode = 'queue_size';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url = $es->get_current_host();
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$count = $this->count_jobs( 'all', $indexable->slug );
-
-		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->gauge( $per_site_stat, $count );
-	}
-
-	public function record_added_to_queue_stat( $count, $object_type ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
-
-		if ( ! $indexable ) {
-			return;
-		}
-
-		if ( ! is_int( $count ) ) {
-			$count = intval( $count );
-		}
-
-		$statsd_mode = 'added_to_queue';
-
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url = $es->get_current_host();
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
-
-		$statsd = new \Automattic\VIP\StatsD();
-		$statsd->update_stats( $per_site_stat, $count, 1, 'c' );
 	}
 
 	/**
@@ -644,7 +786,7 @@ class Queue {
 		}
 
 		// If the number of affected posts is low enough, process them now rather than send them to cron
-		if ( $term->count <= self::MAX_SYNC_INDEXING_COUNT ) {
+		if ( $term->count <= self::$max_sync_indexing_count ) {
 			$this->offload_indexing_to_queue();
 			return;
 		}
@@ -662,14 +804,14 @@ class Queue {
 		if ( empty( $sync_manager->sync_queue ) ) {
 			return $bail;
 		}
-	
+
 		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
 		if ( ! self::is_indexing_ratelimited() ) {
 			$this->cron->schedule_batch_job();
 		}
-		
+
 		// Empty out the queue now that we've queued those items up
 		$sync_manager->sync_queue = [];
 
@@ -677,7 +819,7 @@ class Queue {
 	}
 
 	/**
-	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled, 
+	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled,
 	 * queue all of the posts for indexing.
 	 *
 	 * @param {array} $document_ids IDs of the documents that were to be indexed
@@ -724,12 +866,18 @@ class Queue {
 		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
 			$this->record_ratelimited_stat( $increment, $indexable_slug );
 
+			$this->handle_index_limiting_start_timestamp();
+			$this->maybe_alert_for_prolonged_index_limiting();
+
 			// Offload indexing to async queue
 			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 
 			if ( ! self::is_indexing_ratelimited() ) {
 				self::turn_on_index_ratelimiting();
+				$this->log_index_ratelimiting_start();
 			}
+		} else {
+			$this->clear_index_limiting_start_timestamp();
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
@@ -741,7 +889,7 @@ class Queue {
 	}
 
 	public function record_ratelimited_stat( $count, $indexable_slug ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = $this->indexables->get( $indexable_slug );
 
 		if ( ! $indexable ) {
 			return;
@@ -758,12 +906,41 @@ class Queue {
 
 		$url = $es->get_current_host();
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
-		$per_site_stat = $es->get_statsd_prefix( $url, $statsd_mode, FILES_CLIENT_SITE_ID, $statsd_index_name );
 
-		$statsd = new \Automattic\VIP\StatsD();
+		$this->maybe_update_stat( $stat, $count );
+	}
 
-		$statsd->increment( $stat, $count );
-		$statsd->increment( $per_site_stat, $count );
+	public function maybe_alert_for_prolonged_index_limiting() {
+		$index_limiting_start = wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+
+		if ( false === $index_limiting_start ) {
+			return;
+		}
+
+		$index_limiting_time = time() - $index_limiting_start;
+
+		if ( $index_limiting_time < self::INDEX_RATE_LIMITED_ALERT_LIMIT ) {
+			return;
+		}
+
+		$message = sprintf(
+			'Application %d - %s has had its Elasticsearch indexing rate limited for %d seconds. Large batch indexing operations are being queued for indexing in batches over time.',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			$index_limiting_time
+		);
+
+		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
+
+		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'warning',
+				'feature' => 'vip_search_indexing_rate_limiting',
+				'message' => $message,
+			)
+		);
 	}
 
 	/**
@@ -781,7 +958,7 @@ class Queue {
 	 * @return {bool} True on success, false on failure
 	 */
 	public static function turn_on_index_ratelimiting() {
-		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_QUEUEING_TTL );
+		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
 	}
 
 	/**
@@ -811,7 +988,7 @@ class Queue {
 			)
 		);
 
-		// Null value will usually mean empty table 
+		// Null value will usually mean empty table
 		if ( is_null( $average_wait_time ) || ! is_numeric( $average_wait_time ) ) {
 			return 0;
 		}
@@ -819,14 +996,106 @@ class Queue {
 		return intval( $average_wait_time );
 	}
 
+	/**
+	 * Given an indexable slug and an index version, delete all matching jobs from the queue.
+	 *
+	 * Used to clean up after an index version deletion and prevent processing jobs that don't need to be processed.
+	 *
+	 * @param string $indexable_slug An indexable slug.
+	 * @param int | string $index_version An index version.
+	 * @return null | WP_Error | object Either null if the queue isn't enabled, a WP_Error if the parameters are incorrect, or the results of wpdb::get_results().
+	 */
+	public function delete_jobs_for_index_version( $indexable_slug, $index_version ) {
+		global $wpdb;
+
+		// If run without having the queue enabled, queue wait times are 0
+		if ( ! $this->is_enabled() ) {
+			return null;
+		}
+
+		if ( ! is_string( $indexable_slug ) ) {
+			return new WP_Error( 'invalid-slug-for-queue-cleanup-on-delete', sprintf( 'Invalid indexable slug \'%s\'', $indexable_slug ) );
+		}
+
+		if ( ! is_numeric( $index_version ) ) {
+			return new WP_Error( 'invalid-version-for-queue-cleanup-on-delete', sprintf( 'Invalid version \'%d\'', $index_version ) );
+		}
+
+		// If schema is null, init likely not run yet
+		// Happens when cron is scheduled/run via wp commands
+		if ( is_null( $this->schema ) ) {
+			$this->init();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		return $wpdb->get_results( $wpdb->prepare( "DELETE FROM `{$table_name}` WHERE `object_type` = %s AND `index_version` = %d", $indexable_slug, $index_version ) ); // @codingStandardsIgnoreLine
+	}
+
 	/*
 	 * Increment the number of indexing operations that have been passed through VIP Search
 	 */
 	private static function index_count_incr( $increment = 1 ) {
 		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
-			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::INDEX_COUNT_TTL );
+			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/*
+	 * Checks if the index limiting start timestamp is set, set it otherwise
+	 */
+	public function handle_index_limiting_start_timestamp() {
+		if ( false === wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			$start_timestamp = time();
+			wp_cache_set( self::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::INDEX_COUNT_CACHE_GROUP );
+		}
+	}
+
+	public function clear_index_limiting_start_timestamp() {
+		wp_cache_delete( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+	}
+
+	/**
+	 * Apply sampling to stats that are directly updated to keep stat sending in check.
+	 *
+	 * @param $stat string The stat to be possibly updated.
+	 * @param $value int The value to possibly update the stat with.
+	 */
+	public function maybe_update_stat( $stat, $value ) {
+		if ( ! is_string( $stat ) ) {
+			return;
+		}
+
+		if ( ! is_numeric( $value ) ) {
+			return;
+		}
+
+		if ( self::$stat_sampling_drop_value <= rand( 1, 10 ) ) {
+			return;
+		}
+
+		$value = intval( $value );
+
+		$this->statsd->update_stats( $stat, $value, 1, 'c' );
+	}
+
+	/**
+	 * When indexing rate limting first begins, log this information and surface as a PHP warning
+	 */
+	public function log_index_ratelimiting_start() {
+		$message = sprintf(
+			'Application %d - %s has triggered Elasticsearch indexing rate limiting, which will last for %d seconds. Large batch indexing operations are being queued for indexing in batches over time.',
+			FILES_CLIENT_SITE_ID,
+			\home_url(),
+			self::$index_queueing_ttl
+		);
+
+		$this->logger->log(
+			'warning',
+			'vip_search_indexing_rate_limiting',
+			$message
+		);
 	}
 }

@@ -5,7 +5,7 @@
  *
  * Usage: wpcom_vip_load_permastruct( '/%category%/%postname%/' );
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $new_permastruct
  */
 function wpcom_vip_load_permastruct( $new_permastruct ) {
@@ -18,7 +18,7 @@ function wpcom_vip_load_permastruct( $new_permastruct ) {
 /**
  * Applies the new permalink structure to the option value
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $permastruct The new permastruct
  * @return string The new permastruct
  */
@@ -34,7 +34,7 @@ function _wpcom_vip_filter_permalink_structure( $permastruct ) {
  *     wpcom_vip_load_category_base( '' );
  *     wpcom_vip_load_category_base( 'section' );
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $new_category_base New category base prefix
  */
 function wpcom_vip_load_category_base( $new_category_base ) {
@@ -55,7 +55,7 @@ function wpcom_vip_load_category_base( $new_category_base ) {
 /**
  * Applies the new category base to the option value
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $category_base New category base prefix
  * @return string The category base prefix
  */
@@ -70,7 +70,7 @@ function _wpcom_vip_filter_category_base( $category_base ) {
  * Usage:
  *     wpcom_vip_load_tag_base( 'section' );
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $new_tag_base New tag base prefix
  */
 function wpcom_vip_load_tag_base( $new_tag_base ) {
@@ -83,7 +83,7 @@ function wpcom_vip_load_tag_base( $new_tag_base ) {
 /**
  * Applies the new tag base to the option value
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $tag_base New tag base prefix
  * @return string The tag base prefix
  */

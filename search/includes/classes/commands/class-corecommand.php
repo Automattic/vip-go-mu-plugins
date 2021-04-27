@@ -15,36 +15,38 @@ class CoreCommand extends \ElasticPress\Command {
 	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
 
 	protected function _maybe_setup_index_version( &$assoc_args ) {
-		if ( $assoc_args['version'] ) {
-			$version_number = $assoc_args['version'];
+		if ( array_key_exists( 'version', $assoc_args ) ) {
+			if ( $assoc_args['version'] ) {
+				$version_number = $assoc_args['version'];
 
-			// If version is specified, the indexable must also be specified, as different indexables can have different versions
-			if ( ! isset( $assoc_args['indexables'] ) ) {
-				return WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
-			}
-
-			$search = \Automattic\VIP\Search\Search::instance();
-
-			// For each indexable specified, override the version
-			$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
-
-			foreach ( $indexable_slugs as $slug ) {
-				$indexable = \ElasticPress\Indexables::factory()->get( $slug );
-
-				if ( ! $indexable ) {
-					return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?' ) );
+				// If version is specified, the indexable must also be specified, as different indexables can have different versions
+				if ( ! isset( $assoc_args['indexables'] ) ) {
+					return WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
 				}
 
-				$result = $search->versioning->set_current_version_number( $indexable, $version_number );
+				$search = \Automattic\VIP\Search\Search::instance();
 
-				if ( is_wp_error( $result ) ) {
-					return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+				// For each indexable specified, override the version
+				$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
+
+				foreach ( $indexable_slugs as $slug ) {
+					$indexable = \ElasticPress\Indexables::factory()->get( $slug );
+
+					if ( ! $indexable ) {
+						return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+					}
+
+					$result = $search->versioning->set_current_version_number( $indexable, $version_number );
+
+					if ( is_wp_error( $result ) ) {
+						return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+					}
 				}
 			}
+
+			// Unset our --version param, otherwise WP_CLI complains that it's unknown
+			unset( $assoc_args['version'] );
 		}
-
-		// Unset our --version param, otherwise WP_CLI complains that it's unknown
-		unset( $assoc_args['version'] );
 	}
 
 	/**
@@ -55,7 +57,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * [--version]
 	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version
 	 *
-	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm]
+	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--start-object-id] [--end-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm]
 	 *
 	 * @param array $args Positional CLI args.
 	 * @since 0.1.2
@@ -68,9 +70,38 @@ class CoreCommand extends \ElasticPress\Command {
 
 		$this->_maybe_setup_index_version( $assoc_args );
 
-		array_unshift( $args, 'elasticpress', 'index' );
+		/**
+		 * EP's `--network-wide` mode uses switch_to_blog to index the content,
+		 * that may not be reliable if the codebase differs between subsites.
+		 *
+		 * Side-step the issue by spawning child proccesses for each subsite.
+		 */
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			$start = microtime( true );
+			WP_CLI::line( 'Operating in network mode!' );
 
-		WP_CLI::run_command( $args, $assoc_args );
+			unset( $assoc_args['network-wide'] );
+
+			foreach ( get_sites() as $site ) {
+				switch_to_blog( $site->blog_id );
+				$assoc_args['url'] = home_url();
+
+				WP_CLI::line( 'Indexing ' . $assoc_args['url'] );
+				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ), [
+					'exit_error' => false,
+				] );
+				Utils\wp_clear_object_cache();
+				restore_current_blog();
+			}
+
+			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
+		} else {
+			// Unset skip-confirm since it doesn't exist in ElasticPress and causes
+			// an error for indexing operations exclusively for some reason.
+			unset( $assoc_args['skip-confirm'] );
+			array_unshift( $args, 'elasticpress', 'index' );
+			WP_CLI::run_command( $args, $assoc_args );
+		}
 	}
 
 	/**

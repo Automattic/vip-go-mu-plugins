@@ -81,3 +81,62 @@ function vip_filter_unnecessary_php_modules_for_site_health_tests( $modules ) {
 
 add_filter( 'site_status_test_php_modules', 'vip_filter_unnecessary_php_modules_for_site_health_tests' );
 
+/*
+ * WordPress Core has a bug in the use_block_editor_for_post filter.
+ * Here we temporarily patch this bug, the patch can be removed once
+ * the bug has been fixed in Core.
+ *
+ * This bug can lead to Gutenberg Editor being loaded for posts of
+ * types that do not support the editor, resulting in a JavaScript error
+ * and a white screen. This will happen when using the filter in the
+ * following way:
+ *
+ * add_filter( 'use_block_editor_for_post', '__return_true' );
+ *
+ * Here we add a check to the filter so that this is averted.
+ *
+ * Note that use_block_editor_for_post_type filter does not have this problem
+ * and that the function that calls the filter does a similar check.
+ *
+ * WordPress Core Trac ticket with ways to replicate and a proposed patch
+ * can be found here: https://core.trac.wordpress.org/ticket/52363
+ */
+
+add_filter(
+	'use_block_editor_for_post',
+	function( $can_edit, $post ) {
+		if ( ! isset( $post->post_type ) ) {
+			return $can_edit;
+		}
+
+		if ( ! post_type_supports( $post->post_type, 'editor' ) ) {
+			return false;
+		}
+
+		return $can_edit;
+	},
+	20,
+	2
+);
+
+/**
+ * Prevent invalid query args from causing php errors & a limitless query.
+ *
+ * This patch can be removed when the following core ticket is resolved:
+ * @see https://core.trac.wordpress.org/ticket/17737
+ */
+function vip_prevent_invalid_core_query_args() {
+	if ( is_admin() ) {
+		return;
+	}
+
+	if ( isset( $_GET['name'] ) && ! is_string( $_GET['name'] ) ) {
+		unset( $_GET['name'] );
+	}
+
+	if ( isset( $_GET['pagename'] ) && ! is_string( $_GET['pagename'] ) ) {
+		unset( $_GET['pagename'] );
+	}
+}
+
+add_action( 'wp_loaded', 'vip_prevent_invalid_core_query_args', 1 );

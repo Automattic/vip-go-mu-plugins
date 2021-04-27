@@ -15,6 +15,7 @@ require_once __DIR__ . '/../class-health.php';
 class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
 	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
+	private const INFO_ICON = "\u{1F7E7}"; // unicode info mark
 
 	public function __construct() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -85,6 +86,12 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @param array $assoc_args CLI arguments
 	 */
 	private function validate_indexable_count( $indexable_slug, $assoc_args ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		if ( ! $indexable ) {
+			WP_CLI::line( "Cannot find indexable '$indexable_slug', probably the feature is not enabled\n" );
+			return;
+		}
+
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		if ( isset( $assoc_args['version'] ) ) {
@@ -106,15 +113,26 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 					continue;
 				}
 
+				if ( ! $indexable->index_exists( $site['blog_id'] ) ) {
+					$blog_id = $site['blog_id'];
+					WP_CLI::line( "Skipping validation of '$indexable_slug' index for site $blog_id as it doesn't exist.\n\n" );
+					continue;
+				}
+
 				WP_CLI::line( "\nValidating $indexable_slug count for site " . $site['blog_id'] . ' (' . $site['domain'] . $site['path'] . ')\n' );
 
 				switch_to_blog( $site['blog_id'] );
 
 				$this->validate_indexable_count_for_site( $indexable_slug, $version );
-				
+
 				restore_current_blog();
 			}
 		} else {
+			if ( ! $indexable->index_exists() ) {
+				WP_CLI::line( "Skipping validation of '$indexable_slug' index as it doesn't exist.\n" );
+				return;
+			}
+
 			WP_CLI::line( "Validating $indexable_slug count\n" );
 
 			$this->validate_indexable_count_for_site( $indexable_slug, $version );
@@ -183,15 +201,22 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				continue;
 			}
 
-			$message = ' inconsistencies found';  
-			if ( $result['diff'] ) {
-				$icon = self::FAILURE_ICON;
+			$identification = sprintf( 'entity: %s, type: %s, index_version: %d', $result['entity'], $result['type'], $result['index_version'] );
+
+			if ( $result['skipped'] ) {
+				$message = sprintf( '%s skipping, because there are no documents in ES when counting %s', self::INFO_ICON, $identification );
 			} else {
-				$icon = self::SUCCESS_ICON;
-				$message = 'no' . $message;
+				$message = ' inconsistencies found';
+				if ( $result['diff'] ) {
+					$icon = self::FAILURE_ICON;
+				} else {
+					$icon = self::SUCCESS_ICON;
+					$message = 'no' . $message;
+				}
+
+				$message = sprintf( '%s %s when counting %s - (DB: %s, ES: %s, Diff: %s)', $icon, $message, $identification, $result['db_total'], $result['es_total'], $result['diff'] );
 			}
 
-			$message = sprintf( '%s %s when counting entity: %s, type: %s, index_version: %d - (DB: %s, ES: %s, Diff: %s)', $icon, $message, $result['entity'], $result['type'], $result['index_version'], $result['db_total'], $result['es_total'], $result['diff'] );
 			WP_CLI::line( $message );
 		}
 	}
@@ -209,7 +234,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * ---
 	 * default: 1
 	 * ---
-	 * 
+	 *
 	 * [--last_post_id=<int>]
 	 * : Optional last post id to check
 	 *
@@ -231,28 +256,25 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * default: csv
 	 * ---
 	 *
-	 * [--do-not-heal]
+	 * [--do_not_heal]
 	 * : Optional Don't try to correct inconsistencies
 	 *
 	 * [--silent]
 	 * : Optional silences all non-error output except for the final results
 	 *
+	 * [--force_parallel_execution]
+	 * : Optional Force execution even if the process is already ongoing
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search health validate-contents
-	 * 
+	 *
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
-		// Disable DB and ES query logs to keep memory usage under control
-		if ( ! defined( 'SAVEQUERIES' ) ) {
-			define( 'SAVEQUERIES', false );
-		}
-		if ( ! defined( 'EP_QUERY_LOG' ) ) {
-			define( 'EP_QUERY_LOG', false );
-		}
+		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
 
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content( $assoc_args['start_post_id'], $assoc_args['last_post_id'], $assoc_args['batch_size'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ), isset( $assoc_args['inspect'] ), isset( $assoc_args['do-not-heal'] ) );
-		
+		$results = $health->validate_index_posts_content( $assoc_args );
+
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
 
@@ -260,7 +282,11 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				$this->render_contents_diff( $diff, $assoc_args['format'], $assoc_args['max_diff_size'] );
 			}
 
-			WP_CLI::error( $results->get_error_message() );
+			$message = $results->get_error_message();
+			if ( 'content_validation_already_ongoing' === $results->get_error_code() ) {
+				$message .= "\n\nYou can use --force-parallel-execution to run the command even with the lock in place";
+			}
+			WP_CLI::error( $message );
 		}
 
 		if ( empty( $results ) ) {
@@ -310,7 +336,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		}
 
 		if ( ! empty( $truncate_msg ) && ! $silent ) {
-			WP_CLI::warning( $truncate_msg ); 
+			WP_CLI::warning( $truncate_msg );
 		}
 	}
 

@@ -30,9 +30,9 @@ When migrating or onboarding new sites there are a number of considerations that
 
 ## Index Field Count <a name='index-field-count'></a>
 
-Index field count is one of the major considerations in onboarding a site onto VIP Search. Elasticsearch limits how many unique fields an index can have. To this end, there is a limit set by the `ep_total_field_limit` filter. The default for Elasticsearch is 1000 total fields while VIP Search has it's default set at 5000 with an upper limit of 20000. 
+Index field count is one of the major considerations in onboarding a site onto VIP Search. Elasticsearch limits how many unique fields an index can have. To this end, there is a limit set by the `ep_total_field_limit` filter. The default for Elasticsearch is 1000 total fields while VIP Search has it's default set at 5000 with an upper limit of 20000.
 
-While each object has it's own default fields it indexes, there are also meta and taxonomy considerations that must be made. Each meta and taxonomy field takes up 11 and 9 fields respectively due to type casting and other behavior in the underlying ElasticPress functionality. This means that fields can be "used up" quickly. 
+While each object has it's own default fields it indexes, there are also meta and taxonomy considerations that must be made. Each meta and taxonomy field takes up 11 and 9 fields respectively due to type casting and other behavior in the underlying ElasticPress functionality. This means that fields can be "used up" quickly.
 
 Since the only taxonomy or meta that actually needs to be indexed are those that are used for querying, an allow list system was added to mitigate this issue.
 
@@ -53,12 +53,15 @@ The filter for setting the post taxonomy allow list is `vip_search_post_taxonomi
 
 ## How to enable VIP Search? <a name='https://github.com/Automattic/vip-docs/pull/39'></a>
 
+1. Ensure that an Elasticsearch user has been provisioned for the corresponding site. To see if the elasticsearch user was provisioned check site's meta fields for the `vip_elasticsearch_settings` field in [VIP admin](https://admin.wpvip.com/#/). To provision user run:
+`vipgo api POST /sites/<site-id>/search/provision-user`
 1. Add two new constants to `wp-config.php` or other analog:
 	1. `define( 'VIP_ENABLE_VIP_SEARCH', true );`
 	1. `define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );`
+    1. If you are indexing a multisite, also add `define( 'EP_IS_NETWORK', true );`
 1. Disable and remove all other Elasticsearch-backed functionality. VIP Search uses forks of `es-wp-query` and `ElasticPress` that are loaded automatically. No other Elasticsearch backed functionality is supported while VIP Search is enabled.
 1. Commit/deploy those changes if applicable.
 1. Test it to make sure everything works.
-1. Run a re-index to make sure everything is in sync. You may need to drop your index and then re-index if you notice any irregularities at this point. Performed by running `wp vip-search index --setup`. **This drops your index and makes it inaccessible to VIP Search while this process takes place**. If the index is currently in use and serving production data, [index versioning](versioning.md) should be used so a new index can be created and then swapped to rather than destroying the index currently in use and causing downtime.
+1. Run a re-index to make sure everything is in sync. You may need to drop your index and then re-index if you notice any irregularities at this point. Performed by running `wp vip-search index --setup`. If you are indexing a multisite, add `--network-wide`. **This drops your index and makes it inaccessible to VIP Search while this process takes place**. If the index is currently in use and serving production data, [index versioning](versioning.md) should be used so a new index can be created and then swapped to rather than destroying the index currently in use and causing downtime.
 
 If anything goes wrong, you can just remove the constants and re-enable/replace the plugins and settings you had in place previously.
