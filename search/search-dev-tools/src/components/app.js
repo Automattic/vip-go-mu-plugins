@@ -20,7 +20,10 @@ const AdminBarButton = props => {
 };
 
 /**
- * 
+ * The Main app component.
+ * It mounts onto an existing DOM node in the Admin Bar and then renders into a Portal
+ * to avoid any interference of Admin Bar CSS.
+ *
  * @param {Object} props
  * @returns {preact.VNode} Top-level app component
  */
