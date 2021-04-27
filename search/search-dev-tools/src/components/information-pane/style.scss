@@ -53,6 +53,11 @@
 			}
 		}
 
+		&_teaser {
+			color: var(--vip-brand-60);
+			cursor: pointer;
+		}
+
 		&_item {
 			@include text-caption();
 
