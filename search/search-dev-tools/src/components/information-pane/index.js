@@ -11,7 +11,7 @@ const EXPAND_THRESHOLD = 2;
 
 /**
  *
- * @returns {preact.FunctionComponent} General useful debug info.
+ * @returns {preact.VNode} General useful debug info.
  */
 export const GeneralInformation = () => {
 	const { queries, information } = useContext( SearchContext );
@@ -28,7 +28,7 @@ export const GeneralInformation = () => {
  * Represents a single collaplsible info block.
  *
  * @param {Object} props
- * @returns {preact.FunctionComponent} A collapsible block of information.
+ * @returns {preact.VNode} A collapsible block of information.
  */
 export const InfoBlock = ( { label, value, options = { collapsible: false } } ) => {
 	const [ collapsed, setCollapsed ] = useState( true );

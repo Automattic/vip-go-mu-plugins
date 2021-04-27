@@ -7,7 +7,7 @@ import style from './style.scss';
  *  Collapsible list of values.
  *
  * @param {Object} props: { list, title }
- * @returns {preact.FunctionComponent} a Collapsible list
+ * @returns {preact.VNode} a collapsible list of values
  */
 export const CollapsibleList = ( { list = [], title = 'View' } ) => {
 	const [ visible, setVisible ] = useState( false );

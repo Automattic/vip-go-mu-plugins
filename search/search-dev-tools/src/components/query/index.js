@@ -18,7 +18,7 @@ import style from './style.scss';
 /**
  * A single query
  *
- * @returns {Preact.Component} A query component.
+ * @returns {preact.VNode} A query component.
  */
 const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	const txtQuery = JSON.stringify( args.body, null, 2 );
@@ -138,7 +138,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 /**
  * Query list component
  * 
- * @returns {Preact.Component} query list.
+ * @returns {preact.VNode} query list.
  */
 export const Queries = () => {
 	const { queries } = useContext( SearchContext );

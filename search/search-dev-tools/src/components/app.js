@@ -22,7 +22,7 @@ const AdminBarButton = props => {
 /**
  * 
  * @param {Object} props
- * @returns {Preact.Component} Top-level app component
+ * @returns {preact.VNode} Top-level app component
  */
 const App = props => {
 	const [ visible, setVisible ] = useState( false );

@@ -8,7 +8,7 @@ import close from '../../assets/close.svg';
 /**
  * Overlay. Borrowed from Jetpack Instant Search.
  * @param {Object} props
- * @returns {preact.FunctionComponent} Overlay that contains Dev Tools UI
+ * @returns {preact.VNode} Overlay that contains Dev Tools UI
  */
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme, isVisible, opacity } = props;
