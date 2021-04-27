@@ -1,0 +1,115 @@
+/*
+ * Widgets
+ */
+
+.widgets-area {
+	padding: 1%;
+	max-width: 1250px;
+	margin: 0 auto;
+	
+	@media screen and (max-width: 600px) {
+		padding: 2%;
+	}
+}
+
+.widget {
+	display: block;
+	float: left;
+	width: 48%;
+	margin: 1%;
+	padding: 2em;
+	background: $vip-white;
+	border: 1px solid $vip-grey-2;
+	
+	@media screen and (max-width: 600px) {
+		width: 100%;
+		margin: 0 0 2%;
+	}
+	
+	a {
+		color: $vip-gold;
+		text-decoration: underline;
+	
+		&:hover {
+			text-decoration: underline;
+			color: $vip-grey;
+		}
+	}
+	
+	p {
+		color: $vip-grey;
+	}
+
+	&.widget-small {
+		width: 22%;
+		min-height: 200px;
+		padding: 0;
+		
+		.widget__content {
+			padding: 0 2em;
+		}
+		
+		@media screen and (max-width: 768px) {
+			width: 48%;
+		}
+		
+		@media screen and (max-width: 600px) {
+			width: 100%;
+			margin: 0 0 2%;
+		}
+	}
+}
+
+.widget__title,
+.widget__subtitle {
+	margin-top: 0;
+	font-weight: 600;
+}
+
+.widget__subtitle {
+	margin-top: 3em;
+	font-size: 1.2em;
+}
+
+.widget__col-2 {
+	float: left;
+	width: 45%;
+	margin-right: 10%;
+	
+	@media screen and (max-width: 768px) {
+		float: none;
+		width: 100%;
+		margin: 0;
+	}
+
+	&:last-of-type {
+		margin: 0;
+	}
+}
+
+/* Widget List */
+.widget__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+
+	li {
+		margin-bottom: 1.5em;
+	}
+
+	a,
+	span {
+		display: block;
+	}
+	
+	a {
+		margin-bottom: .2em;
+		font-size: 1.1em;
+	}
+
+	span {
+		font-size: .9em;
+		color: $vip-grey-1;
+	}
+}
+

@@ -1,0 +1,58 @@
+.chart-circular__block {
+	display: inline-block;
+	width: $graph-size;
+	height: $graph-size;
+	margin: 30px 20px 20px;
+	
+	@media screen and (max-width: 1024px) {
+		display: none;
+	}
+}
+
+.chart-circular__data {
+	position: absolute;
+	width: $graph-size;
+	text-align: center;
+	
+	transform: translateY(46%);
+	
+	span {
+		display: block;
+	}
+	
+	.numbers__value {
+		margin-bottom: .25em;
+		font-size: 36px;
+	}
+	
+}
+
+.chart-circular__one {
+	
+	.numbers__value {
+		color: $graph-blue;
+	}
+	
+	path.chart-graph {
+		stroke: $graph-blue;
+	}
+}
+.chart-circular__two {
+	
+	.numbers__value {
+		color: $graph-orange;
+	}
+	
+	path.chart-graph {
+		stroke: $graph-orange;
+	}
+}
+
+.chart-graph {
+	stroke-dasharray: 482;
+	stroke-dashoffset: 482;
+	transition:			all 1.4s ease;
+}
+.chart-graph-dummy {
+	stroke: $graph-dummy;
+}
