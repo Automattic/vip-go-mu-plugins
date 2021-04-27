@@ -64,6 +64,7 @@ class Search {
 		'dca',
 		'dfw',
 		'bur',
+		'ams',
 	];
 
 	private static $query_count_ttl;
