@@ -40,7 +40,8 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		maybe_load_restrictions();
 
-		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'File visibility filter has no callbacks attached' );
+		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'Restrict_All_Files\check_file_visibility() is not defined; restrict-all-files.php may not have been require-d correctly' );
+		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have the correct callback attached' );
 	}
 
 	/**
@@ -53,7 +54,9 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		maybe_load_restrictions();
 
-		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'File visibility filter has no callbacks attached' );
+		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'Restrict_Unpublished_Files\check_file_visibility() is not defined; restrict-unpublished-files.php may not have been require-d correctly' );
+		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have correct callback attached' );
+		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
 	}
 
 	/**
@@ -149,21 +152,21 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 				'FILE_IS_PUBLIC',
 				'/wp-content/uploads/public.jpg',
 				202,
-				false,
+				'false',
 			],
 
 			'private-and-allowed-file' => [
 				'FILE_IS_PRIVATE_AND_ALLOWED',
 				'/wp-content/uploads/allowed.jpg',
 				202,
-				true,
+				'true',
 			],
 
 			'private-and-denied-file' => [
 				'FILE_IS_PRIVATE_AND_DENIED',
 				'/wp-content/uploads/denied.jpg',
 				403,
-				true,
+				'true',
 			],
 		];
 	}
@@ -174,17 +177,12 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	 *
 	 * @dataProvider data_provider__send_visibility_headers
 	 */
-	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $should_have_private_header ) {
+	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $private_header_value ) {
 		send_visibility_headers( $file_visibility, $file_path );
 
 		$this->assertEquals( $expected_status_code, http_response_code(), 'Status code does not match expected' );
 
-		// Not ideal to have a branch in tests, but good enough.
-		if ( $should_have_private_header ) {
-			$this->assertContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers do not include X-Private header' );
-		} else {
-			$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include the X-Private header' );
-		}
+		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), xdebug_get_headers(), 'Sent headers do not include X-Private header or its value is unexpected' );
 	}
 
 	/**
@@ -201,6 +199,148 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( 500, http_response_code(), 'Status code does not match expected' );
 
-		$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include X-Private header but should not.' );
+		$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include X-Private: true header but should not.' );
+		$this->assertNotContains( 'X-Private: false', xdebug_get_headers(), 'Sent headers include X-Private:false header but should not.' );
+	}
+
+	public function test__is_valid_path_for_site__always_true_for_not_multisite() {
+		if ( is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = true;
+
+		$file_path = '2021/01/kittens.jpg';
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_main_site_can_access_self_path_with_vip_protocol() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = true;
+
+		add_filter( 'upload_dir', function( $params ) {
+			$params['path'] = 'vip:/' . $params['path'];
+			$params['basedir'] = 'vip:/' . $params['basedir'];
+			return $params;
+		} );
+
+		$file_path = '2021/01/kittens.jpg';
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_main_site_can_access_self_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = true;
+
+		$file_path = '2021/01/kittens.jpg';
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_main_site_can_access_basedir_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		// Can access other paths from basedir, as long as they don't contain `/sites/ 
+		$expected_is_allowed = true;
+
+		$file_path = 'cache/css/cats.css';
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_main_site_cannot_access_subsite_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = false;
+
+		// Get file path for a subsite
+		$subsite_id = $this->factory->blog->create();
+		$file_path = sprintf( 'sites/%d/2021/01/dogs.gif', $subsite_id );
+
+		// Stay in main site context
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_subsite_can_access_self_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = true;
+
+		// Get file path for a subsite
+		$subsite_id = $this->factory->blog->create();
+		$file_path = sprintf( 'sites/%d/2021/01/hamster.gif', $subsite_id );
+
+		// Run test in subsite context
+		switch_to_blog( $subsite_id );
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_subsite_cannot_access_main_site_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = false;
+
+		// Get file path for main site
+		$file_path = '2021/01/parakeets.gif';
+
+		// Run test in a subsite context
+		$subsite_id = $this->factory->blog->create();
+		switch_to_blog( $subsite_id );
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_subsite_cannot_access_another_subsite_path() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = false;
+
+		// Create two subsites
+		$first_subsite_id = $this->factory->blog->create();
+		$second_subsite_id = $this->factory->blog->create();
+
+		// Get file path from second
+		$file_path = sprintf( 'sites/%d/2021/01/parakeets.gif', $second_subsite_id );
+
+		// Restore first subsite
+		switch_to_blog( $first_subsite_id );
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
 	}
 }

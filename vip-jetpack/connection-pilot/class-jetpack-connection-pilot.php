@@ -26,11 +26,11 @@ class Connection_Pilot {
 	 * See the a8c_cron_control_clean_legacy_data event for more details.
 	 */
 	const CRON_SCHEDULE = 'hourly';
-	
+
 	/**
 	 * The healtcheck option's current data.
 	 *
-	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
+	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'hashed_site_url' => '371a92eb7d5d63007db216dbd3b49187', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
 	 *
 	 * @var mixed False if doesn't exist, else an array with the data shown above.
 	 */
@@ -38,7 +38,7 @@ class Connection_Pilot {
 
 	/**
 	 * Singleton
-	 * 
+	 *
 	 * @var Connection_Pilot Singleton instance
 	 */
 	private static $instance = null;
@@ -49,7 +49,7 @@ class Connection_Pilot {
 		}
 
 		$this->init_actions();
-		
+
 		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
@@ -69,7 +69,12 @@ class Connection_Pilot {
 	 */
 	public function init_actions() {
 		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
-		add_action( 'init', array( $this, 'schedule_cron' ) );
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			add_action( 'wp_loaded', array( $this, 'schedule_cron' ) );
+		} else {
+			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
+		}
+
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
@@ -148,6 +153,7 @@ class Connection_Pilot {
 	public function update_heartbeat() {
 		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
+			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
 			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id' ),
 			'timestamp' => time(),
 		), false );
@@ -176,10 +182,10 @@ class Connection_Pilot {
 		}
 
 		// 2) Check the last heartbeat to see if the URLs match.
-		if ( ! empty( $this->last_heartbeat['site_url'] ) ) {
-			if ( $this->last_heartbeat['site_url'] === get_site_url() ) {
+		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
+			if ( $this->last_heartbeat['hashed_site_url'] === md5( get_site_url() ) ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
-	
+
 				return true;
 			}
 
@@ -193,7 +199,7 @@ class Connection_Pilot {
 	}
 
 	/**
-	 * Send an alert to IRC and Slack.
+	 * Send an alert to IRC/Slack, and add to logs.
 	 *
 	 * Example message:
 	 * Jetpack is disconnected, but was previously connected under the same domain.
@@ -202,13 +208,13 @@ class Connection_Pilot {
 	 *
 	 * @param string   $message optional.
 	 * @param \WP_Error $wp_error optional.
-	 * @param array    $last_heartbeat optional.
 	 *
-	 * @return mixed True if the message was sent to IRC, false if it failed. If sandboxed, will just return the message string.
+	 * @return mixed True if the message was sent to IRC, false if it failed. If silenced, will just return the message string.
 	 */
-	protected function send_alert( $message = '', $wp_error = null, $last_heartbeat = null ) {
+	protected function send_alert( $message = '', $wp_error = null ) {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
+		$last_heartbeat = $this->last_heartbeat;
 		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
@@ -220,15 +226,14 @@ class Connection_Pilot {
 			$message .= sprintf( ' Jetpack connection error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
 		}
 
-		if ( ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) || 
-			( ! defined( 'ALERT_SERVICE_ADDRESS' ) ) || 
-			( defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS ) ) {
-			error_log( $message );
+		\Automattic\VIP\Logstash\log2logstash( [
+			'severity' => 'error',
+			'feature' => 'jetpack-connection-pilot',
+			'message' => $message,
+		] );
 
-			return $message; // Just return the message, as posting to IRC won't work.
-		}
-
-		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
+		$should_silence_alerts = defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS;
+		return $should_silence_alerts ? $message : wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
 	}
 
 	/**
@@ -240,13 +245,13 @@ class Connection_Pilot {
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
 		}
-		
+
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
 	}
 
 	/**
 	 * Checks if a reconnection should be attempted
-	 * 
+	 *
 	 * @param $error \WP_Error Optional error thrown by the connection check
 	 * @return bool True if a reconnect should be attempted
 	 */
@@ -254,7 +259,7 @@ class Connection_Pilot {
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
-		
+
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
 	}
 }

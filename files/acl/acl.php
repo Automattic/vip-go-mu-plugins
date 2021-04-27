@@ -39,6 +39,8 @@ function maybe_load_restrictions() {
 		require_once( __DIR__ . '/restrict-unpublished-files.php' );
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
+		// Purge attachments for posts for better cacheability
+		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
 	}
 }
 
@@ -52,6 +54,30 @@ function get_option_as_bool( $option_name, $default = false ) {
 		1,
 		'1',
 	], true );
+}
+
+/**
+ * Check if the path is allowed for the current context.
+ *
+ * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit. It's the second portion returned by `Pre_Wp_Utils\prepare_request()`
+ */
+function is_valid_path_for_site( $file_path ) {
+	if ( ! is_multisite() ) {
+		return true;
+	}
+
+	// If main site, don't allow access to /sites/ subdirectories.
+	if ( is_main_network() && is_main_site() ) {
+		if ( 0 === strpos( $file_path, 'sites/' ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	$base_path = sprintf( 'sites/%d', get_current_blog_id() );
+
+	return 0 === strpos( $file_path, $base_path );
 }
 
 /**
@@ -71,20 +97,22 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
 	$status_code = 500;
 	$header = false;
+	$is_private = null;
 
 	switch ( $file_visibility ) {
 		case FILE_IS_PUBLIC:
 			$status_code = 202;
+			$is_private = false;
 			break;
 
 		case FILE_IS_PRIVATE_AND_ALLOWED:
 			$status_code = 202;
-			$header = 'X-Private: true';
+			$is_private = true;
 			break;
 
 		case FILE_IS_PRIVATE_AND_DENIED:
 			$status_code = 403;
-			$header = 'X-Private: true';
+			$is_private = true;
 			break;
 
 		default:
@@ -95,7 +123,8 @@ function send_visibility_headers( $file_visibility, $file_path ) {
 
 	http_response_code( $status_code );
 
-	if ( $header ) {
-		header( $header );
+	if ( null !== $is_private ) {
+		$private_header_value = $is_private ? 'true' : 'false';
+		header( sprintf( 'X-Private: %s', $private_header_value ) );
 	}
 }

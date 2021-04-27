@@ -1,9 +1,27 @@
 <?php
 
 namespace Automattic\VIP;
-
+/**
+ * Feature provides a simple interface to gate the functionality by the Go Site Id
+ *
+ * To register a feature add it to the $feature_percentages array (per example below)
+ *
+ * To check whether a feature is enabled: \Automattic\VIP::is_enabled( 'feature-flag' )
+ */
 class Feature {
-	public static $feature_percentages = array();
+	/**
+	 * Holds feature slug and corresponding percentages as a float. E.g.
+	 * // Enable feature for roughly half of the websites
+	 * // 'feature-flag' => 0.5,
+	 *
+	 * @var array
+	 */
+	public static $feature_percentages = array(
+		// https://github.com/Automattic/vip-go-mu-plugins/tree/master/vip-jetpack/connection-pilot
+		'jetpack-cxn-pilot' => 0.25,
+		'search_content_validation_and_auto_heal_cron_job' => 0.5,
+		'admin-password-change-current' => 0.1,
+	);
 
 	public static $site_id = false;
 

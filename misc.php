@@ -85,6 +85,25 @@ add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 
 /**
+ * Fix a race condition in notoptions caching
+ *
+ * The scenario is that the option exists in DB but also in notoptions. This could be cause by a race condition when updating notoptions.
+ * Further updates trying to store the same value would then fail to change any row and therefore not clear the notoptions key.
+ * The solution is that we clear notoptions BEFORE the DB operation as well.
+ */
+function _vip_maybe_clear_notoptions_cache( $option ) {
+	if ( ! wp_installing() ) {
+		$notoptions = wp_cache_get( 'notoptions', 'options' );
+
+		if ( isset( $notoptions[ $option ] ) ) {
+			wp_cache_delete( 'notoptions', 'options' );
+		}
+	}
+}
+
+add_action( 'add_option', '_vip_maybe_clear_notoptions_cache' );
+
+/**
  * On Go, all API usage must be over HTTPS for security
  *
  * Filter `rest_url` to always return the https:// version
@@ -151,3 +170,13 @@ add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
  * Stop Woocommerce from trying to create files on read-only filesystem
  */
 add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
+
+/**
+ * On Go, multisites are technically subdirectory installs so site search only
+ * searches the 'path' on /network/sites.php. This improves site search results by
+ * adding 'domain' to the columns to search.
+ */
+add_filter( 'site_search_columns', function( $cols ) {
+	$cols[] = 'domain';
+	return $cols;
+});

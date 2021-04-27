@@ -2,18 +2,26 @@
 
 namespace Automattic\VIP\Utils;
 
- class Alerts_Test extends \WP_UnitTestCase {
+class Alerts_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../../lib/utils/class-alerts.php' );
+		require_once __DIR__ . '/../../../lib/utils/class-alerts.php';
+	}
+
+	public function mock_http_response( $mocked_response, $response_time = 1 ) {
+		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response, $response_time ) {
+			usleep( $response_time * 1000000 );
+
+			return $mocked_response;
+		}, 10, 3 );
 	}
 
 	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_alerts_method( $name ) {
-		$class = new \ReflectionClass( Alerts::class );
+		$class  = new \ReflectionClass( Alerts::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -236,5 +244,51 @@ namespace Automattic\VIP\Utils;
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-opsgenie-details', $result->get_error_code(), 'Wrong error code' );
+	}
+
+	public function get_test_data__invalid_send_responses() {
+		return [
+			'not-found'    => [
+				[
+					'body'     => '{}',
+					'response' => [
+						'code'    => 404,
+						'message' => 'Not found',
+					],
+					'cookies'  => [],
+				],
+			],
+			'server-error' => [
+				[
+					'body'     => '{}',
+					'response' => [
+						'code'    => 500,
+						'message' => 'Server error',
+					],
+					'cookies'  => [],
+				],
+			],
+		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @dataProvider get_test_data__invalid_send_responses
+	 */
+	public function test__send_function_failed_requests( $mock_response ) {
+		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
+		define( 'ALERT_SERVICE_PORT', 9999 );
+
+		$this->mock_http_response( $mock_response );
+
+		$alerts      = Alerts::instance();
+		$send_method = self::get_alerts_method( 'send' );
+
+		$body   = [ 'somekey' => 'someproperty' ];
+		$result = $send_method->invokeArgs( $alerts, [ $body ] );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'The request returned an invalid response: ' . $mock_response['response']['message'], $result->get_error_message() );
 	}
 }
