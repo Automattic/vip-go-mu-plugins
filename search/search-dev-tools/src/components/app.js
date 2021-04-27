@@ -29,8 +29,7 @@ const AdminBarButton = props => {
  */
 const App = props => {
 	const [ visible, setVisible ] = useState( false );
-	const closeOverlay = e => setVisible( false );
-	const openOverlay = e => setVisible( true );
+	const closeOverlay = () => setVisible( false );
 	const toggleOverlay = () => setVisible( ! visible );
 
 	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
