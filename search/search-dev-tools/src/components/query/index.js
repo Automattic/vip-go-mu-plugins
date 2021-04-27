@@ -5,33 +5,15 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
 import 'prism-themes/themes/prism-ghcolors.css';
 import Editor from 'react-simple-code-editor';
+import cx from 'classnames';
+import pluralize from 'pluralize';
+
 
 import { SearchContext } from '../../context';
 import { postData } from '../../utils';
-
-import cx from 'classnames';
-
-import pluralize from 'pluralize';
+import { CollapsibleList } from '../collapsible-list';
 
 import style from './style.scss';
-
-/**
- *  Collapsible list of values.
- *
- * @param {Object} props: { list, title }
- * @returns {Preact.Component} a Collapsible list
- */
-const CollapsibleList = ( { list = [], title = 'View' } ) => {
-	const [ visible, setVisible ] = useState( false );
-	const toggle = () => {
-		setVisible( ! visible );
-	};
-
-	return ( <div className={ cx( { [ style.backtrace ]: true, [ style.visible ]: visible } ) }>
-		<strong className="vip-h4" onClick={ list.length ? toggle : null }>{ title } ({ `${ list.length }` })</strong>
-		<ol className={style.backtrace_details}>{list.map( ( frame, i ) => ( <li key={i}>{frame}</li> ) ) }</ol>
-	</div> );
-};
 
 /**
  * A single query

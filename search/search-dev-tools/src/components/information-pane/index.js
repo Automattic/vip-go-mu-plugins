@@ -52,9 +52,9 @@ export const InfoBlock = ( { label, value, options = { collapsible: false } } ) 
 		{ options.collapsible
 			? (
 				<Fragment>
-					<div className={cx( { [ style.info_block_inner ]: true } )}>
+					<div className={ cx( { [ style.info_block_inner ]: true } ) }>
 						{
-							isArrayValue ? value.map( val => <span key={val} className={ style.info_block_item }>{ val }</span> ) : <span>{ value }</span>
+							isArrayValue ? value.map( val => <span key={ val } className={ style.info_block_item }>{ val }</span> ) : <span>{ value }</span>
 						}
 					</div>
 					<span className={ style.info_block_teaser } onClick={ toggleCollapsed }>{
