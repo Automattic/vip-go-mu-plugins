@@ -1,0 +1,25 @@
+.form-password-input {
+	position: relative;
+}
+
+.form-password-input__toggle-visibility {
+	color: lighten( $gray, 20 );
+	cursor: pointer;
+	line-height: 40px;
+	position: absolute;
+	right: 8px;
+
+	&.is-hidden:before {
+		@include noticon( '\f403', 16px );
+		line-height: 40px;
+	}
+
+	&.is-visible:before {
+		@include noticon( '\f404', 16px );
+		line-height: 40px;
+	}
+}
+
+.form-password-input__toggle-visibility:hover {
+	color: inherit;
+}
