@@ -483,7 +483,7 @@ class WPCOM_VIP_Cache_Manager {
 		if ( 'post' === get_post_type( $post ) ) {
 			$page_for_posts = get_option( 'page_for_posts' );
 			if ( $page_for_posts ) {
-				$post_purge_urls = array_merge( $post_purge_urls, get_permalink( $page_for_posts ) );
+				$post_purge_urls = array_merge( $post_purge_urls, [ get_permalink( $page_for_posts ) ] );
 			}
 		}
 
@@ -521,6 +521,7 @@ class WPCOM_VIP_Cache_Manager {
 		 * }
 		 * @param type  $post_id The ID of the post which is the primary reason for the purge
 		 */
+
 		$post_purge_urls = apply_filters( 'wpcom_vip_cache_purge_urls', $post_purge_urls, $post_id );
 
 		$this->purge_urls = array_merge( $this->purge_urls, $post_purge_urls );
