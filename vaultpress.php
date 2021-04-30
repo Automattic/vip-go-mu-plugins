@@ -41,7 +41,7 @@ add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $fi
 
 require_once( __DIR__ . '/vaultpress/vaultpress.php' );
 
-add_filter( 'in_admin_header', 'remove_connection_notice');
+add_filter( 'in_admin_header', 'remove_connection_notice' );
 
 function remove_connection_notice() {
 	// Not actually initializing VP, just getting the instance
@@ -49,4 +49,5 @@ function remove_connection_notice() {
 	remove_action( 'user_admin_notices', [ $vaultpress, 'connect_notice' ] );
 	remove_action( 'vaultpress_notices', [ $vaultpress, 'connect_notice' ] );
 	remove_action( 'admin_notices', [ $vaultpress, 'connect_notice' ] );
+	return null;
 }
