@@ -40,3 +40,12 @@ add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $fi
 }, 10, 4 );
 
 require_once( __DIR__ . '/vaultpress/vaultpress.php' );
+
+add_action( 'admin_menu', 'vip_remove_vaultpress_admin_menu', 999 );
+
+function vip_remove_vaultpress_admin_menu() {
+	$vaultpress = VaultPress::init();
+	if ( ! $vaultpress->is_registered() ) {
+		remove_submenu_page( 'jetpack', 'vaultpress' );
+	}
+}
