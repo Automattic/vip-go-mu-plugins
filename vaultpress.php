@@ -41,9 +41,9 @@ add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $fi
 
 require_once( __DIR__ . '/vaultpress/vaultpress.php' );
 
-add_filter( 'in_admin_header', 'remove_connect_notice' );
+add_filter( 'in_admin_header', 'vip_remove_vaultpress_connect_notice' );
 
-function remove_connect_notice() {
+function vip_remove_vaultpress_connect_notice() {
 	// Not actually initializing VP, just getting the instance
 	$vaultpress = VaultPress::init();
 	remove_action( 'user_admin_notices', [ $vaultpress, 'connect_notice' ] );
