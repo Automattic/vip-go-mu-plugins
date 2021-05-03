@@ -87,18 +87,26 @@ if ( is_admin() ) {
  */
 if ( is_admin() ) {
 
-	add_filter( 'edit_months_dropdown', 'wpcom_vip_edit_months_dropdown', 10, 2 );
-	function wpcom_vip_edit_months_dropdown( $post_type, $extra_checks ) {
+	add_filter( 'pre_months_dropdown_query', 'wpcom_vip_pre_months_dropdown_query', 10, 2 );
+	function wpcom_vip_pre_months_dropdown_query( $months, $post_type ) {
 		global $wpdb;
-
+		
 		// Don't set a transient for trashed post.
-		if ( "trash" === $_GET['post_status'] ) {
+		if ( isset( $_GET['post_status'] ) && "trash" === $_GET['post_status'] ) {
 			return __return_null();
 		}
 
-		$months = get_transient( 'wpcom_vip_edit_months_array_'.$post_type );
+		$months = get_transient( 'wpcom_vip_pre_months_dropdown_query_'.$post_type );
 
 		if ( false === $months ) {
+
+			$extra_checks = "AND post_status != 'auto-draft'";
+			if ( ! isset( $_GET['post_status'] ) || 'trash' !== $_GET['post_status'] ) {
+				$extra_checks .= " AND post_status != 'trash'";
+			} elseif ( isset( $_GET['post_status'] ) ) {
+				$extra_checks = $wpdb->prepare( ' AND post_status = %s', $_GET['post_status'] );
+			}
+
 			$months = $wpdb->get_results(
 				$wpdb->prepare(
 					"
@@ -111,7 +119,7 @@ if ( is_admin() ) {
 					$post_type
 				)
 			);
-			set_transient( 'wpcom_vip_edit_months_array_'.$post_type, $months );
+			set_transient( 'wpcom_vip_pre_months_dropdown_query_'.$post_type, $months );
 		}
 		return $months;
 	}
@@ -127,12 +135,12 @@ function wpcom_vip_bust_post_months_cache( $post_id, $post ) {
 
 	// Reset the transient if we are untrashing a post
 	if( "untrash" === $_GET['action'] ) {
-		delete_transient( 'wpcom_vip_edit_months_array_'.$post->post_type );
+		delete_transient( 'wpcom_vip_pre_months_dropdown_query_'.$post->post_type );
 		return;
 	}
 
 	// Grab the transient to see if it needs updating
-	$post_months = get_transient( 'wpcom_vip_edit_months_array_'.$post->post_type );
+	$post_months = get_transient( 'wpcom_vip_pre_months_dropdown_query_'.$post->post_type );
 
 	// Make sure month and year exists in transient before comparing
 	$cached_latest_year = ( ! empty( $post_months[0]->year ) ) ? $post_months[0]->year : '';
@@ -143,6 +151,6 @@ function wpcom_vip_bust_post_months_cache( $post_id, $post ) {
 	$matches_latest_month = get_the_time( 'n', $post_id ) === $cached_latest_month;
 	if ( false !== $post_months && ( ! $matches_latest_year || ! $matches_latest_month ) ) {
 		// the post is not in the same month/year as the data in our transient
-		delete_transient( 'wpcom_vip_edit_months_array_'.$post->post_type );
+		delete_transient( 'wpcom_vip_pre_months_dropdown_query_'.$post->post_type );
 	}
 }
