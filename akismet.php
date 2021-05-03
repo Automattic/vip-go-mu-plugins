@@ -49,9 +49,9 @@ add_action( 'admin_menu', 'vip_remove_akismet_admin_menu', 999 );
 
 function vip_remove_akismet_admin_menu() {
 	$key = Akismet::get_api_key();
-	$key_status = Akismet::check_key_status($key);
+	$key_status = Akismet::check_key_status( $key );
 
-	if ( ! $key_status || ! $key_status[1] || $key_status[1] === 'invalid') {
+	if ( ! $key_status || ! $key_status[1] || 'invalid' === $key_status[1] ) {
 		remove_submenu_page( 'jetpack', 'akismet-key-config' );
 	}
 }
