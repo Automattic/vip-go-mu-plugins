@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "search",
-  "version": "0.0.0",
-  "license": "MIT",
+  "name": "search-dev-tools",
+  "version": "1.0.0",
+  "license": "GPLv2",
   "scripts": {
     "build": "preact build --no-prerender --no-inline-css --no-sw",
     "serve": "sirv build --port 8080 --cors --single",
