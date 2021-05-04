@@ -52,7 +52,6 @@ function vip_remove_vaultpress_connect_notice() {
 	return null;
 }
 
-
 add_action( 'admin_menu', 'vip_remove_vaultpress_admin_menu', 999 );
 
 function vip_remove_vaultpress_admin_menu() {
