@@ -88,7 +88,7 @@ class Search {
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
 	public $healthcheck;
-	public $settingshealthcheck;
+	public $settings_healthcheck;
 	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
@@ -525,7 +525,7 @@ class Search {
 
 	protected function setup_cron_jobs() {
 		$this->healthcheck = new HealthJob( $this );
-		$this->settingshealthcheck = new SettingsHealthJob( $this );
+		$this->settings_healthcheck = new SettingsHealthJob( $this );
 		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
 		/**
@@ -535,11 +535,11 @@ class Search {
 		 */
 		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
 			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->settingshealthcheck, 'init' ], 0 );
+			add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
 			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
 		} else {
 			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->settingshealthcheck, 'init' ], 0 );
+			add_action( 'admin_init', [ $this->settings_healthcheck, 'init' ], 0 );
 			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
 		}
 	}
