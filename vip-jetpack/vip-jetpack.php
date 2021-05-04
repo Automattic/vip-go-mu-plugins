@@ -398,8 +398,9 @@ add_filter( 'jetpack_options', function( $value, $name ) {
 
 // We need to add a dummy menu item if no other menu items are rendered
 function add_jetpack_menu_placeholder() {
-	if ( ! class_exists( 'Jetpack' ) )
+	if ( ! class_exists( 'Jetpack' ) ) {
 		return;
+	}
 
 	$status = new Automattic\Jetpack\Status();
 	// is_connection_ready only exists in Jetpack 9.6 and newer
