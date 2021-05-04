@@ -15,7 +15,7 @@ add_action(
 	function() {
 		register_rest_route(
 			'vip/v1',
-			'search/repl',
+			'search/dev-tools',
 			[
 				'methods'             => [
 					'POST',
@@ -161,7 +161,7 @@ add_action(
 
 			],
 			'nonce'                   => wp_create_nonce( 'wp_rest' ),
-			'ajaxurl'                 => rest_url( 'vip/v1/search/repl' ),
+			'ajaxurl'                 => rest_url( 'vip/v1/search/dev-tools' ),
 			'__webpack_public_path__' => plugin_dir_url( __FILE__ ) . 'build',
 		];
 
