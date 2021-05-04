@@ -398,16 +398,15 @@ add_filter( 'jetpack_options', function( $value, $name ) {
 
 function vip_connect_to_jetpack_admin_page() {
 	?>
-		<h1>
-			Jetpack is not set up in this site
-		</h1>
+    <h1>Jetpack is not set up in this site</h1>
 	<p>Please open a ticket with VIP Support to set it up.</p>
 	<?php
 }
 
+// We need to add a dummy menu item if no other menu items are rendered
 function add_jetpack_menu_placeholder() {
 	if ( ! Jetpack::is_connection_ready() ) {
-		add_submenu_page( 'jetpack', 'Connect Jetpack', 'Connect Jetpack', 'manage_options', 'connect-jetpack', 'vip_connect_to_jetpack_admin_page' );
+		add_submenu_page( 'jetpack', 'Jetpack Not Connected', 'Jetpack not Connected', 'manage_options', 'connect-jetpack', 'vip_connect_to_jetpack_admin_page' );
 	}
 }
 
