@@ -1,0 +1,32 @@
+.vip_search_dev_tools {
+	font-family: var(--vip-font-family);
+	// padding: 20px;
+	> * {
+		// margin-bottom: 20px;
+	}
+
+	.main_caption {
+		margin-bottom: 4px;
+	}
+}
+
+.ab_btn {
+	&::before {
+		content: url( '../assets/wpvip.svg' );
+		margin-right: 7px;
+	}
+
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: center;
+	border: 0;
+	background-color: transparent;
+	color: #eee;
+	padding: 0 8px !important;
+	height: 31px;
+
+	&:hover {
+		color: var(--vip-blue-60);
+		background: white;
+	}
+}

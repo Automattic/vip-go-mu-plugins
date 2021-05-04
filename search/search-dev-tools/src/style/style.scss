@@ -1,0 +1,36 @@
+@import './vars.scss';
+// @import './mixins.scss';
+
+
+.vip-h2 {
+	@include text-h2();
+}
+.vip-h3 {
+	@include text-h3();
+}
+.vip-h4 {
+	@include text-h4();
+}
+.vip-h5 {
+	@include text-h5();
+}
+
+.search-dev-tools {
+	&__wrapper {
+		// todo
+		margin-top: 40px;
+		display: flex;
+		justify-content: center;
+	}
+}
+
+.vip-search-dev-tools-ab {
+	.ab-item {
+		display: none !important;
+	}
+}
+
+
+.main_caption {
+	margin-bottom: 4px;
+}

@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/classes/class-search.php';
+require_once __DIR__ . '/search-dev-tools/search-dev-tools.php';
 
 if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
 	$search_plugin = \Automattic\VIP\Search\Search::instance();

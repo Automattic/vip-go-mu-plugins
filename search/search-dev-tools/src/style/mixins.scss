@@ -1,0 +1,66 @@
+@mixin text-h2 {
+	font-family: SF Pro Display;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 32px;
+	line-height: 38px;
+
+	color: var(--vip-grey-100);
+}
+
+@mixin  text-h3 {
+	font-family: SF Pro Display;
+	font-style: normal;
+	font-weight: 500;
+	font-size: 20px;
+	line-height: 24px;
+	color: var(--vip-grey-100);
+}
+
+@mixin text-h4 {
+	/* Heading 4 */
+	font-family: SF Pro Text;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 15px;
+	line-height: 150%;
+	/* identical to box height, or 22px */
+	color: var(--vip-grey-80);
+}
+
+@mixin text-h5 {
+	/* Heading 5 */
+	font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 13px;
+	line-height: 150%;
+	/* identical to box height, or 19px */
+
+	color: var(--vip-grey-60);
+}
+
+@mixin text-small {
+	font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 13px;
+	line-height: 150%;
+	color: var(--vip-grey-80);
+	/* identical to box height, or 19px */
+}
+
+@mixin text-caption() {
+	/* Caption */
+
+font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+font-style: normal;
+font-weight: normal;
+font-size: 11px;
+line-height: 150%;
+/* identical to box height, or 16px */
+
+
+/* Gray-80 */
+color: var(--vip-grey-80);
+}
