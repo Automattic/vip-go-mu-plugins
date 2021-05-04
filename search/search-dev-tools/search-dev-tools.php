@@ -1,4 +1,16 @@
 <?php
+/**
+ * Plugin Name: Search Dev Tools
+ * Description: Developer tools for Enterprise Search
+ * Version:     1.0.0
+ * Author:      WordPress VIP
+ * Author URI:  https://wpvip.com
+ * License:     GPLv2 or later
+ * Text Domain: vip-search
+ * Domain Path: /lang/
+ *
+ * @package Automattic\VIP\Search
+ */
 // phpcs:disable WordPress.PHP.DisallowShortTernary.Found
 namespace Automattic\VIP\Search\Dev_Tools;
 
