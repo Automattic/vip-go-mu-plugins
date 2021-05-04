@@ -27,8 +27,9 @@
 			padding: 16px;
 			list-style-position: inside;
 
-			li { 
+			li {
 				margin-bottom: 8px;
+				overflow-wrap: break-word;
 				@include text-small();
 			}
 

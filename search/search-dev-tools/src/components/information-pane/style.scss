@@ -47,6 +47,7 @@
 			align-items: flex-start;
 			padding: 16px;
 			min-width: 300px;
+			z-index: 3;
 
 			.info_block_collapsed & {
 				display: none;
