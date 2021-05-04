@@ -395,3 +395,20 @@ add_filter( 'jetpack_options', function( $value, $name ) {
 
 	return $value;
 }, 10, 2 );
+
+function vip_connect_to_jetpack_admin_page() {
+	?>
+		<h1>
+			Jetpack is not set up in this site
+		</h1>
+	<p>Please open a ticket with VIP Support to set it up.</p>
+	<?php
+}
+
+function add_jetpack_menu_placeholder() {
+	if ( ! Jetpack::is_connection_ready() ) {
+		add_submenu_page( 'jetpack', 'Connect Jetpack', 'Connect Jetpack', 'manage_options', 'connect-jetpack', 'vip_connect_to_jetpack_admin_page' );
+	}
+}
+
+add_action( 'admin_menu', 'add_jetpack_menu_placeholder', 999 );
