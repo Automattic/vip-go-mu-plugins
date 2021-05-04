@@ -138,10 +138,6 @@ class HealthJob {
 			return;
 		}
 
-		if ( ! \Automattic\VIP\Feature::is_enabled( 'search_content_validation_and_auto_heal_cron_job' ) ) {
-			return;
-		}
-
 		// Don't run the checks if the index is not built.
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
 			return;
