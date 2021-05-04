@@ -9,7 +9,6 @@ Search Dev Tools is aiming to be a one-stop shop for developers integrating Sear
 	* Tweak a query in an editor with syntax higlighting and see the updated result.
 	* See the stack trace for a query.
 	* See WP_Query arguments for a query
-	* (In the future) an API Playground.
 
 ## Architecture
 
