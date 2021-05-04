@@ -51,3 +51,12 @@ function vip_remove_vaultpress_connect_notice() {
 	remove_action( 'admin_notices', [ $vaultpress, 'connect_notice' ] );
 	return null;
 }
+
+add_action( 'admin_menu', 'vip_remove_vaultpress_admin_menu', 999 );
+
+function vip_remove_vaultpress_admin_menu() {
+	$vaultpress = VaultPress::init();
+	if ( ! $vaultpress->is_registered() ) {
+		remove_submenu_page( 'jetpack', 'vaultpress' );
+	}
+}
