@@ -95,10 +95,10 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			<div className={style.query_src}>
 				<div className={style.query_actions}>
 					{ state.editing || state.result !== txtResult
-						? ( <Fragment>
+						? ( <>
 							<button onClick={ () => setState( { ...state, editing: false } ) }>RUN</button>
 							<button onClick={ () => setState( { ...initialState, collapsed: false } ) }>RESET</button>
-						</Fragment> )
+						</> )
 						: 'Edit me!'
 					}
 				</div>
