@@ -395,3 +395,14 @@ add_filter( 'jetpack_options', function( $value, $name ) {
 
 	return $value;
 }, 10, 2 );
+
+// We need to add a dummy menu item if no other menu items are rendered
+function add_jetpack_menu_placeholder() {
+	$status = new Automattic\Jetpack\Status();
+	// is_connection_ready only exists in Jetpack 9.6 and newer
+	if ( ! $status->is_offline_mode() && method_exists('Jetpack', 'is_connection_ready') && ! Jetpack::is_connection_ready() ) {
+		add_submenu_page( 'jetpack', 'Connect Jetpack', 'Connect Jetpack', 'manage_options', 'jetpack' );
+	}
+}
+
+add_action( 'admin_menu', 'add_jetpack_menu_placeholder', 999 );
