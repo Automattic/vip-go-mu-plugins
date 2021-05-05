@@ -85,6 +85,9 @@ job-references:
           command: |
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            if [[ "$DISABLE_JETPACK" == "1" ]]; then
+              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> /wp/config/wp-config-defaults.php
+            fi
             vendor/bin/phpunit --version
             vendor/bin/phpunit
 
@@ -112,9 +115,6 @@ job-references:
               update_core_tests "$WP_TESTS_DIR"
               exclude_core_tests tests/phpunit/multisite.xml
               exclude_core_tests phpunit.xml.dist tests/phpunit/
-            fi
-            if [[ "$DISABLE_JETPACK" == "1" ]]; then
-              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> /wp/config/wp-config-defaults.php
             fi
             if [[ "$WP_MULTISITE" == "1" ]]; then
               $HOME/project/vendor/bin/phpunit -c tests/phpunit/multisite.xml
