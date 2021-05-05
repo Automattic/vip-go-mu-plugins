@@ -112,6 +112,9 @@ job-references:
               exclude_core_tests tests/phpunit/multisite.xml
               exclude_core_tests phpunit.xml.dist tests/phpunit/
             fi
+            if [[ "$DISABLE_JETPACK" == "1" ]]; then
+              echo "define( 'WP_CRON_CONTROL_SECRET', 'this-is-a-secret' );" >> /wp/config/wp-config-defaults.php
+            fi
             if [[ "$WP_MULTISITE" == "1" ]]; then
               $HOME/project/vendor/bin/phpunit -c tests/phpunit/multisite.xml
             else
@@ -173,6 +176,16 @@ jobs:
     environment:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
