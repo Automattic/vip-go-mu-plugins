@@ -701,17 +701,17 @@
         },
         {
             "name": "automattic/jetpack-jitm",
-            "version": "v1.15.0",
-            "version_normalized": "1.15.0.0",
+            "version": "v1.15.1",
+            "version_normalized": "1.15.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Automattic/jetpack-jitm.git",
-                "reference": "14519309a91af9830d0b79a27fca1b77b494597e"
+                "reference": "e026a3e860758c98ccd4d5f915df97bee7d5ec42"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Automattic/jetpack-jitm/zipball/14519309a91af9830d0b79a27fca1b77b494597e",
-                "reference": "14519309a91af9830d0b79a27fca1b77b494597e",
+                "url": "https://api.github.com/repos/Automattic/jetpack-jitm/zipball/e026a3e860758c98ccd4d5f915df97bee7d5ec42",
+                "reference": "e026a3e860758c98ccd4d5f915df97bee7d5ec42",
                 "shasum": ""
             },
             "require": {
@@ -731,7 +731,7 @@
                 "brain/monkey": "2.6.0",
                 "yoast/phpunit-polyfills": "0.2.0"
             },
-            "time": "2021-04-27T14:42:25+00:00",
+            "time": "2021-05-03T17:01:40+00:00",
             "type": "library",
             "extra": {
                 "autotagger": true,
@@ -758,7 +758,7 @@
             ],
             "description": "Just in time messages for Jetpack",
             "support": {
-                "source": "https://github.com/Automattic/jetpack-jitm/tree/v1.15.0"
+                "source": "https://github.com/Automattic/jetpack-jitm/tree/v1.15.1"
             },
             "install-path": "../automattic/jetpack-jitm"
         },
@@ -1013,18 +1013,25 @@
         },
         {
             "name": "automattic/jetpack-password-checker",
-            "version": "dev-master",
-            "version_normalized": "dev-master",
+            "version": "v0.1.1",
+            "version_normalized": "0.1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Automattic/jetpack-password-checker.git",
+                "reference": "52b8debf87226291e618f84df23e151b04924435"
+            },
             "dist": {
-                "type": "path",
-                "url": "../../packages/password-checker",
-                "reference": "ee6e6265b76b873ff230912c3c13c17f39d667ac"
+                "type": "zip",
+                "url": "https://api.github.com/repos/Automattic/jetpack-password-checker/zipball/52b8debf87226291e618f84df23e151b04924435",
+                "reference": "52b8debf87226291e618f84df23e151b04924435",
+                "shasum": ""
             },
             "require-dev": {
                 "automattic/jetpack-changelogger": "^1.1",
                 "automattic/wordbless": "@dev",
                 "yoast/phpunit-polyfills": "0.2.0"
             },
+            "time": "2021-04-27T14:41:51+00:00",
             "type": "library",
             "extra": {
                 "autotagger": true,
@@ -1042,29 +1049,13 @@
                     "src/"
                 ]
             },
-            "scripts": {
-                "phpunit": [
-                    "@composer update",
-                    "./vendor/phpunit/phpunit/phpunit --colors=always"
-                ],
-                "test-coverage": [
-                    "@composer update",
-                    "phpdbg -d memory_limit=2048M -d max_execution_time=900 -qrr ./vendor/bin/phpunit --coverage-clover \"$COVERAGE_DIR/clover.xml\""
-                ],
-                "test-php": [
-                    "@composer phpunit"
-                ],
-                "post-update-cmd": [
-                    "php -r \"copy('vendor/automattic/wordbless/src/dbless-wpdb.php', 'wordpress/wp-content/db.php');\""
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0-or-later"
             ],
             "description": "Password Checker.",
-            "transport-options": {
-                "monorepo": true,
-                "relative": true
+            "support": {
+                "source": "https://github.com/Automattic/jetpack-password-checker/tree/v0.1.1"
             },
             "install-path": "../automattic/jetpack-password-checker"
         },
