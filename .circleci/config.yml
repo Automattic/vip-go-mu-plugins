@@ -7,6 +7,7 @@ workflows:
       - php74-core-multisite-tests
       - php74-lint
       - php74-build-multisite
+      - php74-build-multisite-no-jetpack
       - php74-build-singlesite
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-nightly
@@ -168,6 +169,16 @@ jobs:
     environment:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-multisite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
