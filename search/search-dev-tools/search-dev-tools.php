@@ -131,11 +131,13 @@ function print_data() {
 		return;
 	}
 
-	$queries = array_filter(
-		ep_get_query_log(),
-		function( $query ) {
-			return false !== stripos( $query['url'], '_search' );
-		}
+	$queries = array_values(
+		array_filter(
+			ep_get_query_log(),
+			function( $query ) {
+				return false !== stripos( $query['url'], '_search' );
+			}
+		)
 	);
 
 	$mapped_queries = array_map(
