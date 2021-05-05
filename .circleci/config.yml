@@ -86,7 +86,7 @@ job-references:
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
             if [[ "$DISABLE_JETPACK" == "1" ]]; then
-              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> /wp/config/wp-config-defaults.php
+              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
             fi
             vendor/bin/phpunit --version
             vendor/bin/phpunit
