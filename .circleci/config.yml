@@ -114,7 +114,7 @@ job-references:
               exclude_core_tests phpunit.xml.dist tests/phpunit/
             fi
             if [[ "$DISABLE_JETPACK" == "1" ]]; then
-              echo "define( 'WP_CRON_CONTROL_SECRET', 'this-is-a-secret' );" >> /wp/config/wp-config-defaults.php
+              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> /wp/config/wp-config-defaults.php
             fi
             if [[ "$WP_MULTISITE" == "1" ]]; then
               $HOME/project/vendor/bin/phpunit -c tests/phpunit/multisite.xml
