@@ -259,19 +259,19 @@ return array(
 		'path'    => $vendorDir . '/automattic/jetpack-lazy-images/src/lazy-images.php'
 	),
 	'Automattic\\Jetpack\\JITMS\\Post_Connection_JITM' => array(
-		'version' => '1.15.0.0',
+		'version' => '1.15.1.0',
 		'path'    => $vendorDir . '/automattic/jetpack-jitm/src/class-post-connection-jitm.php'
 	),
 	'Automattic\\Jetpack\\JITMS\\Rest_Api_Endpoints' => array(
-		'version' => '1.15.0.0',
+		'version' => '1.15.1.0',
 		'path'    => $vendorDir . '/automattic/jetpack-jitm/src/class-rest-api-endpoints.php'
 	),
 	'Automattic\\Jetpack\\JITMS\\Pre_Connection_JITM' => array(
-		'version' => '1.15.0.0',
+		'version' => '1.15.1.0',
 		'path'    => $vendorDir . '/automattic/jetpack-jitm/src/class-pre-connection-jitm.php'
 	),
 	'Automattic\\Jetpack\\JITMS\\JITM' => array(
-		'version' => '1.15.0.0',
+		'version' => '1.15.1.0',
 		'path'    => $vendorDir . '/automattic/jetpack-jitm/src/class-jitm.php'
 	),
 	'Automattic\\Jetpack\\Device_Detection\\User_Agent_Info' => array(
@@ -326,6 +326,10 @@ return array(
 		'version' => '1.9.6.0',
 		'path'    => $vendorDir . '/automattic/jetpack-abtest/src/class-abtest.php'
 	),
+	'Automattic\\Jetpack\\Password_Checker' => array(
+		'version' => '0.1.1.0',
+		'path'    => $vendorDir . '/automattic/jetpack-password-checker/src/class-password-checker.php'
+	),
 	'Automattic\\Jetpack\\Assets\\Logo' => array(
 		'version' => '1.5.4.0',
 		'path'    => $vendorDir . '/automattic/jetpack-logo/src/class-logo.php'
@@ -341,10 +345,6 @@ return array(
 	'Automattic\\Jetpack\\Error' => array(
 		'version' => '1.3.4.0',
 		'path'    => $vendorDir . '/automattic/jetpack-error/src/class-error.php'
-	),
-	'Automattic\\Jetpack\\Password_Checker' => array(
-		'version' => 'dev-master',
-		'path'    => $vendorDir . '/automattic/jetpack-password-checker/src/class-password-checker.php'
 	),
 	'Jetpack_XMLRPC_Server' => array(
 		'version' => '1.26.0.0',

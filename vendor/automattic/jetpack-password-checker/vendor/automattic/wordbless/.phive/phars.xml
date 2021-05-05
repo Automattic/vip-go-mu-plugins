@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<phive xmlns="https://phar.io/phive">
-  <phar name="composer-normalize" version="^2.6.1" installed="2.6.1" location="./tools/composer-normalize" copy="false"/>
-  <phar name="phpcs" version="^3.5.6" installed="3.5.6" location="./tools/phpcs" copy="false"/>
-</phive>
