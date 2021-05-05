@@ -8,6 +8,7 @@ workflows:
       - php74-lint
       - php74-build-multisite
       - php74-build-singlesite
+      - php74-build-singlesite-no-jetpack
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
   changelog:
