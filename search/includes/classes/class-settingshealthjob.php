@@ -161,11 +161,12 @@ class SettingsHealthJob {
 				continue;
 			}
 
-			// Each individual entry in $versions is an array of results, one per index version
+			// Each individual entry in $versions is an array of results, one per index version.
 			foreach ( $versions as $result ) {
-				// Only take action if there are actual inconsistencies
-				if ( empty( $result['diff'] ) ) {
-					continue;
+				// Only take action if there are actual inconsistencies in auto-healable keys.
+				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+				if ( empty( $diff ) ) {
+						continue;
 				}
 
 				$options = array();
