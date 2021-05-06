@@ -48,6 +48,7 @@ phpunit-multisite.xml
 README.md
 readme.md
 readme.txt
+renovate.json
 SECURITY.md
 webpack.config.js
 wpcom-helper.php
