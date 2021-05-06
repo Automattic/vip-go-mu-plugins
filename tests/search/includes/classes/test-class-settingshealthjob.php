@@ -70,12 +70,12 @@ class SettingsHealthJob_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__heal_index_settings__heal_indexables_with_diff() {
-		$indexable_versions_with_non_empty_diff = 2;
+		$indexable_versions_with_non_empty_diff = 1;
 		$unhealthy_indexables                   = [
 			'post' => [
 				[
 					'index_version' => 1,
-					'diff'          => [ 'non-empty' ],
+					'diff'          => [ 'index.max_result_window' => [] ],
 				],
 				[
 					'index_version' => 2,
@@ -85,7 +85,7 @@ class SettingsHealthJob_Test extends \WP_UnitTestCase {
 			'user' => [
 				[
 					'index_version' => 1,
-					'diff'          => [ 'non-empty' ],
+					'diff'          => [ 'index.max_shingle_diff' => [] ],
 				],
 				[
 					'index_version' => 2,
