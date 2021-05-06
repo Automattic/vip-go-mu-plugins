@@ -231,8 +231,8 @@ class HealthJob {
 				$message = sprintf( 'Error while validating index for %s: %s (index_name: %s, index_version: %d)',
 					home_url(),
 					$result['error'],
-					$result['index_name'],
-					$result['index_version']
+					$result['index_name'] ?? '<unknown>',
+					$result['index_version'] ?? 0
 				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
@@ -245,7 +245,7 @@ class HealthJob {
 					home_url(),
 					$result['entity'],
 					$result['type'],
-					$result['index_name'],
+					$result['index_name'] ?? '<unknown>',
 					$result['index_version'],
 					$result['db_total'],
 					$result['es_total'],
