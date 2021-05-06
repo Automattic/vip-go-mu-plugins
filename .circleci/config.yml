@@ -7,7 +7,9 @@ workflows:
       - php74-core-multisite-tests
       - php74-lint
       - php74-build-multisite
+      - php74-build-multisite-no-jetpack
       - php74-build-singlesite
+      - php74-build-singlesite-no-jetpack
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
   changelog:
@@ -84,6 +86,9 @@ job-references:
           command: |
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            if [[ "$DISABLE_JETPACK" == "1" ]]; then
+              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+            fi
             vendor/bin/phpunit --version
             vendor/bin/phpunit
 
@@ -168,11 +173,31 @@ jobs:
       - image: circleci/php:7.4-node
       - image: *db_image
 
+  php74-build-multisite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
   php74-build-singlesite:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
