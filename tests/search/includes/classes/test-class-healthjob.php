@@ -88,7 +88,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type'          => 'custom_type',
 				'db_total'      => 100,
 				'es_total'      => 200,
-				'index_name' 	=> 'posts-123',
+				'index_name'    => 'posts-123',
 				'index_version' => 222,
 				'diff'          => 100,
 			),
@@ -97,12 +97,12 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type'          => 'N/A',
 				'db_total'      => 100,
 				'es_total'      => 100,
-				'index_name' 	=> 'posts-123',
+				'index_name'    => 'posts-123',
 				'index_version' => 333,
 				'diff'          => 0,
 			),
 			array(
-				'index_name' 	=> 'posts-123',
+				'index_name'    => 'posts-123',
 				'index_version' => 333,
 				'error' => 'Foo Error',
 			),
@@ -123,13 +123,13 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->withConsecutive(
 				array(
 					'#vip-go-es-alerts',
-					$this->getExpectedDiffMessage($results[0]),
+					$this->getExpectedDiffMessage( $results[0] ),
 					2,
 					"{$results[0]['entity']}:{$results[0]['type']}",
 				),
 				array(
 					'#vip-go-es-alerts',
-					$this->getExpectedDiffMessage($results[1]),
+					$this->getExpectedDiffMessage( $results[1] ),
 					2,
 					"{$results[1]['entity']}:{$results[1]['type']}",
 				),
@@ -145,7 +145,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$stub->process_document_count_health_results( $results );
 	}
 
-	private function getExpectedDiffMessage($result) {
+	private function getExpectedDiffMessage( $result ) {
 		return sprintf(
 			'Index inconsistencies found for %s: (entity: %s, type: %s, index_name: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 			home_url(),
