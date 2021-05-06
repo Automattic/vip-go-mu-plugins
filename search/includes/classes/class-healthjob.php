@@ -228,7 +228,12 @@ class HealthJob {
 
 			// If there's an error, alert
 			if ( array_key_exists( 'error', $result ) ) {
-				$message = sprintf( 'Error while validating index for %s: %s', home_url(), $result['error'] );
+				$message = sprintf( 'Error while validating index for %s: %s (index_name: %s, index_version: %d)',
+					home_url(),
+					$result['error'],
+					$result['index_name'] ?? '<unknown>',
+					$result['index_version'] ?? 0
+				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
@@ -236,10 +241,11 @@ class HealthJob {
 			// Only alert if inconsistencies found
 			if ( isset( $result['diff'] ) && 0 !== $result['diff'] ) {
 				$message = sprintf(
-					'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
+					'Index inconsistencies found for %s: (entity: %s, type: %s, index_name: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
 					$result['entity'],
 					$result['type'],
+					$result['index_name'] ?? '<unknown>',
 					$result['index_version'],
 					$result['db_total'],
 					$result['es_total'],
