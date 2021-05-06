@@ -223,7 +223,8 @@ class Health {
 		$health = new self( $search );
 
 		foreach ( $post_types as $post_type ) {
-			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+			$post_indexable = Indexables::factory()->get( 'post' );
+			$post_statuses = $post_indexable->get_indexable_post_status();
 
 			$query_args = [
 				'post_type'   => $post_type,
@@ -240,6 +241,7 @@ class Health {
 					'type'          => $post_type,
 					'error'         => $result->get_error_message(),
 					'index_version' => $index_version,
+					'index_name'    => $post_indexable->get_index_name(),
 				];
 			}
 
