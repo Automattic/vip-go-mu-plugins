@@ -19,7 +19,7 @@
 
 @mixin text-h4 {
 	/* Heading 4 */
-	font-family: SF Pro Text;
+	font-family: var(--vip-secondary-font-family);
 	font-style: normal;
 	font-weight: normal;
 	font-size: 15px;
