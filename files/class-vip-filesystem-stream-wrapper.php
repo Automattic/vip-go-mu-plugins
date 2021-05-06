@@ -194,6 +194,16 @@ class VIP_Filesystem_Stream_Wrapper {
 					return false;
 				}
 
+				// When the Files service in read-only mode we should not try to create a temporary stream and instead bail right away.
+				if ( defined( 'FILE_SERVICE_WRITES_DISABLED' ) && FILE_SERVICE_WRITES_DISABLED ) {
+					trigger_error(
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Not really outputing to anywhere
+						sprintf( 'tried to open a non-existing file %s but the File Service is in read-only mode (mode: %s): %s #vip-go-streams', $path, $mode, $result->get_error_message() ),
+						E_USER_WARNING
+					);
+					return false;
+				}
+
 				// File doesn't exist on File service so create new file
 				$file = $this->string_to_resource( '', $mode );
 			} else {
