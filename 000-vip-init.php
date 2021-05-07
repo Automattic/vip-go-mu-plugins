@@ -129,6 +129,11 @@ if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
 }
 
+// JP Connection Pilot auto-connect disabled by default
+if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT' ) ) {
+	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT', false );
+}
+
 // JP Connection Pilot auto-reconnect disabled by default
 if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
