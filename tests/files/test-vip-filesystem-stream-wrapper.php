@@ -178,4 +178,22 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $this->stream_wrapper->validate( $path, 'x' ) );
 		$this->assertError( "fopen mode validation failed for mode x on path $path with error: Test error #vip-go-streams", E_USER_WARNING );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 * @return void
+	 */
+	public function test__stream_open_disabled_via_constant_and_file_does_not_exist() {
+		define( 'FILE_SERVICE_WRITES_DISABLED', true );
+		$path = 'wp-content/uploads/test-file-should-not-exist.txt';
+		$tmp_file = tempnam( sys_get_temp_dir(), 'phpunit' );
+		$this->api_client_mock
+			->expects( $this->once() )
+			->method( 'get_file' )
+			->with( $path )
+			->willReturn( new WP_Error( 'file-not-found', 'File not found and writes are disabled' ) );
+
+		$this->assertFalse( $this->stream_wrapper->stream_open( $path, 'w', [], $tmp_file ) );
+	}
 }
