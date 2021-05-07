@@ -88,6 +88,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type'          => 'custom_type',
 				'db_total'      => 100,
 				'es_total'      => 200,
+				'index_name'    => 'posts-123',
 				'index_version' => 222,
 				'diff'          => 100,
 			),
@@ -96,10 +97,13 @@ class HealthJob_Test extends \WP_UnitTestCase {
 				'type'          => 'N/A',
 				'db_total'      => 100,
 				'es_total'      => 100,
+				'index_name'    => 'posts-123',
 				'index_version' => 333,
 				'diff'          => 0,
 			),
 			array(
+				'index_name'    => 'posts-123',
+				'index_version' => 333,
 				'error' => 'Foo Error',
 			),
 		);
@@ -119,38 +123,20 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->withConsecutive(
 				array(
 					'#vip-go-es-alerts',
-					sprintf(
-						'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
-						home_url(),
-						$results[0]['entity'],
-						$results[0]['type'],
-						$results[0]['index_version'],
-						$results[0]['db_total'],
-						$results[0]['es_total'],
-						$results[0]['diff']
-					),
+					$this->getExpectedDiffMessage( $results[0] ),
 					2,
 					"{$results[0]['entity']}:{$results[0]['type']}",
 				),
 				array(
 					'#vip-go-es-alerts',
-					sprintf(
-						'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
-						home_url(),
-						$results[1]['entity'],
-						$results[1]['type'],
-						$results[1]['index_version'],
-						$results[1]['db_total'],
-						$results[1]['es_total'],
-						$results[1]['diff']
-					),
+					$this->getExpectedDiffMessage( $results[1] ),
 					2,
 					"{$results[1]['entity']}:{$results[1]['type']}",
 				),
 				// NOTE - we've skipped the 3rd result here b/c it has a diff of 0 and shouldn't alert
 				array(
 					'#vip-go-es-alerts',
-					'Error while validating index for http://example.org: Foo Error',
+					'Error while validating index for http://example.org: Foo Error (index_name: posts-123, index_version: 333)',
 					2,
 				)
 			)
@@ -159,6 +145,19 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		$stub->process_document_count_health_results( $results );
 	}
 
+	private function getExpectedDiffMessage( $result ) {
+		return sprintf(
+			'Index inconsistencies found for %s: (entity: %s, type: %s, index_name: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
+			home_url(),
+			$result['entity'],
+			$result['type'],
+			$result['index_name'] ?? '<unknown>',
+			$result['index_version'],
+			$result['db_total'],
+			$result['es_total'],
+			$result['diff']
+		);
+	}
 	/**
 	 * Test that we correctly handle the results of health checks when a check fails completely
 	 */

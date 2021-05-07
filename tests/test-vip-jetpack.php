@@ -170,6 +170,10 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	}
 
 	public function test__jetpack_options_fallback_no_verify_ssl_certs__filter() {
+		if ( ! class_exists( 'Jetpack' ) ) {
+			return;
+		}
+
 		// Make sure it doesn't already exist as 0
 		\Jetpack_Options::delete_option( 'fallback_no_verify_ssl_certs' );
 
