@@ -124,6 +124,11 @@ $internal_cron_events = array(
 	)
 );
 
+// Enable Jetpack private connection by default
+if ( ! defined('VIP_JETPACK_IS_PRIVATE' ) ) {
+	define( 'VIP_JETPACK_IS_PRIVATE', true );
+}
+
 // JP Connection Pilot disabled by default
 if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
