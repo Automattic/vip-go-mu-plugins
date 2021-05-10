@@ -557,6 +557,10 @@ class API_Client_Test extends \WP_UnitTestCase {
 					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'
 				),
 			],
+			'WP_Error' => [
+				new WP_Error( 'oh-no', 'Oh no!' ),
+				new WP_Error( 'oh-no', 'Oh no!' ),
+			],
 			'file-service-readonly' => [
 				[
 					'response' => [
