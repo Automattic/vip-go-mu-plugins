@@ -82,7 +82,6 @@ class Health {
 			return $result;
 		}
 
-
 		$es_total = $this->get_index_entity_count_from_elastic_search( $query_args, $indexable );
 		if ( is_wp_error( $es_total ) ) {
 			return $es_total;
