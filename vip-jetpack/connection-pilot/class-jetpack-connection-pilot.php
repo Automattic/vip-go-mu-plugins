@@ -262,7 +262,7 @@ class Connection_Pilot {
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		// Do not try to reconnect anything else other than production sites
-		if ( 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
 			return false;
 		}
 
