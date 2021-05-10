@@ -125,7 +125,7 @@ $internal_cron_events = array(
 );
 
 // Enable Jetpack private connection by default
-if ( ! defined('VIP_JETPACK_IS_PRIVATE' ) ) {
+if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) ) {
 	define( 'VIP_JETPACK_IS_PRIVATE', true );
 }
 
