@@ -359,10 +359,11 @@ class Health_Test extends \WP_UnitTestCase {
 		$error = new \WP_Error( 'test error' );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings', 'index_exists' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'foo';
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
 
 
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
@@ -386,10 +387,11 @@ class Health_Test extends \WP_UnitTestCase {
 			'es_total' => 8,
 			'diff'     => -2,
 			'skipped'  => false,
+			'reason'   => 'N/A',
 		];
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings', 'index_exists' ] )
 			->getMock();
 
 		$mocked_indexable->slug = $expected_result['entity'];
@@ -397,6 +399,7 @@ class Health_Test extends \WP_UnitTestCase {
 			->willReturn( [
 				'total_objects' => $expected_result['db_total'],
 			] );
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
 
 
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
@@ -420,12 +423,13 @@ class Health_Test extends \WP_UnitTestCase {
 			'es_total' => 0,
 			'diff'     => 'N/A',
 			'skipped'  => true,
+			'reason'   => 'index-empty',
 		];
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings', 'index_exists' ] )
 			->getMock();
-
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
 		$mocked_indexable->slug = $expected_result['entity'];
 
 
@@ -438,6 +442,29 @@ class Health_Test extends \WP_UnitTestCase {
 			->willReturn( $expected_result['es_total'] );
 
 		$result = $patrtially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
+
+		$this->assertEquals( $result, $expected_result );
+	}
+
+	public function test_validate_index_entity_count__skipping_non_existing_indexes() {
+		$expected_result = [
+			'entity'   => 'foo',
+			'type'     => 'N/A',
+			'db_total' => 'N/A',
+			'es_total' => 'N/A',
+			'diff'     => 'N/A',
+			'skipped'  => true,
+			'reason'   => 'index-not-found',
+		];
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'build_settings', 'index_exists' ] )
+			->getMock();
+		$mocked_indexable->method( 'index_exists' )->willReturn( false );
+		$mocked_indexable->slug = $expected_result['entity'];
+
+		$health = new \Automattic\VIP\Search\Health( Search::instance() );
+		$result = $health->validate_index_entity_count( [], $mocked_indexable );
 
 		$this->assertEquals( $result, $expected_result );
 	}
