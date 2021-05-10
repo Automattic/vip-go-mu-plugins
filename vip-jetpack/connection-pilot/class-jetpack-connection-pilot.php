@@ -77,6 +77,11 @@ class Connection_Pilot {
 
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
+		if ( self::should_attempt_auto_connection() ) {
+			add_action( 'wp_initialize_site', array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
+			add_action( 'wp_update_site', array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
+		}
+
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
 	}
 
@@ -242,11 +247,30 @@ class Connection_Pilot {
 	 * @return bool True if the connection pilot should run.
 	 */
 	public static function should_run_connection_pilot() {
+		// Do not run connection pilot anywhere else other than production sites
+		if ( 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+			return false;
+		}
+
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
 		}
 
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
+	}
+
+	/**
+	 * Checks if a connection for a new or updated site should be attempted
+	 *
+	 * @param $error \WP_Error|null Optional error thrown by the connection check
+	 * @return bool True if a reconnect should be attempted
+	 */
+	public static function should_attempt_auto_connection( \WP_Error $error = null ): bool {
+		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT' ) ) {
+			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT;
+		}
+
+		return apply_filters( 'vip_jetpack_connection_pilot_should_auto_connect', false, $error );
 	}
 
 	/**
