@@ -137,7 +137,7 @@ jobs:
   php73-lint:
     <<: *lint_job
     docker:
-      - image: circleci/php:7.3-node
+      - image: circleci/php:7.4-node
 
   php74-core-tests:
     <<: *php_core_job
