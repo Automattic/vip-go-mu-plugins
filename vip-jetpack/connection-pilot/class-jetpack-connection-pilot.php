@@ -77,7 +77,7 @@ class Connection_Pilot {
 
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
-		if ( self::should_attempt_auto_connection() ) {
+		if ( self::should_attempt_reconnection() ) {
 			add_action( 'wp_initialize_site', array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 			add_action( 'wp_update_site', array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 		}
@@ -260,26 +260,12 @@ class Connection_Pilot {
 	}
 
 	/**
-	 * Checks if a connection for a new or updated site should be attempted
-	 *
-	 * @param $error \WP_Error|null Optional error thrown by the connection check
-	 * @return bool True if a reconnect should be attempted
-	 */
-	public static function should_attempt_auto_connection( \WP_Error $error = null ): bool {
-		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT' ) ) {
-			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT;
-		}
-
-		return apply_filters( 'vip_jetpack_connection_pilot_should_auto_connect', false, $error );
-	}
-
-	/**
 	 * Checks if a reconnection should be attempted
 	 *
 	 * @param $error \WP_Error Optional error thrown by the connection check
 	 * @return bool True if a reconnect should be attempted
 	 */
-	public static function should_attempt_reconnection( $error = null ) {
+	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}

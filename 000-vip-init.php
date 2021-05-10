@@ -129,28 +129,17 @@ if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
 }
 
-// JP Connection Pilot auto-connect disabled by default
-if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT' ) ) {
-	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT', false );
-}
-
 // JP Connection Pilot auto-reconnect disabled by default
 if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
 }
 
 if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
-	if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_AUTO_CONNECT ) {
-		$max_mins_cron_launch = 10;
-	} else {
-		$max_mins_cron_launch = 60;
-	}
-
 	$internal_cron_events[] = array(
 		'schedule'  => 'hourly',
 		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
 		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
-		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, $max_mins_cron_launch ) ) ),
+		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 30 ) ) ),
 	);
 }
 
