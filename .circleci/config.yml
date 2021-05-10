@@ -2,7 +2,6 @@ workflows:
   version: 2
   main:
     jobs:
-      - php73-lint
       - php74-core-tests
       - php74-core-multisite-tests
       - php74-lint
@@ -134,11 +133,6 @@ job-references:
           command: npm run lint
 
 jobs:
-  php73-lint:
-    <<: *lint_job
-    docker:
-      - image: circleci/php:7.3-node
-
   php74-core-tests:
     <<: *php_core_job
     environment:
