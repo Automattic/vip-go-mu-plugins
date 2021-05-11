@@ -2,7 +2,11 @@
 export const callOnEscapeKey = callback => event => event.key === 'Escape' && callback();
 
 /**
- *  Async Helper to post data to a REST Endpoint
+ * Async helper to post data to a REST andpoint.
+ *
+ * This function doesn't handle the Errors that maybe thrown after
+ * an unsuccessful request. Please handle these in the caller function/method.
+ *
  * @param {String} url Request URL
  * @param {Object} data Any data to post.
  * @param {String} nonce The nonce verify the permissions
