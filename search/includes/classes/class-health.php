@@ -2,7 +2,6 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexable as Indexable;
 use \ElasticPress\Indexables as Indexables;
 
 use \WP_Query as WP_Query;
@@ -773,25 +772,25 @@ class Health {
 			}
 		}
 
-		if ( ! $indexable->index_exists() ) {
-			return [];
+		$diff = [];
+
+		if ( $indexable->index_exists() ) {
+			$actual_settings = $indexable->get_index_settings();
+
+			if ( is_wp_error( $actual_settings ) ) {
+				$this->search->versioning->reset_current_version_number( $indexable );
+
+				return $actual_settings;
+			}
+
+			$desired_settings = $indexable->build_settings();
+
+			// We only monitor certain settings
+			$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+			$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+
+			$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 		}
-
-		$actual_settings = $indexable->get_index_settings();
-
-		if ( is_wp_error( $actual_settings ) ) {
-			$this->search->versioning->reset_current_version_number( $indexable );
-
-			return $actual_settings;
-		}
-
-		$desired_settings = $indexable->build_settings();
-
-		// We only monitor certain settings
-		$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-		$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-
-		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 
 		$this->search->versioning->reset_current_version_number( $indexable );
 

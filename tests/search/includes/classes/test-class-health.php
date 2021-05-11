@@ -6,6 +6,7 @@ class Health_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
+		require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
 	}
 
 	public function test_get_missing_docs_or_posts_diff() {
@@ -815,9 +816,7 @@ class Health_Test extends \WP_UnitTestCase {
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
 		// Mock search and the versioning instance
-		$mock_search = $this->getMockBuilder( Search::class )
-			->setMethods( [] )
-			->getMock();
+		$mock_search = $this->createMock( Search::class );
 
 		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
 			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
@@ -826,10 +825,11 @@ class Health_Test extends \WP_UnitTestCase {
 		$health = new Health( $mock_search );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings', 'index_exists' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
 
 		$mocked_indexable->method( 'get_index_settings' )
 			->willReturn( $actual );
@@ -840,6 +840,37 @@ class Health_Test extends \WP_UnitTestCase {
 		$actual_diff = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
 
 		$this->assertEquals( $actual_diff, $expected_diff );
+	}
+
+	public function test_get_index_settings_diff_for_indexable_without_index() {
+		$options = [ 'version_number' => 2 ];
+		$actual = [ 'index.number_of_shards' => 1 ];
+		$desired = [ 'index.number_of_shards' => 2 ];
+		// Mock search and the versioning instance
+		$mock_search = $this->createMock( Search::class );
+
+		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
+			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		$health = new Health( $mock_search );
+
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings', 'index_exists' ] )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'index_exists' )->willReturn( false );
+
+		$mocked_indexable->method( 'get_index_settings' )
+			->willReturn( $actual );
+
+		$mocked_indexable->method( 'build_settings' )
+			->willReturn( $desired );
+
+		$actual_diff = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
+
+		$this->assertEmpty( $actual_diff );
 	}
 
 	public function heal_index_settings_for_indexable_data() {
