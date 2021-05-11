@@ -773,6 +773,10 @@ class Health {
 			}
 		}
 
+		if ( ! $indexable->index_exists() ) {
+			return [];
+		}
+
 		$actual_settings = $indexable->get_index_settings();
 
 		if ( is_wp_error( $actual_settings ) ) {
