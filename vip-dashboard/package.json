@@ -57,7 +57,6 @@
     "fbjs": "0.8.17",
     "lodash": "4.17.21",
     "react": "15.7.0",
-    "react-chartjs": "0.8.0",
     "react-dom": "15.7.0"
   }
 }
