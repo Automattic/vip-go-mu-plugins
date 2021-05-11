@@ -1,9 +1,5 @@
 .vip_search_dev_tools {
 	font-family: var(--vip-font-family);
-	// padding: 20px;
-	> * {
-		// margin-bottom: 20px;
-	}
 
 	.main_caption {
 		margin-bottom: 4px;
@@ -12,7 +8,7 @@
 
 .ab_btn {
 	&::before {
-		content: url( '../assets/wpvip.svg' );
+		content: url('../assets/wpvip.svg');
 		margin-right: 7px;
 	}
 

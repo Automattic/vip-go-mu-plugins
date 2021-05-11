@@ -1,6 +1,4 @@
 @import './vars.scss';
-// @import './mixins.scss';
-
 
 .vip-h2 {
 	@include text-h2();
@@ -17,7 +15,6 @@
 
 .search-dev-tools {
 	&__wrapper {
-		// todo
 		margin-top: 40px;
 		display: flex;
 		justify-content: center;
@@ -29,7 +26,6 @@
 		display: none !important;
 	}
 }
-
 
 .main_caption {
 	margin-bottom: 4px;

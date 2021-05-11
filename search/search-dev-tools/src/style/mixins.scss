@@ -4,11 +4,10 @@
 	font-weight: normal;
 	font-size: 32px;
 	line-height: 38px;
-
 	color: var(--vip-grey-100);
 }
 
-@mixin  text-h3 {
+@mixin text-h3 {
 	font-family: var(--vip-font-family);
 	font-style: normal;
 	font-weight: 500;
@@ -53,14 +52,11 @@
 @mixin text-caption() {
 	/* Caption */
 
-font-family: var(--vip-secondary-font-family);
-font-style: normal;
-font-weight: normal;
-font-size: 11px;
-line-height: 150%;
-/* identical to box height, or 16px */
-
-
-/* Gray-80 */
-color: var(--vip-grey-80);
+	font-family: var(--vip-secondary-font-family);
+	font-style: normal;
+	font-weight: normal;
+	font-size: 11px;
+	line-height: 150%;
+	/* identical to box height, or 16px */
+	color: var(--vip-grey-80);
 }
