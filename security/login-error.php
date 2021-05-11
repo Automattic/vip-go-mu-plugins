@@ -12,6 +12,11 @@ namespace Automattic\VIP\Security;
  */
 function use_ambiguous_login_error( string $error ): string {
 	global $errors;
+
+	if ( ! is_wp_error( $errors ) ) {
+		return $error;
+	}
+
 	$err_codes = $errors->get_error_codes();
 
 	$err_types = [
