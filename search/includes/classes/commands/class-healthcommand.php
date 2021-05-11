@@ -204,7 +204,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			$identification = sprintf( 'entity: %s, type: %s, index_version: %d', $result['entity'], $result['type'], $result['index_version'] );
 
 			if ( $result['skipped'] ) {
-				$message = sprintf( '%s skipping, because there are no documents in ES when counting %s', self::INFO_ICON, $identification );
+				$reason_message = 'index-not-found' === $result['reason'] ? 'index was not found in ES' : 'there are no documents in ES';
+				$message = sprintf( '%s skipping, because %s when counting %s', self::INFO_ICON, $reason_message, $identification );
 			} else {
 				$message = ' inconsistencies found';
 				if ( $result['diff'] ) {

@@ -69,10 +69,18 @@ class Health {
 			'entity'   => $indexable->slug,
 			'type'     => ( array_key_exists( 'post_type', $query_args ) ? $query_args['post_type'] : 'N/A' ),
 			'skipped'  => false,
+			'reason'   => 'N/A',
 			'db_total' => 'N/A',
 			'es_total' => 'N/A',
 			'diff' => 'N/A',
 		];
+
+		if ( ! $indexable->index_exists() ) {
+			// If index doesnt exist and we will skip the rest of the check
+			$result['skipped'] = true;
+			$result['reason'] = 'index-not-found';
+			return $result;
+		}
 
 		$es_total = $this->get_index_entity_count_from_elastic_search( $query_args, $indexable );
 		if ( is_wp_error( $es_total ) ) {
@@ -82,6 +90,7 @@ class Health {
 		if ( 0 === $es_total ) {
 			// If there is 0 docs in ES, we assume it wasnet initialized and we will skip the rest of the check
 			$result['skipped'] = true;
+			$result['reason'] = 'index-empty';
 			$result['es_total'] = 0;
 			return $result;
 		}
@@ -223,7 +232,8 @@ class Health {
 		$health = new self( $search );
 
 		foreach ( $post_types as $post_type ) {
-			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+			$post_indexable = Indexables::factory()->get( 'post' );
+			$post_statuses = $post_indexable->get_indexable_post_status();
 
 			$query_args = [
 				'post_type'   => $post_type,
@@ -240,6 +250,7 @@ class Health {
 					'type'          => $post_type,
 					'error'         => $result->get_error_message(),
 					'index_version' => $index_version,
+					'index_name'    => $post_indexable->get_index_name(),
 				];
 			}
 

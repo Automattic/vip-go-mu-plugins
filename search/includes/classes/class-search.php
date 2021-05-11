@@ -64,6 +64,7 @@ class Search {
 		'dca',
 		'dfw',
 		'bur',
+		'ams',
 	];
 
 	private static $query_count_ttl;
@@ -87,6 +88,7 @@ class Search {
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
 	public $healthcheck;
+	public $settings_healthcheck;
 	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
@@ -118,6 +120,18 @@ class Search {
 		$this->setup_regular_stat_collection();
 	}
 
+	/**
+	 * Check if the constants needed for ElasticSearch connection are defined.
+	 *
+	 * @return bool true if constants are defined, false otherwise
+	 */
+	public static function are_es_constants_defined() {
+		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
+		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
+		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
+		return $endpoints_defined && $username_defined && $password_defined;
+	}
+
 	public static function instance() {
 		if ( ! ( static::$_instance instanceof Search ) ) {
 			static::$_instance = new Search();
@@ -133,6 +147,9 @@ class Search {
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-healthjob.php';
+
+		// Load settings health check cron job
+		require_once __DIR__ . '/class-settingshealthjob.php';
 
 		// Load versioning cleanup job
 		require_once __DIR__ . '/class-versioningcleanupjob.php';
@@ -508,6 +525,7 @@ class Search {
 
 	protected function setup_cron_jobs() {
 		$this->healthcheck = new HealthJob( $this );
+		$this->settings_healthcheck = new SettingsHealthJob( $this );
 		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
 		/**
@@ -517,9 +535,11 @@ class Search {
 		 */
 		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
 			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
+			add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
 			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
 		} else {
 			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
+			add_action( 'admin_init', [ $this->settings_healthcheck, 'init' ], 0 );
 			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
 		}
 	}

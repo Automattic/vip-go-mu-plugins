@@ -1,0 +1,103 @@
+.stats {
+	height: $stats-height;
+	color: $grey-blue;
+	background: $graphite-var;
+}
+
+.stats__module {
+	float: left;
+	position: relative;
+	display: inline-block;
+	width: 33%;
+	height: $stats-height;
+	overflow: hidden;
+}
+
+.stats__canvas {
+	width: 400px;
+	height: 100px;
+}
+
+.stats__graphs {
+	position: relative;
+	/*width: 480px;*/
+	/*padding: 20px 10px;*/
+}
+
+.stats__numbers  {
+	position: absolute;
+	bottom: 0px;
+	width: 100%;
+
+	div {
+		float: left;
+		display: block;
+		margin-right: 1em;
+		padding: .5em 1em;
+
+		&:last-of-type {
+			margin: 0;
+		}
+	}
+
+	&.numbers-data {
+		bottom: 18%;
+		padding-left: 2em;
+	}
+}
+
+.stats__total-posts,
+.stats__total-users,
+.stats__total-media,
+.stats__total-loc {
+	position: relative;
+	min-width: 180px;
+
+	&:before {
+		display: inline-block;
+		position: absolute;
+		top: 14px;
+		left: -24px;
+		font-size: 32px;
+		font-family: "Genericons";
+		font-style: normal;
+		font-weight: normal;
+		font-variant: normal;
+		line-height: 1;
+		vertical-align: top;
+		text-align: center;
+		text-decoration: inherit;
+		text-transform: none;
+		-moz-osx-font-smoothing: grayscale;
+		-webkit-font-smoothing: antialiased;
+		speak: none;
+	}
+}
+
+.stats__total-posts {
+
+	&:before {
+		content: '\f100';
+	}
+}
+
+.stats__total-users {
+
+	&:before {
+		content: '\f304';
+	}
+}
+
+.stats__total-media {
+
+	&:before {
+		content: '\f473';
+	}
+}
+
+.stats__total-loc {
+
+	&:before {
+		content: '\f462';
+	}
+}
