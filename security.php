@@ -8,10 +8,10 @@ Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-require_once( __DIR__ . '/security/class-lockout.php' );
-require_once( __DIR__ . '/security/machine-user.php' );
-require_once( __DIR__ . '/security/class-private-sites.php' );
-require_once( __DIR__ . '/security/login-error.php' );
+require_once __DIR__ . '/security/class-lockout.php';
+require_once __DIR__ . '/security/machine-user.php';
+require_once __DIR__ . '/security/class-private-sites.php';
+require_once __DIR__ . '/security/login-error.php';
 
 if ( \Automattic\VIP\Feature::is_enabled( 'admin-password-change-current' ) ) {
 	require_once __DIR__ . '/security/password.php';
