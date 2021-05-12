@@ -51,7 +51,7 @@
     "watchify": "3.11.1"
   },
   "dependencies": {
-    "chart.js": "1.1.1",
+    "chart.js": "2.9.4",
     "classnames": "2.3.1",
     "debug": "2.6.9",
     "fbjs": "0.8.17",
