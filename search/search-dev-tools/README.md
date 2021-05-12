@@ -24,6 +24,8 @@ For the best results we recommend using [mu-plugins dev environment](https://git
 
 Frontend:
 1. Install dependencies `npm i` or `yarn`.
+1. Change `permission_callback` to `__return_true` in `register_rest_routes()` in order to be able to do unauthenticated requests to the REST endpoint.
+1. Make sure your dev environment allows cross-origin requests to the REST endpoint. Look for `Access-Control-Allow-Origin` header on the response from the REST endpoint.
 1. `npm run dev` will build the app and start a standalone server with hot reload and start hacking in `src/`.
 1. To build the WordPress assets, use `npm run build`.
 
