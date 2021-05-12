@@ -25,8 +25,10 @@ define( 'SEARCH_DEV_TOOLS_CAP', 'edit_others_posts' );
 add_action( 'rest_api_init', __NAMESPACE__ . '\register_rest_routes' );
 add_action( 'admin_bar_menu', __NAMESPACE__ . '\admin_bar_node', PHP_INT_MAX );
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
+add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
 add_filter( 'js_do_concat', __NAMESPACE__ . '\skip_js_do_concat', 10, 2 );
 add_action( 'wp_footer', __NAMESPACE__ . '\print_data', 5 );
+add_action( 'admin_footer', __NAMESPACE__ . '\print_data', 5 );
 
 /**
  * Register Dev Tools Endpoint.
