@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use DateTime;
+
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
@@ -75,12 +77,13 @@ class Connection_Pilot {
 			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
 		}
 
-		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
-
+		// Run CP shortly after site creation or update to try to connect automatically
 		if ( self::should_attempt_reconnection() ) {
-			add_action( 'wp_initialize_site', array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
-			add_action( 'wp_update_site', array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
+			add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
+			add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
 		}
+
+		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
 	}
@@ -89,6 +92,10 @@ class Connection_Pilot {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
 			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
+	}
+
+	public function schedule_immediate_cron() {
+		wp_schedule_event( strtotime( '+1 minutes' ), self::CRON_SCHEDULE, self::CRON_ACTION );
 	}
 
 	public static function do_cron() {
@@ -257,7 +264,8 @@ class Connection_Pilot {
 	/**
 	 * Checks if a reconnection should be attempted
 	 *
-	 * @param $error \WP_Error Optional error thrown by the connection check
+	 * @param $error \WP_Error|null Optional error thrown by the connection check
+	 *
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
@@ -265,7 +273,34 @@ class Connection_Pilot {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
 
+		// Attempting connection for fresh sites
+		if ( self::is_fresh_subsite() ) {
+			return true;
+		}
+
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
+	}
+
+	/**
+	 * Checks if the site was created less than an hour before execution
+	 *
+	 * @return bool
+	 */
+	public static function is_fresh_subsite(): bool {
+		// Not applicable for single sites
+		if ( ! is_multisite() ) {
+			return false;
+		}
+
+		try {
+			$site_registered = new DateTime( get_site()->registered );
+		} catch ( \Exception $e ) {
+			return false;
+		}
+
+		$now = new DateTime("now");
+		$time_diff = $now->getTimestamp() - $site_registered->getTimestamp();
+		return $time_diff < 3600;
 	}
 }
 
