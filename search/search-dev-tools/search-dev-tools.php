@@ -43,8 +43,6 @@ function register_rest_routes() {
 			],
 			'callback'            => __NAMESPACE__ . '\rest_callback',
 			'permission_callback' => __NAMESPACE__ . '\should_enable_search_dev_tools',
-			// Uncomment this for testing with `npm run dev`
-			// 'permission_callback' => '__return_true',
 			'args'                => [
 				'url'   => [
 					'type'              => 'string',
