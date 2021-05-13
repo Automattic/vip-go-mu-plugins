@@ -140,6 +140,7 @@ add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
 
 
 // We are putting dispatchers as last so that QM still can catch other operations in shutdown action
+// See https://github.com/johnbillion/query-monitor/pull/549
 function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	if ( is_array( $dispatchers ) ) {
 		if ( isset( $dispatchers['html'] ) ) {
