@@ -172,6 +172,11 @@ class Connection_Pilot {
 	}
 
 	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
+		// Attempting connection for fresh sites
+		if ( self::is_fresh_subsite() ) {
+			return true;
+		}
+
 		$error_code = null;
 
 		if ( $error && is_wp_error( $error ) ) {
@@ -271,11 +276,6 @@ class Connection_Pilot {
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
-		}
-
-		// Attempting connection for fresh sites
-		if ( self::is_fresh_subsite() ) {
-			return true;
 		}
 
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
