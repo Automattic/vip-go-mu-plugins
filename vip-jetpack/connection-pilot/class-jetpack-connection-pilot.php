@@ -8,7 +8,7 @@ require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
- * Will only run if the `VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN` constant is defined and set to true.
+ * Will only run if the `VIP_JETPACK_AUTO_MANAGE_CONNECTION` constant is defined and set to true.
  */
 class Connection_Pilot {
 	/**
@@ -259,8 +259,8 @@ class Connection_Pilot {
 	 * @return bool True if the connection pilot should run.
 	 */
 	public static function should_run_connection_pilot(): bool {
-		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
-			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
+		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
+			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
 		}
 
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
@@ -274,6 +274,7 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
+		// The constant is deprecated, but keeping this check for historical reasons
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
