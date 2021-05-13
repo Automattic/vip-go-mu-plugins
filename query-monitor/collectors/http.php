@@ -5,6 +5,8 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Collector_HTTP extends QM_Collector {
 
 	public $id         = 'http';
@@ -232,6 +234,8 @@ class QM_Collector_HTTP extends QM_Collector {
 			'airplane_mode_enabled',
 		) );
 
+		$home_host = (string) parse_url( home_url(), PHP_URL_HOST );
+
 		foreach ( $this->data['http'] as $key => & $http ) {
 
 			if ( ! isset( $http['response'] ) ) {
@@ -257,10 +261,6 @@ class QM_Collector_HTTP extends QM_Collector {
 			$http['ltime'] = ( $http['end'] - $http['start'] );
 
 			if ( isset( $http['info'] ) ) {
-				if ( isset( $http['info']['total_time'] ) ) {
-					$http['ltime'] = $http['info']['total_time'];
-				}
-
 				if ( ! empty( $http['info']['url'] ) ) {
 					if ( rtrim( $http['url'], '/' ) !== rtrim( $http['info']['url'], '/' ) ) {
 						$http['redirected_to'] = $http['info']['url'];
@@ -271,6 +271,10 @@ class QM_Collector_HTTP extends QM_Collector {
 			$this->data['ltime'] += $http['ltime'];
 
 			$http['component'] = $http['trace']->get_component();
+
+			$host = (string) parse_url( $http['url'], PHP_URL_HOST );
+
+			$http['local'] = ( $host === $home_host );
 
 			$this->log_type( $http['type'] );
 			$this->log_component( $http['component'], $http['ltime'], $http['type'] );

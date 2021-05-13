@@ -5,6 +5,8 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Output_Html_Overview extends QM_Output_Html {
 
 	/**
@@ -34,12 +36,12 @@ class QM_Output_Html_Overview extends QM_Output_Html {
 			$db_queries_data = $db_queries->get_data();
 			if ( isset( $db_queries_data['types'] ) && isset( $db_queries_data['total_time'] ) ) {
 				$db_query_num = $db_queries_data['types'];
-				$db_query_time = $db_queries_data['total_time'];
 			}
 		}
 
 		$raw_request = QM_Collectors::get( 'raw_request' );
 		$cache = QM_Collectors::get( 'cache' );
+		$http = QM_Collectors::get( 'http' );
 
 		$qm_broken   = __( 'A JavaScript problem on the page is preventing Query Monitor from working correctly. jQuery may have been blocked from loading.', 'query-monitor' );
 		$ajax_errors = __( 'PHP errors were triggered during an Ajax request. See your browser developer console for details.', 'query-monitor' );
@@ -128,7 +130,7 @@ class QM_Output_Html_Overview extends QM_Output_Html {
 				}
 				echo esc_html( sprintf(
 					/* translators: 1: Percentage of memory limit used, 2: Memory limit in kilobytes */
-					__( '%1$s%% of %2$s kB limit', 'query-monitor' ),
+					__( '%1$s%% of %2$s kB server limit', 'query-monitor' ),
 					number_format_i18n( $data['memory_usage'], 1 ),
 					number_format_i18n( $data['memory_limit'] / 1024 )
 				) );
@@ -143,23 +145,36 @@ class QM_Output_Html_Overview extends QM_Output_Html {
 				);
 				echo '</span>';
 			}
+
+			if ( $data['wp_memory_limit'] > 0 ) {
+				if ( $data['display_memory_usage_warning'] ) {
+					echo '<br><span class="qm-warn"><span class="dashicons dashicons-warning" aria-hidden="true"></span>';
+				} else {
+					echo '<br><span class="qm-info">';
+				}
+				echo esc_html( sprintf(
+				/* translators: 1: Percentage of memory limit used, 2: Memory limit in kilobytes */
+					__( '%1$s%% of %2$s kB WordPress limit', 'query-monitor' ),
+					number_format_i18n( $data['wp_memory_usage'], 1 ),
+					number_format_i18n( $data['wp_memory_limit'] / 1024 )
+				) );
+				echo '</span>';
+			}
 		}
 
 		echo '</p>';
 		echo '</section>';
 
-		if ( isset( $db_queries_data ) ) {
-			echo '<section>';
-			echo '<h3>' . esc_html__( 'Database Query Time', 'query-monitor' ) . '</h3>';
-			echo '<p>';
-			echo esc_html( number_format_i18n( $db_queries_data['total_time'], 4 ) );
-			echo '</p>';
-			echo '</section>';
-		}
-
 		if ( isset( $db_query_num ) && isset( $db_queries_data ) ) {
 			echo '<section>';
 			echo '<h3>' . esc_html__( 'Database Queries', 'query-monitor' ) . '</h3>';
+
+			if ( isset( $db_queries_data ) ) {
+				echo '<p>';
+				echo esc_html( number_format_i18n( $db_queries_data['total_time'], 4 ) );
+				echo '</p>';
+			}
+
 			echo '<p>';
 
 			if ( ! isset( $db_query_num['SELECT'] ) || count( $db_query_num ) > 1 ) {
@@ -180,6 +195,32 @@ class QM_Output_Html_Overview extends QM_Output_Html {
 			);
 
 			echo '</p>';
+			echo '</section>';
+		}
+
+		if ( $http ) {
+			echo '<section>';
+			echo '<h3>' . esc_html__( 'HTTP API Calls', 'query-monitor' ) . '</h3>';
+
+			$http_data = $http->get_data();
+
+			if ( ! empty( $http_data['http'] ) ) {
+				printf(
+					'<p>%s</p>',
+					esc_html( number_format_i18n( $http_data['ltime'], 4 ) )
+				);
+				printf(
+					'<button class="qm-filter-trigger" data-qm-target="http" data-qm-filter="type" data-qm-value="">%1$s: %2$s</button>',
+					esc_html( _x( 'Total', 'HTTP API calls', 'query-monitor' ) ),
+					esc_html( number_format_i18n( count( $http_data['http'] ) ) )
+				);
+			} else {
+				printf(
+					'<p><em>%s</em></p>',
+					esc_html__( 'None', 'query-monitor' )
+				);
+			}
+
 			echo '</section>';
 		}
 
