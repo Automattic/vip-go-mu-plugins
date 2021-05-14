@@ -111,11 +111,15 @@ pre[class*='language-'] {
 	border-bottom: 1px solid var(--vip-grey-10);
 }
 
+.query_src,
+.query_res {
+	max-width: calc(50vw - 32px);
+}
+
 .query_src {
 	grid-area: query-src;
 	background-color: #ffffff;
 	position: relative;
-	max-width: calc( 50vw - 32px );
 
 	&_extra {
 		@include text-caption();
@@ -127,7 +131,6 @@ pre[class*='language-'] {
 }
 .query_res {
 	grid-area: query-res;
-	max-width: calc( 50vw - 32px );
 }
 
 /**
