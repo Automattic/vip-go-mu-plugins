@@ -7,6 +7,16 @@ require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.ph
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexable.php';
 class Search_Test extends \WP_UnitTestCase {
+	/**
+	 * Make tests run in separate processes since we're testing state
+	 * related to plugin init, including various constants.
+	 */
+
+	// phpcs:disable WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false;
+	protected $runTestInSeparateProcess = true;
+	// phpcs:enable
+
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
