@@ -1266,8 +1266,6 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__should_load_es_wp_query_already_loaded() {
-		require_once __DIR__ . '/../../../../search/es-wp-query/es-wp-query.php';
-
 		$this->expectException( \PHPUnit\Framework\Error\Notice::class );
 
 		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
@@ -2859,9 +2857,6 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
-		// Load ElasticPress so we can activate the protected content feature before Search inits
-		require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
-
 		// Ensure ElasticPress is ready
 		do_action( 'plugins_loaded' );
 
