@@ -133,9 +133,6 @@ pre[class*='language-'] {
 	grid-area: query-res;
 }
 
-/**
- * TODO: We need to make sure we don't leak our Prism customizations
- */
 .query_wrap {
 	.container_editor {
 		counter-reset: line;
