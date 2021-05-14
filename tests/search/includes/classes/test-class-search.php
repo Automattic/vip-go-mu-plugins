@@ -4,8 +4,7 @@ namespace Automattic\VIP\Search;
 
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
-require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
-require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexable.php';
+require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
 class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
@@ -27,7 +26,6 @@ class Search_Test extends \WP_UnitTestCase {
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
 			->getMock();
-
 
 		$cache_key = \Automattic\VIP\Search\Search::INDEX_EXISTANCE_CACHE_KEY_PREFIX . $this->test_index_name;
 		wp_cache_delete( $cache_key, \Automattic\VIP\Search\Search::SEARCH_CACHE_GROUP );
@@ -1268,7 +1266,7 @@ class Search_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__should_load_es_wp_query_already_loaded() {
-		require_once __DIR__ . '/../../search/es-wp-query/es-wp-query.php';
+		require_once __DIR__ . '/../../../../search/es-wp-query/es-wp-query.php';
 
 		$this->expectException( \PHPUnit\Framework\Error\Notice::class );
 
@@ -2844,7 +2842,7 @@ class Search_Test extends \WP_UnitTestCase {
 
 	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
 		// Load ElasticPress so we can activate the protected content feature before Search inits
-		require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
+		require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
 
 		// Ensure ElasticPress is ready
 		do_action( 'plugins_loaded' );
