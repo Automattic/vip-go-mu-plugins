@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexa
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexable.php';
 class Search_Test extends \WP_UnitTestCase {
 	public static $mock_global_functions;
+	public $test_index_name = 'vip-1234-post-0-v3';
 
 	public function setUp() {
 
@@ -16,6 +17,10 @@ class Search_Test extends \WP_UnitTestCase {
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
 			->getMock();
+
+
+		$cache_key = \Automattic\VIP\Search\Search::INDEX_EXISTANCE_CACHE_KEY_PREFIX . $this->test_index_name;
+		wp_cache_delete( $cache_key, \Automattic\VIP\Search\Search::SEARCH_CACHE_GROUP );
 	}
 
 	public function test_query_es_with_invalid_type() {
@@ -3090,7 +3095,8 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__ensure_index_existance__bail_on_index_operation() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$url             = 'https://elastic:1234/vip-203-post-1';
+
+		$url = 'https://elastic:1234/' . $this->test_index_name;
 
 		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
 
@@ -3108,7 +3114,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
 
-		$url = 'https://elastic:1234/vip-203-post-1/_doc';
+		$url = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
 
 		$indexables_mock->method( 'get' )->willReturn( null );
 
@@ -3127,9 +3133,8 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
 
-		$index_name           = 'vip-203-post-1';
 		$different_index_name = 'vip-203-post-42';
-		$url                  = 'https://elastic:1234/' . $index_name . '/_doc';
+		$url                  = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
 
 		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
 		$indexable_mock->method( 'get_index_name' )->willReturn( $different_index_name );
@@ -3159,11 +3164,10 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
 
-		$index_name = 'vip-203-post-1';
-		$url        = 'https://elastic:1234/' . $index_name . '/_doc';
+		$url        = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
 
 		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $index_name );
+		$indexable_mock->method( 'get_index_name' )->willReturn( $this->test_index_name );
 
 		$search             = new \Automattic\VIP\Search\Search();
 		$search->indexables = $indexables_mock;
@@ -3174,6 +3178,51 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
 		$this->assertEquals( $put_mapping_result, $result );
+	}
+
+	public function test__ensure_index_existance__ix_exists_skip_check_on_second_pass() {
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
+		$versioning_mock = $this->createMock( Versioning::class );
+
+		$url        = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
+
+		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
+		$indexable_mock->method( 'get_index_name' )->willReturn( $this->test_index_name );
+
+		$search             = new \Automattic\VIP\Search\Search();
+		$search->indexables = $indexables_mock;
+		$search->versioning = $versioning_mock;
+
+		$indexable_mock->expects( $this->once() )->method( 'index_exists' )->willReturn( true );
+		$indexable_mock->expects( $this->never() )->method( 'put_mapping' );
+
+		$search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$second_pass_result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$this->assertTrue( $second_pass_result );
+	}
+
+	public function test__ensure_index_existance__ix_initialized_skip_check_on_second_pass() {
+		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
+		$versioning_mock = $this->createMock( Versioning::class );
+
+		$index_name = 'vip-203-post-1';
+		$url        = 'https://elastic:1234/' . $index_name . '/_doc';
+
+		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
+		$indexable_mock->method( 'get_index_name' )->willReturn( $index_name );
+
+		$search             = new \Automattic\VIP\Search\Search();
+		$search->indexables = $indexables_mock;
+		$search->versioning = $versioning_mock;
+
+		$indexable_mock->expects( $this->once() )->method( 'index_exists' )->willReturn( false );
+		$indexable_mock->expects( $this->once() )->method( 'put_mapping' )->willReturn( true );
+
+		$search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$second_pass_result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$this->assertTrue( $second_pass_result );
 	}
 
 	/**

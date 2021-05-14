@@ -795,7 +795,12 @@ class Search {
 			return true;
 		}
 
-		// TODO bail if index already checked (in cache)
+		$cache_key = self::INDEX_EXISTANCE_CACHE_KEY_PREFIX . $index_name;
+		$already_verified = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
+
+		if ( $already_verified ) {
+			return true;
+		}
 
 		$index_info = $this->versioning->parse_index_name( $index_name );
 		$indexable = $this->indexables->get( $index_info['slug'] ?? '' );
@@ -812,11 +817,13 @@ class Search {
 
 		if ( ! $indexable->index_exists() ) {
 			$result = $indexable->put_mapping();
-			// TODO cache on sucess
+			if ( $result ) {
+				wp_cache_set( $cache_key, true, self::SEARCH_CACHE_GROUP );
+			}
 			return $result;
 		}
-		// TODO cache indexable check
 
+		wp_cache_set( $cache_key, true, self::SEARCH_CACHE_GROUP );
 		return true;
 	}
 
