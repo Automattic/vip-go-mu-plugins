@@ -62,7 +62,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			'wordpress_api_key',
 		];
 
-		if ( ! defined('VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
+		if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
 			$options[] = 'jetpack_options';
 			$options[] = 'jetpack_private_options';
 		}
