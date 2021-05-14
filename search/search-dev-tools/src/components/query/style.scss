@@ -85,7 +85,6 @@ pre[class*='language-'] {
 	border-radius: 3px;
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	grid-template-rows: 0.4fr 9.5fr;
 	gap: 0px 0px;
 	grid-template-areas:
 		'query-src-header query-res-header'
@@ -112,6 +111,11 @@ pre[class*='language-'] {
 	border-bottom: 1px solid var(--vip-grey-10);
 }
 
+.query_src,
+.query_res {
+	max-width: calc(50vw - 32px);
+}
+
 .query_src {
 	grid-area: query-src;
 	background-color: #ffffff;
@@ -129,9 +133,6 @@ pre[class*='language-'] {
 	grid-area: query-res;
 }
 
-/**
- * TODO: We need to make sure we don't leak our Prism customizations
- */
 .query_wrap {
 	.container_editor {
 		counter-reset: line;
