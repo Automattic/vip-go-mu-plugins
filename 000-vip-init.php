@@ -16,6 +16,8 @@
  * good reason not to.
  */
 
+define( 'VIP_JETPACK_SKIP_LOAD', true );
+
 // Execute the healthcheck as quickly as possible
 if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 	if ( function_exists( 'newrelic_end_transaction' ) ) {

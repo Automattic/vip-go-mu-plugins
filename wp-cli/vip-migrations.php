@@ -58,11 +58,14 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 		// Cleanup options
 		$options = [
-			'jetpack_options',
-			'jetpack_private_options',
 			'vaultpress',
 			'wordpress_api_key',
 		];
+
+		if ( ! defined('VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
+			$options[] = 'jetpack_options';
+			$options[] = 'jetpack_private_options';
+		}
 
 		foreach ( $options as $option ) {
 			WP_CLI::line( 'Deleting option: ' . $option );
