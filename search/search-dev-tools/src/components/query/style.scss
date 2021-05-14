@@ -85,7 +85,6 @@ pre[class*='language-'] {
 	border-radius: 3px;
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	grid-template-rows: 0.4fr 9.5fr;
 	gap: 0px 0px;
 	grid-template-areas:
 		'query-src-header query-res-header'
@@ -116,6 +115,7 @@ pre[class*='language-'] {
 	grid-area: query-src;
 	background-color: #ffffff;
 	position: relative;
+	max-width: calc( 50vw - 32px );
 
 	&_extra {
 		@include text-caption();
@@ -127,6 +127,7 @@ pre[class*='language-'] {
 }
 .query_res {
 	grid-area: query-res;
+	max-width: calc( 50vw - 32px );
 }
 
 /**
