@@ -2747,7 +2747,7 @@ class Search_Seperate_Process_Test extends \WP_UnitTestCase {
 					'args' => array(
 						'headers' => array(
 							'Authorization' => 'foo',
-							'some' => 'header',
+							'some'          => 'header',
 						),
 					),
 				),
@@ -2755,7 +2755,7 @@ class Search_Seperate_Process_Test extends \WP_UnitTestCase {
 					'args' => array(
 						'headers' => array(
 							'Authorization' => '<redacted>',
-							'some' => 'header',
+							'some'          => 'header',
 						),
 					),
 				),
@@ -2989,11 +2989,11 @@ class Search_Seperate_Process_Test extends \WP_UnitTestCase {
 	public function limit_max_result_window_data() {
 		return [
 			[
-				'input' => 500,
+				'input'    => 500,
 				'expected' => 500,
 			],
 			[
-				'input' => 10000,
+				'input'    => 10000,
 				'expected' => 10000,
 			],
 		];
@@ -3053,131 +3053,6 @@ class Search_Seperate_Process_Test extends \WP_UnitTestCase {
 		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
 
 		$this->assertFalse( $result );
-	}
-
-
-
-	public function ensure_index_existance__bail_on_unneeded_method_data() {
-		return [
-			[ 'DELETE' ],
-			[ 'HEAD' ],
-			[ 'heAD' ], // case insensitive
-			[ 'get' ],
-		];
-	}
-
-	/**
-	 * @dataProvider ensure_index_existance__bail_on_unneeded_method_data
-	 */
-	public function test__ensure_index_existance__bail_on_unneeded_method( $method ) {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-
-		$search = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$args = [ 'method' => $method ];
-		$result = $search->ensure_index_existance('url', $args);
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existance__bail_on_no_index_in_url() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-		$url = "https://elastic:1234/_all";
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-
-		$search = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existance($url, [ 'method' => 'POST' ]);
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existance__bail_on_index_operation() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-		$url = "https://elastic:1234/vip-203-post-1";
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-
-		$search = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existance($url, [ 'method' => 'POST' ]);
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existance__bail_on_no_indexable() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$url = "https://elastic:1234/vip-203-post-1/_doc";
-
-		$indexables_mock->method( 'get' )->willReturn( null );
-
-		$search = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existance($url, [ 'method' => 'POST' ]);
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existance__bail_on_non_matching_index_names() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$index_name = 'vip-203-post-1';
-		$different_index_name = 'vip-203-post-42';
-		$url = "https://elastic:1234/" . $index_name . "/_doc";
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $different_index_name );
-
-		$search = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existance($url, [ 'method' => 'POST' ]);
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existance__put_mapping() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$index_name = 'vip-203-post-1';
-		$url = "https://elastic:1234/" . $index_name . "/_doc";
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $index_name );
-
-		$search = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->once() )->method( 'index_exists' );
-		$indexable_mock->expects( $this->once() )->method( 'put_mapping' );
-
-		$result = $search->ensure_index_existance($url, [ 'method' => 'POST' ]);
-		$this->assertTrue( $result );
 	}
 
 	/**

@@ -706,12 +706,9 @@ class Search {
 
 		$start_time = microtime( true );
 
-		var_dump(['request', $query['url'], $args ]);
-
 		if ( ! $this->ensure_index_existance( $query['url'], $args ) ) {
 			return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
 		}
-		var_dump('request went through');
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
@@ -793,7 +790,7 @@ class Search {
 		}
 
 		$path_parts = explode( '/', trim( $url ) );
-		if ( $index_name == end( $path_parts ) ) {
+		if ( end( $path_parts ) == $index_name ) {
 			// if the request is towards the index itself (e.g. putting mappings) we will not try to add mapping to avoid infinite cycle
 			return true;
 		}
@@ -801,7 +798,7 @@ class Search {
 		// TODO bail if index already checked (in cache)
 
 		$index_info = $this->versioning->parse_index_name( $index_name );
-		$indexable = $this->indexables->get( $index_info[ 'slug' ] ?? '' );
+		$indexable = $this->indexables->get( $index_info['slug'] ?? '' );
 		if ( ! $indexable ) {
 			return true;
 		}
