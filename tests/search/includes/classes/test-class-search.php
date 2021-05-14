@@ -2841,9 +2841,6 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
-		// Load ElasticPress so we can activate the protected content feature before Search inits
-		require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
-
 		// Ensure ElasticPress is ready
 		do_action( 'plugins_loaded' );
 
