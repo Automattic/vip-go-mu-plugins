@@ -7,11 +7,12 @@ use \WP_CLI;
 class Search {
 	public const QUERY_COUNT_CACHE_KEY = 'query_count';
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
-	public const QUERY_COUNT_CACHE_GROUP = 'vip_search';
+	public const SEARCH_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW = 10000;
+	public const INDEX_EXISTANCE_CACHE_KEY_PREFIX = 'index_exists_';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -705,6 +706,13 @@ class Search {
 
 		$start_time = microtime( true );
 
+		var_dump(['request', $query['url'], $args ]);
+
+		if ( ! $this->ensure_index_existance( $query['url'], $args ) ) {
+			return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
+		}
+		var_dump('request went through');
+
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
 		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
@@ -763,6 +771,56 @@ class Search {
 		} else {
 			return $response;
 		}
+	}
+
+	/**
+	 * We want to ensure that index exists before doing certain type of operation on it.
+	 *
+	 * The reason is that indexing a document, before mappings were put, would result in index with default, incorrect mapping.
+	 * This method avoids this issue by creating the index with correct mapping if the index doesn't exist yet.
+	 */
+	public function ensure_index_existance( $url, $args ) {
+		$method = strtoupper( $args['method'] ?? '' );
+		$methods_that_need_index = [ 'POST', 'PUT' ];
+		if ( ! in_array( $method, $methods_that_need_index ) ) {
+			// bailing out on methods that would not create index with incorrect mapping
+			return true;
+		}
+
+		$index_name = $this->get_index_name_for_url( $url );
+		if ( ! $index_name ) {
+			return true;
+		}
+
+		$path_parts = explode( '/', trim( $url ) );
+		if ( $index_name == end( $path_parts ) ) {
+			// if the request is towards the index itself (e.g. putting mappings) we will not try to add mapping to avoid infinite cycle
+			return true;
+		}
+
+		// TODO bail if index already checked (in cache)
+
+		$index_info = $this->versioning->parse_index_name( $index_name );
+		$indexable = $this->indexables->get( $index_info[ 'slug' ] ?? '' );
+		if ( ! $indexable ) {
+			return true;
+		}
+
+		if ( $index_name != $indexable->get_index_name() ) {
+			// If the indexable we got is using different indexable than the current bail.
+			// This should not happen because the indexable name should have been used to do the request in the first place,
+			// but pushing mapping to a different index would potentiolly corrupt the other index so we are extra carefull
+			return true;
+		}
+
+		if ( ! $indexable->index_exists() ) {
+			$result = $indexable->put_mapping();
+			// TODO cache on sucess
+			return $result;
+		}
+		// TODO cache indexable check
+
+		return true;
 	}
 
 	public function ep_handle_failed_request( $response, $query, $statsd_prefix ) {
@@ -1017,7 +1075,7 @@ class Search {
 	}
 
 	public function maybe_alert_for_prolonged_query_limiting() {
-		$query_limiting_start = wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
+		$query_limiting_start = wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
 
 		if ( false === $query_limiting_start ) {
 			return;
@@ -1316,9 +1374,9 @@ class Search {
 	}
 
 	/**
-	 * Given an ES url, determine the index name of the request for stats purposes
+	 * Given an ES url, determine the index name of the request
 	 */
-	public function get_statsd_index_name_for_url( $url ) {
+	public function get_index_name_for_url( $url ) {
 		$parsed = parse_url( $url );
 
 		$path = explode( '/', trim( $parsed['path'], '/' ) );
@@ -1326,9 +1384,8 @@ class Search {
 		// Index name is _usually_ the first part of the path
 		$index_name = $path[0];
 
-		// If it starts with underscore but isn't "_all", then we didn't detect the index name
-		// and should return null
-		if ( wp_startswith( $index_name, '_' ) && '_all' !== $index_name ) {
+		// If it starts with underscore, then we didn't detect the index name and should return null
+		if ( wp_startswith( $index_name, '_' ) ) {
 			return null;
 		}
 
@@ -1741,25 +1798,25 @@ class Search {
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
 	private static function query_count_incr() {
-		if ( false === wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
-			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::QUERY_COUNT_CACHE_GROUP, self::$query_count_ttl );
+		if ( false === wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
+			wp_cache_set( self::QUERY_COUNT_CACHE_KEY, 0, self::SEARCH_CACHE_GROUP, self::$query_count_ttl );
 		}
 
-		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::QUERY_COUNT_CACHE_GROUP );
+		return wp_cache_incr( self::QUERY_COUNT_CACHE_KEY, 1, self::SEARCH_CACHE_GROUP );
 	}
 
 	/*
 	 * Checks if the query limiting start timestamp is set, set it otherwise\
 	 */
 	public function handle_query_limiting_start_timestamp() {
-		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
 			$start_timestamp = $this->get_time();
-			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::QUERY_COUNT_CACHE_GROUP );
+			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::SEARCH_CACHE_GROUP );
 		}
 	}
 
 	public function clear_query_limiting_start_timestamp() {
-		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP );
+		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
 	}
 
 	/**
@@ -1807,7 +1864,7 @@ class Search {
 	 * When query rate limting first begins, log this information and surface as a PHP warning
 	 */
 	public function maybe_log_query_ratelimiting_start() {
-		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::QUERY_COUNT_CACHE_GROUP ) ) {
+		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
 			$message = sprintf(
 				'Application %d - %s has triggered Elasticsearch query rate limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.',
 				FILES_CLIENT_SITE_ID,
