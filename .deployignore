@@ -12,6 +12,7 @@
 .eslintignore
 .eslintrc
 .eslintrc.js
+.eslintrc.json
 .git
 .gitattributes
 .github
@@ -108,3 +109,7 @@ yarn.lock
 /jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-mbstring/bootstrap80.php
 /jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-php73/Resources/stubs/JsonException.php
 /jetpack*/vendor/automattic/jetpack-password-checker/vendor/sebastian/resource-operations/build/generate.php
+
+# Search Dev Tools
+/search/search-dev-tools/src/
+/search/search-dev-tools/preact.config.js
