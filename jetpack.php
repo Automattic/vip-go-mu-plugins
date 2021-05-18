@@ -137,7 +137,6 @@ function vip_jetpack_load() {
 	}
 }
 
-// TODO: Run conditionally on init
 vip_jetpack_load();
 
 require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );
