@@ -11,6 +11,11 @@
  * Domain Path: /languages/
  */
 
+// Avoid loading VaultPress altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for VP to work in VIP)
+if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+	return;
+}
+
 // Avoid loading VaultPress altogether if VIP_VAULTPRESS_SKIP_LOAD is set to true
 if ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD ) {
 	return;
