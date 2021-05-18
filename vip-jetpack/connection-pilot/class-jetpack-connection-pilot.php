@@ -305,4 +305,6 @@ class Connection_Pilot {
 	}
 }
 
-Connection_Pilot::instance();
+add_action( 'init', function() {
+	Connection_Pilot::instance();
+}, 25);
