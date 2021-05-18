@@ -89,12 +89,13 @@ function rest_callback( \WP_REST_Request $request ) {
 
 
 /**
- * A capability-based check for whether Dev Tools should be enabled or not
+ * A capability-based check for whether Dev Tools should be enabled or not.
+ * Also check for the existence of ep_get_query_log because the plugin won't work without it.
  *
  * @return boolean
  */
 function should_enable_search_dev_tools(): bool {
-	return current_user_can( SEARCH_DEV_TOOLS_CAP );
+	return current_user_can( SEARCH_DEV_TOOLS_CAP ) && function_exists( 'ep_get_query_log' );
 }
 
 /**

@@ -23,6 +23,8 @@ $overlay-horizontal-padding-small-viewport: 0.5em;
 			position: absolute;
 			top: 24px;
 			right: 24px;
+			// We use !important here because some themes hijack buttons
+			background-color: #fff !important;
 		}
 
 		&.search-dev-tools__overlay--light {
