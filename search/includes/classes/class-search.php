@@ -779,7 +779,7 @@ class Search {
 	public function ensure_index_existance( $url, $args ) {
 		$method = strtoupper( $args['method'] ?? '' );
 		$methods_that_need_index = [ 'POST', 'PUT' ];
-		if ( ! in_array( $method, $methods_that_need_index ) ) {
+		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
 			// bailing out on methods that would not create index with incorrect mapping
 			return true;
 		}
