@@ -12,7 +12,7 @@ class Search {
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW = 10000;
-	public const INDEX_EXISTANCE_CACHE_KEY_PREFIX = 'index_exists_';
+	public const INDEX_EXISTENCE_CACHE_KEY_PREFIX = 'index_exists_';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -706,7 +706,7 @@ class Search {
 
 		$start_time = microtime( true );
 
-		if ( ! $this->ensure_index_existance( $query['url'], $args ) ) {
+		if ( ! $this->ensure_index_existence( $query['url'], $args ) ) {
 			return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
 		}
 
@@ -776,7 +776,7 @@ class Search {
 	 * The reason is that indexing a document, before mappings were put, would result in index with default, incorrect mapping.
 	 * This method avoids this issue by creating the index with correct mapping if the index doesn't exist yet.
 	 */
-	public function ensure_index_existance( $url, $args ) {
+	public function ensure_index_existence( $url, $args ) {
 		$method = strtoupper( $args['method'] ?? '' );
 		$methods_that_need_index = [ 'POST', 'PUT' ];
 		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
@@ -795,7 +795,7 @@ class Search {
 			return true;
 		}
 
-		$cache_key = self::INDEX_EXISTANCE_CACHE_KEY_PREFIX . $index_name;
+		$cache_key = self::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $index_name;
 		$already_verified = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
 
 		if ( $already_verified ) {

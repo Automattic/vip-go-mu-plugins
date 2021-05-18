@@ -27,7 +27,7 @@ class Search_Test extends \WP_UnitTestCase {
 			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
 			->getMock();
 
-		$cache_key = \Automattic\VIP\Search\Search::INDEX_EXISTANCE_CACHE_KEY_PREFIX . $this->test_index_name;
+		$cache_key = \Automattic\VIP\Search\Search::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $this->test_index_name;
 		wp_cache_delete( $cache_key, \Automattic\VIP\Search\Search::SEARCH_CACHE_GROUP );
 	}
 
@@ -3050,7 +3050,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $result );
 	}
 
-	public function ensure_index_existance__bail_on_unneeded_method_data() {
+	public function ensure_index_existence__bail_on_unneeded_method_data() {
 		return [
 			[ 'DELETE' ],
 			[ 'HEAD' ],
@@ -3060,9 +3060,9 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider ensure_index_existance__bail_on_unneeded_method_data
+	 * @dataProvider ensure_index_existence__bail_on_unneeded_method_data
 	 */
-	public function test__ensure_index_existance__bail_on_unneeded_method( $method ) {
+	public function test__ensure_index_existence__bail_on_unneeded_method( $method ) {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 
@@ -3074,11 +3074,11 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
 
 		$args   = [ 'method' => $method ];
-		$result = $search->ensure_index_existance( 'url', $args );
+		$result = $search->ensure_index_existence( 'url', $args );
 		$this->assertTrue( $result );
 	}
 
-	public function test__ensure_index_existance__bail_on_no_index_in_url() {
+	public function test__ensure_index_existence__bail_on_no_index_in_url() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$url             = 'https://elastic:1234/_all';
@@ -3090,11 +3090,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
 
-		$result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertTrue( $result );
 	}
 
-	public function test__ensure_index_existance__bail_on_index_operation() {
+	public function test__ensure_index_existence__bail_on_index_operation() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 
@@ -3107,11 +3107,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
 
-		$result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertTrue( $result );
 	}
 
-	public function test__ensure_index_existance__bail_on_no_indexable() {
+	public function test__ensure_index_existence__bail_on_no_indexable() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
@@ -3126,11 +3126,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
 
-		$result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertTrue( $result );
 	}
 
-	public function test__ensure_index_existance__bail_on_non_matching_index_names() {
+	public function test__ensure_index_existence__bail_on_non_matching_index_names() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
@@ -3147,11 +3147,11 @@ class Search_Test extends \WP_UnitTestCase {
 
 		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
 
-		$result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertTrue( $result );
 	}
 
-	public function ensure_index_existance__put_mapping_data() {
+	public function ensure_index_existence__put_mapping_data() {
 		return [
 			[ true ],
 			[ false ],
@@ -3159,9 +3159,9 @@ class Search_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider ensure_index_existance__put_mapping_data
+	 * @dataProvider ensure_index_existence__put_mapping_data
 	 */
-	public function test__ensure_index_existance__put_mapping_result_is_returned( $put_mapping_result ) {
+	public function test__ensure_index_existence__put_mapping_result_is_returned( $put_mapping_result ) {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
@@ -3178,11 +3178,11 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock->expects( $this->once() )->method( 'index_exists' );
 		$indexable_mock->expects( $this->once() )->method( 'put_mapping' )->willReturn( $put_mapping_result );
 
-		$result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertEquals( $put_mapping_result, $result );
 	}
 
-	public function test__ensure_index_existance__ix_exists_skip_check_on_second_pass() {
+	public function test__ensure_index_existence__ix_exists_skip_check_on_second_pass() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
@@ -3199,12 +3199,12 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock->expects( $this->once() )->method( 'index_exists' )->willReturn( true );
 		$indexable_mock->expects( $this->never() )->method( 'put_mapping' );
 
-		$search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
-		$second_pass_result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
+		$second_pass_result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertTrue( $second_pass_result );
 	}
 
-	public function test__ensure_index_existance__ix_initialized_skip_check_on_second_pass() {
+	public function test__ensure_index_existence__ix_initialized_skip_check_on_second_pass() {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
@@ -3222,8 +3222,8 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock->expects( $this->once() )->method( 'index_exists' )->willReturn( false );
 		$indexable_mock->expects( $this->once() )->method( 'put_mapping' )->willReturn( true );
 
-		$search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
-		$second_pass_result = $search->ensure_index_existance( $url, [ 'method' => 'POST' ] );
+		$search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
+		$second_pass_result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
 		$this->assertTrue( $second_pass_result );
 	}
 
