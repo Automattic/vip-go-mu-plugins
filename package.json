@@ -6,6 +6,7 @@
   "scripts": {
     "phplint": "bin/php-lint.sh",
     "phpcs": "vendor/bin/phpcs",
+    "phpcs:errors": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --processors enforce --quiet",
     "phpcs:changed:remote": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet",
     "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
     "lint": "npm run phplint && npm run phpcs:changed:remote",
@@ -16,6 +17,6 @@
   "devDependencies": {
     "eslines": "1.1.0",
     "eslint": "5.16.0",
-    "husky": "4.2.3"
+    "husky": "4.3.8"
   }
 }

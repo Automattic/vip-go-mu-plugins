@@ -16,11 +16,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 
-		$this->api_client = new API_Client(
-			'https://files.go-vip.co',
-			123456,
-			'super-sekret-token',
-			API_Cache::get_instance() );
+		$this->init_api_client();
 
 		$this->http_requests = [];
 	}
@@ -34,6 +30,15 @@ class API_Client_Test extends \WP_UnitTestCase {
 		API_Cache::get_instance()->clear_tmp_files();
 
 		parent::tearDown();
+	}
+
+	private function init_api_client() {
+		$this->api_client = new API_Client(
+			'https://files.go-vip.co',
+			123456,
+			'super-sekret-token',
+			API_Cache::get_instance()
+		);
 	}
 
 	public function mock_http_response( $mocked_response ) {
@@ -145,11 +150,37 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/path/to/image.jpg', $actual_http_request['url'], 'Incorrect API URL' );
 		$this->assertEquals( 'POST', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
 		$this->assertEquals( 10, $actual_http_request['args']['timeout'], 'Incorrect timeout' );
+
 		$this->assertEquals( [
 			'X-Client-Site-ID' => 123456,
-			'X-Access-Token' => 'super-sekret-token',
-			'Another-Header' => 'Yay!',
+			'X-Access-Token'   => 'super-sekret-token',
+			'Another-Header'   => 'Yay!',
 		], $actual_http_request['args']['headers'], 'Incorrect headers' );
+	}
+
+	public function test__call_api__user_agent() {
+		$original_request_uri = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- test context; this is safe 
+		$_SERVER['REQUEST_URI'] = ' /path?query';
+
+		// Re-initialize so re-generate UA string
+		$this->init_api_client();
+
+		$expected_response = [ 'foo' => 'bar' ];
+		$this->mock_http_response( $expected_response );
+
+		$call_api_method = self::get_method( 'call_api' );
+
+		$actual_response = $call_api_method->invokeArgs( $this->api_client, [
+			'/wp-content/uploads/path/to/image.jpg',
+			'POST',
+		] );
+
+		$actual_http_request = reset( $this->http_requests );
+
+		// Should be upgraded to assertMatchesRegularExpression in the future
+		$this->assertRegExp( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
+
+		$_SERVER['REQUEST_URI'] = $original_request_uri;
 	}
 
 	public function get_test_data__get_api_url() {
@@ -519,14 +550,27 @@ class API_Client_Test extends \WP_UnitTestCase {
 				[
 					'response' => [
 						'code' => 406,
-					]
+					],
 				],
-				new WP_Error('invalid-file-type',
-					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'),
+				new WP_Error(
+					'invalid-file-type',
+					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'
+				),
 			],
 			'WP_Error' => [
 				new WP_Error( 'oh-no', 'Oh no!' ),
 				new WP_Error( 'oh-no', 'Oh no!' ),
+			],
+			'file-service-readonly' => [
+				[
+					'response' => [
+						'code' => 503,
+					],
+				],
+				new WP_Error(
+					'file-service-readonly',
+					__( 'Uploads are temporarily disabled due to Files service maintenance. Please try again later.' )
+				),
 			],
 		];
 	}

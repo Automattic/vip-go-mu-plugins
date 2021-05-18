@@ -1,0 +1,197 @@
+code[class*='language-'],
+pre[class*='language-'] {
+	font-family: var(--vip-font-family);
+}
+
+pre[class*='language-'] {
+	background-color: unset;
+	border: 0;
+	padding-top: 0;
+	margin-top: 0;
+}
+
+.query {
+	&_wrap {
+		margin-bottom: 32px;
+		border-top: 1px solid var(--vip-grey-10);
+		display: flex;
+		flex-flow: row wrap;
+	}
+
+	&_val,
+	&_result {
+		white-space: pre;
+		width: 100%;
+		overflow-y: scroll;
+		margin-bottom: 32px;
+		font-size: 14px;
+		background-color: var(--vip-grey-0);
+		padding: 32px;
+	}
+	&_actions {
+		@include text-caption();
+		position: absolute;
+		right: 32px;
+		margin: 32px 0;
+		z-index: 1;
+		button {
+			text-transform: lowercase;
+			&:not(:last-of-type) {
+				margin-right: 32px;
+			}
+		}
+	}
+
+	&_handle {
+		margin: 32px 0;
+		cursor: pointer;
+
+		:global(.vip-h3) {
+			margin: 0;
+
+			&::selection {
+				background-color: initial;
+			}
+			&::before {
+				content: '';
+				background-image: url(../../assets/minus.svg);
+				background-position: center;
+				background-repeat: no-repeat;
+				margin-right: 16px;
+				width: 16px;
+				height: 16px;
+				display: inline-block;
+			}
+		}
+	}
+
+	&_collapsed {
+		.grid_container {
+			display: none;
+		}
+
+		:global(.vip-h3) {
+			&::before {
+				content: '';
+				background-image: url(../../assets/plus.svg);
+			}
+		}
+	}
+}
+
+.grid_container {
+	width: 100%;
+	border: 1px solid var(--vip-grey-10);
+	border-radius: 3px;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0px 0px;
+	grid-template-areas:
+		'query-src-header query-res-header'
+		'query-src query-res';
+}
+
+.query_src_header {
+	grid-area: query-src-header;
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: space-around;
+	background-color: #ffffff;
+}
+.query_res_header {
+	grid-area: query-res-header;
+}
+
+.query_src_header,
+.query_res_header {
+	padding: 16px 32px;
+	display: flex;
+	flex-flow: row;
+	align-items: center;
+	border-bottom: 1px solid var(--vip-grey-10);
+}
+
+.query_src,
+.query_res {
+	max-width: calc(50vw - 32px);
+}
+
+.query_src {
+	grid-area: query-src;
+	background-color: #ffffff;
+	position: relative;
+
+	&_extra {
+		@include text-caption();
+		display: flex;
+		> * {
+			margin: 0 4px;
+		}
+	}
+}
+.query_res {
+	grid-area: query-res;
+}
+
+.query_wrap {
+	.container_editor {
+		counter-reset: line;
+		position: relative;
+
+		> textarea,
+		> pre {
+			padding: 32px 64px !important;
+		}
+	}
+	.container_editor_line_number {
+		&::before {
+			position: absolute;
+			right: calc(100% - 56px);
+			margin-right: 12px;
+			text-align: right;
+			opacity: 0.5;
+			user-select: none;
+			counter-increment: line;
+			content: counter(line);
+			color: var(--vip-grey-60);
+		}
+	}
+
+	// Line numbers Prism Plugin
+	:global {
+		pre[class*='language-'].line-numbers {
+			position: relative;
+			padding-left: 3.8em;
+			counter-reset: linenumber;
+		}
+
+		pre[class*='language-'].line-numbers > code {
+			position: relative;
+			white-space: inherit;
+		}
+
+		.line-numbers .line-numbers-rows {
+			position: absolute;
+			pointer-events: none;
+			top: 0;
+			font-size: 12px;
+			left: -3.8em;
+			width: 3em;
+			user-select: none;
+		}
+
+		.line-numbers-rows > span {
+			display: block;
+			counter-increment: linenumber;
+		}
+
+		.line-numbers-rows > span:before {
+			content: counter(linenumber);
+			color: var(--vip-grey-60);
+			opacity: 0.5;
+			display: block;
+			padding-right: 0.8em;
+			text-align: right;
+		}
+	}
+}

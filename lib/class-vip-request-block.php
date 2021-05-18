@@ -25,15 +25,26 @@ class VIP_Request_Block {
 	 * @param string $value target IP address to be blocked.
 	 */
 	public static function ip( string $value ) {
+		// Don't try to block if the passed value is not a valid IP.
+		if ( ! filter_var( $value, FILTER_VALIDATE_IP ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'VIP Request Block: The value passed is not a correct IP address: ' . $value );
+			return;
+		}
+
 		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		if ( isset( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) && $value === $_SERVER['HTTP_TRUE_CLIENT_IP'] ) {
 			return self::block_and_log( $value, 'true-client-ip' );
 		}
 
-		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && $value === $_SERVER['HTTP_X_FORWARDED_FOR'] ) {
-			return self::block_and_log( $value, 'x-forwarded-for' );
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+			$position = stripos( $_SERVER['HTTP_X_FORWARDED_FOR'], $value );
+			if ( false !== $position ) {
+				return self::block_and_log( $value, 'x-forwarded-for' );
+			}
 		}
 	}
 
@@ -75,7 +86,7 @@ class VIP_Request_Block {
 	 * @param string $criteria header field used for a block.
 	 * @return void
 	 */
-	private static function block_and_log( string $value, string $criteria ) {
+	public static function block_and_log( string $value, string $criteria ) {
 		http_response_code( 410 );
 		header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 		header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );

@@ -450,7 +450,10 @@ class Logger {
 
 		// Sends data to logstash on shutdown.
 		if ( ! has_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ] ) ) {
-			add_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ], 9999 );
+			// Due to usage of fastcgi_finish_request, we need to be mindful of priority and potential collisions.
+			// One example of a collision is if a fastcgi_finish_request runs before query monitor, it causes it to
+			// die silently and not load anything.
+			add_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ], PHP_INT_MAX );
 		}
 	}
 

@@ -1,0 +1,10 @@
+
+{
+	"extends": "wpvip",
+	"rules": {
+		// Override our default settings just for this directory
+		"react/react-in-jsx-scope": "off",
+		"wpcalypso/import-docblock": "off",
+		"react/prop-types": "off"
+	}
+}

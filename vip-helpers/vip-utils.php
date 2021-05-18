@@ -63,9 +63,9 @@ function wpcom_vip_noncdn_uri( $path ) {
 }
 
 /**
- * Returns a link the WordPress.com VIP site wrapped around an image (the VIP logo).
+ * Returns a link the WordPress VIP site wrapped around an image (the WordPress VIP logo).
  *
- * @param int $image Which variant of the VIP logo to use; between 1-6.
+ * @param int $image Which variant of the WordPress VIP logo to use; between 1-6.
  * @return string HTML
  */
 function vip_powered_wpcom_img_html( $image ) {
@@ -80,25 +80,24 @@ function vip_powered_wpcom_img_html( $image ) {
 	);
 
 	if ( array_key_exists( $image, $vip_powered_wpcom_images ) ) {
-		return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[ $image ][0], __FILE__ ) ) . '" width="' . esc_attr( $vip_powered_wpcom_images[ $image ][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[ $image ][2] ) . '" alt="' . esc_attr__( 'Powered by WordPress.com VIP', 'vip-helpers' ) . '" /></a>';
+		return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[ $image ][0], __FILE__ ) ) . '" width="' . esc_attr( $vip_powered_wpcom_images[ $image ][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[ $image ][2] ) . '" alt="' . esc_attr__( 'Powered by WordPress VIP', 'vip-helpers' ) . '" /></a>';
 	} else {
 		return '';
 	}
 }
 
 /**
- * Returns the "Powered by WordPress.com VIP" widget's content.
+ * Returns the "Powered by WordPress VIP" widget's content.
  *
- * @link http://vip.wordpress.com/documentation/code-and-theme-review-process/ Code Review
- * @link http://vip.wordpress.com/documentation/powered-by-wordpress-com-vip/ Powered By WordPress.com VIP
- * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the VIP link. Otherwise, just return the link.
+ * @link https://docs.wpvip.com/how-tos/add-powered-by-wordpress-vip-to-your-site/ Powered By WordPress VIP
+ * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the WordPress VIP link. Otherwise, just return the link.
  * @param string $before_text Optional. Text to go in front of the VIP link. Defaults to 'Powered by '.
  * @return string HTML
  */
 function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
 	switch ( $display ) {
 		case 'text':
-			$output = $before_text . '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom">WordPress.com VIP</a>';
+			$output = $before_text . '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom">WordPress VIP</a>';
 			break;
 		case 1:
 		case 2:
@@ -116,7 +115,7 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
 }
 
 /**
- * Returns the URL to the WordPress.com VIP site
+ * Returns the URL to the WordPress VIP site
  *
  * @return string
  */
@@ -138,7 +137,6 @@ function vip_powered_wpcom_url() {
  * Contrib users still can't publish.
  *
  * @author mdawaffe
- * @link http://vip.wordpress.com/documentation/allow-contributors-to-upload-images/ Allow Contributors to Upload Images
  */
 function vip_contrib_add_upload_cap() {
 	add_action( 'init', '_vip_contrib_add_upload_cap' );
@@ -148,7 +146,6 @@ function vip_contrib_add_upload_cap() {
 /**
  * Helper function for vip_contrib_add_upload_cap() to change the user roles
  *
- * @link http://vip.wordpress.com/documentation/allow-contributors-to-upload-images/ Allow Contributors to Upload Images
  * @see vip_contrib_add_upload_cap()
  */
 function _vip_contrib_add_upload_cap() {
@@ -166,7 +163,7 @@ function _vip_contrib_add_upload_cap() {
  *
  * However, this function can come in handy if you want a specific artibitrary or varying image size.
  *
- * @link http://vip.wordpress.com/documentation/image-resizing-and-cropping/
+ * @link https://docs.wpvip.com/technical-references/vip-go-files-system/image-transformation/
  *
  * @param int $attachment_id ID of the attachment
  * @param int $width Width of our resized image
@@ -489,9 +486,9 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
  *
  * The $extra_args are:
  *  * obey_cache_control_header: uses the "cache-control" "max-age" value if greater than $cache_time.
- *  * http_api_args: see http://codex.wordpress.org/Function_API/wp_remote_get
+ *  * http_api_args: see https://developer.wordpress.org/reference/functions/wp_remote_get/
  *
- * @link http://lobby.vip.wordpress.com/best-practices/fetching-remote-data/ Fetching Remote Data
+ * @link https://docs.wpvip.com/technical-references/code-quality-and-best-practices/retrieving-remote-data/ Fetching Remote Data
  * @param string $url URL to fetch
  * @param int $timeout Optional. The timeout limit in seconds; valid values are 1-10. Defaults to 3.
  * @param int $cache_time Optional. The minimum cache time in seconds. Valid values are >= 60. Defaults to 900.
@@ -649,7 +646,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
  * This can be executed before WP init because it checks the URI directly to see if the main feed is being requested.
  *
  * @author lloydbudd
- * @link http://vip.wordpress.com/documentation/redirect-the-feed-to-feedburner/ Redirect the Feed To Feedburner
+ * @link https://wpvip.com/documentation/redirect-the-feed-to-feedburner/ Redirect the Feed To Feedburner
  * @param string $target URL to direct feed services to
  */
 function vip_main_feed_redirect( $target ) {
@@ -762,7 +759,7 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
  *
  * Note that like wp_remote_request(), this function does not cache.
  *
- * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
+ * @link https://docs.wpvip.com/technical-references/code-quality-and-best-practices/retrieving-remote-data/ Fetching Remote Data
  * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
  * @param int $threshold Optional. The number of fails required before subsequent requests automatically return the fallback value. Defaults to 3, with a maximum of 10.
@@ -882,7 +879,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
  *
  * Note that like wp_remote_get(), this function does not cache.
  *
- * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
+ * @link https://docs.wpvip.com/technical-references/code-quality-and-best-practices/retrieving-remote-data/ Fetching Remote Data
  * @see vip_safe_wp_remote_request()
  * @see wp_remote_get()
  */
@@ -1099,7 +1096,6 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 
 	// Shared plugins are being deprecated.
 	// This can be removed once shared plugins have all been removed.
-	// https://vip.wordpress.com/documentation/vip-go/deprecating-shared-plugins-on-vip-go/
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
 		define( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS', true );
 	}
@@ -1475,7 +1471,7 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
-	require_once __DIR__ . '/../lib/proxy/ip-utils.php';
+	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
@@ -1495,7 +1491,7 @@ function vip_is_jetpack_request() {
 	);
 
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
+	return Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
 /**

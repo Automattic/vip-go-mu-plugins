@@ -1,6 +1,6 @@
 # VIP Go mu-plugins
 
-This is the development repo for mu-plugins on [VIP Go](http://vip.wordpress.com/documentation/vip-go/),
+This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/documentation/vip-go/),
 
 ## Development
 
@@ -58,7 +58,7 @@ PHP Linting and PHPUnit tests are run by Circle CI as part of PRs and merges. Se
 
 ##### Core tests
 
-We run core tests as part of the CI pipeline. We run core tests both with and without mu-plugins installed. There are many failures when running with mu-plugins so we had to ignore several tests. To add another test there chack `bin/utils.sh`.
+We run core tests as part of the CI pipeline. There are many failures when running with mu-plugins so we had to ignore several tests. To add another test there check `bin/utils.sh`.
 
 To investigate failing test locally you can do following (buckle up as this is not so easy:()):
 
