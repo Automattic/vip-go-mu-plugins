@@ -1,20 +1,19 @@
 <?php
-
 /**
  * Query Monitor plugin for WordPress
  *
  * @package   query-monitor
  * @link      https://github.com/johnbillion/query-monitor
  * @author    John Blackbourn <john@johnblackbourn.com>
- * @copyright 2009-2020 John Blackbourn
+ * @copyright 2009-2021 John Blackbourn
  * @license   GPL v2 or later
  *
  * Plugin Name:  Query Monitor
  * Description:  The Developer Tools Panel for WordPress.
- * Version:      3.6.5
- * Plugin URI:   https://github.com/johnbillion/query-monitor
- * Author:       John Blackbourn & contributors
- * Author URI:   https://github.com/johnbillion/query-monitor/graphs/contributors
+ * Version:      3.7.1
+ * Plugin URI:   https://querymonitor.com/
+ * Author:       John Blackbourn
+ * Author URI:   https://querymonitor.com/
  * Text Domain:  query-monitor
  * Domain Path:  /languages/
  * Requires PHP: 5.3.6
@@ -140,6 +139,7 @@ add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
 
 
 // We are putting dispatchers as last so that QM still can catch other operations in shutdown action
+// See https://github.com/johnbillion/query-monitor/pull/549
 function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	if ( is_array( $dispatchers ) ) {
 		if ( isset( $dispatchers['html'] ) ) {
