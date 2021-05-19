@@ -3,7 +3,6 @@ import { useContext, useEffect, useState, useRef } from 'preact/hooks';
 import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
-import 'prism-themes/themes/prism-ghcolors.css';
 import Editor from 'react-simple-code-editor';
 import cx from 'classnames';
 import pluralize from 'pluralize';
@@ -14,6 +13,7 @@ import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
 
 import style from './style.scss';
+import '../../style/prism.scss';
 
 /**
  * A single query
