@@ -3103,14 +3103,14 @@ class Search_Test extends \WP_UnitTestCase {
 		return [
 			[ 'https://elastic:1234/' . $this->test_index_name ],
 			[ 'https://elastic:1234/' . $this->test_index_name . '/' ],
-			[ ' https://elastic:1234/' . $this->test_index_name . '/   '  ],
+			[ ' https://elastic:1234/' . $this->test_index_name . '/   ' ],
 		];
 	}
 
 	/**
 	 * @dataProvider ensure_index_existence__bail_on_index_operation_data
 	 */
-	public function test__ensure_index_existence__bail_on_index_operation($url) {
+	public function test__ensure_index_existence__bail_on_index_operation( $url ) {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 
@@ -3180,7 +3180,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
 
-		$url        = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
+		$url = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
 
 		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
 		$indexable_mock->method( 'get_index_name' )->willReturn( $this->test_index_name );
@@ -3201,7 +3201,7 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
 		$versioning_mock = $this->createMock( Versioning::class );
 
-		$url        = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
+		$url = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
 
 		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
 		$indexable_mock->method( 'get_index_name' )->willReturn( $this->test_index_name );
