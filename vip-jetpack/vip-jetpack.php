@@ -152,6 +152,8 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 	unset( $modules['site-icon'] );
 	unset( $modules['protect'] );
 
+	error_log(print_r($modules, true));
+
 	return $modules;
 }, 999 );
 
@@ -359,6 +361,11 @@ add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
 
 	return false;
 } );
+
+/**
+ * Hide Jetpack's just in time promotions
+ */
+add_filter( 'jetpack_just_in_time_msgs', '__return_false' );
 
 /**
  * Custom CSS tweaks for the Jetpack Admin pages
