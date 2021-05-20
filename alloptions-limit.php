@@ -16,35 +16,20 @@ function wpcom_vip_sanity_check_alloptions() {
 		return;
 	}
 
+	// Uncompressed size thresholds.
 	// Warn should *always* be =< die
-	$alloptions_size_warn = 800000;
-	// 950000 is slightly less than ~ 1MB, which is the Memcached entry limit.
+	$alloptions_size_warn = 2000000;
+
 	// The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large
 	// Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
-	$alloptions_size_die  = 950000;
+	$alloptions_size_die  = 4000000;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
 	// Cache miss
 	if ( false === $alloptions_size ) {
 		$alloptions = serialize( wp_load_alloptions() );
-		$alloptions_size_uncompressed = strlen( $alloptions );
-		// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
-		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
-		$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
-
-		// We only compress the value if it's bigger than 20kb and the savings for the compressed value are more than 20%;
-		// See https://github.com/Automattic/wp-memcached/blob/811243804a892a4609a4581d9479fa80c4e4ac8d/object-cache.php#L782
-		// Make sure to use the correct size.
-		// This is an additional safe-guard, in reality the bigger the value the better the compression,
-		// So it's hard to get into a situation where you have a large value that not going to have at least 20% savings.
-		$diff = $alloptions_size_uncompressed - $alloptions_size_compressed;
-
-		if ( $alloptions_size_uncompressed > 20000 && $diff > $alloptions_size_uncompressed * 0.2 ) {
-			$alloptions_size = $alloptions_size_compressed;
-		} else {
-			$alloptions_size = $alloptions_size_uncompressed;
-		}
+		$alloptions_size = strlen( $alloptions );
 
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
 	}
@@ -63,11 +48,24 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// Will exit with a 503
 	if ( $blocked ) {
-		wpcom_vip_sanity_check_alloptions_die();
+		wpcom_vip_sanity_check_alloptions_die( $alloptions );
 	}
 }
 
-function wpcom_vip_sanity_check_alloptions_die() {
+function wpcom_vip_sanity_check_alloptions_die( $alloptions ) {
+	// Do a final check before killing the request if the value is actually more than the value limit.
+	// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
+	// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
+	$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
+	if ( ! $alloptions_size_compressed ) {
+		$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
+		wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
+	}
+
+	if ( $alloptions_size_compressed < 1000000 ) {
+		return;
+	}
+
 	// 503 Service Unavailable - prevent caching, indexing, etc and alert Varnish of the problem
 	http_response_code( 503 );
 
