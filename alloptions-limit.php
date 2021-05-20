@@ -11,6 +11,11 @@ use Automattic\VIP\Utils\Alerts;
 
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
 
+/**
+ * The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large.
+ * Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
+ * @return void
+ */
 function wpcom_vip_sanity_check_alloptions() {
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		return;
@@ -18,10 +23,9 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// Uncompressed size thresholds.
 	// Warn should *always* be =< die
-	$alloptions_size_warn = 2000000;
+	$alloptions_size_warn = 1000000;
 
-	// The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large
-	// Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
+	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
 	$alloptions_size_die  = 4000000;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
@@ -53,6 +57,7 @@ function wpcom_vip_sanity_check_alloptions() {
 }
 
 function wpcom_vip_sanity_check_alloptions_die( &$alloptions ) {
+	// It's likely at this point the site is already experiencing performance degradation.
 	// Do a final check before killing the request if the value is actually more than the value limit.
 	// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
 	// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
