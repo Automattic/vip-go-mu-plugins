@@ -24,6 +24,11 @@ function wpvip_load_wp_parsely_plugin() {
 		return;
 	}
 
+	// Bail if the plugin has already initialized elsewhere
+	if ( class_exists( 'Parsely' ) ) {
+		return;
+	}
+
 	/**
 	 * Allows specifying a major version of the plugin per-site.
 	 * If the version is invalid, the default version will be used.
