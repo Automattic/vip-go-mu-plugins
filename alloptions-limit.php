@@ -52,7 +52,7 @@ function wpcom_vip_sanity_check_alloptions() {
 	}
 }
 
-function wpcom_vip_sanity_check_alloptions_die( $alloptions ) {
+function wpcom_vip_sanity_check_alloptions_die( &$alloptions ) {
 	// Do a final check before killing the request if the value is actually more than the value limit.
 	// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
 	// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
