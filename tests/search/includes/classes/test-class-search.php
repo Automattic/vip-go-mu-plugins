@@ -984,6 +984,10 @@ class Search_Test extends \WP_UnitTestCase {
 				'https://host.com/index-name/_doc',
 				'index-name',
 			),
+			array(
+				'  https://host.com/index-name/_doc  ',
+				'index-name',
+			),
 		);
 	}
 
@@ -3094,11 +3098,21 @@ class Search_Test extends \WP_UnitTestCase {
 		$this->assertTrue( $result );
 	}
 
-	public function test__ensure_index_existence__bail_on_index_operation() {
+
+	public function ensure_index_existence__bail_on_index_operation_data() {
+		return [
+			[ 'https://elastic:1234/' . $this->test_index_name ],
+			[ 'https://elastic:1234/' . $this->test_index_name . '/' ],
+			[ ' https://elastic:1234/' . $this->test_index_name . '/   '  ],
+		];
+	}
+
+	/**
+	 * @dataProvider ensure_index_existence__bail_on_index_operation_data
+	 */
+	public function test__ensure_index_existence__bail_on_index_operation($url) {
 		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
 		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-
-		$url = 'https://elastic:1234/' . $this->test_index_name;
 
 		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
 

@@ -789,8 +789,8 @@ class Search {
 			return true;
 		}
 
-		$path_parts = explode( '/', trim( $url ) );
-		if ( end( $path_parts ) == $index_name ) {
+		$url_without_extra_characters = trim( trim( $url ), '/' );
+		if ( wp_endswith( $url_without_extra_characters, $index_name ) ) {
 			// if the request is towards the index itself (e.g. putting mappings) we will not try to add mapping to avoid infinite cycle
 			return true;
 		}
@@ -1381,7 +1381,7 @@ class Search {
 	 * Given an ES url, determine the index name of the request
 	 */
 	public function get_index_name_for_url( $url ) {
-		$parsed = parse_url( $url );
+		$parsed = parse_url( trim( $url ) );
 
 		$path = explode( '/', trim( $parsed['path'], '/' ) );
 
