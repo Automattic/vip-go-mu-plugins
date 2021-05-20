@@ -152,8 +152,6 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 	unset( $modules['site-icon'] );
 	unset( $modules['protect'] );
 
-	error_log(print_r($modules, true));
-
 	return $modules;
 }, 999 );
 
