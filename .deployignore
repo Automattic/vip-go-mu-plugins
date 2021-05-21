@@ -113,3 +113,10 @@ yarn.lock
 # Search Dev Tools
 /search/search-dev-tools/src/
 /search/search-dev-tools/preact.config.js
+
+# Parse.ly WordPress Integration
+/wp-parsely-*/bin
+/wp-parsely-*/tests
+/wp-parsely-*/.prettierrc
+/wp-parsely-*/CHANGELOG.md
+/wp-parsely-*/CODE_OF_CONDUCT.md
