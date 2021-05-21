@@ -11,7 +11,9 @@ class Queue_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static function setUpBeforeClass() {
-		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		}
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
