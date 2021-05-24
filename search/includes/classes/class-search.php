@@ -511,6 +511,9 @@ class Search {
 		add_filter( 'ep_max_results_window', [ $this, 'limit_max_result_window' ], PHP_INT_MAX );
 
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
+
+		// Log details of failed requests
+		add_action('ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
@@ -1834,5 +1837,17 @@ class Search {
 
 	public function limit_max_result_window( $current_value ) {
 		return min( $current_value, self::MAX_RESULT_WINDOW );
+	}
+
+	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
+		global $wp;
+		$url = add_query_arg( $wp->query_vars, home_url( $request ) );
+		$message = sprintf(
+			'Application %d - ES Query in URL %s has failed: %s',
+			FILES_CLIENT_SITE_ID,
+			$url,
+			wp_json_encode($query)
+		);
+		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
 	}
 }
