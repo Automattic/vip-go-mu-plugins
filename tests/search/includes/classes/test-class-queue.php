@@ -610,6 +610,12 @@ class Queue_Test extends \WP_UnitTestCase {
 			'object_type' => 'post',
 			'index_version' => 1,
 		];
+		$third_job_on_other_object = (object) [
+			'job_id' => 3,
+			'object_id' => 20,
+			'object_type' => 'post',
+			'index_version' => 1,
+		];
 
 		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
 			->setMethods( [
@@ -622,7 +628,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$partially_mocked_queue
 			->method( 'get_deadlocked_jobs' )
 			->willReturnOnConsecutiveCalls(
-				[ $first_job, $second_job ],
+				[ $first_job, $second_job, $third_job_on_other_object ],
 				[],
 				[],
 				[],
@@ -632,7 +638,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$partially_mocked_queue->expects( $this->once() )
 			->method( 'update_jobs' )
 			->with(
-				$this->equalTo( [ 1 ] ),
+				$this->equalTo( [ 1, 3 ] ),
 				$this->equalTo( [
 					'status' => 'queued',
 					'scheduled_time' => null,
