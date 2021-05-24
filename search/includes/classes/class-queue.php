@@ -710,11 +710,12 @@ class Queue {
 		$filtered_deadlocked_jobs = [];
 		$jobs_to_be_deleted = [];
 
-		foreach ($all_deadlocked_jobs as $job) {
+		foreach ( $all_deadlocked_jobs as $job ) {
 			$unique_key = sprintf( '%s_%s_%s',
 				$job['object_id'] ?? '',
 				$job['object_type'] ?? '',
-				$job['index_version'] ?? '');
+				$job['index_version'] ?? ''
+			);
 
 			if ( array_key_exists( $unique_key, $found_objects ) ) {
 				$jobs_to_be_deleted[] = $job;

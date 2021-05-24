@@ -641,7 +641,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_queue->expects( $this->once() )
 			->method( 'delete_jobs' )
-			->with( [ $second_job ]	);
+			->with( [ $second_job ] );
 
 		$partially_mocked_queue->free_deadlocked_jobs();
 	}
