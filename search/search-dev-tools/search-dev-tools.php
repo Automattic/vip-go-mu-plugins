@@ -185,7 +185,7 @@ function print_data() {
 			],
 			[
 				'label'   => 'Meta Key Allow List',
-				'value'   => array_values( Search::instance()->get_post_meta_allow_list( null ) ),
+				'value'   => get_meta_for_all_indexable_post_types(),
 				'options' => [
 					'collapsible' => true,
 				],
@@ -267,4 +267,24 @@ function sanitize_query_response( object $response_body ): object {
 	}
 
 	return $response_body;
+}
+
+/**
+ * Safer way to get the correct meta keys for all post types.
+ * This way of calling the filter should avoid potential TypeError fatals,
+ * in case one of the filter type hints the $post to be a WP_Post instance.
+ *
+ * @return array meta keys in the allow list
+ */
+function get_meta_for_all_indexable_post_types(): array {
+	$ret = [];
+	$post_types = \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types();
+
+	foreach ( $post_types as $post_type ) {
+		$fake_post = new \WP_Post( (object) [ 'post_type' => $post_type ] );
+		$ret[] = Search::instance()->get_post_meta_allow_list( $fake_post );
+	}
+
+	// Flatten and return unique values.
+	return array_values( array_unique( array_merge( [], ...$ret ) ) );
 }
