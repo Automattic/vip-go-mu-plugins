@@ -712,9 +712,9 @@ class Queue {
 
 		foreach ( $all_deadlocked_jobs as $job ) {
 			$unique_key = sprintf( '%s_%s_%s',
-				$job['object_id'] ?? '',
-				$job['object_type'] ?? '',
-				$job['index_version'] ?? ''
+				$job->{'object_id'},
+				$job->{'object_type'},
+				$job->{'index_version'}
 			);
 
 			if ( array_key_exists( $unique_key, $found_objects ) ) {

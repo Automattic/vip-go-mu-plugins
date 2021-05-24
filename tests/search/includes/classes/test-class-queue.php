@@ -598,13 +598,13 @@ class Queue_Test extends \WP_UnitTestCase {
 
 
 	public function test_free_deadlocked_jobs_handle_duplicates() {
-		$first_job = [
+		$first_job = (object) [
 			'job_id' => 1,
 			'object_id' => 10,
 			'object_type' => 'post',
 			'index_version' => 1,
 		];
-		$second_job = [
+		$second_job = (object) [
 			'job_id' => 2,
 			'object_id' => 10,
 			'object_type' => 'post',
