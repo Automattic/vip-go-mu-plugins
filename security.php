@@ -4,17 +4,15 @@
 Plugin Name: VIP Security
 Description: Various security enhancements
 Author: Automattic
-Version: 1.0
+Version: 1.2
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
 require_once __DIR__ . '/security/class-lockout.php';
 require_once __DIR__ . '/security/machine-user.php';
 require_once __DIR__ . '/security/class-private-sites.php';
-
-if ( \Automattic\VIP\Feature::is_enabled( 'admin-password-change-current' ) ) {
-	require_once __DIR__ . '/security/password.php';
-}
+require_once __DIR__ . '/security/login-error.php';
+require_once __DIR__ . '/security/password.php';
 
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'login_limit' );
 define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'lost_password_limit' );

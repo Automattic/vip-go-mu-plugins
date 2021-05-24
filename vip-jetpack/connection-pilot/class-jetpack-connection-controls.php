@@ -19,8 +19,8 @@ class Controls {
 			return new \WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some required constants are missing.' );
 		}
 
-		if ( \Jetpack::is_development_mode() ) {
-			return new \WP_Error( 'jp-cxn-pilot-development-mode', 'Jetpack is in development mode.' );
+		if ( (new \Automattic\Jetpack\Status())->is_offline_mode() ) {
+			return new \WP_Error( 'jp-cxn-pilot-offline-mode', 'Jetpack is in offline mode.' );
 		}
 
 		// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
