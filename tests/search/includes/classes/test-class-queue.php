@@ -596,6 +596,56 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->assertEquals( 3, $count );
 	}
 
+
+	public function test_free_deadlocked_jobs_handle_duplicates() {
+		$first_job = [
+			'job_id' => 1,
+			'object_id' => 10,
+			'object_type' => 'post',
+			'index_version' => 1,
+		];
+		$second_job = [
+			'job_id' => 2,
+			'object_id' => 10,
+			'object_type' => 'post',
+			'index_version' => 1,
+		];
+
+		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
+			->setMethods( [
+				'get_deadlocked_jobs',
+				'update_jobs',
+				'delete_jobs',
+			] )
+			->getMock();
+
+		$partially_mocked_queue
+			->method( 'get_deadlocked_jobs' )
+			->willReturnOnConsecutiveCalls(
+				[ $first_job, $second_job ],
+				[],
+				[],
+				[],
+				[]
+			);
+
+		$partially_mocked_queue->expects( $this->once() )
+			->method( 'update_jobs' )
+			->with(
+				$this->equalTo( [ 1 ] ),
+				$this->equalTo( [
+					'status' => 'queued',
+					'scheduled_time' => null,
+				] )
+			);
+
+		$partially_mocked_queue->expects( $this->once() )
+			->method( 'delete_jobs' )
+			->with( [ $second_job ]	);
+
+		$partially_mocked_queue->free_deadlocked_jobs();
+	}
+
 	/**
 	 * Ensure that the value passed into the filter is returned if the indexable_slug is not 'post'
 	 */
