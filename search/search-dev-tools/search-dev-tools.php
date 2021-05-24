@@ -16,10 +16,6 @@ namespace Automattic\VIP\Search\Dev_Tools;
 
 use Automattic\VIP\Search\Search;
 
-if ( ! ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && VIP_ENABLE_VIP_SEARCH ) ) {
-	return;
-}
-
 define( 'SEARCH_DEV_TOOLS_CAP', 'edit_others_posts' );
 
 add_action( 'rest_api_init', __NAMESPACE__ . '\register_rest_routes' );
