@@ -95,15 +95,6 @@ function should_enable_search_dev_tools(): bool {
 }
 
 /**
- * Check whether the site is currently rate-limited
- *
- * @return boolean
- */
-function is_ratelimited(): bool {
-	return wp_cache_get( Search::QUERY_COUNT_CACHE_KEY, Search::QUERY_COUNT_CACHE_GROUP ) > Search::$max_query_count;
-}
-
-/**
  * Add our scripts and styles.
  *
  * @return void
@@ -154,13 +145,20 @@ function print_data() {
 		$queries
 	);
 
+	$limit_count = sprintf(
+		'%s (%d of %d limit)',
+		Search::is_rate_limited() ? 'yes' : 'no',
+		Search::get_query_count(),
+		Search::$max_query_count
+	);
+
 	$data = [
 		'status'                  => 'enabled',
 		'queries'                 => $mapped_queries,
 		'information'             => [
 			[
 				'label'   => 'Rate limited?',
-				'value'   => is_ratelimited() ? 'yes' : 'no',
+				'value'   => $limit_count,
 				'options' => [
 					'collapsible' => false,
 				],
