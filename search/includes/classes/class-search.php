@@ -513,7 +513,7 @@ class Search {
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
 		// Log details of failed requests
-		add_action('ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
+		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
 	}
 
 	protected function load_commands() {
@@ -1846,7 +1846,7 @@ class Search {
 			'Application %d - ES Query in URL %s has failed: %s',
 			FILES_CLIENT_SITE_ID,
 			$url,
-			wp_json_encode($query)
+			wp_json_encode( $query )
 		);
 		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
 	}
