@@ -156,7 +156,7 @@ jobs:
   php74-lint:
     <<: *lint_job
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
 
   php74-build-multisite:
     <<: *php_job
@@ -164,7 +164,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
       - image: *db_image
 
   php74-build-multisite-no-jetpack:
@@ -174,7 +174,7 @@ jobs:
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite:
@@ -183,7 +183,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-no-jetpack:
@@ -193,7 +193,7 @@ jobs:
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
       - image: *db_image
 
   php74-build-multisite-nightly:
@@ -202,7 +202,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "nightly"
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-nightly:
@@ -211,12 +211,12 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "nightly"
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
       - image: *db_image
 
   create-changelog-draft:
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
     steps:
       - checkout
       - run: composer install
