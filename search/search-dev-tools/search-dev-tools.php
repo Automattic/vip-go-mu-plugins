@@ -16,7 +16,7 @@ namespace Automattic\VIP\Search\Dev_Tools;
 
 use Automattic\VIP\Search\Search;
 
-define( 'SEARCH_DEV_TOOLS_CAP', 'edit_others_posts' );
+define( 'SEARCH_DEV_TOOLS_CAP', 'manage_options' );
 
 add_action( 'rest_api_init', __NAMESPACE__ . '\register_rest_routes' );
 add_action( 'admin_bar_menu', __NAMESPACE__ . '\admin_bar_node', PHP_INT_MAX );
