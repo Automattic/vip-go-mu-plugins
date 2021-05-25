@@ -101,6 +101,11 @@ class Search {
 	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
+	/**
+	 * Maximum number of queries before rate-limiting kicks in.
+	 *
+	 * @var int
+	 */
 	public static $max_query_count;
 	public static $query_db_fallback_value;
 
@@ -1900,7 +1905,23 @@ class Search {
 		return min( $current_value, self::MAX_RESULT_WINDOW );
 	}
 
-	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
+	/**
+	 * Determine whether the rate-limiting is in effect
+	 */
+	public static function is_rate_limited(): bool {
+		return intval( wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) > self::$max_query_count;
+	}
+
+	/**
+	 * Get the total number of queries over the last rate-limiting window from object cache.
+	 *
+	 * @return integer
+	 */
+	public static function get_query_count(): int {
+		return (int) wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+	}
+  
+  public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
 		$encoded_query = wp_json_encode( $query );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1924,5 +1945,5 @@ class Search {
 		}
 
 		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
-	}
+  }
 }
