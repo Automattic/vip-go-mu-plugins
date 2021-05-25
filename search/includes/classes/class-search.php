@@ -1920,8 +1920,18 @@ class Search {
 	public static function get_query_count(): int {
 		return (int) wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::SEARCH_CACHE_GROUP );
 	}
-  
-  public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
+
+	/**
+	 * Log failed Elasticpress Query to Logstash
+	 *
+	 * @param $request array Remote request response
+	 * @param $query array Prepared Elasticsearch query
+	 * @param $query_args array Current WP Query arguments
+	 * @param $query_object mixed Could be WP_Query, WP_User_Query, etc.
+	 *
+	 * @return void
+	 */
+	public function log_ep_invalid_response( array $request, array $query, array $query_args, $query_object ) {
 		$encoded_query = wp_json_encode( $query );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1945,5 +1955,5 @@ class Search {
 		}
 
 		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
-  }
+	}
 }
