@@ -1901,14 +1901,28 @@ class Search {
 	}
 
 	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
-		global $wp;
-		$url = add_query_arg( $wp->query_vars, home_url( $request ) );
-		$message = sprintf(
-			'Application %d - ES Query in URL %s has failed: %s',
-			FILES_CLIENT_SITE_ID,
-			$url,
-			wp_json_encode( $query )
-		);
+		$encoded_query = wp_json_encode( $query );
+
+		// Logging a failed query on the CLI
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$message = sprintf(
+				'Application %d - ES Query has failed in CLI: %s',
+				FILES_CLIENT_SITE_ID,
+				$encoded_query
+			);
+
+		// Logging a failed query on a web request
+		} else {
+			global $wp;
+			$url     = add_query_arg( $wp->query_vars, home_url( $request ) );
+			$message = sprintf(
+				'Application %d - ES Query in URL %s has failed: %s',
+				FILES_CLIENT_SITE_ID,
+				$url,
+				$encoded_query
+			);
+		}
+
 		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
 	}
 }
