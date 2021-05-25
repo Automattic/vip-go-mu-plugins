@@ -1903,16 +1903,16 @@ class Search {
 	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
 		$encoded_query = wp_json_encode( $query );
 
-		// Logging a failed query on the CLI
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			// Logging a failed query on the CLI
 			$message = sprintf(
 				'Application %d - ES Query has failed in CLI: %s',
 				FILES_CLIENT_SITE_ID,
 				$encoded_query
 			);
 
-		// Logging a failed query on a web request
 		} else {
+			// Logging a failed query on a web request
 			global $wp;
 			$url     = add_query_arg( $wp->query_vars, home_url( $request ) );
 			$message = sprintf(
