@@ -29,11 +29,21 @@ if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 	die( 'ok' );
 }
 
+if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
+	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
+}
+
+if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
+	define( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE', false );
+}
+
 // Sites can be blocked for various reasons - usually maintenance, so exit
 // early if the constant has been set (defined by VIP Go in config/wp-config.php)
-if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
+if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
+	$allow_front_end = WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE && ! REST_REQUEST && ! WP_ADMIN;
+
 	// WP CLI is allowed, but disable cron
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	if ( ( defined( 'WP_CLI' ) && WP_CLI ) || $allow_front_end ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
 			return 1;
 		}, 9999 );

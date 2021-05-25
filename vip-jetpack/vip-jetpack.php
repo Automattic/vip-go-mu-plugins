@@ -361,6 +361,11 @@ add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
 } );
 
 /**
+ * Hide Jetpack's just in time promotions
+ */
+add_filter( 'jetpack_just_in_time_msgs', '__return_false' );
+
+/**
  * Custom CSS tweaks for the Jetpack Admin pages
  */
 function vip_jetpack_admin_enqueue_scripts() {
@@ -396,12 +401,10 @@ add_filter( 'jetpack_options', function( $value, $name ) {
 	return $value;
 }, 10, 2 );
 
-// We need to add a dummy menu item if no other menu items are rendered
-function add_jetpack_menu_placeholder() {
-	if ( ! class_exists( 'Jetpack' ) ) {
-		return;
-	}
-
+/**
+ * Dummy Jetpack menu item if no other menu items are rendered
+ */
+function add_jetpack_menu_placeholder(): void {
 	$status = new Automattic\Jetpack\Status();
 	// is_connection_ready only exists in Jetpack 9.6 and newer
 	if ( ! $status->is_offline_mode() && method_exists('Jetpack', 'is_connection_ready') && ! Jetpack::is_connection_ready() ) {
