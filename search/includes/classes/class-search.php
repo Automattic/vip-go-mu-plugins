@@ -1929,7 +1929,7 @@ class Search {
 	 *
 	 * @return void
 	 */
-	public function log_ep_invalid_response( array $request, array $query ) {
+	public function log_ep_invalid_response( $request, $query ) {
 		$encoded_query = wp_json_encode( $query );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
