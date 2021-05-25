@@ -699,8 +699,8 @@ class Queue {
 	}
 
 	/**
-	 * In some cases there could be multiple jobs for the same object stucked in deadlock state.
-	 * If we would try to update all of them at once we would break the DB contstraint
+	 * In some cases there could be multiple jobs for the same object stuck in a deadlock state.
+	 * If we would try to update all of them at once we would break the DB constraint
 	 * (state + object_id + object_type + index_version).
 	 *
 	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
