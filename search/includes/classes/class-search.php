@@ -519,7 +519,7 @@ class Search {
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
 		// Log details of failed requests
-		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
+		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 2 );
 	}
 
 	protected function load_commands() {
@@ -1926,12 +1926,10 @@ class Search {
 	 *
 	 * @param $request array Remote request response
 	 * @param $query array Prepared Elasticsearch query
-	 * @param $query_args array Current WP Query arguments
-	 * @param $query_object mixed Could be WP_Query, WP_User_Query, etc.
 	 *
 	 * @return void
 	 */
-	public function log_ep_invalid_response( array $request, array $query, array $query_args, $query_object ) {
+	public function log_ep_invalid_response( array $request, array $query ) {
 		$encoded_query = wp_json_encode( $query );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
