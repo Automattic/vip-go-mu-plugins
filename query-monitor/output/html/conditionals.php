@@ -5,7 +5,16 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Output_Html_Conditionals extends QM_Output_Html {
+
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_Conditionals Collector.
+	 */
+	protected $collector;
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -13,27 +22,38 @@ class QM_Output_Html_Conditionals extends QM_Output_Html {
 		add_filter( 'qm/output/panel_menus', array( $this, 'panel_menu' ), 1000 );
 	}
 
+	public function name() {
+		return __( 'Conditionals', 'query-monitor' );
+	}
+
 	public function output() {
 		$data = $this->collector->get_data();
 
 		$this->before_non_tabular_output();
 
-		echo '<div class="qm-section">';
+		echo '<section>';
 		echo '<h3>' . esc_html__( 'True Conditionals', 'query-monitor' ) . '</h3>';
 
+		echo '<ul>';
 		foreach ( $data['conds']['true'] as $cond ) {
-			echo '<p class="qm-item qm-ltr qm-true"><code>' . esc_html( $cond ) . '()</code></p>';
+			echo '<li class="qm-ltr qm-true"><code>' . esc_html( $cond ) . '() </code></li>';
 		}
+		echo '</ul>';
 
+		echo '</section>';
 		echo '</div>';
-		echo '<div class="qm-section">';
+
+		echo '<div class="qm-boxed">';
+		echo '<section>';
 		echo '<h3>' . esc_html__( 'False Conditionals', 'query-monitor' ) . '</h3>';
 
+		echo '<ul>';
 		foreach ( $data['conds']['false'] as $cond ) {
-			echo '<p class="qm-item qm-ltr qm-false"><code>' . esc_html( $cond ) . '()</code></p>';
+			echo '<li class="qm-ltr qm-false"><code>' . esc_html( $cond ) . '() </code></li>';
 		}
+		echo '</ul>';
 
-		echo '</div>';
+		echo '</section>';
 
 		$this->after_non_tabular_output();
 	}
@@ -43,7 +63,8 @@ class QM_Output_Html_Conditionals extends QM_Output_Html {
 		$data = $this->collector->get_data();
 
 		foreach ( $data['conds']['true'] as $cond ) {
-			$menu[ "conditionals-{$cond}" ] = $this->menu( array(
+			$id          = $this->collector->id() . '-' . $cond;
+			$menu[ $id ] = $this->menu( array(
 				'title' => esc_html( $cond . '()' ),
 				'id'    => 'query-monitor-conditionals-' . esc_attr( $cond ),
 				'meta'  => array(
@@ -61,10 +82,11 @@ class QM_Output_Html_Conditionals extends QM_Output_Html {
 		$data = $this->collector->get_data();
 
 		foreach ( $data['conds']['true'] as $cond ) {
-			unset( $menu[ "conditionals-{$cond}" ] );
+			$id = $this->collector->id() . '-' . $cond;
+			unset( $menu[ $id ] );
 		}
 
-		$menu['conditionals'] = $this->menu( array(
+		$menu[ $this->collector->id() ] = $this->menu( array(
 			'title' => esc_html__( 'Conditionals', 'query-monitor' ),
 			'id'    => 'query-monitor-conditionals',
 		) );
@@ -77,7 +99,8 @@ class QM_Output_Html_Conditionals extends QM_Output_Html {
 }
 
 function register_qm_output_html_conditionals( array $output, QM_Collectors $collectors ) {
-	if ( $collector = QM_Collectors::get( 'conditionals' ) ) {
+	$collector = QM_Collectors::get( 'conditionals' );
+	if ( $collector ) {
 		$output['conditionals'] = new QM_Output_Html_Conditionals( $collector );
 	}
 	return $output;

@@ -24,12 +24,17 @@
  * }
  */
 function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = false ) {
-
 	// Check Jetpack is present and active
 	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() ) {
+		
+		// WordPress.com stats defaults to current UTC date, default to site's local date instead
+		if ( ! $end_date ) {
+			$end_date = current_datetime()->format( 'Y-m-d' );
+		}
+		
 		$args = array(
 			'days'  => $num_days,
-			'limit' => $limit,
+			'limit' => 100, // Due to caching, we request max limit and only return requested $limit below. See PR 1998
 			'end'   => $end_date,
 		);
 
@@ -55,7 +60,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 		$post['post_id']        = absint( $post['post_id'] );
 		$post['views']          = absint( $post['views'] );
 	}
-
+	$posts = array_slice( $posts, 0, $limit );
 	return $posts;
 }
 

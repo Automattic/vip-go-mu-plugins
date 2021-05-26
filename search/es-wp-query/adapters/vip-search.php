@@ -110,7 +110,7 @@ function vip_es_field_map( $es_map ) {
 	return wp_parse_args(
 		array(
 			'post_author'                   => 'post_author.id',
-			'post_author.user_nicename'     => 'post_author.display_name',
+			'post_author.user_nicename'     => 'post_author.login.raw',
 			'post_date'                     => 'post_date',
 			'post_date.year'                => 'date_terms.year',
 			'post_date.month'               => 'date_terms.month',
@@ -133,12 +133,12 @@ function vip_es_field_map( $es_map ) {
 			'post_date_gmt.second'          => 'date_gmt_terms.second',
 			'post_content'                  => 'post_content',
 			'post_content.analyzed'         => 'post_content',
-			'post_title'                    => 'post_title',
+			'post_title'                    => 'post_title.raw',
 			'post_title.analyzed'           => 'post_title',
 			'post_type'                     => 'post_type.raw',
 			'post_excerpt'                  => 'post_excerpt',
 			'post_password'                 => 'post_password',  // This isn't indexed on VIP.
-			'post_name'                     => 'post_name',
+			'post_name'                     => 'post_name.raw',
 			'post_modified'                 => 'post_modified',
 			'post_modified.year'            => 'modified_date_terms.year',
 			'post_modified.month'           => 'modified_date_terms.month',

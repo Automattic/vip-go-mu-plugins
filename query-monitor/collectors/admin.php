@@ -5,12 +5,37 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Collector_Admin extends QM_Collector {
 
 	public $id = 'response';
 
-	public function name() {
-		return __( 'Admin Screen', 'query-monitor' );
+	public function get_concerned_actions() {
+		$actions = array(
+			'current_screen',
+			'admin_notices',
+			'all_admin_notices',
+			'network_admin_notices',
+			'user_admin_notices',
+		);
+
+		if ( ! empty( $this->data['list_table'] ) ) {
+			$actions[] = $this->data['list_table']['column_action'];
+		}
+
+		return $actions;
+	}
+
+	public function get_concerned_filters() {
+		$filters = array();
+
+		if ( ! empty( $this->data['list_table'] ) ) {
+			$filters[] = $this->data['list_table']['columns_filter'];
+			$filters[] = $this->data['list_table']['sortables_filter'];
+		}
+
+		return $filters;
 	}
 
 	public function process() {
@@ -19,13 +44,16 @@ class QM_Collector_Admin extends QM_Collector {
 
 		$current_screen = get_current_screen();
 
-		if ( isset( $_GET['page'] ) && null !== $current_screen ) { // @codingStandardsIgnoreLine
+		if ( isset( $_GET['page'] ) && null !== $current_screen ) { // phpcs:ignore
 			$this->data['base'] = $current_screen->base;
 		} else {
 			$this->data['base'] = $pagenow;
 		}
 
-		$this->data['pagenow'] = $pagenow;
+		$this->data['pagenow']        = $pagenow;
+		$this->data['typenow']        = isset( $GLOBALS['typenow'] ) ? $GLOBALS['typenow'] : '';
+		$this->data['taxnow']         = isset( $GLOBALS['taxnow'] ) ? $GLOBALS['taxnow'] : '';
+		$this->data['hook_suffix']    = isset( $GLOBALS['hook_suffix'] ) ? $GLOBALS['hook_suffix'] : '';
 		$this->data['current_screen'] = ( $current_screen ) ? get_object_vars( $current_screen ) : null;
 
 		$screens = array(
@@ -42,7 +70,7 @@ class QM_Collector_Admin extends QM_Collector {
 			'users-network'   => true,
 		);
 
-		if ( ! empty( $this->data['current_screen'] ) and isset( $screens[ $this->data['current_screen']['base'] ] ) ) {
+		if ( ! empty( $this->data['current_screen'] ) && isset( $screens[ $this->data['current_screen']['base'] ] ) ) {
 
 			$list_table = array();
 
@@ -56,7 +84,7 @@ class QM_Collector_Admin extends QM_Collector {
 				$list_table['column'] = $this->data['current_screen']['base'];
 			}
 
-			if ( ! empty( $this->data['current_screen']['post_type'] ) and empty( $this->data['current_screen']['taxonomy'] ) ) {
+			if ( ! empty( $this->data['current_screen']['post_type'] ) && empty( $this->data['current_screen']['taxonomy'] ) ) {
 				$list_table['columns'] = $this->data['current_screen']['post_type'] . '_posts';
 			} else {
 				$list_table['columns'] = $this->data['current_screen']['id'];
@@ -88,7 +116,7 @@ class QM_Collector_Admin extends QM_Collector {
 }
 
 function register_qm_collector_admin( array $collectors, QueryMonitor $qm ) {
-	$collectors['response'] = new QM_Collector_Admin;
+	$collectors['response'] = new QM_Collector_Admin();
 	return $collectors;
 }
 

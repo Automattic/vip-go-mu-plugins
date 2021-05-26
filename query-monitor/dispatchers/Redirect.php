@@ -5,6 +5,8 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Dispatcher_Redirect extends QM_Dispatcher {
 
 	public $id = 'redirect';
@@ -12,7 +14,7 @@ class QM_Dispatcher_Redirect extends QM_Dispatcher {
 	public function __construct( QM_Plugin $qm ) {
 		parent::__construct( $qm );
 
-		add_filter( 'wp_redirect', array( $this, 'filter_wp_redirect' ), 999, 2 );
+		add_filter( 'wp_redirect', array( $this, 'filter_wp_redirect' ), 9999, 2 );
 
 	}
 
@@ -52,7 +54,7 @@ class QM_Dispatcher_Redirect extends QM_Dispatcher {
 
 	public function is_active() {
 
-		if ( ! $this->user_can_view() ) {
+		if ( ! self::user_can_view() ) {
 			return false;
 		}
 

@@ -12,9 +12,9 @@
  * @package query-monitor
  */
 
-defined( 'ABSPATH' ) or die();
+defined( 'ABSPATH' ) || exit;
 
-if ( defined( 'QM_DISABLED' ) and QM_DISABLED ) {
+if ( defined( 'QM_DISABLED' ) && QM_DISABLED ) {
 	return;
 }
 
@@ -30,13 +30,13 @@ if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
 }
 
 # No autoloaders for us. See https://github.com/johnbillion/query-monitor/issues/7
-$qm_dir = dirname( dirname( __FILE__ ) );
-$plugin = "{$qm_dir}/classes/Plugin.php";
+$qm_dir    = dirname( dirname( __FILE__ ) );
+$qm_plugin = "{$qm_dir}/classes/Plugin.php";
 
-if ( ! is_readable( $plugin ) ) {
+if ( ! is_readable( $qm_plugin ) ) {
 	return;
 }
-require_once $plugin;
+require_once $qm_plugin;
 
 if ( ! QM_Plugin::php_version_met() ) {
 	return;
@@ -66,7 +66,7 @@ class QM_DB extends wpdb {
 	/**
 	 * Class constructor
 	 */
-	function __construct( $dbuser, $dbpassword, $dbname, $dbhost ) {
+	public function __construct( $dbuser, $dbpassword, $dbname, $dbhost ) {
 
 		foreach ( $this->qm_php_vars as $setting => &$val ) {
 			$val = ini_get( $setting );
@@ -77,14 +77,15 @@ class QM_DB extends wpdb {
 	}
 
 	/**
-	 * Perform a MySQL database query, using current database connection.
+	 * Performs a MySQL database query, using current database connection.
 	 *
 	 * @see wpdb::query()
 	 *
 	 * @param string $query Database query
-	 * @return int|false Number of rows affected/selected or false on error
+	 * @return int|bool Boolean true for CREATE, ALTER, TRUNCATE and DROP queries. Number of rows
+	 *                  affected/selected for all other queries. Boolean false on error.
 	 */
-	function query( $query ) {
+	public function query( $query ) {
 		if ( ! $this->ready ) {
 			if ( isset( $this->check_current_query ) ) {
 				// This property was introduced in WP 4.2
@@ -98,12 +99,12 @@ class QM_DB extends wpdb {
 		}
 
 		$result = parent::query( $query );
+		$i      = $this->num_queries - 1;
 
-		if ( ! SAVEQUERIES ) {
+		if ( ! isset( $this->queries[ $i ] ) ) {
 			return $result;
 		}
 
-		$i = $this->num_queries - 1;
 		$this->queries[ $i ]['trace'] = new QM_Backtrace( array(
 			'ignore_frames' => 1,
 		) );
@@ -120,6 +121,8 @@ class QM_DB extends wpdb {
 				}
 			} else {
 				if ( is_resource( $this->dbh ) ) {
+					// Please do not report this code as a PHP 7 incompatibility. Observe the surrounding logic.
+					// phpcs:ignore
 					$code = mysql_errno( $this->dbh );
 				}
 			}
@@ -133,4 +136,5 @@ class QM_DB extends wpdb {
 
 }
 
+// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 $wpdb = new QM_DB( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );

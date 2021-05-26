@@ -5,11 +5,30 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Output_Html_Debug_Bar extends QM_Output_Html {
+
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_Debug_Bar Collector.
+	 */
+	protected $collector;
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
 		add_filter( 'qm/output/menus', array( $this, 'admin_menu' ), 200 );
+	}
+
+	public function name() {
+		$title = $this->collector->get_panel()->title();
+
+		return sprintf(
+			/* translators: Debug Bar add-on name */
+			__( 'Debug Bar: %s', 'query-monitor' ),
+			$title
+		);
 	}
 
 	public function output() {
@@ -43,7 +62,7 @@ class QM_Output_Html_Debug_Bar extends QM_Output_Html {
 			'</h2>',
 		), $panel );
 
-		echo $panel; // @codingStandardsIgnoreLine
+		echo $panel; // phpcs:ignore
 
 		echo '</div>';
 
@@ -63,7 +82,7 @@ function register_qm_output_html_debug_bar( array $output, QM_Collectors $collec
 		$panel_id  = strtolower( sanitize_html_class( get_class( $panel ) ) );
 		$collector = QM_Collectors::get( "debug_bar_{$panel_id}" );
 
-		if ( $collector and $collector->is_visible() ) {
+		if ( $collector && $collector->is_visible() ) {
 			$output[ "debug_bar_{$panel_id}" ] = new QM_Output_Html_Debug_Bar( $collector );
 		}
 	}

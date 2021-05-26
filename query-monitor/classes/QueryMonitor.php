@@ -19,6 +19,9 @@ class QueryMonitor extends QM_Plugin {
 		add_filter( 'user_has_cap',   array( $this, 'filter_user_has_cap' ), 10, 4 );
 		add_filter( 'ure_built_in_wp_caps',         array( $this, 'filter_ure_caps' ) );
 		add_filter( 'ure_capabilities_groups_tree', array( $this, 'filter_ure_groups' ) );
+		add_filter( 'network_admin_plugin_action_links_query-monitor/query-monitor.php', array( $this, 'filter_plugin_action_links' ) );
+		add_filter( 'plugin_action_links_query-monitor/query-monitor.php',               array( $this, 'filter_plugin_action_links' ) );
+		add_filter( 'plugin_row_meta', array( $this, 'filter_plugin_row_meta' ), 10, 4 );
 
 		# Parent setup:
 		parent::__construct( $file );
@@ -26,14 +29,49 @@ class QueryMonitor extends QM_Plugin {
 		# Load and register built-in collectors:
 		$collectors = array();
 		foreach ( glob( $this->plugin_path( 'collectors/*.php' ) ) as $file ) {
-			$key = basename( $file, '.php' );
+			$key                = basename( $file, '.php' );
 			$collectors[ $key ] = $file;
 		}
 
+		/**
+		 * Allow filtering of built-in collector files.
+		 *
+		 * @since 2.14.0
+		 *
+		 * @param string[] $collectors Array of file paths to be loaded.
+		 */
 		foreach ( apply_filters( 'qm/built-in-collectors', $collectors ) as $file ) {
 			include $file;
 		}
 
+	}
+
+	public function filter_plugin_action_links( array $actions ) {
+		return array_merge( array(
+			'settings' => '<a href="#qm-settings">' . esc_html__( 'Settings', 'query-monitor' ) . '</a>',
+			'add-ons'  => '<a href="https://github.com/johnbillion/query-monitor/wiki/Query-Monitor-Add-on-Plugins">' . esc_html__( 'Add-ons', 'query-monitor' ) . '</a>',
+		), $actions );
+	}
+
+	/**
+	 * Filters the array of row meta for each plugin in the Plugins list table.
+	 *
+	 * @param string[] $plugin_meta An array of the plugin's metadata.
+	 * @param string   $plugin_file Path to the plugin file relative to the plugins directory.
+	 * @return string[] An array of the plugin's metadata.
+	 */
+	public function filter_plugin_row_meta( array $plugin_meta, $plugin_file ) {
+		if ( 'query-monitor/query-monitor.php' !== $plugin_file ) {
+			return $plugin_meta;
+		}
+
+		$plugin_meta[] = sprintf(
+			'<a href="%1$s"><span class="dashicons dashicons-star-filled" aria-hidden="true" style="font-size:14px;line-height:1.3"></span>%2$s</a>',
+			'https://github.com/sponsors/johnbillion',
+			esc_html_x( 'Sponsor', 'verb', 'query-monitor' )
+		);
+
+		return $plugin_meta;
 	}
 
 	/**
@@ -74,8 +112,19 @@ class QueryMonitor extends QM_Plugin {
 	}
 
 	public function action_plugins_loaded() {
+		// Hide QM itself from output by default:
+		if ( ! defined( 'QM_HIDE_SELF' ) ) {
+			define( 'QM_HIDE_SELF', true );
+		}
 
-		# Register additional collectors:
+		/**
+		 * Filters the collectors that are being added.
+		 *
+		 * @since 2.11.2
+		 *
+		 * @param QM_Collector[] $collectors Array of collector instances.
+		 * @param QueryMonitor   $instance   QueryMonitor instance.
+		 */
 		foreach ( apply_filters( 'qm/collectors', array(), $this ) as $collector ) {
 			QM_Collectors::add( $collector );
 		}
@@ -85,7 +134,14 @@ class QueryMonitor extends QM_Plugin {
 			include $file;
 		}
 
-		# Register built-in and additional dispatchers:
+		/**
+		 * Filters the dispatchers that are being added.
+		 *
+		 * @since 2.11.2
+		 *
+		 * @param QM_Dispatcher[] $dispatchers Array of dispatcher instances.
+		 * @param QueryMonitor    $instance    QueryMonitor instance.
+		 */
 		foreach ( apply_filters( 'qm/dispatchers', array(), $this ) as $dispatcher ) {
 			QM_Dispatchers::add( $dispatcher );
 		}

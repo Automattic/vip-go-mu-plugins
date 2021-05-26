@@ -12,6 +12,7 @@
 .eslintignore
 .eslintrc
 .eslintrc.js
+.eslintrc.json
 .git
 .gitattributes
 .github
@@ -48,6 +49,8 @@ phpunit-multisite.xml
 README.md
 readme.md
 readme.txt
+renovate.json
+SECURITY.md
 webpack.config.js
 wpcom-helper.php
 yarn.lock
@@ -63,6 +66,8 @@ yarn.lock
 /cron-control-next/bin/
 /cron-control-next/runner/
 /cron-control-next/tests/
+/drop-ins/object-cache/bin/
+/drop-ins/object-cache/tests/
 /search/docs/
 /search/elasticpress/bin/
 /search/elasticpress/config/
@@ -96,3 +101,15 @@ yarn.lock
 /vip-support/bin/
 /vip-support/features/
 /vip-support/tests/
+
+# A few files in Jetpack >9.7 that are giving linting errors due to incompatible PHP versions
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-ctype/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-intl-grapheme/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-intl-normalizer/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-mbstring/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-php73/Resources/stubs/JsonException.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/sebastian/resource-operations/build/generate.php
+
+# Search Dev Tools
+/search/search-dev-tools/src/
+/search/search-dev-tools/preact.config.js

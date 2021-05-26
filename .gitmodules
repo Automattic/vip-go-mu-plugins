@@ -1,6 +1,3 @@
-[submodule "vip-dashboard"]
-	path = vip-dashboard
-	url = https://github.com/Automattic/vip-dashboard.git
 [submodule "vip-support"]
 	path = vip-support
 	url = https://github.com/Automattic/vip-support.git
@@ -39,10 +36,10 @@
 	url = https://github.com/Automattic/gutenberg-ramp.git
 [submodule "cron-control-next"]
 	path = cron-control-next
-	url = git@github.com:Automattic/Cron-Control.git
-[submodule "elasticsearch/elasticpress"]
+	url = https://github.com/Automattic/Cron-Control.git
+[submodule "search/elasticpress"]
 	path = search/elasticpress
 	url = https://github.com/Automattic/ElasticPress.git
-[submodule "elasticsearch/debug-bar-elasticpress"]
+[submodule "search/debug-bar-elasticpress"]
 	path = search/debug-bar-elasticpress
 	url = https://github.com/10up/debug-bar-elasticpress.git

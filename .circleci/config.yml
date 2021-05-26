@@ -2,14 +2,47 @@ workflows:
   version: 2
   main:
     jobs:
-      - php73-build-multisite
-      - php73-build-singlesite
+      - php74-core-tests
+      - php74-core-multisite-tests
+      - php74-lint
       - php74-build-multisite
+      - php74-build-multisite-no-jetpack
       - php74-build-singlesite
-      - php73-build-multisite-nightly
-      - php73-build-singlesite-nightly
+      - php74-build-singlesite-no-jetpack
+      - php74-build-multisite-nightly
+      - php74-build-singlesite-nightly
+  changelog:
+    jobs:
+      - create-changelog-draft:
+          filters:
+            branches:
+              only: master
 
-version: 2
+version: 2.1
+
+parameters:
+  wp_test_dir:
+    type: string
+    default: /tmp/wordpress-tests-lib
+  wp_core_dir:
+    type: string
+    default: /tmp/wordpress/
+  wp_core_develop_dir:
+    type: string
+    default: /tmp/wordpress-develop
+  db_host:
+    type: string
+    default: 127.0.0.1
+  db_name:
+    type: string
+    default: wordpress_test
+  db_user:
+    type: string
+    default: root
+  db_pass:
+    type: string
+    default: ""
+
 
 job-references:
   db_image: &db_image
@@ -24,9 +57,16 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client
-      sudo -E docker-php-ext-install mysqli
-      npm install
+      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
+      sudo -E docker-php-ext-install mysqli gd
+      npm ci
+      composer install -n
+
+  install_core_tests_dependencies: &install_core_tests_dependencies
+    name: "Install Dependencies"
+    command: |
+      sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
+      sudo npm install npm@latest -g
       composer install -n
 
   prepare_repo: &prepare_repo
@@ -35,9 +75,6 @@ job-references:
       git submodule update --init --recursive
 
   php_job: &php_job
-    environment:
-      - WP_TESTS_DIR: "/tmp/wordpress-tests-lib"
-      - WP_CORE_DIR: "/tmp/wordpress/"
     steps:
       - checkout
       - run: *setup_environment
@@ -46,39 +83,96 @@ job-references:
       - run:
           name: "Run Tests"
           command: |
-            if [[ "$RUN_EXTRA" == "1" ]]; then
-              npm run lint
+            rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
+            bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            if [[ "$DISABLE_JETPACK" == "1" ]]; then
+              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
             fi
-            rm -rf $WP_TESTS_DIR $WP_CORE_DIR
-            bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 $WP_VERSION
             vendor/bin/phpunit --version
             vendor/bin/phpunit
 
-jobs:
-  php73-build-multisite:
-    <<: *php_job
-    environment:
-      - RUN_EXTRA: "1"
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
-    docker:
-      - image: circleci/php:7.3-node
-      - image: *db_image
+  php_core_job: &php_core_job
+    steps:
+      - run:
+          name: Add missing packages
+          command: sudo apt-get update && sudo apt-get -y install git ssh
+      - checkout
+      - run: *install_core_tests_dependencies
+      - run: *prepare_repo
+      - run:
+          name: "Run Tests"
+          command: |
+            rm -rf << pipeline.parameters.wp_core_develop_dir >>
+            bash bin/install-wp-develop.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            cd << pipeline.parameters.wp_core_develop_dir >>
+            npm ci
+            npm run build
+            export WP_TESTS_DIR=<< pipeline.parameters.wp_core_develop_dir >>/tests/phpunit
+            if [[ "$INCLUDE_MU_TESTS" == "1" ]]; then
+              cp -r $HOME/project/ build/wp-content/mu-plugins
+              rm -rf tests/phpunit/data/plugins/wordpress-importer
+              source $HOME/project/bin/utils.sh
+              update_core_tests "$WP_TESTS_DIR"
+              exclude_core_tests tests/phpunit/multisite.xml
+              exclude_core_tests phpunit.xml.dist tests/phpunit/
+            fi
+            if [[ "$WP_MULTISITE" == "1" ]]; then
+              $HOME/project/vendor/bin/phpunit -c tests/phpunit/multisite.xml
+            else
+              $HOME/project/vendor/bin/phpunit
+            fi
 
-  php73-build-singlesite:
-    <<: *php_job
+  lint_job: &lint_job
+    steps:
+      - checkout
+      - run: *prepare_repo
+      - run: npm ci
+      - run: composer install -n
+      - run:
+          name: "Lint"
+          command: npm run lint
+
+jobs:
+  php74-core-tests:
+    <<: *php_core_job
     environment:
+      - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.3-node
+      - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
+
+  php74-core-multisite-tests:
+    <<: *php_core_job
+    environment:
+      - INCLUDE_MU_TESTS: "1"
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+    docker:
+      - image: wordpressdevelop/php:7.4-fpm
+      - image: *db_image
+
+  php74-lint:
+    <<: *lint_job
+    docker:
+      - image: circleci/php:7.4-node
 
   php74-build-multisite:
     <<: *php_job
     environment:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-multisite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
@@ -92,21 +186,38 @@ jobs:
       - image: circleci/php:7.4-node
       - image: *db_image
 
-  php73-build-multisite-nightly:
+  php74-build-singlesite-no-jetpack:
     <<: *php_job
     environment:
-      - RUN_EXTRA: "1"
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-multisite-nightly:
+    <<: *php_job
+    environment:
       - WP_MULTISITE: "1"
       - WP_VERSION: "nightly"
     docker:
-      - image: circleci/php:7.3-node
+      - image: circleci/php:7.4-node
       - image: *db_image
 
-  php73-build-singlesite-nightly:
+  php74-build-singlesite-nightly:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
       - WP_VERSION: "nightly"
     docker:
-      - image: circleci/php:7.3-node
+      - image: circleci/php:7.4-node
       - image: *db_image
+
+  create-changelog-draft:
+    docker:
+      - image: circleci/php:7.4-node
+    steps:
+      - checkout
+      - run: composer install
+      - run: php $HOME/project/bin/github-changelog.php

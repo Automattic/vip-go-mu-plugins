@@ -5,17 +5,16 @@
  * @package query-monitor
  */
 
+defined( 'ABSPATH' ) || exit;
+
 class QM_Collector_DB_Components extends QM_Collector {
 
 	public $id = 'db_components';
 
-	public function name() {
-		return __( 'Queries by Component', 'query-monitor' );
-	}
-
 	public function process() {
+		$dbq = QM_Collectors::get( 'db_queries' );
 
-		if ( $dbq = QM_Collectors::get( 'db_queries' ) ) {
+		if ( $dbq ) {
 			if ( isset( $dbq->data['component_times'] ) ) {
 				$this->data['times'] = $dbq->data['component_times'];
 				QM_Util::rsort( $this->data['times'], 'ltime' );
@@ -30,7 +29,7 @@ class QM_Collector_DB_Components extends QM_Collector {
 }
 
 function register_qm_collector_db_components( array $collectors, QueryMonitor $qm ) {
-	$collectors['db_components'] = new QM_Collector_DB_Components;
+	$collectors['db_components'] = new QM_Collector_DB_Components();
 	return $collectors;
 }
 

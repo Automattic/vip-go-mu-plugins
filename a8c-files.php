@@ -25,6 +25,8 @@ require_once( __DIR__ . '/files/init-filesystem.php' );
 
 require_once( __DIR__ . '/files/class-vip-filesystem.php' );
 
+require_once( __DIR__ . '/files/acl/acl.php' );
+
 /**
  * The class use to update attachment meta data
  */
@@ -586,6 +588,8 @@ class A8C_Files {
 	private function purge_file_cache( $url, $method ) {
 		global $file_cache_servers;
 
+		$requests = array();
+
 		$parsed = parse_url( $url );
 		if ( empty( $parsed['host'] ) ) {
 			return $requests;
@@ -598,8 +602,6 @@ class A8C_Files {
 		if ( isset( $parsed['query'] ) ) {
 			$uri .= $parsed['query'];
 		}
-
-		$requests = array();
 
 		if ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' == PURGE_SERVER_TYPE ) {
 			$data = array(
