@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:  WordPress.com VIP Support
+ * Plugin Name:  WordPress VIP Support
  * Description:  Manages the WordPress.com Support Users on your site
  * Version:      3.1.0
  * Author:       <a href="http://automattic.com">Automattic</a>

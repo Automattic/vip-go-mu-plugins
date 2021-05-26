@@ -131,7 +131,9 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		}
 
 		// Update DB's default charset/collation
-		$convert_db = $wpdb->query( 'ALTER DATABASE ' . DB_NAME . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' );
+		$db_name = $wpdb->get_var( 'SELECT DATABASE() FROM DUAL;' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$convert_db = $wpdb->query( 'ALTER DATABASE ' . $db_name . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' );
 		if ( $convert_db ) {
 			WP_CLI::success( "Set database to utf8mb4" );
 		} else {
@@ -145,6 +147,122 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( 'Time to update the `db_charset` and `db_collate` sitemeta, and reload web configs.' );
 		WP_CLI::line( 'DB_CHARSET: `utf8mb4`' );
 		WP_CLI::line( 'DB_COLLATE: `utf8mb4_unicode_ci`' );
+	}
+
+	/**
+	 * Outputs SQL to convert sites to use `utf8mb4`
+	 *
+	 * @subcommand create-sql
+	 */
+	public function create_sql( $args, $assoc_args ) {
+		global $wpdb;
+
+		$tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
+		$tables = array_column( $tables, 0 ); // Flatten array.
+
+		$pass = 1;
+		$sql  = '';
+		while ( $pass <= 3 ) {
+			foreach ( $tables as $table ) {
+				// Get the current CHARSET.
+				$table_create = $wpdb->get_results( $wpdb->prepare( 'SHOW CREATE TABLE %s', $table ), ARRAY_N );
+				$charset = array_column( $table_create, 1 )[0]; // Flatten array to string.
+				$charset = preg_match( '/CHARSET=(.*)(?:\s+|$)/Ui', $charset, $matches );
+
+				if ( isset( $matches[1] ) ) {
+					$charset = $matches[1];
+				} else {
+					WP_CLI::error( "Could not find CHARSET for table $table!" );
+				}
+
+				// Get the current COLLATE;
+				$collate = array_column( $table_create, 1 )[0]; // Flatten array to string.
+				preg_match( '/COLLATE=(.*)(?:\s+|$)/Ui', $collate, $matches );
+
+				if ( isset( $matches[1] ) ) {
+					$collate = $matches[1];
+				} else {
+					$collate = '';
+				}
+
+				if ( 'utf8mb4' !== $charset || 'utf8mb4_unicode_ci' !== $collate ) {
+					$columns_to_fix = 0;
+					$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %s', $table ), ARRAY_N );
+
+					foreach ( $columns as $column ) {
+						$column_name    = $column[0];
+						$column_type    = $column[1];
+						$column_null    = $column[2];
+						$column_key     = $column[3];
+						$column_default = $column[4];
+						$column_extra   = $column[5];
+
+						$new_column_type = false;
+						switch ( $column_type ) {
+							case 'char':
+								$new_column_type = 'BINARY';
+								break;
+							case 'text':
+								$new_column_type = 'BLOB';
+								break;
+							case 'tinytext':
+								$new_column_type = 'TINYBLOB';
+								break;
+							case 'mediumtext':
+								$new_column_type = 'MEDIUMBLOB';
+								break;
+							case 'longtext':
+								$new_column_type = 'LONGBLOB';
+								break;
+							default:
+								if ( false !== strpos( $column_type, 'enum(' ) ) {
+									// TODO: Fix enums?  Do they need fixed?  Only if their text has UTF-8?
+									$new_column_type = $column_type;
+								}
+
+								if ( false !== strpos( $column_type, 'varchar' ) ) {
+									preg_match( '/\d+/', $column_type, $matches );
+									if ( isset( $matches[0] ) ) {
+										$new_column_type = "VARBINARY({$matches[0]})";
+									} else {
+										WP_CLI::error( "Cannot find VARCHAR size for $column_name in $table!" );
+									}
+								}
+						}
+
+						if ( false !== $new_column_type ) {
+							$columns_to_fix++;
+
+							if ( 1 === $columns_to_fix ) {
+								$sql .= "ALTER TABLE `$table` ";
+							} else {
+								$sql .= ', ';
+							}
+
+							if ( 1 === $pass ) {
+								$sql .= "MODIFY `$column_name` $new_column_type";
+							} elseif ( 2 === $pass ) {
+								$sql .= "MODIFY `$column_name` $column_type CHARACTER SET $charset";
+							} elseif ( 3 === $pass ) {
+								$sql .= "MODIFY `$column_name` $column_type CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+							}
+						}
+					} // End Column Loop.
+
+					if ( $columns_to_fix > 0 ) {
+						$sql .= ';' . PHP_EOL;
+					}
+
+					if ( 3 === $pass ) {
+						$sql .= "ALTER TABLE `$table` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" . PHP_EOL;
+					}
+				}
+			} // End Table loop
+
+			$pass++;
+		}
+
+		echo $sql; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**

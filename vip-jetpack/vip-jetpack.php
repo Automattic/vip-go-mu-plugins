@@ -348,3 +348,68 @@ add_filter( 'jetpack_sync_modules', function( $modules ) {
 
 	return $modules;
 } );
+
+/**
+ * Hide promotions/upgrade cards for now except for sites that we want to opt into Instant Search
+ */
+add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
+	if ( defined( 'VIP_JETPACK_ENABLE_INSTANT_SEARCH' ) && true === VIP_JETPACK_ENABLE_INSTANT_SEARCH ) {
+		return $is_enabled;
+	}
+
+	return false;
+} );
+
+/**
+ * Hide Jetpack's just in time promotions
+ */
+add_filter( 'jetpack_just_in_time_msgs', '__return_false' );
+
+/**
+ * Custom CSS tweaks for the Jetpack Admin pages
+ */
+function vip_jetpack_admin_enqueue_scripts() {
+	if ( ! isset( $_GET['page'] ) || 'jetpack' !== $_GET['page'] ) {
+		return;
+	}
+	$admin_css_url  = plugins_url( '/css/admin-settings.css', __FILE__ );
+	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url );
+}
+
+add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
+
+/**
+ * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
+ */
+add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value, $option_name, $default ) {
+	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
+	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
+}, 10, 3 );
+
+/**
+ * SSL is always supported on VIP, so avoid unnecessary checks
+ */
+add_filter( 'pre_transient_jetpack_https_test', function() { return 1; } ); // WP doesn't have __return_one (but it does have __return_zero)
+add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
+
+// And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
+add_filter( 'jetpack_options', function( $value, $name ) {
+	if ( 'fallback_no_verify_ssl_certs' === $name ) {
+		$value = 0;
+	}
+
+	return $value;
+}, 10, 2 );
+
+/**
+ * Dummy Jetpack menu item if no other menu items are rendered
+ */
+function add_jetpack_menu_placeholder(): void {
+	$status = new Automattic\Jetpack\Status();
+	// is_connection_ready only exists in Jetpack 9.6 and newer
+	if ( ! $status->is_offline_mode() && method_exists('Jetpack', 'is_connection_ready') && ! Jetpack::is_connection_ready() ) {
+		add_submenu_page( 'jetpack', 'Connect Jetpack', 'Connect Jetpack', 'manage_options', 'jetpack' );
+	}
+}
+
+add_action( 'admin_menu', 'add_jetpack_menu_placeholder', 999 );

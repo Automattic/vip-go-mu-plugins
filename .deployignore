@@ -12,6 +12,7 @@
 .eslintignore
 .eslintrc
 .eslintrc.js
+.eslintrc.json
 .git
 .gitattributes
 .github
@@ -48,11 +49,14 @@ phpunit-multisite.xml
 README.md
 readme.md
 readme.txt
+renovate.json
+SECURITY.md
 webpack.config.js
 wpcom-helper.php
 yarn.lock
 
 /README-PUBLIC.md
+/akismet/changelog.txt
 /bin/
 /ci/
 /cache/examples/
@@ -62,6 +66,9 @@ yarn.lock
 /cron-control-next/bin/
 /cron-control-next/runner/
 /cron-control-next/tests/
+/drop-ins/object-cache/bin/
+/drop-ins/object-cache/tests/
+/search/docs/
 /search/elasticpress/bin/
 /search/elasticpress/config/
 /search/elasticpress/docs/
@@ -71,6 +78,8 @@ yarn.lock
 /search/elasticpress/CHANGELOG.md
 /search/elasticpress/hookdoc-conf.json
 /search/elasticpress/postcss.config.js
+/search/es-wp-query/bin/
+/search/es-wp-query/tests/
 /jetpack/bin/build-asset-cdn-json.php
 /jetpack/docker/
 /jetpack/docs/
@@ -85,9 +94,22 @@ yarn.lock
 /shared-plugins/two-factor/.ci-env.sh
 /shared-plugins/two-factor/assets/
 /shared-plugins/two-factor/dev-lib/
+/shared-plugins/two-factor/tests/
 /tests/
 /vaultpress/changelog.txt
 /vip-support/.circleci
 /vip-support/bin/
 /vip-support/features/
 /vip-support/tests/
+
+# A few files in Jetpack >9.7 that are giving linting errors due to incompatible PHP versions
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-ctype/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-intl-grapheme/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-intl-normalizer/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-mbstring/bootstrap80.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-php73/Resources/stubs/JsonException.php
+/jetpack*/vendor/automattic/jetpack-password-checker/vendor/sebastian/resource-operations/build/generate.php
+
+# Search Dev Tools
+/search/search-dev-tools/src/
+/search/search-dev-tools/preact.config.js

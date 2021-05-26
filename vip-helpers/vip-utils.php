@@ -56,48 +56,48 @@ function wpcom_vip_themes_root_uri() {
  */
 function wpcom_vip_noncdn_uri( $path ) {
 	// Be gentle on Windows, borrowed from core, see plugin_basename
-	$path = str_replace( '\\','/', $path ); // sanitize for Win32 installs
-	$path = preg_replace( '|/+|','/', $path ); // remove any duplicate slash
+	$path = str_replace( '\\', '/', $path ); // sanitize for Win32 installs
+	$path = preg_replace( '|/+|', '/', $path ); // remove any duplicate slash
 
 	return sprintf( '%s%s', wpcom_vip_themes_root_uri(), str_replace( wpcom_vip_themes_root(), '', $path ) );
 }
 
 /**
- * Returns a link the WordPress.com VIP site wrapped around an image (the VIP logo).
+ * Returns a link the WordPress VIP site wrapped around an image (the WordPress VIP logo).
  *
- * @param int $image Which variant of the VIP logo to use; between 1-6.
+ * @param int $image Which variant of the WordPress VIP logo to use; between 1-6.
  * @return string HTML
  */
 function vip_powered_wpcom_img_html( $image ) {
 	$vip_powered_wpcom_images = array(
 		//image file, width, height
-		1 => array('vip-powered-light-small.png', 187, 26),
-		2 => array('vip-powered-light-normal.png', 209, 56),
-		3 => array('vip-powered-light-long.png', 305, 56),
-		4 => array('vip-powered-dark-small.png', 187, 26),
-		5 => array('vip-powered-dark-normal.png', 209, 56),
-		6 => array('vip-powered-dark-long.png', 305, 56)
-		);
+		1 => array( 'vip-powered-light-small.png', 187, 26 ),
+		2 => array( 'vip-powered-light-normal.png', 209, 56 ),
+		3 => array( 'vip-powered-light-long.png', 305, 56 ),
+		4 => array( 'vip-powered-dark-small.png', 187, 26 ),
+		5 => array( 'vip-powered-dark-normal.png', 209, 56 ),
+		6 => array( 'vip-powered-dark-long.png', 305, 56 ),
+	);
 
-		if ( array_key_exists( $image, $vip_powered_wpcom_images ) )
-			return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[$image][0], __FILE__ ) ) . '" width="' . esc_attr( $vip_powered_wpcom_images[$image][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[$image][2] ) . '" alt="'. esc_attr__( 'Powered by WordPress.com VIP', 'vip-helpers' ) .'" /></a>';
-		else
-			return '';
+	if ( array_key_exists( $image, $vip_powered_wpcom_images ) ) {
+		return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[ $image ][0], __FILE__ ) ) . '" width="' . esc_attr( $vip_powered_wpcom_images[ $image ][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[ $image ][2] ) . '" alt="' . esc_attr__( 'Powered by WordPress VIP', 'vip-helpers' ) . '" /></a>';
+	} else {
+		return '';
+	}
 }
 
 /**
- * Returns the "Powered by WordPress.com VIP" widget's content.
+ * Returns the "Powered by WordPress VIP" widget's content.
  *
- * @link http://vip.wordpress.com/documentation/code-and-theme-review-process/ Code Review
- * @link http://vip.wordpress.com/documentation/powered-by-wordpress-com-vip/ Powered By WordPress.com VIP
- * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the VIP link. Otherwise, just return the link.
+ * @link https://docs.wpvip.com/how-tos/add-powered-by-wordpress-vip-to-your-site/ Powered By WordPress VIP
+ * @param string $display Optional. Either: 1-6 or "text"*. If an integer, wrap an image in the WordPress VIP link. Otherwise, just return the link.
  * @param string $before_text Optional. Text to go in front of the VIP link. Defaults to 'Powered by '.
  * @return string HTML
  */
 function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
-	switch ($display) {
+	switch ( $display ) {
 		case 'text':
-			$output = $before_text . '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom">WordPress.com VIP</a>';
+			$output = $before_text . '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom">WordPress VIP</a>';
 			break;
 		case 1:
 		case 2:
@@ -105,7 +105,7 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
 		case 4:
 		case 5:
 		case 6:
-			$output = vip_powered_wpcom_img_html($display);
+			$output = vip_powered_wpcom_img_html( $display );
 			break;
 		default:
 			$output = '';
@@ -115,16 +115,17 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
 }
 
 /**
- * Returns the URL to the WordPress.com VIP site
+ * Returns the URL to the WordPress VIP site
  *
  * @return string
  */
 function vip_powered_wpcom_url() {
+	$utm_term = $_SERVER['HTTP_HOST'] ?? '';
 	$args = array(
-		'utm_source' => 'vip_powered_wpcom',
-		'utm_medium' => 'web',
+		'utm_source'   => 'vip_powered_wpcom',
+		'utm_medium'   => 'web',
 		'utm_campaign' => 'VIP Footer Credit',
-		'utm_term' => sanitize_text_field( $_SERVER['HTTP_HOST'] ),
+		'utm_term'     => sanitize_text_field( $utm_term ),
 	);
 
 	return add_query_arg( $args, 'https://wpvip.com/' );
@@ -136,22 +137,21 @@ function vip_powered_wpcom_url() {
  * Contrib users still can't publish.
  *
  * @author mdawaffe
- * @link http://vip.wordpress.com/documentation/allow-contributors-to-upload-images/ Allow Contributors to Upload Images
  */
 function vip_contrib_add_upload_cap() {
-	add_action( 'init', '_vip_contrib_add_upload_cap');
+	add_action( 'init', '_vip_contrib_add_upload_cap' );
 	add_action( 'xmlrpc_call', '_vip_contrib_add_upload_cap' ); // User is logged in after 'init' for XMLRPC
 }
 
 /**
  * Helper function for vip_contrib_add_upload_cap() to change the user roles
  *
- * @link http://vip.wordpress.com/documentation/allow-contributors-to-upload-images/ Allow Contributors to Upload Images
  * @see vip_contrib_add_upload_cap()
  */
 function _vip_contrib_add_upload_cap() {
-	if ( ! is_admin() && ! defined( 'XMLRPC_REQUEST' ) )
+	if ( ! is_admin() && ! defined( 'XMLRPC_REQUEST' ) ) {
 		return;
+	}
 
 	wpcom_vip_add_role_caps( 'contributor', array( 'upload_files' ) );
 }
@@ -163,7 +163,7 @@ function _vip_contrib_add_upload_cap() {
  *
  * However, this function can come in handy if you want a specific artibitrary or varying image size.
  *
- * @link http://vip.wordpress.com/documentation/image-resizing-and-cropping/
+ * @link https://docs.wpvip.com/technical-references/vip-go-files-system/image-transformation/
  *
  * @param int $attachment_id ID of the attachment
  * @param int $width Width of our resized image
@@ -194,24 +194,27 @@ function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height, 
  * @param string $via Optional. What the /via should be set to. Empty value disables the feature (the default).
  */
 function wpcom_vip_sharing_twitter_via( $via = '' ) {
-	if( empty( $via ) ) {
+	if ( empty( $via ) ) {
 		$via_callback = '__return_false';
 	} else {
 		// sanitize_key() without changing capitizalization
 		$raw_via = $via;
-		$via = preg_replace( '/[^A-Za-z0-9_\-]/', '', $via );
-		$via = apply_filters( 'sanitize_key', $via, $raw_via );
+		$via     = preg_replace( '/[^A-Za-z0-9_\-]/', '', $via );
+		$via     = apply_filters( 'sanitize_key', $via, $raw_via );
 
-		$via_callback = function() use ( $via ) { return $via; };
+		$via_callback = function() use ( $via ) {
+			return $via;
+		};
 	}
 
 	add_filter( 'jetpack_sharing_twitter_via', $via_callback );
 	add_filter( 'jetpack_open_graph_tags', function( $tags ) use ( $via ) {
 		if ( isset( $tags['twitter:site'] ) ) {
-			if ( empty( $via ) )
+			if ( empty( $via ) ) {
 				unset( $tags['twitter:site'] );
-			else
+			} else {
 				$tags['twitter:site'] = '@' . $via;
+			}
 		}
 		return $tags;
 	}, 99 ); // later so we run after Twitter Cards have run
@@ -238,7 +241,7 @@ function wpcom_vip_disable_sharing() {
 	_wpcom_vip_call_on_hook_or_execute( function() {
 		remove_filter( 'post_flair', 'sharing_display', 20 );
 		remove_filter( 'the_content', 'sharing_display', 19 );
-   		remove_filter( 'the_excerpt', 'sharing_display', 19 );
+		remove_filter( 'the_excerpt', 'sharing_display', 19 );
 
 		wpcom_vip_disable_sharing_resources();
 	}, 'init', 99 );
@@ -333,7 +336,7 @@ function widont( $str = '' ) {
 
 	// Don't join if words exceed a certain length: minimum 10 characters, default 15 characters, filterable via `widont_max_word_length`.
 	$widont_max_word_length = max( 10, absint( apply_filters( 'widont_max_word_length', 15 ) ) );
-	$regex = '#\s+([^\s]{1,' . $widont_max_word_length . '})\s+([^\s]{1,' . $widont_max_word_length . '})$#';
+	$regex                  = '#\s+([^\s]{1,' . $widont_max_word_length . '})\s+([^\s]{1,' . $widont_max_word_length . '})$#';
 
 	return preg_replace( $regex, ' $1&nbsp;$2', $str );
 }
@@ -347,7 +350,7 @@ endif;
 
 if ( ! function_exists( 'wp_endswith' ) ) :
 	function wp_endswith( $haystack, $needle ) {
-		return $needle === substr( $haystack, -strlen( $needle ));
+		return substr( $haystack, -strlen( $needle ) ) === $needle;
 	}
 endif;
 
@@ -364,8 +367,9 @@ endif;
  * @param bool $case_insensitive Optional. Should the redirects be case sensitive? Defaults to false.
  */
 function vip_redirects( $vip_redirects_array = array(), $case_insensitive = false ) {
-	if ( empty( $vip_redirects_array ) )
+	if ( empty( $vip_redirects_array ) ) {
 		return;
+	}
 
 	$redirect_url = '';
 
@@ -376,18 +380,19 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
 
 	if ( $case_insensitive ) {
 		$vip_redirects_array = array_change_key_case( $vip_redirects_array );
-		$uri_unslashed = strtolower( $uri_unslashed );
+		$uri_unslashed       = strtolower( $uri_unslashed );
 	}
 
 	// Get the current URL minus query string
-	$parsed_uri_path = parse_url( $uri_unslashed, PHP_URL_PATH );
-	$parsed_uri_path = $parsed_uri_path ? $parsed_uri_path : '';
+	$parsed_uri_path         = parse_url( $uri_unslashed, PHP_URL_PATH );
+	$parsed_uri_path         = $parsed_uri_path ? $parsed_uri_path : '';
 	$parsed_uri_path_slashed = trailingslashit( $parsed_uri_path );
 
-	if ( $parsed_uri_path && array_key_exists( $parsed_uri_path, $vip_redirects_array ) )
+	if ( $parsed_uri_path && array_key_exists( $parsed_uri_path, $vip_redirects_array ) ) {
 		$redirect_url = $vip_redirects_array[ $parsed_uri_path ];
-	elseif ( $parsed_uri_path_slashed && array_key_exists( $parsed_uri_path_slashed, $vip_redirects_array ) )
+	} elseif ( $parsed_uri_path_slashed && array_key_exists( $parsed_uri_path_slashed, $vip_redirects_array ) ) {
 		$redirect_url = $vip_redirects_array[ $parsed_uri_path_slashed ];
+	}
 
 	if ( $redirect_url ) {
 		wp_redirect( $redirect_url, 301 );
@@ -405,17 +410,21 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
  * @param bool $append_old_uri Optional. If true, the full path past the match will be added to the new URL. Defaults to false.
  */
 function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri = false ) {
-	if ( empty( $vip_redirects_array ) )
+	if ( empty( $vip_redirects_array ) ) {
 		return;
+	}
 
+	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 	// Don't do anything for the homepage
-	if ( '/' == $_SERVER['REQUEST_URI'] )
+	if ( '/' == $request_uri ) {
 		return;
+	}
 
 	foreach ( $vip_redirects_array as $old_path => $new_url ) {
-		if ( substr( $_SERVER['REQUEST_URI'], 0, strlen( $old_path ) ) == $old_path ) {
-			if ( $append_old_uri )
-				$new_url .= str_replace( $old_path, '', $_SERVER['REQUEST_URI'] );
+		if ( substr( $request_uri, 0, strlen( $old_path ) ) == $old_path ) {
+			if ( $append_old_uri ) {
+				$new_url .= str_replace( $old_path, '', $request_uri );
+			}
 			wp_redirect( $new_url, 301 );
 			exit();
 		}
@@ -444,15 +453,17 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
  */
 function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring = false ) {
 
-	if ( empty( $vip_redirects_array ) )
+	if ( empty( $vip_redirects_array ) ) {
 		return;
+	}
 
 	$uri = $_SERVER['REQUEST_URI'];
 
-	if ( ! $with_querystring )
+	if ( ! $with_querystring ) {
 		$uri = parse_url( $uri, PHP_URL_PATH );
+	}
 
-	if( $uri && '/' != $uri ) { // don't process for homepage
+	if ( $uri && '/' != $uri ) { // don't process for homepage
 
 		foreach ( $vip_redirects_array as $old_url => $new_url ) {
 			if ( preg_match( $old_url, $uri, $matches ) ) {
@@ -475,9 +486,9 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
  *
  * The $extra_args are:
  *  * obey_cache_control_header: uses the "cache-control" "max-age" value if greater than $cache_time.
- *  * http_api_args: see http://codex.wordpress.org/Function_API/wp_remote_get
+ *  * http_api_args: see https://developer.wordpress.org/reference/functions/wp_remote_get/
  *
- * @link http://lobby.vip.wordpress.com/best-practices/fetching-remote-data/ Fetching Remote Data
+ * @link https://docs.wpvip.com/technical-references/code-quality-and-best-practices/retrieving-remote-data/ Fetching Remote Data
  * @param string $url URL to fetch
  * @param int $timeout Optional. The timeout limit in seconds; valid values are 1-10. Defaults to 3.
  * @param int $cache_time Optional. The minimum cache time in seconds. Valid values are >= 60. Defaults to 900.
@@ -489,7 +500,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 
 	$extra_args_defaults = array(
 		'obey_cache_control_header' => true, // Uses the "cache-control" "max-age" value if greater than $cache_time
-		'http_api_args' => array(), // See http://codex.wordpress.org/Function_API/wp_remote_get
+		'http_api_args'             => array(), // See http://codex.wordpress.org/Function_API/wp_remote_get
 	);
 
 	$extra_args = wp_parse_args( $extra_args, $extra_args_defaults );
@@ -506,22 +517,27 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 
 	// Let's see if we have an existing cache already
 	// Empty strings are okay, false means no cache
-	if ( false !== $cache = wp_cache_get( $cache_key, $cache_group) )
+	$cache = wp_cache_get( $cache_key, $cache_group );
+	if ( false !== $cache ) {
 		return $cache;
+	}
 
 	// Legacy
-	if ( false !== $cache = wp_cache_get( $old_cache_key, $cache_group) )
+	$cache = wp_cache_get( $old_cache_key, $cache_group );
+	if ( false !== $cache ) {
 		return $cache;
+	}
 
 	// The timeout can be 1 to 10 seconds, we strongly recommend no more than 3 seconds
 	$timeout = min( 10, max( 1, (int) $timeout ) );
 
-	if ( $timeout > 3 )
+	if ( $timeout > 3 ) {
 		_doing_it_wrong( __FUNCTION__, 'Using a timeout value of over 3 seconds is strongly discouraged because users have to wait for the remote request to finish before the rest of their page loads.', null );
+	}
 
 	$server_up = true;
-	$response = false;
-	$content = false;
+	$response  = false;
+	$content   = false;
 
 	// Check to see if previous attempts have failed
 	if ( false !== wp_cache_get( $disable_get_key, $cache_group ) ) {
@@ -533,9 +549,9 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 	}
 	// Otherwise make the remote request
 	else {
-		$http_api_args = (array) $extra_args['http_api_args'];
+		$http_api_args            = (array) $extra_args['http_api_args'];
 		$http_api_args['timeout'] = $timeout;
-		$response = wp_remote_get( $url, $http_api_args );
+		$response                 = wp_remote_get( $url, $http_api_args );
 	}
 
 	// Was the request successful?
@@ -543,8 +559,9 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		$content = wp_remote_retrieve_body( $response );
 
 		$cache_header = wp_remote_retrieve_header( $response, 'cache-control' );
-		if ( is_array( $cache_header ) )
+		if ( is_array( $cache_header ) ) {
 			$cache_header = array_shift( $cache_header );
+		}
 
 		// Obey the cache time header unless an arg is passed saying not to
 		if ( $extra_args['obey_cache_control_header'] && $cache_header ) {
@@ -552,21 +569,24 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 			// When multiple cache-control directives are returned, they are comma separated
 			foreach ( explode( ',', $cache_header ) as $cache_control ) {
 				// In this scenario, only look for the max-age directive
-				if( 'max-age' == substr( trim( $cache_control ), 0, 7 ) )
+				if ( 'max-age' == substr( trim( $cache_control ), 0, 7 ) ) {
 					// Note the array_pad() call prevents 'undefined offset' notices when explode() returns less than 2 results
 					list( $cache_header_type, $cache_header_time ) = array_pad( explode( '=', trim( $cache_control ), 2 ), 2, null );
+				}
 			}
 			// If the max-age directive was found and had a value set that is greater than our cache time
-			if ( isset( $cache_header_type ) && isset( $cache_header_time ) && $cache_header_time > $cache_time )
+			if ( isset( $cache_header_type ) && isset( $cache_header_time ) && $cache_header_time > $cache_time ) {
 				$cache_time = (int) $cache_header_time; // Casting to an int will strip "must-revalidate", etc.
+			}
 		}
 
 		// The cache time shouldn't be less than a minute
 		// Please try and keep this as high as possible though
 		// It'll make your site faster if you do
 		$cache_time = (int) $cache_time;
-		if ( $cache_time < 60 )
+		if ( $cache_time < 60 ) {
 			$cache_time = 60;
+		}
 
 		// Cache the result
 		wp_cache_set( $cache_key, $content, $cache_group, $cache_time );
@@ -626,11 +646,11 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
  * This can be executed before WP init because it checks the URI directly to see if the main feed is being requested.
  *
  * @author lloydbudd
- * @link http://vip.wordpress.com/documentation/redirect-the-feed-to-feedburner/ Redirect the Feed To Feedburner
+ * @link https://wpvip.com/documentation/redirect-the-feed-to-feedburner/ Redirect the Feed To Feedburner
  * @param string $target URL to direct feed services to
  */
 function vip_main_feed_redirect( $target ) {
-	if ( wpcom_vip_is_main_feed_requested() && !wpcom_vip_is_feedservice_ua() ) {
+	if ( wpcom_vip_is_main_feed_requested() && ! wpcom_vip_is_feedservice_ua() ) {
 		wp_redirect( $target, '302' );
 		die;
 	}
@@ -661,10 +681,14 @@ function wpcom_vip_is_feedservice_ua() {
 		// and don't want any requests cached
 		// ASSUMPTION: you've already confirmed is_feed() b/f calling
 		// wpcom_vip_is_feedservice_ua
-			header( "X-Accel-Expires: 0" );
+			header( 'X-Accel-Expires: 0' );
 	}
 
-	return (bool) preg_match("/feedburner|feedvalidator|MediafedMetrics/i", $_SERVER["HTTP_USER_AGENT"]);
+
+	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+	$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+	return (bool) preg_match( '/feedburner|feedvalidator|MediafedMetrics/i', $http_user_agent );
 }
 
 /**
@@ -673,7 +697,7 @@ function wpcom_vip_is_feedservice_ua() {
  * @author lloydbudd
  */
 function vip_crossdomain_redirect() {
-	add_action( 'init', '_vip_crossdomain_redirect');
+	add_action( 'init', '_vip_crossdomain_redirect' );
 }
 
 /**
@@ -703,16 +727,29 @@ function _vip_crossdomain_redirect() {
  * @return array
  */
 function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = false, $category_id = 0 ) {
-	$query = new WP_Query( array( 'posts_per_page' => 100, 'fields' => 'ids', 'post_type' => $post_type, 'no_found_rows' => true, 'post_status' => 'publish', 'ignore_sticky_posts' => true, 'category__in' => $category_id ) );
+	$query = new WP_Query( array(
+		'posts_per_page'      => 100,
+		'fields'              => 'ids',
+		'post_type'           => $post_type,
+		'no_found_rows'       => true,
+		'post_status'         => 'publish',
+		'ignore_sticky_posts' => true,
+		'category__in'        => $category_id,
+	) );
 
 	$post_ids = $query->posts;
 	shuffle( $post_ids );
 	$post_ids = array_splice( $post_ids, 0, $number );
 
-	if ( $return_ids )
+	if ( $return_ids ) {
 		return $post_ids;
+	}
 
-	$random_posts = get_posts( array( 'post__in' => $post_ids, 'numberposts' => count( $post_ids ), 'post_type' => $post_type ) );
+	$random_posts = get_posts( array(
+		'post__in'    => $post_ids,
+		'numberposts' => count( $post_ids ),
+		'post_type'   => $post_type,
+	) );
 
 	return $random_posts;
 }
@@ -722,7 +759,7 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
  *
  * Note that like wp_remote_request(), this function does not cache.
  *
- * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
+ * @link https://docs.wpvip.com/technical-references/code-quality-and-best-practices/retrieving-remote-data/ Fetching Remote Data
  * @param string $url URL to request
  * @param string $fallback_value Optional. Set a fallback value to be returned if the external request fails.
  * @param int $threshold Optional. The number of fails required before subsequent requests automatically return the fallback value. Defaults to 3, with a maximum of 10.
@@ -732,18 +769,18 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
  * @return string|WP_Error|array Array of results. If fail counter is met, returns the $fallback_value, otherwise return WP_Error.
  * @see wp_remote_request()
  */
-function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
+function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
 	global $blog_id;
 
 	$default_args = array( 'method' => 'GET' );
-	$parsed_args = wp_parse_args( $args, $default_args );
+	$parsed_args  = wp_parse_args( $args, $default_args );
 
 	$cache_group = "$blog_id:vip_safe_wp_remote_request";
-	$cache_key = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args[ 'method' ] );
+	$cache_key   = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args['method'] );
 
 	// valid url
-	if ( empty( $url ) || !parse_url( $url ) ) {
-		return ( $fallback_value ) ? $fallback_value : new WP_Error('invalid_url', $url );
+	if ( empty( $url ) || ! parse_url( $url ) ) {
+		return ( $fallback_value ) ? $fallback_value : new WP_Error( 'invalid_url', $url );
 	}
 
 	// Ensure positive values
@@ -751,16 +788,31 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 	$retry     = abs( $retry );
 	$threshold = abs( $threshold );
 
-	// timeouts > 5 seconds are just not reasonable for production usage
-	$timeout = (int) $timeout;
-	if ( $timeout > 5 ) {
-		_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+	// Default max timeout is 5s.
+	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things.
+	$timeout         = (int) $timeout;
+	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
 
-		$timeout = 5;
+	if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+		if ( 30 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
+			$timeout = 30;
+		}
+	} elseif ( \is_admin() && $is_post_request ) {
+		if ( 15 < $timeout ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
+			$timeout = 15;
+		}
+	} else {
+		if ( $timeout > 5 ) {
+			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
+			$timeout = 5;
+		}
 	}
 
 	// retry time < 10 seconds will default to 10 seconds.
-	$retry =  ( (int) $retry < 10 ) ? 10 : (int) $retry;
+	$retry = ( (int) $retry < 10 ) ? 10 : (int) $retry;
 	// more than 10 faulty hits seem to be to much
 	$threshold = ( (int) $threshold > 10 ) ? 10 : (int) $threshold;
 
@@ -773,29 +825,40 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
 				trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} has been throttled after {$option['hits']} attempts. Not reattempting until after $retry seconds", E_USER_WARNING );
 			}
 
-			return ( $fallback_value ) ? $fallback_value : new WP_Error('remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
+			return ( $fallback_value ) ? $fallback_value : new WP_Error( 'remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
 		}
 	}
 
-	$start = microtime( true );
+	$start    = microtime( true );
 	$response = wp_remote_request( $url, array_merge( $parsed_args, array( 'timeout' => $timeout ) ) );
-	$end = microtime( true );
+	$end      = microtime( true );
 
 	$elapsed = ( $end - $start ) > $timeout;
 	if ( true === $elapsed ) {
 		if ( false !== $option && $option['hits'] < $threshold ) {
-			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $option['hits']+1 ), $cache_group, $retry );
-		} else if ( false !== $option && $option['hits'] == $threshold ) {
-			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => $threshold ), $cache_group, $retry );
+			wp_cache_set( $cache_key, array(
+				'time' => floor( $end ),
+				'hits' => $option['hits'] + 1,
+			), $cache_group, $retry );
+		} elseif ( false !== $option && $option['hits'] == $threshold ) {
+			wp_cache_set( $cache_key, array(
+				'time' => floor( $end ),
+				'hits' => $threshold,
+			), $cache_group, $retry );
 		} else {
-			wp_cache_set( $cache_key, array( 'time' => floor( $end ), 'hits' => 1 ), $cache_group, $retry );
+			wp_cache_set( $cache_key, array(
+				'time' => floor( $end ),
+				'hits' => 1,
+			), $cache_group, $retry );
 		}
-	}
-	else {
+	} else {
 		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
-			wp_cache_set( $cache_key, array( 'time' => $option['time'], 'hits' => $option['hits']-1 ), $cache_group, $retry );
+			wp_cache_set( $cache_key, array(
+				'time' => $option['time'],
+				'hits' => $option['hits'] - 1,
+			), $cache_group, $retry );
 		} else {
-			wp_cache_delete( $cache_key, $cache_group);
+			wp_cache_delete( $cache_key, $cache_group );
 		}
 	}
 
@@ -816,14 +879,14 @@ function vip_safe_wp_remote_request( $url, $fallback_value='', $threshold=3, $ti
  *
  * Note that like wp_remote_get(), this function does not cache.
  *
- * @link http://vip.wordpress.com/documentation/fetching-remote-data/ Fetching Remote Data
+ * @link https://docs.wpvip.com/technical-references/code-quality-and-best-practices/retrieving-remote-data/ Fetching Remote Data
  * @see vip_safe_wp_remote_request()
  * @see wp_remote_get()
  */
-function vip_safe_wp_remote_get( $url, $fallback_value='', $threshold=3, $timeout=1, $retry=20, $args = array() ) {
+function vip_safe_wp_remote_get( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
 	// Same defaults as WP_HTTP::get() https://developer.wordpress.org/reference/classes/wp_http/get/
 	$default_args = array( 'method' => 'GET' );
-	$parsed_args = wp_parse_args( $args, $default_args );
+	$parsed_args  = wp_parse_args( $args, $default_args );
 
 	return vip_safe_wp_remote_request( $url, $fallback_value, $threshold, $timeout, $retry, $parsed_args );
 }
@@ -838,23 +901,25 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 
 	if ( is_numeric( $email_or_id ) ) {
 		$user = get_user_by( 'id', $email_or_id );
-		if ( ! $user )
+		if ( ! $user ) {
 			return false;
+		}
 
 		$email = $user->user_email;
 	} elseif ( is_email( $email_or_id ) ) {
 		$email = $email_or_id;
 	} else {
 		$user_login = sanitize_user( $email_or_id, true );
-		$user = get_user_by( 'login', $user_login );
-		if ( ! $user )
+		$user       = get_user_by( 'login', $user_login );
+		if ( ! $user ) {
 			return;
+		}
 
 		$email = $user->user_email;
 	}
 
 	$hashed_email = md5( strtolower( trim( $email ) ) );
-	$profile_url = esc_url_raw( sprintf( 'https://en.gravatar.com/%s.php', $hashed_email ), array( 'http', 'https' ) );
+	$profile_url  = esc_url_raw( sprintf( 'https://en.gravatar.com/%s.php', $hashed_email ), array( 'http', 'https' ) );
 
 	$profile = wpcom_vip_file_get_contents( $profile_url, 1, 900 );
 	if ( $profile ) {
@@ -906,18 +971,20 @@ function wpcom_vip_email_has_gravatar( $email ) {
 function wpcom_vip_is_valid_domain( $url, $whitelisted_domains ) {
 	$domain = parse_url( $url, PHP_URL_HOST );
 
-	if ( ! $domain )
+	if ( ! $domain ) {
 		return false;
+	}
 
 	// Check if we match the domain exactly
-	if ( in_array( $domain, $whitelisted_domains ) )
+	if ( in_array( $domain, $whitelisted_domains ) ) {
 		return true;
+	}
 
 	$valid = false;
 
-	foreach( $whitelisted_domains as $whitelisted_domain ) {
+	foreach ( $whitelisted_domains as $whitelisted_domain ) {
 		$whitelisted_domain = '.' . $whitelisted_domain; // Prevent things like 'evilsitetime.com'
-		if( strpos( $domain, $whitelisted_domain ) === ( strlen( $domain ) - strlen( $whitelisted_domain ) ) ) {
+		if ( strpos( $domain, $whitelisted_domain ) === ( strlen( $domain ) - strlen( $whitelisted_domain ) ) ) {
 			$valid = true;
 			break;
 		}
@@ -931,7 +998,9 @@ function wpcom_vip_is_valid_domain( $url, $whitelisted_domains ) {
  * @param array $users Array of user logins
  */
 function wpcom_vip_bulk_user_management_whitelist( $users ) {
-	add_filter( 'bulk_user_management_admin_users', function() use ( $users ) { return $users; } );
+	add_filter( 'bulk_user_management_admin_users', function() use ( $users ) {
+		return $users;
+	} );
 }
 
 /**
@@ -997,7 +1066,7 @@ function _wpcom_vip_load_plugin_sanitizer( $folder ) {
  */
 function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_candidate_not_used = null ) {
 	// Make sure there's a plugin to load
-	if ( empty($plugin) ) {
+	if ( empty( $plugin ) ) {
 		if ( ! WPCOM_IS_VIP_ENV ) {
 			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
 		}
@@ -1019,9 +1088,14 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		_doing_it_wrong( __FUNCTION__, 'The specified $folder should not be "plugins", which is the default location', '2.0.0' );
 	}
 
+	// Plugins should be loaded before the `plugins_loaded` hook.
+	// Ideally, in client-mu-plugins or via wp-admin > Plugins.
+	if ( did_action( 'plugins_loaded' ) ) {
+		_doing_it_wrong( __FUNCTION__, sprintf( '`wpcom_vip_load_plugin( %s, %s )` was called after the `plugins_loaded` hook. For best results, we recommend loading your plugins earlier from `client-mu-plugins`.', esc_html( $plugin ), esc_html( $folder ) ), null );
+	}
+
 	// Shared plugins are being deprecated.
 	// This can be removed once shared plugins have all been removed.
-	// https://vip.wordpress.com/documentation/vip-go/deprecating-shared-plugins-on-vip-go/
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
 		define( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS', true );
 	}
@@ -1060,7 +1134,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	// non-standard plugin structures, such as $folder/plugin.php
 	$test_files = array(
 		"{$plugin}.php",
-		'plugin.php'
+		'plugin.php',
 	);
 
 	// Is $plugin a filepath? If so, that's the only file we should test
@@ -1116,7 +1190,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 			}
 		}
 	}
-	
+
 	if ( $includepath && file_exists( $includepath ) ) {
 		wpcom_vip_add_loaded_plugin( "{$plugin_type}/{$plugin}/{$file}" );
 
@@ -1199,8 +1273,9 @@ function wpcom_vip_should_load_plugins() {
 function wpcom_vip_add_loaded_plugin( $plugin ) {
 	global $vip_loaded_plugins;
 
-	if ( ! isset( $vip_loaded_plugins ) )
+	if ( ! isset( $vip_loaded_plugins ) ) {
 		$vip_loaded_plugins = array();
+	}
 
 	array_push( $vip_loaded_plugins, $plugin );
 }
@@ -1213,8 +1288,9 @@ function wpcom_vip_add_loaded_plugin( $plugin ) {
 function wpcom_vip_get_loaded_plugins() {
 	global $vip_loaded_plugins;
 
-	if ( ! isset( $vip_loaded_plugins ) )
+	if ( ! isset( $vip_loaded_plugins ) ) {
 		$vip_loaded_plugins = array();
+	}
 
 	return $vip_loaded_plugins;
 }
@@ -1280,27 +1356,33 @@ function _wpcom_vip_include_plugin( $file ) {
 	// Start by marking down the currently defined variables (so we can exclude them later)
 	$pre_include_variables = get_defined_vars();
 
+	// Support symlinks
+	wp_register_plugin_realpath( $file );
+
 	// Now include
-	include_once( $file );
+	include_once $file;
 
 	// Check for a helper file, and include if present
 	$helper_file = dirname( $file ) . '/vipgo-helper.php';
 	if ( file_exists( $helper_file ) ) {
-		include_once( $helper_file );
+		include_once $helper_file;
 	}
 
 	// Blacklist out some variables
-	$blacklist = array( 'blacklist' => 0, 'pre_include_variables' => 0, 'new_variables' => 0, 'helper_file' => 0 );
+	$blacklist = array(
+		'blacklist'             => 0,
+		'pre_include_variables' => 0,
+		'new_variables'         => 0,
+		'helper_file'           => 0,
+	);
 
 	// Let's find out what's new by comparing the current variables to the previous ones
 	$new_variables = array_diff_key( get_defined_vars(), $GLOBALS, $blacklist, $pre_include_variables );
 
 	// global each new variable
-	foreach ( $new_variables as $new_variable => $devnull )
-		global $$new_variable;
-
-	// Set the values again on those new globals
-	extract( $new_variables );
+	foreach ( $new_variables as $new_variable => $value ) {
+		$GLOBALS[ $new_variable ] = $value;
+	}
 
 	return true;
 }
@@ -1356,7 +1438,7 @@ function is_automattician( $user_id = false ) {
  * @return bool True, if the current request is made via the Automattic proxy
  */
 function is_proxied_automattician() {
-	return A8C_PROXIED_REQUEST && is_automattician();
+	return is_proxied_request() && is_automattician();
 }
 
 /**
@@ -1370,10 +1452,10 @@ function is_proxied_request() {
 
 /**
  * Is the current request being made from Jetpack servers?
- * 
+ *
  * NOTE - This checks the REMOTE_ADDR against known JP IPs. The IP can still be spoofed,
  * (but usually an attacker cannot receive the response), so it is important to treat it accordingly
- * 
+ *
  * @return bool Bool indicating if the current request came from JP servers
  */
 function vip_is_jetpack_request() {
@@ -1382,26 +1464,34 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
-	// Simple UA check to filter out most
-	if ( false === stripos( $_SERVER[ 'HTTP_USER_AGENT' ], 'jetpack' ) ) {
+	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+	$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+	// Simple UA check to filter out most.
+	if ( false === stripos( $http_user_agent, 'jetpack' ) ) {
 		return false;
 	}
 
-	require_once( __DIR__ . '/../lib/proxy/ip-utils.php' );
+	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
 	// If has a valid-looking UA, check the remote IP
 	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
+	// Or https://jetpack.com/ips-v4.json
 	$jetpack_ips = array(
-		'122.248.245.244',
-		'54.217.201.243',
-		'54.232.116.4',
+		'122.248.245.244/32',
+		'54.217.201.243/32',
+		'54.232.116.4/32',
 		'192.0.80.0/20',
 		'192.0.96.0/20',
 		'192.0.112.0/20',
 		'195.234.108.0/22',
+		'192.0.96.202/32',
+		'192.0.98.138/32',
+		'192.0.102.71/32',
+		'192.0.102.95/32',
 	);
 
-	return Automattic\VIP\Proxy\IpUtils::checkIp( $_SERVER[ 'REMOTE_ADDR' ], $jetpack_ips );
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	return Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
 /**
@@ -1418,10 +1508,10 @@ function vip_is_jetpack_request() {
  *
  * Example Usage
  *
- * wpcom_vip_irc( '@testuser', 'test message' );				// send testuser a pm on IRC from "a8c"
- * wpcom_vip_irc( '@testuser', 'test message', 3 );	// send testuser a pm on IRC with level 'critical'
- * wpcom_vip_irc( 'testing', 'test message' );					// have "a8c" join #testing and say something
- * wpcom_vip_irc( 'testing', 'test message', 4 );		// have "a8c-test" join #testing and say something with level 'recovery'
+ * wpcom_vip_irc( '@testuser', 'test message' );                // send testuser a pm on IRC from "a8c"
+ * wpcom_vip_irc( '@testuser', 'test message', 3 ); // send testuser a pm on IRC with level 'critical'
+ * wpcom_vip_irc( 'testing', 'test message' );                  // have "a8c" join #testing and say something
+ * wpcom_vip_irc( 'testing', 'test message', 4 );       // have "a8c-test" join #testing and say something with level 'recovery'
  *
  * @param $target (string) Channel or Username.  Usernames prefixed with an @, channel optionally prefixed by #.
  * @param $message (string) Message
@@ -1459,7 +1549,8 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 	}
 
 	if ( is_array( $message ) || is_object( $message ) ) {
-		error_log( "Invalid \$message: wpcom_vip_irc( '$channel_or_user', " . print_r( $message, true ) . " );" );
+		//phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( "Invalid \$message: wpcom_vip_irc( '$channel_or_user', " . print_r( $message, true ) . ' );' );
 
 		return false;
 	}
@@ -1482,7 +1573,7 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 
 	$response = wp_remote_post( $url, array(
 		'timeout' => 0.1,
-		'body' => json_encode( $body ),
+		'body'    => json_encode( $body ),
 	) );
 
 	if ( is_wp_error( $response ) ) {

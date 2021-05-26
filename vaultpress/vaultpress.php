@@ -3,7 +3,7 @@
  * Plugin Name: VaultPress
  * Plugin URI: http://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>. Activate, enter your registration key, and never worry again. <a href="http://vaultpress.com/help/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">Need some help?</a>
- * Version: 2.1.1
+ * Version: 2.1.4
  * Author: Automattic
  * Author URI: http://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || die();
 
 define( 'VAULTPRESS__MINIMUM_PHP_VERSION', '5.6' );
-define( 'VAULTPRESS__VERSION', '2.1' );
+define( 'VAULTPRESS__VERSION', '2.1.4' );
 define( 'VAULTPRESS__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
@@ -2896,9 +2896,14 @@ JS;
 
 		// Usermeta
 		if ( $this->is_main_site() ) {
+			// Keeping these action hooks for backward compatibility
 			add_action( 'added_usermeta',  array( $this, 'usermeta_action_handler' ), 10, 4 );
 			add_action( 'update_usermeta', array( $this, 'usermeta_action_handler' ), 10, 4 );
 			add_action( 'delete_usermeta', array( $this, 'usermeta_action_handler' ), 10, 4 );
+
+			add_action( 'added_user_meta',  array( $this, 'usermeta_action_handler' ), 10, 4 );
+			add_action( 'update_user_meta', array( $this, 'usermeta_action_handler' ), 10, 4 );
+			add_action( 'delete_user_meta', array( $this, 'usermeta_action_handler' ), 10, 4 );
 		}
 
 		// Posts
@@ -2993,12 +2998,12 @@ JS;
 		if ( ! class_exists( 'Jetpack' ) ) {
 			return false;
 		}
-		
+
 		// For version of Jetpack prior to 7.7.
-		if ( ! class_exists( 'Jetpack_IXR_Client' ) ) {
+		if ( defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '7.7', '<' ) && ! class_exists( 'Jetpack_IXR_Client' ) ) {
 			Jetpack::load_xml_rpc_client();
 		}
-		
+
 		$xml = new Jetpack_IXR_Client( array( 'user_id' => get_current_user_id() ) );
 		$xml->query( 'wpcom.getUserEmail' );
 		if ( ! $xml->isError() ) {
@@ -3012,9 +3017,9 @@ JS;
 		if ( ! class_exists( 'Jetpack' ) ) {
 			return false;
 		}
-		
+
 		// For version of Jetpack prior to 7.7.
-		if ( ! class_exists( 'Jetpack_IXR_Client' ) ) {
+		if ( defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '7.7', '<' ) && ! class_exists( 'Jetpack_IXR_Client' ) ) {
 			Jetpack::load_xml_rpc_client();
 		}
 

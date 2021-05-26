@@ -43,15 +43,15 @@ return array(
 		'path'    => $vendorDir . '/automattic/jetpack-standards/PostInstall.php'
 	),
 	'Automattic\\Jetpack\\Autoloader\\AutoloadGenerator' => array(
-		'version' => '1.3.7.0',
+		'version' => '1.7.0.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/AutoloadGenerator.php'
 	),
 	'Automattic\\Jetpack\\Autoloader\\CustomAutoloaderPlugin' => array(
-		'version' => '1.3.7.0',
+		'version' => '1.7.0.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/CustomAutoloaderPlugin.php'
 	),
 	'Automattic\\Jetpack\\Assets\\Logo' => array(
-		'version' => '1.1.4.0',
+		'version' => '1.2.0.0',
 		'path'    => $vendorDir . '/automattic/jetpack-logo/src/class-logo.php'
 	),
 );

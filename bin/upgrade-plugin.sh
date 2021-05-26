@@ -27,7 +27,7 @@ update_wporg_plugin() {
 }
 
 case $PLUGIN_SLUG in
-	vaultpress | akismet)
+	vaultpress | akismet | debug-bar | query-monitor)
 		update_wporg_plugin
 		;;
 	

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title><% preact.title %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+    <% preact.headEnd %>
+</head>
+
+<body style="background-color: var(--vip-grey-80);">
+    <script>
+        var VIPSearchDevTools = {
+            "status": "enabled",
+            "queries": [{
+                "time_start": 1617157236.039657,
+                "time_finish": 1617157236.088007,
+                "args": {
+                    "body": {
+                        "query": {
+                            "bool": {
+                                "must": {
+                                    "multi_match": {
+                                        "query": "hello",
+                                        "fields": [
+                                            "post_title^3",
+                                            "post_content"
+                                        ],
+                                        "operator": "and",
+                                        "type": "cross_fields"
+                                    }
+                                },
+                                "filter": [{
+                                        "terms": {
+                                            "post_type.raw": [
+                                                "post",
+                                                "page",
+                                                "attachment"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "bool": {
+                                            "should": [{
+                                                    "bool": {
+                                                        "filter": [{
+                                                                "term": {
+                                                                    "post_author.id": 1
+                                                                }
+                                                            },
+                                                            {
+                                                                "term": {
+                                                                    "post_status": "private"
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "terms": {
+                                                        "post_status": [
+                                                            "publish"
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "sort": [
+                            "_score",
+                            {
+                                "post_date": "desc"
+                            }
+                        ],
+                        "_source": [
+                            "post_id"
+                        ],
+                        "from": 0,
+                        "size": 10,
+                        "track_total_hits": true
+                    },
+                    "method": "POST",
+                    "headers": {
+                        "Content-Type": "application\/json"
+                    }
+                },
+                "blocking": true,
+                "failed_hosts": [],
+                "request": {
+                    "headers": {},
+                    "body": {
+                        "took": 1,
+                        "timed_out": false,
+                        "_shards": {
+                            "total": 1,
+                            "successful": 1,
+                            "skipped": 0,
+                            "failed": 0
+                        },
+                        "hits": {
+                            "total": {
+                                "value": 0,
+                                "relation": "eq"
+                            },
+                            "max_score": null,
+                            "hits": []
+                        }
+                    },
+                    "response": {
+                        "code": 200,
+                        "message": "OK"
+                    },
+                    "cookies": [],
+                    "filename": null,
+                    "http_response": {
+                        "data": null,
+                        "headers": null,
+                        "status": null
+                    }
+                },
+                "host": "http:\/\/vip-search:9200",
+                "query_args": [],
+                "url": "http:\/\/vip-search:9200\/vip-200508-post-1\/_search",
+                "backtrace": [
+                    "ElasticPress\\Elasticsearch->remote_request",
+                    "ElasticPress\\Elasticsearch->query",
+                    "ElasticPress\\Indexable->query_es",
+                    "Automattic\\VIP\\Search\\Search->query_es",
+                    "ES_WP_Query->query_es",
+                    "ES_WP_Query_Wrapper->get_posts",
+                    "WP_Query->query",
+                    "WP_Query->__construct",
+                    "es_wp_query_shoehorn",
+                    "WP_Hook->apply_filters",
+                    "WP_Hook->do_action",
+                    "do_action_ref_array('pre_get_posts')",
+                    "WP_Query->get_posts",
+                    "WP_Query->query",
+                    "WP_Query->__construct",
+                    "{closure}",
+                    "WP_Hook->apply_filters",
+                    "WP_Hook->do_action",
+                    "do_action('init')",
+                    "require_once('wp-settings.php')",
+                    "require_once('wp-config.php')",
+                    "require_once('wp-load.php')",
+                    "require('wp-blog-header.php')"
+                ]
+            }],
+            "information": [{
+                    "label": "Rate limited?",
+                    "value": "no",
+                    "options": {
+                        "collapsible": false
+                    }
+                },
+                {
+                    "label": "Indexable post types",
+                    "value": [
+                        "post",
+                        "page",
+                        "test",
+                        "cpt",
+                        "what",
+                        "another",
+                        "one-more"
+                    ],
+                    "options": {
+                        "collapsible": true
+                    }
+                },
+                {
+                    "label": "Indexable post status",
+                    "value": [
+                        "publish"
+                    ],
+                    "options": {
+                        "collapsible": true
+                    }
+                },
+                {
+                    "label": "Meta Key Allow List",
+                    "value": [
+                        "x-custom-key"
+                    ],
+                    "options": {
+                        "collapsible": true
+                    }
+                }
+            ],
+            "nonce": "5ba91ee23f",
+            "ajaxurl": "https:\/\/vip-go-dev.lndo.site\/index.php?rest_route=\/vip\/v1\/search\/dev-tools",
+            "__webpack_public_path__": "http:\/\/vip-go-dev.lndo.site\/wp-content\/mu-plugins\/search\/search-dev-tools\/build"
+        };
+    </script>
+    <div data-widget-host="vip-search-dev-tools"></div>
+    <div id="search-dev-tools-portal"></div>
+    <% preact.bodyEnd %>
+</body>
+
+</html>

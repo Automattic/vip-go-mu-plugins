@@ -160,4 +160,32 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_modules, $actual_modules );
 	}
+
+	public function test__jetpack_https_test__transient_filter() {
+		$https_test = apply_filters( 'pre_transient_jetpack_https_test', null );
+		$https_test_message = apply_filters( 'pre_transient_jetpack_https_test_message', null );
+
+		$this->assertEquals( 1, $https_test, 'Value of the jetpack_https_test pre-transient filter is incorrect' );
+		$this->assertEquals( '', $https_test_message, 'Value of the jetpack_https_test_message pre-transient filter is incorrect' );
+	}
+
+	public function test__jetpack_options_fallback_no_verify_ssl_certs__filter() {
+		if ( ! class_exists( 'Jetpack' ) ) {
+			return;
+		}
+
+		// Make sure it doesn't already exist as 0
+		\Jetpack_Options::delete_option( 'fallback_no_verify_ssl_certs' );
+
+		$value = \Jetpack_Options::get_option( 'fallback_no_verify_ssl_certs' );
+
+		$this->assertEquals( 0, $value, 'The fallback_no_verify_ssl_certs Jetpack option value is incorrect' );
+
+		// And other options should be unchanged
+		$other_value = \Jetpack_Options::get_option( 'site_icon_id' );
+
+		$other_value_direct = get_option( 'jetpack_site_icon_id' );
+
+		$this->assertEquals( $other_value, $other_value_direct, 'Unexpected value for unfiltered Jetpack option' );
+	}
 }

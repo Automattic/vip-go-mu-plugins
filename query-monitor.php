@@ -1,20 +1,19 @@
 <?php
-
 /**
  * Query Monitor plugin for WordPress
  *
  * @package   query-monitor
  * @link      https://github.com/johnbillion/query-monitor
  * @author    John Blackbourn <john@johnblackbourn.com>
- * @copyright 2009-2018 John Blackbourn
+ * @copyright 2009-2021 John Blackbourn
  * @license   GPL v2 or later
  *
  * Plugin Name:  Query Monitor
- * Description:  The Developer Tools panel for WordPress.
- * Version:      3.1.1
- * Plugin URI:   https://github.com/johnbillion/query-monitor
- * Author:       John Blackbourn & contributors
- * Author URI:   https://github.com/johnbillion/query-monitor/graphs/contributors
+ * Description:  The Developer Tools Panel for WordPress.
+ * Version:      3.7.1
+ * Plugin URI:   https://querymonitor.com/
+ * Author:       John Blackbourn
+ * Author URI:   https://querymonitor.com/
  * Text Domain:  query-monitor
  * Domain Path:  /languages/
  * Requires PHP: 5.3.6
@@ -138,3 +137,27 @@ function wpcom_vip_qm_disable_on_404() {
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
 
+
+// We are putting dispatchers as last so that QM still can catch other operations in shutdown action
+// See https://github.com/johnbillion/query-monitor/pull/549
+function change_dispatchers_shutdown_priority( array $dispatchers ) {
+	if ( is_array( $dispatchers ) ) {
+		if ( isset( $dispatchers['html'] ) ) {
+			$html_dispatcher = $dispatchers['html'];
+			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
+		}
+		if ( isset( $dispatchers['ajax'] ) ) {
+			$ajax_dispatcher = $dispatchers['ajax'];
+			remove_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), 0 );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
+		}
+	}
+
+	return $dispatchers;
+}
+add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
