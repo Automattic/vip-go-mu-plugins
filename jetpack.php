@@ -135,8 +135,8 @@ function vip_jetpack_load() {
 	if ( version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
 		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
+
+	require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );
 }
 
 vip_jetpack_load();
-
-require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );

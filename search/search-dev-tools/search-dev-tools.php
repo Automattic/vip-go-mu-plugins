@@ -16,11 +16,7 @@ namespace Automattic\VIP\Search\Dev_Tools;
 
 use Automattic\VIP\Search\Search;
 
-if ( ! ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && VIP_ENABLE_VIP_SEARCH ) ) {
-	return;
-}
-
-define( 'SEARCH_DEV_TOOLS_CAP', 'edit_others_posts' );
+define( 'SEARCH_DEV_TOOLS_CAP', 'manage_options' );
 
 add_action( 'rest_api_init', __NAMESPACE__ . '\register_rest_routes' );
 add_action( 'admin_bar_menu', __NAMESPACE__ . '\admin_bar_node', PHP_INT_MAX );
@@ -99,15 +95,6 @@ function should_enable_search_dev_tools(): bool {
 }
 
 /**
- * Check whether the site is currently rate-limited
- *
- * @return boolean
- */
-function is_ratelimited(): bool {
-	return wp_cache_get( Search::QUERY_COUNT_CACHE_KEY, Search::QUERY_COUNT_CACHE_GROUP ) > Search::$max_query_count;
-}
-
-/**
  * Add our scripts and styles.
  *
  * @return void
@@ -158,13 +145,20 @@ function print_data() {
 		$queries
 	);
 
+	$limit_count = sprintf(
+		'%s (%d of %d limit)',
+		Search::is_rate_limited() ? 'yes' : 'no',
+		Search::get_query_count(),
+		Search::$max_query_count
+	);
+
 	$data = [
 		'status'                  => 'enabled',
 		'queries'                 => $mapped_queries,
 		'information'             => [
 			[
 				'label'   => 'Rate limited?',
-				'value'   => is_ratelimited() ? 'yes' : 'no',
+				'value'   => $limit_count,
 				'options' => [
 					'collapsible' => false,
 				],
@@ -185,7 +179,7 @@ function print_data() {
 			],
 			[
 				'label'   => 'Meta Key Allow List',
-				'value'   => array_values( Search::instance()->get_post_meta_allow_list( null ) ),
+				'value'   => get_meta_for_all_indexable_post_types(),
 				'options' => [
 					'collapsible' => true,
 				],
@@ -267,4 +261,24 @@ function sanitize_query_response( object $response_body ): object {
 	}
 
 	return $response_body;
+}
+
+/**
+ * Safer way to get the correct meta keys for all post types.
+ * This way of calling the filter should avoid potential TypeError fatals,
+ * in case one of the filter type hints the $post to be a WP_Post instance.
+ *
+ * @return array meta keys in the allow list
+ */
+function get_meta_for_all_indexable_post_types(): array {
+	$ret = [];
+	$post_types = \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types();
+
+	foreach ( $post_types as $post_type ) {
+		$fake_post = new \WP_Post( (object) [ 'post_type' => $post_type ] );
+		$ret[] = Search::instance()->get_post_meta_allow_list( $fake_post );
+	}
+
+	// Flatten and return unique values.
+	return array_values( array_unique( array_merge( [], ...$ret ) ) );
 }
