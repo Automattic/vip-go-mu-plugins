@@ -2,14 +2,13 @@ workflows:
   version: 2
   main:
     jobs:
-      - php73-lint
-      - php73-core-tests
-      - php73-core-multisite-tests
-      - php73-build-multisite
-      - php73-build-singlesite
+      - php74-core-tests
+      - php74-core-multisite-tests
       - php74-lint
       - php74-build-multisite
+      - php74-build-multisite-no-jetpack
       - php74-build-singlesite
+      - php74-build-singlesite-no-jetpack
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
   changelog:
@@ -87,6 +86,9 @@ job-references:
             docker-php-ext-install pcov
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            if [[ "$DISABLE_JETPACK" == "1" ]]; then
+              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+            fi
             vendor/bin/phpunit --version
             php -d pcov.enabled=1 vendor/bin/phpunit --coverage-text
 
@@ -132,47 +134,24 @@ job-references:
           command: npm run lint
 
 jobs:
-  php73-lint:
-    <<: *lint_job
-    docker:
-      - image: circleci/php:7.3-node
-
-  php73-core-tests:
+  php74-core-tests:
     <<: *php_core_job
     environment:
       - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.3-fpm
+      - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
 
-  php73-core-multisite-tests:
+  php74-core-multisite-tests:
     <<: *php_core_job
     environment:
       - INCLUDE_MU_TESTS: "1"
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.3-fpm
-      - image: *db_image
-
-  php73-build-multisite:
-    <<: *php_job
-    environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
-    docker:
-      - image: circleci/php:7.3-node
-      - image: *db_image
-
-  php73-build-singlesite:
-    <<: *php_job
-    environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-    docker:
-      - image: circleci/php:7.3-node
+      - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
 
   php74-lint:
@@ -189,11 +168,31 @@ jobs:
       - image: circleci/php:7.4-node
       - image: *db_image
 
+  php74-build-multisite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
   php74-build-singlesite:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-no-jetpack:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - DISABLE_JETPACK: "1"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image

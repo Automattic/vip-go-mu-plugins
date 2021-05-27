@@ -48,9 +48,11 @@ function run_after_data_migration_cleanup() {
 
 	wp_cache_flush();
 
-	connect_jetpack();
-	connect_vaultpress();
-	connect_akismet();
+	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
+		connect_jetpack();
+		connect_vaultpress();
+		connect_akismet();
+	}
 }
 
 function delete_db_transients() {

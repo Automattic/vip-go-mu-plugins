@@ -550,14 +550,27 @@ class API_Client_Test extends \WP_UnitTestCase {
 				[
 					'response' => [
 						'code' => 406,
-					]
+					],
 				],
-				new WP_Error('invalid-file-type',
-					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'),
+				new WP_Error(
+					'invalid-file-type',
+					'Failed to generate new unique file name `/wp-content/uploads/file.jpg` (response code: 406)'
+				),
 			],
 			'WP_Error' => [
 				new WP_Error( 'oh-no', 'Oh no!' ),
 				new WP_Error( 'oh-no', 'Oh no!' ),
+			],
+			'file-service-readonly' => [
+				[
+					'response' => [
+						'code' => 503,
+					],
+				],
+				new WP_Error(
+					'file-service-readonly',
+					__( 'Uploads are temporarily disabled due to Files service maintenance. Please try again later.' )
+				),
 			],
 		];
 	}

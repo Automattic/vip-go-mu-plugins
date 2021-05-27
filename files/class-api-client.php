@@ -98,8 +98,6 @@ class API_Client {
 		return $response;
 	}
 
-	// TODO: implement get_unique_filename()
-
 	public function upload_file( $local_path, $upload_path ) {
 		if ( ! file_exists( $local_path ) ) {
 			/* translators: 1: local file path 2: remote upload path */
@@ -301,6 +299,14 @@ class API_Client {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
+
+		if ( 503 === $response_code ) {
+			return new WP_Error(
+				'file-service-readonly',
+				__( 'Uploads are temporarily disabled due to Files service maintenance. Please try again later.' )
+			);
+		}
+
 		if ( 200 !== $response_code ) {
 			return new WP_Error( 'invalid-file-type',
 				sprintf( __( 'Failed to generate new unique file name `%1$s` (response code: %2$d)' ), $file_path, $response_code )

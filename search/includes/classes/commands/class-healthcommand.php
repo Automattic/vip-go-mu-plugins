@@ -204,7 +204,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			$identification = sprintf( 'entity: %s, type: %s, index_version: %d', $result['entity'], $result['type'], $result['index_version'] );
 
 			if ( $result['skipped'] ) {
-				$message = sprintf( '%s skipping, because there are no documents in ES when counting %s', self::INFO_ICON, $identification );
+				$reason_message = 'index-not-found' === $result['reason'] ? 'index was not found in ES' : 'there are no documents in ES';
+				$message = sprintf( '%s skipping, because %s when counting %s', self::INFO_ICON, $reason_message, $identification );
 			} else {
 				$message = ' inconsistencies found';
 				if ( $result['diff'] ) {
@@ -256,11 +257,14 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * default: csv
 	 * ---
 	 *
-	 * [--do-not-heal]
+	 * [--do_not_heal]
 	 * : Optional Don't try to correct inconsistencies
 	 *
 	 * [--silent]
 	 * : Optional silences all non-error output except for the final results
+	 *
+	 * [--force_parallel_execution]
+	 * : Optional Force execution even if the process is already ongoing
 	 *
 	 * ## EXAMPLES
 	 *     wp vip-search health validate-contents
@@ -268,15 +272,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-contents
 	 */
 	public function validate_contents( $args, $assoc_args ) {
-		$results = \Automattic\VIP\Search\Health::validate_index_posts_content(
-			$assoc_args['start_post_id'] ?? 1,
-			$assoc_args['last_post_id'] ?? null,
-			$assoc_args['batch_size'] ?? null,
-			$assoc_args['max_diff_size'] ?? null,
-			isset( $assoc_args['silent'] ),
-			isset( $assoc_args['inspect'] ),
-			isset( $assoc_args['do-not-heal'] )
-		);
+		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
+
+		$results = $health->validate_index_posts_content( $assoc_args );
 
 		if ( is_wp_error( $results ) ) {
 			$diff = $results->get_error_data( 'diff' );
@@ -285,7 +283,11 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				$this->render_contents_diff( $diff, $assoc_args['format'], $assoc_args['max_diff_size'] );
 			}
 
-			WP_CLI::error( $results->get_error_message() );
+			$message = $results->get_error_message();
+			if ( 'content_validation_already_ongoing' === $results->get_error_code() ) {
+				$message .= "\n\nYou can use --force-parallel-execution to run the command even with the lock in place";
+			}
+			WP_CLI::error( $message );
 		}
 
 		if ( empty( $results ) ) {

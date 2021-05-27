@@ -11,7 +11,7 @@ namespace Automattic\VIP\Stats;
 
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
-	add_action( 'async_transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
+	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
 	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999, 2 );
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
 	// Which makes it hard to differentiate between full size and thumbs.

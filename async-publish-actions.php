@@ -61,6 +61,13 @@ function _wpcom_do_async_transition_post_status( $post_id, $new_status, $old_sta
 		return;
 	}
 
+	// Gauge how often this feature is used.
+	if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
+		\Automattic\VIP\Stats\send_pixel( [
+			'vip-go-async-publish-job' => FILES_CLIENT_SITE_ID,
+		] );
+	}
+
 	/**
 	 * Fires when a post is transitioned from one status to another.
 	 *
@@ -132,6 +139,11 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 		return;
 	}
 
+	// If nothing is hooked on, avoid scheduling a cron job.
+	if ( ! has_action( 'async_transition_post_status' ) && ! has_action( "async_{$old_status}_to_{$new_status}" ) && ! has_action( "async_{$new_status}_{$post->post_type}" ) ) {
+		return;
+	}
+
 	if ( false !== wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args ) ) {
 		return;
 	}
@@ -147,12 +159,6 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 if ( should_offload() ) {
 	// Trigger offloading.
 	add_action( 'transition_post_status', __NAMESPACE__ . '\_queue_async_hooks', 10, 3 );
-
-	/**
-	 * Offload ping- and enclosure-related events
-	 */
-	remove_action( 'publish_post', '\_publish_post_hook', 5 );
-	add_action( 'async_publish_post', '\_publish_post_hook', 5, 1 );
 }
 
 /**

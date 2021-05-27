@@ -19,6 +19,9 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
+
+		// Add simple hook to trigger async events by default.
+		add_action( 'async_transition_post_status', '__return_true' );
 	}
 
 	/**
@@ -28,6 +31,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
 
+		remove_action( 'async_transition_post_status', '__return_true' );
 		parent::tearDown();
 	}
 
@@ -193,5 +197,33 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$this->assertInternalType( 'int', $scheduled_for_first, 'No event for first post' );
 		$this->assertInternalType( 'int', $scheduled_for_second, 'No event for second post' );
+	}
+
+	/**
+	 * Confirm no events are scheduled when there are no active hooks.
+	 */
+	public function test_events_are_not_scheduled_when_not_needed() {
+		remove_action( 'async_transition_post_status', '__return_true' );
+
+		$post = [
+			'post_title'   => 'Blank Space - Taylor Swift',
+			'post_content' => 'https://www.youtube.com/watch?v=e-ORhEE9VVg',
+			'post_status'  => 'draft',
+		];
+
+		$pid = wp_insert_post( $post, true );
+		wp_publish_post( $pid );
+
+		$args = [
+			'post_id'    => (int) $pid,
+			'new_status' => 'publish',
+			'old_status' => 'draft',
+		];
+
+		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
+
+		$this->assertFalse( $next );
+
+		add_action( 'async_transition_post_status', '__return_true' );
 	}
 }

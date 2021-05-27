@@ -1,0 +1,6 @@
+/**
+ * Mixins
+ */
+@mixin filter($filter-type,$filter-amount) {
+	filter: $filter-type+unquote('(#{$filter-amount})');
+}
