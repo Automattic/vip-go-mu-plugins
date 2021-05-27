@@ -134,22 +134,26 @@ $internal_cron_events = array(
 	)
 );
 
-// JP Connection Pilot disabled by default
-if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
-	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
+// Enable Jetpack private connection by default on non production sites
+if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+	define( 'VIP_JETPACK_IS_PRIVATE', true );
 }
 
-// JP Connection Pilot auto-reconnect disabled by default
-if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
-	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
+// Jetpack Connection Pilot disabled by default
+if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
+	// Keeping for historical reasons, we can remove this after clients are using the new constant
+	if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
+		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN );
+	} else {
+		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', false );
+	}
 }
 
-if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
+if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUTO_MANAGE_CONNECTION ) {
 	$internal_cron_events[] = array(
 		'schedule'  => 'hourly',
 		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
 		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
-		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ),
 	);
 }
 
