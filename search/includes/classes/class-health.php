@@ -254,6 +254,7 @@ class Health {
 			}
 
 			$result['index_version'] = $index_version;
+			$result['index_name'] = $post_indexable->get_index_name();
 
 			$results[] = $result;
 
