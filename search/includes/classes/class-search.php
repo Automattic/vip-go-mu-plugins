@@ -897,7 +897,7 @@ class Search {
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
-		$timeout = 2;
+		$timeout = apply_filters( 'vip_search_default_query_timeout', 2 );
 
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
 		$is_post_request = false;
