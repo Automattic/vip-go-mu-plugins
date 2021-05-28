@@ -65,6 +65,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 	?>
 	<div class="featured-plugins notice">
 		<h3><?php esc_html_e( 'VIP Featured Technology Partners', 'vip-plugins-dashboard' ); ?></h3>
+		<div class="plugins-grid">
 		<?php
 		foreach ( $plugins as $key => $plugin ) {
 			?>
@@ -87,6 +88,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 			<?php
 		}
 		?>
+		</div>
 	</div>
 	<?php
 }

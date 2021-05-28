@@ -1,10 +1,6 @@
 ( function( $ ) {
 	function init() {
 		bindActions();
-		goResize();
-		$( window ).on( "load", function() {
-			evenHeights( '.plugin' );
-		});
 		protectCodeActivatedPlugins();
 	}
 
@@ -35,34 +31,6 @@
 	function pluginReset( plugin ) {
 		plugin.removeClass( 'hovered' ),
 		plugin.find( '.fp-overlay' ).removeClass( 'visible' );
-	}
-
-	function evenHeights(selector) {
-		var maxHeight = 0;
-		$(selector).each(function(){
-			$(this).height('auto');
-			maxHeight = Math.max(maxHeight, $(this).height());
-		});
-		if ( maxHeight === 0 ) {
-			maxHeight = 'auto';
-		}
-		$(selector).each(function(){
-			$(this).height(maxHeight);
-		});
-	}
-
-	function goResize() {
-		function onResize( c, t ) {
-			onresize = function() {
-				clearTimeout( t );
-				t = setTimeout( c, 100 );
-			};
-			return c;
-		}
-
-		onResize( function() {
-			evenHeights( '.plugin' );
-		} );
 	}
 
 	$( function() {
