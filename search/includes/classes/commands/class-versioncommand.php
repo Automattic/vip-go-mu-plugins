@@ -19,13 +19,13 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * Register a new index version
 	 *
 	 * ## OPTIONS
-	 * 
+	 *
 	 * <type>
 	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
 	 *
 	 * [--network-wide]
 	 * : Optional - add a new version to all subsites
-	 * 
+	 *
 	 * ## EXAMPLES
 	 *     wp vip-search index-versions add post
 	 *     wp vip-search index-versions add post --network-wide
@@ -86,10 +86,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * Get details about a version of an index
 	 *
 	 * ## OPTIONS
-	 * 
+	 *
 	 * <type>
 	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
-	 * 
+	 *
 	 * <version_number>
 	 * : The version number to retrieve
 	 *
@@ -103,7 +103,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function get( $args, $assoc_args ) {
 		$type = $args[0];
-	
+
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
@@ -162,7 +162,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * List all registered index versions
 	 *
 	 * ## OPTIONS
-	 * 
+	 *
 	 * <type>
 	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
 	 *
@@ -179,7 +179,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function list( $args, $assoc_args ) {
 		$type = $args[0];
-	
+
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
@@ -232,13 +232,16 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * Activate a version of an index. This will start sending all requests to the index version specified
 	 *
 	 * ## OPTIONS
-	 * 
+	 *
 	 * <type>
 	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
-	 * 
+	 *
 	 * <version_number>
 	 * : The version number of the index to activate
-	 * 
+	 *
+	 * [--skip-confirm]
+	 * : Skip confirmation
+	 *
 	 * [--network-wide]
 	 * : Optional - activate the version to all subsites. Best used with version aliases like `next` instead of individual version numbers
 	 *
@@ -250,6 +253,11 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	public function activate( $args, $assoc_args ) {
 		$type = $args[0];
 		$desired_version_number = $args[1];
+		if ( $assoc_args['skip-confirm'] ?? '' ) {
+			// WP_CLI::confirm looks for 'yes', but we use skip-confirm to be consistent with other commands
+			$assoc_args['yes'] = true;
+		}
+
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
@@ -326,10 +334,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * Delete a version of an index. This will unregister the index version and delete it from Elasticsearch
 	 *
 	 * ## OPTIONS
-	 * 
+	 *
 	 * <type>
 	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
-	 * 
+	 *
 	 * <version_number>
 	 * : The version number of the index to delete
 	 *
@@ -346,7 +354,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function delete( $args, $assoc_args ) {
 		$type = $args[0];
-	
+
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
@@ -356,7 +364,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		}
 
 		CoreCommand::confirm_destructive_operation( $assoc_args );
-	
+
 		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
 			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
 				$assoc_args['network-wide'] = 0;

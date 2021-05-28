@@ -16,10 +16,12 @@ class Versioning_Test extends \WP_UnitTestCase {
 	public static $search;
 
 	public static function setUpBeforeClass() {
-		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint1',
-			'https://es-endpoint2',
-		) );
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+				'https://es-endpoint1',
+				'https://es-endpoint2',
+			) );
+		}
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
