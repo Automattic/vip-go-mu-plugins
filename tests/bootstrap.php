@@ -42,6 +42,18 @@ function _manually_load_plugin() {
 
 	require_once( __DIR__ . '/../z-client-mu-plugins.php' );
 }
+
+/**
+ * VIP Cache Manager can potentially pollute other tests,
+ * So we explicitly unhook the init callback.
+ *
+ */
+function _remove_init_hook_for_cache_manager() {
+	remove_action( 'init', array( WPCOM_VIP_Cache_Manager::instance(), 'init' ) );
+}
+
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+
+tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 
 require $_tests_dir . '/includes/bootstrap.php';
