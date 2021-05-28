@@ -2,7 +2,9 @@
 	function init() {
 		bindActions();
 		goResize();
-		evenHeights( '.plugin' );
+		$( window ).on( "load", function() {
+			evenHeights( '.plugin' );
+		});
 		protectCodeActivatedPlugins();
 	}
 
