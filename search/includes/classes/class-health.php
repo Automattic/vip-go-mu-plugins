@@ -260,12 +260,11 @@ class Health {
 					'entity'        => $posts->slug,
 					'type'          => $post_type,
 					'error'         => $result->get_error_message(),
-					'index_version' => $index_version,
-					'index_name'    => $post_indexable->get_index_name(),
 				];
 			}
 
 			$result['index_version'] = $index_version;
+			$result['index_name'] = $post_indexable->get_index_name();
 
 			$results[] = $result;
 
