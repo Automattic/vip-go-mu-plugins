@@ -72,10 +72,6 @@
 	display: none;
 }
 
-.featured-plugins .plugin .fp-overlay.visible {
-	display: block;
-}
-
 .featured-plugins .plugin:hover .fp-overlay {
 	-webkit-animation: expand 0.8s cubic-bezier(0.14, 0.61, 0.2, 1) 0s 1 forwards;
 	animation: expand 0.8s cubic-bezier(0.14, 0.61, 0.2, 1) 0s 1 forwards;
