@@ -9,8 +9,6 @@
 		$row.find( 'input[type="checkbox"]' ).hide();
 	}
 
-
-
 	$( function() {
 		init();
 	} );
