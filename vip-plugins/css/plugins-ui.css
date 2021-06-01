@@ -51,7 +51,7 @@
 	display: block;
 }
 
-.featured-plugins .plugin.hovered .fp-content {
+.featured-plugins .plugin:hover .fp-content {
 	-webkit-filter: blur(3px);
 	filter: blur(3px);	
 }
@@ -76,7 +76,7 @@
 	display: block;
 }
 
-.featured-plugins .plugin.hovered .fp-overlay {
+.featured-plugins .plugin:hover .fp-overlay {
 	-webkit-animation: expand 0.8s cubic-bezier(0.14, 0.61, 0.2, 1) 0s 1 forwards;
 	animation: expand 0.8s cubic-bezier(0.14, 0.61, 0.2, 1) 0s 1 forwards;
 	display: table;
@@ -108,11 +108,11 @@
 	outline: none;
 }
 
-.featured-plugins .plugin.hovered .fp-overlay-inner span:hover {
+.featured-plugins .plugin:hover .fp-overlay-inner span:hover {
 	background: #c29c69;
 }
 
-.featured-plugins .plugin.hovered .fp-overlay-inner span:active {
+.featured-plugins .plugin:hover .fp-overlay-inner span:active {
 	top: 1px;
 }
 
