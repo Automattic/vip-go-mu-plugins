@@ -20,7 +20,7 @@
     "eslint": "6.8.0",
     "eslint-config-wpvip": "github:Automattic/eslint-config-wpvip#master",
     "eslint-plugin-flowtype": "3.13.0",
-    "eslint-plugin-import": "2.23.3",
+    "eslint-plugin-import": "2.23.4",
     "eslint-plugin-jest": "22.21.0",
     "eslint-plugin-json": "1.4.0",
     "eslint-plugin-jsx-a11y": "6.4.1",
