@@ -2,11 +2,13 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use DateTime;
+
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
- * Will only run if the `VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN` constant is defined and set to true.
+ * Will only run if the `VIP_JETPACK_AUTO_MANAGE_CONNECTION` constant is defined and set to true.
  */
 class Connection_Pilot {
 	/**
@@ -75,6 +77,12 @@ class Connection_Pilot {
 			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
 		}
 
+		// Run CP shortly after site creation or update to try to connect automatically
+		if ( self::should_attempt_reconnection() ) {
+			add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
+			add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
+		}
+
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
@@ -84,6 +92,10 @@ class Connection_Pilot {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
 			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
+	}
+
+	public function schedule_immediate_cron() {
+		wp_schedule_single_event( strtotime( '+1 minutes' ), self::CRON_ACTION );
 	}
 
 	public static function do_cron() {
@@ -160,6 +172,11 @@ class Connection_Pilot {
 	}
 
 	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
+		// Attempting connection for fresh sites
+		if ( self::is_fresh_subsite() ) {
+			return true;
+		}
+
 		$error_code = null;
 
 		if ( $error && is_wp_error( $error ) ) {
@@ -241,9 +258,9 @@ class Connection_Pilot {
 	 *
 	 * @return bool True if the connection pilot should run.
 	 */
-	public static function should_run_connection_pilot() {
-		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
-			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
+	public static function should_run_connection_pilot(): bool {
+		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
+			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
 		}
 
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
@@ -252,16 +269,42 @@ class Connection_Pilot {
 	/**
 	 * Checks if a reconnection should be attempted
 	 *
-	 * @param $error \WP_Error Optional error thrown by the connection check
+	 * @param $error \WP_Error|null Optional error thrown by the connection check
+	 *
 	 * @return bool True if a reconnect should be attempted
 	 */
-	public static function should_attempt_reconnection( $error = null ) {
+	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
+		// The constant is deprecated, but keeping this check for historical reasons
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
 
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
 	}
+
+	/**
+	 * Checks if the site was created less than an hour before execution
+	 *
+	 * @return bool
+	 */
+	public static function is_fresh_subsite(): bool {
+		// Not applicable for single sites
+		if ( ! is_multisite() ) {
+			return false;
+		}
+
+		try {
+			$site_registered = new DateTime( get_site()->registered );
+		} catch ( \Exception $e ) {
+			return false;
+		}
+
+		$now = new DateTime("now");
+		$time_diff = $now->getTimestamp() - $site_registered->getTimestamp();
+		return $time_diff < 3600;
+	}
 }
 
-Connection_Pilot::instance();
+add_action( 'init', function() {
+	Connection_Pilot::instance();
+}, 25);

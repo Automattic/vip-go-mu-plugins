@@ -1,0 +1,7 @@
+a {
+	transition: all 300ms cubic-bezier(.72,.2,.48,1.36);
+}
+
+a:after {
+	transition: all 160ms cubic-bezier(.72,.2,.48,1.36);
+}

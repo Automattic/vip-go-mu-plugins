@@ -10,7 +10,13 @@ class Cache_Test extends \WP_UnitTestCase {
 	 */
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	
+
+	public static function setUpBeforeClass() {
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		}
+	}
+
 	public function setUp() {
 		global $wpdb;
 		require_once __DIR__ . '/../../../../search/search.php';
@@ -46,19 +52,19 @@ class Cache_Test extends \WP_UnitTestCase {
 			'ep_integrate' => true,
 		] );
 
-		$filters = array_filter( $this->apc_filters, function( $filter ) { 
+		$filters = array_filter( $this->apc_filters, function( $filter ) {
 			return false !== has_filter( $filter, [ $GLOBALS['advanced_post_cache_object'], $filter ] );
 		} );
-		
+
 		$this->assertEmpty( $filters, 'Failed to remove APC filters' );
 
 		// All of APC's filters should be re-enabled for any non-EP query
 		$q = new WP_Query( [ 'posts_per_page' => 10 ] );
 
-		$filters = array_filter( $this->apc_filters, function( $filter ) { 
+		$filters = array_filter( $this->apc_filters, function( $filter ) {
 			return false !== has_filter( $filter, [ $GLOBALS['advanced_post_cache_object'], $filter ] );
 		} );
-		
+
 		$this->assertEquals( count( $this->apc_filters ), count( $filters ), 'Failed to re-attach APC filters' );
 	}
 }
