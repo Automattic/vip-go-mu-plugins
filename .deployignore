@@ -24,6 +24,7 @@
 .jshintrc
 .npmrc
 .nvmrc
+.phpcs.xml.dist
 .scrutinizer.yml
 .travis.yml
 .wordpress-org/
@@ -113,3 +114,11 @@ yarn.lock
 # Search Dev Tools
 /search/search-dev-tools/src/
 /search/search-dev-tools/preact.config.js
+
+# Parse.ly WordPress Integration
+/wp-parsely-*/.prettierrc
+/wp-parsely-*/bin
+/wp-parsely-*/CHANGELOG.md
+/wp-parsely-*/CODE_OF_CONDUCT.md
+/wp-parsely-*/init.py
+/wp-parsely-*/tests
