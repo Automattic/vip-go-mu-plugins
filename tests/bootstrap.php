@@ -52,8 +52,19 @@ function _remove_init_hook_for_cache_manager() {
 	remove_action( 'init', array( WPCOM_VIP_Cache_Manager::instance(), 'init' ) );
 }
 
-tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+/**
+ * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered. 
+ *
+ * Temporarily unhook it.
+ *
+ * @return void
+ */
+function _disable_core_legacy_widget_registration() {
+	remove_action( 'init', 'register_block_core_legacy_widget', 20 );
+}
 
+tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
+tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
 
 require $_tests_dir . '/includes/bootstrap.php';
