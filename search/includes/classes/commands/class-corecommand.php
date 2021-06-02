@@ -16,20 +16,20 @@ class CoreCommand extends \ElasticPress\Command {
 
 	private function _verify_arguments_compatibility( $assoc_args ) {
 		if ( array_key_exists( 'version', $assoc_args ) && array_key_exists( 'using-versions', $assoc_args ) ) {
-			return WP_CLI::error( 'The --version argument is not allowed when specifying --using-versions' );
+			WP_CLI::error( 'The --version argument is not allowed when specifying --using-versions' );
 		}
 
 		// If version is specified, the indexable must also be specified, as different indexables can have different versions
 		if ( array_key_exists( 'version', $assoc_args ) && ! isset( $assoc_args['indexables'] ) ) {
-			return WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
+			WP_CLI::error( 'The --indexables argument is required when specifying --version, as each indexable has separate versioning' );
 		}
 
 		if ( array_key_exists( 'using-versions', $assoc_args ) && ! isset( $assoc_args['indexables'] ) ) {
-			return WP_CLI::error( 'The --indexables argument is required when specifying --using-versions' );
+			WP_CLI::error( 'The --indexables argument is required when specifying --using-versions' );
 		}
 
 		if ( array_key_exists( 'using-versions', $assoc_args ) && isset( $assoc_args['network-wide'] ) ) {
-			return WP_CLI::error( 'The --using-versions argument is not supported together with --network-wide' );
+			WP_CLI::error( 'The --using-versions argument is not supported together with --network-wide' );
 		}
 	}
 
@@ -42,13 +42,13 @@ class CoreCommand extends \ElasticPress\Command {
 			WP_CLI::line( sprintf( 'Updating active version for "%s"', $indexable->slug ) );
 			$result = $search->versioning->activate_version( $indexable, 'next' );
 			if ( is_wp_error( $result ) ) {
-				return WP_CLI::error( sprintf( 'Error activating next version: %s', $result->get_error_message() ) );
+				WP_CLI::error( sprintf( 'Error activating next version: %s', $result->get_error_message() ) );
 			}
 
 			WP_CLI::line( sprintf( 'Removing inactive version for "%s"', $indexable->slug ) );
 			$result = $search->versioning->delete_version( $indexable, 'previous' );
 			if ( is_wp_error( $result ) ) {
-				return WP_CLI::error( sprintf( 'Error deleting previous version: %s', $result->get_error_message() ) );
+				WP_CLI::error( sprintf( 'Error deleting previous version: %s', $result->get_error_message() ) );
 			}
 		}
 	}
@@ -62,7 +62,7 @@ class CoreCommand extends \ElasticPress\Command {
 			$indexable = \ElasticPress\Indexables::factory()->get( $slug );
 
 			if ( ! $indexable ) {
-				return WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+				WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
 			}
 
 			$indexables[] = $indexable;
@@ -90,7 +90,7 @@ class CoreCommand extends \ElasticPress\Command {
 					foreach ( $indexables as $indexable ) {
 						$current_versions = $search->versioning->get_versions( $indexable );
 						if ( count( $current_versions ) > 1 ) {
-							return WP_CLI::error( sprintf(
+							WP_CLI::error( sprintf(
 								'There needs to be only one version per indexable in order to automatically use versions to reindex. Please remove inactive versions for indexable "%s".',
 								$indexable->slug
 							) );
@@ -100,7 +100,7 @@ class CoreCommand extends \ElasticPress\Command {
 					foreach ( $indexables as $indexable ) {
 						$result = $search->versioning->add_version( $indexable );
 						if ( is_wp_error( $result ) ) {
-							return WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
+							WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
 						}
 					}
 				}
@@ -109,7 +109,7 @@ class CoreCommand extends \ElasticPress\Command {
 					$result = $search->versioning->set_current_version_number( $indexable, $version_number );
 
 					if ( is_wp_error( $result ) ) {
-						return WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+						WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
 					}
 				}
 			}
