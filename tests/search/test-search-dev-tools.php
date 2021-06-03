@@ -26,15 +26,19 @@ class Search_Dev_Tools_Test extends \WP_UnitTestCase {
 	public function data_provider_endpoint_urls() {
 		return [
 			[
-				'input'    => 'http://vip-search:9200/vip-123-v1/_search',
+				'input'    => 'http://vip-search:9200/vip-123-post-1/_search',
 				'expected' => true,
 			],
 			[
-				'input'    => 'http://vip-search:9200/vip-123-v1/_search',
+				'input'    => 'http://vip-search:9200/vip-123-post-1,vip-123-post-post-2-v1/_search',
 				'expected' => true,
 			],
 			[
-				'input'    => 'http://vip-search:9200/vip-2345-v1/_search',
+				'input'    => 'http://vip-search:9200/vip-123-post-v1,vip-3456-post-2-v1/_search',
+				'expected' => new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', 'url' ) ),
+			],
+			[
+				'input'    => 'http://vip-search:9200/vip-2345-post-v1/_search',
 				'expected' => new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', 'url' ) ),
 			],
 			[
