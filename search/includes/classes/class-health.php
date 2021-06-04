@@ -139,11 +139,7 @@ class Health {
 			// Get exact total count since Elasticsearch default stops at 10,000.
 			$formatted_args['track_total_hits'] = true;
 
-			add_filter( 'vip_search_default_query_timeout', [ $this, 'filter_increase_query_timeout' ] );
-
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
-
-			remove_filter( 'vip_search_default_query_timeout', [ $this, 'filter_increase_query_timeout' ] );
 		} catch ( \Exception $e ) {
 			$source = method_exists( $e, 'get_error_message' ) ? $e->get_error_message() : $e->getMessage();
 			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $source ) );
@@ -156,14 +152,6 @@ class Health {
 		}
 
 		return (int) $es_result['found_documents']['value'];
-	}
-
-	/**
-	 * Increasing timeout to 5s because the query to fetch the counts can take more than default 2s.
-	 * Leading to false failures.
-	 */
-	public function filter_increase_query_timeout() {
-		return 5;
 	}
 
 	/**
