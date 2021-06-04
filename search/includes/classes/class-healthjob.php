@@ -138,10 +138,6 @@ class HealthJob {
 			return;
 		}
 
-		if ( ! \Automattic\VIP\Feature::is_enabled( 'search_content_validation_and_auto_heal_cron_job' ) ) {
-			return;
-		}
-
 		// Don't run the checks if the index is not built.
 		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
 			return;
@@ -175,127 +171,7 @@ class HealthJob {
 			return;
 		}
 
-		$this->check_all_indexables_settings_health();
-
 		$this->check_document_count_health();
-	}
-
-	public function check_all_indexables_settings_health() {
-		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
-
-		if ( empty( $unhealthy_indexables ) ) {
-			return;
-		}
-
-		$this->process_indexables_settings_health_results( $unhealthy_indexables );
-
-		$this->heal_index_settings( $unhealthy_indexables );
-	}
-
-	public function process_indexables_settings_health_results( $results ) {
-		// If the whole thing failed, error
-		if ( is_wp_error( $results ) ) {
-			$message = sprintf( 'Error while validating index settings for %s: %s', home_url(), $results->get_error_message() );
-
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-			return;
-		}
-
-		foreach ( $results as $indexable_slug => $versions ) {
-			// If there's an error, alert
-			if ( is_wp_error( $versions ) ) {
-				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-			}
-
-			// Each individual entry in $versions is an array of results, one per index version
-			foreach ( $versions as $result ) {
-				// Only alert if inconsistencies found
-				if ( empty( $result['diff'] ) ) {
-					continue;
-				}
-
-				$message = sprintf(
-					'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
-					home_url(),
-					$indexable_slug,
-					$result['index_version'],
-					$result['index_name'],
-					var_export( $result['diff'], true )
-				);
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
-			}
-		}
-	}
-
-	public function heal_index_settings( $unhealthy_indexables ) {
-		// If the whole thing failed, error
-		if ( is_wp_error( $unhealthy_indexables ) ) {
-			$message = sprintf( 'Error while attempting to heal index settings for %s: %s', home_url(), $unhealthy_indexables->get_error_message() );
-
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-			return;
-		}
-
-		foreach ( $unhealthy_indexables as $indexable_slug => $versions ) {
-			// If there's an error, alert
-			if ( is_wp_error( $versions ) ) {
-				$message = sprintf( 'Error while attempting to heal index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-				continue;
-			}
-
-			$indexable = $this->indexables->get( $indexable_slug );
-
-			if ( is_wp_error( $indexable ) || ! $indexable ) {
-				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
-				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-				continue;
-			}
-
-			// Each individual entry in $versions is an array of results, one per index version
-			foreach ( $versions as $result ) {
-				// Only take action if there are actual inconsistencies
-				if ( empty( $result['diff'] ) ) {
-					continue;
-				}
-
-				$options = array();
-
-				if ( isset( $result['index_version'] ) ) {
-					$options['index_version'] = $result['index_version'];
-				}
-
-				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
-
-				if ( is_wp_error( $result['result'] ) ) {
-					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
-
-					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-					continue;
-				}
-
-				$message = sprintf(
-					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s)',
-					home_url(),
-					$indexable_slug,
-					$result['index_version'] ?? '<missing index version>',
-					$result['index_name'] ?? '<missing name>'
-				);
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
-			}
-		}
 	}
 
 	public function check_document_count_health() {
@@ -352,7 +228,12 @@ class HealthJob {
 
 			// If there's an error, alert
 			if ( array_key_exists( 'error', $result ) ) {
-				$message = sprintf( 'Error while validating index for %s: %s', home_url(), $result['error'] );
+				$message = sprintf( 'Error while validating index for %s: %s (index_name: %s, index_version: %d)',
+					home_url(),
+					$result['error'],
+					$result['index_name'] ?? '<unknown>',
+					$result['index_version'] ?? 0
+				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
@@ -360,10 +241,11 @@ class HealthJob {
 			// Only alert if inconsistencies found
 			if ( isset( $result['diff'] ) && 0 !== $result['diff'] ) {
 				$message = sprintf(
-					'Index inconsistencies found for %s: (entity: %s, type: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
+					'Index inconsistencies found for %s: (entity: %s, type: %s, index_name: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
 					$result['entity'],
 					$result['type'],
+					$result['index_name'] ?? '<unknown>',
 					$result['index_version'],
 					$result['db_total'],
 					$result['es_total'],

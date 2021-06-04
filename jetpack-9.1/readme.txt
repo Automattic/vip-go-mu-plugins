@@ -243,6 +243,13 @@ Our Cookie and Consent Banner can help you comply with GDPR. The European Unionâ
 
 == Changelog ==
 
+= 9.1.1 =
+Release date: June 2, 2021
+
+Security:
+
+* Carousel: prevent fetching comments from posts, and from attachments of private posts.
+
 = 9.1 =
 
 * Release date: November 10, 2020

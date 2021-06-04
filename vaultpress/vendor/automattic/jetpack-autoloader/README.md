@@ -42,5 +42,3 @@ Current Limitations
 -----
 
 We currently only support packages that autoload via psr-4 definition in their package.
-
-Your project must use the default composer vendor directory, `vendor`.

@@ -24,7 +24,9 @@ Please don't include internal or private links :)
 
 ## Changelog Description
 <!--
-A description of the context of the change for a changelog. It should have a title, link to the PR, examples (if applicable), and why the change was made.
+A description of the context of the change for a changelog. It should have a title, examples (if applicable), and why the change was made.
+
+**Please keep the changelog title format same as in example below (### <Title>), as this is later used to generate the changelog entry title.**
 
 Example for a plugin upgrade:
 
