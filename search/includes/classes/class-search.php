@@ -897,7 +897,8 @@ class Search {
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
-		$timeout = 2;
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+		$timeout = $is_cli ? 5 : 2;
 
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
 		$is_post_request = false;
@@ -910,7 +911,7 @@ class Search {
 		if ( wp_endswith( $query_path, '_bulk' ) ) {
 			$timeout = 5;
 
-			if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+			if ( $is_cli && $is_post_request ) {
 				$timeout = 30;
 			} elseif ( \is_admin() && $is_post_request ) {
 				$timeout = 15;
