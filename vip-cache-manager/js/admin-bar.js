@@ -21,7 +21,10 @@
 	 * Grab all the necesary URLs (incl. scripts and CSS) for the purge.
 	 */
 	const getURLsToPurge = () => {
-		return [document.location.toString()].concat(
+		const fullUrl = document.location.toString();
+		const ampURL = ( document.location.origin + document.location.pathname ).replace(/\/$/, '' ) + '/amp/';
+
+		return [ fullUrl, ampURL ].concat(
 			Array.from( document.querySelectorAll( 'script[src]' ) ).map( ( { src } ) => src ),
 			Array.from( document.querySelectorAll( 'link[rel=stylesheet]' ) ).map( ( { href } ) => href )
 		)
