@@ -125,14 +125,7 @@ class A8C_Files {
 	}
 
 	function init_photon() {
-		// Limit to certain contexts for the initial testing and roll-out.
-		// This will be phased out and become the default eventually.
-		$use_jetpack_photon = $this->use_jetpack_photon();
-		if ( $use_jetpack_photon ) {
-			$this->init_jetpack_photon_filters();
-		} else {
-			$this->init_vip_photon_filters();
-		}
+		$this->init_jetpack_photon_filters();
 	}
 
 	private function init_jetpack_photon_filters() {
@@ -172,31 +165,12 @@ class A8C_Files {
 			return $content;
 		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
 
+		// We need to make sure Photon downsize runs in `is_admin` context
+		add_filter( 'jetpack_photon_admin_allow_image_downsize', '__return_true' );
+
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
 		Jetpack_Photon::instance();
-
-		// Jetpack_Photon's downsize filter doesn't run when is_admin(), so we need to fallback to the Go filters.
-		// This is temporary until Jetpack allows more easily running these filters for is_admin().
-		if ( is_admin() ) {
-			$this->init_vip_photon_filters();
-		}
-	}
-
-	private function init_vip_photon_filters() {
-		add_filter( 'image_downsize', array( &$this, 'image_resize' ), 5, 3 ); // Ensure this runs before Jetpack, when Photon is active
-	}
-
-	private function use_jetpack_photon() {
-		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
-			return true;
-		}
-
-		if ( isset( $_GET['jetpack-photon'] ) && 'yes' === $_GET['jetpack-photon'] ) {
-			return true;
-		}
-
-		return false;
 	}
 
 	function check_to_upload_file( $data, $postarr ) {
@@ -706,168 +680,6 @@ class A8C_Files {
 		$upload_url_path = untrailingslashit( get_site_url( null, 'wp-content/uploads' ) );
 
 		return $upload_url_path;
-	}
-
-	/**
-	 * Image resizing service.  Takes place of image_downsize().
-	 *
-	 * @param bool $ignore Unused.
-	 * @param int $id Attachment ID for image.
-	 * @param array|string $size Optional, default is 'medium'. Size of image, either array or string.
-	 * @return bool|array False on failure, array on success.
-	 * @see image_downsize()
-	 */
-	function image_resize( $ignore, $id, $size ) {
-		global $_wp_additional_image_sizes, $post;
-
-		// Don't bother resizing non-image (and non-existent) attachment.
-		// We fallthrough to core's image_downsize but that bails as well.
-		$is_img = wp_attachment_is_image( $id );
-		if ( ! $is_img ) {
-			return false;
-		}
-
-		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
-		$crop = false;
-		$args = array();
-
-		// For resize requests coming from an image's attachment page, override
-		// the supplied $size and use the user-defined $content_width if the
-		// theme-defined $content_width has been manually passed in.
-		if ( is_attachment() && $id === $post->ID ) {
-			if ( is_array( $size )
-				 && ! empty ( $size )
-				 && isset( $GLOBALS['content_width'] )
-				 && $size[0] == $GLOBALS['content_width'] ) {
-				$size = array( $content_width, $content_width );
-			}
-		}
-
-		if ( 'tellyworth' == $size ) { // 'full' is reserved because some themes use it (see image_constrain_size_for_editor)
-			$_max_w = 4096;
-			$_max_h = 4096;
-		} elseif ( 'thumbnail' == $size ) {
-			$_max_w = get_option( 'thumbnail_size_w' );
-			$_max_h = get_option( 'thumbnail_size_h' );
-			if ( !$_max_w && !$_max_h ) {
-				$_max_w = 128;
-				$_max_h = 96;
-			}
-			if ( get_option( 'thumbnail_crop' ) )
-				$crop = true;
-		} elseif ( 'medium' == $size ) {
-			$_max_w = get_option( 'medium_size_w' );
-			$_max_h = get_option( 'medium_size_h' );
-				if ( !$_max_w && !$_max_h ) {
-					$_max_w = 300;
-					$_max_h = 300;
-				}
-		} elseif ( 'large' == $size ) {
-			$_max_w = get_option( 'large_size_w' );
-			$_max_h = get_option( 'large_size_h' );
-		} elseif ( is_array( $size ) ) {
-			$_max_w = $w = $size[0];
-			$_max_h = $h = $size[1];
-		} elseif ( ! empty( $_wp_additional_image_sizes[$size] ) ) {
-			$_max_w = $w = $_wp_additional_image_sizes[$size]['width'];
-			$_max_h = $h = $_wp_additional_image_sizes[$size]['height'];
-			$crop = $_wp_additional_image_sizes[$size]['crop'];
-		} elseif ( $content_width > 0 ) {
-			$_max_w = $content_width;
-			$_max_h = 0;
-		} else {
-			$_max_w = 1024;
-			$_max_h = 0;
-		}
-
-		// Constrain default image sizes to the theme's content width, if available.
-		if ( $content_width > 0 && in_array( $size, array( 'thumbnail', 'medium', 'large' ) ) )
-			$_max_w = min( $_max_w, $content_width );
-
-		$resized = false;
-		$img_url = wp_get_attachment_url( $id );
-
-		/**
-		 * Filter the original image Photon-compatible parameters before changes are
-		 *
-		 * @param array|string $args Array of Photon-compatible arguments.
-		 * @param string $img_url Image URL.
-		 */
-		$args = apply_filters( 'vip_go_image_resize_pre_args', $args, $img_url );
-
-		if ( ! $crop ) {
-			$imagedata = wp_get_attachment_metadata( $id );
-
-			if ( ! empty( $imagedata['width'] ) || ! empty( $imagedata['height'] ) ) {
-				$h = $imagedata['height'];
-				$w = $imagedata['width'];
-
-				list ($w, $h) = wp_constrain_dimensions( $w, $h, $_max_w, $_max_h );
-				if ( $w < $imagedata['width'] || $h < $imagedata['height'] )
-					$resized = true;
-			} else {
-				$w = $_max_w;
-				$h = $_max_h;
-			}
-		}
-
-		if ( $crop ) {
-			$constrain = false;
-
-			$imagedata = wp_get_attachment_metadata( $id );
-			if ( $imagedata ) {
-				$w = $imagedata['width'];
-				$h = $imagedata['height'];
-			}
-
-			if ( empty( $w ) )
-				$w = $_max_w;
-
-			if ( empty( $h ) )
-				$h = $_max_h;
-
-			// If the image width is bigger than the allowed max, scale it to match
-			if ( $w >= $_max_w )
-				$w = $_max_w;
-			else
-				$constrain = true;
-
-			// If the image height is bigger than the allowed max, scale it to match
-			if ( $h >= $_max_h )
-				$h = $_max_h;
-			else
-				$constrain = true;
-
-			if ( $constrain )
-				list( $w, $h ) = wp_constrain_dimensions( $w, $h, $_max_w, $_max_h );
-
-			$args['w'] = $w;
-			$args['h'] = $h;
-
-			$args['crop'] = '1';
-			$resized = true;
-		}
-		// we want users to be able to resize full size images with tinymce.
-		// the image_add_wh() filter will add the ?w= query string at display time.
-		elseif ( 'full' != $size ) {
-			$args['w'] = $w;
-			$resized = true;
-		}
-
-		if ( is_array( $args ) ) {
-			// Convert values that are arrays into strings
-			foreach ( $args as $arg => $value ) {
-				if ( is_array( $value ) ) {
-					$args[ $arg ] = implode( ',', $value );
-				}
-			}
-			// Encode values
-			// See http://core.trac.wordpress.org/ticket/17923
-			$args = rawurlencode_deep( $args );
-		}
-		$img_url = add_query_arg( $args, $img_url );
-
-		return array( $img_url, $w, $h, $resized );
 	}
 
 	/**
