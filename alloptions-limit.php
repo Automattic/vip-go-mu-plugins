@@ -23,10 +23,10 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// Uncompressed size thresholds.
 	// Warn should *always* be =< die
-	$alloptions_size_warn = 1000000;
+	$alloptions_size_warn = MB_IN_BYTES * 1.5;
 
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
-	$alloptions_size_die  = 4000000;
+	$alloptions_size_die  = MB_IN_BYTES * 5;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
@@ -96,7 +96,7 @@ function wpcom_vip_alloptions_size_is_acked() {
 function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 	global $wpdb;
 
-	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 15 * MINUTE_IN_SECONDS );
+	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 30 * MINUTE_IN_SECONDS );
 
 	// If adding to cache failed, we're already throttled (unless the operation actually failed),
 	// so return without doing anything.
