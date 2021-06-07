@@ -11,6 +11,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
+		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
 	}
 
@@ -75,5 +76,26 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $actual_output, 'Return value from `queue_purge_url` should be false.' );
 		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
+	}
+
+	public function test__page_for_posts_post_purge_url() {
+		$page_for_posts = $this->factory->post->create_and_get(
+			[
+				'post_type' => 'page',
+				'post_title' => 'blog-archive',
+			]
+		);
+		update_option( 'page_for_posts', $page_for_posts->ID );
+		$permalink = get_permalink( $page_for_posts );
+
+		$post = (array) $this->factory->post->create_and_get( [ 'post_title' => 'test post' ] );
+
+		$post['post_title'] = 'updated';
+
+		wp_update_post( $post );
+
+		$this->assertInternalType( 'array', $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls variable is an array' );
+
+		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
 	}
 }
