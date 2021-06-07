@@ -26,7 +26,7 @@ function wpcom_vip_sanity_check_alloptions() {
 	$alloptions_size_warn = MB_IN_BYTES * 1.5;
 
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
-	$alloptions_size_die  = MB_IN_BYTES * 5;
+	$alloptions_size_die  = MB_IN_BYTES * 4;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
