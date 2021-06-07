@@ -238,6 +238,10 @@ Our Cookie and Consent Banner can help you comply with GDPR. The European Unionâ
 4. Promote your newest posts, pages, and products across your social media channels.
 
 == Changelog ==
+### 9.7.1 - 2021-06-02
+#### Security:
+- Carousel: prevent fetching comments from posts, and from attachments of private posts.
+
 ### 9.7 - 2021-05-04
 #### Enhancements
 - Blocks: improve test coverage for better reliability of each one of Jetpack's blocks.
