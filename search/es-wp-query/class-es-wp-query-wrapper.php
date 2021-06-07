@@ -44,6 +44,19 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 	abstract protected function query_es( $es_args );
 
 	/**
+	 * Override default WP_Query->is_main_query() to support
+	 * this conditional when the main query has been overridden
+	 * by this class.
+	 *
+	 * @fixes #38
+	 *
+	 * @return bool
+	 */
+	public function is_main_query() {
+		return $this->get( 'es_is_main_query', false );
+	}	
+
+	/**
 	 * Maps a field to its Elasticsearch context.
 	 *
 	 * @param string $field The field to map.
@@ -169,7 +182,9 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 	 * @access public
 	 */
 	public function set_found_posts( $q, $es_response ) {
-		if ( isset( $es_response['hits']['total'] ) ) {
+		if ( isset( $es_response['hits']['total']['value'] ) ) {
+			$this->found_posts = absint( $es_response['hits']['total']['value'] );
+		} elseif ( isset( $es_response['hits']['total'] ) ) {
 			$this->found_posts = absint( $es_response['hits']['total'] );
 		} else {
 			$this->found_posts = 0;
@@ -253,7 +268,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 				'tag_slug'           => 'terms.%s.slug',
 				'tag_name'           => 'terms.%s.name',
 				'tag_tt_id'          => 'terms.%s.term_taxonomy_id',
-			) 
+			)
 		);
 
 		$this->parse_query();
@@ -424,7 +439,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						'after'     => $date,
 						'before'    => $date,
 						'inclusive' => true,
-					) 
+					)
 				);
 				$date_filter = $date_query->get_dsl( $this );
 				if ( ! empty( $date_filter ) ) {
@@ -995,8 +1010,8 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						array(
 							'protected'              => true,
 							'show_in_admin_all_list' => true,
-						) 
-					) 
+						)
+					)
 				);
 			}
 
@@ -1153,7 +1168,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 				'fields' => $fields,
 				'size'   => $size,
 				'from'   => $from,
-			) 
+			)
 		);
 
 		// Filter again for the benefit of caching plugins. Regular plugins should use the hooks above.
@@ -1200,12 +1215,15 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 			$size                  = apply_filters( 'es_query_max_results', 1000 );
 			$this->es_args['size'] = $size;
 		}
+		
+		// ES > 7.0 doesn't return the actual total hits by default (capped at 10k), but we need accurate counts
+		$this->es_args[ 'track_total_hits' ] = true;
 
 		if ( ! $q['suppress_filters'] ) {
 			$this->es_args = apply_filters_ref_array( 'es_posts_request', array( $this->es_args, &$this ) );
 		}
 
-		if ( 'ids' === $q['fields'] || 'id=>parent' === $q['fields'] ) {
+		if ( 'ids' === $q['fields'] || 'id=>parent' === $q['fields'] || apply_filters( 'es_query_use_source', false ) ) {
 			$this->es_response = $this->query_es( $this->es_args );
 			$this->set_posts( $q, $this->es_response );
 			$this->post_count = count( $this->posts );
@@ -1312,7 +1330,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						'post_type'   => $post_type,
 						'post_status' => 'publish',
 						'nopaging'    => true, // phpcs:ignore WordPress.VIP.PostsPerPage.posts_per_page_nopaging
-					) 
+					)
 				);
 
 				foreach ( $stickies as $sticky_post ) {
@@ -1635,7 +1653,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 					'query'  => $query,
 					'fields' => (array) $fields,
 				),
-				$args 
+				$args
 			),
 		);
 	}

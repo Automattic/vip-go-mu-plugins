@@ -1,0 +1,21 @@
+.form-text-input {
+	-webkit-appearance: none;
+
+	&:not( :focus ) {
+		&.is-valid {
+			border-color: $alert-green;
+		}
+
+		&.is-valid:hover {
+			border-color: darken( $alert-green, 10 );
+		}
+
+		&.is-error {
+			border-color: $alert-red;
+		}
+
+		&.is-error:hover {
+			border-color: darken( $alert-red, 10 );
+		}
+	}
+}

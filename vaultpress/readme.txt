@@ -1,9 +1,9 @@
 === VaultPress ===
 Contributors: automattic, apokalyptik, briancolinger, josephscott, shaunandrews, xknown, thingalon, annezazu, rachelsquirrel
 Tags: security, malware, virus, archive, back up, back ups, backup, backups, scanning, restore, wordpress backup, site backup, website backup
-Requires at least: 5.1
-Tested up to: 5.3
-Stable tag: 2.1.1
+Requires at least: 5.2
+Tested up to: 5.5
+Stable tag: 2.1.4
 Requires PHP: 5.6
 License: GPLv2
 
@@ -48,6 +48,37 @@ A VaultPress subscription is for a single WordPress site. You can purchase addit
 Yes, VaultPress supports Multisite installs. Each site will require its own subscription.
 
 == Changelog ==
+
+= 2.1.4 =
+
+* Release date: August 7, 2020
+
+** Opcache Conflict **
+
+* General: Revert autoloader version to prior 1.7.0 version, to resolve an intermittent issue during the upgrade process for some users.
+
+= 2.1.3 =
+
+* Release date: August 6, 2020
+
+** Compatibility **
+
+* General: Handle new user meta actions.
+* General: Implement the spread operator for our IXR class methods to match WordPress Core behavior in 5.5.
+* General: Update some miscellaneous dependencies.
+
+= 2.1.2 =
+
+* Release date: Not publicly released, all changes shipped in subsequent version instead.
+
+= 2.1.1 =
+
+* Release date: December 10, 2019
+
+**Compatibility**
+
+* General: the VaultPress plugin now requires PHP 5.6, just like WordPress.
+* General: avoid using PHP short array syntax to load plugin files.
 
 = 2.1 =
 

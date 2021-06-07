@@ -50,16 +50,22 @@ class Alerts {
 	 *
 	 * @return array|WP_Error Response details from wp_remote_post
 	 */
-	private function send( $body ) {
-		$fallback_error = new \WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
+	private function send( array $body ) {
+		$fallback_error = new WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
 
 		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
 			'method' => 'POST',
-			'body' => json_encode( $body ),
+			'body'   => json_encode( $body ),
 		] );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error( 'alert-send-failed', sprintf( 'Error sending alert: %s', $response->get_error_message() ) );
+		}
+
+		// The request got a response
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( ! is_int( $code ) || $code >= 400 ) {
+			return new WP_Error( 'alert-send-failed', sprintf( 'The request returned an invalid response: %s', $response['response']['message'] ) );
 		}
 
 		return $response;
@@ -126,7 +132,7 @@ class Alerts {
 	 *
 	 * @return array|WP_Error
 	 */
-	private function validate_opsgenie_details( $details) {
+	private function validate_opsgenie_details( $details ) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
@@ -283,7 +289,7 @@ class Alerts {
 
 			$alerts->service_address = ALERT_SERVICE_ADDRESS;
 			$alerts->service_port = ALERT_SERVICE_PORT;
-			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alerts', $alerts->service_address, $alerts->service_port );
+			$alerts->service_url = sprintf( 'http://%s:%s/v1.0/alert', $alerts->service_address, $alerts->service_port );
 
 			self::$instance = $alerts;
 		}

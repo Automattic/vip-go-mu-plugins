@@ -137,7 +137,7 @@ class Akismet_Admin {
 
 			wp_register_script( 'akismet.js', plugin_dir_url( __FILE__ ) . '_inc/akismet.js', array('jquery'), AKISMET_VERSION );
 			wp_enqueue_script( 'akismet.js' );
-			
+		
 			$inline_js = array(
 				'comment_author_url_nonce' => wp_create_nonce( 'comment_author_url_nonce' ),
 				'strings' => array(
@@ -151,6 +151,10 @@ class Akismet_Admin {
 
 			if ( isset( $_GET['akismet_recheck'] ) && wp_verify_nonce( $_GET['akismet_recheck'], 'akismet_recheck' ) ) {
 				$inline_js['start_recheck'] = true;
+			}
+
+			if ( apply_filters( 'akismet_enable_mshots', true ) ) {
+				$inline_js['enable_mshots'] = true;
 			}
 
 			wp_localize_script( 'akismet.js', 'WPAkismet', $inline_js );
@@ -383,7 +387,7 @@ class Akismet_Admin {
 			return;
 		}
 
-		$link = add_query_arg( array( 'action' => 'akismet_recheck_queue' ), admin_url( 'admin.php' ) );
+		$link = '';
 
 		$comments_count = wp_count_comments();
 		
@@ -393,32 +397,30 @@ class Akismet_Admin {
 		$classes = array(
 			'button-secondary',
 			'checkforspam',
+			'button-disabled'	// Disable button until the page is loaded
 		);
 
-		if ( ! Akismet::get_api_key() ) {
-			$link = admin_url( 'options-general.php?page=akismet-key-config' );
+		if ( $comments_count->moderated > 0 ) {
+			$classes[] = 'enable-on-load';
 
-			$classes[] = 'checkforspam-pending-config';
+			if ( ! Akismet::get_api_key() ) {
+				$link = add_query_arg( array( 'page' => 'akismet-key-config' ), class_exists( 'Jetpack' ) ? admin_url( 'admin.php' ) : admin_url( 'options-general.php' ) );
+				$classes[] = 'ajax-disabled';
+			}
 		}
 
-		if ( $comments_count->moderated == 0 ) {
-			$classes[] = 'button-disabled';
-		}
 		echo '<a
-				class="' . esc_attr( implode( ' ', $classes ) ) . '"
-				href="' . esc_url( $link ) . '"
-				data-active-label="' . esc_attr( __( 'Checking for Spam', 'akismet' ) ) . '"
-				data-progress-label-format="' . esc_attr( __( '(%1$s%)', 'akismet' ) ) . '"
+				class="' . esc_attr( implode( ' ', $classes ) ) . '"' .
+				( ! empty( $link ) ? ' href="' . esc_url( $link ) . '"' : '' ) .
+				/* translators: The placeholder is for showing how much of the process has completed, as a percent. e.g., "Checking for Spam (40%)" */
+				' data-progress-label="' . esc_attr( __( 'Checking for Spam (%1$s%)', 'akismet' ) ) . '"
 				data-success-url="' . esc_attr( remove_query_arg( array( 'akismet_recheck', 'akismet_recheck_error' ), add_query_arg( array( 'akismet_recheck_complete' => 1, 'recheck_count' => urlencode( '__recheck_count__' ), 'spam_count' => urlencode( '__spam_count__' ) ) ) ) ) . '"
 				data-failure-url="' . esc_attr( remove_query_arg( array( 'akismet_recheck', 'akismet_recheck_complete' ), add_query_arg( array( 'akismet_recheck_error' => 1 ) ) ) ) . '"
 				data-pending-comment-count="' . esc_attr( $comments_count->moderated ) . '"
 				data-nonce="' . esc_attr( wp_create_nonce( 'akismet_check_for_spam' ) ) . '"
-				>';
-			echo '<span class="akismet-label">' . esc_html__('Check for Spam', 'akismet') . '</span>';
-			echo '<span class="checkforspam-progress"></span>';
-		echo '</a>';
+				' . ( ! in_array( 'ajax-disabled', $classes ) ? 'onclick="return false;"' : '' ) . '
+				>' . esc_html__('Check for Spam', 'akismet') . '</a>';
 		echo '<span class="checkforspam-spinner"></span>';
-
 	}
 
 	public static function recheck_queue() {
@@ -610,7 +612,12 @@ class Akismet_Admin {
 						$message = esc_html( __( 'Akismet cleared this comment.', 'akismet' ) );
 					break;
 					case 'wp-blacklisted':
-						$message = sprintf( esc_html( __( 'Comment was caught by %s.', 'akismet' ) ), '<code>wp_blacklist_check</code>' );
+					case 'wp-disallowed':
+						$message = sprintf(
+							/* translators: The placeholder is a WordPress PHP function name. */
+							esc_html( __( 'Comment was caught by %s.', 'akismet' ) ),
+							function_exists( 'wp_check_comment_disallowed_list' ) ? '<code>wp_check_comment_disallowed_list</code>' : '<code>wp_blacklist_check</code>'
+						);
 					break;
 					case 'report-spam':
 						if ( isset( $row['user'] ) ) {
@@ -1053,7 +1060,8 @@ class Akismet_Admin {
 			if ( get_option( 'akismet_alert_code' ) > 0 )
 				self::display_alert();
 		}
-		elseif ( $hook_suffix == 'plugins.php' && !Akismet::get_api_key() ) {
+		elseif ( ( 'plugins.php' === $hook_suffix || 'edit-comments.php' === $hook_suffix ) && ! Akismet::get_api_key() ) {
+			// Show the "Set Up Akismet" banner on the comments and plugin pages if no API key has been set.
 			self::display_api_key_warning();
 		}
 		elseif ( $hook_suffix == 'edit-comments.php' && wp_next_scheduled( 'akismet_schedule_cron_recheck' ) ) {

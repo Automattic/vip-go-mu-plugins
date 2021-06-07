@@ -1,0 +1,242 @@
+<?php
+/**
+ * Scripts and styles output for HTML pages.
+ *
+ * @package query-monitor
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+abstract class QM_Output_Html_Assets extends QM_Output_Html {
+
+	/**
+	 * Collector instance.
+	 *
+	 * @var QM_Collector_Assets Collector.
+	 */
+	protected $collector;
+
+	public function __construct( QM_Collector $collector ) {
+		parent::__construct( $collector );
+		add_filter( 'qm/output/menus',      array( $this, 'admin_menu' ), 70 );
+		add_filter( 'qm/output/menu_class', array( $this, 'admin_class' ) );
+	}
+
+	abstract public function get_type_labels();
+
+	public function output() {
+
+		$data = $this->collector->get_data();
+
+		if ( empty( $data['assets'] ) ) {
+			return;
+		}
+
+		$position_labels = array(
+			// @TODO translator comments or context:
+			'missing' => __( 'Missing', 'query-monitor' ),
+			'broken'  => __( 'Missing Dependencies', 'query-monitor' ),
+			'header'  => __( 'Header', 'query-monitor' ),
+			'footer'  => __( 'Footer', 'query-monitor' ),
+		);
+
+		$type_label = $this->get_type_labels();
+		$this->type = $this->collector->get_dependency_type();
+
+		$hosts = array(
+			__( 'Other', 'query-monitor' ),
+		);
+
+		$this->before_tabular_output();
+
+		echo '<thead>';
+		echo '<tr>';
+		echo '<th scope="col">' . esc_html__( 'Position', 'query-monitor' ) . '</th>';
+		echo '<th scope="col">' . esc_html__( 'Handle', 'query-monitor' ) . '</th>';
+		echo '<th scope="col" class="qm-filterable-column">';
+		$args = array(
+			'prepend' => array(
+				'local' => $data['host'],
+			),
+		);
+		echo $this->build_filter( $this->type . '-host', $hosts, __( 'Host', 'query-monitor' ), $args ); // WPCS: XSS ok.
+		echo '</th>';
+		echo '<th scope="col">' . esc_html__( 'Source', 'query-monitor' ) . '</th>';
+		echo '<th scope="col" class="qm-filterable-column">';
+		echo $this->build_filter( $this->type . '-dependencies', $data['dependencies'], __( 'Dependencies', 'query-monitor' ) ); // WPCS: XSS ok.
+		echo '</th>';
+		echo '<th scope="col" class="qm-filterable-column">';
+		echo $this->build_filter( $this->type . '-dependents', $data['dependents'], __( 'Dependents', 'query-monitor' ) ); // WPCS: XSS ok.
+		echo '</th>';
+		echo '<th scope="col">' . esc_html__( 'Version', 'query-monitor' ) . '</th>';
+		echo '</tr>';
+		echo '</thead>';
+
+		echo '<tbody>';
+
+		foreach ( $position_labels as $position => $label ) {
+			if ( ! empty( $data['assets'][ $position ] ) ) {
+				foreach ( $data['assets'][ $position ] as $handle => $asset ) {
+					$this->dependency_row( $handle, $asset, $label );
+				}
+			}
+		}
+
+		echo '</tbody>';
+
+		echo '<tfoot>';
+
+		echo '<tr>';
+		printf(
+			'<td colspan="7">%1$s</td>',
+			sprintf(
+				esc_html( $type_label['total'] ),
+				'<span class="qm-items-number">' . esc_html( number_format_i18n( $data['counts']['total'] ) ) . '</span>'
+			)
+		);
+		echo '</tr>';
+		echo '</tfoot>';
+
+		$this->after_tabular_output();
+	}
+
+	protected function dependency_row( $handle, array $asset, $label ) {
+		$data = $this->collector->get_data();
+
+		$highlight_deps       = array_map( array( $this, '_prefix_type' ), $asset['dependencies'] );
+		$highlight_dependents = array_map( array( $this, '_prefix_type' ), $asset['dependents'] );
+
+		$dependencies_list = implode( ' ', $asset['dependencies'] );
+		$dependents_list   = implode( ' ', $asset['dependents'] );
+
+		$dependency_output = array();
+
+		foreach ( $asset['dependencies'] as $dep ) {
+			if ( isset( $data['missing_dependencies'][ $dep ] ) ) {
+				$dependency_output[] = sprintf(
+					'<span style="white-space:nowrap"><span class="dashicons dashicons-warning" aria-hidden="true"></span>%s</span>',
+					sprintf(
+						/* translators: %s: Name of missing script or style dependency */
+						__( '%s (missing)', 'query-monitor' ),
+						esc_html( $dep )
+					)
+				);
+			} else {
+				$dependency_output[] = $dep;
+			}
+		}
+
+		$qm_host = ( $asset['local'] ) ? 'local' : __( 'Other', 'query-monitor' );
+
+		$class = '';
+
+		if ( $asset['warning'] ) {
+			$class = 'qm-warn';
+		}
+
+		echo '<tr data-qm-subject="' . esc_attr( $this->type . '-' . $handle ) . '" data-qm-' . esc_attr( $this->type ) . '-host="' . esc_attr( $qm_host ) . '" data-qm-' . esc_attr( $this->type ) . '-dependents="' . esc_attr( $dependents_list ) . '" data-qm-' . esc_attr( $this->type ) . '-dependencies="' . esc_attr( $dependencies_list ) . '" class="' . esc_attr( $class ) . '">';
+		echo '<td class="qm-nowrap">';
+
+		if ( $asset['warning'] ) {
+			echo '<span class="dashicons dashicons-warning" aria-hidden="true"></span>';
+		}
+
+		echo esc_html( $label );
+		echo '</td>';
+
+		$host  = $asset['host'];
+		$parts = explode( '.', $host );
+
+		foreach ( $parts as $k => $part ) {
+			if ( strlen( $part ) > 16 ) {
+				$parts[ $k ] = substr( $parts[ $k ], 0, 6 ) . '&hellip;' . substr( $parts[ $k ], -6 );
+			}
+		}
+
+		$host = implode( '.', $parts );
+
+		echo '<td class="qm-nowrap qm-ltr">' . esc_html( $handle ) . '</td>';
+		echo '<td class="qm-nowrap qm-ltr">' . esc_html( $host ) . '</td>';
+		echo '<td class="qm-ltr">';
+		if ( is_wp_error( $asset['source'] ) ) {
+			$error_data = $asset['source']->get_error_data();
+			if ( $error_data && isset( $error_data['src'] ) ) {
+				printf(
+					'<span class="qm-warn"><span class="dashicons dashicons-warning" aria-hidden="true"></span>%1$s:</span><br><a href="%2$s" class="qm-link">%2$s</a>',
+					esc_html( $asset['source']->get_error_message() ),
+					esc_url( $error_data['src'] )
+				);
+			} else {
+				printf(
+					'<span class="qm-warn"><span class="dashicons dashicons-warning" aria-hidden="true"></span>%s</span>',
+					esc_html( $asset['source']->get_error_message() )
+				);
+			}
+		} elseif ( ! empty( $asset['source'] ) ) {
+			printf(
+				'<a href="%s" class="qm-link">%s</a>',
+				esc_url( $asset['source'] ),
+				esc_html( $asset['display'] )
+			);
+		}
+		echo '</td>';
+		echo '<td class="qm-ltr qm-highlighter" data-qm-highlight="' . esc_attr( implode( ' ', $highlight_deps ) ) . '">';
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo implode( ', ', $dependency_output );
+
+		echo '</td>';
+		echo '<td class="qm-ltr qm-highlighter" data-qm-highlight="' . esc_attr( implode( ' ', $highlight_dependents ) ) . '">' . implode( ', ', array_map( 'esc_html', $asset['dependents'] ) ) . '</td>';
+		echo '<td class="qm-ltr">' . esc_html( $asset['ver'] ) . '</td>';
+
+		echo '</tr>';
+	}
+
+	public function _prefix_type( $val ) {
+		return $this->type . '-' . $val;
+	}
+
+	public function admin_class( array $class ) {
+
+		$data = $this->collector->get_data();
+
+		if ( ! empty( $data['broken'] ) || ! empty( $data['missing'] ) ) {
+			$class[] = 'qm-error';
+		}
+
+		return $class;
+
+	}
+
+	public function admin_menu( array $menu ) {
+
+		$data = $this->collector->get_data();
+
+		if ( empty( $data['assets'] ) ) {
+			return $menu;
+		}
+
+		$type_label = $this->get_type_labels();
+		$label = sprintf(
+			$type_label['count'],
+			number_format_i18n( $data['counts']['total'] )
+		);
+
+		$args = array(
+			'title' => esc_html( $label ),
+			'id'    => esc_attr( "query-monitor-{$this->collector->id}" ),
+			'href'  => esc_attr( '#' . $this->collector->id() ),
+		);
+
+		if ( ! empty( $data['broken'] ) || ! empty( $data['missing'] ) ) {
+			$args['meta']['classname'] = 'qm-error';
+		}
+
+		$id          = $this->collector->id();
+		$menu[ $id ] = $this->menu( $args );
+
+		return $menu;
+
+	}
+
+}

@@ -65,6 +65,7 @@ class Sync {
 
 	public function do_cron() {
 		$this->maybe_sync_jetpack_privacy_settings();
+		$this->put_site_details();
 	}
 
 	public function maybe_sync_jetpack_privacy_settings() {
@@ -121,6 +122,13 @@ class Sync {
 		}
 
 		return $success;
+	}
+
+	public function put_site_details() {
+		// This is a temporary workaround while the full Site Details implementation is finished
+		require_once( __DIR__ . '/class-site-details-index.php' );
+
+		Site_Details_Index::instance()->put_site_details_in_logstash();
 	}
 
 	public function log( $severity, $message, $extra = array() ) {

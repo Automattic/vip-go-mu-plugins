@@ -4,12 +4,17 @@
 Plugin Name: Akismet Anti-Spam
 Plugin URI: https://akismet.com/
 Description: Used by millions, Akismet is quite possibly the best way in the world to <strong>protect your blog from spam</strong>. It keeps your site protected even while you sleep. To get started: activate the Akismet plugin and then go to your Akismet Settings page to set up your API key.
-Version: 4.1.5
+Version: 4.1.9
 Author: Automattic
 Author URI: https://automattic.com/wordpress-plugins/
 License: GPLv2 or later
 Text Domain: akismet
 */
+
+// Avoid loading Akismet altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for Akismet to work in VIP)
+if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+	return;
+}
 
 // Load the core Akismet plugin
 require_once( __DIR__ . '/akismet/akismet.php' );
@@ -44,3 +49,14 @@ function wpcom_vip_akismet_spam_count_incr( $val ) {
 	return 0;
 }
 add_filter( 'akismet_spam_count_incr', 'wpcom_vip_akismet_spam_count_incr' );
+
+add_action( 'admin_menu', 'vip_remove_akismet_admin_menu', 999 );
+
+function vip_remove_akismet_admin_menu() {
+	$key = Akismet::get_api_key();
+	$key_status = Akismet::check_key_status( $key );
+
+	if ( ! $key_status || ! $key_status[1] || 'invalid' === $key_status[1] ) {
+		remove_submenu_page( 'jetpack', 'akismet-key-config' );
+	}
+}

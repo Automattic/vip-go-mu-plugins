@@ -1,4 +1,5 @@
 .idea
+.DS_Store
 
 # Secrets directory
 .secrets
@@ -13,7 +14,11 @@ phpdoc
 
 # Composer
 /vendor/
-output
+/output/
 
 # npm
 node_modules
+
+# Jetpack dev files
+jetpack-*/tools
+jetpack-*/bin
