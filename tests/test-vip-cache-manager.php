@@ -11,6 +11,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
+		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
 	}
 
