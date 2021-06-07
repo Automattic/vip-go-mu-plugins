@@ -26,12 +26,12 @@
   },
   "homepage": "https://github.com/Parsely/wp-parsely#readme",
   "devDependencies": {
-    "@wordpress/eslint-plugin": "^9.0.1",
-    "@wordpress/scripts": "^15.0.1",
-    "prettier": "^2.3.0"
+    "@wordpress/eslint-plugin": "9.0.4",
+    "@wordpress/scripts": "15.0.1",
+    "prettier": "2.3.0"
   },
   "dependencies": {
-    "@wordpress/dom-ready": "^2.13.2",
-    "@wordpress/i18n": "^3.20.0"
+    "@wordpress/dom-ready": "2.13.2",
+    "@wordpress/i18n": "3.20.0"
   }
 }
