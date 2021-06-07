@@ -238,6 +238,10 @@ Our Cookie and Consent Banner can help you comply with GDPR. The European Unionâ
 4. Promote your newest posts, pages, and products across your social media channels.
 
 == Changelog ==
+### 9.6.2 - 2021-06-02
+#### Security:
+- Carousel: prevent fetching comments from posts, and from attachments of private posts.
+
 ### 9.6.1 - 2021-04-13
 #### Bug fixes
 - Connection tools: safeguard cleanup tool against accidental option removal.
