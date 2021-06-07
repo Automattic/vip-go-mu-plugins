@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	public $cache_manager;
 

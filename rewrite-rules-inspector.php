@@ -1,13 +1,26 @@
 <?php
 
- /*
- Plugin Name: Rewrite Rules Inspector
- Plugin URI: https://wordpress.org/plugins/rewrite-rules-inspector/
- Description: Straightforward WordPress admin tool for inspecting your rewrite rules
- Version: 1.2.1
- Author: Automattic
- Author URI: http://automattic.com/wordpress-plugins/
- License: GPLv2 or later
+/**
+ * Rewrite Rules Inspector
+ *
+ * @package      automattic\rewrite-rules-inspector
+ * @author       Automattic, Daniel Bachhuber
+ * @copyright    2012 Automattic
+ * @license      GPL-2.0-or-later
+ *
+ * @wordpress-plugin
+ * Plugin Name:       Rewrite Rules Inspector
+ * Plugin URI:        https://wordpress.org/plugins/rewrite-rules-inspector/
+ * Description:       Simple WordPress admin tool for inspecting your rewrite rules.
+ * Version:           1.3.1
+ * Author:            Automattic, Daniel Bachhuber
+ * Author URI:        https://automattic.com/
+ * Text Domain:       rewrite-rules-inspector
+ * License:           GPL-2.0-or-later
+ * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * GitHub Plugin URI: https://github.com/Automattic/Rewrite-Rules-Inspector
+ * Requires PHP:      5.6
+ * Requires WP:       3.1.0
  */
 
 require_once( __DIR__ . '/rewrite-rules-inspector/rewrite-rules-inspector.php' );
