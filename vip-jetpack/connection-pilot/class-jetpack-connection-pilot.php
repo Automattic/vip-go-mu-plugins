@@ -274,7 +274,17 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
-		// The constant is deprecated, but keeping this check for historical reasons
+		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
+		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3750 ) {
+			return false;
+		}
+
+		// TODO: Only attempting to reconnect on new subsites. We can remove this code after ramp-up
+		if ( ! self::is_fresh_subsite() ) {
+			return false;
+		}
+
+		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
