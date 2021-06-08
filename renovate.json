@@ -22,5 +22,9 @@
 				"groupSlug": "all-minor-patch-eslint"
 			}
 		}
+	],
+	"ignorePaths": [
+		"wp-parsely-*/",
+		"jetpack*/"
 	]
 }
