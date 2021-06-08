@@ -277,11 +277,16 @@ class Connection_Pilot {
 		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
 		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3750 ) {
 			return false;
-		}
-
-		// TODO: Only attempting to reconnect on new subsites. We can remove this code after ramp-up
-		if ( ! self::is_fresh_subsite() ) {
-			return false;
+		} else {
+			try {
+				$site_registered = new DateTime( get_site()->registered );
+				$threshold = new DateTime( "2021-06-01" );
+				if ( $site_registered < $threshold ) {
+					return false;
+				}
+			} catch ( \Exception $e ) {
+				return false;
+			}
 		}
 
 		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
