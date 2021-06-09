@@ -25,7 +25,7 @@ class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
 	 * @return bool
 	 */
 	protected static function isPermittedPath( $path ) {
-		if ( 0 === strpos( $path, 'vip://' ) ) {
+		if ( 0 === strpos( $path, 'vip://wp-content/uploads' ) ) {
 			return true;
 		} else {
 			return ! preg_match( '#^[a-z]+://#i', $path );
