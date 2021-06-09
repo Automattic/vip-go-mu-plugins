@@ -79,6 +79,7 @@ exclude_core_tests() {
 		"tests/user/wpSendUserRequest.php"
 		"tests/xmlrpc/basic.php"
 		"tests/xmlrpc/wp/getUser.php"
+		"tests/xmlrpc/wp/getMediaItem.php"
 		"tests/basic.php"
 	);
 
@@ -117,7 +118,6 @@ update_core_tests() {
 		"$wp_tests_dir/tests/xmlrpc/wp/getPageList.php:Tests_XMLRPC_wp_getPageList"
 		"$wp_tests_dir/tests/xmlrpc/wp/getPage.php:Tests_XMLRPC_wp_getPage"
 		"$wp_tests_dir/tests/xmlrpc/wp/getOptions.php:Tests_XMLRPC_wp_getOptions"
-		"$wp_tests_dir/tests/xmlrpc/wp/getMediaItem.php:Tests_XMLRPC_wp_getMediaItem"
 		"$wp_tests_dir/tests/xmlrpc/wp/getComments.php:Tests_XMLRPC_wp_getComments"
 		"$wp_tests_dir/tests/xmlrpc/wp/getComment.php:Tests_XMLRPC_wp_getComment"
 		"$wp_tests_dir/tests/xmlrpc/wp/editTerm.php:Tests_XMLRPC_wp_editTerm"
