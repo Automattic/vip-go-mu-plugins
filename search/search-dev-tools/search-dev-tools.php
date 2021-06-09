@@ -45,9 +45,7 @@ function register_rest_routes() {
 				'url'   => [
 					'type'              => 'string',
 					'required'          => true,
-					'validate_callback' => function( $value, $request, $param ) {
-							return filter_var( $value, FILTER_VALIDATE_URL ) && stripos( $value, '_search' ) !== false ?: new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) );
-					},
+					'validate_callback' => __NAMESPACE__ . '\rest_endpoint_url_validate_callback',
 				],
 				'query' => [
 					'type'              => 'string',
@@ -92,6 +90,42 @@ function rest_callback( \WP_REST_Request $request ) {
  */
 function should_enable_search_dev_tools(): bool {
 	return current_user_can( SEARCH_DEV_TOOLS_CAP ) && function_exists( 'ep_get_query_log' );
+}
+
+/**
+ * Validate the request URL - we should only allow search URLs.
+ *
+ * @param mixed $value
+ * @param WP_Rest_Request $request
+ * @param string $param key
+ * @return mixed true if valid, WP_Error if not.
+ */
+function rest_endpoint_url_validate_callback( $value, $request, $param ) {
+	$error = new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) );
+
+	// Not a valid URL.
+	if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
+		return $error;
+	}
+
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+	$path = trim( parse_url( $value, PHP_URL_PATH ), '/' );
+
+	// Not an allowed endpoint
+	if ( ! wp_endswith( $path, '_search' ) ) {
+		return $error;
+	}
+
+	$index_part = strtok( $path, '/' );
+
+	// Check for the allowed index names.
+	foreach ( explode( ',', $index_part ) as $idx ) {
+		if ( ! wp_startswith( $idx, 'vip-' . FILES_CLIENT_SITE_ID ) ) {
+			return $error;
+		}
+	}
+
+	return true;
 }
 
 /**
