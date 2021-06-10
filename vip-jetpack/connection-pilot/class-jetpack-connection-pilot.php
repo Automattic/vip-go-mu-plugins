@@ -278,6 +278,10 @@ class Connection_Pilot {
 		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3750 ) {
 			return false;
 		} else {
+			if ( ! function_exists( 'get_site' ) ) {
+				return false;
+			}
+
 			try {
 				$site_registered = new DateTime( get_site()->registered );
 				$threshold = new DateTime( "2021-06-01" );
