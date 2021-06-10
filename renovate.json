@@ -24,7 +24,9 @@
 		}
 	],
 	"ignorePaths": [
-		"wp-parsely-*/",
-		"jetpack*/"
+		"akismet/",
+		"jetpack*/",
+		"vaultpress/",
+		"wp-parsely-*/"
 	]
 }
