@@ -37,12 +37,17 @@ class CoreCommand extends \ElasticPress\Command {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexables = $this->_parse_indexables( $assoc_args );
+		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		foreach ( $indexables as $indexable ) {
 			WP_CLI::line( sprintf( 'Updating active version for "%s"', $indexable->slug ) );
 			$result = $search->versioning->activate_version( $indexable, 'next' );
 			if ( is_wp_error( $result ) ) {
 				WP_CLI::error( sprintf( 'Error activating next version: %s', $result->get_error_message() ) );
+			}
+
+			if ( ! $skip_confirm ) {
+				WP_CLI::confirm( '⚠️  You are about to remove a previously used index version. It is advised to verify that the new version is being used before continuing. Continue?' );
 			}
 
 			WP_CLI::line( sprintf( 'Removing inactive version for "%s"', $indexable->slug ) );
@@ -141,6 +146,7 @@ class CoreCommand extends \ElasticPress\Command {
 		$this->_verify_arguments_compatibility( $assoc_args );
 
 		$using_versions = $assoc_args['using-versions'] ?? false;
+		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		$this->_maybe_setup_index_version( $assoc_args );
 
@@ -184,6 +190,8 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 
 		if ( $using_versions ) {
+			// resetting skip-confirm after it was cleared for elasticpress
+			$assoc_args['skip-confirm'] = $skip_confirm;
 			$this->_shift_version_after_index( $assoc_args );
 		}
 	}
