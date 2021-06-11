@@ -149,11 +149,19 @@ class Connection_Pilot {
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
-
 				return;
 			}
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
+
+			$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+
+			if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+				$this->send_alert( 'Alert: Could not connect VaultPress automatically.' );
+				return;
+			}
+
+			$this->send_alert( 'VaultPress was successfuly connected!' );
 
 			return;
 		}

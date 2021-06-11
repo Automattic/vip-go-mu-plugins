@@ -130,6 +130,10 @@ class Controls {
 		return self::jetpack_is_connected();
 	}
 
+	public static function connect_vaultpress() {
+		return VaultPress::init()->register_via_jetpack( true );
+	}
+
 	/**
 	 * Provision the site with WP.com.
 	 *
