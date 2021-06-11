@@ -155,6 +155,16 @@ class Connection_Pilot {
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
 
+			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+
+			if ( ! $akismet_connection_attempt ) {
+				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+
+				return;
+			}
+
+			$this->send_alert( 'Akismet was successfuly connected!' );
+
 			return;
 		}
 
