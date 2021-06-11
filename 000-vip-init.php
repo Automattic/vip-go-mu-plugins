@@ -159,6 +159,10 @@ if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUT
 
 define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
+if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
+	define( 'VIP_SEARCH_DEV_TOOLS', 'production' !== VIP_GO_APP_ENVIRONMENT || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
+}
+
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
 define( 'FS_METHOD', 'direct' );
