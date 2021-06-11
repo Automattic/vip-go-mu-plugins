@@ -50,7 +50,6 @@ class CoreCommand extends \ElasticPress\Command {
 				WP_CLI::confirm( '⚠️  You are about to remove a previously used index version. It is advised to verify that the new version is being used before continuing. Continue?' );
 			}
 
-
 			WP_CLI::line( sprintf( 'Removing inactive version for "%s"', $indexable->slug ) );
 			$result = $search->versioning->delete_version( $indexable, 'previous' );
 			if ( is_wp_error( $result ) ) {
