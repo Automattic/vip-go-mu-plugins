@@ -149,7 +149,6 @@ class Connection_Pilot {
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
-
 				return;
 			}
 
@@ -159,7 +158,6 @@ class Connection_Pilot {
 
 			if ( ! $akismet_connection_attempt ) {
 				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
-
 				return;
 			}
 
