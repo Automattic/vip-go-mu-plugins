@@ -131,7 +131,11 @@ class Controls {
 	}
 
 	public static function connect_vaultpress() {
-		return VaultPress::init()->register_via_jetpack( true );
+		if ( class_exists( 'VaultPress' ) ) {
+			return \VaultPress::init()->register_via_jetpack( true );
+		}
+
+		return false;
 	}
 
 	/**
