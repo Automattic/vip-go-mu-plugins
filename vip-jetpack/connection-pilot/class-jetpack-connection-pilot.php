@@ -95,7 +95,7 @@ class Connection_Pilot {
 	}
 
 	public function schedule_immediate_cron() {
-		wp_schedule_single_event( strtotime( '+1 minutes' ), self::CRON_ACTION );
+		wp_schedule_single_event( time(), self::CRON_ACTION );
 	}
 
 	public static function do_cron() {
