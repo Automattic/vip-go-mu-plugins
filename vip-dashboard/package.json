@@ -19,7 +19,7 @@
   "devDependencies": {
     "babel-eslint": "10.1.0",
     "browser-sync": "2.26.14",
-    "browserify": "13.3.0",
+    "browserify": "17.0.0",
     "eslint": "3.19.0",
     "eslint-plugin-react": "6.10.3",
     "gulp": "3.9.1",
