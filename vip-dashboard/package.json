@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "classnames": "2.3.1",
-    "debug": "2.6.9",
+    "debug": "4.3.1",
     "fbjs": "0.8.17",
     "lodash": "4.17.21",
     "react": "15.7.0",
