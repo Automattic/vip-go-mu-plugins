@@ -130,12 +130,24 @@ class Controls {
 		return self::jetpack_is_connected();
 	}
 
+	/**
+	 * Connect a site to VaultPress.
+	 *
+	 * Uses VaultPress' function to connect VaultPress using Jetpack. An active Jetpack connection is required on the site.
+	 *
+	 * @return bool|\WP_Error True if site is connected, error otherwise.
+	 */
 	public static function connect_vaultpress() {
 		if ( class_exists( 'VaultPress' ) ) {
-			return \VaultPress::init()->register_via_jetpack( true );
+			$vaultpress = \VaultPress::init();
+			if ( ! $vaultpress->is_registered() ) {
+				return $vaultpress->register_via_jetpack( true );
+			}
+
+			return true;
 		}
 
-		return false;
+		return new \WP_Error( 1, __( 'VaultPress could not be found.' ) );
 	}
 
 	/**

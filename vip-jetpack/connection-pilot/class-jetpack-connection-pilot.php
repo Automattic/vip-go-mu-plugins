@@ -132,6 +132,16 @@ class Connection_Pilot {
 		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
 			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
 
+			// TODO: Remove check after general rollout
+			if ( self::should_attempt_reconnection() ) {
+				// Attempting VaultPress connection given that Jetpack is connected
+				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
+					$this->send_alert( $message );
+				}
+			}
+
 			return;
 		}
 
@@ -153,15 +163,6 @@ class Connection_Pilot {
 			}
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
-
-			$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
-
-			if ( is_wp_error( $vaultpress_connection_attempt ) ) {
-				$this->send_alert( 'Alert: Could not connect VaultPress automatically.' );
-				return;
-			}
-
-			$this->send_alert( 'VaultPress was successfuly connected!' );
 
 			return;
 		}
