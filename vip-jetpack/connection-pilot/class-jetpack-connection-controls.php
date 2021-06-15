@@ -134,12 +134,16 @@ class Controls {
 	 * Connect a site to Akismet.
 	 *
 	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection is required on the site.
+	 *
+	 * @return mixed bool True if connection worked, false otherwise
 	 */
 	public static function connect_akismet() {
 		if ( class_exists( 'Akismet_Admin' ) ) {
-			return \Akismet_Admin::connect_jetpack_user();
+			if ( is_akismet_key_invalid() ) {
+				return \Akismet_Admin::connect_jetpack_user();
+			}
+			return true;
 		}
-
 		return false;
 	}
 
