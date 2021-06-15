@@ -125,10 +125,13 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
-			// Attempting Akismet connection given that Jetpack is connected
-			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
-			if ( ! $akismet_connection_attempt ) {
-				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+			// TODO: Remove check after general rollout
+			if ( self::should_attempt_reconnection() ) {
+				// Attempting Akismet connection given that Jetpack is connected
+				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+				if ( ! $akismet_connection_attempt ) {
+					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+				}
 			}
 
 			return;
