@@ -11,7 +11,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
 /**
  * Notice for blog_public value
  */
-function notice( $wp_admin_bar ) {
+function notice() {
 	$home_url_parsed = parse_url( home_url() );
 	if (
 		! current_user_can( 'manage_options' ) ||
