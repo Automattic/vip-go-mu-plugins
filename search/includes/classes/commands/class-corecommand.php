@@ -237,12 +237,12 @@ class CoreCommand extends \ElasticPress\Command {
 	 * ## EXAMPLES
 	 * wp vip-search get-settings post --format=json | jq
 	 *
-	 * @subcommand get-settings
+	 * @subcommand get-index-settings
 	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_settings( $args, $assoc_args ) {
+	public function get_index_settings( $args, $assoc_args ) {
 		$slug = array_shift( $args );
 
 		$indexable = $this->_parse_indexable( $slug );
