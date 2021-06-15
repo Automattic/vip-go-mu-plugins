@@ -216,9 +216,6 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	require_once( __DIR__ . '/search/search.php' );
 }
 
-
-
-
 // Set WordPress environment type
 // Map some VIP environments to 'production' and 'development', and use 'staging' for any other
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) ) {
