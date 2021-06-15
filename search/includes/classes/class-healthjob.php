@@ -252,7 +252,7 @@ class HealthJob {
 					$result['diff']
 				);
 
-				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$result['entity']}:{$result['type']}" );
+				$this->send_alert( '#vip-go-es-inconsistencies', $message, 2, "{$result['entity']}:{$result['type']}" );
 			}
 		}
 	}
