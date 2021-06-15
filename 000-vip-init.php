@@ -159,10 +159,6 @@ if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUT
 
 define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
-if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
-	define( 'VIP_SEARCH_DEV_TOOLS', 'production' !== VIP_GO_APP_ENVIRONMENT || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
-}
-
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
 define( 'FS_METHOD', 'direct' );
@@ -208,6 +204,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
 }
 
+if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
+	define( 'VIP_SEARCH_DEV_TOOLS', ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
+}
+
 // Load elasticsearch helpers
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
@@ -215,6 +215,9 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
 	require_once( __DIR__ . '/search/search.php' );
 }
+
+
+
 
 // Set WordPress environment type
 // Map some VIP environments to 'production' and 'development', and use 'staging' for any other
