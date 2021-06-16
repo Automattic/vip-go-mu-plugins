@@ -128,6 +128,13 @@ class Connection_Pilot {
 				if ( ! $akismet_connection_attempt ) {
 					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
 				}
+
+				// Attempting VaultPress connection given that Jetpack is connected
+				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
+					$this->send_alert( $message );
+				}
 			}
 
 			return;
