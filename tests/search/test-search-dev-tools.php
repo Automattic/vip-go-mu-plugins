@@ -17,10 +17,9 @@ class Search_Dev_Tools_Test extends \WP_UnitTestCase {
 	// phpcs:enable
 
 	public function setUp() {
-		define( 'VIP_SEARCH_DEV_TOOLS', true );
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
-		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php'; 
+		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';
 	}
 
 	public function data_provider_endpoint_urls() {
