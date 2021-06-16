@@ -141,10 +141,10 @@ class Controls {
 		if ( class_exists( 'Akismet_Admin' ) ) {
 
 			if ( is_akismet_key_invalid() ) {
-				// Getting wpcomvip user, since it's the owner of the connection
+				// Getting wpcomvip user, since it's the owner of the Jetpack connection
 				$current_user = wp_get_current_user();
 				$vip_user = get_user_by( 'login', 'wpcomvip' );
-				if ( ! $current_user || ! $vip_user) {
+				if ( ! $current_user || ! $vip_user ) {
 					return false;
 				}
 
