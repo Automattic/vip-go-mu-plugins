@@ -90,7 +90,7 @@ class Controls {
 	 *
 	 * @return mixed bool|\WP_Error True if JP was (re)connected, \WP_Error otherwise.
 	 */
-	public static function connect_site( $skip_connection_tests = false, $disconnect = false ) {
+	public static function connect_site( bool $skip_connection_tests = false, bool $disconnect = false ) {
 		if ( ! self::validate_constants() ) {
 			return new \WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some constants are missing.' );
 		}
@@ -128,6 +128,23 @@ class Controls {
 
 		// Run the tests again and return the result 🤞.
 		return self::jetpack_is_connected();
+	}
+
+	/**
+	 * Connect a site to Akismet.
+	 *
+	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection is required on the site.
+	 *
+	 * @return bool True if connection worked, false otherwise
+	 */
+	public static function connect_akismet(): bool {
+		if ( class_exists( 'Akismet_Admin' ) ) {
+			if ( is_akismet_key_invalid() ) {
+				return \Akismet_Admin::connect_jetpack_user();
+			}
+			return true;
+		}
+		return false;
 	}
 
 	/**
