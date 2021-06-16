@@ -127,6 +127,12 @@ class Connection_Pilot {
 
 			// TODO: Remove check after general rollout
 			if ( self::should_attempt_reconnection() ) {
+				// Attempting Akismet connection given that Jetpack is connected
+				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+				if ( ! $akismet_connection_attempt ) {
+					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+				}
+
 				// Attempting VaultPress connection given that Jetpack is connected
 				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
 				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
@@ -163,7 +169,6 @@ class Connection_Pilot {
 			}
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
-
 			return;
 		}
 
@@ -284,7 +289,7 @@ class Connection_Pilot {
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
-		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3750 ) {
+		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3600 ) {
 			return false;
 		} else {
 			if ( ! function_exists( 'get_site' ) ) {
