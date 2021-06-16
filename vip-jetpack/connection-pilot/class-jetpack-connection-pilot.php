@@ -125,6 +125,15 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
+			// TODO: Remove check after general rollout
+			if ( self::should_attempt_reconnection() ) {
+				// Attempting Akismet connection given that Jetpack is connected
+				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+				if ( ! $akismet_connection_attempt ) {
+					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+				}
+			}
+
 			return;
 		}
 
@@ -149,12 +158,10 @@ class Connection_Pilot {
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
-
 				return;
 			}
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
-
 			return;
 		}
 
@@ -275,7 +282,7 @@ class Connection_Pilot {
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
-		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3750 ) {
+		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3600 ) {
 			return false;
 		} else {
 			if ( ! function_exists( 'get_site' ) ) {
