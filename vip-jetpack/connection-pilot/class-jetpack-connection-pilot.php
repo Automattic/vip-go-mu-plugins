@@ -282,7 +282,7 @@ class Connection_Pilot {
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
-		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3750 ) {
+		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3600 ) {
 			return false;
 		} else {
 			if ( ! function_exists( 'get_site' ) ) {
