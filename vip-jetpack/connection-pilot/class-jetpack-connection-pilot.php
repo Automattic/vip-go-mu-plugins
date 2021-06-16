@@ -125,13 +125,6 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
-			return;
-		}
-
-		// Not connected, maybe reconnect
-		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
-			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
-
 			// TODO: Remove check after general rollout
 			if ( self::should_attempt_reconnection() ) {
 				// Attempting VaultPress connection given that Jetpack is connected
@@ -141,6 +134,13 @@ class Connection_Pilot {
 					$this->send_alert( $message );
 				}
 			}
+
+			return;
+		}
+
+		// Not connected, maybe reconnect
+		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
+			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
 
 			return;
 		}
