@@ -161,6 +161,26 @@ class Controls {
 	}
 
 	/**
+	 * Connect a site to VaultPress.
+	 *
+	 * Uses VaultPress' function to connect VaultPress using Jetpack. An active Jetpack connection is required on the site.
+	 *
+	 * @return bool|\WP_Error True if site is connected, error otherwise.
+	 */
+	public static function connect_vaultpress() {
+		if ( class_exists( 'VaultPress' ) ) {
+			$vaultpress = \VaultPress::init();
+			if ( ! $vaultpress->is_registered() ) {
+				return $vaultpress->register_via_jetpack( true );
+			}
+
+			return true;
+		}
+
+		return new \WP_Error( 1, __( 'VaultPress could not be found.' ) );
+	}
+
+	/**
 	 * Provision the site with WP.com.
 	 *
 	 * @see https://github.com/Automattic/host-partner-documentation/blob/master/jetpack/plan-provisioning.md
