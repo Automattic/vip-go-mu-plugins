@@ -16,7 +16,9 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = array();
+	public static $feature_percentages = array(
+		'search-dev-tools' => 0.25,
+	);
 
 	public static $site_id = false;
 
