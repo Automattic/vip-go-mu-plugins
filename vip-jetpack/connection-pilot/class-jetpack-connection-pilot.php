@@ -90,7 +90,7 @@ class Connection_Pilot {
 
 	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
+			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
 	}
 
