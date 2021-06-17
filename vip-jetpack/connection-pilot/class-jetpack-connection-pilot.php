@@ -142,8 +142,6 @@ class Connection_Pilot {
 
 		// Not connected, maybe reconnect
 		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
-			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
-
 			return;
 		}
 
@@ -280,9 +278,10 @@ class Connection_Pilot {
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
-		if ( ! is_multisite() && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3600 ) {
+		$is_multisite = is_multisite();
+		if ( ! $is_multisite && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3000 ) {
 			return false;
-		} else {
+		} else if ( $is_multisite ) {
 			if ( ! function_exists( 'get_site' ) ) {
 				return false;
 			}
