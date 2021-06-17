@@ -58,21 +58,35 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 	}
 
+	private function _parse_indexable( $slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $slug );
+		if ( ! $indexable ) {
+			WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+		}
+
+		return $indexable;
+	}
+
 	private function _parse_indexables( $assoc_args ) {
 		$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
 
 		$indexables = [];
 
 		foreach ( $indexable_slugs as $slug ) {
-			$indexable = \ElasticPress\Indexables::factory()->get( $slug );
-
-			if ( ! $indexable ) {
-				WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
-			}
-
+			$indexable = $this->_parse_indexable( $slug );
 			$indexables[] = $indexable;
 		}
 		return $indexables;
+	}
+
+	private function _set_version( $indexable, $version ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$result = $search->versioning->set_current_version_number( $indexable, $version );
+
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+		}
 	}
 
 	protected function _maybe_setup_index_version( $assoc_args ) {
@@ -111,11 +125,7 @@ class CoreCommand extends \ElasticPress\Command {
 				}
 
 				foreach ( $indexables as $indexable ) {
-					$result = $search->versioning->set_current_version_number( $indexable, $version_number );
-
-					if ( is_wp_error( $result ) ) {
-						WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
-					}
+					$this->_set_version( $indexable, $version_number );
 				}
 			}
 		}
@@ -208,6 +218,45 @@ class CoreCommand extends \ElasticPress\Command {
 	public function put_mapping( $args, $assoc_args ) {
 		self::confirm_destructive_operation( $assoc_args );
 		parent::put_mapping( $args, $assoc_args );
+	}
+
+	/**
+	 * Get settings for index which includes shard count and mapping
+	 *
+	 * ## OPTIONS
+	 *
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 *
+	 * [--version]
+	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version
+	 *
+	 * [--format=<string>]
+	 * : Optional one of: table json csv yaml ids count
+	 *
+	 * ## EXAMPLES
+	 * wp vip-search get-settings post --format=json | jq
+	 *
+	 * @subcommand get-index-settings
+	 *
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_index_settings( $args, $assoc_args ) {
+		$slug = array_shift( $args );
+
+		$indexable = $this->_parse_indexable( $slug );
+
+		if ( isset( $assoc_args['version'] ) ) {
+			$this->_set_version( $indexable, $assoc_args['version'] );
+		}
+
+		$index_name = $indexable->get_index_name();
+
+		$settings = \ElasticPress\Elasticsearch::factory()->get_mapping( $index_name );
+
+		$keys = array_keys( $settings );
+		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $settings ), $keys );
 	}
 
 	/**
