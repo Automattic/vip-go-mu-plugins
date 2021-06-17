@@ -146,7 +146,6 @@ class Connection_Pilot {
 
 		// Not connected, maybe reconnect
 		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
-			// $this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
 			return;
 		}
 
