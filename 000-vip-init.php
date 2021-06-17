@@ -139,13 +139,13 @@ if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' 
 	define( 'VIP_JETPACK_IS_PRIVATE', true );
 }
 
-// Jetpack Connection Pilot disabled by default
+// Jetpack Connection Pilot is enabled by default
 if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
 	// Keeping for historical reasons, we can remove this after clients are using the new constant
 	if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
 		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN );
 	} else {
-		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', false );
+		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', true );
 	}
 }
 
@@ -202,6 +202,10 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
+}
+
+if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
+	define( 'VIP_SEARCH_DEV_TOOLS', ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
 }
 
 // Load elasticsearch helpers

@@ -1,30 +1,29 @@
 {
 	"extends": [
+		"github>whitesource/merge-confidence:beta",
 		"config:base",
 		"schedule:weekly"
 	],
-	"reviewers": [
-		"team:Automattic/vip-platform-cantina"
-	],
+	"reviewers": ["team:Automattic/vip-platform-cantina"],
 	"packageRules": [
 		{
-			"depTypeList": ["devDependencies"],
-			"minor": {
-				"groupName": "all non-major devDependencies",
-				"groupSlug": "all-minor-patch-devDependencies"
-			}
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor"],
+			"groupName": "all non-major devDependencies",
+			"groupSlug": "all-minor-patch-devDependencies"
 		},
 		{
-			"packagePatterns": ["eslint"],
-			"depTypeList": ["devDependencies"],
-			"minor": {
-				"groupName": "all non-major eslint",
-				"groupSlug": "all-minor-patch-eslint"
-			}
+			"matchPackagePatterns": ["eslint"],
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor"],
+			"groupName": "all non-major eslint",
+			"groupSlug": "all-minor-patch-eslint"
 		}
 	],
 	"ignorePaths": [
-		"wp-parsely-*/",
-		"jetpack*/"
+		"akismet/**",
+		"jetpack*/**",
+		"vaultpress/**",
+		"wp-parsely-*/**"
 	]
 }
