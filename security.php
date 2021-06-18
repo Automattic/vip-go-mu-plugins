@@ -241,7 +241,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 		 *
 		 * @param string $ip IP address of the password reset request
 		 */
-		$ip_threshold = apply_filters( 'wpcom_vip_ip_password_reset_threshold', 30, $ip );
+		$ip_threshold = apply_filters( 'wpcom_vip_ip_password_reset_threshold', 3, $ip );
 
 		/**
 		 * Password Reset Username Threshold
