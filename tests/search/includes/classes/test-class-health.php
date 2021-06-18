@@ -111,6 +111,44 @@ class Health_Test extends \WP_UnitTestCase {
 				),
 			),
 
+			// Missing in Expected
+			array(
+				// Expected
+				array(),
+
+				// Indexed
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Expected diff
+				array(
+					'post_title' => array(
+						'expected' => null,
+						'actual'   => 'foo',
+					),
+				),
+			),
+
+			// Missing in Indexed
+			array(
+				// Expected
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Indexed
+				array(),
+
+				// Expected diff
+				array(
+					'post_title' => array(
+						'expected' => 'foo',
+						'actual'   => null,
+					),
+				),
+			),
+
 			// Nested props
 			array(
 				// Expected

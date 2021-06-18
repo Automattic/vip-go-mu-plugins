@@ -612,8 +612,10 @@ class Health {
 
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
 		$diff = [];
+		$checked_keys = [];
 
 		foreach ( $document as $key => $value ) {
+			$checked_keys[ $key ] = true;
 			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
@@ -624,10 +626,20 @@ class Health {
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
-			} elseif ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( ( $prepared_document[ $key ] ?? null ) != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
-					'expected' => $prepared_document[ $key ],
+					'expected' => $prepared_document[ $key ] ?? null,
 					'actual'   => $document[ $key ],
+				);
+			}
+		}
+
+		// Check that there is no missing key that would only be on $prepared_document
+		foreach ( $prepared_document as $key => $value ) {
+			if ( ! array_key_exists( $key, $checked_keys ) ) {
+				$diff[ $key ] = array(
+					'expected' => $value,
+					'actual'   => null,
 				);
 			}
 		}
