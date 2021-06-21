@@ -87,7 +87,7 @@ class VIP_Request_Block {
 	 * @return void
 	 */
 	public static function block_and_log( string $value, string $criteria ) {
-		http_response_code( 410 );
+		http_response_code( 403 );
 		header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 		header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
 
