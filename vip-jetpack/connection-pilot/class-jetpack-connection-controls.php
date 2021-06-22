@@ -133,7 +133,8 @@ class Controls {
 	/**
 	 * Connect a site to Akismet.
 	 *
-	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection is required on the site.
+	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection on the site
+	 * and the VaultPress plugin are required.
 	 *
 	 * @return bool True if connection worked, false otherwise
 	 */
