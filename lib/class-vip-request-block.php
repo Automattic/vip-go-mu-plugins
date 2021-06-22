@@ -1,6 +1,6 @@
 <?php
 /**
- * Convenience class to quickly block unwanted clients based on user agent, IP or a header.
+ * Convenience class to quickly block unwanted clients at origin (not edges) based on a user agent, IP, or a header.
  *
  * 🛑 THIS IS LOADED EARLY, PURE PHP ONLY, CORE IS NOT AVAILABLE YET!!! 🛑
  *
