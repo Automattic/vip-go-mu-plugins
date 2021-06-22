@@ -34,7 +34,9 @@ class Cache {
 			return;
 		}
 
-		if ( \ElasticPress\Indexables::factory()->get( 'post' )->elasticpress_enabled( $query ) && ! apply_filters( 'ep_skip_query_integration', false, $query ) ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( $indexable && $indexable->elasticpress_enabled( $query ) && ! apply_filters( 'ep_skip_query_integration', false, $query ) ) {
 			if ( true === $disabled_apc ) {
 				// Already disabled, don't try again.
 				return;
