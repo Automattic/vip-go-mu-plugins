@@ -111,10 +111,6 @@ class Connection_Pilot {
 	 * Needs to be static due to how it is added to cron control.
 	 */
 	public function run_connection_pilot() {
-		if ( ! self::should_run_connection_pilot() ) {
-			return;
-		}
-
 		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
