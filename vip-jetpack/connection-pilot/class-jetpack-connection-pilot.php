@@ -90,12 +90,12 @@ class Connection_Pilot {
 
 	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
+			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
 	}
 
 	public function schedule_immediate_cron() {
-		wp_schedule_single_event( strtotime( '+1 minutes' ), self::CRON_ACTION );
+		wp_schedule_single_event( time(), self::CRON_ACTION );
 	}
 
 	public static function do_cron() {
@@ -125,13 +125,27 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
+			// TODO: Remove check after general rollout
+			if ( self::should_attempt_reconnection() ) {
+				// Attempting Akismet connection given that Jetpack is connected
+				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+				if ( ! $akismet_connection_attempt ) {
+					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+				}
+
+				// Attempting VaultPress connection given that Jetpack is connected
+				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
+					$this->send_alert( $message );
+				}
+			}
+
 			return;
 		}
 
 		// Not connected, maybe reconnect
 		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
-			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
-
 			return;
 		}
 
@@ -149,12 +163,10 @@ class Connection_Pilot {
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
-
 				return;
 			}
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
-
 			return;
 		}
 
@@ -274,7 +286,27 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
-		// The constant is deprecated, but keeping this check for historical reasons
+		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
+		$is_multisite = is_multisite();
+		if ( ! $is_multisite && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3000 ) {
+			return false;
+		} else if ( $is_multisite ) {
+			if ( ! function_exists( 'get_site' ) ) {
+				return false;
+			}
+
+			try {
+				$site_registered = new DateTime( get_site()->registered );
+				$threshold = new DateTime( "2021-06-01" );
+				if ( $site_registered < $threshold ) {
+					return false;
+				}
+			} catch ( \Exception $e ) {
+				return false;
+			}
+		}
+
+		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}

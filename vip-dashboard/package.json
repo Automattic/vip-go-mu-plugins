@@ -19,9 +19,9 @@
   "devDependencies": {
     "babel-eslint": "10.1.0",
     "browser-sync": "2.26.14",
-    "browserify": "13.3.0",
+    "browserify": "17.0.0",
     "eslint": "3.19.0",
-    "eslint-plugin-react": "6.10.3",
+    "eslint-plugin-react": "7.24.0",
     "gulp": "3.9.1",
     "gulp-autoprefixer": "7.0.1",
     "gulp-check-unused-css": "2.1.4",
@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "classnames": "2.3.1",
-    "debug": "2.6.9",
+    "debug": "4.3.1",
     "fbjs": "0.8.17",
     "lodash": "4.17.21",
     "react": "15.7.0",

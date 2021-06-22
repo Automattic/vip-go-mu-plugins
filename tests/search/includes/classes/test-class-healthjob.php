@@ -124,13 +124,13 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			->method( 'send_alert' )
 			->withConsecutive(
 				array(
-					'#vip-go-es-alerts',
+					'#vip-go-es-inconsistencies',
 					$this->getExpectedDiffMessage( $results[0] ),
 					2,
 					"{$results[0]['entity']}:{$results[0]['type']}",
 				),
 				array(
-					'#vip-go-es-alerts',
+					'#vip-go-es-inconsistencies',
 					$this->getExpectedDiffMessage( $results[1] ),
 					2,
 					"{$results[1]['entity']}:{$results[1]['type']}",
