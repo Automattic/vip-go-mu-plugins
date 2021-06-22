@@ -168,16 +168,12 @@ class Controls {
 	 * @return bool|\WP_Error True if site is connected, error otherwise.
 	 */
 	public static function connect_vaultpress() {
-		if ( class_exists( 'VaultPress' ) ) {
-			$vaultpress = \VaultPress::init();
-			if ( ! $vaultpress->is_registered() ) {
-				return $vaultpress->register_via_jetpack( true );
-			}
-
-			return true;
+		$vaultpress = \VaultPress::init();
+		if ( ! $vaultpress->is_registered() ) {
+			return $vaultpress->register_via_jetpack( true );
 		}
 
-		return new \WP_Error( 1, __( 'VaultPress could not be found.' ) );
+		return true;
 	}
 
 	/**
