@@ -63,9 +63,8 @@ module.exports = React.createClass( {
 			return -1;
 		} else if ( event.clientY > rect.bottom ) {
 			return 1;
-		} else {
-			return 0;
 		}
+		return 0;
 	},
 
 	isCursorBeyondElementThreshold: function( element, direction, permittedVertical, event ) {
@@ -98,9 +97,8 @@ module.exports = React.createClass( {
 		// their visible position index
 		if ( this.state.activeOrder ) {
 			return this.state.activeOrder[ index ];
-		} else {
-			return index;
 		}
+		return index;
 	},
 
 	getCursorElementIndex: function( event ) {
@@ -269,9 +267,8 @@ module.exports = React.createClass( {
 					<li ref={ 'wrap-shadow-' + index } key={ 'wrap-shadow-' + index } className="sortable-list__item is-shadow" style={ style }>{ child }</li>,
 					item
 				];
-			} else {
-				return item;
 			}
+			return item;
 		}, this );
 	},
 
