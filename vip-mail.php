@@ -33,7 +33,7 @@ class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
 	}
 }
 
-if ( defined( 'USE_VIP_PHPMAILER' ) && USE_VIP_PHPMAILER ) {
+if ( defined( 'USE_VIP_PHPMAILER' ) && true === USE_VIP_PHPMAILER ) {
 	global $phpmailer;
 	$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 }
