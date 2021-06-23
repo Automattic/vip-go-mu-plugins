@@ -32,9 +32,11 @@ class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
 		}
 	}
 }
-global $phpmailer;
-$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
+if ( defined( 'USE_VIP_PHPMAILER' ) && true === USE_VIP_PHPMAILER ) {
+	global $phpmailer;
+	$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+}
 class VIP_Noop_Mailer {
 	function __construct( $phpmailer ) {
 		$this->subject = $phpmailer->Subject ?? '[No Subject]';
