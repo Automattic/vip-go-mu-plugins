@@ -9,9 +9,14 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 */
 
 if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
-	require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
-	require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
-	require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+	if ( version_compare( $wp_version, '5.5', '<' ) ) { 
+		require_once ABSPATH . WPINC . '/class-phpmailer.php';
+		require_once ABSPATH . WPINC . '/class-smtp.php';
+	} else {
+		require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+		require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+		require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+	}
 }
 class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
 	/**
