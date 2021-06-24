@@ -7,13 +7,13 @@ Author: Automattic
 Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
-
 if ( version_compare( $wp_version, '5.5', '>=' ) ) {
 	if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
 		require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
 		require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
 		require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
 	}
+
 	class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
 		/**
 		 * Check whether a file path is of a permitted type.
