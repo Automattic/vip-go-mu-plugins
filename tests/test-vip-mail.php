@@ -1,8 +1,17 @@
 <?php
 
+
+/**
+ * @preserveGlobalState false
+ * @runInSeparateProcess true
+ */
 class VIP_Mail_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
+		reset_phpmailer_instance();
+	}
+
+	protected function tearDown(): void {
 		reset_phpmailer_instance();
 	}
 
@@ -69,5 +78,34 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		} else {
 			$this->assertEquals( class_exists( 'VIP_PHPMailer' ), false, 'VIP_PHPMailer should not be loaded on <= 5.4' );
 		}
+	}
+
+	/**
+	 * Test base cases here: local attachment and a remote (disallowed)
+	 *
+	 * @return void
+	 */
+	public function test__attachments_path_validation() {
+		global $wp_version;
+		if ( version_compare( $wp_version, '5.5', '<' ) ) {
+			$this->markTestSkipped( 'Skipping VIP_PHPMailer logic validation on WP < 5.5' );
+		}
+
+		$temp = tmpfile();
+		fwrite( $temp, "I'm a test file" );
+		$filename = stream_get_meta_data( $temp )['uri'];
+		wp_mail( 'test@example.com', 'Test with attachment', 'Test', '', [ $filename ] );
+		fclose( $temp );
+
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		$this->assertStringContainsString( 'Content-Disposition: attachment; filename=' . basename( $filename ) , $mailer->get_sent()->body );
+
+		reset_phpmailer_instance();
+
+		wp_mail( 'test@example.com', 'Test with attachment', 'Test', '', [ 'http://lorempixel.com/400/200/' ] );
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		$this->assertThat( $mailer->get_sent()->body, $this->logicalNot( $this->stringContains('Content-Disposition: attachment; filename=') ) );
 	}
 }
