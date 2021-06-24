@@ -57,4 +57,17 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 
 		$this->assertRegExp( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
+
+	/**
+	 * Todo: remove this once we remove 5.4 stack
+	 *
+	 */
+	public function test__conditional_loading_of_VIP_PHPMailer() {
+		global $wp_version;
+		if ( version_compare( $wp_version, '5.5', '>=' ) ) {
+			$this->assertEquals( class_exists( 'VIP_PHPMailer' ), true, 'VIP_PHPMailer should be loaded on >= 5.5' );
+		} else {
+			$this->assertEquals( class_exists( 'VIP_PHPMailer' ), false, 'VIP_PHPMailer should not be loaded on <= 5.4' );
+		}
+	}
 }
