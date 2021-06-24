@@ -14,7 +14,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		}
 	}
 
-	protected function tearDown(): void {
+	public function tearDown(): void {
 		reset_phpmailer_instance();
 	}
 
