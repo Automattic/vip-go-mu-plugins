@@ -10,10 +10,6 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		}
 	}
 
-	public function tearDown(): void {
-		reset_phpmailer_instance();
-	}
-
 	public function test__all_smtp_servers__not_array() {
 		$GLOBALS['all_smtp_servers'] = false;
 
