@@ -9,6 +9,9 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 		reset_phpmailer_instance();
+		if ( ! defined( 'USE_VIP_PHPMAILER' ) ) {
+			define( 'USE_VIP_PHPMAILER', true );
+		}
 	}
 
 	protected function tearDown(): void {
@@ -71,13 +74,26 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 	 * Todo: remove this once we remove 5.4 stack
 	 *
 	 */
-	public function test__conditional_loading_of_VIP_PHPMailer() {
+	public function test_load_VIP_PHPMailer_gte_55() {
+		global $wp_version;
+		if ( version_compare( $wp_version, '5.5', '<' ) ) {
+			$this->markTestSkipped( 'Not testing WP < 5.5' );
+		}
+
+		$this->assertEquals( class_exists( 'VIP_PHPMailer' ), true, 'VIP_PHPMailer should be loaded on >= 5.5. Version: ' . $wp_version );
+	}
+
+	/**
+	 * Todo: remove this once we remove 5.4 stack
+	 *
+	 */
+	public function test_dont_load_VIP_PHPMailer_lt_55() {
 		global $wp_version;
 		if ( version_compare( $wp_version, '5.5', '>=' ) ) {
-			$this->assertEquals( class_exists( 'VIP_PHPMailer' ), true, 'VIP_PHPMailer should be loaded on >= 5.5' );
-		} else {
-			$this->assertEquals( class_exists( 'VIP_PHPMailer' ), false, 'VIP_PHPMailer should not be loaded on <= 5.4' );
+			$this->markTestSkipped( 'Not testing WP < 5.5' );
 		}
+
+		$this->assertEquals( class_exists( 'VIP_PHPMailer' ), false, 'VIP_PHPMailer should not be loaded on < 5.5. Version: ' . $wp_version );
 	}
 
 	/**
@@ -99,13 +115,13 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 
 		$mailer = tests_retrieve_phpmailer_instance();
 
-		$this->assertStringContainsString( 'Content-Disposition: attachment; filename=' . basename( $filename ) , $mailer->get_sent()->body );
+		$this->assertStringContainsString( 'Content-Disposition: attachment; filename=' . basename( $filename ), $mailer->get_sent()->body );
 
 		reset_phpmailer_instance();
 
 		wp_mail( 'test@example.com', 'Test with attachment', 'Test', '', [ 'http://lorempixel.com/400/200/' ] );
 		$mailer = tests_retrieve_phpmailer_instance();
 
-		$this->assertThat( $mailer->get_sent()->body, $this->logicalNot( $this->stringContains('Content-Disposition: attachment; filename=') ) );
+		$this->assertThat( $mailer->get_sent()->body, $this->logicalNot( $this->stringContains( 'Content-Disposition: attachment; filename=' ) ) );
 	}
 }
