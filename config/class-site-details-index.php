@@ -197,9 +197,25 @@ class Site_Details_Index {
 
 	/**
 	 * Builds the site details structure and then puts it into logstash
+	 * and sends it to the site details service
 	 */
-	public function put_site_details_in_logstash() {
+	public function put_site_details() {
 		$site_details = $this->get_site_details();
+
+		if ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) ) {
+			$url = rtrim( SERVICES_API_URL, '/' ) . '/siteinfo/sites';
+
+			$args = array(
+				'method' => 'PUT',
+				'body' => json_encode( $site_details ),
+				'headers' => array(
+					'Authorization' => 'Bearer ' . SERVICES_AUTH_TOKEN,
+					'Content-Type' => 'application/json',
+				),
+			);
+
+			vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
+		}
 
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
