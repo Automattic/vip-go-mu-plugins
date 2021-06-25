@@ -134,8 +134,12 @@ function wpcom_vip_refresh_wp_rewrite() {
 			$option_value = $default_value;
 		else
 			remove_filter( $filter, $callback, 99 );
-		// Save the precious
+
+		// Safely save the precious
+		add_filter( "sanitize_option_{$option_key}", 'wpcom_vip_safeguard_rewrite_rule_updates', 999, 2 );
 		update_option( $option_key, $option_value );
+		remove_filter( "sanitize_option_{$option_key}", 'wpcom_vip_safeguard_rewrite_rule_updates', 999, 2 );
+
 		// Only reapply the filter if it was applied previously
 		// as it overrides the option value with a global variable
 		if ( $reapply )
@@ -156,4 +160,26 @@ function wpcom_vip_refresh_wp_rewrite() {
 	foreach( $custom_rules as $key ) {
 		$wp_rewrite->$key = array_merge( $old_values[$key], $wp_rewrite->$key );
 	}
+}
+
+/**
+ * Filter option values to prevent WP Errors from being saved,
+ * and generated permanant fatal errors after rewrite rules are flushed.
+ *
+ * @param string|WP_Error $value The new option value about to be saved.
+ * @param string $option The option key.
+ * @return string
+ */
+function wpcom_vip_safeguard_rewrite_rule_updates( $value, $option ) {
+	$defaults = [
+		'permalink_structure' => '/%year%/%monthnum%/%day%/%postname%/',
+		'category_base' => '',
+		'tag_base' => '',
+	];
+
+	if ( isset( $defaults[ $option ] ) && is_wp_error( $value ) ) {
+		return $defaults[ $option ];
+	}
+
+	return $value;
 }
