@@ -164,7 +164,7 @@ function wpcom_vip_refresh_wp_rewrite() {
 
 /**
  * Filter option values to prevent WP Errors from being saved,
- * and generated permanant fatal errors after rewrite rules are flushed.
+ * and generating permanent fatal errors after rewrite rules are flushed.
  *
  * @param string|WP_Error $value The new option value about to be saved.
  * @param string $option The option key.
