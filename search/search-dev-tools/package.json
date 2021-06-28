@@ -38,7 +38,7 @@
     "preact": "10.5.13",
     "preact-habitat": "3.3.0",
     "preact-render-to-string": "5.1.19",
-    "prismjs": "1.23.0",
+    "prismjs": "1.24.0",
     "react-simple-code-editor": "0.11.0"
   }
 }
