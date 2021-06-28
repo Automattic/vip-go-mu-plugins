@@ -688,6 +688,7 @@ class Queue {
 			}
 
 			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
 
 			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
 
@@ -731,6 +732,38 @@ class Queue {
 		}
 
 		return $filtered_deadlocked_jobs;
+	}
+
+	/**
+	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
+	 */
+	private function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		$job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+
+		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
+
+		$jobs_to_be_deleted = $wpdb->get_results(
+			 // Cannot prepare table name. @codingStandardsIgnoreStart
+			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE `job_id` IN ( {$escaped_ids} ) AND EXISTS (
+				 SELECT queued.* FROM {$table_name} queued
+				 WHERE queued.status = 'queued'
+				 AND queued.object_id = deadlocked.object_id
+				 AND queued.object_type = deadlocked.object_type
+				 AND queued.index_version = deadlocked.index_version
+				 AND queued.job_id != deadlocked.job_id
+			)",
+			 // @codingStandardsIgnoreEnd
+		);
+
+		if ( ! empty( $jobs_to_be_deleted ) ) {
+			$this->delete_jobs( $jobs_to_be_deleted );
+		}
+
+		return $deadlocked_jobs;
 	}
 
 	public function process_jobs( $jobs ) {
