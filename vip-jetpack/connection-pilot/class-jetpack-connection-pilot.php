@@ -298,7 +298,7 @@ class Connection_Pilot {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
 
-		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', true, $error );
 	}
 }
 
