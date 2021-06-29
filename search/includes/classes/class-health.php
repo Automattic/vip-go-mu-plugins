@@ -595,14 +595,27 @@ class Health {
 	}
 
 	public static function simplified_diff_document_and_prepared_document( $document, $prepared_document ) {
+		$checked_keys = [];
+
 		foreach ( $document as $key => $value ) {
+			$checked_keys[ $key ] = true;
 			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::simplified_diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
-			} elseif ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				if ( $recursive_diff ) {
+					return true;
+				}
+			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				return true;
+			}
+		}
+
+		// Check that there is no missing key that would only be on $prepared_document
+		foreach ( $prepared_document as $key => $value ) {
+			if ( ! array_key_exists( $key, $checked_keys ) ) {
 				return true;
 			}
 		}
@@ -612,22 +625,34 @@ class Health {
 
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
 		$diff = [];
+		$checked_keys = [];
 
 		foreach ( $document as $key => $value ) {
+			$checked_keys[ $key ] = true;
 			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
-			} elseif ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
-					'expected' => $prepared_document[ $key ],
-					'actual'   => $document[ $key ],
+					'expected' => $prepared_document[ $key ] ?? null,
+					'actual'   => $value,
+				);
+			}
+		}
+
+		// Check that there is no missing key that would only be on $prepared_document
+		foreach ( $prepared_document as $key => $value ) {
+			if ( ! array_key_exists( $key, $checked_keys ) ) {
+				$diff[ $key ] = array(
+					'expected' => $value,
+					'actual'   => null,
 				);
 			}
 		}
