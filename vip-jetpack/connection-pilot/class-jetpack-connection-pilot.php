@@ -117,21 +117,18 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
-			// TODO: Remove check after general rollout
-			if ( self::should_attempt_reconnection() ) {
-				// Attempting Akismet connection given that Jetpack is connected
-				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
-				if ( ! $akismet_connection_attempt ) {
-					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
-				}
+			// Attempting Akismet connection given that Jetpack is connected
+			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+			if ( ! $akismet_connection_attempt ) {
+				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+			}
 
-				// Attempting VaultPress connection given that Jetpack is connected
-				if ( ! defined( 'VIP_VAULTPRESS_SKIP_LOAD' )  || ! VIP_VAULTPRESS_SKIP_LOAD ) {
-					$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
-					if ( is_wp_error( $vaultpress_connection_attempt ) ) {
-						$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
-						$this->send_alert( $message );
-					}
+			// Attempting VaultPress connection given that Jetpack is connected
+			if ( ! defined( 'VIP_VAULTPRESS_SKIP_LOAD' )  || ! VIP_VAULTPRESS_SKIP_LOAD ) {
+				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
+					$this->send_alert( $message );
 				}
 			}
 
