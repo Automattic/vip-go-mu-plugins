@@ -7,14 +7,32 @@
 # Stop on failures: ./bin/phpunit-docker.sh --stop-on-failure
 # etc.
 
-if [ $# -eq 2 ]; then
-  WP_VERSION=${1-latest}
-  WP_MULTISITE=${2-0}
-else
-  PATH_TO_TEST=${1}
-  WP_VERSION=${2-latest}
-  WP_MULTISITE=${3-0}
-fi
+while test $# -gt 0; do
+  case "$1" in
+  --version)
+    shift
+    RAW_WP_VERSION=$1
+    ;;
+  --multisite)
+    shift
+    RAW_WP_MULTISITE=$1
+    ;;
+  --file)
+    shift
+    PATH_TO_TEST=$1
+    ;;
+  --stop-on-failure)
+    STOP_ON_FAILURE="--stop-on-failure"
+    ;;
+  --*)
+    echo "bad option $1"
+    ;;
+  esac
+  shift
+done
+
+WP_VERSION=${RAW_WP_VERSION-latest}
+WP_MULTISITE=${RAW_WP_MULTISITE-0}
 
 echo "--------------"
 echo "Will test with WP_VERSION=$WP_VERSION and WP_MULTISITE=$WP_MULTISITE"
@@ -22,6 +40,11 @@ if [ -z "$PATH_TO_TEST" ]; then
   echo "Will test ALL FILES"
 else
   echo "Will test FILE $PATH_TO_TEST"
+fi
+if [ -z "$STOP_ON_FAILURE" ]; then
+  echo "Will NOT stop on failure"
+else
+  echo "Will stop on failure"
 fi
 echo "--------------"
 echo
@@ -58,4 +81,4 @@ docker run \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
 	--rm ghcr.io/automattic/phpunit-docker/phpunit:latest \
-	--bootstrap /app/tests/bootstrap.php "${PATH_TO_TEST}"
+	--bootstrap /app/tests/bootstrap.php "${STOP_ON_FAILURE} ${PATH_TO_TEST}"
