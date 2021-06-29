@@ -8,7 +8,7 @@
 # etc.
 
 if [ $# -eq 2 ]; then
-	WP_VERSION=${1-latest}
+  WP_VERSION=${1-latest}
   WP_MULTISITE=${2-0}
 else
   PATH_TO_TEST=${1}
