@@ -7,6 +7,38 @@ Author: Automattic
 Version: 1.0
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
+if ( version_compare( $wp_version, '5.5', '>=' ) ) {
+	if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
+		require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+		require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+		require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+	}
+
+	class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
+		/**
+		 * Check whether a file path is of a permitted type.
+		 *
+		 * Used to reject URLs and phar files from functions that access local file paths,
+		 * such as addAttachment. Allows VIP File System's `vip` protocol.
+		 *
+		 * @param string $path A relative or absolute path to a file
+		 *
+		 * @return bool
+		 */
+		protected static function isPermittedPath( $path ) {
+			if ( 0 === strpos( $path, 'vip://wp-content/uploads' ) ) {
+				return true;
+			} else {
+				return ! preg_match( '#^[a-z]+://#i', $path );
+			}
+		}
+	}
+
+	if ( defined( 'USE_VIP_PHPMAILER' ) && true === USE_VIP_PHPMAILER ) {
+		global $phpmailer;
+		$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+	}
+}
 
 class VIP_Noop_Mailer {
 	function __construct( $phpmailer ) {

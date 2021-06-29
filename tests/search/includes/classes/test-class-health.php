@@ -111,6 +111,44 @@ class Health_Test extends \WP_UnitTestCase {
 				),
 			),
 
+			// Missing in Expected
+			array(
+				// Expected
+				array(),
+
+				// Indexed
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Expected diff
+				array(
+					'post_title' => array(
+						'expected' => null,
+						'actual'   => 'foo',
+					),
+				),
+			),
+
+			// Missing in Indexed
+			array(
+				// Expected
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Indexed
+				array(),
+
+				// Expected diff
+				array(
+					'post_title' => array(
+						'expected' => 'foo',
+						'actual'   => null,
+					),
+				),
+			),
+
 			// Nested props
 			array(
 				// Expected
@@ -250,19 +288,17 @@ class Health_Test extends \WP_UnitTestCase {
 						'somemeta' => array(
 							'raw'   => 'somemeta_raw',
 							'value' => 'somemeta_value',
-							'date'  => '1970-01-01',
 						),
 					),
 				),
 
 				// Indexed
 				array(
-					'post_title' => 'bar',
+					'post_title' => 'foo',
 					'meta'       => array(
 						'somemeta' => array(
-							'raw'   => 'somemeta_raw_other',
-							'value' => 'somemeta_value_other',
-							'date'  => '1970-12-31', // Should not be validated
+							'raw'   => 'somemeta_raw',
+							'value' => 'somemeta_other_value',
 						),
 					),
 				),
@@ -285,6 +321,34 @@ class Health_Test extends \WP_UnitTestCase {
 
 				// Expected diff
 				false,
+			),
+
+			// Missing in Indexed
+			array(
+				// Expected
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Indexed
+				array(),
+
+				// Expected diff
+				true,
+			),
+
+			// Missing in Expected
+			array(
+				// Expected
+				array(),
+
+				// Indexed
+				array(
+					'post_title' => 'foo',
+				),
+
+				// Expected diff
+				true,
 			),
 		);
 	}
