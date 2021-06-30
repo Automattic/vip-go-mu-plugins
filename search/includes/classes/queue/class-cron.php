@@ -62,6 +62,13 @@ class Cron {
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
 		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
+		// Make job processing = indexing of documents run concurrently. This should help with handling spikes
+		// of bulk reindexing as well as keep cron's option used for queued jobs small, by processing them faster.
+		add_filter( 'a8c_cron_control_concurrent_event_whitelist', function( $whitelist ) {
+			$whitelist[ self::PROCESSOR_CRON_EVENT_NAME ] = self::MAX_PROCESSOR_JOB_COUNT;
+			return $whitelist;
+		} );
+
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
@@ -223,7 +230,7 @@ class Cron {
 			if ( $i > self::MAX_PROCESSOR_JOB_COUNT ) {
 				return;
 			}
-			
+
 			$this->schedule_batch_job();
 
 			$i++;
