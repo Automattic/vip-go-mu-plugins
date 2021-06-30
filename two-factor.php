@@ -23,7 +23,7 @@ function wpcom_vip_should_force_two_factor() {
 	}
 	
 	// The proxy is the second factor for VIP Support users
-	if ( true === A8C_PROXIED_REQUEST ) {
+	if ( is_proxied_automattician() ) {
 		return false;
 	}
 
