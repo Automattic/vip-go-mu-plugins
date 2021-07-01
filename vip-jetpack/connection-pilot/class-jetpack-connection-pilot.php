@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Jetpack;
 
-use DateTime;
-
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
@@ -117,21 +115,19 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
-			// TODO: Remove check after general rollout
-			if ( self::should_attempt_reconnection() ) {
-				// Attempting Akismet connection given that Jetpack is connected
-				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
-				if ( ! $akismet_connection_attempt ) {
-					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
-				}
+			// Attempting Akismet connection given that Jetpack is connected
+			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+			if ( ! $akismet_connection_attempt ) {
+				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+			}
 
-				// Attempting VaultPress connection given that Jetpack is connected
-				if ( ! defined( 'VIP_VAULTPRESS_SKIP_LOAD' )  || ! VIP_VAULTPRESS_SKIP_LOAD ) {
-					$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
-					if ( is_wp_error( $vaultpress_connection_attempt ) ) {
-						$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
-						$this->send_alert( $message );
-					}
+			// Attempting VaultPress connection given that Jetpack is connected
+			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+			if ( ! $skip_vaultpress  ) {
+				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
+					$this->send_alert( $message );
 				}
 			}
 
@@ -275,26 +271,6 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
-		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
-		$is_multisite = is_multisite();
-		if ( ! $is_multisite && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3000 ) {
-			return false;
-		} else if ( $is_multisite ) {
-			if ( ! function_exists( 'get_site' ) ) {
-				return false;
-			}
-
-			try {
-				$site_registered = new DateTime( get_site()->registered );
-				$threshold = new DateTime( "2021-06-01" );
-				if ( $site_registered < $threshold ) {
-					return false;
-				}
-			} catch ( \Exception $e ) {
-				return false;
-			}
-		}
-
 		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
