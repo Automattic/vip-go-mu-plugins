@@ -6,7 +6,7 @@ This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/docume
 
 ### Local Dev
 
-We recommend using the vip development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
+We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
 ### Tests
 
