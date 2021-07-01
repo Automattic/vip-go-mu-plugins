@@ -6,9 +6,7 @@ This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/docume
 
 ### Local Dev
 
-We recommend using the Lando-based development environment for local development: https://github.com/Automattic/vip-go-mu-dev
-
-Follow the instructions in the `vip-go-mu-dev` repo to get set up (it includes a clone of this repo).
+We recommend using the vip development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
 ### Tests
 
