@@ -38,18 +38,28 @@ If you're using the Lando-based environvment and it's already running, you can r
 lando test
 ```
 
-If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
+If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment. To run these tests, execute the following from the project root:
 
 ```bash
-./bin/phpunit-docker.sh [wp-version]
+./bin/phpunit-docker.sh
 ```
 
 You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
+
+```bash
+./bin/phpunit-docker.sh --version 5.4.4
+```
 
 You can also pass the path to a specific test as well as extra PHPUnit arguments:
 
 ```bash
 ./bin/phpunit-docker.sh tests/path/to/the/test-something.php --stop-on-failure [...args]
+```
+
+Finally, you also have the option to choose if the tests run on a multisite environment:
+
+```bash
+./bin/phpunit-docker.sh --version 5.4.4 --multisite 1
 ```
 
 ##### CI
