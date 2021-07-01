@@ -11,7 +11,9 @@ class Queue_Test extends \WP_UnitTestCase {
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static function setUpBeforeClass() {
-		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		}
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
@@ -592,6 +594,67 @@ class Queue_Test extends \WP_UnitTestCase {
 		$count = $this->queue->count_jobs_due_now( 'post' );
 
 		$this->assertEquals( 3, $count );
+	}
+
+
+	public function test_free_deadlocked_jobs_handle_duplicates() {
+		$first_job = (object) [
+			'job_id' => 1,
+			'object_id' => 10,
+			'object_type' => 'post',
+			'index_version' => 1,
+		];
+		$second_job = (object) [
+			'job_id' => 2,
+			'object_id' => 10,
+			'object_type' => 'post',
+			'index_version' => 1,
+		];
+		$third_job_on_other_object = (object) [
+			'job_id' => 3,
+			'object_id' => 20,
+			'object_type' => 'post',
+			'index_version' => 1,
+		];
+
+		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
+			->setMethods( [
+				'get_deadlocked_jobs',
+				'delete_jobs_on_the_already_queued_object',
+				'update_jobs',
+				'delete_jobs',
+			] )
+			->getMock();
+
+		$partially_mocked_queue
+			->method( 'get_deadlocked_jobs' )
+			->willReturnOnConsecutiveCalls(
+				[ $first_job, $second_job, $third_job_on_other_object ],
+				[],
+				[],
+				[],
+				[]
+			);
+
+		$partially_mocked_queue
+			->method( 'delete_jobs_on_the_already_queued_object' )
+			->willReturn( [ $first_job, $second_job, $third_job_on_other_object ] );
+
+		$partially_mocked_queue->expects( $this->once() )
+			->method( 'update_jobs' )
+			->with(
+				$this->equalTo( [ 1, 3 ] ),
+				$this->equalTo( [
+					'status' => 'queued',
+					'scheduled_time' => null,
+				] )
+			);
+
+		$partially_mocked_queue->expects( $this->once() )
+			->method( 'delete_jobs' )
+			->with( [ $second_job ] );
+
+		$partially_mocked_queue->free_deadlocked_jobs();
 	}
 
 	/**

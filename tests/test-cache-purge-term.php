@@ -2,6 +2,10 @@
 
 namespace Automattic\VIP\Tests;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class Cache_Manager__Term_Purge__Test extends \WP_Test_REST_TestCase {
 	const TEST_TAXONOMY_SLUG = 'my-cool-taxonomy';
 

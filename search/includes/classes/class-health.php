@@ -2,7 +2,6 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexable as Indexable;
 use \ElasticPress\Indexables as Indexables;
 
 use \WP_Query as WP_Query;
@@ -69,10 +68,18 @@ class Health {
 			'entity'   => $indexable->slug,
 			'type'     => ( array_key_exists( 'post_type', $query_args ) ? $query_args['post_type'] : 'N/A' ),
 			'skipped'  => false,
+			'reason'   => 'N/A',
 			'db_total' => 'N/A',
 			'es_total' => 'N/A',
 			'diff' => 'N/A',
 		];
+
+		if ( ! $indexable->index_exists() ) {
+			// If index doesnt exist and we will skip the rest of the check
+			$result['skipped'] = true;
+			$result['reason'] = 'index-not-found';
+			return $result;
+		}
 
 		$es_total = $this->get_index_entity_count_from_elastic_search( $query_args, $indexable );
 		if ( is_wp_error( $es_total ) ) {
@@ -82,6 +89,7 @@ class Health {
 		if ( 0 === $es_total ) {
 			// If there is 0 docs in ES, we assume it wasnet initialized and we will skip the rest of the check
 			$result['skipped'] = true;
+			$result['reason'] = 'index-empty';
 			$result['es_total'] = 0;
 			return $result;
 		}
@@ -223,7 +231,8 @@ class Health {
 		$health = new self( $search );
 
 		foreach ( $post_types as $post_type ) {
-			$post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+			$post_indexable = Indexables::factory()->get( 'post' );
+			$post_statuses = $post_indexable->get_indexable_post_status();
 
 			$query_args = [
 				'post_type'   => $post_type,
@@ -239,11 +248,11 @@ class Health {
 					'entity'        => $posts->slug,
 					'type'          => $post_type,
 					'error'         => $result->get_error_message(),
-					'index_version' => $index_version,
 				];
 			}
 
 			$result['index_version'] = $index_version;
+			$result['index_name'] = $post_indexable->get_index_name();
 
 			$results[] = $result;
 
@@ -586,14 +595,27 @@ class Health {
 	}
 
 	public static function simplified_diff_document_and_prepared_document( $document, $prepared_document ) {
+		$checked_keys = [];
+
 		foreach ( $document as $key => $value ) {
+			$checked_keys[ $key ] = true;
 			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::simplified_diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
-			} elseif ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				if ( $recursive_diff ) {
+					return true;
+				}
+			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+				return true;
+			}
+		}
+
+		// Check that there is no missing key that would only be on $prepared_document
+		foreach ( $prepared_document as $key => $value ) {
+			if ( ! array_key_exists( $key, $checked_keys ) ) {
 				return true;
 			}
 		}
@@ -603,22 +625,34 @@ class Health {
 
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
 		$diff = [];
+		$checked_keys = [];
 
 		foreach ( $document as $key => $value ) {
+			$checked_keys[ $key ] = true;
 			if ( in_array( $key, self::DOCUMENT_IGNORED_KEYS, true ) ) {
 				continue;
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $document[ $key ], $prepared_document[ $key ] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
-			} elseif ( $prepared_document[ $key ] != $document[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
-					'expected' => $prepared_document[ $key ],
-					'actual'   => $document[ $key ],
+					'expected' => $prepared_document[ $key ] ?? null,
+					'actual'   => $value,
+				);
+			}
+		}
+
+		// Check that there is no missing key that would only be on $prepared_document
+		foreach ( $prepared_document as $key => $value ) {
+			if ( ! array_key_exists( $key, $checked_keys ) ) {
+				$diff[ $key ] = array(
+					'expected' => $value,
+					'actual'   => null,
 				);
 			}
 		}
@@ -762,21 +796,25 @@ class Health {
 			}
 		}
 
-		$actual_settings = $indexable->get_index_settings();
+		$diff = [];
 
-		if ( is_wp_error( $actual_settings ) ) {
-			$this->search->versioning->reset_current_version_number( $indexable );
+		if ( $indexable->index_exists() ) {
+			$actual_settings = $indexable->get_index_settings();
 
-			return $actual_settings;
+			if ( is_wp_error( $actual_settings ) ) {
+				$this->search->versioning->reset_current_version_number( $indexable );
+
+				return $actual_settings;
+			}
+
+			$desired_settings = $indexable->build_settings();
+
+			// We only monitor certain settings
+			$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+			$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+
+			$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 		}
-
-		$desired_settings = $indexable->build_settings();
-
-		// We only monitor certain settings
-		$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-		$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
-
-		$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 
 		$this->search->versioning->reset_current_version_number( $indexable );
 

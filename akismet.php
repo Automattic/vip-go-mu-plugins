@@ -11,6 +11,11 @@ License: GPLv2 or later
 Text Domain: akismet
 */
 
+// Avoid loading Akismet altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for Akismet to work in VIP)
+if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+	return;
+}
+
 // Load the core Akismet plugin
 require_once( __DIR__ . '/akismet/akismet.php' );
 
@@ -44,3 +49,30 @@ function wpcom_vip_akismet_spam_count_incr( $val ) {
 	return 0;
 }
 add_filter( 'akismet_spam_count_incr', 'wpcom_vip_akismet_spam_count_incr' );
+
+function vip_remove_akismet_admin_menu() {
+	if ( is_akismet_key_invalid() ) {
+		remove_action( 'admin_menu', array( 'Akismet_Admin', 'admin_menu' ), 5 );
+	}
+}
+add_action( 'admin_menu', 'vip_remove_akismet_admin_menu', 1 );
+
+function vip_remove_akismet_admin_notices() {
+	if ( is_akismet_key_invalid() ) {
+		remove_action( 'admin_notices', array( 'Akismet_Admin', 'display_notice' ) );
+	}
+}
+add_action( 'admin_notices', 'vip_remove_akismet_admin_notices', 1 );
+
+/**
+ * @return bool True if the Akismet key in the site is not existent or not valid
+ */
+function is_akismet_key_invalid(): bool {
+	if ( class_exists( 'Akismet' ) ) {
+		$key = Akismet::get_api_key();
+		$key_status = Akismet::check_key_status( $key );
+		return ! $key_status || ! $key_status[1] || 'invalid' === $key_status[1];
+	}
+
+	return false;
+}

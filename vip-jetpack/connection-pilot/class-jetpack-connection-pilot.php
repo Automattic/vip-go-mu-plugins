@@ -6,7 +6,7 @@ require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
- * Will only run if the `VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN` constant is defined and set to true.
+ * Will only run if the `VIP_JETPACK_AUTO_MANAGE_CONNECTION` constant is defined and set to true.
  */
 class Connection_Pilot {
 	/**
@@ -75,6 +75,8 @@ class Connection_Pilot {
 			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
 		}
 
+		add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
+		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
@@ -82,8 +84,12 @@ class Connection_Pilot {
 
 	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
+			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
+	}
+
+	public function schedule_immediate_cron() {
+		wp_schedule_single_event( time(), self::CRON_ACTION );
 	}
 
 	public static function do_cron() {
@@ -103,23 +109,33 @@ class Connection_Pilot {
 	 * Needs to be static due to how it is added to cron control.
 	 */
 	public function run_connection_pilot() {
-		if ( ! self::should_run_connection_pilot() ) {
-			return;
-		}
-
 		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
+			// Attempting Akismet connection given that Jetpack is connected
+			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+			if ( ! $akismet_connection_attempt ) {
+				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+			}
+
+			// Attempting VaultPress connection given that Jetpack is connected
+			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+			if ( ! $skip_vaultpress  ) {
+				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
+				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
+					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
+					$this->send_alert( $message );
+				}
+			}
+
 			return;
 		}
 
 		// Not connected, maybe reconnect
 		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
-			$this->send_alert( 'Jetpack is disconnected. No reconnection attempt was made.' );
-
 			return;
 		}
 
@@ -137,12 +153,10 @@ class Connection_Pilot {
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
 				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
-
 				return;
 			}
 
 			$this->send_alert( 'Jetpack was successfully (re)connected!' );
-
 			return;
 		}
 
@@ -241,9 +255,9 @@ class Connection_Pilot {
 	 *
 	 * @return bool True if the connection pilot should run.
 	 */
-	public static function should_run_connection_pilot() {
-		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
-			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN;
+	public static function should_run_connection_pilot(): bool {
+		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
+			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
 		}
 
 		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
@@ -252,16 +266,20 @@ class Connection_Pilot {
 	/**
 	 * Checks if a reconnection should be attempted
 	 *
-	 * @param $error \WP_Error Optional error thrown by the connection check
+	 * @param $error \WP_Error|null Optional error thrown by the connection check
+	 *
 	 * @return bool True if a reconnect should be attempted
 	 */
-	public static function should_attempt_reconnection( $error = null ) {
+	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
+		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
 		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
 			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
 		}
 
-		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', true, $error );
 	}
 }
 
-Connection_Pilot::instance();
+add_action( 'init', function() {
+	Connection_Pilot::instance();
+}, 25);

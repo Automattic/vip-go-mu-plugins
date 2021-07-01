@@ -150,9 +150,9 @@ class Queue {
 		}
 
 		self::$max_indexing_op_count = intval( self::$max_indexing_op_count );
-		
+
 		$lower_bound_max_indexing_op_count = ( self::$index_count_ttl * self::LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND ) + 1;
-		
+
 		if ( self::$max_indexing_op_count < $lower_bound_max_indexing_op_count ) {
 			_doing_it_wrong(
 				'add_filter',
@@ -174,7 +174,7 @@ class Queue {
 
 			self::$max_indexing_op_count = $upper_bound_max_indexing_op_count;
 		}
-		
+
 		/**
 		 * The length of time Elasticsearch indexing rate limiting will be active once triggered.
 		 *
@@ -687,13 +687,83 @@ class Queue {
 				break;
 			}
 
-			$deadlocked_job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
+
+			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
 
 			$this->update_jobs( $deadlocked_job_ids, array(
 				'status' => 'queued',
 				'scheduled_time' => null,
 			) );
 		}
+	}
+
+	/**
+	 * In some cases there could be multiple jobs for the same object stuck in a deadlock state.
+	 * If we would try to update all of them at once we would break the DB constraint
+	 * (state + object_id + object_type + index_version).
+	 *
+	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
+	 */
+	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
+		$found_objects = [];
+		$filtered_deadlocked_jobs = [];
+		$jobs_to_be_deleted = [];
+
+		foreach ( $all_deadlocked_jobs as $job ) {
+			$unique_key = sprintf( '%s_%s_%s',
+				$job->{'object_id'},
+				$job->{'object_type'},
+				$job->{'index_version'}
+			);
+
+			if ( array_key_exists( $unique_key, $found_objects ) ) {
+				$jobs_to_be_deleted[] = $job;
+			} else {
+				$found_objects[ $unique_key ] = true;
+
+				$filtered_deadlocked_jobs[] = $job;
+			}
+		}
+
+		if ( ! empty( $jobs_to_be_deleted ) ) {
+			$this->delete_jobs( $jobs_to_be_deleted );
+		}
+
+		return $filtered_deadlocked_jobs;
+	}
+
+	/**
+	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
+	 */
+	private function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		$job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
+
+		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
+
+		$jobs_to_be_deleted = $wpdb->get_results(
+			 // Cannot prepare table name. @codingStandardsIgnoreStart
+			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE `job_id` IN ( {$escaped_ids} ) AND EXISTS (
+				 SELECT queued.* FROM {$table_name} queued
+				 WHERE queued.status = 'queued'
+				 AND queued.object_id = deadlocked.object_id
+				 AND queued.object_type = deadlocked.object_type
+				 AND queued.index_version = deadlocked.index_version
+				 AND queued.job_id != deadlocked.job_id
+			)",
+			 // @codingStandardsIgnoreEnd
+		);
+
+		if ( ! empty( $jobs_to_be_deleted ) ) {
+			$this->delete_jobs( $jobs_to_be_deleted );
+		}
+
+		return $deadlocked_jobs;
 	}
 
 	public function process_jobs( $jobs ) {
@@ -933,7 +1003,7 @@ class Queue {
 		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		
+
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',

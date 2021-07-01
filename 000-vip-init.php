@@ -29,11 +29,21 @@ if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 	die( 'ok' );
 }
 
+if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
+	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
+}
+
+if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
+	define( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE', false );
+}
+
 // Sites can be blocked for various reasons - usually maintenance, so exit
 // early if the constant has been set (defined by VIP Go in config/wp-config.php)
-if ( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
+if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
+	$allow_front_end = WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE && ! REST_REQUEST && ! WP_ADMIN;
+
 	// WP CLI is allowed, but disable cron
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	if ( ( defined( 'WP_CLI' ) && WP_CLI ) || $allow_front_end ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
 			return 1;
 		}, 9999 );
@@ -124,22 +134,26 @@ $internal_cron_events = array(
 	)
 );
 
-// JP Connection Pilot disabled by default
-if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
-	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN', false );
+// Enable Jetpack private connection by default on non production sites
+if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+	define( 'VIP_JETPACK_IS_PRIVATE', true );
 }
 
-// JP Connection Pilot auto-reconnect disabled by default
-if ( ! defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
-	define( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT', false );
+// Jetpack Connection Pilot is enabled by default
+if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
+	// Keeping for historical reasons, we can remove this after clients are using the new constant
+	if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
+		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN );
+	} else {
+		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', true );
+	}
 }
 
-if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) && true === VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN ) {
+if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUTO_MANAGE_CONNECTION ) {
 	$internal_cron_events[] = array(
 		'schedule'  => 'hourly',
 		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
 		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
-		'timestamp' => strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ),
 	);
 }
 
@@ -188,6 +202,10 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
+}
+
+if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
+	define( 'VIP_SEARCH_DEV_TOOLS', ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
 }
 
 // Load elasticsearch helpers

@@ -3,13 +3,18 @@
  * Plugin Name: VaultPress
  * Plugin URI: https://vaultpress.com/?utm_source=plugin-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * Description: Protect your content, themes, plugins, and settings with <strong>realtime backup</strong> and <strong>automated security scanning</strong> from <a href="http://vaultpress.com/?utm_source=wp-admin&amp;utm_medium=plugin-description&amp;utm_campaign=1.0" rel="nofollow">VaultPress</a>.
- * Version: 2.1.3
+ * Version: 2.1.4
  * Author: Automattic
  * Author URI: https://vaultpress.com/?utm_source=author-uri&amp;utm_medium=plugin-description&amp;utm_campaign=1.0
  * License: GPL2+
  * Text Domain: vaultpress
  * Domain Path: /languages/
  */
+
+// Avoid loading VaultPress altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for VP to work in VIP)
+if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+	return;
+}
 
 // Avoid loading VaultPress altogether if VIP_VAULTPRESS_SKIP_LOAD is set to true
 if ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD ) {
@@ -40,3 +45,23 @@ add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $fi
 }, 10, 4 );
 
 require_once( __DIR__ . '/vaultpress/vaultpress.php' );
+
+add_filter( 'in_admin_header', 'vip_remove_vaultpress_connect_notice' );
+
+function vip_remove_vaultpress_connect_notice() {
+	// Not actually initializing VP, just getting the instance
+	$vaultpress = VaultPress::init();
+	remove_action( 'user_admin_notices', [ $vaultpress, 'connect_notice' ] );
+	remove_action( 'vaultpress_notices', [ $vaultpress, 'connect_notice' ] );
+	remove_action( 'admin_notices', [ $vaultpress, 'connect_notice' ] );
+	return null;
+}
+
+add_action( 'admin_menu', 'vip_remove_vaultpress_admin_menu', 999 );
+
+function vip_remove_vaultpress_admin_menu() {
+	$vaultpress = VaultPress::init();
+	if ( ! $vaultpress->is_registered() ) {
+		remove_submenu_page( 'jetpack', 'vaultpress' );
+	}
+}
