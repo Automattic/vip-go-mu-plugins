@@ -27,7 +27,7 @@ export const GeneralInformation = () => {
 /**
  * Represents a single collaplsible info block.
  *
- * @param {Object} props including label,value and options
+ * @param {Object} props including label, value and options
  * @returns {preact.VNode} A collapsible block of information.
  */
 export const InfoBlock = ( { label, value, options = { collapsible: false } } ) => {
