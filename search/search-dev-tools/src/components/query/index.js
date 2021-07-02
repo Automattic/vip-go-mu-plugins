@@ -75,7 +75,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			<h3 className="vip-h3">
 				{ pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )}
 				<span style="color: var(--vip-grey-60);"> that took</span> {request.body.took}ms
-				<small> ({request.response.code})</small>
+				<small> ({request?.response?.code || 'unknown' })</small>
 			</h3>
 		</div>
 		<div className={style.grid_container}>
