@@ -40,7 +40,7 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->cron->disable_sweeper_job();
 
 		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-		
+
 		$this->assertFalse( $existing, 'Existing cron event, wp_clear_scheduled_hook() failed' );
 
 		$this->cron->schedule_sweeper_job();
@@ -59,7 +59,7 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->cron->schedule_sweeper_job();
 
 		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-		
+
 		$this->assertTrue( (bool) $existing, 'Sweeper cron event not scheduled, cannot test deletion' );
 
 		$this->cron->disable_sweeper_job();
@@ -88,7 +88,7 @@ class Cron_Test extends \WP_UnitTestCase {
 				'object_type' => 'user',
 			),
 		);
-		
+
 		// Should call Queue::get_jobs() with the right job_ids
 		$mock_queue->expects( $this->once() )
 			->method( 'get_jobs' )
@@ -129,7 +129,7 @@ class Cron_Test extends \WP_UnitTestCase {
 				'object_type' => 'user',
 			),
 		);
-		
+
 		$mock_queue->expects( $this->once() )
 			->method( 'checkout_jobs' )
 			->will( $this->returnValue( $mock_jobs ) );
@@ -159,12 +159,46 @@ class Cron_Test extends \WP_UnitTestCase {
 
 	/**
 	 * Test if cron is enabled or disabled
-	 * 
+	 *
 	 * Currently this is always true
 	 */
 	public function test_is_enabled() {
 		$enabled = $this->cron->is_enabled();
 
 		$this->assertTrue( $enabled );
+	}
+
+	public function configure_concurency_data() {
+		return [
+			[ // min 1
+				1,
+				[ 'vip_search_queue_processor' => 1 ],
+			],
+			[ // max 25 %
+				10,
+				[ 'vip_search_queue_processor' => 3 ],
+			],
+			[
+				20,
+				[ 'vip_search_queue_processor' => 5 ],
+			],
+			[ // max of 5 takes over
+				30,
+				[ 'vip_search_queue_processor' => 5 ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider configure_concurency_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_configure_concurency( $cron_limit, $expected ) {
+		define( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT', $cron_limit );
+
+		$result = $this->cron->configure_concurency( [] );
+
+		$this->assertEquals( $expected, $result );
 	}
 }
