@@ -20,7 +20,7 @@ We use a combination of Prism.js and React Simple Code Editor to highlight the s
 
 ## Local Dev
 
-For the best results, we recommend using the [VIP local development environment](https://docs.wpvip.com/technical-references/vip-local-development-environment/) as it comes with everything that's needed for the working local Search instance, but it's possible to work with frontend code only.
+For the best results, we recommend using the [VIP local development environment](../../README.md) as it comes with everything that's needed for the working local Search instance, but it's possible to work with frontend code only.
 
 Frontend:
 1. Install dependencies `npm i` or `yarn`.

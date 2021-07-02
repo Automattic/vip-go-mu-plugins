@@ -8,6 +8,18 @@ This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/docume
 
 We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
+In order to use mu-plugins code in a "hot-reload" fashion you need to specify the local folder where this repository is cloned to. For example:
+
+```
+vip dev-env create --mu-plugins $(pwd)
+```
+
+You will be prompted to configure other options of the environment. When the environment is created you can start it with:
+
+```
+vip dev-env start
+```
+
 ### Tests
 
 ##### PHP Lint
