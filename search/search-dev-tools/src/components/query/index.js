@@ -34,15 +34,13 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	const queryResultRef = useRef( null );
 
 	/**
-	 *
 	 * @param {Object} query the query to Run
-	 * @param {String} _url ES url
 	 */
-	const fetchForQuery = async ( query, _url ) => {
+	const fetchForQuery = async query => {
 		try {
 			const res = await postData( window.VIPSearchDevTools.ajaxurl, {
 				action: window.VIPSearchDevTools.action,
-				url: _url,
+				url,
 				query,
 			}, window.VIPSearchDevTools.nonce );
 
