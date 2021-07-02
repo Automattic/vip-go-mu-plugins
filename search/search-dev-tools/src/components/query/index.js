@@ -7,7 +7,6 @@ import Editor from 'react-simple-code-editor';
 import cx from 'classnames';
 import pluralize from 'pluralize';
 
-
 import { SearchContext } from '../../context';
 import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
@@ -35,11 +34,9 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	const queryResultRef = useRef( null );
 
 	/**
-	 * 
 	 * @param {Object} query the query to Run
-	 * @param {String} url ES url
 	 */
-	const fetchForQuery = async ( query, url ) => {
+	const fetchForQuery = async query => {
 		try {
 			const res = await postData( window.VIPSearchDevTools.ajaxurl, {
 				action: window.VIPSearchDevTools.action,
@@ -47,7 +44,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				query,
 			}, window.VIPSearchDevTools.nonce );
 
-			setState({ ...state, result: JSON.stringify( res?.result?.body, null, 2 ) } );
+			setState( { ...state, result: JSON.stringify( res?.result?.body, null, 2 ) } );
 		} catch ( err ) {
 			// eslint-disable-next-line no-console
 			console.log( err );
@@ -137,7 +134,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 
 /**
  * Query list component
- * 
+ *
  * @returns {preact.VNode} query list.
  */
 export const Queries = () => {
@@ -148,6 +145,6 @@ export const Queries = () => {
 	}
 
 	return ( <div>
-		{queries.map( ( q, idx ) => <Query key={idx} {...q} /> )}
+		{queries.map( ( query, idx ) => <Query key={idx} {...query} /> )}
 	</div> );
 };
