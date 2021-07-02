@@ -25,7 +25,7 @@
  */
 function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
 		
 		// WordPress.com stats defaults to current UTC date, default to site's local date instead
 		if ( ! $end_date ) {
@@ -40,8 +40,13 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 
 		$posts = stats_get_csv( 'postviews', $args );
 	} else {
-		// If Jetpack is not present or not active, fake the data returned
+		// If Jetpack is present and active, but the Stats module has been disabled, add a notice
+		if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && ! Jetpack::is_module_active( 'stats' ) ) {
 
+			_doing_it_wrong( __FUNCTION__, esc_html__( 'The Jetpack Stats module is disabled but used by VIP Stats.' ), '0.1' );
+		}
+
+		// If Jetpack is not present or not active, fake the data returned
 		$posts = array();
 		$words = array( 'dessert', 'cotton', 'candy', 'caramels', 'tiramisu', 'muffin',  'wafer', 'toffee', 'gummi', 'lemon', 'drops', 'brownie', 'lollipop', 'bears', 'danish', 'chocolate', 'bar', 'topping', 'apple', 'pie', 'pastry', 'powder', 'pudding' );
 
@@ -77,7 +82,8 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
  */
 function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
+
 		$args = array(
 			'post_id'  => $post_id,
 			'num_days' => $num_days,
@@ -106,6 +112,12 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
 		}
 	} else {
+		// If Jetpack is present and active, but the Stats module has been disabled, add a notice
+		if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && ! Jetpack::is_module_active( 'stats' ) ) {
+
+			_doing_it_wrong( __FUNCTION__, esc_html__( 'The Jetpack Stats module is disabled but used by VIP Stats.' ), '0.1' );
+		}
+
 		// If Jetpack is not present or not active, fake the data returned
 		$views = mt_rand( 0, 20000 );
 	}
