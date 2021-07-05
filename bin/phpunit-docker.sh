@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Note: you can pass in additional phpunit args
-# Test with explicit WP version and Multisite config: ./bin/phpunit-docker.sh --version 5.4.4 --multisite 0
-# Test with explicit WP version and file: ./bin/phpunit-docker.sh --file tests/path/to/test --version 5.4.4
+# Test with explicit WP version and Multisite config: ./bin/phpunit-docker.sh --wp 5.4.4 --multisite 0
+# Test with explicit WP version and file: ./bin/phpunit-docker.sh --file tests/path/to/test --wp 5.4.4
 # Test a specific file: ./bin/phpunit-docker.sh --file tests/path/to/test.php
 # Stop on failures: ./bin/phpunit-docker.sh --stop-on-failure
 # etc.
 
 while test $# -gt 0; do
   case "$1" in
-  --version)
+  --wp)
     shift
     RAW_WP_VERSION=$1
     ;;

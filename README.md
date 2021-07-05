@@ -47,7 +47,7 @@ If you don't have the Lando-based environment running (e.g. in a CI context), we
 You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
 
 ```bash
-./bin/phpunit-docker.sh --version 5.4.4
+./bin/phpunit-docker.sh --wp 5.4.4
 ```
 
 You can also pass the path to a specific test as well as extra PHPUnit arguments:
@@ -59,7 +59,7 @@ You can also pass the path to a specific test as well as extra PHPUnit arguments
 Finally, you also have the option to choose if the tests run on a multisite environment:
 
 ```bash
-./bin/phpunit-docker.sh --version 5.4.4 --multisite 1
+./bin/phpunit-docker.sh --wp 5.4.4 --multisite 1
 ```
 
 ##### CI
