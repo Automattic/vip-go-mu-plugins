@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "babel-eslint": "10.1.0",
-    "browser-sync": "2.27.3",
+    "browser-sync": "2.27.4",
     "browserify": "17.0.0",
     "eslint": "3.19.0",
     "eslint-plugin-react": "7.24.0",
@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "classnames": "2.3.1",
-    "debug": "4.3.1",
+    "debug": "4.3.2",
     "fbjs": "3.0.0",
     "lodash": "4.17.21",
     "react": "15.7.0",
