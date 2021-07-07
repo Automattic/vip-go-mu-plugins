@@ -550,7 +550,7 @@ class Logger {
 	/**
 	 * Sends data to `WP_DEBUG_LOG` when applicable.
 	 *
-	 * @since 2020-01-10
+	 * @since 2021-07-07
 	 *
 	 * @param array $entries.
 	 */
@@ -569,7 +569,7 @@ class Logger {
 	/**
 	 * Sends data to `WP_DEBUG_LOG` when applicable.
 	 *
-	 * @since 2020-01-10
+	 * @since 2021-07-07
 	 *
 	 * @param array $entry.
 	 */
