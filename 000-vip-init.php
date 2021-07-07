@@ -141,12 +141,7 @@ if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' 
 
 // Jetpack Connection Pilot is enabled by default
 if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
-	// Keeping for historical reasons, we can remove this after clients are using the new constant
-	if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN' ) ) {
-		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', VIP_JETPACK_CONNECTION_PILOT_SHOULD_RUN );
-	} else {
-		define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', true );
-	}
+	define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', true );
 }
 
 if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUTO_MANAGE_CONNECTION ) {
