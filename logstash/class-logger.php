@@ -81,6 +81,15 @@ class Logger {
 	protected const MAX_ENTRY_EXTRA_SIZE = 262144;
 
 	/**
+	 * Public API Logstash Endpoint
+	 *
+	 * @since 2021-07-07
+	 *
+	 * @var string
+	 */
+	protected const LOGSTASH_ENDPOINT = 'https://public-api.wordpress.com/rest/v1.1/logstash/bulk';
+
+	/**
 	 * Array of allowed parameters
 	 *
 	 * @var Array
@@ -467,8 +476,6 @@ class Logger {
 			return; // Already done.
 		}
 
-		$fallback_error = new \WP_Error( 'logstash-send-failed', 'There was an error connecting to the logstash endpoint' );
-
 		static::$processed_entries = true;
 
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
@@ -476,10 +483,17 @@ class Logger {
 			fastcgi_finish_request();
 		}
 
-		$endpoint = 'https://public-api.wordpress.com/rest/v1.1/logstash/bulk';
+		if ( defined( 'VIP_LOGSTASH_USE_API' ) && VIP_LOGSTASH_USE_API ) {
+			self::process_logs_through_api();
+		} else {
+			self::process_logs_through_file();
+		}
+	}
+
+	private static function process_logs_through_api() {
+		$fallback_error = new \WP_Error( 'logstash-send-failed', 'There was an error connecting to the logstash endpoint' );
 		$entry_chunks = array_chunk( static::$entries, static::BULK_ENTRIES_COUNT );
 
-		// Process all entries.
 		foreach ( $entry_chunks as $entries ) {
 			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
 				static::maybe_wp_debug_log_entries( $entries );
@@ -494,7 +508,7 @@ class Logger {
 			}
 
 			// Send to logstash via REST API endpoint with payload containing log entry details.
-			$_wp_remote_response = vip_safe_wp_remote_request( $endpoint, $fallback_error, 3, 5, 5, [
+			$_wp_remote_response = vip_safe_wp_remote_request( self::LOGSTASH_ENDPOINT, $fallback_error, 3, 5, 5, [
 				'method' => 'POST',
 				'redirection' => 0,
 				'blocking' => false,
@@ -510,10 +524,26 @@ class Logger {
 				static::maybe_wp_debug_log_entries( $entries );
 				trigger_error( 'Unable to ' . esc_html( __METHOD__ ) . '(). Response from <' . esc_html( $endpoint ) . '> was [' . esc_html( $_wp_remote_response_code ) . ']: ' . esc_html( $_wp_remote_response_message ) . '.', E_USER_WARNING );
 			}
+		}
+	}
+
+	private static function process_logs_through_file() {
+		foreach ( static::$entries as $entry ) {
+			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
+				static::maybe_wp_debug_log_entry( $entry );
+				continue; // Bypassing logstash log writing below in this case.
+			}
+
+			$json_data = wp_json_encode( $entry );
+
+			if ( ! $json_data ) {
+				trigger_error( 'log2logstash could not encode your log.', E_USER_WARNING );
+				return;
+			}
 
 			// Log to file
 			// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			// error_log( $json_data . "\n", 3, ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log' );
+			error_log( $json_data . "\n", 3, ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log' );
 		}
 	}
 
@@ -524,7 +554,7 @@ class Logger {
 	 *
 	 * @param array $entries.
 	 */
-	public static function maybe_wp_debug_log_entries( array $entries ) : void {
+	private static function maybe_wp_debug_log_entries( array $entries ) : void {
 		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) ) {
 			return; // Not applicable.
 		} elseif ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
@@ -534,6 +564,23 @@ class Logger {
 		foreach ( $entries as $entry ) {
 			static::wp_debug_log( $entry );
 		}
+	}
+
+	/**
+	 * Sends data to `WP_DEBUG_LOG` when applicable.
+	 *
+	 * @since 2020-01-10
+	 *
+	 * @param array $entry.
+	 */
+	private static function maybe_wp_debug_log_entry( array $entry ) : void {
+		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) ) {
+			return; // Not applicable.
+		} elseif ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return; // Not applicable.
+		}
+
+		static::wp_debug_log( $entry );
 	}
 
 	/**
