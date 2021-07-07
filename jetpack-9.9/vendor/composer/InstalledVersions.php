@@ -237,13 +237,12 @@ private static $installed = array (
     ),
     'automattic/jetpack-password-checker' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => 'v0.1.2',
+      'version' => '0.1.2.0',
       'aliases' => 
       array (
-        0 => '0.1.x-dev',
       ),
-      'reference' => 'dec6ead3b3b26af31d8d46a608e97f4251cb036a',
+      'reference' => '408bf765942578276da69b10c2600564773dceee',
     ),
     'automattic/jetpack-redirect' => 
     array (
@@ -274,12 +273,12 @@ private static $installed = array (
     ),
     'automattic/jetpack-sync' => 
     array (
-      'pretty_version' => 'v1.23.0',
-      'version' => '1.23.0.0',
+      'pretty_version' => 'v1.23.1',
+      'version' => '1.23.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'e36c2cf00ceb3000181bc682756d9dcbac69989b',
+      'reference' => '41172188c5f88560e7a4cdd26017393f845ae781',
     ),
     'automattic/jetpack-terms-of-service' => 
     array (
