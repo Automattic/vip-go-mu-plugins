@@ -68,7 +68,7 @@ class Logger_Test extends \WP_UnitTestCase {
 			'feature' => 'a8c_vip_test',
 			'site_id' => 1,
 			'blog_id' => 1,
-			'host' => 'example.org',
+			'http_host' => 'example.org',
 			'user_id' => 0,
 			'extra' => '[]',
 			'index' => 'log2logstash',
@@ -138,9 +138,9 @@ class Logger_Test extends \WP_UnitTestCase {
 		$this->assertEquals( [], $entries_prop->getValue() );
 	}
 
-	public function test__log2logstash__invalid_host_size() {
+	public function test__log2logstash__invalid_http_host_size() {
 		$data = [
-			'host' => 'BqnKKZj3EHPqnzg7HC9aHJRFfqMZiHPJbKjKZJBeCrqcQmFq2QN2202GOYwsuVzkmKnxycLXUhTS4vbIDsMcNfsPWB0vcz9TxjfbqiJ3Tt0akDmxf841w409Ghge2PnUJ1fA7PkeyQmQux3D36AiLz8VmglrIbiI4zhDG8iiJG09XuOyMWjthvnyWqQqSuQLx2vbdifauXfEXMcPanXk2T2quG94OfHzBkptLPnUKi8n7FMk8mSagR0OHrM1QPOso',
+			'http_host' => 'BqnKKZj3EHPqnzg7HC9aHJRFfqMZiHPJbKjKZJBeCrqcQmFq2QN2202GOYwsuVzkmKnxycLXUhTS4vbIDsMcNfsPWB0vcz9TxjfbqiJ3Tt0akDmxf841w409Ghge2PnUJ1fA7PkeyQmQux3D36AiLz8VmglrIbiI4zhDG8iiJG09XuOyMWjthvnyWqQqSuQLx2vbdifauXfEXMcPanXk2T2quG94OfHzBkptLPnUKi8n7FMk8mSagR0OHrM1QPOso',
 			'severity' => 'alert',
 			'feature' => 'test',
 			'message' => 'Test alert',
@@ -148,7 +148,7 @@ class Logger_Test extends \WP_UnitTestCase {
 
 		Logger::log2logstash( $data );
 
-		$this->assertError( 'Invalid `host` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 255 bytes or less.', E_USER_WARNING );
+		$this->assertError( 'Invalid `http_host` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 255 bytes or less.', E_USER_WARNING );
 
 		$entries_prop = $this->get_property( 'entries' );
 
@@ -220,7 +220,7 @@ class Logger_Test extends \WP_UnitTestCase {
 				'feature' => 'a8c_vip_test',
 				'site_id' => 1,
 				'blog_id' => 1,
-				'host' => 'example.org',
+				'http_host' => 'example.org',
 				'user_id' => 0,
 				'extra' => '[]',
 				'index' => 'log2logstash',
