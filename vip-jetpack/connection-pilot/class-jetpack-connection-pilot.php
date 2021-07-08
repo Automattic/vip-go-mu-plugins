@@ -229,7 +229,7 @@ class Connection_Pilot {
 		}
 
 		// 2) Check the last heartbeat to see if we should back off
-		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp']) ){
+		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ){
 			$backoff_factor = $this->last_heartbeat['backoff_factor'];
 			if ( $backoff_factor > 0 ) {
 				$now = new DateTime();
