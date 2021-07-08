@@ -8,6 +8,10 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__update_backoff_factor
 	 */
 	public function test__update_backoff_factor( $backoff_factor, $expected ) {
+		if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+			return;
+		}
+
 		$option = array(
 			'site_url'        => get_site_url(),
 			'hashed_site_url' => md5( get_site_url() ),
@@ -29,6 +33,10 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__update_heartbeat
 	 */
 	public function test__update_heartbeat( $backoff_factor, $expected ) {
+		if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+			return;
+		}
+
 		$cp = Connection_Pilot::instance();
 
 		if ( $backoff_factor ) {
