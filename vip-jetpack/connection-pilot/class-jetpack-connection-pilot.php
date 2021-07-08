@@ -308,7 +308,7 @@ class Connection_Pilot {
 			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
 		}
 
-		return apply_filters( 'vip_jetpack_connection_pilot_should_run', true );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
 	}
 
 	/**
