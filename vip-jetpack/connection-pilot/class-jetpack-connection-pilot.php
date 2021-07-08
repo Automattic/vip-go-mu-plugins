@@ -56,8 +56,6 @@ class Connection_Pilot {
 		}
 
 		$this->init_actions();
-
-		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
 	/**
@@ -67,6 +65,9 @@ class Connection_Pilot {
 		if ( ! ( self::$instance instanceof self ) ) {
 			self::$instance = new self();
 		}
+
+		// Making sure each time CP is called it reads the correct heartbean
+		self::$instance->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 
 		return self::$instance;
 	}
@@ -177,8 +178,8 @@ class Connection_Pilot {
 	 *
 	 * @return void
 	 */
-	private function update_backoff_factor(): void {
-		$backoff_factor = $this->last_heartbeat['backoff_factor'];
+	public function update_backoff_factor(): void {
+		$backoff_factor = (int) $this->last_heartbeat['backoff_factor'];
 
 		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
 			return;
@@ -194,16 +195,20 @@ class Connection_Pilot {
 	/**
 	 * @param int $backoff_factor
 	 *
-	 * @return bool True if the heartbeat was updated, false otherwise.
+	 * @return void
 	 */
-	public function update_heartbeat( int $backoff_factor = 0 ): bool {
-		return update_option( self::HEARTBEAT_OPTION_NAME, array(
+	public function update_heartbeat( int $backoff_factor = 0 ): void {
+		$option = array(
 			'site_url'         => get_site_url(),
 			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
 			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
 			'timestamp' => time(),
 			'backoff_factor' => $backoff_factor,
-		), false );
+		);
+		$update = update_option( self::HEARTBEAT_OPTION_NAME, $option, false );
+		if ( $update ) {
+			$this->last_heartbeat = $option;
+		}
 	}
 
 	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
