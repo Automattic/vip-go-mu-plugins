@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use DateTime;
+
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
@@ -26,6 +28,11 @@ class Connection_Pilot {
 	 * See the a8c_cron_control_clean_legacy_data event for more details.
 	 */
 	const CRON_SCHEDULE = 'hourly';
+
+	/**
+	 * Maximum number of hours that the system will wait to try to reconnect.
+	 */
+	const MAX_BACKOFF_FACTOR = 2048;
 
 	/**
 	 * The healtcheck option's current data.
@@ -162,14 +169,34 @@ class Connection_Pilot {
 
 		// Reconnection failed
 		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
+
+		// Backing off from future reconnections
+		$backoff_factor = $this->last_heartbeat['backoff_factor'];
+
+		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
+			return;
+		} else if ( $backoff_factor <= 0 ) {
+			$backoff_factor = 1;
+		} else {
+			$backoff_factor = $backoff_factor * 2;
+		}
+
+		$this->update_heartbeat( false, $backoff_factor );
 	}
 
-	public function update_heartbeat() {
+	/**
+	 * @param bool $update_timestamp Whether we should update the timestamp of the last heartbeat
+	 * @param int $backoff_factor
+	 *
+	 * @return bool True if the heartbeat was updated, false otherwise.
+	 */
+	public function update_heartbeat( bool $update_timestamp = true, int $backoff_factor = 0 ): bool {
 		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
 			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
-			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id' ),
-			'timestamp' => time(),
+			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
+			'timestamp' => $update_timestamp ? time() : $this->last_heartbeat['timestamp'],
+			'backoff_factor' => $backoff_factor,
 		), false );
 	}
 
@@ -195,7 +222,21 @@ class Connection_Pilot {
 				return false;
 		}
 
-		// 2) Check the last heartbeat to see if the URLs match.
+		// 2) Check the last heartbeat to see if we should back off
+		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp']) ){
+			$backoff_factor = $this->last_heartbeat['backoff_factor'];
+			if ( $backoff_factor > 0 ) {
+				$now = new DateTime();
+				$diff = $now->diff($this->last_heartbeat['timestamp'], true );
+
+				// Checking the difference in hours from the last heartbeat
+				if ( $diff && $diff->h < $backoff_factor) {
+					return false;
+				}
+			}
+		}
+
+		// 3) Check the last heartbeat to see if the URLs match.
 		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
 			if ( $this->last_heartbeat['hashed_site_url'] === md5( get_site_url() ) ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
@@ -260,7 +301,7 @@ class Connection_Pilot {
 			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
 		}
 
-		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', true );
 	}
 
 	/**
