@@ -169,8 +169,15 @@ class Connection_Pilot {
 
 		// Reconnection failed
 		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
+		$this->update_backoff_factor();
+	}
 
-		// Backing off from future reconnections
+	/**
+	 * Updates the backoff factor after a connection attempt has failed
+	 *
+	 * @return void
+	 */
+	private function update_backoff_factor(): void {
 		$backoff_factor = $this->last_heartbeat['backoff_factor'];
 
 		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
