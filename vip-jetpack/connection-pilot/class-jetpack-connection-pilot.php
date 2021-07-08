@@ -66,7 +66,7 @@ class Connection_Pilot {
 			self::$instance = new self();
 		}
 
-		// Making sure each time CP is called it reads the correct heartbean
+		// Making sure each time CP is called it reads the correct heartbeat
 		self::$instance->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 
 		return self::$instance;
