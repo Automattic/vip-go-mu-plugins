@@ -36,6 +36,7 @@ function wpvip_load_wp_parsely_plugin() {
 	$major_version = apply_filters( 'wpvip_parsely_major_version', WPVIP_PARSELY_DEFAULT_VERSION );
 	if ( ! in_array( $major_version, [
 		'2.5',
+		'2.6-develop',
 	] ) ) {
 		trigger_error(
 			sprintf( 'Invalid value configured via wpvip_parsely_major_version filter: %s', $major_version ),
