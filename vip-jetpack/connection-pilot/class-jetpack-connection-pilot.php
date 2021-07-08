@@ -188,21 +188,20 @@ class Connection_Pilot {
 			$backoff_factor = $backoff_factor * 2;
 		}
 
-		$this->update_heartbeat( false, $backoff_factor );
+		$this->update_heartbeat( $backoff_factor );
 	}
 
 	/**
-	 * @param bool $update_timestamp Whether we should update the timestamp of the last heartbeat
 	 * @param int $backoff_factor
 	 *
 	 * @return bool True if the heartbeat was updated, false otherwise.
 	 */
-	public function update_heartbeat( bool $update_timestamp = true, int $backoff_factor = 0 ): bool {
+	public function update_heartbeat( int $backoff_factor = 0 ): bool {
 		return update_option( self::HEARTBEAT_OPTION_NAME, array(
 			'site_url'         => get_site_url(),
 			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
 			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
-			'timestamp' => $update_timestamp ? time() : $this->last_heartbeat['timestamp'],
+			'timestamp' => time(),
 			'backoff_factor' => $backoff_factor,
 		), false );
 	}
@@ -277,7 +276,7 @@ class Connection_Pilot {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
 		$last_heartbeat = $this->last_heartbeat;
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && $last_heartbeat['cache_site_id'] != -1 ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
 				date( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
