@@ -178,7 +178,7 @@ class Connection_Pilot {
 	 *
 	 * @return void
 	 */
-	public function update_backoff_factor(): void {
+	private function update_backoff_factor(): void {
 		$backoff_factor = (int) $this->last_heartbeat['backoff_factor'];
 
 		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
@@ -197,7 +197,7 @@ class Connection_Pilot {
 	 *
 	 * @return void
 	 */
-	public function update_heartbeat( int $backoff_factor = 0 ): void {
+	private function update_heartbeat( int $backoff_factor = 0 ): void {
 		$option = array(
 			'site_url'         => get_site_url(),
 			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs

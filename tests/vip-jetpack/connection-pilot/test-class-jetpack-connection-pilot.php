@@ -3,12 +3,20 @@
 namespace Automattic\VIP\Jetpack;
 
 class Connection_Pilot_Test extends \WP_UnitTestCase {
+	protected static function getMethod( $name ) {
+		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+
+		return $method;
+	}
+
 	/**
 	 * @group jetpack-required
 	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__update_backoff_factor
 	 */
-	public function test__update_backoff_factor( $backoff_factor, $expected ) {
+	public function test__update_backoff_factor( ?int $backoff_factor, int $expected ) {
 		$option = array(
 			'site_url'        => get_site_url(),
 			'hashed_site_url' => md5( get_site_url() ),
@@ -18,8 +26,9 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 		);
 		update_option( 'vip_jetpack_connection_pilot_heartbeat', $option, false );
 
-		$cp = Connection_Pilot::instance();
-		$cp->update_backoff_factor();
+		$cp                    = Connection_Pilot::instance();
+		$update_backoff_factor = self::getMethod( 'update_backoff_factor' );
+		$update_backoff_factor->invoke( $cp );
 
 		$option = get_option( 'vip_jetpack_connection_pilot_heartbeat' );
 		$this->assertEquals( $expected, $option['backoff_factor'] );
@@ -30,13 +39,14 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__update_heartbeat
 	 */
-	public function test__update_heartbeat( $backoff_factor, $expected ) {
-		$cp = Connection_Pilot::instance();
+	public function test__update_heartbeat( ?int $backoff_factor, array $expected ) {
+		$cp               = Connection_Pilot::instance();
+		$update_heartbeat = self::getMethod( 'update_heartbeat' );
 
 		if ( $backoff_factor ) {
-			$cp->update_heartbeat( $backoff_factor );
+			$update_heartbeat->invokeArgs( $cp, [ $backoff_factor ] );
 		} else {
-			$cp->update_heartbeat();
+			$update_heartbeat->invoke( $cp );
 		}
 
 		$option = get_option( 'vip_jetpack_connection_pilot_heartbeat' );
