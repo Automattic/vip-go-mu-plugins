@@ -11,13 +11,6 @@ class Akismet {
 	private static $last_comment_result = null;
 	private static $comment_as_submitted_allowed_keys = array( 'blog' => '', 'blog_charset' => '', 'blog_lang' => '', 'blog_ua' => '', 'comment_agent' => '', 'comment_author' => '', 'comment_author_IP' => '', 'comment_author_email' => '', 'comment_author_url' => '', 'comment_content' => '', 'comment_date_gmt' => '', 'comment_tags' => '', 'comment_type' => '', 'guid' => '', 'is_test' => '', 'permalink' => '', 'reporter' => '', 'site_domain' => '', 'submit_referer' => '', 'submit_uri' => '', 'user_ID' => '', 'user_agent' => '', 'user_id' => '', 'user_ip' => '' );
 	
-	/**
-	 * Is the comment check happening in the context of an API call? Of if false, then it's during the POST that happens after filling out a comment form.
-	 *
-	 * @var type bool
-	 */
-	private static $is_api_call = false;
-
 	public static function init() {
 		if ( ! self::$initiated ) {
 			self::init_hooks();
@@ -137,12 +130,18 @@ class Akismet {
 	}
 	
 	public static function rest_auto_check_comment( $commentdata ) {
-		self::$is_api_call = true;
-		
-		return self::auto_check_comment( $commentdata );
+		return self::auto_check_comment( $commentdata, 'rest_api' );
 	}
 
-	public static function auto_check_comment( $commentdata ) {
+	/**
+	 * Check a comment for spam.
+	 *
+	 * @param array $commentdata
+	 * @param string $context What kind of request triggered this comment check? Possible values are 'default', 'rest_api', and 'xml-rpc'.
+	 * @return array|WP_Error Either the $commentdata array with additional entries related to its spam status
+	 *                        or a WP_Error, if it's a REST API request and the comment should be discarded.
+	 */
+	public static function auto_check_comment( $commentdata, $context = 'default' ) {
 		// If no key is configured, then there's no point in doing any of this.
 		if ( ! self::get_api_key() ) {
 			return $commentdata;
@@ -246,17 +245,19 @@ class Akismet {
 					update_option( 'akismet_spam_count', get_option( 'akismet_spam_count' ) + $incr );
 				}
 
-				if ( self::$is_api_call ) {
+				if ( 'rest_api' === $context ) {
 					return new WP_Error( 'akismet_rest_comment_discarded', __( 'Comment discarded.', 'akismet' ) );
-				}
-				else {
+				} else if ( 'xml-rpc' === $context ) {
+					// If this is a pingback that we're pre-checking, the discard behavior is the same as the normal spam response behavior.
+					return $commentdata;
+				} else {
 					// Redirect back to the previous page, or failing that, the post permalink, or failing that, the homepage of the blog.
 					$redirect_to = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : ( $post ? get_permalink( $post ) : home_url() );
 					wp_safe_redirect( esc_url_raw( $redirect_to ) );
 					die();
 				}
 			}
-			else if ( self::$is_api_call ) {
+			else if ( 'rest_api' === $context ) {
 				// The way the REST API structures its calls, we can set the comment_approved value right away.
 				$commentdata['comment_approved'] = 'spam';
 			}
@@ -1286,7 +1287,7 @@ class Akismet {
 	}
 	
 	/**
-	 * Mark form.js as async. Because nothing depends on it, it can run at any time
+	 * Mark form.js as deferred. Because nothing depends on it, it can run at any time
 	 * after it's loaded, and the browser won't have to wait for it to load to continue
 	 * parsing the rest of the page.
 	 */
@@ -1295,7 +1296,7 @@ class Akismet {
 			return $tag;
 		}
 		
-		return preg_replace( '/^<script /i', '<script async="async" ', $tag );
+		return preg_replace( '/^<script /i', '<script defer ', $tag );
 	}
 	
 	public static function inject_ak_js( $post_id ) {
@@ -1439,8 +1440,6 @@ p {
 		if ( !is_object( $wp_xmlrpc_server ) )
 			return false;
 
-		self::$is_api_call = true;
-
 		$is_multicall = false;
 		$multicall_count = 0;
 
@@ -1548,12 +1547,9 @@ p {
 				'multicall_count' => $multicall_count,
 			);
 
-			$comment = Akismet::auto_check_comment( $comment );
+			$comment = self::auto_check_comment( $comment, 'xml-rpc' );
 
-			if (
-				is_wp_error( $comment ) // This triggered a 'discard' directive.
-				|| ( isset( $comment['akismet_result'] ) && 'true' == $comment['akismet_result'] ) // It was just a normal spam response.
-				) {
+			if ( isset( $comment['akismet_result'] ) && 'true' == $comment['akismet_result'] ) {
 				// Sad: tightly coupled with the IXR classes. Unfortunately the action provides no context and no way to return anything.
 				$wp_xmlrpc_server->error( new IXR_Error( 0, 'Invalid discovery target' ) );
 
