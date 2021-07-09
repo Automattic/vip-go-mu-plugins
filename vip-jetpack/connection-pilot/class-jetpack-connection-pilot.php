@@ -174,6 +174,29 @@ class Connection_Pilot {
 	}
 
 	/**
+	 * Checks for the backoff factor and returns whether Connection Pilot should skip a connection attempt.
+	 *
+	 * @return bool True if CP should back off, false otherwise.
+	 */
+	private function should_back_off(): bool {
+		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ){
+			$backoff_factor = $this->last_heartbeat['backoff_factor'];
+			if ( $backoff_factor > 0 ) {
+				$dt_heartbeat = ( new DateTime() )->setTimestamp( $this->last_heartbeat['timestamp'] );
+				$dt_now = new DateTime();
+				$diff = $dt_now->diff( $dt_heartbeat, true );
+
+				// Checking the difference in hours from the last heartbeat
+				if ( $diff && $diff->h < $backoff_factor ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Updates the backoff factor after a connection attempt has failed
 	 *
 	 * @return void
@@ -234,17 +257,8 @@ class Connection_Pilot {
 		}
 
 		// 2) Check the last heartbeat to see if we should back off
-		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ){
-			$backoff_factor = $this->last_heartbeat['backoff_factor'];
-			if ( $backoff_factor > 0 ) {
-				$now = new DateTime();
-				$diff = $now->diff($this->last_heartbeat['timestamp'], true );
-
-				// Checking the difference in hours from the last heartbeat
-				if ( $diff && $diff->h < $backoff_factor) {
-					return false;
-				}
-			}
+		if ( $this->should_back_off() ) {
+			return false;
 		}
 
 		// 3) Check the last heartbeat to see if the URLs match.
