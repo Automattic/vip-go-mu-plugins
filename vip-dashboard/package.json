@@ -36,7 +36,7 @@
     "gulp-parker": "0.1.6",
     "gulp-plumber": "1.2.1",
     "gulp-react": "3.1.0",
-    "gulp-sass": "4.1.1",
+    "gulp-sass": "5.0.0",
     "gulp-sourcemaps": "3.0.0",
     "gulp-uglify": "3.0.2",
     "gulp-util": "3.0.8",
