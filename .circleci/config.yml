@@ -144,7 +144,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.4-fpm
+      - image: wordpressdevelop/php:8.1-fpm
       - image: *db_image
 
   php74-core-multisite-tests:
@@ -154,7 +154,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.4-fpm
+      - image: wordpressdevelop/php:8.1-fpm
       - image: *db_image
 
   php74-lint:
