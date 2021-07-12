@@ -22,7 +22,7 @@
     "browserify": "17.0.0",
     "eslint": "3.19.0",
     "eslint-plugin-react": "7.24.0",
-    "gulp": "3.9.1",
+    "gulp": "4.0.2",
     "gulp-autoprefixer": "7.0.1",
     "gulp-check-unused-css": "2.1.4",
     "gulp-concat": "2.6.1",
