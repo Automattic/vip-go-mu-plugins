@@ -24,10 +24,14 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	const DEFAULT_SORT = 'relevance_desc';
 
-	public function __construct() {
+	public function __construct( $name = null ) {
+	    if ( empty( $name ) ) {
+			$name = 'Search (VIP Enterprise)';
+		}
+
 		parent::__construct(
-			'VIPSearchWidget',
-			'Search (VIP Enterprise)',
+			'vip-search-widget',
+			$name,
 			array( 'description' => 'UI for VIP Enterprise Search' )
 		);
 	}
@@ -342,7 +346,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		$form = self::inject_hidden_form_fields( $form, $fields_to_inject );
 
 		echo '<div class="vip-search-form">';
-		echo esc_html( $form );
+		echo $form; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</div>';
 	}
 
@@ -428,7 +432,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	 *
 	 */
 	private static function render_widget_title( string $title, string $before_title, string $after_title ) {
-		echo esc_html( $before_title ) . esc_html( $title ) . esc_html( $after_title );
+		echo $before_title . esc_html( $title ) . $after_title; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 }
