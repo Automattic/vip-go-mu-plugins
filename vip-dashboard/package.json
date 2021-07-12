@@ -48,7 +48,7 @@
     "supertest": "3.4.2",
     "vinyl-buffer": "1.0.1",
     "vinyl-source-stream": "1.1.2",
-    "watchify": "3.11.1"
+    "watchify": "4.0.0"
   },
   "dependencies": {
     "classnames": "2.3.1",
