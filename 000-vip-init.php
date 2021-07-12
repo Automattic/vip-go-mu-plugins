@@ -139,9 +139,9 @@ if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' 
 	define( 'VIP_JETPACK_IS_PRIVATE', true );
 }
 
-// Jetpack Connection Pilot is enabled by default
+// Jetpack Connection Pilot is enabled by default on VIP Go environments
 if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
-	define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', true );
+	define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', false !== VIP_GO_ENV );
 }
 
 if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUTO_MANAGE_CONNECTION ) {
