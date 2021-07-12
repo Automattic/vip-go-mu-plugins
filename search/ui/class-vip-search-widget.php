@@ -70,17 +70,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	public function widget( $args, $instance ) {
 		$instance = $this->vip_search_populate_defaults( $instance );
-		$this->widget_non_instant( $args, $instance );
-	}
 
-	/**
-	 * Render the non-instant frontend widget.
-	 *
-	 * @param array $args     Widgets args supplied by the theme.
-	 * @param array $instance The current widget instance.
-	 *
-	 */
-	public function widget_non_instant( array $args, array $instance ) {
 		if ( empty( $instance['search_box_enabled'] ) && empty( $instance['user_sort_enabled'] ) ) {
 			return;
 		}
@@ -111,10 +101,10 @@ class VIP_Search_Widget extends \WP_Widget {
 
 		if ( ! empty( $instance['search_box_enabled'] ) && ! empty( $instance['user_sort_enabled'] ) ) :
 			?>
-			<div class="jetpack-search-sort-wrapper">
+			<div class="vip-search-sort-wrapper">
 				<label>
 					<?php esc_html_e( 'Sort by', 'jetpack' ); ?>
-					<select class="jetpack-search-sort">
+					<select class="vip-search-sort">
 						<?php foreach ( $this->get_sort_types() as $sort => $label ) { ?>
 							<option value="<?php echo esc_attr( $sort ); ?>" <?php selected( $current_sort, $sort ); ?>>
 								<?php echo esc_html( $label ); ?>
@@ -145,14 +135,12 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param string $order    The order to initialize the select with.
 	 * @param string $orderby  The orderby to initialize the select with.
 	 *
-	 *@since 5.8.0
-	 *
 	 */
-	private function maybe_render_sort_javascript( $instance, $order, $orderby ) {
+	private function maybe_render_sort_javascript( array $instance, string $order, string $orderby ) {
 		if ( ! empty( $instance['user_sort_enabled'] ) ) :
 			?>
 			<script type="text/javascript">
-				var jetpackSearchModuleSorting = function() {
+				var vipSearchModuleSorting = function() {
 					var orderByDefault = '<?php echo 'date' === $orderby ? 'date' : 'relevance'; ?>',
 						orderDefault   = '<?php echo 'ASC' === $order ? 'ASC' : 'DESC'; ?>',
 						widgetId       = decodeURIComponent( '<?php echo rawurlencode( $this->id ); ?>' ),
@@ -160,11 +148,11 @@ class VIP_Search_Widget extends \WP_Widget {
 						isSearch       = <?php echo (int) is_search(); ?>;
 
 					var container = document.getElementById( widgetId + '-wrapper' ),
-						form = container.querySelector( '.jetpack-search-form form' ),
+						form = container.querySelector( '.vip-search-form form' ),
 						orderBy = form.querySelector( 'input[name=orderby]' ),
 						order = form.querySelector( 'input[name=order]' ),
 						searchInput = form.querySelector( 'input[name="s"]' ),
-						sortSelectInput = container.querySelector( '.jetpack-search-sort' );
+						sortSelectInput = container.querySelector( '.vip-search-sort' );
 
 					orderBy.value = orderByDefault;
 					order.value = orderDefault;
@@ -188,9 +176,9 @@ class VIP_Search_Widget extends \WP_Widget {
 				}
 
 				if ( document.readyState === 'interactive' || document.readyState === 'complete' ) {
-					jetpackSearchModuleSorting();
+					vipSearchModuleSorting();
 				} else {
-					document.addEventListener( 'DOMContentLoaded', jetpackSearchModuleSorting );
+					document.addEventListener( 'DOMContentLoaded', vipSearchModuleSorting );
 				}
 			</script>
 			<?php
@@ -203,10 +191,9 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param string $sort A sort string.
 	 *
 	 * @return array Order by and order.
-	 *@since 5.8.0
 	 *
 	 */
-	private function sorting_to_wp_query_param( $sort ) {
+	private function sorting_to_wp_query_param( string $sort ):array {
 		$parts   = explode( '|', $sort );
 		$orderby = $_GET['orderby'] ?? $parts[0];
 
@@ -224,7 +211,6 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param array $old_instance Old settings for this instance.
 	 *
 	 * @return array Settings to save.
-	 *@since 5.0.0
 	 *
 	 */
 	public function update( $new_instance, $old_instance ) {
@@ -246,8 +232,6 @@ class VIP_Search_Widget extends \WP_Widget {
 	 *
 	 * @param array $instance Previously saved values from database.
 	 *
-	 *@since 5.0.0
-	 *
 	 */
 	public function form( $instance ) {
 		$instance = $this->vip_search_populate_defaults( $instance );
@@ -255,7 +239,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		$title = strip_tags( $instance['title'] );
 
 		$classes = sprintf(
-			'jetpack-search-filters-widget %s %s',
+			'vip-search-filters-widget %s %s',
 			$instance['search_box_enabled'] ? '' : 'hide-post-types',
 			$this->id
 		);
@@ -278,7 +262,7 @@ class VIP_Search_Widget extends \WP_Widget {
 				<label>
 					<input
 						type="checkbox"
-						class="jetpack-search-filters-widget__search-box-enabled"
+						class="vip-search-filters-widget__search-box-enabled"
 						name="<?php echo esc_attr( $this->get_field_name( 'search_box_enabled' ) ); ?>"
 						<?php checked( $instance['search_box_enabled'] ); ?>
 					/>
@@ -290,7 +274,7 @@ class VIP_Search_Widget extends \WP_Widget {
 				<label>
 					<input
 						type="checkbox"
-						class="jetpack-search-filters-widget__sort-controls-enabled"
+						class="vip-search-filters-widget__sort-controls-enabled"
 						name="<?php echo esc_attr( $this->get_field_name( 'user_sort_enabled' ) ); ?>"
 						<?php checked( $instance['user_sort_enabled'] ); ?>
 						<?php disabled( ! $instance['search_box_enabled'] ); ?>
@@ -299,7 +283,7 @@ class VIP_Search_Widget extends \WP_Widget {
 				</label>
 			</p>
 
-			<p class="jetpack-search-filters-widget__post-types-select">
+			<p class="vip-search-filters-widget__post-types-select">
 				<label><?php esc_html_e( 'Post types to search (minimum of 1):', 'jetpack' ); ?></label>
 				<?php foreach ( get_post_types( array( 'exclude_from_search' => false ), 'objects' ) as $post_type ) : ?>
 					<label>
@@ -319,7 +303,7 @@ class VIP_Search_Widget extends \WP_Widget {
 					<?php esc_html_e( 'Default sort order:', 'jetpack' ); ?>
 					<select
 						name="<?php echo esc_attr( $this->get_field_name( 'sort' ) ); ?>"
-						class="widefat jetpack-search-filters-widget__sort-order">
+						class="widefat vip-search-filters-widget__sort-order">
 						<?php foreach ( $this->get_sort_types() as $sort_type => $label ) { ?>
 							<option value="<?php echo esc_attr( $sort_type ); ?>" <?php selected( $instance['sort'], $sort_type ); ?>>
 								<?php echo esc_html( $label ); ?>
@@ -339,10 +323,8 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param string $orderby    How to order the search results.
 	 * @param string $order      In what direction to order the search results.
 	 *
-	 *@since 5.8.0
-	 *
 	 */
-	public static function render_widget_search_form( $post_types, $orderby, $order ) {
+	public static function render_widget_search_form( array $post_types, string $orderby, string $order ) {
 		$form = get_search_form( false );
 
 		$fields_to_inject = array(
@@ -359,7 +341,7 @@ class VIP_Search_Widget extends \WP_Widget {
 
 		$form = self::inject_hidden_form_fields( $form, $fields_to_inject );
 
-		echo '<div class="jetpack-search-form">';
+		echo '<div class="vip-search-form">';
 		echo esc_html( $form );
 		echo '</div>';
 	}
@@ -373,7 +355,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @return string The modified form HTML.
 	 *
 	 */
-	private static function inject_hidden_form_fields( $form, $fields ) {
+	private static function inject_hidden_form_fields( string $form, array $fields ):string {
 		$form_injection = '';
 
 		foreach ( $fields as $field_name => $field_value ) {
@@ -400,10 +382,9 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param array $post_types An array of post types.
 	 *
 	 * @return bool
-	 *@since 5.8.0
 	 *
 	 */
-	private static function post_types_differ_searchable( $post_types ) {
+	private static function post_types_differ_searchable( array $post_types ):bool {
 		if ( empty( $post_types ) ) {
 			return false;
 		}
@@ -422,10 +403,9 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param array $array_2
 	 *
 	 * @return array
-	 *@since 5.8.0
 	 *
 	 */
-	private static function array_diff( $array_1, $array_2 ) {
+	private static function array_diff( array $array_1, array $array_2 ) {
 		// If the array counts are the same, then the order doesn't matter. If the count of
 		// $array_1 is higher than $array_2, that's also fine. If the count of $array_2 is higher,
 		// we need to swap the array order though.
@@ -446,9 +426,8 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * @param string $before_title The HTML tag to display before the title
 	 * @param string $after_title  The HTML tag to display after the title
 	 *
-	 *
 	 */
-	private static function render_widget_title( $title, $before_title, $after_title ) {
+	private static function render_widget_title( string $title, string $before_title, string $after_title ) {
 		echo esc_html( $before_title ) . esc_html( $title ) . esc_html( $after_title );
 	}
 
