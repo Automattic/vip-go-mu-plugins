@@ -3,7 +3,7 @@
 namespace Automattic\VIP\Search\UI;
 
 /**
-* Class VIPSearchWidget
+* Class VIP_Search_Widget
  * @package Automattic\VIP\Search\UI
  *
  * Derived from Jetpack_Search_Widget
@@ -207,7 +207,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	/**
 	 * Updates a particular instance of the widget. Validates and sanitizes the options.
 	 *
-	 * @param array $new_instance New settings for this instance as input by the user via Jetpack_Search_Widget::form().
+	 * @param array $new_instance New settings for this instance as input by the user via VIP_Search_Widget::form().
 	 * @param array $old_instance Old settings for this instance.
 	 *
 	 * @return array Settings to save.
