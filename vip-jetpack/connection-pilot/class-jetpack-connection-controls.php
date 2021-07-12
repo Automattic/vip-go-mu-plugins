@@ -28,11 +28,6 @@ class Controls {
 			return new \WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
 		}
 
-		$is_vip_connection = WPCOM_VIP_MACHINE_USER_EMAIL === \Jetpack::get_master_user_email();
-		if ( ! $is_vip_connection ) {
-			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s".', WPCOM_VIP_MACHINE_USER_LOGIN ) );
-		}
-
 		$vip_machine_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
 		if ( ! $vip_machine_user->exists() ) {
 			return new \WP_Error( 'jp-cxn-pilot-vip-user-missing', sprintf( 'The "%s" VIP user is missing.', WPCOM_VIP_MACHINE_USER_LOGIN ) );
@@ -43,6 +38,11 @@ class Controls {
 		$is_connected = self::test_jetpack_connection();
 		if ( is_wp_error( $is_connected ) ) {
 			return $is_connected;
+		}
+
+		$is_vip_connection = WPCOM_VIP_MACHINE_USER_EMAIL === \Jetpack::get_master_user_email();
+		if ( ! $is_vip_connection ) {
+			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s".', WPCOM_VIP_MACHINE_USER_LOGIN ) );
 		}
 
 		return true;
@@ -133,7 +133,8 @@ class Controls {
 	/**
 	 * Connect a site to Akismet.
 	 *
-	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection is required on the site.
+	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection on the site
+	 * and the VaultPress plugin are required.
 	 *
 	 * @return bool True if connection worked, false otherwise
 	 */
@@ -168,16 +169,12 @@ class Controls {
 	 * @return bool|\WP_Error True if site is connected, error otherwise.
 	 */
 	public static function connect_vaultpress() {
-		if ( class_exists( 'VaultPress' ) ) {
-			$vaultpress = \VaultPress::init();
-			if ( ! $vaultpress->is_registered() ) {
-				return $vaultpress->register_via_jetpack( true );
-			}
-
-			return true;
+		$vaultpress = \VaultPress::init();
+		if ( ! $vaultpress->is_registered() ) {
+			return $vaultpress->register_via_jetpack( true );
 		}
 
-		return new \WP_Error( 1, __( 'VaultPress could not be found.' ) );
+		return true;
 	}
 
 	/**
