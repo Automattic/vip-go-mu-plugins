@@ -11,13 +11,6 @@ namespace Automattic\VIP\Search\UI;
 class VIP_Search_Widget extends \WP_Widget {
 
 	/**
-	 * Number of aggregations (filters) to show by default.
-	 *
-	 * @var int
-	 */
-	const DEFAULT_FILTER_COUNT = 5;
-
-	/**
 	 * Default sort order for search results.
 	 *
 	 * @var string
@@ -25,7 +18,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	const DEFAULT_SORT = 'relevance_desc';
 
 	public function __construct( $name = null ) {
-	    if ( empty( $name ) ) {
+		if ( empty( $name ) ) {
 			$name = 'Search (VIP Enterprise)';
 		}
 
@@ -57,7 +50,6 @@ class VIP_Search_Widget extends \WP_Widget {
 				'search_box_enabled' => true,
 				'user_sort_enabled'  => true,
 				'sort'               => self::DEFAULT_SORT,
-				'filters'            => array( array() ),
 				'post_types'         => array(),
 			)
 		);
