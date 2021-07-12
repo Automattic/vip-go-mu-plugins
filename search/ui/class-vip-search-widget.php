@@ -24,11 +24,11 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	const DEFAULT_SORT = 'relevance_desc';
 
-	function __construct() {
+	public function __construct() {
 		parent::__construct(
 			'VIPSearchWidget',
 			'Search (VIP Enterprise)',
-			array( 'description' => 'UI for VIP Enterprise Search', )
+			array( 'description' => 'UI for VIP Enterprise Search' )
 		);
 	}
 
@@ -96,7 +96,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		<?php
 
 		if ( ! empty( $title ) ) {
-		    $this->render_widget_title( $title, $args['before_title'], $args['after_title'] );
+			$this->render_widget_title( $title, $args['before_title'], $args['after_title'] );
 		}
 
 		$default_sort            = $instance['sort'] ?? self::DEFAULT_SORT;
@@ -105,13 +105,13 @@ class VIP_Search_Widget extends \WP_Widget {
 
 		// we need to dynamically inject the sort field into the search box when the search box is enabled, and display
 		// it separately when it's not.
-		 if ( ! empty( $instance['search_box_enabled'] ) ) {
-		 	$this->render_widget_search_form( $instance['post_types'], $orderby, $order );
-		 }
+		if ( ! empty( $instance['search_box_enabled'] ) ) {
+			$this->render_widget_search_form( $instance['post_types'], $orderby, $order );
+		}
 
 		if ( ! empty( $instance['search_box_enabled'] ) && ! empty( $instance['user_sort_enabled'] ) ) :
-				?>
-					<div class="jetpack-search-sort-wrapper">
+			?>
+			<div class="jetpack-search-sort-wrapper">
 				<label>
 					<?php esc_html_e( 'Sort by', 'jetpack' ); ?>
 					<select class="jetpack-search-sort">
@@ -123,7 +123,7 @@ class VIP_Search_Widget extends \WP_Widget {
 					</select>
 				</label>
 			</div>
-		<?php
+			<?php
 		endif;
 
 		$this->maybe_render_sort_javascript( $instance, $order, $orderby );
@@ -150,50 +150,50 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	private function maybe_render_sort_javascript( $instance, $order, $orderby ) {
 		if ( ! empty( $instance['user_sort_enabled'] ) ) :
-		?>
-		<script type="text/javascript">
-			var jetpackSearchModuleSorting = function() {
-				var orderByDefault = '<?php echo 'date' === $orderby ? 'date' : 'relevance'; ?>',
-					orderDefault   = '<?php echo 'ASC' === $order ? 'ASC' : 'DESC'; ?>',
-					widgetId       = decodeURIComponent( '<?php echo rawurlencode( $this->id ); ?>' ),
-					searchQuery    = decodeURIComponent( '<?php echo rawurlencode( get_query_var( 's', '' ) ); ?>' ),
-					isSearch       = <?php echo (int) is_search(); ?>;
+			?>
+			<script type="text/javascript">
+				var jetpackSearchModuleSorting = function() {
+					var orderByDefault = '<?php echo 'date' === $orderby ? 'date' : 'relevance'; ?>',
+						orderDefault   = '<?php echo 'ASC' === $order ? 'ASC' : 'DESC'; ?>',
+						widgetId       = decodeURIComponent( '<?php echo rawurlencode( $this->id ); ?>' ),
+						searchQuery    = decodeURIComponent( '<?php echo rawurlencode( get_query_var( 's', '' ) ); ?>' ),
+						isSearch       = <?php echo (int) is_search(); ?>;
 
-				var container = document.getElementById( widgetId + '-wrapper' ),
-					form = container.querySelector( '.jetpack-search-form form' ),
-					orderBy = form.querySelector( 'input[name=orderby]' ),
-					order = form.querySelector( 'input[name=order]' ),
-					searchInput = form.querySelector( 'input[name="s"]' ),
-					sortSelectInput = container.querySelector( '.jetpack-search-sort' );
+					var container = document.getElementById( widgetId + '-wrapper' ),
+						form = container.querySelector( '.jetpack-search-form form' ),
+						orderBy = form.querySelector( 'input[name=orderby]' ),
+						order = form.querySelector( 'input[name=order]' ),
+						searchInput = form.querySelector( 'input[name="s"]' ),
+						sortSelectInput = container.querySelector( '.jetpack-search-sort' );
 
-				orderBy.value = orderByDefault;
-				order.value = orderDefault;
+					orderBy.value = orderByDefault;
+					order.value = orderDefault;
 
-				// Some themes don't set the search query, which results in the query being lost
-				// when doing a sort selection. So, if the query isn't set, let's set it now. This approach
-				// is chosen over running a regex over HTML for every search query performed.
-				if ( isSearch && ! searchInput.value ) {
-					searchInput.value = searchQuery;
+					// Some themes don't set the search query, which results in the query being lost
+					// when doing a sort selection. So, if the query isn't set, let's set it now. This approach
+					// is chosen over running a regex over HTML for every search query performed.
+					if ( isSearch && ! searchInput.value ) {
+						searchInput.value = searchQuery;
+					}
+
+					searchInput.classList.add( 'show-placeholder' );
+
+					sortSelectInput.addEventListener( 'change', function( event ) {
+						var values  = event.target.value.split( '|' );
+						orderBy.value = values[0];
+						order.value = values[1];
+
+						form.submit();
+					} );
 				}
 
-				searchInput.classList.add( 'show-placeholder' );
-
-				sortSelectInput.addEventListener( 'change', function( event ) {
-					var values  = event.target.value.split( '|' );
-					orderBy.value = values[0];
-					order.value = values[1];
-
-					form.submit();
-				} );
-			}
-
-			if ( document.readyState === 'interactive' || document.readyState === 'complete' ) {
-				jetpackSearchModuleSorting();
-			} else {
-				document.addEventListener( 'DOMContentLoaded', jetpackSearchModuleSorting );
-			}
+				if ( document.readyState === 'interactive' || document.readyState === 'complete' ) {
+					jetpackSearchModuleSorting();
+				} else {
+					document.addEventListener( 'DOMContentLoaded', jetpackSearchModuleSorting );
+				}
 			</script>
-		<?php
+			<?php
 		endif;
 	}
 
@@ -347,7 +347,7 @@ class VIP_Search_Widget extends \WP_Widget {
 
 		$fields_to_inject = array(
 			'orderby' => $orderby,
-			'order'   => $order
+			'order'   => $order,
 		);
 
 		// If the widget has specified post types to search within and IF the post types differ
@@ -360,7 +360,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		$form = self::inject_hidden_form_fields( $form, $fields_to_inject );
 
 		echo '<div class="jetpack-search-form">';
-		echo $form;
+		echo esc_html( $form );
 		echo '</div>';
 	}
 
@@ -397,11 +397,11 @@ class VIP_Search_Widget extends \WP_Widget {
 	/**
 	 * Given the widget instance, will return true when selected post types differ from searchable post types.
 	 *
-	 * @since 5.8.0
-	 *
 	 * @param array $post_types An array of post types.
 	 *
 	 * @return bool
+	 *@since 5.8.0
+	 *
 	 */
 	private static function post_types_differ_searchable( $post_types ) {
 		if ( empty( $post_types ) ) {
@@ -418,12 +418,12 @@ class VIP_Search_Widget extends \WP_Widget {
 	 * Since PHP's built-in array_diff() works by comparing the values that are in array 1 to the other arrays,
 	 * if there are less values in array 1, it's possible to get an empty diff where one might be expected.
 	 *
-	 * @since 5.8.0
-	 *
 	 * @param array $array_1
 	 * @param array $array_2
 	 *
 	 * @return array
+	 *@since 5.8.0
+	 *
 	 */
 	private static function array_diff( $array_1, $array_2 ) {
 		// If the array counts are the same, then the order doesn't matter. If the count of
@@ -449,6 +449,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	 *
 	 */
 	private static function render_widget_title( $title, $before_title, $after_title ) {
-		echo $before_title . esc_html( $title ) . $after_title;
+		echo esc_html( $before_title ) . esc_html( $title ) . esc_html( $after_title );
 	}
+
 }
