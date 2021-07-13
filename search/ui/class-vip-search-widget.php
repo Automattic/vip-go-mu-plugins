@@ -50,7 +50,7 @@ class VIP_Search_Widget extends \WP_Widget {
 			true
 		);
 
-		wp_enqueue_style( 'vip-search-widget', plugins_url( 'css/search-widget-frontend.css', __FILE__ ) );
+		wp_enqueue_style( 'vip-search-widget', plugins_url( 'css/search-widget-frontend.css', __FILE__ ), array(), 1.0 );
 	}
 
 	/**
