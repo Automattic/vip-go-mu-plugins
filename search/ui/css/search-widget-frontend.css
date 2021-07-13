@@ -1,0 +1,66 @@
+.vip-search-filters-widget__sub-heading {
+	font-size: inherit;
+	font-weight: bold;
+	margin: 0 0 .5em;
+	padding: 0;
+}
+
+/* The first heading after the form */
+.vip-search-form + .vip-search-filters-widget__sub-heading {
+	margin-top: 1.5em;
+	margin-bottom: 0.5em !important;
+}
+
+.vip-search-filters-widget__clear {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.vip-search-sort-wrapper {
+	margin-top: 1em;
+	margin-bottom: 1.5em;
+}
+
+.vip-search-sort-wrapper label {
+	display: inherit;
+}
+
+.widget_search .vip-search-filters-widget__filter-list input[type="checkbox"] {
+	width: auto;
+	height: auto;
+}
+
+ul.vip-search-filters-widget__filter-list li {
+	border: none;
+	padding: 0;
+	list-style: none;
+}
+
+ul.vip-search-filters-widget__filter-list li a {
+	text-decoration: none;
+}
+
+ul.vip-search-filters-widget__filter-list li a:hover {
+	box-shadow: none;
+}
+
+ul.vip-search-filters-widget__filter-list li label {
+	font-weight: inherit;
+	display: inherit;
+}
+
+.vip-search-filters-widget__filter-list {
+	list-style: none;
+}
+
+ul.vip-search-filters-widget__filter-list {
+	margin-bottom: 1.5em;
+}
+
+body.search .vip-search-form input[name="s"]::placeholder {
+	color: transparent;
+}
+
+body.search .vip-search-form input[name="s"].show-placeholder::placeholder {
+	color: inherit;
+}
