@@ -8,6 +8,7 @@
  */
 
 require_once( __DIR__ . '/001-core/privacy.php' );
+require_once( __DIR__ . '/001-core/updates.php' );
 
 /**
  * Disable current theme validation
