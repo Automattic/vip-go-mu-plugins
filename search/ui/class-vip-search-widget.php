@@ -27,6 +27,30 @@ class VIP_Search_Widget extends \WP_Widget {
 			$name,
 			array( 'description' => 'UI for VIP Enterprise Search' )
 		);
+
+		if ( ! is_admin() ) {
+			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_scripts' ) );
+		}
+	}
+
+	/**
+	 * Enqueue scripts and styles for the frontend.
+	 *
+	 */
+	public function enqueue_frontend_scripts() {
+		if ( ! is_active_widget( false, false, $this->id_base, true ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'vip-search-widget',
+			plugins_url( 'js/search-widget.js', __FILE__ ),
+			array(),
+			1.0,
+			true
+		);
+
+		wp_enqueue_style( 'vip-search-widget', plugins_url( 'css/search-widget-frontend.css', __FILE__ ) );
 	}
 
 	/**
