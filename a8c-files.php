@@ -133,6 +133,11 @@ class A8C_Files {
 		} else {
 			$this->init_vip_photon_filters();
 		}
+
+		// The VIP File Service has Photon capabilities, but is served from the same domain.
+		// If the Photon module is enabled, force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
+		// Externally hosted files continue to use the remote Photon service.
+		add_filter( 'jetpack_photon_domain', [ 'A8C_Files_Utils', 'filter_photon_domain' ], 10, 2 );
 	}
 
 	private function init_jetpack_photon_filters() {
@@ -140,11 +145,6 @@ class A8C_Files {
 			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
 			return;
 		}
-
-		// The files service has Photon capabilities, but is served from the same domain.
-		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
-		// Externally hosted files continue to use the remot Photon service.
-		add_filter( 'jetpack_photon_domain', [ 'A8C_Files_Utils', 'filter_photon_domain' ], 10, 2 );
 
 		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
 		// This results in all images being full size (which is not ideal)
