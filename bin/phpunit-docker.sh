@@ -7,6 +7,8 @@
 # Stop on failures: ./bin/phpunit-docker.sh --stop-on-failure
 # etc.
 
+EXTRA_ARGS=""
+
 while test $# -gt 0; do
   case "$1" in
   --wp)
@@ -24,8 +26,8 @@ while test $# -gt 0; do
   --stop-on-failure)
     STOP_ON_FAILURE="--stop-on-failure"
     ;;
-  --*)
-    echo "bad option $1"
+  *)
+    EXTRA_ARGS="$EXTRA_ARGS $1"
     ;;
   esac
   shift
@@ -81,4 +83,4 @@ docker run \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
 	--rm ghcr.io/automattic/phpunit-docker/phpunit:latest \
-	--bootstrap /app/tests/bootstrap.php "${STOP_ON_FAILURE} ${PATH_TO_TEST}"
+	--bootstrap /app/tests/bootstrap.php "${STOP_ON_FAILURE} ${PATH_TO_TEST} ${EXTRA_ARGS}"
