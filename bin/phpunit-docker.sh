@@ -23,9 +23,6 @@ while test $# -gt 0; do
     shift
     PATH_TO_TEST=$1
     ;;
-  --stop-on-failure)
-    STOP_ON_FAILURE="--stop-on-failure"
-    ;;
   *)
     EXTRA_ARGS="$EXTRA_ARGS $1"
     ;;
@@ -42,11 +39,6 @@ if [ -z "$PATH_TO_TEST" ]; then
   echo "Will test ALL FILES"
 else
   echo "Will test FILE $PATH_TO_TEST"
-fi
-if [ -z "$STOP_ON_FAILURE" ]; then
-  echo "Will NOT stop on failure"
-else
-  echo "Will stop on failure"
 fi
 echo "--------------"
 echo
@@ -83,4 +75,4 @@ docker run \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
 	--rm ghcr.io/automattic/phpunit-docker/phpunit:latest \
-	--bootstrap /app/tests/bootstrap.php "${STOP_ON_FAILURE} ${PATH_TO_TEST} ${EXTRA_ARGS}"
+	--bootstrap /app/tests/bootstrap.php "${EXTRA_ARGS} ${PATH_TO_TEST}"
