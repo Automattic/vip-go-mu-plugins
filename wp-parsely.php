@@ -61,7 +61,21 @@ function wpvip_override_parsely_option_if_empty( $parsely_settings ) {
 		return $parsely_settings;
 	}
 
+	$parsed_url = parse_url( site_url() );
+	$apikey = $parsed_url['host'];
+
+	/**
+	 * Paths are not supported in Parse.ly `apikey`s
+	 * If this is a subdirectory install, prepend the (modified) path like it's a "subdomain"
+	 * That's conventional for that sort of situation.
+	 */
+	if ( preg_match( '/^\/(.*)/', $parsed_url['path'], $matches ) ) {
+		// Remove "non-word" characters (like slashes)
+		$prefix = preg_replace( '/[\W]/', '', $matches[1] );
+		$apikey = "$prefix.$apikey";
+	}
+
 	return [
-		'apikey' => preg_replace( '/^http:\/\//', '', site_url( '', 'http' ) ),
+		'apikey' => sanitize_text_field( $apikey ),
 	];
 }
