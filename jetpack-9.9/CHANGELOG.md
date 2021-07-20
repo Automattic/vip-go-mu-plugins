@@ -2,6 +2,31 @@
 
 ### This is a list detailing changes for all Jetpack releases.
 
+## 10.0-alpha - unreleased
+
+This is an alpha version! The changes listed here are not final.
+
+### Enhancements
+- Improve carousel icons.
+- Store the preferred view after a page switch using the new WP.com quick switcher
+
+### Improved compatibility
+- Compatibility: Adds support for block_editor_settings_all when running WordPress 5.8 or higher
+- Removing static images and related code. Also ensuring that arrows look and work correctly in RTL.
+- Update Sync tests to include case for jetpack_sync_settings options.
+
+### Bug fixes
+- Allow the use of widget visibility conditions in gutenberg based widget editing
+- Carousel: Prevent comments indicator from bumping icon width of comments button.
+- Carousel CSS tweaks to ensure text and comment loader spinners dislay correctly in dark and light theme views.
+- Enqueue block dependencies for customizer block widget previews. Also removes invalid `isLarge` prop from the FormFileUpload component.
+- Make sure we show the caption of the image in carousel images.
+- WordPress.com Block Editor: do not use in the upcoming Block-based Widgets Editor
+
+### Other changes <!-- Non-user-facing changes go here. This section will not be copied to readme.txt. -->
+- Updated package dependencies.
+- Updated package dependencies.
+
 ## 9.9 - 2021-07-06
 ### Major Enhancements
 - Carousel: improve carousel usability, performance, accessibility, mobile friendliness.
