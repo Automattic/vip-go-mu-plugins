@@ -8,6 +8,9 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 */
 
 add_filter( 'upload_mimes', function( $mimes ) {
+	// TODO: Remove when WebP files are supported by VIP File System
+	unset( $mimes['webp'] );
+
 	unset( $mimes['flv'] );
 	return $mimes;
 }, 99999 );
