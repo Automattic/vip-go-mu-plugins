@@ -73,12 +73,19 @@ function wpvip_override_parsely_option_if_empty( $parsely_settings ) {
 	/**
 	 * Paths are not supported in Parse.ly `apikey`s
 	 * If this is a subdirectory install, prepend the (modified) path like it's a "subdomain"
-	 * That's conventional for that sort of situation.
+	 * This is conventional for this situation.
 	 */
 	if ( preg_match( '/^\/(.*)/', $parsed_url['path'], $matches ) ) {
-		// Remove "non-word" characters (like slashes)
-		$prefix = preg_replace( '/[\W]/', '', $matches[1] );
-		$apikey = "$prefix.$apikey";
+			// Change slashes to dots
+			$prefix = preg_replace( '/\/+/', '.', $matches[1] );
+
+			// Remove remaining "non-word" characters
+			$prefix = preg_replace( '/[^\w.]/', '', $prefix );
+
+			// Reverse the dot separated prefix parts (so last path segment becomes first)
+			$prefix = implode( '.', array_reverse( explode( '.', $prefix ) ) );
+
+			$apikey = "$prefix.$apikey";
 	}
 
 	return [
