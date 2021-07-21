@@ -57,7 +57,13 @@ add_action( 'after_setup_theme', 'wpvip_load_wp_parsely_plugin' );
  * @return array Settings with the 'apikey' value overridden
  */
 function wpvip_override_parsely_option_if_empty( $parsely_settings ) {
-	if ( ! empty( $parsely_settings ) ) {
+	// Bail if an apikey is already set
+	if ( isset( $parsely_settings['apikey'] ) && strlen( $parsely_settings['apikey'] ) > 0 ) {
+		return $parsely_settings;
+	}
+
+	// Bail if this function has already initialized the option
+	if ( isset( $parsely_settings['_wpvip_init_option'] ) ) {
 		return $parsely_settings;
 	}
 
@@ -76,6 +82,7 @@ function wpvip_override_parsely_option_if_empty( $parsely_settings ) {
 	}
 
 	return [
-		'apikey' => sanitize_text_field( $apikey ),
+		'apikey'             => sanitize_text_field( $apikey ),
+		'_wpvip_init_option' => time(),
 	];
 }
