@@ -15,6 +15,7 @@ workflows:
       - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
+      - search-dev-tools
   changelog:
     jobs:
       - create-changelog-draft:
@@ -263,3 +264,13 @@ jobs:
       - checkout
       - run: composer install
       - run: php $HOME/project/bin/github-changelog.php
+
+  search-dev-tools:
+    docker:
+      - image: cimg/node:16.5.0
+    steps:
+      - checkout
+      - run: npm ci --prefix search/search-dev-tools
+      - run: npm run lint --prefix search/search-dev-tools
+      # This build is only used to verify that the src is buildable, not to persist build artifacts
+      - run: npm run build --prefix search/search-dev-tools

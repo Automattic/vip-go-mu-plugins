@@ -270,7 +270,7 @@ class Connection_Pilot {
 			}
 
 			// Not connected and current url doesn't match previous url, don't attempt reconnection
-			$this->notify_pilot( 'Jetpack is disconnected, and it appears the domain has changed.' );
+			$this->send_alert( 'Jetpack is disconnected, and it appears the domain has changed.' );
 
 			return false;
 		}
