@@ -40,7 +40,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 
 		$posts = stats_get_csv( 'postviews', $args );
 	} else {
-		trigger_error( 'Cannot call wpcom_vip_top_posts_array without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
+		trigger_error( 'Cannot call wpcom_vip_top_posts_array() without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
 		return array();
 	}
 
@@ -94,7 +94,7 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
 		}
 	} else {
-		trigger_error( 'Cannot call wpcom_vip_get_post_pageviews without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
+		trigger_error( 'Cannot call wpcom_vip_get_post_pageviews() without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
 		return 0;
 	}
 
