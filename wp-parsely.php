@@ -53,10 +53,10 @@ add_action( 'after_setup_theme', 'wpvip_load_wp_parsely_plugin' );
  * Pre-sets the "apikey" portion of the `parsely` site option hash map to the site_url IF it's empty.
  * This is only hooked into `option_parsely` if we're loading the plugin from this repo.
  *
- * @param array $parsely_settings Settings from the database
+ * @param mixed $parsely_settings Settings from the database
  * @return array Settings with the 'apikey' value overridden
  */
-function wpvip_override_parsely_option_if_empty( $parsely_settings ) {
+function wpvip_override_parsely_option_if_empty( $parsely_settings ): array {
 	// Bail if an apikey is already set
 	if ( isset( $parsely_settings['apikey'] ) && strlen( $parsely_settings['apikey'] ) > 0 ) {
 		return $parsely_settings;
