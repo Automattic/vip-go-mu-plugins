@@ -25,7 +25,7 @@
  */
 function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
 		
 		// WordPress.com stats defaults to current UTC date, default to site's local date instead
 		if ( ! $end_date ) {
@@ -40,20 +40,8 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 
 		$posts = stats_get_csv( 'postviews', $args );
 	} else {
-		// If Jetpack is not present or not active, fake the data returned
-
-		$posts = array();
-		$words = array( 'dessert', 'cotton', 'candy', 'caramels', 'tiramisu', 'muffin',  'wafer', 'toffee', 'gummi', 'lemon', 'drops', 'brownie', 'lollipop', 'bears', 'danish', 'chocolate', 'bar', 'topping', 'apple', 'pie', 'pastry', 'powder', 'pudding' );
-
-		for ( $i = 0; $i < $limit; $i++ ) {
-			shuffle( $words );
-			$posts[] = array(
-				'post_id' 			=> $i,
-				'post_title' 		=> ucfirst( implode( ' ', array_slice( $words, 2, mt_rand( 2, 5 ) ) ) ),
-				'post_permalink' 	=> add_query_arg( 'p', $i, home_url() ),
-				'views' 			=> mt_rand( 0, 20000 ),
-			);
-		}
+		trigger_error( 'Cannot call wpcom_vip_top_posts_array() without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
+		return array();
 	}
 
 	foreach ( $posts as & $post ) {
@@ -77,7 +65,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
  */
 function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
 		$args = array(
 			'post_id'  => $post_id,
 			'num_days' => $num_days,
@@ -106,8 +94,8 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
 		}
 	} else {
-		// If Jetpack is not present or not active, fake the data returned
-		$views = mt_rand( 0, 20000 );
+		trigger_error( 'Cannot call wpcom_vip_get_post_pageviews() without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
+		return 0;
 	}
 
 	return absint( $views );
