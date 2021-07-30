@@ -1,5 +1,0 @@
-{
-  "hooks": {
-    "pre-push": "npm run phplint && npm run phpcs:changed:remote"
-  }
-}
