@@ -14,6 +14,8 @@ The repository is a sub-module of the [mu-plugins](https://github.com/Automattic
 
 ### Gulp
 
+> The version of Gulp used requires the Node < 11. So in order to get the build working you can use `nvm` and switch to version `10.0.0` for example. (Or rewrite the gulp setup, but there are breaking changes that needs to be handled)
+
 [Gulp](http://gulpjs.com/) is required to work on this repository. We use Gulp to compile JSX into valid JavaScript and manage other assets such as CSS and images.
 
 To get setup run the following command in the `vip-dashboard` directory:

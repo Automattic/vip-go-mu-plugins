@@ -18,6 +18,7 @@
 .github
 .gitignore
 .gitmodules
+.husky
 .huskyrc.json
 .jscsrc
 .jshintignore
