@@ -11,7 +11,8 @@
     "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
     "lint": "npm run phplint && npm run phpcs:changed:remote",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
-    "update-test-jquery-updates": "./bin/update-test-jquery-updates.sh"
+    "update-test-jquery-updates": "./bin/update-test-jquery-updates.sh",
+    "prepare": "husky install"
   },
   "author": "Automattic",
   "devDependencies": {
