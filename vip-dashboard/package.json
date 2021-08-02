@@ -44,8 +44,6 @@
     "lodash.assign": "4.2.0",
     "reactify": "1.1.1",
     "sass": "^1.36.0",
-    "should": "11.2.1",
-    "should-http": "0.1.1",
     "supertest": "3.4.2",
     "vinyl-buffer": "1.0.1",
     "vinyl-source-stream": "1.1.2",
