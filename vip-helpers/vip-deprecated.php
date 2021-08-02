@@ -1,45 +1,6 @@
 <?php
 
 /**
- * Loads the shared VIP helper file which defines some helpful functions.
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_load_helper() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Loads the WordPress.com-only VIP helper file which defines some helpful functions.
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_load_helper_wpcom() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Loads the WordPress.com-only VIP helper file for stats which defines some helpful stats-related functions.
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_load_helper_stats() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Disable the WordPress.com filter that prevents orphans in titles
- *
- * See http://en.blog.wordpress.com/2006/12/24/no-orphans-in-titles/
- *
- * @author nickmomrik
- * @deprecated Not applicable since VIP 2.0.0
- */
-function vip_allow_title_orphans() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
  * VIP Legacy Related Posts (HTML formatted results)
  *
  * Don't use for new projects, just use WPCOM_RelatedPosts directly, since it has hooks
@@ -93,28 +54,6 @@ function vip_admin_gallery_css_extras() {
  * @see vip_admin_gallery_css_extras()
  */
 function _vip_admin_gallery_css_extras() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Completely disable enhanced feed functionality
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_disable_enhanced_feeds() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Do not display the images in enhanced feeds.
- *
- * Helper function for wpcom_vip_disable_enhanced_feeds().
- *
- * @author nickmomrik
- * @deprecated Not applicable since VIP 2.0.0
- * @see wpcom_vip_disable_enhanced_feeds()
- */
-function vip_remove_enhanced_feed_images() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
@@ -180,7 +119,6 @@ function get_top_posts( $number = 10, $days = 2 ) {
 
 }
 
-
 /**
  * Prevent Youtube embeds in comments
  *
@@ -190,16 +128,6 @@ function get_top_posts( $number = 10, $days = 2 ) {
  * @author nickmomrik
  */
 function wpcom_vip_disable_youtube_comment_embeds() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Overrides a theme's $content_width to remove the image constraint.
- *
- * @deprecated Not applicable since VIP 2.0.0
- * @author nickmomrik
- */
-function wpcom_vip_allow_full_size_images_for_real() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
@@ -215,18 +143,6 @@ function wpcom_vip_crop_small_thumbnail() {
 }
 
 /**
- * Do not display the Polldaddy rating.
- *
- * Usually used for a page or post where ratings are not wanted.
- *
- * @deprecated Not applicable since VIP 2.0.0
- * @author nickmomrik
- */
-function wpcom_vip_remove_polldaddy_rating() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
  * Removes the <media:content> tags from the RSS2 feed.
  *
  * You should really call this when creating a custom feed (best to leave them in your normal feed).
@@ -234,13 +150,6 @@ function wpcom_vip_remove_polldaddy_rating() {
  * @deprecated Not applicable since VIP 2.0.0
  */
 function wpcom_vip_remove_mediacontent_from_rss2_feed() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Disable the post-post screen
- */
-function wpcom_vip_disable_postpost() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
@@ -289,28 +198,6 @@ function wpcom_uncached_get_post_meta( $post_id, $key, $single = false ) {
 }
 
 /**
- * Queries posts by a postmeta key/value pair directly from the master database.
- *
- * This is not intended for front-end usage. This purpose of this function is to avoid race conditions that could appear while the caches are primed.
- * A good scenario where this could be used is to ensure published posts are not syndicated multiple times by checking if a post with a certain meta value already exists.
- *
- * @deprecated No longer supported since VIP 2.0.0
- * @param string $meta_key Post meta key to query
- * @param string $meta_value Post meta value to check for
- * @param string $post_type Optional; post_type of the post to query. Defaults to 'post'.
- * @param array $post_stati Optional; array of the post_stati that are supposed to be included. Defaults to: publish, draft, pending, private.
- * @param integer $limit Optional. Amount of possible posts to receive; not more than 10. Default is 1.
- * @return array|WP_Error Array with post objects or a WP_Error
- */
-function wpcom_uncached_get_post_by_meta( $meta_key, $meta_value, $post_type = 'post', $post_stati = array( 'publish', 'draft', 'pending', 'private' ), $limit = 1 ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-
-    // No longer supported function
-
-    return array();
-}
-
-/**
  * Sets the default for subscribe to comments to off
  *
  * @deprecated Not applicable since VIP 2.0.0
@@ -318,39 +205,6 @@ function wpcom_uncached_get_post_by_meta( $meta_key, $meta_value, $post_type = '
 function wpcom_vip_disable_default_subscribe_to_comments() {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
-
-/**
- * Removes the mobile app promotion from the bottom of the default mobile theme.
- *
- * Example: "Now Available! Download WordPress for iOS"
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_disable_mobile_app_promotion() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Deprecated function. This used to work around a term ordering issue on a very old version of WordPress. No longer needed.
- *
- * @deprecated
- * @return bool Always returns false
- */
-function wpcom_vip_enable_term_order_functionality() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-
-    return false;
-}
-
-/**
- * Allows non-author users to submit any tags allowed via $allowedposttags instead of just $allowedtags
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_allow_more_html_in_comments() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
 /**
  * Helper function for wpcom_vip_allow_more_html_in_comments()
  *
@@ -372,57 +226,12 @@ function wpcom_vip_notify_on_new_user_added_to_site( $emails ) {
 }
 
 /**
- * Remove devicepx.js from pageloads
- *
- * devicepx.js loads retina/HiDPI versions of certain files (Gravatars, etc) for devices that run at a
- * higher resolution (such as smartphones), and is distributed inside Jetpack.
-
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_disable_devicepx_js() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
  * Disables output of geolocation information in "public" locations--post content, meta tags, and feeds.
  *
  * @deprecated Not applicable since VIP 2.0.0
  * @see http://en.support.wordpress.com/geotagging/
  */
 function wpcom_vip_disable_geolocation_output() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Allow VIP themes to disable hovercard functionality and removes the scripts.
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_disable_hovercards() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Allow VIP themes to disable global terms on WordPress.com.
- *
- * @deprecated Deprecated since VIP 2.0.0 - Apply the filter directly
- */
-function wpcom_vip_disable_global_terms() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-
-    add_filter( 'global_terms_enabled', '__return_false' );
-}
-
-/**
- * Disables the WordPress.com-specific Customizer and Custom Design
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_disable_custom_customizer() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-function wpcom_vip_remove_opensearch(){
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
@@ -504,9 +313,6 @@ function wpcom_vip_debug( $type, $data ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
-function vary_cache_on_function( $function ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
 
 /**
  * This is the old deprecated version of wpcom_vip_file_get_contents(). Please don't use this function in any new code.
@@ -560,17 +366,6 @@ function disable_autosave() {
  * @deprecated No longer supported since 2.0.0 - Use AdBusters https://github.com/Automattic/Adbusters/
  */
 function vip_doubleclick_dartiframe_redirect() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Send comment moderation emails to multiple addresses
- *
- * @author nickmomrik
- * @deprecated No longer supported since 2.0.0
- * @param array $emails Array of email addresses
- */
-function vip_multiple_moderators( $emails ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
@@ -705,15 +500,6 @@ function disable_right_now_comment_count() {
 }
 
 /**
- * Helper function to disable the WordPress.com wide Zemanta Tools for all users.
- *
- * @deprecated Not applicable since VIP 2.0.0
- */
-function wpcom_vip_disable_zemanta_for_all_users() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
  * Checks if the current site_url() matches from a specified list.
  *
  * @deprecated No longer supported since 2.0.0
@@ -767,37 +553,6 @@ function wpcom_vip_home_template_uri( $path ) {
 }
 
 /**
- * Return the language code.
- *
- * Internal wpcom function that's used by the wpcom-sitemap plugin
- *
- * Note: Not overrideable in production - this function exists solely for dev environment
- * compatibility. To set blog language, use the Dashboard UI.
- *
- * @deprecated Deprecated since 2.0.0
- * @return string
- */
-if ( ! function_exists( 'get_blog_lang_code' ) ) {
-
-function get_blog_lang_code( $blog_id = 0 ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-
-    return 'en';
-}
-
-}
-
-/**
- * Set the roles that can view stats
- *
- * @deprecated No longer supported since 2.0.0
- * @param array $roles The roles that can view stats
- */
-function wpcom_vip_stats_roles( array $roles ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
  * Get the WP.com stats as CSV
  *
  * Strings containing double quotes, commas, or "\n" are enclosed in double-quotes. Double-quotes in strings are escaped by inserting another double-quote.
@@ -816,24 +571,6 @@ function wpcom_vip_stats_roles( array $roles ) {
  */
 function wpcom_vip_get_stats_csv( $table = 'views', $end_date = false, $num_days = 1, $and = '', $limit = 5, $summarize = NULL ) {
     _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
- * Get the most shared posts of the current blog, ordered DESC by share count
- *
- * @author jjj
- * @access public
- *
- * @global WPDB $wpdb WordPress's Database class
- * @deprecated No longer supported since 2.0.0
- * @param int $limit Optional. Number of posts to retrieve. Defaults to 5.
- * @param int $cache_duration Optional. Length of time to cache the query. Defaults to 3600.
- * @return array Array of most shared post IDs
- */
-function wpcom_vip_get_most_shared_posts( $limit = 5, $cache_duration = 3600 ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-
-    return array();
 }
 
 /**
@@ -948,22 +685,6 @@ function wpcom_sitemap_initstr( $charset ) {
 }
 
 /**
- * Print an XML sitemap conforming to the Sitemaps.org protocol
- * Outputs an XML list of up to the latest 1000 posts.
- *
- * @deprecated No longer supported since 2.0.0
- * @link http://sitemaps.org/protocol.php Sitemaps.org protocol
- * @todo set cache and expire on post publish, page publish or approved comment publish
- */
-function wpcom_print_sitemap() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-function wpcom_print_news_sitemap($format) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-/**
 * Transitionary solution in migration from n to news namespace
 *
 * While we get all the VIP clients that have filters that changing the namespace
@@ -1026,59 +747,6 @@ function sitemap_endpoints() {
     return null;
 }
 
-}
-
-if ( ! function_exists( 'do_sitemap_pings' ) ) {
-
-/**
- * Ping all registered HTTP endpoints for sitemap URIs
- *
- * @deprecated No longer supported since 2.0.0
- */
-function do_sitemap_pings( $job ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-}
-
-if ( ! function_exists( 'sitemap_discovery' ) ) {
-
-/**
- * Output the master sitemap URLs for the current blog context
- *
- * @deprecated No longer supported since 2.0.0
- */
-function sitemap_discovery() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-}
-
-if ( ! function_exists( 'sitemap_handle_update' ) ) {
-
-/**
- * Clear the sitemap cache when a sitemap action has changed
- * Add a job to the pings queue to send out update notifications
- *
- * @deprecated No longer supported since 2.0.0
- * @param int $post_id unique post identifier. not used.
- */
-function sitemap_handle_update( $post_id ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
-}
-
-}
-
-/**
- * Remove the tracking bug added to all WordPress.com feeds.
- *
- * @deprecated Not applicable since 2.0.0
- * Helper function for wpcom_vip_disable_enhanced_feeds().
- *
- * @see wpcom_vip_disable_enhanced_feeds()
- */
-function wpcom_vip_remove_feed_tracking_bug() {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
 /**
@@ -1236,18 +904,6 @@ function wpcom_vip_theme_dir( $theme = '' ) {
 }
 
 /**
- * If you don't want people (de)activating plugins via this UI
- * and only want to enable plugins via wpcom_vip_load_plugin()
- * calls in your theme's functions.php file, then call this
- * function to disable this plugin's (de)activation links.
- *
- * @deprecated No longer supported since 2.0.0
- */
-function wpcom_vip_plugins_ui_disable_activation() {
-    _deprecated_function( __FUNCTION__, '2.0.0', 'plugins_url' );
-}
-
-/**
  * Get the WP.com stats
  *
  * @deprecated No longer supported since 2.0.0
@@ -1264,22 +920,6 @@ function wpcom_vip_get_stats_array( $table = 'views', $end_date = false, $num_da
     _deprecated_function( __FUNCTION__, '2.0.0' );
 
     return array();
-}
-
-/**
- * Use a custom CDN host for displaying theme images and media library content.
- *
- * Please get in touch before using this as it can break your site.
- *
- * @deprecated No longer supported since 2.0.0
- * @param array $args Array of args
- * 		string|array cdn_host_media => Hostname of the CDN for media library assets.
- * 		string|array cdn_host_static => Optional. Hostname of the CDN for static assets.
- * 		bool include_admin => Optional. Whether the custom CDN host should be used in the admin context as well.
- * 		bool disable_ssl => Optional. Whether SSL should be disabled for the custom CDN.
- */
-function wpcom_vip_load_custom_cdn( $args ) {
-    _deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
 /**
