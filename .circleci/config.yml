@@ -267,7 +267,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.5.0
+      - image: cimg/node:16.6.0
     steps:
       - checkout
       - run: npm ci --prefix search/search-dev-tools
