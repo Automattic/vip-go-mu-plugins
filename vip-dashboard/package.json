@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "babel-eslint": "10.1.0",
-    "browser-sync": "2.27.4",
+    "browser-sync": "2.27.5",
     "browserify": "17.0.0",
     "eslint": "3.19.0",
     "eslint-plugin-react": "7.24.0",
@@ -43,8 +43,7 @@
     "gulp-watch": "5.0.1",
     "lodash.assign": "4.2.0",
     "reactify": "1.1.1",
-    "sass": "^1.36.0",
-    "supertest": "3.4.2",
+    "sass": "1.37.0",
     "vinyl-buffer": "1.0.1",
     "vinyl-source-stream": "1.1.2",
     "watchify": "3.11.1"
