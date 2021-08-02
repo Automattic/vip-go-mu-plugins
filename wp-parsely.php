@@ -15,12 +15,17 @@ define( 'WPVIP_PARSELY_DEFAULT_VERSION', '2.5' );
 
 function wpvip_load_wp_parsely_plugin() {
 	/**
-	 * Sourcing the wp-parsely plugin via mu-plugins is opt-in.
+	 * Sourcing the wp-parsely plugin via mu-plugins is generally opt-in.
 	 * To enable it on your site, add this line:
 	 *
 	 * add_filter( 'wpvip_parsely_load_mu', '__return_true' );
+	 *
+	 * We enable it for some sites via the `WPVIP_PARSELY_LOAD_MU` constant.
+	 * To disable it even when the constant is set, add this line:
+	 *
+	 * add_filter( 'wpvip_parsely_load_mu', '__return_false' );
 	 */
-	if ( ! apply_filters( 'wpvip_parsely_load_mu', false ) ) {
+	if ( ! apply_filters( 'wpvip_parsely_load_mu', defined( 'WPVIP_PARSELY_LOAD_MU' ) && WPVIP_PARSELY_LOAD_MU ) ) {
 		return;
 	}
 
