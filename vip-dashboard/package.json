@@ -43,7 +43,7 @@
     "gulp-watch": "5.0.1",
     "lodash.assign": "4.2.0",
     "reactify": "1.1.1",
-    "sass": "1.36.0",
+    "sass": "1.37.0",
     "vinyl-buffer": "1.0.1",
     "vinyl-source-stream": "1.1.2",
     "watchify": "3.11.1"
