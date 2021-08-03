@@ -161,10 +161,6 @@ class CoreCommand extends \ElasticPress\Command {
 		$this->_maybe_setup_index_version( $assoc_args );
 
 
-		// Unset our --version param, otherwise WP_CLI complains that it's unknown
-		unset( $assoc_args['version'] );
-		// Unset our --using-versions param, otherwise WP_CLI complains that it's unknown
-		unset( $assoc_args['using-versions'] );
 
 		/**
 		 * EP's `--network-wide` mode uses switch_to_blog to index the content,
@@ -192,9 +188,12 @@ class CoreCommand extends \ElasticPress\Command {
 
 			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
-			// Unset skip-confirm since it doesn't exist in ElasticPress and causes
+			// Unset our arguments since they don't exist in ElasticPress and causes
 			// an error for indexing operations exclusively for some reason.
+			unset( $assoc_args['version'] );
+			unset( $assoc_args['using-versions'] );
 			unset( $assoc_args['skip-confirm'] );
+
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
 		}
