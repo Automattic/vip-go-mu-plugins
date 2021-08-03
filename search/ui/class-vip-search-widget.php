@@ -320,7 +320,7 @@ class VIP_Search_Widget extends \WP_Widget {
 
 			<p>
 				<label>
-					<?php esc_html_e( 'Default sort order:', 'jetpack' ); ?>
+					<?php esc_html_e( 'Default sort order:', 'vip-search' ); ?>
 					<select
 						name="<?php echo esc_attr( $this->get_field_name( 'sort' ) ); ?>"
 						class="widefat vip-search-filters-widget__sort-order">
