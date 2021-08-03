@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Jetpack\Connection_Pilot;
 
+use \Automattic\Jetpack\Connection\Manager as Jetpack_Connection;
+
 /**
  * These are the re-usable methods for testing JP connections and (re)connecting sites.
  */
@@ -23,9 +25,25 @@ class Controls {
 			return new \WP_Error( 'jp-cxn-pilot-offline-mode', 'Jetpack is in offline mode.' );
 		}
 
-		// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
-		if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
-			return new \WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
+		$connection = new Jetpack_Connection();
+
+		// Methods only available in Jetpack 9.2 and above
+		if ( method_exists( $connection, 'is_connected' ) && method_exists( $connection, 'has_connected_owner' ) ) {
+			// The Jetpack_Connection::is_connected() method checks both the existence of a blog token and id.
+			if ( ! $connection::is_connected() ) {
+				return new \WP_Error( 'jp-cxn-pilot-not-connected', 'Jetpack is currently not connected.' );
+			}
+
+			// The Jetpack_Connection::has_connected_owner() method checks both the existence of a user token and master_user option.
+			if ( ! $connection::has_connected_owner() ) {
+				return new \WP_Error( 'jp-cxn-pilot-not-connected-owner', 'Jetpack does not have a connected owner.' );
+			}
+
+		} else {
+			// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
+			if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
+				return new \WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
+			}
 		}
 
 		$vip_machine_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
@@ -40,7 +58,8 @@ class Controls {
 			return $is_connected;
 		}
 
-		$is_vip_connection = WPCOM_VIP_MACHINE_USER_EMAIL === \Jetpack::get_master_user_email();
+		$connection_owner = $connection->get_connection_owner();
+		$is_vip_connection = $connection_owner && $connection_owner->login === WPCOM_VIP_MACHINE_USER_LOGIN;
 		if ( ! $is_vip_connection ) {
 			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s".', WPCOM_VIP_MACHINE_USER_LOGIN ) );
 		}
