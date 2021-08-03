@@ -25,7 +25,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		parent::__construct(
 			'vip-search-widget',
 			$name,
-			array( 'description' => 'UI for VIP Enterprise Search' )
+			array( 'description' => 'Enterprise Search' )
 		);
 
 		if ( ! is_admin() ) {
