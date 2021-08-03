@@ -299,7 +299,7 @@ class VIP_Search_Widget extends \WP_Widget {
 						<?php checked( $instance['user_sort_enabled'] ); ?>
 						<?php disabled( ! $instance['search_box_enabled'] ); ?>
 					/>
-					<?php esc_html_e( 'Show sort selection dropdown', 'jetpack' ); ?>
+					<?php esc_html_e( 'Show sort selection dropdown', 'vip-search' ); ?>
 				</label>
 			</p>
 
