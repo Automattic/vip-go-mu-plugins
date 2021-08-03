@@ -123,7 +123,7 @@ class VIP_Search_Widget extends \WP_Widget {
 			?>
 			<div class="vip-search-sort-wrapper">
 				<label>
-					<?php esc_html_e( 'Sort by', 'jetpack' ); ?>
+					<?php esc_html_e( 'Sort by', 'vip-search' ); ?>
 					<select class="vip-search-sort">
 						<?php foreach ( $this->get_sort_types() as $sort => $label ) { ?>
 							<option value="<?php echo esc_attr( $sort ); ?>" <?php selected( $current_sort, $sort ); ?>>
