@@ -304,7 +304,7 @@ class VIP_Search_Widget extends \WP_Widget {
 			</p>
 
 			<p class="vip-search-filters-widget__post-types-select">
-				<label><?php esc_html_e( 'Post types to search (minimum of 1):', 'jetpack' ); ?></label>
+				<label><?php esc_html_e( 'Post types to search (minimum of 1):', 'vip-search' ); ?></label>
 				<?php foreach ( get_post_types( array( 'exclude_from_search' => false ), 'objects' ) as $post_type ) : ?>
 					<label>
 						<input
