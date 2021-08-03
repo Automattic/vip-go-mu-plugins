@@ -19,7 +19,7 @@ class VIP_Search_Widget extends \WP_Widget {
 
 	public function __construct( $name = null ) {
 		if ( empty( $name ) ) {
-			$name = 'Search (VIP Enterprise)';
+			$name = 'Enterprise Search';
 		}
 
 		parent::__construct(
