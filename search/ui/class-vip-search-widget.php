@@ -267,7 +267,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		<div class="<?php echo esc_attr( $classes ); ?>">
 			<p>
 				<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>">
-					<?php esc_html_e( 'Title (optional):', 'jetpack' ); ?>
+					<?php esc_html_e( 'Title (optional):', 'vip-search' ); ?>
 				</label>
 				<input
 					class="widefat"
@@ -286,7 +286,7 @@ class VIP_Search_Widget extends \WP_Widget {
 						name="<?php echo esc_attr( $this->get_field_name( 'search_box_enabled' ) ); ?>"
 						<?php checked( $instance['search_box_enabled'] ); ?>
 					/>
-					<?php esc_html_e( 'Show search box', 'jetpack' ); ?>
+					<?php esc_html_e( 'Show search box', 'vip-search' ); ?>
 				</label>
 			</p>
 
