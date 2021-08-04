@@ -1953,6 +1953,6 @@ class Search {
 			);
 		}
 
-		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
+		$this->logger->log( 'warning', 'search_query_failure', $message );
 	}
 }

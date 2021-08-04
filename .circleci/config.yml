@@ -5,12 +5,17 @@ workflows:
       - php74-core-tests
       - php74-core-multisite-tests
       - php74-lint
-      - php74-build-multisite
-      - php74-build-multisite-no-jetpack
       - php74-build-singlesite
-      - php74-build-singlesite-no-jetpack
+      - php74-build-singlesite-57
+      - php74-build-singlesite-56
+      - php74-build-singlesite-55
+      - php74-build-singlesite-54
+      - php74-build-multisite
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
+      - php74-build-singlesite-no-jetpack
+      - php74-build-multisite-no-jetpack
+      - search-dev-tools
   changelog:
     jobs:
       - create-changelog-draft:
@@ -85,11 +90,13 @@ job-references:
           command: |
             rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
             bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+            vendor/bin/phpunit --version
             if [[ "$DISABLE_JETPACK" == "1" ]]; then
               echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+              vendor/bin/phpunit --exclude-group jetpack-required
+            else
+              vendor/bin/phpunit
             fi
-            vendor/bin/phpunit --version
-            vendor/bin/phpunit
 
   php_core_job: &php_core_job
     steps:
@@ -177,6 +184,42 @@ jobs:
       - image: circleci/php:7.4-node
       - image: *db_image
 
+  php74-build-singlesite-54:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "5.4.4"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-55:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "5.5.5"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-56:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "5.6.4"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-57:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "5.7.2"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
   php74-build-singlesite:
     <<: *php_job
     environment:
@@ -221,3 +264,13 @@ jobs:
       - checkout
       - run: composer install
       - run: php $HOME/project/bin/github-changelog.php
+
+  search-dev-tools:
+    docker:
+      - image: cimg/node:16.6.0
+    steps:
+      - checkout
+      - run: npm ci --prefix search/search-dev-tools
+      - run: npm run lint --prefix search/search-dev-tools
+      # This build is only used to verify that the src is buildable, not to persist build artifacts
+      - run: npm run build --prefix search/search-dev-tools

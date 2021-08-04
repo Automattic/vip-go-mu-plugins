@@ -164,8 +164,36 @@ function print_data() {
 
 	$mapped_queries = array_map(
 		function( $query ) {
-			$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
-			$query['args']['body']    = json_decode( $query['args']['body'] );
+			// The happy path: we sanitize query response
+			if ( is_array( $query['request'] ) ) {
+				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
+				// Network error.
+			} elseif ( is_wp_error( $query['request'] ) ) {
+				$query['request'] = [
+					'body' => [
+						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+						'error' => $query['request'],
+					],
+					'response' => [
+						'code' => 'timeout',
+						'message' => 'Request failure',
+					],
+				];
+				// Handle any other weirdness by including catch all.
+			} else {
+				$query['request'] = [
+					'body' => [
+						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+						'error' => 'Unknown error, please contact VIP for further investigation',
+					],
+					'response' => [
+						'code' => 'unknown',
+						'message' => 'Request failure',
+					],
+				];
+			}
+
+			$query['args']['body'] = json_decode( $query['args']['body'] );
 			// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
 			// Because the full list of core query arguments is > 60 elements long and it doesn't look good on the frontend.
 			$query['query_args'] = array_filter(

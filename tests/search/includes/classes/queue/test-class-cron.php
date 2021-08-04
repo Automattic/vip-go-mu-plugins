@@ -40,7 +40,7 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->cron->disable_sweeper_job();
 
 		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-		
+
 		$this->assertFalse( $existing, 'Existing cron event, wp_clear_scheduled_hook() failed' );
 
 		$this->cron->schedule_sweeper_job();
@@ -59,7 +59,7 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->cron->schedule_sweeper_job();
 
 		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-		
+
 		$this->assertTrue( (bool) $existing, 'Sweeper cron event not scheduled, cannot test deletion' );
 
 		$this->cron->disable_sweeper_job();
@@ -88,7 +88,7 @@ class Cron_Test extends \WP_UnitTestCase {
 				'object_type' => 'user',
 			),
 		);
-		
+
 		// Should call Queue::get_jobs() with the right job_ids
 		$mock_queue->expects( $this->once() )
 			->method( 'get_jobs' )
@@ -111,6 +111,9 @@ class Cron_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_schedule_batch_job() {
+		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
+			->setMethods( [ 'get_processor_job_count' ] )
+			->getMock();
 		$mock_queue = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'checkout_jobs', 'free_deadlocked_jobs' ] )
 			->getMock();
@@ -129,17 +132,19 @@ class Cron_Test extends \WP_UnitTestCase {
 				'object_type' => 'user',
 			),
 		);
-		
+
 		$mock_queue->expects( $this->once() )
 			->method( 'checkout_jobs' )
-			->will( $this->returnValue( $mock_jobs ) );
+			->willReturn( $mock_jobs );
 
-		$original_queue = $this->cron->queue;
-		$this->cron->queue = $mock_queue;
+		// Only schedule once as the second count is already maximum
+		$partially_mocked_cron->method( 'get_processor_job_count' )->willReturnOnConsecutiveCalls( 1, 5 );
+
+		$partially_mocked_cron->queue = $mock_queue;
 
 		$now = time();
 
-		$this->cron->sweep_jobs();
+		$partially_mocked_cron->sweep_jobs();
 
 		$expected_cron_event_args = array(
 			$mock_job_ids,
@@ -150,16 +155,52 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $now, $cron_event_time );
 
-		// Restore original Queue to not affect other tests
-		$this->cron->queue = $original_queue;
-
 		// Unschedule event to not pollute other tests
 		wp_unschedule_event( $now, Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
 	}
 
+	public function schedule_batch_job__scheduling_limits_data() {
+		return [
+			[
+				[ 0, 1, 2, 3, 4, 5 ],
+				5,
+			],
+			[
+				[ new \WP_Error( 'not-good' ) ],
+				0,
+			],
+			[
+				[ 0, 1, new \WP_Error( 'not-good' ) ],
+				2,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider schedule_batch_job__scheduling_limits_data
+	 */
+	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_shedule_count ) {
+		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
+			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job' ] )
+			->getMock();
+
+
+		$partially_mocked_cron->queue = $this->createMock( \Automattic\VIP\Search\Queue::class );
+
+		$partially_mocked_cron->expects( $this->exactly( $expected_shedule_count ) )
+			->method( 'schedule_batch_job' )
+			->willReturn( true );
+
+		$partially_mocked_cron->method( 'get_processor_job_count' )
+			->willReturnOnConsecutiveCalls( ...$job_counts );
+
+		$partially_mocked_cron->sweep_jobs();
+	}
+
+
 	/**
 	 * Test if cron is enabled or disabled
-	 * 
+	 *
 	 * Currently this is always true
 	 */
 	public function test_is_enabled() {

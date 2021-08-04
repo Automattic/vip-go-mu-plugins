@@ -45,13 +45,13 @@ class Logger {
 	protected const BULK_ENTRIES_COUNT = 10;
 
 	/**
-	 * Maximum log entry host size.
+	 * Maximum log entry http host size.
 	 *
 	 * @since 2020-01-10
 	 *
 	 * @var int 255 bytes.
 	 */
-	protected const MAX_ENTRY_HOST_SIZE = 255;
+	protected const MAX_ENTRY_HTTP_HOST_SIZE = 255;
 
 	/**
 	 * Maximum log entry feature size.
@@ -109,7 +109,7 @@ class Logger {
 		'extra',              // string with additional data. eg json encoded, lists of ids
 		'feature',
 		'file',
-		'host',
+		'http_host',
 		'http_response_code',
 		'index',
 		'line',
@@ -292,7 +292,7 @@ class Logger {
 		$default_params = [
 			'site_id'   => get_current_network_id(),                  // Required.
 			'blog_id'   => get_current_blog_id(),                     // Required.
-			'host'      => strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
+			'http_host' => strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
 
 			'severity'  => '',                                        // Optional.
 			'feature'   => '',                                        // Required.
@@ -388,9 +388,9 @@ class Logger {
 	 *                    - `extra`    : Optional. Any array, object, or scalar value. Default is `[]`.
 	 *
 	 * @internal          The following blog-specific keys are set for you automatically:
-	 *                    - `site_id` : Required. Default is current network ID.
-	 *                    - `blog_id` : Required. Default is current blog ID.
-	 *                    - `host`    : Optional. Default is current hostname.
+	 *                    - `site_id`   : Required. Default is current network ID.
+	 *                    - `blog_id`   : Required. Default is current blog ID.
+	 *                    - `http_host` : Optional. Default is current http host.
 	 *
 	 * @internal          The following user-specific keys are set for you automatically:
 	 *                    - `user_id` : Optional. Default is current user ID.
@@ -414,8 +414,8 @@ class Logger {
 			trigger_error( 'Invalid `blog_id` in call to ' . esc_html( __METHOD__ ) . '(). Must be an integer > 0.', E_USER_WARNING );
 			return; // Failed validation.
 
-		} elseif ( isset( $data['host'] ) && strlen( $data['host'] ) > static::MAX_ENTRY_HOST_SIZE ) {
-			trigger_error( 'Invalid `host` in call to ' . esc_html( __METHOD__ ) . '(). Must be ' . esc_html( static::MAX_ENTRY_HOST_SIZE ) . ' bytes or less.', E_USER_WARNING );
+		} elseif ( isset( $data['http_host'] ) && strlen( $data['http_host'] ) > static::MAX_ENTRY_HTTP_HOST_SIZE ) {
+			trigger_error( 'Invalid `http_host` in call to ' . esc_html( __METHOD__ ) . '(). Must be ' . esc_html( static::MAX_ENTRY_HTTP_HOST_SIZE ) . ' bytes or less.', E_USER_WARNING );
 			return; // Failed validation.
 
 		} elseif ( isset( $data['severity'] ) && ! in_array( $data['severity'], [ '', 'emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug' ], true ) ) {

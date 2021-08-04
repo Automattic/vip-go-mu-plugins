@@ -30,6 +30,11 @@ class Connection_Pilot {
 	const CRON_SCHEDULE = 'hourly';
 
 	/**
+	 * Maximum number of hours that the system will wait to try to reconnect.
+	 */
+	const MAX_BACKOFF_FACTOR = 2048;
+
+	/**
 	 * The healtcheck option's current data.
 	 *
 	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'hashed_site_url' => '371a92eb7d5d63007db216dbd3b49187', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
@@ -51,8 +56,6 @@ class Connection_Pilot {
 		}
 
 		$this->init_actions();
-
-		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
 	/**
@@ -62,6 +65,9 @@ class Connection_Pilot {
 		if ( ! ( self::$instance instanceof self ) ) {
 			self::$instance = new self();
 		}
+
+		// Making sure each time CP is called it reads the correct heartbeat
+		self::$instance->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 
 		return self::$instance;
 	}
@@ -77,12 +83,8 @@ class Connection_Pilot {
 			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
 		}
 
-		// Run CP shortly after site creation or update to try to connect automatically
-		if ( self::should_attempt_reconnection() ) {
-			add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
-			add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
-		}
-
+		add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
+		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
@@ -90,12 +92,12 @@ class Connection_Pilot {
 
 	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
-			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 1, 60 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
+			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
 	}
 
 	public function schedule_immediate_cron() {
-		wp_schedule_single_event( strtotime( '+1 minutes' ), self::CRON_ACTION );
+		wp_schedule_single_event( time(), self::CRON_ACTION );
 	}
 
 	public static function do_cron() {
@@ -115,25 +117,21 @@ class Connection_Pilot {
 	 * Needs to be static due to how it is added to cron control.
 	 */
 	public function run_connection_pilot() {
-		if ( ! self::should_run_connection_pilot() ) {
-			return;
-		}
-
 		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
-			// TODO: Remove check after general rollout
-			if ( self::should_attempt_reconnection() ) {
-				// Attempting Akismet connection given that Jetpack is connected
-				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
-				if ( ! $akismet_connection_attempt ) {
-					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
-				}
+			// Attempting Akismet connection given that Jetpack is connected
+			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+			if ( ! $akismet_connection_attempt ) {
+				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+			}
 
-				// Attempting VaultPress connection given that Jetpack is connected
+			// Attempting VaultPress connection given that Jetpack is connected
+			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+			if ( ! $skip_vaultpress  ) {
 				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
 				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
 					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
@@ -172,23 +170,71 @@ class Connection_Pilot {
 
 		// Reconnection failed
 		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
+		$this->update_backoff_factor();
 	}
 
-	public function update_heartbeat() {
-		return update_option( self::HEARTBEAT_OPTION_NAME, array(
+	/**
+	 * Checks for the backoff factor and returns whether Connection Pilot should skip a connection attempt.
+	 *
+	 * @return bool True if CP should back off, false otherwise.
+	 */
+	private function should_back_off(): bool {
+		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ){
+			$backoff_factor = $this->last_heartbeat['backoff_factor'];
+			if ( $backoff_factor > 0 ) {
+				$dt_heartbeat = ( new DateTime() )->setTimestamp( $this->last_heartbeat['timestamp'] );
+				$dt_now = new DateTime();
+				$diff = $dt_now->diff( $dt_heartbeat, true );
+
+				// Checking the difference in hours from the last heartbeat
+				if ( $diff && $diff->h < $backoff_factor ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Updates the backoff factor after a connection attempt has failed
+	 *
+	 * @return void
+	 */
+	private function update_backoff_factor(): void {
+		$backoff_factor = (int) $this->last_heartbeat['backoff_factor'];
+
+		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
+			return;
+		} else if ( $backoff_factor <= 0 ) {
+			$backoff_factor = 1;
+		} else {
+			$backoff_factor = $backoff_factor * 2;
+		}
+
+		$this->update_heartbeat( $backoff_factor );
+	}
+
+	/**
+	 * @param int $backoff_factor
+	 *
+	 * @return void
+	 */
+	private function update_heartbeat( int $backoff_factor = 0 ): void {
+		$option = array(
 			'site_url'         => get_site_url(),
 			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
-			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id' ),
+			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
 			'timestamp' => time(),
-		), false );
+			'backoff_factor' => $backoff_factor,
+		);
+		$update = update_option( self::HEARTBEAT_OPTION_NAME, $option, false );
+		if ( $update ) {
+			$this->last_heartbeat = $option;
+		}
 	}
 
 	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
-		// Attempting connection for fresh sites
-		if ( self::is_fresh_subsite() ) {
-			return true;
-		}
-
 		$error_code = null;
 
 		if ( $error && is_wp_error( $error ) ) {
@@ -210,7 +256,12 @@ class Connection_Pilot {
 				return false;
 		}
 
-		// 2) Check the last heartbeat to see if the URLs match.
+		// 2) Check the last heartbeat to see if we should back off
+		if ( $this->should_back_off() ) {
+			return false;
+		}
+
+		// 3) Check the last heartbeat to see if the URLs match.
 		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
 			if ( $this->last_heartbeat['hashed_site_url'] === md5( get_site_url() ) ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
@@ -219,7 +270,7 @@ class Connection_Pilot {
 			}
 
 			// Not connected and current url doesn't match previous url, don't attempt reconnection
-			$this->notify_pilot( 'Jetpack is disconnected, and it appears the domain has changed.' );
+			$this->send_alert( 'Jetpack is disconnected, and it appears the domain has changed.' );
 
 			return false;
 		}
@@ -244,7 +295,7 @@ class Connection_Pilot {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
 		$last_heartbeat = $this->last_heartbeat;
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && $last_heartbeat['cache_site_id'] != -1 ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
 				date( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
@@ -286,54 +337,7 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
-		// TODO: Only attempting to reconnect on new sites. We can remove this code after ramp-up
-		$is_multisite = is_multisite();
-		if ( ! $is_multisite && defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID < 3000 ) {
-			return false;
-		} else if ( $is_multisite ) {
-			if ( ! function_exists( 'get_site' ) ) {
-				return false;
-			}
-
-			try {
-				$site_registered = new DateTime( get_site()->registered );
-				$threshold = new DateTime( "2021-06-01" );
-				if ( $site_registered < $threshold ) {
-					return false;
-				}
-			} catch ( \Exception $e ) {
-				return false;
-			}
-		}
-
-		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
-		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
-			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
-		}
-
-		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', false, $error );
-	}
-
-	/**
-	 * Checks if the site was created less than an hour before execution
-	 *
-	 * @return bool
-	 */
-	public static function is_fresh_subsite(): bool {
-		// Not applicable for single sites
-		if ( ! is_multisite() ) {
-			return false;
-		}
-
-		try {
-			$site_registered = new DateTime( get_site()->registered );
-		} catch ( \Exception $e ) {
-			return false;
-		}
-
-		$now = new DateTime("now");
-		$time_diff = $now->getTimestamp() - $site_registered->getTimestamp();
-		return $time_diff < 3600;
+		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', true, $error );
 	}
 }
 
