@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Migration;
 
+use Automattic\VIP\Jetpack\Connection_Pilot;
+
 add_action( 'vip_after_data_migration', 'Automattic\VIP\Migration\after_data_migration' );
 
 function after_data_migration() {
@@ -49,9 +51,8 @@ function run_after_data_migration_cleanup() {
 	wp_cache_flush();
 
 	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
-		connect_jetpack();
-		connect_vaultpress();
-		connect_akismet();
+		$connection_pilot = Connection_Pilot::instance();
+		$connection_pilot->run_connection_pilot();
 	}
 }
 
@@ -63,49 +64,4 @@ function delete_db_transients() {
 		WHERE option_name LIKE '\_transient\_%'
 		OR option_name LIKE '\_site\_transient\_%'"
 	);
-}
-
-function connect_jetpack() {
-	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
-		\WP_CLI::runcommand( sprintf( 'jetpack-start connect --url=%s', home_url() ) );
-	} else {
-		trigger_error( 'Cannot connect JP outside of a WP_CLI context, skipping', E_USER_WARNING );
-	}
-}
-
-function connect_vaultpress() {
-	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
-		// Remove the VaultPress option from the db to prevent site registration from failing
-		delete_option( 'vaultpress' );
-
-		// Register VaultPress
-		\WP_CLI::runcommand( sprintf( 'vaultpress register_via_jetpack --url=%s', home_url() ) );
-	} else {
-		trigger_error( 'Cannot connect VaultPress outside of a WP_CLI context, skipping', E_USER_WARNING );
-	}
-}
-
-function connect_akismet() {
-	$original_user = get_current_user_id();
-
-	// Switch to wpcomvip -- Akismet connects the current user
-	$wpcomvip_user = get_user_by( 'login', 'wpcomvip' );
-	if ( ! $wpcomvip_user ) {
-		trigger_error( sprintf( '%s: Failed to find wpcomvip user while attempting to connect Akismet; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
-		return;
-	}
-
-	wp_set_current_user( $wpcomvip_user->ID );
-
-	if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
-		$connected = \Akismet_Admin::connect_jetpack_user();
-		if ( ! $connected ) {
-			trigger_error( sprintf( '%s: Failed to connect Akismet; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
-		}
-	} else {
-		trigger_error( sprintf( '%s: Failed to call `Akismet_Admin::connect_jetpack_user` as it does not exist; Akismet will need to be connected manually', __FUNCTION__ ), E_USER_WARNING );
-	}
-
-	// Switch back to current user
-	wp_set_current_user( $original_user );
 }
