@@ -57,7 +57,8 @@ class Controls {
 		$connection_owner  = \Jetpack::connection()->get_connection_owner();
 		$is_vip_connection = $connection_owner && $connection_owner->login === WPCOM_VIP_MACHINE_USER_LOGIN;
 		if ( ! $is_vip_connection ) {
-			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s".', WPCOM_VIP_MACHINE_USER_LOGIN ) );
+                         $connection_owner_login = $connection_owner ? $connection_owner->login : '';
+			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s". Current connection owner is: "%s"', WPCOM_VIP_MACHINE_USER_LOGIN, $connection_owner_login ) );
 		}
 
 		return true;
