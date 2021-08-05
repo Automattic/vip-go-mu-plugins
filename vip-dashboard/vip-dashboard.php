@@ -5,7 +5,7 @@
  * Description: WordPress VIP Go Dashboard
  * Author: Scott Evans, Filipe Varela, Pau Argelaguet
  * Version: 3.0.0
- * Author URI: http://wpvip.com
+ * Author URI: https://wpvip.com
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: vip-dashboard
