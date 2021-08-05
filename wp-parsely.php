@@ -59,10 +59,21 @@ function maybe_load_plugin() {
 
 	foreach ( $versions_to_try as $version ) {
 		$entry_file = __DIR__ . '/wp-parsely-' . $version . '/wp-parsely.php';
-		if ( is_readable( $entry_file ) ) {
-			require $entry_file;
-			return;
+		if ( ! is_readable( $entry_file ) ) {
+			continue;
 		}
+
+		require $entry_file;
+
+		// If the plugin was loaded solely by the option, hide the UI (for now)
+		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
+			remove_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) );
+			remove_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) );
+			remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
+			remove_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
+			remove_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
+		}
+		return;
 	}
 }
 add_action( 'after_setup_theme', __NAMESPACE__ . '\maybe_load_plugin' );
