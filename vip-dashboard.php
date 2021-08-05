@@ -2,11 +2,11 @@
 
 /*
  * Plugin Name: VIP Dashboard
- * Plugin URI: https://wpvip.com
+ * Plugin URI: http://wpvip.com
  * Description: WordPress VIP Go Dashboard
- * Author: Scott Evans, Filipe Varela, WPVIP
- * Version: 2.1.1
- * Author URI: https://wpvip.com
+ * Author: Scott Evans, Filipe Varela, Pau Argelaguet
+ * Version: 3.0.0
+ * Author URI: http://wpvip.com
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: vip-dashboard
