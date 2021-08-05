@@ -175,35 +175,6 @@ class A8C_Files {
 		return false;
 	}
 
-	function attachment_file_exists( $file_url ) {
-		$url_parts = parse_url( $file_url );
-		$post_url = $this->get_files_service_hostname() . $url_parts['path'];
-
-		$headers = array(
-					'X-Client-Site-ID: ' . constant( 'FILES_CLIENT_SITE_ID' ),
-					'X-Access-Token: ' . constant( 'FILES_ACCESS_TOKEN' ),
-					'X-Action: file_exists',
-				);
-
-		$ch = curl_init( $post_url );
-
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 10 );
-		curl_setopt( $ch, CURLOPT_VERBOSE, true );
-
-		curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-
-		return ( 200 == $http_code );
-	}
-
-	function get_files_service_hostname() {
-		return 'https://' . FILE_SERVICE_ENDPOINT;
-	}
-
 	public function upload_url_path( $upload_url_path, $option ) {
 		// No modifications needed outside multisite
 		if ( false === is_multisite() ) {
