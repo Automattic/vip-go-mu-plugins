@@ -24,7 +24,7 @@ function render_vip_dashboard_widget_welcome() {
 					<span>Your organization’s tickets</span>
 				</li>
 				<li>
-					<a href="https://docs.wpvip.com/technical-references/vip-support/general-ticket-guidelines/" target="_blank">Ticket guidelines</a>
+					<a href="https://docs.wpvip.com/technical-references/vip-support/#h-submitting-a-ticket" target="_blank">Ticket guidelines</a>
 					<span>How to open the perfect ticket</span>
 				</li>
 			</ul>
@@ -33,15 +33,15 @@ function render_vip_dashboard_widget_welcome() {
 		<div class="widget__col-2">
 			<ul class="widget__list">
 				<li>
-					<a href="https://docs.wpvip.com/how-tos/launch-a-site-with-vip/" target="_blank">Guidebook: Launching with VIP</a>
+					<a href="https://docs.wpvip.com/how-tos/launch-a-site/" target="_blank">Guidebook: Launching with VIP</a>
 					<span>Steps to launch</span>
 				</li>
 				<li>
-					<a href="https://wpvip.com/documentation/developing-with-vip/welcome-to-vip-development/" target="_blank">Guidebook: Developing with VIP</a>
+					<a href="https://docs.wpvip.com/technical-references/development-workflow/" target="_blank">Development Workflow on VIP</a>
 					<span>An overview of VIP development</span>
 				</li>
 				<li>
-					<a href="https://wpvip.com/news/" target="_blank">VIP News</a>
+					<a href="https://wpvip.com/blog/" target="_blank">VIP Blog</a>
 					<span>New features, case studies</span>
 				</li>
 				<li>
