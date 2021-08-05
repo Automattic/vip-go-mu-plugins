@@ -264,3 +264,21 @@ body.toplevel_page_vip-dashboard #vp-notice {
 .contact-form__input {
   width: 69.9%;
 }
+
+.contact-form__error,
+.contact-form__success {
+  padding: 10px;
+  margin-bottom: 1.3em;
+  font-weight: normal;
+  border: 1px solid #d7dee2;
+  color: #62707a;
+  background: #ffffff;
+}
+
+.contact-form__error {
+  border-left: 3px solid #d94f4f;
+}
+
+.contact-form__success {
+  border-left: 3px solid #4ab866;
+}
