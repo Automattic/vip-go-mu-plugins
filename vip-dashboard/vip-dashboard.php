@@ -60,14 +60,14 @@ function vip_dashboard_admin_scripts() {
  */
 function vip_dashboard_page() {
 	?>
-    <main role="main">
-		<?php render_vip_dashboard_header() ?>
+	<main role="main">
+		<?php render_vip_dashboard_header(); ?>
 
-        <div class="widgets-area">
-			<?php render_vip_dashboard_widget_welcome() ?>
-			<?php render_vip_dashboard_widget_contact() ?>
-        </div>
-    </main>
+		<div class="widgets-area">
+			<?php render_vip_dashboard_widget_welcome(); ?>
+			<?php render_vip_dashboard_widget_contact(); ?>
+		</div>
+	</main>
 	<?php
 }
 
