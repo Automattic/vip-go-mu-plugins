@@ -1,11 +1,11 @@
 <?php
 /*
  * Plugin Name: VIP Dashboard
- * Plugin URI: http://wpvip.com
+ * Plugin URI: https://wpvip.com
  * Description: WordPress VIP Go Dashboard
- * Author: Scott Evans, Filipe Varela
- * Version: 2.1.1
- * Author URI: http://wpvip.com
+ * Author: Scott Evans, Filipe Varela, Pau Argelaguet
+ * Version: 3.0.0
+ * Author URI: https://wpvip.com
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: vip-dashboard
@@ -18,20 +18,23 @@
  * @return void
  */
 function vip_dashboard_init() {
-
 	if ( ! is_admin() ) {
 		return;
 	}
 
+	// Loading components
+	require_once( 'components/header.php' );
+	require_once( 'components/widget-welcome.php' );
+	require_once( 'components/widget-contact.php' );
+
 	// Enable menu for all sites using a VIP and a8c sites.
 	add_action( 'admin_menu', 'wpcom_vip_admin_menu', 5 );
 	add_action( 'admin_menu', 'wpcom_vip_rename_vip_menu_to_dashboard', 50 );
-
 }
 add_action( 'plugins_loaded', 'vip_dashboard_init' );
 
 /**
- * Register master stylesheet (compiled via gulp)
+ * Register master stylesheet
  *
  * @return void
  */
@@ -41,12 +44,12 @@ function vip_dashboard_admin_styles() {
 }
 
 /**
- * Register master JavaScript (compiled via gulp)
+ * Register master JavaScript
  *
  * @return void
  */
 function vip_dashboard_admin_scripts() {
-	wp_register_script( 'vip-dashboard-script', plugins_url( '/assets/js/vip-dashboard.js', __FILE__ ), array( 'jquery' ), '1.0', true );
+	wp_register_script( 'vip-dashboard-script', plugins_url( '/assets/js/vip-dashboard.js', __FILE__ ), array( 'jquery' ), '3.0', true );
 	wp_enqueue_script( 'vip-dashboard-script' );
 }
 
@@ -56,19 +59,15 @@ function vip_dashboard_admin_scripts() {
  * @return void
  */
 function vip_dashboard_page() {
-
-	$current_user = wp_get_current_user();
-	$name         = $current_user->display_name;
-	$email        = $current_user->user_email;
-	$ajaxurl      = add_query_arg( array( '_wpnonce' => wp_create_nonce( 'vip-dashboard' ) ), untrailingslashit( admin_url( 'admin-ajax.php' ) ) );
 	?>
-	<div id="app"
-		data-ajaxurl="<?php echo esc_url( $ajaxurl ); ?>"
-		data-asseturl="<?php echo esc_attr( plugins_url( '/assets/', __FILE__ ) ); ?>"
-		data-email="<?php echo esc_attr( $email ); ?>"
-		data-name="<?php echo esc_attr( $name ); ?>"
-		data-adminurl="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>"
-	></div>
+	<main role="main">
+		<?php render_vip_dashboard_header(); ?>
+
+		<div class="widgets-area">
+			<?php render_vip_dashboard_widget_welcome(); ?>
+			<?php render_vip_dashboard_widget_contact(); ?>
+		</div>
+	</main>
 	<?php
 }
 
@@ -207,8 +206,6 @@ function vip_contact_form_handler() {
 		echo wp_json_encode( $return );
 		die();
 	}
-
-	die();
 }
 add_action( 'wp_ajax_vip_contact', 'vip_contact_form_handler' );
 
