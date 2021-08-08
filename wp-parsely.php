@@ -52,7 +52,7 @@ function maybe_load_plugin() {
 		$versions_to_try = array_unique( $versions_to_try );
 	} else {
 		trigger_error(
-			sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', $version ),
+			sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', esc_html( $version ) ),
 			E_USER_WARNING
 		);
 	}
