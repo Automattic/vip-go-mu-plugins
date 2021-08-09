@@ -108,8 +108,6 @@ install_test_suite() {
 	sed $ioption "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
 	sed $ioption "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
 	sed $ioption "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR_ACTUAL"/wp-tests-config.php
-
-  composer update
 }
 
 install_wp
