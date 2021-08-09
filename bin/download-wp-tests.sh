@@ -114,8 +114,6 @@ install_test_suite() {
 install_wp
 install_test_suite
 
-composer update
-
 # Create a symbolic link to the version specific directories
 # from a generic location
 rm -rf "${WP_CORE_DIR%%+(/)}"
