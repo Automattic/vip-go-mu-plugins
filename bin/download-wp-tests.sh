@@ -39,8 +39,6 @@ else
 	WP_TESTS_TAG="tags/$WP_VERSION"
 fi
 
-echo $WP_VERSION
-
 set -ex
 
 # Footle around to remove any trailing slashes, and then add
@@ -48,8 +46,8 @@ set -ex
 # We're going to install WordPress and the WordPress test lib
 # to version specific directories, for greater control locally
 shopt -s extglob;
-WP_TESTS_DIR_ACTUAL="${WP_TESTS_DIR%%+(/)}-${WP_VERSION}/"
-WP_CORE_DIR_ACTUAL="${WP_CORE_DIR%%+(/)}-${WP_VERSION}/"
+WP_TESTS_DIR_ACTUAL="${WP_TESTS_DIR%%+(/)}-${WP_VERSION}"
+WP_CORE_DIR_ACTUAL="${WP_CORE_DIR%%+(/)}-${WP_VERSION}"
 
 install_wp() {
 

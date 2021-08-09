@@ -1,5 +1,7 @@
 <?php
 
+echo "BOOTSTRAP CUSTOM\n";
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
 	$_tests_dir = '/tmp/wordpress-tests-lib';
@@ -66,5 +68,7 @@ function _disable_core_legacy_widget_registration() {
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
+
+echo __DIR__;
 
 require $_tests_dir . '/includes/bootstrap.php';

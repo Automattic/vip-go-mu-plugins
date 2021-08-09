@@ -22,5 +22,3 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 $DIR/download-wp-tests.sh "$DB_NAME" "$DB_USER" "$DB_PASS" "$DB_HOST" "$WP_VERSION"
 
 install_db "$DB_NAME" "$DB_USER" "$DB_PASS" "$DB_HOST"
-
-composer update
