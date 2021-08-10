@@ -208,4 +208,38 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$this->assertTrue( $enabled );
 	}
+
+	public function configure_concurency_data() {
+		return [
+			[ // min 1
+				1,
+				[ 'vip_search_queue_processor' => 1 ],
+			],
+			[ // max 25 %
+				10,
+				[ 'vip_search_queue_processor' => 3 ],
+			],
+			[
+				20,
+				[ 'vip_search_queue_processor' => 5 ],
+			],
+			[ // max of 5 takes over
+				30,
+				[ 'vip_search_queue_processor' => 5 ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider configure_concurency_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_configure_concurency( $cron_limit, $expected ) {
+		define( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT', $cron_limit );
+
+		$result = $this->cron->configure_concurency( [] );
+
+		$this->assertEquals( $expected, $result );
+	}
 }

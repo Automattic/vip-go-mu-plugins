@@ -62,6 +62,8 @@ class Cron {
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
 		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
+		add_filter( 'a8c_cron_control_concurrent_event_whitelist', [ $this, 'configure_concurency' ] );
+
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
@@ -75,6 +77,20 @@ class Cron {
 		} else {
 			add_action( 'admin_init', [ $this, 'schedule_sweeper_job' ], 0 );
 		}
+	}
+
+	/**
+	 * Make job processing = indexing of documents run concurrently. This should help with handling spikes
+	 * of bulk reindexing as well as keep cron's option used for queued jobs small, by processing them faster.
+	 *
+	 * Also, we want to make sure to only take up to 25% of avaiable cron concurrency capacity, so that other
+	 * cron jobs can still be processed without a big impact.
+	 */
+	public function configure_concurency( $whitelist ) {
+		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
+		$whitelist[ self::PROCESSOR_CRON_EVENT_NAME ] = min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
+
+		return $whitelist;
 	}
 
 	/**
