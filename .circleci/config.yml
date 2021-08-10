@@ -6,6 +6,7 @@ workflows:
       - php74-core-multisite-tests
       - php74-lint
       - php74-build-singlesite
+      - php74-build-singlesite-58
       - php74-build-singlesite-57
       - php74-build-singlesite-56
       - php74-build-singlesite-55
@@ -216,6 +217,15 @@ jobs:
     environment:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.7.2"
+    docker:
+      - image: circleci/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-58:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "5.8"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
