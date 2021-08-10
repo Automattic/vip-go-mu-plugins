@@ -92,8 +92,7 @@ class Cron {
 	 * cron jobs can still be processed without a big impact.
 	 */
 	public function configure_concurency( $whitelist ) {
-		$max_concurrent_processor_job_count = $this->get_max_concurrent_processor_job_count();
-		$whitelist[ self::PROCESSOR_CRON_EVENT_NAME ] = $max_concurrent_processor_job_count;
+		$whitelist[ self::PROCESSOR_CRON_EVENT_NAME ] = $this->get_max_concurrent_processor_job_count();
 
 		return $whitelist;
 	}
