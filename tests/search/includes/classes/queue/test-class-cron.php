@@ -112,7 +112,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 	public function test_schedule_batch_job() {
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
-			->setMethods( [ 'get_processor_job_count' ] )
+			->setMethods( [ 'get_processor_job_count', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
 		$mock_queue = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'checkout_jobs', 'free_deadlocked_jobs' ] )
@@ -139,6 +139,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		// Only schedule once as the second count is already maximum
 		$partially_mocked_cron->method( 'get_processor_job_count' )->willReturnOnConsecutiveCalls( 1, 5 );
+		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )->willReturn( 5 );
 
 		$partially_mocked_cron->queue = $mock_queue;
 
@@ -181,7 +182,7 @@ class Cron_Test extends \WP_UnitTestCase {
 	 */
 	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_shedule_count ) {
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
-			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job' ] )
+			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
 
 
@@ -193,6 +194,8 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_cron->method( 'get_processor_job_count' )
 			->willReturnOnConsecutiveCalls( ...$job_counts );
+		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )
+			->willReturn( 5 );
 
 		$partially_mocked_cron->sweep_jobs();
 	}
