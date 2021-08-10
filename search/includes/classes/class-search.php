@@ -520,6 +520,9 @@ class Search {
 
 		// Log details of failed requests
 		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 2 );
+
+		// Lock search algorithm to 3.4 for backwards compat purposes
+		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ], 9999 );
 	}
 
 	protected function load_commands() {
@@ -1954,5 +1957,16 @@ class Search {
 		}
 
 		$this->logger->log( 'warning', 'search_query_failure', $message );
+	}
+
+	/**
+	 * Filter out default algorithm version to be used.
+	 * 
+	 * @param $default_algorithm_version string Algorithm version.
+	 * 
+	 * @return string
+	 */
+	public function filter__ep_search_algorithm_version( $default_algorithm_version ) {
+		return '3.4';
 	}
 }
