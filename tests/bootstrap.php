@@ -67,4 +67,34 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
 
+
+function _configure_wp_parsely_env_load_via_filter() {
+	echo "[WP_PARSELY_INTEGRATION] Enabling the plugin via filter\n";
+	add_filter( 'wpvip_parsely_load_mu', '__return_true' );
+}
+
+function _configure_wp_parsely_env_load_via_option() {
+	echo "[WP_PARSELY_INTEGRATION] Enabling the plugin via option\n";
+	update_option( '_wpvip_parsely_mu', '1' );
+}
+
+switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
+	case 'filter_enabled':
+		echo "Expecting wp-parsely plugin to be enabled by the filter.\n";
+		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_filter' );
+		break;
+	case 'option_enabled':
+		echo "Expecting wp-parsely plugin to be enabled by the option.\n";
+		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_option' );
+		break;
+	case 'filter_and_option_enabled':
+		echo "Expecting wp-parsely plugin to be enabled by the filter and the option.\n";
+		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_filter' );
+		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_option' );
+		break;
+	default:
+		echo "Expecting wp-parsely plugin to be disabled.\n";
+		break;
+}
+
 require $_tests_dir . '/includes/bootstrap.php';
