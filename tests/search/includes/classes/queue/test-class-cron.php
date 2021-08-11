@@ -112,7 +112,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 	public function test_schedule_batch_job() {
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
-			->setMethods( [ 'get_processor_job_count' ] )
+			->setMethods( [ 'get_processor_job_count', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
 		$mock_queue = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'checkout_jobs', 'free_deadlocked_jobs' ] )
@@ -139,6 +139,7 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		// Only schedule once as the second count is already maximum
 		$partially_mocked_cron->method( 'get_processor_job_count' )->willReturnOnConsecutiveCalls( 1, 5 );
+		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )->willReturn( 5 );
 
 		$partially_mocked_cron->queue = $mock_queue;
 
@@ -181,7 +182,7 @@ class Cron_Test extends \WP_UnitTestCase {
 	 */
 	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_shedule_count ) {
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
-			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job' ] )
+			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
 
 
@@ -193,6 +194,8 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_cron->method( 'get_processor_job_count' )
 			->willReturnOnConsecutiveCalls( ...$job_counts );
+		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )
+			->willReturn( 5 );
 
 		$partially_mocked_cron->sweep_jobs();
 	}
@@ -207,5 +210,39 @@ class Cron_Test extends \WP_UnitTestCase {
 		$enabled = $this->cron->is_enabled();
 
 		$this->assertTrue( $enabled );
+	}
+
+	public function configure_concurrency_data() {
+		return [
+			[ // min 1
+				1,
+				[ 'vip_search_queue_processor' => 1 ],
+			],
+			[ // max 25 %
+				10,
+				[ 'vip_search_queue_processor' => 3 ],
+			],
+			[
+				20,
+				[ 'vip_search_queue_processor' => 5 ],
+			],
+			[ // max of 5 takes over
+				30,
+				[ 'vip_search_queue_processor' => 5 ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider configure_concurrency_data
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_configure_concurrency( $cron_limit, $expected ) {
+		define( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT', $cron_limit );
+
+		$result = $this->cron->configure_concurrency( [] );
+
+		$this->assertEquals( $expected, $result );
 	}
 }
