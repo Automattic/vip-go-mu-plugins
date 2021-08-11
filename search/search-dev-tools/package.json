@@ -16,30 +16,30 @@
     "build/*"
   ],
   "devDependencies": {
-    "@babel/eslint-parser": "^7.14.7",
+    "@babel/eslint-parser": "7.15.0",
     "babel-eslint": "10.1.0",
-    "eslint": "^6.8.0",
+    "eslint": "6.8.0",
     "eslint-config-wpvip": "github:Automattic/eslint-config-wpvip#master",
     "eslint-plugin-flowtype": "3.13.0",
-    "eslint-plugin-import": "2.23.4",
+    "eslint-plugin-import": "2.24.0",
     "eslint-plugin-jest": "22.21.0",
     "eslint-plugin-json": "1.4.0",
     "eslint-plugin-jsx-a11y": "6.4.1",
     "eslint-plugin-no-async-foreach": "0.1.1",
     "eslint-plugin-react": "7.24.0",
-    "eslint-plugin-wpcalypso": "4.1.0",
+    "eslint-plugin-wpcalypso": "5.0.0",
     "preact-cli": "3.2.2",
-    "sass": "1.35.1",
+    "sass": "1.37.5",
     "sass-loader": "10.2.0",
     "sirv-cli": "1.0.12"
   },
   "dependencies": {
     "classnames": "2.3.1",
     "pluralize": "8.0.0",
-    "preact": "10.5.13",
+    "preact": "10.5.14",
     "preact-habitat": "3.3.0",
     "preact-render-to-string": "5.1.19",
-    "prismjs": "1.24.0",
+    "prismjs": "1.24.1",
     "react-simple-code-editor": "0.11.0"
   }
 }

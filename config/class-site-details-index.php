@@ -202,8 +202,8 @@ class Site_Details_Index {
 	public function put_site_details() {
 		$site_details = $this->get_site_details();
 
-		if ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) ) {
-			$url = rtrim( SERVICES_API_URL, '/' ) . '/siteinfo/sites';
+		if ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
+			$url = rtrim( SERVICES_API_URL, '/' ) . '/sitedetails/sites';
 
 			$args = array(
 				'method' => 'PUT',

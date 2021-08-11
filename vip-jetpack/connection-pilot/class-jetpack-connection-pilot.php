@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use DateTime;
+
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
 /**
@@ -28,6 +30,11 @@ class Connection_Pilot {
 	const CRON_SCHEDULE = 'hourly';
 
 	/**
+	 * Maximum number of hours that the system will wait to try to reconnect.
+	 */
+	const MAX_BACKOFF_FACTOR = 2048;
+
+	/**
 	 * The healtcheck option's current data.
 	 *
 	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'hashed_site_url' => '371a92eb7d5d63007db216dbd3b49187', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
@@ -49,8 +56,6 @@ class Connection_Pilot {
 		}
 
 		$this->init_actions();
-
-		$this->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 	}
 
 	/**
@@ -60,6 +65,9 @@ class Connection_Pilot {
 		if ( ! ( self::$instance instanceof self ) ) {
 			self::$instance = new self();
 		}
+
+		// Making sure each time CP is called it reads the correct heartbeat
+		self::$instance->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
 
 		return self::$instance;
 	}
@@ -162,15 +170,68 @@ class Connection_Pilot {
 
 		// Reconnection failed
 		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
+		$this->update_backoff_factor();
 	}
 
-	public function update_heartbeat() {
-		return update_option( self::HEARTBEAT_OPTION_NAME, array(
+	/**
+	 * Checks for the backoff factor and returns whether Connection Pilot should skip a connection attempt.
+	 *
+	 * @return bool True if CP should back off, false otherwise.
+	 */
+	private function should_back_off(): bool {
+		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ){
+			$backoff_factor = $this->last_heartbeat['backoff_factor'];
+			if ( $backoff_factor > 0 ) {
+				$dt_heartbeat = ( new DateTime() )->setTimestamp( $this->last_heartbeat['timestamp'] );
+				$dt_now = new DateTime();
+				$diff = $dt_now->diff( $dt_heartbeat, true );
+
+				// Checking the difference in hours from the last heartbeat
+				if ( $diff && $diff->h < $backoff_factor ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Updates the backoff factor after a connection attempt has failed
+	 *
+	 * @return void
+	 */
+	private function update_backoff_factor(): void {
+		$backoff_factor = (int) $this->last_heartbeat['backoff_factor'];
+
+		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
+			return;
+		} else if ( $backoff_factor <= 0 ) {
+			$backoff_factor = 1;
+		} else {
+			$backoff_factor = $backoff_factor * 2;
+		}
+
+		$this->update_heartbeat( $backoff_factor );
+	}
+
+	/**
+	 * @param int $backoff_factor
+	 *
+	 * @return void
+	 */
+	private function update_heartbeat( int $backoff_factor = 0 ): void {
+		$option = array(
 			'site_url'         => get_site_url(),
 			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
-			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id' ),
+			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
 			'timestamp' => time(),
-		), false );
+			'backoff_factor' => $backoff_factor,
+		);
+		$update = update_option( self::HEARTBEAT_OPTION_NAME, $option, false );
+		if ( $update ) {
+			$this->last_heartbeat = $option;
+		}
 	}
 
 	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
@@ -195,7 +256,12 @@ class Connection_Pilot {
 				return false;
 		}
 
-		// 2) Check the last heartbeat to see if the URLs match.
+		// 2) Check the last heartbeat to see if we should back off
+		if ( $this->should_back_off() ) {
+			return false;
+		}
+
+		// 3) Check the last heartbeat to see if the URLs match.
 		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
 			if ( $this->last_heartbeat['hashed_site_url'] === md5( get_site_url() ) ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
@@ -204,7 +270,7 @@ class Connection_Pilot {
 			}
 
 			// Not connected and current url doesn't match previous url, don't attempt reconnection
-			$this->notify_pilot( 'Jetpack is disconnected, and it appears the domain has changed.' );
+			$this->send_alert( 'Jetpack is disconnected, and it appears the domain has changed.' );
 
 			return false;
 		}
@@ -229,7 +295,7 @@ class Connection_Pilot {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
 		$last_heartbeat = $this->last_heartbeat;
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && $last_heartbeat['cache_site_id'] != -1 ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
 				date( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
@@ -271,11 +337,6 @@ class Connection_Pilot {
 	 * @return bool True if a reconnect should be attempted
 	 */
 	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
-		// TODO: The constant is deprecated and should be removed. Keeping this check during the ramp-up
-		if ( defined( 'VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT' ) ) {
-			return VIP_JETPACK_CONNECTION_PILOT_SHOULD_RECONNECT;
-		}
-
 		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', true, $error );
 	}
 }

@@ -120,12 +120,12 @@ private static $installed = array (
     ),
     'automattic/jetpack-connection' => 
     array (
-      'pretty_version' => 'v1.29.0',
-      'version' => '1.29.0.0',
+      'pretty_version' => 'v1.30.0',
+      'version' => '1.30.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => '47789f8b56171ae226931da28764d3b1c9f2f95b',
+      'reference' => '0d09b7b65720e6c901d0d23b7bc5fa708f030623',
     ),
     'automattic/jetpack-connection-ui' => 
     array (
@@ -174,12 +174,12 @@ private static $installed = array (
     ),
     'automattic/jetpack-identity-crisis' => 
     array (
-      'pretty_version' => 'v0.2.0',
-      'version' => '0.2.0.0',
+      'pretty_version' => 'v0.2.1',
+      'version' => '0.2.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '70032ca911cfe2229a047b3aada82595cc75283f',
+      'reference' => 'a07659f3c7724febf5df2e92cf8ddc315bee762f',
     ),
     'automattic/jetpack-jitm' => 
     array (
@@ -237,13 +237,12 @@ private static $installed = array (
     ),
     'automattic/jetpack-password-checker' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => 'v0.1.2',
+      'version' => '0.1.2.0',
       'aliases' => 
       array (
-        0 => '0.1.x-dev',
       ),
-      'reference' => 'dec6ead3b3b26af31d8d46a608e97f4251cb036a',
+      'reference' => '408bf765942578276da69b10c2600564773dceee',
     ),
     'automattic/jetpack-redirect' => 
     array (
@@ -274,12 +273,12 @@ private static $installed = array (
     ),
     'automattic/jetpack-sync' => 
     array (
-      'pretty_version' => 'v1.23.0',
-      'version' => '1.23.0.0',
+      'pretty_version' => 'v1.23.3',
+      'version' => '1.23.3.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'e36c2cf00ceb3000181bc682756d9dcbac69989b',
+      'reference' => '8be11f9f2b03682131ca94f71db0c3f865aa944a',
     ),
     'automattic/jetpack-terms-of-service' => 
     array (

@@ -19,13 +19,27 @@ class Controls {
 			return new \WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some required constants are missing.' );
 		}
 
-		if ( (new \Automattic\Jetpack\Status())->is_offline_mode() ) {
+		if ( ( new \Automattic\Jetpack\Status() )->is_offline_mode() ) {
 			return new \WP_Error( 'jp-cxn-pilot-offline-mode', 'Jetpack is in offline mode.' );
 		}
 
-		// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
-		if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
-			return new \WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
+		// Methods only available in Jetpack 9.2 and above
+		if ( method_exists( 'Automattic\Jetpack\Connection\Manager', 'is_connected' ) && method_exists( 'Automattic\Jetpack\Connection\Manager', 'has_connected_owner' ) ) {
+			// The Jetpack_Connection::is_connected() method checks both the existence of a blog token and id.
+			if ( ! \Jetpack::connection()->is_connected() ) {
+				return new \WP_Error( 'jp-cxn-pilot-not-connected', 'Jetpack is currently not connected.' );
+			}
+
+			// The Jetpack_Connection::has_connected_owner() method checks both the existence of a user token and master_user option.
+			if ( ! \Jetpack::connection()->has_connected_owner() ) {
+				return new \WP_Error( 'jp-cxn-pilot-not-connected-owner', 'Jetpack does not have a connected owner.' );
+			}
+
+		} else {
+			// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
+			if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
+				return new \WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
+			}
 		}
 
 		$vip_machine_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
@@ -40,9 +54,12 @@ class Controls {
 			return $is_connected;
 		}
 
-		$is_vip_connection = WPCOM_VIP_MACHINE_USER_EMAIL === \Jetpack::get_master_user_email();
+		$connection_owner  = \Jetpack::connection()->get_connection_owner();
+		$is_vip_connection = $connection_owner && $connection_owner->user_login === WPCOM_VIP_MACHINE_USER_LOGIN;
 		if ( ! $is_vip_connection ) {
-			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s".', WPCOM_VIP_MACHINE_USER_LOGIN ) );
+			$connection_owner_login = $connection_owner ? $connection_owner->user_login : 'unknown';
+
+			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s". Current connection owner is: "%s"', WPCOM_VIP_MACHINE_USER_LOGIN, $connection_owner_login ) );
 		}
 
 		return true;
@@ -139,19 +156,21 @@ class Controls {
 	 * @return bool True if connection worked, false otherwise
 	 */
 	public static function connect_akismet(): bool {
-		if ( class_exists( 'Akismet_Admin' ) ) {
+		if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
 
 			if ( is_akismet_key_invalid() ) {
-				$current_user = wp_get_current_user();
+				$original_user = wp_get_current_user();
 				// Getting wpcomvip user, since it's the owner of the Jetpack connection
 				$vip_user = get_user_by( 'login', 'wpcomvip' );
-				if ( ! $current_user || ! $vip_user ) {
+				if ( ! $original_user || ! $vip_user ) {
 					return false;
 				}
 
 				wp_set_current_user( $vip_user );
+
 				$result = \Akismet_Admin::connect_jetpack_user();
-				wp_set_current_user( $current_user );
+				wp_set_current_user( $original_user );
+
 				return $result;
 			}
 
@@ -171,6 +190,9 @@ class Controls {
 	public static function connect_vaultpress() {
 		$vaultpress = \VaultPress::init();
 		if ( ! $vaultpress->is_registered() ) {
+			// Remove the VaultPress option from the db to prevent site registration from failing
+			delete_option( 'vaultpress' );
+
 			return $vaultpress->register_via_jetpack( true );
 		}
 

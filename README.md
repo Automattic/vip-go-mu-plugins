@@ -6,9 +6,19 @@ This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/docume
 
 ### Local Dev
 
-We recommend using the Lando-based development environment for local development: https://github.com/Automattic/vip-go-mu-dev
+We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
-Follow the instructions in the `vip-go-mu-dev` repo to get set up (it includes a clone of this repo).
+In order to use mu-plugins code in a "hot-reload" fashion you need to specify the local folder where this repository is cloned to. For example:
+
+```
+vip dev-env create --mu-plugins $(pwd)
+```
+
+You will be prompted to configure other options of the environment. When the environment is created you can start it with:
+
+```
+vip dev-env start
+```
 
 ### Tests
 
@@ -38,18 +48,28 @@ If you're using the Lando-based environvment and it's already running, you can r
 lando test
 ```
 
-If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
+If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment. To run these tests, execute the following from the project root:
 
 ```bash
-./bin/phpunit-docker.sh [wp-version]
+./bin/phpunit-docker.sh
 ```
 
 You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
+
+```bash
+./bin/phpunit-docker.sh --wp 5.4.4
+```
 
 You can also pass the path to a specific test as well as extra PHPUnit arguments:
 
 ```bash
 ./bin/phpunit-docker.sh tests/path/to/the/test-something.php --stop-on-failure [...args]
+```
+
+Finally, you also have the option to choose if the tests run on a multisite environment:
+
+```bash
+./bin/phpunit-docker.sh --wp 5.4.4 --multisite 1
 ```
 
 ##### CI
