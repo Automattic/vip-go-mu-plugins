@@ -18,7 +18,7 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function cleanup( $args, $assoc_args ) {
 		// Allow sites (e.g. Automattic internal) to bypass this cleanup if they have manual cleanup routines.
-		$should_do_cleanup = apply_filters( 'vip_do_user_cleanup' , true );
+		$should_do_cleanup = apply_filters( 'vip_do_user_cleanup', true );
 		if ( false === $should_do_cleanup ) {
 			return WP_CLI::success( 'Cleanup has been bypassed by the environment.' );
 		}
@@ -52,14 +52,18 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		User_Cleanup::revoke_super_admin_for_users( $user_ids );
 
 		// TODO: switch to get_sites() or wpdb?
-		$iterator_args = array(
+		$iterator_args = [
 			'table' => $wpdb->blogs,
-			'where' => array( 'spam' => 0, 'deleted' => 0, 'archived' => 0 ),
-			'fields' => array( 'blog_id' ),
-		);
+			'where' => [
+				'spam' => 0,
+				'deleted' => 0,
+				'archived' => 0,
+			],
+			'fields' => [ 'blog_id' ],
+		];
 		$iterator = new \WP_CLI\Iterators\Table( $iterator_args );
 
-		foreach( $sites_iterator as $site ) {
+		foreach ( $sites_iterator as $site ) {
 			switch_to_blog( $site->blog_id );
 
 			// TODO: output

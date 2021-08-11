@@ -67,7 +67,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 				[
 					'user',
 					'example.com',
-				]
+				],
 			],
 
 			'email with +' => [
@@ -192,8 +192,8 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 		$actual_results = User_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
 
 		$this->assertEquals( $expected_results, $actual_results );
-		
-		$this->_restore_super_admins();		
+
+		$this->_restore_super_admins();
 	}
 
 	public function test__revoke_super_admin_for_users__multisite__one_user() {

@@ -19,7 +19,7 @@ class User_Cleanup {
 			$emails_raw = [ $emails_string ];
 		}
 
-		foreach( $emails_raw as $email_raw ) {
+		foreach ( $emails_raw as $email_raw ) {
 			$email_raw = trim( $email_raw );
 
 			$email_filtered = filter_var( $email_raw, FILTER_VALIDATE_EMAIL );
@@ -56,7 +56,7 @@ class User_Cleanup {
 			$hostname_wildcard = '%' . $wpdb->esc_like( '@' . $email_hostname );
 
 			$email_sql_where_array[] = $wpdb->prepare(
-				"( user_email = %s OR ( user_email LIKE %s AND user_email LIKE %s ) )",
+				'( user_email = %s OR ( user_email LIKE %s AND user_email LIKE %s ) )',
 				$email, // search for exact match
 				$username_wildcard, // search for `username+*`
 				$hostname_wildcard // search for `*@example.com`
@@ -65,12 +65,17 @@ class User_Cleanup {
 
 		$email_sql_where = implode( ' OR ', $email_sql_where_array );
 
+		//phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users -- gotta do the direct query for this :)
+		//phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- already escaped earlier
 		$sql = "SELECT ID FROM {$wpdb->users}
 			LEFT JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id
 			WHERE meta_key LIKE 'wp_%%capabilities'
-			AND ( {$email_sql_where} )"; // already prepared and escaped
+			AND ( {$email_sql_where} )";
+		//phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users
+		//phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 
-		return $wpdb->get_col( $sql );
+
+		return $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- already prepared
 	}
 
 	public static function revoke_super_admin_for_users( $user_ids ) {
