@@ -19,6 +19,8 @@ const SUPPORTED_VERSIONS = [
 ];
 
 function maybe_load_plugin() {
+	global $parsely;
+
 	/**
 	 * Sourcing the wp-parsely plugin via mu-plugins is generally opt-in.
 	 * To enable it on your site, add this line:
