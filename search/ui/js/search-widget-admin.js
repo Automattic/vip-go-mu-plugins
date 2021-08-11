@@ -1,4 +1,4 @@
-/* globals jetpack_search_filter_admin, jQuery, analytics */
+/* globals vip_search_filter_admin, jQuery */
 
 ( function( $, args ) {
     var defaultFilterCount = ( 'undefined' !== typeof args && args.defaultFilterCount ) ?
@@ -264,7 +264,7 @@
     // When widgets are updated, remove and re-add listeners
     $( document ).on( 'widget-updated widget-added', function( e, widget ) {
         var idBase = $( widget ).find('.id_base').val(),
-            isVIPSearch = ( idBase && ( 'vip-search-filters' === idBase ) );
+            isVIPSearch = ( idBase && ( 'vip-search-widget' === idBase ) );
 
         if ( ! isVIPSearch ) {
             return;

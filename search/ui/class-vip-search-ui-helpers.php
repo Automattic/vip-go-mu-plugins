@@ -80,14 +80,14 @@ class VIP_Search_UI_Helpers {
 		switch ( $type ) {
 			case 'year':
 				$string = ( $is_updated )
-					? esc_html_x( 'Year Updated', 'label for filtering posts', 'jetpack' )
-					: esc_html_x( 'Year', 'label for filtering posts', 'jetpack' );
+					? esc_html_x( 'Year Updated', 'label for filtering posts', 'vip-search' )
+					: esc_html_x( 'Year', 'label for filtering posts', 'vip-search' );
 				break;
 			case 'month':
 			default:
 				$string = ( $is_updated )
-					? esc_html_x( 'Month Updated', 'label for filtering posts', 'jetpack' )
-					: esc_html_x( 'Month', 'label for filtering posts', 'jetpack' );
+					? esc_html_x( 'Month Updated', 'label for filtering posts', 'vip-search' )
+					: esc_html_x( 'Month', 'label for filtering posts', 'vip-search' );
 				break;
 		}
 

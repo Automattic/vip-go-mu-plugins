@@ -6,7 +6,7 @@ namespace Automattic\VIP\Search\UI;
 * Class VIP_Search_Widget
  * @package Automattic\VIP\Search\UI
  *
- * Derived from Jetpack_Search_Widget
+ * Derived from vip-search_Search_Widget
  */
 class VIP_Search_Widget extends \WP_Widget {
 
@@ -49,13 +49,26 @@ class VIP_Search_Widget extends \WP_Widget {
 	public function widget_admin_setup() {
 		wp_enqueue_style( 'widget-vip-search-filters', plugins_url( 'css/search-widget-admin-ui.css', __FILE__ ), array(), 1.0 );
 
-		wp_enqueue_script(
+		wp_register_script(
 			'vip-search-widget-admin',
-			plugins_url( 'js/search-admin-widget.js', __FILE__ ),
-			array( 'jquery', 'jquery-ui-sortable', 'jp-tracks-functions' ),
+			plugins_url( 'js/search-widget-admin.js', __FILE__ ),
+			array( 'jquery', 'jquery-ui-sortable' ),
 			1.0,
-			true
 		);
+
+		wp_localize_script(
+			'vip-search-widget-admin', 'vip_search_filter_admin', array(
+				'defaultFilterCount' => self::DEFAULT_FILTER_COUNT,
+				'i18n'               => array(
+					'month'        => VIP_Search_UI_Helpers::get_date_filter_type_name( 'month', false ),
+					'year'         => VIP_Search_UI_Helpers::get_date_filter_type_name( 'year', false ),
+					'monthUpdated' => VIP_Search_UI_Helpers::get_date_filter_type_name( 'month', true ),
+					'yearUpdated'  => VIP_Search_UI_Helpers::get_date_filter_type_name( 'year', true ),
+				),
+			)
+		);
+
+		wp_enqueue_script( 'vip-search-widget-admin' );
 	}
 
 	/**
@@ -376,13 +389,6 @@ class VIP_Search_Widget extends \WP_Widget {
                     <?php echo esc_html_e( 'Adding filters requires JavaScript!', 'vip-search' ); ?>
                 </p>
             </noscript>
-            <?php if ( is_customize_preview() ) : ?>
-                <p class="vip-search-filters-help">
-                    <a href="<?php echo esc_url( Redirect::get_url( 'vip-support-search', array( 'anchor' => 'filters-not-showing-up' ) ) ); ?>" target="_blank">
-                        <?php esc_html_e( "Why aren't my filters appearing?", 'vip-search' ); ?>
-                    </a>
-                </p>
-            <?php endif; ?>
 		</div>
 		<?php
 	}
@@ -554,28 +560,28 @@ class VIP_Search_Widget extends \WP_Widget {
 		$args['name_placeholder'] = VIP_Search_UI_Helpers::generate_widget_filter_name( $args );
 
 		?>
-		<div class="jetpack-search-filters-widget__filter is-<?php $this->render_widget_attr( 'type', $args['type'], $is_template ); ?>">
-			<p class="jetpack-search-filters-widget__type-select">
+		<div class="vip-search-filters-widget__filter is-<?php $this->render_widget_attr( 'type', $args['type'], $is_template ); ?>">
+			<p class="vip-search-filters-widget__type-select">
 				<label>
-					<?php esc_html_e( 'Filter Type:', 'jetpack' ); ?>
+					<?php esc_html_e( 'Filter Type:', 'vip-search' ); ?>
 					<select name="<?php echo esc_attr( $this->get_field_name( 'filter_type' ) ); ?>[]" class="widefat filter-select">
 						<option value="taxonomy" <?php $this->render_widget_option_selected( 'type', $args['type'], 'taxonomy', $is_template ); ?>>
-							<?php esc_html_e( 'Taxonomy', 'jetpack' ); ?>
+							<?php esc_html_e( 'Taxonomy', 'vip-search' ); ?>
 						</option>
 						<option value="post_type" <?php $this->render_widget_option_selected( 'type', $args['type'], 'post_type', $is_template ); ?>>
-							<?php esc_html_e( 'Post Type', 'jetpack' ); ?>
+							<?php esc_html_e( 'Post Type', 'vip-search' ); ?>
 						</option>
 						<option value="date_histogram" <?php $this->render_widget_option_selected( 'type', $args['type'], 'date_histogram', $is_template ); ?>>
-							<?php esc_html_e( 'Date', 'jetpack' ); ?>
+							<?php esc_html_e( 'Date', 'vip-search' ); ?>
 						</option>
 					</select>
 				</label>
 			</p>
 
-			<p class="jetpack-search-filters-widget__taxonomy-select">
+			<p class="vip-search-filters-widget__taxonomy-select">
 				<label>
 					<?php
-						esc_html_e( 'Choose a taxonomy:', 'jetpack' );
+						esc_html_e( 'Choose a taxonomy:', 'vip-search' );
 						$seen_taxonomy_labels = array();
 					?>
 					<select name="<?php echo esc_attr( $this->get_field_name( 'taxonomy_type' ) ); ?>[]" class="widefat taxonomy-select">
@@ -585,7 +591,7 @@ class VIP_Search_Widget extends \WP_Widget {
 									$label = in_array( $taxonomy->label, $seen_taxonomy_labels )
 										? sprintf(
 											/* translators: %1$s is the taxonomy name, %2s is the name of its type to help distinguish between several taxonomies with the same name, e.g. category and tag. */
-											_x( '%1$s (%2$s)', 'A label for a taxonomy selector option', 'jetpack' ),
+											_x( '%1$s (%2$s)', 'A label for a taxonomy selector option', 'vip-search' ),
 											$taxonomy->label,
 											$taxonomy->name
 										)
@@ -599,43 +605,43 @@ class VIP_Search_Widget extends \WP_Widget {
 				</label>
 			</p>
 
-			<p class="jetpack-search-filters-widget__date-histogram-select">
+			<p class="vip-search-filters-widget__date-histogram-select">
 				<label>
-					<?php esc_html_e( 'Choose a field:', 'jetpack' ); ?>
+					<?php esc_html_e( 'Choose a field:', 'vip-search' ); ?>
 					<select name="<?php echo esc_attr( $this->get_field_name( 'date_histogram_field' ) ); ?>[]" class="widefat date-field-select">
 						<option value="post_date" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_date', $is_template ); ?>>
-							<?php esc_html_e( 'Date', 'jetpack' ); ?>
+							<?php esc_html_e( 'Date', 'vip-search' ); ?>
 						</option>
 						<option value="post_date_gmt" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_date_gmt', $is_template ); ?>>
-							<?php esc_html_e( 'Date GMT', 'jetpack' ); ?>
+							<?php esc_html_e( 'Date GMT', 'vip-search' ); ?>
 						</option>
 						<option value="post_modified" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_modified', $is_template ); ?>>
-							<?php esc_html_e( 'Modified', 'jetpack' ); ?>
+							<?php esc_html_e( 'Modified', 'vip-search' ); ?>
 						</option>
 						<option value="post_modified_gmt" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_modified_gmt', $is_template ); ?>>
-							<?php esc_html_e( 'Modified GMT', 'jetpack' ); ?>
+							<?php esc_html_e( 'Modified GMT', 'vip-search' ); ?>
 						</option>
 					</select>
 				</label>
 			</p>
 
-			<p class="jetpack-search-filters-widget__date-histogram-select">
+			<p class="vip-search-filters-widget__date-histogram-select">
 				<label>
-					<?php esc_html_e( 'Choose an interval:', 'jetpack' ); ?>
+					<?php esc_html_e( 'Choose an interval:', 'vip-search' ); ?>
 					<select name="<?php echo esc_attr( $this->get_field_name( 'date_histogram_interval' ) ); ?>[]" class="widefat date-interval-select">
 						<option value="month" <?php $this->render_widget_option_selected( 'interval', $args['interval'], 'month', $is_template ); ?>>
-							<?php esc_html_e( 'Month', 'jetpack' ); ?>
+							<?php esc_html_e( 'Month', 'vip-search' ); ?>
 						</option>
 						<option value="year" <?php $this->render_widget_option_selected( 'interval', $args['interval'], 'year', $is_template ); ?>>
-							<?php esc_html_e( 'Year', 'jetpack' ); ?>
+							<?php esc_html_e( 'Year', 'vip-search' ); ?>
 						</option>
 					</select>
 				</label>
 			</p>
 
-			<p class="jetpack-search-filters-widget__title">
+			<p class="vip-search-filters-widget__title">
 				<label>
-					<?php esc_html_e( 'Title:', 'jetpack' ); ?>
+					<?php esc_html_e( 'Title:', 'vip-search' ); ?>
 					<input
 						class="widefat"
 						type="text"
@@ -648,7 +654,7 @@ class VIP_Search_Widget extends \WP_Widget {
 
 			<p>
 				<label>
-					<?php esc_html_e( 'Maximum number of filters (1-50):', 'jetpack' ); ?>
+					<?php esc_html_e( 'Maximum number of filters (1-50):', 'vip-search' ); ?>
 					<input
 						class="widefat filter-count"
 						name="<?php echo esc_attr( $this->get_field_name( 'num_filters' ) ); ?>[]"
@@ -662,8 +668,8 @@ class VIP_Search_Widget extends \WP_Widget {
 				</label>
 			</p>
 
-			<p class="jetpack-search-filters-widget__controls">
-				<a href="#" class="delete"><?php esc_html_e( 'Remove', 'jetpack' ); ?></a>
+			<p class="vip-search-filters-widget__controls">
+				<a href="#" class="delete"><?php esc_html_e( 'Remove', 'vip-search' ); ?></a>
 			</p>
 		</div>
 	<?php
