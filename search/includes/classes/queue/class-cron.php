@@ -62,7 +62,7 @@ class Cron {
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
 		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
-		add_filter( 'a8c_cron_control_concurrent_event_whitelist', [ $this, 'configure_concurency' ] );
+		add_filter( 'a8c_cron_control_concurrent_event_whitelist', [ $this, 'configure_concurrency' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -91,7 +91,7 @@ class Cron {
 	 * Also, we want to make sure to only take up to 25% of avaiable cron concurrency capacity, so that other
 	 * cron jobs can still be processed without a big impact.
 	 */
-	public function configure_concurency( $whitelist ) {
+	public function configure_concurrency( $whitelist ) {
 		$whitelist[ self::PROCESSOR_CRON_EVENT_NAME ] = $this->get_max_concurrent_processor_job_count();
 
 		return $whitelist;

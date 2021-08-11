@@ -212,7 +212,7 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->assertTrue( $enabled );
 	}
 
-	public function configure_concurency_data() {
+	public function configure_concurrency_data() {
 		return [
 			[ // min 1
 				1,
@@ -234,14 +234,14 @@ class Cron_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider configure_concurency_data
+	 * @dataProvider configure_concurrency_data
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test_configure_concurency( $cron_limit, $expected ) {
+	public function test_configure_concurrency( $cron_limit, $expected ) {
 		define( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT', $cron_limit );
 
-		$result = $this->cron->configure_concurency( [] );
+		$result = $this->cron->configure_concurrency( [] );
 
 		$this->assertEquals( $expected, $result );
 	}
