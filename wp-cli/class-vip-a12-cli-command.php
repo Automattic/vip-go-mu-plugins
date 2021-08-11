@@ -1,6 +1,10 @@
 <?php
 
-class VIP_A12_CLI_Command extends \WPCOM_VIP_CLI_Command {
+namespace Automattic\VIP\CLI;
+
+use Automattic\VIP\Helpers\User_Cleanup;
+
+class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 	/**
 	 * Remove access for a user from an environment.
@@ -14,20 +18,20 @@ class VIP_A12_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function cleanup( $args, $assoc_args ) {
 		// Allow sites (e.g. Automattic internal) to bypass this cleanup if they have manual cleanup routines.
-		$should_do_cleanup = apply_filters( 'vip_do_a12_cleanup' , true );
+		$should_do_cleanup = apply_filters( 'vip_do_user_cleanup' , true );
 		if ( false === $should_do_cleanup ) {
-			return WP_CLI::success( 'Cleanup has been bypassed by the environment' );
+			return WP_CLI::success( 'Cleanup has been bypassed by the environment.' );
 		}
 
 		$emails_arg = WP_CLI\Utils\get_flag_value( $assoc_args, 'emails' );
 
-		$emails = A12_Cleanup_Utils::parse_emails_string( $emails_arg );
+		$emails = User_Cleanup::parse_emails_string( $emails_arg );
 
 		if ( empty( $emails ) ) {
 			return WP_CLI::error( 'Please provide valid email addresses.' );
 		}
 
-		$user_ids = A12_Cleanup_Utils::fetch_user_ids_for_emails( $emails );
+		$user_ids = User_Cleanup::fetch_user_ids_for_emails( $emails );
 
 		if ( empty( $user_ids ) ) {
 			return WP_CLI::success( 'No users found for the specified email addresses.' );
@@ -39,13 +43,13 @@ class VIP_A12_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			// TODO: output
 		}
 
-		A12_Cleanup_Utils::revoke_roles_for_users( $user_ids );
+		User_Cleanup::revoke_roles_for_users( $user_ids );
 
 		// TODO: output
 	}
 
 	private function process_multisite( $user_ids ) {
-		A12_Cleanup_Utils::revoke_super_admin_for_users( $user_ids );
+		User_Cleanup::revoke_super_admin_for_users( $user_ids );
 
 		// TODO: switch to get_sites() or wpdb?
 		$iterator_args = array(
@@ -58,11 +62,11 @@ class VIP_A12_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		foreach( $sites_iterator as $site ) {
 			switch_to_blog( $site->blog_id );
 
-			// TODO: log
+			// TODO: output
 
-			A12_Cleanup_Utils::revoke_roles_for_users( $user_ids );
+			User_Cleanup::revoke_roles_for_users( $user_ids );
 		}
 	}
 }
 
-WP_CLI::add_command( 'vip a12', '\VIP_A12_CLI_Command' );
+WP_CLI::add_command( 'vip user', '\VIP_User_CLI_Command' );

@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Helpers;
 
-class A12_Cleanup_Test extends \WP_UnitTestCase {
+class User_Cleanup_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../vip-helpers/class-a12-cleanup.php' );
+		require_once( __DIR__ . '/../../vip-helpers/class-user-cleanup.php' );
 	}
 
 	public function data_provider__parse_emails_string() {
@@ -55,7 +55,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 	 * @dataProvider data_provider__parse_emails_string
 	 */
 	public function test__parse_emails_string( $emails_string, $expected_emails ) {
-		$actual_emails = A12_Cleanup::parse_emails_string( $emails_string );
+		$actual_emails = User_Cleanup::parse_emails_string( $emails_string );
 
 		$this->assertEquals( $expected_emails, $actual_emails );
 	}
@@ -84,7 +84,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 	 * @dataProvider data_provider__split_email
 	 */
 	public function test__split_email( $email, $expected_split ) {
-		$actual_split = A12_Cleanup::split_email( $email );
+		$actual_split = User_Cleanup::split_email( $email );
 
 		$this->assertEquals( $expected_split, $actual_split );
 	}
@@ -95,7 +95,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_ids = [ $user_1_id ];
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ $user_1_email ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ $user_1_email ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -108,7 +108,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_ids = [ $user_1_id, $user_2_id ];
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ $user_1_email, $user_2_email ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ $user_1_email, $user_2_email ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -119,7 +119,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_ids = [ $user_1_id ];
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ $user_1_email ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ $user_1_email ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -130,7 +130,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_ids = [ $user_1_id ];
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -141,7 +141,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_ids = []; // emails will not match
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -152,7 +152,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_ids = []; // emails will not match
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -166,7 +166,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 		// Should not return user since they are not a member of the blog anymore
 		$expected_ids = [];
 
-		$actual_ids = A12_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
+		$actual_ids = User_Cleanup::fetch_user_ids_for_emails( [ 'user@example.com' ] );
 
 		$this->assertEquals( $expected_ids, $actual_ids );
 	}
@@ -189,7 +189,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 			$user_id_2 => false,
 		];
 
-		$actual_results = A12_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
+		$actual_results = User_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
 
 		$this->assertEquals( $expected_results, $actual_results );
 		
@@ -212,7 +212,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_super_admins = [ 'admin' ];
 
-		$actual_results = A12_Cleanup::revoke_super_admin_for_users( [ $user_id_1 ] );
+		$actual_results = User_Cleanup::revoke_super_admin_for_users( [ $user_id_1 ] );
 
 		$this->assertEquals( $expected_results, $actual_results );
 		$this->assertEquals( $expected_super_admins, get_super_admins(), 'get_super_admins() is incorrect' );
@@ -239,7 +239,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_super_admins = [ 'admin' ];
 
-		$actual_results = A12_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
+		$actual_results = User_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
 
 		$this->assertEquals( $expected_results, $actual_results, 'Return value from revoke_super_admin_for_users was incorrect' );
 		$this->assertEquals( $expected_super_admins, get_super_admins(), 'get_super_admins() is incorrect' );
@@ -266,7 +266,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_super_admins = [ 'admin' ];
 
-		$actual_results = A12_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
+		$actual_results = User_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
 
 		$this->assertEquals( $expected_results, $actual_results, 'Return value from revoke_super_admin_for_users was incorrect' );
 		$this->assertEquals( $expected_super_admins, get_super_admins(), 'get_super_admins() is incorrect' );
@@ -296,7 +296,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 
 		$expected_super_admins = [ 'admin', get_userdata( $user_id_3 )->user_login ];
 
-		$actual_results = A12_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
+		$actual_results = User_Cleanup::revoke_super_admin_for_users( [ $user_id_1, $user_id_2 ] );
 
 		$this->assertEquals( $expected_results, $actual_results, 'Return value from revoke_super_admin_for_users was incorrect' );
 		$this->assertEquals( $expected_super_admins, array_values( get_super_admins() ), 'get_super_admins() is incorrect' );
@@ -311,7 +311,7 @@ class A12_Cleanup_Test extends \WP_UnitTestCase {
 			$user_1_id => true,
 		];
 
-		$actual_results = A12_Cleanup::revoke_roles_for_users( [ $user_1_id ] );
+		$actual_results = User_Cleanup::revoke_roles_for_users( [ $user_1_id ] );
 
 		$user_1 = get_userdata( $user_1_id );
 

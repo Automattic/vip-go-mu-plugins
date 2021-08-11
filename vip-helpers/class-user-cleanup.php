@@ -3,12 +3,11 @@
 namespace Automattic\VIP\Helpers;
 
 // If the constant is set, don't run the cleanup
-if ( defined( 'VIP_SKIP_A12_CLEANUP' ) && true === VIP_SKIP_A12_CLEANUP ) {
-	add_filter( 'vip_do_a12_cleanup', '__return_false' );
+if ( defined( 'VIP_SKIP_USER_CLEANUP' ) && true === VIP_SKIP_USER_CLEANUP ) {
+	add_filter( 'vip_do_user_cleanup', '__return_false' );
 }
 
-// TODO: rename to User_Cleanup?
-class A12_Cleanup {
+class User_Cleanup {
 	public static function parse_emails_string( $emails_string ) {
 		$emails = [];
 
@@ -84,7 +83,6 @@ class A12_Cleanup {
 				$revoked = revoke_super_admin( $user_id );
 			}
 
-			// TODO: separate results for single site / non-superadmins?
 			$results[ $user_id ] = $revoked;
 		}
 
@@ -98,7 +96,7 @@ class A12_Cleanup {
 			$user = get_userdata( $user_id );
 
 			if ( ! $user ) {
-				$results[ $user_id ] = false;
+				$results[ $user_id ] = new WP_Error( 'not-found', 'User not found' );
 				continue;
 			}
 
