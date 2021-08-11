@@ -7,7 +7,8 @@ if ( defined( 'VIP_SKIP_A12_CLEANUP' ) && true === VIP_SKIP_A12_CLEANUP ) {
 	add_filter( 'vip_do_a12_cleanup', '__return_false' );
 }
 
-class User_Cleanup {
+// TODO: rename to User_Cleanup?
+class A12_Cleanup {
 	public static function parse_emails_string( $emails_string ) {
 		$emails = [];
 
@@ -28,35 +29,47 @@ class User_Cleanup {
 				continue;
 			}
 
-			$emails[ $email_filtered ] = explode( '@', $email_filtered );
+			$emails[] = $email_filtered;
 		}
 
 		return $emails;
+	}
+
+	public static function split_email( $email ) {
+		list( $email_username, $email_hostname ) = explode( '@', $email );
+
+		// Strip off everything after the +, if it exists
+		list( $email_username, ) = explode( '+', $email_username );
+
+		return [ $email_username, $email_hostname ];
 	}
 
 	public static function fetch_user_ids_for_emails( $emails ) {
 		global $wpdb;
 
 		$email_sql_where_array = [];
-		foreach ( $emails as $email => $email_username_hostname_split ) {
-			list( $email_username, $email_hosname ) = $email_username_hostname_split;
+		foreach ( $emails as $email ) {
+			$email_username_hostname_split = self::split_email( $email );
 
-			// TODO: what is username already has +?
+			list( $email_username, $email_hostname ) = $email_username_hostname_split;
+
+			$username_wildcard = $wpdb->esc_like( $email_username . '+' ) . '%';
+			$hostname_wildcard = '%' . $wpdb->esc_like( '@' . $email_hostname );
+
 			$email_sql_where_array[] = $wpdb->prepare(
 				"( user_email = %s OR ( user_email LIKE %s AND user_email LIKE %s ) )",
 				$email, // search for exact match
-				$wpdb->esc_like( $user_email_username . '+' . '%' ), // search for `username+*`
-				$wpdb->esc_like( '%' . '@' . $user_email_host ) // search for `*@example.com`
+				$username_wildcard, // search for `username+*`
+				$hostname_wildcard // search for `*@example.com`
 			);
 		}
 
 		$email_sql_where = implode( ' OR ', $email_sql_where_array );
 
-		$sql = "SELECT ID AS role
-			FROM {$wpdb->users}
+		$sql = "SELECT ID FROM {$wpdb->users}
 			LEFT JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id
 			WHERE meta_key LIKE 'wp_%%capabilities'
-			AND ( {$email_sql_where} )"; // already escaped
+			AND ( {$email_sql_where} )"; // already prepared and escaped
 
 		return $wpdb->get_col( $sql );
 	}
@@ -65,9 +78,14 @@ class User_Cleanup {
 		$results = [];
 
 		foreach ( $user_ids as $user_id ) {
+			$revoked = false;
+
 			if ( is_super_admin( $user_id ) ) {
-				$results[ $user_id ] = revoke_super_admin( $user_id );
+				$revoked = revoke_super_admin( $user_id );
 			}
+
+			// TODO: separate results for single site / non-superadmins?
+			$results[ $user_id ] = $revoked;
 		}
 
 		return $results;
