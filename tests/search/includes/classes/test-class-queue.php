@@ -407,7 +407,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_process_jobs() {
-		$job_ids = array(
+		$object_ids = array(
 			'12',
 			'45',
 			'89',
@@ -415,18 +415,18 @@ class Queue_Test extends \WP_UnitTestCase {
 		);
 
 		// Add some jobs to the queue
-		$this->queue->queue_objects( $job_ids );
+		$this->queue->queue_objects( $object_ids );
 
 		// Have to get by job id and not by object id
-		$jobs = $this->queue->get_jobs_by_range( 12, 246 );
+		$jobs = $this->queue->get_jobs_by_range( 1, 4 );
 
 		$job_count = $this->queue->count_jobs( 'all' );
 
-		$this->assertEquals( $job_count, count( $job_ids ), 'job count in database should match jobs added to queue' );
+		$this->assertEquals( $job_count, count( $object_ids ), 'job count in database should match jobs added to queue' );
 
 		$this->queue->process_jobs( $jobs );
 
-		$jobs = $this->queue->get_jobs_by_range( 12, 246 );
+		$jobs = $this->queue->get_jobs_by_range( 1, 4 );
 
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
