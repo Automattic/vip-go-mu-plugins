@@ -28,9 +28,19 @@ class VIP_Search_Widget extends \WP_Widget {
 			array( 'description' => 'Enterprise Search' )
 		);
 
-		if ( ! is_admin() ) {
+		if ( is_admin() ) {
+			add_action( 'sidebar_admin_setup', array( $this, 'widget_admin_setup' ) );
+		} else {
 			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_scripts' ) );
 		}
+	}
+
+	/**
+	 * Enqueues the scripts and styles needed for the customizer.
+	 *
+	 */
+	public function widget_admin_setup() {
+		wp_enqueue_style( 'widget-vip-search-filters', plugins_url( 'css/search-widget-admin-ui.css', __FILE__ ) );
 	}
 
 	/**
