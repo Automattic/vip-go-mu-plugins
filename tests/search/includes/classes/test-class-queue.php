@@ -418,7 +418,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->queue_objects( $job_ids );
 
 		// Have to get by job id and not by object id
-		$jobs = $this->queue->get_jobs( array_keys( $job_ids ) );
+		$jobs = $this->queue->get_jobs_by_range( 12, 246 );
 
 		$job_count = $this->queue->count_jobs( 'all' );
 
@@ -426,7 +426,7 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$this->queue->process_jobs( $jobs );
 
-		$jobs = $this->queue->get_jobs( array_keys( $job_ids ) );
+		$jobs = $this->queue->get_jobs_by_range( 12, 246 );
 
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
@@ -460,6 +460,18 @@ class Queue_Test extends \WP_UnitTestCase {
 		$jobs = $this->queue->get_jobs( array() );
 
 		$this->assertEquals( array(), $jobs );
+	}
+
+	public function test_get_jobs_by_range() {
+		$this->queue->queue_object( 1000, 'post' );
+		$this->queue->queue_object( 2000, 'post' );
+
+		$jobs = $this->queue->test_get_jobs_by_range( 1, 2 );
+
+		$expected_object_ids = array( 1000, 2000 );
+		$actual_object_ids = wp_list_pluck( $jobs, 'object_id' );
+
+		$this->assertEquals( $expected_object_ids, $actual_object_ids );
 	}
 
 	public function test_queue_objects_not_array() {
