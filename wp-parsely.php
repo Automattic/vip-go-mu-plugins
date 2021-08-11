@@ -11,9 +11,16 @@
  * Domain Path: /languages/
  */
 
-define( 'WPVIP_PARSELY_DEFAULT_VERSION', '2.5' );
+namespace Automattic\VIP\WP_Parsely_Integration;
 
-function wpvip_load_wp_parsely_plugin() {
+// The default version is the first entry in the SUPPORTED_VERSIONS list.
+const SUPPORTED_VERSIONS = [
+	'2.5',
+];
+
+function maybe_load_plugin() {
+	global $parsely;
+
 	/**
 	 * Sourcing the wp-parsely plugin via mu-plugins is generally opt-in.
 	 * To enable it on your site, add this line:
@@ -34,20 +41,41 @@ function wpvip_load_wp_parsely_plugin() {
 		return;
 	}
 
+	$versions_to_try = SUPPORTED_VERSIONS;
+
 	/**
 	 * Allows specifying a major version of the plugin per-site.
 	 * If the version is invalid, the default version will be used.
 	 */
-	$major_version = apply_filters( 'wpvip_parsely_major_version', WPVIP_PARSELY_DEFAULT_VERSION );
-	if ( ! in_array( $major_version, [
-		'2.5',
-	] ) ) {
+	$specified_version = apply_filters( 'wpvip_parsely_version', false );
+
+	if ( in_array( $specified_version, SUPPORTED_VERSIONS ) ) {
+		array_unshift( $versions_to_try, $specified_version );
+		$versions_to_try = array_unique( $versions_to_try );
+	} else {
 		trigger_error(
-			sprintf( 'Invalid value configured via wpvip_parsely_major_version filter: %s', $major_version ),
+			sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', esc_html( $version ) ),
 			E_USER_WARNING
 		);
-		$major_version = WPVIP_PARSELY_DEFAULT_VERSION;
 	}
-	require 'wp-parsely-' . $major_version . '/wp-parsely.php';
+
+	foreach ( $versions_to_try as $version ) {
+		$entry_file = __DIR__ . '/wp-parsely-' . $version . '/wp-parsely.php';
+		if ( ! is_readable( $entry_file ) ) {
+			continue;
+		}
+
+		require $entry_file;
+
+		// If the plugin was loaded solely by the option, hide the UI (for now)
+		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
+			remove_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) );
+			remove_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) );
+			remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
+			remove_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
+			remove_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
+		}
+		return;
+	}
 }
-add_action( 'after_setup_theme', 'wpvip_load_wp_parsely_plugin' );
+add_action( 'after_setup_theme', __NAMESPACE__ . '\maybe_load_plugin' );
