@@ -40,7 +40,7 @@ class VIP_Search_Widget extends \WP_Widget {
 	 *
 	 */
 	public function widget_admin_setup() {
-		wp_enqueue_style( 'widget-vip-search-filters', plugins_url( 'css/search-widget-admin-ui.css', __FILE__ ) );
+		wp_enqueue_style( 'widget-vip-search-filters', plugins_url( 'css/search-widget-admin-ui.css', __FILE__ ), array(), 1.0 );
 	}
 
 	/**
