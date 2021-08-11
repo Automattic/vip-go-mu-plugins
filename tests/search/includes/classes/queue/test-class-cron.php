@@ -196,7 +196,7 @@ class Cron_Test extends \WP_UnitTestCase {
 			[
 				'min_id' => 1,
 				'max_id' => 2,
-			]
+			],
 		];
 
 		// Should have scheduled 1 cron event to process the posts
