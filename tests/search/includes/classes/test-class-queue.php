@@ -466,7 +466,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		$this->queue->queue_object( 1000, 'post' );
 		$this->queue->queue_object( 2000, 'post' );
 
-		$jobs = $this->queue->test_get_jobs_by_range( 1, 2 );
+		$jobs = $this->queue->get_jobs_by_range( 1, 2 );
 
 		$expected_object_ids = array( 1000, 2000 );
 		$actual_object_ids = wp_list_pluck( $jobs, 'object_id' );
