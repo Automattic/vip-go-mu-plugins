@@ -1971,6 +1971,7 @@ class Search {
 	 */
 	public function filter__ep_search_algorithm_version( $default_algorithm_version ) {
 		return '3.5';
+	}
 
 	public function maybe_change_index_version() {
 		$indexables = $this->indexables->get_all();
