@@ -650,7 +650,8 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_queue
 			->method( 'delete_jobs_on_the_already_queued_object' )
-			->willReturn( [ $first_job, $second_job, $third_job_on_other_object ] );
+			->with( [ $first_job, $third_job_on_other_object ] )
+			->willReturn( [ $first_job, $third_job_on_other_object ] );
 
 		$partially_mocked_queue->expects( $this->once() )
 			->method( 'update_jobs' )

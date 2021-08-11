@@ -759,7 +759,7 @@ class Queue {
 	/**
 	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
 	 */
-	private function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
+	public function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
