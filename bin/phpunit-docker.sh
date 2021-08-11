@@ -75,4 +75,4 @@ docker run \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
 	--rm ghcr.io/automattic/phpunit-docker/phpunit:latest \
-	--bootstrap /app/tests/bootstrap.php "${EXTRA_ARGS} ${PATH_TO_TEST}"
+	--bootstrap /app/tests/bootstrap.php ${EXTRA_ARGS} "${PATH_TO_TEST}"
