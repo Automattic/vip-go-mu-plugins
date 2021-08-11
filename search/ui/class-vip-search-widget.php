@@ -10,6 +10,13 @@ namespace Automattic\VIP\Search\UI;
  */
 class VIP_Search_Widget extends \WP_Widget {
 
+    /**
+	 * Number of aggregations (filters) to show by default.
+	 *
+	 * @var int
+	 */
+	const DEFAULT_FILTER_COUNT = 5;
+
 	/**
 	 * Default sort order for search results.
 	 *
@@ -41,6 +48,14 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	public function widget_admin_setup() {
 		wp_enqueue_style( 'widget-vip-search-filters', plugins_url( 'css/search-widget-admin-ui.css', __FILE__ ) );
+
+		wp_enqueue_script(
+			'vip-search-widget-admin',
+			plugins_url( 'js/search-admin-widget.js', __FILE__ ),
+			array( 'jquery', 'jquery-ui-sortable', 'jp-tracks-functions' ),
+			1.0,
+			true
+		);
 	}
 
 	/**
@@ -71,9 +86,9 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	private function get_sort_types():array {
 		return array(
-			'relevance|DESC' => is_admin() ? esc_html__( 'Relevance (recommended)', 'jetpack' ) : esc_html__( 'Relevance', 'jetpack' ),
-			'date|DESC'      => esc_html__( 'Newest first', 'jetpack' ),
-			'date|ASC'       => esc_html__( 'Oldest first', 'jetpack' ),
+			'relevance|DESC' => is_admin() ? esc_html__( 'Relevance (recommended)', 'vip-search' ) : esc_html__( 'Relevance', 'vip-search' ),
+			'date|DESC'      => esc_html__( 'Newest first', 'vip-search' ),
+			'date|ASC'       => esc_html__( 'Oldest first', 'vip-search' ),
 		);
 	}
 
@@ -342,8 +357,62 @@ class VIP_Search_Widget extends \WP_Widget {
 					</select>
 				</label>
 			</p>
+			
+            <script class="vip-search-filters-widget__filter-template" type="text/template">
+                <?php echo $this->render_widget_edit_filter( array(), true ); ?>
+            </script>
+            <div class="vip-search-filters-widget__filters">
+                <?php foreach ( (array) $instance['filters'] as $filter ) : ?>
+                    <?php $this->render_widget_edit_filter( $filter ); ?>
+                <?php endforeach; ?>
+            </div>
+            <p class="vip-search-filters-widget__add-filter-wrapper">
+                <a class="button vip-search-filters-widget__add-filter" href="#">
+                    <?php esc_html_e( 'Add a filter', 'vip-search' ); ?>
+                </a>
+            </p>
+            <noscript>
+                <p class="vip-search-filters-help">
+                    <?php echo esc_html_e( 'Adding filters requires JavaScript!', 'vip-search' ); ?>
+                </p>
+            </noscript>
+            <?php if ( is_customize_preview() ) : ?>
+                <p class="vip-search-filters-help">
+                    <a href="<?php echo esc_url( Redirect::get_url( 'vip-support-search', array( 'anchor' => 'filters-not-showing-up' ) ) ); ?>" target="_blank">
+                        <?php esc_html_e( "Why aren't my filters appearing?", 'vip-search' ); ?>
+                    </a>
+                </p>
+            <?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * We need to render HTML in two formats: an Underscore template (client-side)
+	 * and native PHP (server-side). This helper function allows for easy rendering
+	 * of attributes in both formats.
+	 *
+	 * @param string $name        Attribute name.
+	 * @param string $value       Attribute value.
+	 * @param bool   $is_template Whether this is for an Underscore template or not.
+	 */
+	private function render_widget_attr( $name, $value, $is_template ) {
+		echo $is_template ? "<%= $name %>" : esc_attr( $value );
+	}
+
+	/**
+	 * We need to render HTML in two formats: an Underscore template (client-size)
+	 * and native PHP (server-side). This helper function allows for easy rendering
+	 * of the "selected" attribute in both formats.
+	 *
+	 * @param string $name        Attribute name.
+	 * @param string $value       Attribute value.
+	 * @param string $compare     Value to compare to the attribute value to decide if it should be selected.
+	 * @param bool   $is_template Whether this is for an Underscore template or not.
+	 */
+	private function render_widget_option_selected( $name, $value, $compare, $is_template ) {
+		$compare_js = rawurlencode( $compare );
+		echo $is_template ? "<%= decodeURIComponent( '$compare_js' ) === $name ? 'selected=\"selected\"' : '' %>" : selected( $value, $compare );
 	}
 
 	/**
@@ -461,4 +530,142 @@ class VIP_Search_Widget extends \WP_Widget {
 		echo $before_title . esc_html( $title ) . $after_title; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
+	/**
+	 * Responsible for rendering a single filter in the customizer or the widget administration screen in wp-admin.
+	 *
+	 * We use this method for two purposes - rendering the fields server-side, and also rendering a script template for Underscore.
+	 *
+	 * @param array $filter      The filter to render.
+	 * @param bool  $is_template Whether this is for an Underscore template or not.
+	 */
+	public function render_widget_edit_filter( $filter, $is_template = false ) {
+		$args = wp_parse_args(
+			$filter, array(
+				'name'      => '',
+				'type'      => 'taxonomy',
+				'taxonomy'  => '',
+				'post_type' => '',
+				'field'     => '',
+				'interval'  => '',
+				'count'     => self::DEFAULT_FILTER_COUNT,
+			)
+		);
+
+		$args['name_placeholder'] = VIP_Search_UI_Helpers::generate_widget_filter_name( $args );
+
+		?>
+		<div class="jetpack-search-filters-widget__filter is-<?php $this->render_widget_attr( 'type', $args['type'], $is_template ); ?>">
+			<p class="jetpack-search-filters-widget__type-select">
+				<label>
+					<?php esc_html_e( 'Filter Type:', 'jetpack' ); ?>
+					<select name="<?php echo esc_attr( $this->get_field_name( 'filter_type' ) ); ?>[]" class="widefat filter-select">
+						<option value="taxonomy" <?php $this->render_widget_option_selected( 'type', $args['type'], 'taxonomy', $is_template ); ?>>
+							<?php esc_html_e( 'Taxonomy', 'jetpack' ); ?>
+						</option>
+						<option value="post_type" <?php $this->render_widget_option_selected( 'type', $args['type'], 'post_type', $is_template ); ?>>
+							<?php esc_html_e( 'Post Type', 'jetpack' ); ?>
+						</option>
+						<option value="date_histogram" <?php $this->render_widget_option_selected( 'type', $args['type'], 'date_histogram', $is_template ); ?>>
+							<?php esc_html_e( 'Date', 'jetpack' ); ?>
+						</option>
+					</select>
+				</label>
+			</p>
+
+			<p class="jetpack-search-filters-widget__taxonomy-select">
+				<label>
+					<?php
+						esc_html_e( 'Choose a taxonomy:', 'jetpack' );
+						$seen_taxonomy_labels = array();
+					?>
+					<select name="<?php echo esc_attr( $this->get_field_name( 'taxonomy_type' ) ); ?>[]" class="widefat taxonomy-select">
+						<?php foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $taxonomy ) : ?>
+							<option value="<?php echo esc_attr( $taxonomy->name ); ?>" <?php $this->render_widget_option_selected( 'taxonomy', $args['taxonomy'], $taxonomy->name, $is_template ); ?>>
+								<?php
+									$label = in_array( $taxonomy->label, $seen_taxonomy_labels )
+										? sprintf(
+											/* translators: %1$s is the taxonomy name, %2s is the name of its type to help distinguish between several taxonomies with the same name, e.g. category and tag. */
+											_x( '%1$s (%2$s)', 'A label for a taxonomy selector option', 'jetpack' ),
+											$taxonomy->label,
+											$taxonomy->name
+										)
+										: $taxonomy->label;
+									echo esc_html( $label );
+									$seen_taxonomy_labels[] = $taxonomy->label;
+								?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</label>
+			</p>
+
+			<p class="jetpack-search-filters-widget__date-histogram-select">
+				<label>
+					<?php esc_html_e( 'Choose a field:', 'jetpack' ); ?>
+					<select name="<?php echo esc_attr( $this->get_field_name( 'date_histogram_field' ) ); ?>[]" class="widefat date-field-select">
+						<option value="post_date" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_date', $is_template ); ?>>
+							<?php esc_html_e( 'Date', 'jetpack' ); ?>
+						</option>
+						<option value="post_date_gmt" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_date_gmt', $is_template ); ?>>
+							<?php esc_html_e( 'Date GMT', 'jetpack' ); ?>
+						</option>
+						<option value="post_modified" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_modified', $is_template ); ?>>
+							<?php esc_html_e( 'Modified', 'jetpack' ); ?>
+						</option>
+						<option value="post_modified_gmt" <?php $this->render_widget_option_selected( 'field', $args['field'], 'post_modified_gmt', $is_template ); ?>>
+							<?php esc_html_e( 'Modified GMT', 'jetpack' ); ?>
+						</option>
+					</select>
+				</label>
+			</p>
+
+			<p class="jetpack-search-filters-widget__date-histogram-select">
+				<label>
+					<?php esc_html_e( 'Choose an interval:', 'jetpack' ); ?>
+					<select name="<?php echo esc_attr( $this->get_field_name( 'date_histogram_interval' ) ); ?>[]" class="widefat date-interval-select">
+						<option value="month" <?php $this->render_widget_option_selected( 'interval', $args['interval'], 'month', $is_template ); ?>>
+							<?php esc_html_e( 'Month', 'jetpack' ); ?>
+						</option>
+						<option value="year" <?php $this->render_widget_option_selected( 'interval', $args['interval'], 'year', $is_template ); ?>>
+							<?php esc_html_e( 'Year', 'jetpack' ); ?>
+						</option>
+					</select>
+				</label>
+			</p>
+
+			<p class="jetpack-search-filters-widget__title">
+				<label>
+					<?php esc_html_e( 'Title:', 'jetpack' ); ?>
+					<input
+						class="widefat"
+						type="text"
+						name="<?php echo esc_attr( $this->get_field_name( 'filter_name' ) ); ?>[]"
+						value="<?php $this->render_widget_attr( 'name', $args['name'], $is_template ); ?>"
+						placeholder="<?php $this->render_widget_attr( 'name_placeholder', $args['name_placeholder'], $is_template ); ?>"
+					/>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<?php esc_html_e( 'Maximum number of filters (1-50):', 'jetpack' ); ?>
+					<input
+						class="widefat filter-count"
+						name="<?php echo esc_attr( $this->get_field_name( 'num_filters' ) ); ?>[]"
+						type="number"
+						value="<?php $this->render_widget_attr( 'count', $args['count'], $is_template ); ?>"
+						min="1"
+						max="50"
+						step="1"
+						required
+					/>
+				</label>
+			</p>
+
+			<p class="jetpack-search-filters-widget__controls">
+				<a href="#" class="delete"><?php esc_html_e( 'Remove', 'jetpack' ); ?></a>
+			</p>
+		</div>
+	<?php
+	}
 }

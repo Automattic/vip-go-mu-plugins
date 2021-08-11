@@ -37,6 +37,8 @@ if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
 
 	add_action( 'widgets_init', function () {
 		require_once __DIR__ . '/ui/class-vip-search-widget.php';
+		require_once __DIR__ . '/ui/class-vip-search-ui-helpers.php';
+
 		register_widget( 'Automattic\VIP\Search\UI\VIP_Search_Widget' );
 	} );
 
