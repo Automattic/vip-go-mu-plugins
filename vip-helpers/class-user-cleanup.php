@@ -37,7 +37,7 @@ class User_Cleanup {
 	public static function split_email( $email ) {
 		list( $email_username, $email_hostname ) = explode( '@', $email );
 
-		// Strip off everything after the +, if it exists
+		// Strip off everything after the +, if it exists so that we can run a wildcard match
 		list( $email_username, ) = explode( '+', $email_username );
 
 		return [ $email_username, $email_hostname ];
