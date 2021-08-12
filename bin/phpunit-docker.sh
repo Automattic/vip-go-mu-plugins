@@ -72,6 +72,7 @@ docker run \
 	--network $NETWORK_NAME \
 	-e WP_MULTISITE="$WP_MULTISITE" \
 	-e WPVIP_PARSELY_INTEGRATION_TEST_MODE="$WPVIP_PARSELY_INTEGRATION_TEST_MODE" \
+	-e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="$WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION" \
 	-v $(pwd):/app \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
