@@ -541,7 +541,7 @@ class VIP_Search_Widget extends \WP_Widget {
 		// If the widget has specified post types to search within and IF the post types differ
 		// from the default post types that would have been searched, set the selected post
 		// types via hidden inputs.
-		if ( self::post_types_differ_searchable( $post_types ) ) {
+		if ( VIP_Search_UI_Helpers::post_types_differ_searchable( $post_types ) ) {
 			$fields_to_inject['post_type'] = implode( ',', $post_types );
 		}
 
@@ -580,49 +580,6 @@ class VIP_Search_Widget extends \WP_Widget {
 		);
 
 		return $form;
-	}
-
-	/**
-	 * Given the widget instance, will return true when selected post types differ from searchable post types.
-	 *
-	 * @param array $post_types An array of post types.
-	 *
-	 * @return bool
-	 *
-	 */
-	private static function post_types_differ_searchable( array $post_types ):bool {
-		if ( empty( $post_types ) ) {
-			return false;
-		}
-
-		$searchable_post_types = get_post_types( array( 'exclude_from_search' => false ) );
-		$diff_of_searchable    = self::array_diff( $searchable_post_types, (array) $post_types );
-
-		return ! empty( $diff_of_searchable );
-	}
-
-	/**
-	 * Since PHP's built-in array_diff() works by comparing the values that are in array 1 to the other arrays,
-	 * if there are less values in array 1, it's possible to get an empty diff where one might be expected.
-	 *
-	 * @param array $array_1
-	 * @param array $array_2
-	 *
-	 * @return array
-	 *
-	 */
-	private static function array_diff( array $array_1, array $array_2 ) {
-		// If the array counts are the same, then the order doesn't matter. If the count of
-		// $array_1 is higher than $array_2, that's also fine. If the count of $array_2 is higher,
-		// we need to swap the array order though.
-		if ( count( $array_1 ) !== count( $array_2 ) && count( $array_2 ) > count( $array_1 ) ) {
-			$temp    = $array_1;
-			$array_1 = $array_2;
-			$array_2 = $temp;
-		}
-
-		// Disregard keys
-		return array_values( array_diff( $array_1, $array_2 ) );
 	}
 
 	/**
