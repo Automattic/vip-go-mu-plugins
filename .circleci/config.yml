@@ -23,6 +23,12 @@ workflows:
           filters:
             branches:
               only: master
+  after-merge:
+    jobs:
+      - push-code-to-build:
+          # filters:
+          #   branches:
+          #     only: master
 
 version: 2.1
 
@@ -284,3 +290,9 @@ jobs:
       - run: npm run lint --prefix search/search-dev-tools
       # This build is only used to verify that the src is buildable, not to persist build artifacts
       - run: npm run build --prefix search/search-dev-tools
+
+  push-code-to-build:
+      docker:
+        - image: circleci/php:7.4
+      steps:
+        - run: echo "What is love?"
