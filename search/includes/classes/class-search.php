@@ -845,7 +845,7 @@ class Search {
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 		$url = 'unknown';
-		if ( ! $is_cli ) {
+		if ( ! $is_cli && $request && ! is_wp_error( $request ) ) {
 			global $wp;
 			$url = add_query_arg( $wp->query_vars, home_url( $request ) );
 		}

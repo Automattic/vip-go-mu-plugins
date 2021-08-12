@@ -2720,9 +2720,7 @@ class Search_Test extends \WP_UnitTestCase {
 					$this->anything()
 				);
 
-
-
-		$es->ep_handle_failed_request( $response, [], '' );
+		$es->ep_handle_failed_request( null, $response, [], '' );
 	}
 
 	public function get_sanitize_ep_query_for_logging_data() {
