@@ -614,7 +614,13 @@ class Queue {
 		$min_job_id_value = intval( $min_id );
 		$max_job_id_value = intval( $max_id );
 
-		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` >= $min_job_id_value AND `job_id` <= $max_job_id_value" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
+		$jobs = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE `job_id` >= %d AND `job_id` <= %d",  // Cannot prepare table name. @codingStandardsIgnoreLine
+				$min_job_id_value,
+				$max_job_id_value
+			)
+		);
 
 		return $jobs;
 	}
