@@ -105,6 +105,33 @@ class VIP_Search_Widget extends \WP_Widget {
 		);
 	}
 
+	/**
+	 * This method returns a boolean for whether the widget should show site-wide filters for the site.
+	 *
+	 * This is meant to provide backwards-compatibility for VIP, and other professional plan users, that manually
+	 * configured filters via `Jetpack_Search::set_filters()`.
+	 *
+	 * @return bool Whether the widget should display site-wide filters or not.
+	 */
+	public function should_display_sitewide_filters() {
+		$filter_widgets = get_option( 'widget_jetpack-search-filters' );
+
+		// This shouldn't be empty, but just for sanity
+		if ( empty( $filter_widgets ) ) {
+			return false;
+		}
+
+		// If any widget has any filters, return false
+		foreach ( $filter_widgets as $number => $widget ) {
+			$widget_id = sprintf( '%s-%d', $this->id_base, $number );
+			if ( ! empty( $widget['filters'] ) && is_active_widget( false, $widget_id, $this->id_base ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public function vip_search_populate_defaults( $instance ) {
 		$instance = wp_parse_args(
 			(array) $instance, array(
@@ -128,6 +155,22 @@ class VIP_Search_Widget extends \WP_Widget {
 	 */
 	public function widget( $args, $instance ) {
 		$instance = $this->vip_search_populate_defaults( $instance );
+
+//		if ( is_search() ) {
+//			if ( VIP_Search_UI_Helpers::should_rerun_search_in_customizer_preview() ) {
+//				Jetpack_Search::instance()->update_search_results_aggregations();
+//			}
+//
+//			$filters = Jetpack_Search::instance()->get_filters();
+//
+//			if ( $this->should_display_sitewide_filters() ) {
+//				$filters = array_filter( $filters, array( $this, 'is_for_current_widget' ) );
+//			}
+//
+//			if ( ! empty( $filters ) ) {
+//				$display_filters = true;
+//			}
+//		}
 
 		if ( empty( $instance['search_box_enabled'] ) && empty( $instance['user_sort_enabled'] ) ) {
 			return;
@@ -173,6 +216,24 @@ class VIP_Search_Widget extends \WP_Widget {
 			</div>
 			<?php
 		endif;
+
+//		if ( $display_filters ) {
+//			/**
+//			 * Responsible for rendering filters to narrow down search results.
+//			 *
+//			 * @module search
+//			 *
+//			 * @since  5.8.0
+//			 *
+//			 * @param array $filters    The possible filters for the current query.
+//			 * @param array $post_types An array of post types to limit filtering to.
+//			 */
+//			do_action(
+//				'jetpack_search_render_filters',
+//				$filters,
+//				isset( $instance['post_types'] ) ? $instance['post_types'] : null
+//			);
+//		}
 
 		$this->maybe_render_sort_javascript( $instance, $order, $orderby );
 
@@ -281,6 +342,46 @@ class VIP_Search_Widget extends \WP_Widget {
 		$instance['post_types']         = empty( $new_instance['post_types'] ) || empty( $instance['search_box_enabled'] )
 			? array()
 			: array_map( 'sanitize_key', $new_instance['post_types'] );
+
+		$filters = array();
+		if ( isset( $new_instance['filter_type'] ) ) {
+			foreach ( (array) $new_instance['filter_type'] as $index => $type ) {
+				$count = (int) $new_instance['num_filters'][ $index ];
+				$count = min( 50, $count ); // Set max boundary at 50.
+				$count = max( 1, $count );  // Set min boundary at 1.
+
+				switch ( $type ) {
+					case 'taxonomy':
+						$filters[] = array(
+							'name'     => sanitize_text_field( $new_instance['filter_name'][ $index ] ),
+							'type'     => 'taxonomy',
+							'taxonomy' => sanitize_key( $new_instance['taxonomy_type'][ $index ] ),
+							'count'    => $count,
+						);
+						break;
+					case 'post_type':
+						$filters[] = array(
+							'name'  => sanitize_text_field( $new_instance['filter_name'][ $index ] ),
+							'type'  => 'post_type',
+							'count' => $count,
+						);
+						break;
+					case 'date_histogram':
+						$filters[] = array(
+							'name'     => sanitize_text_field( $new_instance['filter_name'][ $index ] ),
+							'type'     => 'date_histogram',
+							'count'    => $count,
+							'field'    => sanitize_key( $new_instance['date_histogram_field'][ $index ] ),
+							'interval' => sanitize_key( $new_instance['date_histogram_interval'][ $index ] ),
+						);
+						break;
+				}
+			}
+		}
+
+		if ( ! empty( $filters ) ) {
+			$instance['filters'] = $filters;
+		}
 
 		return $instance;
 	}

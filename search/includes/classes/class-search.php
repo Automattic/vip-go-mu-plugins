@@ -436,7 +436,7 @@ class Search {
 		add_filter( 'ep_facet_taxonomies_size', array( $this, 'filter__ep_facet_taxonomies_size' ), 10, 2 );
 
 		// Disable facet queries
-		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
+		// add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
 
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
 		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );

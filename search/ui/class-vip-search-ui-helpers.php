@@ -11,6 +11,23 @@ namespace Automattic\VIP\Search\UI;
 class VIP_Search_UI_Helpers {
 
 	/**
+	 * Whether we should rerun a search in the customizer preview or not.
+	 *
+	 * @return bool
+	 */
+	static function should_rerun_search_in_customizer_preview() {
+		// Only update when in a customizer preview and data is being posted.
+		// Check for $_POST removes an extra update when the customizer loads.
+		//
+		// Note: We use $GLOBALS['wp_customize'] here instead of is_customize_preview() to support unit tests.
+		if ( ! isset( $GLOBALS['wp_customize'] ) || ! $GLOBALS['wp_customize']->is_preview() || empty( $_POST ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Creates a default name for a filter. Used when the filter label is blank.
 	 *
 	 * @param array $widget_filter The filter to generate the title for.
