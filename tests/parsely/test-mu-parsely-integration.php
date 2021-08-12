@@ -8,7 +8,7 @@ function test_mode() {
 }
 
 class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
-	static $test_mode;
+	protected static $test_mode;
 
 	public static function setUpBeforeClass() {
 		self::$test_mode = test_mode();
@@ -25,14 +25,14 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_parsely_class_existance() {
-		$class_should_exist = self::$test_mode !== 'disabled';
+		$class_should_exist = 'disabled' !== self::$test_mode;
 		$this->assertSame( $class_should_exist, class_exists( 'Parsely' ) );
 	}
 
 	public function test_parsely_global() {
 		global $parsely;
 
-		$instance_should_exist = self::$test_mode !== 'disabled';
+		$instance_should_exist = 'disabled' !== self::$test_mode;
 		$this->assertSame( $instance_should_exist, isset( $parsely ) );
 	}
 
