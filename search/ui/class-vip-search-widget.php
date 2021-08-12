@@ -6,7 +6,7 @@ namespace Automattic\VIP\Search\UI;
 * Class VIP_Search_Widget
  * @package Automattic\VIP\Search\UI
  *
- * Derived from vip-search_Search_Widget
+ * Derived from Jetpack_Search_Widget
  */
 class VIP_Search_Widget extends \WP_Widget {
 
