@@ -520,6 +520,7 @@ class Search {
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
 		// Log details of failed requests
+		// TODO: Deprecate
 		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 2 );
 
 		// Lock search algorithm to 3.5
@@ -736,7 +737,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $response, $query, $statsd_prefix );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -841,8 +842,13 @@ class Search {
 		return true;
 	}
 
-	public function ep_handle_failed_request( $response, $query, $statsd_prefix ) {
-		$response_error = [];
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+		$url = 'unknown';
+		if ( ! $is_cli ) {
+			global $wp;
+			$url = add_query_arg( $wp->query_vars, home_url( $request ) );
+		}
 
 		if ( is_wp_error( $response ) ) {
 			$error_messages = $response->get_error_messages();
@@ -856,7 +862,11 @@ class Search {
 			$this->logger->log(
 				'error',
 				'vip_search_http_error',
-				implode( ';', $error_messages )
+				implode( ';', $error_messages ),
+				[
+					'is_cli' => $is_cli,
+					'url' => $url,
+				]
 			);
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -877,6 +887,8 @@ class Search {
 					'root_cause' => $response_error['root_cause'] ?? null,
 					'query' => $query_for_logging,
 					'backtrace' => wp_debug_backtrace_summary(),
+					'is_cli' => $is_cli,
+					'url' => $url,
 				]
 			);
 		}
