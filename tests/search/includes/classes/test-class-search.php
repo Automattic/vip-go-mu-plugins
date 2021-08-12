@@ -2715,7 +2715,7 @@ class Search_Test extends \WP_UnitTestCase {
 				->method( 'log' )
 				->with(
 					$this->equalTo( 'error' ),
-					$this->equalTo( 'vip_search_query_error' ),
+					$this->equalTo( 'search_query_error' ),
 					$this->equalTo( $expected_message ),
 					$this->anything()
 				);

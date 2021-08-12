@@ -861,7 +861,7 @@ class Search {
 
 			$this->logger->log(
 				'error',
-				'vip_search_http_error',
+				'search_http_error',
 				implode( ';', $error_messages ),
 				[
 					'is_cli' => $is_cli,
@@ -880,7 +880,7 @@ class Search {
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
 				'error',
-				'vip_search_query_error',
+				'search_query_error',
 				$error_message,
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
