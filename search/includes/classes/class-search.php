@@ -843,10 +843,11 @@ class Search {
 
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
-		$url = 'unknown';
-		if ( ! $is_cli && $request && ! is_wp_error( $request ) ) {
-			global $wp;
-			$url = add_query_arg( $wp->query_vars, home_url( $request ) );
+
+		if ( is_wp_error( $request ) ) {
+			$encoded_request = $request->get_error_message();
+		} else {
+			$encoded_request = wp_json_encode( $request );
 		}
 
 		if ( is_wp_error( $response ) ) {
@@ -864,7 +865,7 @@ class Search {
 				implode( ';', $error_messages ),
 				[
 					'is_cli' => $is_cli,
-					'url' => $url,
+					'request' => $encoded_request,
 				]
 			);
 		} else {
@@ -887,7 +888,7 @@ class Search {
 					'query' => $query_for_logging,
 					'backtrace' => wp_debug_backtrace_summary(),
 					'is_cli' => $is_cli,
-					'url' => $url,
+					'request' => $encoded_request,
 				]
 			);
 		}
