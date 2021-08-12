@@ -520,7 +520,6 @@ class Search {
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
 		// Log details of failed requests
-		// TODO: Deprecate
 		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 2 );
 
 		// Lock search algorithm to 3.5
