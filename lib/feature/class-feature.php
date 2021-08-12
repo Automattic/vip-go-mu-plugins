@@ -17,8 +17,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = array(
-		// https://github.com/Automattic/vip-go-mu-plugins/tree/master/vip-jetpack/connection-pilot
-		'jetpack-cxn-pilot' => 0.25,
+		'search-dev-tools' => 0.5,
 	);
 
 	public static $site_id = false;

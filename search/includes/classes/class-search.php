@@ -9,6 +9,7 @@ class Search {
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const SEARCH_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
+	public const QUERY_FORCE_VERSION_PATTERN = 'vip_search_%s_version';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW = 10000;
@@ -520,6 +521,9 @@ class Search {
 
 		// Log details of failed requests
 		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 2 );
+
+		// Lock search algorithm to 3.5
+		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
 	}
 
 	protected function load_commands() {
@@ -604,6 +608,8 @@ class Search {
 
 	public function action__plugins_loaded() {
 		$this->maybe_load_es_wp_query();
+
+		$this->maybe_change_index_version();
 	}
 
 	public function action__wp() {
@@ -897,7 +903,8 @@ class Search {
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
-		$timeout = 2;
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+		$timeout = $is_cli ? 5 : 2;
 
 		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
 		$is_post_request = false;
@@ -910,7 +917,7 @@ class Search {
 		if ( wp_endswith( $query_path, '_bulk' ) ) {
 			$timeout = 5;
 
-			if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
+			if ( $is_cli && $is_post_request ) {
 				$timeout = 30;
 			} elseif ( \is_admin() && $is_post_request ) {
 				$timeout = 15;
@@ -1952,6 +1959,37 @@ class Search {
 			);
 		}
 
-		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
+		$this->logger->log( 'warning', 'search_query_failure', $message );
+	}
+
+	/**
+	 * Filter out default algorithm version to be used.
+	 * 
+	 * @param $default_algorithm_version string Algorithm version.
+	 * 
+	 * @return string
+	 */
+	public function filter__ep_search_algorithm_version( $default_algorithm_version ) {
+		return '3.5';
+	}
+
+	public function maybe_change_index_version() {
+		$indexables = $this->indexables->get_all();
+
+		foreach ( $indexables as $indexable ) {
+			$query_force_version_argument = sprintf( self::QUERY_FORCE_VERSION_PATTERN, $indexable->slug );
+
+			if ( ! isset( $_GET[ $query_force_version_argument ] ) ) {
+				continue;
+			}
+
+			$normalized_version = $this->versioning->normalize_version_number( $indexable, $_GET[ $query_force_version_argument ] );
+
+			if ( is_wp_error( $normalized_version ) ) {
+				continue;
+			}
+
+			$this->versioning->set_current_version_number( $indexable, $normalized_version );
+		}
 	}
 }

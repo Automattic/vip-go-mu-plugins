@@ -786,8 +786,11 @@ class Versioning {
 	 * since deletes are comparatively much less frequent, so the savings of preventing back-and-forth switching between
 	 * index versions is not as great. We also process the deletes immediately, b/c the queue system currently does not
 	 * support deletes (just indexing)
+	 *
+	 * NOTE 2 - we are passing 'post' as the default slug since EP 3.5 introduced `ep_delete_post` with only one
+	 * argument ($post_id)
 	 */
-	public function action__ep_delete_indexable( $object_id, $indexable_slug ) {
+	public function action__ep_delete_indexable( $object_id, $indexable_slug = 'post' ) {
 		// Prevent infinite loops :)
 		if ( $this->is_doing_object_delete ) {
 			return;

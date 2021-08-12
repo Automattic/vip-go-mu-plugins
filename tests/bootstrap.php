@@ -44,6 +44,15 @@ function _manually_load_plugin() {
 }
 
 /**
+ * VIP Cache Manager can potentially pollute other tests,
+ * So we explicitly unhook the init callback.
+ *
+ */
+function _remove_init_hook_for_cache_manager() {
+	remove_action( 'init', array( WPCOM_VIP_Cache_Manager::instance(), 'init' ) );
+}
+
+/**
  * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered. 
  *
  * Temporarily unhook it.
@@ -55,7 +64,7 @@ function _disable_core_legacy_widget_registration() {
 }
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
-
+tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
 
 require $_tests_dir . '/includes/bootstrap.php';

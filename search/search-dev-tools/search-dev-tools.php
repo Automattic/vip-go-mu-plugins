@@ -45,9 +45,7 @@ function register_rest_routes() {
 				'url'   => [
 					'type'              => 'string',
 					'required'          => true,
-					'validate_callback' => function( $value, $request, $param ) {
-							return filter_var( $value, FILTER_VALIDATE_URL ) && stripos( $value, '_search' ) !== false ?: new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) );
-					},
+					'validate_callback' => __NAMESPACE__ . '\rest_endpoint_url_validate_callback',
 				],
 				'query' => [
 					'type'              => 'string',
@@ -95,6 +93,42 @@ function should_enable_search_dev_tools(): bool {
 }
 
 /**
+ * Validate the request URL - we should only allow search URLs.
+ *
+ * @param mixed $value
+ * @param WP_Rest_Request $request
+ * @param string $param key
+ * @return mixed true if valid, WP_Error if not.
+ */
+function rest_endpoint_url_validate_callback( $value, $request, $param ) {
+	$error = new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) );
+
+	// Not a valid URL.
+	if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
+		return $error;
+	}
+
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+	$path = trim( parse_url( $value, PHP_URL_PATH ), '/' );
+
+	// Not an allowed endpoint
+	if ( ! wp_endswith( $path, '_search' ) ) {
+		return $error;
+	}
+
+	$index_part = strtok( $path, '/' );
+
+	// Check for the allowed index names.
+	foreach ( explode( ',', $index_part ) as $idx ) {
+		if ( ! wp_startswith( $idx, 'vip-' . FILES_CLIENT_SITE_ID ) ) {
+			return $error;
+		}
+	}
+
+	return true;
+}
+
+/**
  * Add our scripts and styles.
  *
  * @return void
@@ -130,8 +164,36 @@ function print_data() {
 
 	$mapped_queries = array_map(
 		function( $query ) {
-			$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
-			$query['args']['body']    = json_decode( $query['args']['body'] );
+			// The happy path: we sanitize query response
+			if ( is_array( $query['request'] ) ) {
+				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
+				// Network error.
+			} elseif ( is_wp_error( $query['request'] ) ) {
+				$query['request'] = [
+					'body' => [
+						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+						'error' => $query['request'],
+					],
+					'response' => [
+						'code' => 'timeout',
+						'message' => 'Request failure',
+					],
+				];
+				// Handle any other weirdness by including catch all.
+			} else {
+				$query['request'] = [
+					'body' => [
+						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+						'error' => 'Unknown error, please contact VIP for further investigation',
+					],
+					'response' => [
+						'code' => 'unknown',
+						'message' => 'Request failure',
+					],
+				];
+			}
+
+			$query['args']['body'] = json_decode( $query['args']['body'] );
 			// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
 			// Because the full list of core query arguments is > 60 elements long and it doesn't look good on the frontend.
 			$query['query_args'] = array_filter(

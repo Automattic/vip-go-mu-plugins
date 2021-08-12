@@ -62,6 +62,8 @@ class Cron {
 		add_action( self::SWEEPER_CRON_EVENT_NAME, [ $this, 'sweep_jobs' ] );
 		add_action( self::TERM_UPDATE_CRON_EVENT_NAME, [ $this, 'queue_posts_for_term_taxonomy_id' ] );
 
+		add_filter( 'a8c_cron_control_concurrent_event_whitelist', [ $this, 'configure_concurrency' ] );
+
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
@@ -75,6 +77,24 @@ class Cron {
 		} else {
 			add_action( 'admin_init', [ $this, 'schedule_sweeper_job' ], 0 );
 		}
+	}
+
+	public function get_max_concurrent_processor_job_count() {
+		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
+		return min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
+	}
+
+	/**
+	 * Make job processing = indexing of documents run concurrently. This should help with handling spikes
+	 * of bulk reindexing as well as keep cron's option used for queued jobs small, by processing them faster.
+	 *
+	 * Also, we want to make sure to only take up to 25% of avaiable cron concurrency capacity, so that other
+	 * cron jobs can still be processed without a big impact.
+	 */
+	public function configure_concurrency( $whitelist ) {
+		$whitelist[ self::PROCESSOR_CRON_EVENT_NAME ] = $this->get_max_concurrent_processor_job_count();
+
+		return $whitelist;
 	}
 
 	/**
@@ -212,29 +232,28 @@ class Cron {
 
 		$this->queue->free_deadlocked_jobs();
 
-		// If job limit has been surpassed, don't schedule any new jobs
-		if ( $this->get_processor_job_count() > self::MAX_PROCESSOR_JOB_COUNT ) {
-			return;
-		}
+		$job_count = $this->get_processor_job_count();
+		$max_job_count = $this->get_max_concurrent_processor_job_count();
+		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {
 
-		$i = 1; // Start incrementor at 1 since the first loop is the first job
-		do {
-			// Prevent loop from scheduling more than the maximum allowed jobs in any single iteration
-			if ( $i > self::MAX_PROCESSOR_JOB_COUNT ) {
-				return;
+			$schedule_success = $this->schedule_batch_job();
+			if ( is_wp_error( $schedule_success ) || ! $schedule_success ) {
+				break;
 			}
-			
-			$this->schedule_batch_job();
 
-			$i++;
-		} while ( $this->get_processor_job_count() < self::MAX_PROCESSOR_JOB_COUNT );
-		// Prevent continuing if the current processor job count goes over the max allowed job count
+			$job_count = $this->get_processor_job_count();
+		}
 	}
 
+	/**
+	 * Get the number of processor jobs already scheduled.
+	 *
+	 * @return int|WP_Error - count of jobs or error if we failed to fetch the current number.
+	 */
 	public function get_processor_job_count() {
 		// If cron control isn't available, only schedule one job
 		if ( ! class_exists( 'Automattic\\WP\\Cron_Control\\Events_Store' ) ) {
-			return self::MAX_PROCESSOR_JOB_COUNT;
+			return new \WP_Error( 'vip-search-cron-no-events-store', 'Automattic\\WP\\Cron_Control\\Events_Store is not defined' );
 		}
 
 		global $wpdb;
@@ -245,23 +264,28 @@ class Cron {
 
 		// If null, only schedule one job
 		if ( is_null( $current_processor_job_count ) ) {
-			return self::MAX_PROCESSOR_JOB_COUNT;
+			return new \WP_Error( 'vip-search-cron-processor-count', 'Could not find the current search queue processor count' );
 		}
 
 		return intval( $current_processor_job_count );
 	}
 
+	/**
+	 * Checkout items from queue and schedule a job to process them.
+	 *
+	 * @return boolean|WP_Error true if scheduling went well, false if there are no items to schedule, error otherwise
+	 */
 	public function schedule_batch_job() {
 		// Find jobs to process
 		$jobs = $this->queue->checkout_jobs( self::PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT );
 
 		if ( empty( $jobs ) ) {
-			return;
+			return false;
 		}
 
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
+		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {

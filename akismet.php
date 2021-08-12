@@ -4,7 +4,7 @@
 Plugin Name: Akismet Anti-Spam
 Plugin URI: https://akismet.com/
 Description: Used by millions, Akismet is quite possibly the best way in the world to <strong>protect your blog from spam</strong>. It keeps your site protected even while you sleep. To get started: activate the Akismet plugin and then go to your Akismet Settings page to set up your API key.
-Version: 4.1.9
+Version: 4.1.10
 Author: Automattic
 Author URI: https://automattic.com/wordpress-plugins/
 License: GPLv2 or later
@@ -50,13 +50,29 @@ function wpcom_vip_akismet_spam_count_incr( $val ) {
 }
 add_filter( 'akismet_spam_count_incr', 'wpcom_vip_akismet_spam_count_incr' );
 
-add_action( 'admin_menu', 'vip_remove_akismet_admin_menu', 999 );
-
 function vip_remove_akismet_admin_menu() {
-	$key = Akismet::get_api_key();
-	$key_status = Akismet::check_key_status( $key );
-
-	if ( ! $key_status || ! $key_status[1] || 'invalid' === $key_status[1] ) {
-		remove_submenu_page( 'jetpack', 'akismet-key-config' );
+	if ( is_akismet_key_invalid() ) {
+		remove_action( 'admin_menu', array( 'Akismet_Admin', 'admin_menu' ), 5 );
 	}
+}
+add_action( 'admin_menu', 'vip_remove_akismet_admin_menu', 1 );
+
+function vip_remove_akismet_admin_notices() {
+	if ( is_akismet_key_invalid() ) {
+		remove_action( 'admin_notices', array( 'Akismet_Admin', 'display_notice' ) );
+	}
+}
+add_action( 'admin_notices', 'vip_remove_akismet_admin_notices', 1 );
+
+/**
+ * @return bool True if the Akismet key in the site is not existent or not valid
+ */
+function is_akismet_key_invalid(): bool {
+	if ( class_exists( 'Akismet' ) ) {
+		$key = Akismet::get_api_key();
+		$key_status = Akismet::check_key_status( $key );
+		return ! $key_status || ! $key_status[1] || 'invalid' === $key_status[1];
+	}
+
+	return false;
 }
