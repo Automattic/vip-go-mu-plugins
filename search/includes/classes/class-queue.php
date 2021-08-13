@@ -579,6 +579,9 @@ class Queue {
 		return $job;
 	}
 
+	/**
+	 * @deprecated this will no longer be used. The method is kept to ease deployment. See the usage for more information.
+	 */
 	public function get_jobs( $job_ids ) {
 		global $wpdb;
 
@@ -592,6 +595,32 @@ class Queue {
 		$escaped_ids = implode( ', ', $job_ids );
 
 		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
+
+		return $jobs;
+	}
+
+	/**
+	 * Get the jobs using the lowest and highest job_id range
+	 */
+	public function get_jobs_by_range( $min_id, $max_id ) {
+		global $wpdb;
+
+		if ( ! $min_id || ! $max_id ) {
+			return array();
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		$min_job_id_value = intval( $min_id );
+		$max_job_id_value = intval( $max_id );
+
+		$jobs = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE `job_id` >= %d AND `job_id` <= %d",  // Cannot prepare table name. @codingStandardsIgnoreLine
+				$min_job_id_value,
+				$max_job_id_value
+			)
+		);
 
 		return $jobs;
 	}
@@ -612,11 +641,10 @@ class Queue {
 		$table_name = $this->schema->get_table_name();
 
 		// TODO transaction
-		// TODO only find objects that aren't already running
 
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `job_id` LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$count
 			)
 		);
@@ -737,7 +765,7 @@ class Queue {
 	/**
 	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
 	 */
-	private function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
+	public function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
