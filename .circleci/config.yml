@@ -20,11 +20,10 @@ workflows:
 
   after-master-merge:
     jobs:
-      - push-code-to-build
-      # - push-code-to-build:
-      #     filters:
-      #       branches:
-      #         only: master
+      - push-code-to-build:
+          filters:
+            branches:
+              only: master
       - build-docs:
           filters:
             branches:

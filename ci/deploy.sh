@@ -60,4 +60,4 @@ git add -A .
 # If you get an SSH prompt to enter a passphrase, you likely encrypted then
 # key against the wrong repository
 git commit -am "Built from vip-go-mu-plugins@${GIT_REVISION}"
-git status
+git push
