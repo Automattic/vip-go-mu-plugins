@@ -17,19 +17,17 @@ workflows:
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
       - search-dev-tools
-  changelog:
+
+  after-master-merge:
     jobs:
+      - push-code-to-build:
+          filters:
+            branches:
+              only: master
       - create-changelog-draft:
           filters:
             branches:
               only: master
-  after-merge:
-    jobs:
-      - push-code-to-build
-      # - push-code-to-build:
-          # filters:
-          #   branches:
-          #     only: master
 
 version: 2.1
 
@@ -301,4 +299,4 @@ jobs:
         - add_ssh_keys:
             fingerprints:
               - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
-        - run: ./ci/deploy-build.sh
+        - run: ./ci/deploy.sh
