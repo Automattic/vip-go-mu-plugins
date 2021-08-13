@@ -25,7 +25,8 @@ workflows:
               only: master
   after-merge:
     jobs:
-      - push-code-to-build:
+      - push-code-to-build
+      # - push-code-to-build:
           # filters:
           #   branches:
           #     only: master
@@ -295,4 +296,5 @@ jobs:
       docker:
         - image: circleci/php:7.4
       steps:
-        - run: echo "What is love?"
+        - checkout
+        - run: ./ci/prepare.sh
