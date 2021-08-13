@@ -24,11 +24,9 @@ class User_Cleanup {
 
 			$email_filtered = filter_var( $email_raw, FILTER_VALIDATE_EMAIL );
 
-			if ( empty( $email_filtered ) ) {
-				continue;
+			if ( ! empty( $email_filtered ) ) {
+				$emails[] = $email_filtered;
 			}
-
-			$emails[] = $email_filtered;
 		}
 
 		return $emails;
