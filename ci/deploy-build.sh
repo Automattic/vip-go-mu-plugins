@@ -77,5 +77,4 @@ git add -A .
 # If you get an SSH prompt to enter a passphrase, you likely encrypted then
 # key against the wrong repository
 git commit -am "Built from ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}"
-# git push
-git status
+git push
