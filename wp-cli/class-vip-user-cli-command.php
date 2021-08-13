@@ -3,8 +3,9 @@
 namespace Automattic\VIP\CLI;
 
 use Automattic\VIP\Helpers\User_Cleanup;
+use WP_CLI;
 
-class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
+class VIP_User_CLI_Command extends \WP_CLI_Command {
 
 	/**
 	 * Remove access for a user from an environment.
@@ -14,22 +15,23 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * --emails=<emails>
-	 * : comma-separated list of emails
+	 * : Comma-separated list of emails
 	 *
-	 * [--yes] Remove without confirmation.
+	 * [--yes]
+	 * : Remove without confirmation.
 	 *
 	 * ## EXAMPLES
 	 *
-	 * wp vip user cleanup --emails user@example.com,another@example.net
+	 * wp vip user cleanup --emails="user@example.com,another@example.net"
 	 */
 	public function cleanup( $args, $assoc_args ) {
 		// Allow sites (e.g. Automattic internal) to bypass this cleanup if they have manual cleanup routines.
 		$should_do_cleanup = apply_filters( 'vip_do_user_cleanup', true );
 		if ( false === $should_do_cleanup ) {
-			return WP_CLI::success( 'Cleanup has been bypassed by the environment.' );
+			return \WP_CLI::success( 'Cleanup has been bypassed by the environment.' );
 		}
 
-		$emails_arg = WP_CLI\Utils\get_flag_value( $assoc_args, 'emails' );
+		$emails_arg = \WP_CLI\Utils\get_flag_value( $assoc_args, 'emails' );
 
 		$emails = User_Cleanup::parse_emails_string( $emails_arg );
 
@@ -64,6 +66,8 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	}
 
 	private function process_multisite( $user_ids ) {
+		global $wpdb;
+
 		User_Cleanup::revoke_super_admin_for_users( $user_ids );
 
 		// TODO: switch to get_sites() or wpdb?
@@ -76,7 +80,7 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			],
 			'fields' => [ 'blog_id' ],
 		];
-		$iterator = new \WP_CLI\Iterators\Table( $iterator_args );
+		$sites_iterator = new \WP_CLI\Iterators\Table( $iterator_args );
 
 		foreach ( $sites_iterator as $site ) {
 			switch_to_blog( $site->blog_id );
@@ -88,4 +92,4 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip user', '\VIP_User_CLI_Command' );
+\WP_CLI::add_command( 'vip user', __NAMESPACE__ . '\VIP_User_CLI_Command' );
