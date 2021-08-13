@@ -845,9 +845,10 @@ class Search {
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
-			$encoded_request = $request->get_error_message();
+			$encoded_request = $request->get_error_messages();
 		} else {
-			$encoded_request = wp_json_encode( $request );
+			// TODO: Report actual request, once we make sure all its fields are sanitized and publishable
+			$encoded_request = 'Not an error.';
 		}
 
 		if ( is_wp_error( $response ) ) {
@@ -889,6 +890,7 @@ class Search {
 					'backtrace' => wp_debug_backtrace_summary(),
 					'is_cli' => $is_cli,
 					'request' => $encoded_request,
+					'response' => $response_body,
 				]
 			);
 		}
