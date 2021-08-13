@@ -24,6 +24,11 @@ workflows:
           filters:
             branches:
               only: master
+      - build-docs
+      # - build-docs:
+      #     filters:
+      #       branches:
+      #         only: master
       - create-changelog-draft:
           filters:
             branches:
@@ -300,3 +305,13 @@ jobs:
             fingerprints:
               - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
         - run: ./ci/deploy.sh
+
+  build-docs:
+      docker:
+        - image: circleci/php:7.4
+      steps:
+        - checkout
+        - add_ssh_keys:
+            fingerprints:
+              - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
+        - run: ./ci/generate-docs.sh
