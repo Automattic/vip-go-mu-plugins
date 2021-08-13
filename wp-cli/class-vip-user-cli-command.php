@@ -13,8 +13,14 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * [--emails=<emails>]
+	 * --emails=<emails>
 	 * : comma-separated list of emails
+	 *
+	 * [--yes] Remove without confirmation.
+	 *
+	 * ## EXAMPLES
+	 *
+	 * wp vip user cleanup --emails user@example.com,another@example.net
 	 */
 	public function cleanup( $args, $assoc_args ) {
 		// Allow sites (e.g. Automattic internal) to bypass this cleanup if they have manual cleanup routines.
@@ -29,6 +35,15 @@ class VIP_User_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		if ( empty( $emails ) ) {
 			return WP_CLI::error( 'Please provide valid email addresses.' );
+		}
+
+		if ( ! isset( $assoc_args['yes'] ) ) {
+			WP_CLI::line( 'This will remove all access for any users with email addresses that match the following:' );
+			foreach ( $emails as $email ) {
+				WP_CLI::line( sprintf( '- %s', $email ) );
+			}
+
+			WP_CLI::confirm( 'Are you sure?' );
 		}
 
 		$user_ids = User_Cleanup::fetch_user_ids_for_emails( $emails );
