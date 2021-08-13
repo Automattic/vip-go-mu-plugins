@@ -1,8 +1,14 @@
 #!/bin/bash
 
-# called by Travis CI
-
 set -ex
+
+# Convert the URLs in the superproject .gitmodules file,
+# then init those submodules
+sed -i -e "s|git@\([^:]*\):|https://\1/|" .gitmodules
+git submodule update --init
+# Now recurse over all the contained submodules,
+# sub-submodules, etc, to do the same
+date; git submodule foreach --recursive 'if [ -w .gitmodules ]; then sed -i -e "s|git@\([^:]*\):|https://\1/|" "$toplevel/$path/.gitmodules"; fi; git submodule update --init "$toplevel/$path";'; date;
 
 DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 
@@ -53,5 +59,5 @@ git config push.default "current"
 git add -A .
 # If you get an SSH prompt to enter a passphrase, you likely encrypted then
 # key against the wrong repository
-git commit -am "Built from vip-go-mu-plugins@<< pipeline.git.revision >>"
-git push
+git commit -am "Built from vip-go-mu-plugins@${GIT_REVISION}"
+git status

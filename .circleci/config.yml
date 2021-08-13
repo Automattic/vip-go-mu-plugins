@@ -20,15 +20,15 @@ workflows:
 
   after-master-merge:
     jobs:
-      - push-code-to-build:
-          filters:
-            branches:
-              only: master
-      - build-docs
-      # - build-docs:
+      - push-code-to-build
+      # - push-code-to-build:
       #     filters:
       #       branches:
       #         only: master
+      - build-docs:
+          filters:
+            branches:
+              only: master
       - create-changelog-draft:
           filters:
             branches:
@@ -298,9 +298,10 @@ jobs:
   push-code-to-build:
       docker:
         - image: circleci/php:7.4
+      environment:
+        - GIT_REVISION: << pipeline.git.revision >>
       steps:
         - checkout
-        - run: ./ci/prepare.sh
         - add_ssh_keys:
             fingerprints:
               - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
@@ -309,9 +310,11 @@ jobs:
   build-docs:
       docker:
         - image: circleci/php:7.4
+      environment:
+        - GIT_REVISION: << pipeline.git.revision >>
       steps:
         - checkout
         - add_ssh_keys:
             fingerprints:
-              - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
+              - "25:57:4c:ef:c1:ff:80:ee:36:1a:a9:0b:d2:67:61:bb"
         - run: ./ci/generate-docs.sh
