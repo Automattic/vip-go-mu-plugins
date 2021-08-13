@@ -49,14 +49,16 @@ function maybe_load_plugin() {
 	 */
 	$specified_version = apply_filters( 'wpvip_parsely_version', false );
 
-	if ( in_array( $specified_version, SUPPORTED_VERSIONS ) ) {
-		array_unshift( $versions_to_try, $specified_version );
-		$versions_to_try = array_unique( $versions_to_try );
-	} else {
-		trigger_error(
-			sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', esc_html( $version ) ),
-			E_USER_WARNING
-		);
+	if ( $specified_version ) {
+		if ( in_array( $specified_version, SUPPORTED_VERSIONS ) ) {
+			array_unshift( $versions_to_try, $specified_version );
+			$versions_to_try = array_unique( $versions_to_try );
+		} else {
+			trigger_error(
+				sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', esc_html( $specified_version ) ),
+				E_USER_WARNING
+			);
+		}
 	}
 
 	foreach ( $versions_to_try as $version ) {
