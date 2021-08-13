@@ -53,5 +53,5 @@ git config push.default "current"
 git add -A .
 # If you get an SSH prompt to enter a passphrase, you likely encrypted then
 # key against the wrong repository
-git commit -am "Built from ${TRAVIS_REPO_SLUG}@${TRAVIS_COMMIT}"
+git commit -am "Built from vip-go-mu-plugins@<< pipeline.git.revision >>"
 git push
