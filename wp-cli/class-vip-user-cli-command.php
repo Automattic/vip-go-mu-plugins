@@ -55,20 +55,16 @@ class VIP_User_CLI_Command extends \WP_CLI_Command {
 		}
 
 		if ( is_multisite() ) {
-			return $this->process_multisite( $user_ids );
-
-			// TODO: output
+			$this->process_multisite( $user_ids );
 		}
 
-		User_Cleanup::revoke_roles_for_users( $user_ids );
-
-		// TODO: output
+		$this->do_site_removals( $user_ids );
 	}
 
 	private function process_multisite( $user_ids ) {
 		global $wpdb;
 
-		User_Cleanup::revoke_super_admin_for_users( $user_ids );
+		$this->do_super_admin_removals( $user_ids );
 
 		// TODO: switch to get_sites() or wpdb?
 		$iterator_args = [
@@ -85,9 +81,34 @@ class VIP_User_CLI_Command extends \WP_CLI_Command {
 		foreach ( $sites_iterator as $site ) {
 			switch_to_blog( $site->blog_id );
 
-			// TODO: output
+			$this->do_site_removals( $user_ids );
+		}
+	}
 
-			User_Cleanup::revoke_roles_for_users( $user_ids );
+	private function do_super_admin_removals( $user_ids ) {
+		WP_CLI::line( '== Processing Super Admins ==' );
+
+		$super_admin_removals = User_Cleanup::revoke_super_admin_for_users( $user_ids );
+		$this->output_super_admin_removal_results( $super_admin_removals );
+	}
+
+	private function do_site_removals( $user_ids ) {
+		WP_CLI::line( sprintf( '== Processing site %s (%d) ==', home_url(), get_current_blog_id() ) );
+		$site_removals = User_Cleanup::revoke_roles_for_users( $user_ids );
+		$this->output_site_removal_results( $site_removals );
+	}
+
+	private function output_super_admin_removal_results( $super_admin_removals ) {
+		foreach ( $super_admin_removals as $user_id => $revoked ) {
+			$user = get_userdata( $user_id );
+			WP_CLI::line( sprintf( '- %s (%d)', $user->user_login, $user_id ) );
+		}
+	}
+
+	private function output_site_removal_results( $site_removals ) {
+		foreach ( $site_removals as $user_id => $revoked ) {
+			$user = get_userdata( $user_id );
+			WP_CLI::line( sprintf( '- %s (%d)', $user->user_login, $user_id ) );
 		}
 	}
 }
