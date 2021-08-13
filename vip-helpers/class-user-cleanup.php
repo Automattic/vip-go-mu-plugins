@@ -70,10 +70,9 @@ class User_Cleanup {
 			WHERE meta_key LIKE 'wp_%%capabilities'
 			AND ( {$email_sql_where} )";
 		//phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users
+
+		return $wpdb->get_col( $sql );
 		//phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
-
-
-		return $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- already prepared
 	}
 
 	public static function revoke_super_admin_for_users( $user_ids ) {
