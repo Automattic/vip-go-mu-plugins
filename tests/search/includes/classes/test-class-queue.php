@@ -407,7 +407,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_process_jobs() {
-		$job_ids = array(
+		$object_ids = array(
 			'12',
 			'45',
 			'89',
@@ -415,18 +415,18 @@ class Queue_Test extends \WP_UnitTestCase {
 		);
 
 		// Add some jobs to the queue
-		$this->queue->queue_objects( $job_ids );
+		$this->queue->queue_objects( $object_ids );
 
 		// Have to get by job id and not by object id
-		$jobs = $this->queue->get_jobs( array_keys( $job_ids ) );
+		$jobs = $this->queue->get_jobs_by_range( 1, 4 );
 
 		$job_count = $this->queue->count_jobs( 'all' );
 
-		$this->assertEquals( $job_count, count( $job_ids ), 'job count in database should match jobs added to queue' );
+		$this->assertEquals( $job_count, count( $object_ids ), 'job count in database should match jobs added to queue' );
 
 		$this->queue->process_jobs( $jobs );
 
-		$jobs = $this->queue->get_jobs( array_keys( $job_ids ) );
+		$jobs = $this->queue->get_jobs_by_range( 1, 4 );
 
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
@@ -460,6 +460,18 @@ class Queue_Test extends \WP_UnitTestCase {
 		$jobs = $this->queue->get_jobs( array() );
 
 		$this->assertEquals( array(), $jobs );
+	}
+
+	public function test_get_jobs_by_range() {
+		$this->queue->queue_object( 1000, 'post' );
+		$this->queue->queue_object( 2000, 'post' );
+
+		$jobs = $this->queue->get_jobs_by_range( 1, 2 );
+
+		$expected_object_ids = array( 1000, 2000 );
+		$actual_object_ids = wp_list_pluck( $jobs, 'object_id' );
+
+		$this->assertEquals( $expected_object_ids, $actual_object_ids );
 	}
 
 	public function test_queue_objects_not_array() {
@@ -638,7 +650,8 @@ class Queue_Test extends \WP_UnitTestCase {
 
 		$partially_mocked_queue
 			->method( 'delete_jobs_on_the_already_queued_object' )
-			->willReturn( [ $first_job, $second_job, $third_job_on_other_object ] );
+			->with( [ $first_job, $third_job_on_other_object ] )
+			->willReturn( [ $first_job, $third_job_on_other_object ] );
 
 		$partially_mocked_queue->expects( $this->once() )
 			->method( 'update_jobs' )
