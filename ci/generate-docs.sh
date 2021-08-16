@@ -12,9 +12,6 @@ cp ./ci/known_hosts ~/.ssh/known_hosts
 # Clone the repo at the `gh-pages` branch, getting only the commits for that branch
 git clone --branch gh-pages --single-branch "git@github.com:Automattic/vip-go-mu-plugins.git" ${VIP_DOCS_DIR}
 
-# # Composer runs faster without Xdebug, and we don't need Xdebug any more
-# phpenv config-rm xdebug.ini
-
 mkdir -p $VIP_PHPDOC_DIR
 cd $VIP_PHPDOC_DIR
 # Using Composer to install PHPDoc is slower than other methods, but installs

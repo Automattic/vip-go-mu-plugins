@@ -14,7 +14,7 @@ DEPLOY_BUILD_DIR="/tmp/deploy_build/"
 
 cp ./ci/known_hosts ~/.ssh/known_hosts
 
-git clone  git@github.com:Automattic/vip-go-mu-plugins-built.git /tmp/target
+git clone git@github.com:Automattic/vip-go-mu-plugins-built.git /tmp/target
 
 mkdir -p ${DEPLOY_BUILD_DIR}
 
