@@ -17,8 +17,17 @@ workflows:
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
       - search-dev-tools
-  changelog:
+
+  after-master-merge:
     jobs:
+      - push-code-to-build:
+          filters:
+            branches:
+              only: master
+      - build-docs:
+          filters:
+            branches:
+              only: master
       - create-changelog-draft:
           filters:
             branches:
@@ -284,3 +293,27 @@ jobs:
       - run: npm run lint --prefix search/search-dev-tools
       # This build is only used to verify that the src is buildable, not to persist build artifacts
       - run: npm run build --prefix search/search-dev-tools
+
+  push-code-to-build:
+      docker:
+        - image: circleci/php:7.4
+      environment:
+        - GIT_REVISION: << pipeline.git.revision >>
+      steps:
+        - checkout
+        - add_ssh_keys:
+            fingerprints:
+              - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
+        - run: ./ci/deploy.sh
+
+  build-docs:
+      docker:
+        - image: circleci/php:7.4
+      environment:
+        - GIT_REVISION: << pipeline.git.revision >>
+      steps:
+        - checkout
+        - add_ssh_keys:
+            fingerprints:
+              - "25:57:4c:ef:c1:ff:80:ee:36:1a:a9:0b:d2:67:61:bb"
+        - run: ./ci/generate-docs.sh
