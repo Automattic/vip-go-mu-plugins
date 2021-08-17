@@ -30,8 +30,8 @@ make phpdoc
 
 cd ${VIP_DOCS_DIR}
 
-git config user.name "CI Pipeline"
-git config user.email "ci@pipeline.com"
+git config user.name "CircleCI"
+git config user.email "builds@circleci.com"
 git config push.default "current"
 
 git add -A .
