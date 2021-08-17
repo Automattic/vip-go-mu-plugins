@@ -55,7 +55,7 @@ class VIP_User_CLI_Command extends \WP_CLI_Command {
 		}
 
 		if ( is_multisite() ) {
-			$this->process_multisite( $user_ids );
+			return $this->process_multisite( $user_ids );
 		}
 
 		$this->do_site_removals( $user_ids );
