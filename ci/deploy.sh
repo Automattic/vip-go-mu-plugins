@@ -52,8 +52,8 @@ mv /tmp/target/.git ${DEPLOY_BUILD_DIR}
 
 cd ${DEPLOY_BUILD_DIR}
 
-git config user.name "CI Pipeline"
-git config user.email "ci@pipeline.com"
+git config user.name "CircleCI"
+git config user.email "builds@circleci.com"
 git config push.default "current"
 
 git add -A .
