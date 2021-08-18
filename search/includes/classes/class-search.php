@@ -472,6 +472,8 @@ class Search {
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
+		// Set to 0.001
+		add_filter( 'epwr_weight', array( $this, 'filter__epwr_weight' ), 0 , 3 );
 
 		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
 		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
@@ -1532,6 +1534,13 @@ class Search {
 	 */
 	public function filter__epwr_boost_mode( $boost_mode, $formatted_args, $args ) {
 		return 'multiply';
+	}
+
+	/*
+	 * Filter for setting weight for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_weight( $weight, $formatted_args, $args ) {
+		return 0.001;
 	}
 
 	/**
