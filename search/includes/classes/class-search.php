@@ -9,6 +9,7 @@ class Search {
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const SEARCH_CACHE_GROUP = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
+	public const QUERY_FORCE_VERSION_PATTERN = 'vip_search_%s_version';
 	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW = 10000;
@@ -471,6 +472,8 @@ class Search {
 		add_filter( 'epwr_score_mode', array( $this, 'filter__epwr_score_mode' ), 0, 3 );
 		// Set to 'multiply'
 		add_filter( 'epwr_boost_mode', array( $this, 'filter__epwr_boost_mode' ), 0, 3 );
+		// Set to 0.001
+		add_filter( 'epwr_weight', array( $this, 'filter__epwr_weight' ), 0, 3 );
 
 		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
 		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
@@ -520,6 +523,9 @@ class Search {
 
 		// Log details of failed requests
 		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 2 );
+
+		// Lock search algorithm to 3.5
+		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
 	}
 
 	protected function load_commands() {
@@ -604,6 +610,8 @@ class Search {
 
 	public function action__plugins_loaded() {
 		$this->maybe_load_es_wp_query();
+
+		$this->maybe_change_index_version();
 	}
 
 	public function action__wp() {
@@ -730,7 +738,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $response, $query, $statsd_prefix );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -835,8 +843,15 @@ class Search {
 		return true;
 	}
 
-	public function ep_handle_failed_request( $response, $query, $statsd_prefix ) {
-		$response_error = [];
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+
+		if ( is_wp_error( $request ) ) {
+			$encoded_request = $request->get_error_messages();
+		} else {
+			// TODO: Report actual request, once we make sure all its fields are sanitized and publishable
+			$encoded_request = 'Not an error.';
+		}
 
 		if ( is_wp_error( $response ) ) {
 			$error_messages = $response->get_error_messages();
@@ -849,8 +864,12 @@ class Search {
 
 			$this->logger->log(
 				'error',
-				'vip_search_http_error',
-				implode( ';', $error_messages )
+				'search_http_error',
+				implode( ';', $error_messages ),
+				[
+					'is_cli' => $is_cli,
+					'request' => $encoded_request,
+				]
 			);
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -864,13 +883,16 @@ class Search {
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
 			$this->logger->log(
 				'error',
-				'vip_search_query_error',
+				'search_query_error',
 				$error_message,
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
 					'query' => $query_for_logging,
 					'backtrace' => wp_debug_backtrace_summary(),
+					'is_cli' => $is_cli,
+					'request' => $encoded_request,
+					'response' => $response_body,
 				]
 			);
 		}
@@ -1514,6 +1536,13 @@ class Search {
 		return 'multiply';
 	}
 
+	/*
+	 * Filter for setting weight for date relevancy in ElasticPress
+	 */
+	public function filter__epwr_weight( $weight, $formatted_args, $args ) {
+		return 0.001;
+	}
+
 	/**
 	 * Get current Elasticsearch host
 	 *
@@ -1953,6 +1982,37 @@ class Search {
 			);
 		}
 
-		$this->logger->log( 'warning', 'vip_search_query_failure', $message );
+		$this->logger->log( 'warning', 'search_query_failure', $message );
+	}
+
+	/**
+	 * Filter out default algorithm version to be used.
+	 * 
+	 * @param $default_algorithm_version string Algorithm version.
+	 * 
+	 * @return string
+	 */
+	public function filter__ep_search_algorithm_version( $default_algorithm_version ) {
+		return '3.5';
+	}
+
+	public function maybe_change_index_version() {
+		$indexables = $this->indexables->get_all();
+
+		foreach ( $indexables as $indexable ) {
+			$query_force_version_argument = sprintf( self::QUERY_FORCE_VERSION_PATTERN, $indexable->slug );
+
+			if ( ! isset( $_GET[ $query_force_version_argument ] ) ) {
+				continue;
+			}
+
+			$normalized_version = $this->versioning->normalize_version_number( $indexable, $_GET[ $query_force_version_argument ] );
+
+			if ( is_wp_error( $normalized_version ) ) {
+				continue;
+			}
+
+			$this->versioning->set_current_version_number( $indexable, $normalized_version );
+		}
 	}
 }

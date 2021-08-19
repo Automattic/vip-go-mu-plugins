@@ -2,13 +2,29 @@
 
 This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/documentation/vip-go/),
 
+## Documentation
+
+### Enterprise Search
+
+Please, visit our [Enterprise Search documentation](https://docs.wpvip.com/how-tos/vip-search/) to learn more.
+
 ## Development
 
 ### Local Dev
 
-We recommend using the Lando-based development environment for local development: https://github.com/Automattic/vip-go-mu-dev
+We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
-Follow the instructions in the `vip-go-mu-dev` repo to get set up (it includes a clone of this repo).
+In order to use mu-plugins code in a "hot-reload" fashion you need to specify the local folder where this repository is cloned to. For example:
+
+```
+vip dev-env create --mu-plugins $(pwd)
+```
+
+You will be prompted to configure other options of the environment. When the environment is created you can start it with:
+
+```
+vip dev-env start
+```
 
 ### Tests
 
@@ -38,18 +54,28 @@ If you're using the Lando-based environvment and it's already running, you can r
 lando test
 ```
 
-If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment.  To run these tests, execute the following from the project root:
+If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment. To run these tests, execute the following from the project root:
 
 ```bash
-./bin/phpunit-docker.sh [wp-version]
+./bin/phpunit-docker.sh
 ```
 
 You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
+
+```bash
+./bin/phpunit-docker.sh --wp 5.4.4
+```
 
 You can also pass the path to a specific test as well as extra PHPUnit arguments:
 
 ```bash
 ./bin/phpunit-docker.sh tests/path/to/the/test-something.php --stop-on-failure [...args]
+```
+
+Finally, you also have the option to choose if the tests run on a multisite environment:
+
+```bash
+./bin/phpunit-docker.sh --wp 5.4.4 --multisite 1
 ```
 
 ##### CI
@@ -82,12 +108,6 @@ To investigate failing test locally you can do following (buckle up as this is n
 
 1. Run the test you want (in this case `test_allowed_anon_comments`) `$MU_PLUGINS_DIR/vendor/bin/phpunit --filter test_allowed_anon_comments`
 
-### PHPDoc
-
-You can find selective PHPDoc documentation here: https://automattic.github.io/vip-go-mu-plugins/
-
-These are generated via CI by the [`generate-docs.sh`]() script.
-
 ## Deployment
 
 ### Production
@@ -100,12 +120,3 @@ This is a repo primarily meant for local non-development use.
 
 Every commit merged into `master` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh) script, which builds pushes a copy of this repo and expanded submodules.
 
-#### How this works
-
-1. The private part of a deploy key for [Automattic/vip-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/) is encrypted against this repository ([Automattic/vip-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins/)), meaning it can only be decrypted by Travis running scripts related to this repo
-2. This repository and it's submodules are checked out, again, to start the build
-3. All VCS config and metadata is removed from the build
-4. Various files are removed, including the [`.travis.yml`](https://github.com/Automattic/vip-go-mu-plugins/blob/master/.travis.yml) containing the encrypted private part of the deploy key
-5. The [Automattic/vip-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/) repo is checked out
-6. The `.git` directory from the `Automattic/vip-go-mu-plugins-built` repository is moved into the build directory, and a commit is created representing the changes from this build
-7. The commit is pushed to the `Automattic/vip-go-mu-plugins-built` repository

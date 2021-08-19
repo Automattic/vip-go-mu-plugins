@@ -37,12 +37,17 @@ class CoreCommand extends \ElasticPress\Command {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$indexables = $this->_parse_indexables( $assoc_args );
+		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		foreach ( $indexables as $indexable ) {
 			WP_CLI::line( sprintf( 'Updating active version for "%s"', $indexable->slug ) );
 			$result = $search->versioning->activate_version( $indexable, 'next' );
 			if ( is_wp_error( $result ) ) {
 				WP_CLI::error( sprintf( 'Error activating next version: %s', $result->get_error_message() ) );
+			}
+
+			if ( ! $skip_confirm ) {
+				WP_CLI::confirm( '⚠️  You are about to remove a previously used index version. It is advised to verify that the new version is being used before continuing. Continue?' );
 			}
 
 			WP_CLI::line( sprintf( 'Removing inactive version for "%s"', $indexable->slug ) );
@@ -53,21 +58,35 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 	}
 
+	private function _parse_indexable( $slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $slug );
+		if ( ! $indexable ) {
+			WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+		}
+
+		return $indexable;
+	}
+
 	private function _parse_indexables( $assoc_args ) {
 		$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
 
 		$indexables = [];
 
 		foreach ( $indexable_slugs as $slug ) {
-			$indexable = \ElasticPress\Indexables::factory()->get( $slug );
-
-			if ( ! $indexable ) {
-				WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
-			}
-
+			$indexable = $this->_parse_indexable( $slug );
 			$indexables[] = $indexable;
 		}
 		return $indexables;
+	}
+
+	private function _set_version( $indexable, $version ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$result = $search->versioning->set_current_version_number( $indexable, $version );
+
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
+		}
 	}
 
 	protected function _maybe_setup_index_version( $assoc_args ) {
@@ -106,11 +125,7 @@ class CoreCommand extends \ElasticPress\Command {
 				}
 
 				foreach ( $indexables as $indexable ) {
-					$result = $search->versioning->set_current_version_number( $indexable, $version_number );
-
-					if ( is_wp_error( $result ) ) {
-						WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
-					}
+					$this->_set_version( $indexable, $version_number );
 				}
 			}
 		}
@@ -141,14 +156,11 @@ class CoreCommand extends \ElasticPress\Command {
 		$this->_verify_arguments_compatibility( $assoc_args );
 
 		$using_versions = $assoc_args['using-versions'] ?? false;
+		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		$this->_maybe_setup_index_version( $assoc_args );
 
 
-		// Unset our --version param, otherwise WP_CLI complains that it's unknown
-		unset( $assoc_args['version'] );
-		// Unset our --using-versions param, otherwise WP_CLI complains that it's unknown
-		unset( $assoc_args['using-versions'] );
 
 		/**
 		 * EP's `--network-wide` mode uses switch_to_blog to index the content,
@@ -176,14 +188,19 @@ class CoreCommand extends \ElasticPress\Command {
 
 			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
-			// Unset skip-confirm since it doesn't exist in ElasticPress and causes
+			// Unset our arguments since they don't exist in ElasticPress and causes
 			// an error for indexing operations exclusively for some reason.
+			unset( $assoc_args['version'] );
+			unset( $assoc_args['using-versions'] );
 			unset( $assoc_args['skip-confirm'] );
+
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
 		}
 
 		if ( $using_versions ) {
+			// resetting skip-confirm after it was cleared for elasticpress
+			$assoc_args['skip-confirm'] = $skip_confirm;
 			$this->_shift_version_after_index( $assoc_args );
 		}
 	}
@@ -200,6 +217,45 @@ class CoreCommand extends \ElasticPress\Command {
 	public function put_mapping( $args, $assoc_args ) {
 		self::confirm_destructive_operation( $assoc_args );
 		parent::put_mapping( $args, $assoc_args );
+	}
+
+	/**
+	 * Get settings for index which includes shard count and mapping
+	 *
+	 * ## OPTIONS
+	 *
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 *
+	 * [--version]
+	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version
+	 *
+	 * [--format=<string>]
+	 * : Optional one of: table json csv yaml ids count
+	 *
+	 * ## EXAMPLES
+	 * wp vip-search get-settings post --format=json | jq
+	 *
+	 * @subcommand get-index-settings
+	 *
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_index_settings( $args, $assoc_args ) {
+		$slug = array_shift( $args );
+
+		$indexable = $this->_parse_indexable( $slug );
+
+		if ( isset( $assoc_args['version'] ) ) {
+			$this->_set_version( $indexable, $assoc_args['version'] );
+		}
+
+		$index_name = $indexable->get_index_name();
+
+		$settings = \ElasticPress\Elasticsearch::factory()->get_mapping( $index_name );
+
+		$keys = array_keys( $settings );
+		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $settings ), $keys );
 	}
 
 	/**
