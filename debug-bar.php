@@ -11,6 +11,8 @@
 
 // If the user is an Automattician (typically a vip_support user), then force-enable Debug Bar.
 add_filter( 'debug_bar_enable', function( $enable ) {
+	return true;
+
 	if ( is_automattician() ) {
 		return true;
 	}
