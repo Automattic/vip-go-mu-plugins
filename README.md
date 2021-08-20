@@ -1,6 +1,6 @@
 # VIP Go mu-plugins
 
-This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/documentation/vip-go/),
+This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/documentation/vip-go/).
 
 ## Documentation
 
