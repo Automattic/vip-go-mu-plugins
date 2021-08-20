@@ -200,10 +200,6 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
 }
 
-if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
-	define( 'VIP_SEARCH_DEV_TOOLS', true );
-}
-
 // Load elasticsearch helpers
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
