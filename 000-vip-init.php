@@ -201,7 +201,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
-	define( 'VIP_SEARCH_DEV_TOOLS', ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
+	define( 'VIP_SEARCH_DEV_TOOLS', true );
 }
 
 // Load elasticsearch helpers
