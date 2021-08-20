@@ -237,6 +237,9 @@ class Health {
 			$query_args = [
 				'post_type'   => $post_type,
 				'post_status' => array_values( $post_statuses ),
+				// Force fetching just one post, otherwise the query may get killed on large datasets.
+				// This works for at least ten million records in posts table.
+				'posts_per_page' => 1,
 			];
 
 			$result = $health->validate_index_entity_count( $query_args, $posts );
