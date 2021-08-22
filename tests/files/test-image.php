@@ -62,7 +62,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 *
 	 * @return ReflectionMethod
 	 */
-	protected static function getMethod( $name ) {
+	protected static function get_method( $name ) {
 		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible(true);
@@ -76,7 +76,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 *
 	 * @return ReflectionProperty
 	 */
-	protected function getProperty( $name ) {
+	protected function get_property( $name ) {
 		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
 		$property = $class->getProperty( $name );
 		$property->setAccessible(true);
@@ -311,11 +311,11 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
 		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
-		$width = $this->getProperty( 'width' );
+		$width = $this->get_property( 'width' );
 		$width->setValue( $image, 150 );
-		$height = $this->getProperty( 'height' );
+		$height = $this->get_property( 'height' );
 		$height->setValue( $image, 150 );
-		$get_resized_filename = $this->getMethod( 'get_resized_filename' );
+		$get_resized_filename = $this->get_method( 'get_resized_filename' );
 
 		$this->assertEquals( $this->test_image . '?resize=150,150', $get_resized_filename->invokeArgs( $image, [] ) );
 	}
