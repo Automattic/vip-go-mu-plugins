@@ -143,7 +143,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * : This switch will create a new version and reindex that version (while the current version will continue to serve content).
 	 * After the indexing is done the new version will be activated and old version removed.
 	 *
-	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--start-object-id] [--end-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm] [--using-versions]
+	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--upper-limit-object-id] [--lower-limit-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm] [--using-versions]
 	 *
 	 * @param array $args Positional CLI args.
 	 * @since 0.1.2
