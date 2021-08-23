@@ -4,6 +4,7 @@
         "automattic/vipwpcs": "2.3.2",
         "phpcompatibility/phpcompatibility-wp": "2.1.2",
         "dealerdirect/phpcodesniffer-composer-installer": "0.7.1",
-        "erusev/parsedown": "1.7.4"
+        "erusev/parsedown": "1.7.4",
+        "yoast/phpunit-polyfills": "^1.0"
     }
 }
