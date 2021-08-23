@@ -23,10 +23,7 @@ require_once __DIR__ . '/includes/classes/class-search.php';
 if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
 	$search_plugin = \Automattic\VIP\Search\Search::instance();
 
-	// Temporarily hide it under a constant
-	if ( defined( '\VIP_SEARCH_DEV_TOOLS' ) && true === \VIP_SEARCH_DEV_TOOLS ) {
-		require_once __DIR__ . '/search-dev-tools/search-dev-tools.php';
-	}
+	require_once __DIR__ . '/search-dev-tools/search-dev-tools.php';
 
 	// If VIP Search query integration is enabled, disable Jetpack Search
 	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
