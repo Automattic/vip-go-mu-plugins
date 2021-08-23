@@ -57,12 +57,12 @@ class Sync {
 
 		$schedule[ self::CRON_INTERVAL_NAME ] = [
 			'interval' => self::CRON_INTERVAL,
-			'display' => __( 'Custom interval for VIP Config Sync. Currently set to ' . self::CRON_INTERVAL . 'seconds' ),
+			'display' => __( 'Custom interval for VIP Config Sync. Currently set to 5 minutes' ),
 		];
 
 		return $schedule;
 	}
-	
+
 	public function do_cron() {
 		$this->maybe_sync_jetpack_privacy_settings();
 		$this->put_site_details();
