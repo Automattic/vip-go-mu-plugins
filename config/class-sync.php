@@ -7,7 +7,7 @@ class Sync {
 
 	const CRON_EVENT_NAME = 'vip_config_sync_cron';
 	const CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval';
-	const CRON_INTERVAL = 30 * \MINUTE_IN_SECONDS;
+	const CRON_INTERVAL = 5 * \MINUTE_IN_SECONDS;
 	const LOG_FEATURE_NAME = 'vip_config_sync';
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
@@ -57,7 +57,7 @@ class Sync {
 
 		$schedule[ self::CRON_INTERVAL_NAME ] = [
 			'interval' => self::CRON_INTERVAL,
-			'display' => __( 'VIP Config Sync cron interval' ),
+			'display' => __( 'Custom interval for VIP Config Sync. Currently set to 5 mins' ),
 		];
 
 		return $schedule;
