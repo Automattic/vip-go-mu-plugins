@@ -1136,7 +1136,7 @@ class Search {
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
-				'feature' => 'vip_search_query_rate_limiting',
+				'feature' => 'search_query_rate_limiting',
 				'message' => $message,
 			)
 		);
@@ -1914,7 +1914,7 @@ class Search {
 				self::$query_count_ttl
 			);
 
-			$this->logger->log( 'warning', 'vip_search_query_rate_limiting', $message );
+			$this->logger->log( 'warning', 'search_query_rate_limiting', $message );
 		}
 	}
 
