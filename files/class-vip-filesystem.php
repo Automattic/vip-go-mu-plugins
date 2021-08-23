@@ -447,7 +447,7 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * The core's function recurse_dirsize would call to opendir() which is not supproted by the
+	 * The core's function recurse_dirsize would call to opendir() which is not supported by the
 	 * VIP File service and would always fail with Warning.
 	 *
 	 * To avoid this we will short-circuit the execution and return 0 as folder size.
