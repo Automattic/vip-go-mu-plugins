@@ -100,6 +100,7 @@ class VIP_Filesystem {
 		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
 		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
+		add_filter( 'pre_recurse_dirsize', [ $this, 'filter_pre_recurse_dirsize' ] );
 	}
 
 	/**
@@ -117,6 +118,7 @@ class VIP_Filesystem {
 		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ] );
 		remove_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
+		remove_filter( 'pre_recurse_dirsize', [ $this, 'filter_pre_recurse_dirsize' ] );
 	}
 
 	/**
@@ -442,5 +444,15 @@ class VIP_Filesystem {
 		unlink( $temp_file );
 
 		return $meta;
+	}
+
+	/**
+	 * The core's function recurse_dirsize would call to opendir() which is not supproted by the
+	 * VIP File service and would always fail with Warning.
+	 *
+	 * To avoid this we will short-circuit the execution and return 0 as folder size.
+	 */
+	public function filter_pre_recurse_dirsize() {
+		return 0;
 	}
 }
