@@ -62,7 +62,6 @@ class Sync {
 
 		return $schedule;
 	}
-
 	public function do_cron() {
 		$this->maybe_sync_jetpack_privacy_settings();
 		$this->put_site_details();
