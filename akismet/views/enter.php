@@ -1,5 +1,5 @@
 <div class="akismet-enter-api-key-box centered">
-	<a href="#"><?php esc_html_e( 'Manually enter an API key' ); ?></a>
+	<a href="#"><?php esc_html_e( 'Manually enter an API key', 'akismet' ); ?></a>
 	<div class="enter-api-key">
 		<form action="<?php echo esc_url( Akismet_Admin::get_page_url() ); ?>" method="post">
 			<?php wp_nonce_field( Akismet_Admin::NONCE ) ?>
