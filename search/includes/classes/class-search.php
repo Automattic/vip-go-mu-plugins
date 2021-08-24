@@ -1098,14 +1098,14 @@ class Search {
 
 		$queue_stats = $this->queue->get_queue_stats();
 
-		if ( intval( $queue_stats->average_wait_time ) > self::STALE_QUEUE_WAIT_LIMIT ) {
+		if ( $queue_stats->average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
 			$message = sprintf(
 				'Average index queue wait time for application %d - %s is currently %d seconds. There are %d items in the queue and the oldest item is %d seconds old',
 				FILES_CLIENT_SITE_ID,
 				home_url(),
-				intval( $queue_stats->average_wait_time ),
-				intval( $queue_stats->queue_count ),
-				intval( $queue_stats->longest_wait_time )
+				$queue_stats->average_wait_time,
+				$queue_stats->queue_count,
+				$queue_stats->longest_wait_time
 			);
 			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 		}
