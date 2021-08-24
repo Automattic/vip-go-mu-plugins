@@ -173,6 +173,9 @@ class CoreCommand extends \ElasticPress\Command {
 	 * [--show-bulk-errors]
 	 * : displays the error message returned from Elasticsearch when a post fails to index (as opposed to just the title and ID of the post)
 	 *
+	 * [--skip-confirm]
+	 * : Skip Enterprise Search confirmation prompts for destructive operations.
+	 *
 	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--upper-limit-object-id] [--lower-limit-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--version] [--skip-confirm] [--using-versions]
 	 *
 	 * @param array $args Positional CLI args.
