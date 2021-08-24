@@ -69,48 +69,6 @@ class Cron_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $next, 'After Cron:disable_sweeper_job(), job was still found' );
 	}
 
-	// TODO Remove after change of args was deployed
-	public function test_process_jobs_legacy() {
-		$mock_queue = $this->getMockBuilder( Queue::class )
-			->setMethods( [ 'get_jobs', 'process_jobs' ] )
-			->getMock();
-
-		$mock_job_ids = array( 1, 2 );
-
-		$mock_jobs = array(
-			(object) array(
-				'job_id' => 1,
-				'object_id' => 1,
-				'object_type' => 'post',
-			),
-			(object) array(
-				'job_id' => 2,
-				'object_id' => 2,
-				'object_type' => 'user',
-			),
-		);
-
-		// Should call Queue::get_jobs() with the right job_ids
-		$mock_queue->expects( $this->once() )
-			->method( 'get_jobs' )
-			->with( $mock_job_ids )
-			->will( $this->returnValue( $mock_jobs ) );
-
-		// Then it should process those jobs
-		$mock_queue->expects( $this->once() )
-			->method( 'process_jobs' )
-			->with( $mock_jobs )
-			->will( $this->returnValue( true ) );
-
-		$original_queue = $this->cron->queue;
-		$this->cron->queue = $mock_queue;
-
-		$this->cron->process_jobs( $mock_job_ids );
-
-		// Restore original Queue to not affect other tests
-		$this->cron->queue = $original_queue;
-	}
-
 	public function test_process_jobs() {
 		$mock_queue = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'get_jobs_by_range', 'process_jobs' ] )
