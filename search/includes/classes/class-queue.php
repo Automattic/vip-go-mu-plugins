@@ -1040,11 +1040,11 @@ class Queue {
 	}
 
 	/**
-	 * Get the current average queue wait time
+	 * Get the current queue stats
 	 *
-	 * @return {int} The current average wait time in seconds.
+	 * @return {object} object containing queue stats - average_wait_time, longest_wait_time, queue_count
 	 */
-	public function get_average_queue_wait_time() {
+	public function get_queue_stats() {
 		global $wpdb;
 
 		// If run without having the queue enabled, queue wait times are 0
@@ -1060,18 +1060,33 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		$average_wait_time = $wpdb->get_var(
+		$queue_stats = $wpdb->get_row(
+			// Cannot prepare table name. @codingStandardsIgnoreStart
 			$wpdb->prepare(
-				"SELECT FLOOR( AVG( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS average_wait_time FROM $table_name WHERE 1" // Cannot prepare table name. @codingStandardsIgnoreLine
+				"SELECT
+					FLOOR( AVG( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS average_wait_time,
+					FLOOR( MAX( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS longest_wait_time,
+					COUNT( * ) AS queue_count
+				FROM $table_name
+				WHERE 1"
 			)
+			// @codingStandardsIgnoreEnd
 		);
 
 		// Null value will usually mean empty table
-		if ( is_null( $average_wait_time ) || ! is_numeric( $average_wait_time ) ) {
-			return 0;
+		if ( is_null( $queue_stats ) || ! is_object( $queue_stats ) ) {
+			return (object) [
+				'average_wait_time' => 0,
+				'longest_wait_time' => 0,
+				'queue_count' => 0,
+			];
 		}
 
-		return intval( $average_wait_time );
+		$queue_stats->average_wait_time = intval( $queue_stats->average_wait_time );
+		$queue_stats->longest_wait_time = intval( $queue_stats->longest_wait_time );
+		$queue_stats->queue_count = intval( $queue_stats->queue_count );
+
+		return $queue_stats;
 	}
 
 	/**

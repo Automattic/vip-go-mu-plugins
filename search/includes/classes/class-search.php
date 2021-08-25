@@ -1096,14 +1096,16 @@ class Search {
 			return;
 		}
 
-		$average_wait_time = $this->queue->get_average_queue_wait_time();
+		$queue_stats = $this->queue->get_queue_stats();
 
-		if ( $average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
+		if ( $queue_stats->average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
 			$message = sprintf(
-				'Average index queue wait time for application %d - %s is currently %d seconds',
+				'Average index queue wait time for application %d - %s is currently %d seconds. There are %d items in the queue and the oldest item is %d seconds old',
 				FILES_CLIENT_SITE_ID,
 				home_url(),
-				$average_wait_time
+				$queue_stats->average_wait_time,
+				$queue_stats->queue_count,
+				$queue_stats->longest_wait_time
 			);
 			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 		}
@@ -1987,9 +1989,9 @@ class Search {
 
 	/**
 	 * Filter out default algorithm version to be used.
-	 * 
+	 *
 	 * @param $default_algorithm_version string Algorithm version.
-	 * 
+	 *
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version( $default_algorithm_version ) {
