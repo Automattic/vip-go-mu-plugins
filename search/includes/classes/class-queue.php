@@ -1075,7 +1075,11 @@ class Queue {
 
 		// Null value will usually mean empty table
 		if ( is_null( $queue_stats ) || ! is_object( $queue_stats ) ) {
-			return (object) [ 'average_wait_time' => 0, 'longest_wait_time' => 0, 'queue_count' => 0 ];
+			return (object) [
+				'average_wait_time' => 0,
+				'longest_wait_time' => 0,
+				'queue_count' => 0,
+			];
 		}
 
 		$queue_stats->average_wait_time = intval( $queue_stats->average_wait_time );
