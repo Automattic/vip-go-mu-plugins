@@ -147,15 +147,7 @@ class Cron {
 	 * @param {array} $options Containing max_id and min_id keys
 	 */
 	public function process_jobs( $options ) {
-
-		if ( ! array_key_exists( 'min_id', $options ) ) {
-			// This is a temporary fix to handle deployment correctly. To cover the case when
-			// the process job would be created with the full list of ids instead of min and max.
-			// It should be possible to remove within few minutes after deploy.
-			$jobs = $this->queue->get_jobs( $options );
-		} else {
-			$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
-		}
+		$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
 
 		if ( empty( $jobs ) ) {
 			return;

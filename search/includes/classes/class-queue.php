@@ -580,26 +580,6 @@ class Queue {
 	}
 
 	/**
-	 * @deprecated this will no longer be used. The method is kept to ease deployment. See the usage for more information.
-	 */
-	public function get_jobs( $job_ids ) {
-		global $wpdb;
-
-		if ( empty( $job_ids ) ) {
-			return array();
-		}
-
-		$table_name = $this->schema->get_table_name();
-
-		$escaped_ids = array_map( 'intval', $job_ids );
-		$escaped_ids = implode( ', ', $job_ids );
-
-		$jobs = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )" ); // Cannot prepare table name, ids already escaped. @codingStandardsIgnoreLine
-
-		return $jobs;
-	}
-
-	/**
 	 * Get the jobs using the lowest and highest job_id range
 	 */
 	public function get_jobs_by_range( $min_id, $max_id ) {
