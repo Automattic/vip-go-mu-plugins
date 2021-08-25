@@ -136,14 +136,47 @@ class CoreCommand extends \ElasticPress\Command {
 	 *
 	 * ## OPTIONS
 	 *
+	 * [--setup]
+	 * : Drop the index, send the new mappings to the server, and re-index the site.
+	 *
+	 * [--network-wide]
+	 * : Sequentially index every site in your multisite network.
+	 *
 	 * [--version]
-	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version
+	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version.
 	 *
 	 * [--using-versions]
 	 * : This switch will create a new version and reindex that version (while the current version will continue to serve content).
 	 * After the indexing is done the new version will be activated and old version removed.
 	 *
-	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--start-object-id] [--end-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--ep-host] [--ep-prefix] [--version] [--skip-confirm] [--using-versions]
+	 * [--per-page]
+	 * : Lets you determine the amount of posts to be indexed per bulk index (or cycle). Default: 500.
+	 *
+	 * [--include]
+	 * : Comma-separated list of object ID to index.
+	 *
+	 * [--post-ids]
+	 * : Alias of --include (deprecated).
+	 *
+	 * [--post-type]
+	 * : Comma-separated list of post types to index. By default all public post types are indexed.
+	 *
+	 * [--indexables]
+	 * : Comma-separated list of Indexables to index, default includes all registered Indexables.
+	 *
+	 * [--upper-limit-object-id]
+	 * : Upper limit of a range of IDs to be indexed. If indexing IDs from 30 to 45, this should be 45.
+	 *
+	 * [--lower-limit-object-id]
+	 * : Lower limit of a range of IDs to be indexed. If indexing IDs from 30 to 45, this should be 30.
+	 *
+	 * [--show-bulk-errors]
+	 * : displays the error message returned from Elasticsearch when a post fails to index (as opposed to just the title and ID of the post)
+	 *
+	 * [--skip-confirm]
+	 * : Skip Enterprise Search confirmation prompts for destructive operations.
+	 *
+	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--upper-limit-object-id] [--lower-limit-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--version] [--skip-confirm] [--using-versions]
 	 *
 	 * @param array $args Positional CLI args.
 	 * @since 0.1.2
