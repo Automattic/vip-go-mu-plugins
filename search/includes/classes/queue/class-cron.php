@@ -80,7 +80,7 @@ class Cron {
 	}
 
 	public function get_max_concurrent_processor_job_count() {
-		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
+		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 3 );
 		return min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
 	}
 
@@ -235,9 +235,18 @@ class Cron {
 		$job_count = $this->get_processor_job_count();
 		$max_job_count = $this->get_max_concurrent_processor_job_count();
 		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {
-
+			// Core would return FALSE or WP_Error on failure (depending on the last argument), cron control returns NULL on success or WP_Error on failure
 			$schedule_success = $this->schedule_batch_job();
-			if ( is_wp_error( $schedule_success ) || ! $schedule_success ) {
+
+			if ( is_wp_error( $schedule_success ) || false === $schedule_success ) {
+				\Automattic\VIP\Logstash\log2logstash(
+					[
+						'severity' => 'warning',
+						'feature' => 'search_queue_sweeper',
+						'message' => 'Failed to schedule a processor job',
+						'extra' => $schedule_success,
+					]
+				);
 				break;
 			}
 
@@ -290,7 +299,7 @@ class Cron {
 			'max_id' => max( $job_ids ),
 		];
 
-		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ $options ] );
+		return wp_schedule_single_event( time() + mt_rand( 0, 60 ), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
