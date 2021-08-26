@@ -80,7 +80,7 @@ class Cron {
 	}
 
 	public function get_max_concurrent_processor_job_count() {
-		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 3 );
+		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
 		return min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
 	}
 
@@ -299,7 +299,7 @@ class Cron {
 			'max_id' => max( $job_ids ),
 		];
 
-		return wp_schedule_single_event( time() + mt_rand( 0, 60 ), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );
+		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
