@@ -2802,7 +2802,7 @@ class Search_Test extends \WP_UnitTestCase {
 				->method( 'log' )
 				->with(
 					$this->equalTo( 'warning' ),
-					$this->equalTo( 'vip_search_query_rate_limiting' ),
+					$this->equalTo( 'search_query_rate_limiting' ),
 					$this->equalTo(
 						'Application 123 - http://example.org has triggered Elasticsearch query rate limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.'
 					),
