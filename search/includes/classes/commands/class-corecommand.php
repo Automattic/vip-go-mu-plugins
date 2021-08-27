@@ -226,6 +226,9 @@ class CoreCommand extends \ElasticPress\Command {
 			unset( $assoc_args['version'] );
 			unset( $assoc_args['using-versions'] );
 			unset( $assoc_args['skip-confirm'] );
+			if ( $skip_confirm ) {
+				$assoc_args['yes'] = true;
+			}
 
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
