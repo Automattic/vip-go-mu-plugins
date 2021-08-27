@@ -28,6 +28,11 @@ class HealthJob {
 	 */
 	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
 
+	/**
+	 * @var int the number after which the alert should be sent.
+	 */
+	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
+
 	public $health_check_disabled_sites = array();
 
 	/**
@@ -238,8 +243,8 @@ class HealthJob {
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
 
-			// Only alert if inconsistencies found
-			if ( isset( $result['diff'] ) && 0 !== $result['diff'] ) {
+			// Only alert if more than the number of inconsistencies found.
+			if ( isset( $result['diff'] ) && self::INCONSISTENCIES_ALERT_THRESHOLD < abs( $result['diff'] ) ) {
 				$message = sprintf(
 					'Index inconsistencies found for %s: (entity: %s, type: %s, index_name: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
 					home_url(),
