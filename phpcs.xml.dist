@@ -49,7 +49,7 @@
 	<!-- Limit to PHP files -->
 	<arg name="extensions" value="php"/>
 
-	<config name="ignore_warnings_on_exit">true</config>
+	<config name="ignore_warnings_on_exit" value="true"/>
 
 	<!-- Rules: Check PHP version compatibility - see
 		https://github.com/PHPCompatibility/PHPCompatibilityWP -->

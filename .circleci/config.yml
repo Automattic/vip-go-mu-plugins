@@ -17,8 +17,13 @@ workflows:
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
       - search-dev-tools
-  changelog:
+
+  after-master-merge:
     jobs:
+      - push-code-to-build:
+          filters:
+            branches:
+              only: master
       - create-changelog-draft:
           filters:
             branches:
@@ -63,7 +68,7 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-8-dev default-mysql-client libpng-dev
+      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev
       sudo -E docker-php-ext-install mysqli gd
       npm ci
       composer install -n
@@ -71,7 +76,7 @@ job-references:
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get -y install subversion libgcc-8-dev default-mysql-client nodejs npm
+      sudo apt-get update && sudo apt-get -y install subversion libgcc-10-dev default-mysql-client nodejs npm
       sudo npm install npm@latest -g
       composer install -n
 
@@ -277,10 +282,22 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.6.0
+      - image: cimg/node:16.8.0
     steps:
       - checkout
       - run: npm ci --prefix search/search-dev-tools
       - run: npm run lint --prefix search/search-dev-tools
       # This build is only used to verify that the src is buildable, not to persist build artifacts
       - run: npm run build --prefix search/search-dev-tools
+
+  push-code-to-build:
+      docker:
+        - image: circleci/php:7.4
+      environment:
+        - GIT_REVISION: << pipeline.git.revision >>
+      steps:
+        - checkout
+        - add_ssh_keys:
+            fingerprints:
+              - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
+        - run: ./ci/deploy.sh

@@ -2715,14 +2715,12 @@ class Search_Test extends \WP_UnitTestCase {
 				->method( 'log' )
 				->with(
 					$this->equalTo( 'error' ),
-					$this->equalTo( 'vip_search_query_error' ),
+					$this->equalTo( 'search_query_error' ),
 					$this->equalTo( $expected_message ),
 					$this->anything()
 				);
 
-
-
-		$es->ep_handle_failed_request( $response, [], '' );
+		$es->ep_handle_failed_request( null, $response, [], '' );
 	}
 
 	public function get_sanitize_ep_query_for_logging_data() {
@@ -2804,7 +2802,7 @@ class Search_Test extends \WP_UnitTestCase {
 				->method( 'log' )
 				->with(
 					$this->equalTo( 'warning' ),
-					$this->equalTo( 'vip_search_query_rate_limiting' ),
+					$this->equalTo( 'search_query_rate_limiting' ),
 					$this->equalTo(
 						'Application 123 - http://example.org has triggered Elasticsearch query rate limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.'
 					),
