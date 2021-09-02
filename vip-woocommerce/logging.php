@@ -51,5 +51,10 @@ function restrict_woocommerce_logging( $message, $level, $context, $handler = nu
 		return null;
 	}
 
+	// Safety Measure #2: Setup a killswitch to quickly intervene if problems occur.
+	if ( true === get_option( 'vip_woocommerce_prevent_debug_logging', false ) ) {
+		return null;
+	}
+
 	return $message;
 }
