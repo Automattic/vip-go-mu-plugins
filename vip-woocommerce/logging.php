@@ -47,7 +47,7 @@ function restrict_woocommerce_logging( $message, $level, $context, $handler = nu
 
 	// Safety Measure #1: Mute some WooCommerce logging sources that do not need to be active by default.
 	$muted_sources = apply_filters( 'vip_woocommerce_muted_logging_sources', [ 'webhooks-delivery', 'fatal-errors' ] );
-	if ( is_a( $handler, 'WC_Log_Handler_DB' ) && in_array( $context, $muted_sources, true ) ) {
+	if ( is_a( $handler, 'WC_Log_Handler_DB' ) && isset( $context['source'] ) && in_array( $context['source'], $muted_sources, true ) ) {
 		return null;
 	}
 
