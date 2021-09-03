@@ -23,7 +23,7 @@ add_action( 'plugins_loaded', function() {
 		return;
 	}
 
-	add_action( 'woocommerce_logger_log_message', __NAMESPACE__ . '\restrict_woocommerce_logging', 30, 4 );
+	add_filter( 'woocommerce_logger_log_message', __NAMESPACE__ . '\restrict_woocommerce_logging', 30, 4 );
 } );
 
 /**
