@@ -19,7 +19,10 @@ then
 fi
 
 echo "Fetching latest changes..."
+git stash
+git checkout master
 git fetch
+git pull
 
 current_date=$(date '+v%Y%m%d.')
 minor_version=0
@@ -44,7 +47,7 @@ notes_file="/tmp/$tag.md"
 gh pr list --state closed --label "[Status] Deployed to staging" > "$notes_file"
 sed -i -e 's/^/- #/' $notes_file
 
-gh release create $tag --title $tag --notes-file "$notes_file"
+gh release create $tag --title $tag --notes-file "$notes_file" --target master
 
 echo ""
 echo "New release $tag created successfully!"
