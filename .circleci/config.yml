@@ -10,7 +10,6 @@ workflows:
       - php74-build-singlesite-57
       - php74-build-singlesite-56
       - php74-build-singlesite-55
-      - php74-build-singlesite-54
       - php74-build-multisite
       - php74-build-multisite-nightly
       - php74-build-singlesite-nightly
@@ -186,15 +185,6 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
-    docker:
-      - image: circleci/php:7.4-node
-      - image: *db_image
-
-  php74-build-singlesite-54:
-    <<: *php_job
-    environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "5.4.4"
     docker:
       - image: circleci/php:7.4-node
       - image: *db_image
