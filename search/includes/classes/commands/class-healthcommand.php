@@ -24,7 +24,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
-	 * Validate DB and ES index counts for all objects
+	 * Validate DB and ES index counts for all objects for active indexables
 	 *
 	 * ## OPTIONS
 	 *
@@ -35,11 +35,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-counts
 	 */
 	public function validate_counts( $args, $assoc_args ) {
-		$this->validate_posts_count( $args, $assoc_args );
-
-		WP_CLI::line( '' );
-
-		$this->validate_users_count( $args, $assoc_args );
+		foreach ( \ElasticPress\Indexables::factory()->get_all( null, true ) as $indexable_slug ) {
+			$this->validate_indexable_count( $indexable_slug, $assoc_args );
+			WP_CLI::line( '' );
+		}
 	}
 
 	/**
@@ -52,7 +51,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * : Validate all sites in a multisite network
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-es health validate-users-count
+	 *     wp vip-search health validate-users-count
 	 *
 	 * @subcommand validate-users-count
 	 */
