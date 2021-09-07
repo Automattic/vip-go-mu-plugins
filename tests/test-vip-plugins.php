@@ -39,7 +39,6 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 			'shared-plugins/two-factor/two-factor.php',
 			'plugins/advent-calender/advent-calendar.php',
 			'plugins/msm-sitemap/msm-sitemap.php',
-			'shared-plugins/vip-go-elasticsearch/vip-go-elasticsearch.php',
 		];
 
 		/**
