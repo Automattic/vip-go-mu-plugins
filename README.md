@@ -110,6 +110,26 @@ To investigate failing test locally you can do following (buckle up as this is n
 
 ## Deployment
 
+### Release
+
+A new release of the plugin consists of all those pull requests that have been merged since the last release and have been deployed to Staging (i.e. have the _[Status] Deployed to staging_ label. Releases are named after the day they are released plus a minor version:
+
+```
+YYYYMMDD.x
+
+e.g: 20210917.0
+```
+
+Releases are created using GitHub's releases and are effectively a tag in the GitHub repository. Previous releases can be found [here](https://github.com/Automattic/vip-go-mu-plugins/releases/).
+
+To create a new release, please use the `create-release` script. The script requires the [GitHub CLI](https://github.com/cli/cli) to be installed in the computer. It will create the new release, properly tagged and with the expected description.
+
+```
+cd vip-go-mu-plugins
+
+bin/create-release.sh
+```
+
 ### Production
 
 **For Automattic Use:** Instructions are in the FG :)
