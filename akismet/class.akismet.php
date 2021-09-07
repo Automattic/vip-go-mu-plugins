@@ -418,7 +418,7 @@ class Akismet {
 			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
 			
 			foreach ( $comment_ids as $comment_id ) {
-				do_action( 'deleted_comment', comment_id );
+				do_action( 'deleted_comment', $comment_id );
 			}
 		}
 
