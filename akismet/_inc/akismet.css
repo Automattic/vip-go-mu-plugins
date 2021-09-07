@@ -100,12 +100,9 @@ table.comments td.comment p a:after {
 	margin-top: .5rem;
 }
 .akismet-alert {
-	border: 1px solid #e5e5e5;
 	padding: 0.4em 1em 1.4em 1em;
-    border-radius: 3px;
-    -webkit-border-radius: 3px;
-    border-width: 1px;
-    border-style: solid;
+	box-sizing: border-box;
+	box-shadow: 0 0 0 1px rgba(200, 215, 225, 0.5), 0 1px 2px #e9eff3;
 }
 
 .akismet-alert h3.akismet-key-status {
