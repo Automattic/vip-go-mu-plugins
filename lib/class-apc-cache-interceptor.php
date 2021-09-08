@@ -27,7 +27,7 @@ function do_apcu_hot_cache_init( $hc ) {
 	// Bypass APCu offloading in the REST API for some cases where there could
 	// be concerns about stale data after writes
 	if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
-		
+
 		// Cache subsite information for 10 seconds unless we're in the
 		// network admin, where we may be editing this information.
 		if ( ! function_exists( 'is_network_admin' ) || ! is_network_admin() ) {
@@ -190,7 +190,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 			// a key that will be cached.
 			$split = explode( ':', $_key );
 			$split = array_slice( $split, 2 );
-			$_key = implode( ':', $split );
+			$_key  = implode( ':', $split );
 
 			return array(
 				'key'   => $_key,
@@ -210,7 +210,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 				// Don't intercept if we're explicitly bypassing local caches
 				return false;
 			}
-			
+
 			$intercept = $this->do_intercept_key( $id, $flag );
 			if ( ! $intercept ) {
 				return $value;
@@ -255,6 +255,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 			// On success simply serve that value
 			if ( $success ) {
 				// Store in the thread cache
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
 				$this->cache[ $thread_cache_key ] = unserialize( $rval );
 
 				$rval = $this->maybe_clone( $this->cache[ $thread_cache_key ] );
@@ -276,6 +277,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 			if ( false !== $rval ) {
 				// Store in the thread cache and store it in apcu
 				$this->cache[ $thread_cache_key ] = $this->maybe_clone( $rval );
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 				if ( apcu_store( $key, serialize( $this->cache[ $thread_cache_key ] ), $intercept['model']['ttl'] ) ) {
 					$this->run_callbacks(
 						'cache_miss',
@@ -397,6 +399,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 				$key['resolved']['key'],
 				$found ? 'true' : 'false',
 				$stored ? 'true' : 'false',
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				$this->debug_values ? var_export( $value, true ) : '<redacted>'
 			);
 		}
@@ -407,6 +410,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 				$type,
 				$key['resolved']['group'],
 				$key['resolved']['key'],
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				$this->debug_values ? var_export( $value, true ) : '<redacted>'
 			);
 		}
@@ -428,6 +432,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 						$group,
 						$key,
 						$ttl,
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 						$this->debug_values ? var_export( $ttl, true ) : '<redacted>'
 					);
 					break;
@@ -487,6 +492,7 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 					'<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
 					esc_html( $group ),
 					esc_html( $key ),
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 					esc_html( var_export( $value, true ) )
 				);
 			}

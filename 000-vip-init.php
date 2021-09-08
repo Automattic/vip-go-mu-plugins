@@ -134,7 +134,7 @@ add_action( 'set_current_user', function() {
 $internal_cron_events = array(
 	array(
 		'schedule' => 'hourly',
-		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Automattic\VIP\Support_User\User::CRON_ACTION
+		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Equals to the value of Automattic\VIP\Support_User\User::CRON_ACTION
 		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
 	),
 );

@@ -1,6 +1,7 @@
 <?php
 
 namespace Automattic\VIP;
+
 /**
  * Feature provides a simple interface to gate the functionality by the Go Site Id
  *
