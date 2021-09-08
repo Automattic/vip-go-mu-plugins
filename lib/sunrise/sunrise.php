@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 	return;
 }
 
-require_once WP_CONTENT_DIR . '/mu-plugins/lib/utils/context.php';
+require_once WP_CONTENT_DIR . '/mu-plugins/lib/utils/class-context.php';
 
 use Automattic\VIP\Utils\Context;
 
