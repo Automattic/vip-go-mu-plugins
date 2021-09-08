@@ -9,8 +9,8 @@ class Date_Condition implements Condition {
 	private $decision_date;
 
 	public function __construct( string $start_date, string $end_date, string $decision_date = 'now' ) {
-		$this->start_date = new \DateTime( $start_date, new \DateTimeZone( 'UTC' ) );
-		$this->end_date = new \DateTime( $end_date, new \DateTimeZone( 'UTC' ) );
+		$this->start_date    = new \DateTime( $start_date, new \DateTimeZone( 'UTC' ) );
+		$this->end_date      = new \DateTime( $end_date, new \DateTimeZone( 'UTC' ) );
 		$this->decision_date = new \DateTime( $decision_date, new \DateTimeZone( 'UTC' ) );
 	}
 
