@@ -62,6 +62,11 @@ class Controls {
 			return new \WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s". Current connection owner is: "%s"', WPCOM_VIP_MACHINE_USER_LOGIN, $connection_owner_login ) );
 		}
 
+		$is_owner_connected = self::test_jetpack_owner_connection();
+		if ( ! $is_owner_connected ) {
+			return new \WP_Error( 'jp-cxn-pilot-owner-not-connected', sprintf( 'The connection owner is not connected to Jetpack.' ) );
+		}
+
 		return true;
 	}
 
@@ -89,12 +94,21 @@ class Controls {
 		}
 
 		$result       = json_decode( $body );
-		$is_connected = isset( $result->connected ) ? (bool) $result->connected : false;
+		$is_connected = isset( $result->connected ) && (bool) $result->connected;
 		if ( ! $is_connected ) {
 			return new \WP_Error( 'jp-cxn-pilot-not-connected', 'Connection test failed (WP.com does not think this site is connected or there are authentication or other issues).' );
 		}
 
 		return true;
+	}
+
+	public static function test_jetpack_owner_connection(): bool {
+		$user_id = \Jetpack::connection()->get_connection_owner_id();
+
+		$xml = new \Jetpack_IXR_Client( array( 'user_id' => $user_id ) );
+		$xml->query( 'jetpack.testConnection' );
+
+		return ! $xml->isError();
 	}
 
 	/**
