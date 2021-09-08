@@ -8,7 +8,7 @@ class Site_Details_Index {
 	 *
 	 * @var Site_Details_Index
 	 */
-	private static $_instance;
+	private static $instance;
 
 	/**
 	 * The timestamp that will be used to determine the value of Site_Details_Index::get_current_timestamp().
@@ -30,13 +30,13 @@ class Site_Details_Index {
 	 * @return Site_Details_Index A Site_Details_Index object.
 	 */
 	public static function instance( $timestamp = null ) {
-		if ( ! ( static::$_instance instanceof Site_Details_Index ) ) {
-			static::$_instance = new Site_Details_Index();
-			static::$_instance->set_current_timestamp( $timestamp );
-			static::$_instance->init();
+		if ( ! ( static::$instance instanceof Site_Details_Index ) ) {
+			static::$instance = new Site_Details_Index();
+			static::$instance->set_current_timestamp( $timestamp );
+			static::$instance->init();
 		}
 
-		return static::$_instance;
+		return static::$instance;
 	}
 
 	public function init() {
@@ -53,7 +53,7 @@ class Site_Details_Index {
 		if ( ! is_array( $site_details ) ) {
 			$site_details = array();
 		}
-		
+
 		global $wp_version;
 
 		$site_id = 0;
@@ -66,19 +66,19 @@ class Site_Details_Index {
 			$environment_name = strval( VIP_GO_APP_ENVIRONMENT );
 		}
 
-		$site_details['timestamp'] = $this->get_current_timestamp();
-		$site_details['client_site_id'] = $site_id;
-		$site_details['environment_name'] = $environment_name;
-		$site_details['core']['wp_version'] = strval( $wp_version );
-		$site_details['core']['php_version'] = phpversion();
-		$site_details['core']['blog_id'] = get_current_blog_id();
-		$site_details['core']['site_url'] = get_site_url();
+		$site_details['timestamp']            = $this->get_current_timestamp();
+		$site_details['client_site_id']       = $site_id;
+		$site_details['environment_name']     = $environment_name;
+		$site_details['core']['wp_version']   = strval( $wp_version );
+		$site_details['core']['php_version']  = phpversion();
+		$site_details['core']['blog_id']      = get_current_blog_id();
+		$site_details['core']['site_url']     = get_site_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
 		$site_details['plugins'] = $this->get_plugin_info();
-		$site_details['search'] = $this->get_search_info();
+		$site_details['search']  = $this->get_search_info();
 		$site_details['jetpack'] = $this->get_jetpack_info();
-		
+
 		return $site_details;
 	}
 
@@ -89,11 +89,11 @@ class Site_Details_Index {
 	 */
 	public function get_plugin_info() {
 		// Needed or get_plugins can't be found in some instances
-		require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-		$all_plugins = get_plugins();
-		$active_plugins = get_option( 'active_plugins' );
-		$network_plugins = get_site_option( 'active_sitewide_plugins' );
+		$all_plugins                = get_plugins();
+		$active_plugins             = get_option( 'active_plugins' );
+		$network_plugins            = get_site_option( 'active_sitewide_plugins' );
 		$plugins_activated_via_code = wpcom_vip_get_filtered_loaded_plugins();
 
 		$plugin_info = array();
@@ -109,10 +109,10 @@ class Site_Details_Index {
 			}
 
 			$plugin_info[] = array(
-				'path' => $key,
-				'name' => $value['Name'],
-				'version' => $value['Version'],
-				'active' => null !== $activated_by,
+				'path'         => $key,
+				'name'         => $value['Name'],
+				'version'      => $value['Version'],
+				'active'       => null !== $activated_by,
 				'activated_by' => $activated_by,
 			);
 		}
@@ -127,10 +127,10 @@ class Site_Details_Index {
 		$search_info = array();
 
 		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
-			$search_info['enabled'] = true;
+			$search_info['enabled']                   = true;
 			$search_info['query_integration_enabled'] = \Automattic\VIP\Search\Search::is_query_integration_enabled();
 		} else {
-			$search_info['enabled'] = false;
+			$search_info['enabled']                   = false;
 			$search_info['query_integration_enabled'] = false;
 		}
 
@@ -145,9 +145,9 @@ class Site_Details_Index {
 
 		if ( class_exists( 'Jetpack' ) ) {
 			$jetpack_info['available'] = true;
-			$jetpack_info['active'] = \Jetpack::is_active();
-			$jetpack_info['id'] = \Jetpack::get_option( 'id' );
-			$jetpack_info['version'] = JETPACK__VERSION;
+			$jetpack_info['active']    = \Jetpack::is_active();
+			$jetpack_info['id']        = \Jetpack::get_option( 'id' );
+			$jetpack_info['version']   = JETPACK__VERSION;
 			if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
 				$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
 			}
@@ -206,11 +206,11 @@ class Site_Details_Index {
 			$url = rtrim( SERVICES_API_URL, '/' ) . '/sitedetails/sites';
 
 			$args = array(
-				'method' => 'PUT',
-				'body' => json_encode( $site_details ),
+				'method'  => 'PUT',
+				'body'    => wp_json_encode( $site_details ),
 				'headers' => array(
 					'Authorization' => 'Bearer ' . SERVICES_AUTH_TOKEN,
-					'Content-Type' => 'application/json',
+					'Content-Type'  => 'application/json',
 				),
 			);
 
@@ -220,9 +220,9 @@ class Site_Details_Index {
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'info',
-				'feature' => self::LOG_FEATURE_NAME,
-				'message' => 'Site details update',
-				'extra' => $site_details,
+				'feature'  => self::LOG_FEATURE_NAME,
+				'message'  => 'Site details update',
+				'extra'    => $site_details,
 			)
 		);
 	}
