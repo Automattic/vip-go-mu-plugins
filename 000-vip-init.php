@@ -16,8 +16,12 @@
  * good reason not to.
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit();
+}
+
 // Execute the healthcheck as quickly as possible
-if ( '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
+if ( isset( $_SERVER['REQUEST_URI'] ) && '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 	if ( function_exists( 'newrelic_end_transaction' ) ) {
 		// Discard the transaction (the `true` param)
 		// See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
@@ -68,11 +72,12 @@ if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 
 require_once __DIR__ . '/lib/environment/class-environment.php';
 
+// phpcs:ignore WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant -- by design
 if ( ! defined( 'A8C_PROXIED_REQUEST' ) ) {
 	/**
 	 * @var constant A8C_PROXIED_REQUEST Set to true if the current request is made via the Automattic proxy, which is only available to Automatticians.
 	 */
-	define( 'A8C_PROXIED_REQUEST', false );
+	define( 'A8C_PROXIED_REQUEST', false ); // phpcs:ignore WordPressVIPMinimum.Constants.RestrictedConstants.DefiningRestrictedConstant
 }
 
 if ( ! defined( 'VIP_GO_ENV' ) ) {
@@ -111,16 +116,16 @@ define( 'WPCOM_VIP_PRIVATE_DIR', $private_dir_path );
 unset( $private_dir_path );
 
 // Define these values just in case
-defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) or define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
-defined( 'WPCOM_VIP_MACHINE_USER_NAME' )  or define( 'WPCOM_VIP_MACHINE_USER_NAME', 'VIP' );
-defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) or define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
-defined( 'WPCOM_VIP_MACHINE_USER_ROLE' )  or define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
+defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) || define( 'WPCOM_VIP_MACHINE_USER_LOGIN', 'vip' );
+defined( 'WPCOM_VIP_MACHINE_USER_NAME' ) || define( 'WPCOM_VIP_MACHINE_USER_NAME', 'VIP' );
+defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) || define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
+defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) || define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
 add_action( 'set_current_user', function() {
 	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 
 	if ( $user && $user->ID ) {
-		defined( 'WPCOM_VIP_MACHINE_USER_ID' ) or define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
+		defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
 	}
 }, PHP_INT_MIN );
 
@@ -131,7 +136,7 @@ $internal_cron_events = array(
 		'schedule' => 'hourly',
 		'action'   => 'wpcom_vip_support_remove_user_via_cron', // Automattic\VIP\Support_User\User::CRON_ACTION
 		'callback' => array( 'Automattic\VIP\Support_User\User', 'do_cron_cleanup' ),
-	)
+	),
 );
 
 // Enable Jetpack private connection by default on non production sites
@@ -146,9 +151,9 @@ if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
 
 if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUTO_MANAGE_CONNECTION ) {
 	$internal_cron_events[] = array(
-		'schedule'  => 'hourly',
-		'action'    => 'wpcom_vip_run_jetpack_connection_pilot',
-		'callback'  => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
+		'schedule' => 'hourly',
+		'action'   => 'wpcom_vip_run_jetpack_connection_pilot',
+		'callback' => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
 	);
 }
 
@@ -163,31 +168,31 @@ if ( WPCOM_SANDBOXED ) {
 }
 
 // Feature flags
-require_once( __DIR__ . '/lib/feature/class-feature.php' );
+require_once __DIR__ . '/lib/feature/class-feature.php';
 
 // Logging
-require_once( __DIR__ . '/logstash/logstash.php' );
-require_once( __DIR__ . '/lib/statsd/class-statsd.php' );
+require_once __DIR__ . '/logstash/logstash.php';
+require_once __DIR__ . '/lib/statsd/class-statsd.php';
 
 // Debugging Tools
-require_once( __DIR__ . '/000-debug/0-load.php' );
-require_once( __DIR__ . '/lib/utils/class-alerts.php' );
+require_once __DIR__ . '/000-debug/0-load.php';
+require_once __DIR__ . '/lib/utils/class-alerts.php';
 
 // Load our development and environment helpers
-require_once( __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php' );
-require_once( __DIR__ . '/vip-helpers/vip-utils.php' );
-require_once( __DIR__ . '/vip-helpers/vip-newrelic.php' );
-require_once( __DIR__ . '/vip-helpers/vip-caching.php' );
-require_once( __DIR__ . '/vip-helpers/vip-roles.php' );
-require_once( __DIR__ . '/vip-helpers/vip-permastructs.php' );
-require_once( __DIR__ . '/vip-helpers/vip-mods.php' );
-require_once( __DIR__ . '/vip-helpers/vip-media.php' );
-require_once( __DIR__ . '/vip-helpers/vip-elasticsearch.php' );
-require_once( __DIR__ . '/vip-helpers/vip-stats.php' );
-require_once( __DIR__ . '/vip-helpers/vip-deprecated.php' );
-require_once( __DIR__ . '/vip-helpers/vip-syndication-cache.php' );
-require_once( __DIR__ . '/vip-helpers/vip-migrations.php' );
-require_once( __DIR__ . '/vip-helpers/class-user-cleanup.php' );
+require_once __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php';
+require_once __DIR__ . '/vip-helpers/vip-utils.php';
+require_once __DIR__ . '/vip-helpers/vip-newrelic.php';
+require_once __DIR__ . '/vip-helpers/vip-caching.php';
+require_once __DIR__ . '/vip-helpers/vip-roles.php';
+require_once __DIR__ . '/vip-helpers/vip-permastructs.php';
+require_once __DIR__ . '/vip-helpers/vip-mods.php';
+require_once __DIR__ . '/vip-helpers/vip-media.php';
+require_once __DIR__ . '/vip-helpers/vip-elasticsearch.php';
+require_once __DIR__ . '/vip-helpers/vip-stats.php';
+require_once __DIR__ . '/vip-helpers/vip-deprecated.php';
+require_once __DIR__ . '/vip-helpers/vip-syndication-cache.php';
+require_once __DIR__ . '/vip-helpers/vip-migrations.php';
+require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
@@ -196,8 +201,8 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 
 // Load WP_CLI helpers
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
-	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
+	require_once __DIR__ . '/vip-helpers/vip-wp-cli.php';
+	require_once __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php';
 }
 
 // Load elasticsearch helpers
@@ -205,7 +210,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 // If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
 	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
-	require_once( __DIR__ . '/search/search.php' );
+	require_once __DIR__ . '/search/search.php';
 }
 
 // Set WordPress environment type
@@ -233,26 +238,27 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 }
 
 // Load config related helpers
-require_once( __DIR__ . '/config/class-sync.php' );
+require_once __DIR__ . '/config/class-sync.php';
 
 add_action( 'init', function() {
 	\Automattic\VIP\Config\Sync::instance();
 } );
 
 // Load _encloseme meta cleanup scheduler
-require_once( __DIR__ . '/lib/class-vip-encloseme-cleanup.php' );
+require_once __DIR__ . '/lib/class-vip-encloseme-cleanup.php';
 
 $encloseme_cleaner = new VIP_Encloseme_Cleanup();
 $encloseme_cleaner->init();
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
-	$headers['X-hacker'] = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
+	$headers['X-hacker']     = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
-	$headers['Host-Header'] = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
+	$headers['Host-Header']  = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
-	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER[ 'HTTP_HOST' ], '.go-vip.' ) ) {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- should be safe, because we are only looking for a substring and don't use the variable for anything else
+	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER['HTTP_HOST'] ?? '', '.go-vip.' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 
