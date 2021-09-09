@@ -171,10 +171,10 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		}
 
 		if ( 'stderr' === $display_errors && defined( 'STDERR' ) && is_resource( STDERR ) ) {
-			fprintf( STDERR, $display_errors_format, $string, esc_html( $message ), esc_html( $file ), esc_html( $line ), esc_html( $source ), esc_html( $backtrace ) );
+			fprintf( STDERR, $display_errors_format, $string, htmlspecialchars( $message ), htmlspecialchars( $file ), htmlspecialchars( $line ), htmlspecialchars( $source ), htmlspecialchars( $backtrace ) );
 		} else {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			printf( $display_errors_format, $string, esc_html( $message ), esc_html( $file ), esc_html( $line ), esc_html( $source ), esc_html( $backtrace ) );
+			printf( $display_errors_format, $string, htmlspecialchars( $message ), htmlspecialchars( $file ), htmlspecialchars( $line ), htmlspecialchars( $source ), htmlspecialchars( $backtrace ) );
 		}
 	}
 
