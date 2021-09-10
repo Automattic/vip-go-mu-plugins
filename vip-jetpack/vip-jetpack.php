@@ -413,3 +413,12 @@ function add_jetpack_menu_placeholder(): void {
 }
 
 add_action( 'admin_menu', 'add_jetpack_menu_placeholder', 999 );
+
+
+function remove_jetpack_menu_search(): void {
+	// Only relevant for Jetpack 10.1 and higher
+	if ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+		// if ( class_exists())
+	}
+}
+add_action( 'admin_menu', 'remove_jetpack_menu_search', 1 );
