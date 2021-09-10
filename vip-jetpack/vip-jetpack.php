@@ -425,4 +425,4 @@ function remove_jetpack_menu_search(): void {
 		}
 	}
 }
-add_action( 'admin_menu', 'remove_jetpack_menu_search', 1 );
+add_action( 'admin_menu', 'remove_jetpack_menu_search', 999 );
