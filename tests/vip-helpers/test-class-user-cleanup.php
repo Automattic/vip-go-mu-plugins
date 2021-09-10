@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Helpers;
 
+use WP_Error;
+
 class User_Cleanup_Test extends \WP_UnitTestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
@@ -323,6 +325,14 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 		if ( is_multisite() ) {
 			$this->assertFalse( is_user_member_of_blog( $user_1_id ), 'is_user_member_of_blog did not return false' );
 		}
+	}
+
+	public function test__revoke_roles_for_users_nonexisting() {
+		$user_id = -1;
+		$actual_results = User_Cleanup::revoke_roles_for_users( [ $user_id ] );
+		$this->assertIsArray( $actual_results );
+		$this->assertArrayHasKey( $user_id, $actual_results );
+		$this->assertInstanceOf( WP_Error::class, $actual_results[ $user_id ] );
 	}
 
 	private function _backup_super_admins() {
