@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Helpers;
 
+use WP_Error;
+
 // If the constant is set, don't run the cleanup
 if ( defined( 'VIP_SKIP_USER_CLEANUP' ) && true === VIP_SKIP_USER_CLEANUP ) {
 	add_filter( 'vip_do_user_cleanup', '__return_false' );
