@@ -165,6 +165,6 @@ class StatsD {
 			trigger_error( "Statsd::send exception('$escaped_url'): {$e->getMessage()}", \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 
-	// phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	// phpcs:enable
 	}
 }

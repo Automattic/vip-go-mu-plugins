@@ -25,10 +25,10 @@ function wpcom_error_shutdown() {
 }
 
 /**
- * @param int $type
- * @param string $message
- * @param string $file
- * @param int $line
+ * @param int    $type      The level of the error raised (prior to PHP 8, $type is 0 if the error has been silenced with @)
+ * @param string $message   Error message
+ * @param string $file      Filename that the error was raised in
+ * @param int    $line      Line number where the error was raised
  * @return void
  */
 function wpcom_error_handler( $type, $message, $file, $line ) {
@@ -84,19 +84,19 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
 		$call_path[] = trim( $path );
 	}
 
-	return join( ', ', $call_path );
+	return implode( ', ', $call_path );
 }
 
 /**
  * Shared Error Handler run as a Custom Error Handler and at Shutdown as an error handler of last resort.
  * When we run at shutdown we must not die as then the pretty printing of the Error doesn't happen which is lame sauce.
  *
- * @param bool $whether_i_may_die
- * @param int $type
- * @param string $message
- * @param string $file
- * @param int $line
- * @return bool
+ * @param bool   $whether_i_may_die     true if the function is called from the Error Handler and not from the shutdown handler
+ * @param int    $type                  The level of the error raised (prior to PHP 8, $type is 0 if the error has been silenced with @)
+ * @param string $message               Error message
+ * @param string $file                  Filename that the error was raised in
+ * @param int    $line                  Line number where the error was raised
+ * @return bool                         Whether not to call the normal error handling (the return value is ignored by the callers and thus has no effect)
  */
 function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file, $line ) {
 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
