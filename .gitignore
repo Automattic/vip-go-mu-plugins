@@ -7,6 +7,9 @@
 # Secret files
 jetpack-private.php
 
+# dev-env related files
+/dev-env-plugin.php
+
 # Local PHPDoc configuration file
 # overrides phpdoc.dist.xml
 phpdoc.xml
