@@ -36,11 +36,11 @@ npm run phplint
 
 ##### PHPCS
 
-We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`).
+We use eslines to incrementally scan changed code. It will automatically run on pre-push (see `.huskyrc.json`).
 
 This is also run on Circle CI for all PRs.
 
-If you want too scan the entire codebase:
+If you want to scan the entire codebase:
 
 ```bash
 npm run phpcs
