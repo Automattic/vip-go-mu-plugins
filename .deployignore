@@ -23,6 +23,7 @@
 .jscsrc
 .jshintignore
 .jshintrc
+.lintstagedrc
 .npmrc
 .nvmrc
 .phpcs.xml.dist

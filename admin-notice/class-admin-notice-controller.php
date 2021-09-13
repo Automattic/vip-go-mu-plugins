@@ -3,8 +3,8 @@
 namespace Automattic\VIP\Admin_Notice;
 
 class Admin_Notice_Controller {
-	const DISMISS_USER_META = 'dismissed_vip_notices';
-	const DISMISS_NONCE_ACTION = 'dismiss_notice';
+	const DISMISS_USER_META      = 'dismissed_vip_notices';
+	const DISMISS_NONCE_ACTION   = 'dismiss_notice';
 	const DISMISS_IDENTIFIER_KEY = 'identifier';
 
 	public static $stale_dismiss_cleanup_value = 1; // Value to compare <= against rand( 1, 100 ). 1 should result in roughly 1 in 100 chance.
@@ -31,9 +31,9 @@ class Admin_Notice_Controller {
 	}
 
 	public function enqueue_scripts() {
-		wp_enqueue_script( 'vip-admin-notice-script', plugins_url( '/js/script.js', __FILE__ ), [], '1.0' );
+		wp_enqueue_script( 'vip-admin-notice-script', plugins_url( '/js/script.js', __FILE__ ), [], '1.0', true );
 		wp_localize_script( 'vip-admin-notice-script', 'dismissal_data', [
-			'nonce' => wp_create_nonce( self::DISMISS_NONCE_ACTION ),
+			'nonce'          => wp_create_nonce( self::DISMISS_NONCE_ACTION ),
 			'data_attribute' => Admin_Notice::DISMISS_DATA_ATTRIBUTE,
 			'identifier_key' => self::DISMISS_IDENTIFIER_KEY,
 		] );
@@ -49,6 +49,7 @@ class Admin_Notice_Controller {
 	}
 
 	public function maybe_clean_stale_dismissed_notices() {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK here, no need to use slower wp_rand()
 		if ( self::$stale_dismiss_cleanup_value >= rand( 1, 100 ) ) {
 			$this->clean_stale_dismissed_notices();
 		}
