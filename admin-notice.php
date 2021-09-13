@@ -9,4 +9,4 @@
  *
  * @package Automattic\VIP\AdminNotice
  */
-require_once( __DIR__ . '/admin-notice/admin-notice.php' );
+require_once __DIR__ . '/admin-notice/admin-notice.php';
