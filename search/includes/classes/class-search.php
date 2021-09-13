@@ -1286,7 +1286,7 @@ class Search {
 	/**
 	 * Remove the marketing admin page for Jetpack Search if VIP Search is enabled
 	 */
-	function remove_jetpack_menu_search(): void {
+	public function remove_jetpack_menu_search(): void {
 		if ( class_exists( 'Jetpack_Search_Dashboard_Page' ) ) {
 			remove_submenu_page(
 				'jetpack',
