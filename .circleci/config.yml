@@ -56,10 +56,7 @@ parameters:
 
 job-references:
   db_image: &db_image
-    cimg/mariadb:10.3
-    ports:
-      - 3306:3306
-
+    circleci/mariadb:10.2
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
