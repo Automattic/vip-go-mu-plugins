@@ -139,4 +139,59 @@
 	</p>
 	<?php endif; ?>
 </div>
+<?php elseif ( $type == 'usage-limit' && isset( Akismet::$LIMIT_NOTICES[ $code ] ) ) :?>
+<div class="error akismet-usage-limit-alert">
+	<div class="akismet-usage-limit-logo">
+		<img src="<?php echo esc_url( plugins_url( '../_inc/img/logo-a-2x.png', __FILE__ ) ); ?>" alt="Akismet" />
+	</div>
+	<div class="akismet-usage-limit-text">
+		<h3>
+		<?php
+		switch ( Akismet::$LIMIT_NOTICES[ $code ] ) {
+			case 'FIRST_MONTH_OVER_LIMIT':
+			case 'SECOND_MONTH_OVER_LIMIT':
+				esc_html_e( 'Your Akismet account usage is over your plan\'s limit', 'akismet' );
+				break;
+			case 'THIRD_MONTH_APPROACHING_LIMIT':
+				esc_html_e( 'Your Akismet account usage is approaching your plan\'s limit', 'akismet' );
+				break;
+			case 'THIRD_MONTH_OVER_LIMIT':
+			case 'FOUR_PLUS_MONTHS_OVER_LIMIT':
+				esc_html_e( 'Your account has been restricted', 'akismet' );
+				break;
+			default:
+		}
+		?>
+		</h3>
+		<p>
+		<?php
+		switch ( Akismet::$LIMIT_NOTICES[ $code ] ) {
+			case 'FIRST_MONTH_OVER_LIMIT':
+				printf(
+					__( 'Since %s, your account made %s API calls, compared to your plan\'s limit of %s. <a href="%s" target="_blank">Learn more</a> about usage limits.', 'akismet' ),
+					esc_html( gmdate( 'F' ) . ' 1' ),
+					number_format( $api_calls ),
+					number_format( $usage_limit ),
+					'https://docs.akismet.com/akismet-api-usage-limits/'
+				);
+				break;
+			case 'SECOND_MONTH_OVER_LIMIT':
+				esc_html_e( 'Your Akismet usage has been over your plan\'s limit for two consecutive months. Next month, we will restrict your account after you reach the limit. Please consider upgrading your plan.', 'akismet' );
+				break;
+			case 'THIRD_MONTH_APPROACHING_LIMIT':
+				esc_html_e( 'Your Akismet usage is nearing your plan\'s limit for the third consecutive month. We will restrict your account after you reach the limit. Upgrade your plan so Akismet can continue blocking spam.', 'akismet' );
+				break;
+			case 'THIRD_MONTH_OVER_LIMIT':
+			case 'FOUR_PLUS_MONTHS_OVER_LIMIT':
+				esc_html_e( 'Your Akismet usage has been over your plan\'s limit for three consecutive months. We have restricted your account for the rest of the month. Upgrade your plan so Akismet can continue blocking spam.', 'akismet' );
+				break;
+			default:
+		}
+		?>
+		</p>
+	</div>
+	<div class="akismet-usage-limit-cta">
+		<?php printf( __( '<a href="%1$s" class="button" target="_blank">Upgrade to %2$s</a>', 'akismet' ), esc_attr( $upgrade_url ), esc_html( $upgrade_plan ) ); ?>
+	</div>
+</div>
 <?php endif;?>

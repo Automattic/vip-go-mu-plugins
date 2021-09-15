@@ -144,10 +144,10 @@ class Cron {
 	 *
 	 * This is the cron hook for indexing a batch of objects
 	 *
-	 * @param {array} $job_ids Array of job ids to process
+	 * @param {array} $options Containing max_id and min_id keys
 	 */
-	public function process_jobs( $job_ids ) {
-		$jobs = $this->queue->get_jobs( $job_ids );
+	public function process_jobs( $options ) {
+		$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
 
 		if ( empty( $jobs ) ) {
 			return;
@@ -234,10 +234,25 @@ class Cron {
 
 		$job_count = $this->get_processor_job_count();
 		$max_job_count = $this->get_max_concurrent_processor_job_count();
-		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {
 
+		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {
 			$schedule_success = $this->schedule_batch_job();
-			if ( is_wp_error( $schedule_success ) || ! $schedule_success ) {
+
+			// A WP_Error means the event couldn't be scheduled, let's log.
+			if ( is_wp_error( $schedule_success ) ) {
+				\Automattic\VIP\Logstash\log2logstash(
+					[
+						'severity' => 'warning',
+						'feature'  => 'search_queue_sweeper',
+						'message'  => 'Failed to schedule a processor job',
+						'extra'    => $schedule_success,
+					]
+				);
+				break;
+			}
+
+			// FALSE means an empty queue, so there's nothing to do here anymore.
+			if ( false === $schedule_success ) {
 				break;
 			}
 
@@ -285,7 +300,12 @@ class Cron {
 
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, array( $job_ids ) );
+		$options = [
+			'min_id' => min( $job_ids ),
+			'max_id' => max( $job_ids ),
+		];
+
+		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {

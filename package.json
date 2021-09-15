@@ -11,13 +11,14 @@
     "phpcs:changed:local": "vendor/bin/phpcs --report=bin/phpcs-eslint-report.php | eslines --quiet -d index",
     "lint": "npm run phplint && npm run phpcs:changed:remote",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
-    "update-test-jquery-updates": "./bin/update-test-jquery-updates.sh",
-    "prepare": "husky install"
+    "prepare": "npx husky install"
   },
   "author": "Automattic",
   "devDependencies": {
     "eslines": "1.1.0",
     "eslint": "5.16.0",
-    "husky": "7.0.1"
+    "husky": "7.0.2",
+    "lint-staged": "^11.1.2",
+    "phplint": "^2.0.5"
   }
 }

@@ -187,6 +187,7 @@ require_once( __DIR__ . '/vip-helpers/vip-stats.php' );
 require_once( __DIR__ . '/vip-helpers/vip-deprecated.php' );
 require_once( __DIR__ . '/vip-helpers/vip-syndication-cache.php' );
 require_once( __DIR__ . '/vip-helpers/vip-migrations.php' );
+require_once( __DIR__ . '/vip-helpers/class-user-cleanup.php' );
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
@@ -197,10 +198,6 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once( __DIR__ . '/vip-helpers/vip-wp-cli.php' );
 	require_once( __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php' );
-}
-
-if ( ! defined( 'VIP_SEARCH_DEV_TOOLS' ) ) {
-	define( 'VIP_SEARCH_DEV_TOOLS', ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled( 'search-dev-tools' ) );
 }
 
 // Load elasticsearch helpers

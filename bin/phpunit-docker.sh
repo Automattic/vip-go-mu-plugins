@@ -62,6 +62,12 @@ trap cleanup EXIT
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 WP_VERSION=$($DIR/download-wp-tests.sh wordpress_test root "$MYSQL_ROOT_PASSWORD" "$DB_CONTAINER_NAME" "$WP_VERSION")
 
+if [ -f vendor/bin/phpunit ]; then
+	ENTRYPOINT="--entrypoint /app/vendor/bin/phpunit"
+else
+	ENTRYPOINT=""
+fi
+
 ## Ensure there's a database connection for the rest of the steps
 until docker exec -it $db mysql -u root -h $DB_CONTAINER_NAME --password="wordpress" -e 'CREATE DATABASE wordpress_test' > /dev/null; do
 	echo "Waiting for database connection..."
@@ -71,8 +77,11 @@ done
 docker run \
 	--network $NETWORK_NAME \
 	-e WP_MULTISITE="$WP_MULTISITE" \
+	-e WPVIP_PARSELY_INTEGRATION_TEST_MODE="$WPVIP_PARSELY_INTEGRATION_TEST_MODE" \
+	-e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="$WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION" \
 	-v $(pwd):/app \
 	-v /tmp/wordpress-tests-lib-$WP_VERSION:/tmp/wordpress-tests-lib \
 	-v /tmp/wordpress-$WP_VERSION:/tmp/wordpress \
+	$ENTRYPOINT \
 	--rm ghcr.io/automattic/phpunit-docker/phpunit:latest \
 	--bootstrap /app/tests/bootstrap.php ${EXTRA_ARGS} "${PATH_TO_TEST}"
