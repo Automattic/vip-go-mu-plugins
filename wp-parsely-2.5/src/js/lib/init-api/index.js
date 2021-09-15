@@ -8,7 +8,7 @@ async function uuidProfileCall() {
 
 	const url = `https://api.parsely.com/v2/profile?apikey=${ encodeURIComponent(
 		apikey
-	) }&uuid=${ encodeURIComponent( uuid ) }&url=${ window.location.href }`;
+	) }&uuid=${ encodeURIComponent( uuid ) }&url=${ encodeURIComponent( window.location.href ) }`;
 
 	return fetch( url );
 }
