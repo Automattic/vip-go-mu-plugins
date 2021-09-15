@@ -41,7 +41,7 @@
 			"@php ./vendor/php-parallel-lint/php-parallel-lint/parallel-lint . -e php --exclude vendor --exclude .git --checkstyle"
 		],
 		"prepare-ci": [
-			"bash bin/install-wp-tests.sh wordpress_test root root localhost nightly"
+			"bash bin/install-wp-tests.sh wordpress_test root root localhost latest"
 		],
 		"test": [
 			"@php ./vendor/bin/phpunit --no-coverage"
