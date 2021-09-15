@@ -56,7 +56,7 @@ parameters:
 
 job-references:
   db_image: &db_image
-    circleci/mariadb:10.2
+    circleci/mariadb:10.3
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
