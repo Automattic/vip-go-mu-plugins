@@ -234,19 +234,25 @@ class Cron {
 
 		$job_count = $this->get_processor_job_count();
 		$max_job_count = $this->get_max_concurrent_processor_job_count();
+
 		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {
-			// Core would return FALSE or WP_Error on failure (depending on the last argument), cron control returns NULL on success or WP_Error on failure
 			$schedule_success = $this->schedule_batch_job();
 
-			if ( is_wp_error( $schedule_success ) || false === $schedule_success ) {
+			// A WP_Error means the event couldn't be scheduled, let's log.
+			if ( is_wp_error( $schedule_success ) ) {
 				\Automattic\VIP\Logstash\log2logstash(
 					[
 						'severity' => 'warning',
-						'feature' => 'search_queue_sweeper',
-						'message' => 'Failed to schedule a processor job',
-						'extra' => $schedule_success,
+						'feature'  => 'search_queue_sweeper',
+						'message'  => 'Failed to schedule a processor job',
+						'extra'    => $schedule_success,
 					]
 				);
+				break;
+			}
+
+			// FALSE means an empty queue, so there's nothing to do here anymore.
+			if ( false === $schedule_success ) {
 				break;
 			}
 

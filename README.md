@@ -36,11 +36,11 @@ npm run phplint
 
 ##### PHPCS
 
-We use eslines to incrementally scan changed code. It will automatically run on pre-commit (see `.huskyrc.json`).
+We use eslines to incrementally scan changed code. It will automatically run on pre-push (see `.huskyrc.json`).
 
 This is also run on Circle CI for all PRs.
 
-If you want too scan the entire codebase:
+If you want to scan the entire codebase:
 
 ```bash
 npm run phpcs
@@ -109,6 +109,26 @@ To investigate failing test locally you can do following (buckle up as this is n
 1. Run the test you want (in this case `test_allowed_anon_comments`) `$MU_PLUGINS_DIR/vendor/bin/phpunit --filter test_allowed_anon_comments`
 
 ## Deployment
+
+### Release
+
+A new release of the plugin consists of all those pull requests that have been merged since the last release and have been deployed to Staging (i.e. have the _[Status] Deployed to staging_ label. Releases are named after the day they are released plus a minor version:
+
+```
+YYYYMMDD.x
+
+e.g: 20210917.0
+```
+
+Releases are created using GitHub's releases and are effectively a tag in the GitHub repository. Previous releases can be found [here](https://github.com/Automattic/vip-go-mu-plugins/releases/).
+
+To create a new release, please use the `create-release` script. The script requires the [GitHub CLI](https://github.com/cli/cli) to be installed in the computer. It will create the new release, properly tagged and with the expected description.
+
+```
+cd vip-go-mu-plugins
+
+bin/create-release.sh
+```
 
 ### Production
 

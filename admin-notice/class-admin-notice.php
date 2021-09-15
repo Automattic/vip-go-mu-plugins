@@ -28,10 +28,10 @@ class Admin_Notice {
 	 * @param string $dismiss_identifier if provided the dismiss will become dissmisible
 	 */
 	public function __construct( string $message, array $conditions = [], string $dismiss_identifier = '', string $notice_class = 'info' ) {
-		$this->message = $message;
-		$this->conditions = $conditions;
+		$this->message            = $message;
+		$this->conditions         = $conditions;
 		$this->dismiss_identifier = $dismiss_identifier;
-		$this->notice_class = in_array( $notice_class, self::ALLOWED_NOTICE_CLASSES, true ) ? $notice_class : 'info';
+		$this->notice_class       = in_array( $notice_class, self::ALLOWED_NOTICE_CLASSES, true ) ? $notice_class : 'info';
 	}
 
 	public function display() {

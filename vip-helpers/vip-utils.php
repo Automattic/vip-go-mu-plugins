@@ -1227,7 +1227,6 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 	$protected_shared_plugins = array(
 		'two-factor',
 		'jetpack-force-2fa',
-		'vip-go-elasticsearch',
 	);
 
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
