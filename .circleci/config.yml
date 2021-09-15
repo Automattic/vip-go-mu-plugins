@@ -56,7 +56,7 @@ parameters:
 
 job-references:
   db_image: &db_image
-    circleci/mariadb:10.3
+    cimg/mariadb:10.3
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
@@ -187,6 +187,7 @@ jobs:
     docker:
       - image: cimg/php:7.4-node
       - image: *db_image
+        ports: 3306:3306
 
   php74-build-singlesite-55:
     <<: *php_job
