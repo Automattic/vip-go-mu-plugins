@@ -56,7 +56,7 @@ parameters:
 
 job-references:
   db_image: &db_image
-    cimg/mariadb:10.2
+    cimg/mariadb:10.3
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
@@ -67,7 +67,7 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev mysqli gd
+      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php-mysqli php7.4-gd
       npm ci
       composer install -n
 
