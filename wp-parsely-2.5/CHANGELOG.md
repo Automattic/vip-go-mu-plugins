@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2021-08-10
+
+### Fixed
+
+- Load the API init script before the tracker so values are populated.
+- Encode the current URL in the `uuidProfileCall` URL.
+
 ## [2.5.0] - 2021-05-17
 
 ### Added
@@ -271,6 +278,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial version.
 - Add sSupport for parsely-page and JavaScript on home page and published pages and posts as well as archive pages (date/author/category/tag).
 
+[2.5.1]: https://github.com/Parsely/wp-parsely/compare/2.5.0...2.5.1
 [2.5.0]: https://github.com/Parsely/wp-parsely/compare/2.4.1...2.5.0
 [2.4.1]: https://github.com/Parsely/wp-parsely/compare/2.4.0...2.4.1
 [2.4.0]: https://github.com/Parsely/wp-parsely/compare/2.3.0...2.4.0

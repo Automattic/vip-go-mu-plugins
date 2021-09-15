@@ -11,7 +11,7 @@
  * Plugin Name:       Parse.ly
  * Plugin URI:        https://www.parse.ly/help/integration/wordpress
  * Description:       This plugin makes it a snap to add Parse.ly tracking code to your WordPress blog.
- * Version:           2.5.0
+ * Version:           2.5.1
  * Author:            Parse.ly
  * Author URI:        https://www.parse.ly
  * Text Domain:       wp-parsely
@@ -31,7 +31,7 @@ if ( class_exists( 'Parsely' ) ) {
 	return;
 }
 
-define( 'PARSELY_VERSION', '2.5.0' );
+define( 'PARSELY_VERSION', '2.5.1' );
 
 if ( ! defined( 'PARSELY_PLUGIN_BASENAME' ) ) {
 	define( 'PARSELY_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
