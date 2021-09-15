@@ -67,7 +67,7 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php7.4-mysqli php7.4-gd php-xdebug
+      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php7.4-mysqli php7.4-gd php7.4-xdebug
       npm ci
       composer install -n
 
