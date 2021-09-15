@@ -185,7 +185,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function manual_purge_message() {
-		echo "<div id='message' class='updated fade'><p><strong>" . __( 'Varnish cache purged!', 'varnish-http-purge' ) . '</strong></p></div>';
+		echo "<div id='message' class='updated fade'><p><strong>" . esc_html__( 'Varnish cache purged!', 'varnish-http-purge' ) . '</strong></p></div>';
 	}
 
 	public function curl_multi( $requests ) {
@@ -277,9 +277,9 @@ class WPCOM_VIP_Cache_Manager {
 		while ( $running ) {
 			do {
 				$result = curl_multi_exec( $curl_multi, $running );
-			} while ( $result == CURLM_CALL_MULTI_PERFORM );
+			} while ( CURLM_CALL_MULTI_PERFORM === $result );
 
-			if ( $result != CURLM_OK ) {
+			if ( CURLM_OK !== $result ) {
 				error_log( 'curl_multi_exec() returned something different than CURLM_OK' );
 			}
 
