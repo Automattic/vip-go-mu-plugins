@@ -16,6 +16,7 @@
 	</php>
 	<testsuites>
 		<testsuite name="WP_Tests">
+			<directory>./tests/</directory>
 			<directory suffix="-test.php">./tests/</directory>
 		</testsuite>
 	</testsuites>
