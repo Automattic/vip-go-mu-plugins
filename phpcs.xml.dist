@@ -78,6 +78,9 @@
 
 		<!-- Allow short array syntax -->
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+
+		<!-- Do not enforce 'class-' prefix -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
 	</rule>
 
 </ruleset>
