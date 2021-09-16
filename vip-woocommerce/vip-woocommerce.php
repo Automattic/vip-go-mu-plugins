@@ -8,3 +8,7 @@
  */
 
 require_once __DIR__ . '/logging.php';
+
+if ( file_exists( __DIR__ . '/action-scheduler.php' ) ) {
+	require_once __DIR__ . '/action-scheduler.php';
+}
