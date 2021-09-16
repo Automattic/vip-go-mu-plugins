@@ -61,10 +61,15 @@ jobs:
           xml-file: ./phpunit.xml.dist
           xml-schema-file: ./vendor/phpunit/phpunit/phpunit.xsd
 
-      # Check the code-style consistency of the PHP files.
-#      - name: Check PHP code style
-#        continue-on-error: true
-#        run: vendor/bin/phpcs --report-full --report-checkstyle=./phpcs-report.xml
+      - name: Lint .phpcs.xml.dist
+        uses: ChristophWurst/xmllint-action@v1
+        with:
+          xml-file: ./.phpcs.xml.dist
+          xml-schema-file: ./vendor/squizlabs/php_codesniffer/phpcs.xsd
 
-#      - name: Show PHPCS results in PR
-#        run: cs2pr ./phpcs-report.xml
+      # Check the code-style consistency of the PHP files.
+      - name: Check PHP code style
+        run: vendor/bin/phpcs --report-full --report-checkstyle=./phpcs-report.xml
+
+      - name: Show PHPCS results in PR
+        run: cs2pr ./phpcs-report.xml
