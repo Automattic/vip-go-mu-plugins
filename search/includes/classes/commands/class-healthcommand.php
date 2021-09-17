@@ -148,6 +148,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$versions = [];
+		$results  = [];
 
 		if ( isset( $version ) ) {
 			$versions[] = $version;
