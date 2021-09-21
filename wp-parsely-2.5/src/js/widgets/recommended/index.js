@@ -6,9 +6,7 @@ import domReady from '@wordpress/dom-ready';
 /**
  * Internal dependencies
  */
-import { getCookieValue } from '../../lib/cookies';
-
-const VISITOR_COOKIE_KEY_NAME = '_parsely_visitor';
+import { getUuidFromVisitorCookie } from '../../lib/personalization';
 
 function widgetLoad( {
 	displayAuthor,
@@ -20,19 +18,11 @@ function widgetLoad( {
 	jQuery,
 	widgetId,
 } ) {
-	let uuid = false;
-	const cookieVal = getCookieValue( VISITOR_COOKIE_KEY_NAME );
-
-	if ( cookieVal ) {
-		try {
-			uuid = JSON.parse( unescape( cookieVal ) ).id;
-		} catch ( e ) {}
-	}
-
 	let fullUrl = apiUrl;
+	const uuid = personalized ? getUuidFromVisitorCookie() : undefined;
 
-	if ( personalized && uuid ) {
-		fullUrl += `&uuid=${ uuid }`;
+	if ( uuid ) {
+		fullUrl += `&uuid=${ encodeURIComponent( uuid ) }`;
 	} else {
 		fullUrl += `&url=${ encodeURIComponent( permalink ) }`;
 	}
