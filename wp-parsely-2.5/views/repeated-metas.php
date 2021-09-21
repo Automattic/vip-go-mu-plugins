@@ -8,14 +8,22 @@
  * @license      GPL-2.0-or-later
  */
 
-?>
-<meta name="parsely-title" content="<?php echo esc_attr( $parsely_page['headline'] ); ?>" />
-<meta name="parsely-link" content="<?php echo esc_attr( $parsely_page['url'] ); ?>" />
-<meta name="parsely-type" content="<?php echo esc_attr( $parsely_post_type ); ?>" />
-<meta name="parsely-image-url" content="<?php echo esc_attr( $parsely_page['thumbnailUrl'] ); ?>" />
-<meta name="parsely-pub-date" content="<?php echo esc_attr( $parsely_page['datePublished'] ); ?>" />
-<meta name="parsely-section" content="<?php echo esc_attr( $parsely_page['articleSection'] ); ?>" />
-<meta name="parsely-tags" content="<?php echo esc_attr( $parsely_page['keywords'] ); ?>" />
-<?php foreach ( (array) $parsely_page['author'] as $author ) { ?>
-<meta name="parsely-author" content="<?php echo esc_attr( $author['name'] ); ?>" />
-<?php }
+foreach ( $parsely_metas as $parsely_meta_key => $parsely_meta_val ) {
+	printf(
+		'<meta name="%s" content="%s" />%s',
+		esc_attr( 'parsely-' . $parsely_meta_key ),
+		esc_attr( $parsely_meta_val ),
+		PHP_EOL
+	);
+}
+
+if ( isset( $parsely_page_authors ) ) {
+	foreach ( $parsely_page_authors as $parsely_author_name ) {
+		printf(
+			'<meta name="parsely-author" content="%s" />%s',
+			esc_attr( $parsely_author_name ),
+			PHP_EOL
+		);
+	}
+}
+
