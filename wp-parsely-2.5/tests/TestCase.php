@@ -8,12 +8,14 @@
 
 namespace Parsely\Tests;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase as WPIntegrationTestCase;
+
 /**
  * Abstract base class for all test case implementations.
  *
  * @package Parsely\Tests
  */
-abstract class TestCase extends \WP_UnitTestCase {
+abstract class TestCase extends WPIntegrationTestCase {
 	const DEFAULT_OPTIONS = array(
 		'apikey'                    => 'blog.parsely.com',
 		'content_id_prefix'         => '',
@@ -27,6 +29,11 @@ abstract class TestCase extends \WP_UnitTestCase {
 		'logo'                      => '',
 	);
 
+	/**
+	 * Utility function to update Parse.ly options with a merge of default values and custom values.
+	 *
+	 * @param array $custom_options Associative array of option keys and values that should be saved.
+	 */
 	public static function set_options( $custom_options = array() ) {
 		update_option( \Parsely::OPTIONS_KEY, array_merge( self::DEFAULT_OPTIONS, $custom_options ) );
 	}
