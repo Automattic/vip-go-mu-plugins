@@ -66,7 +66,12 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 		$this->assertSame( $expected, has_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) ) );
 		$this->assertSame( $expected, has_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) ) );
 		$this->assertSame( $expected, has_action( 'widgets_init', 'parsely_recommended_widget_register' ) );
-		$this->assertSame( $expected, has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' ) );
+
+		$this->assertSame(
+			// reversing expected, since all hooks above remove stuff and this one adds
+			$expected == 10 ? false : 10,
+			has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' )
+		);
 
 		/*
 			TODO: put these in when landing the quick links
@@ -82,7 +87,7 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 		$options = alter_option_use_repeated_metas( array( 'some_option' => 'value' ) );
 		$this->assertSame( array(
 			'some_option' => 'value',
-			'meta_type' => 'repeated_metas'
+			'meta_type' => 'repeated_metas',
 		), $options );
 
 		$options = alter_option_use_repeated_metas( array( 'meta_type' => 'json_ld' ) );
