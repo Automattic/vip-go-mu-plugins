@@ -69,7 +69,7 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 
 		$this->assertSame(
 			// reversing expected, since all hooks above remove stuff and this one adds
-			10 === $expected ? false : 10,
+			in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) && false === $expected ? 10 : false,
 			has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' )
 		);
 
