@@ -67,10 +67,30 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 		$this->assertSame( $expected, has_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) ) );
 		$this->assertSame( $expected, has_action( 'widgets_init', 'parsely_recommended_widget_register' ) );
 
+		$this->assertSame(
+			// reversing expected, since all hooks above remove stuff and this one adds
+			in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) && false === $expected ? 10 : false,
+			has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' )
+		);
+
 		/*
 			TODO: put these in when landing the quick links
 			$this->assertSame( $expected, has_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
 			$this->assertSame( $expected, has_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
 		*/
+	}
+
+	public function test_alter_option_use_repeated_metas() {
+		$options = alter_option_use_repeated_metas();
+		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
+
+		$options = alter_option_use_repeated_metas( array( 'some_option' => 'value' ) );
+		$this->assertSame( array(
+			'some_option' => 'value',
+			'meta_type' => 'repeated_metas',
+		), $options );
+
+		$options = alter_option_use_repeated_metas( array( 'meta_type' => 'json_ld' ) );
+		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
 	}
 }
