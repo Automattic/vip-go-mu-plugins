@@ -77,10 +77,13 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 
 	public function test_alter_option_use_repeated_metas() {
 		$options = alter_option_use_repeated_metas();
-		$this->assertSame( array( 'meta_type' => 'repeated_metas'), $options );
+		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
 
 		$options = alter_option_use_repeated_metas( array( 'some_option' => 'value' ) );
-		$this->assertSame( array( 'some_option' => 'value', 'meta_type' => 'repeated_metas' ), $options );
+		$this->assertSame( array(
+			'some_option' => 'value',
+			'meta_type' => 'repeated_metas'
+		), $options );
 
 		$options = alter_option_use_repeated_metas( array( 'meta_type' => 'json_ld' ) );
 		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
