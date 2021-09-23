@@ -74,22 +74,20 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return void
 	 */
 	public function admin_bar_callback( WP_Admin_Bar $admin_bar ) {
-		if ( is_admin() || ! current_user_can( 'manage_options' ) ) {
-			return;
+		if ( ! is_admin() && $this->current_user_can_purge_cache() ) {
+			$admin_bar->add_menu(
+				[
+					'id'     => 'vip-purge-page',
+					'parent' => null,
+					'group'  => null,
+					'title'  => 'Flush Cache for Page',
+					'href'   => '#',
+					'meta'   => [
+						'title' => 'Flush Page cache for this page and its assets',
+					],
+				]
+			);
 		}
-
-		$admin_bar->add_menu(
-			[
-				'id'     => 'vip-purge-page',
-				'parent' => null,
-				'group'  => null,
-				'title'  => 'Flush Cache for Page',
-				'href'   => '#',
-				'meta'   => [
-					'title' => 'Flush Page cache for this page and its assets',
-				],
-			]
-		);
 	}
 
 	/**
@@ -98,15 +96,13 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return void
 	 */
 	public function button_enqueue_scripts() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
+		if ( $this->current_user_can_purge_cache() ) {
+			wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.1', true );
+			wp_localize_script( 'purge-page-cache-btn', 'VIPPageFlush', [
+				'nonce'   => wp_create_nonce( 'purge-page' ),
+				'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
+			] );
 		}
-
-		wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.1', true );
-		wp_localize_script( 'purge-page-cache-btn', 'VIPPageFlush', [
-			'nonce' => wp_create_nonce( 'purge-page' ),
-			'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
-		] );
 	}
 
 	/**
@@ -115,6 +111,7 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return void
 	 */
 	public function ajax_vip_purge_page_cache() {
+		// phpcs:disable WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsRemoteFile -- OK to read php://input
 		$req = json_decode( file_get_contents( 'php://input' ) );
 
 		if ( json_last_error() ) {
@@ -124,7 +121,7 @@ class WPCOM_VIP_Cache_Manager {
 			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
 		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! $this->current_user_can_purge_cache() ) {
 			\Automattic\VIP\Stats\send_pixel( [
 				'vip-cache-url-purge-status' => 'deny-permissions',
 			] );
@@ -156,9 +153,9 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		\Automattic\VIP\Stats\send_pixel( [
-			'vip-cache-action' => 'user-url-purge',
-			'vip-cache-url-purge-by-site'   => VIP_GO_APP_ID,
-			'vip-cache-url-purge-status' => 'success',
+			'vip-cache-action'            => 'user-url-purge',
+			'vip-cache-url-purge-by-site' => VIP_GO_APP_ID,
+			'vip-cache-url-purge-status'  => 'success',
 		] );
 
 		// Optimistically tell that the operation is successful and bail.
@@ -799,6 +796,10 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		return is_proxied_automattician();
+	}
+
+	private function current_user_can_purge_cache(): bool {
+		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'manage_options' ), wp_get_current_user() );
 	}
 }
 
