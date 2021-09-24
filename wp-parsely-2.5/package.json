@@ -25,13 +25,17 @@
     "url": "https://github.com/Parsely/wp-parsely/issues"
   },
   "homepage": "https://github.com/Parsely/wp-parsely#readme",
+  "browserslist": [
+    "defaults"
+  ],
   "devDependencies": {
-    "@wordpress/eslint-plugin": "^9.0.1",
-    "@wordpress/scripts": "^15.0.1",
-    "prettier": "^2.3.0"
+    "@wordpress/eslint-plugin": "^9.1.2",
+    "@wordpress/scripts": "^17.1.0",
+    "prettier": "^2.3.2"
   },
   "dependencies": {
     "@wordpress/dom-ready": "^2.13.2",
-    "@wordpress/i18n": "^3.20.0"
+    "@wordpress/i18n": "^3.20.0",
+    "js-cookie": "^3.0.0"
   }
 }

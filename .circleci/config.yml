@@ -56,7 +56,7 @@ parameters:
 
 job-references:
   db_image: &db_image
-    circleci/mariadb:10.2
+    circleci/mariadb:10.3
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
@@ -67,8 +67,7 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev
-      sudo -E docker-php-ext-install mysqli gd
+      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php7.4-mysqli php7.4-gd php7.4-xdebug
       npm ci
       composer install -n
 
@@ -168,7 +167,7 @@ jobs:
   php74-lint:
     <<: *lint_job
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
 
   php74-build-multisite:
     <<: *php_job
@@ -176,7 +175,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-multisite-no-jetpack:
@@ -186,7 +185,7 @@ jobs:
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite-55:
@@ -195,7 +194,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.5.5"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite-56:
@@ -204,7 +203,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.6.4"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite-57:
@@ -213,7 +212,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.7.2"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite-58:
@@ -222,7 +221,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.8"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite:
@@ -231,7 +230,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite-no-jetpack:
@@ -241,7 +240,7 @@ jobs:
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-multisite-nightly:
@@ -250,7 +249,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "nightly"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   php74-build-singlesite-nightly:
@@ -259,12 +258,12 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "nightly"
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
       - image: *db_image
 
   create-changelog-draft:
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4-node
     steps:
       - checkout
       - run: composer install
@@ -282,7 +281,7 @@ jobs:
 
   push-code-to-build:
       docker:
-        - image: circleci/php:7.4
+        - image: cimg/php:7.4
       environment:
         - GIT_REVISION: << pipeline.git.revision >>
       steps:

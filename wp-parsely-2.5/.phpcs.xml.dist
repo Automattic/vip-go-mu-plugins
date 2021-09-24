@@ -9,6 +9,8 @@
 	<file>.</file>
 	<!-- Ignoring Files and Folders:
 		https://github.com/squizlabs/PHP_CodeSniffer/wiki/Advanced-Usage#ignoring-files-and-folders -->
+	<exclude-pattern>/build/</exclude-pattern>
+	<exclude-pattern>/node_modules/</exclude-pattern>
 	<exclude-pattern>/vendor/</exclude-pattern>
 
 	<!-- How to scan -->
@@ -49,6 +51,7 @@
 		<properties>
 			<property name="prefixes" type="array">
 				<element value="parsely"/>
+				<element value="wp_parsely"/>
 			</property>
 		</properties>
 	</rule>
@@ -68,6 +71,7 @@
 	</rule>
 
 	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>tests/</exclude-pattern>
 		<properties>
 			<property name="custom_test_class_whitelist" type="array">
 				<element value="TestCase"/>

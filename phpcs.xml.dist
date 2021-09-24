@@ -38,6 +38,7 @@
 	<exclude-pattern>vendor/*</exclude-pattern>
 	<exclude-pattern>wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>wp-cron-control/*</exclude-pattern>
+	<exclude-pattern>wp-parsely-2.5/*</exclude-pattern>
 	<exclude-pattern>test-jquery-updates/*</exclude-pattern>
 	<exclude-pattern>*/build/*.asset.php</exclude-pattern>
 
