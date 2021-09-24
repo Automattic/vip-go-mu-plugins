@@ -860,7 +860,34 @@ class VIP_Filesystem_Stream_Wrapper {
 			return;
 		}
 
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( sprintf( '%s (%s)', $message, wp_debug_backtrace_summary() ) );
+		$trace = $this->backtrace_fmt();
+
+		\Automattic\VIP\Logstash\log2logstash(
+			[
+				'severity' => 'info',
+				'feature'  => 'stream_wrapper_audit_' . $trace[1]['function'],
+				'message'  => "File op {$trace[1]['function']}: " . $message,
+				'extra'    => [
+					'trace' => $this->backtrace_fmt(),
+				],
+			]
+		);
+	}
+
+	/**
+	 * Format the debug backtrace to be a bit more readable .
+	 *
+	 * @return array
+	 */
+	private function backtrace_fmt() {
+		$t = debug_backtrace( false, 30 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		// Discard current frame.
+		unset( $t[0] );
+		foreach ( $t as &$frame ) {
+			$frame['file'] = str_replace( ABSPATH, '', $frame['file'] ) . ':' . $frame['line'];
+			unset( $frame['line'] );
+		}
+
+		return array_values( $t );
 	}
 }
