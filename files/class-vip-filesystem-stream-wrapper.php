@@ -869,7 +869,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				'feature'  => 'stream_wrapper_audit_' . $trace[1]['function'],
 				'message'  => "File op {$trace[1]['function']}: " . $message,
 				'extra'    => [
-					'trace' => $this->backtrace_fmt(),
+					'trace' => $trace,
 				],
 			]
 		);
