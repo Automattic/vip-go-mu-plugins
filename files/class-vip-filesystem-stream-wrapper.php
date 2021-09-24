@@ -881,11 +881,13 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return array
 	 */
 	private function backtrace_fmt() {
-		$trace = debug_backtrace( false, 30 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		$trace = debug_backtrace( 0, 30 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 		// Discard current frame.
 		unset( $trace[0] );
 		foreach ( $trace as &$frame ) {
-			$frame['file'] = str_replace( ABSPATH, '', $frame['file'] ) . ':' . $frame['line'];
+			if ( isset( $frame['file'] ) ) {
+				$frame['file'] = str_replace( ABSPATH, '', $frame['file'] ) . ':' . $frame['line'];
+			}
 			unset( $frame['line'] );
 		}
 
