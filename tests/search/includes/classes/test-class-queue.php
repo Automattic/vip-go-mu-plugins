@@ -10,6 +10,11 @@ class Queue_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
+	/** @var \Automattic\VIP\Search\Search */
+	private $es;
+	/** @var \Automattic\VIP\Search\Queue */
+	private $queue;
+
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
@@ -30,7 +35,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	public function set_up() {
 		global $wpdb;
 
-		parent::set_up();
+		/* parent::set_up(); */
 
 		wp_cache_flush();
 
@@ -1186,8 +1191,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$filter
@@ -1208,8 +1213,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_low_message
@@ -1234,8 +1239,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_high_message

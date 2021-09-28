@@ -42,7 +42,7 @@ class Cache_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_apc_compat_pre_get_posts_wired() {
-		$this->assertInternalType( 'int', has_action( 'pre_get_posts', array( $this->es->cache, 'disable_apc_for_ep_enabled_requests' ) ) );
+		$this->assertIsInt( has_action( 'pre_get_posts', array( $this->es->cache, 'disable_apc_for_ep_enabled_requests' ) ) );
 	}
 
 	public function test_disable_enable_apc() {

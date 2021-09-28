@@ -49,7 +49,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 		$header = $mailer->get_sent()->header;
 
-		$this->assertContains( 'From: WordPress <donotreply@wordpress.com>', $header );
+		$this->assertStringContainsString( 'From: WordPress <donotreply@wordpress.com>', $header );
 	}
 
 	public function test__has_tracking_header_with_key() {

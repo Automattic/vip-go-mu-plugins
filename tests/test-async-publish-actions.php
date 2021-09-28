@@ -104,7 +104,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
-		$this->assertInternalType( 'int',  $next );
+		$this->assertIsInt( $next );
 	}
 
 	/**
@@ -160,7 +160,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
-		$this->assertInternalType( 'int',  $next );
+		$this->assertIsInt( $next );
 	}
 
 	/**
@@ -195,8 +195,8 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$scheduled_for_second = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
-		$this->assertInternalType( 'int', $scheduled_for_first, 'No event for first post' );
-		$this->assertInternalType( 'int', $scheduled_for_second, 'No event for second post' );
+		$this->assertIsInt( $scheduled_for_first, 'No event for first post' );
+		$this->assertIsInt( $scheduled_for_second, 'No event for second post' );
 	}
 
 	/**

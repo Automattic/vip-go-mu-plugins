@@ -22,8 +22,8 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-		$this->expectExceptionMessage( 'File ACL restrictions are enabled without server configs' );
+		$this->expectWarning();
+		$this->expectWarningMessage( 'File ACL restrictions are enabled without server configs' );
 
 		maybe_load_restrictions();
 
@@ -192,8 +192,8 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 	public function test__send_visibility_headers__invalid_visibility() {
 		define( 'NOT_A_VISIBILITY', 'NOT_A_VISIBILITY' );
 
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-		$this->expectExceptionMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
+		$this->expectWarning();
+		$this->expectWarningMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
 
 		send_visibility_headers( NOT_A_VISIBILITY, '/wp-content/uploads/invalid.jpg' );
 

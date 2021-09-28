@@ -2,9 +2,12 @@
 
 namespace Automattic\VIP\Files;
 
+use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
 
 class API_Client_Test extends \WP_UnitTestCase {
+	use ArraySubsetAsserts;
+
 	private $http_requests;
 
 	public static function set_up_before_class() {
@@ -178,7 +181,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$actual_http_request = reset( $this->http_requests );
 
 		// Should be upgraded to assertMatchesRegularExpression in the future
-		$this->assertRegExp( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
+		$this->assertMatchesRegularExpression( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
 
 		$_SERVER['REQUEST_URI'] = $original_request_uri;
 	}

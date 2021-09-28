@@ -1273,7 +1273,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__should_load_es_wp_query_already_loaded() {
 		require_once __DIR__ . '/../../../../search/es-wp-query/es-wp-query.php';
 
-		$this->expectException( \PHPUnit\Framework\Error\Notice::class );
+		$this->expectError();
 
 		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
 
@@ -2408,8 +2408,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// trigger_error is only called if an alert should happen
 		if ( $should_alert ) {
-			$this->expectException( 'PHPUnit_Framework_Error_Warning' );
-			$this->expectExceptionMessage(
+			$this->expectNotice();
+			$this->expectNoticeMessage(
 				sprintf(
 					'Application 123 - http://example.org has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
 					$difference
@@ -2461,8 +2461,8 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$filter
@@ -2483,8 +2483,8 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_low_message
@@ -2505,8 +2505,8 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_high_message

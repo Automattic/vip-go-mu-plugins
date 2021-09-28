@@ -2,7 +2,11 @@
 
 namespace Automattic\VIP\Cache;
 
+use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
+
 class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
+	use ArraySubsetAsserts;
+
 	public function set_up() {
 		parent::set_up();
 

@@ -5,9 +5,9 @@ namespace Automattic\VIP\Search;
 use \ElasticPress\Indexable as Indexable;
 use \ElasticPress\Indexables as Indexables;
 
+use \WP_Error as WP_Error;
 use \WP_Query as WP_Query;
 use \WP_User_Query as WP_User_Query;
-use \WP_Error as WP_Error;
 
 class Queue {
 	const CACHE_GROUP = 'vip-search-index-queue';
@@ -16,6 +16,7 @@ class Queue {
 	const MAX_BATCH_SIZE = 1000;
 	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
+	/** @var Queue\Schema */
 	public $schema;
 	public $statsd;
 	public $indexables;

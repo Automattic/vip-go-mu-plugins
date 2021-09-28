@@ -112,7 +112,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 		$actual = $get_upload_path->invoke( $this->vip_filesystem );
 
-		$this->assertNotContains( 'vip://', $actual );
+		$this->assertStringNotContainsString( 'vip://', $actual );
 	}
 
 	public function get_test_data__clean_file_path() {

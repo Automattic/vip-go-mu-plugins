@@ -26,7 +26,7 @@ class Logger_Test extends \WP_UnitTestCase {
 	public function tear_down() {
 		restore_error_handler();
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	public function errorHandler( $errno, $errstr, $errfile, $errline, $errcontext ) {
