@@ -16,7 +16,6 @@ class Queue {
 	const MAX_BATCH_SIZE = 1000;
 	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
 
-	/** @var Queue\Schema */
 	public $schema;
 	public $statsd;
 	public $indexables;

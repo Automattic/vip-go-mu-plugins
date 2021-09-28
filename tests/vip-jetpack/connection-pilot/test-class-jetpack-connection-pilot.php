@@ -2,9 +2,10 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 use DateTime;
 
-class Connection_Pilot_Test extends \WP_UnitTestCase {
+class Connection_Pilot_Test extends TestCase {
 	protected static function getMethod( $name ) {
 		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );
 		$method = $class->getMethod( $name );

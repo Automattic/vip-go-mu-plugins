@@ -13,8 +13,9 @@
 namespace Automattic\VIP\Tests;
 
 use Automattic\VIP\Proxy\IpUtils;
+use PHPUnit\Framework\TestCase;
 
-class IpUtilsTest extends \PHPUnit_Framework_TestCase {
+class IpUtilsTest extends TestCase {
 
 	/**
 	 * @dataProvider testIpv4Provider

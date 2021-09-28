@@ -2,12 +2,17 @@
 
 namespace Automattic\VIP\Tests;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
+
 /**
  * Tests for the wpcom_vip_get_client_mu_plugins()
  *
  * We're using test fixtures so we don't have to muck around with a hard-coded client-mu-plugins path.
  */
-class Client_Mu_Plugins__Get__Tests extends \WP_UnitTestCase {
+class Client_Mu_Plugins__Get__Tests extends TestCase {
 	public function test__invalid_dir() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/this-doesnt-exist/';
 
@@ -45,7 +50,7 @@ class Client_Mu_Plugins__Get__Tests extends \WP_UnitTestCase {
  *
  * We're using test fixtures so we don't have to muck around with a hard-coded client-mu-plugins path.
  */
-class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
+class Client_Mu_Plugins__Get_Data__Tests extends TestCase {
 	function test__empty() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/empty/';
 
@@ -79,7 +84,7 @@ class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
 /**
  * Tests for `plugins_url` override
  */
-class Client_Mu_Plugins__Plugins_Url__Tests extends \WP_UnitTestCase {
+class Client_Mu_Plugins__Plugins_Url__Tests extends TestCase {
 	public function get_test_data() {
 		return [
 			'not-client-mu-plugins-path' => [

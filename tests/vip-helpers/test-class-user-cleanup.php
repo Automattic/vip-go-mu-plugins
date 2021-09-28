@@ -2,9 +2,10 @@
 
 namespace Automattic\VIP\Helpers;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
 
-class User_Cleanup_Test extends \WP_UnitTestCase {
+class User_Cleanup_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 

@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Security;
 
-class Machine_User_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Machine_User_Test extends TestCase {
 
 	public static function set_up_before_class() {
 		parent::set_up_before_class();

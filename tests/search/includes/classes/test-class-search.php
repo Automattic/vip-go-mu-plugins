@@ -2,10 +2,13 @@
 
 namespace Automattic\VIP\Search;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
-class Search_Test extends \WP_UnitTestCase {
+
+class Search_Test extends TestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
@@ -19,9 +22,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
-	public function set_up() {
-		parent::set_up();
-
+	public function setUp(): void {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
@@ -1273,7 +1274,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__should_load_es_wp_query_already_loaded() {
 		require_once __DIR__ . '/../../../../search/es-wp-query/es-wp-query.php';
 
-		$this->expectError();
+		$this->expectNotice();
 
 		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
 
@@ -2408,8 +2409,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// trigger_error is only called if an alert should happen
 		if ( $should_alert ) {
-			$this->expectNotice();
-			$this->expectNoticeMessage(
+			$this->expectWarning();
+			$this->expectWarningMessage(
 				sprintf(
 					'Application 123 - http://example.org has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
 					$difference

@@ -2,10 +2,10 @@
 
 namespace Automattic\VIP\Security;
 
-use Automattic\VIP\Feature;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
 
-class Current_Password_Change_Test extends \WP_UnitTestCase {
+class Current_Password_Change_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 

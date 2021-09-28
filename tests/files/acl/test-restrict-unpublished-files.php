@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 
-use WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends \WP_UnitTestCase {
+class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends TestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
 	public static function set_up_before_class() {

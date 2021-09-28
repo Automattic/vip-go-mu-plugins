@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Tests;
 
-class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class VIP_Go_REST_API_Test extends TestCase {
 	/**
 	 * Let's reduce repetition
 	 */

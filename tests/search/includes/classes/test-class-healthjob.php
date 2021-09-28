@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
-class HealthJob_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class HealthJob_Test extends TestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.

@@ -2,8 +2,8 @@
 
 namespace Automattic\VIP\Search\Queue;
 
-use Automattic\VIP\Search\Queue as Queue;
 use \ElasticPress\Indexables as Indexables;
+use Automattic\VIP\Search\Queue as Queue;
 
 class Cron {
 	/**

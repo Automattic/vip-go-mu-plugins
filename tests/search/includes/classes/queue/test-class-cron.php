@@ -3,11 +3,10 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue\Cron as Cron;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class Cron_Test extends \WP_UnitTestCase {
-	public function set_up() {
-		parent::set_up();
-
+class Cron_Test extends TestCase {
+	public function setUp(): void {
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 		}

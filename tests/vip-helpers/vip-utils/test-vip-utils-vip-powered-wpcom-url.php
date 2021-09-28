@@ -1,6 +1,8 @@
 <?php
 
-class WPCOM_VIP_UTILS_VIP_POWERED_WPCOM_URL_TEST extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class WPCOM_VIP_UTILS_VIP_POWERED_WPCOM_URL_TEST extends TestCase {
 
 	public function test__vip_powered_wpcom_url() {
 

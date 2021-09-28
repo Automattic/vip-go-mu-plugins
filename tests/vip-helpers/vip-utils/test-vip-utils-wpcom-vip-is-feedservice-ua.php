@@ -1,6 +1,8 @@
 <?php
 
-class WPCOM_VIP_Utils_Wpcom_Vip_Is_Feedservice_UA_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class WPCOM_VIP_Utils_Wpcom_Vip_Is_Feedservice_UA_Test extends TestCase {
 
 	public function wpcom_vip_is_feedservice_ua_data() {
 		return [
@@ -19,9 +21,8 @@ class WPCOM_VIP_Utils_Wpcom_Vip_Is_Feedservice_UA_Test extends \WP_UnitTestCase 
 	 * @dataProvider wpcom_vip_is_feedservice_ua_data
 	 */
 	public function test__wpcom_vip_is_feedservice_ua( $agent, $expected ) {
-		//phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		$_SERVER['HTTP_USER_AGENT'] = $agent;
-		//phpcs:enable
 
 		$this->assertEquals( $expected, wpcom_vip_is_feedservice_ua() );
 	}

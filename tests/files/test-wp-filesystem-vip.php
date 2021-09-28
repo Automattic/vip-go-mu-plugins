@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Files;
 
-class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class WP_Filesystem_VIP_Test extends TestCase {
 	private $filesystem;
 	private $fs_uploads_mock;
 	private $fs_direct_mock;

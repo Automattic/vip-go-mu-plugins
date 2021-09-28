@@ -1,7 +1,8 @@
 <?php
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class VIP_Mail_Test extends \WP_UnitTestCase {
+class VIP_Mail_Test extends TestCase {
 	public function set_up() {
 		parent::set_up();
 		reset_phpmailer_instance();

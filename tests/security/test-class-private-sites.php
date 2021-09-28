@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Security;
 
-class Private_Sites_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Private_Sites_Test extends TestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled

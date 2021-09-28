@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
-use WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
+class VIP_Files_Acl_Pre_Wp_Utils_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 

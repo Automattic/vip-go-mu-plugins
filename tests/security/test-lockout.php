@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Security;
 
-class Lockout_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Lockout_Test extends TestCase {
 
 	/**
 	 * @var Lockout

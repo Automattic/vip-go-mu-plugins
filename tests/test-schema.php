@@ -1,6 +1,8 @@
 <?php
 
-class VIP_Go_Schema_Test extends WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class VIP_Go_Schema_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 

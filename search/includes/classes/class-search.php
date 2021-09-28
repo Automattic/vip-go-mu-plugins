@@ -94,7 +94,6 @@ class Search {
 	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
-	/** @var Queue */
 	public $queue;
 	public $statsd;
 	public $indexables;

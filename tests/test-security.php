@@ -1,6 +1,8 @@
 <?php
 
-class VIP_Go_Security_Test extends WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class VIP_Go_Security_Test extends TestCase {
 	public function test__admin_username_restricted() {
 		$this->factory->user->create( [
 			'user_login' => 'admin',

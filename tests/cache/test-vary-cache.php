@@ -2,13 +2,13 @@
 
 namespace Automattic\VIP\Cache;
 
-use WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class Vary_Cache_Test extends \WP_UnitTestCase {
+class Vary_Cache_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		require_once( __DIR__ . '/../../cache/class-vary-cache.php' );
+		require_once __DIR__ . '/../../cache/class-vary-cache.php';
 	}
 
 	public function set_up() {

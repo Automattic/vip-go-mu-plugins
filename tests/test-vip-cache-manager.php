@@ -1,10 +1,12 @@
 <?php
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
-class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+class VIP_Go_Cache_Manager_Test extends TestCase {
 	public $cache_manager;
 
 	public function set_up() {

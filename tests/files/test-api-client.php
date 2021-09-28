@@ -2,10 +2,11 @@
 
 namespace Automattic\VIP\Files;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
 
-class API_Client_Test extends \WP_UnitTestCase {
+class API_Client_Test extends TestCase {
 	use ArraySubsetAsserts;
 
 	private $http_requests;
@@ -13,7 +14,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		require_once( __DIR__ . '/../../files/class-api-client.php' );
+		require_once __DIR__ . '/../../files/class-api-client.php';
 	}
 
 	public function set_up() {

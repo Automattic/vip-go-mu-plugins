@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Logstash;
 
-class Logger_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Logger_Test extends TestCase {
 	private $errors;
 
 	public static function set_up_before_class() {

@@ -3,8 +3,9 @@
 namespace Automattic\VIP\Files;
 
 use \WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
+class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 	private $stream_wrapper;
 
 	private $api_client_mock;

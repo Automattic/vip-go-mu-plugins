@@ -1,6 +1,8 @@
 <?php
 
-class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class VIP_Go_Jetpack_Test extends TestCase {
 	function get_jp_sync_settings_data() {
 		return [
 			// Too small

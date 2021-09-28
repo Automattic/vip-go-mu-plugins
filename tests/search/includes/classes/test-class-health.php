@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
-class Health_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Health_Test extends TestCase {
 	public function set_up() {
 		parent::set_up();
 

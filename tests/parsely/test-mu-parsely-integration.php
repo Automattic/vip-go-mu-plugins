@@ -2,12 +2,14 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
 function test_mode() {
 	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
 	return $mode ? $mode : 'disabled';
 }
 
-class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
+class MU_Parsely_Integration_Test extends TestCase {
 	protected static $test_mode;
 
 	public static function set_up_before_class() {

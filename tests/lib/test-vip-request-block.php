@@ -1,6 +1,8 @@
 <?php
 
-class VIP_Request_Block_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class VIP_Request_Block_Test extends TestCase {
 	/*
 	 * The $_SERVER headers that are used in this class to test
 	 * are defined in the tests/bootstrap.php file.

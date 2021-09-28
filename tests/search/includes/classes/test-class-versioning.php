@@ -3,8 +3,9 @@
 namespace Automattic\VIP\Search;
 
 use \WP_Error as WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class Versioning_Test extends \WP_UnitTestCase {
+class Versioning_Test extends TestCase {
 	/**
 	* Make tests run in separate processes since we're testing state
 	* related to plugin init, including various constants.

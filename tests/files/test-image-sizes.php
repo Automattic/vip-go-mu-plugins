@@ -1,5 +1,7 @@
 <?php
 
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
 /**
  * Class A8C_Files_ImageSizes_Test
  *
@@ -11,7 +13,7 @@
  *
  * @group srcset
  */
-class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
+class A8C_Files_ImageSizes_Test extends TestCase {
 
 	/**
 	 * The test image.

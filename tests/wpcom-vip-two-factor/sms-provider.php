@@ -1,6 +1,8 @@
 <?php
 
-class Two_Factor_SMS_Test extends WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Two_Factor_SMS_Test extends TestCase {
 	public function set_up() {
 		parent::set_up();
 

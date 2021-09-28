@@ -2,18 +2,15 @@
 
 namespace Automattic\VIP\Search;
 
-class Queue_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Queue_Test extends TestCase {
 	/**
 	* Make tests run in separate processes since we're testing state
 	* related to plugin init, including various constants.
 	*/
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-
-	/** @var \Automattic\VIP\Search\Search */
-	private $es;
-	/** @var \Automattic\VIP\Search\Queue */
-	private $queue;
 
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
@@ -32,11 +29,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
-	public function set_up() {
-		global $wpdb;
-
-		/* parent::set_up(); */
-
+	public function setUp(): void {
 		wp_cache_flush();
 
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {

@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Performance;
 
-class Do_Pings_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Do_Pings_Test extends TestCase {
 	public function test__block_encloseme_metadata_filter_should_respect_update_value_if_not_encloseme() {
 		$should_update = true;
 		$object_id = 1;

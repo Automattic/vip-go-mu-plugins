@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Files;
 
-use WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class API_Cache_Test extends \WP_UnitTestCase {
+class API_Cache_Test extends TestCase {
 	/**
 	 * @var API_Cache
 	 */

@@ -1,6 +1,8 @@
 <?php
 
-class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends TestCase {
 
 	public static function set_up_before_class() {
 		parent::set_up_before_class();

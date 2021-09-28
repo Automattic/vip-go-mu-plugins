@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Config;
 
-class Site_Details_Index_Test extends \WP_UnitTestCase {
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+class Site_Details_Index_Test extends TestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.

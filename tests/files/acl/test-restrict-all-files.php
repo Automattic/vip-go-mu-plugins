@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Files\Acl\Restrict_All_Files;
 
-use WP_Error;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
 
-class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
+class VIP_Files_Acl_Restrict_All_Files_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 

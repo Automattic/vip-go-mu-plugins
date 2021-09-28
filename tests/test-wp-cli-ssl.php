@@ -3,12 +3,16 @@
 namespace Automattic\VIP\Tests;
 
 use function Automattic\VIP\WP_CLI\init_is_ssl_toggle_for_multisite;
-use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
 
-class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
+use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
+use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
+class VIP_WP_CLI__SSL__Test extends TestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- safe - test environment
 		$this->initial_https_value = $_SERVER['HTTPS'] ?? null;
 	}
 
