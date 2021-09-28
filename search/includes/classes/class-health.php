@@ -772,19 +772,15 @@ class Health {
 		$diff = array();
 
 		foreach ( $versions as $version ) {
-			$version_diff = $this->get_index_settings_diff_for_indexable( $indexable, array(
+			$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
 				'index_version' => $version['number'],
 			) );
 
-			if ( empty( $version_diff ) ) {
+			if ( empty( $version_result ) ) {
 				continue;
 			}
 
-			$diff[] = array(
-				'index_version' => $version['number'],
-				'index_name' => $indexable->get_index_name(),
-				'diff' => $version_diff,
-			);
+			$diff[] = $version_result;
 		}
 
 		return $diff;
@@ -819,9 +815,18 @@ class Health {
 			$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
 		}
 
+		$result = [];
+		if ( ! empty($diff) ) {
+			$result = array(
+				'index_version' => $options['index_version'] ?? 1,
+				'index_name' => $indexable->get_index_name(),
+				'diff' => $diff,
+			);
+		}
+
 		$this->search->versioning->reset_current_version_number( $indexable );
 
-		return $diff;
+		return $result;
 	}
 
 	public static function limit_index_settings_to_keys( $settings, $keys ) {
