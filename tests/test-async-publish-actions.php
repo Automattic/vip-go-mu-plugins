@@ -4,6 +4,7 @@
  */
 
 namespace Automattic\VIP\Async_Publish_Actions\Tests;
+
 use Automattic\VIP\Async_Publish_Actions;
 use WP_UnitTestCase;
 
@@ -14,7 +15,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Prepare test environment
 	 */
-	function set_up() {
+	public function set_up() {
 		parent::set_up();
 
 		// make sure the schedule is clear.
@@ -27,7 +28,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Clean up after our tests
 	 */
-	function tear_down() {
+	public function tear_down() {
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
 

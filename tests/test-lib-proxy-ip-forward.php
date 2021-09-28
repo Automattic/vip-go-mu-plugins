@@ -13,6 +13,9 @@ use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
 use function Automattic\VIP\Proxy\set_remote_address;
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
+
 abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 

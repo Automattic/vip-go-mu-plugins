@@ -41,30 +41,33 @@ class API_Cache_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__clear_tmp_files() {
-		$file1 = tempnam( sys_get_temp_dir(), 'test' );
-		$file2 = tempnam( sys_get_temp_dir(), 'test' );
+		$file1 = tempnam( sys_get_temp_dir(), 'test' );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
+		$file2 = tempnam( sys_get_temp_dir(), 'test' );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
 
-		$filesProp = self::get_property( $this->cache, 'files' );
-		$filesProp->setValue( $this->cache, [ 'test.jpg' => $file1, 'test2.jpg' => $file2 ] );
+		$files_prop = self::get_property( $this->cache, 'files' );
+		$files_prop->setValue( $this->cache, [
+			'test.jpg' => $file1,
+			'test2.jpg' => $file2,
+		] );
 
-		$statsProp = self::get_property( $this->cache, 'file_stats' );
-		$statsProp->setValue( $this->cache, [
-			'test.jpg' => [
-				'size' => '81',
-				'mtime' => '123456779'
+		$stats_prop = self::get_property( $this->cache, 'file_stats' );
+		$stats_prop->setValue( $this->cache, [
+			'test.jpg'  => [
+				'size'  => '81',
+				'mtime' => '123456779',
 			],
 			'test2.jpg' => [
-				'size' => '235',
-				'mtime' => '123456779'
-			]
+				'size'  => '235',
+				'mtime' => '123456779',
+			],
 		] );
 
 		$this->cache->clear_tmp_files();
 
-		$this->assertEmpty( $filesProp->getValue( $this->cache ) );
+		$this->assertEmpty( $files_prop->getValue( $this->cache ) );
 		$this->assertFalse( file_exists( $file1 ) );
 		$this->assertFalse( file_exists( $file2 ) );
-		$this->assertEmpty( $statsProp->getValue( $this->cache ) );
+		$this->assertEmpty( $stats_prop->getValue( $this->cache ) );
 	}
 
 	public function test__get_file() {
