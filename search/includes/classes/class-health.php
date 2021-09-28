@@ -816,7 +816,7 @@ class Health {
 		}
 
 		$result = [];
-		if ( ! empty($diff) ) {
+		if ( ! empty( $diff ) ) {
 			$result = array(
 				'index_version' => $options['index_version'] ?? 1,
 				'index_name' => $indexable->get_index_name(),
