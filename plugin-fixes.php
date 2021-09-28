@@ -9,23 +9,13 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 /**
  * Contact Form 7 (https://en-ca.wordpress.org/plugins/contact-form-7/)
- * 
+ *
  * The plugin attempts to write to a `wp-content` path which will fail.
  * These files are transient and only meant to be included as attachment,
  * so let's just tell CF7 to put them in `/tmp/`.
  */
 if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
 	define( 'WPCF7_UPLOADS_TMP_DIR', get_temp_dir() );
-}
-
-/**
- * Woocommerce log location
- *
- * @constant WC_LOG_DIR Write Woocommerce logs to the /tmp directory to prevent
- * them from being copied to the Files Service.
- */
-if ( ! defined( 'WC_LOG_DIR' ) ) {
-	define( 'WC_LOG_DIR', '/tmp' );
 }
 
 /**
@@ -38,9 +28,9 @@ if ( ! defined( 'WC_LOG_DIR' ) ) {
 function vip_go_amp_force_query_var_value( $query_vars ) {
 	// Don't bother if AMP is not active
 	if ( ! defined( 'AMP_QUERY_VAR' ) ) {
-		return $query_vars;	
+		return $query_vars;
 	}
-	
+
 	if ( isset( $query_vars[ AMP_QUERY_VAR ] ) ) {
 		if ( '' === $query_vars[ AMP_QUERY_VAR ] ) {
 			$query_vars[ AMP_QUERY_VAR ] = 1;
