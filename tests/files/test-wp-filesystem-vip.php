@@ -7,14 +7,14 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 	private $fs_uploads_mock;
 	private $fs_direct_mock;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-wp-filesystem-vip.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
 		$this->fs_direct_mock = $this->createMock( \WP_Filesystem_Direct::class );
@@ -25,10 +25,10 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 		] );
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		$this->filesystem = null;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**

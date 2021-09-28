@@ -2,13 +2,13 @@
 
 class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase {
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 		require_once( __DIR__ . '/../misc.php' );
 	}
 
-	public function tearDown() {
-		parent::tearDown();
+	public function tear_down() {
+		parent::tear_down();
 		wp_reset_query();
 	}
 

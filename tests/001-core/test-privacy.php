@@ -3,14 +3,14 @@
 namespace Automattic\VIP\Core\Privacy;
 
 class Privacy_Policy_Link_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../001-core/privacy.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		// Override the default to make testing easier.
 		add_filter( 'vip_show_login_privacy_policy', '__return_true' );

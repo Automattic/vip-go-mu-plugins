@@ -3,8 +3,8 @@
 namespace Automattic\VIP\Utils;
 
 class Context_Test extends \PHPUnit_Framework_TestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../../lib/utils/context.php' );
 	}

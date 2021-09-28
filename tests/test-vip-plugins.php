@@ -8,8 +8,8 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 	protected $option_active_sitewide_plugins = [];
 	protected $code_activated_plugins = [];
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		// emulate the active plugins option
 		$this->option_active_plugins = [

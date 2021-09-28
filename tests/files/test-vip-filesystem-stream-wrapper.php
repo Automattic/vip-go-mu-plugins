@@ -11,23 +11,23 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 
 	private $errors = [];
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
-		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock ); 
+		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
 
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		$this->stream_wrapper = null;
 		$this->api_client_mock = null;
 
@@ -35,7 +35,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 
 		restore_error_handler();
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**
@@ -70,7 +70,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 		$path_from = 'vip://wp-content/uploads/file.txt';
 		$path_to = 'vip://wp-content/uploads/file.txt';
 
-		// We bail early so Api_Client should not be touched. 
+		// We bail early so Api_Client should not be touched.
 		$this->api_client_mock
 			->expects( $this->never() )
 			->method( $this->anything() );
@@ -95,13 +95,13 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 		$this->api_client_mock
 			->expects( $this->once() )
 			->method( 'upload_file' )
-			->with( $tmp_file, 'wp-content/uploads/new.txt' ) 
+			->with( $tmp_file, 'wp-content/uploads/new.txt' )
 			->willReturn( '/wp-content/uploads/new.txt' );
 
 		$this->api_client_mock
 			->expects( $this->once() )
 			->method( 'delete_file' )
-			->with( 'wp-content/uploads/old.txt' ) 
+			->with( 'wp-content/uploads/old.txt' )
 			->willReturn( true );
 
 		$actual_result = $this->stream_wrapper->rename( $path_from, $path_to );
@@ -110,7 +110,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	}
 
 	public function get_test_data__validate_valid_mode() {
-		return [ 
+		return [
 			'read mode'   => [ 'r' ],
 			'write mode'  => [ 'w' ],
 			'append mode' => [ 'a' ],
@@ -126,7 +126,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	}
 
 	public function get_test_data__validate_invalid_mode() {
-		return [ 
+		return [
 			'c mode'   => [ 'c' ],
 			'e mode'  => [ 'e' ],
 		];

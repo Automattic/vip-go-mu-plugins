@@ -7,28 +7,28 @@ class Curl_Streamer_Test extends \WP_UnitTestCase {
 
 	private $curl_streamer;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-curl-streamer.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->file_stream = fopen( self::TEST_FILE_PATH, 'r' );
 		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );
 		$this->curl_streamer->init();
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		$this->curl_streamer->deinit();
 		fclose( $this->file_stream );
 
 		$this->file_stream = null;
 		$this->curl_streamer = null;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	public function test__init() {

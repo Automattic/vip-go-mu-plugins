@@ -6,8 +6,8 @@ class VIP_Request_Block_Test extends \WP_UnitTestCase {
 	 * are defined in the tests/bootstrap.php file.
 	 */
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../lib/class-vip-request-block.php';
 	}

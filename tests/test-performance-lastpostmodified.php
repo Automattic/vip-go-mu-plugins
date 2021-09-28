@@ -5,14 +5,10 @@ namespace Automattic\VIP\Performance;
 class lastpostmodified_Test extends \WP_UnitTestCase {
 	protected $post;
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
-	}
-
-	public function tearDown() {
-		parent::tearDown();
 	}
 
 	public function test__transition_post_status__save_on_publish() {

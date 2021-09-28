@@ -10,22 +10,22 @@ class API_Cache_Test extends \WP_UnitTestCase {
 	 */
 	public $cache;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-api-cache.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->cache = API_Cache::get_instance();
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		$this->cache->clear_tmp_files();
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	public static function get_property( $object, $name ) {
@@ -48,15 +48,15 @@ class API_Cache_Test extends \WP_UnitTestCase {
 		$filesProp->setValue( $this->cache, [ 'test.jpg' => $file1, 'test2.jpg' => $file2 ] );
 
 		$statsProp = self::get_property( $this->cache, 'file_stats' );
-		$statsProp->setValue( $this->cache, [ 
+		$statsProp->setValue( $this->cache, [
 			'test.jpg' => [
 				'size' => '81',
 				'mtime' => '123456779'
-			], 
+			],
 			'test2.jpg' => [
 				'size' => '235',
-				'mtime' => '123456779'	
-			] 
+				'mtime' => '123456779'
+			]
 		] );
 
 		$this->cache->clear_tmp_files();

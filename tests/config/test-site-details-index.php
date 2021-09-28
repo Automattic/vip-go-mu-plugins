@@ -10,7 +10,8 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
 		require_once __DIR__ . '/../../config/class-site-details-index.php';
 	}
 
@@ -31,7 +32,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 	public function test__cron_event_should_be_hooked_if_init() {
 		// Getting the instance should call init which should add set_env_and_core to the hook
 		$sdi = Site_Details_Index::instance();
-		
+
 		$this->assertTrue( is_integer( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) ) );
 	}
 
@@ -53,7 +54,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 			),
 		);
 
-		// Set the cache for plugins and the option for enabling a plugin	
+		// Set the cache for plugins and the option for enabling a plugin
 		wp_cache_set( 'plugins', array( '' => $plugins ), 'plugins' );
 		update_option( 'active_plugins', array( 'world.php' ) );
 
@@ -90,7 +91,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'activated_by' => 'option',
 				),
 			),
-			$site_details['plugins'] 
+			$site_details['plugins']
 		);
 
 		$this->assertTrue( array_key_exists( 'core', $site_details ), 'core should exist' );
@@ -131,7 +132,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 			),
 		);
 
-		// Set the cache for plugins and the option for enabling a plugin	
+		// Set the cache for plugins and the option for enabling a plugin
 		wp_cache_set( 'plugins', array( '' => $plugins ), 'plugins' );
 		update_option( 'active_plugins', array( 'hello.php' ) );
 
@@ -170,7 +171,7 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 					'activated_by' => null,
 				),
 			),
-			$site_details['plugins'] 
+			$site_details['plugins']
 		);
 
 		$this->assertTrue( array_key_exists( 'core', $site_details ), 'core should exist' );

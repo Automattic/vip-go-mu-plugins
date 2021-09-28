@@ -5,14 +5,14 @@ namespace Automattic\VIP\Cache;
 use WP_Error;
 
 class Vary_Cache_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../cache/class-vary-cache.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->original_COOKIE = $_COOKIE;
 		$this->original_SERVER = $_SERVER;
@@ -20,13 +20,13 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		Vary_Cache::load();
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_COOKIE;
 		$_SERVER = $this->original_SERVER;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**

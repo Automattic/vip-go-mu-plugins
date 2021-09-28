@@ -5,23 +5,23 @@ namespace Automattic\VIP\Files\Acl\Restrict_All_Files;
 use WP_Error;
 
 class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../../files/acl/acl.php';
 		require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->original_current_user_id = get_current_user_id();
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		wp_set_current_user( $this->original_current_user_id );
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	public function test__check_file_visibility__not_logged_in() {

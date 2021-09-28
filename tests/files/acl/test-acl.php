@@ -5,8 +5,8 @@ namespace Automattic\VIP\Files\Acl;
 use WP_Error;
 
 class VIP_Files_Acl_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../../files/acl/acl.php' );
 	}
@@ -256,7 +256,7 @@ class VIP_Files_Acl_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped();
 		}
 
-		// Can access other paths from basedir, as long as they don't contain `/sites/ 
+		// Can access other paths from basedir, as long as they don't contain `/sites/
 		$expected_is_allowed = true;
 
 		$file_path = 'cache/css/cats.css';

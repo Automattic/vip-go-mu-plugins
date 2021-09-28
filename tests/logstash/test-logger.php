@@ -5,14 +5,14 @@ namespace Automattic\VIP\Logstash;
 class Logger_Test extends \WP_UnitTestCase {
 	private $errors;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../logstash/class-logger.php';
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->errors = [];
 
@@ -23,7 +23,7 @@ class Logger_Test extends \WP_UnitTestCase {
 		$entries_prop->setValue( [] );
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		restore_error_handler();
 
 		parent::tearDown();

@@ -11,14 +11,18 @@ class Cache_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	public static function setUpBeforeClass() {
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
+
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
 	}
 
-	public function setUp() {
+	public function set_up() {
 		global $wpdb;
+		parent::set_up();
+
 		require_once __DIR__ . '/../../../../search/search.php';
 		include_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
 

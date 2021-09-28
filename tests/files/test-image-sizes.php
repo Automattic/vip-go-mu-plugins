@@ -30,8 +30,8 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	/**
 	 * Load the Automattic\VIP\Files\ImageSizes class.
 	 */
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-image.php' );
 		require_once( __DIR__ . '/../../files/class-image-sizes.php' );
@@ -42,8 +42,8 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
@@ -55,7 +55,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 *
 	 * Remove added uploads.
 	 */
-	public function tearDown() {
+	public function tear_down() {
 
 		$this->remove_added_uploads();
 
@@ -66,7 +66,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		 */
 		Automattic\VIP\Files\ImageSizes::$sizes = null;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**

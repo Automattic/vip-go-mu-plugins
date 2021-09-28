@@ -7,21 +7,21 @@ use WP_Error;
 class API_Client_Test extends \WP_UnitTestCase {
 	private $http_requests;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-api-client.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->init_api_client();
 
 		$this->http_requests = [];
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		$this->api_client = null;
 		$this->http_requests = null;
 
@@ -29,7 +29,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 
 		API_Cache::get_instance()->clear_tmp_files();
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	private function init_api_client() {
@@ -48,9 +48,9 @@ class API_Client_Test extends \WP_UnitTestCase {
 				'args' => $args,
 			];
 
-			if ( $args[ 'stream' ] && 
-				! is_wp_error( $mocked_response ) && 
-				isset( $mocked_response[ 'response' ] ) && 
+			if ( $args[ 'stream' ] &&
+				! is_wp_error( $mocked_response ) &&
+				isset( $mocked_response[ 'response' ] ) &&
 				$mocked_response[ 'response' ][ 'code' ] === 200 ) {
 				// Handle streamed requests
 				file_put_contents( $args[ 'filename' ], $mocked_response[ 'body' ] );
@@ -159,7 +159,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__call_api__user_agent() {
-		$original_request_uri = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- test context; this is safe 
+		$original_request_uri = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- test context; this is safe
 		$_SERVER['REQUEST_URI'] = ' /path?query';
 
 		// Re-initialize so re-generate UA string
@@ -360,7 +360,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->mock_http_response( $mocked_response );
 
 		$file = $this->api_client->get_file( '/wp-content/uploads/get_file.jpg' );
-		
+
 		if ( is_wp_error( $file ) ) {
 			$actual_result = $file;
 		} else {

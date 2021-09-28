@@ -4,14 +4,14 @@ namespace Automattic\VIP\Security;
 
 class Machine_User_Test extends \WP_UnitTestCase {
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../security/machine-user.php';
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->machine_user = $this->factory->user->create_and_get( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,

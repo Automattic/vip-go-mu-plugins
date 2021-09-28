@@ -10,7 +10,9 @@ function test_mode() {
 class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 	protected static $test_mode;
 
-	public static function setUpBeforeClass() {
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
+
 		self::$test_mode = test_mode();
 		if ( 'disabled' !== self::$test_mode ) {
 			echo 'Running Parsely Integration Tests in mode: ' . esc_html( self::$test_mode ) . "\n";

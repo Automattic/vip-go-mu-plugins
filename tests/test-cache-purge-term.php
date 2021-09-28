@@ -9,8 +9,8 @@ namespace Automattic\VIP\Tests;
 class Cache_Manager__Term_Purge__Test extends \WP_Test_REST_TestCase {
 	const TEST_TAXONOMY_SLUG = 'my-cool-taxonomy';
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->cache_manager = \WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->clear_queued_purge_urls();
@@ -20,10 +20,10 @@ class Cache_Manager__Term_Purge__Test extends \WP_Test_REST_TestCase {
 		remove_all_actions( 'clean_post_cache' );
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		unregister_taxonomy( self::TEST_TAXONOMY_SLUG );
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	private function register_taxonomy_and_term( $taxonomy_args = [] ) {

@@ -13,8 +13,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 */
 	protected $vip_filesystem;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-vip-filesystem.php' );
 
@@ -27,8 +27,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->vip_filesystem = new VIP_Filesystem();
 
@@ -37,14 +37,14 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$add_filters->invoke( $this->vip_filesystem );
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		// remove the filters
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
 
 		$this->vip_filesystem = null;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**

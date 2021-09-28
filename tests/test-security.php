@@ -116,19 +116,19 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	}
 
-	public function setUp() {
+	public function set_up() {
 
-		parent::setUp();
+		parent::set_up();
 
 		$this->original_POST = $_POST;
 
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 
 		$_POST = $this->original_POST;
 
-		parent::tearDown();
+		parent::tear_down();
 
 	}
 

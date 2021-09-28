@@ -4,13 +4,15 @@ namespace Automattic\VIP\Search;
 
 class SettingsHealthJob_Test extends \WP_UnitTestCase {
 
-	public static function setUpBeforeClass() {
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 		require_once __DIR__ . '/../../../../search/search.php';
 
 		\Automattic\VIP\Search\Search::instance();
 	}
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
 		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
 	}
 

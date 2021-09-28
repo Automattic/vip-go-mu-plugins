@@ -10,7 +10,9 @@ class HealthJob_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	public static function setUpBeforeClass() {
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
+
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
@@ -26,7 +28,8 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
 		require_once __DIR__ . '/../../../../search/includes/classes/class-healthjob.php';
 	}
 

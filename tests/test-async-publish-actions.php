@@ -14,8 +14,8 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Prepare test environment
 	 */
-	function setUp() {
-		parent::setUp();
+	function set_up() {
+		parent::set_up();
 
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
@@ -27,12 +27,12 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Clean up after our tests
 	 */
-	function tearDown() {
+	function tear_down() {
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
 
 		remove_action( 'async_transition_post_status', '__return_true' );
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**

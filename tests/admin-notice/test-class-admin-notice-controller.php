@@ -2,14 +2,18 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
+
 require_once __DIR__ . '/../../admin-notice/class-admin-notice-controller.php';
 require_once __DIR__ . '/../../admin-notice/class-admin-notice.php';
 
-class Admin_Notice_Controller_Test extends \PHPUnit\Framework\TestCase {
+class Admin_Notice_Controller_Test extends TestCase {
 
 	public static $mock_global_functions;
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
+
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'add_user_meta', 'get_user_meta', 'delete_user_meta' ] )
 			->getMock();

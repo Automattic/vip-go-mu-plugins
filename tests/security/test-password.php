@@ -6,14 +6,14 @@ use Automattic\VIP\Feature;
 use WP_Error;
 
 class Current_Password_Change_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../security/password.php';
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->factory->user->create( [
 			'user_login' => 'john',

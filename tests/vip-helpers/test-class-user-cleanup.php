@@ -5,8 +5,8 @@ namespace Automattic\VIP\Helpers;
 use WP_Error;
 
 class User_Cleanup_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../vip-helpers/class-user-cleanup.php' );
 	}

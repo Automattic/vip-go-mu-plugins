@@ -3,8 +3,8 @@
 namespace Automattic\VIP\Cache;
 
 class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		global $wp_rest_server;
 		$this->server = $wp_rest_server = new \WP_REST_Server;
@@ -17,11 +17,11 @@ class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
 		] );
 	}
 
-	public function tearDown() {
-		parent::tearDown();
-
+	public function tear_down() {
 		global $wp_rest_server;
 		$wp_rest_server = null;
+
+		parent::tear_down();
 	}
 
 	protected function dispatch_request( $method ) {

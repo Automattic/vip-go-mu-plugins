@@ -19,7 +19,8 @@ class Search_Test extends \WP_UnitTestCase {
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
 
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 

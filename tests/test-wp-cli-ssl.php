@@ -2,21 +2,22 @@
 
 namespace Automattic\VIP\Tests;
 
-use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
 use function Automattic\VIP\WP_CLI\init_is_ssl_toggle_for_multisite;
+use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
 
 class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->initial_https_value = $_SERVER['HTTPS'] ?? null;
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		$_SERVER['HTTPS'] = $this->initial_https_value;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
+
 	public function get_test_data() {
 		return [
 			// 1) siteurl

@@ -2,27 +2,29 @@
 
 namespace Automattic\VIP\Tests;
 
-use function Automattic\VIP\Proxy\is_valid_ip;
-use function Automattic\VIP\Proxy\set_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
-use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
-use function Automattic\VIP\Proxy\get_proxy_verification_key;
-use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
-use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
+use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
+use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
+use function Automattic\VIP\Proxy\get_proxy_verification_key;
+use function Automattic\VIP\Proxy\is_valid_ip;
+use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
+use function Automattic\VIP\Proxy\set_remote_address;
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
-abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
+abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
 		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
 		}
@@ -30,6 +32,8 @@ abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
 		}
+
+		parent::tear_down();
 	}
 }
 
@@ -297,17 +301,19 @@ class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framewo
 	}
 }
 
-class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
+
 		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
 		}
@@ -315,6 +321,8 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
 		}
+
+		parent::tear_down();
 	}
 
 	/**

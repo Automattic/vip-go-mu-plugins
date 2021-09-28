@@ -16,14 +16,14 @@ class Lockout_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = FALSE;
 	protected $runTestInSeparateProcess = TRUE;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../security/class-lockout.php';
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->lockout = new Lockout();
 	}

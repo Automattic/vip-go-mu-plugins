@@ -3,7 +3,8 @@
 namespace Automattic\VIP\Search\Commands;
 
 class HealthCommand_Test extends \WP_UnitTestCase {
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
 		// define( 'WP_CLI', true );
 
 		// require_once __DIR__ . '/../../../../../vip-helpers/vip-wp-cli.php';

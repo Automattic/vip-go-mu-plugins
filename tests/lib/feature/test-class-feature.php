@@ -2,9 +2,11 @@
 
 namespace Automattic\VIP;
 
-class Feature_Test extends \PHPUnit_Framework_TestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
+
+class Feature_Test extends TestCase {
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../../lib/feature/class-feature.php' );
 	}
@@ -12,11 +14,11 @@ class Feature_Test extends \PHPUnit_Framework_TestCase {
 	/**
 	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
 	 * use something like this when generating test data:
-	 * 
+	 *
 	 * for( $i = 1; $i < 1000; $i++ ) {
 	 *     echo $i . ' - ' . crc32( 'foo-feature-' . $i ) % 100 . PHP_EOL;
 	 * }
-	 * 
+	 *
 	 * The above will give you a list of site IDs that fall above or below your target threshold
 	 */
 	public function is_enabled_by_percentage_data() {

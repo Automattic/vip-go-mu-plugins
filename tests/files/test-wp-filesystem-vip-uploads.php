@@ -8,14 +8,14 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	private $api_client_mock;
 	private $filesystem;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once( __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php' );
 	}
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
@@ -24,13 +24,13 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		add_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		remove_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 
 		$this->api_client_mock = null;
 		$this->filesystem = null;
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**

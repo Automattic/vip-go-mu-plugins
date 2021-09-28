@@ -3,7 +3,9 @@
 namespace Automattic\VIP\Search;
 
 class Health_Test extends \WP_UnitTestCase {
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
+
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
 		require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';

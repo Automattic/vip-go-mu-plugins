@@ -3,8 +3,8 @@
 namespace Automattic\VIP\Utils;
 
 class Alerts_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+	public static function set_up_before_class() {
+		parent::set_up_before_class();
 
 		require_once __DIR__ . '/../../../lib/utils/class-alerts.php';
 	}
@@ -203,13 +203,13 @@ class Alerts_Test extends \WP_UnitTestCase {
 	public function get_test_data__invalid_details() {
 		return [
 			'invalid-type' => [ 'string' ],
-			'missing-keys' => [ 
+			'missing-keys' => [
 				'alias' => 'test/alert',
 				'description' => 'Test alert',
 				'entity' => 'test',
 				'source' => 'test',
 			],
-			'extra-keys' => [ 
+			'extra-keys' => [
 				'alias' => 'test/alert',
 				'description' => 'Test alert',
 				'entity' => 'test',

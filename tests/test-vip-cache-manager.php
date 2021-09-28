@@ -7,8 +7,8 @@
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	public $cache_manager;
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->init();

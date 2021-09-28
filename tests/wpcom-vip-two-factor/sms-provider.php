@@ -1,7 +1,9 @@
 <?php
 
 class Two_Factor_SMS_Test extends WP_UnitTestCase {
-	public function setUp() {
+	public function set_up() {
+		parent::set_up();
+
 		require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
 		require_once __DIR__ . '/../../wpcom-vip-two-factor/sms-provider.php';
 	}

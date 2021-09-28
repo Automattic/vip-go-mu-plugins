@@ -2,8 +2,8 @@
 
 
 class VIP_Mail_Test extends \WP_UnitTestCase {
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 		reset_phpmailer_instance();
 		if ( ! defined( 'USE_VIP_PHPMAILER' ) ) {
 			define( 'USE_VIP_PHPMAILER', true );
@@ -59,7 +59,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 		$header = $mailer->get_sent()->header;
 
-		$this->assertRegExp( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
+		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 
 	/**
