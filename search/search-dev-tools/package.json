@@ -16,7 +16,7 @@
     "build/*"
   ],
   "devDependencies": {
-    "@babel/eslint-parser": "7.15.4",
+    "@babel/eslint-parser": "7.15.7",
     "babel-eslint": "10.1.0",
     "eslint": "6.8.0",
     "eslint-config-wpvip": "github:Automattic/eslint-config-wpvip#master",
