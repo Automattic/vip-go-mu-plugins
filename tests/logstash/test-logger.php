@@ -31,8 +31,8 @@ class Logger_Test extends TestCase {
 		parent::tear_down();
 	}
 
-	public function errorHandler( $errno, $errstr, $errfile, $errline, $errcontext ) {
-		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline', 'errcontext' );
+	public function errorHandler( $errno, $errstr, $errfile, $errline ) {
+		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline' );
 	}
 
 	public function assertError( $errstr, $errno ) {

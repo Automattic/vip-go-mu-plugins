@@ -52,8 +52,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 	/**
 	 * Helper functions to test for trigger_error calls
 	 */
-	public function errorHandler( $errno, $errstr, $errfile, $errline, $errcontext ) {
-		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline', 'errcontext' );
+	public function errorHandler( $errno, $errstr, $errfile, $errline ) {
+		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline' );
 	}
 
 	public function assertError( $errstr, $errno ) {

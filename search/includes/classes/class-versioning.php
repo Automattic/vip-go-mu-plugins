@@ -531,7 +531,11 @@ class Versioning {
 		$new_version = null;
 
 		if ( ! empty( $versions ) && is_array( $versions ) ) {
-			$new_version = max( array_keys( $versions ) );
+			$versions = array_map( function ( $v ) {
+				return is_int( $v ) ? $v : 0;
+			}, array_keys( $versions ) );
+
+			$new_version = max( $versions );
 		}
 
 		// If site has no versions yet (1 version), the next version is 2

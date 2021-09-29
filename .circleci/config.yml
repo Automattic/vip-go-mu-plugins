@@ -15,6 +15,8 @@ workflows:
       - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
+      - php80-build-multisite-nightly
+      - php80-build-singlesite-nightly
       - search-dev-tools
 
   after-master-merge:
@@ -71,6 +73,14 @@ job-references:
       npm ci
       composer install -n
 
+  install_dependencies_php80: &install_dependencies_php80
+    name: "Install Dependencies"
+    command: |
+      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php8.0-mysqli php8.0-gd php8.0-xdebug jq moreutils
+      npm ci
+      cat composer.json | jq '.["require-dev"]["phpunit/phpunit"] = "^9"' | sponge composer.json
+      composer update phpunit/phpunit -W
+
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
     command: |
@@ -83,24 +93,31 @@ job-references:
     command: |
       git submodule update --init --recursive
 
+  install_phpunit9: &install_phpunit9
+    name: "Install PHPUnit 9"
+    command: |
+      composer require -W --dev phpunit/phpunit:^9
+
+  run_tests: &run_tests
+    name: "Run Tests"
+    command: |
+      rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
+      bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
+      vendor/bin/phpunit --version
+      if [[ "$DISABLE_JETPACK" == "1" ]]; then
+        echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+        vendor/bin/phpunit --exclude-group jetpack-required
+      else
+        vendor/bin/phpunit
+      fi
+
   php_job: &php_job
     steps:
       - checkout
       - run: *setup_environment
       - run: *install_dependencies
       - run: *prepare_repo
-      - run:
-          name: "Run Tests"
-          command: |
-            rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
-            bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
-            vendor/bin/phpunit --version
-            if [[ "$DISABLE_JETPACK" == "1" ]]; then
-              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-              vendor/bin/phpunit --exclude-group jetpack-required
-            else
-              vendor/bin/phpunit
-            fi
+      - run: *run_tests
 
   phpunit9_job: &phpunit9_job
     steps:
@@ -108,19 +125,16 @@ job-references:
       - run: *setup_environment
       - run: *install_dependencies
       - run: *prepare_repo
-      - run:
-          name: "Run Tests"
-          command: |
-            rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
-            bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
-            composer require -W --dev phpunit/phpunit:^9
-            vendor/bin/phpunit --version
-            if [[ "$DISABLE_JETPACK" == "1" ]]; then
-              echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-              vendor/bin/phpunit --exclude-group jetpack-required
-            else
-              vendor/bin/phpunit
-            fi
+      - run: *install_phpunit9
+      - run: *run_tests
+
+  php80_job: &php80_job
+    steps:
+      - checkout
+      - run: *setup_environment
+      - run: *install_dependencies_php80
+      - run: *prepare_repo
+      - run: *run_tests
 
   php_core_job: &php_core_job
     steps:
@@ -279,6 +293,24 @@ jobs:
       - WP_VERSION: "nightly"
     docker:
       - image: cimg/php:7.4-node
+      - image: *db_image
+
+  php80-build-multisite-nightly:
+    <<: *php80_job
+    environment:
+      - WP_MULTISITE: "1"
+      - WP_VERSION: "nightly"
+    docker:
+      - image: cimg/php:8.0-node
+      - image: *db_image
+
+  php80-build-singlesite-nightly:
+    <<: *php80_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "nightly"
+    docker:
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   create-changelog-draft:
