@@ -2306,7 +2306,9 @@ class Search_Test extends TestCase {
 		$application_id      = 123;
 		$application_url     = 'http://example.org';
 		$average_queue_value = 3601;
-		$expected_message    = "Average index queue wait time for application $application_id - $application_url is currently $average_queue_value seconds";
+		$queue_count_value   = 1;
+		$longest_queue_value = $average_queue_value;
+		$expected_message    = "Average index queue wait time for application {$application_id} - {$application_url} is currently {$average_queue_value} seconds. There are {$queue_count_value} items in the queue and the oldest item is {$longest_queue_value} seconds old";
 		$expected_level      = 2;
 
 		$es = new \Automattic\VIP\Search\Search();
@@ -2323,7 +2325,13 @@ class Search_Test extends TestCase {
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
 
-		$queue_mocked->method( 'get_average_queue_wait_time' )->willReturn( $average_queue_value );
+		$queue_mocked
+			->method( 'get_queue_stats' )
+			->willReturn( (object) [
+				'average_wait_time' => $average_queue_value,
+				'queue_count'       => $queue_count_value,
+				'longest_wait_time' => $longest_queue_value,
+			] );
 
 		$alerts_mocked->expects( $this->once() )
 			->method( 'send_to_chat' )
