@@ -15,8 +15,8 @@
   },
   "author": "Automattic",
   "devDependencies": {
-    "eslines": "1.1.0",
-    "eslint": "5.16.0",
+    "eslines": "2.0.0",
+    "eslint": "7.32.0",
     "husky": "7.0.2",
     "lint-staged": "11.1.2",
     "phplint": "2.0.5"
