@@ -99,4 +99,4 @@ function maybe_load_plugin() {
 		return;
 	}
 }
-add_action( 'after_setup_theme', __NAMESPACE__ . '\maybe_load_plugin' );
+add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );

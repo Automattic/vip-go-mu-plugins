@@ -20,7 +20,7 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 	public function test_has_maybe_load_plugin_action() {
 		$this->assertSame(
 			10,
-			has_action( 'after_setup_theme', __NAMESPACE__ . '\maybe_load_plugin' )
+			has_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' )
 		);
 	}
 
