@@ -9,8 +9,8 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 class TTL_Manager__REST_API__Test extends TestCase {
 	use ArraySubsetAsserts;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		global $wp_rest_server;
 		$this->server = $wp_rest_server = new \WP_REST_Server;
@@ -23,11 +23,11 @@ class TTL_Manager__REST_API__Test extends TestCase {
 		] );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	protected function dispatch_request( $method ) {

@@ -13,8 +13,8 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 class Cache_Manager__Term_Purge__Test extends TestCase {
 	const TEST_TAXONOMY_SLUG = 'my-cool-taxonomy';
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->cache_manager = \WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->clear_queued_purge_urls();
@@ -24,10 +24,10 @@ class Cache_Manager__Term_Purge__Test extends TestCase {
 		remove_all_actions( 'clean_post_cache' );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		unregister_taxonomy( self::TEST_TAXONOMY_SLUG );
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	private function register_taxonomy_and_term( $taxonomy_args = [] ) {

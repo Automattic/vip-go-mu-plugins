@@ -11,8 +11,8 @@ class WP_Filesystem_VIP_Uploads_Test extends TestCase {
 	private $api_client_mock;
 	private $filesystem;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
@@ -21,13 +21,13 @@ class WP_Filesystem_VIP_Uploads_Test extends TestCase {
 		add_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		remove_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 
 		$this->api_client_mock = null;
 		$this->filesystem = null;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

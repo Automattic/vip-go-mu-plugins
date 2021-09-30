@@ -23,8 +23,8 @@ class A8C_Files_Image_Test extends TestCase {
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->enable_a8c_files();
 	}
@@ -34,11 +34,11 @@ class A8C_Files_Image_Test extends TestCase {
 	 *
 	 * Remove added uploads.
 	 */
-	public function tear_down() {
+	public function tearDown(): void {
 
 		$this->remove_added_uploads();
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

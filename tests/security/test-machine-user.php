@@ -8,8 +8,8 @@ require_once __DIR__ . '/../../security/machine-user.php';
 
 class Machine_User_Test extends TestCase {
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->machine_user = $this->factory->user->create_and_get( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,

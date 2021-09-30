@@ -6,7 +6,7 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 
 class SettingsHealthJob_Test extends TestCase {
 
-	public static function set_up_before_class() {
+	public static function setUpBeforeClass(): void {
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
 

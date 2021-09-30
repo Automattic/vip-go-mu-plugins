@@ -8,17 +8,17 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
 class VIP_WP_CLI__SSL__Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- safe - test environment
 		$this->initial_https_value = $_SERVER['HTTPS'] ?? null;
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		$_SERVER['HTTPS'] = $this->initial_https_value;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public function get_test_data() {

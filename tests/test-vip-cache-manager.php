@@ -9,8 +9,8 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 class VIP_Go_Cache_Manager_Test extends TestCase {
 	public $cache_manager;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->init();

@@ -14,8 +14,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 
 	private $errors = [];
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
@@ -24,7 +24,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		$this->stream_wrapper = null;
 		$this->api_client_mock = null;
 
@@ -32,7 +32,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 
 		restore_error_handler();
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

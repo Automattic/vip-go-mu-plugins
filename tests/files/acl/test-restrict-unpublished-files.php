@@ -10,16 +10,16 @@ require_once __DIR__ . '/../../../files/acl/restrict-unpublished-files.php';
 class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends TestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->original_current_user_id = get_current_user_id();
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		wp_set_current_user( $this->original_current_user_id );
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public function test__check_file_visibility__attachment_not_found() {

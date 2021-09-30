@@ -6,7 +6,7 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 
 class VersioningCleanupJob_Test extends TestCase {
 
-	public function set_up() {
+	public function setUp(): void {
 		require_once __DIR__ . '/../../../../search/includes/classes/class-versioningcleanupjob.php';
 	}
 

@@ -8,8 +8,8 @@ use WP_Error;
 require_once __DIR__ . '/../../security/password.php';
 
 class Current_Password_Change_Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->factory->user->create( [
 			'user_login' => 'john',

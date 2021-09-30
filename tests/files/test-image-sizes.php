@@ -37,8 +37,8 @@ class A8C_Files_ImageSizes_Test extends TestCase {
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
@@ -50,7 +50,7 @@ class A8C_Files_ImageSizes_Test extends TestCase {
 	 *
 	 * Remove added uploads.
 	 */
-	public function tear_down() {
+	public function tearDown(): void {
 
 		$this->remove_added_uploads();
 
@@ -61,7 +61,7 @@ class A8C_Files_ImageSizes_Test extends TestCase {
 		 */
 		Automattic\VIP\Files\ImageSizes::$sizes = null;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

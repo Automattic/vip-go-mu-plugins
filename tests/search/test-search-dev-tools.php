@@ -19,7 +19,7 @@ class Search_Dev_Tools_Test extends TestCase {
 	protected $runTestInSeparateProcess = true;
 	// phpcs:enable
 
-	public function set_up() {
+	public function setUp(): void {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';

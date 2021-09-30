@@ -19,14 +19,14 @@ use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
-	public function set_up() {
+	public function setUp(): void {
 		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
 		}
@@ -304,14 +304,14 @@ class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framewo
 class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
-	public function set_up() {
+	public function setUp(): void {
 		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
 		}

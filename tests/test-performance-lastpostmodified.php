@@ -8,8 +8,8 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 class lastpostmodified_Test extends TestCase {
 	protected $post;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
 	}

@@ -7,8 +7,8 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 require_once __DIR__ . '/../../001-core/privacy.php';
 
 class Privacy_Policy_Link_Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		// Override the default to make testing easier.
 		add_filter( 'vip_show_login_privacy_policy', '__return_true' );

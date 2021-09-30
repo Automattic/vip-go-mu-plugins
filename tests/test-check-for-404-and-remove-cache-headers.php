@@ -6,9 +6,9 @@ require_once __DIR__ . '/../misc.php';
 
 class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends TestCase {
 
-	public function tear_down() {
+	public function tearDown(): void {
 		wp_reset_query();
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

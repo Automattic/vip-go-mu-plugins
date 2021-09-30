@@ -8,16 +8,16 @@ require_once __DIR__ . '/../../../files/acl/acl.php';
 require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
 
 class VIP_Files_Acl_Restrict_All_Files_Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->original_current_user_id = get_current_user_id();
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		wp_set_current_user( $this->original_current_user_id );
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public function test__check_file_visibility__not_logged_in() {

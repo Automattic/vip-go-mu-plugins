@@ -10,8 +10,8 @@ class VIP_Go_Plugins_Test extends TestCase {
 	protected $option_active_sitewide_plugins = [];
 	protected $code_activated_plugins = [];
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		// emulate the active plugins option
 		$this->option_active_plugins = [

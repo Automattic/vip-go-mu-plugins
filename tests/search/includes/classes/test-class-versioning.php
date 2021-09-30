@@ -16,8 +16,8 @@ class Versioning_Test extends TestCase {
 	public static $version_instance;
 	public static $search;
 
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(

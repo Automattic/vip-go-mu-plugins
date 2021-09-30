@@ -11,7 +11,7 @@ class Capability_Condition_Test extends TestCase {
 
 	public static $mock_global_functions;
 
-	public function set_up() {
+	public function setUp(): void {
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'mock_current_user_can' ] )
 			->getMock();

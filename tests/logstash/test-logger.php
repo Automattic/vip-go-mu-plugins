@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../logstash/class-logger.php';
 class Logger_Test extends TestCase {
 	private $errors;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->errors = [];
 
@@ -21,10 +21,10 @@ class Logger_Test extends TestCase {
 		$entries_prop->setValue( [] );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		restore_error_handler();
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public function errorHandler( $errno, $errstr, $errfile, $errline ) {

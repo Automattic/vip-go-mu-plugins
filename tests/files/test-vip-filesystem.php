@@ -15,8 +15,8 @@ class VIP_Filesystem_Test extends TestCase {
 	 */
 	protected $vip_filesystem;
 
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 
 		// make sure needed constants are defined
 		if ( ! defined( 'LOCAL_UPLOADS' ) ) {
@@ -27,8 +27,8 @@ class VIP_Filesystem_Test extends TestCase {
 		}
 	}
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->vip_filesystem = new VIP_Filesystem();
 
@@ -37,14 +37,14 @@ class VIP_Filesystem_Test extends TestCase {
 		$add_filters->invoke( $this->vip_filesystem );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		// remove the filters
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
 
 		$this->vip_filesystem = null;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

@@ -5,7 +5,7 @@ namespace Automattic\VIP\Search\Commands;
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
 class HealthCommand_Test extends TestCase {
-	public function set_up() {
+	public function setUp(): void {
 		// define( 'WP_CLI', true );
 
 		// require_once __DIR__ . '/../../../../../vip-helpers/vip-wp-cli.php';

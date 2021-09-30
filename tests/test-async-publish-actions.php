@@ -15,8 +15,8 @@ class Async_Publish_Actions_Test extends TestCase {
 	/**
 	 * Prepare test environment
 	 */
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
@@ -28,12 +28,12 @@ class Async_Publish_Actions_Test extends TestCase {
 	/**
 	 * Clean up after our tests
 	 */
-	public function tear_down() {
+	public function tearDown(): void {
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
 
 		remove_action( 'async_transition_post_status', '__return_true' );
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

@@ -118,19 +118,19 @@ class VIP_Go_Security_Test extends TestCase {
 
 	}
 
-	public function set_up() {
+	public function setUp(): void {
 
-		parent::set_up();
+		parent::setUp();
 
 		$this->original_POST = $_POST;
 
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 
 		$_POST = $this->original_POST;
 
-		parent::tear_down();
+		parent::tearDown();
 
 	}
 

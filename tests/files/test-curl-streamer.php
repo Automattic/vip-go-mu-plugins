@@ -11,22 +11,22 @@ class Curl_Streamer_Test extends TestCase {
 
 	private $curl_streamer;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->file_stream = fopen( self::TEST_FILE_PATH, 'r' );
 		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );
 		$this->curl_streamer->init();
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		$this->curl_streamer->deinit();
 		fclose( $this->file_stream );
 
 		$this->file_stream = null;
 		$this->curl_streamer = null;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public function test__init() {

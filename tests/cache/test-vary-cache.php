@@ -7,8 +7,8 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 require_once __DIR__ . '/../../cache/class-vary-cache.php';
 
 class Vary_Cache_Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->original_COOKIE = $_COOKIE;
 		$this->original_SERVER = $_SERVER;
@@ -16,13 +16,13 @@ class Vary_Cache_Test extends TestCase {
 		Vary_Cache::load();
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_COOKIE;
 		$_SERVER = $this->original_SERVER;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

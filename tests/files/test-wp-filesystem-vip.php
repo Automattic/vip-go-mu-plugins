@@ -11,8 +11,8 @@ class WP_Filesystem_VIP_Test extends TestCase {
 	private $fs_uploads_mock;
 	private $fs_direct_mock;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
 		$this->fs_direct_mock = $this->createMock( \WP_Filesystem_Direct::class );
@@ -23,10 +23,10 @@ class WP_Filesystem_VIP_Test extends TestCase {
 		] );
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		$this->filesystem = null;
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	/**

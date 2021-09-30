@@ -3,8 +3,8 @@
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
 class VIP_Mail_Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 		reset_phpmailer_instance();
 		if ( ! defined( 'USE_VIP_PHPMAILER' ) ) {
 			define( 'USE_VIP_PHPMAILER', true );

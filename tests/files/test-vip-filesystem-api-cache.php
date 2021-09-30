@@ -12,16 +12,16 @@ class API_Cache_Test extends TestCase {
 	 */
 	public $cache;
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->cache = API_Cache::get_instance();
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		$this->cache->clear_tmp_files();
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public static function get_property( $object, $name ) {

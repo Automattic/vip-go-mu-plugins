@@ -11,21 +11,21 @@ class API_Client_Test extends TestCase {
 
 	private $http_requests;
 
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 
 		require_once __DIR__ . '/../../files/class-api-client.php';
 	}
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 
 		$this->init_api_client();
 
 		$this->http_requests = [];
 	}
 
-	public function tear_down() {
+	public function tearDown(): void {
 		$this->api_client = null;
 		$this->http_requests = null;
 
@@ -33,7 +33,7 @@ class API_Client_Test extends TestCase {
 
 		API_Cache::get_instance()->clear_tmp_files();
 
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	private function init_api_client() {

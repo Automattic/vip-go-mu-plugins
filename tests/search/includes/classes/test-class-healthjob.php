@@ -12,8 +12,8 @@ class HealthJob_Test extends TestCase {
 	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
@@ -30,8 +30,8 @@ class HealthJob_Test extends TestCase {
 		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
-	public function set_up() {
-		parent::set_up();
+	public function setUp(): void {
+		parent::setUp();
 		require_once __DIR__ . '/../../../../search/includes/classes/class-healthjob.php';
 	}
 
