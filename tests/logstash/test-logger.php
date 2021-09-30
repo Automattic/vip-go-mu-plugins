@@ -4,14 +4,10 @@ namespace Automattic\VIP\Logstash;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../logstash/class-logger.php';
+
 class Logger_Test extends TestCase {
 	private $errors;
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once __DIR__ . '/../../logstash/class-logger.php';
-	}
 
 	public function set_up() {
 		parent::set_up();

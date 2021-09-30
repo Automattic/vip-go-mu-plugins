@@ -4,13 +4,9 @@ namespace Automattic\VIP\Security;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../security/machine-user.php';
+
 class Machine_User_Test extends TestCase {
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once __DIR__ . '/../../security/machine-user.php';
-	}
 
 	public function set_up() {
 		parent::set_up();

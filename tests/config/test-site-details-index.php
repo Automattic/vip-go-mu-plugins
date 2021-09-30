@@ -4,6 +4,8 @@ namespace Automattic\VIP\Config;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../config/class-site-details-index.php';
+
 class Site_Details_Index_Test extends TestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
@@ -11,10 +13,6 @@ class Site_Details_Index_Test extends TestCase {
 	 */
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-
-	public function set_up() {
-		require_once __DIR__ . '/../../config/class-site-details-index.php';
-	}
 
 	/**
 	 * @runInSeparateProcess

@@ -4,17 +4,13 @@ namespace Automattic\VIP\Files;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../files/class-api-cache.php';
+
 class API_Cache_Test extends TestCase {
 	/**
 	 * @var API_Cache
 	 */
 	public $cache;
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-api-cache.php' );
-	}
 
 	public function set_up() {
 		parent::set_up();

@@ -2,16 +2,13 @@
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../misc.php';
+
 class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends TestCase {
 
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-		require_once( __DIR__ . '/../misc.php' );
-	}
-
 	public function tear_down() {
-		parent::tear_down();
 		wp_reset_query();
+		parent::tear_down();
 	}
 
 	/**

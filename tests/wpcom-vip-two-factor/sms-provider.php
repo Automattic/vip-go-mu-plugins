@@ -2,14 +2,10 @@
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
+require_once __DIR__ . '/../../wpcom-vip-two-factor/sms-provider.php';
+
 class Two_Factor_SMS_Test extends TestCase {
-	public function set_up() {
-		parent::set_up();
-
-		require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
-		require_once __DIR__ . '/../../wpcom-vip-two-factor/sms-provider.php';
-	}
-
 	public function test__two_factor_sms_formatting() {
 		$token = 123456;
 		$expected = '123456 is your Test Blog verification code.' . "\n\n" . '@example.org #123456';

@@ -2,6 +2,8 @@
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../files/class-image.php';
+
 /**
  * Class A8C_Files_Image_Test
  *
@@ -15,15 +17,6 @@ class A8C_Files_Image_Test extends TestCase {
 	 * @var string
 	 */
 	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
-
-	/**
-	 * Load the Automattic\VIP\Files\ImageSizes class.
-	 */
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-image.php' );
-	}
 
 	/**
 	 * Set the test to the original initial state of the VIP Go.

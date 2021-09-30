@@ -4,13 +4,9 @@ namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../../files/acl/pre-wp-utils.php';
+
 class VIP_Files_Acl_Pre_Wp_Utils_Test extends TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../../files/acl/pre-wp-utils.php' );
-	}
-
 	public function test__prepare_request__empty_request_uri() {
 		$this->expectWarning();
 		$this->expectWarningMessage( 'VIP Files ACL failed due to empty URI' );

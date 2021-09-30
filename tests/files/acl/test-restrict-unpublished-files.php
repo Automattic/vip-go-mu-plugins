@@ -4,15 +4,11 @@ namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../../files/acl/acl.php';
+require_once __DIR__ . '/../../../files/acl/restrict-unpublished-files.php';
+
 class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends TestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once __DIR__ . '/../../../files/acl/acl.php';
-		require_once __DIR__ . '/../../../files/acl/restrict-unpublished-files.php';
-	}
 
 	public function set_up() {
 		parent::set_up();

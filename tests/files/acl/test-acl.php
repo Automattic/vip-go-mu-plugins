@@ -4,13 +4,9 @@ namespace Automattic\VIP\Files\Acl;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../../files/acl/acl.php';
+
 class VIP_Files_Acl_Test extends TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../../files/acl/acl.php' );
-	}
-
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
 		// no setup
 

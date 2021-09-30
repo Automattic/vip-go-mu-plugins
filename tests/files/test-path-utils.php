@@ -2,13 +2,9 @@
 
 namespace Automattic\VIP\Files;
 
+require_once __DIR__ . '/../../files/class-path-utils.php';
+
 class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-path-utils.php' );
-	}
-
 	public function get_test_data__is_subdirectory_multisite_path__nope() {
 		return [
 			'missing_leading_slash' => [

@@ -5,15 +5,11 @@ namespace Automattic\VIP\Files;
 use \WP_Error;
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php';
+
 class WP_Filesystem_VIP_Uploads_Test extends TestCase {
 	private $api_client_mock;
 	private $filesystem;
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php' );
-	}
 
 	public function set_up() {
 		parent::set_up();

@@ -4,16 +4,12 @@ namespace Automattic\VIP\Files;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../files/class-curl-streamer.php';
+
 class Curl_Streamer_Test extends TestCase {
 	const TEST_FILE_PATH = __DIR__ . '/../fixtures/files/stream.txt';
 
 	private $curl_streamer;
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-curl-streamer.php' );
-	}
 
 	public function set_up() {
 		parent::set_up();

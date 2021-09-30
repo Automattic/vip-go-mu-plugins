@@ -5,18 +5,14 @@ namespace Automattic\VIP\Files;
 use \WP_Error;
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
+
 class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 	private $stream_wrapper;
 
 	private $api_client_mock;
 
 	private $errors = [];
-
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php' );
-	}
 
 	public function set_up() {
 		parent::set_up();

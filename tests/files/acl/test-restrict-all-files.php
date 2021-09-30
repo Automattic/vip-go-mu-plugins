@@ -4,14 +4,10 @@ namespace Automattic\VIP\Files\Acl\Restrict_All_Files;
 
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 
+require_once __DIR__ . '/../../../files/acl/acl.php';
+require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
+
 class VIP_Files_Acl_Restrict_All_Files_Test extends TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once __DIR__ . '/../../../files/acl/acl.php';
-		require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
-	}
-
 	public function set_up() {
 		parent::set_up();
 

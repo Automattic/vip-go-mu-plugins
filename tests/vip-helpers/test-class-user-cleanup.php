@@ -5,13 +5,9 @@ namespace Automattic\VIP\Helpers;
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
 
+require_once __DIR__ . '/../../vip-helpers/class-user-cleanup.php';
+
 class User_Cleanup_Test extends TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../vip-helpers/class-user-cleanup.php' );
-	}
-
 	public function data_provider__parse_emails_string() {
 		return [
 			'empty' => [ '', [] ],

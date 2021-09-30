@@ -4,13 +4,9 @@ namespace Automattic\VIP;
 
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
+require_once( __DIR__ . '/../../../lib/feature/class-feature.php' );
+
 class Feature_Test extends TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../../lib/feature/class-feature.php' );
-	}
-
 	/**
 	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
 	 * use something like this when generating test data:

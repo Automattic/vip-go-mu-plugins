@@ -5,6 +5,8 @@ namespace Automattic\VIP\Files;
 use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
 
+require_once __DIR__ . '/../../files/class-vip-filesystem.php';
+
 class VIP_Filesystem_Test extends TestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
@@ -15,8 +17,6 @@ class VIP_Filesystem_Test extends TestCase {
 
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../files/class-vip-filesystem.php' );
 
 		// make sure needed constants are defined
 		if ( ! defined( 'LOCAL_UPLOADS' ) ) {

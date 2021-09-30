@@ -4,13 +4,9 @@ namespace Automattic\VIP;
 
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
+require_once __DIR__ . '/../../../lib/environment/class-environment.php';
+
 class Environment_Test extends TestCase {
-	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
-		require_once( __DIR__ . '/../../../lib/environment/class-environment.php' );
-	}
-
 	public function is_sandbox_container_data() {
 		return array(
 			// Non-sandbox hostname, no env vars
