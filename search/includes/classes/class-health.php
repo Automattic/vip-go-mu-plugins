@@ -348,7 +348,7 @@ class Health {
 
 		$health = new self( $search );
 
-		foreach( $comment_types as $comment_type ) {
+		foreach ( $comment_types as $comment_type ) {
 
 			$query_args = [
 				'type' => $comment_type,
