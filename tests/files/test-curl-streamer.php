@@ -12,7 +12,7 @@ class Curl_Streamer_Test extends TestCase {
 	public static function set_up_before_class() {
 		parent::set_up_before_class();
 
-		require_once __DIR__ . '/../../files/class-curl-streamer.php';
+		require_once( __DIR__ . '/../../files/class-curl-streamer.php' );
 	}
 
 	public function set_up() {

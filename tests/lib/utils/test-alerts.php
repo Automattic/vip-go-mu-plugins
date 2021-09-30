@@ -205,13 +205,13 @@ class Alerts_Test extends TestCase {
 	public function get_test_data__invalid_details() {
 		return [
 			'invalid-type' => [ 'string' ],
-			'missing-keys' => [
+			'missing-keys' => [ 
 				'alias' => 'test/alert',
 				'description' => 'Test alert',
 				'entity' => 'test',
 				'source' => 'test',
 			],
-			'extra-keys' => [
+			'extra-keys' => [ 
 				'alias' => 'test/alert',
 				'description' => 'Test alert',
 				'entity' => 'test',

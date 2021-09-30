@@ -51,30 +51,30 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends TestCase {
 				null,
 				'VIP Files ACL failed due to empty path',
 			],
-
+	
 			'empty-uri' => [
 				'',
 				'VIP Files ACL failed due to empty path',
 			],
-
+	
 			'path-no-wp-content' => [
 				'/a/path/to/a/file.jpg',
 				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
 			],
-
+	
 			'relative-url-with-wp-content' => [
 				'en/wp-content/uploads/file.png',
 				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)',
 			],
 		];
 	}
-
+	
 	public function get_data__validate_path__valid() {
 		return [
 			'valid-path' => [
 				'/wp-content/uploads/kittens.gif',
 			],
-
+	
 			'valid-path-nested' => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 			],
@@ -90,7 +90,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends TestCase {
 			'multi-wp-content-directories' => [
 				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 			],
-
+	
 			/* TODO: not supported yet
 			'resized-image' => [
 				'/wp-content/uploads/2021/01/dinos-100x100.jpg',
@@ -107,7 +107,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends TestCase {
 		$this->expectWarningMessage( $expected_warning );
 
 		$actual_is_valid = validate_path( $file_path );
-
+	
 		$this->assertFalse( $actual_is_valid );
 	}
 
@@ -116,7 +116,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends TestCase {
 	 */
 	public function test__validate_path__valid( $file_path ) {
 		$actual_is_valid = validate_path( $file_path );
-
+	
 		$this->assertTrue( $actual_is_valid );
 	}
 

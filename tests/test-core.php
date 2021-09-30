@@ -6,7 +6,6 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 
 class VIP_Go__Core__Disable_Update_Caps_Test extends TestCase {
 	public function set_up() {
-		parent::set_up();
 		wpcom_vip_init_core_restrictions();
 	}
 

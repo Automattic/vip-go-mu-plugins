@@ -256,7 +256,7 @@ class VIP_Files_Acl_Test extends TestCase {
 			$this->markTestSkipped();
 		}
 
-		// Can access other paths from basedir, as long as they don't contain `/sites/
+		// Can access other paths from basedir, as long as they don't contain `/sites/ 
 		$expected_is_allowed = true;
 
 		$file_path = 'cache/css/cats.css';

@@ -14,11 +14,11 @@ class Feature_Test extends TestCase {
 	/**
 	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
 	 * use something like this when generating test data:
-	 *
+	 * 
 	 * for( $i = 1; $i < 1000; $i++ ) {
 	 *     echo $i . ' - ' . crc32( 'foo-feature-' . $i ) % 100 . PHP_EOL;
 	 * }
-	 *
+	 * 
 	 * The above will give you a list of site IDs that fall above or below your target threshold
 	 */
 	public function is_enabled_by_percentage_data() {

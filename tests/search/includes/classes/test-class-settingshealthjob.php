@@ -7,15 +7,10 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
 class SettingsHealthJob_Test extends TestCase {
 
 	public static function set_up_before_class() {
-		parent::set_up_before_class();
 		require_once __DIR__ . '/../../../../search/search.php';
+		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
 
 		\Automattic\VIP\Search\Search::instance();
-	}
-
-	public function set_up() {
-		parent::set_up();
-		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
 	}
 
 	public function test__heal_index_settings__reports_error() {

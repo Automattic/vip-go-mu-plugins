@@ -13,17 +13,12 @@ class Cache_Test extends TestCase {
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static function set_up_before_class() {
-		parent::set_up_before_class();
-
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
 	}
 
 	public function set_up() {
-		global $wpdb;
-		parent::set_up();
-
 		require_once __DIR__ . '/../../../../search/search.php';
 		include_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
 

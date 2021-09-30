@@ -12,8 +12,6 @@ class Admin_Notice_Controller_Test extends TestCase {
 	public static $mock_global_functions;
 
 	public function set_up() {
-		parent::set_up();
-
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'add_user_meta', 'get_user_meta', 'delete_user_meta' ] )
 			->getMock();

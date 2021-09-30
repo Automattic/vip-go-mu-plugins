@@ -2,15 +2,15 @@
 
 namespace Automattic\VIP\Tests;
 
+use function Automattic\VIP\Proxy\is_valid_ip;
+use function Automattic\VIP\Proxy\set_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail;
-use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
-use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
 use function Automattic\VIP\Proxy\get_proxy_verification_key;
-use function Automattic\VIP\Proxy\is_valid_ip;
+use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
 use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
-use function Automattic\VIP\Proxy\set_remote_address;
+use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
@@ -20,7 +20,6 @@ abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
 	public function set_up() {
-		parent::set_up();
 		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
@@ -35,8 +34,6 @@ abstract class IP_Forward_Test_Base extends TestCase {
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
 		}
-
-		parent::tear_down();
 	}
 }
 
@@ -308,8 +305,6 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends TestCas
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
 	public function set_up() {
-		parent::set_up();
-
 		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
@@ -324,8 +319,6 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends TestCas
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
 		}
-
-		parent::tear_down();
 	}
 
 	/**

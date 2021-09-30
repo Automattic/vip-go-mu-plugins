@@ -59,7 +59,7 @@ class A8C_Files_Image_Test extends TestCase {
 
 	/**
 	 * Helper function for accessing protected method.
-	 *
+	 * 
 	 * Renamed from `getMethod` to `get_method` for consistency with `get_property` (see below)
 	 *
 	 * @param string $name Name of the method.
@@ -75,7 +75,7 @@ class A8C_Files_Image_Test extends TestCase {
 
 	/**
 	 * Helper function for accessing protected property.
-	 *
+	 * 
 	 * Renamed from `getProperty` `to `get_property` to avoid conflicts with PHPUnit Polyfill's `getProperty()` method
 	 * which is used by `assertAttributeXXX` assertions.
 	 *

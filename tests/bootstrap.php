@@ -21,30 +21,30 @@ define( 'WPCOM_VIP_MAIL_TRACKING_KEY', 'key' );
 define( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING', true );
 
 function _manually_load_plugin() {
-	require_once __DIR__ . '/../000-vip-init.php';
-	require_once __DIR__ . '/../001-core.php';
-	require_once __DIR__ . '/../a8c-files.php';
+	require_once( __DIR__ . '/../000-vip-init.php' );
+	require_once( __DIR__ . '/../001-core.php' );
+	require_once( __DIR__ . '/../a8c-files.php' );
 
-	require_once __DIR__ . '/../async-publish-actions.php';
-	require_once __DIR__ . '/../performance.php';
-	require_once __DIR__ . '/../security.php';
+	require_once( __DIR__ . '/../async-publish-actions.php' );
+	require_once( __DIR__ . '/../performance.php' );
+	require_once( __DIR__ . '/../security.php' );
 
-	require_once __DIR__ . '/../schema.php';
+	require_once( __DIR__ . '/../schema.php' );
 
-	require_once __DIR__ . '/../vip-jetpack/vip-jetpack.php';
+	require_once( __DIR__ . '/../vip-jetpack/vip-jetpack.php' );
 
 	// Proxy lib
-	require_once __DIR__ . '/../lib/proxy/ip-forward.php';
-	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
+	require_once( __DIR__ . '/../lib/proxy/ip-forward.php' );
+	require_once( __DIR__ . '/../lib/proxy/class-iputils.php' );
 
-	require_once __DIR__ . '/../vip-cache-manager.php';
-	require_once __DIR__ . '/../vip-mail.php';
-	require_once __DIR__ . '/../vip-rest-api.php';
-	require_once __DIR__ . '/../vip-plugins.php';
+	require_once( __DIR__ . '/../vip-cache-manager.php' );
+	require_once( __DIR__ . '/../vip-mail.php' );
+	require_once( __DIR__ . '/../vip-rest-api.php' );
+	require_once( __DIR__ . '/../vip-plugins.php' );
 
-	require_once __DIR__ . '/../wp-cli.php';
+	require_once( __DIR__ . '/../wp-cli.php' );
 
-	require_once __DIR__ . '/../z-client-mu-plugins.php';
+	require_once( __DIR__ . '/../z-client-mu-plugins.php' );
 }
 
 /**
@@ -57,7 +57,7 @@ function _remove_init_hook_for_cache_manager() {
 }
 
 /**
- * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered.
+ * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered. 
  *
  * Temporarily unhook it.
  *

@@ -71,7 +71,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 		$path_from = 'vip://wp-content/uploads/file.txt';
 		$path_to = 'vip://wp-content/uploads/file.txt';
 
-		// We bail early so Api_Client should not be touched.
+		// We bail early so Api_Client should not be touched. 
 		$this->api_client_mock
 			->expects( $this->never() )
 			->method( $this->anything() );
@@ -96,13 +96,13 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 		$this->api_client_mock
 			->expects( $this->once() )
 			->method( 'upload_file' )
-			->with( $tmp_file, 'wp-content/uploads/new.txt' )
+			->with( $tmp_file, 'wp-content/uploads/new.txt' ) 
 			->willReturn( '/wp-content/uploads/new.txt' );
 
 		$this->api_client_mock
 			->expects( $this->once() )
 			->method( 'delete_file' )
-			->with( 'wp-content/uploads/old.txt' )
+			->with( 'wp-content/uploads/old.txt' ) 
 			->willReturn( true );
 
 		$actual_result = $this->stream_wrapper->rename( $path_from, $path_to );
@@ -111,7 +111,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 	}
 
 	public function get_test_data__validate_valid_mode() {
-		return [
+		return [ 
 			'read mode'   => [ 'r' ],
 			'write mode'  => [ 'w' ],
 			'append mode' => [ 'a' ],
@@ -127,7 +127,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
 	}
 
 	public function get_test_data__validate_invalid_mode() {
-		return [
+		return [ 
 			'c mode'   => [ 'c' ],
 			'e mode'  => [ 'e' ],
 		];
