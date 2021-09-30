@@ -78,6 +78,42 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * ## OPTIONS
+	 *
+	 * [--version=<int>]
+	 * : Index version to validate - defaults to all
+	 *
+	 * [--network-wide]
+	 * : Validate all sites in a multisite network
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-terms-count
+	 *
+	 * @subcommand validate-terms-count
+	 */
+	public function validate_terms_count( $args, $assoc_args ) {
+		$this->validate_indexable_count( 'term', $assoc_args );
+	}
+
+		/**
+	 * ## OPTIONS
+	 *
+	 * [--version=<int>]
+	 * : Index version to validate - defaults to all
+	 *
+	 * [--network-wide]
+	 * : Validate all sites in a multisite network
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-es health validate-comments-count
+	 *
+	 * @subcommand validate-comments-count
+	 */
+	public function validate_comments_count( $args, $assoc_args ) {
+		$this->validate_indexable_count( 'comment', $assoc_args );
+	}
+
+	/**
 	 * Generic internal function to validate counts on any indexable,
 	 * supporting multisite installations
 	 *
@@ -175,6 +211,16 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 					break;
 				case 'user':
 					$results = \Automattic\VIP\Search\Health::validate_index_users_count( array(
+						'index_version' => $version_number,
+					) );
+					break;
+				case 'term':
+					$results = \Automattic\VIP\Search\Health::validate_index_terms_count( array(
+						'index_version' => $version_number,
+					) );
+					break;
+				case 'comment':
+					$results = \Automattic\VIP\Search\Health::validate_index_comments_count( array(
 						'index_version' => $version_number,
 					) );
 					break;

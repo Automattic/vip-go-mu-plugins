@@ -74,6 +74,10 @@ class Health {
 			'diff' => 'N/A',
 		];
 
+		if ( 'N/A' === $result['type'] && isset( $query_args['type'] ) ) {
+			$result['type'] = $query_args['type'];
+		}
+
 		if ( ! $indexable->index_exists() ) {
 			// If index doesnt exist and we will skip the rest of the check
 			$result['skipped'] = true;
@@ -262,6 +266,120 @@ class Health {
 		}
 
 		$search->versioning->reset_current_version_number( $posts );
+
+		return $results;
+	}
+
+	/**
+	 * Validate DB and ES index terms counts
+	 *
+	 * @return array Array containing entity (term), type (N/A), error, ES count, DB count, difference
+	 */
+	public static function validate_index_terms_count( $options = array() ) {
+		// Get indexable object
+		$terms = Indexables::factory()->get( 'term' );
+
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $terms ) {
+			return new WP_Error( 'es_terms_query_error', 'failure retrieving term indexable from ES #vip-search' );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( $options['index_version'] ) {
+			$version_result = $search->versioning->set_current_version_number( $terms, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$index_version = $search->versioning->get_current_version_number( $terms );
+
+		$query_args = [
+			'order' => 'asc',
+		];
+
+		$result = ( new self( $search ) )->validate_index_entity_count( $query_args, $terms );
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error( 'es_terms_query_error', sprintf( 'failure retrieving terms from ES: %s #vip-search', $result->get_error_message() ) );
+		}
+
+		$result['index_version'] = $index_version;
+
+		$search->versioning->reset_current_version_number( $terms );
+
+		return array( $result );
+	}
+
+	/**
+	 * Validate DB and ES index comments counts
+	 *
+	 * @return array Array containing entity (comment), type (comment,review), error, ES count, DB count, difference
+	 */
+	public static function validate_index_comments_count( $options = array() ) {
+		// Get indexable object
+		$comments = Indexables::factory()->get( 'comment' );
+
+		$results = [];
+
+		// Indexables::factory()->get() returns boolean|array
+		// False is returned in case of error
+		if ( ! $comments ) {
+			return new WP_Error( 'es_comments_query_error', 'failure retrieving comment indexable from ES #vip-search' );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		if ( $options['index_version'] ) {
+			$version_result = $search->versioning->set_current_version_number( $comments, $options['index_version'] );
+
+			if ( is_wp_error( $version_result ) ) {
+				return $version_result;
+			}
+		}
+
+		$index_version = $search->versioning->get_current_version_number( $comments );
+
+		$comment_types = $comments->get_indexable_comment_types();
+		$comment_status = $comments->get_indexable_comment_status();
+
+		$health = new self( $search );
+
+		foreach( $comment_types as $comment_type ) {
+
+			$query_args = [
+				'type' => $comment_type,
+				// Force fetching just one comment, otherwise the query may get killed on large datasets.
+				// This works for at least ten million records in comments table.
+				'per_page' => 1,
+				// Empty arguments to silence warnings
+				'karma' => '',
+				'parent' => '',
+
+			];
+
+			$result = $health->validate_index_entity_count( $query_args, $comments );
+
+			// In case of error skip to the next comment type
+			// Not returning an error, otherwise there is no visibility on other comment types
+			if ( is_wp_error( $result ) ) {
+				$result = [
+					'entity'        => $comments->slug,
+					'type'          => $comment_type,
+					'error'         => $result->get_error_message(),
+				];
+			}
+
+			$result['index_version'] = $index_version;
+			$result['index_name'] = $comments->get_index_name();
+
+			$results[] = $result;
+		}
+
+		$search->versioning->reset_current_version_number( $comments );
 
 		return $results;
 	}
