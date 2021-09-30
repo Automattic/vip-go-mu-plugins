@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Helpers;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../vip-helpers/class-user-cleanup.php';
 
-class User_Cleanup_Test extends TestCase {
+class User_Cleanup_Test extends WP_UnitTestCase {
 	public function data_provider__parse_emails_string() {
 		return [
 			'empty' => [ '', [] ],

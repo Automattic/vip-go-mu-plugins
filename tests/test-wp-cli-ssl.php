@@ -4,10 +4,11 @@ namespace Automattic\VIP\Tests;
 
 use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
 use function Automattic\VIP\WP_CLI\init_is_ssl_toggle_for_multisite;
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+
+use WP_UnitTestCase;
 
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
-class VIP_WP_CLI__SSL__Test extends TestCase {
+class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 

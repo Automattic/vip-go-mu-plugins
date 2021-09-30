@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Files;
 
-use \WP_Error;
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_Error;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
 
-class VIP_Filesystem_Stream_Wrapper_Test extends TestCase {
+class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	private $stream_wrapper;
 
 	private $api_client_mock;

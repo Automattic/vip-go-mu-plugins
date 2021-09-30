@@ -2,11 +2,14 @@
 
 namespace Automattic\VIP\Files\Acl;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../../files/acl/acl.php';
 
-class VIP_Files_Acl_Test extends TestCase {
+class VIP_Files_Acl_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
 		// no setup
 

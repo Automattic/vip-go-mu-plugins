@@ -6,12 +6,12 @@
 namespace Automattic\VIP\Async_Publish_Actions\Tests;
 
 use Automattic\VIP\Async_Publish_Actions;
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 /**
  * @group async-publish-actions
  */
-class Async_Publish_Actions_Test extends TestCase {
+class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Prepare test environment
 	 */

@@ -2,20 +2,18 @@
 
 namespace Automattic\VIP\Files;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
-class API_Client_Test extends TestCase {
+require_once __DIR__ . '/../../files/class-api-client.php';
+
+class API_Client_Test extends WP_UnitTestCase {
 	use ArraySubsetAsserts;
+	use AssertionRenames;
 
 	private $http_requests;
-
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-
-		require_once __DIR__ . '/../../files/class-api-client.php';
-	}
 
 	public function setUp(): void {
 		parent::setUp();

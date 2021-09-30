@@ -1,10 +1,8 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
 require_once ABSPATH . '/wp-admin/includes/upgrade.php';
 
-class VIP_Go_Schema_Test extends TestCase {
+class VIP_Go_Schema_Test extends WP_UnitTestCase {
 	public function test__dbDelta__verify_blog_tables() {
 		$deltas = dbDelta( 'blog', false ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.dbDelta_dbdelta
 		

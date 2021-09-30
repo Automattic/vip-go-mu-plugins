@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Files;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-api-cache.php';
 
-class API_Cache_Test extends TestCase {
+class API_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @var API_Cache
 	 */

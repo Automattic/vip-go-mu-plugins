@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP;
 
-use Yoast\PHPUnitPolyfills\TestCases\TestCase;
+use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../../lib/environment/class-environment.php';
 

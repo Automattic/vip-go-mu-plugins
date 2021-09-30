@@ -2,13 +2,16 @@
 
 namespace Automattic\VIP\Search;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
 
-class Search_Test extends TestCase {
+class Search_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.

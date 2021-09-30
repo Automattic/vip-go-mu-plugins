@@ -1,8 +1,10 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
-class VIP_Mail_Test extends TestCase {
+class VIP_Mail_Test extends WP_UnitTestCase {
+	use AssertionRenames;
+
 	public function setUp(): void {
 		parent::setUp();
 		reset_phpmailer_instance();

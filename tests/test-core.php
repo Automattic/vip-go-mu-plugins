@@ -1,10 +1,8 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
 // phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
 
-class VIP_Go__Core__Disable_Update_Caps_Test extends TestCase {
+class VIP_Go__Core__Disable_Update_Caps_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		wpcom_vip_init_core_restrictions();
 	}

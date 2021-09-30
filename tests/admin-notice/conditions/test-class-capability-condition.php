@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
-use Yoast\PHPUnitPolyfills\TestCases\TestCase;
+use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../../admin-notice/conditions/interface-condition.php';
 require_once __DIR__ . '/../../../admin-notice/conditions/class-capability-condition.php';

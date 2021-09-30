@@ -3,10 +3,10 @@
 namespace Automattic\VIP\Cache;
 
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_Test_REST_TestCase;
 
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
-class TTL_Manager__REST_API__Test extends TestCase {
+class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	use ArraySubsetAsserts;
 
 	public function setUp(): void {

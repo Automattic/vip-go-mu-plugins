@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
-class HealthJob_Test extends TestCase {
+class HealthJob_Test extends WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
@@ -36,6 +36,8 @@ class HealthJob_Test extends TestCase {
 	}
 
 	public function test__vip_search_healthjob_check_health() {
+		$this->expectNotToPerformAssertions();
+
 		// We have to test under the assumption that the main class has been loaded and initialized,
 		// as it does various setup tasks like including dependencies
 		$es = new \Automattic\VIP\Search\Search();

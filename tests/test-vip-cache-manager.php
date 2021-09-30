@@ -1,12 +1,14 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
-class VIP_Go_Cache_Manager_Test extends TestCase {
+class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	public $cache_manager;
 
 	public function setUp(): void {

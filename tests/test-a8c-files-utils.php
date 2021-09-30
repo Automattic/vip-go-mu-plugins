@@ -1,8 +1,6 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
-class VIP_Go_A8C_Files_Utils_Test extends TestCase {
+class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	public function get_data_for_filter_photon_domain() {
 		return [
 			'image_on_home_url'       => [

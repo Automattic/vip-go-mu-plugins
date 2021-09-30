@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Core\Privacy;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../001-core/privacy.php';
 
-class Privacy_Policy_Link_Test extends TestCase {
+class Privacy_Policy_Link_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 

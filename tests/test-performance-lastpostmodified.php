@@ -2,10 +2,10 @@
 
 namespace Automattic\VIP\Performance;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.StartWithCapital
-class lastpostmodified_Test extends TestCase {
+class lastpostmodified_Test extends WP_UnitTestCase {
 	protected $post;
 
 	public function setUp(): void {

@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Files;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-vip-filesystem.php';
 
-class VIP_Filesystem_Test extends TestCase {
+class VIP_Filesystem_Test extends WP_UnitTestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
 	/**

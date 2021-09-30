@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Security;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
 use WP_Error;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../security/password.php';
 
-class Current_Password_Change_Test extends TestCase {
+class Current_Password_Change_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 

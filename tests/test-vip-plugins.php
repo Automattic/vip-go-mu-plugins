@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Tests;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
-class VIP_Go_Plugins_Test extends TestCase {
+class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 
 	protected $option_active_plugins = [];
 	protected $option_active_sitewide_plugins = [];

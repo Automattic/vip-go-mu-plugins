@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
-class Health_Test extends TestCase {
+class Health_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';

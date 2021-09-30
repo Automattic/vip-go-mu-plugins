@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_Test_REST_TestCase;
 
 // phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
 
@@ -10,7 +10,7 @@ use Yoast\WPTestUtils\WPIntegration\TestCase;
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
-class Cache_Manager__Term_Purge__Test extends TestCase {
+class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
 	const TEST_TAXONOMY_SLUG = 'my-cool-taxonomy';
 
 	public function setUp(): void {

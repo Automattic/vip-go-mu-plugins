@@ -1,7 +1,5 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
 require_once __DIR__ . '/../../files/class-image.php';
 require_once __DIR__ . '/../../files/class-image-sizes.php';
 
@@ -16,7 +14,7 @@ require_once __DIR__ . '/../../files/class-image-sizes.php';
  *
  * @group srcset
  */
-class A8C_Files_ImageSizes_Test extends TestCase {
+class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 	/**
 	 * The test image.

@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Search\Commands;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
-class HealthCommand_Test extends TestCase {
+class HealthCommand_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		// define( 'WP_CLI', true );
 

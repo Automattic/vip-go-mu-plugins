@@ -1,10 +1,8 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
 require_once __DIR__ . '/../misc.php';
 
-class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends TestCase {
+class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_reset_query();

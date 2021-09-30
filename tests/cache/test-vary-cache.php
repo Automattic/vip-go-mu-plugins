@@ -2,11 +2,14 @@
 
 namespace Automattic\VIP\Cache;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../cache/class-vary-cache.php';
 
-class Vary_Cache_Test extends TestCase {
+class Vary_Cache_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	public function setUp(): void {
 		parent::setUp();
 

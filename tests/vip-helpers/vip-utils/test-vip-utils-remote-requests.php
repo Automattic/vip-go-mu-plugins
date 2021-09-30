@@ -1,8 +1,6 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
-class WPCOM_VIP_Utils_Remote_Requests_Test extends TestCase {
+class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 	public function mock_http_response( $mocked_response, $response_time = 1 ) {
 		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response, $response_time ) {
 			usleep( $response_time * 1000000 );

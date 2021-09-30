@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
-use Yoast\PHPUnitPolyfills\TestCases\TestCase;
+use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../admin-notice/class-admin-notice-controller.php';
 require_once __DIR__ . '/../../admin-notice/class-admin-notice.php';

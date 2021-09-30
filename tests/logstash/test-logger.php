@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Logstash;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../logstash/class-logger.php';
 
-class Logger_Test extends TestCase {
+class Logger_Test extends WP_UnitTestCase {
 	private $errors;
 
 	public function setUp(): void {

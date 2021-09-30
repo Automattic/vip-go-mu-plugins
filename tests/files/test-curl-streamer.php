@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Files;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-curl-streamer.php';
 
-class Curl_Streamer_Test extends TestCase {
+class Curl_Streamer_Test extends WP_UnitTestCase {
 	const TEST_FILE_PATH = __DIR__ . '/../fixtures/files/stream.txt';
 
 	private $curl_streamer;

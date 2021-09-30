@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
+use PHPUnit\Framework\TestCase;
 use function Automattic\VIP\Proxy\is_valid_ip;
 use function Automattic\VIP\Proxy\set_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address;
@@ -11,7 +12,6 @@ use function Automattic\VIP\Proxy\get_proxy_verification_key;
 use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
 use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
-use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 // phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
@@ -220,7 +220,7 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 	}
 }
 
-class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+class IP_Forward__Get_Proxy_Verification_Key__Test extends TestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -273,7 +273,7 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 	}
 }
 
-class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends TestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled

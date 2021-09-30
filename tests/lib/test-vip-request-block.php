@@ -1,10 +1,12 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../lib/class-vip-request-block.php';
 
-class VIP_Request_Block_Test extends TestCase {
+class VIP_Request_Block_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	/*
 	 * The $_SERVER headers that are used in this class to test
 	 * are defined in the tests/bootstrap.php file.

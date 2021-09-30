@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP;
 
-use Yoast\PHPUnitPolyfills\TestCases\TestCase;
+use PHPUnit\Framework\TestCase;
 
-require_once( __DIR__ . '/../../../lib/feature/class-feature.php' );
+require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
 class Feature_Test extends TestCase {
 	/**

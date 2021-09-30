@@ -1,8 +1,6 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
-class WPCOM_VIP_Utils_Wpcom_Vip_File_Get_Contents_Test extends TestCase {
+class WPCOM_VIP_Utils_Wpcom_Vip_File_Get_Contents_Test extends WP_UnitTestCase {
 
 	public function test__wpcom_vip_file_get_contents__cached() {
 		$url = 'http://www.foo.bar';

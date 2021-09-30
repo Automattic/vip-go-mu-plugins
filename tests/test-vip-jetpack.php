@@ -1,8 +1,6 @@
 <?php
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
-
-class VIP_Go_Jetpack_Test extends TestCase {
+class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	function get_jp_sync_settings_data() {
 		return [
 			// Too small
@@ -173,7 +171,7 @@ class VIP_Go_Jetpack_Test extends TestCase {
 
 	public function test__jetpack_options_fallback_no_verify_ssl_certs__filter() {
 		if ( ! class_exists( 'Jetpack' ) ) {
-			return;
+			return self::markTestSkipped( 'Jetpack is required to run this test' );
 		}
 
 		// Make sure it doesn't already exist as 0

@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Utils;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../../lib/utils/class-alerts.php';
 
-class Alerts_Test extends TestCase {
+class Alerts_Test extends WP_UnitTestCase {
 	public function mock_http_response( $mocked_response, $response_time = 1 ) {
 		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response, $response_time ) {
 			usleep( $response_time * 1000000 );

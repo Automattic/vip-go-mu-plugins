@@ -2,13 +2,13 @@
 
 namespace Automattic\VIP\Security;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../security/class-lockout.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
 
-class Lockout_Test extends TestCase {
+class Lockout_Test extends WP_UnitTestCase {
 
 	/**
 	 * @var Lockout

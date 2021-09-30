@@ -2,12 +2,12 @@
 
 namespace Automattic\VIP\Files;
 
-use \WP_Error;
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_Error;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php';
 
-class WP_Filesystem_VIP_Uploads_Test extends TestCase {
+class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 	private $api_client_mock;
 	private $filesystem;
 

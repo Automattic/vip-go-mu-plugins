@@ -1,10 +1,10 @@
 <?php
 namespace Automattic\VIP\Search;
 
-use \WP_Query;
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_Query;
+use WP_UnitTestCase;
 
-class Cache_Test extends TestCase {
+class Cache_Test extends WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.

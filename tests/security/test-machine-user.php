@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Security;
 
-use Yoast\WPTestUtils\WPIntegration\TestCase;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../security/machine-user.php';
 
-class Machine_User_Test extends TestCase {
+class Machine_User_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
