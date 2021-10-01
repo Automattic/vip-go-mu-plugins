@@ -11,7 +11,7 @@ class Curl_Streamer {
 
 	public function init() {
 		add_filter( 'http_api_transports', [ $this, 'enforce_curl_transport' ] );
-		add_action( 'http_api_curl', [ $this, 'init_upload' ], 10, 3 );
+		add_action( 'http_api_curl', [ $this, 'init_upload' ], 10 );
 	}
 
 	public function deinit() {

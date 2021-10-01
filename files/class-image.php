@@ -74,7 +74,7 @@ class Image {
 		$this->set_width_height( $dimensions );
 
 		$this->is_resized = true;
-		return true;
+		return $this->is_resized;
 	}
 
 	/**
