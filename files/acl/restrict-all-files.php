@@ -5,7 +5,6 @@
 
 namespace Automattic\VIP\Files\Acl\Restrict_All_Files;
 
-use const Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 

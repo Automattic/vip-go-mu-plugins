@@ -71,7 +71,7 @@ function check_file_visibility( $file_visibility, $file_path ) {
 function get_attachment_id_from_file_path( $path ) {
 	global $wpdb;
 
-	$cache_key = 'path_' . md5( $path );
+	$cache_key     = 'path_' . md5( $path );
 	$attachment_id = wp_cache_get( $cache_key, CACHE_GROUP );
 	if ( false !== $attachment_id ) {
 		return $attachment_id;
@@ -79,6 +79,7 @@ function get_attachment_id_from_file_path( $path ) {
 
 	$attachment_id = 0;
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 	$results = $wpdb->get_results(
 		$wpdb->prepare(
 			"SELECT post_id, meta_value FROM $wpdb->postmeta WHERE meta_key = '_wp_attached_file' AND meta_value = %s",
@@ -125,12 +126,12 @@ function purge_attachments_for_post( $urls, $post_id ) {
 	}
 
 	$attachment_ids = get_posts( [
-		'post_parent'    => $post->ID,
-		'post_type'      => 'attachment',
-		'posts_per_page' => 250,            // Set a reasonably high limit (instead of -1 as default)
-		'orderby'        => 'ID',           // For performance (instead of `date` as default)
-		'order'          => 'ASC',
-		'fields'         => 'ids',
+		'post_parent'      => $post->ID,
+		'post_type'        => 'attachment',
+		'posts_per_page'   => 250,            // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- set a reasonably high limit (instead of -1 as default)
+		'orderby'          => 'ID',           // For performance (instead of date as default)
+		'order'            => 'ASC',
+		'fields'           => 'ids',
 		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
 		'suppress_filters' => true,
 	] );

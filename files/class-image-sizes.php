@@ -60,11 +60,15 @@ class ImageSizes {
 		 * to prevent creation of intermediate files, which are not really being used.
 		 */
 		remove_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
-		$intermediate_image_sizes = get_intermediate_image_sizes();
-		add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' ); // Re-add the filter.
+		$intermediate_image_sizes = get_intermediate_image_sizes();             // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_intermediate_image_sizes_get_intermediate_image_sizes
+		add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );   // Re-add the filter.
 
 		foreach ( $intermediate_image_sizes as $s ) {
-			$sizes[ $s ] = [ 'width' => '', 'height' => '', 'crop' => false ];
+			$sizes[ $s ] = [
+				'width'  => '',
+				'height' => '',
+				'crop'   => false,
+			];
 			if ( isset( $_wp_additional_image_sizes[ $s ]['width'] ) ) {
 				// For theme-added sizes.
 				$sizes[ $s ]['width'] = intval( $_wp_additional_image_sizes[ $s ]['width'] );
@@ -125,9 +129,9 @@ class ImageSizes {
 		}
 
 		$defaults = [
-			'width' => null,
+			'width'  => null,
 			'height' => null,
-			'crop' => false,
+			'crop'   => false,
 		];
 
 		return array_merge( $defaults, $size_data );

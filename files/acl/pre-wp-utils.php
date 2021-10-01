@@ -19,12 +19,12 @@ namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
  */
 function prepare_request( $file_request_uri ) {
 	if ( ! $file_request_uri ) {
-		trigger_error( 'VIP Files ACL failed due to empty URI', E_USER_WARNING );
+		trigger_error( 'VIP Files ACL failed due to empty URI', E_USER_WARNING );   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 
 		return false;
 	}
 
-	$file_path = parse_url( $file_request_uri, PHP_URL_PATH );
+	$file_path = parse_url( $file_request_uri, PHP_URL_PATH );  // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 
 	$is_valid_path = validate_path( $file_path );
 	if ( ! $is_valid_path ) {
@@ -44,14 +44,14 @@ function prepare_request( $file_request_uri ) {
  */
 function validate_path( $file_path ) {
 	if ( ! $file_path ) {
-		trigger_error( 'VIP Files ACL failed due to empty path', E_USER_WARNING );
+		trigger_error( 'VIP Files ACL failed due to empty path', E_USER_WARNING );  // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 
 		return false;
 	}
 
 	// Relative path not allowed
 	if ( '/' !== $file_path[0] ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		trigger_error( sprintf( 'VIP Files ACL failed due to relative path (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
 
 		return false;
@@ -60,7 +60,7 @@ function validate_path( $file_path ) {
 	// Missing `/wp-content/uploads/`.
 	// Using `strpos` since we can have subsite / subdirectory paths.
 	if ( false === strpos( $file_path, '/wp-content/uploads/' ) ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		trigger_error( sprintf( 'VIP Files ACL failed due to invalid path (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
 
 		return false;
