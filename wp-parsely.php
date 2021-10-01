@@ -90,7 +90,7 @@ add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
 function maybe_disable_some_features() {
 	global $parsely;
 
-	if ( $parsely != null ) {
+	if ( null != $parsely ) {
 		// If the plugin was loaded solely by the option, hide the UI (for now)
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
 			remove_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) );
