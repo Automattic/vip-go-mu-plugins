@@ -34,8 +34,6 @@ function alter_option_use_repeated_metas( $parsely_options = [] ) {
 }
 
 function maybe_load_plugin() {
-	global $parsely;
-
 	/**
 	 * Sourcing the wp-parsely plugin via mu-plugins is generally opt-in.
 	 * To enable it on your site, add this line:
@@ -84,6 +82,19 @@ function maybe_load_plugin() {
 
 		require $entry_file;
 
+		return;
+	}
+}
+add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
+
+function maybe_disable_some_features() {
+	if ( ! apply_filters( 'wpvip_parsely_load_mu', get_option( '_wpvip_parsely_mu' ) === '1' ) ) {
+		return;
+	}
+
+	global $parsely;
+
+	if ( null != $parsely ) {
 		// If the plugin was loaded solely by the option, hide the UI (for now)
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
 			remove_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) );
@@ -98,8 +109,6 @@ function maybe_load_plugin() {
 			// If we have the UI, we want to load the experimental "Open on Parsely links"
 			add_filter( 'wp_parsely_enable_row_action_links', '__return_true' );
 		}
-
-		return;
 	}
 }
-add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
+add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
