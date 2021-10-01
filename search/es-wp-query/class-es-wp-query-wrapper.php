@@ -34,6 +34,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 	 */
 	public $es_response;
 
+
 	/**
 	 * Construct for querying Elasticsearch. Must be implemented in child classes.
 	 *
@@ -54,7 +55,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 	 */
 	public function is_main_query() {
 		return $this->get( 'es_is_main_query', false );
-	}	
+	}
 
 	/**
 	 * Maps a field to its Elasticsearch context.

@@ -24,7 +24,7 @@ add_filter( 'query_vars', 'es_wp_query_arg' );
  * If a WP_Query object has `'es' => true`, use Elasticsearch to run the meat of the query.
  * This is fires on the "pre_get_posts" action.
  *
- * @param  WP_Query $query Current full WP_Query object.
+ * @param  WP_Query $query - Current full WP_Query object.
  * @return void
  */
 function es_wp_query_shoehorn( &$query ) {
@@ -91,7 +91,7 @@ function es_wp_query_shoehorn( &$query ) {
 				'fields'         => $query->get( 'fields' ),
 				'orderby'        => 'post__in',
 				'order'          => 'ASC',
-			) 
+			)
 		);
 
 		// Reinsert all the conditionals from the original query.
@@ -292,6 +292,11 @@ class ES_WP_Query_Shoehorn {
 		// Restore some necessary defaults if we zapped 'em.
 		if ( empty( $q['posts_per_page'] ) ) {
 			$q['posts_per_page'] = $this->posts_per_page;
+		}
+
+		// Allow sitemap.xml redirect to wp-sitemap.xml page.
+		if ( 'sitemap.xml' === $q['pagename'] ) {
+			$q['pagename'] = sanitize_title_for_query( wp_basename( $q['pagename'] ) );
 		}
 
 		// Restore the author ID which is normally added during get_posts() in WP_Query.
