@@ -173,6 +173,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 *
 	 * @dataProvider data_provider__send_visibility_headers
 	 */
@@ -187,6 +188,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_visibility_headers__invalid_visibility() {
 		define( 'NOT_A_VISIBILITY', 'NOT_A_VISIBILITY' );

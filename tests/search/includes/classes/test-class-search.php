@@ -659,6 +659,7 @@ class Search_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__sent_for_group() {
 

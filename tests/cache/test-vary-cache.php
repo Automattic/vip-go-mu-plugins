@@ -473,6 +473,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__sent_for_group() {
 		Vary_Cache::register_group( 'dev-group' );
@@ -485,6 +486,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__dont_override_headers() {
 		header( 'Vary: yay' );
@@ -500,6 +502,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__sent_for_group_with_encryption() {
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
@@ -515,6 +518,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__not_sent_with_no_groups() {
 		do_action( 'send_headers' );
