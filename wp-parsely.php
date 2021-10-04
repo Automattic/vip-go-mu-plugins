@@ -54,6 +54,7 @@ function maybe_load_plugin() {
 		return;
 	}
 
+	// We're using priority 11 because the plugin is registered with (default) priority 10
 	add_action( 'widgets_init', __NAMESPACE__ . '\unregister_parsely_widget', 11 );
 
 	$versions_to_try = SUPPORTED_VERSIONS;
