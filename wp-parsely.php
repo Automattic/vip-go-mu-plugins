@@ -54,6 +54,8 @@ function maybe_load_plugin() {
 		return;
 	}
 
+	add_action( 'widgets_init', __NAMESPACE__ . '\unregister_parsely_widget', 11 );
+
 	$versions_to_try = SUPPORTED_VERSIONS;
 
 	/**
@@ -109,3 +111,14 @@ function maybe_disable_some_features() {
 	}
 }
 add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
+
+function unregister_parsely_widget() {
+	global $parsely;
+
+	if ( null != $parsely ) {
+		// If the plugin was loaded solely by the option, hide the UI (for now)
+		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
+			unregister_widget( 'Parsely_Recommended_Widget' );
+		}
+	}
+}
