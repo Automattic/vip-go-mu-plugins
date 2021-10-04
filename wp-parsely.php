@@ -99,8 +99,6 @@ function maybe_disable_some_features() {
 			remove_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) );
 			remove_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) );
 			remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
-			remove_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
-			remove_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
 
 			// ..& default to "repeated metas"
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
