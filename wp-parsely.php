@@ -54,6 +54,9 @@ function maybe_load_plugin() {
 		return;
 	}
 
+	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
+	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
+
 	$versions_to_try = SUPPORTED_VERSIONS;
 
 	/**
@@ -88,10 +91,6 @@ function maybe_load_plugin() {
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
 
 function maybe_disable_some_features() {
-	if ( ! apply_filters( 'wpvip_parsely_load_mu', get_option( '_wpvip_parsely_mu' ) === '1' ) ) {
-		return;
-	}
-
 	global $parsely;
 
 	if ( null != $parsely ) {
@@ -108,4 +107,3 @@ function maybe_disable_some_features() {
 		}
 	}
 }
-add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
