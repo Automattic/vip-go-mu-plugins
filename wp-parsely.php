@@ -54,6 +54,9 @@ function maybe_load_plugin() {
 		return;
 	}
 
+	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
+	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
+
 	// We're using priority 11 because the plugin is registered with (default) priority 10
 	add_action( 'widgets_init', __NAMESPACE__ . '\unregister_parsely_widget', 11 );
 
@@ -91,27 +94,20 @@ function maybe_load_plugin() {
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
 
 function maybe_disable_some_features() {
-	if ( ! apply_filters( 'wpvip_parsely_load_mu', get_option( '_wpvip_parsely_mu' ) === '1' ) ) {
-		return;
-	}
-
-	global $parsely;
-
-	if ( null != $parsely ) {
+	if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely' ) ) {
 		// If the plugin was loaded solely by the option, hide the UI (for now)
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
-			remove_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) );
-			remove_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) );
+			remove_action( 'admin_menu', array( $GLOBALS['parsely'], 'add_settings_sub_menu' ) );
+			remove_action( 'admin_footer', array( $GLOBALS['parsely'], 'display_admin_warning' ) );
 			remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
-			remove_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
-			remove_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) );
+			remove_filter( 'page_row_actions', array( $GLOBALS['parsely'], 'row_actions_add_parsely_link' ) );
+			remove_filter( 'post_row_actions', array( $GLOBALS['parsely'], 'row_actions_add_parsely_link' ) );
 
 			// ..& default to "repeated metas"
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
 		}
 	}
 }
-add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
 
 function unregister_parsely_widget() {
 	global $parsely;
