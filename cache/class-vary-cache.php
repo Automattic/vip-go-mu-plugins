@@ -492,7 +492,8 @@ class Vary_Cache {
 	 */
 	public static function set_cookie_expiry( int $expiry ) {
 		if ( $expiry < HOUR_IN_SECONDS ) {
-			trigger_error( sprintf( '%s: cookie expiry must be greater than or equal to 1 hour (%d)', __METHOD__, intval( HOUR_IN_SECONDS ) ), E_USER_WARNING );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HOUR_IN_SECONDS is safe as it is an integer value
+			trigger_error( sprintf( '%s: cookie expiry must be greater than or equal to 1 hour (%d)', __METHOD__, HOUR_IN_SECONDS ), E_USER_WARNING );
 			return;
 		}
 
