@@ -24,6 +24,13 @@ function wpcom_error_shutdown() {
 	}
 }
 
+/**
+ * @param int    $type      The level of the error raised (prior to PHP 8, $type is 0 if the error has been silenced with @)
+ * @param string $message   Error message
+ * @param string $file      Filename that the error was raised in
+ * @param int    $line      Line number where the error was raised
+ * @return void
+ */
 function wpcom_error_handler( $type, $message, $file, $line ) {
 	wpcom_custom_error_handler( true, $type, $message, $file, $line );
 }
@@ -36,7 +43,7 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
 	} elseif ( in_array( $last_error_type, array( E_ERROR, E_USER_ERROR ), 1 ) ) {
 		return ''; // The standard debug backtrace is useless for Fatal Errors
 	} else {
-		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
+		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection, WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 		$backtrace = debug_backtrace( 0 );
 	}
 
@@ -80,9 +87,16 @@ function wpcom_get_error_backtrace( $last_error_file, $last_error_type, $for_irc
 	return implode( ', ', $call_path );
 }
 
-/*
+/**
  * Shared Error Handler run as a Custom Error Handler and at Shutdown as an error handler of last resort.
  * When we run at shutdown we must not die as then the pretty printing of the Error doesn't happen which is lame sauce.
+ *
+ * @param bool   $whether_i_may_die     true if the function is called from the Error Handler and not from the shutdown handler
+ * @param int    $type                  The level of the error raised (prior to PHP 8, $type is 0 if the error has been silenced with @)
+ * @param string $message               Error message
+ * @param string $file                  Filename that the error was raised in
+ * @param int    $line                  Line number where the error was raised
+ * @return bool                         Whether not to call the normal error handling (the return value is ignored by the callers and thus has no effect)
  */
 function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file, $line ) {
 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
@@ -133,16 +147,18 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 	}
 
 	// @ error suppression
-	if ( 0 == error_reporting() ) {
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting -- false positive
+	if ( 0 === error_reporting() ) {
 		$string = '[Suppressed] ' . $string;
 	}
 
 	$backtrace = wpcom_get_error_backtrace( $file, $type );
 
 	if ( ! empty( $_SERVER['HTTP_HOST'] ) && isset( $_SERVER['REQUEST_URI'] ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- this is OK, the variable will be escaped later
 		$source = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	} else {
-		$source = '$ ' . @join( ' ', $GLOBALS['argv'] );
+		$source = '$ ' . join( ' ', empty( $GLOBALS['argv'] ) || ! is_array( $GLOBALS['argv'] ) ? [] : $GLOBALS['argv'] );
 	}
 
 	$display_errors = ini_get( 'display_errors' );
@@ -155,29 +171,32 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		}
 
 		if ( 'stderr' === $display_errors && defined( 'STDERR' ) && is_resource( STDERR ) ) {
-			fwrite( STDERR, sprintf( $display_errors_format, $string, $message, $file, $line, htmlspecialchars( $source ), htmlspecialchars( $backtrace ) ) );
+			fprintf( STDERR, $display_errors_format, $string, $message, $file, $line, htmlspecialchars( $source ), htmlspecialchars( $backtrace ) );
 		} else {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			printf( $display_errors_format, $string, $message, $file, $line, htmlspecialchars( $source ), htmlspecialchars( $backtrace ) );
 		}
 	}
 
 	if ( ini_get( 'log_errors' ) ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( sprintf( '%s: %s in %s on line %d [%s] [%s]', $string, $message, $file, $line, $source, $backtrace ) );
 	}
 
-	if ( $die ) {
-		// When we run at shutdown we must not die as then the pretty printing of the Error doesn't happen which is lame sauce.
-		if ( $whether_i_may_die ) {
-			die( 1 );
-		}
+	// When we run at shutdown we must not die as then the pretty printing of the Error doesn't happen which is lame sauce.
+	if ( $die && $whether_i_may_die ) {
+		die( 1 );
 	}
 
 	return true;
 }
 
+// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- used only to check for a substring
 $php_self = $_SERVER['PHP_SELF'] ?? '';
 if ( false === stripos( $php_self, 'phpunit' ) ) {
+	// phpcs:ignore WordPress.PHP.IniSet.Risky
 	ini_set( 'a8c.enable_backtrace_on_error', 1 );
 	register_shutdown_function( 'wpcom_error_shutdown' );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 	set_error_handler( 'wpcom_error_handler' );
 }
