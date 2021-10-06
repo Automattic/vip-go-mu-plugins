@@ -53,7 +53,7 @@ class Site_Details_Index {
 		if ( ! is_array( $site_details ) ) {
 			$site_details = array();
 		}
-		
+
 		global $wp_version;
 
 		$site_id = 0;
@@ -78,7 +78,7 @@ class Site_Details_Index {
 		$site_details['plugins'] = $this->get_plugin_info();
 		$site_details['search']  = $this->get_search_info();
 		$site_details['jetpack'] = $this->get_jetpack_info();
-		
+
 		return $site_details;
 	}
 

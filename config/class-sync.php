@@ -26,7 +26,7 @@ class Sync {
 	}
 
 	public function maybe_setup_cron() {
-		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] );     // phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
+		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] ); // phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_action( self::CRON_EVENT_NAME, [ $this, 'do_cron' ] );
 
 		// Only register cron event from admin or CLI, to keep it out of frontend request path
