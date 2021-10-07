@@ -92,12 +92,12 @@
             'dev_requirement' => false,
         ),
         'automattic/jetpack-connection' => array(
-            'pretty_version' => 'v1.30.5',
-            'version' => '1.30.5.0',
+            'pretty_version' => 'v1.30.6',
+            'version' => '1.30.6.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../automattic/jetpack-connection',
             'aliases' => array(),
-            'reference' => '2c0f6a8c37601afe5497b2ba8a62e119684e3e53',
+            'reference' => 'a76d26bb08da9db1be1301acdd470233053f2340',
             'dev_requirement' => false,
         ),
         'automattic/jetpack-connection-ui' => array(
@@ -263,12 +263,12 @@
             'dev_requirement' => false,
         ),
         'automattic/jetpack-tracking' => array(
-            'pretty_version' => 'v1.13.10',
-            'version' => '1.13.10.0',
+            'pretty_version' => 'v1.13.11',
+            'version' => '1.13.11.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../automattic/jetpack-tracking',
             'aliases' => array(),
-            'reference' => 'ab152bf58aafa2dd0bdf925055dae44ef6d16aee',
+            'reference' => 'ed8ce7054fd04d1c75e2bdd87683e17d4b852295',
             'dev_requirement' => false,
         ),
         'nojimage/twitter-text-php' => array(

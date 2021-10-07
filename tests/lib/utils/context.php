@@ -2,9 +2,11 @@
 
 namespace Automattic\VIP\Utils;
 
-require_once __DIR__ . '/../../../lib/utils/context.php';
+use PHPUnit\Framework\TestCase;
 
-class Context_Test extends \PHPUnit_Framework_TestCase {
+require_once __DIR__ . '/../../../lib/utils/class-context.php';
+
+class Context_Test extends TestCase {
 	function test__is_cache_healthcheck__nope() {
 		$_SERVER['REQUEST_URI'] = '/not-healthcheck-path';
 

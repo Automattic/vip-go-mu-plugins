@@ -49,8 +49,8 @@ class API_Cache {
 			return;
 		}
 
-		foreach( $this->files as $name => $path ) {
-			unlink( $path );
+		foreach ( $this->files as $name => $path ) {
+			unlink( $path );                // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 			unset( $this->files[ $name ] );
 		}
 
@@ -97,6 +97,7 @@ class API_Cache {
 
 	public function remove_file( $filepath ) {
 		if ( isset( $this->files[ $filepath ] ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 			unlink( $this->files[ $filepath ] );
 			unset( $this->files[ $filepath ] );
 		}
@@ -111,6 +112,7 @@ class API_Cache {
 	}
 
 	public function create_tmp_file() {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
 		return tempnam( $this->tmp_dir, 'vip' );
 	}
 }

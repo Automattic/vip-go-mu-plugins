@@ -94,8 +94,10 @@ class StatsD {
 
 	/*
 	 * Send the metrics over UDP
-	 **/
+	 */
 	public function send( $data, $sample_rate = 1 ) {
+	// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+
 		// Disables StatsD logging for test environments
 		if ( defined( 'VIP_DISABLE_STATSD' ) && VIP_DISABLE_STATSD ) {
 			return;
@@ -121,6 +123,7 @@ class StatsD {
 
 		if ( $sample_rate < 1 ) {
 			foreach ( $data as $stat => $value ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand -- don't need a CSPRNG here
 				if ( ( mt_rand() / mt_getrandmax() ) <= $sample_rate ) {
 					$sampled_data[ $stat ] = "$value|@$sample_rate";
 				}
@@ -135,18 +138,19 @@ class StatsD {
 
 		$host = VIP_STATSD_HOST;
 		$port = VIP_STATSD_PORT;
-		$url = "udp://$host";
+		$url  = "udp://$host";
 
 		// Wrap this in a try/catch - failures in any of this should logged as warnings
 		try {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fsockopen -- false positive, this is a network socket
 			$fp = fsockopen( $url, $port, $errno, $errstr );
 
 			if ( ! $fp ) {
 				throw new \Exception( "fsockopen: $errstr ($errno)" );
-				return;
 			}
 
 			foreach ( $sampled_data as $stat => $value ) {
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- false positive, write to a network socket
 				if ( false === fwrite( $fp, "$stat:$value" ) ) {
 					$escaped_write = addslashes( "$stat:$value" );
 					throw new \Exception( "fwrite: failed to write '$escaped_write'" );
@@ -160,5 +164,7 @@ class StatsD {
 			$escaped_url = addslashes( $url );
 			trigger_error( "Statsd::send exception('$escaped_url'): {$e->getMessage()}", \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
+
+	// phpcs:enable
 	}
 }
