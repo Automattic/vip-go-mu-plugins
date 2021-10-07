@@ -50,10 +50,12 @@ function l( $stuff = null, ...$rest ) {
 		return $stuff;
 	}
 	if ( ! isset( $pageload ) ) {
-		$pageload = substr( md5( mt_rand() ), 0, 4 );
+		$pageload = substr( md5( wp_rand() ), 0, 4 );
 		if ( ! empty( $_SERVER['argv'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$hint = implode( ' ', $_SERVER['argv'] );
 		} elseif ( isset( $_SERVER['HTTP_HOST'] ) && isset( $_SERVER['REQUEST_URI'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$hint = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 		} else {
 			$hint = php_sapi_name();
@@ -65,8 +67,8 @@ function l( $stuff = null, ...$rest ) {
 	$pid = $pageload . '-' . getmypid();
 	if ( is_null( $stuff ) ) {
 		// Log the file and line number
-		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
-		$backtrace = debug_backtrace( false );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 		while ( isset( $backtrace[1]['function'] ) && __FUNCTION__ == $backtrace[1]['function'] ) {
 			array_shift( $backtrace );
 		}
@@ -94,8 +96,8 @@ function l( $stuff = null, ...$rest ) {
 			if ( array( 'default output handler' ) == $obs ) {
 				break;
 			}
-			// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
-			$backtrace = debug_backtrace( false );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 			foreach ( $backtrace as $level ) {
 				$caller = '';
 				if ( isset( $level['class'] ) ) {
@@ -111,6 +113,7 @@ function l( $stuff = null, ...$rest ) {
 		if ( $in_ob_handler ) {
 			$log = l_json_encode_pretty( $stuff );
 		} else {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 			$log = print_r( $stuff, true );
 		}
 	}
@@ -123,7 +126,7 @@ function l( $stuff = null, ...$rest ) {
 // Log only once (suppresses logging on subsequent calls from the same file+line)
 function lo( $stuff, ...$rest ) {
 	static $callers = array();
-	$backtrace      = debug_backtrace( false );
+	$backtrace      = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );       // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 	$caller         = md5( $backtrace[0]['file'] . $backtrace[0]['line'] );
 	if ( isset( $callers[ $caller ] ) ) {
 		return $stuff;
@@ -133,64 +136,14 @@ function lo( $stuff, ...$rest ) {
 	return call_user_func_array( 'l', $args );
 }
 
-// Pretty print for JSON (stolen from public.api)
+/**
+ * Pretty print for JSON
+ * 
+ * @param mixed $data       Variable to encode as JSON.
+ * @return string|false     The JSON-encoded string, or false if it cannot be encoded.
+ */
 function l_json_encode_pretty( $data ) {
-	if ( defined( 'JSON_PRETTY_PRINT' ) ) {
-		// Added in PHP 5.4.0
-		return json_encode( $data, JSON_PRETTY_PRINT );
-	}
-
-	// Adapted from http://us3.php.net/manual/en/function.json-encode.php#80339
-	$json = json_encode( $data );
-	$len  = strlen( $json );
-
-	$tab          = "\t";
-	$new_json     = '';
-	$indent_level = 0;
-	$in_string    = false;
-
-	$slashed = false;
-	for ( $c = 0; $c < $len; $c++ ) {
-		$char = $json[ $c ];
-		if ( $in_string ) {
-			if ( '"' === $char && $c > 0 && ! $slashed ) {
-				$in_string = false;
-			}
-			$new_json .= $char;
-		} else {
-			switch ( $char ) {
-				case '{':
-				case '[':
-					$new_json .= $char . "\n" . str_repeat( $tab, ++$indent_level );
-					break;
-				case '}':
-				case ']':
-					$new_json .= "\n" . str_repeat( $tab, --$indent_level ) . $char;
-					break;
-				case ',':
-					$new_json .= ",\n" . str_repeat( $tab, $indent_level );
-					break;
-				case ':':
-					$new_json .= ': ';
-					break;
-				case '"':
-					if ( $c > 0 && ! $slashed ) {
-						$in_string = true;
-					}
-					// no break
-				default:
-					$new_json .= $char;
-					break;
-			}
-		}
-		if ( '\\' == $char ) {
-			$slashed = ! $slashed;
-		} else {
-			$slashed = false;
-		}
-	}
-
-	return $new_json;
+	return wp_json_encode( $data, JSON_PRETTY_PRINT );
 }
 
 /**
@@ -205,7 +158,7 @@ function vip_timer( $name = '' ) {
 	static $times = array();
 	if ( ! array_key_exists( $name, $times ) ) {
 		$times[ $name ] = microtime( true );
-		return;
+		return null;
 	}
 	$elapsed = microtime( true ) - $times[ $name ];
 	unset( $times[ $name ] );
@@ -240,7 +193,8 @@ function t() {
 		$start = $now;
 	}
 
-	$backtrace = debug_backtrace( false );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+	$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 	while ( isset( $backtrace[1]['function'] ) && __FUNCTION__ == $backtrace[1]['function'] ) {
 		array_shift( $backtrace );
 	}

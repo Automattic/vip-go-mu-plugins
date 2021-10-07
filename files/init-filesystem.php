@@ -16,24 +16,24 @@
 
 define( 'VIP_FILESYSTEM_METHOD', 'VIP' );
 
-require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
+require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
 
-require_once( __DIR__ . '/class-wp-filesystem-vip.php' );
-require_once( __DIR__ . '/class-api-client.php' );
+require_once __DIR__ . '/class-wp-filesystem-vip.php';
+require_once __DIR__ . '/class-api-client.php';
 
 // Stub class to match the format that `WP_Filesystem()` expects.
 // it does a check for class_exists() of the filesystem method i.e. `WP_Filesystem_{type}`
 class WP_Filesystem_VIP extends Automattic\VIP\Files\WP_Filesystem_VIP {}
 
-add_filter( 'filesystem_method', function( $method, $args, $context, $allow_relaxed_file_ownership ) {
+add_filter( 'filesystem_method', function() {
 	return VIP_FILESYSTEM_METHOD; // The VIP base class transparently handles using the direct filesystem as well as the VIP Go File API
-}, PHP_INT_MAX, 4 );
+}, PHP_INT_MAX );
 
-add_filter( 'request_filesystem_credentials', function( $credentials, $form_post, $type, $error, $context, $extra_fields, $allow_relaxed_file_ownership ) {
+add_filter( 'request_filesystem_credentials', function( $credentials, $form_post, $type ) {
 	// Handle the default `''` case which we'll override thanks to the `filesystem_method` filter.
 	if ( '' === $type || VIP_FILESYSTEM_METHOD === $type ) {
-		if ( true === WPCOM_IS_VIP_ENV ){
-			$api_client = Automattic\VIP\Files\new_api_client();
+		if ( true === WPCOM_IS_VIP_ENV ) {
+			$api_client  = Automattic\VIP\Files\new_api_client();
 			$credentials = [
 				new Automattic\VIP\Files\WP_Filesystem_VIP_Uploads( $api_client ),
 				new WP_Filesystem_Direct( null ),
@@ -47,7 +47,7 @@ add_filter( 'request_filesystem_credentials', function( $credentials, $form_post
 		}
 	}
 	return $credentials;
-}, PHP_INT_MAX, 7 );
+}, PHP_INT_MAX, 3 );
 
 // Should't need this because we `require`-ed the class already.
 // But just in case :)

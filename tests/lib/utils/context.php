@@ -6,7 +6,7 @@ class Context_Test extends \PHPUnit_Framework_TestCase {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
-		require_once( __DIR__ . '/../../../lib/utils/context.php' );
+		require_once( __DIR__ . '/../../../lib/utils/class-context.php' );
 	}
 
 	function test__is_cache_healthcheck__nope() {

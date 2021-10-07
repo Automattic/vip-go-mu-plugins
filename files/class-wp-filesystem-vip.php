@@ -2,20 +2,18 @@
 
 namespace Automattic\VIP\Files;
 
-require_once( ABSPATH . 'wp-admin/includes/file.php' );
-require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php' );
-require_once( ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php' );
+require_once ABSPATH . 'wp-admin/includes/file.php';
+require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
 
-require_once( __DIR__ . '/class-wp-filesystem-vip-uploads.php' );
-require_once( __DIR__ . '/class-api-client.php' );
+require_once __DIR__ . '/class-wp-filesystem-vip-uploads.php';
+require_once __DIR__ . '/class-api-client.php';
 
 use WP_Error;
 use WP_Filesystem_Direct;
 
 class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
-	/** @var WP_Filesystem_VIP_Uploads */
-	private $api;
 	/** @var WP_Filesystem_Direct */
 	private $direct;
 
@@ -79,7 +77,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		$upload_dir = wp_get_upload_dir()['basedir'];
-		$temp_dir = get_temp_dir();
+		$temp_dir   = get_temp_dir();
 
 		/* Translators: 1) file name 2) class name 3) tmp dir path 4) uploads dir path */
 		$error_msg = sprintf( __( 'The `%1$s` file cannot be managed by the `%2$s` class. Writes are only allowed for the `%3$s` and `%4$s` directories and reads can be performed everywhere.' ), $filename, __CLASS__, $temp_dir, $upload_dir );
@@ -87,7 +85,8 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$this->errors->add( 'unsupported-filepath', $error_msg );
 
 		// TODO: Do we want to trigger_error in all environments? (Or just a small batch to start).
-		trigger_error( $error_msg, E_USER_WARNING );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( esc_html( $error_msg ), E_USER_WARNING );
 
 		return false;
 	}
@@ -221,7 +220,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 		$destination_exists = $destination_transport->exists( $destination );
 		if ( ! $overwrite && $destination_exists ) {
-			/* translators 1: destination file path 2: overwrite param 3: `true` boolean value */
+			/* translators: 1: destination file path 2: overwrite param 3: `true` boolean value */
 			$this->errors->add( 'destination-exists', sprintf( __( 'The destination path (`%1$s`) already exists and `%2$s` was not not set to `%3$s`.' ), $destination, '$overwrite', 'true' ) );
 			return false;
 		}
