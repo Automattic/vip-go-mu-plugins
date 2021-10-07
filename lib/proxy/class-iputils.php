@@ -96,7 +96,7 @@ class IpUtils {
 	 * @throws \RuntimeException When IPV6 support is not enabled
 	 */
 	public static function check_ip6( $request_ip, $ip ) {
-		if ( ! ( ( extension_loaded( 'sockets' ) && defined( 'AF_INET6' ) ) || @inet_pton( '::1' ) ) ) {
+		if ( ! ( ( extension_loaded( 'sockets' ) && defined( 'AF_INET6' ) ) || inet_pton( '::1' ) ) ) {
 			throw new \RuntimeException( 'Unable to check Ipv6. Check that PHP was not compiled with option "disable-ipv6".' );
 		}
 
@@ -111,8 +111,8 @@ class IpUtils {
 			$netmask = 128;
 		}
 
-		$bytes_addr = unpack( 'n*', @inet_pton( $address ) );
-		$bytes_test = unpack( 'n*', @inet_pton( $request_ip ) );
+		$bytes_addr = unpack( 'n*', @inet_pton( $address ) );      // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- inet_pton() spits a warning on failures
+		$bytes_test = unpack( 'n*', @inet_pton( $request_ip ) );   // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( ! $bytes_addr || ! $bytes_test ) {
 			return false;

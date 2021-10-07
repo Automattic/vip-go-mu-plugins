@@ -4,8 +4,8 @@ namespace Automattic\VIP\Files\Acl;
 
 require_once __DIR__ . '/pre-wp-utils.php';
 
-$vip_files_acl_original_uri = $_SERVER['HTTP_X_ORIGINAL_URI'] ?? null;
-$vip_files_acl_paths = Pre_WP_Utils\prepare_request( $vip_files_acl_original_uri );
+$vip_files_acl_original_uri = $_SERVER['HTTP_X_ORIGINAL_URI'] ?? null;                      // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+$vip_files_acl_paths        = Pre_WP_Utils\prepare_request( $vip_files_acl_original_uri );
 
 if ( ! $vip_files_acl_paths ) {
 	// Note: a 400 might be more appropriate but we're limited in terms of response codes.
@@ -18,7 +18,7 @@ if ( ! $vip_files_acl_paths ) {
 list( $vip_files_acl_subsite_path, $vip_files_acl_sanitized_file_path ) = $vip_files_acl_paths;
 
 if ( $vip_files_acl_subsite_path ) {
-	$_SERVER['REQUEST_URI'] = $vip_files_acl_subsite_path . ( $_SERVER['REQUEST_URI'] ?? '' );
+	$_SERVER['REQUEST_URI'] = $vip_files_acl_subsite_path . ( $_SERVER['REQUEST_URI'] ?? '' );  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 }
 
 // Load WordPress
@@ -26,7 +26,7 @@ require __DIR__ . '/../../../../wp-load.php';
 
 $vip_files_acl_is_path_allowed = is_valid_path_for_site( $vip_files_acl_sanitized_file_path );
 if ( ! $vip_files_acl_is_path_allowed ) {
-	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- using htmlspecialchars, which PHPCS complains about
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped -- using htmlspecialchars, which PHPCS complains about
 	trigger_error( sprintf( 'Blocked request for file path that is not allowed (current site ID: %s | requested URI: %s)', (int) get_current_blog_id(), htmlspecialchars( $vip_files_acl_original_uri ) ), E_USER_WARNING );
 
 	http_response_code( 400 );
