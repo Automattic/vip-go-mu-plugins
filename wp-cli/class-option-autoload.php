@@ -204,7 +204,7 @@ class Option_Autoload extends WPCOM_VIP_CLI_Command {
 	 *     Success: Object deleted.
 	 *
 	 */
-	public function refresh() {
+	public function refresh( $args, $assoc_args ) {
 
 		WP_CLI::run_command( [ 'cache', 'delete', 'alloptions', 'options' ] );
 
