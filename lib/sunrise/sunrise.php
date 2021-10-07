@@ -26,8 +26,8 @@ function network_not_found( $domain, $path ) {
 	];
 	$data = wp_json_encode( $data );
 
-	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-	trigger_error( 'ms_network_not_found: ' . esc_html( $data ), E_USER_WARNING );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+	trigger_error( 'ms_network_not_found: ' . htmlspecialchars( $data ), E_USER_WARNING );
 
 	handle_not_found_error( 'network' );
 }
@@ -48,8 +48,8 @@ function site_not_found( $network, $domain, $path ) {
 	];
 	$data = wp_json_encode( $data );
 
-	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-	trigger_error( 'ms_site_not_found: ' . esc_html( $data ), E_USER_WARNING );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+	trigger_error( 'ms_site_not_found: ' . htmlspecialchars( $data ), E_USER_WARNING );
 
 	handle_not_found_error( 'site' );
 }
