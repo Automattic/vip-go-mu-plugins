@@ -432,8 +432,11 @@ class Vary_Cache {
 				}
 			}
 
-			// Remove the site prefix
-			$value        = ltrim( $auth_cookie, VIP_GO_APP_ID . '.' );
+			// Remove the site prefix at the beginning
+			$prefix = VIP_GO_APP_ID . '.';
+			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
+				$value = substr( $auth_cookie, strlen ( $prefix ) );
+			}
 			$cookie_value = self::decrypt_cookie_value( $value );
 
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
