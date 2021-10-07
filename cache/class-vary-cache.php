@@ -435,7 +435,7 @@ class Vary_Cache {
 			// Remove the site prefix at the beginning
 			$prefix = VIP_GO_APP_ID . '.';
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
-				$value = substr( $auth_cookie, strlen ( $prefix ) );
+				$value = substr( $auth_cookie, strlen( $prefix ) );
 			}
 			$cookie_value = self::decrypt_cookie_value( $value );
 
