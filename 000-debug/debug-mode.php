@@ -25,11 +25,7 @@ const COOKIE_TTL = 2 * HOUR_IN_SECONDS;
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_debug_mode' );
 
 function init_debug_mode() {
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['a8c-debug'] ) ) {
-		toggle_debug_mode();
-		return;
-	}
+	maybe_toggle_debug_mode();
 
 	if ( is_debug_mode_enabled() ) {
 		enable_debug_tools();
@@ -93,15 +89,14 @@ function disable_debug_mode() {
 	redirect_back();
 }
 
-function toggle_debug_mode() {
-	// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- we check if `a8c-debug` exists in `init_debug_mode`
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( 'true' === $_GET['a8c-debug'] ) {
+function maybe_toggle_debug_mode() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$enable = (string) ( $_GET['a8c-debug'] ?? '' );
+	if ( 'true' === $enable ) {
 		enable_debug_mode();
-	} elseif ( 'false' === $_GET['a8c-debug'] ) {
+	} elseif ( 'false' === $enable ) {
 		disable_debug_mode();
 	}
-	// phpcs:enable
 }
 
 function enable_debug_tools() {
