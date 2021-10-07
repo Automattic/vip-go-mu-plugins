@@ -25,7 +25,11 @@ const COOKIE_TTL = 2 * HOUR_IN_SECONDS;
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_debug_mode' );
 
 function init_debug_mode() {
-	maybe_toggle_debug_mode();
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$enable = filter_var( $_GET['a8c-debug'] ?? '', FILTER_SANITIZE_STRING );
+	if ( in_array( $enable, [ 'true', 'false' ], true ) ) {
+		set_debug_mode( 'true' === $enable );
+	}
 
 	if ( is_debug_mode_enabled() ) {
 		enable_debug_tools();
@@ -89,12 +93,16 @@ function disable_debug_mode() {
 	redirect_back();
 }
 
-function maybe_toggle_debug_mode() {
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	$enable = (string) ( $_GET['a8c-debug'] ?? '' );
-	if ( 'true' === $enable ) {
+/**
+ * Turns the debug mode on or off
+ * 
+ * @param bool $set     Whether to turn on (true) or off (false) the debug mode
+ * @return void 
+ */
+function set_debug_mode( bool $set ) {
+	if ( $set ) {
 		enable_debug_mode();
-	} elseif ( 'false' === $enable ) {
+	} else {
 		disable_debug_mode();
 	}
 }
