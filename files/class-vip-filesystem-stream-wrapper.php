@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Files;
 
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+
 class VIP_Filesystem_Stream_Wrapper {
 
 	/**
@@ -125,7 +127,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$this->client = $client;
 		}
 
-		$this->protocol = $protocol ?: self::DEFAULT_PROTOCOL;
+		$this->protocol = $protocol ? $protocol : self::DEFAULT_PROTOCOL;
 
 		$this->debug_mode = false;
 		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' )
@@ -153,7 +155,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		return stream_wrapper_register(
-			$this->protocol, get_called_class(), STREAM_IS_URL );
+		$this->protocol, get_called_class(), STREAM_IS_URL );
 	}
 
 	/**
@@ -197,6 +199,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				// File doesn't exist on File service so create new file
 				$file = $this->string_to_resource( '', $mode );
 			} else {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
 				$file = fopen( $result, $mode );
 			}
 
@@ -271,10 +274,11 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_read( $count ) {
 		$this->debug( sprintf( 'stream_read => %s + %s + %s', $count, $this->path, $this->uri ) );
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fread
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
 			trigger_error(
-				sprintf( 'Error reading from file: %s #vip-go-streams', $this->path ),
+				sprintf( 'Error reading from file: %s #vip-go-streams', esc_html( $this->path ) ),
 				E_USER_WARNING
 			);
 			return '';
@@ -387,18 +391,19 @@ class VIP_Filesystem_Stream_Wrapper {
 		if ( 'r' === $this->mode ) {
 			// No writes in 'read' mode
 			trigger_error(
-				sprintf( 'stream_write failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ),
+				sprintf( 'stream_write failed for %s with error: No writes allowed in "read" mode #vip-go-streams', esc_html( $this->path ) ),
 				E_USER_WARNING
 			);
 
 			return false;
 		}
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
 		$length = fwrite( $this->file, $data );
 
 		if ( false === $length ) {
 			trigger_error(
-				sprintf( 'Error writing to file: %s #vip-go-stream', $this->path ),
+				sprintf( 'Error writing to file: %s #vip-go-stream', esc_html( $this->path ) ),
 				E_USER_WARNING
 			);
 			return false;
@@ -419,7 +424,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True if success. False on failure
 	 */
 	public function unlink( $path ) {
-		$this->debug( sprintf( 'unlink =>  %s', $path ) );
+		$this->debug( sprintf( 'unlink =>  %s', $path ), true );
 
 		$path = $this->trim_path( $path );
 
@@ -482,7 +487,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		$path = $this->trim_path( $path );
 
 		// Default stats
-		$stats = array (
+		$stats = array(
 			0         => 0,
 			'dev'     => 0,
 			1         => 0,
@@ -546,11 +551,16 @@ class VIP_Filesystem_Stream_Wrapper {
 			// Here we should parse the meta data into the statistics array
 			// and then combine with data from `is_file` API
 			// see: http://php.net/manual/en/function.stat.php
-			$stats[2]  = $stats['mode'] = 33206; // read+write permissions
-			$stats[7]  = $stats['size'] = (int) $info['size'];
-			$stats[8]  = $stats['atime'] = (int) $info['mtime'];
-			$stats[9]  = $stats['mtime'] = (int) $info['mtime'];
-			$stats[10] = $stats['ctime'] = (int) $info['mtime'];
+			$stats['mode']  = 33206; // read+write permissions
+			$stats['size']  = (int) $info['size'];
+			$stats['atime'] = (int) $info['mtime'];
+			$stats['mtime'] = (int) $info['mtime'];
+			$stats['ctime'] = (int) $info['mtime'];
+			$stats[2]       = $stats['mode'];
+			$stats[7]       = $stats['size'];
+			$stats[8]       = $stats['atime'];
+			$stats[9]       = $stats['mtime'];
+			$stats[10]      = $stats['ctime'];
 
 			return $stats;
 		} catch ( \Exception $e ) {
@@ -597,7 +607,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		$path_from = $this->trim_path( $path_from );
-		$path_to = $this->trim_path( $path_to );
+		$path_to   = $this->trim_path( $path_to );
 
 		try {
 			// Get original file first
@@ -614,15 +624,15 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Convert to actual file to upload to new path
-			$file     = fopen( $result, 'r' );
-			$meta     = stream_get_meta_data( $file );
-			$filePath = $meta['uri'];
+			$file      = fopen( $result, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+			$meta      = stream_get_meta_data( $file );
+			$file_path = $meta['uri'];
 
 			// Upload to file service
-			$result = $this->client->upload_file( $filePath, $path_to );
+			$result = $this->client->upload_file( $file_path, $path_to );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
-					sprintf( 'rename/upload_file/to failed for %s with error: %s #vip-go-streams', $filePath, $result->get_error_message() ),
+					sprintf( 'rename/upload_file/to failed for %s with error: %s #vip-go-streams', esc_html( $file_path ), esc_html( $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
@@ -726,9 +736,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	protected function string_to_resource( $data, $mode ) {
 		// Create a temporary file
 		$tmp_handler = tmpfile();
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
 		if ( false === fwrite( $tmp_handler, $data ) ) {
 			trigger_error( 'Error creating temporary resource #vip-go-streams',
-				E_USER_ERROR );
+			E_USER_ERROR );
 		}
 
 		switch ( $mode ) {
@@ -854,13 +865,43 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @since   1.0.0
 	 * @access  protected
 	 * @param   string    $message  Debug message to be logged
+	 * @param   bool      $force Whether to force debug
 	 */
-	protected function debug( $message ) {
-		if ( ! $this->debug_mode ) {
+	protected function debug( $message, $force = false ) {
+		if ( ! ( $this->debug_mode || $force ) ) {
 			return;
 		}
 
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( sprintf( '%s (%s)', $message, wp_debug_backtrace_summary() ) );
+		$trace = $this->backtrace_fmt();
+
+		\Automattic\VIP\Logstash\log2logstash(
+			[
+				'severity' => 'info',
+				'feature'  => 'stream_wrapper_audit_' . $trace[1]['function'],
+				'message'  => "File op {$trace[1]['function']}: " . $message,
+				'extra'    => [
+					'trace' => $trace,
+				],
+			]
+		);
+	}
+
+	/**
+	 * Format the debug backtrace to be a bit more readable .
+	 *
+	 * @return array
+	 */
+	private function backtrace_fmt() {
+		$trace = debug_backtrace( 0, 30 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		// Discard current frame.
+		unset( $trace[0] );
+		foreach ( $trace as &$frame ) {
+			if ( isset( $frame['file'] ) ) {
+				$frame['file'] = str_replace( ABSPATH, '', $frame['file'] ) . ':' . $frame['line'];
+			}
+			unset( $frame['line'] );
+		}
+
+		return array_values( $trace );
 	}
 }

@@ -1,0 +1,46 @@
+name: End-to-end (e2e) Tests
+
+on:
+  # Run on all pushes and on all pull requests.
+  # Prevent the "push" build from running when there are only irrelevant changes.
+  push:
+    paths-ignore:
+      - '**.md'
+  pull_request:
+  # Allow manually triggering the workflow.
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: e2e against WordPress latest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Spin up WordPress
+        run: docker-compose -f tests/e2e/docker-compose.yml up &
+
+      - name: Use node lts/*
+        uses: actions/setup-node@v2
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Update npm to latest
+        run: npm i -g npm
+
+      - name: Installing dependencies
+        run: npm ci
+
+      - name: Wait for WP
+        run: until docker-compose -f tests/e2e/docker-compose.yml run cli wp db check &> /dev/null; do >&2 echo "Waiting for the back end to provision..."; sleep 2; done; >&2 echo "WordPress is ready!"
+        shell: bash
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+
+      - name: Clean up
+        if: ${{ always() }}
+        run: docker-compose -f tests/e2e/docker-compose.yml down -v

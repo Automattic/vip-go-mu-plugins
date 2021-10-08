@@ -1,0 +1,7 @@
+{
+	"env": { "browser": true },
+	"extends": [ "plugin:@wordpress/eslint-plugin/recommended-with-formatting" ],
+	"settings": {
+		"jest": { "version": "latest" }
+	}
+}

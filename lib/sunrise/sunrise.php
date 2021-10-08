@@ -5,11 +5,11 @@ namespace Automattic\VIP\Sunrise;
 /**
  * Nothing to see here for single sites
  */
-if ( ! is_multisite() ) {
+if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 	return;
 }
 
-require_once( WP_CONTENT_DIR . '/mu-plugins/lib/utils/context.php' );
+require_once WP_CONTENT_DIR . '/mu-plugins/lib/utils/class-context.php';
 
 use Automattic\VIP\Utils\Context;
 
@@ -24,9 +24,10 @@ function network_not_found( $domain, $path ) {
 		'domain_requested' => $domain,
 		'path_requested'   => $path,
 	];
-	$data = json_encode( $data );
+	$data = wp_json_encode( $data );
 
-	trigger_error( 'ms_network_not_found: ' . $data, E_USER_WARNING );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+	trigger_error( 'ms_network_not_found: ' . htmlspecialchars( $data ), E_USER_WARNING );
 
 	handle_not_found_error( 'network' );
 }
@@ -45,9 +46,10 @@ function site_not_found( $network, $domain, $path ) {
 		'domain_requested' => $domain,
 		'path_requested'   => $path,
 	];
-	$data = json_encode( $data );
+	$data = wp_json_encode( $data );
 
-	trigger_error( 'ms_site_not_found: ' . $data, E_USER_WARNING );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+	trigger_error( 'ms_site_not_found: ' . htmlspecialchars( $data ), E_USER_WARNING );
 
 	handle_not_found_error( 'site' );
 }
@@ -58,7 +60,7 @@ function handle_not_found_error( $error_type ) {
 	if ( $is_healthcheck ) {
 		http_response_code( 200 );
 		header( 'Content-type: text/plain' );
-		echo sprintf( '%s not found; but still OK', htmlspecialchars( $error_type ) );
+		printf( '%s not found; but still OK', $error_type ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- text/plain
 		exit;
 	}
 
@@ -73,10 +75,11 @@ function handle_not_found_error( $error_type ) {
 			$error_doc = sprintf( '%s/mu-plugins/errors/site-maintenance.html', WP_CONTENT_DIR );
 		} else {
 			$status_code = 404;
-			$error_doc = sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type );
+			$error_doc   = sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type );
 		}
 
 		http_response_code( $status_code );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- this is a local pre-made HTML file
 		echo file_get_contents( $error_doc );
 		exit;
 	}

@@ -879,6 +879,7 @@ class Health_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_for_indexable_data
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
+		$index_name = 'vip-123-post-1';
 		// Mock search and the versioning instance
 		$mock_search = $this->createMock( Search::class );
 
@@ -889,11 +890,12 @@ class Health_Test extends \WP_UnitTestCase {
 		$health = new Health( $mock_search );
 
 		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings', 'index_exists' ] )
+			->setMethods( [ 'query_db', 'prepare_document', 'put_mapping', 'build_mapping', 'get_index_settings', 'build_settings', 'index_exists', 'get_index_name' ] )
 			->getMock();
 
 		$mocked_indexable->slug = 'post';
 		$mocked_indexable->method( 'index_exists' )->willReturn( true );
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
 
 		$mocked_indexable->method( 'get_index_settings' )
 			->willReturn( $actual );
@@ -901,9 +903,18 @@ class Health_Test extends \WP_UnitTestCase {
 		$mocked_indexable->method( 'build_settings' )
 			->willReturn( $desired );
 
-		$actual_diff = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
+		$actual_result = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
 
-		$this->assertEquals( $actual_diff, $expected_diff );
+		$expected_result = [];
+		if ( ! empty( $actual_result ) ) {
+			$expected_result = [
+				'diff' => $expected_diff,
+				'index_version' => 1,
+				'index_name' => $index_name,
+			];
+		}
+
+		$this->assertEquals( $actual_result, $expected_result );
 	}
 
 	public function test_get_index_settings_diff_for_indexable_without_index() {
