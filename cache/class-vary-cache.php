@@ -462,11 +462,11 @@ class Vary_Cache {
 	/**
 	 * Flattens the 2D array into a serialized string compatible with the cookie format.
 	 *
-	 * @return null|string A string representation of the groups
+	 * @return string A string representation of the groups
 	 */
 	private static function stringify_groups() {
 		if ( empty( self::$groups ) ) {
-			return null;
+			return '';
 		}
 
 		ksort( self::$groups ); // make sure the string order is the same every time.
@@ -479,7 +479,7 @@ class Vary_Cache {
 		}
 
 		if ( empty( $flattened ) ) {
-			return null;
+			return '';
 		}
 
 		return self::VERSION_PREFIX . implode( self::GROUP_SEPARATOR, $flattened );
