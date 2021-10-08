@@ -715,7 +715,7 @@ function vip_reset_local_object_cache() {
 	$wp_object_cache->memcache_debug = array();
 	$wp_object_cache->cache = array();
 
-	if ( is_callable( $wp_object_cache, '__remoteset' ) ) {
+	if ( is_callable( [ $wp_object_cache, '__remoteset' ] ) ) {
 		$wp_object_cache->__remoteset(); // important
 	}
 }
