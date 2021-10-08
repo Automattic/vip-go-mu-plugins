@@ -324,4 +324,33 @@ class CoreCommand extends \ElasticPress\Command {
 
 		WP_CLI::confirm( '⚠️  You are about to run ' . WP_CLI::colorize( '%ra destructive operation%n' ) . '. Are you sure?' );
 	}
+
+	/**
+	 * Return all index names as a JSON object.
+	 * 
+	 * @subcommand get-indexes
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_indexes( $args, $assoc_args ) {
+		$path = '_cat/indices?format=json';
+
+		$response = \ElasticPress\Elasticsearch::factory()->remote_request( $path );
+
+		$body = json_decode( wp_remote_retrieve_body( $response ) );
+
+		if ( ! is_array( $body ) ) {
+			if ( property_exists( $body, 'error' ) ) {
+				WP_CLI::error( $body->error );
+			} else {
+				WP_CLI::error( 'Ohnoes! Something went wrong.' );
+			}
+		}
+
+		$indexes = array_column( $body, 'index' );
+		sort( $indexes );
+
+		WP_CLI::line( wp_json_encode( $indexes ) );
+	}
 }
