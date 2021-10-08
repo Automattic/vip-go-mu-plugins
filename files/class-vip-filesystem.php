@@ -229,6 +229,7 @@ class VIP_Filesystem {
 
 		if ( is_wp_error( $result ) ) {
 			if ( 'invalid-file-type' !== $result->get_error_code() ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 				trigger_error(
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					sprintf( '%s #vip-go-streams', $result->get_error_message() ),
@@ -280,6 +281,7 @@ class VIP_Filesystem {
 			return '';
 		}
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 		if ( ! unlink( $file_path ) ) {
 			return '';
 		}
@@ -389,7 +391,7 @@ class VIP_Filesystem {
 		$invalidation_url = get_site_url() . $file_uri;
 
 		if ( ! \WPCOM_VIP_Cache_Manager::instance()->queue_purge_url( $invalidation_url ) ) {
-			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error(
 				/* translators: invalidation url */
 				sprintf( __( 'Error purging %s from the cache service #vip-go-streams' ), $invalidation_url ),
@@ -443,11 +445,13 @@ class VIP_Filesystem {
 
 		// Save a local copy and read metadata from that
 		$temp_file = wp_tempnam();
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 		file_put_contents( $temp_file, file_get_contents( $file ) );
 		$meta = wp_read_image_metadata( $temp_file );
 
 		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 		unlink( $temp_file );
 
 		return $meta;

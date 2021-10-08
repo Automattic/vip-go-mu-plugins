@@ -306,13 +306,14 @@ class Logger {
 		];
 
 		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 1 );
 
-			if ( isset( $backtrace[0] ) && isset( $backtrace[0]['file'] ) ) {
+			if ( isset( $backtrace[0]['file'] ) ) {
 				$default_params['file'] = $backtrace[0]['file'];
 			}
 
-			if ( isset( $backtrace[0] ) && isset( $backtrace[0]['line'] ) ) {
+			if ( isset( $backtrace[0]['line'] ) ) {
 				$default_params['line'] = $backtrace[0]['line'];
 			}
 		}
@@ -502,9 +503,7 @@ class Logger {
 	 * @param array $entry.
 	 */
 	public static function maybe_wp_debug_log_entries( array $entry ) : void {
-		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) ) {
-			return; // Not applicable.
-		} elseif ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) || ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
 			return; // Not applicable.
 		}
 
@@ -527,6 +526,7 @@ class Logger {
 		$log_path = WP_CONTENT_DIR . '/debug.log';
 		$log_path = is_string( WP_DEBUG_LOG ) && WP_DEBUG_LOG ? WP_DEBUG_LOG : $log_path;
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- not a VIP environment
 		if ( $log_path && ( ( file_exists( $log_path ) && is_writable( $log_path ) ) || ( ! file_exists( $log_path ) && is_writable( dirname( $log_path ) ) ) ) ) {
 			file_put_contents( // phpcs:ignore -- `file_put_contents()` ok.
 				$log_path,

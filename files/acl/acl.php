@@ -10,21 +10,22 @@
 
 namespace Automattic\VIP\Files\Acl;
 
-const FILE_IS_PUBLIC = 'FILE_IS_PUBLIC';
+const FILE_IS_PUBLIC              = 'FILE_IS_PUBLIC';
 const FILE_IS_PRIVATE_AND_ALLOWED = 'FILE_IS_PRIVATE_AND_ALLOWED';
-const FILE_IS_PRIVATE_AND_DENIED = 'FILE_IS_PRIVATE_AND_DENIED';
+const FILE_IS_PRIVATE_AND_DENIED  = 'FILE_IS_PRIVATE_AND_DENIED';
 
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
-	$is_files_acl_enabled = defined( 'VIP_FILES_ACL_ENABLED' ) && true === VIP_FILES_ACL_ENABLED;
-	$is_restrict_all_enabled = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
+	$is_files_acl_enabled            = defined( 'VIP_FILES_ACL_ENABLED' ) && true === VIP_FILES_ACL_ENABLED;
+	$is_restrict_all_enabled         = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
 	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
 
 	if ( ! $is_files_acl_enabled ) {
 		// Throw warning if restrictions are enabled but ACL constant is not set.
 		// This is probably a sign that options were copied between sites or someone missed a setup step.
 		if ( $is_restrict_all_enabled || $is_restrict_unpublished_enabled ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error( 'File ACL restrictions are enabled without server configs (missing `VIP_FILES_ACL_ENABLED` constant).', E_USER_WARNING );
 		}
 
@@ -32,11 +33,11 @@ function maybe_load_restrictions() {
 	}
 
 	if ( $is_restrict_all_enabled ) {
-		require_once( __DIR__ . '/restrict-all-files.php' );
+		require_once __DIR__ . '/restrict-all-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
 	} elseif ( $is_restrict_unpublished_enabled ) {
-		require_once( __DIR__ . '/restrict-unpublished-files.php' );
+		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 		// Purge attachments for posts for better cacheability
@@ -44,7 +45,7 @@ function maybe_load_restrictions() {
 	}
 }
 
-function get_option_as_bool( $option_name, $default = false ) {
+function get_option_as_bool( $option_name ) {
 	$value = get_option( $option_name, false );
 
 	return in_array( $value, [
@@ -96,27 +97,26 @@ function is_valid_path_for_site( $file_path ) {
 function send_visibility_headers( $file_visibility, $file_path ) {
 	// Default to throwing an error so we can catch unexpected problems more easily.
 	$status_code = 500;
-	$header = false;
-	$is_private = null;
+	$is_private  = null;
 
 	switch ( $file_visibility ) {
 		case FILE_IS_PUBLIC:
 			$status_code = 202;
-			$is_private = false;
+			$is_private  = false;
 			break;
 
 		case FILE_IS_PRIVATE_AND_ALLOWED:
 			$status_code = 202;
-			$is_private = true;
+			$is_private  = true;
 			break;
 
 		case FILE_IS_PRIVATE_AND_DENIED:
 			$status_code = 403;
-			$is_private = true;
+			$is_private  = true;
 			break;
 
 		default:
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error( sprintf( 'Invalid file visibility (%s) ACL set for %s', $file_visibility, $file_path ), E_USER_WARNING );
 			break;
 	}
