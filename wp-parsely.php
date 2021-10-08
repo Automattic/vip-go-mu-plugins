@@ -55,7 +55,8 @@ function maybe_load_plugin() {
 	}
 
 	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
-	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
+	// We need priority 0 so it's executed before `widgets_init`
+	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
 
 	$versions_to_try = SUPPORTED_VERSIONS;
 
@@ -100,6 +101,9 @@ function maybe_disable_some_features() {
 
 			// ..& default to "repeated metas"
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
+
+			// Remove the Parse.ly Recommended Widget
+			unregister_widget( 'Parsely_Recommended_Widget' );
 		} else {
 			// If we have the UI, we want to load the experimental "Open on Parsely links"
 			add_filter( 'wp_parsely_enable_row_action_links', '__return_true' );
