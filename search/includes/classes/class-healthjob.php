@@ -34,9 +34,9 @@ class HealthJob {
 	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
 
 	/**
-	 * @var int the number after which the alert should be sent for autoheal.
+	 * @var int the percentage after which the alert should be sent for autoheal - 0.1 = 10%
 	 */
-	const AUTOHEALED_ALERT_THRESHOLD = 1000;
+	const AUTOHEALED_ALERT_THRESHOLD = 0.1;
 
 	public $health_check_disabled_sites = array();
 
@@ -159,9 +159,16 @@ class HealthJob {
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} elseif ( ! empty( $results ) && count( $results ) > self::AUTOHEALED_ALERT_THRESHOLD ) {
-			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		} else if ( ! empty( $results ) ) {
+			$self_healed_post_count = count( $results );
+			$total_post_count = wp_count_posts()->publish;
+
+			$alert_threshold = $total_post_count * self::AUTOHEALED_ALERT_THRESHOLD;
+
+			if ( $self_healed_post_count > $alert_threshold ) {
+				$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			}
 		}
 
 	}
