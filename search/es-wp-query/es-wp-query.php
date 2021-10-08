@@ -3,7 +3,7 @@
  * Plugin Name: Elasticsearch Wrapper for WP_Query
  * Plugin URI: https://github.com/alleyinteractive/es-wp-query
  * Description: A drop-in replacement for WP_Query to leverage Elasticsearch for complex queries.
- * Version: 0.2
+ * Version: 0.4
  * Author: Matthew Boynes
  * Author URI: http://www.alleyinteractive.com/
  *
