@@ -29,9 +29,14 @@ class HealthJob {
 	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
 
 	/**
-	 * @var int the number after which the alert should be sent.
+	 * @var int the number after which the alert should be sent for inconsistencies found.
 	 */
 	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
+
+	/**
+	 * @var int the number after which the alert should be sent for autoheal.
+	 */
+	const AUTOHEALED_ALERT_THRESHOLD = 1000;
 
 	public $health_check_disabled_sites = array();
 
@@ -154,7 +159,7 @@ class HealthJob {
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} elseif ( ! empty( $results ) ) {
+		} elseif ( ! empty( $results ) && count( $results ) > self::AUTOHEALED_ALERT_THRESHOLD ) {
 			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 		}
