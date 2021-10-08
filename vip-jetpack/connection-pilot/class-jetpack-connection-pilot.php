@@ -88,6 +88,7 @@ class Connection_Pilot {
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
+		add_filter( 'vip_jetpack_connection_pilot_silenced_alerts', array( $this, 'filter_vip_jetpack_connection_pilot_silenced_alerts' ) );
 	}
 
 	public function schedule_cron() {
@@ -278,6 +279,14 @@ class Connection_Pilot {
 		return $should;
 	}
 
+	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts ) {
+		$alerts = array( 
+			'/VaultPress connection error.*A registration key can only be used on one site/',
+		);
+
+		return array_merge( $existing_alerts, $alerts );
+	}
+
 	/**
 	 * Send an alert to IRC/Slack, and add to logs.
 	 *
@@ -313,7 +322,20 @@ class Connection_Pilot {
 		] );
 
 		$should_silence_alerts = defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS;
-		return $should_silence_alerts ? $message : wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
+		if ( $should_silence_alerts ) {
+			return $message;
+		}
+
+		// Bypass alerting on specific set messages, that can be false positives
+		// Array of regexps to match the message that should be ignored
+		$alerts_to_be_silenced = apply_filters( 'vip_jetpack_connection_pilot_silenced_alerts', array( ) );
+		foreach ( $alerts_to_be_silenced as $alert_regex ) {
+			if ( preg_match( $alert_regex, $message ) ) {
+				return $message;
+			}
+		}
+
+		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
 	}
 
 	/**
