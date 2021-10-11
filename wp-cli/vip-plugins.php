@@ -1,23 +1,23 @@
 <?php
-
 /**
  * Explore the VIP Shared Plugins repo
  */
+
 class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 
 	public $fields = array(
-		'name',
-		'author',
-		'vip_version',
-		'wporg_version',
-		'slug',
-	);
+			'name',
+			'author',
+			'vip_version',
+			'wporg_version',
+			'slug',
+		);
 
 	public $vip_plugins;
 
 	public $vip_plugins_wporg_details;
 
-	public function __construct() {
+	function __construct() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
 
@@ -27,34 +27,33 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 	 * @subcommand list
 	 * @synopsis [--filter=<filter>] [--format=<format>]
 	 */
-	public function _list( $args, $assoc_args ) {   // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+	public function _list( $args, $assoc_args ) {
 
-		$defaults   = array(
-			'filter' => '',
-			'format' => 'table',
-		);
+		$defaults = array(
+				'filter'          => '',
+				'format'          => 'table',
+			);
 		$assoc_args = array_merge( $defaults, $assoc_args );
 
 		$vip_plugins = $this->get_vip_plugins();
 
 		$plugins_output = array();
-		foreach ( $vip_plugins as $plugin_path => $vip_plugin ) {
-			$plugin_output = new \stdClass();
+		foreach( $vip_plugins as $plugin_path => $vip_plugin ) {
+			$plugin_output = new \stdClass;
 
 			$plugin_slug = explode( '/', $plugin_path );
 			$plugin_slug = $plugin_slug[0];
 
-			$plugin_output->name          = $vip_plugin['Name'];
-			$plugin_output->author        = $vip_plugin['Author'];
-			$plugin_output->vip_version   = $vip_plugin['Version'];
+			$plugin_output->name = $vip_plugin['Name'];
+			$plugin_output->author = $vip_plugin['Author'];
+			$plugin_output->vip_version = $vip_plugin['Version'];
 			$plugin_output->wporg_version = $this->get_plugin_wporg_version( $plugin_path );
-			$plugin_output->slug          = $plugin_slug;
+			$plugin_output->slug = $plugin_slug;
 
 			switch ( $assoc_args['filter'] ) {
 				case 'outdated':
-					if ( $plugin_output->wporg_version && version_compare( $plugin_output->wporg_version, $plugin_output->vip_version ) ) {
+					if ( $plugin_output->wporg_version && version_compare( $plugin_output->wporg_version, $plugin_output->vip_version ) )
 						$plugins_output[] = $plugin_output;
-					}
 					break;
 				default:
 					$plugins_output[] = $plugin_output;
@@ -71,18 +70,18 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand get-active-plugins-for-blog
 	 */
-	public function get_active_plugins_for_blog() {
+	public function get_active_plugins_for_blog( $args, $assoc_args ) {
 
 		WP_CLI::log( 'fetching active plugins ...' );
 
-		foreach ( $this->get_vip_plugins() as $plugin_file => $_ ) {
+		foreach ( $this->get_vip_plugins() as $plugin_file => $plugin_data ) {
 
 			$plugin_folder = basename( dirname( $plugin_file ) );
 
 			$plugin_status = WPcom_VIP_Plugins_UI()->is_plugin_active( $plugin_folder ) ? 'active' : 'inactive';
 
 			if ( 'active' === $plugin_status ) {
-				WP_CLI::log( $plugin_folder );
+				WP_CLI::log(  $plugin_folder );
 			}
 		}
 
@@ -107,12 +106,12 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 			WP_CLI::error( sprintf( 'No plugin specified. Please specify a plugin and run the command once again.' ) );
 		}
 
-		$plugin_ui   = WPcom_VIP_Plugins_UI::instance();
-		$deactivated = $plugin_ui->deactivate_plugin( $plugin, $this->args['force'] );
+		$plugin_ui = WPcom_VIP_Plugins_UI::instance();
+		$deactivated = $plugin_ui->deactivate_plugin( $plugin , $this->args['force'] );
 
 		if ( true === $deactivated ) {
 			WP_CLI::line( sprintf( 'Success! The %s plugin was deactivated', $plugin ) );
-		} elseif ( ! $this->args['force'] ) {
+		} else if ( ! $this->args['force'] ) {
 			WP_CLI::line( 'Plugin deactivation failed. Perhaps you meant to use --force?' );
 		} else {
 			WP_CLI::line( 'Plugin deactivation failed. The plugin is really not stored in the option.' );
@@ -175,17 +174,17 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 
 		// Get the status of this plugin
 		$plugin_ui = WPcom_VIP_Plugins_UI::instance();
-		$active    = $plugin_ui->is_plugin_active( $plugin );
+		$active = $plugin_ui->is_plugin_active( $plugin );
 
 		// Let's report which site we're on, just in case we're running this on multiple sites at once
 		$site = get_site_url();
 
 		if ( ! isset( $this->args['activation_type'] ) ) {
 			switch ( $active ) {
-				case 'option':
+				case 'option' :
 					WP_CLI::line( sprintf( '%s: Plugin %s is activate via UI', $site, $plugin ) );
 					break;
-				case 'manual':
+				case 'manual' :
 					WP_CLI::line( sprintf( '%s: Plugin %s is active via theme', $site, $plugin ) );
 					break;
 				default:
@@ -214,11 +213,10 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 	 */
 	private function get_plugin_wporg_version( $plugin_path ) {
 		$wporg_details = $this->get_plugin_wporg_details( $plugin_path );
-		if ( isset( $wporg_details->new_version ) ) {
+		if ( isset( $wporg_details->new_version ) )
 			return $wporg_details->new_version;
-		} else {
+		else
 			return false;
-		}
 	}
 
 	/**
@@ -227,39 +225,35 @@ class VIP_Plugin_Command extends WPCOM_VIP_CLI_Command {
 	 */
 	private function get_plugin_wporg_details( $plugin_path ) {
 
-		if ( isset( $this->vip_plugins_wporg_details[ $plugin_path ] ) ) {
-			return $this->vip_plugins_wporg_details[ $plugin_path ];
-		}
+		if ( isset( $this->vip_plugins_wporg_details[$plugin_path] ) )
+			return $this->vip_plugins_wporg_details[$plugin_path];
 
-		$wporg_details = wp_cache_get( 'vip_plugins_wporg_details', 'wp-cli' );
-		if ( $wporg_details ) {
+		if ( $wporg_details = wp_cache_get( 'vip_plugins_wporg_details', 'wp-cli' ) ) {
 			$this->vip_plugins_wporg_details = $wporg_details;
-			return $this->vip_plugins_wporg_details[ $plugin_path ];
+			return $this->vip_plugins_wporg_details[$plugin_path];
 		}
 
-		$to_send          = new stdClass();
+		$to_send = new stdClass;
 		$to_send->plugins = $this->get_vip_plugins();
 
 		$options = array(
-			'timeout' => '30',                                          // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout.timeout_timeout
-			'body'    => array( 'plugins' => serialize( $to_send ) ),   // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+			'timeout' => '30',
+			'body' => array( 'plugins' => serialize( $to_send ) ),
 		);
 
 		$raw_response = wp_remote_post( 'http://api.wordpress.org/plugins/update-check/1.0/', $options );
 
-		if ( is_wp_error( $raw_response ) || 200 != wp_remote_retrieve_response_code( $raw_response ) ) {
+		if ( is_wp_error( $raw_response ) || 200 != wp_remote_retrieve_response_code( $raw_response ) )
 			return false;
-		}
 
 		$response = maybe_unserialize( wp_remote_retrieve_body( $raw_response ) );
 
-		if ( ! is_array( $response ) ) {
+		if ( ! is_array( $response ) )
 			$response = array();
-		}
 
 		$this->vip_plugins_wporg_details = $response;
 		wp_cache_set( 'vip_plugins_wporg_details', $this->vip_plugins_wporg_details, 'wp-cli', 900 );
-		return $this->vip_plugins_wporg_details[ $plugin_path ];
+		return $this->vip_plugins_wporg_details[$plugin_path];
 	}
 
 }
