@@ -167,7 +167,7 @@ jobs:
   php74-lint:
     <<: *lint_job
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
 
   php74-build-multisite:
     <<: *php_job
@@ -175,7 +175,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "latest"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-multisite-no-jetpack:
@@ -185,7 +185,7 @@ jobs:
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-55:
@@ -194,7 +194,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.5.5"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-56:
@@ -203,7 +203,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.6.4"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-57:
@@ -212,7 +212,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.7.2"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-58:
@@ -221,7 +221,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "5.8"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite:
@@ -230,7 +230,7 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-no-jetpack:
@@ -240,7 +240,7 @@ jobs:
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-multisite-nightly:
@@ -249,7 +249,7 @@ jobs:
       - WP_MULTISITE: "1"
       - WP_VERSION: "nightly"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   php74-build-singlesite-nightly:
@@ -258,12 +258,12 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "nightly"
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
       - image: *db_image
 
   create-changelog-draft:
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
     steps:
       - checkout
       - run: composer install
@@ -281,7 +281,7 @@ jobs:
 
   push-code-to-build:
       docker:
-        - image: cimg/php:7.4
+        - image: cimg/php:8.0
       environment:
         - GIT_REVISION: << pipeline.git.revision >>
       steps:
