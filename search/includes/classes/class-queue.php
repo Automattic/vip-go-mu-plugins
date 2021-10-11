@@ -1068,7 +1068,8 @@ class Queue {
 					FLOOR( MAX( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS longest_wait_time,
 					COUNT( * ) AS queue_count
 				FROM $table_name
-				WHERE 1"
+				WHERE 1", 
+				null
 			)
 			// @codingStandardsIgnoreEnd
 		);
