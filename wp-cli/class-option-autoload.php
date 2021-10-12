@@ -2,7 +2,7 @@
 /**
  * Manage autoloaded options
  */
-class Option_Autoload extends WP_CLI_Command {
+class Option_Autoload extends WPCOM_VIP_CLI_Command {
 
 	/**
 	 * Set autoload for option
@@ -37,6 +37,7 @@ class Option_Autoload extends WP_CLI_Command {
 		wp_protect_special_option( $option );
 
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$option_autoload = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
 		if ( is_null( $option_autoload ) ) {
@@ -47,8 +48,10 @@ class Option_Autoload extends WP_CLI_Command {
 			WP_CLI::error( sprintf( "Option autoload already set to '%s'.", $yn ) );
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->get_results( $wpdb->prepare( "UPDATE {$wpdb->options} SET autoload = %s where option_name = %s", $yn, $option ) );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$check_option = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
 		if ( $check_option === $option_autoload ) {
@@ -113,6 +116,7 @@ class Option_Autoload extends WP_CLI_Command {
 		list( $option ) = $args;
 
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$option_autoload = $wpdb->get_var( $wpdb->prepare( "SELECT autoload from {$wpdb->options} where option_name = %s", $option ) );
 
 		if ( is_null( $option_autoload ) ) {
@@ -167,7 +171,7 @@ class Option_Autoload extends WP_CLI_Command {
 	public function list_( $args, $assoc_args ) {
 
 		list( $yn ) = $args;
-		$yn = $this->validate_yn( $yn, 'yes' );
+		$yn         = $this->validate_yn( $yn, 'yes' );
 
 		// option list uses on/off ¯\_(ツ)_/¯
 		$yn = 'yes' === $yn ? 'on' : 'off';
@@ -176,8 +180,8 @@ class Option_Autoload extends WP_CLI_Command {
 			[ 'option', 'list' ],
 			[
 				'autoload' => $yn,
-				'fields' => 'option_name',
-				'format' => $assoc_args['format'],
+				'fields'   => 'option_name',
+				'format'   => $assoc_args['format'],
 			]
 		);
 
