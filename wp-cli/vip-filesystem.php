@@ -82,7 +82,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		}
 
 		$log_file_name = sprintf( '%svip-files-update-filesizes-%s%s.csv', get_temp_dir(),
-			$this->dry_run ? 'dry-run-' : '', date( 'YmdHi' ) );
+		$this->dry_run ? 'dry-run-' : '', gmdate( 'YmdHi' ) );
 
 		WP_CLI::line( '' );
 		WP_CLI::line( 'ARGUMENTS' );
@@ -111,7 +111,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 			if ( $attachments ) {
 				$counts = $this->meta_updater->update_attachments( $attachments, $this->dry_run );
-				WP_CLI::line( sprintf( '-- results: %s', json_encode( $counts ) ) );
+				WP_CLI::line( sprintf( '-- results: %s', wp_json_encode( $counts ) ) );
 			}
 
 			// Pause.
@@ -119,7 +119,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			sleep( 1 );
 
 			$start_index = $end_index + 1;
-			$end_index = $start_index + $batch_size;
+			$end_index   = $start_index + $batch_size;
 
 		} while ( $start_index <= $max_id );
 
