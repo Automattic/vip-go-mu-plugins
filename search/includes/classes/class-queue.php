@@ -1061,17 +1061,14 @@ class Queue {
 		$table_name = $this->schema->get_table_name();
 
 		$queue_stats = $wpdb->get_row(
-			// Cannot prepare table name. @codingStandardsIgnoreStart
-			$wpdb->prepare(
+				// Query does not need preparation. @codingStandardsIgnoreStart
 				"SELECT
 					FLOOR( AVG( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS average_wait_time,
 					FLOOR( MAX( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS longest_wait_time,
 					COUNT( * ) AS queue_count
 				FROM $table_name
-				WHERE 1", 
-				null
-			)
-			// @codingStandardsIgnoreEnd
+				WHERE 1"
+				// @codingStandardsIgnoreEnd
 		);
 
 		// Null value will usually mean empty table
