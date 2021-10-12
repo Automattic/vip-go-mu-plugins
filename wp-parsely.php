@@ -84,7 +84,11 @@ function maybe_load_plugin() {
 			continue;
 		}
 
-		require $entry_file;
+		// Requiring actual Parse.ly plugin
+		require_once $entry_file;
+
+		// Requiring VIP's customizations over Parse.ly
+		require_once __DIR__ . '/vip-parsely/vip-parsely.php';
 
 		return;
 	}
