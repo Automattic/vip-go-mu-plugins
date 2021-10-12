@@ -82,6 +82,9 @@
 
 		<!-- Do not enforce 'class-' prefix -->
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+
+		<!-- Allow short ternaries -->
+		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
 	</rule>
 
 </ruleset>
