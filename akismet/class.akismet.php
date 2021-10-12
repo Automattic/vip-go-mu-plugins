@@ -5,7 +5,7 @@ class Akismet {
 	const API_PORT = 80;
 	const MAX_DELAY_BEFORE_MODERATION_EMAIL = 86400; // One day in seconds
 
-	public static $LIMIT_NOTICES = array(
+	public static $limit_notices = array(
 		10501 => 'FIRST_MONTH_OVER_LIMIT',
 		10502 => 'SECOND_MONTH_OVER_LIMIT',
 		10504 => 'THIRD_MONTH_APPROACHING_LIMIT',
@@ -41,11 +41,7 @@ class Akismet {
 		add_action( 'akismet_schedule_cron_recheck', array( 'Akismet', 'cron_recheck' ) );
 
 		add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
-
-		add_action( 'admin_head-edit-comments.php', array( 'Akismet', 'load_form_js' ) );
-		add_action( 'comment_form', array( 'Akismet', 'load_form_js' ) );
-		add_action( 'comment_form', array( 'Akismet', 'inject_ak_js' ) );
-		add_filter( 'script_loader_tag', array( 'Akismet', 'set_form_js_async' ), 10, 3 );
+		add_action( 'comment_form', array( 'Akismet', 'output_custom_form_fields' ) );
 
 		add_filter( 'comment_moderation_recipients', array( 'Akismet', 'disable_moderation_emails_if_unreachable' ), 1000, 2 );
 		add_filter( 'pre_comment_approved', array( 'Akismet', 'last_comment_status' ), 10, 2 );
@@ -54,9 +50,20 @@ class Akismet {
 
 		// Run this early in the pingback call, before doing a remote fetch of the source uri
 		add_action( 'xmlrpc_call', array( 'Akismet', 'pre_check_pingback' ) );
-		
+
 		// Jetpack compatibility
 		add_filter( 'jetpack_options_whitelist', array( 'Akismet', 'add_to_jetpack_options_whitelist' ) );
+		add_filter( 'jetpack_contact_form_html', array( 'Akismet', 'inject_custom_form_fields' ) );
+		add_filter( 'jetpack_contact_form_akismet_values', array( 'Akismet', 'prepare_custom_form_values' ) );
+
+		// Gravity Forms
+		add_filter( 'gform_get_form_filter', array( 'Akismet', 'inject_custom_form_fields' ) );
+		add_filter( 'gform_akismet_fields', array( 'Akismet', 'prepare_custom_form_values' ) );
+
+		// Contact Form 7
+		add_filter( 'wpcf7_form_elements', array( 'Akismet', 'append_custom_form_fields' ) );
+		add_filter( 'wpcf7_akismet_parameters', array( 'Akismet', 'prepare_custom_form_values' ) );
+
 		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
 		add_action( 'add_option_wordpress_api_key', array( 'Akismet', 'added_option' ), 10, 2 );
 
@@ -416,7 +423,7 @@ class Akismet {
 
 			clean_comment_cache( $comment_ids );
 			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
-			
+
 			foreach ( $comment_ids as $comment_id ) {
 				do_action( 'deleted_comment', $comment_id );
 			}
@@ -982,7 +989,7 @@ class Akismet {
 		if ( is_user_logged_in() )
 			return false;
 	
-		return ( get_option( 'akismet_strictness' ) === '1'  );
+		return ( get_option( 'akismet_strictness' ) === '1' );
 	}
 
 	public static function get_ip_address() {
@@ -1132,10 +1139,12 @@ class Akismet {
 		if ( ! empty( self::$prevent_moderation_email_for_these_comments ) && ! empty( $emails ) ) {
 			$comment = get_comment( $comment_id );
 
-			foreach ( self::$prevent_moderation_email_for_these_comments as $possible_match ) {
-				if ( self::comments_match( $possible_match, $comment ) ) {
-					update_comment_meta( $comment_id, 'akismet_delayed_moderation_email', true );
-					return array();
+			if ( $comment ) {
+				foreach ( self::$prevent_moderation_email_for_these_comments as $possible_match ) {
+					if ( self::comments_match( $possible_match, $comment ) ) {
+						update_comment_meta( $comment_id, 'akismet_delayed_moderation_email', true );
+						return array();
+					}
 				}
 			}
 		}
@@ -1275,20 +1284,20 @@ class Akismet {
 			'usage-limit',
 			'upgrade-plan',
 			'upgrade-url',
+			'upgrade-type',
 		);
 
-		foreach( $alert_header_names as $alert_header_name ) {
+		foreach ( $alert_header_names as $alert_header_name ) {
 			$value = null;
-			if ( isset( $response[0][$alert_header_prefix . $alert_header_name] ) ) {
-				$value = $response[0][$alert_header_prefix . $alert_header_name];
+			if ( isset( $response[0][ $alert_header_prefix . $alert_header_name ] ) ) {
+				$value = $response[0][ $alert_header_prefix . $alert_header_name ];
 			}
 
 			$option_name = $alert_option_prefix . str_replace( '-', '_', $alert_header_name );
 			if ( $value != get_option( $option_name ) ) {
 				if ( ! $value ) {
 					delete_option( $option_name );
-				}
-				else {
+				} else {
 					update_option( $option_name, $value );
 				}
 			}
@@ -1296,34 +1305,76 @@ class Akismet {
 	}
 
 	public static function load_form_js() {
-		if ( function_exists( 'is_amp_endpoint' ) && is_amp_endpoint() ) {
-			return;
-		}
-
-		if ( ! self::get_api_key() ) {
-			return;
-		}
-
-		wp_register_script( 'akismet-form', plugin_dir_url( __FILE__ ) . '_inc/form.js', array(), AKISMET_VERSION, true );
-		wp_enqueue_script( 'akismet-form' );
+		/* deprecated */
 	}
-	
-	/**
-	 * Mark form.js as deferred. Because nothing depends on it, it can run at any time
-	 * after it's loaded, and the browser won't have to wait for it to load to continue
-	 * parsing the rest of the page.
-	 */
+
 	public static function set_form_js_async( $tag, $handle, $src ) {
-		if ( 'akismet-form' !== $handle ) {
-			return $tag;
-		}
-		
-		return preg_replace( '/^<script /i', '<script defer ', $tag );
+		/* deprecated */
+		return $tag;
 	}
-	
-	public static function inject_ak_js( $post_id ) {
-		echo '<input type="hidden" id="ak_js" name="ak_js" value="' . mt_rand( 0, 250 ) . '"/>';
-		echo '<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100" style="display: none !important;"></textarea>';
+
+	public static function get_akismet_form_fields() {
+		$fields = '';
+
+		$prefix = 'ak_';
+
+		// Contact Form 7 uses _wpcf7 as a prefix to know which fields to exclude from comment_content.
+		if ( 'wpcf7_form_elements' === current_filter() ) {
+			$prefix = '_wpcf7_ak_';
+		}
+
+		$fields .= '<p style="display: none !important;">';
+		$fields .= '<label>&#916;<textarea name="' . $prefix . 'hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label>';
+
+		if ( ! function_exists( 'amp_is_request' ) || ! amp_is_request() ) {
+			$fields .= '<input type="hidden" id="ak_js" name="' . $prefix . 'js" value="' . mt_rand( 0, 250 ) . '"/>';
+			$fields .= '<script>document.getElementById( "ak_js" ).setAttribute( "value", ( new Date() ).getTime() );</script>';
+		}
+
+		$fields .= '</p>';
+
+		return $fields;
+	}
+
+	public static function output_custom_form_fields( $post_id ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput
+		echo self::get_akismet_form_fields();
+	}
+
+	public static function inject_custom_form_fields( $html ) {
+		$html = str_replace( '</form>', self::get_akismet_form_fields() . '</form>', $html );
+
+		return $html;
+	}
+
+	public static function append_custom_form_fields( $html ) {
+		$html .= self::get_akismet_form_fields();
+
+		return $html;
+	}
+
+	/**
+	 * Ensure that any Akismet-added form fields are included in the comment-check call.
+	 *
+	 * @param array $form
+	 * @return array $form
+	 */
+	public static function prepare_custom_form_values( $form ) {
+		$prefix = 'ak_';
+
+		// Contact Form 7 uses _wpcf7 as a prefix to know which fields to exclude from comment_content.
+		if ( 'wpcf7_akismet_parameters' === current_filter() ) {
+			$prefix = '_wpcf7_ak_';
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		foreach ( $_POST as $key => $val ) {
+			if ( 0 === strpos( $key, $prefix ) ) {
+				$form[ 'POST_ak_' . substr( $key, strlen( $prefix ) ) ] = $val;
+			}
+		}
+
+		return $form;
 	}
 
 	private static function bail_on_activation( $message, $deactivate = true ) {
