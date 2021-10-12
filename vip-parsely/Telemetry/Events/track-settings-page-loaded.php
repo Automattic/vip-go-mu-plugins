@@ -12,7 +12,7 @@ namespace Automattic\VIP\Parsely\Telemetry;
  * @param Telemetry_System $telemetry_system
  * @return void
  */
-function track_wpparsely_settings_page_loaded( Telemetry_System $telemetry_system ): void {
+function track_settings_page_loaded( Telemetry_System $telemetry_system ): void {
 	if (
 		! ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) ||
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
@@ -21,5 +21,5 @@ function track_wpparsely_settings_page_loaded( Telemetry_System $telemetry_syste
 	) {
 		return;
 	}
-	$telemetry_system->record_event( 'wpparsely_settings_page_loaded' );
+	$telemetry_system->record_event( 'vip_wpparsely_settings_page_loaded' );
 }

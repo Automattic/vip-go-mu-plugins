@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Parsely\Telemetry;
 
-function track_wpparsely_widget_updated( $instance, $new_instance, $old_instance, $widget_obj, Telemetry_System $telemetry_system ) {
+function track_widget_updated( $instance, $new_instance, $old_instance, $widget_obj, Telemetry_System $telemetry_system ) {
 	global $wp;
 	$id_base = $widget_obj->id_base;
 	if ( WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID !== $id_base ) {
@@ -19,7 +19,7 @@ function track_wpparsely_widget_updated( $instance, $new_instance, $old_instance
 		 * This is an "encode" call to preview the widget in the admin.
 		 * Track this event seperately.
 		 */
-		$telemetry_system->record_event( 'wpparsely_widget_prepublish_change', compact( 'id_base' ) );
+		$telemetry_system->record_event( 'vip_wpparsely_widget_prepublish_change', compact( 'id_base' ) );
 		return $instance;
 	}
 
@@ -40,7 +40,7 @@ function track_wpparsely_widget_updated( $instance, $new_instance, $old_instance
 	);
 
 	if ( count( $updated_keys ) ) {
-		$telemetry_system->record_event( 'wpparsely_widget_updated', compact( 'id_base', 'updated_keys' ) );
+		$telemetry_system->record_event( 'vip_wpparsely_widget_updated', compact( 'id_base', 'updated_keys' ) );
 	}
 
 	return $instance;

@@ -36,28 +36,28 @@ add_action(
 			$tracks    = new Tracks();
 			$telemetry = new Telemetry( $tracks );
 
-			require_once __DIR__ . '/Telemetry/Events/wpparsely-settings-page-loaded.php';
+			require_once __DIR__ . '/Telemetry/Events/track-settings-page-loaded.php';
 			$telemetry->register_event(
 				array(
 					'action_hook' => 'load-settings_page_parsely',
-					'callable'    => 'Automattic\VIP\Parsely\Telemetry\track_wpparsely_settings_page_loaded',
+					'callable'    => 'Automattic\VIP\Parsely\Telemetry\track_settings_page_loaded',
 				)
 			);
 
-			require_once __DIR__ . '/Telemetry/Events/wpparsely-option-updated.php';
+			require_once __DIR__ . '/Telemetry/Events/track-option-updated.php';
 			$telemetry->register_event(
 				array(
 					'action_hook'   => 'update_option_parsely',
-					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_wpparsely_option_updated',
+					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_option_updated',
 					'accepted_args' => 2,
 				)
 			);
 
-			require_once __DIR__ . '/Telemetry/Events/wpparsely-delete-widget.php';
+			require_once __DIR__ . '/Telemetry/Events/track-delete-widget.php';
 			$telemetry->register_event(
 				array(
 					'action_hook'   => 'delete_widget',
-					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_wpparsely_delete_widget',
+					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_delete_widget',
 					'accepted_args' => 3,
 				)
 			);
