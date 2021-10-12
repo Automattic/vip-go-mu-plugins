@@ -21,5 +21,5 @@ function track_settings_page_loaded( Telemetry_System $telemetry_system ): void 
 	) {
 		return;
 	}
-	$telemetry_system->record_event( 'vip_wpparsely_settings_page_loaded' );
+	$telemetry_system->record_event( 'wpparsely_settings_page_loaded' );
 }

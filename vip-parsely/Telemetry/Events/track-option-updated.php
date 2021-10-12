@@ -33,5 +33,5 @@ function track_option_updated( $old_value, $value, Telemetry_System $telemetry_s
 	if ( ! count( $updated_keys ) ) {
 		return;
 	}
-	$telemetry_system->record_event( 'vip_wpparsely_option_updated', compact( 'updated_keys' ) );
+	$telemetry_system->record_event( 'wpparsely_option_updated', compact( 'updated_keys' ) );
 }

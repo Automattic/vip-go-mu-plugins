@@ -8,5 +8,5 @@ function track_delete_widget( $widget_id, $sidebar_id, $id_base, Telemetry_Syste
 	if ( WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID !== $id_base ) {
 		return;
 	}
-	$telemetry_system->record_event( 'vip_wpparsely_delete_widget', compact( 'id_base' ) );
+	$telemetry_system->record_event( 'wpparsely_delete_widget', compact( 'id_base' ) );
 }

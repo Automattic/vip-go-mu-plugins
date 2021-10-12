@@ -19,7 +19,7 @@ function track_widget_updated( $instance, $new_instance, $old_instance, $widget_
 		 * This is an "encode" call to preview the widget in the admin.
 		 * Track this event seperately.
 		 */
-		$telemetry_system->record_event( 'vip_wpparsely_widget_prepublish_change', compact( 'id_base' ) );
+		$telemetry_system->record_event( 'wpparsely_widget_prepublish_change', compact( 'id_base' ) );
 		return $instance;
 	}
 
@@ -40,7 +40,7 @@ function track_widget_updated( $instance, $new_instance, $old_instance, $widget_
 	);
 
 	if ( count( $updated_keys ) ) {
-		$telemetry_system->record_event( 'vip_wpparsely_widget_updated', compact( 'id_base', 'updated_keys' ) );
+		$telemetry_system->record_event( 'wpparsely_widget_updated', compact( 'id_base', 'updated_keys' ) );
 	}
 
 	return $instance;
