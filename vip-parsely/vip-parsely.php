@@ -53,25 +53,6 @@ add_action(
 				)
 			);
 
-			require_once __DIR__ . '/Telemetry/Events/track-delete-widget.php';
-			$telemetry->register_event(
-				array(
-					'action_hook'   => 'delete_widget',
-					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_delete_widget',
-					'accepted_args' => 3,
-				)
-			);
-
-			require_once __DIR__ . '/Telemetry/Events/track-widget-updated.php';
-			$telemetry->register_event(
-				array(
-					'action_hook'   => 'widget_update_callback',
-					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_widget_updated',
-					'accepted_args' => 4,
-					'is_filter'     => true,
-				)
-			);
-
 			$telemetry->run();
 		}
 	}
