@@ -62,6 +62,7 @@ function disable_display_errors() {
 		return;
 	}
 
+	// phpcs:ignore WordPress.PHP.IniSet.display_errors_Blacklisted
 	ini_set( 'display_errors', 0 );
 }
 
@@ -71,7 +72,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	init_is_ssl_toggle();
 
 	foreach ( glob( __DIR__ . '/wp-cli/*.php' ) as $command ) {
-		require( $command );
+		require $command;
 	}
 
 	/**
