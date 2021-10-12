@@ -168,7 +168,7 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
 	}
 
 	if ( $page_id ) {
-		return get_page( $page_id, $output );
+		return get_post( $page_id, $output );
 	}
 
 	return null;
@@ -203,7 +203,7 @@ function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 
 	}
 
 	if ( $page_id ) {
-		return get_page( $page_id, $output );
+		return get_post( $page_id, $output );
 	}
 
 	return null;
@@ -715,7 +715,7 @@ function vip_reset_local_object_cache() {
 	$wp_object_cache->memcache_debug = array();
 	$wp_object_cache->cache = array();
 
-	if ( is_callable( $wp_object_cache, '__remoteset' ) ) {
+	if ( method_exists( $wp_object_cache, '__remoteset' ) ) {
 		$wp_object_cache->__remoteset(); // important
 	}
 }
