@@ -5,7 +5,7 @@
  *
  * We've made some local mods while we wait for an upstream release/update.
  */
-class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
+class Jetpack_Start_Provision_CLI_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Cancel's the current Jetpack plan granted by this partner, if applicable
 	 *
@@ -17,8 +17,10 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 	public function partner_cancel( $args, $named_args ) {
 		list( $token_json ) = $args;
 
-		if ( ! $token_json || ! ( $token = json_decode( $token_json ) ) ) {
-			$this->partner_provision_error( new WP_Error( 'missing_access_token',  sprintf( __( 'Invalid token JSON: %s', 'jetpack' ), $token_json ) ) );
+		$token = $token_json ? json_decode( $token_json ) : null;
+		if ( ! $token_json || ! $token ) {
+			// translators: 1 - token
+			$this->partner_provision_error( new WP_Error( 'missing_access_token', sprintf( __( 'Invalid token JSON: %s', 'jetpack' ), $token_json ) ) );
 		}
 
 		if ( isset( $token->error ) ) {
@@ -29,20 +31,20 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 			$this->partner_provision_error( new WP_Error( 'missing_access_token', __( 'Missing or invalid access token', 'jetpack' ) ) );
 		}
 
-		$blog_id    = Jetpack_Options::get_option( 'id' );
+		$blog_id = Jetpack_Options::get_option( 'id' );
 
 		if ( ! $blog_id ) {
-			$this->partner_provision_error( new WP_Error( 'site_not_registered',  __( 'This site is not connected to Jetpack', 'jetpack' ) ) );
+			$this->partner_provision_error( new WP_Error( 'site_not_registered', __( 'This site is not connected to Jetpack', 'jetpack' ) ) );
 		}
 
 		$request = array(
 			'headers' => array(
-				'Authorization' => "Bearer " . $token->access_token,
+				'Authorization' => 'Bearer ' . $token->access_token,
 				'Host'          => defined( 'JETPACK__WPCOM_JSON_API_HOST_HEADER' ) ? JETPACK__WPCOM_JSON_API_HOST_HEADER : 'public-api.wordpress.com',
 			),
-			'timeout' => 60,
+			'timeout' => 60, // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout.timeout_timeout
 			'method'  => 'POST',
-			'body'    => json_encode( array( 'site_id' => $blog_id ) )
+			'body'    => wp_json_encode( array( 'site_id' => $blog_id ) ),
 		);
 
 		$url = sprintf( 'https://%s/rest/v1.3/jpphp/%d/partner-cancel', $this->get_api_host(), $blog_id );
@@ -53,7 +55,7 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 			$this->partner_provision_error( $result );
 		}
 
-		WP_CLI::log( json_encode( $result ) );
+		WP_CLI::log( wp_json_encode( $result ) );
 	}
 
 	/**
@@ -88,8 +90,10 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 	public function partner_provision( $args, $named_args ) {
 		list( $token_json ) = $args;
 
-		if ( ! $token_json || ! ( $token = json_decode( $token_json ) ) ) {
-			$this->partner_provision_error( new WP_Error( 'missing_access_token',  sprintf( __( 'Invalid token JSON: %s', 'jetpack' ), $token_json ) ) );
+		$token = $token_json ? json_decode( $token_json ) : null;
+		if ( ! $token_json || ! $token ) {
+			// translators: 1 - token
+			$this->partner_provision_error( new WP_Error( 'missing_access_token', sprintf( __( 'Invalid token JSON: %s', 'jetpack' ), $token_json ) ) );
 		}
 
 		if ( isset( $token->error ) ) {
@@ -116,23 +120,28 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 				$this->partner_provision_error( new WP_Error( 'registration_error', __( 'There was an unspecified error registering the site', 'jetpack' ) ) );
 			}
 
-			$blog_id    = Jetpack_Options::get_option( 'id' );
-			$blog_token = Jetpack_Options::get_option( 'blog_token' );
+			$blog_id = Jetpack_Options::get_option( 'id' );
 		}
 
 		// if the user isn't specified, but we have a current master user, then set that to current user
-		if ( ! get_current_user_id() && $master_user_id = Jetpack_Options::get_option( 'master_user' ) ) {
-			wp_set_current_user( $master_user_id );
+		if ( ! get_current_user_id() ) {
+			$master_user_id = Jetpack_Options::get_option( 'master_user' );
+			if ( $master_user_id ) {
+				wp_set_current_user( $master_user_id );
+			}
 		}
 
-		$site_icon = ( function_exists( 'has_site_icon') && has_site_icon() )
+		$site_icon = ( function_exists( 'has_site_icon' ) && has_site_icon() )
 			? get_site_icon_url()
 			: false;
 
 		/** This filter is documented in class.jetpack-cli.php */
 		if ( apply_filters( 'jetpack_start_enable_sso', true ) ) {
 			$redirect_uri = add_query_arg(
-				array( 'action' => 'jetpack-sso', 'redirect_to' => urlencode( admin_url() ) ),
+				array(
+					'action'      => 'jetpack-sso',
+					'redirect_to' => urlencode( admin_url() ),
+				),
 				wp_login_url() // TODO: come back to Jetpack dashboard?
 			);
 		} else {
@@ -140,8 +149,8 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 		}
 
 		$request_body = array(
-			'jp_version'    => JETPACK__VERSION,
-			'redirect_uri'  => $redirect_uri
+			'jp_version'   => JETPACK__VERSION,
+			'redirect_uri' => $redirect_uri,
 		);
 
 		if ( $site_icon ) {
@@ -153,9 +162,9 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 
 			// role
 			$roles_instance = new \Automattic\Jetpack\Roles();
-			$role = $roles_instance->translate_current_user_to_role();
-			$signed_role = Jetpack::connection()->sign_role( $role );
-			$secrets = Jetpack::init()->generate_secrets( 'authorize' );
+			$role           = $roles_instance->translate_current_user_to_role();
+			$signed_role    = Jetpack::connection()->sign_role( $role );
+			$secrets        = Jetpack::init()->generate_secrets( 'authorize' );
 
 			// Jetpack auth stuff
 			$request_body['scope']  = $signed_role;
@@ -186,12 +195,12 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 
 		$request = array(
 			'headers' => array(
-				'Authorization' => "Bearer " . $token->access_token,
+				'Authorization' => 'Bearer ' . $token->access_token,
 				'Host'          => defined( 'JETPACK__WPCOM_JSON_API_HOST_HEADER' ) ? JETPACK__WPCOM_JSON_API_HOST_HEADER : 'public-api.wordpress.com',
 			),
-			'timeout' => 60,
+			'timeout' => 60,    // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout.timeout_timeout
 			'method'  => 'POST',
-			'body'    => json_encode( $request_body )
+			'body'    => wp_json_encode( $request_body ),
 		);
 
 		$url = sprintf( 'https://%s/rest/v1.3/jpphp/%d/partner-provision', $this->get_api_host(), $blog_id );
@@ -210,11 +219,12 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 		$response_code = wp_remote_retrieve_response_code( $result );
 		$body_json     = json_decode( wp_remote_retrieve_body( $result ) );
 
-		if( 200 !== $response_code ) {
+		if ( 200 !== $response_code ) {
 			if ( isset( $body_json->error ) ) {
 				$this->partner_provision_error( new WP_Error( $body_json->error, $body_json->message ) );
 			} else {
-				$this->partner_provision_error( new WP_Error( 'server_error', sprintf( __( "Request failed with code %s" ), $response_code ) ) );
+				// translators: 1 - HTTP response code
+				$this->partner_provision_error( new WP_Error( 'server_error', sprintf( __( 'Request failed with code %s' ), $response_code ) ) );
 			}
 		}
 
@@ -222,7 +232,8 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 			// authorize user and enable SSO
 			Jetpack::update_user_token( $user->ID, sprintf( '%s.%d', $body_json->access_token, $user->ID ), true );
 
-			if ( $active_modules = Jetpack_Options::get_option( 'active_modules' ) ) {
+			$active_modules = Jetpack_Options::get_option( 'active_modules' );
+			if ( $active_modules ) {
 				Jetpack::delete_active_modules();
 				Jetpack::activate_default_modules( 999, 1, $active_modules, false );
 			} else {
@@ -241,7 +252,7 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 			}
 		}
 
-		WP_CLI::log( json_encode( $body_json ) );
+		WP_CLI::log( wp_json_encode( $body_json ) );
 	}
 
 	private function get_api_host() {
@@ -250,10 +261,10 @@ class Jetpack_Start_Provision_CLI_Command extends WP_CLI_Command {
 	}
 
 	private function partner_provision_error( $error ) {
-		WP_CLI::log( json_encode( array(
+		WP_CLI::log( wp_json_encode( array(
 			'success'       => false,
 			'error_code'    => $error->get_error_code(),
-			'error_message' => $error->get_error_message()
+			'error_message' => $error->get_error_message(),
 		) ) );
 		exit( 1 );
 	}
