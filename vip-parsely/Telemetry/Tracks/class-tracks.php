@@ -21,7 +21,7 @@ class Tracks implements Telemetry_System {
 	 */
 	private $queue = array();
 
-	const EVENT_NAME_PREFIX = 'vip_wpparsely_';
+	const EVENT_NAME_PREFIX = 'wpparsely_';
 	const TRACKS_RECORD_URL = 'https://public-api.wordpress.com/rest/v1.1/tracks/record';
 
 	/**
