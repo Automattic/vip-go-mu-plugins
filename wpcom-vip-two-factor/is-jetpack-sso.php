@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+
 namespace Automattic\VIP\TwoFactor;
 
 // muplugins_loaded fires before cookie constants are set
@@ -40,6 +42,7 @@ function is_jetpack_sso() {
 		return false;
 	}
 
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- will be validated by wp_validate_auth_cookie()
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_COOKIE ];
 	return wp_validate_auth_cookie( $cookie, 'secure_auth' );
 }
@@ -53,6 +56,7 @@ function is_jetpack_sso_two_step() {
 		return false;
 	}
 
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- will be validated by wp_validate_auth_cookie()
 	$cookie = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ];
 	return wp_validate_auth_cookie( $cookie, 'secure_auth' );
 }
