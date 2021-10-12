@@ -279,12 +279,12 @@ class Connection_Pilot {
 		return $should;
 	}
 
-	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts ) {
+	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts = [] ) {
 		$alerts = array( 
 			'/VaultPress connection error.*A registration key can only be used on one site/',
 		);
 
-		return array_merge( $existing_alerts, $alerts );
+		return array_merge( (array) $existing_alerts, $alerts );
 	}
 
 	/**
