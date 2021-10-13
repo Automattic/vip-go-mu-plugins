@@ -33,8 +33,7 @@ class Controls {
 			// The Jetpack_Connection::has_connected_owner() method checks both the existence of a user token and master_user option.
 			if ( ! \Jetpack::connection()->has_connected_owner() ) {
 				return new \WP_Error( 'jp-cxn-pilot-not-connected-owner', 'Jetpack does not have a connected owner.' );
-			}
-
+			}       
 		} else {
 			// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
 			if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
@@ -55,7 +54,7 @@ class Controls {
 		}
 
 		$connection_owner  = \Jetpack::connection()->get_connection_owner();
-		$is_vip_connection = $connection_owner && $connection_owner->user_login === WPCOM_VIP_MACHINE_USER_LOGIN;
+		$is_vip_connection = $connection_owner && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
 		if ( ! $is_vip_connection ) {
 			$connection_owner_login = $connection_owner ? $connection_owner->user_login : 'unknown';
 
@@ -240,6 +239,7 @@ class Controls {
 			escapeshellarg( VIP_GO_APP_ID )
 		);
 
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		exec( $cmd, $script_output );
 		$script_output_json = json_decode( end( $script_output ) );
 
