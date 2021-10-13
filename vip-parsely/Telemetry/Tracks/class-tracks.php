@@ -53,16 +53,16 @@ class Tracks implements Telemetry_System {
 	 *
 	 * @param string $event_name The event name. Must be snake_case.
 	 * @param array  $event_props Any additional properties to include with the event. Key names must be valid (start with a lower-case letter and "snake case").
-	 * @param bool   $blocking Should the event be sent to the backend immediately? Default: false.
+	 * @param bool   $send_immediately Should the event be sent to the backend immediately? Default: false.
 	 * @return void
 	 */
-	public function record_event( string $event_name, array $event_props = array(), bool $blocking = false ): void {
+	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false ): void {
 		$event = self::normalize_event( $event_name, $event_props );
 		if ( $event->error ) {
 			return;
 		}
 
-		if ( $blocking ) {
+		if ( $send_immediately ) {
 			self::send_events_to_api( array( $event ) );
 			return;
 		}
