@@ -17,15 +17,15 @@ declare(strict_types=1);
 use Automattic\VIP\Parsely\Telemetry\Telemetry;
 use Automattic\VIP\Parsely\Telemetry\Tracks;
 
-require __DIR__ . '/Telemetry/class-telemetry.php';
-require __DIR__ . '/Telemetry/class-telemetry-system.php';
-require __DIR__ . '/Telemetry/Tracks/class-tracks.php';
-require __DIR__ . '/Telemetry/Tracks/class-tracks-event.php';
-add_action(
-	'admin_init',
-	function(): void {
-		// If enabled, instantiating Telemetry with Automattic's Tracks backend
-		if ( apply_filters( 'wp_parsely_enable_telemetry_backend', false ) ) {
+// If enabled, instantiating Telemetry with Automattic's Tracks backend
+if ( apply_filters( 'wp_parsely_enable_telemetry_backend', false ) ) {
+	require __DIR__ . '/Telemetry/class-telemetry.php';
+	require __DIR__ . '/Telemetry/class-telemetry-system.php';
+	require __DIR__ . '/Telemetry/Tracks/class-tracks.php';
+	require __DIR__ . '/Telemetry/Tracks/class-tracks-event.php';
+	add_action(
+		'admin_init',
+		function (): void {
 			$tracks    = new Tracks();
 			$telemetry = new Telemetry( $tracks );
 
@@ -48,5 +48,5 @@ add_action(
 
 			$telemetry->run();
 		}
-	}
-);
+	);
+}
