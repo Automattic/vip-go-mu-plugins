@@ -44,8 +44,8 @@ class Tracks_Event {
 	/**
 	 * Determine the user id and type from the environment.
 	 *
-	 * @param [object] $event The "midput" event object that needs identity information.
-	 * @return [object] The "midput" event object including identity information (if present)
+	 * @param object $event The "midput" event object that needs identity information.
+	 * @return object The "midput" event object including identity information (if present)
 	 */
 	protected static function annotate_with_id_and_type( $event ) {
 		$wp_user_id = get_current_user_id();
