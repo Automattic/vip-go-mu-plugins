@@ -48,11 +48,11 @@ if ( ! defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && 'production' !== VIP_GO
 
 // Default plan object for all VIP sites.
 define( 'VIP_JETPACK_DEFAULT_PLAN', array(
-	'product_id' => 'vip',
-	'product_slug' => 'vip',
+	'product_id'         => 'vip',
+	'product_slug'       => 'vip',
 	'product_name_short' => 'VIP',
-	'product_variation' => 'vip',
-	'supports' => array (
+	'product_variation'  => 'vip',
+	'supports'           => array(
 		'videopress',
 		'akismet',
 		'vaultpress',
@@ -61,8 +61,8 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 		'wordads',
 		'search',
 	),
-	'features' => array (
-		'active' => array (
+	'features'           => array(
+		'active'    => array(
 			'premium-themes',
 			'akismet',
 			'vaultpress-backups',
@@ -75,8 +75,8 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 			'support',
 			'wordads-jetpack',
 		),
-		'available' => array (
-			'akismet' => array (
+		'available' => array(
+			'akismet'                       => array(
 				'jetpack_free',
 				'jetpack_premium',
 				'jetpack_personal',
@@ -84,45 +84,45 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 				'jetpack_business_monthly',
 				'jetpack_personal_monthly',
 			),
-			'vaultpress-backups' => array (
+			'vaultpress-backups'            => array(
 				'jetpack_premium',
 				'jetpack_premium_monthly',
 				'jetpack_business_monthly',
 			),
-			'vaultpress-backup-archive' => array (
+			'vaultpress-backup-archive'     => array(
 				'jetpack_premium',
 				'jetpack_premium_monthly',
 				'jetpack_business_monthly',
 			),
-			'vaultpress-storage-space' => array (
+			'vaultpress-storage-space'      => array(
 				'jetpack_premium',
 				'jetpack_premium_monthly',
 				'jetpack_business_monthly',
 			),
-			'vaultpress-automated-restores' => array (
+			'vaultpress-automated-restores' => array(
 				'jetpack_premium',
 				'jetpack_premium_monthly',
 				'jetpack_business_monthly',
 			),
-			'simple-payments' => array (
+			'simple-payments'               => array(
 				'jetpack_premium',
 				'jetpack_premium_monthly',
 				'jetpack_business_monthly',
 			),
-			'support' => array (
+			'support'                       => array(
 				'jetpack_premium',
 				'jetpack_personal',
 				'jetpack_premium_monthly',
 				'jetpack_business_monthly',
 				'jetpack_personal_monthly',
 			),
-			'premium-themes' => array (
+			'premium-themes'                => array(
 				'jetpack_business_monthly',
 			),
-			'vaultpress-security-scanning' => array (
+			'vaultpress-security-scanning'  => array(
 				'jetpack_business_monthly',
 			),
-			'polldaddy' => array (
+			'polldaddy'                     => array(
 				'jetpack_business_monthly',
 			),
 		),
@@ -132,12 +132,12 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 /**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
-require_once( __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php' );
+require_once __DIR__ . '/connection-pilot/class-jetpack-connection-pilot.php';
 
 /**
  * Enable VIP modules required as part of the platform
  */
-require_once( __DIR__ . '/jetpack-mandatory.php' );
+require_once __DIR__ . '/jetpack-mandatory.php';
 
 /**
  * Remove certain modules from the list of those that can be activated
@@ -163,7 +163,7 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
  * This will prevent issues from the plan option being corrupted,
  * which can then break features like Jetpack Search.
  */
-add_filter( 'pre_option_jetpack_active_plan', function( $pre_option, $option, $default ) {
+add_filter( 'pre_option_jetpack_active_plan', function( $pre_option ) {
 	if ( true === WPCOM_IS_VIP_ENV
 		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
 		&& Jetpack::is_active() ) {
@@ -171,7 +171,7 @@ add_filter( 'pre_option_jetpack_active_plan', function( $pre_option, $option, $d
 	}
 
 	return $pre_option;
-}, 10, 3 );
+} );
 
 /**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
@@ -207,7 +207,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
  * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
  * 
  */
-add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $value ) {
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
 	return 4 * MINUTE_IN_SECONDS;
 }, 9999 );
 
@@ -217,7 +217,7 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function( $valu
  * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
  * 
  */
-add_filter( 'option_jetpack_sync_settings_sync_wait_time', function( $value ) {
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function() {
 	return 1;
 }, 9999 );
 
@@ -236,13 +236,14 @@ if ( true === WPCOM_SANDBOXED ) {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- version number is OK
 		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
 	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
 }
 
 // On production servers, only our machine user can manage the Jetpack connection
 if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
-	add_filter( 'map_meta_cap', function( $caps, $cap, $user_id, $args ) {
+	add_filter( 'map_meta_cap', function( $caps, $cap, $user_id ) {
 		switch ( $cap ) {
 			case 'jetpack_connect':
 			case 'jetpack_reconnect':
@@ -255,7 +256,7 @@ if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
 		}
 
 		return $caps;
-	}, 10, 4 );
+	}, 10, 3 );
 }
 
 function wpcom_vip_did_jetpack_search_query( $query ) {
@@ -269,6 +270,7 @@ function wpcom_vip_did_jetpack_search_query( $query ) {
 		$wp_elasticsearch_queries_log = array();
 	}
 
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
 	$query['backtrace'] = wp_debug_backtrace_summary();
 
 	$wp_elasticsearch_queries_log[] = $query;
@@ -369,11 +371,12 @@ add_filter( 'jetpack_just_in_time_msgs', '__return_false' );
  * Custom CSS tweaks for the Jetpack Admin pages
  */
 function vip_jetpack_admin_enqueue_scripts() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is unavailable here
 	if ( ! isset( $_GET['page'] ) || 'jetpack' !== $_GET['page'] ) {
 		return;
 	}
-	$admin_css_url  = plugins_url( '/css/admin-settings.css', __FILE__ );
-	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url );
+	$admin_css_url = plugins_url( '/css/admin-settings.css', __FILE__ );
+	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url, [], '20200511' );
 }
 
 add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
@@ -381,15 +384,17 @@ add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
 /**
  * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
  */
-add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value, $option_name, $default ) {
+add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value ) {
 	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
 	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
-}, 10, 3 );
+} );
 
 /**
  * SSL is always supported on VIP, so avoid unnecessary checks
  */
-add_filter( 'pre_transient_jetpack_https_test', function() { return 1; } ); // WP doesn't have __return_one (but it does have __return_zero)
+add_filter( 'pre_transient_jetpack_https_test', function() {
+	return 1;
+} ); // WP doesn't have __return_one (but it does have __return_zero)
 add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
 
 // And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
@@ -407,7 +412,7 @@ add_filter( 'jetpack_options', function( $value, $name ) {
 function add_jetpack_menu_placeholder(): void {
 	$status = new Automattic\Jetpack\Status();
 	// is_connection_ready only exists in Jetpack 9.6 and newer
-	if ( ! $status->is_offline_mode() && method_exists('Jetpack', 'is_connection_ready') && ! Jetpack::is_connection_ready() ) {
+	if ( ! $status->is_offline_mode() && method_exists( 'Jetpack', 'is_connection_ready' ) && ! Jetpack::is_connection_ready() ) {
 		add_submenu_page( 'jetpack', 'Connect Jetpack', 'Connect Jetpack', 'manage_options', 'jetpack' );
 	}
 }
