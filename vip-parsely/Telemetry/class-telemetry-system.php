@@ -2,8 +2,7 @@
 /**
  * Telemetry System interface
  *
- * @package Parsely\Telemetry
- * @since 3.0.0
+ * @package Automattic\VIP\Parsely\Telemetry
  */
 
 declare(strict_types=1);
@@ -12,8 +11,6 @@ namespace Automattic\VIP\Parsely\Telemetry;
 
 /**
  * Telemetry back-end classes are expected to conform this interface.
- *
- * @since 3.0.0
  */
 interface Telemetry_System {
 	/**

@@ -1,13 +1,16 @@
 <?php
+/**
+ * Tracking code for the `load-settings_page_parsely` event (whenever the Parse.ly settings page is loaded).
+ *
+ * @package Automattic\VIP\Parsely\Telemetry
+ */
 
 declare(strict_types=1);
 
 namespace Automattic\VIP\Parsely\Telemetry;
 
 /**
- * Records an event when the Parse.ly
- *
- * @since 3.0.0
+ * Records an event using the given Telemetry System when the Parse.ly settings page is loaded.
  *
  * @param Telemetry_System $telemetry_system
  * @return void

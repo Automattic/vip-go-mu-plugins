@@ -2,8 +2,7 @@
 /**
  * Tracks class
  *
- * @package Parsely\Telemetry
- * @since 3.0.0
+ * @package Automattic\VIP\Parsely\Telemetry
  */
 
 declare(strict_types=1);
