@@ -67,9 +67,12 @@ class Tracks_Event {
 			return $event;
 		}
 
-		// TODO: This probably needs some improvement as well.
+		// _ui stands for User ID in A8c Tracks.
 		$event->_ui = 'wpparsely:' . md5( "$home_option|$wp_user_id" );
+
+		// _ut stands for User Type in A8c Tracks.
 		$event->_ut = 'anon';
+
 		return $event;
 	}
 
@@ -96,7 +99,7 @@ class Tracks_Event {
 		// The rest of this process expects an object. Cast it!
 		$_event = (object) $event;
 
-		// Required.
+		// _en stands for Event Name in A8c tracks. It is required.
 		if ( ! $_event->_en ) {
 			return new WP_Error( 'invalid_event', 'A valid event must be specified via `_en`', 400 );
 		}

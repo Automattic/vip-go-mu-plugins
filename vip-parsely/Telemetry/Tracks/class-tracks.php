@@ -76,9 +76,9 @@ class Tracks implements Telemetry_System {
 	 * @param string $event_name The (potentially-unprefixed) event name.
 	 * @param array  $event_props Any additional properties to include with the event.
 	 *
-	 * @return Tracks_Event The normalized event materialized as a Parsely_A8c_Tracks_Event object
+	 * @return Tracks_Event The normalized event materialized as a Tracks_Event object
 	 */
-	private static function normalize_event( string $event_name, array $event_props = array() ) {
+	private static function normalize_event( string $event_name, array $event_props = array() ): Tracks_Event {
 		$_event_props = array();
 		foreach ( $event_props as $key => $value ) {
 			if ( is_string( $value ) ) {
