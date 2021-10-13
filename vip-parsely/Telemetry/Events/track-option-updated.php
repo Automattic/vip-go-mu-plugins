@@ -15,7 +15,7 @@ namespace Automattic\VIP\Parsely\Telemetry;
  * case some values in the option are updated. If that's the case, those changed values will also be sent in the event.
  *
  * @param array $old_value 	The old option value.
- * @param array $value The new option value.
+ * @param array $value      The new option value.
  * @param Telemetry_System $telemetry_system
  * @return void
  */
