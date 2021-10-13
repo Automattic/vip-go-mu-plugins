@@ -92,6 +92,7 @@ class Connection_Pilot {
 
 	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand -- don't need a CSPRNG, mt_rand() is OK
 			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
 		}
 	}
@@ -131,7 +132,7 @@ class Connection_Pilot {
 
 			// Attempting VaultPress connection given that Jetpack is connected
 			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
-			if ( ! $skip_vaultpress  ) {
+			if ( ! $skip_vaultpress ) {
 				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
 				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
 					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
@@ -179,12 +180,12 @@ class Connection_Pilot {
 	 * @return bool True if CP should back off, false otherwise.
 	 */
 	private function should_back_off(): bool {
-		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ){
+		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ) {
 			$backoff_factor = $this->last_heartbeat['backoff_factor'];
 			if ( $backoff_factor > 0 ) {
 				$dt_heartbeat = ( new DateTime() )->setTimestamp( $this->last_heartbeat['timestamp'] );
-				$dt_now = new DateTime();
-				$diff = $dt_now->diff( $dt_heartbeat, true );
+				$dt_now       = new DateTime();
+				$diff         = $dt_now->diff( $dt_heartbeat, true );
 
 				// Checking the difference in hours from the last heartbeat
 				if ( $diff && $diff->h < $backoff_factor ) {
@@ -206,7 +207,7 @@ class Connection_Pilot {
 
 		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
 			return;
-		} else if ( $backoff_factor <= 0 ) {
+		} elseif ( $backoff_factor <= 0 ) {
 			$backoff_factor = 1;
 		} else {
 			$backoff_factor = $backoff_factor * 2;
@@ -222,11 +223,11 @@ class Connection_Pilot {
 	 */
 	private function update_heartbeat( int $backoff_factor = 0 ): void {
 		$option = array(
-			'site_url'         => get_site_url(),
-			'hashed_site_url'  => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
-			'cache_site_id'    => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
-			'timestamp' => time(),
-			'backoff_factor' => $backoff_factor,
+			'site_url'        => get_site_url(),
+			'hashed_site_url' => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
+			'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
+			'timestamp'       => time(),
+			'backoff_factor'  => $backoff_factor,
 		);
 		$update = update_option( self::HEARTBEAT_OPTION_NAME, $option, false );
 		if ( $update ) {
@@ -242,7 +243,7 @@ class Connection_Pilot {
 		}
 
 		// 1) Had an error
-		switch( $error_code ) {
+		switch ( $error_code ) {
 			case 'jp-cxn-pilot-missing-constants':
 			case 'jp-cxn-pilot-development-mode':
 				$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
@@ -263,7 +264,7 @@ class Connection_Pilot {
 
 		// 3) Check the last heartbeat to see if the URLs match.
 		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
-			if ( $this->last_heartbeat['hashed_site_url'] === md5( get_site_url() ) ) {
+			if ( md5( get_site_url() ) === $this->last_heartbeat['hashed_site_url'] ) {
 				// Not connected, but current url matches previous url, attempt a reconnect
 
 				return true;
@@ -295,10 +296,10 @@ class Connection_Pilot {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
 		$last_heartbeat = $this->last_heartbeat;
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && $last_heartbeat['cache_site_id'] != -1 ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && -1 != $last_heartbeat['cache_site_id'] ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
-				date( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
+				gmdate( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
 			);
 		}
 
@@ -308,8 +309,8 @@ class Connection_Pilot {
 
 		\Automattic\VIP\Logstash\log2logstash( [
 			'severity' => 'error',
-			'feature' => 'jetpack-connection-pilot',
-			'message' => $message,
+			'feature'  => 'jetpack-connection-pilot',
+			'message'  => $message,
 		] );
 
 		$should_silence_alerts = defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS;
