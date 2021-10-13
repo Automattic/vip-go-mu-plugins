@@ -26,9 +26,9 @@ add_action( 'muplugins_loaded', __NAMESPACE__ . '\init_debug_mode' );
 
 function init_debug_mode() {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['a8c-debug'] ) ) {
-		toggle_debug_mode();
-		return;
+	$enable = filter_var( $_GET['a8c-debug'] ?? '', FILTER_SANITIZE_STRING );
+	if ( in_array( $enable, [ 'true', 'false' ], true ) ) {
+		set_debug_mode( 'true' === $enable );
 	}
 
 	if ( is_debug_mode_enabled() ) {
@@ -93,15 +93,18 @@ function disable_debug_mode() {
 	redirect_back();
 }
 
-function toggle_debug_mode() {
-	// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- we check if `a8c-debug` exists in `init_debug_mode`
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( 'true' === $_GET['a8c-debug'] ) {
+/**
+ * Turns the debug mode on or off
+ * 
+ * @param bool $set     Whether to turn on (true) or off (false) the debug mode
+ * @return void 
+ */
+function set_debug_mode( bool $set ) {
+	if ( $set ) {
 		enable_debug_mode();
-	} elseif ( 'false' === $_GET['a8c-debug'] ) {
+	} else {
 		disable_debug_mode();
 	}
-	// phpcs:enable
 }
 
 function enable_debug_tools() {

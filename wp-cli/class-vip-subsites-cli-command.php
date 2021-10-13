@@ -38,7 +38,7 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		}
 
 		$blog_id = (int) sanitize_key( $args[0] );
-		$domain = $args[1];
+		$domain  = $args[1];
 
 		WP_CLI::line( '' );
 		WP_CLI::line( 'ARGUMENTS' );
@@ -49,11 +49,12 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 		WP_CLI::line( '' );
 
 		$date_now = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$blogs_update = $wpdb->update(
 			'wp_blogs',
 			array(
-				'domain' => $domain,
-				'path' => $path,
+				'domain'       => $domain,
+				'path'         => $path,
 				'last_updated' => $date_now->format( 'Y-m-d H:i:s' ),
 			),
 			array( 'blog_id' => $blog_id )
@@ -61,7 +62,7 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 
 		if ( $blogs_update ) {
 			WP_CLI::success( 'WP blogs update complete!' );
-		} else if ( $wpdb->last_error ) {
+		} elseif ( $wpdb->last_error ) {
 			WP_CLI::error( $wpdb->last_error );
 		} else {
 			WP_CLI::warning( 'No changes detected' );
