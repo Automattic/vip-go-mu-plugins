@@ -14,7 +14,7 @@ namespace Automattic\VIP\Parsely\Telemetry;
  * Records an event using the given Telemetry System when the Parse.ly option is updated. It will only send the event in
  * case some values in the option are updated. If that's the case, those changed values will also be sent in the event.
  *
- * @param array $old_value 	The old option value.
+ * @param array $old_value  The old option value.
  * @param array $value      The new option value.
  * @param Telemetry_System $telemetry_system
  * @return void
