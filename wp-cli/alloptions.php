@@ -27,7 +27,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 		$total_size = 0;
 
 		foreach ( $alloptions as $name => $val ) {
-			$size       = mb_strlen( $val );
+			$size        = mb_strlen( $val );
 			$total_size += $size;
 
 			// find big options only
@@ -65,7 +65,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 		WP_CLI\Utils\format_items( $assoc_args['format'], $options, array( 'name', 'size' ) );
 
 		WP_CLI::line( sprintf( 'Total size of all option values for this blog: %s', size_format( $total_size ) ) );
-		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s',   size_format( strlen( serialize( $alloptions ) ) ) ) );
+		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s', size_format( strlen( serialize( $alloptions ) ) ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 		WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
 		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
 		WP_CLI::line( "\tuse `wp option autoload set <option_name> no` to disable autoload for option" );
@@ -204,6 +204,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	 */
 	public function ack_test( $args = [], $assoc_args = [] ) {
 		WP_CLI::log( 'wpcom_vip_alloptions_size_is_acked() value:' );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_dump
 		var_dump( wpcom_vip_alloptions_size_is_acked() );
 	}
 
