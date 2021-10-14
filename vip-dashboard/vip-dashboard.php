@@ -217,7 +217,7 @@ add_action( 'wp_ajax_vip_contact', 'vip_contact_form_handler' );
  *
  * @param string $linktext the text for the link.
  * @param bool   $echo echo or return.
- * @return html
+ * @return string
  */
 function vip_echo_mailto_vip_hosting( $linktext = 'Send an email to VIP Hosting.', $echo = true ) {
 	// phpcs:disable WordPress.Security.NonceVerification.Missing
@@ -248,13 +248,11 @@ function vip_echo_mailto_vip_hosting( $linktext = 'Send an email to VIP Hosting.
 	$email .= 'Platform: VIP Go';
 
 	$url = add_query_arg( array(
-		'subject' => __( 'Descriptive subject please', 'vip-dashboard' ),
+		'subject' => rawurlencode( __( 'Descriptive subject please', 'vip-dashboard' ) ),
 		'body'    => rawurlencode( $email ),
 	), 'mailto:vip-support@wordpress.com' );
 
-	// $url not escaped on output as email formatting is borked by esc_url:
-	// https://core.trac.wordpress.org/ticket/31632
-	$html = '<a href="' . $url . '">' . esc_html( $linktext ) . '</a>';
+	$html = '<a href="' . esc_url( $url ) . '">' . esc_html( $linktext ) . '</a>';
 
 	if ( $echo ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- properly sanitized above
