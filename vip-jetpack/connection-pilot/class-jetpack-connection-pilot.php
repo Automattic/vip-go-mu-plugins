@@ -329,7 +329,7 @@ class Connection_Pilot {
 
 		// Bypass alerting on specific set messages, that can be false positives
 		// Array of regexps to match the message that should be ignored
-		$alerts_to_be_silenced = apply_filters( 'vip_jetpack_connection_pilot_silenced_alerts', array( ) );
+		$alerts_to_be_silenced = apply_filters( 'vip_jetpack_connection_pilot_silenced_alerts', [] );
 		foreach ( $alerts_to_be_silenced as $alert_regex ) {
 			if ( preg_match( $alert_regex, $message ) ) {
 				return $message;
