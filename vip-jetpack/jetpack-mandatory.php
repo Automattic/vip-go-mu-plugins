@@ -29,11 +29,11 @@ class WPCOM_VIP_Jetpack_Mandatory {
 	 *
 	 * @return WPCOM_VIP_Jetpack_Mandatory object The instance of WPCOM_VIP_Jetpack_Mandatory
 	 */
-	static public function init() {
+	public static function init() {
 		static $instance = false;
 
 		if ( ! $instance ) {
-			$instance = new WPCOM_VIP_Jetpack_Mandatory;
+			$instance = new WPCOM_VIP_Jetpack_Mandatory();
 		}
 
 		return $instance;
@@ -44,12 +44,12 @@ class WPCOM_VIP_Jetpack_Mandatory {
 	 * Class constructor. Handles hooking actions and filters.
 	 */
 	public function __construct() {
-		add_action( 'admin_footer',                      array( $this, 'action_admin_footer_early' ), 5 );
-		add_action( 'admin_footer',                      array( $this, 'action_admin_footer' ), 8 );
+		add_action( 'admin_footer', array( $this, 'action_admin_footer_early' ), 5 );
+		add_action( 'admin_footer', array( $this, 'action_admin_footer' ), 8 );
 		add_action( 'load-jetpack_page_jetpack_modules', array( $this, 'action_load_jetpack_modules' ) );
 
 		// @TODO: Add VIP scanner check to watch for people unhooking this
-		add_filter( 'jetpack_get_default_modules',              array( $this, 'filter_jetpack_get_default_modules' ), 99 );
+		add_filter( 'jetpack_get_default_modules', array( $this, 'filter_jetpack_get_default_modules' ), 99 );
 		// @TODO: Add VIP scanner check to watch for people unhooking this
 		add_filter( 'pre_update_option_jetpack_active_modules', array( $this, 'filter_pre_update_option_jetpack_active_modules' ), 99, 2 );
 	}
@@ -58,9 +58,9 @@ class WPCOM_VIP_Jetpack_Mandatory {
 	// =====
 
 	public function action_load_jetpack_modules() {
-		$mandatory_css_url = WP_CONTENT_URL . '/mu-plugins/' . basename( __DIR__ ) . '/css/mandatory-settings.css';
+		$mandatory_css_url  = WP_CONTENT_URL . '/mu-plugins/' . basename( __DIR__ ) . '/css/mandatory-settings.css';
 		$mandatory_css_file = WP_CONTENT_DIR . '/mu-plugins/' . basename( __DIR__ ) . '/css/mandatory-settings.css';
-		$mtime = filemtime( $mandatory_css_file );
+		$mtime              = filemtime( $mandatory_css_file );
 		wp_enqueue_style( 'vip-jetpack-mandatory-settings', $mandatory_css_url, array(), $mtime );
 	}
 
@@ -82,19 +82,19 @@ class WPCOM_VIP_Jetpack_Mandatory {
 		$forced_modules = $this->mandatory_modules;
 		// Code cribbed from WP_Scripts::localize()
 		foreach ( (array) $forced_modules as $key => $value ) {
-			if ( ! is_scalar($value) ) {
-				$forced_modules[$key] = $value;
+			if ( ! is_scalar( $value ) ) {
+				$forced_modules[ $key ] = $value;
 			} else {
-				$forced_modules[$key] = html_entity_decode( (string) $value, ENT_QUOTES, 'UTF-8' );
+				$forced_modules[ $key ] = html_entity_decode( (string) $value, ENT_QUOTES, 'UTF-8' );
 			}
 		}
 
-		$output = "var wpcom_vip_jetpack_forced = " . wp_json_encode( $forced_modules ) . ';';
-		echo "<script type='text/javascript'>" . PHP_EOL; // CDATA and type='text/javascript' is not needed for HTML 5
-		echo "/* <![CDATA[ */" . PHP_EOL;
-		echo $output . PHP_EOL;
-		echo "/* ]]> */" . PHP_EOL;
-		echo "</script>" . PHP_EOL;
+		$output = 'var wpcom_vip_jetpack_forced = ' . wp_json_encode( $forced_modules ) . ';';
+		echo "<script type='text/javascript'>", PHP_EOL; // CDATA and type='text/javascript' is not needed for HTML 5
+		echo '/* <![CDATA[ */', PHP_EOL;
+		echo $output, PHP_EOL;  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '/* ]]> */', PHP_EOL;
+		echo '</script>', PHP_EOL;
 	}
 
 	/**
@@ -144,6 +144,7 @@ class WPCOM_VIP_Jetpack_Mandatory {
 	 * is mandatory.
 	 */
 	public function js_templates() {
+		// phpcs:disable WordPressVIPMinimum.Security.Mustache.OutputNotation -- we take care of the values when preparing the template
 		?>
 		<script type="text/html" id="tmpl-Jetpack_Modules_List_Table_Template">
 			<# var i = 0;
@@ -167,21 +168,22 @@ class WPCOM_VIP_Jetpack_Mandatory {
 								<span class='wpcom-vip-no-delete' id="wpcom-vip-no-delete-{{ item.module }}"><?php _e( 'This module is required for WordPress VIP', 'wpcom-vip-jetpack' ); ?></span>
 							<# } else if ( item.activated && 'vaultpress' !== item.module ) { #>
 								<# if ( 'omnisearch' !== item.module ) { #>
-									<span class='delete'><a href="<?php echo admin_url( 'admin.php' ); ?>?page=jetpack&#038;action=deactivate&#038;module={{{ item.module }}}&#038;_wpnonce={{{ item.deactivate_nonce }}}"><?php _e( 'Deactivate', 'jetpack' ); ?></a></span>
+									<span class='delete'><a href="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>?page=jetpack&#038;action=deactivate&#038;module={{{ item.module }}}&#038;_wpnonce={{{ item.deactivate_nonce }}}"><?php _e( 'Deactivate', 'jetpack' ); ?></a></span>
 								<# } #>
 							<# } else if ( item.available ) { #>
-								<span class='activate'><a href="<?php echo admin_url( 'admin.php' ); ?>?page=jetpack&#038;action=activate&#038;module={{{ item.module }}}&#038;_wpnonce={{{ item.activate_nonce }}}"><?php _e( 'Activate', 'jetpack' ); ?></a></span>
+								<span class='activate'><a href="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>?page=jetpack&#038;action=activate&#038;module={{{ item.module }}}&#038;_wpnonce={{{ item.activate_nonce }}}"><?php _e( 'Activate', 'jetpack' ); ?></a></span>
 							<# } #>
 						</div>
 					</td>
 				</tr>
 				<# }); } else { #>
 					<tr class="no-modules-found">
-						<td colspan="2"><?php esc_html_e( 'No Modules Found' , 'jetpack' ); ?></td>
+						<td colspan="2"><?php esc_html_e( 'No Modules Found', 'jetpack' ); ?></td>
 					</tr>
 				<# } #>
 		</script>
 		<?php
+		// phpcs:enable
 	}
 
 	/**

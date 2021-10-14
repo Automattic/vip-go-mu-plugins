@@ -1,5 +1,11 @@
 <?php
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.SchemaChange
+// phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- MySQL schema does not use the snake case
+
 class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Command arguments
@@ -73,7 +79,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 		// Validate starting charset to avoid catastrophe
 		WP_CLI::line( 'PREFLIGHT CHECKS' );
-		if ( in_array( $wpdb->charset, array( 'latin1', 'utf8', ), true ) ) {
+		if ( in_array( $wpdb->charset, array( 'latin1', 'utf8' ), true ) ) {
 			WP_CLI::line( "* Expected charset (`{$wpdb->charset}`) found." );
 		} elseif ( 'utf8mb4' === $wpdb->charset ) {
 			WP_CLI::error( 'Site is already using `utf8mb4`. Aborting!' );
@@ -92,14 +98,14 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 		// Describe tables to be converted
 		$this->get_tables();
-		$tables_count = number_format( count( $this->tables ) );
+		$tables_count  = number_format( count( $this->tables ) );
 		$tables_string = implode( ', ', $this->tables );
 
 		WP_CLI::line( "* Found {$tables_count} tables to check and potentially convert: {$tables_string}." );
 		WP_CLI::line( '' );
 
 		// Provide an opportunity to abort
-		WP_CLI::confirm( "Proceed with " . ( $this->dry_run ? 'DRY' : 'LIVE' ) . " RUN and " . ( $this->dry_run ? 'test converting' : 'potentially convert' ) . " {$tables_count} tables from `{$wpdb->charset}` to `utf8mb4`?" );
+		WP_CLI::confirm( 'Proceed with ' . ( $this->dry_run ? 'DRY' : 'LIVE' ) . ' RUN and ' . ( $this->dry_run ? 'test converting' : 'potentially convert' ) . " {$tables_count} tables from `{$wpdb->charset}` to `utf8mb4`?" );
 		if ( ! $this->dry_run ) {
 			WP_CLI::confirm( 'ARE YOU REALLY SURE?' );
 		}
@@ -124,6 +130,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 					WP_CLI::warning( "Table {$table} not converted because it doesn't exist or doesn't contain convertible columns." );
 				}
 			} else {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				WP_CLI::warning( 'Unknown response: ' . var_export( $converted, true ) );
 			}
 
@@ -135,9 +142,9 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$convert_db = $wpdb->query( 'ALTER DATABASE ' . $db_name . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' );
 		if ( $convert_db ) {
-			WP_CLI::success( "Set database to utf8mb4" );
+			WP_CLI::success( 'Set database to utf8mb4' );
 		} else {
-			WP_CLI::warning( "Could not update database default charset" );
+			WP_CLI::warning( 'Could not update database default charset' );
 		}
 
 		// Wrap up
@@ -166,8 +173,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			foreach ( $tables as $table ) {
 				// Get the current CHARSET.
 				$table_create = $wpdb->get_results( $wpdb->prepare( 'SHOW CREATE TABLE %s', $table ), ARRAY_N );
-				$charset = array_column( $table_create, 1 )[0]; // Flatten array to string.
-				$charset = preg_match( '/CHARSET=(.*)(?:\s+|$)/Ui', $charset, $matches );
+				$charset      = array_column( $table_create, 1 )[0]; // Flatten array to string.
+				$charset      = preg_match( '/CHARSET=(.*)(?:\s+|$)/Ui', $charset, $matches );
 
 				if ( isset( $matches[1] ) ) {
 					$charset = $matches[1];
@@ -187,15 +194,11 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 				if ( 'utf8mb4' !== $charset || 'utf8mb4_unicode_ci' !== $collate ) {
 					$columns_to_fix = 0;
-					$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %s', $table ), ARRAY_N );
+					$columns        = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %s', $table ), ARRAY_N );
 
 					foreach ( $columns as $column ) {
-						$column_name    = $column[0];
-						$column_type    = $column[1];
-						$column_null    = $column[2];
-						$column_key     = $column[3];
-						$column_default = $column[4];
-						$column_extra   = $column[5];
+						$column_name = $column[0];
+						$column_type = $column[1];
 
 						$new_column_type = false;
 						switch ( $column_type ) {
@@ -318,6 +321,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	private function maybe_convert_table_to_utf8mb4( $table ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$results = $wpdb->get_results( "SHOW FULL COLUMNS FROM `$table`" );
 		if ( ! $results ) {
 			return false;
@@ -326,21 +330,21 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		foreach ( $results as $column ) {
 			if ( $column->Collation ) {
 				list( $charset ) = explode( '_', $column->Collation );
-				$charset = strtolower( $charset );
-				if ( ! in_array( $charset, array( 'latin1', 'utf8', 'utf8mb4', ), true ) ) {
+				$charset         = strtolower( $charset );
+				if ( ! in_array( $charset, array( 'latin1', 'utf8', 'utf8mb4' ), true ) ) {
 					// Don't upgrade tables that have columns we can't convert.
 					return false;
 				}
 			}
 		}
 
-		$table_details = $wpdb->get_row( "SHOW TABLE STATUS LIKE '$table'" );
+		$table_details = $wpdb->get_row( $wpdb->prepare( 'SHOW TABLE STATUS LIKE %s', $table ) );
 		if ( ! $table_details ) {
 			return false;
 		}
 
 		list( $table_charset ) = explode( '_', $table_details->Collation );
-		$table_charset = strtolower( $table_charset );
+		$table_charset         = strtolower( $table_charset );
 		if ( 'utf8mb4' === $table_charset ) {
 			return true;
 		}
@@ -352,7 +356,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 
 			if ( $this->protect_masquerading_utf8 ) {
 				$column_convert_error = false;
-				$protected_columns = $this->convert_masquerading_columns( $table );
+				$protected_columns    = $this->convert_masquerading_columns( $table );
 
 				// Exclude columns that didn't need conversion
 				$protected_columns = array_filter( $protected_columns );
@@ -367,6 +371,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 				}
 			}
 
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$convert = $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
 
 			if ( is_int( $convert ) || $convert ) {
@@ -392,7 +397,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	private function convert_masquerading_columns( $table ) {
 		global $wpdb;
 
-		$columns = $wpdb->get_results( "SHOW COLUMNS FROM $table;" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$columns = $wpdb->get_results( "SHOW COLUMNS FROM $table" );
 
 		$cols_converted = array();
 
@@ -410,7 +416,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 	 */
 	private function maybe_convert_column( $col, $table ) {
 		global $wpdb;
-		$from_type = $to_type = null;
+		$from_type = null;
+		$to_type   = null;
 
 		foreach ( self::TYPE_MAPPING as $from => $to ) {
 			// Most will be exact matches, except for varchar and enum
@@ -420,7 +427,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 				( 'varchar' === $from && 0 === stripos( $col->Type, $from ) )
 			) {
 				$from_type = $from;
-				$to_type = $to;
+				$to_type   = $to;
 				break;
 			}
 		}
@@ -435,7 +442,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		// enums are special
 		if ( 0 === stripos( $from_type, 'enum' ) ) {
 			// If we can't find the options, something is very wrong
-			if ( ! preg_match( '#' . preg_quote( $from_type ) . '\(([^\)]+)\)#i', $col->Type, $options ) ) {
+			if ( ! preg_match( '#' . preg_quote( $from_type, '#' ) . '\(([^\)]+)\)#i', $col->Type, $options ) ) {
 				return false;
 			}
 
@@ -445,8 +452,8 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			WP_CLI::line( "Converting column {$col->Field}" );
 
 			$convert = $wpdb->query( $wpdb->prepare(
-				'ALTER TABLE %s CHANGE %s %s ENUM(' . $options . ') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci %s DEFAULT "%s"',
-				$table,
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"ALTER TABLE {$table} CHANGE %s %s ENUM({$options}) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci %s DEFAULT %s",
 				$col->Field,
 				$col->Field,
 				$null_not_null,
@@ -464,7 +471,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		// Maintain varchar length
 		if ( 0 === stripos( $from_type, 'varchar' ) ) {
 			// If we can't find the length, something is very wrong
-			if ( ! preg_match( '#' . preg_quote( $from_type ) . '\(([\d]+)\)#i', $col->Type, $length ) ) {
+			if ( ! preg_match( '#' . preg_quote( $from_type, '#' ) . '\(([\d]+)\)#i', $col->Type, $length ) ) {
 				return false;
 			}
 
@@ -486,7 +493,9 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		// Double conversion corrects column charset without changing its content, as the types converted to do not use charsets
 		// See https://codex.wordpress.org/Converting_Database_Character_Sets
 		$pattern = 'ALTER TABLE %1$s CHANGE %2$s %2$s %3$s %4$s %5$s DEFAULT "%6$s"';
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$convert = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $to_type, '', $null_not_null, $col->Default ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$restore = $wpdb->query( $wpdb->prepare( $pattern, $table, $col->Field, $from_type, 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', $null_not_null, $col->Default ) );
 
 		WP_CLI::line( "Finished converting column {$col->Field}" );

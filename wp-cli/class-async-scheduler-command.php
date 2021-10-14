@@ -114,11 +114,11 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	public static function runner( $command ) {
 		$cache_key = md5( $command );
-		$start = time();
+		$start     = time();
 
 		Alerts::chat( self::SLACK_NOTIFY_CHANNEL, sprintf( 'Kicking off `%s` on `%s`', $command, gethostname() ), 5 );
 
-		$result = WP_CLI::runcommand(
+		$result       = WP_CLI::runcommand(
 			$command,
 			[
 				// We need to be able to clean up and process success/errors and implement logging (if need be):

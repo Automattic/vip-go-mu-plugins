@@ -2,6 +2,9 @@
 
 use \WP_CLI\Utils;
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 	/**
@@ -16,16 +19,16 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * [--skip-confirm]
 	 * : Skip the confirmation prompt
 	 */
-	function cleanup( $args, $assoc_args ) {
+	public function cleanup( $args, $assoc_args ) {
 		global $wpdb;
 
-		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run' );
+		$dry_run      = Utils\get_flag_value( $assoc_args, 'dry-run' );
 		$skip_confirm = Utils\get_flag_value( $assoc_args, 'skip-confirm' );
 		if ( $dry_run ) {
 			WP_CLI::log( 'Performing a dry run, with no database modification.' );
-		} else if ( ! $skip_confirm ) {
+		} elseif ( ! $skip_confirm ) {
 			$env = defined( 'VIP_GO_ENV' ) ? VIP_GO_ENV : 'unknown';
-			WP_CLI::confirm( sprintf( 'Are you sure you want to run cleanup on the %s environment?', $env ) , $assoc_args );
+			WP_CLI::confirm( sprintf( 'Are you sure you want to run cleanup on the %s environment?', $env ), $assoc_args );
 		}
 
 		$network = Utils\get_flag_value( $assoc_args, 'network' );
@@ -37,9 +40,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( $network ) {
 			$iterator_args = array(
 				'table' => $wpdb->blogs,
-				'where' => array( 'spam' => 0, 'deleted' => 0, 'archived' => 0 ),
+				'where' => array(
+					'spam'     => 0,
+					'deleted'  => 0,
+					'archived' => 0,
+				),
 			);
-			$it = new \WP_CLI\Iterators\Table( $iterator_args );
+			$it            = new \WP_CLI\Iterators\Table( $iterator_args );
 			foreach ( $it as $blog ) {
 				$url = $blog->domain . $blog->path;
 				$cmd = "--url={$url} vip migration cleanup --skip-confirm";
@@ -100,7 +107,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *   - ms_global
 	 *   - ""
 	 */
-	function dbdelta( $args, $assoc_args ) {
+	public function dbdelta( $args, $assoc_args ) {
 		global $wpdb;
 
 		$tables = isset( $args[1] ) ? $args[1] : '';
@@ -119,9 +126,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( $network ) {
 			$iterator_args = array(
 				'table' => $wpdb->blogs,
-				'where' => array( 'spam' => 0, 'deleted' => 0, 'archived' => 0 ),
+				'where' => array(
+					'spam'     => 0,
+					'deleted'  => 0,
+					'archived' => 0,
+				),
 			);
-			$it = new \WP_CLI\Iterators\Table( $iterator_args );
+			$it            = new \WP_CLI\Iterators\Table( $iterator_args );
 			foreach ( $it as $blog ) {
 				$url = $blog->domain . $blog->path;
 				$cmd = "--url={$url} vip migration dbdelta";
@@ -145,7 +156,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			return;
 		}
 
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$changes = dbDelta( $tables, ! $dry_run );
 
@@ -159,6 +170,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		$count = count( $changes );
+		// translators: 1 - number of changes
 		WP_CLI::success( sprintf( _n( '%s change', '%s changes', $count ), number_format_i18n( $count ) ) );
 	}
 
@@ -193,20 +205,24 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * @subcommand validate-attachments
 	 */
 	public function validate_attachments( $args, $assoc_args ) {
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_multi_init, WordPress.WP.AlternativeFunctions.curl_curl_init, WordPress.WP.AlternativeFunctions.curl_curl_setopt
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_multi_add_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_exec
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_getinfo, WordPress.WP.AlternativeFunctions.curl_curl_multi_remove_handle
 		$log_found_files = WP_CLI\Utils\get_flag_value( $assoc_args, 'log-found-files', false );
-		$output_file    = $args[0];
-		$extra_check    = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
-		$find_empty     = WP_CLI\Utils\get_flag_value( $assoc_args, 'find-empty-files', false );
-		$disable_cache  = WP_CLI\Utils\get_flag_value( $assoc_args, 'disable-cache', false );
+		$output_file     = $args[0];
+		$extra_check     = WP_CLI\Utils\get_flag_value( $assoc_args, 'extra-check', false );
+		$find_empty      = WP_CLI\Utils\get_flag_value( $assoc_args, 'find-empty-files', false );
+		$disable_cache   = WP_CLI\Utils\get_flag_value( $assoc_args, 'disable-cache', false );
 
 		$offset  = 0;
 		$limit   = 500;
 		$threads = 10;
 		$output  = array( array( 'url', 'status' ) );
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen -- should be safe here
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
-			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $filename ) );
+			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $output_file ) );
 		}
 
 		global $wpdb;
@@ -220,7 +236,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			$date_query .= $wpdb->prepare( ' AND post_date < %s ', $assoc_args['end_date'] );
 		}
 
-		$count_sql        = 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = "attachment" ' . $date_query;
+		$count_sql = "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' " . $date_query;
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$attachment_count = $wpdb->get_row( $count_sql, ARRAY_N )[0];
 		WP_CLI::log( 'Saving output to ' . $output_file );
 
@@ -240,8 +257,8 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			WP_CLI::log( 'Disabling Varnish Cache.' );
 		}
 		
-		$progress         = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
-		$upload_dir       = wp_get_upload_dir();
+		$progress   = \WP_CLI\Utils\make_progress_bar( 'Checking ' . number_format( $attachment_count ) . ' attachments', $attachment_count );
+		$upload_dir = wp_get_upload_dir();
 
 		if ( ! file_exists( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ) ) {
 			$cache = [];
@@ -305,7 +322,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					curl_setopt( $ch[ $index ], CURLOPT_RETURNTRANSFER, true );
 
 					if ( $disable_cache ) {
-						curl_setopt( $ch[ $index ], CURLOPT_URL, $url . '?disable-cache=' . mt_rand( 1000000, 9999999 ) );
+						curl_setopt( $ch[ $index ], CURLOPT_URL, $url . '?disable-cache=' . wp_rand( 1000000, 9999999 ) );
 					} else {
 						curl_setopt( $ch[ $index ], CURLOPT_URL, $url );
 					}
@@ -320,7 +337,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 				$curl_active = null;
 
 				do {
-					$mrc = curl_multi_exec( $mh, $curl_active );
+					curl_multi_exec( $mh, $curl_active );
 				} while ( $curl_active > 0 );
 
 				// Process the responses.
@@ -359,7 +376,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			// Pause.
 			sleep( 1 );
 
-			$offset += $limit;
+			$offset              += $limit;
 			$attachment_ids_count = count( $attachment_ids );
 		} while ( $attachment_ids_count );
 
@@ -377,8 +394,11 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 		}
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- false positive, get_temp_dir() is used
 		file_put_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ), wp_json_encode( $cache ) );
+		// phpcs:enable
 	}
+
 	/**
 	 * Import user meta attributes from a CSV file.
 	 *
@@ -417,10 +437,10 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand import-user-meta
 	 */
-	function import_user_meta( $args, $assoc_args ) {
+	public function import_user_meta( $args, $assoc_args ) {
 		$filename = $args[0];
 		$user_key = $assoc_args['user_key'] ?? 'user_login';
-		$dry_run = Utils\get_flag_value( $assoc_args, 'dry-run', true );
+		$dry_run  = Utils\get_flag_value( $assoc_args, 'dry-run', true );
 
 		// Force a boolean, always default to true.
 		$dry_run = filter_var( $dry_run, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ?? true;
@@ -434,7 +454,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		}
 
 		foreach ( new \WP_CLI\Iterators\CSV( $filename ) as $user_data ) {
-			$user_data = array_values( $user_data ); // Strip useless array keys.
+			$user_data                                  = array_values( $user_data ); // Strip useless array keys.
 			list( $user_value, $meta_key, $meta_value ) = $user_data;
 
 			$meta_value = json_decode( $meta_value, true );

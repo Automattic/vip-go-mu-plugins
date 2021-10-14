@@ -120,7 +120,7 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
-			require_once( $path );
+			require_once $path;
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
 		}
@@ -139,7 +139,7 @@ function vip_jetpack_load() {
 		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
 
-	require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );
+	require_once __DIR__ . '/vip-jetpack/vip-jetpack.php';
 }
 
 vip_jetpack_load();

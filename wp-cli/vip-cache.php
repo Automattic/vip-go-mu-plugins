@@ -12,7 +12,8 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 	 */
 	public function purge( $args, $assoc_args ) {
 		if ( isset( $args[0] ) && wp_http_validate_url( $args[0] ) ) {
-			return $this->purge_url( $args, $assoc_args );
+			$this->purge_url( $args, $assoc_args );
+			return;
 		}
 
 		if ( ! isset( $assoc_args['skip-confirm'] ) ) {

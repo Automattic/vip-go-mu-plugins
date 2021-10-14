@@ -10,6 +10,6 @@ add_filter( 'two_factor_providers', function( $p ) {
 		$p['Two_Factor_SMS'] = __DIR__ . '/sms-provider.php';
 	}
 
-	unset( $p[ 'Two_Factor_Dummy' ] );
+	unset( $p['Two_Factor_Dummy'] );
 	return $p;
 } );
