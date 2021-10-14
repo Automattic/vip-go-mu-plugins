@@ -161,3 +161,8 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	return $dispatchers;
 }
 add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
+
+/**
+ * Load QM plugins
+ */
+require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
