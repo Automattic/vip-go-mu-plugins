@@ -18,7 +18,7 @@ class Jetpack_Start_Provision_CLI_Command extends WPCOM_VIP_CLI_Command {
 		list( $token_json ) = $args;
 
 		$token = $token_json ? json_decode( $token_json ) : null;
-		if ( ! $token_json || ! $token ) {
+		if ( ! $token ) {
 			// translators: 1 - token
 			$this->partner_provision_error( new WP_Error( 'missing_access_token', sprintf( __( 'Invalid token JSON: %s', 'jetpack' ), $token_json ) ) );
 		}
@@ -91,7 +91,7 @@ class Jetpack_Start_Provision_CLI_Command extends WPCOM_VIP_CLI_Command {
 		list( $token_json ) = $args;
 
 		$token = $token_json ? json_decode( $token_json ) : null;
-		if ( ! $token_json || ! $token ) {
+		if ( ! $token ) {
 			// translators: 1 - token
 			$this->partner_provision_error( new WP_Error( 'missing_access_token', sprintf( __( 'Invalid token JSON: %s', 'jetpack' ), $token_json ) ) );
 		}
