@@ -395,7 +395,13 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
 	}
 
 	if ( $redirect_url ) {
-		wp_redirect( $redirect_url, 301 );
+		if ( did_action( 'plugins_loaded' ) ) {
+			// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+			wp_redirect( $redirect_url, 301 );
+		} else {
+			header( "Location: {$redirect_url}", true, 301 );
+		}
+
 		exit;
 	}
 }
