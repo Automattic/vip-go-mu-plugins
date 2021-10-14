@@ -5,6 +5,9 @@
         "phpcompatibility/phpcompatibility-wp": "2.1.2",
         "dealerdirect/phpcodesniffer-composer-installer": "0.7.1",
         "erusev/parsedown": "1.7.4",
-        "yoast/phpunit-polyfills": "1.0.2"
+        "yoast/phpunit-polyfills": "1.0.2",
+        "johnpbloch/wordpress-core": "^5.8",
+        "wp-phpunit/wp-phpunit": "^5.8",
+        "wp-cli/wp-cli": "^2.5"
     }
 }

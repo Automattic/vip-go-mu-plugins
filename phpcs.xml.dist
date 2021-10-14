@@ -17,8 +17,8 @@
 	<exclude-pattern>cron-control-next/*</exclude-pattern>
 	<exclude-pattern>debug-bar-cron/*</exclude-pattern>
 	<exclude-pattern>http-concat/*</exclude-pattern>
-	<exclude-pattern>jetpack/*</exclude-pattern>
-	<exclude-pattern>jetpack-*/*</exclude-pattern>
+	<exclude-pattern>^jetpack/*</exclude-pattern>
+	<exclude-pattern>^jetpack-*/*</exclude-pattern>
 	<exclude-pattern>lightweight-term-count-update/*</exclude-pattern>
 	<exclude-pattern>query-monitor/*</exclude-pattern>
 	<exclude-pattern>rewrite-rules-inspector/*</exclude-pattern>
@@ -82,6 +82,9 @@
 
 		<!-- Do not enforce 'class-' prefix -->
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+
+		<!-- Allow short ternaries -->
+		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
 	</rule>
 
 </ruleset>
