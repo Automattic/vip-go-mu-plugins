@@ -94,9 +94,13 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	 * @return array
 	 */
 	public function admin_class( array $class ) {
-		$class[] = 'qm-alloptions';
+		$data = $this->collector->get_data();
+		if ( $data['total_size_comp'] > MB_IN_BYTES * .8 ) {
+			$class[] = 'qm-warning';
+		}
 		return $class;
 	}
+
 
 	public function admin_menu( array $menu ) {
 
