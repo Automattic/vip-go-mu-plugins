@@ -275,21 +275,14 @@ class WPCOM_VIP_REST_API_Endpoints {
 		$tmp_plugins      = array();
 		foreach ( $standard_plugins as $key => $plugin ) {
 			$vip_plugin_slug = 'plugins/' . dirname( $key );
-			if ( is_plugin_active( $key ) ) {
+			$active          = is_plugin_active( $key );
+			if ( $active || ! in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
 				$tmp_plugins[ $key ] = array(
 					'name'        => $plugin['Name'],
 					'version'     => $plugin['Version'],
 					'description' => $plugin['Description'],
 					'type'        => 'standard',
-					'active'      => true,
-				);
-			} elseif ( ! in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
-				$tmp_plugins[ $key ] = array(
-					'name'        => $plugin['Name'],
-					'version'     => $plugin['Version'],
-					'description' => $plugin['Description'],
-					'type'        => 'standard',
-					'active'      => false,
+					'active'      => $active,
 				);
 			}
 		}
@@ -346,22 +339,18 @@ class WPCOM_VIP_REST_API_Endpoints {
 		foreach ( get_plugins( '/../mu-plugins/shared-plugins' ) as $key => $plugin ) {
 			$active_plugin_type = $this->legacy_is_plugin_active( basename( dirname( $key ) ) );
 			if ( $active_plugin_type ) {
+				$entry = [
+					'name'        => $plugin['Name'],
+					'version'     => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type'        => 'manual' === $active_plugin_type ? 'vip-shared-code' : 'vip-shared-ui',
+					'active'      => true,
+				];
+
 				if ( 'manual' === $active_plugin_type ) {
-					$tmp_code_plugins[ $key ] = array(
-						'name'        => $plugin['Name'],
-						'version'     => $plugin['Version'],
-						'description' => $plugin['Description'],
-						'type'        => 'vip-shared-code',
-						'active'      => true,
-					);
+					$tmp_code_plugins[ $key ] = $entry;
 				} else {
-					$tmp_ui_plugins[ $key ] = array(
-						'name'        => $plugin['Name'],
-						'version'     => $plugin['Version'],
-						'description' => $plugin['Description'],
-						'type'        => 'vip-shared-ui',
-						'active'      => true,
-					);
+					$tmp_ui_plugins[ $key ] = $entry;
 				}
 			}
 		}
