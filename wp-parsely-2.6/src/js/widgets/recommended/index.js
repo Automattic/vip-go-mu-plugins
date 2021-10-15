@@ -95,12 +95,12 @@ domReady( () => {
 
 	widgets.forEach( ( widget ) => {
 		widgetLoad( widget, {
-			displayAuthor: widget.getAttribute( 'data-parsely-widget-display-author' ),
+			displayAuthor: widget.getAttribute( 'data-parsely-widget-display-author' ) === 'true',
 			displayDirection: widget.getAttribute( 'data-parsely-widget-display-direction' ),
 			apiUrl: widget.getAttribute( 'data-parsely-widget-api-url' ),
 			imgDisplay: widget.getAttribute( 'data-parsely-widget-img-display' ),
 			permalink: widget.getAttribute( 'data-parsely-widget-permalink' ),
-			personalized: widget.getAttribute( 'data-parsely-widget-personalized' ),
+			personalized: widget.getAttribute( 'data-parsely-widget-personalized' ) === 'true',
 			widgetId: widget.getAttribute( 'data-parsely-widget-id' ),
 		} );
 	} );
