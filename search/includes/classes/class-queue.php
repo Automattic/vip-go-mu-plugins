@@ -1015,7 +1015,7 @@ class Queue {
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
-				'feature' => 'vip_search_indexing_rate_limiting',
+				'feature' => 'search_indexing_rate_limiting',
 				'message' => $message,
 			)
 		);
@@ -1185,7 +1185,7 @@ class Queue {
 
 		$this->logger->log(
 			'warning',
-			'vip_search_indexing_rate_limiting',
+			'search_indexing_rate_limiting',
 			$message
 		);
 	}
