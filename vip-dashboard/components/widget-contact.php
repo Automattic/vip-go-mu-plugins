@@ -41,18 +41,6 @@ function render_vip_dashboard_widget_contact() {
 			</div>
 			<div class="contact-form__row">
 				<div class="contact-form__label">
-					<label for="contact-form__type">Type</label>
-				</div>
-				<div class="contact-form__input">
-					<select id="contact-form__type">
-						<option value="Technical">Technical</option>
-						<option value="Business">Business/Project Management</option>
-						<option value="Review">Theme/Plugin Review</option>
-					</select>
-				</div>
-			</div>
-			<div class="contact-form__row">
-				<div class="contact-form__label">
 					<label for="contact-form__details">Details</label>
 				</div>
 				<div class="contact-form__input">

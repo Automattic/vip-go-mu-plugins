@@ -1,24 +1,24 @@
 <?php
 /*
- Plugin Name: VIP REST API Endpoints
- Plugin URI: https://wpvip.com
- Description: Add custom REST API endpoints for VIP requests; N.B. these endpoints are subject to change without notice, and should be considered "private".
- Author: Erick Hitter, Automattic
- Version: 0.1
- */
+Plugin Name: VIP REST API Endpoints
+Plugin URI: https://wpvip.com
+Description: Add custom REST API endpoints for VIP requests; N.B. these endpoints are subject to change without notice, and should be considered "private".
+Author: Erick Hitter, Automattic
+Version: 0.1
+*/
 
 class WPCOM_VIP_REST_API_Endpoints {
 	/**
 	 * SINGLETON
 	 */
-	private static $__instance = null;
+	private static $instance = null;
 
 	public static function instance() {
-		if ( ! is_a( self::$__instance, __CLASS__ ) ) {
-			self::$__instance = new self;
+		if ( ! is_a( self::$instance, __CLASS__ ) ) {
+			self::$instance = new self();
 		}
 
-		return self::$__instance;
+		return self::$instance;
 	}
 
 	/**
@@ -80,16 +80,19 @@ class WPCOM_VIP_REST_API_Endpoints {
 	public function force_authorized_access( $result ) {
 		global $wp_rewrite;
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+
 		if ( $wp_rewrite->using_permalinks() ) {
 			$rest_prefix = rest_get_url_prefix();
 
 			// Expected request.
 			$expected_namespace = get_rest_url( null, $this->namespace );
 			$expected_namespace = trailingslashit( $expected_namespace );
-			$expected_namespace = parse_url( $expected_namespace, PHP_URL_PATH );
+			$expected_namespace = wp_parse_url( $expected_namespace, PHP_URL_PATH );
 
 			// Actual request.
-			$request_parts = explode( '/', $_SERVER['REQUEST_URI'] );
+			$request_parts = explode( '/', $request_uri );
 
 			// Drop undesirable leading bits to rebuild namespace from request.
 			foreach ( $request_parts as $key => $part ) {
@@ -111,14 +114,14 @@ class WPCOM_VIP_REST_API_Endpoints {
 				return $result;
 			}
 
-			$slashed_request = trailingslashit( $_SERVER['REQUEST_URI'] );
+			$slashed_request = trailingslashit( $request_uri );
 
 			if ( 0 === strpos( $slashed_request, $expected_namespace ) && wpcom_vip_go_rest_api_request_allowed( $this->namespace ) ) {
 				return true;
 			}
 		} else {
 			$query_args   = array();
-			$query_string = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_QUERY );
+			$query_string = wp_parse_url( $request_uri, PHP_URL_QUERY );
 			wp_parse_str( $query_string, $query_args );
 
 			if ( ! isset( $query_args['rest_route'] ) ) {
@@ -159,7 +162,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 				foreach ( $_sites as $_site ) {
 					switch_to_blog( $_site );
 
-					$url_parts = wp_parse_args( parse_url( home_url() ), array(
+					$url_parts = wp_parse_args( wp_parse_url( home_url() ), array(
 						'host' => '',
 						'path' => '',
 					) );
@@ -173,7 +176,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 					}
 
 					$sites[] = array(
-						'ID' => $_site,
+						'ID'          => $_site,
 						'domain_name' => $url,
 					);
 
@@ -187,8 +190,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 		} else {
 			// Provided for consistency, even though this provides no insightful response
 			$sites[] = array(
-				'ID' => 1,
-				'domain_name' => parse_url( home_url(), PHP_URL_HOST ),
+				'ID'          => 1,
+				'domain_name' => wp_parse_url( home_url(), PHP_URL_HOST ),
 			);
 		}
 
@@ -209,7 +212,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 *
 	 * @return WP_REST_Response
 	 */
-	public function list_jetpack_details( $request ): WP_REST_Response {
+	public function list_jetpack_details(): WP_REST_Response {
 		$details = [];
 
 		if ( is_multisite() ) {
@@ -246,7 +249,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 */
 	protected function get_jetpack_details_for_site(): array {
 		$connection = new Automattic\Jetpack\Connection\Manager();
-		$data = [
+		$data       = [
 			'site_id'       => get_current_blog_id(),
 			'cache_site_id' => Jetpack::get_option( 'id' ),
 			'home_url'      => home_url(),
@@ -269,24 +272,17 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 		// array of all standard plugins
 		$standard_plugins = get_plugins();
-		$tmp_plugins = array();
+		$tmp_plugins      = array();
 		foreach ( $standard_plugins as $key => $plugin ) {
 			$vip_plugin_slug = 'plugins/' . dirname( $key );
-			if ( is_plugin_active( $key ) ) {
+			$active          = is_plugin_active( $key );
+			if ( $active || ! in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
 				$tmp_plugins[ $key ] = array(
-					'name' => $plugin['Name'],
-					'version' => $plugin['Version'],
+					'name'        => $plugin['Name'],
+					'version'     => $plugin['Version'],
 					'description' => $plugin['Description'],
-					'type' => 'standard',
-					'active' => true,
-				);
-			} elseif ( ! in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
-				$tmp_plugins[ $key ] = array(
-					'name' => $plugin['Name'],
-					'version' => $plugin['Version'],
-					'description' => $plugin['Description'],
-					'type' => 'standard',
-					'active' => false,
+					'type'        => 'standard',
+					'active'      => $active,
 				);
 			}
 		}
@@ -298,71 +294,68 @@ class WPCOM_VIP_REST_API_Endpoints {
 			$vip_plugin_slug = 'plugins/' . dirname( $key );
 			if ( in_array( $vip_plugin_slug, $vip_loaded_plugins, true ) ) {
 				$tmp_plugins[ $key ] = array(
-					'name' => $plugin['Name'],
-					'version' => $plugin['Version'],
+					'name'        => $plugin['Name'],
+					'version'     => $plugin['Version'],
 					'description' => $plugin['Description'],
-					'type' => 'standard-code',
-					'active' => true,
+					'type'        => 'standard-code',
+					'active'      => true,
 				);
 			}
 		}
 		$all_plugins['standard-code'] = $tmp_plugins;
 
 		// array of all mu plugins
-		$mu_plugins = get_mu_plugins();
+		$mu_plugins  = get_mu_plugins();
 		$tmp_plugins = array();
 		foreach ( $mu_plugins as $key => $plugin ) {
 			$tmp_plugins[ $key ] = array(
-				'name' => $plugin['Name'],
-				'version' => $plugin['Version'],
+				'name'        => $plugin['Name'],
+				'version'     => $plugin['Version'],
 				'description' => $plugin['Description'],
-				'type' => 'mu-plugin',
-				'active' => true,
+				'type'        => 'mu-plugin',
+				'active'      => true,
 			);
 		}
 		$all_plugins['mu-plugin'] = $tmp_plugins;
 
 		// array of all client mu plugins
 		$client_mu_plugins = wpcom_vip_get_client_mu_plugins_data();
-		$tmp_plugins = array();
+		$tmp_plugins       = array();
 		foreach ( $client_mu_plugins as $key => $plugin ) {
 			$tmp_plugins[ $key ] = array(
-				'name' => $plugin['Name'],
-				'version' => $plugin['Version'],
+				'name'        => $plugin['Name'],
+				'version'     => $plugin['Version'],
 				'description' => $plugin['Description'],
-				'type' => 'client-mu-plugin',
-				'active' => true,
+				'type'        => 'client-mu-plugin',
+				'active'      => true,
 			);
 		}
 		$all_plugins['client-mu-plugin'] = $tmp_plugins;
 
 		// array of all shared plugins (activated via code and via UI)
 		// once the remaining shared plugins are retired we can remove this section
-		$tmp_ui_plugins = array();
+		$tmp_ui_plugins   = array();
 		$tmp_code_plugins = array();
 		foreach ( get_plugins( '/../mu-plugins/shared-plugins' ) as $key => $plugin ) {
-			if ( $active_plugin_type = $this->legacy_is_plugin_active( basename( dirname( $key ) ) ) ) {
+			$active_plugin_type = $this->legacy_is_plugin_active( basename( dirname( $key ) ) );
+			if ( $active_plugin_type ) {
+				$entry = [
+					'name'        => $plugin['Name'],
+					'version'     => $plugin['Version'],
+					'description' => $plugin['Description'],
+					'type'        => 'manual' === $active_plugin_type ? 'vip-shared-code' : 'vip-shared-ui',
+					'active'      => true,
+				];
+
 				if ( 'manual' === $active_plugin_type ) {
-					$tmp_code_plugins[ $key ] = array(
-						'name' => $plugin['Name'],
-						'version' => $plugin['Version'],
-						'description' => $plugin['Description'],
-						'type' => 'vip-shared-code',
-						'active' => true,
-					);
+					$tmp_code_plugins[ $key ] = $entry;
 				} else {
-					$tmp_ui_plugins[ $key ] = array(
-						'name' => $plugin['Name'],
-						'version' => $plugin['Version'],
-						'description' => $plugin['Description'],
-						'type' => 'vip-shared-ui',
-						'active' => true,
-					);
+					$tmp_ui_plugins[ $key ] = $entry;
 				}
 			}
 		}
 		$all_plugins['vip-shared-code'] = $tmp_code_plugins;
-		$all_plugins['vip-shared-ui'] = $tmp_ui_plugins;
+		$all_plugins['vip-shared-ui']   = $tmp_ui_plugins;
 
 		// add constant to endpoint
 		$all_plugins['disable-shared-plugins'] = ( defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) && true === WPCOM_VIP_DISABLE_SHARED_PLUGINS ) ? true : false;
