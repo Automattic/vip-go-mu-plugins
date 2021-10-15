@@ -18,7 +18,7 @@
   "devDependencies": {
     "@babel/eslint-parser": "7.15.8",
     "babel-eslint": "10.1.0",
-    "eslint": "6.8.0",
+    "eslint": "8.0.1",
     "eslint-config-wpvip": "github:Automattic/eslint-config-wpvip#master",
     "eslint-plugin-flowtype": "3.13.0",
     "eslint-plugin-import": "2.24.2",
