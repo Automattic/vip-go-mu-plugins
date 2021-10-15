@@ -32,12 +32,12 @@ class Environment {
 
 		// The call was not able to retrieve an env variable
 		// log this as an E_USER_NOTICE for debugging
-		trigger_error( // phpcs:ignore
+		trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			sprintf(
 				'The ENV variable: "%s" did not exist. %s::get_var returned default: "%s"',
-				$key, // phpcs:ignore
-				__CLASS__, // phpcs:ignore
-				$default_value // phpcs:ignore
+				$key, // phpcs:ignore WordPress.Security.EscapeOutput
+				__CLASS__,
+				$default_value // phpcs:ignore WordPress.Security.EscapeOutput
 			),
 			E_USER_NOTICE
 		);
