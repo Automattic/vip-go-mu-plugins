@@ -4,37 +4,16 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitabbe6786ee8beb5eddaaf6583db0467b
+class ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0
 {
     public static $prefixLengthsPsr4 = array (
-        'V' => 
-        array (
-            'VariableAnalysis\\' => 17,
-        ),
-        'D' => 
-        array (
-            'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 55,
-        ),
         'A' => 
         array (
-            'Automattic\\Jetpack\\Standards\\' => 29,
             'Automattic\\Jetpack\\Autoloader\\' => 30,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'VariableAnalysis\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/sirbrillig/phpcs-variable-analysis/VariableAnalysis',
-        ),
-        'Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/dealerdirect/phpcodesniffer-composer-installer/src',
-        ),
-        'Automattic\\Jetpack\\Standards\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/automattic/jetpack-standards',
-        ),
         'Automattic\\Jetpack\\Autoloader\\' => 
         array (
             0 => __DIR__ . '/..' . '/automattic/jetpack-autoloader/src',
@@ -43,14 +22,20 @@ class ComposerStaticInitabbe6786ee8beb5eddaaf6583db0467b
 
     public static $classMap = array (
         'Automattic\\Jetpack\\Assets\\Logo' => __DIR__ . '/..' . '/automattic/jetpack-logo/src/class-logo.php',
+        'Automattic\\Jetpack\\Autoloader\\AutoloadFileWriter' => __DIR__ . '/..' . '/automattic/jetpack-autoloader/src/AutoloadFileWriter.php',
+        'Automattic\\Jetpack\\Autoloader\\AutoloadGenerator' => __DIR__ . '/..' . '/automattic/jetpack-autoloader/src/AutoloadGenerator.php',
+        'Automattic\\Jetpack\\Autoloader\\AutoloadProcessor' => __DIR__ . '/..' . '/automattic/jetpack-autoloader/src/AutoloadProcessor.php',
+        'Automattic\\Jetpack\\Autoloader\\CustomAutoloaderPlugin' => __DIR__ . '/..' . '/automattic/jetpack-autoloader/src/CustomAutoloaderPlugin.php',
+        'Automattic\\Jetpack\\Autoloader\\ManifestGenerator' => __DIR__ . '/..' . '/automattic/jetpack-autoloader/src/ManifestGenerator.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitabbe6786ee8beb5eddaaf6583db0467b::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitabbe6786ee8beb5eddaaf6583db0467b::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitabbe6786ee8beb5eddaaf6583db0467b::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0::$classMap;
 
         }, null, ClassLoader::class);
     }

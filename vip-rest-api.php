@@ -71,36 +71,38 @@ function wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $auth_h
 function wpcom_vip_go_rest_api_request_allowed( $namespace, $cap = 'do_not_allow' ) {
 	// First check basic auth
 	$basic_auth_user = wpcom_vip_basic_auth_user();
-	if ( $basic_auth_user && ! is_wp_error( $basic_auth_user ) &&
-		$basic_auth_user->ID && $basic_auth_user->ID > 0 ) {
-			$user_id = $basic_auth_user->ID;
+	if ( $basic_auth_user && ! is_wp_error( $basic_auth_user ) && $basic_auth_user->ID && $basic_auth_user->ID > 0 ) {
+		$user_id = $basic_auth_user->ID;
 
-			// Check current user has `vip_support` or the required capability.
-			// VIP Support users should be able to do anything on the site, but
-			// this cap check runs before that plugin is loaded.
-			// https://github.com/Automattic/vip-support
-			if ( user_can( $user_id, 'vip_support' ) || user_can( $user_id, $cap ) ) {
-				return true;
-			}
+		// Check current user has `vip_support` or the required capability.
+		// VIP Support users should be able to do anything on the site, but
+		// this cap check runs before that plugin is loaded.
+		// https://github.com/Automattic/vip-support
+		if ( user_can( $user_id, 'vip_support' ) || user_can( $user_id, $cap ) ) {
+			return true;
+		}
 	}
 
 	// Do we have a header to check?
-	if ( ! isset( $_SERVER['HTTP_AUTHORIZATION'] ) || empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+	if ( empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
 		return false;
 	}
 
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	return wpcom_vip_verify_go_rest_api_request_authorization( $namespace, $_SERVER['HTTP_AUTHORIZATION'] );
 }
 
 function wpcom_vip_basic_auth_user() {
+	// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication
 	if ( ! isset( $_SERVER['PHP_AUTH_USER'] ) || ! isset( $_SERVER['PHP_AUTH_PW'] ) ) {
 		return false;
 	}
 
-	$username = $_SERVER['PHP_AUTH_USER'];
-	$password = $_SERVER['PHP_AUTH_PW'];
+	$username = $_SERVER['PHP_AUTH_USER'];  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$password = $_SERVER['PHP_AUTH_PW'];    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 	return wp_authenticate( $username, $password );
+	// phpcs:enable
 }
 
 /**
