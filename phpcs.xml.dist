@@ -18,9 +18,7 @@
 	<exclude-pattern>/debug-bar-cron/*</exclude-pattern>
 	<exclude-pattern>/http-concat/*</exclude-pattern>
 	<exclude-pattern>/jetpack/*</exclude-pattern>
-	<exclude-pattern>/jetpack-[\d.]+/</exclude-pattern>
 	<exclude-pattern>/lightweight-term-count-update/*</exclude-pattern>
-	<exclude-pattern>/query-monitor/*</exclude-pattern>
 	<exclude-pattern>/rewrite-rules-inspector/*</exclude-pattern>
 	<exclude-pattern>/vip-support/*</exclude-pattern>
 
@@ -30,6 +28,8 @@
 	<exclude-pattern>/bin/*</exclude-pattern>
 	<exclude-pattern>/debug-bar/*</exclude-pattern>
 	<exclude-pattern>/drop-ins/*</exclude-pattern>
+	<exclude-pattern>/jetpack-[\d.]+/</exclude-pattern>
+	<exclude-pattern>/query-monitor/*</exclude-pattern>
 	<exclude-pattern>/search/elasticpress/*</exclude-pattern>
 	<exclude-pattern>/search/debug-bar-elasticpress/*</exclude-pattern>
 	<exclude-pattern>/search/es-wp-query/*</exclude-pattern>
