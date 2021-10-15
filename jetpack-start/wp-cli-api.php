@@ -4,7 +4,7 @@
  * Note: this file requires that WPCOM_VIP_JP_START_API_CLIENT_ID and WPCOM_VIP_JP_START_CLIENT_SECRET and WPCOM_VIP_JP_START_WPCOM_USER_ID are set
  */
 
-class Jetpack_Start_CLI_Command extends WP_CLI_Command {
+class Jetpack_Start_CLI_Command extends WPCOM_VIP_CLI_Command {
 	/**
 	 * Cancel a Jetpack Start subscription for the current site
 	 *
@@ -34,6 +34,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( '-- Failed to cancel plan: %s', $data->get_error_message() ) );
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 		WP_CLI::line( sprintf( '-- Cancelled subscription for site (API response: %s)', var_export( $data, true ) ) );
 
 		$this->disconnect_site();
@@ -143,7 +144,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 		WP_CLI::line( '- Provisioning via Jetpack Start API' );
 
 		$provision_args = array(
-			'user_id' => $user->ID,
+			'user_id'       => $user->ID,
 			'wpcom_user_id' => WPCOM_VIP_JP_START_WPCOM_USER_ID,
 		);
 
@@ -169,6 +170,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			return false;
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 		WP_CLI::line( sprintf( '-- Completed provisioning: %s', var_export( $data, true ) ) );
 
 		// HACK: Jetpack options can get stuck in notoptions, which can lead to a broken state.
@@ -263,13 +265,15 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			);
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 		WP_CLI::line( sprintf( '-- Running bin script: `%s` with args (%s)', $script, var_export( $args, true ) ) );
 
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		exec( $cmd, $script_output, $script_result );
 		$script_output_json = json_decode( end( $script_output ) );
 
 		if ( ! $script_output_json ) {
-			return new WP_Error( 'invalid_output', 'Could not parse script output: ' . var_export( $script_output, true ) );
+			return new WP_Error( 'invalid_output', 'Could not parse script output: ' . join( PHP_EOL, $script_output ) );
 		} elseif ( isset( $script_output_json->error_code ) ) {
 			return new WP_Error( $script_output_json->error_code, $script_output_json->error_message );
 		}
@@ -282,7 +286,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 	 */
 	private function is_vip_connection() {
 		$master_user_email = Jetpack::get_master_user_email();
-		return $master_user_email === WPCOM_VIP_MACHINE_USER_EMAIL;
+		return WPCOM_VIP_MACHINE_USER_EMAIL === $master_user_email;
 	}
 
 	/**
@@ -311,7 +315,7 @@ class Jetpack_Start_CLI_Command extends WP_CLI_Command {
 			return new WP_Error( 'jps-test-fail-empty-body', 'Failed to test connection (empty response body)' );
 		}
 
-		$result = json_decode( $body );
+		$result       = json_decode( $body );
 		$is_connected = (bool) $result->connected;
 		if ( ! $is_connected ) {
 			return new WP_Error( 'jps-not-connected', 'Connection test failed (WP.com does not think this site is connected or there are authentication or other issues.)' );
