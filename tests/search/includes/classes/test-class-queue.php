@@ -804,7 +804,7 @@ class Queue_Test extends WP_UnitTestCase {
 				->method( 'log' )
 				->with(
 					$this->equalTo( 'warning' ),
-					$this->equalTo( 'vip_search_indexing_rate_limiting' ),
+					$this->equalTo( 'search_indexing_rate_limiting' ),
 					$this->equalTo(
 						'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
 					),
@@ -1340,7 +1340,7 @@ class Queue_Test extends WP_UnitTestCase {
 				->method( 'log' )
 				->with(
 					$this->equalTo( 'warning' ),
-					$this->equalTo( 'vip_search_indexing_rate_limiting' ),
+					$this->equalTo( 'search_indexing_rate_limiting' ),
 					$this->equalTo(
 						'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
 					),
