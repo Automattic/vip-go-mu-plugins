@@ -623,14 +623,14 @@ function wpcom_vip_get_meta_desc() {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 
 	$default_settings = array(
-		'length'              => 25,              // amount of length units to use for the meta description
-		'length_unit'         => 'word',     // the length unit can be either "word" or "char"
-		'use_excerpt'         => true,       // if the post/page has an excerpt it will overwrite the generated description if this is set to true
-		'add_category_desc'   => true, // add the category description to category views if this value is true
+		'length'              => 25,        // amount of length units to use for the meta description
+		'length_unit'         => 'word',    // the length unit can be either "word" or "char"
+		'use_excerpt'         => true,      // if the post/page has an excerpt it will overwrite the generated description if this is set to true
+		'add_category_desc'   => true,      // add the category description to category views if this value is true
 		'add_tag_desc'        => true,      // add the category description to category views if this value is true
-		'add_other_desc'      => true,    // add the blog description/tagline to all other pages if this value is true
-		'default_description' => '', // in case no description is defined use this as a default description
-		'custom_field_key'    => '',    // if a custom field key is set we try to use the value of this field as description
+		'add_other_desc'      => true,      // add the blog description/tagline to all other pages if this value is true
+		'default_description' => '',        // in case no description is defined use this as a default description
+		'custom_field_key'    => '',        // if a custom field key is set we try to use the value of this field as description
 	);
 
 	$settings = apply_filters( 'wpcom_vip_meta_desc_settings', $default_settings );
