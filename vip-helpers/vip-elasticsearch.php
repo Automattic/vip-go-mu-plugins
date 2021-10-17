@@ -45,88 +45,89 @@
  * @return bool|string False if WP_Error, otherwise JSON string
  */
 function es_api_search_index( $args ) {
-    if ( class_exists( 'Jetpack' ) ) {
-        $jetpack_blog_id = Jetpack::get_option( 'id' );
-        if ( ! $jetpack_blog_id ) {
-            return array( 'error' => 'Failed to get Jetpack blog_id' );
-        }
+	if ( class_exists( 'Jetpack' ) ) {
+		$jetpack_blog_id = Jetpack::get_option( 'id' );
+		if ( ! $jetpack_blog_id ) {
+			return array( 'error' => 'Failed to get Jetpack blog_id' );
+		}
 
-        $args['blog_id'] = $jetpack_blog_id;
-    }
+		$args['blog_id'] = $jetpack_blog_id;
+	}
 
-    $defaults = array(
-        'blog_id' => get_current_blog_id(),
-    );
+	$defaults = array(
+		'blog_id' => get_current_blog_id(),
+	);
 
-    $args = wp_parse_args( $args, $defaults );
+	$args = wp_parse_args( $args, $defaults );
 
-    $args['blog_id'] = absint( $args['blog_id'] );
+	$args['blog_id'] = absint( $args['blog_id'] );
 
-    $endpoint = sprintf( '/sites/%s/search', $args['blog_id'] );
-    $service_url = 'https://public-api.wordpress.com/rest/v1' . $endpoint;
+	$endpoint    = sprintf( '/sites/%s/search', $args['blog_id'] );
+	$service_url = 'https://public-api.wordpress.com/rest/v1' . $endpoint;
 
-    $do_authenticated_request = false;
-    if ( class_exists( 'Jetpack_Client' )
-            && isset( $args['authenticated_request'] )
-	    && true === $args['authenticated_request'] ) {
-        $do_authenticated_request = true;
-    }
+	$do_authenticated_request = false;
+	if ( class_exists( 'Jetpack_Client' )
+			&& isset( $args['authenticated_request'] )
+		&& true === $args['authenticated_request'] ) {
+		$do_authenticated_request = true;
+	}
 
-    unset( $args['blog_id'] );
-    unset( $args['authenticated_request'] );
+	unset( $args['blog_id'] );
+	unset( $args['authenticated_request'] );
 
-    $request_args = array(
-        'headers' => array(
-            'Content-Type' => 'application/json',
-        ),
-    );
-    $request_body = json_encode( $args );
+	$request_args = array(
+		'headers' => array(
+			'Content-Type' => 'application/json',
+		),
+	);
+	$request_body = wp_json_encode( $args );
 
-    $start_time = microtime( true );
+	$start_time = microtime( true );
 
-    if ( $do_authenticated_request ) {
-      $request_args['method'] = 'POST';
+	if ( $do_authenticated_request ) {
+		$request_args['method'] = 'POST';
 
-      $request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
-    } else {
-      $request_args = array_merge( $request_args, array(
-        'body' => $request_body,
-	    ) );
+		$request = Jetpack_Client::wpcom_json_api_request_as_blog( $endpoint, Jetpack_Client::WPCOM_JSON_API_VERSION, $request_args, $request_body );
+	} else {
+		$request_args = array_merge( $request_args, array(
+			'body' => $request_body,
+		) );
 
-      $request = wp_remote_post( $service_url, $request_args );
-    }
+		$request = wp_remote_post( $service_url, $request_args );
+	}
 
-    $end_time = microtime( true );
+	$end_time = microtime( true );
 
-    if ( is_wp_error( $request ) )
-        return false;
+	if ( is_wp_error( $request ) ) {
+		return false;
+	}
 
-    $response = json_decode( wp_remote_retrieve_body( $request ), true );
+	$response = json_decode( wp_remote_retrieve_body( $request ), true );
 
-    // Rewrite blog id from remote to local id
-    if ( isset( $response['results'] ) && isset( $response['results']['hits'] ) ) {
-        $local_blog_id = get_current_blog_id();
-        foreach ( $response['results']['hits'] as $key => $hit ) {
-            if ( isset( $hit['fields']['blog_id'] ) && $hit['fields']['blog_id'] == $jetpack_blog_id ) {
-                $response['results']['hits'][$key]['fields']['blog_id'] = $local_blog_id;
-            }
-        }
-    }
+	// Rewrite blog id from remote to local id
+	if ( isset( $response['results'] ) && isset( $response['results']['hits'] ) ) {
+		$local_blog_id = get_current_blog_id();
+		foreach ( $response['results']['hits'] as $key => $hit ) {
+			if ( isset( $hit['fields']['blog_id'] ) && $hit['fields']['blog_id'] == $jetpack_blog_id ) {
+				$response['results']['hits'][ $key ]['fields']['blog_id'] = $local_blog_id;
+			}
+		}
+	}
 
-    $took = $response && $response['took'] ? $response['took'] : null;
+	$took = $response && $response['took'] ? $response['took'] : null;
 
-    $queried = array(
-        'args'          => $args,
-        'response'      => $response,
-        'response_code' => wp_remote_retrieve_response_code( $request ),
-        'elapsed_time'  => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
-        'es_time'       => $took,
-        'url'           => $service_url,
+	$queried = array(
+		'args'          => $args,
+		'response'      => $response,
+		'response_code' => wp_remote_retrieve_response_code( $request ),
+		'elapsed_time'  => ( $end_time - $start_time ) * 1000, // Convert from float seconds to ms
+		'es_time'       => $took,
+		'url'           => $service_url,
 	);
 
 	do_action( 'did_vip_elasticsearch_query', $queried );
 
-    return $response;
+	return $response;
 }
 
 // Log all ES queries
@@ -141,6 +142,7 @@ function wpcom_vip_did_elasticsearch_query( $query ) {
 		$wp_elasticsearch_queries_log = array();
 	}
 
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
 	$query['backtrace'] = wp_debug_backtrace_summary();
 
 	$wp_elasticsearch_queries_log[] = $query;
@@ -152,16 +154,16 @@ add_action( 'did_vip_elasticsearch_query', 'wpcom_vip_did_elasticsearch_query' )
  * A wrapper for es_api_search_index() that accepts WP-style args
  *
  * This is a copy/paste, up to date as of WP.com r65003 (Jan 7th, 2013)
+ * Updated Oct 17, 2021: es_api_search_index() no longer accepts the second argument
  *
  * @param array $args
- * @param string $stat_app_name Optional.
  * @return bool|string False if WP_Error, otherwise JSON string
  * @see wpcom_search_api_wp_to_es_args() for details
  */
-function wpcom_search_api_query( $args, $stat_app_name = 'blog-search' ) {
-    $es_query_args = wpcom_search_api_wp_to_es_args( $args );
+function wpcom_search_api_query( $args ) {
+	$es_query_args = wpcom_search_api_wp_to_es_args( $args );
 
-    return es_api_search_index( $es_query_args, $stat_app_name );
+	return es_api_search_index( $es_query_args );
 }
 
 /**
@@ -171,228 +173,233 @@ function wpcom_search_api_query( $args, $stat_app_name = 'blog-search' ) {
  * @return array
  */
 function wpcom_search_api_wp_to_es_args( $args ) {
-    $defaults = array(
-        'blog_id'        => get_current_blog_id(),
+	// phpcs:disable Squiz.PHP.CommentedOutCode.Found
+	$defaults = array(
+		'blog_id'        => get_current_blog_id(),
 
-        'query'          => null,    // Search phrase
-        'query_fields'   => array( 'title', 'content', 'author', 'tag', 'category' ),
+		'query'          => null,    // Search phrase
+		'query_fields'   => array( 'title', 'content', 'author', 'tag', 'category' ),
 
-        'post_type'      => 'post',  // string or an array
-        'terms'          => array(), // ex: array( 'taxonomy-1' => array( 'slug' ), 'taxonomy-2' => array( 'slug-a', 'slug-b' ) )
+		'post_type'      => 'post',  // string or an array
+		'terms'          => array(), // ex: array( 'taxonomy-1' => array( 'slug' ), 'taxonomy-2' => array( 'slug-a', 'slug-b' ) )
 
-        'author'         => null,    // id or an array of ids
-        'author_name'    => array(), // string or an array
+		'author'         => null,    // id or an array of ids
+		'author_name'    => array(), // string or an array
 
-        'date_range'     => null,    // array( 'field' => 'date', 'gt' => 'YYYY-MM-dd', 'lte' => 'YYYY-MM-dd' ); date formats: 'YYYY-MM-dd' or 'YYYY-MM-dd HH:MM:SS'
+		'date_range'     => null,    // array( 'field' => 'date', 'gt' => 'YYYY-MM-dd', 'lte' => 'YYYY-MM-dd' ); date formats: 'YYYY-MM-dd' or 'YYYY-MM-dd HH:MM:SS'
 
-        'orderby'        => null,    // Defaults to 'relevance' if query is set, otherwise 'date'. Pass an array for multiple orders.
-        'order'          => 'DESC',
+		'orderby'        => null,    // Defaults to 'relevance' if query is set, otherwise 'date'. Pass an array for multiple orders.
+		'order'          => 'DESC',
 
-        'posts_per_page' => 10,
-        'offset'         => null,
-        'paged'          => null,
+		'posts_per_page' => 10,
+		'offset'         => null,
+		'paged'          => null,
 
-        /**
-         * Facets. Examples:
-         * array(
-         *     'Tag'       => array( 'type' => 'taxonomy', 'taxonomy' => 'post_tag', 'count' => 10 ) ),
-         *     'Post Type' => array( 'type' => 'post_type', 'count' => 10 ) ),
-         * );
-         */
-        'facets'         => null,
-    );
+		/**
+		 * Facets. Examples:
+		 * array(
+		 *     'Tag'       => array( 'type' => 'taxonomy', 'taxonomy' => 'post_tag', 'count' => 10 ) ),
+		 *     'Post Type' => array( 'type' => 'post_type', 'count' => 10 ) ),
+		 * );
+		 */
+		'facets'         => null,
+	);
 
-    $raw_args = $args; // Keep a copy
+	$args = wp_parse_args( $args, $defaults );
 
-    $args = wp_parse_args( $args, $defaults );
+	$es_query_args = array(
+		'blog_id' => absint( $args['blog_id'] ),
+		'size'    => absint( $args['posts_per_page'] ),
+	);
 
-    $es_query_args = array(
-        'blog_id' => absint( $args['blog_id'] ),
-        'size'    => absint( $args['posts_per_page'] ),
-    );
+	// ES "from" arg (offset)
+	if ( $args['offset'] ) {
+		$es_query_args['from'] = absint( $args['offset'] );
+	} elseif ( $args['paged'] ) {
+		$es_query_args['from'] = max( 0, ( absint( $args['paged'] ) - 1 ) * $es_query_args['size'] );
+	}
 
-    // ES "from" arg (offset)
-    if ( $args['offset'] ) {
-        $es_query_args['from'] = absint( $args['offset'] );
-    } elseif ( $args['paged'] ) {
-        $es_query_args['from'] = max( 0, ( absint( $args['paged'] ) - 1 ) * $es_query_args['size'] );
-    }
+	if ( ! is_array( $args['author_name'] ) ) {
+		$args['author_name'] = array( $args['author_name'] );
+	}
 
-    if ( !is_array( $args['author_name'] ) ) {
-        $args['author_name'] = array( $args['author_name'] );
-    }
+	// ES stores usernames, not IDs, so transform
+	if ( ! empty( $args['author'] ) ) {
+		if ( ! is_array( $args['author'] ) ) {
+			$args['author'] = array( $args['author'] );
+		}
+		foreach ( $args['author'] as $author ) {
+			$user = get_user_by( 'id', $author );
 
-    // ES stores usernames, not IDs, so transform
-    if ( ! empty( $args['author'] ) ) {
-        if ( !is_array( $args['author'] ) )
-            $args['author'] = array( $args['author'] );
-        foreach ( $args['author'] as $author ) {
-            $user = get_user_by( 'id', $author );
+			if ( $user && ! empty( $user->user_login ) ) {
+				$args['author_name'][] = $user->user_login;
+			}
+		}
+	}
 
-            if ( $user && ! empty( $user->user_login ) ) {
-                $args['author_name'][] = $user->user_login;
-            }
-        }
-    }
+	// Build the filters from the query elements.
+	// Filters rock because they are cached from one query to the next
+	// but they are cached as individual filters, rather than all combined together.
+	// May get performance boost by also caching the top level boolean filter too.
+	$filters = array();
 
-    // Build the filters from the query elements.
-    // Filters rock because they are cached from one query to the next
-    // but they are cached as individual filters, rather than all combined together.
-    // May get performance boost by also caching the top level boolean filter too.
-    $filters = array();
+	if ( $args['post_type'] ) {
+		if ( ! is_array( $args['post_type'] ) ) {
+			$args['post_type'] = array( $args['post_type'] );
+		}
+		$filters[] = array( 'terms' => array( 'post_type' => $args['post_type'] ) );
+	}
 
-    if ( $args['post_type'] ) {
-        if ( !is_array( $args['post_type'] ) )
-            $args['post_type'] = array( $args['post_type'] );
-        $filters[] = array( 'terms' => array( 'post_type' => $args['post_type'] ) );
-    }
+	if ( $args['author_name'] ) {
+		$filters[] = array( 'terms' => array( 'author_login' => $args['author_name'] ) );
+	}
 
-    if ( $args['author_name'] ) {
-        $filters[] = array( 'terms' => array( 'author_login' => $args['author_name'] ) );
-    }
+	if ( ! empty( $args['date_range'] ) && isset( $args['date_range']['field'] ) ) {
+		$field = $args['date_range']['field'];
+		unset( $args['date_range']['field'] );
+		$filters[] = array( 'range' => array( $field => $args['date_range'] ) );
+	}
 
-    if ( !empty( $args['date_range'] ) && isset( $args['date_range']['field'] ) ) {
-        $field = $args['date_range']['field'];
-        unset( $args['date_range']['field'] );
-        $filters[] = array( 'range' => array( $field => $args['date_range'] ) );
-    }
+	if ( is_array( $args['terms'] ) ) {
+		foreach ( $args['terms'] as $tax => $terms ) {
+			$terms = (array) $terms;
+			if ( count( $terms ) && mb_strlen( $tax ) ) {
+				switch ( $tax ) {
+					case 'post_tag':
+						$tax_fld = 'tag.slug';
+						break;
+					case 'category':
+						$tax_fld = 'category.slug';
+						break;
+					default:
+						$tax_fld = 'taxonomy.' . $tax . '.slug';
+						break;
+				}
+				foreach ( $terms as $term ) {
+					$filters[] = array( 'term' => array( $tax_fld => $term ) );
+				}
+			}
+		}
+	}
 
-    if ( is_array( $args['terms'] ) ) {
-        foreach ( $args['terms'] as $tax => $terms ) {
-            $terms = (array) $terms;
-            if ( count( $terms ) && mb_strlen( $tax ) ) {
-                switch ( $tax ) {
-                    case 'post_tag':
-                        $tax_fld = 'tag.slug';
-                        break;
-                    case 'category':
-                        $tax_fld = 'category.slug';
-                        break;
-                    default:
-                        $tax_fld = 'taxonomy.' . $tax . '.slug';
-                        break;
-                }
-                foreach ( $terms as $term ) {
-                    $filters[] = array( 'term' => array( $tax_fld => $term ) );
-                }
-            }
-        }
-    }
+	if ( ! empty( $filters ) ) {
+		$es_query_args['filter'] = array( 'and' => $filters );
+	} else {
+		$es_query_args['filter'] = array( 'match_all' => new stdClass() );
+	}
 
-    if ( ! empty( $filters ) ) {
-        $es_query_args['filter'] = array( 'and' => $filters );
-    } else {
-        $es_query_args['filter'] = array( 'match_all' => new stdClass() );
-    }
+	// phpcs:disable WordPress.WP.CapitalPDangit.DeprecatedWhitelistCommentFound
+	// Fill in the query
+	// todo: add auto phrase searching
+	// todo: add fuzzy searching to correct for spelling mistakes
+	// todo: boost title, tag, and category matches
+	if ( $args['query'] ) {
+		$es_query_args['query'] = array(
+			'multi_match' => array(
+				'query'    => $args['query'],
+				'fields'   => $args['query_fields'],
+				'operator' => 'and',
+				'type'     => 'cross_fields',
+			),
+		);
 
-    // Fill in the query
-    //  todo: add auto phrase searching
-    //  todo: add fuzzy searching to correct for spelling mistakes
-    //  todo: boost title, tag, and category matches
-    if ( $args['query'] ) {
-        $es_query_args['query'] = array( 'multi_match' => array(
-            'query'  => $args['query'],
-            'fields' => $args['query_fields'],
-            'operator'  => 'and',
-            'type'  => 'cross_fields',
-        ) );
+		if ( ! $args['orderby'] ) {
+			$args['orderby'] = array( 'relevance' );
+		}
+	} else {
+		if ( ! $args['orderby'] ) {
+			$args['orderby'] = array( 'date' );
+		}
+	}
 
-        if ( ! $args['orderby'] ) {
-            $args['orderby'] = array( 'relevance' );
-        }
-    } else {
-        if ( ! $args['orderby'] ) {
-            $args['orderby'] = array( 'date' );
-        }
-    }
+	// Validate the "order" field
+	switch ( strtolower( $args['order'] ) ) {
+		case 'asc':
+			$args['order'] = 'asc';
+			break;
+		case 'desc':
+		default:
+			$args['order'] = 'desc';
+			break;
+	}
 
-    // Validate the "order" field
-    switch ( strtolower( $args['order'] ) ) {
-        case 'asc':
-            $args['order'] = 'asc';
-            break;
-        case 'desc':
-        default:
-            $args['order'] = 'desc';
-            break;
-    }
-
-    $es_query_args['sort'] = array();
-    foreach ( (array) $args['orderby'] as $orderby ) {
-        // Translate orderby from WP field to ES field
-        // todo: add support for sorting by title, num likes, num comments, num views, etc
-        switch ( $orderby ) {
-            case 'relevance' :
-                $es_query_args['sort'][] = array( '_score' => array( 'order' => $args['order'] ) );
-                break;
-            case 'date' :
-                $es_query_args['sort'][] = array( 'date' => array( 'order' => $args['order'] ) );
-                break;
-            case 'ID' :
-                $es_query_args['sort'][] = array( 'id' => array( 'order' => $args['order'] ) );
-                break;
-            case 'author' :
-                $es_query_args['sort'][] = array( 'author.raw' => array( 'order' => $args['order'] ) );
-                break;
-        }
-    }
-    if ( empty( $es_query_args['sort'] ) )
-        unset( $es_query_args['sort'] );
+	$es_query_args['sort'] = array();
+	foreach ( (array) $args['orderby'] as $orderby ) {
+		// Translate orderby from WP field to ES field
+		// todo: add support for sorting by title, num likes, num comments, num views, etc
+		switch ( $orderby ) {
+			case 'relevance':
+				$es_query_args['sort'][] = array( '_score' => array( 'order' => $args['order'] ) );
+				break;
+			case 'date':
+				$es_query_args['sort'][] = array( 'date' => array( 'order' => $args['order'] ) );
+				break;
+			case 'ID':
+				$es_query_args['sort'][] = array( 'id' => array( 'order' => $args['order'] ) );
+				break;
+			case 'author':
+				$es_query_args['sort'][] = array( 'author.raw' => array( 'order' => $args['order'] ) );
+				break;
+		}
+	}
+	if ( empty( $es_query_args['sort'] ) ) {
+		unset( $es_query_args['sort'] );
+	}
 
 	// Facets. Deprecated in favor of Aggregations. Code is very similar, but left in place for backwards compatibility
 	// while things are migrated over. Should be removed once everything is running > 2.x
-    if ( ! empty( $args['facets'] ) ) {
-        foreach ( (array) $args['facets'] as $label => $facet ) {
-            switch ( $facet['type'] ) {
+	if ( ! empty( $args['facets'] ) ) {
+		foreach ( (array) $args['facets'] as $label => $facet ) {
+			switch ( $facet['type'] ) {
 
-                case 'taxonomy':
-                    switch ( $facet['taxonomy'] ) {
+				case 'taxonomy':
+					switch ( $facet['taxonomy'] ) {
 
-                        case 'post_tag':
-                            $field = 'tag';
-                            break;
+						case 'post_tag':
+							$field = 'tag';
+							break;
 
-                        case 'category':
-                            $field = 'category';
-                            break;
+						case 'category':
+							$field = 'category';
+							break;
 
-                        default:
-                            $field = 'taxonomy.' . $facet['taxonomy'];
-                            break;
-                    } // switch $facet['taxonomy']
+						default:
+							$field = 'taxonomy.' . $facet['taxonomy'];
+							break;
+					} // switch $facet['taxonomy']
 
-                    $es_query_args['facets'][$label] = array(
-                        'terms' => array(
-                            'field' => $field . '.slug',
-                            'size' => $facet['count'],
-                        ),
-                    );
+					$es_query_args['facets'][ $label ] = array(
+						'terms' => array(
+							'field' => $field . '.slug',
+							'size'  => $facet['count'],
+						),
+					);
 
-                    break;
+					break;
 
-                case 'post_type':
-                    $es_query_args['facets'][$label] = array(
-                        'terms' => array(
-                            'field' => 'post_type',
-                            'size' => $facet['count'],
-                        ),
-                    );
+				case 'post_type':
+					$es_query_args['facets'][ $label ] = array(
+						'terms' => array(
+							'field' => 'post_type',
+							'size'  => $facet['count'],
+						),
+					);
 
-                    break;
+					break;
 
-                case 'date_histogram':
-                    $es_query_args['facets'][$label] = array(
-                        'date_histogram' => array(
-                            'interval' => $facet['interval'],
-                            'field'    => ( ! empty( $facet['field'] ) && 'post_date_gmt' == $facet['field'] ) ? 'date_gmt' : 'date',
-                            'size'     => $facet['count'],
-                        ),
-                    );
+				case 'date_histogram':
+					$es_query_args['facets'][ $label ] = array(
+						'date_histogram' => array(
+							'interval' => $facet['interval'],
+							'field'    => ( ! empty( $facet['field'] ) && 'post_date_gmt' == $facet['field'] ) ? 'date_gmt' : 'date',
+							'size'     => $facet['count'],
+						),
+					);
 
-                    break;
-            }
-        }
-    }
+					break;
+			}
+		}
+	}
 
 	// Aggregations
 	if ( ! empty( $args['aggregations'] ) ) {
@@ -420,7 +427,7 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 					$es_query_args['aggregations'][ $label ] = array(
 						'terms' => array(
 							'field' => $field . '.slug',
-							'size' => min( (int) $aggregation['count'], $max_aggregations_count ),
+							'size'  => min( (int) $aggregation['count'], $max_aggregations_count ),
 						),
 					);
 
@@ -430,7 +437,7 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 					$es_query_args['aggregations'][ $label ] = array(
 						'terms' => array(
 							'field' => 'post_type',
-							'size' => min( (int) $aggregation['count'], $max_aggregations_count ),
+							'size'  => min( (int) $aggregation['count'], $max_aggregations_count ),
 						),
 					);
 
@@ -450,4 +457,5 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 	}
 
 	return $es_query_args;
+	// phpcs:enable
 }
