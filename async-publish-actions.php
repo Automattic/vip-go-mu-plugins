@@ -57,7 +57,7 @@ function _wpcom_do_async_transition_post_status( $post_id, $new_status, $old_sta
 	$post = get_post( $post_id );
 
 	// If post status has changed since this was queued, abort and let the next event handle this post.
-	if ( $new_status !== get_post_status( $post ) ) {
+	if ( get_post_status( $post ) !== $new_status ) {
 		return;
 	}
 

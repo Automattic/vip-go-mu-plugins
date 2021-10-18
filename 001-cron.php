@@ -1,12 +1,12 @@
 <?php
 /*
- Plugin Name: Cron Control
- Plugin URI:
- Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
- Author: Erick Hitter, Automattic
- Version: 2.0
- Text Domain: automattic-cron-control
- */
+Plugin Name: Cron Control
+Plugin URI:
+Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
+Author: Erick Hitter, Automattic
+Version: 2.0
+Text Domain: automattic-cron-control
+*/
 
 /**
  * Determine if Cron Control is called for
@@ -46,13 +46,15 @@ function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
 		return $allowed;
 	}
 
-	$base_path = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
+	$base_path      = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
+	$request_uri    = $_SERVER['REQUEST_URI'] ?? '';        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
+	$request_method = $_SERVER['REQUEST_METHOD'] ?? '';     // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
 
-	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+	if ( 0 === strpos( $request_uri, $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $request_method ) {
 		return true;
 	}
 
-	if ( 0 === strpos( $_SERVER['REQUEST_URI'], $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN ) && 'PUT' === $_SERVER['REQUEST_METHOD'] ) {
+	if ( 0 === strpos( $request_uri, $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN ) && 'PUT' === $request_method ) {
 		return true;
 	}
 
@@ -87,6 +89,7 @@ function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
 		wpcom_vip_cron_control_event_object_to_string( $event ),
 		$error->getTraceAsString()
 	);
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	error_log( $message );
 }
 
@@ -98,6 +101,7 @@ function wpcom_vip_log_cron_control_event_for_caught_error( $event, $error ) {
 function wpcom_vip_log_cron_control_event_object( $event ) {
 	$message  = 'Cron Control Uncaught Error - ';
 	$message .= wpcom_vip_cron_control_event_object_to_string( $event );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	error_log( $message );
 }
 

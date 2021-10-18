@@ -12,7 +12,7 @@ namespace Automattic\VIP\Stats;
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
-	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999, 2 );
+	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999 );
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
@@ -30,21 +30,15 @@ function track_publish_post( $new_status, $old_status ) {
 		return;
 	}
 
-	$pixel = add_query_arg( array(
-		'v'                     => 'wpcom-no-pv',
-		'x_vip-go-publish-post' => FILES_CLIENT_SITE_ID,
-	), 'http://pixel.wp.com/b.gif' );
-
-	wp_remote_get( $pixel, array(
-		'blocking' => false,
-		'timeout'  => 1,
-	) );
+	send_pixel([
+		'vip-go-publish-post' => FILES_CLIENT_SITE_ID,
+	]);
 }
 
 /**
  * Count uploaded files
  */
-function handle_file_upload( $upload, $context = 'upload' ) {
+function handle_file_upload( $upload ) {
 	track_file_upload();
 
 	return $upload;
@@ -63,10 +57,10 @@ function track_file_upload() {
 	$stat_group = $using_streams ? 'stream' : 'a8c-files';
 
 	send_pixel( [
-		'vip-go-file-upload-via' => $stat_group,
-		'vip-go-file-upload-by-site' => FILES_CLIENT_SITE_ID,
+		'vip-go-file-upload-via'         => $stat_group,
+		'vip-go-file-upload-by-site'     => FILES_CLIENT_SITE_ID,
 		'vip-go-file-upload-by-site-via' => sprintf( '%s_%s', FILES_CLIENT_SITE_ID, $stat_group ),
-		'vip-go-file-action' => 'upload',
+		'vip-go-file-action'             => 'upload',
 	] );
 }
 
@@ -108,10 +102,10 @@ function track_file_delete() {
 	$stat_group = $using_streams ? 'stream' : 'a8c-files';
 
 	send_pixel( [
-		'vip-go-file-delete-via' => $stat_group,
-		'vip-go-file-delete-by-site' => FILES_CLIENT_SITE_ID,
+		'vip-go-file-delete-via'         => $stat_group,
+		'vip-go-file-delete-by-site'     => FILES_CLIENT_SITE_ID,
 		'vip-go-file-delete-by-site-via' => sprintf( '%s_%s', FILES_CLIENT_SITE_ID, $stat_group ),
-		'vip-go-file-action' => 'delete',
+		'vip-go-file-action'             => 'delete',
 	] );
 }
 
@@ -129,6 +123,7 @@ function send_pixel( $stats ) {
 
 	$pixel = add_query_arg( $query_args, 'http://pixel.wp.com/b.gif' );
 
+	// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get
 	wp_remote_get( $pixel, array(
 		'blocking' => false,
 		'timeout'  => 1,
