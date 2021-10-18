@@ -230,7 +230,7 @@ class Versioning {
 					\Automattic\VIP\Logstash\log2logstash(
 						array(
 							'severity' => 'warning',
-							'feature'  => 'vip_search_versioning',
+							'feature'  => 'search_versioning',
 							'message'  => $message,
 						)
 					);
