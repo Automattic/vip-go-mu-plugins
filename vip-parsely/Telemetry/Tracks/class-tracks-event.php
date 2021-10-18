@@ -26,17 +26,14 @@ class Tracks_Event {
 	/**
 	 * Jetpack_Tracks_Event constructor.
 	 *
-	 * @param object $event Tracks event.
+	 * @param array $event Tracks event.
 	 */
-	public function __construct( $event ) {
+	public function __construct( array $event ) {
 		$_event = self::validate_and_sanitize( $event );
 		if ( is_wp_error( $_event ) ) {
+			// Execution should be aborted if an error is found. We don't have an explicit return
+			// since there is no more code after this statement.
 			$this->error = $_event;
-			return;
-		}
-
-		foreach ( $_event as $key => $value ) {
-			$this->{$key} = $value;
 		}
 	}
 
@@ -92,10 +89,10 @@ class Tracks_Event {
 	/**
 	 * Annotate the event with all relevant info.
 	 *
-	 * @param  mixed $event Object or (flat) array.
+	 * @param  array $event Object or (flat) array.
 	 * @return mixed        The transformed event array or WP_Error on failure.
 	 */
-	protected static function validate_and_sanitize( $event ) {
+	protected static function validate_and_sanitize( array $event ) {
 		// The rest of this process expects an object. Cast it!
 		$_event = (object) $event;
 
@@ -120,9 +117,7 @@ class Tracks_Event {
 			return new WP_Error( 'empty_ui', 'Could not determine user identity and type', 400 );
 		}
 
-		$_event = self::annotate_with_env_props( $_event );
-
-		return $_event;
+		return self::annotate_with_env_props( $_event );
 	}
 
 	/**
