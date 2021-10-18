@@ -70,8 +70,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function view( $args, $assoc_args ) {
 
-		$key = $args[0] ?? 'latest';
-		$names_only = WP_CLI\Utils\get_flag_value(
+		$key          = $args[0] ?? 'latest';
+		$names_only   = WP_CLI\Utils\get_flag_value(
 			$assoc_args,
 			'names-only',
 			false
@@ -113,7 +113,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 	public function restore( $args, $assoc_args ) {
 
 		global $wpdb;
-		$key = $args[0] ?? 'latest';
+		$key       = $args[0] ?? 'latest';
 		$show_diff = WP_CLI\Utils\get_flag_value(
 			$assoc_args,
 			'diff',
@@ -204,11 +204,9 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 
 		if ( 'latest' === $key ) {
-			$date   = gmdate( 'Y-m-d H:i:s', array_key_last( $backup_roles ) );
 			$backup = array_pop( $backup_roles );
 		} else {
 			if ( isset( $backup_roles[ $key ] ) ) {
-				$date   = gmdate( 'Y-m-d H:i:s', $key );
 				$backup = $backup_roles[ $key ];
 			} else {
 				\WP_CLI::error( 'Specified backup time_key not found.' );

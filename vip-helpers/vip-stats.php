@@ -38,15 +38,17 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
 			'end'   => $end_date,
 		);
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.stats_get_csv_stats_get_csv
 		$posts = stats_get_csv( 'postviews', $args );
 	} else {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		trigger_error( 'Cannot call wpcom_vip_top_posts_array() without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
 		return array();
 	}
 
 	foreach ( $posts as & $post ) {
-		$post['post_id']        = absint( $post['post_id'] );
-		$post['views']          = absint( $post['views'] );
+		$post['post_id'] = absint( $post['post_id'] );
+		$post['views']   = absint( $post['views'] );
 	}
 	$posts = array_slice( $posts, 0, $limit );
 	return $posts;
@@ -89,11 +91,13 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 		$views = wp_cache_get( $cache_key, 'vip_stats' );
 
 		if ( false === $views ) {
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.stats_get_csv_stats_get_csv
 			$posts = stats_get_csv( 'postviews', $args );
 			$views = $posts[0]['views'] ?? 0;
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
 		}
 	} else {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		trigger_error( 'Cannot call wpcom_vip_get_post_pageviews() without both Jetpack and the Jetpack Stats module active.', E_USER_WARNING );
 		return 0;
 	}

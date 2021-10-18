@@ -13,18 +13,19 @@ class VIP_Suspend_Cache_Invalidation {
 		add_action( 'edited_term_taxonomy', array( $this, 'edited_term_taxonomy_action' ), 10, 2 );
 
 		// Re-enable cache invalidation once the cache clearing code has been bypassed
-		add_action( 'edit_term', array( $this, 'edit_term_action' ), 10, 3 );
+		add_action( 'edit_term', array( $this, 'edit_term_action' ) );
 
 		add_action( 'wpcom_vip_clean_tax_relations_cache', array( $this, 'cron_action' ), 10, 2 );
 	}
 
 	/**
-	* WP Cron even for purging object cache in batches
-	*/
-	function cron_action( $tt_id, $taxonomy ) {
+	 * WP Cron even for purging object cache in batches
+	 */
+	public function cron_action( $tt_id, $taxonomy ) {
 
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$objects = $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
 
 		$tax_object = get_taxonomy( $taxonomy );
@@ -48,15 +49,16 @@ class VIP_Suspend_Cache_Invalidation {
 			return;
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$objects = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
 
 		//no action needed if there is less that $limimt number of objects to purge
-    	if ( intval( $objects ) < $this->limit ) {
+		if ( intval( $objects ) < $this->limit ) {
 			return;
-    	}
+		}
 
 		// Make sure we're in `wp_update_term` - the only place we want this to happen
-		$backtrace = wp_debug_backtrace_summary( null, null, false );
+		$backtrace = wp_debug_backtrace_summary( null, null, false );   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
 
 		if ( ! in_array( 'wp_update_term', $backtrace ) ) {
 			return;
@@ -75,7 +77,7 @@ class VIP_Suspend_Cache_Invalidation {
 	 * Restores cache invalidation, after the slow term relationship cache invalidation
 	 * has been skipped
 	 */
-	public function edit_term_action( $term_id, $tt_id, $taxonomy ) {
+	public function edit_term_action() {
 
 		// `edit_term` is only called from inside `wp_update_term`, so the backtrace
 		// check is not required
