@@ -6,7 +6,7 @@
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
-require_once( __DIR__ . '/lib/utils/class-alerts.php' );
+require_once __DIR__ . '/lib/utils/class-alerts.php';
 use Automattic\VIP\Utils\Alerts;
 
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
@@ -26,13 +26,14 @@ function wpcom_vip_sanity_check_alloptions() {
 	$alloptions_size_warn = MB_IN_BYTES * 1.5;
 
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
-	$alloptions_size_die  = MB_IN_BYTES * 4;
+	$alloptions_size_die = MB_IN_BYTES * 4;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
 	// Cache miss
 	if ( false === $alloptions_size ) {
-		$alloptions = serialize( wp_load_alloptions() );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		$alloptions      = serialize( wp_load_alloptions() );
 		$alloptions_size = strlen( $alloptions );
 
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
@@ -74,6 +75,7 @@ function wpcom_vip_sanity_check_alloptions_die( &$alloptions ) {
 	// 503 Service Unavailable - prevent caching, indexing, etc and alert Varnish of the problem
 	http_response_code( 503 );
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- no need to escape the premade HTML file
 	echo file_get_contents( __DIR__ . '/errors/alloptions-limit.html' );
 
 	exit;
@@ -108,29 +110,27 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 	$opsgenie_alert_level = 'P4';
 	if ( $blocked ) {
-		$msg = "This site is now BLOCKED from loading until option sizes are under control.";
+		$msg = 'This site is now BLOCKED from loading until option sizes are under control.';
 
 		// If site is blocked, then the IRC alert is CRITICAL
-		$irc_alert_level = 3;
+		$irc_alert_level      = 3;
 		$opsgenie_alert_level = 'P3';
 	} else {
-		$msg = "Site will be blocked from loading if option sizes get too much bigger.";
+		$msg = 'Site will be blocked from loading if option sizes get too much bigger.';
 	}
 
 	$msg .= "\n\nDebug information can be found in the Fieldguide";
 
-	$is_vip_env    = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
-	$environment   = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
-	$site_id       = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
+	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
+	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
+	$site_id     = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
 
 	// Send notices to VIP staff if this is happening on VIP-hosted sites
 	if ( $is_vip_env && $site_id ) {
 		/** silence alerts on selected sites due to known issues **/
 
 		// Array of VIP Go site IDs to silence alerts on
-		$vip_alerts_blocked = array(
-
-		);
+		$vip_alerts_blocked = array();
 
 		if ( in_array( $site_id, $vip_alerts_blocked, true ) ) {
 			return;
@@ -185,6 +185,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		if ( $email_recipient ) {
 			$size = size_format( $size );
 
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
 			wp_mail( $email_recipient, $subject, "Alloptions size when serialized: $size\n\n$msg" );
 		}
 	}

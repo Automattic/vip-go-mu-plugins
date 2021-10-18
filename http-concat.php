@@ -13,8 +13,9 @@ if ( ! defined( 'VIP_GO_ENABLE_HTTP_CONCAT' ) ) {
 
 if ( true === VIP_GO_ENABLE_HTTP_CONCAT ) {
 	// Activate concatenation
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
-		require __DIR__ .'/http-concat/jsconcat.php';
+		require __DIR__ . '/http-concat/jsconcat.php';
 
 		add_filter( 'js_do_concat', function( $do_concat, $handle ) {
 			// Retain < 5.0 behaviour for tinyMCE scripts.
@@ -31,7 +32,8 @@ if ( true === VIP_GO_ENABLE_HTTP_CONCAT ) {
 		}, 10, 2 );
 	}
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ! isset( $_GET['concat_css'] ) || 'yes' === $_GET['concat_css'] ) {
-		require __DIR__ .'/http-concat/cssconcat.php';
+		require __DIR__ . '/http-concat/cssconcat.php';
 	}
 }

@@ -7,7 +7,7 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
-require_once( __DIR__ . '/001-core/privacy.php' );
+require_once __DIR__ . '/001-core/privacy.php';
 
 /**
  * Disable current theme validation
@@ -130,6 +130,7 @@ function vip_prevent_invalid_core_query_args() {
 		return;
 	}
 
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	if ( isset( $_GET['name'] ) && ! is_string( $_GET['name'] ) ) {
 		unset( $_GET['name'] );
 	}
@@ -137,6 +138,7 @@ function vip_prevent_invalid_core_query_args() {
 	if ( isset( $_GET['pagename'] ) && ! is_string( $_GET['pagename'] ) ) {
 		unset( $_GET['pagename'] );
 	}
+	// phpcs:enable
 }
 
 add_action( 'wp_loaded', 'vip_prevent_invalid_core_query_args', 1 );
