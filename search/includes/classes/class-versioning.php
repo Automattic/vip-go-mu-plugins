@@ -889,7 +889,7 @@ class Versioning {
 				\Automattic\VIP\Logstash\log2logstash(
 					array(
 						'severity' => 'info',
-						'feature'  => 'vip_search_versioning',
+						'feature'  => 'search_versioning',
 						'message'  => $message,
 						'extra'    => $versions,
 					)
