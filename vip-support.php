@@ -7,4 +7,4 @@
  * License:      GPLv2 or later
  */
 
-require_once( __DIR__ . '/vip-support/vip-support.php' );
+require_once __DIR__ . '/vip-support/vip-support.php';

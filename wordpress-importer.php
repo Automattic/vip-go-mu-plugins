@@ -11,7 +11,7 @@ Text Domain:wordpress-importer
 License: GPL version 2 or later - https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-require( __DIR__ . '/wordpress-importer/wordpress-importer.php' );
+require __DIR__ . '/wordpress-importer/wordpress-importer.php';
 
 add_action( 'import_start', function() {
 	if ( ! defined( 'WP_IMPORTING' ) || ! WP_IMPORTING ) {

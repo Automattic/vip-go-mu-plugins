@@ -2,17 +2,15 @@
 
 namespace Automattic\VIP\Blog_Public;
 
-if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-	if ( 'production' === VIP_GO_APP_ENVIRONMENT ) {
-		return;
-	}
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) {
+	return;
 }
 
 /**
  * Notice for blog_public value
  */
 function notice() {
-	$home_url_parsed = parse_url( home_url() );
+	$home_url_parsed = wp_parse_url( home_url() );
 	if (
 		! current_user_can( 'manage_options' ) ||
 		get_option( 'blogpublic_notice_dismissed', false ) ||
@@ -70,9 +68,9 @@ add_action( 'wp_ajax_blogpublic_notice_dismiss', __NAMESPACE__ . '\dismiss_callb
  * If blog_public is being updated to 1
  * remove 'dismiss' flag to reshow the notice
  */
-function reset_notice_dismissal( $old_value, $value, $option ) {
+function reset_notice_dismissal( $old_value, $value ) {
 	if ( ( '0' === $old_value || 0 === $old_value ) && 1 === $value ) {
 		delete_option( 'blogpublic_notice_dismissed' );
 	}
 }
-add_action( 'update_option_blog_public', __NAMESPACE__ . '\reset_notice_dismissal', 10, 3 );
+add_action( 'update_option_blog_public', __NAMESPACE__ . '\reset_notice_dismissal', 10, 2 );
