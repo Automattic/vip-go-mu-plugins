@@ -488,6 +488,27 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 }
 
 /**
+ * Internal helper function to log request failure.
+ * 
+ * @param string $url
+ * @param WP_Error|array|false $response
+ * @return void
+ * @global int $blog_id
+ * @internal
+ */
+function _wpcom_log_failed_request( $url, $response ): void {
+	global $blog_id;
+
+	if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
+		if ( $response && ! is_wp_error( $response ) ) {
+			error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for {$url} and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
+		} elseif ( $response ) { // is WP_Error object
+			error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for {$url} and the result was: " . $response->get_error_message() );
+		}
+	}
+}
+
+/**
  * Fetch a remote URL and cache the result for a certain period of time.
  *
  * This function originally used file_get_contents(), hence the function name.
@@ -508,8 +529,6 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
  * @return string The remote file's contents (cached)
  */
 function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $extra_args = array() ) {
-	global $blog_id;
-
 	$extra_args_defaults = array(
 		'obey_cache_control_header' => true, // Uses the "cache-control" "max-age" value if greater than $cache_time
 		'http_api_args'             => array(), // See http://codex.wordpress.org/Function_API/wp_remote_get
@@ -616,25 +635,14 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		}
 
 		if ( $content ) {
-			if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-				if ( $response && ! is_wp_error( $response ) ) {
-					error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-				} elseif ( $response ) { // is WP_Error object
-					error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-				}
-			}
+			_wpcom_log_failed_request( $url, $response );
 		} elseif ( $response ) {
 			// We were unable to fetch any content, so don't try again for another 60 seconds
 			wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
 	
 			// If a remote request failed, log why it did
-			if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-				if ( $response && ! is_wp_error( $response ) ) {
-					error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-				} elseif ( $response ) { // is WP_Error object
-					error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-				}
-			}
+			_wpcom_log_failed_request( $url, $response );
+
 			// So we can hook in other places and do stuff
 			do_action( 'wpcom_vip_remote_request_error', $url, $response );
 		}
