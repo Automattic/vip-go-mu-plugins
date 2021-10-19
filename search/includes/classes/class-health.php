@@ -399,7 +399,7 @@ class Health {
 	 * : Optional last post id to check
 	 *
 	 * [batch_size=<int>]
-	 * : Optional batch size
+	 * : Optional batch size (max is 5000)
 	 *
 	 * [max_diff_size=<int>]
 	 * : Optional max count of diff before exiting
@@ -446,7 +446,7 @@ class Health {
 		if ( ! is_numeric( $batch_size ) || 0 >= $batch_size || $batch_size > PHP_INT_MAX ) {
 			$batch_size = self::CONTENT_VALIDATION_BATCH_SIZE;
 		} else {
-			$batch_size = intval( $batch_size );
+			$batch_size = min( 5000, intval( $batch_size ) );
 		}
 
 		// If max diff size NOT an int over 0, reset to default
