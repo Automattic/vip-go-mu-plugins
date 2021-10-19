@@ -36,7 +36,7 @@ if ( ! defined( 'VAULTPRESS_TIMEOUT' ) ) {
 	define( 'VAULTPRESS_TIMEOUT', 10 );
 }
 
-add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $file_content ) {
+add_filter( 'pre_scan_file', function( $should_skip_file, $file ) {
 	foreach ( VIP_VAULTPRESS_SKIP_FILES as $vp_skip_file ) {
 		if ( wp_endswith( $file, $vp_skip_file ) ) {
 			return true;
@@ -44,9 +44,9 @@ add_filter( 'pre_scan_file', function( $should_skip_file, $file, $real_file, $fi
 	}
 
 	return $should_skip_file;
-}, 10, 4 );
+}, 10, 2 );
 
-require_once( __DIR__ . '/vaultpress/vaultpress.php' );
+require_once __DIR__ . '/vaultpress/vaultpress.php';
 
 add_filter( 'in_admin_header', 'vip_remove_vaultpress_connect_notice' );
 

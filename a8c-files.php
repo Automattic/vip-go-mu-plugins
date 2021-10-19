@@ -7,32 +7,34 @@ Version: 0.2
 Author URI: http://automattic.com/
 */
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
+
 /* Requires at least: 3.9.0
  * due to the dependancy on the filter 'wp_insert_attachment_data'
  * used to catch imports and push the files to the VIP MogileFS service
  */
 
-if ( ! defined( 'FILE_SERVICE_ENDPOINT' ) )
+if ( ! defined( 'FILE_SERVICE_ENDPOINT' ) ) {
 	define( 'FILE_SERVICE_ENDPOINT', 'files.vipv2.net' );
+}
 
 define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
 define( 'ALLOW_UNFILTERED_UPLOADS', false );
 
-require_once( __DIR__ . '/files/class-path-utils.php' );
+require_once __DIR__ . '/files/class-path-utils.php';
 
-require_once( __DIR__ . '/files/init-filesystem.php' );
+require_once __DIR__ . '/files/init-filesystem.php';
 
-require_once( __DIR__ . '/files/class-vip-filesystem.php' );
+require_once __DIR__ . '/files/class-vip-filesystem.php';
 
-require_once( __DIR__ . '/files/acl/acl.php' );
+require_once __DIR__ . '/files/acl/acl.php';
 
 /**
  * The class use to update attachment meta data
  */
 require_once __DIR__ . '/files/class-meta-updater.php';
 
-use Automattic\VIP\Files\Path_Utils;
 use Automattic\VIP\Files\VIP_Filesystem;
 use Automattic\VIP\Files\Meta_Updater;
 
@@ -61,11 +63,11 @@ class A8C_Files {
 	 */
 	const OPT_MAX_POST_ID = 'vip_attachment_max_post_id_v2';
 
-	function __construct() {
+	public function __construct() {
 
 		// Upload size limit is 1GB
 		add_filter( 'upload_size_limit', function() {
-			return 1073741824; // pow( 2, 30 )
+			return 1073741824; // 2^30
 		});
 
 		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
@@ -77,15 +79,17 @@ class A8C_Files {
 		add_action( 'init', array( $this, 'init_photon' ) );
 
 		// ensure we always upload with year month folder layouts
-		add_filter( 'pre_option_uploads_use_yearmonth_folders', function( $arg ) { return '1'; } );
+		add_filter( 'pre_option_uploads_use_yearmonth_folders', function() {
+			return '1';
+		} );
 
 		// ensure the correct upload URL is used even after switch_to_blog is called
-		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ), 10, 2 );
+		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ) );
 
 		// Conditionally schedule the attachment filesize metaata update job
 		if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
 			// add new cron schedule for filesize update
-			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 );
+			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 
 			// Schedule meta update job
 			$this->schedule_update_job();
@@ -100,7 +104,7 @@ class A8C_Files {
 		$vip_filesystem->run();
 	}
 
-	function init_photon() {
+	public function init_photon() {
 		// Limit to certain contexts for the initial testing and roll-out.
 		// This will be phased out and become the default eventually.
 		$use_jetpack_photon = $this->use_jetpack_photon();
@@ -113,6 +117,7 @@ class A8C_Files {
 
 	private function init_jetpack_photon_filters() {
 		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
 			return;
 		}
@@ -127,13 +132,13 @@ class A8C_Files {
 		add_filter( 'jetpack_photon_development_mode', '__return_false', 9999 );
 
 		if ( false === is_vip_go_srcset_enabled() ) {
-			add_filter( 'wp_get_attachment_metadata', function ( $data, $post_id ) {
+			add_filter( 'wp_get_attachment_metadata', function ( $data ) {
 				if ( isset( $data['sizes'] ) ) {
 					$data['sizes'] = array();
 				}
 
 				return $data;
-			}, 10, 2 );
+			} );
 		}
 
 		// This is our catch-all to strip dimensions from intermediate images in content.
@@ -164,10 +169,11 @@ class A8C_Files {
 	}
 
 	private function use_jetpack_photon() {
-		if (  defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
+		if ( defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
 			return true;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
 		if ( isset( $_GET['jetpack-photon'] ) && 'yes' === $_GET['jetpack-photon'] ) {
 			return true;
 		}
@@ -175,14 +181,13 @@ class A8C_Files {
 		return false;
 	}
 
-	public function upload_url_path( $upload_url_path, $option ) {
+	public function upload_url_path( $upload_url_path ) {
 		// No modifications needed outside multisite
-		if ( false === is_multisite() ) {
-			return $upload_url_path;
+		if ( false !== is_multisite() ) {
+			// Change the upload url path to site's URL + wp-content/uploads without trailing slash
+			// Related core code: https://core.trac.wordpress.org/browser/tags/4.6.1/src/wp-includes/functions.php#L1929
+			$upload_url_path = untrailingslashit( get_site_url( null, 'wp-content/uploads' ) );
 		}
-		// Change the upload url path to site's URL + wp-content/uploads without trailing slash
-		// Related core code: https://core.trac.wordpress.org/browser/tags/4.6.1/src/wp-includes/functions.php#L1929
-		$upload_url_path = untrailingslashit( get_site_url( null, 'wp-content/uploads' ) );
 
 		return $upload_url_path;
 	}
@@ -196,7 +201,7 @@ class A8C_Files {
 	 * @return bool|array False on failure, array on success.
 	 * @see image_downsize()
 	 */
-	function image_resize( $ignore, $id, $size ) {
+	public function image_resize( $ignore, $id, $size ) {
 		global $_wp_additional_image_sizes, $post;
 
 		// Don't bother resizing non-image (and non-existent) attachment.
@@ -207,17 +212,14 @@ class A8C_Files {
 		}
 
 		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
-		$crop = false;
-		$args = array();
+		$crop          = false;
+		$args          = array();
 
 		// For resize requests coming from an image's attachment page, override
 		// the supplied $size and use the user-defined $content_width if the
 		// theme-defined $content_width has been manually passed in.
 		if ( is_attachment() && $id === $post->ID ) {
-			if ( is_array( $size )
-				 && ! empty ( $size )
-				 && isset( $GLOBALS['content_width'] )
-				 && $size[0] == $GLOBALS['content_width'] ) {
+			if ( is_array( $size ) && ! empty( $size ) && isset( $GLOBALS['content_width'] ) && $size[0] == $GLOBALS['content_width'] ) {
 				$size = array( $content_width, $content_width );
 			}
 		}
@@ -228,29 +230,34 @@ class A8C_Files {
 		} elseif ( 'thumbnail' == $size ) {
 			$_max_w = get_option( 'thumbnail_size_w' );
 			$_max_h = get_option( 'thumbnail_size_h' );
-			if ( !$_max_w && !$_max_h ) {
+			if ( ! $_max_w && ! $_max_h ) {
 				$_max_w = 128;
 				$_max_h = 96;
 			}
-			if ( get_option( 'thumbnail_crop' ) )
+			if ( get_option( 'thumbnail_crop' ) ) {
 				$crop = true;
+			}
 		} elseif ( 'medium' == $size ) {
 			$_max_w = get_option( 'medium_size_w' );
 			$_max_h = get_option( 'medium_size_h' );
-				if ( !$_max_w && !$_max_h ) {
-					$_max_w = 300;
-					$_max_h = 300;
-				}
+			if ( ! $_max_w && ! $_max_h ) {
+				$_max_w = 300;
+				$_max_h = 300;
+			}
 		} elseif ( 'large' == $size ) {
 			$_max_w = get_option( 'large_size_w' );
 			$_max_h = get_option( 'large_size_h' );
 		} elseif ( is_array( $size ) ) {
-			$_max_w = $w = $size[0];
-			$_max_h = $h = $size[1];
-		} elseif ( ! empty( $_wp_additional_image_sizes[$size] ) ) {
-			$_max_w = $w = $_wp_additional_image_sizes[$size]['width'];
-			$_max_h = $h = $_wp_additional_image_sizes[$size]['height'];
-			$crop = $_wp_additional_image_sizes[$size]['crop'];
+			$_max_w = $size[0];
+			$_max_h = $size[1];
+			$w      = $_max_w;
+			$h      = $_max_h;
+		} elseif ( ! empty( $_wp_additional_image_sizes[ $size ] ) ) {
+			$_max_w = $_wp_additional_image_sizes[ $size ]['width'];
+			$_max_h = $_wp_additional_image_sizes[ $size ]['height'];
+			$w      = $_max_w;
+			$h      = $_max_h;
+			$crop   = $_wp_additional_image_sizes[ $size ]['crop'];
 		} elseif ( $content_width > 0 ) {
 			$_max_w = $content_width;
 			$_max_h = 0;
@@ -260,8 +267,9 @@ class A8C_Files {
 		}
 
 		// Constrain default image sizes to the theme's content width, if available.
-		if ( $content_width > 0 && in_array( $size, array( 'thumbnail', 'medium', 'large' ) ) )
+		if ( $content_width > 0 && in_array( $size, array( 'thumbnail', 'medium', 'large' ) ) ) {
 			$_max_w = min( $_max_w, $content_width );
+		}
 
 		$resized = false;
 		$img_url = wp_get_attachment_url( $id );
@@ -282,8 +290,9 @@ class A8C_Files {
 				$w = $imagedata['width'];
 
 				list ($w, $h) = wp_constrain_dimensions( $w, $h, $_max_w, $_max_h );
-				if ( $w < $imagedata['width'] || $h < $imagedata['height'] )
+				if ( $w < $imagedata['width'] || $h < $imagedata['height'] ) {
 					$resized = true;
+				}
 			} else {
 				$w = $_max_w;
 				$h = $_max_h;
@@ -299,38 +308,42 @@ class A8C_Files {
 				$h = $imagedata['height'];
 			}
 
-			if ( empty( $w ) )
+			if ( empty( $w ) ) {
 				$w = $_max_w;
+			}
 
-			if ( empty( $h ) )
+			if ( empty( $h ) ) {
 				$h = $_max_h;
+			}
 
 			// If the image width is bigger than the allowed max, scale it to match
-			if ( $w >= $_max_w )
+			if ( $w >= $_max_w ) {
 				$w = $_max_w;
-			else
+			} else {
 				$constrain = true;
+			}
 
 			// If the image height is bigger than the allowed max, scale it to match
-			if ( $h >= $_max_h )
+			if ( $h >= $_max_h ) {
 				$h = $_max_h;
-			else
+			} else {
 				$constrain = true;
+			}
 
-			if ( $constrain )
+			if ( $constrain ) {
 				list( $w, $h ) = wp_constrain_dimensions( $w, $h, $_max_w, $_max_h );
+			}
 
 			$args['w'] = $w;
 			$args['h'] = $h;
 
 			$args['crop'] = '1';
-			$resized = true;
-		}
-		// we want users to be able to resize full size images with tinymce.
-		// the image_add_wh() filter will add the ?w= query string at display time.
-		elseif ( 'full' != $size ) {
+			$resized      = true;
+		} elseif ( 'full' != $size ) {
+			// we want users to be able to resize full size images with tinymce.
+			// the image_add_wh() filter will add the ?w= query string at display time.
 			$args['w'] = $w;
-			$resized = true;
+			$resized   = true;
 		}
 
 		if ( is_array( $args ) ) {
@@ -359,14 +372,14 @@ class A8C_Files {
 	 * @return  mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ 'vip_five_minutes' ] ) ) {
+		if ( isset( $schedule['vip_five_minutes'] ) ) {
 			return $schedule;
 		}
 
 		// Not actually five minutes; we want it to run faster though to get through everything.
 		$schedule['vip_five_minutes'] = [
 			'interval' => 180,
-			'display' => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
+			'display'  => __( 'Once every 3 minutes, unlike what the slug says. Originally used to be 5 mins.' ),
 		];
 
 		return $schedule;
@@ -381,8 +394,8 @@ class A8C_Files {
 			return;
 		}
 
-		if (! wp_next_scheduled ( self::CRON_EVENT_NAME )) {
-			wp_schedule_event(time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
+		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+			wp_schedule_event( time(), 'vip_five_minutes', self::CRON_EVENT_NAME );
 		}
 
 		add_action( self::CRON_EVENT_NAME, [ $this, 'update_attachment_meta' ] );
@@ -396,8 +409,8 @@ class A8C_Files {
 			'#vip-go-filesize-updates',
 			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
 				self::CRON_EVENT_NAME,
-				home_url() ),
-			5 );
+			home_url() ),
+		5 );
 
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			// already done. Nothing to update
@@ -405,8 +418,8 @@ class A8C_Files {
 				'#vip-go-filesize-updates',
 				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
 					home_url(),
-					self::CRON_EVENT_NAME ),
-				5 );
+				self::CRON_EVENT_NAME ),
+			5 );
 			return;
 		}
 
@@ -425,8 +438,9 @@ class A8C_Files {
 		$num_lookups = 0;
 		$max_lookups = 10;
 
-		$orig_start_index = $start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
-		$end_index = $start_index + $batch_size;
+		$orig_start_index = get_option( self::OPT_NEXT_FILESIZE_INDEX, 0 );
+		$start_index      = $orig_start_index;
+		$end_index        = $start_index + $batch_size;
 
 		do {
 			if ( $start_index > $max_id ) {
@@ -452,7 +466,7 @@ class A8C_Files {
 			update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 
 			$start_index = $end_index + 1;
-			$end_index = $start_index + $batch_size;
+			$end_index   = $start_index + $batch_size;
 
 			// Avoid infinite loops
 			$num_lookups++;
@@ -469,7 +483,7 @@ class A8C_Files {
 		wpcom_vip_irc(
 			'#vip-go-filesize-updates',
 			sprintf( 'Batch %d to %d (of %d) completed on %s. Processed %d attachments (%s) $vip-go-streams-debug',
-				$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), json_encode( $counts ) ),
+			$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), wp_json_encode( $counts ) ),
 			5
 		);
 
@@ -483,9 +497,9 @@ class A8C_Files_Utils {
 		$home_url = home_url();
 		$site_url = site_url();
 
-		$image_url_parsed = parse_url( $image_url );
-		$home_url_parsed = parse_url( $home_url );
-		$site_url_parsed = parse_url( $site_url );
+		$image_url_parsed = wp_parse_url( $image_url );
+		$home_url_parsed  = wp_parse_url( $home_url );
+		$site_url_parsed  = wp_parse_url( $site_url );
 
 		if ( $image_url_parsed['host'] === $home_url_parsed['host'] ) {
 			return $home_url;
@@ -503,7 +517,7 @@ class A8C_Files_Utils {
 	}
 
 	public static function strip_dimensions_from_url_path( $url ) {
-		$path = parse_url( $url, PHP_URL_PATH );
+		$path = wp_parse_url( $url, PHP_URL_PATH );
 
 		if ( ! $path ) {
 			return $url;
@@ -531,7 +545,7 @@ function a8c_files_init() {
  *
  * Function name parallels wpcom's implementation to accommodate existing code
  */
-function wpcom_intermediate_sizes( $sizes ) {
+function wpcom_intermediate_sizes() {
 	return __return_empty_array();
 }
 
@@ -543,7 +557,9 @@ function wpcom_intermediate_sizes( $sizes ) {
  */
 function is_vip_go_srcset_enabled() {
 	// Allow override via querystring for easy testing
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
 	if ( isset( $_GET['disable_vip_srcset'] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return '0' === $_GET['disable_vip_srcset'];
 	}
 
@@ -587,7 +603,7 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 	}
 
 	// Skip non-image attachments
-	$mime_type = get_post_mime_type( $attachment_id );
+	$mime_type           = get_post_mime_type( $attachment_id );
 	$attachment_is_image = preg_match( '!^image/!', $mime_type );
 	if ( 1 !== $attachment_is_image ) {
 		return $data;
@@ -628,7 +644,7 @@ function a8c_files_maybe_inject_image_sizes( $data, $attachment_id ) {
 		}
 	}
 
-	$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
+	$image_sizes   = new Automattic\VIP\Files\ImageSizes( $attachment_id, $data );
 	$data['sizes'] = $image_sizes->generate_sizes_meta();
 
 	$cached_sizes[ $attachment_id ] = $data['sizes'];
@@ -652,8 +668,8 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 			return;
 		}
 
-		require_once( __DIR__ . '/files/class-image.php' );
-		require_once( __DIR__ . '/files/class-image-sizes.php' );
+		require_once __DIR__ . '/files/class-image.php';
+		require_once __DIR__ . '/files/class-image-sizes.php';
 
 		// Load the native VIP Go srcset solution on priority of 20, allowing other plugins to set sizes earlier.
 		add_filter( 'wp_get_attachment_metadata', 'a8c_files_maybe_inject_image_sizes', 20, 2 );

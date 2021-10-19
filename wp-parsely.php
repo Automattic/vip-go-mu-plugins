@@ -71,6 +71,7 @@ function maybe_load_plugin() {
 			array_unshift( $versions_to_try, $specified_version );
 			$versions_to_try = array_unique( $versions_to_try );
 		} else {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error(
 				sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', esc_html( $specified_version ) ),
 				E_USER_WARNING
