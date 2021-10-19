@@ -27,15 +27,16 @@ function validate_current_password( WP_Error &$errors, bool $update, &$user ) {
 
 	check_admin_referer( 'update-user_' . $user->ID );
 
-	if ( ! isset( $_POST['pass1'] ) || empty( $_POST['pass1'] ) ) {
+	if ( empty( $_POST['pass1'] ) ) {
 		return;
 	}
 
-	if ( ! isset( $_POST['current_pass'] ) || empty( $_POST['current_pass'] ) ) {
+	if ( empty( $_POST['current_pass'] ) ) {
 		$errors->add( 'empty_current_password', '<strong>Error</strong>: Please enter your current password.', array( 'form-field' => 'current_pass' ) );
 		return;
 	}
 
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- TODO: do we need to wp_unslash() it first?
 	$auth = wp_authenticate( $user->user_login, $_POST['current_pass'] );
 	if ( is_wp_error( $auth ) ) {
 		$errors->add( 'wrong_current_password', '<strong>Error</strong>: The entered current password is not correct.', array( 'form-field' => 'current_pass' ) );
