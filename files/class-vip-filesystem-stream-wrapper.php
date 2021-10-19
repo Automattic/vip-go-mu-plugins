@@ -222,7 +222,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			return true;
 		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ),
+				esc_html( sprintf( 'stream_open failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ) ),
 				E_USER_WARNING
 			);
 
@@ -305,7 +305,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		if ( 'r' === $this->mode ) {
 			// No writes in 'read' mode
 			trigger_error(
-				sprintf( 'stream_flush failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ),
+				esc_html( sprintf( 'stream_flush failed for %s with error: No writes allowed in "read" mode #vip-go-streams', $this->path ) ),
 				E_USER_WARNING
 			);
 
@@ -318,7 +318,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				->upload_file( $this->uri, $this->path );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
-					sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $result->get_error_message() ),
+					esc_html( sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
@@ -330,7 +330,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			return fflush( $this->file );
 		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $e->getMessage() ),
+				esc_html( sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', $this->path, $e->getMessage() ) ),
 				E_USER_WARNING
 			);
 
@@ -355,7 +355,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		if ( ! $this->seekable ) {
 			// File not seekable
 			trigger_error(
-				sprintf( 'File not seekable: %s #vip-go-streams', $this->path ),
+				esc_html( sprintf( 'File not seekable: %s #vip-go-streams', $this->path ) ),
 				E_USER_WARNING
 			);
 			return false;
@@ -366,7 +366,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		if ( -1 === $result ) {
 			// Seek failed
 			trigger_error(
-				sprintf( 'Error seeking on file: %s #vip-go-streams', $this->path ),
+				esc_html( sprintf( 'Error seeking on file: %s #vip-go-streams', $this->path ) ),
 				E_USER_WARNING
 			);
 			return false;
@@ -433,7 +433,7 @@ class VIP_Filesystem_Stream_Wrapper {
 
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
-					sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+					esc_html( sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
@@ -445,7 +445,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			return true;
 		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ),
+				esc_html( sprintf( 'unlink failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ) ),
 				E_USER_WARNING
 			);
 
@@ -537,7 +537,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$result = $this->client->is_file( $path, $info );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
-					sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ),
+					esc_html( sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
@@ -565,7 +565,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			return $stats;
 		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ),
+				esc_html( sprintf( 'url_stat failed for %s with error: %s #vip-go-streams', $path, $e->getMessage() ) ),
 				E_USER_WARNING
 			);
 
@@ -616,7 +616,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$result = $this->client->get_file( $path_from );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
-					sprintf( 'rename/get_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ),
+					esc_html( sprintf( 'rename/get_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
@@ -643,7 +643,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$result = $this->client->delete_file( $path_from );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
-					sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ),
+					esc_html( sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
@@ -653,7 +653,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			return true;
 		} catch ( \Exception $e ) {
 			trigger_error(
-				sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $e->getMessage() ),
+				esc_html( sprintf( 'rename/delete_file/from failed for %s with error: %s #vip-go-streams', $path_from, $e->getMessage() ) ),
 				E_USER_WARNING
 			);
 
@@ -806,7 +806,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	*/
 	public function validate( $path, $mode ) {
 		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
-			trigger_error( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." );
+			trigger_error( esc_html( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." ) );
 
 			return false;
 		}
@@ -819,11 +819,13 @@ class VIP_Filesystem_Stream_Wrapper {
 				$result = $this->client->is_file( $path, $info );
 				if ( is_wp_error( $result ) ) {
 					trigger_error(
-						sprintf(
-							'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
-							$mode,
-							$path,
-							$result->get_error_message()
+						esc_html(
+							sprintf(
+								'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
+								$mode,
+								$path,
+								$result->get_error_message()
+							)
 						),
 						E_USER_WARNING
 					);
@@ -834,7 +836,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				if ( $result ) {
 					// File already exists
 					trigger_error(
-						sprintf( 'File %s already exists. Cannot use mode %s', $path, $mode )
+						esc_html( sprintf( 'File %s already exists. Cannot use mode %s', $path, $mode ) )
 					);
 
 					return false;
@@ -843,11 +845,13 @@ class VIP_Filesystem_Stream_Wrapper {
 				return true;
 			} catch ( \Exception $e ) {
 				trigger_error(
-					sprintf(
-						'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
-						$mode,
-						$path, 
-						$e->getMessage() // phpcs:ignore
+					esc_html(
+						sprintf(
+							'fopen mode validation failed for mode %s on path %s with error: %s #vip-go-streams',
+							$mode,
+							$path, 
+							$e->getMessage() // phpcs:ignore
+						)
 					),
 					E_USER_WARNING
 				);
