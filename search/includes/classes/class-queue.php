@@ -10,44 +10,44 @@ use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
 
 class Queue {
-	const CACHE_GROUP = 'vip-search-index-queue';
+	const CACHE_GROUP                     = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
 	const MAX_BATCH_SIZE = 1000;
-	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
+	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
 	public $schema;
 	public $statsd;
 	public $indexables;
 	public $logger;
 
-	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
-	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
+	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
-	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
-	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+	public const INDEX_QUEUEING_ENABLED_KEY         = 'index_queueing_enabled';
+	public static $stat_sampling_drop_value         = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_indexing_op_count;
-	private const DEFAULT_MAX_INDEXING_OP_COUNT = 6000 + 1;
+	private const DEFAULT_MAX_INDEXING_OP_COUNT           = 6000 + 1;
 	private const LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 10;
 	private const UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 250;
 
-	private const INDEX_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const INDEX_RATE_LIMITED_ALERT_LIMIT       = 7200; // 2 hours in seconds
 	private const INDEX_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const INDEX_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const INDEX_RATE_LIMITING_ALERT_LEVEL      = 2; // Level 2 = 'alert'
 
 	private static $index_count_ttl;
-	private const DEFAULT_INDEX_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const DEFAULT_INDEX_COUNT_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_INDEX_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
 	private const UPPER_BOUND_INDEX_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
 
 	private static $index_queueing_ttl;
-	private const DEFAULT_INDEX_QUEUEING_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const DEFAULT_INDEX_QUEUEING_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_INDEX_QUEUEING_TTL = 1 * \MINUTE_IN_SECONDS;
 	private const UPPER_BOUND_INDEX_QUEUEING_TTL = 20 * \MINUTE_IN_SECONDS;
 
 	private static $max_sync_indexing_count;
-	private const DEFAULT_MAX_SYNC_INDEXING_COUNT = 10000;
+	private const DEFAULT_MAX_SYNC_INDEXING_COUNT     = 10000;
 	private const LOWER_BOUND_MAX_SYNC_INDEXING_COUNT = 2500;
 	private const UPPER_BOUND_MAX_SYNC_INDEXING_COUNT = 25000;
 
@@ -58,8 +58,8 @@ class Queue {
 
 		$this->apply_settings();
 
-		require_once( __DIR__ . '/queue/class-schema.php' );
-		require_once( __DIR__ . '/queue/class-cron.php' );
+		require_once __DIR__ . '/queue/class-schema.php';
+		require_once __DIR__ . '/queue/class-cron.php';
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
@@ -639,13 +639,13 @@ class Queue {
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
 		$this->update_jobs( $job_ids, array(
-			'status' => 'scheduled',
+			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
 		) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
-			$job->status = 'scheduled';
+			$job->status         = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
@@ -701,7 +701,7 @@ class Queue {
 			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
 
 			$this->update_jobs( $deadlocked_job_ids, array(
-				'status' => 'queued',
+				'status'         => 'queued',
 				'scheduled_time' => null,
 			) );
 		}
@@ -715,9 +715,9 @@ class Queue {
 	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
 	 */
 	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
-		$found_objects = [];
+		$found_objects            = [];
 		$filtered_deadlocked_jobs = [];
-		$jobs_to_be_deleted = [];
+		$jobs_to_be_deleted       = [];
 
 		foreach ( $all_deadlocked_jobs as $job ) {
 			$unique_key = sprintf( '%s_%s_%s',
@@ -937,7 +937,7 @@ class Queue {
 		}
 
 		// Increment first to prevent overrunning ratelimiting
-		$increment = count( $sync_manager->sync_queue );
+		$increment             = count( $sync_manager->sync_queue );
 		$index_count_in_period = self::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
@@ -982,7 +982,7 @@ class Queue {
 		// For url parsing operations
 		$es = \Automattic\VIP\Search\Search::instance();
 
-		$url = $es->get_current_host();
+		$url  = $es->get_current_host();
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
 
 		$this->maybe_update_stat( $stat, $count );
@@ -1015,8 +1015,8 @@ class Queue {
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
-				'feature' => 'search_indexing_rate_limiting',
-				'message' => $message,
+				'feature'  => 'search_indexing_rate_limiting',
+				'message'  => $message,
 			)
 		);
 	}
@@ -1076,13 +1076,13 @@ class Queue {
 			return (object) [
 				'average_wait_time' => 0,
 				'longest_wait_time' => 0,
-				'queue_count' => 0,
+				'queue_count'       => 0,
 			];
 		}
 
 		$queue_stats->average_wait_time = intval( $queue_stats->average_wait_time );
 		$queue_stats->longest_wait_time = intval( $queue_stats->longest_wait_time );
-		$queue_stats->queue_count = intval( $queue_stats->queue_count );
+		$queue_stats->queue_count       = intval( $queue_stats->queue_count );
 
 		return $queue_stats;
 	}
