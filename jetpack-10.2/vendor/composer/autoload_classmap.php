@@ -34,6 +34,7 @@ return array(
     'Automattic\\Jetpack\\Connection\\REST_Connector' => $vendorDir . '/automattic/jetpack-connection/src/class-rest-connector.php',
     'Automattic\\Jetpack\\Connection\\Rest_Authentication' => $vendorDir . '/automattic/jetpack-connection/src/class-rest-authentication.php',
     'Automattic\\Jetpack\\Connection\\Secrets' => $vendorDir . '/automattic/jetpack-connection/src/class-secrets.php',
+    'Automattic\\Jetpack\\Connection\\Server_Sandbox' => $vendorDir . '/automattic/jetpack-connection/src/class-server-sandbox.php',
     'Automattic\\Jetpack\\Connection\\Tokens' => $vendorDir . '/automattic/jetpack-connection/src/class-tokens.php',
     'Automattic\\Jetpack\\Connection\\Urls' => $vendorDir . '/automattic/jetpack-connection/src/class-urls.php',
     'Automattic\\Jetpack\\Connection\\Utils' => $vendorDir . '/automattic/jetpack-connection/src/class-utils.php',
