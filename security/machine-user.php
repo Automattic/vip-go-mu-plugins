@@ -13,8 +13,8 @@ const USER_MODIFICATION_CAPS = [
 function prevent_machine_user_mods( $caps, $requested_cap, $user_id, $args ) {
 	if ( in_array( $requested_cap, USER_MODIFICATION_CAPS, true ) ) {
 		// args[0] is who we're performing the action on.
-		$user_to_edit_id = $args[ 0 ];
-		$user_to_edit = get_userdata( $user_to_edit_id );
+		$user_to_edit_id = $args[0];
+		$user_to_edit    = get_userdata( $user_to_edit_id );
 
 		if ( WPCOM_VIP_MACHINE_USER_LOGIN === $user_to_edit->user_login ) {
 			return [ 'do_not_allow' ];
