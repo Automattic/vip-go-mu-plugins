@@ -5,10 +5,10 @@ namespace Automattic\VIP\Search\Queue;
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION = 3;
-	const DB_VERSION_TRANSIENT = 'vip_search_queue_db_version';
+	const DB_VERSION               = 3;
+	const DB_VERSION_TRANSIENT     = 'vip_search_queue_db_version';
 	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
-	const TABLE_CREATE_LOCK = 'vip_search_queue_creating_table';
+	const TABLE_CREATE_LOCK        = 'vip_search_queue_creating_table';
 
 	public function init() {
 		$this->setup_hooks();

@@ -170,24 +170,24 @@ function print_data() {
 				// Network error.
 			} elseif ( is_wp_error( $query['request'] ) ) {
 				$query['request'] = [
-					'body' => [
-						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+					'body'     => [
+						'took'  => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
 						'error' => $query['request'],
 					],
 					'response' => [
-						'code' => 'timeout',
+						'code'    => 'timeout',
 						'message' => 'Request failure',
 					],
 				];
 				// Handle any other weirdness by including catch all.
 			} else {
 				$query['request'] = [
-					'body' => [
-						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+					'body'     => [
+						'took'  => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
 						'error' => 'Unknown error, please contact VIP for further investigation',
 					],
 					'response' => [
-						'code' => 'unknown',
+						'code'    => 'unknown',
 						'message' => 'Request failure',
 					],
 				];
@@ -333,12 +333,12 @@ function sanitize_query_response( object $response_body ): object {
  * @return array meta keys in the allow list
  */
 function get_meta_for_all_indexable_post_types(): array {
-	$ret = [];
+	$ret        = [];
 	$post_types = \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types();
 
 	foreach ( $post_types as $post_type ) {
 		$fake_post = new \WP_Post( (object) [ 'post_type' => $post_type ] );
-		$ret[] = Search::instance()->get_post_meta_allow_list( $fake_post );
+		$ret[]     = Search::instance()->get_post_meta_allow_list( $fake_post );
 	}
 
 	// Flatten and return unique values.

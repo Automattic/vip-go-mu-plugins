@@ -137,7 +137,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 				}
 
 				$version['blog_id'] = $site['blog_id'];
-				$version['url'] = $site['domain'] . $site['path'];
+				$version['url']     = $site['domain'] . $site['path'];
 
 				$versions[] = $version;
 			}
@@ -210,7 +210,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 				foreach ( $site_versions as &$version ) {
 					$version['blog_id'] = $site['blog_id'];
-					$version['url'] = $site['domain'] . $site['path'];
+					$version['url']     = $site['domain'] . $site['path'];
 				}
 
 				$versions = array_merge( $versions, $site_versions );
@@ -251,7 +251,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand activate
 	 */
 	public function activate( $args, $assoc_args ) {
-		$type = $args[0];
+		$type                   = $args[0];
 		$desired_version_number = $args[1];
 		if ( $assoc_args['skip-confirm'] ?? '' ) {
 			// WP_CLI::confirm looks for 'yes', but we use skip-confirm to be consistent with other commands

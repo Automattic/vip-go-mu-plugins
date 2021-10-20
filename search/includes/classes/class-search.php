@@ -5,15 +5,15 @@ namespace Automattic\VIP\Search;
 use \WP_CLI;
 
 class Search {
-	public const QUERY_COUNT_CACHE_KEY = 'query_count';
+	public const QUERY_COUNT_CACHE_KEY              = 'query_count';
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
-	public const SEARCH_CACHE_GROUP = 'vip_search';
+	public const SEARCH_CACHE_GROUP                 = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
-	public const QUERY_FORCE_VERSION_PATTERN = 'vip_search_%s_version';
-	public const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	public const SEARCH_ALERT_LEVEL = 2; // Level 2 = 'alert'
-	public const MAX_RESULT_WINDOW = 10000;
-	public const INDEX_EXISTENCE_CACHE_KEY_PREFIX = 'index_exists_';
+	public const QUERY_FORCE_VERSION_PATTERN        = 'vip_search_%s_version';
+	public const SEARCH_ALERT_SLACK_CHAT            = '#vip-go-es-alerts';
+	public const SEARCH_ALERT_LEVEL                 = 2; // Level 2 = 'alert'
+	public const MAX_RESULT_WINDOW                  = 10000;
+	public const INDEX_EXISTENCE_CACHE_KEY_PREFIX   = 'index_exists_';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -71,21 +71,21 @@ class Search {
 
 	private static $query_count_ttl;
 
-	private const MAX_SEARCH_LENGTH = 255;
-	private const DISABLE_POST_META_ALLOW_LIST = array();
-	private const STALE_QUEUE_WAIT_LIMIT = 3600; // 1 hour in seconds
-	private const POST_FIELD_COUNT_LIMIT = 5000;
+	private const MAX_SEARCH_LENGTH              = 255;
+	private const DISABLE_POST_META_ALLOW_LIST   = array();
+	private const STALE_QUEUE_WAIT_LIMIT         = 3600; // 1 hour in seconds
+	private const POST_FIELD_COUNT_LIMIT         = 5000;
 	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
 
-	private const DEFAULT_QUERY_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const DEFAULT_QUERY_COUNT_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_QUERY_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
 	private const UPPER_BOUND_QUERY_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
 
-	private const DEFAULT_MAX_QUERY_COUNT = 50000 + 1;
+	private const DEFAULT_MAX_QUERY_COUNT        = 50000 + 1;
 	private const LOWER_BOUND_QUERIES_PER_SECOND = 10;
 	private const UPPER_BOUND_QUERIES_PER_SECOND = 500;
 
-	private const DEFAULT_QUERY_DB_FALLBACK_VALUE = 5;
+	private const DEFAULT_QUERY_DB_FALLBACK_VALUE     = 5;
 	private const LOWER_BOUND_QUERY_DB_FALLBACK_VALUE = 1;
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
@@ -134,8 +134,8 @@ class Search {
 	 */
 	public static function are_es_constants_defined() {
 		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
-		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
-		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
+		$username_defined  = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
+		$password_defined  = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
@@ -348,7 +348,7 @@ class Search {
 		}
 
 		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
+			$host                     = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
 			$this->current_host_index = array_search( $host, VIP_ELASTICSEARCH_ENDPOINTS );
 
 			define( 'EP_HOST', $host );
@@ -539,9 +539,9 @@ class Search {
 	}
 
 	protected function setup_cron_jobs() {
-		$this->healthcheck = new HealthJob( $this );
+		$this->healthcheck          = new HealthJob( $this );
 		$this->settings_healthcheck = new SettingsHealthJob( $this );
-		$this->versioning_cleanup = new VersioningCleanupJob( $this->indexables, $this->versioning );
+		$this->versioning_cleanup   = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
 		/**
 		 * Hook into admin_init action to ensure cron-control has already been loaded.
@@ -711,14 +711,14 @@ class Search {
 			$args['headers'],
 			[
 				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
-				'X-Client-Env' => VIP_GO_ENV,
-				'Accept-Encoding' => 'gzip, deflate',
+				'X-Client-Env'     => VIP_GO_ENV,
+				'Accept-Encoding'  => 'gzip, deflate',
 			]
 		);
 
-		$statsd_mode = $this->get_statsd_request_mode_for_request( $query['url'], $args );
+		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
-		$statsd_prefix = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		$start_time = microtime( true );
 
@@ -742,7 +742,7 @@ class Search {
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
-			$response_body = json_decode( $response_body_json, true );
+			$response_body      = json_decode( $response_body_json, true );
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
 				$this->maybe_send_timing_stat( $statsd_prefix . '.engine', $response_body['took'] );
@@ -767,10 +767,10 @@ class Search {
 					trigger_error( esc_html( $message ), \E_USER_WARNING );
 					\Automattic\VIP\Logstash\log2logstash( array(
 						'severity' => 'warning',
-						'feature' => 'search_es_warning',
-						'message' => $message,
-						'extra' => [
-							'query' => $query,
+						'feature'  => 'search_es_warning',
+						'message'  => $message,
+						'extra'    => [
+							'query'     => $query,
 							'backtrace' => wp_debug_backtrace_summary(),
 						],
 					) );
@@ -793,7 +793,7 @@ class Search {
 	 * This method avoids this issue by creating the index with correct mapping if the index doesn't exist yet.
 	 */
 	public function ensure_index_existence( $url, $args ) {
-		$method = strtoupper( $args['method'] ?? '' );
+		$method                  = strtoupper( $args['method'] ?? '' );
 		$methods_that_need_index = [ 'POST', 'PUT' ];
 		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
 			// bailing out on methods that would not create index with incorrect mapping
@@ -811,7 +811,7 @@ class Search {
 			return true;
 		}
 
-		$cache_key = self::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $index_name;
+		$cache_key        = self::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $index_name;
 		$already_verified = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
 
 		if ( $already_verified ) {
@@ -819,7 +819,7 @@ class Search {
 		}
 
 		$index_info = $this->versioning->parse_index_name( $index_name );
-		$indexable = $this->indexables->get( $index_info['slug'] ?? '' );
+		$indexable  = $this->indexables->get( $index_info['slug'] ?? '' );
 		if ( ! $indexable ) {
 			return true;
 		}
@@ -867,14 +867,14 @@ class Search {
 				'search_http_error',
 				implode( ';', $error_messages ),
 				[
-					'is_cli' => $is_cli,
+					'is_cli'  => $is_cli,
 					'request' => $encoded_request,
 				]
 			);
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
-			$response_body = json_decode( $response_body_json, true );
-			$response_error = $response_body['error'] ?? [];
+			$response_body      = json_decode( $response_body_json, true );
+			$response_error     = $response_body['error'] ?? [];
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
@@ -888,11 +888,11 @@ class Search {
 				[
 					'error_type' => $response_error['type'] ?? 'Unknown error type',
 					'root_cause' => $response_error['root_cause'] ?? null,
-					'query' => $query_for_logging,
-					'backtrace' => wp_debug_backtrace_summary(),
-					'is_cli' => $is_cli,
-					'request' => $encoded_request,
-					'response' => $response_body,
+					'query'      => $query_for_logging,
+					'backtrace'  => wp_debug_backtrace_summary(),
+					'is_cli'     => $is_cli,
+					'request'    => $encoded_request,
+					'response'   => $response_body,
 				]
 			);
 		}
@@ -919,10 +919,10 @@ class Search {
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
-		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+		$is_cli  = defined( 'WP_CLI' ) && WP_CLI;
 		$timeout = $is_cli ? 5 : 2;
 
-		$query_path = wp_parse_url( $query[ 'url' ], PHP_URL_PATH );
+		$query_path      = wp_parse_url( $query['url'], PHP_URL_PATH );
 		$is_post_request = false;
 
 		if ( isset( $args['method'] ) && 0 === strcasecmp( 'POST', $args['method'] ) ) {
@@ -1083,7 +1083,7 @@ class Search {
 
 		$statsd_mode = 'query_ratelimited';
 
-		$url = $this->get_current_host();
+		$url  = $this->get_current_host();
 		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
 
 		$this->maybe_increment_stat( $stat );
@@ -1138,8 +1138,8 @@ class Search {
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
-				'feature' => 'search_query_rate_limiting',
-				'message' => $message,
+				'feature'  => 'search_query_rate_limiting',
+				'message'  => $message,
 			)
 		);
 	}
@@ -1179,7 +1179,7 @@ class Search {
 		}
 
 		$index_name = $indexable->get_index_name();
-		$path = "$index_name/_mapping";
+		$path       = "$index_name/_mapping";
 
 		// Send a request to get all current mappings
 		$raw = \ElasticPress\Elasticsearch::factory()->remote_request( $path );
@@ -1360,7 +1360,7 @@ class Search {
 	public function get_statsd_request_mode_for_request( $url, $args ) {
 		$parsed = parse_url( $url );
 
-		$path = explode( '/', $parsed['path'] );
+		$path   = explode( '/', $parsed['path'] );
 		$method = strtolower( $args['method'] ) ?? 'post';
 
 		// NOTE - Not doing a switch() b/c the meaningful part of URI is not always in same spot
@@ -1466,7 +1466,7 @@ class Search {
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
 
-		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
+		// returns prefix only e.g. 'com.WordPress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
 	}
 
@@ -1491,7 +1491,7 @@ class Search {
 		}
 
 		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
-		$formatted_args['query']['bool']['must'] = $formatted_args['query']['bool']['should'];
+		$formatted_args['query']['bool']['must']                               = $formatted_args['query']['bool']['should'];
 		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
 		unset( $formatted_args['query']['bool']['should'] );
 

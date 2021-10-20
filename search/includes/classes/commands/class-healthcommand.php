@@ -15,7 +15,7 @@ require_once __DIR__ . '/../class-health.php';
 class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
 	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
-	private const INFO_ICON = "\u{1F7E7}"; // unicode info mark
+	private const INFO_ICON    = "\u{1F7E7}"; // unicode info mark
 
 	public function __construct() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -251,13 +251,13 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 
 			if ( $result['skipped'] ) {
 				$reason_message = 'index-not-found' === $result['reason'] ? 'index was not found in ES' : 'there are no documents in ES';
-				$message = sprintf( '%s skipping, because %s when counting %s', self::INFO_ICON, $reason_message, $identification );
+				$message        = sprintf( '%s skipping, because %s when counting %s', self::INFO_ICON, $reason_message, $identification );
 			} else {
 				$message = ' inconsistencies found';
 				if ( $result['diff'] ) {
 					$icon = self::FAILURE_ICON;
 				} else {
-					$icon = self::SUCCESS_ICON;
+					$icon    = self::SUCCESS_ICON;
 					$message = 'no' . $message;
 				}
 
@@ -367,7 +367,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$truncate_msg = '';
 		if ( count( $diff ) > $max_diff_size ) {
 			$truncate_msg = sprintf( 'Truncated diff processing at %d out of %d since max_diff_size is %d', $max_diff_size, count( $diff ), $max_diff_size );
-			$diff = array_slice( $diff, 0, $max_diff_size, true );
+			$diff         = array_slice( $diff, 0, $max_diff_size, true );
 		}
 
 		// Array pop without modifying the diff array
