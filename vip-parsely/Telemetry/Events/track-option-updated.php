@@ -47,7 +47,7 @@ function track_option_updated( array $old_value, array $value, Telemetry_System 
 		array()
 	);
 
-	if ( ! count( $updated_keys ) ) {
+	if ( count( $updated_keys ) === 0 ) {
 		return;
 	}
 
