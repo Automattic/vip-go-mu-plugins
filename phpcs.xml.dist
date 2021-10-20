@@ -85,6 +85,9 @@
 
 		<!-- Allow short ternaries -->
 		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
+
+		<!-- Generates too many false positives -->
+		<exclude name="WordPress.WP.CapitalPDangit.Misspelled" />
 	</rule>
 
 </ruleset>
