@@ -32,7 +32,7 @@ function use_ambiguous_login_error( string $error ): string {
 			break;
 		}
 	}
- 
+
 	return $error;
 }
 

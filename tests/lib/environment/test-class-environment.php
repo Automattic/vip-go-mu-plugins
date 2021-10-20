@@ -2,11 +2,71 @@
 
 namespace Automattic\VIP;
 
+use PHPUnit\Framework\Error\Notice;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../../lib/environment/class-environment.php';
 
+/**
+ * @runTestsInSeparateProcesses
+ */
 class Environment_Test extends TestCase {
+	protected function tearDown(): void {
+		Notice::$enabled = true;
+		parent::tearDown();
+	}
+
+	public function get_var_standard_env() {
+		define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
+	}
+
+	public function get_var_legacy_env() {
+		define( 'MY_VAR', 'MY_VAR' );
+	}
+
+	// tests the use-case where $key parameter is not found
+	public function test_get_default_var() {
+		Notice::$enabled = false;
+
+		$val = Environment::get_var( 'MY_VAR', 'default_value' );
+		$this->assertEquals( 'default_value', $val );
+	}
+
+	// tests the use-case where $key parameter does not have the prefix
+	public function test_get_var_legacy_key() {
+		Notice::$enabled = false;
+
+		$this->get_var_legacy_env();
+		$val = Environment::get_var( 'MY_VAR', 'default_value' );
+		$this->assertEquals( 'MY_VAR', $val );
+	}
+
+	// tests the use-case where $key parameter is lower case
+	public function test_get_var_lower_key() {
+		Notice::$enabled = false;
+
+		$this->get_var_standard_env();
+		$val = Environment::get_var( 'vip_env_var_my_var', 'default_value' );
+		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
+	}
+
+	// tests the use-case where $key parameter is ''
+	public function test_get_var_empty_key() {
+		Notice::$enabled = false;
+
+		$this->get_var_standard_env();
+		$val = Environment::get_var( '', 'default_value' );
+		$this->assertEquals( 'default_value', $val );
+	}
+
+	public function test_get_var() {
+		Notice::$enabled = false;
+
+		$this->get_var_standard_env();
+		$val = Environment::get_var( 'MY_VAR', 'default_value' );
+		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
+	}
+
 	public function is_sandbox_container_data() {
 		return array(
 			// Non-sandbox hostname, no env vars

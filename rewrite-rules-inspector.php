@@ -23,12 +23,14 @@
  * Requires WP:       3.1.0
  */
 
-require_once( __DIR__ . '/rewrite-rules-inspector/rewrite-rules-inspector.php' );
+require_once __DIR__ . '/rewrite-rules-inspector/rewrite-rules-inspector.php';
 
 /**
  * Place the rewrite rules view under the VIP dashboard instead of under tools.php
  */
-add_filter( 'rri_parent_slug', function() { return 'vip-dashboard'; } );
+add_filter( 'rri_parent_slug', function() {
+	return 'vip-dashboard';
+} );
 
 /**
  * When a VIP switches their theme, make a request to flush and reload their rules
@@ -36,7 +38,8 @@ add_filter( 'rri_parent_slug', function() { return 'vip-dashboard'; } );
  * won't be loaded on this request
  */
 add_action( 'switch_theme', 'rri_wpcom_action_switch_theme' );
-function rri_wpcom_action_switch_theme( $new_name ) {
+function rri_wpcom_action_switch_theme() {
+	// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.flush_rewrite_rules_flush_rewrite_rules
 	flush_rewrite_rules();
 }
 

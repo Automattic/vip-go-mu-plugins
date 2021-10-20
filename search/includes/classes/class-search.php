@@ -767,7 +767,7 @@ class Search {
 					trigger_error( esc_html( $message ), \E_USER_WARNING );
 					\Automattic\VIP\Logstash\log2logstash( array(
 						'severity' => 'warning',
-						'feature' => 'vip_search_es_warning',
+						'feature' => 'search_es_warning',
 						'message' => $message,
 						'extra' => [
 							'query' => $query,
