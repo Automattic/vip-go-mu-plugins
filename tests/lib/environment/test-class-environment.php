@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../../lib/environment/class-environment.php';
 
 /**
  * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
  */
 class Environment_Test extends TestCase {
 	protected function tearDown(): void {
