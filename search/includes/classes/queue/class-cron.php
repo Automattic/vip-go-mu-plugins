@@ -133,7 +133,7 @@ class Cron {
 
 		$schedule[ self::SWEEPER_CRON_INTERVAL_NAME ] = [
 			'interval' => self::SWEEPER_CRON_INTERVAL,
-			'display' => __( 'VIP Search index queue job creator time interval' ),
+			'display'  => __( 'VIP Search index queue job creator time interval' ),
 		];
 
 		return $schedule;
@@ -162,7 +162,7 @@ class Cron {
 	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		$indexable_post_types = Indexables::factory()->get( 'post' )->get_indexable_post_types();
+		$indexable_post_types    = Indexables::factory()->get( 'post' )->get_indexable_post_types();
 		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
 
 		// Only proceed if indexable post types are defined correctly
@@ -178,15 +178,15 @@ class Cron {
 		// WP_Query args for looking up posts that match the term taxonomy id and indexable
 		// post types/statuses
 		$args = array(
-			'posts_per_page' => self::TERM_UPDATE_BATCH_SIZE,
-			'post_type' => $indexable_post_types,
-			'post_status' => $indexable_post_statuses,
-			'paged' => 1,
-			'fields' => 'ids',
+			'posts_per_page'         => self::TERM_UPDATE_BATCH_SIZE,
+			'post_type'              => $indexable_post_types,
+			'post_status'            => $indexable_post_statuses,
+			'paged'                  => 1,
+			'fields'                 => 'ids',
 			'update_post_meta_cache' => false,
 			'update_post_term_cache' => false,
-			'ignore_sticky_posts' => true,
-			'tax_query' => array(
+			'ignore_sticky_posts'    => true,
+			'tax_query'              => array(
 				array(
 					'field' => 'term_taxonomy_id',
 					'terms' => $term_taxonomy_id,
@@ -208,7 +208,7 @@ class Cron {
 
 			// Go to the next page and reset $posts
 			$args['paged'] = intval( $args['paged'] ) + 1;
-			$posts = new \WP_Query( $args );
+			$posts         = new \WP_Query( $args );
 
 			// If page is empty, just return early
 			if ( ! $posts->have_posts() ) {
@@ -232,7 +232,7 @@ class Cron {
 
 		$this->queue->free_deadlocked_jobs();
 
-		$job_count = $this->get_processor_job_count();
+		$job_count     = $this->get_processor_job_count();
 		$max_job_count = $this->get_max_concurrent_processor_job_count();
 
 		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {

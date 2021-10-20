@@ -41,7 +41,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 		// TODO limit to only some sites
 
 		$search = \Automattic\VIP\Search\Search::instance();
-		$queue = $search->queue;
+		$queue  = $search->queue;
 
 		$object_type = 'post';
 
@@ -62,7 +62,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		$queue->offload_indexing_to_queue();
 
-		$starting_queued_count = $queue->count_jobs( 'queued', $object_type );
+		$starting_queued_count         = $queue->count_jobs( 'queued', $object_type );
 		$starting_queued_count_due_now = $queue->count_jobs( 'queued', $object_type );
 
 		WP_CLI::line( sprintf( 'Async queue currently contains %d queued jobs, with %d due now', $starting_queued_count, $starting_queued_count_due_now ) );
@@ -72,8 +72,8 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 		// Get a bunch of posts
 		$q = new \WP_Query( array(
 			'posts_per_page' => $batch_size,
-			'post_type' => 'post',
-			'post_status' => 'publish', // Keep it simple
+			'post_type'      => 'post',
+			'post_status'    => 'publish', // Keep it simple
 		) );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
@@ -118,7 +118,7 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 			$indexable->sync_manager->index_sync_queue();
 		}
 
-		$after_requeue_queued_count = $queue->count_jobs( 'scheduled', $object_type );
+		$after_requeue_queued_count         = $queue->count_jobs( 'scheduled', $object_type );
 		$after_requeue_queued_due_now_count = $queue->count_jobs_due_now( $object_type );
 
 		$total_times_queued = count( $q->posts ) * ( $requeue_times + 1 ); // +1 b/c of the initial batch we queued before retrying

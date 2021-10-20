@@ -9,12 +9,12 @@ use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
 
 class Health {
-	const CONTENT_VALIDATION_BATCH_SIZE    = 500;
-	const CONTENT_VALIDATION_MAX_DIFF_SIZE = 1000;
-	const CONTENT_VALIDATION_LOCK_NAME = 'vip_search_content_validation_lock';
-	const CONTENT_VALIDATION_LOCK_TIMEOUT = 900; // 15 min
-	const CONTENT_VALIDATION_PROCESS_OPTION = 'vip_search_content_validation_process_post_id';
-	const DOCUMENT_IGNORED_KEYS            = array(
+	const CONTENT_VALIDATION_BATCH_SIZE        = 500;
+	const CONTENT_VALIDATION_MAX_DIFF_SIZE     = 1000;
+	const CONTENT_VALIDATION_LOCK_NAME         = 'vip_search_content_validation_lock';
+	const CONTENT_VALIDATION_LOCK_TIMEOUT      = 900; // 15 min
+	const CONTENT_VALIDATION_PROCESS_OPTION    = 'vip_search_content_validation_process_post_id';
+	const DOCUMENT_IGNORED_KEYS                = array(
 		// This field is proving problematic to reliably diff due to differences in the filters
 		// that run during normal indexing and this validator
 		'post_content_filtered',
@@ -44,7 +44,7 @@ class Health {
 	public $search;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search = $search;
+		$this->search     = $search;
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -71,7 +71,7 @@ class Health {
 			'reason'   => 'N/A',
 			'db_total' => 'N/A',
 			'es_total' => 'N/A',
-			'diff' => 'N/A',
+			'diff'     => 'N/A',
 		];
 
 		if ( 'N/A' === $result['type'] && isset( $query_args['type'] ) ) {
@@ -81,7 +81,7 @@ class Health {
 		if ( ! $indexable->index_exists() ) {
 			// If index doesnt exist and we will skip the rest of the check
 			$result['skipped'] = true;
-			$result['reason'] = 'index-not-found';
+			$result['reason']  = 'index-not-found';
 			return $result;
 		}
 
@@ -92,8 +92,8 @@ class Health {
 
 		if ( 0 === $es_total ) {
 			// If there is 0 docs in ES, we assume it wasnet initialized and we will skip the rest of the check
-			$result['skipped'] = true;
-			$result['reason'] = 'index-empty';
+			$result['skipped']  = true;
+			$result['reason']   = 'index-empty';
 			$result['es_total'] = 0;
 			return $result;
 		}
@@ -114,7 +114,7 @@ class Health {
 
 		$result['db_total'] = $db_total;
 		$result['es_total'] = $es_total;
-		$result['diff'] = $diff;
+		$result['diff']     = $diff;
 
 		return $result;
 	}
@@ -236,11 +236,11 @@ class Health {
 
 		foreach ( $post_types as $post_type ) {
 			$post_indexable = Indexables::factory()->get( 'post' );
-			$post_statuses = $post_indexable->get_indexable_post_status();
+			$post_statuses  = $post_indexable->get_indexable_post_status();
 
 			$query_args = [
-				'post_type'   => $post_type,
-				'post_status' => array_values( $post_statuses ),
+				'post_type'      => $post_type,
+				'post_status'    => array_values( $post_statuses ),
 				// Force fetching just one post, otherwise the query may get killed on large datasets.
 				// This works for at least ten million records in posts table.
 				'posts_per_page' => 1,
@@ -252,14 +252,14 @@ class Health {
 			// Not returning an error, otherwise there is no visibility on other post types
 			if ( is_wp_error( $result ) ) {
 				$result = [
-					'entity'        => $posts->slug,
-					'type'          => $post_type,
-					'error'         => $result->get_error_message(),
+					'entity' => $posts->slug,
+					'type'   => $post_type,
+					'error'  => $result->get_error_message(),
 				];
 			}
 
 			$result['index_version'] = $index_version;
-			$result['index_name'] = $post_indexable->get_index_name();
+			$result['index_name']    = $post_indexable->get_index_name();
 
 			$results[] = $result;
 
@@ -343,7 +343,7 @@ class Health {
 
 		$index_version = $search->versioning->get_current_version_number( $comments );
 
-		$comment_types = $comments->get_indexable_comment_types();
+		$comment_types  = $comments->get_indexable_comment_types();
 		$comment_status = $comments->get_indexable_comment_status();
 
 		$health = new self( $search );
@@ -351,13 +351,13 @@ class Health {
 		foreach ( $comment_types as $comment_type ) {
 
 			$query_args = [
-				'type' => $comment_type,
+				'type'     => $comment_type,
 				// Force fetching just one comment, otherwise the query may get killed on large datasets.
 				// This works for at least ten million records in comments table.
 				'per_page' => 1,
 				// Empty arguments to silence warnings
-				'karma' => '',
-				'parent' => '',
+				'karma'    => '',
+				'parent'   => '',
 
 			];
 
@@ -367,14 +367,14 @@ class Health {
 			// Not returning an error, otherwise there is no visibility on other comment types
 			if ( is_wp_error( $result ) ) {
 				$result = [
-					'entity'        => $comments->slug,
-					'type'          => $comment_type,
-					'error'         => $result->get_error_message(),
+					'entity' => $comments->slug,
+					'type'   => $comment_type,
+					'error'  => $result->get_error_message(),
 				];
 			}
 
 			$result['index_version'] = $index_version;
-			$result['index_name'] = $comments->get_index_name();
+			$result['index_name']    = $comments->get_index_name();
 
 			$results[] = $result;
 		}
@@ -420,13 +420,13 @@ class Health {
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
 	public function validate_index_posts_content( $options ) {
-		$start_post_id = $options['start_post_id'] ?? 1;
-		$last_post_id = $options['last_post_id'] ?? null;
-		$batch_size = $options['batch_size'] ?? null;
-		$max_diff_size = $options['max_diff_size'] ?? null;
-		$silent = isset( $options['silent'] );
-		$inspect = isset( $options['inspect'] );
-		$do_not_heal = isset( $options['do_not_heal'] );
+		$start_post_id            = $options['start_post_id'] ?? 1;
+		$last_post_id             = $options['last_post_id'] ?? null;
+		$batch_size               = $options['batch_size'] ?? null;
+		$max_diff_size            = $options['max_diff_size'] ?? null;
+		$silent                   = isset( $options['silent'] );
+		$inspect                  = isset( $options['inspect'] );
+		$do_not_heal              = isset( $options['do_not_heal'] );
 		$force_parallel_execution = isset( $options['force_parallel_execution'] );
 
 		$process_parallel_execution_lock = ! $force_parallel_execution;
@@ -745,7 +745,7 @@ class Health {
 	}
 
 	public static function diff_document_and_prepared_document( $document, $prepared_document ) {
-		$diff = [];
+		$diff         = [];
 		$checked_keys = [];
 
 		foreach ( $document as $key => $value ) {
@@ -927,7 +927,7 @@ class Health {
 			$desired_settings = $indexable->build_settings();
 
 			// We only monitor certain settings
-			$actual_settings_to_check = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
+			$actual_settings_to_check  = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
 			$desired_settings_to_check = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
 
 			$diff = self::get_index_settings_diff( $actual_settings_to_check, $desired_settings_to_check );
@@ -937,8 +937,8 @@ class Health {
 		if ( ! empty( $diff ) ) {
 			$result = array(
 				'index_version' => $options['index_version'] ?? 1,
-				'index_name' => $indexable->get_index_name(),
-				'diff' => $diff,
+				'index_name'    => $indexable->get_index_name(),
+				'diff'          => $diff,
 			);
 		}
 
@@ -991,15 +991,15 @@ class Health {
 
 		$result = $indexable->update_index_settings( $desired_settings_to_heal );
 
-		$index_name = $indexable->get_index_name();
+		$index_name    = $indexable->get_index_name();
 		$index_version = $this->search->versioning->get_current_version_number( $indexable );
 
 		$this->search->versioning->reset_current_version_number( $indexable );
 
 		return array(
-			'index_name' => $index_name,
+			'index_name'    => $index_name,
 			'index_version' => $index_version,
-			'result' => $result,
+			'result'        => $result,
 		);
 	}
 }
