@@ -18,7 +18,7 @@ class Lockout {
 	 * @var array Default user capabilities for locked state
 	 */
 	public $locked_cap = [
-		'read' => true,
+		'read'    => true,
 		'level_0' => true,
 	];
 
@@ -31,7 +31,7 @@ class Lockout {
 			add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
 
 			add_filter( 'user_has_cap', [ $this, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
-			add_filter( 'pre_site_option_site_admins', [ $this, 'filter_site_admin_option' ], PHP_INT_MAX, 4 );
+			add_filter( 'pre_site_option_site_admins', [ $this, 'filter_site_admin_option' ], PHP_INT_MAX );
 			add_filter( 'pre_update_site_option_site_admins', [ $this, 'filter_prevent_site_admin_option_updates' ], PHP_INT_MAX, 2 );
 		}
 	}
@@ -68,8 +68,8 @@ class Lockout {
 	}
 
 	/**
-     * Mark that user has seen warning
-     *
+	 * Mark that user has seen warning
+	 *
 	 * @param \WP_User $user
 	 */
 	protected function user_seen_notice( \WP_User $user ) {
@@ -77,7 +77,8 @@ class Lockout {
 
 		if ( ! $seen_warning ) {
 			add_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, VIP_LOCKOUT_STATE, true );
-			add_user_meta( $user->ID, self::USER_SEEN_WARNING_TIME_KEY, date('Y-m-d H:i:s'), true );
+			// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- not sure if it is safe to replace with gmdate()
+			add_user_meta( $user->ID, self::USER_SEEN_WARNING_TIME_KEY, date( 'Y-m-d H:i:s' ), true );
 		}
 	}
 
@@ -104,10 +105,10 @@ class Lockout {
 	}
 
 	/**
-     * Filter the result of user capability check
-     *
-     * If site is in lockout mode then all user will only have capabilities of a subscriber.
-     *
+	 * Filter the result of user capability check
+	 *
+	 * If site is in lockout mode then all user will only have capabilities of a subscriber.
+	 *
 	 * @param array $user_caps
 	 * @param array $caps
 	 * @param array $args
@@ -144,7 +145,7 @@ class Lockout {
 	 *
 	 * @return  array
 	 */
-	public function filter_site_admin_option( $pre_option, $option, $network_id, $default ) {
+	public function filter_site_admin_option( $pre_option ) {
 		if ( defined( 'VIP_LOCKOUT_STATE' ) && 'locked' === VIP_LOCKOUT_STATE ) {
 			if ( is_automattician() ) {
 				return $pre_option;
