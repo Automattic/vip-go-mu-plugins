@@ -499,12 +499,15 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 function _wpcom_log_failed_request( $url, $response ): void {
 	global $blog_id;
 
-	if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-		if ( $response && ! is_wp_error( $response ) ) {
-			trigger_error( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for {$url} and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'], E_USER_NOTICE );
-		} elseif ( $response ) { // is WP_Error object
-			trigger_error( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for {$url} and the result was: " . $response->get_error_message(), E_USER_NOTICE );
-		}
+	if ( $response && ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) ) {
+		$message = sprintf(
+			'wpcom_vip_file_get_contents: Blog ID %d: Failure for %s and the result was: %s',
+			$blog_id,
+			$url,
+			is_wp_error( $response ) ? $response->get_error_message() : $response['response']['code'] . ' ' . $response['response']['message']
+		);
+
+		trigger_error( esc_html( $message ), E_USER_NOTICE );
 	}
 }
 
