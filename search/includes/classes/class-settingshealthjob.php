@@ -35,8 +35,8 @@ class SettingsHealthJob {
 	public $indexables;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search = $search;
-		$this->health = new Health( $search );
+		$this->search     = $search;
+		$this->health     = new Health( $search );
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -154,7 +154,7 @@ class SettingsHealthJob {
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
 				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
-				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
+				$message       = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
