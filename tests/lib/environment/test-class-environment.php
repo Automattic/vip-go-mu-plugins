@@ -2,18 +2,28 @@
 
 namespace Automattic\VIP;
 
-use PHPUnit\Framework\Error\Notice;
 use PHPUnit\Framework\TestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../../lib/environment/class-environment.php';
+
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 class Environment_Test extends TestCase {
+	use ExpectPHPException;
+
+	private $error_reporting;
+
+	protected function setUp(): void {
+		$this->error_reporting = error_reporting();
+	}
+
 	protected function tearDown(): void {
-		Notice::$enabled = true;
+		error_reporting( $this->error_reporting );
 		parent::tearDown();
 	}
 
@@ -27,7 +37,7 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
-		Notice::$enabled = false;
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
@@ -35,7 +45,7 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case where $key parameter does not have the prefix
 	public function test_get_var_legacy_key() {
-		Notice::$enabled = false;
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_legacy_env();
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
@@ -44,7 +54,7 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case where $key parameter is lower case
 	public function test_get_var_lower_key() {
-		Notice::$enabled = false;
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
 		$val = Environment::get_var( 'vip_env_var_my_var', 'default_value' );
@@ -53,7 +63,7 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case where $key parameter is ''
 	public function test_get_var_empty_key() {
-		Notice::$enabled = false;
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
 		$val = Environment::get_var( '', 'default_value' );
@@ -61,7 +71,7 @@ class Environment_Test extends TestCase {
 	}
 
 	public function test_get_var() {
-		Notice::$enabled = false;
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
