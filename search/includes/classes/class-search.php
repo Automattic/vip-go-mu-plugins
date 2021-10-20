@@ -1466,7 +1466,6 @@ class Search {
 		// Break up tracking based on mode
 		$key_parts[] = $mode;
 
-		// phpcs:ignore WordPress.WP.CapitalPDangit.Misspelled
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
 	}

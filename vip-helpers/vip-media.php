@@ -84,7 +84,6 @@ function wpcom_vip_set_image_quality( $quality, $strip = false ) {
 
 	add_filter( 'the_content', function( $content ) use ( $quality, $strip ) {
 		if ( false !== strpos( $content, 'files.wordpress.com' ) ) {
-			// phpcs:ignore WordPress.WP.CapitalPDangit.Misspelled -- domain name is spelt correctly
 			$content = preg_replace_callback( '#https?://\w+\.files\.wordpress\.com[^\s"\'>]+#', function( $matches ) use ( $quality, $strip ) {
 				return wpcom_vip_set_image_quality_for_url( $matches[0], $quality, $strip );
 			}, $content );
