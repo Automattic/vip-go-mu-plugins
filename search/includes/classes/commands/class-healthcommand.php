@@ -331,7 +331,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 
 			$message = $results->get_error_message();
 			if ( 'content_validation_already_ongoing' === $results->get_error_code() ) {
-				$message .= "\n\nYou can use --force-parallel-execution to run the command even with the lock in place";
+				$message .= "\n\nYou can use --force_parallel_execution to run the command even with the lock in place";
 			}
 			WP_CLI::error( $message );
 		}
