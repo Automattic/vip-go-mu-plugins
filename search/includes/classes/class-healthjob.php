@@ -57,8 +57,8 @@ class HealthJob {
 	public $indexables;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search = $search;
-		$this->health = new Health( $search );
+		$this->search     = $search;
+		$this->health     = new Health( $search );
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -153,7 +153,7 @@ class HealthJob {
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} else if ( ! empty( $results ) ) {
+		} elseif ( ! empty( $results ) ) {
 			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 		}

@@ -35,7 +35,7 @@ class DocumentCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand get
 	 */
 	public function get( $args, $assoc_args ) {
-		$type = $args[0];
+		$type      = $args[0];
 		$object_id = $args[1];
 	
 		$search = \Automattic\VIP\Search\Search::instance();
