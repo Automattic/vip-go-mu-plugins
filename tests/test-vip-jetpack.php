@@ -124,7 +124,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 
 	function get_jetpack_sync_modules_data() {
 		return [
-			'enabled-no-matching-modules' => [
+			'enabled-no-matching-modules'   => [
 				[
 					'sync' => 'Other_Sync_Class',
 				],
@@ -135,14 +135,14 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 
 			'enabled-with-matching-modules' => [
 				[
-					'sync' => 'Jetpack_Sync_Modules_Full_Sync',
+					'sync'      => 'Jetpack_Sync_Modules_Full_Sync',
 					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync',
-					'not-sync' => 'Not_Sync_Class',
+					'not-sync'  => 'Not_Sync_Class',
 				],
 				[
-					'sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
+					'sync'      => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
 					'also-sync' => 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately',
-					'not-sync' => 'Not_Sync_Class',
+					'not-sync'  => 'Not_Sync_Class',
 				],
 			],
 		];
@@ -154,7 +154,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	 * @dataProvider get_jetpack_sync_modules_data
 	 */
 	public function test__jetpack_sync_modules__class_exists( $modules, $expected_modules ) {
-		require_once( __DIR__ . '/fixtures/jetpack/class-jetpack-sync-immediately.php' );
+		require_once __DIR__ . '/fixtures/jetpack/class-jetpack-sync-immediately.php';
 
 		$actual_modules = apply_filters( 'jetpack_sync_modules', $modules );
 
@@ -162,7 +162,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	}
 
 	public function test__jetpack_https_test__transient_filter() {
-		$https_test = apply_filters( 'pre_transient_jetpack_https_test', null );
+		$https_test         = apply_filters( 'pre_transient_jetpack_https_test', null );
 		$https_test_message = apply_filters( 'pre_transient_jetpack_https_test_message', null );
 
 		$this->assertEquals( 1, $https_test, 'Value of the jetpack_https_test pre-transient filter is incorrect' );

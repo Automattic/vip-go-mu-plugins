@@ -9,7 +9,7 @@ class Cache_Test extends WP_UnitTestCase {
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
 	 */
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static function setUpBeforeClass(): void {
@@ -48,7 +48,7 @@ class Cache_Test extends WP_UnitTestCase {
 
 		// All of APC's filters should be unhooked for EP queries
 		$q = new WP_Query( [
-			's' => 'test',
+			's'            => 'test',
 			'ep_integrate' => true,
 		] );
 

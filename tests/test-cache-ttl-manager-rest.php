@@ -13,12 +13,12 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 		parent::setUp();
 
 		global $wp_rest_server;
-		$this->server = $wp_rest_server = new \WP_REST_Server;
+		$this->server = $wp_rest_server = new \WP_REST_Server();
 		do_action( 'rest_api_init' );
 
 		register_rest_route( 'tests/v1', '/endpoint', [
-			'methods' => [ 'GET', 'HEAD', 'POST', 'PUT', 'DELETE' ],
-			'callback' => '__return_null',
+			'methods'             => [ 'GET', 'HEAD', 'POST', 'PUT', 'DELETE' ],
+			'callback'            => '__return_null',
 			'permission_callback' => '__return_true',
 		] );
 	}
@@ -31,8 +31,8 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	protected function dispatch_request( $method ) {
-		$request = new \WP_REST_Request( $method, '/tests/v1/endpoint' );
-		$response = $this->server->dispatch( $request );
+		$request             = new \WP_REST_Request( $method, '/tests/v1/endpoint' );
+		$response            = $this->server->dispatch( $request );
 		$dispatched_response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
 
 		return $dispatched_response;
@@ -104,8 +104,8 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	public function test__skip_ttl_for_error_responses() {
-		$request = new \WP_REST_Request( 'GET', '/tests/v1/this-does-not-exist' );
-		$response = $this->server->dispatch( $request );
+		$request             = new \WP_REST_Request( 'GET', '/tests/v1/this-does-not-exist' );
+		$response            = $this->server->dispatch( $request );
 		$dispatched_response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
 
 		$response_headers = $dispatched_response->get_headers();
@@ -114,7 +114,7 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	public function test__skip_ttl_if_already_set_via_rest_response() {
-		$request = new \WP_REST_Request( 'GET', '/tests/v1/endpoint' );
+		$request  = new \WP_REST_Request( 'GET', '/tests/v1/endpoint' );
 		$response = $this->server->dispatch( $request );
 		$response->header( 'Cache-Control', 'max-age=666' );
 		$dispatched_response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );

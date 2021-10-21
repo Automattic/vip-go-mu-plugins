@@ -19,8 +19,8 @@ class Lockout_Test extends WP_UnitTestCase {
 	 * Make tests run in separate processes and don't preserve global state so
 	 * that constants set in tests won't affect one another.
 	 */
-	protected $preserveGlobalState = FALSE;
-	protected $runTestInSeparateProcess = TRUE;
+	protected $preserveGlobalState      = false;
+	protected $runTestInSeparateProcess = true;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -32,7 +32,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( 'Automattic\VIP\Security\Lockout' );
+		$class  = new \ReflectionClass( 'Automattic\VIP\Security\Lockout' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -47,7 +47,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
 
 		$this->assertEquals(
-			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY , true ),
+			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
 			VIP_LOCKOUT_STATE
 		);
 		$this->assertNotEmpty(
@@ -64,7 +64,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
 
 		$this->assertEquals(
-			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY , true ),
+			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
 			VIP_LOCKOUT_STATE
 		);
 		$this->assertNotEmpty(
@@ -77,7 +77,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$user = $this->factory->user->create_and_get();
 
-		$date_str = date('Y-m-d H:i:s');
+		$date_str = date( 'Y-m-d H:i:s' );
 		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, 'warning', true );
 		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, $date_str, true );
 
@@ -85,7 +85,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
 
 		$this->assertEquals(
-			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY , true ),
+			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
 			'warning'
 		);
 		$this->assertEquals(
@@ -98,10 +98,10 @@ class Lockout_Test extends WP_UnitTestCase {
 		define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$user = $this->factory->user->create_and_get( [
-			'role' => 'editor'
+			'role' => 'editor',
 		]);
 
-		$user_cap = $user->get_role_caps();
+		$user_cap     = $user->get_role_caps();
 		$expected_cap = get_role( 'subscriber' )->capabilities;
 
 		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
@@ -113,7 +113,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		define( 'VIP_LOCKOUT_STATE', 'warning' );
 
 		$user = $this->factory->user->create_and_get( [
-			'role' => 'editor'
+			'role' => 'editor',
 		]);
 
 		$user_cap = $user->get_role_caps();
@@ -125,7 +125,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 	public function test__filter_user_has_cap__no_state() {
 		$user = $this->factory->user->create_and_get( [
-			'role' => 'editor'
+			'role' => 'editor',
 		]);
 
 		$user_cap = $user->get_role_caps();
@@ -141,7 +141,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		$user_id = \Automattic\VIP\Support_User\User::add( [
 			'user_email' => 'user@automattic.com',
 			'user_login' => 'vip-support',
-			'user_pass' => 'password',
+			'user_pass'  => 'password',
 		] );
 
 		$user = wp_set_current_user( $user_id );

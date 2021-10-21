@@ -93,29 +93,29 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	public function data_provider__get_option_as_bool__option_exists() {
 		return [
 			// true
-			'bool true' => [
+			'bool true'    => [
 				true,
 				true,
 			],
-			'string true' => [
+			'string true'  => [
 				'true',
 				true,
 			],
-			'string yes' => [
+			'string yes'   => [
 				'yes',
 				true,
 			],
-			'int 1' => [
+			'int 1'        => [
 				1,
 				true,
 			],
-			'string 1' => [
+			'string 1'     => [
 				'1',
 				true,
 			],
 
 			// false
-			'bool false' => [
+			'bool false'   => [
 				false,
 				false,
 			],
@@ -147,7 +147,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 	public function data_provider__send_visibility_headers() {
 		return [
-			'public-file' => [
+			'public-file'              => [
 				'FILE_IS_PUBLIC',
 				'/wp-content/uploads/public.jpg',
 				202,
@@ -161,7 +161,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 				'true',
 			],
 
-			'private-and-denied-file' => [
+			'private-and-denied-file'  => [
 				'FILE_IS_PRIVATE_AND_DENIED',
 				'/wp-content/uploads/denied.jpg',
 				403,
@@ -226,7 +226,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$expected_is_allowed = true;
 
 		add_filter( 'upload_dir', function( $params ) {
-			$params['path'] = 'vip:/' . $params['path'];
+			$params['path']    = 'vip:/' . $params['path'];
 			$params['basedir'] = 'vip:/' . $params['basedir'];
 			return $params;
 		} );
@@ -276,7 +276,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 		// Get file path for a subsite
 		$subsite_id = $this->factory->blog->create();
-		$file_path = sprintf( 'sites/%d/2021/01/dogs.gif', $subsite_id );
+		$file_path  = sprintf( 'sites/%d/2021/01/dogs.gif', $subsite_id );
 
 		// Stay in main site context
 
@@ -294,7 +294,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 		// Get file path for a subsite
 		$subsite_id = $this->factory->blog->create();
-		$file_path = sprintf( 'sites/%d/2021/01/hamster.gif', $subsite_id );
+		$file_path  = sprintf( 'sites/%d/2021/01/hamster.gif', $subsite_id );
 
 		// Run test in subsite context
 		switch_to_blog( $subsite_id );
@@ -331,7 +331,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$expected_is_allowed = false;
 
 		// Create two subsites
-		$first_subsite_id = $this->factory->blog->create();
+		$first_subsite_id  = $this->factory->blog->create();
 		$second_subsite_id = $this->factory->blog->create();
 
 		// Get file path from second

@@ -11,7 +11,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
 	 */
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	/**
@@ -44,11 +44,11 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 		$plugins = array(
 			'hello.php' => array(
-				'Name' => 'Hello Tests',
+				'Name'    => 'Hello Tests',
 				'Version' => '4.5',
 			),
 			'world.php' => array(
-				'Name' => 'Testing World',
+				'Name'    => 'Testing World',
 				'Version' => '8.6',
 			),
 		);
@@ -76,17 +76,17 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
-					'path' => 'hello.php',
-					'name' => 'Hello Tests',
-					'version' => '4.5',
-					'active' => false,
+					'path'         => 'hello.php',
+					'name'         => 'Hello Tests',
+					'version'      => '4.5',
+					'active'       => false,
 					'activated_by' => null,
 				),
 				array(
-					'path' => 'world.php',
-					'name' => 'Testing World',
-					'version' => '8.6',
-					'active' => true,
+					'path'         => 'world.php',
+					'name'         => 'Testing World',
+					'version'      => '8.6',
+					'active'       => true,
 					'activated_by' => 'option',
 				),
 			),
@@ -122,11 +122,11 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 		$plugins = array(
 			'hello.php' => array(
-				'Name' => 'Hello Tests',
+				'Name'    => 'Hello Tests',
 				'Version' => '4.5',
 			),
 			'world.php' => array(
-				'Name' => 'Testing World',
+				'Name'    => 'Testing World',
 				'Version' => '8.6',
 			),
 		);
@@ -156,17 +156,17 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
-					'path' => 'hello.php',
-					'name' => 'Hello Tests',
-					'version' => '4.5',
-					'active' => true,
+					'path'         => 'hello.php',
+					'name'         => 'Hello Tests',
+					'version'      => '4.5',
+					'active'       => true,
 					'activated_by' => 'option',
 				),
 				array(
-					'path' => 'world.php',
-					'name' => 'Testing World',
-					'version' => '8.6',
-					'active' => false,
+					'path'         => 'world.php',
+					'name'         => 'Testing World',
+					'version'      => '8.6',
+					'active'       => false,
 					'activated_by' => null,
 				),
 			),

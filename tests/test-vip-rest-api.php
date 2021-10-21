@@ -26,7 +26,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		}
 
 		global $wp_rest_server;
-		$this->server = $wp_rest_server = new \WP_REST_Server;
+		$this->server = $wp_rest_server = new \WP_REST_Server();
 		do_action( 'rest_api_init' );
 	}
 
@@ -137,7 +137,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 
 		// $request->add_header() doesn't populate the vars our endpoint checks
 		$_SERVER['PHP_AUTH_USER'] = '';
-		$_SERVER['PHP_AUTH_PW'] = '';
+		$_SERVER['PHP_AUTH_PW']   = '';
 
 		$response = $this->server->dispatch( $request );
 
@@ -151,11 +151,11 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
 
 		list( $random_username, $random_password ) = self::get_test_username_password();
-		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+		$user_id                                   = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
 
 		// $request->add_header() doesn't populate the vars our endpoint checks
 		$_SERVER['PHP_AUTH_USER'] = $random_username;
-		$_SERVER['PHP_AUTH_PW'] = $random_password;
+		$_SERVER['PHP_AUTH_PW']   = $random_password;
 
 		$response = $this->server->dispatch( $request );
 
@@ -169,13 +169,13 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
 
 		list( $random_username, $random_password ) = self::get_test_username_password();
-		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
-		$user = get_user_by( 'id', $user_id );
+		$user_id                                   = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+		$user                                      = get_user_by( 'id', $user_id );
 		$user->add_cap( 'vip_support' );
 
 		// $request->add_header() doesn't populate the vars our endpoint checks
 		$_SERVER['PHP_AUTH_USER'] = $random_username;
-		$_SERVER['PHP_AUTH_PW'] = $random_password;
+		$_SERVER['PHP_AUTH_PW']   = $random_password;
 
 		$response = $this->server->dispatch( $request );
 
@@ -189,13 +189,13 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
 
 		list( $random_username, $random_password ) = self::get_test_username_password();
-		$user_id = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
-		$user = get_user_by( 'id', $user_id );
+		$user_id                                   = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
+		$user                                      = get_user_by( 'id', $user_id );
 		$user->add_cap( 'manage_sites' );
 
 		// $request->add_header() doesn't populate the vars our endpoint checks
 		$_SERVER['PHP_AUTH_USER'] = $random_username;
-		$_SERVER['PHP_AUTH_PW'] = $random_password;
+		$_SERVER['PHP_AUTH_PW']   = $random_password;
 
 		$response = $this->server->dispatch( $request );
 

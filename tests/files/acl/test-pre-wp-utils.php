@@ -33,7 +33,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 	}
 
 	public function test__prepare_request__valid() {
-		$request_uri = '/sub/wp-content/uploads/file.jpg';
+		$request_uri     = '/sub/wp-content/uploads/file.jpg';
 		$expected_result = [
 			'/sub',
 			'file.jpg',
@@ -46,17 +46,17 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data__validate_path__invalid() {
 		return [
-			'null-uri' => [
+			'null-uri'                     => [
 				null,
 				'VIP Files ACL failed due to empty path',
 			],
 	
-			'empty-uri' => [
+			'empty-uri'                    => [
 				'',
 				'VIP Files ACL failed due to empty path',
 			],
 	
-			'path-no-wp-content' => [
+			'path-no-wp-content'           => [
 				'/a/path/to/a/file.jpg',
 				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
 			],
@@ -70,11 +70,11 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 	
 	public function get_data__validate_path__valid() {
 		return [
-			'valid-path' => [
+			'valid-path'                     => [
 				'/wp-content/uploads/kittens.gif',
 			],
 	
-			'valid-path-nested' => [
+			'valid-path-nested'              => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 			],
 
@@ -82,11 +82,11 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				'/subsite/wp-content/uploads/puppies.png',
 			],
 
-			'valid-multi-directory-subsite' => [
+			'valid-multi-directory-subsite'  => [
 				'/sub/site/wp-content/uploads/fishies.png',
 			],
 
-			'multi-wp-content-directories' => [
+			'multi-wp-content-directories'   => [
 				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 			],
 	
@@ -121,7 +121,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data__sanitize_and_split_path() {
 		return [
-			'valid-path' => [
+			'valid-path'                     => [
 				'/wp-content/uploads/kittens.gif',
 				[
 					'',
@@ -129,7 +129,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				],
 			],
 
-			'valid-path-nested' => [
+			'valid-path-nested'              => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 				[
 					'',
@@ -145,7 +145,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				],
 			],
 
-			'valid-multi-directory-subsite' => [
+			'valid-multi-directory-subsite'  => [
 				'/sub/site/wp-content/uploads/fishies.png',
 				[
 					'/sub/site',
@@ -153,7 +153,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				],
 			],
 
-			'multi-wp-content-directories' => [
+			'multi-wp-content-directories'   => [
 				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 				[
 					'',

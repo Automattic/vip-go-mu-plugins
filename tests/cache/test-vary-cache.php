@@ -32,7 +32,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_vary_cache_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -42,7 +42,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected properties.
 	 */
 	protected static function get_vary_cache_property( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
+		$class    = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
 		$property = $class->getProperty( $name );
 		$property->setAccessible( true );
 		return $property->getValue();
@@ -50,7 +50,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__is_user_in_group_segment() {
 		return [
-			'group-not-defined' => [
+			'group-not-defined'                            => [
 				[],
 				[],
 				'dev-group',
@@ -58,7 +58,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				false,
 			],
 
-			'user-not-in-group' => [
+			'user-not-in-group'                            => [
 				[
 					'vip-go-seg' => 'design-group_--_yes',
 				],
@@ -70,7 +70,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				false,
 			],
 
-			'user-in-group-with-empty-segment' => [
+			'user-in-group-with-empty-segment'             => [
 				[
 					'vip-go-seg' => 'dev-group_--_',
 				],
@@ -94,7 +94,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				false,
 			],
 
-			'user-in-group-but-different-segment' => [
+			'user-in-group-but-different-segment'          => [
 				[
 					'vip-go-seg' => 'dev-group_--_maybe',
 				],
@@ -106,7 +106,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				false,
 			],
 
-			'user-in-group-and-same-segment' => [
+			'user-in-group-and-same-segment'               => [
 				[
 					'vip-go-seg' => 'dev-group_--_yes',
 				],
@@ -118,7 +118,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				true,
 			],
 
-			'user-in-group-and-segment-with-zero-value' => [
+			'user-in-group-and-segment-with-zero-value'    => [
 				[
 					'vip-go-seg' => 'dev-group_--_0',
 				],
@@ -134,13 +134,13 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__is_user_in_group() {
 		return [
-			'group-not-defined' => [
+			'group-not-defined'               => [
 				[],
 				[],
 				'dev-group',
 				false,
 			],
-			'user-not-in-group' => [
+			'user-not-in-group'               => [
 				[
 					'vip-go-seg' => 'design-group_--_yes',
 				],
@@ -150,7 +150,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				'dev-group',
 				false,
 			],
-			'user-in-group' => [
+			'user-in-group'                   => [
 				[
 					'vip-go-seg' => 'dev-group_--_yes',
 				],
@@ -170,7 +170,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				'dev-group',
 				false,
 			],
-			'user-not-yet-assigned' => [
+			'user-not-yet-assigned'           => [
 				[],
 				[
 					'dev-group',
@@ -182,8 +182,8 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	/**
- 	 * @dataProvider get_test_data__is_user_in_group_segment
- 	 */
+	 * @dataProvider get_test_data__is_user_in_group_segment
+	 */
 	public function test__is_user_in_group_segment( $initial_cookie, $initial_groups, $test_group, $test_value, $expected_result ) {
 		$_COOKIE = $initial_cookie;
 		Vary_Cache::register_groups( $initial_groups );
@@ -220,7 +220,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function test__register_groups__valid() {
 		$expected_groups = [
-			'dev-group' => '',
+			'dev-group'    => '',
 			'design-group' => '',
 		];
 
@@ -235,7 +235,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function test__register_groups__multiple_calls() {
 		$expected_groups = [
-			'dev-group' => '',
+			'dev-group'    => '',
 			'design-group' => '',
 		];
 
@@ -269,7 +269,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				[ 'dev-group', 'dev-group---__' ],
 				'invalid_vary_group_name',
 			],
-			'invalid-group-name' => [
+			'invalid-group-name'  => [
 				[ 'dev-group---__' ],
 				'invalid_vary_group_name',
 			],
@@ -289,7 +289,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__set_group_for_user_invalid() {
 		return [
-			'invalid-group-name-group-separator' => [
+			'invalid-group-name-group-separator'    => [
 				'dev-group---__',
 				'yes',
 				'invalid_vary_group_name',
@@ -299,7 +299,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				'yes---__',
 				'invalid_vary_group_segment',
 			],
-			'invalid-group-name-value-separator' => [
+			'invalid-group-name-value-separator'    => [
 				'dev-group_--_',
 				'yes',
 				'invalid_vary_group_name',
@@ -309,7 +309,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				'yes_--_',
 				'invalid_vary_group_segment',
 			],
-			'invalid-group-name-value-character' => [
+			'invalid-group-name-value-character'    => [
 				'dev-group%',
 				'yes',
 				'invalid_vary_group_name',
@@ -351,11 +351,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
 	}
 
-	public function test__set_group_for_user_group_not_registered( ) {
+	public function test__set_group_for_user_group_not_registered() {
 
 		$expected_error_code = 'invalid_vary_group_notregistered';
 
-		$actual_result  = Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
+		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
 
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
 
@@ -367,7 +367,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__set_group_for_user_invalid
 	 */
 	public function test__set_group_for_user_invalid( $group, $value, $expected_error_code ) {
-		$actual_result  = Vary_Cache::set_group_for_user( $group, $value );
+		$actual_result = Vary_Cache::set_group_for_user( $group, $value );
 
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
 
@@ -393,9 +393,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function test__enable_encryption_invalid() {
-		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
+		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
 		$this->expectError();
-		$actual_result = Vary_Cache::enable_encryption( );
+		$actual_result = Vary_Cache::enable_encryption();
 		$this->assertNull( $actual_result );
 	}
 
@@ -404,13 +404,13 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__enable_encryption_invalid_empty_constants() {
-		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
+		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
 		$this->expectError();
 
 		define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
 		define( 'VIP_GO_AUTH_COOKIE_IV', '' );
 
-		$actual_result = Vary_Cache::enable_encryption( );
+		$actual_result = Vary_Cache::enable_encryption();
 		$this->assertNull( $actual_result );
 	}
 
@@ -422,7 +422,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
 		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
 
-		$actual_result = Vary_Cache::enable_encryption( );
+		$actual_result = Vary_Cache::enable_encryption();
 		$this->assertNull( $actual_result );
 
 	}
@@ -451,7 +451,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$get_validate_cookie_value_method = self::get_vary_cache_method( 'validate_cookie_value' );
 
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
-			$value
+			$value,
 		] );
 
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
@@ -460,11 +460,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
-	public function test__validate_cookie_value_valid( ) {
+	public function test__validate_cookie_value_valid() {
 		$get_validate_cookie_value_method = self::get_vary_cache_method( 'validate_cookie_value' );
 
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
-			'dev-group'
+			'dev-group',
 		] );
 
 		$this->assertTrue( $actual_result );
@@ -605,32 +605,30 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__stringify_groups() {
 		return [
-			'values_for_all_groups' => [
+			'values_for_all_groups'           => [
+				[
+					'dev-group',
+					'design-group',
+				],
+				[
+					'dev-group'    => 'yes',
+					'design-group' => 'no',
+				],
+				'vc-v1__design-group_--_no---__dev-group_--_yes',
+			],
+			'values_for_only_nonempty_groups' => [
 				[
 					'dev-group',
 					'design-group',
 				],
 				[
 					'dev-group' => 'yes',
-					'design-group' => 'no',
 				],
-				'vc-v1__design-group_--_no---__dev-group_--_yes'
+				'vc-v1__dev-group_--_yes',
 			],
-			'values_for_only_nonempty_groups' => [
-				[
-					'dev-group',
-					'design-group'
-				],
-				[
-					'dev-group' => 'yes',
-				],
-				'vc-v1__dev-group_--_yes'
-			],
-			'values_for_all_empty_groups' => [
-				[
-				],
-				[
-				],
+			'values_for_all_empty_groups'     => [
+				[],
+				[],
 				'',
 			],
 
@@ -643,46 +641,47 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	public function test__stringify_groups_valid( $groups, $group_values, $expected_result ) {
 		$get_stringify_groups_method = self::get_vary_cache_method( 'stringify_groups' );
 		Vary_Cache::register_groups( $groups );
-		foreach($group_values as $key => $value) {
-			Vary_Cache::set_group_for_user($key, $value);
+		foreach ( $group_values as $key => $value ) {
+			Vary_Cache::set_group_for_user( $key, $value );
 		}
 
-		$actual_result = $get_stringify_groups_method->invokeArgs(null, [ ] );
+		$actual_result = $get_stringify_groups_method->invokeArgs( null, [] );
 
 		$this->assertSame( $expected_result, $actual_result );
 	}
 
 	public function get_test_data__parse_group_cookies() {
 		return [
-			'values_regular_group' => [
+			'values_regular_group'             => [
 				[],
 				[
 					'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
 				],
 				[],
 				[
-					'design-group' => 'no' ,
-					'dev-group' => 'yes'
+					'design-group' => 'no',
+					'dev-group'    => 'yes',
 				],
 			],
-			'values_encrypted_group_header' => [
-				[	'key' => 'abc',
-					'iv' => '1231231231231234',
+			'values_encrypted_group_header'    => [
+				[
+					'key'    => 'abc',
+					'iv'     => '1231231231231234',
 					'siteid' => 123,
 				],
+				[],
 				[
+					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
 				],
 				[
-					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes'
-				],
-				[
-					'design-group' => 'no' ,
-					'dev-group' => 'yes'
+					'design-group' => 'no',
+					'dev-group'    => 'yes',
 				],
 			],
 			'values_encrypted_group_no_header' => [
-				[	'key' => 'abc',
-					'iv' => '1231231231231234',
+				[
+					'key'    => 'abc',
+					'iv'     => '1231231231231234',
 					'siteid' => 123,
 				],
 				[
@@ -692,32 +691,31 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 					'HTTP_COOKIE' => 'vip-go-auth=123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I;',
 				],
 				[
-					'design-group' => 'no' ,
-					'dev-group' => 'yes'
+					'design-group' => 'no',
+					'dev-group'    => 'yes',
 				],
 			],
-			'values_regular_nogroup' => [
+			'values_regular_nogroup'           => [
 				[],
 				[
 					'vip-go-seg' => 'vc-v1__',
 				],
 				[],
-				[
-				],
+				[],
 			],
-			'values_encrypted_nogroup' => [
-				[	'key' => 'abc',
-					'iv' => '1231231231231234',
+			'values_encrypted_nogroup'         => [
+				[
+					'key'    => 'abc',
+					'iv'     => '1231231231231234',
 					'siteid' => 123,
 				],
+				[],
 				[
+					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_yes---__dev-group_--_no',
 				],
 				[
-					'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_yes---__dev-group_--_no'
-				],
-				[
-					'design-group' => 'yes' ,
-					'dev-group' => 'no'
+					'design-group' => 'yes',
+					'dev-group'    => 'no',
 				],
 			],
 		];
@@ -729,18 +727,17 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result )
-	{
-		$_SERVER = array_merge( $_SERVER, $headers );
-		$_COOKIE = $initial_cookie;
+	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result ) {
+		$_SERVER                       = array_merge( $_SERVER, $headers );
+		$_COOKIE                       = $initial_cookie;
 		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
 		if ( ! empty( $secrets ) ) {
-			define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets[ 'key' ] );
-			define( 'VIP_GO_AUTH_COOKIE_IV', $secrets[ 'iv' ] );
-			define( 'VIP_GO_APP_ID', $secrets[ 'siteid' ]);
+			define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets['key'] );
+			define( 'VIP_GO_AUTH_COOKIE_IV', $secrets['iv'] );
+			define( 'VIP_GO_APP_ID', $secrets['siteid'] );
 			Vary_Cache::enable_encryption();
 		}
-		$get_parse_group_cookie_method->invokeArgs(null, [ ] );
+		$get_parse_group_cookie_method->invokeArgs( null, [] );
 		$this->assertEquals( $expected_result, Vary_Cache::get_groups() );
 	}
 

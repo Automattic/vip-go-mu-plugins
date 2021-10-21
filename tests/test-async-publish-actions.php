@@ -49,7 +49,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		$pid = wp_insert_post( $post, true );
 
 		$args = [
-			'post_id' => (int) $pid,
+			'post_id'    => (int) $pid,
 			'new_status' => 'draft',
 			'old_status' => 'new',
 		];
@@ -73,7 +73,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		$pid = wp_insert_post( $post, true );
 
 		$args = [
-			'post_id' => (int) $pid,
+			'post_id'    => (int) $pid,
 			'new_status' => 'draft',
 			'old_status' => 'new',
 		];

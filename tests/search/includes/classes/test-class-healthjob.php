@@ -113,7 +113,7 @@ class HealthJob_Test extends WP_UnitTestCase {
 			array(
 				'index_name'    => 'posts-123',
 				'index_version' => 333,
-				'error' => 'Foo Error',
+				'error'         => 'Foo Error',
 			),
 		);
 
