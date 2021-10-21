@@ -135,7 +135,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	public function test__validate__invalid_mode( $mode ) {
 		$result = $this->stream_wrapper->validate( '/test/path', $mode );
 
-		$this->assertError( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'.", E_USER_NOTICE );
+		$this->assertError( esc_html( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." ), E_USER_NOTICE );
 		$this->assertFalse( $result );
 	}
 

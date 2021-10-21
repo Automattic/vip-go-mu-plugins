@@ -36,7 +36,7 @@ class CoreCommand extends \ElasticPress\Command {
 	private function _shift_version_after_index( $assoc_args ) {
 		$search = \Automattic\VIP\Search\Search::instance();
 
-		$indexables = $this->_parse_indexables( $assoc_args );
+		$indexables   = $this->_parse_indexables( $assoc_args );
 		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		foreach ( $indexables as $indexable ) {
@@ -73,7 +73,7 @@ class CoreCommand extends \ElasticPress\Command {
 		$indexables = [];
 
 		foreach ( $indexable_slugs as $slug ) {
-			$indexable = $this->_parse_indexable( $slug );
+			$indexable    = $this->_parse_indexable( $slug );
 			$indexables[] = $indexable;
 		}
 		return $indexables;
@@ -95,7 +95,7 @@ class CoreCommand extends \ElasticPress\Command {
 			$using_versions = $assoc_args['using-versions'] ?? false;
 			if ( $assoc_args['version'] ?? false ) {
 				$version_number = $assoc_args['version'];
-			} else if ( $using_versions ) {
+			} elseif ( $using_versions ) {
 				$version_number = 'next';
 			}
 
@@ -189,7 +189,7 @@ class CoreCommand extends \ElasticPress\Command {
 		$this->_verify_arguments_compatibility( $assoc_args );
 
 		$using_versions = $assoc_args['using-versions'] ?? false;
-		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
+		$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		$this->_maybe_setup_index_version( $assoc_args );
 
