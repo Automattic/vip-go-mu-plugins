@@ -3,11 +3,10 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue\Cron as Cron;
+use WP_UnitTestCase;
 
-class Cron_Test extends \WP_UnitTestCase {
-	public function setUp() {
-		global $wpdb;
-
+class Cron_Test extends WP_UnitTestCase {
+	public function setUp(): void {
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 		}

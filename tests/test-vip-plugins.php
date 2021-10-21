@@ -2,13 +2,15 @@
 
 namespace Automattic\VIP\Tests;
 
-class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 
 	protected $option_active_plugins = [];
 	protected $option_active_sitewide_plugins = [];
 	protected $code_activated_plugins = [];
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		// emulate the active plugins option

@@ -5,6 +5,8 @@ namespace Automattic\VIP\Files;
 use WP_Error;
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/../../files/class-vip-filesystem.php';
+
 class VIP_Filesystem_Test extends WP_UnitTestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
@@ -13,10 +15,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 */
 	protected $vip_filesystem;
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-vip-filesystem.php' );
 
 		// make sure needed constants are defined
 		if ( ! defined( 'LOCAL_UPLOADS' ) ) {
@@ -27,7 +27,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->vip_filesystem = new VIP_Filesystem();
@@ -37,7 +37,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$add_filters->invoke( $this->vip_filesystem );
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		// remove the filters
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
@@ -112,7 +112,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 		$actual = $get_upload_path->invoke( $this->vip_filesystem );
 
-		$this->assertNotContains( 'vip://', $actual );
+		$this->assertStringNotContainsString( 'vip://', $actual );
 	}
 
 	public function get_test_data__clean_file_path() {

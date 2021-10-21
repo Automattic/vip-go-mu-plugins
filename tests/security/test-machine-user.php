@@ -2,15 +2,13 @@
 
 namespace Automattic\VIP\Security;
 
-class Machine_User_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../security/machine-user.php';
 
-		require_once __DIR__ . '/../../security/machine-user.php';
-	}
+class Machine_User_Test extends WP_UnitTestCase {
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->machine_user = $this->factory->user->create_and_get( [

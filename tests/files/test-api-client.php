@@ -2,18 +2,20 @@
 
 namespace Automattic\VIP\Files;
 
+use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
-class API_Client_Test extends \WP_UnitTestCase {
+require_once __DIR__ . '/../../files/class-api-client.php';
+
+class API_Client_Test extends WP_UnitTestCase {
+	use ArraySubsetAsserts;
+	use AssertionRenames;
+
 	private $http_requests;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-api-client.php' );
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->init_api_client();
@@ -21,7 +23,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$this->http_requests = [];
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		$this->api_client = null;
 		$this->http_requests = null;
 
@@ -48,12 +50,13 @@ class API_Client_Test extends \WP_UnitTestCase {
 				'args' => $args,
 			];
 
-			if ( $args[ 'stream' ] && 
-				! is_wp_error( $mocked_response ) && 
-				isset( $mocked_response[ 'response' ] ) && 
-				$mocked_response[ 'response' ][ 'code' ] === 200 ) {
+			if ( $args['stream'] &&
+				! is_wp_error( $mocked_response ) &&
+				isset( $mocked_response['response'] ) &&
+				200 === $mocked_response['response']['code'] ) {
 				// Handle streamed requests
-				file_put_contents( $args[ 'filename' ], $mocked_response[ 'body' ] );
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+				file_put_contents( $args['filename'], $mocked_response['body'] );
 			}
 
 			return $mocked_response;
@@ -178,7 +181,7 @@ class API_Client_Test extends \WP_UnitTestCase {
 		$actual_http_request = reset( $this->http_requests );
 
 		// Should be upgraded to assertMatchesRegularExpression in the future
-		$this->assertRegExp( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
+		$this->assertMatchesRegularExpression( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
 
 		$_SERVER['REQUEST_URI'] = $original_request_uri;
 	}

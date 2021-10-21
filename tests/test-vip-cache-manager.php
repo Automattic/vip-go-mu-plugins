@@ -1,13 +1,17 @@
 <?php
 
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	public $cache_manager;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
@@ -70,7 +74,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 
 		$actual_output = $this->cache_manager->queue_purge_url( $queue_url );
 
@@ -94,7 +98,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 
 		wp_update_post( $post );
 
-		$this->assertInternalType( 'array', $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls variable is an array' );
+		$this->assertIsArray( $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls variable is an array' );
 
 		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
 	}

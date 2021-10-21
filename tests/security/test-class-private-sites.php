@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Security;
 
-class Private_Sites_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+class Private_Sites_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled

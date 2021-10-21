@@ -2,7 +2,13 @@
 
 namespace Automattic\VIP\Security;
 
-class Lockout_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+require_once __DIR__ . '/../../security/class-lockout.php';
+require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
+require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
+
+class Lockout_Test extends WP_UnitTestCase {
 
 	/**
 	 * @var Lockout
@@ -16,13 +22,7 @@ class Lockout_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = FALSE;
 	protected $runTestInSeparateProcess = TRUE;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once __DIR__ . '/../../security/class-lockout.php';
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->lockout = new Lockout();
@@ -136,9 +136,6 @@ class Lockout_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter_user_has_cap__locked_vip_support() {
-		require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
-		require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
-
 		define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$user_id = \Automattic\VIP\Support_User\User::add( [

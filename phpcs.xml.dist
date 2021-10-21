@@ -29,6 +29,7 @@
 	<exclude-pattern>/debug-bar/*</exclude-pattern>
 	<exclude-pattern>/drop-ins/*</exclude-pattern>
 	<exclude-pattern>/jetpack-[\d.]+/</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
 	<exclude-pattern>/query-monitor/*</exclude-pattern>
 	<exclude-pattern>/search/elasticpress/*</exclude-pattern>
 	<exclude-pattern>/search/debug-bar-elasticpress/*</exclude-pattern>
@@ -39,7 +40,6 @@
 	<exclude-pattern>/wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>/wp-cron-control/*</exclude-pattern>
 	<exclude-pattern>/wp-parsely-*/*</exclude-pattern>
-	<exclude-pattern>/test-jquery-updates/*</exclude-pattern>
 	<exclude-pattern>*/build/*\.asset\.php</exclude-pattern>
 
 	<!-- How to scan -->
@@ -85,6 +85,9 @@
 
 		<!-- Allow short ternaries -->
 		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
+
+		<!-- Generates too many false positives -->
+		<exclude name="WordPress.WP.CapitalPDangit.Misspelled" />
 	</rule>
 
 </ruleset>

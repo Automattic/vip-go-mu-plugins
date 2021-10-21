@@ -2,32 +2,29 @@
 
 namespace Automattic\VIP\Files;
 
-use \WP_Error;
+use WP_Error;
+use WP_UnitTestCase;
 
-class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
+require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
+
+class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	private $stream_wrapper;
 
 	private $api_client_mock;
 
 	private $errors = [];
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php' );
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
-		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock ); 
+		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
 
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		$this->stream_wrapper = null;
 		$this->api_client_mock = null;
 
@@ -51,8 +48,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	/**
 	 * Helper functions to test for trigger_error calls
 	 */
-	public function errorHandler( $errno, $errstr, $errfile, $errline, $errcontext ) {
-		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline', 'errcontext' );
+	public function errorHandler( $errno, $errstr, $errfile, $errline ) {
+		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline' );
 	}
 
 	public function assertError( $errstr, $errno ) {
@@ -138,7 +135,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	public function test__validate__invalid_mode( $mode ) {
 		$result = $this->stream_wrapper->validate( '/test/path', $mode );
 
-		$this->assertError( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'.", E_USER_NOTICE );
+		$this->assertError( esc_html( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." ), E_USER_NOTICE );
 		$this->assertFalse( $result );
 	}
 

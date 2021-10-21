@@ -13,17 +13,19 @@
 namespace Automattic\VIP\Tests;
 
 use Automattic\VIP\Proxy\IpUtils;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
-class IpUtilsTest extends \PHPUnit_Framework_TestCase {
+class IpUtilsTest extends TestCase {
 
 	/**
-	 * @dataProvider testIpv4Provider
+	 * @dataProvider data_ipv4_provider
 	 */
 	public function testIpv4( $matches, $remote_addr, $cidr ) {
 		$this->assertSame( $matches, IpUtils::check_ip( $remote_addr, $cidr ) );
 	}
 
-	public function testIpv4Provider() {
+	public function data_ipv4_provider() {
 		return array(
 			array( true, '192.168.1.1', '192.168.1.1' ),
 			array( true, '192.168.1.1', '192.168.1.1/1' ),
@@ -41,7 +43,7 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
-	 * @dataProvider testIpv6Provider
+	 * @dataProvider data_ipv6_provider
 	 */
 	public function testIpv6( $matches, $remote_addr, $cidr ) {
 		if ( ! defined( 'AF_INET6' ) ) {
@@ -51,7 +53,7 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase {
 		$this->assertSame( $matches, IpUtils::check_ip( $remote_addr, $cidr ) );
 	}
 
-	public function testIpv6Provider() {
+	public function data_ipv6_provider() {
 		return array(
 			array( true, '2a01:198:603:0:396e:4789:8e99:890f', '2a01:198:603:0::/65' ),
 			array( false, '2a00:198:603:0:396e:4789:8e99:890f', '2a01:198:603:0::/65' ),
@@ -67,7 +69,6 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
-	 * @expectedException \RuntimeException
 	 * @requires extension sockets
 	 */
 	public function testAnIpv6WithOptionDisabledIpv6() {
@@ -75,6 +76,7 @@ class IpUtilsTest extends \PHPUnit_Framework_TestCase {
 			$this->markTestSkipped( 'Only works when PHP is compiled with the option "disable-ipv6".' );
 		}
 
+		$this->expectException( RuntimeException::class );
 		IpUtils::check_ip( '2a01:198:603:0:396e:4789:8e99:890f', '2a01:198:603:0::/65' );
 	}
 }

@@ -2,17 +2,13 @@
 
 namespace Automattic\VIP\Security;
 
-use Automattic\VIP\Feature;
 use WP_Error;
+use WP_UnitTestCase;
 
-class Current_Password_Change_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../security/password.php';
 
-		require_once __DIR__ . '/../../security/password.php';
-	}
-
-	public function setUp() {
+class Current_Password_Change_Test extends WP_UnitTestCase {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->factory->user->create( [

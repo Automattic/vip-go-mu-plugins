@@ -1,21 +1,20 @@
 <?php
 
-class VIP_Request_Block_Test extends \WP_UnitTestCase {
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+
+require_once __DIR__ . '/../../lib/class-vip-request-block.php';
+
+class VIP_Request_Block_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	/*
 	 * The $_SERVER headers that are used in this class to test
 	 * are defined in the tests/bootstrap.php file.
 	 */
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once __DIR__ . '/../../lib/class-vip-request-block.php';
-	}
-
-	/**
-	 * @doesNotPerformAssertions
-	 */
 	public function test__no_error_raised_when_ip_is_not_present() {
+		$this->expectNotToPerformAssertions();
+
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '4.4.4.4';
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
@@ -24,10 +23,9 @@ class VIP_Request_Block_Test extends \WP_UnitTestCase {
 		// Expecting that no exception has been raised up to this point
 	}
 
-	/**
-	 * @doesNotPerformAssertions
-	 */
 	public function test__invalid_ip_should_not_raise_error() {
+		$this->expectNotToPerformAssertions();
+
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
 		VIP_Request_Block::ip( '1' );
@@ -39,7 +37,7 @@ class VIP_Request_Block_Test extends \WP_UnitTestCase {
 		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '4.4.4.4';
 		// We're detecting that the block is successful by expecting
 		// "Cannot modify header information" headers already sent by warning
-		$this->expectException( PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 		VIP_Request_Block::ip( '4.4.4.4' );
 	}
 
@@ -48,7 +46,7 @@ class VIP_Request_Block_Test extends \WP_UnitTestCase {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
 		// We're detecting that the block is successful by expecting
 		// "Cannot modify header information" headers already sent by warning
-		$this->expectException( PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 		VIP_Request_Block::ip( '1.1.1.1' );
 	}
 
@@ -57,7 +55,7 @@ class VIP_Request_Block_Test extends \WP_UnitTestCase {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
 		// We're detecting that the block is successful by expecting
 		// "Cannot modify header information" headers already sent by warning
-		$this->expectException( PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 		VIP_Request_Block::ip( '8.8.8.8' );
 	}
 }

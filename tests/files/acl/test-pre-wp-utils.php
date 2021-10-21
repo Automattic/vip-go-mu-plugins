@@ -2,18 +2,17 @@
 
 namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
-use WP_Error;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
-class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../../files/acl/pre-wp-utils.php';
 
-		require_once( __DIR__ . '/../../../files/acl/pre-wp-utils.php' );
-	}
+class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
 
 	public function test__prepare_request__empty_request_uri() {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-		$this->expectExceptionMessage( 'VIP Files ACL failed due to empty URI' );
+		$this->expectWarning();
+		$this->expectWarningMessage( 'VIP Files ACL failed due to empty URI' );
 
 		$request_uri = '';
 
@@ -23,7 +22,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__prepare_request__invalid_request_uri() {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 		$this->expectExceptionMessage( 'VIP Files ACL failed due to relative path (for invalid/path.jpg)' );
 
 		$request_uri = 'invalid/path.jpg';
@@ -103,8 +102,8 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_data__validate_path__invalid
 	 */
 	public function test__validate_path__invalid( $file_path, $expected_warning ) {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-		$this->expectExceptionMessage( $expected_warning );
+		$this->expectWarning();
+		$this->expectWarningMessage( $expected_warning );
 
 		$actual_is_valid = validate_path( $file_path );
 	

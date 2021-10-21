@@ -2,15 +2,9 @@
 
 namespace Automattic\VIP\Performance;
 
-class Do_Pings_Test extends \WP_UnitTestCase {
-	public function setUp() {
-		parent::setUp();
-	}
+use WP_UnitTestCase;
 
-	public function tearDown() {
-		parent::tearDown();
-	}
-
+class Do_Pings_Test extends WP_UnitTestCase {
 	public function test__block_encloseme_metadata_filter_should_respect_update_value_if_not_encloseme() {
 		$should_update = true;
 		$object_id = 1;
