@@ -88,35 +88,36 @@ class Tracks_Event {
 	/**
 	 * Annotate the event with all relevant info.
 	 *
-	 * @param  array $event Object or (flat) array.
+	 * @param  array $event_data Object or (flat) array.
+	 *
 	 * @return mixed        The transformed event array or WP_Error on failure.
 	 */
-	protected static function validate_and_sanitize( array $event ) {
+	protected static function validate_and_sanitize( array $event_data ) {
 		// The rest of this process expects an object. Cast it!
-		$_event = (object) $event;
+		$event = (object) $event_data;
 
 		// _en stands for Event Name in A8c tracks. It is required.
-		if ( ! $_event->_en ) {
+		if ( ! $event->_en ) {
 			return new WP_Error( 'invalid_event', 'A valid event must be specified via `_en`', 400 );
 		}
 
 		// delete non-routable addresses otherwise geoip will discard the record entirely.
-		if ( property_exists( $_event, '_via_ip' ) && preg_match( '/^192\.168|^10\./', $_event->_via_ip ) ) {
-			unset( $_event->_via_ip );
+		if ( property_exists( $event, '_via_ip' ) && preg_match( '/^192\.168|^10\./', $event->_via_ip ) ) {
+			unset( $event->_via_ip );
 		}
 
 		// Make sure we have an event timestamp.
-		if ( ! isset( $_event->_ts ) ) {
-			$_event->_ts = self::milliseconds_since_epoch();
+		if ( ! isset( $event->_ts ) ) {
+			$event->_ts = self::milliseconds_since_epoch();
 		}
 
-		$_event = self::annotate_with_id_and_type( $_event );
+		$event = self::annotate_with_id_and_type( $event );
 
-		if ( ! ( property_exists( $_event, '_ui' ) && property_exists( $_event, '_ut' ) ) ) {
+		if ( ! ( property_exists( $event, '_ui' ) && property_exists( $event, '_ut' ) ) ) {
 			return new WP_Error( 'empty_ui', 'Could not determine user identity and type', 400 );
 		}
 
-		return self::annotate_with_env_props( $_event );
+		return self::annotate_with_env_props( $event );
 	}
 
 	/**
