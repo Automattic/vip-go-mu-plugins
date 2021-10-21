@@ -1,6 +1,6 @@
 <?php
 
-class WPCOM_VIP_Get_Resized_Attachment_Url_Test extends \WP_UnitTestCase {
+class WPCOM_VIP_Get_Resized_Attachment_Url_Test extends WP_UnitTestCase {
 	public function test__invalid_attachment() {
 		$attachment_id = 99999999;
 

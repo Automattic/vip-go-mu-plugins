@@ -1,11 +1,13 @@
 <?php
 
+require_once __DIR__ . '/../../files/class-image.php';
+
 /**
  * Class A8C_Files_Image_Test
  *
  * @group srcset
  */
-class A8C_Files_Image_Test extends \WP_UnitTestCase {
+class A8C_Files_Image_Test extends WP_UnitTestCase {
 
 	/**
 	 * The test image.
@@ -15,20 +17,11 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
-	 * Load the Automattic\VIP\Files\ImageSizes class.
-	 */
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-image.php' );
-	}
-
-	/**
 	 * Set the test to the original initial state of the VIP Go.
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->enable_a8c_files();
@@ -39,7 +32,7 @@ class A8C_Files_Image_Test extends \WP_UnitTestCase {
 	 *
 	 * Remove added uploads.
 	 */
-	public function tearDown() {
+	public function tearDown(): void {
 
 		$this->remove_added_uploads();
 

@@ -1,8 +1,11 @@
 <?php
 
+use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
-class VIP_Mail_Test extends \WP_UnitTestCase {
-	public function setUp() {
+class VIP_Mail_Test extends WP_UnitTestCase {
+	use AssertionRenames;
+
+	public function setUp(): void {
 		parent::setUp();
 		reset_phpmailer_instance();
 		if ( ! defined( 'USE_VIP_PHPMAILER' ) ) {
@@ -49,7 +52,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 		$header = $mailer->get_sent()->header;
 
-		$this->assertContains( 'From: WordPress <donotreply@wordpress.com>', $header );
+		$this->assertStringContainsString( 'From: WordPress <donotreply@wordpress.com>', $header );
 	}
 
 	public function test__has_tracking_header_with_key() {
@@ -59,7 +62,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 		$header = $mailer->get_sent()->header;
 
-		$this->assertRegExp( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
+		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 
 	/**

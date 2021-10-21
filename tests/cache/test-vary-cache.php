@@ -2,16 +2,15 @@
 
 namespace Automattic\VIP\Cache;
 
-use WP_Error;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
-class Vary_Cache_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../cache/class-vary-cache.php';
 
-		require_once( __DIR__ . '/../../cache/class-vary-cache.php' );
-	}
+class Vary_Cache_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->original_COOKIE = $_COOKIE;
@@ -20,7 +19,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 		Vary_Cache::load();
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_COOKIE;
@@ -253,7 +252,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	public function test__register_groups__did_send_headers() {
 		do_action( 'send_headers' );
 
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 
 		$actual_result = Vary_Cache::register_groups( [
 			'dev-group',
@@ -281,7 +280,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
 	public function test__register_groups__invalid( $invalid_groups ) {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
 
 		$this->assertFalse( $actual_result, 'Invalid register_groups call did not return false' );
@@ -395,7 +394,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 
 	public function test__enable_encryption_invalid() {
 		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
-		$this->expectException( \PHPUnit\Framework\Error\Error::class );
+		$this->expectError();
 		$actual_result = Vary_Cache::enable_encryption( );
 		$this->assertNull( $actual_result );
 	}
@@ -406,7 +405,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	 */
 	public function test__enable_encryption_invalid_empty_constants() {
 		$this->markTestSkipped('Skip for now until PHPUnit is updated in Travis');
-		$this->expectException( \PHPUnit\Framework\Error\Error::class );
+		$this->expectError();
 
 		define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
 		define( 'VIP_GO_AUTH_COOKIE_IV', '' );
@@ -474,6 +473,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__sent_for_group() {
 		Vary_Cache::register_group( 'dev-group' );
@@ -486,6 +486,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__dont_override_headers() {
 		header( 'Vary: yay' );
@@ -501,6 +502,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__sent_for_group_with_encryption() {
 		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
@@ -516,6 +518,7 @@ class Vary_Cache_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__not_sent_with_no_groups() {
 		do_action( 'send_headers' );

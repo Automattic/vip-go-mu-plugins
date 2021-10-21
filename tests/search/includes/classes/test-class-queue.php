@@ -2,7 +2,12 @@
 
 namespace Automattic\VIP\Search;
 
-class Queue_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+
+class Queue_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	/**
 	* Make tests run in separate processes since we're testing state
 	* related to plugin init, including various constants.
@@ -10,7 +15,7 @@ class Queue_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
@@ -26,9 +31,7 @@ class Queue_Test extends \WP_UnitTestCase {
 		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
-	public function setUp() {
-		global $wpdb;
-
+	public function setUp(): void {
 		wp_cache_flush();
 
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
@@ -1183,8 +1186,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$filter
@@ -1205,8 +1208,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_low_message
@@ -1231,8 +1234,8 @@ class Queue_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_high_message

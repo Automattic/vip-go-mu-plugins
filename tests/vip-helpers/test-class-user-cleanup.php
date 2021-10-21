@@ -3,14 +3,11 @@
 namespace Automattic\VIP\Helpers;
 
 use WP_Error;
+use WP_UnitTestCase;
 
-class User_Cleanup_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../vip-helpers/class-user-cleanup.php';
 
-		require_once( __DIR__ . '/../../vip-helpers/class-user-cleanup.php' );
-	}
-
+class User_Cleanup_Test extends WP_UnitTestCase {
 	public function data_provider__parse_emails_string() {
 		return [
 			'empty' => [ '', [] ],

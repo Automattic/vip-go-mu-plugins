@@ -1,6 +1,6 @@
 <?php
 
-class WPCOM_VIP_Utils_Vip_Is_Jetpack_Request_Test extends \WP_UnitTestCase {
+class WPCOM_VIP_Utils_Vip_Is_Jetpack_Request_Test extends WP_UnitTestCase {
 
 	public function test__vip_is_jetpack_request__shortcut() {
 		//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__

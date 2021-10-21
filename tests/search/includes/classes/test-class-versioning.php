@@ -2,9 +2,10 @@
 
 namespace Automattic\VIP\Search;
 
-use \WP_Error as WP_Error;
+use WP_Error;
+use WP_UnitTestCase;
 
-class Versioning_Test extends \WP_UnitTestCase {
+class Versioning_Test extends WP_UnitTestCase {
 	/**
 	* Make tests run in separate processes since we're testing state
 	* related to plugin init, including various constants.
@@ -15,7 +16,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 	public static $version_instance;
 	public static $search;
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 				'https://es-endpoint1',

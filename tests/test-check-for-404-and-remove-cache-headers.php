@@ -1,15 +1,12 @@
 <?php
 
+require_once __DIR__ . '/../misc.php';
+
 class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase {
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-		require_once( __DIR__ . '/../misc.php' );
-	}
-
-	public function tearDown() {
-		parent::tearDown();
+	public function tearDown(): void {
 		wp_reset_query();
+		parent::tearDown();
 	}
 
 	/**

@@ -2,15 +2,17 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use WP_UnitTestCase;
+
 function test_mode() {
 	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
 	return $mode ? $mode : 'disabled';
 }
 
-class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
+class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	protected static $test_mode;
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
 		self::$test_mode = test_mode();
 		if ( 'disabled' !== self::$test_mode ) {
 			echo 'Running Parsely Integration Tests in mode: ' . esc_html( self::$test_mode ) . "\n";

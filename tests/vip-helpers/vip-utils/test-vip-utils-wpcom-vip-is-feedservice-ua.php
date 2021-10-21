@@ -1,6 +1,6 @@
 <?php
 
-class WPCOM_VIP_Utils_Wpcom_Vip_Is_Feedservice_UA_Test extends \WP_UnitTestCase {
+class WPCOM_VIP_Utils_Wpcom_Vip_Is_Feedservice_UA_Test extends WP_UnitTestCase {
 
 	public function wpcom_vip_is_feedservice_ua_data() {
 		return [

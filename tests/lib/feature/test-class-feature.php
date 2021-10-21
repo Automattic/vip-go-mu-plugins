@@ -2,13 +2,11 @@
 
 namespace Automattic\VIP;
 
-class Feature_Test extends \PHPUnit_Framework_TestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+use PHPUnit\Framework\TestCase;
 
-		require_once( __DIR__ . '/../../../lib/feature/class-feature.php' );
-	}
+require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
+class Feature_Test extends TestCase {
 	/**
 	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
 	 * use something like this when generating test data:

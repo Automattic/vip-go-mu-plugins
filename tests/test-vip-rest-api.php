@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Tests;
 
-class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	/**
 	 * Let's reduce repetition
 	 */
@@ -15,7 +17,7 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 	/**
 	 * Test prep
 	 */
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		// NONCE_SALT is used to hash tokens
@@ -31,7 +33,7 @@ class VIP_Go_REST_API_Test extends \WP_UnitTestCase {
 	/**
 	 * Clean up after our tests
 	 */
-	function tearDown() {
+	public function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
 

@@ -1,9 +1,10 @@
 <?php
 namespace Automattic\VIP\Search;
 
-use \WP_Query;
+use WP_Query;
+use WP_UnitTestCase;
 
-class Cache_Test extends \WP_UnitTestCase {
+class Cache_Test extends WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
@@ -11,14 +12,13 @@ class Cache_Test extends \WP_UnitTestCase {
 	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
 	}
 
-	public function setUp() {
-		global $wpdb;
+	public function setUp(): void {
 		require_once __DIR__ . '/../../../../search/search.php';
 		include_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
 
@@ -38,7 +38,7 @@ class Cache_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_apc_compat_pre_get_posts_wired() {
-		$this->assertInternalType( 'int', has_action( 'pre_get_posts', array( $this->es->cache, 'disable_apc_for_ep_enabled_requests' ) ) );
+		$this->assertIsInt( has_action( 'pre_get_posts', array( $this->es->cache, 'disable_apc_for_ep_enabled_requests' ) ) );
 	}
 
 	public function test_disable_enable_apc() {

@@ -2,8 +2,14 @@
 
 namespace Automattic\VIP\Cache;
 
-class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
-	public function setUp() {
+use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
+use WP_Test_REST_TestCase;
+
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
+class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
+	use ArraySubsetAsserts;
+
+	public function setUp(): void {
 		parent::setUp();
 
 		global $wp_rest_server;
@@ -17,11 +23,11 @@ class TTL_Manager__REST_API__Test extends \WP_Test_REST_TestCase {
 		] );
 	}
 
-	public function tearDown() {
-		parent::tearDown();
-
+	public function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
+
+		parent::tearDown();
 	}
 
 	protected function dispatch_request( $method ) {
