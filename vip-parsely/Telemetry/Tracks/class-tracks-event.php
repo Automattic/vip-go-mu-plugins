@@ -54,7 +54,6 @@ class Tracks_Event {
 			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.InterpolatedVariableNotSnakeCase
 			$event->_ui = "${VIP_GO_APP_ID}_$wp_user_id";
 
-			// TODO: _ut needs to be in the allowed list.
 			$event->_ut = 'vip_go_app_wp_user';
 			return $event;
 		}
