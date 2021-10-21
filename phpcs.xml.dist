@@ -88,6 +88,8 @@
 
 		<!-- Generates too many false positives -->
 		<exclude name="WordPress.WP.CapitalPDangit.Misspelled" />
+		<!-- We use trigger_error extensively -->
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_trigger_error" />
 	</rule>
 
 </ruleset>
