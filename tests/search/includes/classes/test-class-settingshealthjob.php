@@ -103,9 +103,9 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->getMock();
 
 		$health_mock->method( 'heal_index_settings_for_indexable' )->willReturn( array(
-			'result' => true,
+			'result'        => true,
 			'index_version' => 1,
-			'index_name' => 'foo-index',
+			'index_name'    => 'foo-index',
 		) );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )

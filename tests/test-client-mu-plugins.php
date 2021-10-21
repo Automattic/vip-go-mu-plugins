@@ -30,7 +30,7 @@ class Client_Mu_Plugins__Get__Tests extends WP_UnitTestCase {
 	}
 
 	public function test__valid() {
-		$dir = __DIR__ . '/fixtures/client-mu-plugins/valid';
+		$dir      = __DIR__ . '/fixtures/client-mu-plugins/valid';
 		$expected = [
 			$dir . '/0-first-plugin.php',
 			$dir . '/index.php',
@@ -69,7 +69,7 @@ class Client_Mu_Plugins__Get_Data__Tests extends WP_UnitTestCase {
 			// index.php is stripped out
 			// not-php.txt is stripped out
 			'with-headers.php',
-			'z-last-plugin.php'
+			'z-last-plugin.php',
 		];
 		$this->assertEquals( $expected_keys, array_keys( $actual ), 'Returned array keys for plugins don\'t match expected values' );
 
@@ -87,16 +87,16 @@ class Client_Mu_Plugins__Get_Data__Tests extends WP_UnitTestCase {
 class Client_Mu_Plugins__Plugins_Url__Tests extends WP_UnitTestCase {
 	public function get_test_data() {
 		return [
-			'not-client-mu-plugins-path' => [
+			'not-client-mu-plugins-path'     => [
 				'script.js',
 				WP_PLUGIN_DIR . '/file.php',
 				WP_CONTENT_URL . '/plugins/script.js',
 			],
 
-			'client-mu-plugins-path_root' => [
+			'client-mu-plugins-path_root'    => [
 				'script.js',
 				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/file.php',
-				WP_CONTENT_URL . '/client-mu-plugins/script.js'
+				WP_CONTENT_URL . '/client-mu-plugins/script.js',
 			],
 
 			'client-mu-plugins-path_subpath' => [
@@ -110,7 +110,7 @@ class Client_Mu_Plugins__Plugins_Url__Tests extends WP_UnitTestCase {
 				'/script.js',
 				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/plugin/file.php',
 				WP_CONTENT_URL . '/client-mu-plugins/plugin/script.js',
-			]
+			],
 		];
 	}
 

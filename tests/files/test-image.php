@@ -58,9 +58,9 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	 * @return ReflectionMethod
 	 */
 	protected static function get_method( $name ) {
-		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
+		$class  = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible(true);
+		$method->setAccessible( true );
 		return $method;
 	}
 
@@ -75,9 +75,9 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	 * @return ReflectionProperty
 	 */
 	protected function get_property( $name ) {
-		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
+		$class    = new ReflectionClass( 'Automattic\\VIP\\Files\\Image' );
 		$property = $class->getProperty( $name );
-		$property->setAccessible(true);
+		$property->setAccessible( true );
 		return $property;
 	}
 
@@ -93,7 +93,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
@@ -112,56 +112,56 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	 */
 	public function get_data_for_generate_sizes() {
 		return [
-			'thumbnail' => [
+			'thumbnail'    => [
 				[
-					'width' => '150',
+					'width'  => '150',
 					'height' => '150',
-					'crop' => '1',
+					'crop'   => '1',
 				],
 				[
-					'width' => 150,
+					'width'  => 150,
 					'height' => 150,
 					'params' => [
 						'resize' => '150,150',
 					],
-				]
+				],
 			],
-			'medium' => [
+			'medium'       => [
 				[
-					'width' => '300',
+					'width'  => '300',
 					'height' => '300',
-					'crop' => false,
+					'crop'   => false,
 				],
 				[
-					'width' => 300,
+					'width'  => 300,
 					'height' => 169,
 					'params' => [
 						'resize' => '300,169',
 					],
-				]
+				],
 			],
 			'medium_large' => [
 				[
-					'width' => '768',
+					'width'  => '768',
 					'height' => '0',
-					'crop' => false,
+					'crop'   => false,
 				],
 				[
-					'width' => 768,
+					'width'  => 768,
 					'height' => 432,
 					'params' => [
 						'resize' => '768,432',
 					],
-				]
+				],
 			],
-			'large' => [
+			'large'        => [
 				[
-					'width' => '1024',
+					'width'  => '1024',
 					'height' => '1024',
-					'crop' => false,
+					'crop'   => false,
 				],
 				[
-					'width' => 1024,
+					'width'  => 1024,
 					'height' => 576,
 					'params' => [
 						'resize' => '1024,576',
@@ -184,7 +184,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
@@ -211,17 +211,17 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
+		$image          = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 		$new_size_array = $image->get_size( $size );
 
 		$expected_size_array = [
-			'file' => add_query_arg( $expected_resize['params'], 'image.jpg' ),
-			'width' => $expected_resize['width'],
-			'height' => $expected_resize['height'],
+			'file'      => add_query_arg( $expected_resize['params'], 'image.jpg' ),
+			'width'     => $expected_resize['width'],
+			'height'    => $expected_resize['height'],
 			'mime-type' => 'image/jpeg',
 		];
 		$this->assertEquals( $expected_size_array, $new_size_array, 'The size array does not match the expected one.' );
@@ -240,7 +240,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
@@ -265,7 +265,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
@@ -284,12 +284,16 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
 		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
-		$image->resize( array( 'width' => 150, 'height' => 150, 'crop' => true ) );
+		$image->resize( array(
+			'width'  => 150,
+			'height' => 150,
+			'crop'   => true,
+		) );
 
 		$this->assertEquals( wp_basename( $this->test_image ) . '?resize=150,150', $image->get_filename(), 'Wrong filename after image resize.' );
 	}
@@ -304,7 +308,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'post_mime_type' => 'image/jpeg',
 			'post_type'      => 'attachment',
 		];
-		$attachment_id = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
+		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 

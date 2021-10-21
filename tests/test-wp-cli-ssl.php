@@ -34,19 +34,19 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 				'on',
 			],
 
-			'https_site_url__is_ssl' => [
+			'https_site_url__is_ssl'     => [
 				'https://example.com',
 				'on',
 				'on',
 			],
 
-			'http_site_url__not_is_ssl' => [
+			'http_site_url__not_is_ssl'  => [
 				'http://example.com',
 				null,
 				null,
 			],
 
-			'http_site_url__is_ssl' => [
+			'http_site_url__is_ssl'      => [
 				'http://example.com',
 				'on',
 				null,
@@ -81,16 +81,16 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 		}
 
 		$blog_1_id = $this->factory->blog->create_object( [
-			'domain' => 'not-ssl.com',
-			'path' => '/',
-			'title' => 'Not SSL',
+			'domain'  => 'not-ssl.com',
+			'path'    => '/',
+			'title'   => 'Not SSL',
 			'site_id' => 1,
 		] );
 
 		$blog_2_id = $this->factory->blog->create_object( [
-			'domain' => 'is-ssl.com',
-			'path' => '/',
-			'title' => 'Is SSL',
+			'domain'  => 'is-ssl.com',
+			'path'    => '/',
+			'title'   => 'Is SSL',
 			'site_id' => 1,
 		] );
 		update_blog_option( $blog_2_id, 'siteurl', 'https://is-ssl.com' );

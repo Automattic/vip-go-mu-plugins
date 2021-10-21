@@ -26,7 +26,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 
 		$file_visibility = false;
-		$file_path = '2021/01/kittens.jpg';
+		$file_path       = '2021/01/kittens.jpg';
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -40,7 +40,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		update_post_meta( PHP_INT_MAX, '_wp_attached_file', '2021/01/kittens.jpg' );
 
 		$file_visibility = false;
-		$file_path = '2021/01/kittens.jpg';
+		$file_path       = '2021/01/kittens.jpg';
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -50,16 +50,16 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	public function test__check_file_visibility__attachment_not_inherit() {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 
-		$post_id = $this->factory->post->create();
+		$post_id       = $this->factory->post->create();
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
 		wp_update_post( [
-			'ID' => $attachment_id,
+			'ID'          => $attachment_id,
 			'post_status' => 'publish',
 		] );
 
 		$file_visibility = false;
-		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$file_path       = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -81,7 +81,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
 		$file_visibility = false;
-		$file_path = sprintf( 'sites/%d/%s', $subsite_id, get_post_meta( $attachment_id, '_wp_attached_file', true ) );
+		$file_path       = sprintf( 'sites/%d/%s', $subsite_id, get_post_meta( $attachment_id, '_wp_attached_file', true ) );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -91,11 +91,11 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	public function test__check_file_visibility__attachment_with_publish_parent() {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 
-		$post_id = $this->factory->post->create( [ 'post_status' => 'publish' ] );
+		$post_id       = $this->factory->post->create( [ 'post_status' => 'publish' ] );
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
 		$file_visibility = false;
-		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$file_path       = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -105,11 +105,11 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	public function test__check_file_visibility__attachment_with_draft_parent_and_without_user() {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 
-		$post_id = $this->factory->post->create( [ 'post_status' => 'draft' ] );
+		$post_id       = $this->factory->post->create( [ 'post_status' => 'draft' ] );
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
 		$file_visibility = false;
-		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$file_path       = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -119,14 +119,14 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	public function test__check_file_visibility__attachment_with_draft_parent_and_without_user_permissions() {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 
-		$post_id = $this->factory->post->create( [ 'post_status' => 'draft' ] );
+		$post_id       = $this->factory->post->create( [ 'post_status' => 'draft' ] );
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
 		$test_user_id = $this->factory->user->create( array( 'role' => 'contributor' ) ); // will not have access to post
 		wp_set_current_user( $test_user_id );
 
 		$file_visibility = false;
-		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$file_path       = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -136,14 +136,14 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	public function test__check_file_visibility__attachment_with_draft_parent_and_with_user_permissions() {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 
-		$post_id = $this->factory->post->create( [ 'post_status' => 'draft' ] );
+		$post_id       = $this->factory->post->create( [ 'post_status' => 'draft' ] );
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $post_id );
 
 		$test_user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $test_user_id );
 
 		$file_visibility = false;
-		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$file_path       = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -151,7 +151,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_attachment_id_from_file_path__attachment_not_found() {
-		$attachment_path = '/2020/12/not-an-attachment.pdf';
+		$attachment_path        = '/2020/12/not-an-attachment.pdf';
 		$expected_attachment_id = 0;
 
 		// Run the test.
@@ -164,8 +164,8 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		// Set up a test attachment.
 		$expected_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path = parse_url( $attachment_src, PHP_URL_PATH );
-		$attachment_path = $this->strip_wpcontent_uploads( $attachment_path );
+		$attachment_path        = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
 
 		// Run the test.
 		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
@@ -178,15 +178,15 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
 		// Create a second attachment with the same file path.
-		$duplicate_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$duplicate_attachment_id   = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
 		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', $duplicate_attachment_file );
 
 		// Look up the first one in the list.
 		$expected_attachment_id = $attachment_id;
 		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path = parse_url( $attachment_src, PHP_URL_PATH );
-		$attachment_path = $this->strip_wpcontent_uploads( $attachment_path );
+		$attachment_path        = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
 
 		// Run the test.
 		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
@@ -199,15 +199,15 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
 		// Create a second attachment with the same file path.
-		$duplicate_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$duplicate_attachment_id   = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
 		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', strtoupper( $duplicate_attachment_file ) );
 
 		// Look up the second one in the list.
 		$expected_attachment_id = $duplicate_attachment_id;
 		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path = parse_url( $attachment_src, PHP_URL_PATH );
-		$attachment_path = $this->strip_wpcontent_uploads( $attachment_path );
+		$attachment_path        = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
 
 		// Run the test.
 		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
@@ -221,7 +221,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 	public function test__purge_attachments_for_post__invalid_post() {
 		// Input and output are the same; no change
-		$input_urls = [
+		$input_urls    = [
 			'https://example.com',
 		];
 		$expected_urls = [
@@ -238,7 +238,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 	public function test__purge_attachments_for_post__post_with_no_attachments() {
 		// Input and output are the same; no change
-		$input_urls = [
+		$input_urls    = [
 			'https://example.com',
 		];
 		$expected_urls = [
@@ -258,7 +258,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 			'https://example.com',
 		];
 
-		$test_post_id = $this->factory->post->create();
+		$test_post_id    = $this->factory->post->create();
 		$attachment_id_1 = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $test_post_id );
 		$attachment_id_2 = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $test_post_id );
 		$attachment_id_3 = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH, $test_post_id );
