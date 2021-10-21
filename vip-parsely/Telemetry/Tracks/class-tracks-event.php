@@ -108,7 +108,7 @@ class Tracks_Event {
 
 		// Make sure we have an event timestamp.
 		if ( ! isset( $_event->_ts ) ) {
-			$_event->_ts = self::build_timestamp();
+			$_event->_ts = self::milliseconds_since_epoch();
 		}
 
 		$_event = self::annotate_with_id_and_type( $_event );
@@ -127,7 +127,7 @@ class Tracks_Event {
 	 *
 	 * @return string
 	 */
-	protected static function build_timestamp(): string {
+	protected static function milliseconds_since_epoch(): string {
 		$ts = round( microtime( true ) * 1000 );
 		return number_format( $ts, 0, '', '' );
 	}
