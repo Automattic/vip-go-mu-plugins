@@ -70,7 +70,7 @@ function rest_callback( \WP_REST_Request $request ) {
 
 	$ep     = \ElasticPress\Elasticsearch::factory();
 	$result = $ep->remote_request(
-		trim( parse_url( $request['url'], PHP_URL_PATH ), '/' ),
+		trim( wp_parse_url( $request['url'], PHP_URL_PATH ), '/' ),
 		[
 			'body'   => $request['query'],
 			'method' => 'POST',
@@ -138,8 +138,8 @@ function enqueue_assets() {
 		return;
 	}
 
-	wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], current_time( 'timestamp' ), true );
-	wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], current_time( 'timestamp' ) );
+	wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], time(), true );
+	wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], time() );
 }
 
 /**
