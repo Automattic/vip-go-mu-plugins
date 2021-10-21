@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 
 /**
  * Retrieve featured plugins from the wpvip.com API
@@ -9,9 +10,9 @@ function wpcom_vip_fetch_vip_featured_plugins() {
 	$plugins = wp_cache_get( 'wpcom_vip_featured_plugins' );
 
 	if ( false === $plugins ) {
-		$plugins = array();
+		$plugins                  = array();
 		$url_for_featured_plugins = 'https://wpvip.com/wp-json/vip/v0/plugins?type=technology';
-		$response = vip_safe_wp_remote_get( $url_for_featured_plugins, false, 3, 5 );
+		$response                 = vip_safe_wp_remote_get( $url_for_featured_plugins, false, 3, 5 );
 
 		if ( ! $response ) {
 			trigger_error( 'The API on wpvip.com is not responding (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
@@ -67,11 +68,11 @@ function wpcom_vip_render_vip_featured_plugins() {
 		<h3><?php esc_html_e( 'VIP Featured Technology Partners', 'vip-plugins-dashboard' ); ?></h3>
 		<div class="plugins-grid">
 		<?php
-		foreach ( $plugins as $key => $plugin ) {
+		foreach ( $plugins as $plugin ) {
 			?>
 			<div class="plugin">
 				<a class="fp-content" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
-					<img src="<?php echo esc_attr( $plugin->meta->listing_logo ); ?>" alt="<?php echo esc_attr( $plugin->post_title ); ?>" />
+					<img src="<?php echo esc_url( $plugin->meta->listing_logo ); ?>" alt="<?php echo esc_attr( $plugin->post_title ); ?>" />
 					<h4><?php echo esc_html( $plugin->post_title ); ?></h4>
 					<p><?php echo esc_html( $plugin->meta->listing_description ); ?></p>
 				</a>
@@ -140,7 +141,7 @@ function wpcom_vip_get_network_filtered_loaded_plugins() {
  * @param  string $context
  * @return array
  */
-function wpcom_vip_plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
+function wpcom_vip_plugin_action_links( $actions, $plugin_file ) {
 	$screen = get_current_screen();
 	if ( in_array( $plugin_file, wpcom_vip_get_filtered_loaded_plugins(), true ) ) {
 		if ( array_key_exists( 'activate', $actions ) ) {
@@ -158,8 +159,8 @@ function wpcom_vip_plugin_action_links( $actions, $plugin_file, $plugin_data, $c
 
 	return $actions;
 }
-add_filter( 'plugin_action_links', 'wpcom_vip_plugin_action_links', 10, 4 );
-add_filter( 'network_admin_plugin_action_links', 'wpcom_vip_plugin_action_links', 10, 4 );
+add_filter( 'plugin_action_links', 'wpcom_vip_plugin_action_links', 10, 2 );
+add_filter( 'network_admin_plugin_action_links', 'wpcom_vip_plugin_action_links', 10, 2 );
 
 /**
  * Merge code activated plugins with database option for better UI experience
@@ -168,7 +169,7 @@ add_filter( 'network_admin_plugin_action_links', 'wpcom_vip_plugin_action_links'
  * @param  string $option
  * @return array
  */
-function wpcom_vip_option_active_plugins( $value, $option ) {
+function wpcom_vip_option_active_plugins( $value ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
 
 	if ( false === is_array( $value ) ) {
@@ -181,7 +182,7 @@ function wpcom_vip_option_active_plugins( $value, $option ) {
 
 	return $value;
 }
-add_filter( 'option_active_plugins', 'wpcom_vip_option_active_plugins', 10, 2 );
+add_filter( 'option_active_plugins', 'wpcom_vip_option_active_plugins' );
 
 /**
  * Merge code activated plugins with network database option for better UI experience
@@ -190,7 +191,7 @@ add_filter( 'option_active_plugins', 'wpcom_vip_option_active_plugins', 10, 2 );
  * @param  string $option
  * @return array
  */
-function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
+function wpcom_vip_site_option_active_sitewide_plugins( $value ) {
 	$code_plugins = wpcom_vip_get_network_filtered_loaded_plugins();
 
 	if ( false === is_array( $value ) ) {
@@ -204,7 +205,7 @@ function wpcom_vip_site_option_active_sitewide_plugins( $value, $option ) {
 	return $value;
 
 }
-add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active_sitewide_plugins', 10, 2 );
+add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active_sitewide_plugins' );
 
 /**
  * Unmerge code activated plugins from active plugins option (reverse of the above)
@@ -214,7 +215,7 @@ add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active
  * @param  string $option
  * @return array
  */
-function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option ) {
+function wpcom_vip_pre_update_option_active_plugins( $value ) {
 	$code_plugins = wpcom_vip_get_filtered_loaded_plugins();
 
 	if ( false === is_array( $value ) ) {
@@ -227,7 +228,7 @@ function wpcom_vip_pre_update_option_active_plugins( $value, $old_value, $option
 
 	return $value;
 }
-add_filter( 'pre_update_option_active_plugins', 'wpcom_vip_pre_update_option_active_plugins', 10, 3 );
+add_filter( 'pre_update_option_active_plugins', 'wpcom_vip_pre_update_option_active_plugins' );
 
 /**
  * Unmerge code activated plugins from network active plugins option (reverse of the above)
@@ -238,7 +239,7 @@ add_filter( 'pre_update_option_active_plugins', 'wpcom_vip_pre_update_option_act
  * @param  int $network_id
  * @return array
  */
-function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_value, $option, $network_id ) {
+function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value ) {
 	$code_plugins = wpcom_vip_get_network_filtered_loaded_plugins();
 
 	if ( false === is_array( $value ) ) {
@@ -251,7 +252,7 @@ function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value, $old_
 
 	return $value;
 }
-add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_update_site_option_active_sitewide_plugins', 10, 4 );
+add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_update_site_option_active_sitewide_plugins' );
 
 /**
  * Custom CSS and JS for the plugins UIs
@@ -261,7 +262,7 @@ add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_upd
 function wpcom_vip_plugins_ui_admin_enqueue_scripts() {
 	$screen = get_current_screen();
 	if ( 'plugins' === $screen->id || 'plugins-network' === $screen->id ) {
-		wp_enqueue_style( 'vip-plugins-style', plugins_url( '/css/plugins-ui.css', __FILE__ ) , array(), '3.0' );
+		wp_enqueue_style( 'vip-plugins-style', plugins_url( '/css/plugins-ui.css', __FILE__ ), array(), '3.0' );
 		wp_enqueue_script( 'vip-plugins-script', plugins_url( '/js/plugins-ui.js', __FILE__ ), array( 'jquery' ), '3.0', true );
 	}
 }
@@ -280,7 +281,7 @@ function wpcom_vip_include_active_plugins() {
 	}
 
 	foreach ( $retired_plugins_option as $plugin ) {
-		 wpcom_vip_load_plugin( $plugin );
+		wpcom_vip_load_plugin( $plugin );
 	}
 }
 add_action( 'plugins_loaded', 'wpcom_vip_include_active_plugins', 5 );
