@@ -7,6 +7,8 @@ use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../cache/class-vary-cache.php';
 
+// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+
 class Vary_Cache_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
 

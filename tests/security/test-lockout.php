@@ -8,19 +8,16 @@ require_once __DIR__ . '/../../security/class-lockout.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class Lockout_Test extends WP_UnitTestCase {
 
 	/**
 	 * @var Lockout
 	 */
 	private $lockout;
-
-	/**
-	 * Make tests run in separate processes and don't preserve global state so
-	 * that constants set in tests won't affect one another.
-	 */
-	protected $preserveGlobalState      = false;
-	protected $runTestInSeparateProcess = true;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -77,7 +74,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$user = $this->factory->user->create_and_get();
 
-		$date_str = date( 'Y-m-d H:i:s' );
+		$date_str = gmdate( 'Y-m-d H:i:s' );
 		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, 'warning', true );
 		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, $date_str, true );
 

@@ -293,8 +293,8 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta         = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes       = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
-		$image_sizes_meta = $imageSizes->generate_sizes_meta();
+		$image_sizes      = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		$image_sizes_meta = $image_sizes->generate_sizes_meta();
 
 		$this->assertEquals( $expected_sizes_meta, $image_sizes_meta );
 	}
@@ -358,8 +358,8 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta               = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes             = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
-		$standardised_size_data = $imageSizes->standardize_size_data( $size_data );
+		$image_sizes            = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		$standardised_size_data = $image_sizes->standardize_size_data( $size_data );
 
 		$this->assertEquals( $expected, $standardised_size_data );
 	}

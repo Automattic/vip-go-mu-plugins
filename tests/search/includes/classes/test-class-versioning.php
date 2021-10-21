@@ -5,14 +5,11 @@ namespace Automattic\VIP\Search;
 use WP_Error;
 use WP_UnitTestCase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class Versioning_Test extends WP_UnitTestCase {
-	/**
-	* Make tests run in separate processes since we're testing state
-	* related to plugin init, including various constants.
-	*/
-	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-
 	public static $version_instance;
 	public static $search;
 

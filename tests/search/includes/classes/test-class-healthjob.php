@@ -4,14 +4,11 @@ namespace Automattic\VIP\Search;
 
 use WP_UnitTestCase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class HealthJob_Test extends WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
-	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 

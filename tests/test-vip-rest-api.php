@@ -4,6 +4,8 @@ namespace Automattic\VIP\Tests;
 
 use WP_UnitTestCase;
 
+// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication
+
 class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	/**
 	 * Let's reduce repetition
@@ -26,7 +28,8 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		}
 
 		global $wp_rest_server;
-		$this->server = $wp_rest_server = new \WP_REST_Server();
+		$wp_rest_server = new \WP_REST_Server();
+		$this->server   = $wp_rest_server;
 		do_action( 'rest_api_init' );
 	}
 

@@ -6,28 +6,17 @@ use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../config/class-site-details-index.php';
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class Site_Details_Index_Test extends WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
-	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__cron_event_should_not_be_hooked_if_no_init() {
 		$sdi = new Site_Details_Index();
 
 		$this->assertFalse( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__cron_event_should_be_hooked_if_init() {
 		// Getting the instance should call init which should add set_env_and_core to the hook
 		$sdi = Site_Details_Index::instance();
@@ -35,10 +24,6 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertTrue( is_integer( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__set_env_and_core() {
 		global $wp_version;
 
@@ -113,10 +98,6 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertEquals( is_multisite(), $site_details['core']['is_multisite'], 'is_multisite should be equal to is_multisite()' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__vip_site_details_index_data() {
 		global $wp_version;
 
