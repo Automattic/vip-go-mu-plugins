@@ -152,6 +152,7 @@ class Site_Details_Index {
 				$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
 			}
 			$jetpack_info['active_modules'] = \Jetpack::get_active_modules();
+			$jetpack_info['instant_search'] = \Jetpack_Options::is_instant_enabled();
 		} else {
 			$jetpack_info['available'] = false;
 		}
