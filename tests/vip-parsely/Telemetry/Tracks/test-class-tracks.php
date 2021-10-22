@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Automattic\VIP\Parsely\Telemetry;
 
-class Tracks_test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+use WP_UnitTestCase;
 
-		require_once __DIR__ . '/../../../../vip-parsely/Telemetry/class-telemetry-system.php';
-		require_once __DIR__ . '/../../../../vip-parsely/Telemetry/Tracks/class-tracks.php';
-	}
+require_once __DIR__ . '/../../../../vip-parsely/Telemetry/class-telemetry-system.php';
+require_once __DIR__ . '/../../../../vip-parsely/Telemetry/Tracks/class-tracks.php';
 
+class Tracks_Test extends WP_UnitTestCase {
 	public function test__should_normalize_invalid_name() {
 		$normalize_event_name = self::get_method('normalize_event_name');
 
