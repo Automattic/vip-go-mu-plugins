@@ -33,7 +33,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 					</thead>
 					<tr>
 						<td scope="col"><?php esc_html_e( 'Uncompressed size', 'qm-monitor' ); ?></td>
-						<td scope="col" class="qm-num"><?php echo esc_html( $data['total_size']); ?></td>
+						<td scope="col" class="qm-num"><?php echo esc_html( $data['total_size'] ); ?></td>
 						<td scope="col" class="qm-num"><?php echo esc_html( size_format( $data['total_size'], 2 ) ); ?></td>
 						<td scope="col"><?php esc_html_e( 'Consumes PHP memory', 'qm-monitor' ); ?></td>
 					</tr>
