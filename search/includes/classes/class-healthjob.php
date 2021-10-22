@@ -77,6 +77,7 @@ class HealthJob {
 		}
 
 		// Add the custom cron schedule
+		// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
 		$this->schedule_job();
@@ -279,6 +280,7 @@ class HealthJob {
 		if ( $type ) {
 			$cache_key = "healthcheck_alert_seen:{$type}";
 			if ( false === wp_cache_get( $cache_key, Cache::CACHE_GROUP_KEY ) ) {
+				// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 				wp_cache_set( $cache_key, 1, Cache::CACHE_GROUP_KEY, round( self::CRON_INTERVAL * 1.5 ) );
 				return false;
 			}
@@ -299,10 +301,8 @@ class HealthJob {
 			return false;
 		}
 
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
-				return false;
-			}
+		if ( defined( 'VIP_GO_APP_ID' ) && in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
+			return false;
 		}
 
 		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );

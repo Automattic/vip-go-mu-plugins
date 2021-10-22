@@ -5,7 +5,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->factory->user->create( [
 			'user_login' => 'admin',
 			'user_email' => 'admin@example.com',
-			'user_pass'   => 'secret1',
+			'user_pass'  => 'secret1',
 		] );
 
 		$result = wp_authenticate( 'admin', 'secret1' );
@@ -18,7 +18,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->factory->user->create( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
-			'user_pass'   => 'secret2',
+			'user_pass'  => 'secret2',
 		] );
 
 		$result = wp_authenticate( WPCOM_VIP_MACHINE_USER_LOGIN, 'secret2' );
@@ -31,7 +31,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->factory->user->create( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
-			'user_pass'   => 'secret3',
+			'user_pass'  => 'secret3',
 		] );
 
 		$result = wp_authenticate( WPCOM_VIP_MACHINE_USER_EMAIL, 'secret3' );
@@ -44,7 +44,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( [
 			'user_login' => 'taylorswift',
 			'user_email' => 'taylor@example.com',
-			'user_pass'   => 'secret4',
+			'user_pass'  => 'secret4',
 		] );
 
 		$result = wp_authenticate( 'taylorswift', 'secret4' );
@@ -57,7 +57,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( [
 			'user_login' => 'taylorswift',
 			'user_email' => 'taylor@example.com',
-			'user_pass'   => 'secret5',
+			'user_pass'  => 'secret5',
 		] );
 
 		$result = wp_authenticate( 'taylor@example.com', 'secret5' );

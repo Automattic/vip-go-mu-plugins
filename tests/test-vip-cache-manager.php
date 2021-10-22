@@ -24,17 +24,17 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 			// 1: input URL
 			// 2: array of expected purge_urls list
 
-			'normal_url' => [
+			'normal_url'                     => [
 				'http://example.com/path/to/files',
 				[ 'http://example.com/path/to/files' ],
 			],
 
-			'strip_querystring' => [
+			'strip_querystring'              => [
 				'https://example.com/path/to/file?query',
 				[ 'https://example.com/path/to/file' ],
 			],
 
-			'strip_fragment' => [
+			'strip_fragment'                 => [
 				'https://example.com/post#fragment',
 				[ 'https://example.com/post' ],
 			],
@@ -85,7 +85,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	public function test__page_for_posts_post_purge_url() {
 		$page_for_posts = $this->factory->post->create_and_get(
 			[
-				'post_type' => 'page',
+				'post_type'  => 'page',
 				'post_title' => 'blog-archive',
 			]
 		);

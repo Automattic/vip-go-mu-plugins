@@ -343,8 +343,7 @@ class Health {
 
 		$index_version = $search->versioning->get_current_version_number( $comments );
 
-		$comment_types  = $comments->get_indexable_comment_types();
-		$comment_status = $comments->get_indexable_comment_status();
+		$comment_types = $comments->get_indexable_comment_types();
 
 		$health = new self( $search );
 
@@ -590,6 +589,7 @@ class Health {
 	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
 
 		$post_types    = $indexable->get_indexable_post_types();
@@ -613,19 +613,18 @@ class Health {
 		$found_document_ids = wp_list_pluck( $documents, 'ID' );
 
 		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
-		                  : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+		                : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
 			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
 			$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
-			                 : self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+			                : self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 			if ( $diff ) {
 				$key           = self::get_post_key( $document['ID'] );
-				$diffs[ $key ] = $inspect ? $diff
-				                          : self::simplified_format_post_diff( $document['ID'], 'inconsistent' ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+				$diffs[ $key ] = $inspect ? $diff : self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
 			}
 		}
 
@@ -795,7 +794,7 @@ class Health {
 	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index|inconsistent> ].
 	 */
 	public static function reconcile_diff( array $diff ) {
-		foreach ( $diff as $key => $obj_to_reconcile ) {
+		foreach ( $diff as $obj_to_reconcile ) {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 				case 'inconsistent':
@@ -811,6 +810,7 @@ class Health {
 	public static function get_last_post_id() {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$last = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
 
 		return (int) $last;
