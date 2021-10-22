@@ -20,57 +20,62 @@ class QM_Output_AllOptions extends QM_Output_Html {
 		$data = $this->collector->get_data();
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id() ); ?>">
-			<div class="qm-boxed"><h3>
-			<?php
-			printf(
-				wp_kses(
-					/* translators: 1. uncompressed size 2. compressed size */
-					__( 'Total size: <strong>%1$s</strong> (uncompressed), %2$s (estimated compression)', 'qm-monitor' ),
-					[ 'strong' => [] ]
-				),
-				esc_html( size_format( $data['total_size'], 2 ) ),
-				esc_html( size_format( $data['total_size_comp'], 2 ) )
-			);
-			?>
-			</h3></div>
+			<div class="qm-boxed">
+			<section>
+				<table>
+					<thead>
+						<tr>
+							<th scope="col"><h3><?php esc_html_e( 'Total Size', 'qm-monitor' ); ?></h3></th>
+							<th scope="col" class="qm-num"><?php esc_html_e( 'Size (bytes)', 'qm-monitor' ); ?></th>
+							<th scope="col" class="qm-num"><?php esc_html_e( 'Size (human)', 'qm-monitor' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Impact', 'qm-monitor' ); ?></th>
+						</tr>
+					</thead>
+					<tr>
+						<td scope="col"><?php esc_html_e( 'Uncompressed size', 'qm-monitor' ); ?></td>
+						<td scope="col" class="qm-num"><?php echo esc_html( $data['total_size']); ?></td>
+						<td scope="col" class="qm-num"><?php echo esc_html( size_format( $data['total_size'], 2 ) ); ?></td>
+						<td scope="col"><?php esc_html_e( 'Consumes PHP memory', 'qm-monitor' ); ?></td>
+					</tr>
+					<tr>
+						<td scope="col"><?php esc_html_e( 'Compressed size (estimated)', 'qm-monitor' ); ?></td>
+						<td scope="col" class="qm-num"><?php echo esc_html( $data['total_size_comp'] ); ?></td>
+						<td scope="col" class="qm-num"><?php echo esc_html( size_format( $data['total_size_comp'], 2 ) ); ?></td>
+						<td scope="col"><?php echo wp_kses( __( 'At 1000000 bytes, an error page will be shown to prevent overrunning the database. <a href="https://docs.wpvip.com/technical-references/code-quality-and-best-practices/working-with-wp_options/#h-identify-and-resolve-problems-with-alloptions">Read more</a>', 'qm-monitor' ), [ 'a' => [ 'href' => true ] ] ); ?></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<?php
+					esc_html_e( 'To un-autoload an option, you can use the following command:', 'qm-monitor' );
+					echo '<br><code>wp option autoload set &lt;option_name&gt; no</code><br>';
+					esc_html_e( 'In some cases, the code which sets the option will need to be updated.', 'qm-monitor' );
+				?>
+			</section>
+			</div>
 			<table>
 				<thead>
 					<tr>
-					<th scope="col"><?php esc_html_e( 'Option name', 'qm-monitor' ); ?></th>
-					<th scope="col" class="qm-num"><?php esc_html_e( 'Size (bytes)', 'qm-monitor' ); ?></th>
-					<th scope="col" class="qm-num"><?php esc_html_e( 'Size (human)', 'qm-monitor' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php
-				foreach ( $data['options'] as $option ) {
-					echo '<tr>';
-					printf(
-						'<td class="qm-ltr">%1$s</td><td class="qm-ltr qm-num">%2$d</td><td class="qm-ltr qm-num">%3$s</td>',
-						esc_html( $option->name ),
-						esc_html( $option->size ),
-						esc_html( size_format( $option->size, 2 ) )
-					);
-					echo '</tr>';
-				}
-				?>
+						<th scope="col"><?php esc_html_e( 'Option name', 'qm-monitor' ); ?></th>
+						<th scope="col" class="qm-num"><?php esc_html_e( 'Size (bytes)', 'qm-monitor' ); ?></th>
+						<th scope="col" class="qm-num"><?php esc_html_e( 'Size (human)', 'qm-monitor' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					foreach ( $data['options'] as $option ) {
+						echo '<tr>';
+						printf(
+							'<td class="qm-ltr">%1$s</td><td class="qm-ltr qm-num">%2$d</td><td class="qm-ltr qm-num">%3$s</td>',
+							esc_html( $option->name ),
+							esc_html( $option->size ),
+							esc_html( size_format( $option->size, 2 ) )
+						);
+						echo '</tr>';
+					}
+					?>
 				</tbody>
 			</table>
-			<?php if ( file_exists( WPMU_PLUGIN_DIR . '/wp-cli/alloptions.php' ) ) { ?>
-			<div class="qm-boxed">
-				<ul>
-					<li>
-					<?php
-					printf(
-						/* translators: 1. WP-CLI command */
-						esc_html__( 'use %s to disable autoload for given option', 'qm-monitor' ),
-						'<code>wp option autoload set &lt;option_name&gt; no</code>'
-					);
-					?>
-					</li>
-				</ul>
-			</div>
-			<?php } ?>
 		</div>
 		<?php
 	}
