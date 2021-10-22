@@ -25,7 +25,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		$this->stream_wrapper = null;
+		$this->stream_wrapper  = null;
 		$this->api_client_mock = null;
 
 		$this->errors = [];
@@ -39,7 +39,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem_Stream_Wrapper' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem_Stream_Wrapper' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -65,7 +65,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 	public function test__rename__same_path() {
 		$path_from = 'vip://wp-content/uploads/file.txt';
-		$path_to = 'vip://wp-content/uploads/file.txt';
+		$path_to   = 'vip://wp-content/uploads/file.txt';
 
 		// We bail early so Api_Client should not be touched. 
 		$this->api_client_mock
@@ -79,7 +79,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 	public function test__rename__sucess() {
 		$path_from = 'vip://wp-content/uploads/old.txt';
-		$path_to = 'vip://wp-content/uploads/new.txt';
+		$path_to   = 'vip://wp-content/uploads/new.txt';
 
 		$tmp_file = tempnam( sys_get_temp_dir(), 'phpunit' );
 
@@ -111,7 +111,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 			'read mode'   => [ 'r' ],
 			'write mode'  => [ 'w' ],
 			'append mode' => [ 'a' ],
-			'x mode' => [ 'x' ],
+			'x mode'      => [ 'x' ],
 		];
 	}
 
@@ -124,8 +124,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 	public function get_test_data__validate_invalid_mode() {
 		return [ 
-			'c mode'   => [ 'c' ],
-			'e mode'  => [ 'e' ],
+			'c mode' => [ 'c' ],
+			'e mode' => [ 'e' ],
 		];
 	}
 

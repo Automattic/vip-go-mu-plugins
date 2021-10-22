@@ -49,22 +49,22 @@ class Context_Test extends TestCase {
 
 	public function get_test_data__is_web_request__nope() {
 		return [
-			'is_wp_cli' => [
+			'is_wp_cli'     => [
 				'WP_CLI',
 			],
-			'is_ajax' => [
+			'is_ajax'       => [
 				'DOING_AJAX',
 			],
 			'is_installing' => [
 				'WP_INSTALLING',
 			],
-			'is_rest_api' => [
+			'is_rest_api'   => [
 				'REST_REQUEST',
 			],
 			'is_xmlrpc_api' => [
 				'XMLRPC_REQUEST',
 			],
-			'is_cron' => [
+			'is_cron'       => [
 				'DOING_CRON',
 			],
 		];

@@ -71,7 +71,7 @@ class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
 
 	public function get_data_for_valid_term_and_taxonomy_tests() {
 		return [
-			'public_taxonomy' => [
+			'public_taxonomy'             => [
 				[
 					'public' => true,
 				],
@@ -79,14 +79,14 @@ class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
 
 			'publicly_queryable_taxonomy' => [
 				[
-					'public' => false,
+					'public'             => false,
 					'publicly_queryable' => true,
 				],
 			],
 
-			'show_in_rest_taxonomy' => [
+			'show_in_rest_taxonomy'       => [
 				[
-					'public' => false,
+					'public'       => false,
 					'show_in_rest' => true,
 				],
 			],
@@ -102,7 +102,7 @@ class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
 		$this->cache_manager->queue_terms_purges( $term_id, self::TEST_TAXONOMY_SLUG );
 
 		$expected_term_link = get_term_link( $term_id, self::TEST_TAXONOMY_SLUG );
-		$queued_purge_urls = $this->cache_manager->get_queued_purge_urls();
+		$queued_purge_urls  = $this->cache_manager->get_queued_purge_urls();
 		$this->assertContains( $expected_term_link, $queued_purge_urls );
 	}
 }

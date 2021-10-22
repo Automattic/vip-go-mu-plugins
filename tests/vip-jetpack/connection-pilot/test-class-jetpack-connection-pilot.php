@@ -104,7 +104,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 0,
-				)
+				),
 			],
 			'zero' => [
 				0,
@@ -114,7 +114,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 0,
-				)
+				),
 			],
 			'one'  => [
 				1,
@@ -124,7 +124,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 1,
-				)
+				),
 			],
 		];
 	}

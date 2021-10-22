@@ -10,21 +10,21 @@ require_once __DIR__ . '/../../vip-helpers/class-user-cleanup.php';
 class User_Cleanup_Test extends WP_UnitTestCase {
 	public function data_provider__parse_emails_string() {
 		return [
-			'empty' => [ '', [] ],
-			'null' => [ null, [] ],
-			'false' => [ false, [] ],
+			'empty'                       => [ '', [] ],
+			'null'                        => [ null, [] ],
+			'false'                       => [ false, [] ],
 
-			'spaces' => [ '  ', [] ],
-			'spaces and commas' => [ ' , ', [] ],
+			'spaces'                      => [ '  ', [] ],
+			'spaces and commas'           => [ ' , ', [] ],
 
-			'single email' => [
+			'single email'                => [
 				'user@example.com',
 				[
 					'user@example.com',
 				],
 			],
 
-			'multiple emails' => [
+			'multiple emails'             => [
 				'user@example.com,another@example.net',
 				[
 					'user@example.com',
@@ -32,7 +32,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 				],
 			],
 
-			'multiples with spaces' => [
+			'multiples with spaces'       => [
 				' user@example.com,   another@example.net',
 				[
 					'user@example.com',
@@ -61,7 +61,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function data_provider__split_email() {
 		return [
-			'basic email' => [
+			'basic email'  => [
 				'user@example.com',
 				[
 					'user',
@@ -90,7 +90,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match() {
 		$user_1_email = 'user@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -101,9 +101,9 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match_multiples() {
 		$user_1_email = 'user@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 		$user_2_email = 'user2@other.com';
-		$user_2_id = $this->factory->user->create( array( 'user_email' => $user_2_email ) );
+		$user_2_id    = $this->factory->user->create( array( 'user_email' => $user_2_email ) );
 
 		$expected_ids = [ $user_1_id, $user_2_id ];
 
@@ -114,7 +114,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match_with_plus() {
 		$user_1_email = 'user+extra@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -125,7 +125,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__email_with_plus() {
 		$user_1_email = 'user+extra@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -136,7 +136,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__username_match_different_host() {
 		$user_1_email = 'user+extra@different.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = []; // emails will not match
 
@@ -147,7 +147,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__host_match_different_username() {
 		$user_1_email = 'different+extra@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = []; // emails will not match
 
@@ -158,7 +158,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__no_caps() {
 		$user_1_email = 'user@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		get_userdata( $user_1_id )->remove_all_caps();
 
@@ -325,7 +325,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 	}
 
 	public function test__revoke_roles_for_users_nonexisting() {
-		$user_id = -1;
+		$user_id        = -1;
 		$actual_results = User_Cleanup::revoke_roles_for_users( [ $user_id ] );
 		$this->assertIsArray( $actual_results );
 		$this->assertArrayHasKey( $user_id, $actual_results );

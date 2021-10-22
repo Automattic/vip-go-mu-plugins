@@ -5,15 +5,12 @@ namespace Automattic\VIP\Search;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
 class Queue_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
-
-	/**
-	* Make tests run in separate processes since we're testing state
-	* related to plugin init, including various constants.
-	*/
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 	public static function setUpBeforeClass(): void {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
@@ -130,11 +127,11 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$objects = array(
 			array(
-				'id' => 1,
+				'id'   => 1,
 				'type' => 'post',
 			),
 			array(
-				'id' => 1,
+				'id'   => 1,
 				'type' => 'user',
 			),
 		);
@@ -167,11 +164,11 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$objects = array(
 			array(
-				'id' => 1,
+				'id'   => 1,
 				'type' => 'post',
 			),
 			array(
-				'id' => 1,
+				'id'   => 1,
 				'type' => 'user',
 			),
 		);
@@ -211,19 +208,19 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$objects = array(
 			array(
-				'id' => 1,
+				'id'   => 1,
 				'type' => 'post',
 			),
 			array(
-				'id' => 2,
+				'id'   => 2,
 				'type' => 'post',
 			),
 			array(
-				'id' => 3,
+				'id'   => 3,
 				'type' => 'post',
 			),
 			array(
-				'id' => 1000,
+				'id'   => 1000,
 				'type' => 'user',
 			),
 		);
@@ -377,7 +374,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->queue_object( 2, 'post', array( 'index_version' => 2 ) );
 		$this->queue->queue_object( 3, 'post', array( 'index_version' => 1 ) );
 
-		$count_default = $this->queue->count_jobs( 'queued', 'post' );
+		$count_default   = $this->queue->count_jobs( 'queued', 'post' );
 		$count_version_2 = $this->queue->count_jobs( 'queued', 'post', array( 'index_version' => 2 ) );
 
 		$this->assertEquals( 1, $count_default, 'Wrong count for default index version' );
@@ -454,7 +451,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$jobs = $this->queue->get_jobs_by_range( 1, 2 );
 
 		$expected_object_ids = array( 1000, 2000 );
-		$actual_object_ids = wp_list_pluck( $jobs, 'object_id' );
+		$actual_object_ids   = wp_list_pluck( $jobs, 'object_id' );
 
 		$this->assertEquals( $expected_object_ids, $actual_object_ids );
 	}
@@ -532,7 +529,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME;
 
 		$this->queue->update_job( $job1->job_id, array(
-			'status' => 'scheduled',
+			'status'         => 'scheduled',
 			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 		) );
 
@@ -542,7 +539,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME - ( 3 * DAY_IN_SECONDS );
 
 		$this->queue->update_job( $job2->job_id, array(
-			'status' => 'running',
+			'status'         => 'running',
 			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 		) );
 
@@ -570,7 +567,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME;
 
 		$this->queue->update_job( $job1->job_id, array(
-			'status' => 'scheduled',
+			'status'         => 'scheduled',
 			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 		) );
 
@@ -580,7 +577,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME - ( 3 * DAY_IN_SECONDS );
 
 		$this->queue->update_job( $job2->job_id, array(
-			'status' => 'scheduled',
+			'status'         => 'scheduled',
 			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 		) );
 
@@ -595,22 +592,22 @@ class Queue_Test extends WP_UnitTestCase {
 
 
 	public function test_free_deadlocked_jobs_handle_duplicates() {
-		$first_job = (object) [
-			'job_id' => 1,
-			'object_id' => 10,
-			'object_type' => 'post',
+		$first_job                 = (object) [
+			'job_id'        => 1,
+			'object_id'     => 10,
+			'object_type'   => 'post',
 			'index_version' => 1,
 		];
-		$second_job = (object) [
-			'job_id' => 2,
-			'object_id' => 10,
-			'object_type' => 'post',
+		$second_job                = (object) [
+			'job_id'        => 2,
+			'object_id'     => 10,
+			'object_type'   => 'post',
 			'index_version' => 1,
 		];
 		$third_job_on_other_object = (object) [
-			'job_id' => 3,
-			'object_id' => 20,
-			'object_type' => 'post',
+			'job_id'        => 3,
+			'object_id'     => 20,
+			'object_type'   => 'post',
 			'index_version' => 1,
 		];
 
@@ -643,7 +640,7 @@ class Queue_Test extends WP_UnitTestCase {
 			->with(
 				$this->equalTo( [ 1, 3 ] ),
 				$this->equalTo( [
-					'status' => 'queued',
+					'status'         => 'queued',
 					'scheduled_time' => null,
 				] )
 			);
@@ -667,7 +664,7 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the value passed into the filter is returned if the sync queue is empty
 	 */
 	public function test__ratelimit_indexing_should_pass_bail_if_sync_queue_empty() {
-		$sync_manager = new \stdClass();
+		$sync_manager             = new \stdClass();
 		$sync_manager->sync_queue = array();
 
 		$this->assertTrue( $this->queue->ratelimit_indexing( true, $sync_manager, 'post' ), 'should return true since true was passed in' );
@@ -685,7 +682,7 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the count in the cache doesn't exist if the ratelimit_indexing returns early
 	 */
 	public function test_ratelimit_indexing_cache_count_should_not_exists_if_early_return() {
-		$sync_manager = new \stdClass();
+		$sync_manager             = new \stdClass();
 		$sync_manager->sync_queue = array();
 
 		$this->queue->ratelimit_indexing( true, '', 'hippo' );
@@ -702,7 +699,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$table_name = $this->queue->schema->get_table_name();
 
-		$sync_manager = new \stdClass();
+		$sync_manager             = new \stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
@@ -748,7 +745,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$table_name = $this->queue->schema->get_table_name();
 
-		$sync_manager = new \stdClass();
+		$sync_manager             = new \stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
@@ -811,7 +808,7 @@ class Queue_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$sync_manager = new \stdClass();
+		$sync_manager             = new \stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$partially_mocked_queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
@@ -831,14 +828,14 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$partially_mocked_queue->expects( $this->once() )->method( 'clear_index_limiting_start_timestamp' );
 
-		$sync_manager = new \stdClass();
+		$sync_manager             = new \stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
 	}
 
 	public function test__record_ratelimited_stat__records_statsd() {
-		$increment = 14;
+		$increment      = 14;
 		$indexable_slug = 'post';
 
 		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
@@ -945,33 +942,33 @@ class Queue_Test extends WP_UnitTestCase {
 				// Input
 				array(
 					(object) array(
-						'object_id' => 1,
-						'object_type' => 'post',
+						'object_id'     => 1,
+						'object_type'   => 'post',
 						'index_version' => 1,
 					),
 					(object) array(
-						'object_id' => 2,
-						'object_type' => 'post',
+						'object_id'     => 2,
+						'object_type'   => 'post',
 						'index_version' => 1,
 					),
 					(object) array(
-						'object_id' => 3,
-						'object_type' => 'post',
+						'object_id'     => 3,
+						'object_type'   => 'post',
 						'index_version' => 2,
 					),
 					(object) array(
-						'object_id' => 4,
-						'object_type' => 'post',
+						'object_id'     => 4,
+						'object_type'   => 'post',
 						'index_version' => 2,
 					),
 					(object) array(
-						'object_id' => 1,
-						'object_type' => 'user',
+						'object_id'     => 1,
+						'object_type'   => 'user',
 						'index_version' => 1,
 					),
 					(object) array(
-						'object_id' => 2,
-						'object_type' => 'user',
+						'object_id'     => 2,
+						'object_type'   => 'user',
 						'index_version' => 2,
 					),
 				),
@@ -980,20 +977,20 @@ class Queue_Test extends WP_UnitTestCase {
 					1 => array(
 						'post' => array(
 							(object) array(
-								'object_id' => 1,
-								'object_type' => 'post',
+								'object_id'     => 1,
+								'object_type'   => 'post',
 								'index_version' => 1,
 							),
 							(object) array(
-								'object_id' => 2,
-								'object_type' => 'post',
+								'object_id'     => 2,
+								'object_type'   => 'post',
 								'index_version' => 1,
 							),
 						),
 						'user' => array(
 							(object) array(
-								'object_id' => 1,
-								'object_type' => 'user',
+								'object_id'     => 1,
+								'object_type'   => 'user',
 								'index_version' => 1,
 							),
 						),
@@ -1001,20 +998,20 @@ class Queue_Test extends WP_UnitTestCase {
 					2 => array(
 						'post' => array(
 							(object) array(
-								'object_id' => 3,
-								'object_type' => 'post',
+								'object_id'     => 3,
+								'object_type'   => 'post',
 								'index_version' => 2,
 							),
 							(object) array(
-								'object_id' => 4,
-								'object_type' => 'post',
+								'object_id'     => 4,
+								'object_type'   => 'post',
 								'index_version' => 2,
 							),
 						),
 						'user' => array(
 							(object) array(
-								'object_id' => 2,
-								'object_type' => 'user',
+								'object_id'     => 2,
+								'object_type'   => 'user',
 								'index_version' => 2,
 							),
 						),
@@ -1040,23 +1037,23 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$objects = array(
 			array(
-				'id' => 1,
-				'type' => 'post',
+				'id'      => 1,
+				'type'    => 'post',
 				'version' => 1,
 			),
 			array(
-				'id' => 2,
-				'type' => 'post',
+				'id'      => 2,
+				'type'    => 'post',
 				'version' => 1,
 			),
 			array(
-				'id' => 3,
-				'type' => 'post',
+				'id'      => 3,
+				'type'    => 'post',
 				'version' => 2,
 			),
 			array(
-				'id' => 4,
-				'type' => 'post',
+				'id'      => 4,
+				'type'    => 'post',
 				'version' => 3,
 			),
 		);
@@ -1081,36 +1078,36 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
-					'job_id' => '1',
-					'object_id' => '1',
-					'object_type' => 'post',
-					'priority' => '5',
-					'start_time' => null,
-					'status' => 'queued',
-					'index_version' => '1',
-					'queued_time' => '2020-10-31 00:00:00',
+					'job_id'         => '1',
+					'object_id'      => '1',
+					'object_type'    => 'post',
+					'priority'       => '5',
+					'start_time'     => null,
+					'status'         => 'queued',
+					'index_version'  => '1',
+					'queued_time'    => '2020-10-31 00:00:00',
 					'scheduled_time' => null,
 				),
 				array(
-					'job_id' => '2',
-					'object_id' => '2',
-					'object_type' => 'post',
-					'priority' => '5',
-					'start_time' => null,
-					'status' => 'queued',
-					'index_version' => '1',
-					'queued_time' => '2020-10-31 00:00:00',
+					'job_id'         => '2',
+					'object_id'      => '2',
+					'object_type'    => 'post',
+					'priority'       => '5',
+					'start_time'     => null,
+					'status'         => 'queued',
+					'index_version'  => '1',
+					'queued_time'    => '2020-10-31 00:00:00',
 					'scheduled_time' => null,
 				),
 				array(
-					'job_id' => '4',
-					'object_id' => '4',
-					'object_type' => 'post',
-					'priority' => '5',
-					'start_time' => null,
-					'status' => 'queued',
-					'index_version' => '3',
-					'queued_time' => '2020-10-31 00:00:00',
+					'job_id'         => '4',
+					'object_id'      => '4',
+					'object_type'    => 'post',
+					'priority'       => '5',
+					'start_time'     => null,
+					'status'         => 'queued',
+					'index_version'  => '3',
+					'queued_time'    => '2020-10-31 00:00:00',
 					'scheduled_time' => null,
 				),
 			),
@@ -1125,14 +1122,14 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
-					'job_id' => '4',
-					'object_id' => '4',
-					'object_type' => 'post',
-					'priority' => '5',
-					'start_time' => null,
-					'status' => 'queued',
-					'index_version' => '3',
-					'queued_time' => '2020-10-31 00:00:00',
+					'job_id'         => '4',
+					'object_id'      => '4',
+					'object_type'    => 'post',
+					'priority'       => '5',
+					'start_time'     => null,
+					'status'         => 'queued',
+					'index_version'  => '3',
+					'queued_time'    => '2020-10-31 00:00:00',
 					'scheduled_time' => null,
 				),
 			),
@@ -1354,7 +1351,7 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;

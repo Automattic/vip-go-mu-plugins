@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
+use WP_Error;
 
 require_once __DIR__ . '/../class-health.php';
 
@@ -127,8 +128,6 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			return;
 		}
 
-		$search = \Automattic\VIP\Search\Search::instance();
-
 		if ( isset( $assoc_args['version'] ) ) {
 			$version = intval( $assoc_args['version'] );
 		} else {
@@ -137,7 +136,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 
 		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
 			if ( isset( $version ) ) {
-				return WP_CLI::error( 'The --network-wide argument is not compatible with --version when not using network mode (the `EP_IS_NETWORK` constant), as subsites  can have differing index versions' );
+				WP_CLI::error( 'The --network-wide argument is not compatible with --version when not using network mode (the `EP_IS_NETWORK` constant), as subsites  can have differing index versions' );
+				return;
 			}
 
 			$sites = \ElasticPress\Utils\get_sites();
@@ -227,7 +227,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			}
 
 			if ( is_wp_error( $results ) ) {
-				return WP_CLI::error( $results->get_error_message() );
+				/** @var WP_Error $results */
+				WP_CLI::error( $results->get_error_message() );
+				return;
 			}
 
 			$this->render_results( $results );
@@ -353,7 +355,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$this->render_contents_diff( $results, $assoc_args['format'], $assoc_args['max_diff_size'], isset( $assoc_args['silent'] ) );
 	}
 
-	private function render_contents_diff( $diff, $format = 'csv', $max_diff_size, $silent = false ) {
+	private function render_contents_diff( $diff, $format, $max_diff_size, $silent = false ) {
 		if ( ! is_array( $diff ) || empty( $diff ) || 0 >= $max_diff_size ) {
 			return;
 		}
@@ -378,6 +380,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		} else {
 			WP_CLI::warning( 'Formatting is being ignored!' );
 			foreach ( $diff as $d ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_dump
 				var_dump( $d );
 			}
 		}

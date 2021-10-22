@@ -69,7 +69,8 @@ class Cron {
 		}
 
 		// Add the custom cron schedule
-		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
+		// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
+		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] );
 
 		// Hook into init actions(except for init) to ensure cron-control has already been loaded
 		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
@@ -186,7 +187,7 @@ class Cron {
 			'update_post_meta_cache' => false,
 			'update_post_term_cache' => false,
 			'ignore_sticky_posts'    => true,
-			'tax_query'              => array(
+			'tax_query'              => array(  // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 				array(
 					'field' => 'term_taxonomy_id',
 					'terms' => $term_taxonomy_id,
