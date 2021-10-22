@@ -19,13 +19,17 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	public function output() {
 		$data = $this->collector->get_data();
 		?>
-		<div class="qm qm-non-tabular" id="<?php echo esc_attr($this->collector->id())?>">
+		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id() ); ?>">
 			<div class="qm-boxed"><h3>
 			<?php
 			printf(
-				'Total size: <strong>%s</strong> (uncompressed), %s (estimated compression)',
-				size_format( $data['total_size'], 2 ),
-				size_format( $data['total_size_comp'], 2 )
+				wp_kses(
+					/* translators: 1. uncompressed size 2. compressed size */
+					__( 'Total size: <strong>%1$s</strong> (uncompressed), %2$s (estimated compression)', 'qm-monitor' ),
+					[ 'strong' => [] ]
+				),
+				esc_html( size_format( $data['total_size'], 2 ) ),
+				esc_html( size_format( $data['total_size_comp'], 2 ) )
 			);
 			?>
 			</h3></div>
@@ -39,23 +43,31 @@ class QM_Output_AllOptions extends QM_Output_Html {
 			</thead>
 			<tbody>
 				<?php
-					foreach ( $data['options'] as $option ) {
-						echo '<tr>';
-						printf(
-							'<td class="qm-ltr">%s</td><td class="qm-ltr qm-num">%d</td><td class="qm-ltr qm-num">%s</td>',
-							$option->name,
-							$option->size,
-							size_format( $option->size, 2 )
-						);
-						echo '</tr>';
-					}
+				foreach ( $data['options'] as $option ) {
+					echo '<tr>';
+					printf(
+						'<td class="qm-ltr">%1$s</td><td class="qm-ltr qm-num">%2$d</td><td class="qm-ltr qm-num">%3$s</td>',
+						esc_html( $option->name ),
+						esc_html( $option->size ),
+						esc_html( size_format( $option->size, 2 ) )
+					);
+					echo '</tr>';
+				}
 				?>
 				</tbody>
 			</table>
 			<?php if ( file_exists( WPMU_PLUGIN_DIR . '/wp-cli/alloptions.php' ) ) { ?>
 			<div class="qm-boxed">
 				<ul>
-					<li>use <code>wp option autoload set &lt;option_name&gt; no</code> to disable autoload for given option</li>
+					<li>
+					<?php
+					printf(
+						/* translators: 1. WP-CLI command */
+						esc_html__( 'use %s to disable autoload for given option', 'qm-monitor' ),
+						'<code>wp option autoload set &lt;option_name&gt; no</code>'
+					);
+					?>
+					</li>
 				</ul>
 			</div>
 			<?php } ?>
@@ -79,7 +91,8 @@ class QM_Output_AllOptions extends QM_Output_Html {
 			list( $num, $unit ) = explode( ' ', size_format( $data['total_size_comp'], 1 ) );
 
 			$title[] = sprintf(
-				_x( '%s<small> %s opts</small>', 'size of alloptions', 'query-monitor' ),
+				/* translators: 1. size 2. size unit */
+				_x( '%1$s<small> %2$s opts</small>', 'size of alloptions', 'query-monitor' ),
 				$num,
 				$unit
 			);
@@ -103,11 +116,17 @@ class QM_Output_AllOptions extends QM_Output_Html {
 
 
 	public function admin_menu( array $menu ) {
+		$title = __( 'Autoloaded Options', 'query-monitor' );
+
+		$data = $this->collector->get_data();
+		if ( $data['total_size_comp'] > MB_IN_BYTES * .8 ) {
+			$title = __( 'Autoloaded Options 🚩', 'query-monitor' );
+		}
 
 		$menu[] = $this->menu( array(
 			'id'    => 'qm-alloptions',
 			'href'  => '#qm-alloptions',
-			'title' => __( 'Autoloaded Options', 'query-monitor' ),
+			'title' => $title,
 		));
 
 		return $menu;
