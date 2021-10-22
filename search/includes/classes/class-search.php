@@ -759,7 +759,7 @@ class Search {
 						'feature'  => 'search_es_warning',
 						'message'  => $message,
 						'extra'    => [
-							'query'     => $query,
+							'query'     => $this->sanitize_ep_query_for_logging( $query ),
 							'backtrace' => wp_debug_backtrace_summary(),    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
 						],
 					) );
