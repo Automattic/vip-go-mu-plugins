@@ -18,7 +18,7 @@ class Tracks implements Telemetry_System {
 	 *
 	 * @var array
 	 */
-	private $queue = array();
+	private array $queue = array();
 
 	const EVENT_NAME_PREFIX = 'wpparsely_';
 	const TRACKS_RECORD_URL = 'https://public-api.wordpress.com/rest/v1.1/tracks/record';
@@ -117,7 +117,7 @@ class Tracks implements Telemetry_System {
 	 * @param bool  $blocking Passed to `wp_remote_post`. Default: true.
 	 *
 	 * @see https://developer.wordpress.org/reference/classes/WP_Http/request/#parameters
-	 * @return (array|WP_Error) The response or WP_Error on failure.
+	 * @return array|\WP_Error (array|WP_Error) The response or WP_Error on failure.
 	 */
 	private static function send_events_to_api( array $events, array $common_props = array(), bool $blocking = true ) {
 		return wp_remote_post(

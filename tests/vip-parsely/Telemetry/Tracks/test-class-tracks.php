@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Automattic\VIP\Parsely\Telemetry;
 
 class Tracks_test extends \WP_UnitTestCase {
