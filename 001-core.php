@@ -9,6 +9,15 @@
 
 require_once __DIR__ . '/001-core/privacy.php';
 
+use Automattic\VIP\Environment;
+
+/**
+ * A wrapper for Automattic\VIP\Environment::get_var
+ */
+function env_get_var( $key, $default_value = '' ) {
+    return Environment::get_var( $key, $default_value );
+}
+
 /**
  * Disable current theme validation
  *
