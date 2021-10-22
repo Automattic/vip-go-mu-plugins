@@ -230,7 +230,7 @@ class Versioning {
 					\Automattic\VIP\Logstash\log2logstash(
 						array(
 							'severity' => 'warning',
-							'feature'  => 'vip_search_versioning',
+							'feature'  => 'search_versioning',
 							'message'  => $message,
 						)
 					);
@@ -406,8 +406,6 @@ class Versioning {
 	 * @return array Array of index versions
 	 */
 	public function get_version( Indexable $indexable, $version_number ) {
-		$slug = $indexable->slug;
-
 		$version_number = $this->normalize_version_number( $indexable, $version_number );
 
 		if ( is_wp_error( $version_number ) ) {
@@ -430,8 +428,6 @@ class Versioning {
 	 * @return bool Boolean indicating if the new version was successfully added or not
 	 */
 	public function add_version( Indexable $indexable ) {
-		$slug = $indexable->slug;
-
 		$versions = $this->get_versions( $indexable );
 
 		$new_version_number = $this->get_next_version_number( $versions );
@@ -531,7 +527,11 @@ class Versioning {
 		$new_version = null;
 
 		if ( ! empty( $versions ) && is_array( $versions ) ) {
-			$new_version = max( array_keys( $versions ) );
+			$versions = array_map( function ( $v ) {
+				return is_int( $v ) ? $v : 0;
+			}, array_keys( $versions ) );
+
+			$new_version = max( $versions );
 		}
 
 		// If site has no versions yet (1 version), the next version is 2
@@ -836,7 +836,7 @@ class Versioning {
 			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_KEY,
 			1,
 			self::INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP,
-			$ttl
+			$ttl    // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		);
 	}
 
@@ -889,7 +889,7 @@ class Versioning {
 				\Automattic\VIP\Logstash\log2logstash(
 					array(
 						'severity' => 'info',
-						'feature'  => 'vip_search_versioning',
+						'feature'  => 'search_versioning',
 						'message'  => $message,
 						'extra'    => $versions,
 					)

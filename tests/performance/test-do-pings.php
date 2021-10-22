@@ -2,21 +2,15 @@
 
 namespace Automattic\VIP\Performance;
 
-class Do_Pings_Test extends \WP_UnitTestCase {
-	public function setUp() {
-		parent::setUp();
-	}
+use WP_UnitTestCase;
 
-	public function tearDown() {
-		parent::tearDown();
-	}
-
+class Do_Pings_Test extends WP_UnitTestCase {
 	public function test__block_encloseme_metadata_filter_should_respect_update_value_if_not_encloseme() {
 		$should_update = true;
-		$object_id = 1;
-		$meta_key = 'test';
-		$meta_value = 'random value';
-		$unique = true;
+		$object_id     = 1;
+		$meta_key      = 'test';
+		$meta_value    = 'random value';
+		$unique        = true;
 
 		$result = block_encloseme_metadata_filter( $should_update, $object_id, $meta_key, $meta_value, $unique );
 		
@@ -34,10 +28,10 @@ class Do_Pings_Test extends \WP_UnitTestCase {
 
 	public function test__block_encloseme_metadata_filter_should_be_false_if_encloseme() {
 		$should_update = true;
-		$object_id = 1;
-		$meta_key = '_encloseme';
-		$meta_value = 'random value';
-		$unique = true;
+		$object_id     = 1;
+		$meta_key      = '_encloseme';
+		$meta_value    = 'random value';
+		$unique        = true;
 
 		$result = block_encloseme_metadata_filter( $should_update, $object_id, $meta_key, $meta_value, $unique );
 		
@@ -55,10 +49,10 @@ class Do_Pings_Test extends \WP_UnitTestCase {
 	public function test__add_post_meta_integration() {
 		$post = $this->factory->post->create_and_get();
 		
-		$object_id = $post->ID;
-		$meta_key = 'test';
+		$object_id  = $post->ID;
+		$meta_key   = 'test';
 		$meta_value = 'random value';
-		$unique = true;
+		$unique     = true;
 
 		// Result should be a meta ID
 		$result = \add_post_meta( $object_id, $meta_key, $meta_value, $unique );

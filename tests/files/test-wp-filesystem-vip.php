@@ -2,22 +2,20 @@
 
 namespace Automattic\VIP\Files;
 
-class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+require_once __DIR__ . '/../../files/class-wp-filesystem-vip.php';
+
+class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	private $filesystem;
 	private $fs_uploads_mock;
 	private $fs_direct_mock;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-wp-filesystem-vip.php' );
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
-		$this->fs_direct_mock = $this->createMock( \WP_Filesystem_Direct::class );
+		$this->fs_direct_mock  = $this->createMock( \WP_Filesystem_Direct::class );
 
 		$this->filesystem = new WP_Filesystem_VIP( [
 			$this->fs_uploads_mock,
@@ -25,7 +23,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 		] );
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		$this->filesystem = null;
 
 		parent::tearDown();
@@ -35,7 +33,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -45,11 +43,11 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 		// Not ideal that we are using the constants for our test cases.
 		// However, it's the easiest way to ensure consistency across test environments.
 		return [
-			'invalid other wp-* path' => [
+			'invalid other wp-* path'       => [
 				'/var/www/file.jpg',
 				false,
 			],
-			'invalid other wp-* path' => [
+			'invalid other wp-* path'       => [
 				ABSPATH . '/wp-includes/js/jquery.js',
 				false,
 			],
@@ -57,7 +55,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				WP_CONTENT_DIR . '/themes/twentyseveteen/style.css',
 				false,
 			],
-			'valid uploads path' => [
+			'valid uploads path'            => [
 				WP_CONTENT_DIR . '/uploads/2018/04/04.jpg',
 				true,
 			],
@@ -81,7 +79,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				'/wp-includes/js/jquery.js',
 				false,
 			],
-			'valid tmp path' => [
+			'valid tmp path'     => [
 				'/tmp/file.css',
 				true,
 			],
@@ -105,7 +103,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				'/var/log/.maintenance',
 				false,
 			],
-			'valid path' => [
+			'valid path'   => [
 				ABSPATH . '.maintenance',
 				true,
 			],
@@ -125,7 +123,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__is_upgrade_path() {
 		return [
-			'invalid path' => [
+			'invalid path'                  => [
 				'/wp-includes/js/jquery.js',
 				false,
 			],
@@ -133,7 +131,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				WP_CONTENT_DIR . '/uploads/image.jpg',
 				false,
 			],
-			'valid path' => [
+			'valid path'                    => [
 				WP_CONTENT_DIR . '/upgrade/.plugin',
 				true,
 			],
@@ -153,7 +151,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__is_plugins_path() {
 		return [
-			'invalid path' => [
+			'invalid path'                  => [
 				'/wp-includes/js/jquery.js',
 				false,
 			],
@@ -161,7 +159,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				WP_CONTENT_DIR . '/uploads/image.jpg',
 				false,
 			],
-			'valid path' => [
+			'valid path'                    => [
 				WP_CONTENT_DIR . '/plugins/vip/vip.php',
 				true,
 			],
@@ -181,7 +179,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__is_themes_path() {
 		return [
-			'invalid path' => [
+			'invalid path'                  => [
 				'',
 				false,
 			],
@@ -189,7 +187,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				WP_CONTENT_DIR . '/uploads/image.jpg',
 				false,
 			],
-			'valid path' => [
+			'valid path'                    => [
 				WP_CONTENT_DIR . '/themes/vip/functions.php',
 				true,
 			],
@@ -209,7 +207,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__is_languages_path() {
 		return [
-			'invalid path' => [
+			'invalid path'                  => [
 				'',
 				false,
 			],
@@ -217,7 +215,7 @@ class WP_Filesystem_VIP_Test extends \WP_UnitTestCase {
 				WP_CONTENT_DIR . '/uploads/image.jpg',
 				false,
 			],
-			'valid path' => [
+			'valid path'                    => [
 				WP_CONTENT_DIR . '/languages/vip/vip-en.mo',
 				true,
 			],

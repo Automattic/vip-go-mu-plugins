@@ -24,8 +24,8 @@ class Date_Condition_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	private function build_condition( $start_shift, $end_shift ) {
-		$start_date = date_modify( new \DateTime(), $start_shift );
-		$end_date = date_modify( new \DateTime(), $end_shift );
+		$start_date    = date_modify( new \DateTime(), $start_shift );
+		$end_date      = date_modify( new \DateTime(), $end_shift );
 		$format_string = 'd-m-Y H:i';
 
 		return new Date_Condition(

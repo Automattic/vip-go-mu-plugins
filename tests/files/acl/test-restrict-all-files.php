@@ -2,23 +2,19 @@
 
 namespace Automattic\VIP\Files\Acl\Restrict_All_Files;
 
-use WP_Error;
+use WP_UnitTestCase;
 
-class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../../files/acl/acl.php';
+require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
 
-		require_once __DIR__ . '/../../../files/acl/acl.php';
-		require_once __DIR__ . '/../../../files/acl/restrict-all-files.php';
-	}
-
-	public function setUp() {
+class VIP_Files_Acl_Restrict_All_Files_Test extends WP_UnitTestCase {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->original_current_user_id = get_current_user_id();
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		wp_set_current_user( $this->original_current_user_id );
 
 		parent::tearDown();
@@ -28,7 +24,7 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 
 		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
-		$file_path = '2021/01/kittens.jpg';
+		$file_path       = '2021/01/kittens.jpg';
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
@@ -39,10 +35,10 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 
 		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
-		$file_path = '2021/01/kittens.jpg';
+		$file_path       = '2021/01/kittens.jpg';
 
 		$test_user_id = $this->factory->user->create();
-		$user = new \WP_User( $test_user_id );
+		$user         = new \WP_User( $test_user_id );
 		$user->remove_role( 'subscriber' );
 		wp_set_current_user( $test_user_id );
 
@@ -55,7 +51,7 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends \WP_UnitTestCase {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 
 		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
-		$file_path = '2021/01/kittens.jpg';
+		$file_path       = '2021/01/kittens.jpg';
 
 		$test_user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $test_user_id );

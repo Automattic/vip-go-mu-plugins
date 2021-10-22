@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPressVIPMinimum.Classes.RestrictedExtendClasses.wp_cli
 
 class WPCOM_VIP_CLI_Command extends WP_CLI_Command {
 

@@ -5,7 +5,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 10.2
+ * Version: 10.2.1
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -34,7 +34,7 @@ if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
-if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
+if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || ! constant( 'WPCOM_IS_VIP_ENV' ) ) {
 	add_filter( 'jetpack_is_staging_site', '__return_true' );
 }
 
@@ -76,7 +76,7 @@ function vip_jetpack_token_send_signature_error_headers( $error ) {
 
 	header( sprintf(
 		'X-Jetpack-Signature-Error-Details: %s',
-		base64_encode( json_encode( $error_data['signature_details'] ) )
+		base64_encode( wp_json_encode( $error_data['signature_details'] ) )
 	) );
 }
 

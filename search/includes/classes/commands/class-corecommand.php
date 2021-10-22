@@ -11,10 +11,7 @@ use \WP_CLI\Utils;
  * @package Automattic\VIP\Search
  */
 class CoreCommand extends \ElasticPress\Command {
-	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
-	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
-
-	private function _verify_arguments_compatibility( $assoc_args ) {
+	private function verify_arguments_compatibility( $assoc_args ) {
 		if ( array_key_exists( 'version', $assoc_args ) && array_key_exists( 'using-versions', $assoc_args ) ) {
 			WP_CLI::error( 'The --version argument is not allowed when specifying --using-versions' );
 		}
@@ -33,10 +30,10 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 	}
 
-	private function _shift_version_after_index( $assoc_args ) {
+	private function shift_version_after_index( $assoc_args ) {
 		$search = \Automattic\VIP\Search\Search::instance();
 
-		$indexables = $this->_parse_indexables( $assoc_args );
+		$indexables   = $this->parse_indexables( $assoc_args );
 		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
 		foreach ( $indexables as $indexable ) {
@@ -58,7 +55,7 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 	}
 
-	private function _parse_indexable( $slug ) {
+	private function parse_indexable( $slug ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $slug );
 		if ( ! $indexable ) {
 			WP_CLI::error( sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
@@ -67,19 +64,19 @@ class CoreCommand extends \ElasticPress\Command {
 		return $indexable;
 	}
 
-	private function _parse_indexables( $assoc_args ) {
+	private function parse_indexables( $assoc_args ) {
 		$indexable_slugs = explode( ',', str_replace( ' ', '', $assoc_args['indexables'] ) );
 
 		$indexables = [];
 
 		foreach ( $indexable_slugs as $slug ) {
-			$indexable = $this->_parse_indexable( $slug );
+			$indexable    = $this->parse_indexable( $slug );
 			$indexables[] = $indexable;
 		}
 		return $indexables;
 	}
 
-	private function _set_version( $indexable, $version ) {
+	private function set_version( $indexable, $version ) {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$result = $search->versioning->set_current_version_number( $indexable, $version );
@@ -89,13 +86,13 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 	}
 
-	protected function _maybe_setup_index_version( $assoc_args ) {
+	protected function maybe_setup_index_version( $assoc_args ) {
 		if ( array_key_exists( 'version', $assoc_args ) || array_key_exists( 'using-versions', $assoc_args ) ) {
 			$version_number = '';
 			$using_versions = $assoc_args['using-versions'] ?? false;
 			if ( $assoc_args['version'] ?? false ) {
 				$version_number = $assoc_args['version'];
-			} else if ( $using_versions ) {
+			} elseif ( $using_versions ) {
 				$version_number = 'next';
 			}
 
@@ -103,7 +100,7 @@ class CoreCommand extends \ElasticPress\Command {
 				$search = \Automattic\VIP\Search\Search::instance();
 
 				// For each indexable specified, override the version
-				$indexables = $this->_parse_indexables( $assoc_args );
+				$indexables = $this->parse_indexables( $assoc_args );
 
 				if ( $using_versions ) {
 					foreach ( $indexables as $indexable ) {
@@ -125,7 +122,7 @@ class CoreCommand extends \ElasticPress\Command {
 				}
 
 				foreach ( $indexables as $indexable ) {
-					$this->_set_version( $indexable, $version_number );
+					$this->set_version( $indexable, $version_number );
 				}
 			}
 		}
@@ -186,12 +183,12 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
 			self::confirm_destructive_operation( $assoc_args );
 		}
-		$this->_verify_arguments_compatibility( $assoc_args );
+		$this->verify_arguments_compatibility( $assoc_args );
 
 		$using_versions = $assoc_args['using-versions'] ?? false;
-		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
+		$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
-		$this->_maybe_setup_index_version( $assoc_args );
+		$this->maybe_setup_index_version( $assoc_args );
 
 
 
@@ -237,7 +234,7 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( $using_versions ) {
 			// resetting skip-confirm after it was cleared for elasticpress
 			$assoc_args['skip-confirm'] = $skip_confirm;
-			$this->_shift_version_after_index( $assoc_args );
+			$this->shift_version_after_index( $assoc_args );
 		}
 	}
 
@@ -280,10 +277,10 @@ class CoreCommand extends \ElasticPress\Command {
 	public function get_index_settings( $args, $assoc_args ) {
 		$slug = array_shift( $args );
 
-		$indexable = $this->_parse_indexable( $slug );
+		$indexable = $this->parse_indexable( $slug );
 
 		if ( isset( $assoc_args['version'] ) ) {
-			$this->_set_version( $indexable, $assoc_args['version'] );
+			$this->set_version( $indexable, $assoc_args['version'] );
 		}
 
 		$index_name = $indexable->get_index_name();

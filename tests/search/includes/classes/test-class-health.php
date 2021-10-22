@@ -2,8 +2,10 @@
 
 namespace Automattic\VIP\Search;
 
-class Health_Test extends \WP_UnitTestCase {
-	public function setUp() {
+use WP_UnitTestCase;
+
+class Health_Test extends WP_UnitTestCase {
+	public static function setUpBeforeClass(): void {
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
 		require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
@@ -555,7 +557,7 @@ class Health_Test extends \WP_UnitTestCase {
 			->getMock();
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -573,10 +575,10 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_last_processed() {
-		$options = [
+		$options                  = [
 			'start_post_id' => 1,
-			'last_post_id' => 100,
-			'batch_size' => 50,
+			'last_post_id'  => 100,
+			'batch_size'    => 50,
 		];
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'validate_index_posts_content_batch' ] )
@@ -584,7 +586,7 @@ class Health_Test extends \WP_UnitTestCase {
 			->getMock();
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -612,7 +614,7 @@ class Health_Test extends \WP_UnitTestCase {
 			->getMock();
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -638,7 +640,7 @@ class Health_Test extends \WP_UnitTestCase {
 			->getMock();
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -658,8 +660,8 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_validate_index_posts_content__pick_up_after_interuption() {
-		$interrupted_post_id = 5;
-		$start_post_id = 1;
+		$interrupted_post_id      = 5;
+		$start_post_id            = 1;
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -667,7 +669,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 		$patrtially_mocked_health->method( 'get_validate_content_abandoned_process' )->willReturn( $interrupted_post_id );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -687,8 +689,8 @@ class Health_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_running_in_parallel() {
-		$interrupted_post_id = 5;
-		$start_post_id = 1;
+		$interrupted_post_id      = 5;
+		$start_post_id            = 1;
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -696,7 +698,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 		$patrtially_mocked_health->method( 'get_validate_content_abandoned_process' )->willReturn( $interrupted_post_id );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -712,14 +714,14 @@ class Health_Test extends \WP_UnitTestCase {
 			->with( $this->anything(), $start_post_id, $this->anything(), $this->anything() );
 
 		$patrtially_mocked_health->validate_index_posts_content( [
-			'start_post_id' => $start_post_id,
+			'start_post_id'            => $start_post_id,
 			'force_parallel_execution' => true,
 		] );
 	}
 
 	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_non_default_start_post_id() {
-		$interrupted_post_id = 5;
-		$start_post_id = 2;
+		$interrupted_post_id      = 5;
+		$start_post_id            = 2;
 		$patrtially_mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
 			->setMethods( [ 'update_validate_content_process', 'remove_validate_content_process', 'get_validate_content_abandoned_process', 'validate_index_posts_content_batch' ] )
 			->disableOriginalConstructor()
@@ -727,7 +729,7 @@ class Health_Test extends \WP_UnitTestCase {
 		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
 		$patrtially_mocked_health->method( 'get_validate_content_abandoned_process' )->willReturn( $interrupted_post_id );
 
-		$mocked_indexables = $this->getMockBuilder( \ElasticPress\Indexables::class )
+		$mocked_indexables                    = $this->getMockBuilder( \ElasticPress\Indexables::class )
 			->setMethods( [ 'get' ] )
 			->getMock();
 		$patrtially_mocked_health->indexables = $mocked_indexables;
@@ -762,15 +764,15 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 2,
-					'index.max_result_window' => 9000,
+					'index.max_result_window'  => 9000,
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 2,
-					'index.max_result_window' => 9000,
+					'index.max_result_window'  => 9000,
 				),
 				// Options
 				array(),
@@ -781,12 +783,12 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => '1',
+					'index.number_of_shards'   => '1',
 					'index.number_of_replicas' => '2',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 2,
 				),
 				// Options
@@ -798,12 +800,12 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => '1',
+					'index.number_of_shards'   => '1',
 					'index.number_of_replicas' => '2',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 3,
 				),
 				// Options
@@ -812,7 +814,7 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_replicas' => array(
 						'expected' => 3,
-						'actual' => '2',
+						'actual'   => '2',
 					),
 				),
 			),
@@ -820,17 +822,17 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 2,
-					'foo' => 'bar',
-					'index.max_result_window' => '1000000',
+					'foo'                      => 'bar',
+					'index.max_result_window'  => '1000000',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 1,
-					'foo' => 'baz',
-					'index.max_result_window' => 9000,
+					'foo'                      => 'baz',
+					'index.max_result_window'  => 9000,
 				),
 				// Options
 				array(),
@@ -838,11 +840,11 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_replicas' => array(
 						'expected' => 1,
-						'actual' => 2,
+						'actual'   => 2,
 					),
-					'index.max_result_window' => array(
+					'index.max_result_window'  => array(
 						'expected' => 9000,
-						'actual' => 1000000,
+						'actual'   => 1000000,
 					),
 				),
 			),
@@ -850,15 +852,15 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 2,
-					'foo' => 'bar',
+					'foo'                      => 'bar',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 1,
-					'foo' => 'baz',
+					'foo'                      => 'baz',
 				),
 				// Options
 				array(
@@ -868,7 +870,7 @@ class Health_Test extends \WP_UnitTestCase {
 				array(
 					'index.number_of_replicas' => array(
 						'expected' => 1,
-						'actual' => 2,
+						'actual'   => 2,
 					),
 				),
 			),
@@ -908,9 +910,9 @@ class Health_Test extends \WP_UnitTestCase {
 		$expected_result = [];
 		if ( ! empty( $actual_result ) ) {
 			$expected_result = [
-				'diff' => $expected_diff,
+				'diff'          => $expected_diff,
 				'index_version' => 1,
-				'index_name' => $index_name,
+				'index_name'    => $index_name,
 			];
 		}
 
@@ -919,7 +921,7 @@ class Health_Test extends \WP_UnitTestCase {
 
 	public function test_get_index_settings_diff_for_indexable_without_index() {
 		$options = [ 'version_number' => 2 ];
-		$actual = [ 'index.number_of_shards' => 1 ];
+		$actual  = [ 'index.number_of_shards' => 1 ];
 		$desired = [ 'index.number_of_shards' => 2 ];
 		// Mock search and the versioning instance
 		$mock_search = $this->createMock( Search::class );
@@ -954,9 +956,9 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 2,
-					'index.max_result_window' => 9000,
+					'index.max_result_window'  => 9000,
 				),
 				// Options
 				array(),
@@ -965,10 +967,10 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 1,
-					'index.max_result_window' => 9000,
-					'foo' => 'baz',
+					'index.max_result_window'  => 9000,
+					'foo'                      => 'baz',
 				),
 				// Options
 				array(),
@@ -977,10 +979,10 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Desired index settings from ElasticPress
 				array(
-					'index.number_of_shards' => 1,
+					'index.number_of_shards'   => 1,
 					'index.number_of_replicas' => 1,
-					'index.max_result_window' => 9000,
-					'foo' => 'baz',
+					'index.max_result_window'  => 9000,
+					'foo'                      => 'baz',
 				),
 				// Options
 				array(
@@ -1038,9 +1040,9 @@ class Health_Test extends \WP_UnitTestCase {
 		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
 
 		$expected_result = array(
-			'index_name' => 'foo-index-name',
+			'index_name'    => 'foo-index-name',
 			'index_version' => $options['index_version'] ?? 1,
-			'result' => true,
+			'result'        => true,
 		);
 
 		$this->assertEquals( $expected_result, $result );
@@ -1095,12 +1097,12 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'number_of_shards' => 1,
+					'number_of_shards'   => 1,
 					'number_of_replicas' => 2,
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'number_of_shards' => 1,
+					'number_of_shards'   => 1,
 					'number_of_replicas' => 2,
 				),
 				// Expected diff
@@ -1110,12 +1112,12 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'number_of_shards' => '1',
+					'number_of_shards'   => '1',
 					'number_of_replicas' => '2',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'number_of_shards' => 1,
+					'number_of_shards'   => 1,
 					'number_of_replicas' => 2,
 				),
 				// Expected diff
@@ -1125,19 +1127,19 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'number_of_shards' => '1',
+					'number_of_shards'   => '1',
 					'number_of_replicas' => '2',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'number_of_shards' => 1,
+					'number_of_shards'   => 1,
 					'number_of_replicas' => 3,
 				),
 				// Expected diff
 				array(
 					'number_of_replicas' => array(
 						'expected' => 3,
-						'actual' => '2',
+						'actual'   => '2',
 					),
 				),
 			),
@@ -1145,31 +1147,31 @@ class Health_Test extends \WP_UnitTestCase {
 			array(
 				// Actual settings of index in Elasticsearch
 				array(
-					'number_of_shards' => 1,
+					'number_of_shards'   => 1,
 					'number_of_replicas' => 2,
-					'max_result_window' => '1000000',
-					'foo' => 'bar',
+					'max_result_window'  => '1000000',
+					'foo'                => 'bar',
 				),
 				// Desired index settings from ElasticPress
 				array(
-					'number_of_shards' => 1,
+					'number_of_shards'   => 1,
 					'number_of_replicas' => 1,
-					'max_result_window' => 9000,
-					'foo' => 'baz',
+					'max_result_window'  => 9000,
+					'foo'                => 'baz',
 				),
 				// Expected diff
 				array(
 					'number_of_replicas' => array(
 						'expected' => 1,
-						'actual' => 2,
+						'actual'   => 2,
 					),
-					'max_result_window' => array(
+					'max_result_window'  => array(
 						'expected' => 9000,
-						'actual' => '1000000',
+						'actual'   => '1000000',
 					),
-					'foo' => array(
+					'foo'                => array(
 						'expected' => 'baz',
-						'actual' => 'bar',
+						'actual'   => 'bar',
 					),
 				),
 			),
@@ -1178,7 +1180,7 @@ class Health_Test extends \WP_UnitTestCase {
 				// Actual settings of index in Elasticsearch
 				array(
 					'number_of_shards' => 1,
-					'routing' => array(
+					'routing'          => array(
 						'allocation' => array(
 							'include' => array(
 								'dc' => 'dfw,bur',
@@ -1189,7 +1191,7 @@ class Health_Test extends \WP_UnitTestCase {
 				// Desired index settings from ElasticPress
 				array(
 					'number_of_shards' => 1,
-					'routing' => array(
+					'routing'          => array(
 						'allocation' => array(
 							'include' => array(
 								'dc' => 'bur',
@@ -1204,7 +1206,7 @@ class Health_Test extends \WP_UnitTestCase {
 							'include' => array(
 								'dc' => array(
 									'expected' => 'bur',
-									'actual' => 'dfw,bur',
+									'actual'   => 'dfw,bur',
 								),
 							),
 						),

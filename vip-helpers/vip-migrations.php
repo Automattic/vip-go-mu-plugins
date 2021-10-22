@@ -16,7 +16,7 @@ function after_data_migration() {
 		}
 		dbDelta( 'global' );
 
-		foreach( $sites as $site ) {
+		foreach ( $sites as $site ) {
 			switch_to_blog( $site->blog_id );
 
 			run_after_data_migration_cleanup();
@@ -26,7 +26,8 @@ function after_data_migration() {
 
 		return true;
 	} else {
-		return run_after_data_migration_cleanup();
+		run_after_data_migration_cleanup();
+		return false;
 	}
 }
 
@@ -59,6 +60,7 @@ function run_after_data_migration_cleanup() {
 function delete_db_transients() {
 	global $wpdb;
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	return $wpdb->query(
 		"DELETE FROM $wpdb->options
 		WHERE option_name LIKE '\_transient\_%'

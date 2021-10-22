@@ -2,17 +2,16 @@
 
 namespace Automattic\VIP\Performance;
 
-class lastpostmodified_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.StartWithCapital
+class lastpostmodified_Test extends WP_UnitTestCase {
 	protected $post;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
-	}
-
-	public function tearDown() {
-		parent::tearDown();
 	}
 
 	public function test__transition_post_status__save_on_publish() {
@@ -50,7 +49,7 @@ class lastpostmodified_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__bump_lastpostmodified__any() {
-		$this->post->post_modified = '1989-12-13 01:00:00';
+		$this->post->post_modified     = '1989-12-13 01:00:00';
 		$this->post->post_modified_gmt = '1989-12-13 06:00:00';
 
 		Last_Post_Modified::bump_lastpostmodified( $this->post );
@@ -64,8 +63,8 @@ class lastpostmodified_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__bump_lastpostmodified__cpt() {
-		$this->post->post_type = 'book';
-		$this->post->post_modified = '2003-05-27 00:00:00';
+		$this->post->post_type         = 'book';
+		$this->post->post_modified     = '2003-05-27 00:00:00';
 		$this->post->post_modified_gmt = '2003-05-27 05:00:00';
 
 		Last_Post_Modified::bump_lastpostmodified( $this->post );

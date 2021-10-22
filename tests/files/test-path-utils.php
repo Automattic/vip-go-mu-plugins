@@ -2,25 +2,21 @@
 
 namespace Automattic\VIP\Files;
 
+require_once __DIR__ . '/../../files/class-path-utils.php';
+
 class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-path-utils.php' );
-	}
-
 	public function get_test_data__is_subdirectory_multisite_path__nope() {
 		return [
 			'missing_leading_slash' => [
 				'subsite1/wp-content/uploads/sites/1/file.jpg',
 			],
-			'no_subdirectory' => [
+			'no_subdirectory'       => [
 				'/wp-content/uploads/sites/1/file.jpg',
 			],
-			'invalid_subdirectory' => [
+			'invalid_subdirectory'  => [
 				'/subsité1/wp-content/uploads/sites/1/file.jpg',
 			],
-			'empty_subdirectory' => [
+			'empty_subdirectory'    => [
 				'//wp-content/uploads/sites/1/file.jpg',
 			],
 			'no_wp-content-uploads' => [
@@ -40,7 +36,7 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 
 	public function get_test_data__is_subdirectory_multisite_path__yep() {
 		return [
-			'valid_path' => [
+			'valid_path'             => [
 				'/subsite1/wp-content/uploads/sites/1/file.jpg',
 			],
 			'all_allowed_characters' => [
@@ -60,26 +56,26 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 
 	public function get_test_data__is_sub_subdirectory_multisite_path__nope() {
 		return [
-			'missing_leading_slash' => [
+			'missing_leading_slash'    => [
 				'subsite1/subsite2/wp-content/uploads/sites/1/file.jpg',
 			],
 			// Can't test for no_subdirectory :)
-			'no_sub_subdirectory' => [
+			'no_sub_subdirectory'      => [
 				'/subsite1/wp-content/uploads/sites/1/file.jpg',
 			],
-			'invalid_subdirectory' => [
+			'invalid_subdirectory'     => [
 				'/subsité1/wp-content/uploads/sites/1/file.jpg',
 			],
 			'invalid_sub_subdirectory' => [
 				'/subsite1/subsité2/wp-content/uploads/sites/1/file.jpg',
 			],
-			'empty_subdirectory' => [
+			'empty_subdirectory'       => [
 				'//subsite2/wp-content/uploads/sites/1/file.jpg',
 			],
-			'empty_sub_subdirectory' => [
+			'empty_sub_subdirectory'   => [
 				'/subsite1//wp-content/uploads/sites/1/file.jpg',
 			],
-			'no_wp-content-uploads' => [
+			'no_wp-content-uploads'    => [
 				'/subsite1/subsite2/sites/1/file.jpg',
 			],
 		];
@@ -96,7 +92,7 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 
 	public function get_test_data__is_sub_subdirectory_multisite_path__yep() {
 		return [
-			'valid_path' => [
+			'valid_path'             => [
 				'/subsite1/subsite2/wp-content/uploads/sites/1/file.jpg',
 			],
 			'all_allowed_characters' => [
@@ -116,11 +112,11 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 
 	public function get_test_data__trim_leading_multisite_directory() {
 		return [
-			'sub_subdirectory' => [
+			'sub_subdirectory'         => [
 				'/subsite1/subsite2/wp-content/uploads/sites/10/file.jpg',
 				'/wp-content/uploads/sites/10/file.jpg',
 			],
-			'subdirectory' => [
+			'subdirectory'             => [
 				'/subsite1/wp-content/uploads/sites/2/file.jpg',
 				'/wp-content/uploads/sites/2/file.jpg',
 			],
@@ -128,11 +124,11 @@ class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
 				'/subsite1/subsite2/wp-content/uploads/file.jpg',
 				'/wp-content/uploads/file.jpg',
 			],
-			'subdirectory_no_site' => [
+			'subdirectory_no_site'     => [
 				'/subsite1/wp-content/uploads/file.jpg',
 				'/wp-content/uploads/file.jpg',
 			],
-			'other' => [
+			'other'                    => [
 				'',
 				false,
 			],

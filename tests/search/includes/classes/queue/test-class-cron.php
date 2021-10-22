@@ -3,11 +3,10 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue\Cron as Cron;
+use WP_UnitTestCase;
 
-class Cron_Test extends \WP_UnitTestCase {
-	public function setUp() {
-		global $wpdb;
-
+class Cron_Test extends WP_UnitTestCase {
+	public function setUp(): void {
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 		}
@@ -82,13 +81,13 @@ class Cron_Test extends \WP_UnitTestCase {
 
 		$mock_jobs = array(
 			(object) array(
-				'job_id' => 1,
-				'object_id' => 1,
+				'job_id'      => 1,
+				'object_id'   => 1,
 				'object_type' => 'post',
 			),
 			(object) array(
-				'job_id' => 2,
-				'object_id' => 2,
+				'job_id'      => 2,
+				'object_id'   => 2,
 				'object_type' => 'user',
 			),
 		);
@@ -105,7 +104,7 @@ class Cron_Test extends \WP_UnitTestCase {
 			->with( $mock_jobs )
 			->will( $this->returnValue( true ) );
 
-		$original_queue = $this->cron->queue;
+		$original_queue    = $this->cron->queue;
 		$this->cron->queue = $mock_queue;
 
 		$this->cron->process_jobs( $options );
@@ -119,19 +118,19 @@ class Cron_Test extends \WP_UnitTestCase {
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
 			->setMethods( [ 'get_processor_job_count', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
-		$mock_queue = $this->getMockBuilder( Queue::class )
+		$mock_queue            = $this->getMockBuilder( Queue::class )
 			->setMethods( [ 'checkout_jobs', 'free_deadlocked_jobs' ] )
 			->getMock();
 
 		$mock_jobs = array(
 			(object) array(
-				'job_id' => 1,
-				'object_id' => 1,
+				'job_id'      => 1,
+				'object_id'   => 1,
 				'object_type' => 'post',
 			),
 			(object) array(
-				'job_id' => 2,
-				'object_id' => 2,
+				'job_id'      => 2,
+				'object_id'   => 2,
 				'object_type' => 'user',
 			),
 		);

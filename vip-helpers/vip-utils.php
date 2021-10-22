@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+
 /**
  * Utility function to trigger a callback on a hook with priority or execute immediately if the hook has already been fired previously.
  *
@@ -120,8 +122,9 @@ function vip_powered_wpcom( $display = 'text', $before_text = 'Powered by ' ) {
  * @return string
  */
 function vip_powered_wpcom_url() {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$utm_term = $_SERVER['HTTP_HOST'] ?? '';
-	$args = array(
+	$args     = array(
 		'utm_source'   => 'vip_powered_wpcom',
 		'utm_medium'   => 'web',
 		'utm_campaign' => 'VIP Footer Credit',
@@ -376,7 +379,8 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
 	// Sanitize the redirects array
 	$vip_redirects_array = array_map( 'untrailingslashit', $vip_redirects_array );
 
-	$uri_unslashed = untrailingslashit( $_SERVER['REQUEST_URI'] );
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$uri_unslashed = untrailingslashit( $_SERVER['REQUEST_URI'] ?? '' );
 
 	if ( $case_insensitive ) {
 		$vip_redirects_array = array_change_key_case( $vip_redirects_array );
@@ -384,7 +388,7 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
 	}
 
 	// Get the current URL minus query string
-	$parsed_uri_path         = parse_url( $uri_unslashed, PHP_URL_PATH );
+	$parsed_uri_path         = wp_parse_url( $uri_unslashed, PHP_URL_PATH );
 	$parsed_uri_path         = $parsed_uri_path ? $parsed_uri_path : '';
 	$parsed_uri_path_slashed = trailingslashit( $parsed_uri_path );
 
@@ -420,6 +424,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 		return;
 	}
 
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 	// Don't do anything for the homepage
 	if ( '/' == $request_uri ) {
@@ -431,7 +436,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 			if ( $append_old_uri ) {
 				$new_url .= str_replace( $old_path, '', $request_uri );
 			}
-			wp_redirect( $new_url, 301 );
+			wp_redirect( $new_url, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 			exit();
 		}
 	}
@@ -463,10 +468,11 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 		return;
 	}
 
-	$uri = $_SERVER['REQUEST_URI'];
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$uri = $_SERVER['REQUEST_URI'] ?? '';
 
 	if ( ! $with_querystring ) {
-		$uri = parse_url( $uri, PHP_URL_PATH );
+		$uri = wp_parse_url( $uri, PHP_URL_PATH );
 	}
 
 	if ( $uri && '/' != $uri ) { // don't process for homepage
@@ -474,10 +480,34 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 		foreach ( $vip_redirects_array as $old_url => $new_url ) {
 			if ( preg_match( $old_url, $uri, $matches ) ) {
 				$redirect_uri = preg_replace( $old_url, $new_url, $uri );
-				wp_redirect( $redirect_uri, 301 );
+				wp_redirect( $redirect_uri, 301 );  // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 				exit;
 			}
 		}
+	}
+}
+
+/**
+ * Internal helper function to log request failure.
+ * 
+ * @param string $url
+ * @param WP_Error|array|false $response
+ * @return void
+ * @global int $blog_id
+ * @internal
+ */
+function _wpcom_log_failed_request( $url, $response ): void {
+	global $blog_id;
+
+	if ( $response && ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) ) {
+		$message = sprintf(
+			'wpcom_vip_file_get_contents: Blog ID %d: Failure for %s and the result was: %s',
+			$blog_id,
+			$url,
+			is_wp_error( $response ) ? $response->get_error_message() : $response['response']['code'] . ' ' . $response['response']['message']
+		);
+
+		trigger_error( esc_html( $message ), E_USER_NOTICE );
 	}
 }
 
@@ -502,8 +532,6 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
  * @return string The remote file's contents (cached)
  */
 function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $extra_args = array() ) {
-	global $blog_id;
-
 	$extra_args_defaults = array(
 		'obey_cache_control_header' => true, // Uses the "cache-control" "max-age" value if greater than $cache_time
 		'http_api_args'             => array(), // See http://codex.wordpress.org/Function_API/wp_remote_get
@@ -511,7 +539,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 
 	$extra_args = wp_parse_args( $extra_args, $extra_args_defaults );
 
-	$cache_key       = md5( serialize( array_merge( $extra_args, array( 'url' => $url ) ) ) );
+	$cache_key       = md5( serialize( array_merge( $extra_args, array( 'url' => $url ) ) ) );  // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 	$backup_key      = $cache_key . '_backup';
 	$disable_get_key = $cache_key . '_disable';
 	$cache_group     = 'wpcom_vip_file_get_contents';
@@ -548,16 +576,14 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 	// Check to see if previous attempts have failed
 	if ( false !== wp_cache_get( $disable_get_key, $cache_group ) ) {
 		$server_up = false;
-	}
-	// Legacy
-	elseif ( false !== wp_cache_get( $old_disable_get_key, $cache_group ) ) {
+	} elseif ( false !== wp_cache_get( $old_disable_get_key, $cache_group ) ) {
+		// Legacy
 		$server_up = false;
-	}
-	// Otherwise make the remote request
-	else {
+	} else {
+		// Otherwise make the remote request
 		$http_api_args            = (array) $extra_args['http_api_args'];
 		$http_api_args['timeout'] = $timeout;
-		$response                 = wp_remote_get( $url, $http_api_args );
+		$response                 = wp_remote_get( $url, $http_api_args );  // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get
 	}
 
 	// Was the request successful?
@@ -595,50 +621,34 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		}
 
 		// Cache the result
-		wp_cache_set( $cache_key, $content, $cache_group, $cache_time );
+		wp_cache_set( $cache_key, $content, $cache_group, $cache_time );    // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 
 		// Additionally cache the result with no expiry as a backup content source
 		wp_cache_set( $backup_key, $content, $cache_group );
 
 		// So we can hook in other places and do stuff
 		do_action( 'wpcom_vip_remote_request_success', $url, $response );
-	}
-	// Okay, it wasn't successful. Perhaps we have a backup result from earlier.
-	elseif ( $content = wp_cache_get( $backup_key, $cache_group ) ) {
+	} else {
+		// Okay, it wasn't successful. Perhaps we have a backup result from earlier.
 		// If a remote request failed, log why it did
-		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			if ( $response && ! is_wp_error( $response ) ) {
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-			} elseif ( $response ) { // is WP_Error object
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-			}
+		$content = wp_cache_get( $backup_key, $cache_group );
+		if ( ! $content ) {
+			// Legacy
+			$content = wp_cache_get( $old_backup_key, $cache_group );
 		}
-	}
-	// Legacy
-	elseif ( $content = wp_cache_get( $old_backup_key, $cache_group ) ) {
-		// If a remote request failed, log why it did
-		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			if ( $response && ! is_wp_error( $response ) ) {
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-			} elseif ( $response ) { // is WP_Error object
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-			}
-		}
-	}
-	// We were unable to fetch any content, so don't try again for another 60 seconds
-	elseif ( $response ) {
-		wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
 
-		// If a remote request failed, log why it did
-		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			if ( $response && ! is_wp_error( $response ) ) {
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response['response']['code'] . ' ' . $response['response']['message'] );
-			} elseif ( $response ) { // is WP_Error object
-				error_log( "wpcom_vip_file_get_contents: Blog ID {$blog_id}: Failure for $url and the result was: " . $response->get_error_message() );
-			}
+		if ( $content ) {
+			_wpcom_log_failed_request( $url, $response );
+		} elseif ( $response ) {
+			// We were unable to fetch any content, so don't try again for another 60 seconds
+			wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
+	
+			// If a remote request failed, log why it did
+			_wpcom_log_failed_request( $url, $response );
+
+			// So we can hook in other places and do stuff
+			do_action( 'wpcom_vip_remote_request_error', $url, $response );
 		}
-		// So we can hook in other places and do stuff
-		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 	}
 
 	return $content;
@@ -657,7 +667,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
  */
 function vip_main_feed_redirect( $target ) {
 	if ( wpcom_vip_is_main_feed_requested() && ! wpcom_vip_is_feedservice_ua() ) {
-		wp_redirect( $target, '302' );
+		wp_redirect( $target, '302' );  // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 		die;
 	}
 }
@@ -669,9 +679,9 @@ function vip_main_feed_redirect( $target ) {
  * @return bool Returns true if main feed is requested
  */
 function wpcom_vip_is_main_feed_requested() {
-	$toMatch = '#^/(wp-(rdf|rss|rss2|atom|rssfeed).php|index.xml|feed|rss)/?$#i';
-	$request = $_SERVER['REQUEST_URI'];
-	return (bool) preg_match( $toMatch, $request );
+	$to_match = '#^/(wp-(rdf|rss|rss2|atom|rssfeed).php|index.xml|feed|rss)/?$#i';
+	$request  = $_SERVER['REQUEST_URI'] ?? '';  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	return (bool) preg_match( $to_match, $request );
 }
 
 /**
@@ -691,7 +701,7 @@ function wpcom_vip_is_feedservice_ua() {
 	}
 
 
-	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+	// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
 	return (bool) preg_match( '/feedburner|feedvalidator|MediafedMetrics/i', $http_user_agent );
@@ -712,9 +722,11 @@ function vip_crossdomain_redirect() {
  * @see vip_crossdomain_redirect()
  */
 function _vip_crossdomain_redirect() {
-	$request = $_SERVER['REQUEST_URI'];
-	if ( '/crossdomain.xml' == $request ) {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$request = $_SERVER['REQUEST_URI'] ?? '';
+	if ( '/crossdomain.xml' === $request ) {
 		header( 'Content-Type: text/xml' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 		echo file_get_contents( get_stylesheet_directory() . $request );
 		exit();
 	}
@@ -782,10 +794,10 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 	$parsed_args  = wp_parse_args( $args, $default_args );
 
 	$cache_group = "$blog_id:vip_safe_wp_remote_request";
-	$cache_key   = 'disable_remote_request_' . md5( parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args['method'] );
+	$cache_key   = 'disable_remote_request_' . md5( wp_parse_url( $url, PHP_URL_HOST ) . '_' . $parsed_args['method'] );
 
 	// valid url
-	if ( empty( $url ) || ! parse_url( $url ) ) {
+	if ( empty( $url ) || ! wp_parse_url( $url ) ) {
 		return ( $fallback_value ) ? $fallback_value : new WP_Error( 'invalid_url', $url );
 	}
 
@@ -828,7 +840,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 	if ( false !== $option && time() - $option['time'] < $retry ) {
 		if ( $option['hits'] >= $threshold ) {
 			if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-				trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} has been throttled after {$option['hits']} attempts. Not reattempting until after $retry seconds", E_USER_WARNING );
+				trigger_error( esc_html( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} has been throttled after {$option['hits']} attempts. Not reattempting until after $retry seconds" ), E_USER_WARNING );
 			}
 
 			return ( $fallback_value ) ? $fallback_value : new WP_Error( 'remote_request_disabled', 'Remote requests disabled: ' . maybe_serialize( $option ) );
@@ -845,24 +857,24 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 			wp_cache_set( $cache_key, array(
 				'time' => floor( $end ),
 				'hits' => $option['hits'] + 1,
-			), $cache_group, $retry );
+			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		} elseif ( false !== $option && $option['hits'] == $threshold ) {
 			wp_cache_set( $cache_key, array(
 				'time' => floor( $end ),
 				'hits' => $threshold,
-			), $cache_group, $retry );
+			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		} else {
 			wp_cache_set( $cache_key, array(
 				'time' => floor( $end ),
 				'hits' => 1,
-			), $cache_group, $retry );
+			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		}
 	} else {
 		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
 			wp_cache_set( $cache_key, array(
 				'time' => $option['time'],
 				'hits' => $option['hits'] - 1,
-			), $cache_group, $retry );
+			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		} else {
 			wp_cache_delete( $cache_key, $cache_group );
 		}
@@ -870,7 +882,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 
 	if ( is_wp_error( $response ) ) {
 		if ( ! defined( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING' ) || ! WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING ) {
-			trigger_error( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} and a timeout of $timeout failed. Result: " . maybe_serialize( $response ), E_USER_WARNING );
+			trigger_error( esc_html( "vip_safe_wp_remote_request: Blog ID {$blog_id}: Requesting $url with method {$parsed_args[ 'method' ]} and a timeout of $timeout failed. Result: " . maybe_serialize( $response ) ), E_USER_WARNING );
 		}
 		do_action( 'wpcom_vip_remote_request_error', $url, $response );
 
@@ -918,7 +930,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 		$user_login = sanitize_user( $email_or_id, true );
 		$user       = get_user_by( 'login', $user_login );
 		if ( ! $user ) {
-			return;
+			return false;
 		}
 
 		$email = $user->user_email;
@@ -929,6 +941,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 
 	$profile = wpcom_vip_file_get_contents( $profile_url, 1, 900 );
 	if ( $profile ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
 		$profile = unserialize( $profile );
 
 		if ( is_array( $profile ) && ! empty( $profile['entry'] ) && is_array( $profile['entry'] ) ) {
@@ -953,7 +966,8 @@ function wpcom_vip_email_has_gravatar( $email ) {
 	$hash = md5( strtolower( trim( $email ) ) );
 
 	// If not in the cache, check again
-	if ( false === $has_gravatar = wp_cache_get( $hash, 'email_has_gravatar' ) ) {
+	$has_gravatar = wp_cache_get( $hash, 'email_has_gravatar' );
+	if ( false === $has_gravatar ) {
 
 		$request = wp_remote_head( 'http://0.gravatar.com/avatar/' . $hash . '?d=404' );
 
@@ -975,7 +989,7 @@ function wpcom_vip_email_has_gravatar( $email ) {
  * @return bool Returns true if $url is in the $whitelisted_domains
  */
 function wpcom_vip_is_valid_domain( $url, $whitelisted_domains ) {
-	$domain = parse_url( $url, PHP_URL_HOST );
+	$domain = wp_parse_url( $url, PHP_URL_HOST );
 
 	if ( ! $domain ) {
 		return false;
@@ -1028,15 +1042,17 @@ function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 	if ( $ttl
 		&& $ttl > ( 5 * HOUR_IN_SECONDS )
 		&& $ttl < ( MONTH_IN_SECONDS - HOUR_IN_SECONDS ) ) {
-		$ttl = $ttl + rand( 0, HOUR_IN_SECONDS );
+		$ttl = $ttl + rand( 0, HOUR_IN_SECONDS );                   // phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand
 	} else {
-		$ttl = rand( 5 * HOUR_IN_SECONDS, 6 * HOUR_IN_SECONDS );
+		$ttl = rand( 5 * HOUR_IN_SECONDS, 6 * HOUR_IN_SECONDS );    // phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand
 	}
 
-	$cache_key = md5( $url . '||' . serialize( $args ) );
+	$cache_key = md5( $url . '||' . serialize( $args ) );           // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 
-	if ( false === $html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' ) ) {
+	$html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' );
+	if ( false === $html ) {
 		$html = wp_oembed_get( $url, $args );
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', $ttl );
 	}
 
@@ -1067,19 +1083,16 @@ function _wpcom_vip_load_plugin_sanitizer( $folder ) {
  * @param string $plugin Optional. Plugin folder name of the plugin, or the folder and
  * plugin file name (such as wp-api/plugin.php), relative to either the VIP shared-plugins folder, or WP_PLUGIN_DIR
  * @param string $folder Subdirectory of WP_PLUGIN_DIR to load plugin from
- * @param bool $load_release_candidate Deprecated. No longer used
  * @return bool True if the include was successful
  */
-function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_candidate_not_used = null ) {
+function wpcom_vip_load_plugin( $plugin = false, $folder = false ) {
 	// Make sure there's a plugin to load
-	if ( empty( $plugin ) ) {
-		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
-		}
+	if ( empty( $plugin ) && ! WPCOM_IS_VIP_ENV ) {
+		die( 'wpcom_vip_load_plugin() was called without a first parameter!' );
 	}
 
 	if ( ! wpcom_vip_should_load_plugins() ) {
-		return;
+		return false;
 	}
 
 	/**
@@ -1089,7 +1102,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 	 * load a release candidate. We should interpret 'plugins' to mean
 	 * the plugin is in the default place.
 	 */
-	if ( $folder === 'plugins' ) {
+	if ( 'plugins' === $folder ) {
 		$folder = false;
 		_doing_it_wrong( __FUNCTION__, 'The specified $folder should not be "plugins", which is the default location', '2.0.0' );
 	}
@@ -1210,10 +1223,10 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false, $load_release_
 		}
 
 		if ( ! WPCOM_IS_VIP_ENV ) {
-			die( $error_msg );
+			die( esc_html( $error_msg ) );
 		} else {
 			// On VIP we try to both notify the user...
-			trigger_error( $error_msg, E_USER_WARNING );
+			trigger_error( esc_html( $error_msg ), E_USER_WARNING );
 			// ...And trigger a New Relic notice, if the extension is available
 			if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_notice_error' ) ) {
 				newrelic_notice_error( $error_msg );
@@ -1452,6 +1465,7 @@ function is_proxied_automattician() {
  * @return bool True if the current request is made using the Automattic proxy
  */
 function is_proxied_request() {
+	// phpcs:disable WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant
 	return defined( 'A8C_PROXIED_REQUEST' ) && true === A8C_PROXIED_REQUEST;
 }
 
@@ -1469,7 +1483,7 @@ function vip_is_jetpack_request() {
 		return false;
 	}
 
-	//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+	// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 	// Simple UA check to filter out most.
 	if ( false === stripos( $http_user_agent, 'jetpack' ) ) {
@@ -1495,7 +1509,7 @@ function vip_is_jetpack_request() {
 		'192.0.102.95/32',
 	);
 
-	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
 	return Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
@@ -1528,6 +1542,7 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 	if ( $kind && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
 		wp_cache_add_global_groups( array( 'irc-ratelimit' ) );
 
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		if ( ! wp_cache_add( $kind, 1, 'irc-ratelimit', $interval ) ) {
 			return false;
 		}
@@ -1554,7 +1569,7 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 	}
 
 	if ( is_array( $message ) || is_object( $message ) ) {
-		//phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		error_log( "Invalid \$message: wpcom_vip_irc( '$channel_or_user', " . print_r( $message, true ) . ' );' );
 
 		return false;
@@ -1578,7 +1593,7 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 
 	$response = wp_remote_post( $url, array(
 		'timeout' => 0.1,
-		'body'    => json_encode( $body ),
+		'body'    => wp_json_encode( $body ),
 	) );
 
 	if ( is_wp_error( $response ) ) {

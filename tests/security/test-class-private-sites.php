@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Security;
 
-class Private_Sites_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+class Private_Sites_Test extends WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -90,10 +92,10 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 
 	public function test__filter_jetpack_get_available_modules() {
 		$modules = array(
-			'json-api' => true,
+			'json-api'              => true,
 			'enhanced-distribution' => true,
-			'search' => true,
-			'something-else' => true,
+			'search'                => true,
+			'something-else'        => true,
 		);
 
 		$private = \Automattic\VIP\Security\Private_Sites::instance();
@@ -101,7 +103,7 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 		$filtered = $private->filter_jetpack_get_available_modules( $modules );
 
 		$expected = array(
-			'search' => true,
+			'search'         => true,
 			'something-else' => true,
 		);
 
@@ -148,14 +150,14 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 
 		$input = array(
 			'blog_public' => 1,
-			'foo' => 'bar',
+			'foo'         => 'bar',
 		);
 
 		$filtered = $private->filter_blog_public_option_for_full_sync( $input );
 
 		$expected = array(
 			'blog_public' => '-1',
-			'foo' => 'bar',
+			'foo'         => 'bar',
 		);
 
 		$this->assertEquals( $expected, $filtered );

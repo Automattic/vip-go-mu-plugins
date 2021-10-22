@@ -2,13 +2,11 @@
 
 namespace Automattic\VIP\Utils;
 
-class Alerts_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+use WP_UnitTestCase;
 
-		require_once __DIR__ . '/../../../lib/utils/class-alerts.php';
-	}
+require_once __DIR__ . '/../../../lib/utils/class-alerts.php';
 
+class Alerts_Test extends WP_UnitTestCase {
 	public function mock_http_response( $mocked_response, $response_time = 1 ) {
 		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response, $response_time ) {
 			usleep( $response_time * 1000000 );
@@ -69,7 +67,7 @@ class Alerts_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__valid_channel_or_user() {
 		return [
-			'valid-channel' => [
+			'valid-channel'  => [
 				'#testchannel',
 				'#testchannel',
 			],
@@ -100,12 +98,12 @@ class Alerts_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__invalid_channel_or_user() {
 		return [
-			'invalid-characters' => [
+			'invalid-characters'    => [
 				'&*%$!^',
 			],
 			'empty-channel-or-user' => [
 				'',
-			]
+			],
 		];
 	}
 
@@ -147,12 +145,12 @@ class Alerts_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__invalid_message() {
 		return [
-			'invalid-type' => [
+			'invalid-type'  => [
 				[],
 			],
 			'empty-message' => [
 				'',
-			]
+			],
 		];
 	}
 
@@ -184,11 +182,11 @@ class Alerts_Test extends \WP_UnitTestCase {
 		define( 'ALERT_SERVICE_PORT', 9999 );
 
 		$details = [
-			'alias' => 'test/alert',
+			'alias'       => 'test/alert',
 			'description' => 'Test alert',
-			'entity' => 'test',
-			'priority' => 'P4',
-			'source' => 'test',
+			'entity'      => 'test',
+			'priority'    => 'P4',
+			'source'      => 'test',
 		];
 
 		$alerts = Alerts::instance();
@@ -204,25 +202,25 @@ class Alerts_Test extends \WP_UnitTestCase {
 		return [
 			'invalid-type' => [ 'string' ],
 			'missing-keys' => [ 
-				'alias' => 'test/alert',
+				'alias'       => 'test/alert',
 				'description' => 'Test alert',
-				'entity' => 'test',
-				'source' => 'test',
+				'entity'      => 'test',
+				'source'      => 'test',
 			],
-			'extra-keys' => [ 
-				'alias' => 'test/alert',
+			'extra-keys'   => [ 
+				'alias'       => 'test/alert',
 				'description' => 'Test alert',
-				'entity' => 'test',
-				'priority' => 'P4',
-				'source' => 'test',
-				'extra' => 'invalid',
+				'entity'      => 'test',
+				'priority'    => 'P4',
+				'source'      => 'test',
+				'extra'       => 'invalid',
 			],
-			'empty-keys' => [
-				'alias' => 'test/alert',
+			'empty-keys'   => [
+				'alias'       => 'test/alert',
 				'description' => '',
-				'entity' => 'test',
-				'priority' => 'P4',
-				'source' => 'test',
+				'entity'      => 'test',
+				'priority'    => 'P4',
+				'source'      => 'test',
 			],
 		];
 	}

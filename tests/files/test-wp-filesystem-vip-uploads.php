@@ -2,19 +2,16 @@
 
 namespace Automattic\VIP\Files;
 
-use \WP_Error;
+use WP_Error;
+use WP_UnitTestCase;
 
-class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
+require_once __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php';
+
+class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 	private $api_client_mock;
 	private $filesystem;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php' );
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->api_client_mock = $this->createMock( Api_Client::class );
@@ -24,11 +21,11 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 		add_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		remove_filter( 'upload_dir', [ $this, 'filter_uploads_basedir' ] );
 
 		$this->api_client_mock = null;
-		$this->filesystem = null;
+		$this->filesystem      = null;
 
 		parent::tearDown();
 	}
@@ -37,7 +34,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP_Uploads' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP_Uploads' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -49,7 +46,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__sanitize_uploads_path__upload_basedir() {
-		$test_path = '/tmp/uploads/file/to/path.txt';
+		$test_path               = '/tmp/uploads/file/to/path.txt';
 		$expected_sanitized_path = '/wp-content/uploads/file/to/path.txt';
 
 		$test_method = $this->get_method( 'sanitize_uploads_path' );
@@ -62,7 +59,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__sanitize_uploads_path__WP_CONTENT_DIR() {
-		$test_path = WP_CONTENT_DIR . '/uploads/path/to/file.jpg';
+		$test_path               = WP_CONTENT_DIR . '/uploads/path/to/file.jpg';
 		$expected_sanitized_path = '/wp-content/uploads/path/to/file.jpg';
 
 		$test_method = $this->get_method( 'sanitize_uploads_path' );
@@ -114,17 +111,17 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__get_contents_array__success() {
 		return [
-			'empty' => [
+			'empty'              => [
 				'',
 				[],
 			],
 
-			'one-line' => [
+			'one-line'           => [
 				'Hello World!',
 				[ "Hello World!\n" ],
 			],
 
-			'multiple-lines' => [
+			'multiple-lines'     => [
 				"Hello\nWorld\n!",
 				[
 					"Hello\n",
@@ -139,7 +136,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 					"Hello World!\n",
 					"\n",
 				],
-			]
+			],
 		];
 	}
 
@@ -159,7 +156,7 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 	public function test__put_contents__params() {
 		$test_content = 'Howdy';
-		$test_file = '/tmp/uploads/file.txt';
+		$test_file    = '/tmp/uploads/file.txt';
 
 		$tmp_file = false;
 
@@ -186,22 +183,22 @@ class WP_Filesystem_VIP_Uploads_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__is_dir() {
 		return [
-			'file' => [
+			'file'                          => [
 				'/wp-content/uploads/file.jpg',
 				false,
 			],
 
-			'file with trailing period' => [
+			'file with trailing period'     => [
 				'/wp-content/uploads/file.',
 				false,
 			],
 
-			'file with leading period' => [
+			'file with leading period'      => [
 				'/wp-content/uploads/.file',
 				false,
 			],
 
-			'directory' => [
+			'directory'                     => [
 				'/wp-content/uploads/folder',
 				true,
 			],

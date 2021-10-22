@@ -2,30 +2,28 @@
 
 namespace Automattic\VIP\Security;
 
-class Machine_User_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../security/machine-user.php';
 
-		require_once __DIR__ . '/../../security/machine-user.php';
-	}
+class Machine_User_Test extends WP_UnitTestCase {
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->machine_user = $this->factory->user->create_and_get( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
-			'role' => WPCOM_VIP_MACHINE_USER_ROLE,
+			'role'       => WPCOM_VIP_MACHINE_USER_ROLE,
 		] );
 
 	}
 
 	public function get_test_data__user_modification_caps() {
 		return [
-			'edit_user' => [ 'edit_user' ],
-			'remove_user' => [ 'remove_user' ],
-			'delete_user' => [ 'delete_user' ],
+			'edit_user'    => [ 'edit_user' ],
+			'remove_user'  => [ 'remove_user' ],
+			'delete_user'  => [ 'delete_user' ],
 			'promote_user' => [ 'promote_user' ],
 		];
 	}
@@ -33,7 +31,7 @@ class Machine_User_Test extends \WP_UnitTestCase {
 	// For testing non-superadmin Administrator users
 	public function get_test_data__selective_user_modification_caps() {
 		return [
-			'remove_user' => [ 'remove_user' ],
+			'remove_user'  => [ 'remove_user' ],
 			'promote_user' => [ 'promote_user' ],
 		];
 	}
@@ -118,7 +116,7 @@ class Machine_User_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__user_modification_caps
 	 */
 	public function test__non_admin_users_cannot_modify_others( $test_cap ) {
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$test_user    = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
 		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
@@ -134,7 +132,7 @@ class Machine_User_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Single site test for administrator user; multisite tested separately.' );
 		}
 
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user    = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
 		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
@@ -152,7 +150,7 @@ class Machine_User_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Multisite test for administrator user; single site tested separately.' );
 		}
 
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user    = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
 		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );

@@ -5,10 +5,10 @@ namespace Automattic\VIP\Search\Queue;
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION = 3;
-	const DB_VERSION_TRANSIENT = 'vip_search_queue_db_version';
+	const DB_VERSION               = 3;
+	const DB_VERSION_TRANSIENT     = 'vip_search_queue_db_version';
 	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
-	const TABLE_CREATE_LOCK = 'vip_search_queue_creating_table';
+	const TABLE_CREATE_LOCK        = 'vip_search_queue_creating_table';
 
 	public function init() {
 		$this->setup_hooks();
@@ -53,7 +53,7 @@ class Schema {
 	public function create_tables_during_multisite_install( $bid ) {
 		switch_to_blog( $bid );
 
-		if ( ! self::is_installed() ) {
+		if ( ! $this->is_installed() ) {
 			$this->_prepare_table();
 		}
 
@@ -91,7 +91,7 @@ class Schema {
 	 */
 	public function prepare_table() {
 		// Table installed and current version
-		if ( self::is_installed() ) {
+		if ( $this->is_installed() ) {
 			return;
 		}
 
@@ -108,7 +108,7 @@ class Schema {
 	/**
 	 * Create the plugin's DB table when necessary
 	 */
-	protected function _prepare_table() {
+	protected function _prepare_table() { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
 		// Use Core's method of creating/updating tables.
 		if ( ! function_exists( 'dbDelta' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/upgrade.php';
@@ -128,7 +128,7 @@ class Schema {
 			`status` varchar(45) NOT NULL COMMENT 'Status of the indexing job',
 			`index_version` int(11) NOT NULL DEFAULT 1,
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  			`scheduled_time` datetime DEFAULT NULL,
+			`scheduled_time` datetime DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
 			UNIQUE KEY `unique_object_status_version` (`object_id`,`object_type`,`status`,`index_version`)
 		) ENGINE=InnoDB";
@@ -136,6 +136,7 @@ class Schema {
 		dbDelta( $schema, true );
 
 		// Confirm that the table was created, and set the option to prevent further updates.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
 		if ( 1 === $table_count ) {

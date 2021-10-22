@@ -2,30 +2,28 @@
 
 namespace Automattic\VIP\Files;
 
-class Curl_Streamer_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+require_once __DIR__ . '/../../files/class-curl-streamer.php';
+
+class Curl_Streamer_Test extends WP_UnitTestCase {
 	const TEST_FILE_PATH = __DIR__ . '/../fixtures/files/stream.txt';
 
 	private $curl_streamer;
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-curl-streamer.php' );
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
-		$this->file_stream = fopen( self::TEST_FILE_PATH, 'r' );
+		$this->file_stream   = fopen( self::TEST_FILE_PATH, 'r' );
 		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );
 		$this->curl_streamer->init();
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		$this->curl_streamer->deinit();
 		fclose( $this->file_stream );
 
-		$this->file_stream = null;
+		$this->file_stream   = null;
 		$this->curl_streamer = null;
 
 		parent::tearDown();
@@ -34,7 +32,7 @@ class Curl_Streamer_Test extends \WP_UnitTestCase {
 	public function test__init() {
 		$expected_transport = 'WP_Http_Curl';
 
-		$wp_http = new \WP_Http();
+		$wp_http          = new \WP_Http();
 		$actual_transport = $wp_http->_get_first_available_transport( [] );
 
 		$this->assertEquals( $expected_transport, $actual_transport );

@@ -2,25 +2,24 @@
 
 namespace Automattic\VIP\Search;
 
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
-class Search_Test extends \WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
 
-	// phpcs:disable WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $preserveGlobalState      = false;
-	protected $runTestInSeparateProcess = true;
-	// phpcs:enable
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class Search_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
 
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
-	public function setUp() {
-
+	public function setUp(): void {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
@@ -654,6 +653,7 @@ class Search_Test extends \WP_UnitTestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
+	 * @requires function xdebug_get_headers
 	 */
 	public function test__send_vary_headers__sent_for_group() {
 
@@ -1272,7 +1272,7 @@ class Search_Test extends \WP_UnitTestCase {
 	public function test__should_load_es_wp_query_already_loaded() {
 		require_once __DIR__ . '/../../../../search/es-wp-query/es-wp-query.php';
 
-		$this->expectException( \PHPUnit\Framework\Error\Notice::class );
+		$this->expectNotice();
 
 		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
 
@@ -2304,7 +2304,9 @@ class Search_Test extends \WP_UnitTestCase {
 		$application_id      = 123;
 		$application_url     = 'http://example.org';
 		$average_queue_value = 3601;
-		$expected_message    = "Average index queue wait time for application $application_id - $application_url is currently $average_queue_value seconds";
+		$queue_count_value   = 1;
+		$longest_queue_value = $average_queue_value;
+		$expected_message    = "Average index queue wait time for application {$application_id} - {$application_url} is currently {$average_queue_value} seconds. There are {$queue_count_value} items in the queue and the oldest item is {$longest_queue_value} seconds old";
 		$expected_level      = 2;
 
 		$es = new \Automattic\VIP\Search\Search();
@@ -2321,7 +2323,13 @@ class Search_Test extends \WP_UnitTestCase {
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
 
-		$queue_mocked->method( 'get_average_queue_wait_time' )->willReturn( $average_queue_value );
+		$queue_mocked
+			->method( 'get_queue_stats' )
+			->willReturn( (object) [
+				'average_wait_time' => $average_queue_value,
+				'queue_count'       => $queue_count_value,
+				'longest_wait_time' => $longest_queue_value,
+			] );
 
 		$alerts_mocked->expects( $this->once() )
 			->method( 'send_to_chat' )
@@ -2407,8 +2415,8 @@ class Search_Test extends \WP_UnitTestCase {
 
 		// trigger_error is only called if an alert should happen
 		if ( $should_alert ) {
-			$this->expectException( 'PHPUnit_Framework_Error_Warning' );
-			$this->expectExceptionMessage(
+			$this->expectWarning();
+			$this->expectWarningMessage(
 				sprintf(
 					'Application 123 - http://example.org has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
 					$difference
@@ -2460,8 +2468,8 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$filter
@@ -2482,8 +2490,8 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_low_message
@@ -2504,8 +2512,8 @@ class Search_Test extends \WP_UnitTestCase {
 			}
 		);
 
-		$this->expectException( 'PHPUnit_Framework_Error_Notice' );
-		$this->expectExceptionMessage(
+		$this->expectNotice();
+		$this->expectNoticeMessage(
 			sprintf(
 				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
 				$too_high_message

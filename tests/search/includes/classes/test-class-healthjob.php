@@ -2,15 +2,16 @@
 
 namespace Automattic\VIP\Search;
 
-class HealthJob_Test extends \WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
-	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+use WP_UnitTestCase;
 
-	public static function setUpBeforeClass() {
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class HealthJob_Test extends WP_UnitTestCase {
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
@@ -26,11 +27,14 @@ class HealthJob_Test extends \WP_UnitTestCase {
 		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
-	public function setUp() {
+	public function setUp(): void {
+		parent::setUp();
 		require_once __DIR__ . '/../../../../search/includes/classes/class-healthjob.php';
 	}
 
 	public function test__vip_search_healthjob_check_health() {
+		$this->expectNotToPerformAssertions();
+
 		// We have to test under the assumption that the main class has been loaded and initialized,
 		// as it does various setup tasks like including dependencies
 		$es = new \Automattic\VIP\Search\Search();
@@ -106,7 +110,7 @@ class HealthJob_Test extends \WP_UnitTestCase {
 			array(
 				'index_name'    => 'posts-123',
 				'index_version' => 333,
-				'error' => 'Foo Error',
+				'error'         => 'Foo Error',
 			),
 		);
 

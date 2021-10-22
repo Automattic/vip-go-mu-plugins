@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Tests;
 
-class WPCOM_VIP_Set_Image_Quality_For_Url_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
+
+class WPCOM_VIP_Set_Image_Quality_For_Url_Test extends WP_UnitTestCase {
 
 	private const ATTACHMENT_URL = 'https://example.com/wp-contents/uploads/2020/08/foo.jpg';
 

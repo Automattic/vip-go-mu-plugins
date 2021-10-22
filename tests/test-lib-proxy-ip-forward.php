@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
+use PHPUnit\Framework\TestCase;
 use function Automattic\VIP\Proxy\is_valid_ip;
 use function Automattic\VIP\Proxy\set_remote_address;
 use function Automattic\VIP\Proxy\fix_remote_address;
@@ -12,17 +13,21 @@ use function Automattic\VIP\Proxy\get_ip_addresses_from_ip_trail;
 use function Automattic\VIP\Proxy\is_valid_proxy_verification_key;
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
 
-abstract class IP_Forward_Test_Base extends \PHPUnit_Framework_TestCase {
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
+// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+
+abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
-	public function setUp() {
-		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
+	public function setUp(): void {
+		$this->original_remote_addr     = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
 		}
@@ -47,7 +52,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__get_ip_addresses_from_ip_trail__ip_trail_has_lt_2_ips() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4';
+		$ip_trail                        = '1.2.3.4';
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -56,7 +61,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__get_ip_addresses_from_ip_trail__ip_trail_has_gt_2_ips() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 9.0.21.0, 5.6.7.8';
+		$ip_trail                        = '1.2.3.4, 9.0.21.0, 5.6.7.8';
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -65,7 +70,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__get_ip_addresses_from_ip_trail__proxy_doesnt_match_forwarded_for() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.5.5.5';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
+		$ip_trail                        = '1.2.3.4, 5.6.7.8';
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -74,7 +79,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__fix_remote_address_from_ip_trail__invalid_remote_ip() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 123456789';
+		$ip_trail                        = '1.2.3.4, 123456789';
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -83,7 +88,7 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__fix_remote_address_from_ip_trail__invalid_user_ip() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = 'bad_ip, 5.6.7.8';
+		$ip_trail                        = 'bad_ip, 5.6.7.8';
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -92,8 +97,8 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__fix_remote_address_from_ip_trail__valid_ip_trail_ipv4() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
-		$expected_ip_addresses = [ '1.2.3.4', '5.6.7.8' ];
+		$ip_trail                        = '1.2.3.4, 5.6.7.8';
+		$expected_ip_addresses           = [ '1.2.3.4', '5.6.7.8' ];
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -102,8 +107,8 @@ class IP_Forward__Get_Ip_Addresses_From_Ip_Trail__Tests extends IP_Forward_Test_
 
 	public function test__fix_remote_address_from_ip_trail__valid_ip_trail_ipv6() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '2001:db8::1234:ace:6006:1e, 5.6.7.8';
-		$expected_ip_addresses = [ '2001:db8::1234:ace:6006:1e', '5.6.7.8' ];
+		$ip_trail                        = '2001:db8::1234:ace:6006:1e, 5.6.7.8';
+		$expected_ip_addresses           = [ '2001:db8::1234:ace:6006:1e', '5.6.7.8' ];
 
 		$result = get_ip_addresses_from_ip_trail( $ip_trail );
 
@@ -150,8 +155,8 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	// fix_remote_address
 	public function test__fix_remote_address__invalid_user_ip() {
-		$user_ip = 'bad_ip';
-		$proxy_ip = '5.6.7.8';
+		$user_ip   = 'bad_ip';
+		$proxy_ip  = '5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
 
 		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
@@ -161,8 +166,8 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 	}
 
 	public function test__fix_remote_address__ip_not_in_whitelist() {
-		$user_ip = '1.2.3.4';
-		$proxy_ip = '5.6.7.8';
+		$user_ip   = '1.2.3.4';
+		$proxy_ip  = '5.6.7.8';
 		$whitelist = [ '0.0.0.0' ];
 
 		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
@@ -172,8 +177,8 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 	}
 
 	public function test__fix_remote_address__ip_in_whitelist_ipv4() {
-		$user_ip = '1.2.3.4';
-		$proxy_ip = '5.6.7.8';
+		$user_ip   = '1.2.3.4';
+		$proxy_ip  = '5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
 
 		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
@@ -183,8 +188,8 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 	}
 
 	public function test__fix_remote_address__ip_in_whitelist_ipv6() {
-		$user_ip = '2001:db8::1234:ace:6006:1e';
-		$proxy_ip = '5.6.7.8';
+		$user_ip   = '2001:db8::1234:ace:6006:1e';
+		$proxy_ip  = '5.6.7.8';
 		$whitelist = [ '5.6.7.8' ];
 
 		$result = fix_remote_address( $user_ip, $proxy_ip, $whitelist );
@@ -195,8 +200,8 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	public function test__fix_remote_address_from_ip_trail__ip_not_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
-		$whitelist = [ '0.0.0.0' ];
+		$ip_trail                        = '1.2.3.4, 5.6.7.8';
+		$whitelist                       = [ '0.0.0.0' ];
 
 		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
 
@@ -206,8 +211,8 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 
 	public function test__fix_remote_address_from_ip_trail__ip_in_whitelist() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
-		$whitelist = [ '5.6.7.8' ];
+		$ip_trail                        = '1.2.3.4, 5.6.7.8';
+		$whitelist                       = [ '5.6.7.8' ];
 
 		$result = fix_remote_address_from_ip_trail( $ip_trail, $whitelist );
 
@@ -216,7 +221,7 @@ class IP_Forward_Tests extends IP_Forward_Test_Base {
 	}
 }
 
-class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+class IP_Forward__Get_Proxy_Verification_Key__Test extends TestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -269,7 +274,7 @@ class IP_Forward__Get_Proxy_Verification_Key__Test extends \PHPUnit_Framework_Te
 	}
 }
 
-class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends TestCase {
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -297,17 +302,17 @@ class IP_Forward__Is_Valid_Proxy_Verification_Key__Test extends \PHPUnit_Framewo
 	}
 }
 
-class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUnit_Framework_TestCase {
+class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
-	public function setUp() {
-		$this->original_remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
+	public function setUp(): void {
+		$this->original_remote_addr     = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
 		}
@@ -323,7 +328,7 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 	 */
 	public function test__invalid_ip() {
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
-		$key = 'valid-key';
+		$key     = 'valid-key';
 		$user_ip = 'bad_ip';
 
 		$result = fix_remote_address_with_verification_key( $user_ip, $key );
@@ -338,7 +343,7 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 	 */
 	public function test__invalid_key() {
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
-		$key = 'not-a-valid-key';
+		$key     = 'not-a-valid-key';
 		$user_ip = '5.6.7.8';
 
 		$result = fix_remote_address_with_verification_key( $user_ip, $key );
@@ -353,7 +358,7 @@ class IP_Forward__Fix_Remote_Address_With_Verification_Key__Test extends \PHPUni
 	 */
 	public function test__all_valid() {
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
-		$key = 'valid-key';
+		$key     = 'valid-key';
 		$user_ip = '5.6.7.8';
 
 		$result = fix_remote_address_with_verification_key( $user_ip, $key );
@@ -370,7 +375,7 @@ class IP_Forward__Fix_Remote_Address_From_Ip_Trail_With_Verification_Key__Test e
 	 */
 	public function test__all_valid() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
+		$ip_trail                        = '1.2.3.4, 5.6.7.8';
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 
@@ -386,7 +391,7 @@ class IP_Forward__Fix_Remote_Address_From_Ip_Trail_With_Verification_Key__Test e
 	 */
 	public function test__invalid_key() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.8';
+		$ip_trail                        = '1.2.3.4, 5.6.7.8';
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'invalid-key';
 
@@ -402,7 +407,7 @@ class IP_Forward__Fix_Remote_Address_From_Ip_Trail_With_Verification_Key__Test e
 	 */
 	public function test__invalid_ip_trail() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail = '1.2.3.4, 5.6.7.eight';
+		$ip_trail                        = '1.2.3.4, 5.6.7.eight';
 		define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
 		$key = 'valid-key';
 

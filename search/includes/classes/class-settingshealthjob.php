@@ -35,8 +35,8 @@ class SettingsHealthJob {
 	public $indexables;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search = $search;
-		$this->health = new Health( $search );
+		$this->search     = $search;
+		$this->health     = new Health( $search );
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -122,7 +122,7 @@ class SettingsHealthJob {
 					$indexable_slug,
 					$result['index_version'],
 					$result['index_name'],
-					var_export( $result['diff'], true )
+					var_export( $result['diff'], true )     // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
@@ -154,7 +154,7 @@ class SettingsHealthJob {
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
 				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
-				$message = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
+				$message       = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
@@ -216,6 +216,7 @@ class SettingsHealthJob {
 			$cache_key = "healthcheck_alert_seen:{$type}";
 			if ( false === wp_cache_get( $cache_key, Cache::CACHE_GROUP_KEY ) ) {
 				$cron_interval = 1 * \HOUR_IN_SECONDS;
+				// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 				wp_cache_set( $cache_key, 1, Cache::CACHE_GROUP_KEY, round( $cron_interval * 1.5 ) );
 				return false;
 			}

@@ -4,6 +4,7 @@
  */
 
 namespace Automattic\VIP\Async_Publish_Actions\Tests;
+
 use Automattic\VIP\Async_Publish_Actions;
 use WP_UnitTestCase;
 
@@ -14,7 +15,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Prepare test environment
 	 */
-	function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		// make sure the schedule is clear.
@@ -27,7 +28,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Clean up after our tests
 	 */
-	function tearDown() {
+	public function tearDown(): void {
 		// make sure the schedule is clear.
 		_set_cron_array( array() );
 
@@ -48,7 +49,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		$pid = wp_insert_post( $post, true );
 
 		$args = [
-			'post_id' => (int) $pid,
+			'post_id'    => (int) $pid,
 			'new_status' => 'draft',
 			'old_status' => 'new',
 		];
@@ -72,7 +73,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		$pid = wp_insert_post( $post, true );
 
 		$args = [
-			'post_id' => (int) $pid,
+			'post_id'    => (int) $pid,
 			'new_status' => 'draft',
 			'old_status' => 'new',
 		];
@@ -104,7 +105,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
-		$this->assertInternalType( 'int',  $next );
+		$this->assertIsInt( $next );
 	}
 
 	/**
@@ -160,7 +161,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
-		$this->assertInternalType( 'int',  $next );
+		$this->assertIsInt( $next );
 	}
 
 	/**
@@ -195,8 +196,8 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 
 		$scheduled_for_second = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
-		$this->assertInternalType( 'int', $scheduled_for_first, 'No event for first post' );
-		$this->assertInternalType( 'int', $scheduled_for_second, 'No event for second post' );
+		$this->assertIsInt( $scheduled_for_first, 'No event for first post' );
+		$this->assertIsInt( $scheduled_for_second, 'No event for second post' );
 	}
 
 	/**

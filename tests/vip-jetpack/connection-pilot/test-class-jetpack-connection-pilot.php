@@ -3,8 +3,9 @@
 namespace Automattic\VIP\Jetpack;
 
 use DateTime;
+use WP_UnitTestCase;
 
-class Connection_Pilot_Test extends \WP_UnitTestCase {
+class Connection_Pilot_Test extends WP_UnitTestCase {
 	protected static function getMethod( $name ) {
 		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );
 		$method = $class->getMethod( $name );
@@ -103,7 +104,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 0,
-				)
+				),
 			],
 			'zero' => [
 				0,
@@ -113,7 +114,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 0,
-				)
+				),
 			],
 			'one'  => [
 				1,
@@ -123,7 +124,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 1,
-				)
+				),
 			],
 		];
 	}

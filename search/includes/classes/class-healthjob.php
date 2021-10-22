@@ -57,8 +57,8 @@ class HealthJob {
 	public $indexables;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search = $search;
-		$this->health = new Health( $search );
+		$this->search     = $search;
+		$this->health     = new Health( $search );
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -77,6 +77,7 @@ class HealthJob {
 		}
 
 		// Add the custom cron schedule
+		// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
 		$this->schedule_job();
@@ -153,7 +154,7 @@ class HealthJob {
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} else if ( ! empty( $results ) ) {
+		} elseif ( ! empty( $results ) ) {
 			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 		}
@@ -279,6 +280,7 @@ class HealthJob {
 		if ( $type ) {
 			$cache_key = "healthcheck_alert_seen:{$type}";
 			if ( false === wp_cache_get( $cache_key, Cache::CACHE_GROUP_KEY ) ) {
+				// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 				wp_cache_set( $cache_key, 1, Cache::CACHE_GROUP_KEY, round( self::CRON_INTERVAL * 1.5 ) );
 				return false;
 			}
@@ -299,10 +301,8 @@ class HealthJob {
 			return false;
 		}
 
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
-				return false;
-			}
+		if ( defined( 'VIP_GO_APP_ID' ) && in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
+			return false;
 		}
 
 		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
