@@ -51,7 +51,7 @@ class Tracks_Event {
 		}
 
 		if ( defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID ) {
-			$event->_ui = VIP_GO_APP_ID . "_" . $wp_user_id;
+			$event->_ui = VIP_GO_APP_ID . '_' . $wp_user_id;
 			$event->_ut = 'vip_go_app_wp_user';
 			return $event;
 		}

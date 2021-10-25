@@ -22,7 +22,7 @@ class Tracks_Test extends WP_UnitTestCase {
 	 * @dataProvider data_normalize_event_name
 	 */
 	public function test_normalize_event_name( string $input, string $expected ) {
-		$normalize_event_name = self::get_method('normalize_event_name');
+		$normalize_event_name = self::get_method( 'normalize_event_name' );
 		$tracks = new Tracks();
 		$actual = $normalize_event_name->invokeArgs( $tracks, array( $input ) );
 		self::assertEquals( $expected, $actual );
