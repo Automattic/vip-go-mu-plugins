@@ -18,9 +18,8 @@ namespace Automattic\VIP\Parsely\Telemetry;
 function track_settings_page_loaded( Telemetry_System $telemetry_system ): void {
 	if (
 		! ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) ||
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] )
-		// phpcs:enable
 	) {
 		return;
 	}

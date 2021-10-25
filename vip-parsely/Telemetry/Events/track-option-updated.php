@@ -32,7 +32,7 @@ function track_option_updated( array $old_value, array $value, Telemetry_System 
 				wp_json_encode( $old_value[ $key ] ) === wp_json_encode( $value[ $key ] ) ) ||
 
 				// Ignoring the `parsely_wipe_metadata_cache` key if we're wiping the cache.
-				( 'parsely_wipe_metadata_cache' === $key && ! ( isset( $value[ $key ] ) && $value[ $key ] ) ) ||
+				( 'parsely_wipe_metadata_cache' === $key && ! empty ( $value[ $key ] ) ) ||
 
 				// Ignoring the `plugin_version` key.
 				'plugin_version' === $key

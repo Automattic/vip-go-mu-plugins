@@ -51,9 +51,7 @@ class Tracks_Event {
 		}
 
 		if ( defined( 'VIP_GO_APP_ID' ) && VIP_GO_APP_ID ) {
-			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.InterpolatedVariableNotSnakeCase
-			$event->_ui = "${VIP_GO_APP_ID}_$wp_user_id";
-
+			$event->_ui = VIP_GO_APP_ID . "_" . $wp_user_id;
 			$event->_ut = 'vip_go_app_wp_user';
 			return $event;
 		}
@@ -75,8 +73,8 @@ class Tracks_Event {
 	/**
 	 * Determine environment-specific props and include them in the event.
 	 *
-	 * @param [object] $event The "midput" event object that needs environment information.
-	 * @return [object] The "midput" event object including identity environment (if present)
+	 * @param object $event The "midput" event object that needs environment information.
+	 * @return object The "midput" event object including identity environment (if present)
 	 */
 	protected static function annotate_with_env_props( $event ) {
 		if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) {

@@ -18,21 +18,20 @@ class Tracks_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'wpparsely_invalid', $normalized_name );
 	}
 
-	public function test__should_not_normalize_valid_name() {
-		$normalize_event_name = self::get_method( 'normalize_event_name' );
-
+	/**
+	 * @dataProvider data_normalize_event_name
+	 */
+	public function test_normalize_event_name( string $input, string $expected ) {
+		$normalize_event_name = self::get_method('normalize_event_name');
 		$tracks = new Tracks();
-		$normalized_name = $normalize_event_name->invokeArgs( $tracks, array( 'wpparsely_valid' ) );
-		$this->assertEquals( 'wpparsely_valid', $normalized_name );
+		$actual = $normalize_event_name->invokeArgs( $tracks, array( $input ) );
+		self::assertEquals( $expected, $actual );
 	}
 
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Tracks' );
-		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
-		return $method;
+	public function data_normalize_event_name() {
+		return [
+			[ 'invalid', 'wpparsely_invalid' ],
+			[ 'wpparsely_valid', 'wpparsely_valid' ],
+		];
 	}
 }
