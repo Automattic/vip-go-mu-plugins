@@ -65,7 +65,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__should_back_off
 	 */
 	public function test__should_back_off( ?int $backoff_factor, DateTime $dt, bool $expected ) {
-		if ( $backoff_factor != null ) {
+		if ( null !== $backoff_factor ) {
 			$option = array(
 				'site_url'        => get_site_url(),
 				'hashed_site_url' => md5( get_site_url() ),

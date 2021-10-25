@@ -6,6 +6,8 @@ use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-api-cache.php';
 
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+
 class API_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @var API_Cache
@@ -77,6 +79,7 @@ class API_Cache_Test extends WP_UnitTestCase {
 
 		$actual = $this->cache->get_file( 'test.jpg' );
 
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 		$this->assertEquals( $expected, file_get_contents( $actual ) );
 	}
 
