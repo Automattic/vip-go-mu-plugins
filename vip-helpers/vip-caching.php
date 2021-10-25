@@ -495,7 +495,7 @@ function wpcom_vip_cache_delete( $key, $group = '' ) {
  * @global wpdb $wpdb
  *
  * @param bool   $in_same_term    Optional. Whether post should be in a same taxonomy term. Note - only the first term will be used from wp_get_object_terms().
- * @param int    $excluded_terms  Optional. The terms to exclude.
+ * @param string $excluded_terms  Optional. A comma-separated list of the term IDs to exclude.
  * @param bool   $previous        Optional. Whether to retrieve previous post.
  * @param string $taxonomy        Optional. Taxonomy, if $in_same_term is true. Default 'category'.
  *
@@ -510,6 +510,9 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	$join              = '';
 	$where             = '';
 	$current_post_date = $post->post_date;
+	
+	/** @var string[] */
+	$excluded_terms = empty( $excluded_terms ) ? [] : explode( ',', $excluded_terms );
 
 	if ( $in_same_term ) {
 		if ( is_object_in_taxonomy( $post->post_type, $taxonomy ) ) {
@@ -517,9 +520,8 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 			if ( ! empty( $term_array ) && ! is_wp_error( $term_array ) ) {
 				$term_array_ids = wp_list_pluck( $term_array, 'term_id' );
 				// Remove any exclusions from the term array to include.
-				$excluded_terms = explode( ',', $excluded_terms );
 				if ( ! empty( $excluded_terms ) ) {
-					$term_array_ids = array_diff( $term_array_ids, (array) $excluded_terms );
+					$term_array_ids = array_diff( $term_array_ids, $excluded_terms );
 				}
 				if ( ! empty( $term_array_ids ) ) {
 					$term_array_ids    = array_map( 'intval', $term_array_ids );
