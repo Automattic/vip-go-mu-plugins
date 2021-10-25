@@ -1493,7 +1493,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_taxonomies_allow_list',
-			function( $taxonomies ) {
+			function() {
 				return array( 'post_tag' );
 			}
 		);
@@ -2152,7 +2152,7 @@ class Search_Test extends WP_UnitTestCase {
 			'took' => 100,
 		];
 		$mocked_response      = [
-			'body' => json_encode( $mocked_response_body ),
+			'body' => wp_json_encode( $mocked_response_body ),
 		];
 
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
@@ -2190,7 +2190,7 @@ class Search_Test extends WP_UnitTestCase {
 			'items' => [ [], [] ],
 		];
 		$mocked_response      = [
-			'body' => json_encode( $mocked_response_body ),
+			'body' => wp_json_encode( $mocked_response_body ),
 		];
 
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
@@ -3270,7 +3270,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function mock_vip_safe_wp_remote_request() {
-
+		/* Empty */
 	}
 }
 
