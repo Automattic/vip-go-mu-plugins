@@ -10,7 +10,7 @@ class VIP_Go__Core__Disable_Update_Caps_Test extends WP_UnitTestCase {
 		$this->error_reporting = error_reporting();
 	}
 
-	protected function tearDown(): void {
+	public function tearDown(): void {
 		error_reporting( $this->error_reporting );
 		parent::tearDown();
 	}
@@ -27,42 +27,58 @@ class VIP_Go__Core__Disable_Update_Caps_Test extends WP_UnitTestCase {
 	public function test_get_default_var() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
-		$val = env_get_var( 'MY_VAR', 'default_value' );
+		$val = vip_get_env_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
 	}
 
-	// tests the use-case where $key parameter does not have the prefix
+	/**
+	 * tests the use-case where $key parameter does not have the prefix
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_get_var_legacy_key() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_legacy_env();
-		$val = env_get_var( 'MY_VAR', 'default_value' );
+		$val = vip_get_env_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'MY_VAR', $val );
 	}
 
-	// tests the use-case where $key parameter is lower case
+	/**
+	 * tests the use-case where $key parameter is lower case
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_get_var_lower_key() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
-		$val = env_get_var( 'vip_env_var_my_var', 'default_value' );
+		$val = vip_get_env_var( 'vip_env_var_my_var', 'default_value' );
 		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
 	}
 
-	// tests the use-case where $key parameter is ''
+	/**
+	 * tests the use-case where $key parameter is ''
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_get_var_empty_key() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
-		$val = env_get_var( '', 'default_value' );
+		$val = vip_get_env_var( '', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_get_var() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
-		$val = env_get_var( 'MY_VAR', 'default_value' );
+		$val = vip_get_env_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
 	}
 
