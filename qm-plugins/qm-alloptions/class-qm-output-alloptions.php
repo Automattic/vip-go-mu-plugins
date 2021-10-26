@@ -38,7 +38,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 						<td scope="col"><?php esc_html_e( 'Consumes PHP memory', 'qm-monitor' ); ?></td>
 					</tr>
 					<tr>
-						<td scope="col"><?php esc_html_e( 'Compressed size (estimated)', 'qm-monitor' ); ?></td>
+						<td scope="col"><?php esc_html_e( 'Compressed size', 'qm-monitor' ); ?></td>
 						<td scope="col" class="qm-num"><?php echo esc_html( $data['total_size_comp'] ); ?></td>
 						<td scope="col" class="qm-num"><?php echo esc_html( size_format( $data['total_size_comp'], 2 ) ); ?></td>
 						<td scope="col"><?php echo wp_kses( __( 'At 1000000 bytes, an error page will be shown to prevent overrunning the database. <a href="https://docs.wpvip.com/technical-references/code-quality-and-best-practices/working-with-wp_options/#h-identify-and-resolve-problems-with-alloptions">Read more</a>', 'qm-monitor' ), [ 'a' => [ 'href' => true ] ] ); ?></td>
@@ -89,7 +89,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	public function admin_title( array $title ) {
 
 		if ( $this->size_is_concerning() ) {
-			$data = $this->collector->get_data();
+			$data               = $this->collector->get_data();
 			list( $num, $unit ) = explode( ' ', size_format( $data['total_size_comp'], 1 ) );
 
 			$title[] = sprintf(
@@ -136,6 +136,8 @@ class QM_Output_AllOptions extends QM_Output_Html {
 
 	/**
 	 * Check if size is at warning threshold
+	 *
+	 * @return bool
 	 */
 	private function size_is_concerning() {
 		$data = $this->collector->get_data();
