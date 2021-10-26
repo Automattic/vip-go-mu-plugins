@@ -20,10 +20,24 @@ class QM_Output_AllOptions extends QM_Output_Html {
 		$data = $this->collector->get_data();
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id() ); ?>">
+			<?php
+				if ( $this->size_is_concerning() ) {
+					$percentage = round( ($data['total_size_comp'] / 1000000)*100 );
+					echo '<section class="qm-notice"><p>';
+					printf(
+						wp_kses(
+							__( '⚠️ The total size of autoloaded options is at %s%% of maximum. <a href="https://docs.wpvip.com/technical-references/code-quality-and-best-practices/working-with-wp_options/#h-identify-and-resolve-problems-with-alloptions">Review and clean up options</a> listed below to avoid impacting performance or uptime.', 'qm-monitor' ),
+							[ 'a' => [ 'href' => true ] ]
+						),
+						$percentage
+					);
+					echo '</p></section>';
+				}
+			?>
 			<div class="qm-boxed">
 			<section>
 				<table>
-					<caption class="screen-reader-text"><?php esc_html_e( 'Show total size of alloptions and its impact.', 'qm-monitor' ); ?></caption>
+					<caption class="screen-reader-text"><?php esc_html_e( 'Show total size of autoloaded options and its impact.', 'qm-monitor' ); ?></caption>
 					<thead>
 						<tr>
 							<th scope="col"><h3><?php esc_html_e( 'Total Size', 'qm-monitor' ); ?></h3></th>
@@ -55,7 +69,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 			</section>
 			</div>
 			<table>
-				<caption class="screen-reader-text"><?php esc_html_e( 'Show size of each value in alloptions.', 'qm-monitor' ); ?></caption>
+				<caption class="screen-reader-text"><?php esc_html_e( 'Show size of each value in autoloaded options.', 'qm-monitor' ); ?></caption>
 				<thead>
 					<tr>
 						<th scope="col"><?php esc_html_e( 'Option name', 'qm-monitor' ); ?></th>
@@ -139,13 +153,12 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	/**
 	 * Check if size is at warning threshold
 	 *
-	 * .8 is fairly arbitrary here. However, at 1000000 (see alloptions-limit.php#L71)
-	 * the site will be killed with an error page.
+	 * 80% of the error page threshold defined in alloptions-limit.php#L71
 	 *
 	 * @return bool
 	 */
 	private function size_is_concerning() {
 		$data = $this->collector->get_data();
-		return ( $data['total_size_comp'] > MB_IN_BYTES * .8 );
+		return ( $data['total_size_comp'] > 800000 );
 	}
 }
