@@ -21,7 +21,7 @@ class Tracks_Event {
 	 *
 	 * @see Tracks::record_event
 	 *
-	 * @var mixed Error.
+	 * @var WP_Error Error.
 	 */
 	public $error;
 
