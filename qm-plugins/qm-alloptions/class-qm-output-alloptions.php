@@ -84,15 +84,12 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	 * Adds data to top admin bar
 	 *
 	 * @param array $title
-	 *
 	 * @return array
 	 */
 	public function admin_title( array $title ) {
-		$data = $this->collector->get_data();
 
-		// Only show title info if size is risky
-		if ( $data['total_size_comp'] > MB_IN_BYTES * .8 ) {
-
+		if ( $this->size_is_concerning() ) {
+			$data = $this->collector->get_data();
 			list( $num, $unit ) = explode( ' ', size_format( $data['total_size_comp'], 1 ) );
 
 			$title[] = sprintf(
@@ -108,23 +105,23 @@ class QM_Output_AllOptions extends QM_Output_Html {
 
 	/**
 	 * @param array $class
-	 *
 	 * @return array
 	 */
 	public function admin_class( array $class ) {
-		$data = $this->collector->get_data();
-		if ( $data['total_size_comp'] > MB_IN_BYTES * .8 ) {
+		if ( $this->size_is_concerning() ) {
 			$class[] = 'qm-warning';
 		}
 		return $class;
 	}
 
-
+	/**
+	 * @param array $menu
+	 * @return array
+	 */
 	public function admin_menu( array $menu ) {
 		$title = __( 'Autoloaded Options', 'query-monitor' );
 
-		$data = $this->collector->get_data();
-		if ( $data['total_size_comp'] > MB_IN_BYTES * .8 ) {
+		if ( $this->size_is_concerning() ) {
 			$title = __( 'Autoloaded Options 🚩', 'query-monitor' );
 		}
 
@@ -135,5 +132,13 @@ class QM_Output_AllOptions extends QM_Output_Html {
 		));
 
 		return $menu;
+	}
+
+	/**
+	 * Check if size is at warning threshold
+	 */
+	private function size_is_concerning() {
+		$data = $this->collector->get_data();
+		return ( $data['total_size_comp'] > MB_IN_BYTES * .8 );
 	}
 }
