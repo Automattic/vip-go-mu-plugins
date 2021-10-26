@@ -66,7 +66,7 @@ class Tracks implements Telemetry_System {
 
 		if ( $send_immediately ) {
 			$response = self::send_events_to_api( array( $event ) );
-			if ( is_wp_error($response)) {
+			if ( is_wp_error( $response ) ) {
 				return $response;
 			}
 			return true;
