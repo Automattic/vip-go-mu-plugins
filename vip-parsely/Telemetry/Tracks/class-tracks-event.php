@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Parsely\Telemetry;
 
+use WP_Error;
+
 /**
  * Instances of this class are fit for recording to the Automattic Tracks system (unless an error occurs during instantiation).
  */
