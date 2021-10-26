@@ -139,6 +139,9 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	/**
 	 * Check if size is at warning threshold
 	 *
+	 * .8 is fairly arbitrary here. However, at 1000000 (see alloptions-limit.php#L71)
+	 * the site will be killed with an error page.
+	 *
 	 * @return bool
 	 */
 	private function size_is_concerning() {
