@@ -73,7 +73,7 @@ class Tracks implements Telemetry_System {
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
-			if ( ! is_int( $status_code ) || $status_code > 300 ) {
+			if ( ! is_int( $status_code ) || $status_code >= 300 || $status_code < 200 ) {
 				return new WP_Error( 'request_error', 'The request to the tracks service was invalid', $status_code );
 			}
 
