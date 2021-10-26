@@ -23,6 +23,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 			<div class="qm-boxed">
 			<section>
 				<table>
+					<caption class="screen-reader-text"><?php esc_html_e( 'Show total size of alloptions and its impact.', 'qm-monitor' ); ?></caption>
 					<thead>
 						<tr>
 							<th scope="col"><h3><?php esc_html_e( 'Total Size', 'qm-monitor' ); ?></h3></th>
@@ -54,6 +55,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 			</section>
 			</div>
 			<table>
+				<caption class="screen-reader-text"><?php esc_html_e( 'Show size of each value in alloptions.', 'qm-monitor' ); ?></caption>
 				<thead>
 					<tr>
 						<th scope="col"><?php esc_html_e( 'Option name', 'qm-monitor' ); ?></th>
@@ -66,7 +68,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 					foreach ( $data['options'] as $option ) {
 						echo '<tr>';
 						printf(
-							'<td class="qm-ltr">%1$s</td><td class="qm-ltr qm-num">%2$d</td><td class="qm-ltr qm-num">%3$s</td>',
+							'<th scope="row" class="qm-ltr">%1$s</td><td class="qm-ltr qm-num">%2$d</td><td class="qm-ltr qm-num">%3$s</td>',
 							esc_html( $option->name ),
 							esc_html( $option->size ),
 							esc_html( size_format( $option->size, 2 ) )
