@@ -122,7 +122,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 		$title = __( 'Autoloaded Options', 'query-monitor' );
 
 		if ( $this->size_is_concerning() ) {
-			$title = __( 'Autoloaded Options 🚩', 'query-monitor' );
+			$title = __( 'Autoloaded Options (!)', 'query-monitor' );
 		}
 
 		$menu[] = $this->menu( array(
