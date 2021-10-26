@@ -21,18 +21,20 @@ class QM_Output_AllOptions extends QM_Output_Html {
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id() ); ?>">
 			<?php
-				if ( $this->size_is_concerning() ) {
-					$percentage = round( ($data['total_size_comp'] / 1000000)*100 );
-					echo '<section class="qm-notice"><p>';
-					printf(
-						wp_kses(
-							__( '⚠️ The total size of autoloaded options is at %s%% of maximum. <a href="https://docs.wpvip.com/technical-references/code-quality-and-best-practices/working-with-wp_options/#h-identify-and-resolve-problems-with-alloptions">Review and clean up options</a> listed below to avoid impacting performance or uptime.', 'qm-monitor' ),
-							[ 'a' => [ 'href' => true ] ]
-						),
-						$percentage
-					);
-					echo '</p></section>';
-				}
+			if ( $this->size_is_concerning() ) {
+				// 1000000 set in alloptions-limit.php#L71
+				$percentage = round( ( $data['total_size_comp'] / 1000000 ) * 100 );
+				echo '<section class="qm-notice"><p>';
+				printf(
+					wp_kses(
+						/* translators: 1. percentage */
+						__( '⚠️ The total size of autoloaded options is at %d%% of maximum. <a href="https://docs.wpvip.com/technical-references/code-quality-and-best-practices/working-with-wp_options/#h-identify-and-resolve-problems-with-alloptions">Review and clean up options</a> listed below to avoid impacting performance or uptime.', 'qm-monitor' ),
+						[ 'a' => [ 'href' => true ] ]
+					),
+					intval( $percentage )
+				);
+				echo '</p></section>';
+			}
 			?>
 			<div class="qm-boxed">
 			<section>
