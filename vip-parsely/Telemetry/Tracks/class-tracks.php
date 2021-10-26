@@ -59,16 +59,24 @@ class Tracks implements Telemetry_System {
 	 * @return bool|WP_Error True if the event could be enqueued or send correctly. WP_Error otherwise
 	 */
 	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false ) {
-		$event = self::normalize_event( $event_name, $event_props );
-		if ( is_wp_error( $event->error ) ) {
-			return $event->error;
+		$event_object = self::normalize_event( $event_name, $event_props );
+		$event = $event_object->_event;
+		if ( is_wp_error( $event->_event ) ) {
+			return $event->_event;
 		}
 
 		if ( $send_immediately ) {
 			$response = self::send_events_to_api( array( $event ) );
+
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			if ( ! is_int( $status_code ) || $status_code > 300 ) {
+				return new WP_Error( 'request_error', 'The request to the tracks service was invalid', $status_code );
+			}
+
 			return true;
 		}
 
