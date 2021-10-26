@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Parsely\Telemetry;
 
+use WP_Error;
+
 /**
  * Telemetry back-end classes are expected to conform this interface.
  */
@@ -37,7 +39,7 @@ interface Telemetry_System {
 	 * @param string $event_name The event name. Must be snake_case.
 	 * @param array  $event_props Any additional properties to include with the event. Key names must be valid (start with a lower-case letter and "snake case").
 	 * @param bool   $send_immediately Should the event be sent to the backend immediately? Default: false.
-	 * @return void
+	 * @return bool|WP_Error True if the event could be enqueued or send correctly. WP_Error otherwise
 	 */
-	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false ): void;
+	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false );
 }
