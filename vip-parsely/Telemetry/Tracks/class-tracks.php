@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Parsely\Telemetry;
 
+use WP_Error;
+
 /**
  * This class comprises the mechanics of sending events to the Automattic Tracks system.
  */
@@ -54,20 +56,32 @@ class Tracks implements Telemetry_System {
 	 * @param string $event_name The event name. Must be snake_case.
 	 * @param array  $event_props Any additional properties to include with the event. Key names must be valid (start with a lower-case letter and "snake case").
 	 * @param bool   $send_immediately Should the event be sent to the backend immediately? Default: false.
-	 * @return void
+	 * @return bool|WP_Error True if the event could be enqueued or send correctly. WP_Error otherwise
 	 */
-	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false ): void {
-		$event = self::normalize_event( $event_name, $event_props );
-		if ( $event->error ) {
-			return;
+	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false ) {
+		$event_object = self::normalize_event( $event_name, $event_props );
+		$event        = $event_object->data;
+		if ( is_wp_error( $event ) ) {
+			return $event;
 		}
 
 		if ( $send_immediately ) {
-			self::send_events_to_api( array( $event ) );
-			return;
+			$response = self::send_events_to_api( array( $event ) );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			if ( ! is_int( $status_code ) || $status_code >= 300 || $status_code < 200 ) {
+				return new WP_Error( 'request_error', 'The request to the tracks service was invalid', $status_code );
+			}
+
+			return true;
 		}
 
 		$this->queue[] = $event;
+		return true;
 	}
 
 	/**
@@ -117,7 +131,7 @@ class Tracks implements Telemetry_System {
 	 * @param bool  $blocking Passed to `wp_remote_post`. Default: true.
 	 *
 	 * @see https://developer.wordpress.org/reference/classes/WP_Http/request/#parameters
-	 * @return array|\WP_Error (array|WP_Error) The response or WP_Error on failure.
+	 * @return array|WP_Error The response or WP_Error on failure.
 	 */
 	private static function send_events_to_api( array $events, array $common_props = array(), bool $blocking = true ) {
 		return wp_remote_post(
