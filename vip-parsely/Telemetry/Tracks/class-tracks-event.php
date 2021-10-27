@@ -20,7 +20,7 @@ class Tracks_Event {
 	 *
 	 * @var object|WP_Error Event.
 	 */
-	public $_event;
+	public $data;
 
 	/**
 	 * Jetpack_Tracks_Event constructor.
@@ -28,7 +28,7 @@ class Tracks_Event {
 	 * @param array $event Tracks event.
 	 */
 	public function __construct( array $event ) {
-		$this->_event = self::validate_and_sanitize( $event );
+		$this->data = self::validate_and_sanitize( $event );
 	}
 
 	/**
