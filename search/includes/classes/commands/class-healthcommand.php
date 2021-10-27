@@ -348,7 +348,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		}
 
 		if ( ! isset( $assoc_args['silent'] ) ) {
-			$message = "Inconsistencies " . ( ! isset( $assoc_args['do_not_heal'] ) ? "fixed" : "found" ) . ":";
+			$message = 'Inconsistencies ' . ( ! isset( $assoc_args['do_not_heal'] ) ? 'fixed' : 'found' ) . ':';
 			// Not empty, so inconsistencies were found...
 			WP_CLI::warning( $message );
 		}
