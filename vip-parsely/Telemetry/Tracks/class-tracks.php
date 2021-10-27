@@ -59,9 +59,10 @@ class Tracks implements Telemetry_System {
 	 * @return bool|WP_Error True if the event could be enqueued or send correctly. WP_Error otherwise
 	 */
 	public function record_event( string $event_name, array $event_props = array(), bool $send_immediately = false ) {
-		$event = self::normalize_event( $event_name, $event_props );
-		if ( is_wp_error( $event->error ) ) {
-			return $event->error;
+		$event_object = self::normalize_event( $event_name, $event_props );
+		$event        = $event_object->data;
+		if ( is_wp_error( $event ) ) {
+			return $event;
 		}
 
 		if ( $send_immediately ) {
