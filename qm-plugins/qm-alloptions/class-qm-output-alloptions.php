@@ -70,6 +70,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 				?>
 			</section>
 			</div>
+			<p><?php echo wp_kses( __( '<span style="background:#ffffc9">Highlighted</span> options are considered "big". Starred (*) options are commonly large core options which should not be changed.', 'qm-monitor' ), [ 'span' => [ 'style' => true ] ] ); ?></p>
 			<table>
 				<caption class="screen-reader-text"><?php esc_html_e( 'Show size of each value in autoloaded options.', 'qm-monitor' ); ?></caption>
 				<thead>
@@ -82,10 +83,15 @@ class QM_Output_AllOptions extends QM_Output_Html {
 				<tbody>
 					<?php
 					foreach ( $data['options'] as $option ) {
-						echo '<tr>';
+						$class = '';
+						if ( ! $this->option_is_core( $option->name ) && $option->size > 500 ) { // 500 is "big". see wp-cli/alloptions.php
+							$class = 'qm-highlight';
+						}
+						echo '<tr class="' . esc_attr( $class ) . '">';
 						printf(
-							'<th scope="row" class="qm-ltr">%1$s</td><td class="qm-ltr qm-num">%2$d</td><td class="qm-ltr qm-num">%3$s</td>',
+							'<th scope="row" class="qm-ltr">%1$s%2$s</td><td class="qm-ltr qm-num">%3$d</td><td class="qm-ltr qm-num">%4$s</td>',
 							esc_html( $option->name ),
+							( $this->option_is_core( $option->name ) ? ' *' : '' ),
 							esc_html( $option->size ),
 							esc_html( size_format( $option->size, 2 ) )
 						);
@@ -162,5 +168,26 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	private function size_is_concerning() {
 		$data = $this->collector->get_data();
 		return ( $data['total_size_comp'] > 800000 );
+	}
+
+	/**
+	 * Check if option is a commonly large core option
+	 *
+	 * @return bool
+	 */
+	private function option_is_core( $option_name ) {
+		$commonly_large_opts = [
+			'rewrite_rules',
+			'widget_block',
+		];
+		if ( in_array( $option_name, $commonly_large_opts, true ) ) {
+			return true;
+		}
+		global $wpdb;
+		if ( $option_name === $wpdb->prefix . 'user_roles' ) {
+			return true;
+		}
+
+		return false;
 	}
 }
