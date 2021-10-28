@@ -70,7 +70,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 				?>
 			</section>
 			</div>
-			<p><?php echo wp_kses( __( '<span style="background:#ffffc9">Highlighted</span> options are considered "big". Starred (*) options are commonly large core options which should not be changed.', 'qm-monitor' ), [ 'span' => [ 'style' => true ] ] ); ?></p>
+			<p><?php esc_html_e( 'Starred (*) options are commonly large core options which should not be changed.', 'qm-monitor' ); ?></p>
 			<table>
 				<caption class="screen-reader-text"><?php esc_html_e( 'Show size of each value in autoloaded options.', 'qm-monitor' ); ?></caption>
 				<thead>
@@ -83,11 +83,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 				<tbody>
 					<?php
 					foreach ( $data['options'] as $option ) {
-						$class = '';
-						if ( ! $this->option_is_core( $option->name ) && $option->size > 500 ) { // 500 is "big". see wp-cli/alloptions.php
-							$class = 'qm-highlight';
-						}
-						echo '<tr class="' . esc_attr( $class ) . '">';
+						echo '<tr>';
 						printf(
 							'<th scope="row" class="qm-ltr">%1$s%2$s</td><td class="qm-ltr qm-num">%3$d</td><td class="qm-ltr qm-num">%4$s</td>',
 							esc_html( $option->name ),
