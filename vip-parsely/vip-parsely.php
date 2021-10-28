@@ -31,7 +31,7 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', false ) ) {
 	require __DIR__ . '/Telemetry/Tracks/class-tracks.php';
 	require __DIR__ . '/Telemetry/Tracks/class-tracks-event.php';
 	add_action(
-		'admin_init',
+		'init',
 		function (): void {
 			$tracks    = new Tracks();
 			$telemetry = new Telemetry( $tracks );
