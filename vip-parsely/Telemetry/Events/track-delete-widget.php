@@ -11,13 +11,6 @@ declare(strict_types=1);
 namespace Automattic\VIP\Parsely\Telemetry;
 
 /**
- * This is determined by our value passed to the `WP_Widget` constructor.
- *
- * @see https://github.com/Parsely/wp-parsely/blob/e9f1b8cd1a94743e068681a8106176d23857992d/src/class-parsely-recommended-widget.php#L28
- */
-const WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID = 'parsely_recommended_widget';
-
-/**
  * Records an event using the given Telemetry System whenever a `parsely_recommended_widget` instance is deleted.
  *
  * @param string $widget_id ID of the widget marked for deletion.
