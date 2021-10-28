@@ -68,7 +68,6 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', false ) ) {
 					'action_hook'   => 'widget_update_callback',
 					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_widget_updated',
 					'accepted_args' => 4,
-					'is_filter'     => true,
 				)
 			);
 
