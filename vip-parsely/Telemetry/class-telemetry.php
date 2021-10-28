@@ -76,7 +76,12 @@ class Telemetry {
 
 					call_user_func_array( $event['callable'], $args );
 				};
-				add_action( $event['action_hook'], $func, 10, $accepted_args );
+
+				if ( isset( $event['is_filter'] ) && $event['is_filter'] ) {
+					add_filter( $event['action_hook'], $func, 10, $accepted_args );
+				} else {
+					add_action( $event['action_hook'], $func, 10, $accepted_args );
+				}
 			}
 		}
 	}
