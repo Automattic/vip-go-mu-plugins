@@ -46,6 +46,15 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', false ) ) {
 				)
 			);
 
+			require_once __DIR__ . '/Telemetry/Events/track-delete-widget.php';
+			$telemetry->register_event(
+				array(
+					'action_hook'   => 'delete_widget',
+					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_delete_widget',
+					'accepted_args' => 3,
+				)
+			);
+
 			$telemetry->run();
 		}
 	);
