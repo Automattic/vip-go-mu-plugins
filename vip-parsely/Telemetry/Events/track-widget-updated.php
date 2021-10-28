@@ -21,7 +21,7 @@ use WP_Widget;
  * @param Telemetry_System $telemetry_system
  * @return array
  */
-function track_wpparsely_widget_updated( array $instance, array $new_instance, array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ) {
+function track_widget_updated( array $instance, array $new_instance, array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ) {
 	$id_base = $widget_obj->id_base;
 	if ( WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID !== $id_base ) {
 		return $instance;

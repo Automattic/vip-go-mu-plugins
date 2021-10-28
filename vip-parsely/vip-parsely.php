@@ -66,7 +66,7 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', false ) ) {
 			$telemetry->register_event(
 				array(
 					'action_hook'   => 'widget_update_callback',
-					'callable'      => 'Parsely\Telemetry\track_wpparsely_widget_updated',
+					'callable'      => 'Automattic\VIP\Parsely\Telemetry\track_widget_updated',
 					'accepted_args' => 4,
 					'is_filter'     => true,
 				)
