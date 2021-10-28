@@ -12,7 +12,7 @@ namespace Automattic\VIP\Parsely\Telemetry;
 use WP_Widget;
 
 /**
- *
+ * Records an event using the given Telemetry System whenever a `parsely_recommended_widget` instance is updated.
  *
  * @param array $instance The current widget instance's settings.
  * @param array $new_instance Array of new widget settings.
@@ -22,19 +22,19 @@ use WP_Widget;
  * @return array
  */
 function track_wpparsely_widget_updated( array $instance, array $new_instance, array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ) {
-	global $wp;
 	$id_base = $widget_obj->id_base;
 	if ( WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID !== $id_base ) {
 		return $instance;
 	}
 
+	global $wp;
 	if (
 		isset( $wp->query_vars['rest_route'] ) &&
 		'/wp/v2/widget-types/parsely_recommended_widget/encode' === $wp->query_vars['rest_route']
 	) {
 		/**
 		 * This is an "encode" call to preview the widget in the admin.
-		 * Track this event seperately.
+		 * Track this event separately.
 		 */
 		$telemetry_system->record_event( 'wpparsely_widget_prepublish_change', compact( 'id_base' ) );
 		return $instance;
