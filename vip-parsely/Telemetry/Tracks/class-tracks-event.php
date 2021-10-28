@@ -16,14 +16,11 @@ use WP_Error;
  */
 class Tracks_Event {
 	/**
-	 * Tracks Event Error.
-	 * If this is set to a `WP_Error` instance, the event will not be tracked.
+	 * The object containing the event itself.
 	 *
-	 * @see Tracks::record_event
-	 *
-	 * @var WP_Error Error.
+	 * @var object|WP_Error Event.
 	 */
-	public $error;
+	public $data;
 
 	/**
 	 * Jetpack_Tracks_Event constructor.
@@ -31,12 +28,7 @@ class Tracks_Event {
 	 * @param array $event Tracks event.
 	 */
 	public function __construct( array $event ) {
-		$_event = self::validate_and_sanitize( $event );
-		if ( is_wp_error( $_event ) ) {
-			// Execution should be aborted if an error is found. We don't have an explicit return
-			// since there is no more code after this statement.
-			$this->error = $_event;
-		}
+		$this->data = self::validate_and_sanitize( $event );
 	}
 
 	/**
