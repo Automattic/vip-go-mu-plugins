@@ -221,8 +221,8 @@ class Environment_Test extends TestCase {
 		return array(
 			array(
 				// path -- directory where a dev-env lando root is
-				'/Users/username/.local/share/vip/dev-environment/username'
-			)
+				'/Users/username/.local/share/vip/dev-environment/username',
+			),
 		);
 	}
 
@@ -233,6 +233,6 @@ class Environment_Test extends TestCase {
 	 */
 	public function test_is_dev_env_container( $path ) {
 		$_ENV['LANDO_APP_ROOT'] = $path;
-		$this->assertTrue( Environment::is_dev_env_container( ) );
+		$this->assertTrue( Environment::is_dev_env_container() );
 	}
 }
