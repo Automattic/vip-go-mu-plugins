@@ -7,17 +7,6 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
-require_once __DIR__ . '/001-core/privacy.php';
-
-use Automattic\VIP\Environment;
-
-/**
- * A wrapper for Automattic\VIP\Environment::get_var
- */
-function vip_get_env_var( $key, $default_value = '' ) {
-	return Environment::get_var( $key, $default_value );
-}
-
 /**
  * Disable current theme validation
  *
