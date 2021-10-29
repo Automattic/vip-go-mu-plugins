@@ -40,7 +40,7 @@ function track_widget_updated( array $instance, ?array $new_instance, ?array $ol
 		return $instance;
 	}
 
-	if ( $old_instance == null ) {
+	if ( null == $old_instance ) {
 		// If there is no old instance, all keys are updated. We have this shortcut so we don't have to do
 		// `array_keys` of null, thus raising a warning.
 		$updated_keys = array_keys( $instance );
