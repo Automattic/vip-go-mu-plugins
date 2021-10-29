@@ -216,4 +216,23 @@ class Environment_Test extends TestCase {
 
 		$this->assertEquals( $expected, $result );
 	}
+
+	public function is_dev_env_container_data() {
+		return array(
+			array(
+				// path -- directory where a dev-env lando root is
+				'/Users/username/.local/share/vip/dev-environment/username'
+			)
+		);
+	}
+
+	/**
+	 * Tests the functionality of Environment::is_dev_env_container
+	 * Really only testing the regex because it would be impossible to have a valid test in non-dev-env containers
+	 * @dataProvider is_dev_env_container_data
+	 */
+	public function test_is_dev_env_container( $path ) {
+		$_ENV['LANDO_APP_ROOT'] = $path;
+		$this->assertTrue( Environment::is_dev_env_container( ) );
+	}
 }

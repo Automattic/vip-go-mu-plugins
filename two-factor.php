@@ -12,6 +12,9 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
+// Environment tools
+use Automattic\VIP\Environment;
+
 // Do not allow API requests from 2fa users.
 add_filter( 'two_factor_user_api_login_enable', '__return_false', 1 ); // Hook in early to allow overrides
 
@@ -155,7 +158,10 @@ function wpcom_vip_enforce_two_factor_plugin() {
 	}
 }
 
-add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
+// Do not enable 2FA plugin if WordPress is executed in the context of the CLI
+if ( defined( 'WP_CLI' ) && ! Environment::is_dev_env_container() ) {
+	add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
+}
 function wpcom_enable_two_factor_plugin() {
 	$enable_two_factor = apply_filters( 'wpcom_vip_enable_two_factor', true );
 	if ( true !== $enable_two_factor ) {

@@ -68,4 +68,14 @@ class Environment {
 
 		return false;
 	}
+
+	public static function is_dev_env_container( ) {
+		if ( isset( $_ENV['LANDO_APP_ROOT'] ) ) {
+			if ( preg_match( '/^[\w\-. \/\-_]+vip\/dev-environment\/[\w\-. \-_]+$/',  $_ENV['LANDO_APP_ROOT'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
