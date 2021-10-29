@@ -40,21 +40,27 @@ function track_widget_updated( array $instance, ?array $new_instance, ?array $ol
 		return $instance;
 	}
 
-	$all_keys     = array_unique( array_merge( array_keys( $old_instance ), array_keys( $instance ) ) );
-	$updated_keys = array_reduce(
-		$all_keys,
-		function( $carry, $key ) use ( $old_instance, $instance ) {
-			if (
-				isset( $old_instance[ $key ] ) === isset( $instance[ $key ] ) &&
-				wp_json_encode( $old_instance[ $key ] ) === wp_json_encode( $instance[ $key ] )
-			) {
+	if ( $old_instance == null ) {
+		// If there is no old instance, all keys are updated. We have this shortcut so we don't have to do
+		// `array_keys` of null, thus raising a warning.
+		$updated_keys = array_keys( $instance );
+	} else {
+		$all_keys     = array_unique( array_merge( array_keys( $old_instance ), array_keys( $instance ) ) );
+		$updated_keys = array_reduce(
+			$all_keys,
+			function( $carry, $key ) use ( $old_instance, $instance ) {
+				if (
+					isset( $old_instance[ $key ] ) === isset( $instance[ $key ] ) &&
+					wp_json_encode( $old_instance[ $key ] ) === wp_json_encode( $instance[ $key ] )
+				) {
+					return $carry;
+				}
+				$carry[] = $key;
 				return $carry;
-			}
-			$carry[] = $key;
-			return $carry;
-		},
-		array()
-	);
+			},
+			array()
+		);
+	}
 
 	if ( count( $updated_keys ) ) {
 		$telemetry_system->record_event( 'wpparsely_widget_updated', compact( 'id_base', 'updated_keys' ) );
