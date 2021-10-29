@@ -7,6 +7,8 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+require_once __DIR__ . '/001-core/privacy.php';
+
 /**
  * Disable current theme validation
  *
