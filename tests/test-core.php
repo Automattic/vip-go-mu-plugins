@@ -1,5 +1,4 @@
 <?php
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 // phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
 
