@@ -114,7 +114,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 
 			$title[] = sprintf(
 				/* translators: 1. size 2. size unit */
-				_x( '%1$s<small> %2$s opts</small>', 'size of alloptions', 'query-monitor' ),
+				_x( '%1$s<small> %2$s opts</small>', 'size of alloptions', 'qm-monitor' ),
 				$num,
 				$unit
 			);
@@ -139,10 +139,10 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	 * @return array
 	 */
 	public function admin_menu( array $menu ) {
-		$title = __( 'Autoloaded Options', 'query-monitor' );
+		$title = __( 'Autoloaded Options', 'qm-monitor' );
 
 		if ( $this->size_is_concerning() ) {
-			$title = __( 'Autoloaded Options ⚠️', 'query-monitor' );
+			$title = __( 'Autoloaded Options ⚠️', 'qm-monitor' );
 		}
 
 		$menu[] = $this->menu( array(
