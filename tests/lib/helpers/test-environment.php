@@ -7,13 +7,13 @@ require_once __DIR__ . '/../../../lib/helpers/environment.php';
 use PHPUnit\Framework\TestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 class Environment_Test extends TestCase {
+	use ExpectPHPException;
+
 	public function setUp(): void {
 		$this->error_reporting = error_reporting();
 	}
@@ -33,7 +33,7 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
+		$this->expectNotice();
 
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
 		$this->assertEquals( 'BAR', $val );
@@ -45,7 +45,6 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_legacy_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_legacy_env();
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
@@ -58,7 +57,6 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_lower_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( 'vip_env_var_my_var', 'BAR' );
@@ -71,7 +69,7 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_empty_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
+		$this->expectNotice();
 
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( '', 'BAR' );
@@ -83,7 +81,6 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
