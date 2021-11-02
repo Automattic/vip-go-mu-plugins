@@ -142,6 +142,8 @@ class Health {
 
 			// Get exact total count since Elasticsearch default stops at 10,000.
 			$formatted_args['track_total_hits'] = true;
+			// We don't really need any of the fields.
+			$formatted_args['_source'] = false;
 
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {

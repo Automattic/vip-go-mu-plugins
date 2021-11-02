@@ -16,7 +16,6 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'2.6',
-	'2.5',
 ];
 
 /**
@@ -89,7 +88,10 @@ function maybe_load_plugin() {
 		require_once $entry_file;
 
 		// Requiring VIP's customizations over Parse.ly
-		require_once __DIR__ . '/vip-parsely/vip-parsely.php';
+		$vip_parsely_plugin = __DIR__ . '/vip-parsely/vip-parsely.php';
+		if ( is_readable( $vip_parsely_plugin ) ) {
+			require_once $vip_parsely_plugin;
+		}
 
 		return;
 	}
