@@ -14,15 +14,6 @@ use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 class Environment_Test extends TestCase {
 	use ExpectPHPException;
 
-	public function setUp(): void {
-		$this->error_reporting = error_reporting();
-	}
-
-	public function tearDown(): void {
-		error_reporting( $this->error_reporting );
-		parent::tearDown();
-	}
-
 	public function get_var_standard_env() {
 		define( 'VIP_ENV_VAR_MY_VAR', 'FOO' );
 	}
