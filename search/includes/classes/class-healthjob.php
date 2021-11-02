@@ -161,7 +161,7 @@ class HealthJob {
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 		} else if ( ! empty( $results ) ) {
 			$self_healed_post_count = count( $results );
-			$total_post_count = wp_count_posts()->publish;
+			$total_post_count = $this->count_indexable_posts();
 
 			$alert_threshold = $total_post_count * self::AUTOHEALED_ALERT_THRESHOLD;
 
@@ -171,6 +171,24 @@ class HealthJob {
 			}
 		}
 
+	}
+
+	private function count_indexable_posts() {
+		$post_indexable = $this->indexables->get('post');
+
+		$post_types = $post_indexable->get_indexable_post_types();
+		$post_statuses  = $post_indexable->get_indexable_post_status();
+
+
+		$sum = 0;
+		foreach ( $post_types as $post_type ) {
+			$counts = wp_count_posts( $post_type );
+			foreach ($post_statuses as $status) {
+				$count = $counts->$status ?? 0;
+				$sum += $count;
+			}
+		}
+		return $sum;
 	}
 
 	/**
