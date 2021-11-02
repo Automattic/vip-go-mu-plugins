@@ -7,6 +7,8 @@ require_once __DIR__ . '/../../../lib/helpers/environment.php';
 use PHPUnit\Framework\TestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
