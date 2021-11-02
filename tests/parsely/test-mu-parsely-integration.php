@@ -6,7 +6,7 @@ use WP_UnitTestCase;
 
 function test_mode() {
 	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
-	return $mode ? $mode : 'disabled';
+	return $mode ?: 'disabled';
 }
 
 class MU_Parsely_Integration_Test extends WP_UnitTestCase {
@@ -75,11 +75,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' )
 		);
 
-		/*
-			TODO: put these in when landing the quick links
-			$this->assertSame( $expected, has_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
-			$this->assertSame( $expected, has_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
-		*/
+		$this->assertSame( $expected, has_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
+		$this->assertSame( $expected, has_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
 	}
 
 	public function test_alter_option_use_repeated_metas() {
