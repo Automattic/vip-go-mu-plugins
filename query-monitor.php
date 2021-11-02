@@ -165,6 +165,6 @@ add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MA
 /**
  * Load QM plugins
  */
-if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) {
+if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
 	require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
 }
