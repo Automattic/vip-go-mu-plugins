@@ -786,7 +786,7 @@ class Search {
 		$methods_that_need_index = [ 'POST', 'PUT' ];
 		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
 			// bailing out on methods that would not create index with incorrect mapping
-			return true;
+			return false;
 		}
 
 		$index_name = $this->get_index_name_for_url( $url );
