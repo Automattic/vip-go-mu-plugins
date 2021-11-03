@@ -69,7 +69,7 @@ job-references:
       echo "export PATH=$HOME/.composer/vendor/bin:$PATH" >> $BASH_ENV
       source /home/circleci/.bashrc
 
-  new_install_dependencies: &new_install_dependencies
+  install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
       npm ci
@@ -87,20 +87,28 @@ job-references:
     command: |
       git submodule update --init --recursive
 
-  new_php_job: &new_php_job
+  run_tests: &run_tests
+    name: "Run Tests"
+    command: |
+      if [ "$DISABLE_JETPACK" = "1" ]; then
+        echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+        /usr/local/bin/runner --exclude-group jetpack-required
+      else
+        /usr/local/bin/runner
+      fi
+    environment:
+      MYSQL_HOST: << pipeline.parameters.db_host >>
+      MYSQL_USER: << pipeline.parameters.db_user >>
+      MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
+      MYSQL_DB: << pipeline.parameters.db_name >>
+
+  php_job: &php_job
     steps:
       - checkout
       - run: *setup_environment
-      - run: *new_install_dependencies
+      - run: *install_dependencies
       - run: *prepare_repo
-      - run:
-          name: Run tests
-          command: ./bin/ci-test-runner.sh
-          environment:
-            MYSQL_HOST: << pipeline.parameters.db_host >>
-            MYSQL_USER: << pipeline.parameters.db_user >>
-            MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
-            MYSQL_DB: << pipeline.parameters.db_name >>
+      - run: *run_tests
 
   php_core_job: &php_core_job
     steps:
@@ -170,7 +178,7 @@ jobs:
       - image: cimg/php:7.4-node
 
   php74-build-multisite:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "1"
       WORDPRESS_VERSION: "latest"
@@ -179,7 +187,7 @@ jobs:
       - image: *db_image
 
   php74-build-multisite-no-jetpack:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "1"
       WORDPRESS_VERSION: "latest"
@@ -189,7 +197,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-55:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "5.5.6"
@@ -198,7 +206,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-56:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "5.6.5"
@@ -207,7 +215,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-57:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "5.7.3"
@@ -216,7 +224,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-58:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "5.8.1"
@@ -225,7 +233,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "latest"
@@ -234,7 +242,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-no-jetpack:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "latest"
@@ -244,7 +252,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-parsely-filter:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "latest"
@@ -254,7 +262,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-parsely-option:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "latest"
@@ -264,7 +272,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-parsely-filter-option:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "latest"
@@ -274,7 +282,7 @@ jobs:
       - image: *db_image
 
   php74-build-multisite-nightly:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "1"
       WORDPRESS_VERSION: "nightly"
@@ -284,7 +292,7 @@ jobs:
       - image: *db_image
 
   php74-build-singlesite-nightly:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "nightly"
@@ -294,7 +302,7 @@ jobs:
       - image: *db_image
 
   php80-build-multisite-nightly:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "1"
       WORDPRESS_VERSION: "nightly"
@@ -305,7 +313,7 @@ jobs:
       - image: *db_image
 
   php80-build-singlesite-nightly:
-    <<: *new_php_job
+    <<: *php_job
     environment:
       WP_MULTISITE: "0"
       WORDPRESS_VERSION: "nightly"
