@@ -782,13 +782,6 @@ class Search {
 	 * This method avoids this issue by creating the index with correct mapping if the index doesn't exist yet.
 	 */
 	public function ensure_index_existence( $url, $args ) {
-		$method                  = strtoupper( $args['method'] ?? '' );
-		$methods_that_need_index = [ 'POST', 'PUT' ];
-		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
-			// bailing out on methods that would not create index with incorrect mapping
-			return true;
-		}
-
 		$index_name = $this->get_index_name_for_url( $url );
 		if ( ! $index_name ) {
 			return true;
