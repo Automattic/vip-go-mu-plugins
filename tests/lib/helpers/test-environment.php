@@ -38,7 +38,6 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_legacy_key() {
-
 		$this->get_var_legacy_env();
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
 		$this->assertEquals( 'FOO', $val );
@@ -50,7 +49,6 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_lower_key() {
-
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( 'vip_env_var_my_var', 'BAR' );
 		$this->assertEquals( 'FOO', $val );
@@ -74,7 +72,6 @@ class Environment_Test extends TestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var() {
-
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
 		$this->assertEquals( 'FOO', $val );
