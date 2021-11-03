@@ -1411,6 +1411,10 @@ class Search {
 	public function get_index_name_for_url( $url ) {
 		$parsed = wp_parse_url( trim( $url ) );
 
+		if ( ! isset( $parsed['path'] ) ) {
+			return null;
+		}
+
 		$path = explode( '/', trim( $parsed['path'], '/' ) );
 
 		// Index name is _usually_ the first part of the path
