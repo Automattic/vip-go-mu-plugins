@@ -1165,7 +1165,7 @@ class Search {
 	 * @return null|int The current field count
 	 */
 	public function get_current_field_count( \ElasticPress\Indexable $indexable ) {
-		if ( ! $indexable ) {
+		if ( ! $indexable || ! $indexable->index_exists() ) {
 			return null;
 		}
 

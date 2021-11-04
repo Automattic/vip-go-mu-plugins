@@ -110,6 +110,10 @@ return array(
 		'version' => '1.5.3.0',
 		'path'    => $vendorDir . '/automattic/jetpack-config/src/class-config.php'
 	),
+	'Automattic\\Jetpack\\Abtest' => array(
+		'version' => '1.9.13.0',
+		'path'    => $vendorDir . '/automattic/jetpack-abtest/src/class-abtest.php'
+	),
 	'Jetpack_Sync_Settings' => array(
 		'version' => '1.6.7.0',
 		'path'    => $vendorDir . '/automattic/jetpack-compat/legacy/class-jetpack-sync-settings.php'
@@ -145,10 +149,6 @@ return array(
 	'Automattic\\Jetpack\\Backup\\REST_Controller' => array(
 		'version' => '1.1.7.0',
 		'path'    => $vendorDir . '/automattic/jetpack-backup/src/class-rest-controller.php'
-	),
-	'Automattic\\Jetpack\\Abtest' => array(
-		'version' => '1.9.13.0',
-		'path'    => $vendorDir . '/automattic/jetpack-abtest/src/class-abtest.php'
 	),
 	'Automattic\\Jetpack\\Partner' => array(
 		'version' => '1.5.5.0',
