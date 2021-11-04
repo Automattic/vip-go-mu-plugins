@@ -11,6 +11,7 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 	 */
 	public function datasync() {
 		$this->cleanup_all_sites( 'datasync' );
+		WP_CLI::success( 'Datasync cleanup completed.' );
 	}
 
 	/**
@@ -21,6 +22,7 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 	public function sql_import() {
 		// TODO: Would be ideal if we could pinpoint if just a specific subsite's blog tables were imported.
 		$this->cleanup_all_sites( 'sqlimport' );
+		WP_CLI::success( 'SQL Import cleanup completed.' );
 	}
 
 	private function cleanup_all_sites( $operation ) {
