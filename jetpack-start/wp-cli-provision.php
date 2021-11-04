@@ -233,8 +233,10 @@ class Jetpack_Start_Provision_CLI_Command extends WPCOM_VIP_CLI_Command {
 		if ( isset( $body_json->access_token ) ) {
 			// authorize user and enable SSO
 			if ( method_exists( 'Jetpack', 'update_user_token' ) ) {
+				// Removed in JP 10.3
 				Jetpack::update_user_token( $user->ID, sprintf( '%s.%d', $body_json->access_token, $user->ID ), true );
 			} else {
+				// Available since JP 9.5
 				( new Tokens() )->update_user_token( $user->ID, sprintf( '%s.%d', $body_json->access_token, $user->ID ), true );
 			}
 
