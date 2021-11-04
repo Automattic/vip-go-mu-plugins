@@ -1,5 +1,7 @@
 <?php
 
+use Automattic\Jetpack\Connection\Tokens;
+
 /**
  * These are extracted commands from Jetpack CLI.
  *
@@ -230,7 +232,7 @@ class Jetpack_Start_Provision_CLI_Command extends WPCOM_VIP_CLI_Command {
 
 		if ( isset( $body_json->access_token ) ) {
 			// authorize user and enable SSO
-			Jetpack::update_user_token( $user->ID, sprintf( '%s.%d', $body_json->access_token, $user->ID ), true );
+			( new Tokens )->update_user_token( $user->ID, sprintf( '%s.%d', $body_json->access_token, $user->ID ), true );
 
 			$active_modules = Jetpack_Options::get_option( 'active_modules' );
 			if ( $active_modules ) {
