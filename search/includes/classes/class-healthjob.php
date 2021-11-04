@@ -95,10 +95,10 @@ class HealthJob {
 	 */
 	public function schedule_job() {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
+			wp_schedule_event( time() + ( md_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
-			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+			wp_schedule_event( time() + ( md_rand( 1, 48 ) * HOUR_IN_SECONDS ), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
 	}
 
