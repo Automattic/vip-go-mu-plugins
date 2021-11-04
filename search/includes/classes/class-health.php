@@ -543,6 +543,8 @@ class Health {
 			if ( $is_cli && ! $silent ) {
 				echo sprintf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
+			// To prevent continuous hammering of clusters.
+			sleep( mt_rand( 2, 5 ) );
 		} while ( $start_post_id <= $last_post_id );
 
 		if ( $process_parallel_execution_lock ) {
