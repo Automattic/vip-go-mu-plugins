@@ -533,11 +533,11 @@ class Search_Test extends WP_UnitTestCase {
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-
+		$es->healthcheck          = new \Automattic\VIP\Search\HealthJob( $es );
 		// Should not have fataled (class was included)
 
 		// Ensure it returns the priority set. Easiest way to to ensure it's not false
-		$this->assertTrue( false !== has_action( 'admin_init', [ $es->healthcheck, 'init' ] ) );
+		$this->assertTrue( false !== has_action( 'wp_loaded', [ $es->healthcheck, 'init' ] ) );
 	}
 
 	/**
@@ -546,7 +546,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__vip_search_setup_healthchecks_disabled_in_non_production_env() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-
+		$es->healthcheck          = new \Automattic\VIP\Search\HealthJob( $es );
 		// Should not have fataled (class was included)
 
 		// Should not have instantiated and registered the init action to setup the health check
