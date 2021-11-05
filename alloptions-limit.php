@@ -11,6 +11,7 @@ use Automattic\VIP\Utils\Alerts;
 
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
 
+define( 'VIP_ALLOPTIONS_ERROR_THRESHOLD', 1000000 );
 /**
  * The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large.
  * Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
@@ -23,10 +24,10 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// Uncompressed size thresholds.
 	// Warn should *always* be =< die
-	$alloptions_size_warn = MB_IN_BYTES * 1.5;
+	$alloptions_size_warn = MB_IN_BYTES * 3;
 
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
-	$alloptions_size_die = MB_IN_BYTES * 4;
+	$alloptions_size_die = MB_IN_BYTES * 6;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
@@ -39,38 +40,42 @@ function wpcom_vip_sanity_check_alloptions() {
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
 	}
 
-	$blocked = $alloptions_size > $alloptions_size_die;
-	$warning = $alloptions_size > $alloptions_size_warn;
+	$warning        = $alloptions_size > $alloptions_size_warn;
+	$maybe_blocked  = $alloptions_size > $alloptions_size_die;
+	$really_blocked = false;
+	$alloptions_size_compressed = 0;
 
-	// If it's at least over the warning threshold (will also run when blocked), notify
-	if ( $warning ) {
-		if ( $blocked ) {
-			add_filter( 'alloptions_overrule_ack', '__return_true' );
-		}
-		// NOTE - This function has built-in rate limiting so it's ok to call on every request
-		wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $blocked );
+	if ( ! $warning ) {
+		return;
 	}
 
 	// Will exit with a 503
-	if ( $blocked ) {
-		wpcom_vip_sanity_check_alloptions_die( $alloptions );
+	if ( $maybe_blocked ) {
+		// It's likely at this point the site is already experiencing performance degradation.
+		// Do a final check before killing the request if the value is actually more than the value limit.
+		// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
+		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
+		$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
+		if ( ! $alloptions_size_compressed ) {
+			$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
+			wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
+		}
+
+	}
+
+	if ( $alloptions_size_compressed >= VIP_ALLOPTIONS_ERROR_THRESHOLD ) {
+		$really_blocked = true;
+	}
+
+	// NOTE - This function has built-in rate limiting so it's ok to call on every request
+	wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $alloptions_size_compressed, $maybe_blocked, $really_blocked );
+
+	if ( $really_blocked ) {
+		wpcom_vip_sanity_check_alloptions_die();
 	}
 }
 
-function wpcom_vip_sanity_check_alloptions_die( &$alloptions ) {
-	// It's likely at this point the site is already experiencing performance degradation.
-	// Do a final check before killing the request if the value is actually more than the value limit.
-	// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
-	// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
-	$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
-	if ( ! $alloptions_size_compressed ) {
-		$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
-		wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
-	}
-
-	if ( $alloptions_size_compressed < 1000000 ) {
-		return;
-	}
+function wpcom_vip_sanity_check_alloptions_die() {
 
 	// 503 Service Unavailable - prevent caching, indexing, etc and alert Varnish of the problem
 	http_response_code( 503 );
@@ -95,7 +100,7 @@ function wpcom_vip_alloptions_size_is_acked() {
 	return false;
 }
 
-function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
+function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, $maybe_blocked = false, $really_blocked = true ) {
 	global $wpdb;
 
 	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 30 * MINUTE_IN_SECONDS );
@@ -106,20 +111,15 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 		return;
 	}
 
-	$irc_alert_level = 2; // ALERT
-
-	$opsgenie_alert_level = 'P4';
-	if ( $blocked ) {
+	if ( $really_blocked ) {
 		$msg = 'This site is now BLOCKED from loading until option sizes are under control.';
-
-		// If site is blocked, then the IRC alert is CRITICAL
-		$irc_alert_level      = 3;
-		$opsgenie_alert_level = 'P3';
+	} else if ( $maybe_blocked ) {
+		$msg = 'This will soon be BLOCKED from loading until if the options sizes increase.';
+		$msg .= PHP_EOL . PHP_EOL;
+		$msg .= sprintf( 'Blocking threshold: %s. Current size: %s', VIP_ALLOPTIONS_ERROR_THRESHOLD, $size_compressed );
 	} else {
 		$msg = 'Site will be blocked from loading if option sizes get too much bigger.';
 	}
-
-	$msg .= "\n\nDebug information can be found in the Fieldguide";
 
 	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
 	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
@@ -127,22 +127,14 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 
 	// Send notices to VIP staff if this is happening on VIP-hosted sites
 	if ( $is_vip_env && $site_id ) {
-		/** silence alerts on selected sites due to known issues **/
 
-		// Array of VIP Go site IDs to silence alerts on
-		$vip_alerts_blocked = array();
-
-		if ( in_array( $site_id, $vip_alerts_blocked, true ) ) {
-			return;
-		}
-
-		$subject = 'ALLOPTIONS: %s (%s VIP Go site ID: %s';
+		$subject = 'ALLOPTIONS: %1$s (%2$s VIP Go site ID: %3$s';
 
 		if ( 0 !== $wpdb->blogid ) {
 			$subject .= ", blog ID {$wpdb->blogid}";
 		}
 
-		$subject .= ') options is up to %s';
+		$subject .= ') options is up to %4$s';
 
 		$subject = sprintf(
 			$subject,
@@ -152,37 +144,34 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $blocked = false ) {
 			size_format( $size )
 		);
 
-		$to_irc = $subject . ' #vipoptions';
-
 		// Send to IRC, if we have a host configured
-		if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
-			if ( 'production' === $environment ) {
+		if (
+			defined( 'ALERT_SERVICE_ADDRESS' ) &&
+			ALERT_SERVICE_ADDRESS &&
+			'production' === $environment &&
+			$really_blocked
+		) {
 
-				if ( ! wpcom_vip_alloptions_size_is_acked() ) {
-					wpcom_vip_irc( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-alloptions' );
-				}
+			// Send to OpsGenie
+			$alerts = Alerts::instance();
+			$alerts->opsgenie(
+				$subject,
+				array(
+					'alias'       => 'alloptions/' . $site_id,
+					'description' => sprintf( 'The size of AllOptions has breached %s bytes', VIP_ALLOPTIONS_ERROR_THRESHOLD ),
+					'entity'      => (string) $site_id,
+					'priority'    => 'P3',
+					'source'      => 'sites/alloptions-size',
+				),
+				'alloptions-size-alert',
+				'10'
+			);
 
-				// Send to OpsGenie
-				$alerts = Alerts::instance();
-				$alerts->opsgenie(
-					$subject,
-					array(
-						'alias'       => 'alloptions/' . $site_id,
-						'description' => 'The size of AllOptions is reaching the max limit of 1 MB.',
-						'entity'      => (string) $site_id,
-						'priority'    => $opsgenie_alert_level,
-						'source'      => 'sites/alloptions-size',
-					),
-					'alloptions-size-alert',
-					'10'
-				);
-
-			}
 		}
 
 		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
 
-		if ( $email_recipient ) {
+		if ( is_email( $email_recipient ) ) {
 			$size = size_format( $size );
 
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
