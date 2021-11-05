@@ -532,12 +532,10 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__vip_search_setup_healthchecks_with_enabled() {
 		// Need to filter to enable the HealthJob
 		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
-		// Need to fake the context before initializing
-		define( 'WP_CLI', true );
-		require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
+		$es->setup_cron_jobs();
 		// Should not have fataled (class was included)
 
 		// Ensure it returns the priority set. Easiest way to to ensure it's not false
@@ -550,11 +548,9 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_setup_healthchecks_disabled_in_non_production_env() {
-		// Need to fake the context before initializing
-		define( 'WP_CLI', true );
-		require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
+		$es->setup_cron_jobs();
 
 		// Should not have fataled (class was included)
 
