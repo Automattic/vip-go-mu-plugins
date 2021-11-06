@@ -86,12 +86,12 @@ class A8C_Files {
 		// ensure the correct upload URL is used even after switch_to_blog is called
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ) );
 
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			// Conditionally schedule the attachment filesize metadata update job
-			if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
-				// add new cron schedule for filesize update
-				add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
+		// Conditionally schedule the attachment filesize metadata update job
+		if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
+			// add new cron schedule for filesize update
+			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 
+			if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// Schedule meta update job
 				$this->schedule_update_job();
 			}
