@@ -127,9 +127,8 @@ class Search {
 		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
 			$this->load_commands();
 			$this->setup_cron_jobs();
+			$this->setup_regular_stat_collection();
 		}
-
-		$this->setup_regular_stat_collection();
 	}
 
 	/**
