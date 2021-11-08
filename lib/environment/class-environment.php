@@ -34,12 +34,11 @@ class Environment {
 		// log this as an E_USER_NOTICE for debugging
 		trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			sprintf(
-				'The ENV variable: "%s" did not exist. %s::get_var returned default: "%s"',
+				'The ENV variable: "%s" did not exist. %s::get_var returned the default value',
 				$key, // phpcs:ignore WordPress.Security.EscapeOutput
-				__CLASS__,
-				$default_value // phpcs:ignore WordPress.Security.EscapeOutput
+				__CLASS__
 			),
-			E_USER_NOTICE
+			\E_USER_NOTICE
 		);
 
 		return $default_value;

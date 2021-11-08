@@ -15,6 +15,9 @@ workflows:
       - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
+      - php74-build-singlesite-parsely-filter
+      - php74-build-singlesite-parsely-option
+      - php74-build-singlesite-parsely-filter-option
       - php80-build-multisite-nightly
       - php80-build-singlesite-nightly
       - search-dev-tools
@@ -226,7 +229,7 @@ jobs:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
-      - WP_VERSION: "5.5.5"
+      - WP_VERSION: "5.5.6"
     docker:
       - image: cimg/php:7.4-node
       - image: *db_image
@@ -235,7 +238,7 @@ jobs:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
-      - WP_VERSION: "5.6.4"
+      - WP_VERSION: "5.6.5"
     docker:
       - image: cimg/php:7.4-node
       - image: *db_image
@@ -244,7 +247,7 @@ jobs:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
-      - WP_VERSION: "5.7.2"
+      - WP_VERSION: "5.7.3"
     docker:
       - image: cimg/php:7.4-node
       - image: *db_image
@@ -253,7 +256,7 @@ jobs:
     <<: *php_job
     environment:
       - WP_MULTISITE: "0"
-      - WP_VERSION: "5.8"
+      - WP_VERSION: "5.8.1"
     docker:
       - image: cimg/php:7.4-node
       - image: *db_image
@@ -273,6 +276,36 @@ jobs:
       - WP_MULTISITE: "0"
       - WP_VERSION: "latest"
       - DISABLE_JETPACK: "1"
+    docker:
+      - image: cimg/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-parsely-filter:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
+    docker:
+      - image: cimg/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-parsely-option:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
+    docker:
+      - image: cimg/php:7.4-node
+      - image: *db_image
+
+  php74-build-singlesite-parsely-filter-option:
+    <<: *php_job
+    environment:
+      - WP_MULTISITE: "0"
+      - WP_VERSION: "latest"
+      - WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
     docker:
       - image: cimg/php:7.4-node
       - image: *db_image

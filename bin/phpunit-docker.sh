@@ -51,7 +51,7 @@ MYSQL_ROOT_PASSWORD='wordpress'
 
 docker network create $NETWORK_NAME
 
-db=$(docker run --network $NETWORK_NAME --name $DB_CONTAINER_NAME -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -d mariadb/server:$MARIADB_VERSION)
+db=$(docker run --network $NETWORK_NAME --name $DB_CONTAINER_NAME -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -d mariadb:$MARIADB_VERSION)
 function cleanup() {
 	echo "cleanup!"
 	docker rm -f $db

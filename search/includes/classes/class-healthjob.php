@@ -29,9 +29,14 @@ class HealthJob {
 	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
 
 	/**
-	 * @var int the number after which the alert should be sent.
+	 * @var int the number after which the alert should be sent for inconsistencies found.
 	 */
 	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
+
+	/**
+	 * @var int the percentage after which the alert should be sent for autoheal - 0.1 = 10%
+	 */
+	const AUTOHEALED_ALERT_THRESHOLD = 0.1;
 
 	public $health_check_disabled_sites = array();
 
@@ -90,10 +95,10 @@ class HealthJob {
 	 */
 	public function schedule_job() {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
+			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
-			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+			wp_schedule_event( time() + ( mt_rand( 1, 48 ) * HOUR_IN_SECONDS ), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
 	}
 
@@ -154,11 +159,36 @@ class HealthJob {
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} elseif ( ! empty( $results ) ) {
-			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		} else if ( ! empty( $results ) ) {
+			$self_healed_post_count = count( $results );
+			$total_post_count = $this->count_indexable_posts();
+
+			$alert_threshold = $total_post_count * self::AUTOHEALED_ALERT_THRESHOLD;
+
+			if ( $self_healed_post_count > $alert_threshold ) {
+				$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			}
 		}
 
+	}
+
+	private function count_indexable_posts() {
+		$post_indexable = $this->indexables->get( 'post' );
+
+		$post_types = $post_indexable->get_indexable_post_types();
+		$post_statuses  = $post_indexable->get_indexable_post_status();
+
+
+		$sum = 0;
+		foreach ( $post_types as $post_type ) {
+			$counts = wp_count_posts( $post_type );
+			foreach ( $post_statuses as $status ) {
+				$count = $counts->$status ?? 0;
+				$sum += $count;
+			}
+		}
+		return $sum;
 	}
 
 	/**
