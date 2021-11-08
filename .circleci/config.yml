@@ -181,146 +181,146 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "1"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-multisite-no-jetpack:
     <<: *php_job
     environment:
       WP_MULTISITE: "1"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-55:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "5.5.6"
+      WP_VERSION: "5.5.6"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-56:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "5.6.5"
+      WP_VERSION: "5.6.5"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-57:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "5.7.3"
+      WP_VERSION: "5.7.3"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-58:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "5.8.1"
+      WP_VERSION: "5.8.1"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-no-jetpack:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-parsely-filter:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-parsely-option:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-parsely-filter-option:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "latest"
+      WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-multisite-nightly:
     <<: *php_job
     environment:
       WP_MULTISITE: "1"
-      WORDPRESS_VERSION: "nightly"
+      WP_VERSION: "nightly"
       PHPUNIT_VERSION: "9"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-nightly:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "nightly"
+      WP_VERSION: "nightly"
       PHPUNIT_VERSION: "9"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php80-build-multisite-nightly:
     <<: *php_job
     environment:
       WP_MULTISITE: "1"
-      WORDPRESS_VERSION: "nightly"
+      WP_VERSION: "nightly"
       PHPUNIT_VERSION: "9"
       PHP_VERSION: "8.0"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php80-build-singlesite-nightly:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WORDPRESS_VERSION: "nightly"
+      WP_VERSION: "nightly"
       PHPUNIT_VERSION: "9"
       PHP_VERSION: "8.0"
     docker:
-      - image: wildwildangel/wp-test-runner-ex-circleci:latest
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   create-changelog-draft:
