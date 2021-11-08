@@ -38,7 +38,7 @@ class Environment {
 				$key, // phpcs:ignore WordPress.Security.EscapeOutput
 				__CLASS__
 			),
-			E_USER_NOTICE
+			\E_USER_NOTICE
 		);
 
 		return $default_value;
