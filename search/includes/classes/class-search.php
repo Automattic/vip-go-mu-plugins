@@ -909,12 +909,13 @@ class Search {
 	 * @return boolean
 	 */
 	public function is_url_query_cacheable( string $url, $args ): bool {
+		$is_cacheable = false;
+
 		// Explicitly disable in production for now.
 		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) {
-			return false;
+			return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
 		}
 
-		$is_cacheable = false;
 
 		foreach ( [ '_doc', '_search', '_mget' ] as $needle ) {
 			if ( wp_in( $needle, $url ) ) {
