@@ -138,8 +138,11 @@ function enqueue_assets() {
 		return;
 	}
 
-	wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], time(), true );
-	wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], time() );
+	$assets_dir = __DIR__ . '/build';
+	$assets_url = plugin_dir_url( __FILE__ ) . 'build';
+
+	wp_enqueue_script( 'vip-search-dev-tools', $assets_url . '/bundle.js', [], filemtime( $assets_dir . '/bundle.js' ), true );
+	wp_enqueue_style( 'vip-search-dev-tools', $assets_url . '/bundle.css', [], filemtime( $assets_dir . '/bundle.css' ) );
 }
 
 /**
