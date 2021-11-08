@@ -820,6 +820,15 @@ class Search {
 		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
+		$is_cacheable           = $this->is_url_query_cacheable( $query['url'], $args );
+		$cache_key              = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
+		/**
+		 * Serve cached response right away, if available and the query is cacheable
+		 */
+		$response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
+		if ( $response ) {
+			return $response;
+		}
 
 		$start_time = microtime( true );
 
@@ -881,14 +890,39 @@ class Search {
 		if ( is_wp_error( $response ) ) {
 			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
+		} else {
+			if ( 'index_exists' === $type ) {
+				// Cache index_exists into option since we didn't return a cached value earlier.
+				update_option( $index_exists_option_name, $response );
+			} elseif ( $is_cacheable ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
+				wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, mt_rand( 60, 70 ) );
+			}
+			return $response;
+		}
+	}
+
+	/**
+	 * Check whether this particular ES query response can be cached.
+	 *
+	 * @param string $url
+	 * @return boolean
+	 */
+	public function is_url_query_cacheable( string $url, $args ): bool {
+		// Explicitly disable in production for now.
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) {
+			return false;
 		}
 
-		if ( 'index_exists' === $type ) {
-			// Cache index_exists into option since we didn't return a cached value earlier.
-			update_option( $index_exists_option_name, $response );
+		$is_cacheable = false;
+
+		foreach ( [ '_doc', '_search', '_mget' ] as $needle ) {
+			if ( wp_in( $needle, $url ) ) {
+				$is_cacheable = true;
+			}
 		}
 
-		return $response;
+		return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
 	}
 
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
