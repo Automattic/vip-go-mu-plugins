@@ -24,10 +24,10 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// Uncompressed size thresholds.
 	// Warn should *always* be =< die
-	$alloptions_size_warn = MB_IN_BYTES * 3;
+	$alloptions_size_warn = MB_IN_BYTES * 2.5;
 
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
-	$alloptions_size_die = MB_IN_BYTES * 6;
+	$alloptions_size_die = MB_IN_BYTES * 4;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
@@ -56,7 +56,7 @@ function wpcom_vip_sanity_check_alloptions() {
 		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
 		$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
 		if ( ! $alloptions_size_compressed ) {
-			$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
+			$alloptions_size_compressed = strlen( gzdeflate( serialize( wp_load_alloptions() ) ) );
 			wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
 		}
 	}
