@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue\Cron as Cron;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 class Cron_Test extends WP_UnitTestCase {
@@ -115,6 +116,7 @@ class Cron_Test extends WP_UnitTestCase {
 
 
 	public function test_schedule_batch_job() {
+		/** @var Cron&MockObject */
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
 			->setMethods( [ 'get_processor_job_count', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
@@ -151,8 +153,7 @@ class Cron_Test extends WP_UnitTestCase {
 
 		$expected_cron_event_args = [
 			[
-				'min_id' => 1,
-				'max_id' => 2,
+				'job_ids' => [ 1, 2 ],
 			],
 		];
 
@@ -186,6 +187,7 @@ class Cron_Test extends WP_UnitTestCase {
 	 * @dataProvider schedule_batch_job__scheduling_limits_data
 	 */
 	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_shedule_count ) {
+		/** @var Cron&MockObject */
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
 			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
