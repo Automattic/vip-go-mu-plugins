@@ -107,11 +107,13 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		/**
 		 * Check the raw value in the DB matches what we sent above - skips any filters
 		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$option_db     = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'active_plugins' LIMIT 1" );
 		$option_db     = maybe_unserialize( $option_db );
 		$plugin_change = array_merge( $this->option_active_plugins, array( 'amp-wp/amp.php' ) );
 		// because this was a dupe plugin we will be smart enough to remove it from the option
-		if ( ( $key = array_search( 'msm-sitemap/msm-sitemap.php', $plugin_change, true ) ) !== false ) {
+		$key = array_search( 'msm-sitemap/msm-sitemap.php', $plugin_change, true );
+		if ( false !== $key ) {
 			unset( $plugin_change[ $key ] );
 		}
 		sort( $plugin_change );
@@ -177,6 +179,7 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		/**
 		 * Check the raw value in the DB matches what we sent above - skips any filters
 		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$option_db = $wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'active_sitewide_plugins' LIMIT 1" );
 		$option_db = maybe_unserialize( $option_db );
 		ksort( $plugin_change );

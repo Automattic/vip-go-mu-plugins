@@ -161,6 +161,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				],
 			],
 
+			// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
 			/* TODO: not supported yet
 			'resized-image' => [
 				'/wp-content/uploads/2021/01/dinos-100x100.jpg',

@@ -8,6 +8,8 @@ require_once __DIR__ . '/../../security/class-lockout.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery
+
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
