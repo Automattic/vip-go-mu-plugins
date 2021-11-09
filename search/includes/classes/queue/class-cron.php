@@ -147,10 +147,14 @@ class Cron {
 	 *
 	 * This is the cron hook for indexing a batch of objects
 	 *
-	 * @param array $options Containing max_id and min_id keys
+	 * @param array $options Containing either max_id and min_id or job_ids keys
 	 */
 	public function process_jobs( $options ) {
-		$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
+		if ( ! empty( $options['job_ids'] ) && is_array( $options['job_ids'] ) ) {
+			$jobs = $this->queue->get_jobs_by_ids( $options['job_ids'] );
+		} else {
+			$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
+		}
 
 		if ( empty( $jobs ) ) {
 			return;
@@ -304,8 +308,7 @@ class Cron {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		$options = [
-			'min_id' => min( $job_ids ),
-			'max_id' => max( $job_ids ),
+			'job_ids' => $job_ids,
 		];
 
 		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );

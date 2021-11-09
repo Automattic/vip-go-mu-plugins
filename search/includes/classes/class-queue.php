@@ -12,6 +12,7 @@ class Queue {
 	const MAX_BATCH_SIZE = 1000;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
+	/** @var Queue\Schema */
 	public $schema;
 	public $statsd;
 	public $indexables;
@@ -608,9 +609,28 @@ class Queue {
 	}
 
 	/**
+	 * @param array $ids IDs of the jobs to retrieve
+	 * @return array Array of job objects
+	 */
+	public function get_jobs_by_ids( array $ids ) {
+		global $wpdb;
+		$result = [];
+
+		if ( ! empty( $ids ) ) {
+			$table_name    = $this->schema->get_table_name();
+			$sanitized_ids = join( ', ', array_map( 'intval', $ids ) );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL
+			$result = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ({$sanitized_ids})" );
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Grab $count jobs that are due now and mark them as running
 	 *
-	 * @param {int} $count How many jobs to check out
+	 * @param int $count How many jobs to check out
 	 * @return array Array of jobs (db rows) that were checked out
 	 */
 	public function checkout_jobs( $count = 250 ) {
@@ -626,7 +646,7 @@ class Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `job_id` LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$count
 			)
 		);
