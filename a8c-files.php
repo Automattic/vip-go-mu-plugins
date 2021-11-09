@@ -91,7 +91,7 @@ class A8C_Files {
 			// add new cron schedule for filesize update
 			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 
-			if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 				// Schedule meta update job
 				$this->schedule_update_job();
 			}
