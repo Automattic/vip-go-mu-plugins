@@ -43,16 +43,15 @@ function wpcom_vip_sanity_check_alloptions() {
 	$warning        = $alloptions_size > $alloptions_size_warn;
 	$maybe_blocked  = $alloptions_size > $alloptions_size_die;
 	$really_blocked = false;
+
 	$alloptions_size_compressed = 0;
 
 	if ( ! $warning ) {
 		return;
 	}
 
-	// Will exit with a 503
 	if ( $maybe_blocked ) {
 		// It's likely at this point the site is already experiencing performance degradation.
-		// Do a final check before killing the request if the value is actually more than the value limit.
 		// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
 		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
 		$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
@@ -60,7 +59,6 @@ function wpcom_vip_sanity_check_alloptions() {
 			$alloptions_size_compressed = strlen( gzdeflate( $alloptions ) );
 			wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
 		}
-
 	}
 
 	if ( $alloptions_size_compressed >= VIP_ALLOPTIONS_ERROR_THRESHOLD ) {
@@ -70,6 +68,7 @@ function wpcom_vip_sanity_check_alloptions() {
 	// NOTE - This function has built-in rate limiting so it's ok to call on every request
 	wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $alloptions_size_compressed, $maybe_blocked, $really_blocked );
 
+	// Will exit with a 503
 	if ( $really_blocked ) {
 		wpcom_vip_sanity_check_alloptions_die();
 	}
@@ -113,8 +112,8 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, 
 
 	if ( $really_blocked ) {
 		$msg = 'This site is now BLOCKED from loading until option sizes are under control.';
-	} else if ( $maybe_blocked ) {
-		$msg = 'This will soon be BLOCKED from loading until if the options sizes increase.';
+	} elseif ( $maybe_blocked ) {
+		$msg  = 'This will soon be BLOCKED from loading until if the options sizes increase.';
 		$msg .= PHP_EOL . PHP_EOL;
 		$msg .= sprintf( 'Blocking threshold: %s. Current size: %s', VIP_ALLOPTIONS_ERROR_THRESHOLD, $size_compressed );
 	} else {
