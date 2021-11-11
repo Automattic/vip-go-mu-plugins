@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 require_once __DIR__ . '/../../../lib/utils/class-context.php';
 
 class Context_Test extends TestCase {
-	function test__is_cache_healthcheck__nope() {
+	public function test__is_cache_healthcheck__nope() {
 		$_SERVER['REQUEST_URI'] = '/not-healthcheck-path';
 
 		$actual_result = Context::is_healthcheck();
@@ -15,7 +15,7 @@ class Context_Test extends TestCase {
 		$this->assertFalse( $actual_result );
 	}
 
-	function test__is_cache_healthcheck__yep() {
+	public function test__is_cache_healthcheck__yep() {
 		$_SERVER['REQUEST_URI'] = '/cache-healthcheck?';
 
 		$actual_result = Context::is_healthcheck();
@@ -27,8 +27,10 @@ class Context_Test extends TestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	function test__is_maintenance_mode__nope() {
+	public function test__is_maintenance_mode__nope() {
 		// Note: `WPCOM_VIP_SITE_MAINTENANCE_MODE` not defined
+
+		self::assertFalse( defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) );
 
 		$actual_result = Context::is_maintenance_mode();
 

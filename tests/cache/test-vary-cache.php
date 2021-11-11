@@ -12,11 +12,14 @@ require_once __DIR__ . '/../../cache/class-vary-cache.php';
 class Vary_Cache_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
 
+	private $original_cookie;
+	private $original_server;
+
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->original_COOKIE = $_COOKIE;
-		$this->original_SERVER = $_SERVER;
+		$this->original_cookie = $_COOKIE;
+		$this->original_server = $_SERVER;
 
 		Vary_Cache::load();
 	}
@@ -24,8 +27,8 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		Vary_Cache::unload();
 
-		$_COOKIE = $this->original_COOKIE;
-		$_SERVER = $this->original_SERVER;
+		$_COOKIE = $this->original_cookie;
+		$_SERVER = $this->original_server;
 
 		parent::tearDown();
 	}

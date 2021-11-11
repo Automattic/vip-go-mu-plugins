@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
@@ -666,6 +667,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		do_action( 'send_headers' );
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		unset( $_GET['ep_debug'] );
 
 		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
@@ -1201,6 +1203,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__rate_limit_ep_query_integration__handles_start_correctly() {
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'handle_query_limiting_start_timestamp', 'maybe_alert_for_prolonged_query_limiting' ] )
 			->getMock();
@@ -1219,6 +1222,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__rate_limit_ep_query_integration__clears_start_correctly() {
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'clear_query_limiting_start_timestamp' ] )
 			->getMock();
@@ -1232,6 +1236,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__record_ratelimited_query_stat__records_statsd() {
 		$stats_key = 'foo';
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_statsd_prefix', 'maybe_increment_stat' ] )
 			->getMock();
@@ -1493,7 +1498,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_taxonomies_allow_list',
-			function( $taxonomies ) {
+			function() {
 				return array( 'post_tag' );
 			}
 		);
@@ -2152,9 +2157,10 @@ class Search_Test extends WP_UnitTestCase {
 			'took' => 100,
 		];
 		$mocked_response      = [
-			'body' => json_encode( $mocked_response_body ),
+			'body' => wp_json_encode( $mocked_response_body ),
 		];
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat', 'maybe_send_timing_stat' ] )
 			->getMock();
@@ -2185,14 +2191,14 @@ class Search_Test extends WP_UnitTestCase {
 		$query                = [ 'url' => 'https://foo.bar/' ];
 		$args                 = [];
 		$stats_prefix         = 'foo';
-		$stats_prefix_per_doc = 'bar';
 		$mocked_response_body = [
 			'items' => [ [], [] ],
 		];
 		$mocked_response      = [
-			'body' => json_encode( $mocked_response_body ),
+			'body' => wp_json_encode( $mocked_response_body ),
 		];
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_send_timing_stat' ] )
 			->getMock();
@@ -2227,6 +2233,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat' ] )
 			->getMock();
@@ -2254,6 +2261,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat' ] )
 			->getMock();
@@ -2281,6 +2289,7 @@ class Search_Test extends WP_UnitTestCase {
 		$stats_prefix    = 'foo';
 		$mocked_response = new \WP_Error( 'code1', 'curl error 28' );
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat' ] )
 			->getMock();
@@ -2354,6 +2363,7 @@ class Search_Test extends WP_UnitTestCase {
 		$expected_message = "The field count for post index for application $application_id - $application_url is too damn high - $field_count";
 		$expected_level   = 2;
 
+		/** @var MockObject&\Automattic\VIP\Search\Search */
 		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
 			->setMethods( [ 'get_current_field_count' ] )
 			->getMock();
@@ -3270,7 +3280,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function mock_vip_safe_wp_remote_request() {
-
+		/* Empty */
 	}
 }
 

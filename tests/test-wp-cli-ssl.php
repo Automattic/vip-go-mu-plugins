@@ -69,6 +69,7 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 		}
 
 		maybe_toggle_is_ssl();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$actual_https_value = $_SERVER['HTTPS'] ?? null;
 
 		$this->assertEquals( $expected_https_value, $actual_https_value );
@@ -99,10 +100,15 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 
 		// Change from ! is_ssl() to SSL site => is_ssL() === true
 		switch_to_blog( $blog_2_id );
+
+		self::assertTrue( isset( $_SERVER['HTTPS'] ) );
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$this->assertEquals( 'on', $_SERVER['HTTPS'] );
 
 		// Change to same site
 		switch_to_blog( $blog_2_id );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$this->assertEquals( 'on', $_SERVER['HTTPS'] );
 
 		// Change from is_ssl() to non-SSL site => is_ssl() === false

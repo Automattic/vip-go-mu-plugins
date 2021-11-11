@@ -39,7 +39,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm that events aren't scheduled for non-published posts
 	 */
-	function test_event_not_scheduled_for_draft() {
+	public function test_event_not_scheduled_for_draft() {
 		$post = [
 			'post_title'   => 'Tommy Tutone - 867-5309/Jenny',
 			'post_content' => 'https://www.youtube.com/watch?v=6WTdTwcmxyo',
@@ -63,7 +63,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm that events aren't scheduled for non-published posts
 	 */
-	function test_event_not_scheduled_for_auto_draft() {
+	public function test_event_not_scheduled_for_auto_draft() {
 		$post = [
 			'post_title'   => 'Corey Hart - Sunglasses At Night',
 			'post_content' => 'https://www.youtube.com/watch?v=X2LTL8KgKv8',
@@ -87,7 +87,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm that an event is scheduled for a published post.
 	 */
-	function test_event_is_scheduled_for_publish() {
+	public function test_event_is_scheduled_for_publish() {
 		$post = [
 			'post_title'   => 'Toto - Africa',
 			'post_content' => 'https://www.youtube.com/watch?v=FTQbiNvZqaY',
@@ -111,7 +111,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm that an event is scheduled for a published post.
 	 */
-	function test_event_is_not_scheduled_for_same_status() {
+	public function test_event_is_not_scheduled_for_same_status() {
 		$post = [
 			'post_title'   => 'Starship - We Built This City',
 			'post_content' => 'https://www.youtube.com/watch?v=K1b8AhIsSYQ',
@@ -139,7 +139,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm that an event is scheduled for a published post.
 	 */
-	function test_event_is_scheduled_for_unpublish() {
+	public function test_event_is_scheduled_for_unpublish() {
 		$post = [
 			'post_title'   => 'Michael Jackson - Thriller',
 			'post_content' => 'https://www.youtube.com/watch?v=sOnqjkJTMaA',
@@ -167,7 +167,7 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 	/**
 	 * Confirm that events are scheduled for succeeding published posts.
 	 */
-	function test_two_events_are_scheduled_for_succeeding_events() {
+	public function test_two_events_are_scheduled_for_succeeding_events() {
 		$post = [
 			'post_title'   => 'Whitney Houston - I Will Always Love You',
 			'post_content' => 'https://www.youtube.com/watch?v=3JWTaaS7LdU',

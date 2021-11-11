@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 
@@ -10,6 +11,7 @@ require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
 class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	private $stream_wrapper;
 
+	/** @var MockObject&Api_Client */
 	private $api_client_mock;
 
 	private $errors = [];
@@ -17,10 +19,12 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		/** @var MockObject&Api_Client */
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
 		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
@@ -60,6 +64,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 			}
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		$this->fail( 'Error with level ' . $errno . " and message '" . $errstr . "' not found in " . var_export( $this->errors, true ) );
 	}
 
@@ -81,6 +86,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$path_from = 'vip://wp-content/uploads/old.txt';
 		$path_to   = 'vip://wp-content/uploads/new.txt';
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
 		$tmp_file = tempnam( sys_get_temp_dir(), 'phpunit' );
 
 		$this->api_client_mock
