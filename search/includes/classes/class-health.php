@@ -2,6 +2,10 @@
 
 namespace Automattic\VIP\Search;
 
+use ElasticPress\Indexable\Comment\Comment;
+use ElasticPress\Indexable\Post\Post;
+use ElasticPress\Indexable\Term\Term;
+use ElasticPress\Indexable\User\User;
 use \ElasticPress\Indexables as Indexables;
 
 use \WP_Query as WP_Query;
@@ -131,7 +135,7 @@ class Health {
 	 *      'post_status' => array( $post_statuses )
 	 * ];
 	 *
-	 * @param mixed $indexable Instance of an ElasticPress Indexable Object to search on
+	 * @param Comment|Post|Term|User $indexable Instance of an ElasticPress Indexable Object to search on
 	 * @return WP_Error|int
 	 */
 	public function get_index_entity_count_from_elastic_search( array $query_args, \ElasticPress\Indexable $indexable ) {
@@ -501,12 +505,13 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
+			/** @var array|WP_Error */
 			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
 			} elseif ( count( $result ) && ! $do_not_heal ) {
-					self::reconcile_diff( $result );
+				self::reconcile_diff( $result );
 			}
 
 			$results = array_merge( $results, $result );
