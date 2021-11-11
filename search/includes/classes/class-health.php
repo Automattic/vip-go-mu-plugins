@@ -2,10 +2,6 @@
 
 namespace Automattic\VIP\Search;
 
-use ElasticPress\Indexable\Comment\Comment;
-use ElasticPress\Indexable\Post\Post;
-use ElasticPress\Indexable\Term\Term;
-use ElasticPress\Indexable\User\User;
 use \ElasticPress\Indexables as Indexables;
 
 use \WP_Query as WP_Query;
@@ -135,7 +131,7 @@ class Health {
 	 *      'post_status' => array( $post_statuses )
 	 * ];
 	 *
-	 * @param Comment|Post|Term|User $indexable Instance of an ElasticPress Indexable Object to search on
+	 * @param mixed $indexable Instance of an ElasticPress Indexable Object to search on
 	 * @return WP_Error|int
 	 */
 	public function get_index_entity_count_from_elastic_search( array $query_args, \ElasticPress\Indexable $indexable ) {
