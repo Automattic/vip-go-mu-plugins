@@ -774,7 +774,7 @@ class Health {
 		}
 
 		// Check that there is no missing key that would only be on $prepared_document
-		foreach ( $prepared_document as $key => $value ) {
+		foreach ( (array) $prepared_document as $key => $value ) {
 			if ( ! array_key_exists( $key, $checked_keys ) ) {
 				$diff[ $key ] = array(
 					'expected' => $value,
