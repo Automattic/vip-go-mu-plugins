@@ -2,8 +2,11 @@
 
 namespace Automattic\VIP\Search;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
+
+// phpcs:disable Squiz.PHP.CommentedOutCode.Found -- false positives
 
 /**
  * @runTestsInSeparateProcesses
@@ -1007,10 +1010,8 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
-		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
-			ARRAY_A
-		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
 
 		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
 
@@ -1123,10 +1124,8 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
-		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
-			ARRAY_A
-		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
 
 		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
 
@@ -1170,10 +1169,8 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
-		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
-			ARRAY_A
-		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
 
 		$expected_jobs = array(
 			array(
@@ -1213,14 +1210,14 @@ class Versioning_Test extends WP_UnitTestCase {
 		// Add a filter that we can use to count how many deletes are actually sent to ES
 		$delete_count = 0;
 
-		add_filter( 'ep_do_intercept_request', function( $request, $query, $args, $failures ) use ( &$delete_count ) {
+		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count ) {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
 			}
 
 			// For linting, always have to return something
 			return null;
-		}, 10, 4 );
+		}, 10, 3 );
 
 		$indexable->delete( 1 );
 
@@ -1517,6 +1514,7 @@ class Versioning_Test extends WP_UnitTestCase {
 			->getMock();
 		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
 
+		/** @var MockObject&\Automattic\VIP\Search\Versioning */
 		$partially_mocked_versioning = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
 			->setMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
 			->getMock();

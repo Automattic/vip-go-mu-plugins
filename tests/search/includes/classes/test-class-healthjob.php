@@ -4,6 +4,8 @@ namespace Automattic\VIP\Search;
 
 use WP_UnitTestCase;
 
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_var_export
+
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled

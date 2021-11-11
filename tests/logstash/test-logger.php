@@ -14,6 +14,7 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->errors = [];
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		set_error_handler( [ $this, 'errorHandler' ] );
 
 		// Reset Logger::$entries prop
@@ -39,6 +40,7 @@ class Logger_Test extends WP_UnitTestCase {
 			}
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		$this->fail( 'Error with level ' . $errno . " and message '" . $errstr . "' not found in " . var_export( $this->errors, true ) );
 	}
 

@@ -162,7 +162,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	}
 
 	public function test__call_api__user_agent() {
-		$original_request_uri   = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- test context; this is safe 
+		$original_request_uri   = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- test context; this is safe 
 		$_SERVER['REQUEST_URI'] = ' /path?query';
 
 		// Re-initialize so re-generate UA string
@@ -173,14 +173,13 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$call_api_method = self::get_method( 'call_api' );
 
-		$actual_response = $call_api_method->invokeArgs( $this->api_client, [
+		$call_api_method->invokeArgs( $this->api_client, [
 			'/wp-content/uploads/path/to/image.jpg',
 			'POST',
 		] );
 
 		$actual_http_request = reset( $this->http_requests );
 
-		// Should be upgraded to assertMatchesRegularExpression in the future
 		$this->assertMatchesRegularExpression( '/^WPVIP\/[^\/]+\/Files; \/path\?query$/', $actual_http_request['args']['user-agent'], 'User-Agent not correctly set' );
 
 		$_SERVER['REQUEST_URI'] = $original_request_uri;
@@ -367,6 +366,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		if ( is_wp_error( $file ) ) {
 			$actual_result = $file;
 		} else {
+			// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 			$actual_result = file_get_contents( $file );
 		}
 
@@ -485,7 +485,7 @@ class API_Client_Test extends WP_UnitTestCase {
 					'response' => [
 						'code' => 200,
 					],
-					'body'     => '{{{',
+					'body'     => '{{{',    // phpcs:ignore WordPressVIPMinimum.Security.Mustache.OutputNotation -- false positive
 				],
 				'upload_file-failed-json_decode-error',
 			],
