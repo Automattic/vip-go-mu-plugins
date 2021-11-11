@@ -501,12 +501,13 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
+			/** @var array|WP_Error */
 			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
 			} elseif ( count( $result ) && ! $do_not_heal ) {
-					self::reconcile_diff( $result );
+				self::reconcile_diff( $result );
 			}
 
 			$results = array_merge( $results, $result );
