@@ -159,7 +159,7 @@ class Cron_Test extends WP_UnitTestCase {
 		// Should have scheduled 1 cron event to process the posts
 		$cron_event_time = wp_next_scheduled( Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
 
-		$this->assertEquals( $now, $cron_event_time );
+		$this->assertEqualsWithDelta( $now, $cron_event_time, 1 );
 
 		// Unschedule event to not pollute other tests
 		wp_unschedule_event( $now, Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
