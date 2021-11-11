@@ -760,7 +760,7 @@ class Health {
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] ?? [] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
@@ -774,7 +774,7 @@ class Health {
 		}
 
 		// Check that there is no missing key that would only be on $prepared_document
-		foreach ( (array) $prepared_document as $key => $value ) {
+		foreach ( $prepared_document as $key => $value ) {
 			if ( ! array_key_exists( $key, $checked_keys ) ) {
 				$diff[ $key ] = array(
 					'expected' => $value,
