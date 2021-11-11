@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 
@@ -14,6 +15,7 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		/** @var MockObject&Api_Client */
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
 		$this->filesystem = new WP_Filesystem_VIP_Uploads( $this->api_client_mock );
@@ -163,11 +165,9 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$this->api_client_mock
 			->method( 'upload_file' )
 			->with(
-				$this->callback( function( $local_path ) use ( $test_content, $tmp_file ) {
-					// Store a local reference so we can verify deletion after
-					$tmp_file = $local_path;
-
+				$this->callback( function( $local_path ) use ( $test_content ) {
 					// Verify contents of the file
+					// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 					$tmp_file_contents = file_get_contents( $local_path );
 					return $test_content === $tmp_file_contents;
 				} ),

@@ -761,7 +761,7 @@ class Health {
 			}
 
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] ?? [] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;

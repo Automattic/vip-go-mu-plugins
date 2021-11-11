@@ -225,6 +225,29 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_diff, $diff );
 	}
 
+	public function test_diff_document_and_prepared_document_does_not_generate_notices(): void {
+		$document = [
+			'meta' => [
+				'_dt_aop_include_in_feed' => [
+					[
+						'value'    => '',
+						'raw'      => '',
+						'boolean'  => false,
+						'date'     => '1971-01-01',
+						'datetime' => '1971-01-01 00:00:01',
+						'time'     => '00:00:01', 
+					],
+				],
+			],
+		];
+		
+		$prepared_document = [
+			'meta' => [],
+		];
+
+		self::assertNull( \Automattic\VIP\Search\Health::diff_document_and_prepared_document( $document, $prepared_document ) );
+	}
+
 	public function test_get_document_ids_for_batch() {
 		$ids = \Automattic\VIP\Search\Health::get_document_ids_for_batch( 1, 5 );
 

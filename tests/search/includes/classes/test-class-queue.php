@@ -2,8 +2,11 @@
 
 namespace Automattic\VIP\Search;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 /**
  * @runTestsInSeparateProcesses
@@ -147,7 +150,7 @@ class Queue_Test extends WP_UnitTestCase {
 			// Now it should only exist once
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'",
 					$object['id'],
 					$object['type']
 				)
@@ -189,7 +192,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 			$row = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT `start_time` FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"SELECT `start_time` FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'",
 					$object['id'],
 					$object['type']
 				)
@@ -259,7 +262,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$ids_where_string = implode( ', ', $ids_escaped );
 
-		$not_scheduled_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'scheduled'" ); // Cannot prepare table name, already escaped. @codingStandardsIgnoreLine
+		$not_scheduled_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'scheduled'" );
 
 		// There should be 1 that now isn't marked as running, and that's post 1 which was rescheduled again for the future (rate limited)
 		$this->assertEquals( 1, $not_scheduled_count );
@@ -611,6 +614,7 @@ class Queue_Test extends WP_UnitTestCase {
 			'index_version' => 1,
 		];
 
+		/** @var MockObject&\Automattic\VIP\Search\Queue */
 		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
 			->setMethods( [
 				'get_deadlocked_jobs',
@@ -711,7 +715,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( $sync_manager->sync_queue as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
 					$object_id
 				)
 			);
@@ -728,7 +732,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( $sync_manager->sync_queue as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
 					$object_id
 				)
 			);
@@ -757,7 +761,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( $sync_manager->sync_queue as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
 					$object_id
 				)
 			);
@@ -774,7 +778,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( $sync_manager->sync_queue as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
 					$object_id
 				)
 			);
@@ -784,6 +788,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__ratelimit_indexing__handles_start_correctly() {
+		/** @var MockObject&\Automattic\VIP\Search\Queue */
 		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
 			->setMethods( [
 				'handle_index_limiting_start_timestamp',
@@ -793,6 +798,7 @@ class Queue_Test extends WP_UnitTestCase {
 			] )
 			->getMock();
 
+		/** @var MockObject&\Automattic\VIP\Logstash\Logger */
 		$partially_mocked_queue->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
 				->setMethods( [ 'log' ] )
 				->getMock();
@@ -820,6 +826,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__ratelimit_indexing__clears_start_correctly() {
+		/** @var MockObject&\Automattic\VIP\Search\Queue */
 		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
 			->setMethods( [
 				'clear_index_limiting_start_timestamp',
@@ -838,6 +845,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$increment      = 14;
 		$indexable_slug = 'post';
 
+		/** @var MockObject&\Automattic\VIP\Search\Queue */
 		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
 			->setMethods( [ 'maybe_update_stat' ] )
 			->getMock();
@@ -898,7 +906,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( range( 0, 9 ) as $object_id ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )",
 					$object_id
 				)
 			);
@@ -916,7 +924,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( range( 0, 9 ) as $object_id ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )",
 					$object_id
 				)
 			);
@@ -925,7 +933,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( range( 0, 2 ) as $object_id ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id`, `object_type` ) VALUES ( %d, %s )", // Cannot prepare table name. @codingStandardsIgnoreLine
+					"INSERT INTO $table_name ( `object_id`, `object_type` ) VALUES ( %d, %s )",
 					$object_id,
 					'random object type'
 				)
@@ -1061,7 +1069,7 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( $objects as $object ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id`, `object_type`, `status`, `index_version`, `queued_time` ) VALUES ( %d, %s, %s, %d, %s )", // @codingStandardsIgnoreLine
+					"INSERT INTO $table_name ( `object_id`, `object_type`, `status`, `index_version`, `queued_time` ) VALUES ( %d, %s, %s, %d, %s )",
 					$object['id'],
 					$object['type'],
 					'queued',
@@ -1073,7 +1081,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->queue->delete_jobs_for_index_version( 'post', 2 );
 
-		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' ); // @codingStandardsIgnoreLine
+		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' );
 
 		$this->assertEquals(
 			array(
@@ -1117,7 +1125,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->queue->delete_jobs_for_index_version( 'post', 1 );
 
-		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' ); // @codingStandardsIgnoreLine
+		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' );
 
 		$this->assertEquals(
 			array(

@@ -17,7 +17,7 @@ Fill with either one:
 
 ## Actual Behavior
 
-How does the application currently work.
+How the application currently works.
 
 ## Steps to Reproduce the Problem
 
@@ -27,4 +27,4 @@ How does the application currently work.
 
 ## (Optional) Additional notes
 
-Any other relevant information to help with debugging/implemention.
+Any other relevant information to help with debugging/implementation.

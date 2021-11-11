@@ -2,6 +2,9 @@
 
 use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- we are testinng it
+
 class VIP_Mail_Test extends WP_UnitTestCase {
 	use AssertionRenames;
 
@@ -103,6 +106,7 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 		}
 
 		$temp = tmpfile();
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
 		fwrite( $temp, "I'm a test file" );
 		$filename = stream_get_meta_data( $temp )['uri'];
 		wp_mail( 'test@example.com', 'Test with attachment', 'Test', '', [ $filename ] );

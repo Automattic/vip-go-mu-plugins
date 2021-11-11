@@ -164,7 +164,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		// Set up a test attachment.
 		$expected_attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path        = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path        = wp_parse_url( $attachment_src, PHP_URL_PATH );
 		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
 
 		// Run the test.
@@ -185,7 +185,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		// Look up the first one in the list.
 		$expected_attachment_id = $attachment_id;
 		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path        = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path        = wp_parse_url( $attachment_src, PHP_URL_PATH );
 		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
 
 		// Run the test.
@@ -196,7 +196,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 	public function test__get_attachment_id_from_file_path__attachment_multiple_results_exact_match_first() {
 		// Set up the first attachment.
-		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
 		// Create a second attachment with the same file path.
 		$duplicate_attachment_id   = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
@@ -206,7 +206,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		// Look up the second one in the list.
 		$expected_attachment_id = $duplicate_attachment_id;
 		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path        = parse_url( $attachment_src, PHP_URL_PATH );
+		$attachment_path        = wp_parse_url( $attachment_src, PHP_URL_PATH );
 		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
 
 		// Run the test.

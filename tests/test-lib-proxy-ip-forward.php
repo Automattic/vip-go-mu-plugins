@@ -16,6 +16,9 @@ use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verifica
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 // phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
+// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 
 abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
