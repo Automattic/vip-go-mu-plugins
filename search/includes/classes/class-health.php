@@ -545,6 +545,7 @@ class Health {
 			}
 			if ( $is_cli && $silent ) {
 				// To prevent continuous hammering of clusters.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
 				sleep( mt_rand( 2, 5 ) );
 			}
 		} while ( $start_post_id <= $last_post_id );
