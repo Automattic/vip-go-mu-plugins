@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue as Queue;
+use Automattic\WP\Cron_Control\Events_Store;
 use \ElasticPress\Indexables as Indexables;
 use WP_Error;
 
@@ -282,13 +283,15 @@ class Cron {
 	 */
 	public function get_processor_job_count() {
 		// If cron control isn't available, only schedule one job
-		if ( ! class_exists( 'Automattic\\WP\\Cron_Control\\Events_Store' ) ) {
+		if ( ! class_exists( Events_Store::class ) ) {
 			return new \WP_Error( 'vip-search-cron-no-events-store', 'Automattic\\WP\\Cron_Control\\Events_Store is not defined' );
 		}
 
 		global $wpdb;
 
-		$table_name = \Automattic\WP\Cron_Control\Events_Store::instance()->get_table_name();
+		/** @var Events_Store */
+		$event_store = Events_Store::instance();
+		$table_name  = $event_store->get_table_name();
 
 		$current_processor_job_count = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE action = 'vip_search_queue_processor' AND status != 'complete'" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 
