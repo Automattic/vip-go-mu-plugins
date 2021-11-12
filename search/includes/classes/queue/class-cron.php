@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue as Queue;
 use \ElasticPress\Indexables as Indexables;
+use WP_Error;
 
 class Cron {
 	/**
@@ -48,6 +49,7 @@ class Cron {
 
 	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
+	 * @var Queue
 	 */
 	public $queue;
 
@@ -145,7 +147,7 @@ class Cron {
 	 *
 	 * This is the cron hook for indexing a batch of objects
 	 *
-	 * @param {array} $options Containing max_id and min_id keys
+	 * @param array $options Containing max_id and min_id keys
 	 */
 	public function process_jobs( $options ) {
 		$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
@@ -160,7 +162,7 @@ class Cron {
 	/**
 	 * Given a term taxonomy id, queue all posts for reindexing that match it
 	 *
-	 * @param {int} $term_taxonomy_id The term taxonomy id you want to index
+	 * @param int $term_taxonomy_id The term taxonomy id you want to index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
 		$indexable_post_types    = Indexables::factory()->get( 'post' )->get_indexable_post_types();

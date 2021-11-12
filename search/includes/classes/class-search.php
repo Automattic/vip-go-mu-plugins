@@ -2057,7 +2057,7 @@ class Search {
 		}
 
 		$this->logger->log( 'warning', 'search_query_failure', $message, [
-			'request' => $request,
+			'request'    => $request,
 			'query_args' => $query_args,
 		] );
 	}
