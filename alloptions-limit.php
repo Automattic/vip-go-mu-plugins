@@ -12,6 +12,7 @@ use Automattic\VIP\Utils\Alerts;
 add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
 
 define( 'VIP_ALLOPTIONS_ERROR_THRESHOLD', 1000000 );
+
 /**
  * The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large.
  * Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
@@ -169,13 +170,12 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, 
 
 		}
 
-		$email_recipient = defined( 'VIP_ALLOPTIONS_NOTIFY_EMAIL' ) ? VIP_ALLOPTIONS_NOTIFY_EMAIL : false;
+		/**
+		 * Fires under alloptions warning conditions
+		 *
+		 * @param bool $really_blocked False if alloptions size is large. True if site loading is being blocked.
+		 */
+		do_action( 'vip_alloptions_notification', $really_blocked );
 
-		if ( is_email( $email_recipient ) ) {
-			$size = size_format( $size );
-
-			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-			wp_mail( $email_recipient, $subject, "Alloptions size when serialized: $size\n\n$msg" );
-		}
 	}
 }
