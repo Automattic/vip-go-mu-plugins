@@ -156,7 +156,7 @@ class Cron_Test extends WP_UnitTestCase {
 		$partially_mocked_cron->sweep_jobs();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$option_name = $wpdb->get_var( "SELECT option_value FROM {$wpdb->options} WHERE option_name LIKE 'vip:esqp\_%'" );
+		$option_name = $wpdb->get_var( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'vip:esqp\_%'" );
 		self::assertIsString( $option_name );
 
 		$expected_cron_event_args = [
