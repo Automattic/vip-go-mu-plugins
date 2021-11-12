@@ -50,20 +50,6 @@ function wpcom_vip_akismet_spam_count_incr( $val ) {
 }
 add_filter( 'akismet_spam_count_incr', 'wpcom_vip_akismet_spam_count_incr' );
 
-function vip_remove_akismet_admin_menu() {
-	if ( is_akismet_key_invalid() ) {
-		remove_action( 'admin_menu', array( 'Akismet_Admin', 'admin_menu' ), 5 );
-	}
-}
-add_action( 'admin_menu', 'vip_remove_akismet_admin_menu', 1 );
-
-function vip_remove_akismet_admin_notices() {
-	if ( is_akismet_key_invalid() ) {
-		remove_action( 'admin_notices', array( 'Akismet_Admin', 'display_notice' ) );
-	}
-}
-add_action( 'admin_notices', 'vip_remove_akismet_admin_notices', 1 );
-
 /**
  * @return bool True if the Akismet key in the site is not existent or not valid
  */
