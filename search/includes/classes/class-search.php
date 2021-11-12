@@ -2093,7 +2093,7 @@ class Search {
 		}
 	}
 
-	public function exclude_es_query_reserved_names( $taxanomies ) {
-		return array_merge( $taxanomies, self::ES_QUERY_RESERVED_NAMES );
+	public function exclude_es_query_reserved_names( $taxonomies ) {
+		return array_merge( $taxonomies, self::ES_QUERY_RESERVED_NAMES );
 	}
 }
