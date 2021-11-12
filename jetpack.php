@@ -139,7 +139,7 @@ function vip_jetpack_load() {
 		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
 
-	if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
+	if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) && 'none' !== VIP_JETPACK_LOADED_VERSION ) {
 		require_once __DIR__ . '/vip-jetpack/vip-jetpack.php';
 	}
 }
