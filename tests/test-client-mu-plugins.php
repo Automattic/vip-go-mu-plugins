@@ -51,7 +51,7 @@ class Client_Mu_Plugins__Get__Tests extends WP_UnitTestCase {
  * We're using test fixtures so we don't have to muck around with a hard-coded client-mu-plugins path.
  */
 class Client_Mu_Plugins__Get_Data__Tests extends WP_UnitTestCase {
-	function test__empty() {
+	public function test__empty() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/empty/';
 
 		$actual = wpcom_vip_get_client_mu_plugins_data( $dir );
@@ -59,7 +59,7 @@ class Client_Mu_Plugins__Get_Data__Tests extends WP_UnitTestCase {
 		$this->assertEmpty( $actual );
 	}
 
-	function test__valid() {
+	public function test__valid() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/valid/';
 
 		$actual = wpcom_vip_get_client_mu_plugins_data( $dir );
@@ -117,7 +117,7 @@ class Client_Mu_Plugins__Plugins_Url__Tests extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data
 	 */
-	function test__client_mu_plugins_url( $url_path, $plugin_path, $expected_url ) {
+	public function test__client_mu_plugins_url( $url_path, $plugin_path, $expected_url ) {
 		$actual_url = plugins_url( $url_path, $plugin_path );
 
 		$this->assertEquals( $expected_url, $actual_url );

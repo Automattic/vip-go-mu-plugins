@@ -1,7 +1,7 @@
 <?php
 
 class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
-	function get_jp_sync_settings_data() {
+	public function get_jp_sync_settings_data() {
 		return [
 			// Too small
 			[
@@ -122,7 +122,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT' ) );
 	}
 
-	function get_jetpack_sync_modules_data() {
+	public function get_jetpack_sync_modules_data() {
 		return [
 			'enabled-no-matching-modules'   => [
 				[
