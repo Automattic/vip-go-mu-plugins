@@ -350,7 +350,6 @@ jobs:
     environment:
        - CIRCLE_PROJECT_USERNAME: Automattic
        - CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
-       - CHANGELOG_POST_TOKEN: 123
     docker:
       - image: circleci/php:7.4-node
     steps:
