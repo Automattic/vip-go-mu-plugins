@@ -70,7 +70,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $expected, has_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) ) );
 		$this->assertSame( $expected, has_action( 'widgets_init', 'parsely_recommended_widget_register' ) );
 
-
 		$reverse_expected = 'option_enabled' == self::$test_mode ? 10 : false;
 		$this->assertSame( $reverse_expected, has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' ) );
 

@@ -1,6 +1,8 @@
 <?php
 
 class VIP_Go_Security_Test extends WP_UnitTestCase {
+	private $original_post;
+
 	public function test__admin_username_restricted() {
 		$this->factory->user->create( [
 			'user_login' => 'admin',
@@ -117,19 +119,16 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function setUp(): void {
-
 		parent::setUp();
 
-		$this->original_POST = $_POST;
-
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$this->original_post = $_POST;
 	}
 
 	public function tearDown(): void {
-
-		$_POST = $this->original_POST;
+		$_POST = $this->original_post;
 
 		parent::tearDown();
-
 	}
 
 }

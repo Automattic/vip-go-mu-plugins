@@ -21,5 +21,8 @@ if ( file_exists( $mu_plugins_base . '/lib/class-vip-request-block.php' ) ) {
 // Load Environment utility class and its helpers, if available
 if ( file_exists( $mu_plugins_base . '/lib/environment/class-environment.php' ) ) {
 	require_once $mu_plugins_base . '/lib/environment/class-environment.php';
-	// TODO: add the env helpers once implemented
+}
+
+if ( file_exists( $mu_plugins_base . '/lib/helpers/environment.php' ) ) {
+	require_once $mu_plugins_base . '/lib/helpers/environment.php';
 }

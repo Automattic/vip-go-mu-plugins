@@ -14,8 +14,8 @@ class Curl_Streamer_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->file_stream   = fopen( self::TEST_FILE_PATH, 'r' );
-		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );
+		$this->file_stream   = fopen( self::TEST_FILE_PATH, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );   // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_streamer -- FP
 		$this->curl_streamer->init();
 	}
 
@@ -43,7 +43,7 @@ class Curl_Streamer_Test extends WP_UnitTestCase {
 	}
 
 	public function test__handle_upload() {
-		 $read_pass_1 = $this->curl_streamer->handle_upload( null, $this->file_stream, 10 );
+		$read_pass_1 = $this->curl_streamer->handle_upload( null, $this->file_stream, 10 );
 
 		$this->assertEquals( "123456789\n", $read_pass_1, 'Incorrect data for 1st pass' );
 
