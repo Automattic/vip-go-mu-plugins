@@ -49,8 +49,7 @@
 	<arg name="parallel" value="8"/>
 	<!-- Limit to PHP files -->
 	<arg name="extensions" value="php"/>
-
-	<config name="ignore_warnings_on_exit" value="true"/>
+	<arg value="s"/>
 
 	<!-- Rules: Check PHP version compatibility - see
 		https://github.com/PHPCompatibility/PHPCompatibilityWP -->
