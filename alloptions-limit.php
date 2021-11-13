@@ -1,24 +1,26 @@
 <?php
-
 /**
- * Plugin Name: VIP All Options Limit
+ * Plugin Name: VIP AllOptions Safeguard
  * Description: Provides warnings and notifications for wp_options exceeding limits.
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
-require_once __DIR__ . '/lib/utils/class-alerts.php';
+
+namespace Automattic\VIP\AllOptions;
+
 use Automattic\VIP\Utils\Alerts;
 
-add_action( 'plugins_loaded', 'wpcom_vip_sanity_check_alloptions' );
+require_once __DIR__ . '/lib/utils/class-alerts.php';
+
+add_action( 'plugins_loaded', __NAMESPACE__ . '\run_alloptions_safeguard' );
 
 define( 'VIP_ALLOPTIONS_ERROR_THRESHOLD', 1000000 );
 
 /**
  * The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large.
  * Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
- * @return void
  */
-function wpcom_vip_sanity_check_alloptions() {
+function run_alloptions_safeguard() {
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		return;
 	}
@@ -67,15 +69,18 @@ function wpcom_vip_sanity_check_alloptions() {
 	}
 
 	// NOTE - This function has built-in rate limiting so it's ok to call on every request
-	wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $alloptions_size_compressed, $really_blocked );
+	alloptions_safeguard_notify( $alloptions_size, $alloptions_size_compressed, $really_blocked );
 
 	// Will exit with a 503
 	if ( $really_blocked ) {
-		wpcom_vip_sanity_check_alloptions_die();
+		alloptions_safeguard_die();
 	}
 }
 
-function wpcom_vip_sanity_check_alloptions_die() {
+/**
+ * Show error page and exit
+ */
+function alloptions_safeguard_die() {
 
 	// 503 Service Unavailable - prevent caching, indexing, etc and alert Varnish of the problem
 	http_response_code( 503 );
@@ -92,10 +97,10 @@ function wpcom_vip_sanity_check_alloptions_die() {
  * @param int $size            Uncompressed sized of alloptions, in bytes
  * @param int $size_compressed Compressed size of alloption, in bytes.
  *                             HOWEVER, this is only set if $size meets a threshold.
- *                             @see wpcom_vip_sanity_check_alloptions()
+ *                             @see run_alloptions_safeguard()
  * @param bool $really_blocked True if the options size is large enough to cause site to be blocked from loading.
  */
-function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, $really_blocked = true ) {
+function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_blocked = true ) {
 	global $wpdb;
 
 	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 30 * MINUTE_IN_SECONDS );
@@ -111,7 +116,7 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, 
 	 *
 	 * @param bool $really_blocked False if alloptions size is large. True if site loading is being blocked.
 	 */
-	do_action( 'vip_alloptions_notification', $really_blocked );
+	do_action( 'vip_alloptions_safeguard_notify', $really_blocked );
 
 	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
 	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
