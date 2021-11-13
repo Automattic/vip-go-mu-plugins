@@ -56,11 +56,9 @@ function wpcom_vip_sanity_check_alloptions() {
 		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
 		$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
 		if ( ! $alloptions_size_compressed ) {
-			$alloptions_size_deflated = gzdeflate( maybe_serialize( wp_load_alloptions() ) );
-			if ( $alloptions_size_deflated ) {
-				$alloptions_size_compressed = strlen( $alloptions_size_deflated );
-				wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
-			}
+			$alloptions_size_deflated   = gzdeflate( maybe_serialize( wp_load_alloptions() ) );
+			$alloptions_size_compressed = false !== $alloptions_size_deflated ? strlen( $alloptions_size_deflated ) : VIP_ALLOPTIONS_ERROR_THRESHOLD - 1;
+			wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
 		}
 	}
 
