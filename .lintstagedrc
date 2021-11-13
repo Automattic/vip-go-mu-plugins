@@ -1,6 +1,6 @@
 {
     "*.php": [
         "phplint",
-        "vendor/bin/phpcs --cache"
+        "vendor/bin/phpcs"
     ]
 }
