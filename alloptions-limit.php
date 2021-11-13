@@ -68,7 +68,7 @@ function wpcom_vip_sanity_check_alloptions() {
 	}
 
 	// NOTE - This function has built-in rate limiting so it's ok to call on every request
-	wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $alloptions_size_compressed, $maybe_blocked, $really_blocked );
+	wpcom_vip_sanity_check_alloptions_notify( $alloptions_size, $alloptions_size_compressed, $really_blocked );
 
 	// Will exit with a 503
 	if ( $really_blocked ) {
@@ -101,7 +101,16 @@ function wpcom_vip_alloptions_size_is_acked() {
 	return false;
 }
 
-function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, $maybe_blocked = false, $really_blocked = true ) {
+/**
+ * Send notification
+ *
+ * @param int $size            Uncompressed sized of alloptions, in bytes
+ * @param int $size_compressed Compressed size of alloption, in bytes.
+ *                             HOWEVER, this is only set if $size meets a threshold.
+ *                             @see wpcom_vip_sanity_check_alloptions()
+ * @param bool $really_blocked True if the options size is large enough to cause site to be blocked from loading.
+ */
+function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, $really_blocked = true ) {
 	global $wpdb;
 
 	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 30 * MINUTE_IN_SECONDS );
@@ -112,70 +121,68 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, 
 		return;
 	}
 
-	if ( $really_blocked ) {
-		$msg = 'This site is now BLOCKED from loading until option sizes are under control.';
-	} elseif ( $maybe_blocked ) {
-		$msg  = 'This will soon be BLOCKED from loading until if the options sizes increase.';
-		$msg .= PHP_EOL . PHP_EOL;
-		$msg .= sprintf( 'Blocking threshold: %s. Current size: %s', VIP_ALLOPTIONS_ERROR_THRESHOLD, $size_compressed );
-	} else {
-		$msg = 'Site will be blocked from loading if option sizes get too much bigger.';
-	}
+	/**
+	 * Fires under alloptions warning conditions
+	 *
+	 * @param bool $really_blocked False if alloptions size is large. True if site loading is being blocked.
+	 */
+	do_action( 'vip_alloptions_notification', $really_blocked );
 
 	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
 	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
 	$site_id     = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
 
 	// Send notices to VIP staff if this is happening on VIP-hosted sites
-	if ( $is_vip_env && $site_id ) {
-
-		$subject = 'ALLOPTIONS: %1$s (%2$s VIP Go site ID: %3$s';
-
-		if ( 0 !== $wpdb->blogid ) {
-			$subject .= ", blog ID {$wpdb->blogid}";
-		}
-
-		$subject .= ') options is up to %4$s';
-
-		$subject = sprintf(
-			$subject,
-			esc_url( home_url() ),
-			esc_html( $environment ),
-			(int) $site_id,
-			size_format( $size )
-		);
-
-		// Send to IRC, if we have a host configured
-		if (
-			defined( 'ALERT_SERVICE_ADDRESS' ) &&
-			ALERT_SERVICE_ADDRESS &&
-			'production' === $environment &&
-			$really_blocked
-		) {
-
-			// Send to OpsGenie
-			$alerts = Alerts::instance();
-			$alerts->opsgenie(
-				$subject,
-				array(
-					'alias'       => 'alloptions/' . $site_id,
-					'description' => sprintf( 'The size of AllOptions has breached %s bytes', VIP_ALLOPTIONS_ERROR_THRESHOLD ),
-					'entity'      => (string) $site_id,
-					'priority'    => 'P3',
-					'source'      => 'sites/alloptions-size',
-				),
-				'alloptions-size-alert',
-				'10'
-			);
-
-		}
-
-		/**
-		 * Fires under alloptions warning conditions
-		 *
-		 * @param bool $really_blocked False if alloptions size is large. True if site loading is being blocked.
-		 */
-		do_action( 'vip_alloptions_notification', $really_blocked );
-
+	if (
+		! $is_vip_env ||
+		! $site_id ||
+		! defined( 'ALERT_SERVICE_ADDRESS' ) ||
+		! ALERT_SERVICE_ADDRESS ||
+		'production' !== $environment
+	) {
+		return;
 	}
+
+	$subject = 'ALLOPTIONS: %1$s (%2$s VIP Go site ID: %3$s';
+
+	if ( 0 !== $wpdb->blogid ) {
+		$subject .= ", blog ID {$wpdb->blogid}";
+	}
+
+	$subject .= ') options is up to %4$s';
+
+	$subject = sprintf(
+		$subject,
+		esc_url( home_url() ),
+		esc_html( $environment ),
+		(int) $site_id,
+		size_format( $size )
+	);
+
+	if ( $really_blocked ) {
+		$priority = 'P2';
+		$description = sprintf( 'The size of AllOptions has breached %s bytes', VIP_ALLOPTIONS_ERROR_THRESHOLD );
+	} elseif ( $size_compressed > 0 ) {
+		$priority = 'P3';
+		$description = sprintf( 'The size of AllOptions is at %1$s bytes (compressed), %2$s bytes (uncompressed)', $size_compressed, $size );
+	} else {
+		$priority = 'P5';
+		$description = sprintf( 'The size of AllOptions is at %1$s bytes (uncompressed)', $size );
+	}
+
+	// Send to OpsGenie
+	$alerts = Alerts::instance();
+	$alerts->opsgenie(
+		$subject,
+		array(
+			'alias'       => 'alloptions/' . $site_id,
+			'description' => $description,
+			'entity'      => (string) $site_id,
+			'priority'    => $priority,
+			'source'      => 'sites/alloptions-size',
+		),
+		'alloptions-size-alert',
+		'10'
+	);
+
 }
