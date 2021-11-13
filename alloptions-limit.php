@@ -86,20 +86,6 @@ function wpcom_vip_sanity_check_alloptions_die() {
 	exit;
 }
 
-function wpcom_vip_alloptions_size_is_acked() {
-	if ( apply_filters( 'alloptions_overrule_ack', false ) ) {
-		return false;
-	}
-
-	$stat = get_option( 'vip_suppress_alloptions_alert', [] );
-
-	if ( is_array( $stat ) && array_key_exists( 'expiry', $stat ) && $stat['expiry'] > time() ) {
-		return true;
-	}
-
-	return false;
-}
-
 /**
  * Send notification
  *
