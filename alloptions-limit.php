@@ -34,8 +34,7 @@ function wpcom_vip_sanity_check_alloptions() {
 
 	// Cache miss
 	if ( false === $alloptions_size ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-		$alloptions      = serialize( wp_load_alloptions() );
+		$alloptions      = maybe_serialize( wp_load_alloptions() );
 		$alloptions_size = strlen( $alloptions );
 
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
@@ -57,9 +56,11 @@ function wpcom_vip_sanity_check_alloptions() {
 		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
 		$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
 		if ( ! $alloptions_size_compressed ) {
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-			$alloptions_size_compressed = strlen( gzdeflate( serialize( wp_load_alloptions() ) ) );
-			wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
+			$alloptions_size_deflated = gzdeflate( maybe_serialize( wp_load_alloptions() ) );
+			if ( $alloptions_size_deflated ) {
+				$alloptions_size_compressed = strlen( $alloptions_size_deflated );
+				wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
+			}
 		}
 	}
 
@@ -160,13 +161,13 @@ function wpcom_vip_sanity_check_alloptions_notify( $size, $size_compressed = 0, 
 	);
 
 	if ( $really_blocked ) {
-		$priority = 'P2';
+		$priority    = 'P2';
 		$description = sprintf( 'The size of AllOptions has breached %s bytes', VIP_ALLOPTIONS_ERROR_THRESHOLD );
 	} elseif ( $size_compressed > 0 ) {
-		$priority = 'P3';
+		$priority    = 'P3';
 		$description = sprintf( 'The size of AllOptions is at %1$s bytes (compressed), %2$s bytes (uncompressed)', $size_compressed, $size );
 	} else {
-		$priority = 'P5';
+		$priority    = 'P5';
 		$description = sprintf( 'The size of AllOptions is at %1$s bytes (uncompressed)', $size );
 	}
 
