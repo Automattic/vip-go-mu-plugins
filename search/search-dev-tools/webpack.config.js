@@ -8,7 +8,6 @@ const { CleanWebpackPlugin } = require( 'clean-webpack-plugin' );
 
 module.exports = function( env ) {
 	const dev = ( env.WEBPACK_WATCH || env.WEBPACK_SERVE ) && ! env.production;
-	console.log( dev ? 'development' : 'production' );
 
 	process.env.NODE_ENV = dev ? 'development' : 'production';
 
