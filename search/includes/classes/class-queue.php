@@ -300,6 +300,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
+	 * @param array $options
 	 */
 	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
 		global $wpdb;
@@ -314,10 +315,9 @@ class Queue {
 
 		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
 
-		$table_name = $this->schema->get_table_name();
+		$priority = (int) ( $options['priority'] ?? 5 );
 
-		// Have to escape this separately so we can insert NULL if no start time specified
-		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
+		$table_name = $this->schema->get_table_name();
 
 		$original_suppress = $wpdb->suppress_errors;
 
@@ -326,14 +326,24 @@ class Queue {
 		$wpdb->suppress_errors( true );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status`, `index_version` ) VALUES ( %d, %s, {$start_time_escaped}, %s, %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$object_id,
-				$object_type,
-				'queued',
-				$index_version
-			)
+		$wpdb->insert(
+			$table_name,
+			[
+				'object_id'     => $object_id,
+				'object_type'   => $object_type,
+				'start_time'    => $next_index_time,
+				'status'        => 'queued',
+				'index_version' => $index_version,
+				'priority'      => $priority,
+			],
+			[
+				'object_id'     => '%d',
+				'object_type'   => '%s',
+				'start_time'    => '%s',
+				'status'        => '%s',
+				'index_version' => '%d',
+				'priority'      => '%d',
+			]
 		);
 
 		/**
@@ -362,6 +372,7 @@ class Queue {
 	 *
 	 * @param array $object_ids The ids of the objects
 	 * @param string $object_type The type of objects
+	 * @param array $options
 	 */
 	public function queue_objects( $object_ids, $object_type = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
