@@ -108,7 +108,7 @@ class A8C_Files {
 
 	public function init_photon() {
 		// Limit to certain contexts for the initial testing and roll-out.
-		// This will be phased out and become the default eventually.
+		// This maybe phased out and become the default eventually.
 		$use_jetpack_photon = $this->use_jetpack_photon();
 		if ( $use_jetpack_photon ) {
 			$this->init_jetpack_photon_filters();
