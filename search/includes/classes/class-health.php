@@ -104,7 +104,7 @@ class Health {
 
 			$db_total = (int) $db_result['total_objects'];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->get_error_message() ) );
+			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
 		}
 
 		$diff = 0;
@@ -147,8 +147,7 @@ class Health {
 
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
-			$source = method_exists( $e, 'get_error_message' ) ? $e->get_error_message() : $e->getMessage();
-			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $source ) );
+			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $e->getMessage() ) );
 		}
 
 		// There is not other useful information out of query_es(): it just returns false in case of failure.
