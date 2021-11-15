@@ -730,6 +730,8 @@ class Versioning {
 			// Other index versions, besides active
 			$inactive_versions = $this->get_inactive_versions( $indexable );
 
+			$queue = \Automattic\VIP\Search\Search::instance()->queue;
+
 			// There were changes for active version - now we need to loop over every object that was queued for the active version and replicate that job to the other versions
 			foreach ( $inactive_versions as $version ) {
 				$this->set_current_version_number( $indexable, $version['number'] );
@@ -740,8 +742,9 @@ class Versioning {
 
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];
+					$options['priority']      = 15;
 
-					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
+					$queue->queue_object( $object_id, $object_type, $options );
 				}
 
 				$this->reset_current_version_number( $indexable );
@@ -764,13 +767,15 @@ class Versioning {
 			return $bail;
 		}
 
+		$queue = \Automattic\VIP\Search\Search::instance()->queue;
 		foreach ( $inactive_versions as $version ) {
-			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
-				$options = array(
-					'index_version' => $version['number'],
-				);
+			$options = array(
+				'index_version' => $version['number'],
+				'priority'      => 15,
+			);
 
-				\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $indexable_slug, $options );
+			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
+				$queue->queue_object( $object_id, $indexable_slug, $options );
 			}
 		}
 

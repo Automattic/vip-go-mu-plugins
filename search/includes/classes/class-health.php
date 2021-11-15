@@ -806,7 +806,7 @@ class Health {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 				case 'inconsistent':
-					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'], [ 'priority' => 15 ] );
 					break;
 				case 'extra_in_index':
 					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );
