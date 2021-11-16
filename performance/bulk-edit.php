@@ -97,7 +97,16 @@ function bulk_edit_admin_notice() {
 	$mailto        = 'mailto:vip-support@wordpress.com?subject=' . urlencode( $email_subject );
 	?>
 	<div id="<?php echo esc_attr( $id ); ?>" class="notice notice-error is-dismissible">
-		<p><?php /* translators: 1: number of items, 2: email address */ printf( esc_html__( 'Bulk actions are disabled because more than %1$s items were requested. To re-enable bulk edit, please adjust the "Number of items" setting under <em>Screen Options</em>. If you have a large number of posts to update, please <a href="%2$s">get in touch</a> as we may be able to help.', 'wpcom-vip' ), esc_html( number_format_i18n( BULK_EDIT_LIMIT ) ), esc_url( $mailto ) ); ?></p>
+		<p>
+		<?php
+		printf(
+			/* translators: 1: number of items, 2: email address */
+			__( 'Bulk actions are disabled because more than %1$s items were requested. To re-enable bulk edit, please adjust the "Number of items" setting under <em>Screen Options</em>. If you have a large number of posts to update, please <a href="%2$s">get in touch</a> as we may be able to help.', 'wpcom-vip' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML string
+			esc_html( number_format_i18n( BULK_EDIT_LIMIT ) ),
+			esc_url( $mailto )
+		);
+		?>
+		</p>
 
 		<script>jQuery(document).ready( function($) { $( '#<?php echo esc_js( $id ); ?>' ).on( 'remove', function() {
 			$.ajax( {

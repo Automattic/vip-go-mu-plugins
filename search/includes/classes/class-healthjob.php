@@ -95,9 +95,11 @@ class HealthJob {
 	 */
 	public function schedule_job() {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
 			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
 		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
 			wp_schedule_event( time() + ( mt_rand( 1, 48 ) * HOUR_IN_SECONDS ), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
 	}
@@ -159,9 +161,9 @@ class HealthJob {
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} else if ( ! empty( $results ) ) {
+		} elseif ( ! empty( $results ) ) {
 			$self_healed_post_count = count( $results );
-			$total_post_count = $this->count_indexable_posts();
+			$total_post_count       = $this->count_indexable_posts();
 
 			$alert_threshold = $total_post_count * self::AUTOHEALED_ALERT_THRESHOLD;
 
@@ -176,8 +178,8 @@ class HealthJob {
 	private function count_indexable_posts() {
 		$post_indexable = $this->indexables->get( 'post' );
 
-		$post_types = $post_indexable->get_indexable_post_types();
-		$post_statuses  = $post_indexable->get_indexable_post_status();
+		$post_types    = $post_indexable->get_indexable_post_types();
+		$post_statuses = $post_indexable->get_indexable_post_status();
 
 
 		$sum = 0;
@@ -185,7 +187,7 @@ class HealthJob {
 			$counts = wp_count_posts( $post_type );
 			foreach ( $post_statuses as $status ) {
 				$count = $counts->$status ?? 0;
-				$sum += $count;
+				$sum  += $count;
 			}
 		}
 		return $sum;

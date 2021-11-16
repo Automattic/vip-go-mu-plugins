@@ -41,7 +41,7 @@ parameters:
     default: /tmp/wordpress-tests-lib
   wp_core_dir:
     type: string
-    default: /tmp/wordpress/
+    default: /tmp/wordpress
   wp_core_develop_dir:
     type: string
     default: /tmp/wordpress-develop
@@ -72,17 +72,8 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php7.4-mysqli php7.4-gd php7.4-xdebug
       npm ci
       composer install -n
-
-  install_dependencies_php80: &install_dependencies_php80
-    name: "Install Dependencies"
-    command: |
-      sudo apt-get update && sudo apt-get install subversion libgcc-10-dev default-mysql-client libpng-dev php8.0-mysqli php8.0-gd php8.0-xdebug jq moreutils
-      npm ci
-      cat composer.json | jq '.["require-dev"]["phpunit/phpunit"] = "^9"' | sponge composer.json
-      composer update phpunit/phpunit -W
 
   install_core_tests_dependencies: &install_core_tests_dependencies
     name: "Install Dependencies"
@@ -96,46 +87,26 @@ job-references:
     command: |
       git submodule update --init --recursive
 
-  install_phpunit9: &install_phpunit9
-    name: "Install PHPUnit 9"
-    command: |
-      composer require -W --dev phpunit/phpunit:^9
-
   run_tests: &run_tests
     name: "Run Tests"
     command: |
-      rm -rf << pipeline.parameters.wp_core_dir >> << pipeline.parameters.wp_test_dir >>
-      bash bin/install-wp-tests.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
-      vendor/bin/phpunit --version
-      if [[ "$DISABLE_JETPACK" == "1" ]]; then
+      if [ "$DISABLE_JETPACK" = "1" ]; then
         echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-        vendor/bin/phpunit --exclude-group jetpack-required
+        /usr/local/bin/runner --exclude-group jetpack-required
       else
-        vendor/bin/phpunit
+        /usr/local/bin/runner
       fi
+    environment:
+      MYSQL_HOST: << pipeline.parameters.db_host >>
+      MYSQL_USER: << pipeline.parameters.db_user >>
+      MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
+      MYSQL_DB: << pipeline.parameters.db_name >>
 
   php_job: &php_job
     steps:
       - checkout
       - run: *setup_environment
       - run: *install_dependencies
-      - run: *prepare_repo
-      - run: *run_tests
-
-  phpunit9_job: &phpunit9_job
-    steps:
-      - checkout
-      - run: *setup_environment
-      - run: *install_dependencies
-      - run: *prepare_repo
-      - run: *install_phpunit9
-      - run: *run_tests
-
-  php80_job: &php80_job
-    steps:
-      - checkout
-      - run: *setup_environment
-      - run: *install_dependencies_php80
       - run: *prepare_repo
       - run: *run_tests
 
@@ -184,9 +155,9 @@ jobs:
   php74-core-tests:
     <<: *php_core_job
     environment:
-      - INCLUDE_MU_TESTS: "1"
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
+      INCLUDE_MU_TESTS: "1"
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
     docker:
       - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
@@ -194,9 +165,9 @@ jobs:
   php74-core-multisite-tests:
     <<: *php_core_job
     environment:
-      - INCLUDE_MU_TESTS: "1"
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
+      INCLUDE_MU_TESTS: "1"
+      WP_MULTISITE: "1"
+      WP_VERSION: "latest"
     docker:
       - image: wordpressdevelop/php:7.4-fpm
       - image: *db_image
@@ -209,150 +180,163 @@ jobs:
   php74-build-multisite:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
+      WP_MULTISITE: "1"
+      WP_VERSION: "latest"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-multisite-no-jetpack:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "latest"
-      - DISABLE_JETPACK: "1"
+      WP_MULTISITE: "1"
+      WP_VERSION: "latest"
+      DISABLE_JETPACK: "1"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-55:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "5.5.6"
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.5.7"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-56:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "5.6.5"
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.6.6"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-57:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "5.7.3"
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.7.4"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-58:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "5.8.1"
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.8.2"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-no-jetpack:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-      - DISABLE_JETPACK: "1"
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      DISABLE_JETPACK: "1"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-parsely-filter:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-      - WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-parsely-option:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-      - WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-parsely-filter-option:
     <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "latest"
-      - WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-multisite-nightly:
-    <<: *phpunit9_job
+    <<: *php_job
     environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "nightly"
+      WP_MULTISITE: "1"
+      WP_VERSION: "nightly"
+      PHPUNIT_VERSION: "9"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php74-build-singlesite-nightly:
-    <<: *phpunit9_job
+    <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "nightly"
+      WP_MULTISITE: "0"
+      WP_VERSION: "nightly"
+      PHPUNIT_VERSION: "9"
     docker:
-      - image: cimg/php:7.4-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php80-build-multisite-nightly:
-    <<: *php80_job
+    <<: *php_job
     environment:
-      - WP_MULTISITE: "1"
-      - WP_VERSION: "nightly"
+      WP_MULTISITE: "1"
+      WP_VERSION: "nightly"
+      PHPUNIT_VERSION: "9"
+      PHP_VERSION: "8.0"
     docker:
-      - image: cimg/php:8.0-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   php80-build-singlesite-nightly:
-    <<: *php80_job
+    <<: *php_job
     environment:
-      - WP_MULTISITE: "0"
-      - WP_VERSION: "nightly"
+      WP_MULTISITE: "0"
+      WP_VERSION: "nightly"
+      PHPUNIT_VERSION: "9"
+      PHP_VERSION: "8.0"
     docker:
-      - image: cimg/php:8.0-node
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
   create-changelog-draft:
+    environment:
+       - CIRCLE_PROJECT_USERNAME: Automattic
+       - CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
     docker:
-      - image: cimg/php:7.4-node
+      - image: circleci/php:7.4-node
     steps:
-      - checkout
-      - run: composer install
-      - run: php $HOME/project/bin/github-changelog.php
+      - run: composer require automattic/vip-build-tools:1.0.6
+      - run:
+          command: |
+            php $HOME/project/vendor/automattic/vip-build-tools/scripts/github-changelog.php \
+                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
+                --wp-tag-ids=1784989 \
+                --debug
 
   search-dev-tools:
     docker:
@@ -368,7 +352,7 @@ jobs:
       docker:
         - image: cimg/php:7.4
       environment:
-        - GIT_REVISION: << pipeline.git.revision >>
+        GIT_REVISION: << pipeline.git.revision >>
       steps:
         - checkout
         - add_ssh_keys:

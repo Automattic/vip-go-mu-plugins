@@ -104,7 +104,7 @@ class Health {
 
 			$db_total = (int) $db_result['total_objects'];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->get_error_message() ) );
+			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
 		}
 
 		$diff = 0;
@@ -147,8 +147,7 @@ class Health {
 
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
-			$source = method_exists( $e, 'get_error_message' ) ? $e->get_error_message() : $e->getMessage();
-			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $source ) );
+			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $e->getMessage() ) );
 		}
 
 		// There is not other useful information out of query_es(): it just returns false in case of failure.
@@ -501,12 +500,13 @@ class Health {
 				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
+			/** @var array|WP_Error */
 			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
 			} elseif ( count( $result ) && ! $do_not_heal ) {
-					self::reconcile_diff( $result );
+				self::reconcile_diff( $result );
 			}
 
 			$results = array_merge( $results, $result );
@@ -545,6 +545,7 @@ class Health {
 			}
 			if ( $is_cli && $silent ) {
 				// To prevent continuous hammering of clusters.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
 				sleep( mt_rand( 2, 5 ) );
 			}
 		} while ( $start_post_id <= $last_post_id );
@@ -729,12 +730,13 @@ class Health {
 				continue;
 			}
 
+			$prepared_value = $prepared_document[ $key ] ?? null;
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, is_array( $prepared_value ) ? $prepared_value : [] );
 				if ( $recursive_diff ) {
 					return true;
 				}
-			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( $prepared_value != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				return true;
 			}
 		}
@@ -759,13 +761,14 @@ class Health {
 				continue;
 			}
 
+			$prepared_value = $prepared_document[ $key ] ?? null;
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, is_array( $prepared_value ) ? $prepared_value : [] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
-			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( $prepared_value != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
 					'expected' => $prepared_document[ $key ] ?? null,
 					'actual'   => $value,
