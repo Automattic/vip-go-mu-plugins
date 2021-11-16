@@ -2743,7 +2743,23 @@ class Search_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$es->ep_handle_failed_request( null, $response, [], '' );
+		$es->ep_handle_failed_request( null, $response, [], '', null );
+	}
+
+	/**
+	 * Ensure when index_exists() is called and there is no index, it does not get logged as a failed request.
+	 */
+	public function test__ep_handle_failed_request__index_exists() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$es->logger->expects( $this->never() )->method( 'log' );
+
+		$es->ep_handle_failed_request( null, 404, [], '', 'index_exists' );
 	}
 
 	public function get_sanitize_ep_query_for_logging_data() {
