@@ -15,6 +15,7 @@ class Versioning {
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL            = 10;
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
 	const VERSIONING_JOB_DEFAULT_PRIORITY                    = 15;
+	const INDEX_SYNC_JOB_DEFAULT_PRIORITY                    = 15;
 
 	/**
 	 * The maximum number of index versions that can exist for any indexable.
@@ -778,13 +779,24 @@ class Versioning {
 		}
 
 		$queue = \Automattic\VIP\Search\Search::instance()->queue;
+
 		foreach ( $inactive_versions as $version ) {
 			$options = array(
 				'index_version' => $version['number'],
-				'priority'      => 15,
 			);
 
 			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
+				/**
+				 * Filter do determine the priority of the index synchronization job
+				 *
+				 * @param int $priority         Priority
+				 * @param int $object_id        Object ID
+				 * @param string $object_type   Object type
+				 * @return int                  Priority
+				 */
+				$priority            = apply_filters( 'ep_index_sync_priority', self::INDEX_SYNC_JOB_DEFAULT_PRIORITY, $object_id, $indexable_slug );
+				$options['priority'] = $priority;
+
 				$queue->queue_object( $object_id, $indexable_slug, $options );
 			}
 		}
