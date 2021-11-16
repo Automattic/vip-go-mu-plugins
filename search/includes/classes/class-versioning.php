@@ -14,6 +14,7 @@ class Versioning {
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP          = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL            = 10;
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
+	const VERSIONING_JOB_DEFAULT_PRIORITY                    = 15;
 
 	/**
 	 * The maximum number of index versions that can exist for any indexable.
@@ -742,7 +743,16 @@ class Versioning {
 
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];
-					$options['priority']      = 15;
+
+					/**
+					 * Filter do determine the priority of the replication job
+					 *
+					 * @param int $priority         Priority
+					 * @param int $object_id        Object ID
+					 * @param string $object_type   Object type
+					 * @return int                  Priority
+					 */
+					$options['priority'] = apply_filters( 'ep_versioning_reindex_priority', self::VERSIONING_JOB_DEFAULT_PRIORITY, $object_id, $object_type );
 
 					$queue->queue_object( $object_id, $object_type, $options );
 				}

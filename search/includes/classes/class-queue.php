@@ -22,6 +22,7 @@ class Queue {
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY         = 'index_queueing_enabled';
+	public const INDEX_DEFAULT_PRIORITY             = 5;
 	public static $stat_sampling_drop_value         = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_indexing_op_count;
@@ -315,7 +316,7 @@ class Queue {
 
 		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
 
-		$priority = (int) ( $options['priority'] ?? 5 );
+		$priority = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
 
 		$table_name = $this->schema->get_table_name();
 
