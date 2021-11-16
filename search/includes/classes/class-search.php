@@ -123,9 +123,12 @@ class Search {
 		$this->maybe_enable_ep_query_logging();
 		$this->load_dependencies();
 		$this->setup_hooks();
-		$this->load_commands();
-		$this->setup_cron_jobs();
-		$this->setup_regular_stat_collection();
+
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			$this->load_commands();
+			$this->setup_cron_jobs();
+			$this->setup_regular_stat_collection();
+		}
 	}
 
 	/**
@@ -536,25 +539,19 @@ class Search {
 		}
 	}
 
-	protected function setup_cron_jobs() {
+	/**
+	 * Setup the needed cron jobs (this fires in WP_CLI context)
+	 *
+	 * @return void
+	 */
+	public function setup_cron_jobs() {
 		$this->healthcheck          = new HealthJob( $this );
 		$this->settings_healthcheck = new SettingsHealthJob( $this );
 		$this->versioning_cleanup   = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
-		/**
-		 * Hook into admin_init action to ensure cron-control has already been loaded.
-		 *
-		 * Hook into wp_loaded in WPCLI contexts.
-		 */
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
-			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
-		} else {
-			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->settings_healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
-		}
+		add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
+		add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
+		add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
 	}
 
 	protected function setup_regular_stat_collection() {
