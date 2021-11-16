@@ -690,7 +690,16 @@ class Search {
 		return 500;
 	}
 
-	public function filter__ep_do_intercept_request( $request, $query, $args, $type ) {
+	/**
+	 * Filter to intercept EP remote requests.
+	 * 
+	 * @param  array  $request New remote request response
+	 * @param  array  $query   Remote request arguments
+	 * @param  array  $args    Request arguments
+	 * @param  string $type    Type of request
+	 * @return array  $request New request
+	 */
+	public function filter__ep_do_intercept_request( $request, $query, $args, $type = null ) {
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
