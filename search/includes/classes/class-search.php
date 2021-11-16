@@ -123,9 +123,12 @@ class Search {
 		$this->maybe_enable_ep_query_logging();
 		$this->load_dependencies();
 		$this->setup_hooks();
-		$this->load_commands();
-		$this->setup_cron_jobs();
-		$this->setup_regular_stat_collection();
+
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			$this->load_commands();
+			$this->setup_cron_jobs();
+			$this->setup_regular_stat_collection();
+		}
 	}
 
 	/**
@@ -413,7 +416,7 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 3 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
 
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
@@ -536,25 +539,19 @@ class Search {
 		}
 	}
 
-	protected function setup_cron_jobs() {
+	/**
+	 * Setup the needed cron jobs (this fires in WP_CLI context)
+	 *
+	 * @return void
+	 */
+	public function setup_cron_jobs() {
 		$this->healthcheck          = new HealthJob( $this );
 		$this->settings_healthcheck = new SettingsHealthJob( $this );
 		$this->versioning_cleanup   = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
-		/**
-		 * Hook into admin_init action to ensure cron-control has already been loaded.
-		 *
-		 * Hook into wp_loaded in WPCLI contexts.
-		 */
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
-			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
-		} else {
-			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->settings_healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
-		}
+		add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
+		add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
+		add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
 	}
 
 	protected function setup_regular_stat_collection() {
@@ -690,7 +687,16 @@ class Search {
 		return 500;
 	}
 
-	public function filter__ep_do_intercept_request( $request, $query, $args ) {
+	/**
+	 * Filter to intercept EP remote requests.
+	 * 
+	 * @param  array  $request New remote request response
+	 * @param  array  $query   Remote request arguments
+	 * @param  array  $args    Request arguments
+	 * @param  string $type    Type of request
+	 * @return array  $request New request
+	 */
+	public function filter__ep_do_intercept_request( $request, $query, $args, $type = null ) {
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -727,7 +733,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -832,7 +838,10 @@ class Search {
 		return true;
 	}
 
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
+		if ( 'index_exists' === $type ) {
+			return; // Not a failed request, it is just doing a check if the index exists or not.
+		}
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {

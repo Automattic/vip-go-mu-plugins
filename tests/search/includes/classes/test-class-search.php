@@ -527,6 +527,8 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_setup_healthchecks_with_enabled() {
 		// Need to filter to enable the HealthJob
@@ -534,19 +536,22 @@ class Search_Test extends WP_UnitTestCase {
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
-
+		$es->setup_cron_jobs();
 		// Should not have fataled (class was included)
 
 		// Ensure it returns the priority set. Easiest way to to ensure it's not false
-		$this->assertTrue( false !== has_action( 'admin_init', [ $es->healthcheck, 'init' ] ) );
+		$this->assertTrue( false !== has_action( 'wp_loaded', [ $es->healthcheck, 'init' ] ) );
 	}
 
 	/**
 	 * Test that instantiating the HealthJob does not happen when not in production
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_setup_healthchecks_disabled_in_non_production_env() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
+		$es->setup_cron_jobs();
 
 		// Should not have fataled (class was included)
 
@@ -2738,7 +2743,23 @@ class Search_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$es->ep_handle_failed_request( null, $response, [], '' );
+		$es->ep_handle_failed_request( null, $response, [], '', null );
+	}
+
+	/**
+	 * Ensure when index_exists() is called and there is no index, it does not get logged as a failed request.
+	 */
+	public function test__ep_handle_failed_request__index_exists() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$es->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+				->setMethods( [ 'log' ] )
+				->getMock();
+
+		$es->logger->expects( $this->never() )->method( 'log' );
+
+		$es->ep_handle_failed_request( null, 404, [], '', 'index_exists' );
 	}
 
 	public function get_sanitize_ep_query_for_logging_data() {
