@@ -730,12 +730,13 @@ class Health {
 				continue;
 			}
 
+			$prepared_value = $prepared_document[ $key ] ?? null;
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, is_array( $prepared_value ) ? $prepared_value : [] );
 				if ( $recursive_diff ) {
 					return true;
 				}
-			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( $prepared_value != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				return true;
 			}
 		}
@@ -760,13 +761,14 @@ class Health {
 				continue;
 			}
 
+			$prepared_value = $prepared_document[ $key ] ?? null;
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] ?? [] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, is_array( $prepared_value ) ? $prepared_value : [] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
-			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( $prepared_value != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
 					'expected' => $prepared_document[ $key ] ?? null,
 					'actual'   => $value,
