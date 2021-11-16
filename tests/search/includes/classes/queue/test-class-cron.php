@@ -115,7 +115,6 @@ class Cron_Test extends WP_UnitTestCase {
 		$this->cron->queue = $original_queue;
 	}
 
-
 	public function test_schedule_batch_job() {
 		/** @var wpdb $wpdb */
 		global $wpdb;
