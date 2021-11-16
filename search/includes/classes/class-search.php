@@ -417,7 +417,7 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 3 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
 
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
@@ -688,7 +688,16 @@ class Search {
 		return 500;
 	}
 
-	public function filter__ep_do_intercept_request( $request, $query, $args ) {
+	/**
+	 * Filter to intercept EP remote requests.
+	 * 
+	 * @param  array  $request New remote request response
+	 * @param  array  $query   Remote request arguments
+	 * @param  array  $args    Request arguments
+	 * @param  string $type    Type of request
+	 * @return array  $request New request
+	 */
+	public function filter__ep_do_intercept_request( $request, $query, $args, $type = null ) {
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -725,7 +734,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -830,7 +839,10 @@ class Search {
 		return true;
 	}
 
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
+		if ( 'index_exists' === $type ) {
+			return; // Not a failed request, it is just doing a check if the index exists or not.
+		}
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
