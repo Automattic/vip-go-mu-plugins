@@ -314,9 +314,9 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
-
-		$priority = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
+		$index_version      = $this->get_index_version_number_from_options( $object_type, $options );
+		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
+		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
 
 		$table_name = $this->schema->get_table_name();
 
@@ -326,14 +326,14 @@ class Queue {
 		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
-		// phpcs:ignore WordPress.DB
+		// phpcs:disable WordPress.DB -- the code below breaks literally all DB rules :-)
 		$wpdb->query(
-			// phpcs:ignore WordPress.DB
 			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
-				VALUES (%d, %s, 'queued', %d, %s, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
-				[ $object_id, $object_type, $index_version, $next_index_time, $priority, $priority ]
+				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
+				[ $object_id, $object_type, $index_version, $priority, $priority ]
 			)
 		);
+		// phpcs:enable
 
 		/**
 		 * Fires when an object is requested to be queued. Note that this fires regardless of if the object is actually queued
