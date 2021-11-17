@@ -417,7 +417,7 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 4 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
@@ -691,13 +691,14 @@ class Search {
 	/**
 	 * Filter to intercept EP remote requests.
 	 * 
-	 * @param  array  $request New remote request response
-	 * @param  array  $query   Remote request arguments
-	 * @param  array  $args    Request arguments
-	 * @param  string $type    Type of request
-	 * @return array  $request New request
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
 	 */
-	public function filter__ep_do_intercept_request( $request, $query, $args, $type = null ) {
+	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];

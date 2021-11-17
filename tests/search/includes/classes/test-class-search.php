@@ -2189,7 +2189,7 @@ class Search_Test extends WP_UnitTestCase {
 				[ "$stats_prefix.total", $this->greaterThan( 0 ) ]
 			);
 
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_per_doc() {
@@ -2223,7 +2223,7 @@ class Search_Test extends WP_UnitTestCase {
 				[ "$stats_prefix.per_doc", $this->greaterThan( 0 ) ]
 			);
 
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_on_non_200_response() {
@@ -2254,7 +2254,7 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'maybe_increment_stat' )
 			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.error" ] );
 
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_per_msg() {
@@ -2285,7 +2285,7 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'maybe_increment_stat' )
 			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.error" ], [ "$stats_prefix.error" ] );
 
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
 	}
 
 	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_timeout() {
@@ -2311,7 +2311,7 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'maybe_increment_stat' )
 			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.timeout" ] );
 
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, null );
+		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
 	}
 
 	public function test__maybe_alert_for_average_queue_time__sends_notification() {
@@ -2759,7 +2759,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$es->logger->expects( $this->never() )->method( 'log' );
 
-		$es->ep_handle_failed_request( null, 404, [], '', 'index_exists' );
+		$es->ep_handle_failed_request( null, 404, [], 0, 'index_exists' );
 	}
 
 	public function get_sanitize_ep_query_for_logging_data() {
