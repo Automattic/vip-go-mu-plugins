@@ -2,7 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\MockObject\MockObject;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use WP_UnitTestCase;
 
 class Health_Test extends WP_UnitTestCase {
@@ -226,27 +228,54 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_diff, $diff );
 	}
 
-	public function test_diff_document_and_prepared_document_does_not_generate_notices(): void {
-		$document = [
-			'meta' => [
-				'_dt_aop_include_in_feed' => [
-					[
-						'value'    => '',
-						'raw'      => '',
-						'boolean'  => false,
-						'date'     => '1971-01-01',
-						'datetime' => '1971-01-01 00:00:01',
-						'time'     => '00:00:01', 
+	/**
+	 * @dataProvider data_diff_document_and_prepared_document_does_not_generate_notices
+	 */
+	public function test_diff_document_and_prepared_document_does_not_generate_notices( array $document, array $prepared_document ): void {
+		self::assertNull( \Automattic\VIP\Search\Health::diff_document_and_prepared_document( $document, $prepared_document ) );
+	}
+
+	/**
+	 * @dataProvider data_diff_document_and_prepared_document_does_not_generate_notices
+	 */
+	public function test_simplified_diff_document_and_prepared_document_does_not_generate_notices( array $document, array $prepared_document ): void {
+		self::assertFalse( \Automattic\VIP\Search\Health::simplified_diff_document_and_prepared_document( $document, $prepared_document ) );
+	}
+
+	public function data_diff_document_and_prepared_document_does_not_generate_notices(): iterable {
+		return [
+			[
+				[
+					'meta' => [
+						'_dt_aop_include_in_feed' => [
+							[
+								'value'    => '',
+								'raw'      => '',
+								'boolean'  => false,
+								'date'     => '1971-01-01',
+								'datetime' => '1971-01-01 00:00:01',
+								'time'     => '00:00:01', 
+							],
+						],
 					],
+				],
+				[
+					'meta' => [],
+				],
+			],
+			[
+				[
+					'meta' => [
+						[
+							'value' => '',
+						],
+					],
+				],
+				[
+					'meta' => 'value',
 				],
 			],
 		];
-		
-		$prepared_document = [
-			'meta' => [],
-		];
-
-		self::assertNull( \Automattic\VIP\Search\Health::diff_document_and_prepared_document( $document, $prepared_document ) );
 	}
 
 	public function test_get_document_ids_for_batch() {
