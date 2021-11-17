@@ -225,6 +225,22 @@ class Queue_Test extends WP_UnitTestCase {
 		self::assertEquals( $expected, $actual );
 	}
 
+	public function test_requeue_with_different_priority(): void {
+		$this->queue->queue_object( 1, 'post', [ 'priority' => 4 * Queue::INDEX_DEFAULT_PRIORITY ] );
+		$this->queue->queue_object( 1, 'post', [ 'priority' => 2 * Queue::INDEX_DEFAULT_PRIORITY ] );
+
+		$jobs = $this->queue->checkout_jobs();
+
+		self::assertIsArray( $jobs );
+		self::assertCount( 1, $jobs );
+		self::assertArrayHasKey( 0, $jobs );
+
+		$job = $jobs[0];
+		self::assertIsObject( $job );
+		self::assertObjectHasAttribute( 'priority', $job );
+		self::assertSame( 2 * Queue::INDEX_DEFAULT_PRIORITY, (int) $job->priority );
+	}
+
 	public function test_checkout_jobs() {
 		global $wpdb;
 

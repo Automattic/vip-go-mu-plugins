@@ -326,25 +326,13 @@ class Queue {
 		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->insert(
-			$table_name,
-			[
-				'object_id'     => $object_id,
-				'object_type'   => $object_type,
-				'start_time'    => $next_index_time,
-				'status'        => 'queued',
-				'index_version' => $index_version,
-				'priority'      => $priority,
-			],
-			[
-				'object_id'     => '%d',
-				'object_type'   => '%s',
-				'start_time'    => '%s',
-				'status'        => '%s',
-				'index_version' => '%d',
-				'priority'      => '%d',
-			]
+		// phpcs:ignore WordPress.DB
+		$wpdb->query(
+			// phpcs:ignore WordPress.DB
+			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
+				VALUES (%d, %s, 'queued', %d, %s, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
+				[ $object_id, $object_type, $index_version, $next_index_time, $priority, $priority ]
+			)
 		);
 
 		/**
