@@ -817,7 +817,7 @@ class Health {
 					 * @param string $object_type   Object type
 					 * @return int                  Job priority
 					 */
-					$priority = apply_filters( 'ep_healthcheck_reindex_priority', self::REINDEX_JOB_DEFAULT_PRIORITY, $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					$priority = apply_filters( 'vip_healthcheck_reindex_priority', self::REINDEX_JOB_DEFAULT_PRIORITY, $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
 					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'], [ 'priority' => $priority ] );
 					break;
 				case 'extra_in_index':
