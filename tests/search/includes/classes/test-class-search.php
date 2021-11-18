@@ -2746,9 +2746,9 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure when index_exists() is called and there is no index, it does not get logged as a failed request.
+	 * Ensure when actions from the skiplist are called, they do not get logged as a failed request.
 	 */
-	public function test__ep_handle_failed_request__index_exists() {
+	public function test__ep_handle_failed_request__skiplist() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
@@ -2758,7 +2758,14 @@ class Search_Test extends WP_UnitTestCase {
 
 		$es->logger->expects( $this->never() )->method( 'log' );
 
-		$es->ep_handle_failed_request( null, 404, [], 0, 'index_exists' );
+		$skiplist = [
+			'index_exists',
+			'get',
+		];
+
+		foreach ( $skiplist as $item ) {
+			$es->ep_handle_failed_request( null, 404, [], 0, $item );
+		}
 	}
 
 	public function get_sanitize_ep_query_for_logging_data() {

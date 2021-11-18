@@ -36,6 +36,8 @@ class Health {
 		'index.routing.allocation.include.dc',
 	);
 
+	const REINDEX_JOB_DEFAULT_PRIORITY = 15;
+
 	/**
 	 * Instance of Search class
 	 *
@@ -807,7 +809,16 @@ class Health {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 				case 'inconsistent':
-					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					/**
+					 * Filter to determine the priority of the reindex job
+					 *
+					 * @param int $priority         Job priority
+					 * @param int $object_id        Object ID
+					 * @param string $object_type   Object type
+					 * @return int                  Job priority
+					 */
+					$priority = apply_filters( 'vip_healthcheck_reindex_priority', self::REINDEX_JOB_DEFAULT_PRIORITY, $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'], [ 'priority' => $priority ] );
 					break;
 				case 'extra_in_index':
 					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );

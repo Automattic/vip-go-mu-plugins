@@ -15,6 +15,12 @@ use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 class Queue_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
 
+	/** @var \Automattic\VIP\Search\Search */
+	private $es;
+
+	/** @var \Automattic\VIP\Search\Queue */
+	private $queue;
+
 	public static function setUpBeforeClass(): void {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
@@ -202,6 +208,37 @@ class Queue_Test extends WP_UnitTestCase {
 
 			$this->assertEquals( $expected_start_time, $row->start_time );
 		}
+	}
+
+	public function test_job_priorities(): void {
+		$this->queue->queue_object( 1, 'post', [ 'priority' => 2 * Queue::INDEX_DEFAULT_PRIORITY ] );
+		$this->queue->queue_object( 2, 'post', [ 'priority' => 1 ] );
+		$this->queue->queue_object( 3, 'post' );
+
+		$jobs = $this->queue->checkout_jobs();
+
+		self::assertIsArray( $jobs );
+		self::assertCount( 3, $jobs );
+
+		$expected = [ 2, 3, 1 ];
+		$actual   = array_column( $jobs, 'object_id' );
+		self::assertEquals( $expected, $actual );
+	}
+
+	public function test_requeue_with_different_priority(): void {
+		$this->queue->queue_object( 1, 'post', [ 'priority' => 4 * Queue::INDEX_DEFAULT_PRIORITY ] );
+		$this->queue->queue_object( 1, 'post', [ 'priority' => 2 * Queue::INDEX_DEFAULT_PRIORITY ] );
+
+		$jobs = $this->queue->checkout_jobs();
+
+		self::assertIsArray( $jobs );
+		self::assertCount( 1, $jobs );
+		self::assertArrayHasKey( 0, $jobs );
+
+		$job = $jobs[0];
+		self::assertIsObject( $job );
+		self::assertObjectHasAttribute( 'priority', $job );
+		self::assertSame( 2 * Queue::INDEX_DEFAULT_PRIORITY, (int) $job->priority );
 	}
 
 	public function test_checkout_jobs() {

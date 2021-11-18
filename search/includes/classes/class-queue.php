@@ -12,6 +12,7 @@ class Queue {
 	const MAX_BATCH_SIZE = 1000;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
+	/** @var Queue\Schema */
 	public $schema;
 	public $statsd;
 	public $indexables;
@@ -21,6 +22,7 @@ class Queue {
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
 	public const INDEX_QUEUEING_ENABLED_KEY         = 'index_queueing_enabled';
+	public const INDEX_DEFAULT_PRIORITY             = 5;
 	public static $stat_sampling_drop_value         = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_indexing_op_count;
@@ -299,6 +301,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
+	 * @param array $options
 	 */
 	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
 		global $wpdb;
@@ -311,12 +314,11 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+		$index_version      = $this->get_index_version_number_from_options( $object_type, $options );
+		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
+		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
 
 		$table_name = $this->schema->get_table_name();
-
-		// Have to escape this separately so we can insert NULL if no start time specified
-		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
 
 		$original_suppress = $wpdb->suppress_errors;
 
@@ -324,16 +326,14 @@ class Queue {
 		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:disable WordPress.DB -- the code below breaks literally all DB rules :-)
 		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status`, `index_version` ) VALUES ( %d, %s, {$start_time_escaped}, %s, %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$object_id,
-				$object_type,
-				'queued',
-				$index_version
+			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
+				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
+				[ $object_id, $object_type, $index_version, $priority, $priority ]
 			)
 		);
+		// phpcs:enable
 
 		/**
 		 * Fires when an object is requested to be queued. Note that this fires regardless of if the object is actually queued
@@ -361,6 +361,7 @@ class Queue {
 	 *
 	 * @param array $object_ids The ids of the objects
 	 * @param string $object_type The type of objects
+	 * @param array $options
 	 */
 	public function queue_objects( $object_ids, $object_type = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
@@ -608,9 +609,28 @@ class Queue {
 	}
 
 	/**
+	 * @param array $ids IDs of the jobs to retrieve
+	 * @return array Array of job objects
+	 */
+	public function get_jobs_by_ids( array $ids ) {
+		global $wpdb;
+		$result = [];
+
+		if ( ! empty( $ids ) ) {
+			$table_name    = $this->schema->get_table_name();
+			$sanitized_ids = join( ', ', array_map( 'intval', $ids ) );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL
+			$result = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ({$sanitized_ids})" );
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Grab $count jobs that are due now and mark them as running
 	 *
-	 * @param {int} $count How many jobs to check out
+	 * @param int $count How many jobs to check out
 	 * @return array Array of jobs (db rows) that were checked out
 	 */
 	public function checkout_jobs( $count = 250 ) {
@@ -626,7 +646,7 @@ class Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `job_id` LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$count
 			)
 		);

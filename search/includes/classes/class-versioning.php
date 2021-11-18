@@ -14,6 +14,7 @@ class Versioning {
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_GROUP          = 'vip_search';
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL            = 10;
 	const INDEX_VERSIONS_SELF_HEAL_LOCK_CACHE_TTL_ON_FAILURE = 60 * 10; // 10 minutes
+	const INACTIVE_VERSION_JOB_DEFAULT_PRIORITY              = 15;
 
 	/**
 	 * The maximum number of index versions that can exist for any indexable.
@@ -730,6 +731,8 @@ class Versioning {
 			// Other index versions, besides active
 			$inactive_versions = $this->get_inactive_versions( $indexable );
 
+			$queue = \Automattic\VIP\Search\Search::instance()->queue;
+
 			// There were changes for active version - now we need to loop over every object that was queued for the active version and replicate that job to the other versions
 			foreach ( $inactive_versions as $version ) {
 				$this->set_current_version_number( $indexable, $version['number'] );
@@ -741,7 +744,17 @@ class Versioning {
 					// Override the index version in the options
 					$options['index_version'] = $version['number'];
 
-					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $object_type, $options );
+					/**
+					 * Filter do determine the priority of the replication job
+					 *
+					 * @param int $priority         Priority
+					 * @param int $object_id        Object ID
+					 * @param string $object_type   Object type
+					 * @return int                  Priority
+					 */
+					$options['priority'] = apply_filters( 'vip_versioning_reindex_priority', self::INACTIVE_VERSION_JOB_DEFAULT_PRIORITY, $object_id, $object_type );
+
+					$queue->queue_object( $object_id, $object_type, $options );
 				}
 
 				$this->reset_current_version_number( $indexable );
@@ -764,13 +777,21 @@ class Versioning {
 			return $bail;
 		}
 
-		foreach ( $inactive_versions as $version ) {
-			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
-				$options = array(
-					'index_version' => $version['number'],
-				);
+		$queue = \Automattic\VIP\Search\Search::instance()->queue;
 
-				\Automattic\VIP\Search\Search::instance()->queue->queue_object( $object_id, $indexable_slug, $options );
+		foreach ( $inactive_versions as $version ) {
+			$options = array(
+				'index_version' => $version['number'],
+			);
+
+			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
+				/**
+				 * This filter is documented in Versioning::replicate_queued_objects_to_other_versions
+				 */
+				$priority            = apply_filters( 'vip_versioning_reindex_priority', self::INACTIVE_VERSION_JOB_DEFAULT_PRIORITY, $object_id, $indexable_slug );
+				$options['priority'] = $priority;
+
+				$queue->queue_object( $object_id, $indexable_slug, $options );
 			}
 		}
 
@@ -816,8 +837,10 @@ class Versioning {
 		foreach ( $inactive_versions as $version ) {
 			$this->set_current_version_number( $indexable, $version['number'] );
 
-			$indexable->delete( $object_id );
-
+			if ( $indexable->get( $object_id ) ) {
+				$indexable->delete( $object_id );
+			}
+			
 			$this->reset_current_version_number( $indexable );
 		}
 
