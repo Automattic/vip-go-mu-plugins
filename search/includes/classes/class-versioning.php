@@ -816,8 +816,10 @@ class Versioning {
 		foreach ( $inactive_versions as $version ) {
 			$this->set_current_version_number( $indexable, $version['number'] );
 
-			$indexable->delete( $object_id );
-
+			if ( $indexable->get( $object_id ) ) {
+				$indexable->delete( $object_id );
+			}
+			
 			$this->reset_current_version_number( $indexable );
 		}
 
