@@ -2,9 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
-use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\MockObject\MockObject;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use WP_UnitTestCase;
 
 class Health_Test extends WP_UnitTestCase {

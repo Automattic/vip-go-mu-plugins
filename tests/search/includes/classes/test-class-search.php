@@ -1063,6 +1063,14 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		\ElasticPress\Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
 		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
 		$this->assertEquals(
 			array(
