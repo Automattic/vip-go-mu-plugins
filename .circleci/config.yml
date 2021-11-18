@@ -101,6 +101,7 @@ job-references:
       MYSQL_USER: << pipeline.parameters.db_user >>
       MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
       MYSQL_DB: << pipeline.parameters.db_name >>
+      DISABLE_XDEBUG: "1"
 
   php_job: &php_job
     steps:
