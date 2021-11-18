@@ -840,9 +840,15 @@ class Search {
 	}
 
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
-		if ( 'index_exists' === $type ) {
-			return; // Not a failed request, it is just doing a check if the index exists or not.
+		// Not real failed requests, we should not be logging.
+		$skiplist = [
+			'index_exists',
+			'get',
+		];
+		if ( in_array( $type, $skiplist, true ) ) {
+			return;
 		}
+
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
