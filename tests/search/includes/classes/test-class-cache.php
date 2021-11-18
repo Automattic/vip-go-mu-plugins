@@ -1,23 +1,17 @@
 <?php
 namespace Automattic\VIP\Search;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_Query;
 use WP_UnitTestCase;
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Cache_Test extends WP_UnitTestCase {
-	public static function setUpBeforeClass(): void {
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		}
-	}
+	/** @var MockObject&Search */
+	private $es;
 
 	public function setUp(): void {
 		require_once __DIR__ . '/../../../../search/search.php';
-		include_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
+		require_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
 
 		$this->apc_filters = [
 			'posts_request',
@@ -27,8 +21,11 @@ class Cache_Test extends WP_UnitTestCase {
 			'found_posts',
 		];
 
-		$this->es = new \Automattic\VIP\Search\Search();
+		/** @var MockObject&Search */
+		$this->es = $this->getMockBuilder( Search::class )->setMethods( [ 'get_origin_dc_from_es_endpoint' ] )->getMock();
+		$this->es->method( 'get_origin_dc_from_es_endpoint' )->willReturn( 'BUR' );
 		$this->es->init();
+
 		\ElasticPress\register_indexable_posts();
 
 		add_filter( 'ep_skip_query_integration', '__return_false', 100 );

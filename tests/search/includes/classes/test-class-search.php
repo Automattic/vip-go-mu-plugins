@@ -902,46 +902,15 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->apply_settings();
 	}
 
-	public function get_sanitize_ep_query_for_logging_data() {
-		return array(
-			// No Auth header present
-			array(
-				// The "query" from ElasticPress
-				array(
-					'args' => array(
-						'headers' => array(
-							'some' => 'header',
-						),
-					),
-				),
-				// Expected sanitized value
-				array(
-					'args' => array(
-						'headers' => array(
-							'some' => 'header',
-						),
-					),
-				),
-			),
-			// Auth header present, should be sanitized
-			array(
-				array(
-					'args' => array(
-						'headers' => array(
-							'Authorization' => 'foo',
-							'some'          => 'header',
-						),
-					),
-				),
-				array(
-					'args' => array(
-						'headers' => array(
-							'Authorization' => '<redacted>',
-							'some'          => 'header',
-						),
-					),
-				),
-			),
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
+		add_filter(
+			$filter,
+			function() {
+				return 0;
+			}
 		);
 
 		$this->expectNotice();
@@ -1091,6 +1060,24 @@ class Search_Test extends WP_UnitTestCase {
 		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
 
 		$this->assertFalse( $result );
+	}
+
+	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
+		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
+		$this->assertEquals(
+			array(
+				'test'       => 'test',
+				'one'        => 'one',
+				'attachment' => 'attachment',
+			),
+			apply_filters(
+				'ep_indexable_post_types',
+				array(
+					'test' => 'test',
+					'one'  => 'one',
+				)
+			)
+		);
 	}
 
 	/**

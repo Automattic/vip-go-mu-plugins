@@ -1188,24 +1188,6 @@ class Search_Lite_Test extends WP_UnitTestCase {
 		$this->assertEquals( new \StdClass(), apply_filters( 'ep_indexable_post_types', new \StdClass() ) );
 	}
 
-	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
-		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
-		$this->assertEquals(
-			array(
-				'test'       => 'test',
-				'one'        => 'one',
-				'attachment' => 'attachment',
-			),
-			apply_filters(
-				'ep_indexable_post_types',
-				array(
-					'test' => 'test',
-					'one'  => 'one',
-				)
-			)
-		);
-	}
-
 	public function test__is_protected_content_enabled_should_return_true_if_protected_content_enabled() {
 		$es = $this->search_instance;
 
