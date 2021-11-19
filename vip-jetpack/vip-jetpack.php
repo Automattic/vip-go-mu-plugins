@@ -63,6 +63,7 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 	),
 	'features'           => array(
 		'active'    => array(
+			'premium-themes',
 			'google-analytics',
 			'security-settings',
 			'advanced-seo',
@@ -81,6 +82,7 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 			'vaultpress-storage-space',
 			'vaultpress-automated-restores',
 			'vaultpress-security-scanning',
+			'polldaddy',
 			'simple-payments',
 			'support',
 			'wordads-jetpack',
