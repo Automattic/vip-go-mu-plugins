@@ -1209,7 +1209,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		// Add a filter that we can use to count how many deletes are actually sent to ES
 		$delete_count = 0;
-		$get_count = 0;
+		$get_count    = 0;
 
 		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) {
 			if ( 'DELETE' === $args['method'] ) {
