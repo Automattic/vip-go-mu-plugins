@@ -32,7 +32,7 @@ class Connection_Pilot {
 	/**
 	 * Maximum number of hours that the system will wait to try to reconnect.
 	 */
-	const MAX_BACKOFF_FACTOR = 2048;
+	const MAX_BACKOFF_FACTOR = 7 * 24;
 
 	/**
 	 * The healtcheck option's current data.
@@ -187,6 +187,13 @@ class Connection_Pilot {
 	private function should_back_off(): bool {
 		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ) {
 			$backoff_factor = $this->last_heartbeat['backoff_factor'];
+
+			// Ensure we don't go past the max, and support future decreases should they occur.
+			if ( $backoff_factor > self::MAX_BACKOFF_FACTOR ) {
+				$backoff_factor = self::MAX_BACKOFF_FACTOR;
+				$this->update_heartbeat( $backoff_factor );
+			}
+
 			if ( $backoff_factor > 0 ) {
 				$dt_heartbeat = ( new DateTime() )->setTimestamp( $this->last_heartbeat['timestamp'] );
 				$dt_now       = new DateTime();
