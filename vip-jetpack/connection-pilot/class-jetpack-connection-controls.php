@@ -221,12 +221,11 @@ class Controls {
 	 * @return mixed bool|WP_Error True if provisioning worked, WP_Error otherwise.
 	 */
 	public static function provision_site( $user_id ) {
-		$provision_result = new WP_Error( 'jp-cxn-pilot-provisioning-error', 'Unable to use Provisioner.' );
 		if ( class_exists( 'Automattic\VIP\Jetpack\Connection_Pilot\Provisioner' ) ) {
-			$provision_result = Provisioner::provision_site( $user_id );
+			return Provisioner::provision_site( $user_id );
 		}
 
-		return $provision_result;
+		return new WP_Error( 'jp-cxn-pilot-provisioning-error', 'Unable to use Provisioner.' );
 	}
 
 	/**
