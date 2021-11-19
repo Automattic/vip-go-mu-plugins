@@ -7,12 +7,9 @@ async function globalSetup( config: FullConfig ) {
   const page = await browser.newPage();
 
   // Log in to wp-admin
-  await page.goto( baseURL + '/wp-login.php' );
+  await page.goto( baseURL + '/wp-login.php', { waitUntil: 'networkidle' } );
   const loginPage = new LoginPage( page );
-  await Promise.all( [
-    page.waitForNavigation(),
-    loginPage.login( 'e2e_tester', 'aut0matedTe$ter' )
-  ] );
+  await loginPage.login( 'e2e_tester', 'aut0matedTe$ter' );
 
   // Save signed-in state
   await page.context().storageState( { path: storageState as string } );
