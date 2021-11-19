@@ -264,7 +264,7 @@ class ES_WP_Tax_Query extends WP_Tax_Query {
 			return;
 		}
 
-		$query['terms'] = array_unique( (array) $query['terms'] );
+		$query['terms'] = array_values( array_unique( (array) $query['terms'] ) );
 
 		if ( is_taxonomy_hierarchical( $query['taxonomy'] ) && $query['include_children'] ) {
 			$this->transform_query( $query, 'term_id' );

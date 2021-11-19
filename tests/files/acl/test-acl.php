@@ -5,10 +5,16 @@ namespace Automattic\VIP\Files\Acl;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
+require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../files/acl/acl.php';
 
 class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
+
+	public function setUp(): void {
+		parent::setUp();
+		header_remove();
+	}
 
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
 		// no setup
@@ -171,10 +177,6 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 * @requires function xdebug_get_headers
-	 *
 	 * @dataProvider data_provider__send_visibility_headers
 	 */
 	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $private_header_value ) {
@@ -182,26 +184,21 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_status_code, http_response_code(), 'Status code does not match expected' );
 
-		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), xdebug_get_headers(), 'Sent headers do not include X-Private header or its value is unexpected' );
+		$headers = headers_list();
+		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), $headers, 'Sent headers do not include X-Private header or its value is unexpected', true );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 * @requires function xdebug_get_headers
-	 */
 	public function test__send_visibility_headers__invalid_visibility() {
-		define( 'NOT_A_VISIBILITY', 'NOT_A_VISIBILITY' );
-
 		$this->expectWarning();
 		$this->expectWarningMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
 
-		send_visibility_headers( NOT_A_VISIBILITY, '/wp-content/uploads/invalid.jpg' );
+		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
 
 		$this->assertEquals( 500, http_response_code(), 'Status code does not match expected' );
 
-		$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include X-Private: true header but should not.' );
-		$this->assertNotContains( 'X-Private: false', xdebug_get_headers(), 'Sent headers include X-Private:false header but should not.' );
+		$headers = headers_list();
+		$this->assertNotContains( 'X-Private: true', $headers, 'Sent headers include X-Private: true header but should not.', true );
+		$this->assertNotContains( 'X-Private: false', $headers, 'Sent headers include X-Private:false header but should not.', true );
 	}
 
 	public function test__is_valid_path_for_site__always_true_for_not_multisite() {

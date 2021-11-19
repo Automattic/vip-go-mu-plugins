@@ -15,8 +15,8 @@ class Tracks_Test extends WP_UnitTestCase {
 	 */
 	public function test_normalize_event_name( string $input, string $expected ) {
 		$normalize_event_name = self::get_method( 'normalize_event_name' );
-		$tracks = new Tracks();
-		$actual = $normalize_event_name->invokeArgs( $tracks, array( $input ) );
+		$tracks               = new Tracks();
+		$actual               = $normalize_event_name->invokeArgs( $tracks, array( $input ) );
 		self::assertEquals( $expected, $actual );
 	}
 
@@ -31,7 +31,7 @@ class Tracks_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Tracks' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\Tracks' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
