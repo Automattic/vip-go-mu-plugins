@@ -21,6 +21,7 @@ workflows:
       - php80-build-multisite-nightly
       - php80-build-singlesite-nightly
       - search-dev-tools
+      - e2e-tests
 
   after-master-merge:
     jobs:
@@ -331,3 +332,10 @@ jobs:
             fingerprints:
               - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
         - run: ./ci/deploy.sh
+
+  e2e-tests:
+    docker:
+      - image: cimg/node:16.10.0
+    steps:
+      - checkout
+      - run: npm run test-e2e
