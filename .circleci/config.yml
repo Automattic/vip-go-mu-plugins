@@ -336,6 +336,7 @@ jobs:
   e2e-tests:
     docker:
       - image: cimg/node:16.10.0
+        user: root
     steps:
       - checkout
       - setup_remote_docker:
