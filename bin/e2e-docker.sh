@@ -74,8 +74,15 @@ docker run \
   -e WORDPRESS_DB_USER="root" \
   -e WORDPRESS_DB_PASSWORD="wordpress" \
   -d \
-  --entrypoint "/startup.sh" \
-  --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4 "chmod 744 startup.sh"
+  --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4
+
+if [ $CI ]; then
+  docker cp $(pwd) php:/wp/wp-content/mu-plugins
+  docker cp $(pwd)/__tests__/e2e/wp-config-e2e.php php:/wp/wp-config.php
+  docker cp $(pwd)/__tests__/e2e/php-startup.sh php:/startup.sh
+fi
+docker exec php /startup.sh
+  
 
 [[ $(docker ps -f "name=$NG_CONTAINER_NAME" --format '{{.Names}}') == $NG_CONTAINER_NAME ]] ||
 docker run \
