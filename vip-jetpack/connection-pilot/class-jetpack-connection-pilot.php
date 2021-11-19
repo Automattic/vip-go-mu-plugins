@@ -89,6 +89,10 @@ class Connection_Pilot {
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
 		add_filter( 'vip_jetpack_connection_pilot_silenced_alerts', array( $this, 'filter_vip_jetpack_connection_pilot_silenced_alerts' ) );
+
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			require_once __DIR__ . '/class-jetpack-connection-cli.php';
+		}
 	}
 
 	public function schedule_cron() {
@@ -281,7 +285,7 @@ class Connection_Pilot {
 	}
 
 	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts = [] ) {
-		$alerts = array( 
+		$alerts = array(
 			'/VaultPress connection error.*A registration key can only be used on one site/',
 		);
 
