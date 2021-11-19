@@ -1,6 +1,7 @@
 <?php
 
 namespace Automattic\VIP\Jetpack\Connection_Pilot;
+
 use WP_CLI;
 
 WP_CLI::add_command( 'jetpack-start', __NAMESPACE__ . '\CLI' );
@@ -57,7 +58,7 @@ class CLI {
 			WP_CLI::warning( sprintf( '❌ Could not connect VaultPress. Error (%s): %s', $vp_connection->get_error_code(), $vp_connection->get_error_message() ) );
 		}
 
-		return $ak_connection === true && $vp_connection === true;
+		return true === $ak_connection && true === $vp_connection;
 	}
 
 	/**
@@ -98,8 +99,10 @@ class CLI {
 			'fields'   => 'ids',
 		];
 
-		// number = 0 allows for fetching all sites.
-		$site_count = get_sites( array_merge( $default_site_args, [ 'number' => 0, 'count' => true ] ) );
+		$site_count = get_sites( array_merge( $default_site_args, [ 
+			'number' => 0, // allows for fetching all sites.
+			'count'  => true,
+		] ) );
 		if ( $site_count > 1000 ) {
 			WP_CLI::warning( 'There are more than 1000 active subsites. Connecting only up to 1000 is supported at this time.' );
 		}
@@ -108,6 +111,7 @@ class CLI {
 		$starting_blog_id = get_current_blog_id();
 
 		$all_success = true;
+
 		$sites = get_sites( array_merge( $default_site_args, [ 'number' => 1000 ] ) );
 		foreach ( $sites as $site_id ) {
 			switch_to_blog( $site_id );

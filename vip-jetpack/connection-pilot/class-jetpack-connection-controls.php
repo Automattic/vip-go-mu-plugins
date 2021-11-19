@@ -1,6 +1,7 @@
 <?php
 
 namespace Automattic\VIP\Jetpack\Connection_Pilot;
+
 use WP_Error;
 
 /**
@@ -203,7 +204,7 @@ class Controls {
 	 */
 	public static function connect_vaultpress() {
 		$vaultpress = \VaultPress::init();
-		if ( ! $vaultpress->is_registered() || ! isset( $vaultpress->options['connection'] ) || "ok" !== $vaultpress->options['connection'] ) {
+		if ( ! $vaultpress->is_registered() || ! isset( $vaultpress->options['connection'] ) || 'ok' !== $vaultpress->options['connection'] ) {
 			// Remove the VaultPress option from the db to prevent site registration from failing
 			delete_option( 'vaultpress' );
 
