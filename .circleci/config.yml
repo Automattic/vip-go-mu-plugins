@@ -336,10 +336,11 @@ jobs:
   e2e-tests:
     docker:
       - image: cimg/node:16.10.0
-        user: root
     steps:
       - checkout
       - setup_remote_docker:
           version: 19.03.13
+          docker_layer_caching: true
+      - run: chmod +x __tests__/e2e/php-startup.sh
       - run: npm ci
       - run: npm run test-e2e
