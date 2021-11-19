@@ -63,7 +63,6 @@ fi
 docker run \
   --network $NETWORK_NAME \
   --name $FPM_CONTAINER_NAME \
-  --user root \
   -v $SHARED_VOLUME:/wp \
   -v $(pwd):/wp/wp-content/mu-plugins \
   -v $(pwd)/__tests__/e2e/wp-config-e2e.php:/wp/wp-config.php \
@@ -75,8 +74,8 @@ docker run \
   -e WORDPRESS_DB_USER="root" \
   -e WORDPRESS_DB_PASSWORD="wordpress" \
   -d \
-  --entrypoint /startup.sh \
-  --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4
+  --entrypoint "/startup.sh" \
+  --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4 "chmod 744 startup.sh"
 
 [[ $(docker ps -f "name=$NG_CONTAINER_NAME" --format '{{.Names}}') == $NG_CONTAINER_NAME ]] ||
 docker run \

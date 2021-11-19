@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ $WP_VERSION == "nightly" ]; then
     apk add --no-cache libzip-dev zip && docker-php-ext-install zip
 fi
