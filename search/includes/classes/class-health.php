@@ -623,6 +623,11 @@ class Health {
 
 		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
 		                : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+		// Filter out any that are extra or missing in index
+		$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
+			$key = self::get_post_key( $document['ID'] );
+			return ! array_key_exists( $key, $diffs );
+		} );
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
