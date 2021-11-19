@@ -101,6 +101,7 @@ job-references:
       MYSQL_USER: << pipeline.parameters.db_user >>
       MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
       MYSQL_DB: << pipeline.parameters.db_name >>
+      DISABLE_XDEBUG: "1"
 
   php_job: &php_job
     steps:
@@ -325,8 +326,8 @@ jobs:
 
   create-changelog-draft:
     environment:
-       - CIRCLE_PROJECT_USERNAME: Automattic
-       - CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
+      CIRCLE_PROJECT_USERNAME: Automattic
+      CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
     docker:
       - image: circleci/php:7.4-node
     steps:
