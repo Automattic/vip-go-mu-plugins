@@ -66,7 +66,7 @@ docker run \
   -v $SHARED_VOLUME:/wp \
   -v $(pwd):/wp/wp-content/mu-plugins \
   -v $(pwd)/__tests__/e2e/wp-config-e2e.php:/wp/wp-config.php \
-  -v $(pwd)/__tests__/e2e/php-startup.sh:/startup.sh \
+  -v $(pwd)/__tests__/e2e/php-startup.sh:/scripts/startup.sh \
   -e WP_VERSION="$WP_VERSION" \
   -e WORDPRESS_DB_HOST="$DB_CONTAINER_NAME" \
   -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
@@ -74,7 +74,7 @@ docker run \
   -e WORDPRESS_DB_USER="root" \
   -e WORDPRESS_DB_PASSWORD="wordpress" \
   -d \
-  --entrypoint /startup.sh \
+  --entrypoint /scripts/startup.sh \
   --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4
 
 [[ $(docker ps -f "name=$NG_CONTAINER_NAME" --format '{{.Names}}') == $NG_CONTAINER_NAME ]] ||
