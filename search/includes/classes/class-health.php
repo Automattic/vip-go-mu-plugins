@@ -637,7 +637,7 @@ class Health {
 			                : self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 			if ( $diff ) {
-				$key = self::get_post_key( $document['ID'] );
+				$key           = self::get_post_key( $document['ID'] );
 				$diffs[ $key ] = $inspect ? $diff : self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
 			}
 		}
