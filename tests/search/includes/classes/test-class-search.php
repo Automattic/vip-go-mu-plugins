@@ -6,6 +6,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
+require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
@@ -29,6 +30,8 @@ class Search_Test extends WP_UnitTestCase {
 
 		$cache_key = \Automattic\VIP\Search\Search::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $this->test_index_name;
 		wp_cache_delete( $cache_key, \Automattic\VIP\Search\Search::SEARCH_CACHE_GROUP );
+
+		header_remove();
 	}
 
 	public function test_query_es_with_invalid_type() {
@@ -656,11 +659,6 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertContains( $es->get_random_host( $hosts ), $hosts );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 * @requires function xdebug_get_headers
-	 */
 	public function test__send_vary_headers__sent_for_group() {
 
 		$es = new \Automattic\VIP\Search\Search();
@@ -675,7 +673,8 @@ class Search_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		unset( $_GET['ep_debug'] );
 
-		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', xdebug_get_headers() );
+		$headers = headers_list();
+		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', $headers, '', true );
 	}
 
 	public function test__vip_search_filter__ep_facet_taxonomies_size() {
