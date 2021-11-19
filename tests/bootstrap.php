@@ -112,4 +112,6 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		break;
 }
 
+require_once __DIR__ . '/mock-header.php';
+
 require $_tests_dir . '/includes/bootstrap.php';

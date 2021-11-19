@@ -112,6 +112,7 @@ docker run \
     -e MYSQL_PASSWORD \
     -e MYSQL_DATABASE \
     -e MYSQL_HOST \
+    -e DISABLE_XDEBUG=1 \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
     ${ARGS}
