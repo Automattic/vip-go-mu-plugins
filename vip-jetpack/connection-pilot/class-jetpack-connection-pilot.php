@@ -6,6 +6,10 @@ use DateTime;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
+if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+	require_once __DIR__ . '/class-jetpack-connection-cli.php';
+}
+
 /**
  * The Pilot is in control of setting up the cron job for monitoring JP connections and sending out alerts if anything is wrong.
  * Will only run if the `VIP_JETPACK_AUTO_MANAGE_CONNECTION` constant is defined and set to true.
@@ -20,14 +24,6 @@ class Connection_Pilot {
 	 * Cron action that runs the connection pilot checks.
 	 */
 	const CRON_ACTION = 'wpcom_vip_run_jetpack_connection_pilot';
-
-	/**
-	 * The schedule the cron job runs on. Update in 000-vip-init.php as well.
-	 *
-	 * Schedule changes can take up to 24 hours to take effect.
-	 * See the a8c_cron_control_clean_legacy_data event for more details.
-	 */
-	const CRON_SCHEDULE = 'hourly';
 
 	/**
 	 * Maximum number of hours that the system will wait to try to reconnect.
@@ -51,11 +47,12 @@ class Connection_Pilot {
 	private static $instance = null;
 
 	private function __construct() {
-		if ( ! self::should_run_connection_pilot() ) {
-			return;
-		}
+		// The hook always needs to be available so the job can remove itself if it needs to.
+		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
-		$this->init_actions();
+		if ( self::should_run_connection_pilot() ) {
+			$this->init_actions();
+		}
 	}
 
 	/**
@@ -76,29 +73,22 @@ class Connection_Pilot {
 	 * Hook any relevant actions
 	 */
 	public function init_actions() {
-		// Ensure the internal cron job has been added. Should already exist as an internal Cron Control job.
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+		// Ensure the cron job has been added.
+		if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && \WP_CLI ) ) {
 			add_action( 'wp_loaded', array( $this, 'schedule_cron' ) );
-		} else {
-			add_action( 'admin_init', array( $this, 'schedule_cron' ) );
 		}
 
 		add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
 		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
-		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
 		add_filter( 'vip_jetpack_connection_pilot_silenced_alerts', array( $this, 'filter_vip_jetpack_connection_pilot_silenced_alerts' ) );
-
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
-			require_once __DIR__ . '/class-jetpack-connection-cli.php';
-		}
 	}
 
 	public function schedule_cron() {
 		if ( ! wp_next_scheduled( self::CRON_ACTION ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand -- don't need a CSPRNG, mt_rand() is OK
-			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), self::CRON_SCHEDULE, self::CRON_ACTION );
+			wp_schedule_event( strtotime( sprintf( '+%d minutes', mt_rand( 2, 30 ) ) ), 'hourly', self::CRON_ACTION );
 		}
 	}
 
@@ -108,11 +98,11 @@ class Connection_Pilot {
 
 	public static function do_cron() {
 		if ( ! self::should_run_connection_pilot() ) {
+			wp_clear_scheduled_hook( self::CRON_ACTION );
 			return;
 		}
 
 		$instance = self::instance();
-
 		$instance->run_connection_pilot();
 	}
 
