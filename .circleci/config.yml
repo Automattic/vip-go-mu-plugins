@@ -340,4 +340,5 @@ jobs:
       - checkout
       - setup_remote_docker:
           version: 19.03.13
+      - run: npm ci
       - run: npm run test-e2e
