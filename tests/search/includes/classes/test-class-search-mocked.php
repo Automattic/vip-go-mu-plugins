@@ -839,6 +839,75 @@ class Search_Mocked_Test extends WP_UnitTestCase {
 	public function mock_vip_safe_wp_remote_request() {
 		/* Empty */
 	}
+
+	public function get_post_meta_allow_list__combinations_for_jetpack_migration_data() {
+		return [
+			[
+				null, // VIP search
+				null, // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST ), // expected
+			],
+			[
+				[ 'foo' ], // VIP search
+				null, // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
+			],
+			[
+				// keys provided by VIP and JP filters
+				[ 'foo' ], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ), // expected
+			],
+			[
+				// keys from empty VIP filter, JP filter
+				[], // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
+			],
+			[
+				// No VIP filter, JP filter
+				null, // VIP search
+				[ 'bar' ], // Jetpack filter added
+				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_post_meta_allow_list__combinations_for_jetpack_migration_data
+	 */
+	public function test__get_post_meta_allow_list__combinations_for_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
+		/** @var MockObject&Search */
+		$es = $this->getMockBuilder( Search::class )
+			->setMethods( [ 'is_jetpack_migration' ] )
+			->getMock();
+
+		// Mock `define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );` definition
+		$es->method( 'is_jetpack_migration' )->willReturn( true );
+		
+		remove_all_filters( 'vip_search_post_meta_allow_list' );
+		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
+		$es->init();
+
+		$post     = new \WP_Post( new \StdClass() );
+		$post->ID = 0;
+
+		if ( is_array( $vip_search_keys ) ) {
+			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+				return array_merge( $post_meta, $vip_search_keys );
+			});
+		}
+
+		if ( is_array( $jetpack_added ) ) {
+			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+				return array_merge( $post_meta, $jetpack_added );
+			});
+		}
+
+		$result = $es->get_post_meta_allow_list( $post );
+
+		$this->assertEquals( $expected, $result );
+	}
 }
 
 /**
