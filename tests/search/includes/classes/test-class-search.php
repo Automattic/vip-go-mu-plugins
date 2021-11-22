@@ -288,7 +288,7 @@ class Search_Test extends WP_UnitTestCase {
 		$es->init();
 
 		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0 ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
 
 		define(
 			'VIP_ELASTICSEARCH_ENDPOINTS',
@@ -302,8 +302,8 @@ class Search_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
-		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 107, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
+		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0 ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
+		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 107 ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
 	}
 
 	/*
@@ -315,7 +315,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array() );
 
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0 ) );
 	}
 
 	/*
@@ -327,7 +327,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
 
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0 ) );
 	}
 
 	/*
