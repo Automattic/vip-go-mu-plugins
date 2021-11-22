@@ -3,7 +3,9 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue\Cron as Cron;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
+use wpdb;
 
 class Cron_Test extends WP_UnitTestCase {
 	public function setUp(): void {
@@ -113,8 +115,11 @@ class Cron_Test extends WP_UnitTestCase {
 		$this->cron->queue = $original_queue;
 	}
 
-
 	public function test_schedule_batch_job() {
+		/** @var wpdb $wpdb */
+		global $wpdb;
+
+		/** @var Cron&MockObject */
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
 			->setMethods( [ 'get_processor_job_count', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();
@@ -149,17 +154,27 @@ class Cron_Test extends WP_UnitTestCase {
 
 		$partially_mocked_cron->sweep_jobs();
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$option_name = $wpdb->get_var( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'vip:esqp\_%'" );
+		self::assertIsString( $option_name );
+
 		$expected_cron_event_args = [
 			[
-				'min_id' => 1,
-				'max_id' => 2,
+				'option' => $option_name,
 			],
 		];
+
+		$expected_job_ids = [ 1, 2 ];
 
 		// Should have scheduled 1 cron event to process the posts
 		$cron_event_time = wp_next_scheduled( Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
 
 		$this->assertEqualsWithDelta( $now, $cron_event_time, 1 );
+
+		$job_ids = get_option( $option_name );
+		self::assertEquals( $expected_job_ids, $job_ids );
+
+		self::assertTrue( delete_option( $option_name ) );
 
 		// Unschedule event to not pollute other tests
 		wp_unschedule_event( $now, Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
@@ -186,6 +201,7 @@ class Cron_Test extends WP_UnitTestCase {
 	 * @dataProvider schedule_batch_job__scheduling_limits_data
 	 */
 	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_shedule_count ) {
+		/** @var Cron&MockObject */
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
 			->setMethods( [ 'get_processor_job_count', 'schedule_batch_job', 'get_max_concurrent_processor_job_count' ] )
 			->getMock();

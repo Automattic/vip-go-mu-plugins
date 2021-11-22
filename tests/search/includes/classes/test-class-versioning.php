@@ -1209,10 +1209,15 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		// Add a filter that we can use to count how many deletes are actually sent to ES
 		$delete_count = 0;
+		$get_count    = 0;
 
-		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count ) {
+		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
+			}
+
+			if ( 'GET' === $args['method'] ) {
+				$get_count++;
 			}
 
 			// For linting, always have to return something
@@ -1221,7 +1226,8 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$indexable->delete( 1 );
 
-		$this->assertEquals( $delete_count, 2 );
+		$this->assertEquals( $delete_count, 1 );
+		$this->assertEquals( $get_count, 1 );
 	}
 
 	public function normalize_version_data() {

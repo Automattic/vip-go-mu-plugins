@@ -115,7 +115,7 @@ yarn.lock
 
 # Search Dev Tools
 /search/search-dev-tools/src/
-/search/search-dev-tools/preact.config.js
+/search/search-dev-tools/*.config.js
 /search/search-dev-tools/.babelrc.json
 
 # Parse.ly WordPress Integration
