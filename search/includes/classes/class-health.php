@@ -845,6 +845,7 @@ class Health {
 			$query_args     = [
 				'posts_per_page' => 1,
 				'orderby'        => 'ID',
+				'order'        => 'desc',
 				'fields'         => 'ids',
 			];
 			$query          = self::query_objects( $query_args, 'post' );
