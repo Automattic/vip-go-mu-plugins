@@ -64,9 +64,8 @@ docker run \
   --network $NETWORK_NAME \
   --name $FPM_CONTAINER_NAME \
   -v $SHARED_VOLUME:/wp \
-  -v $(pwd):/wp/wp-content/mu-plugins \
-  -v $(pwd)/__tests__/e2e/wp-config-e2e.php:/wp/wp-config.php \
-  -v $(pwd)/__tests__/e2e/php-startup.sh:/scripts/startup.sh \
+  -v /scripts \
+  -v /wp/wp-content \
   -e WP_VERSION="$WP_VERSION" \
   -e WORDPRESS_DB_HOST="$DB_CONTAINER_NAME" \
   -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
@@ -76,12 +75,10 @@ docker run \
   -d \
   --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4
 
-if [ $CI ]; then
-  docker cp $(pwd) php:/wp/wp-content/mu-plugins
-  docker cp $(pwd)/__tests__/e2e/wp-config-e2e.php php:/wp/wp-config.php
-  docker cp $(pwd)/__tests__/e2e/php-startup.sh php:/scripts/startup.sh
-  chmod +x /scripts/startup.sh
-fi
+docker cp $(pwd)/. $FPM_CONTAINER_NAME:/wp/wp-content/mu-plugins
+docker cp $(pwd)/__tests__/e2e/wp-config-e2e.php $FPM_CONTAINER_NAME:/wp/wp-config.php
+docker cp $(pwd)/__tests__/e2e/php-startup.sh $FPM_CONTAINER_NAME:/scripts/startup.sh
+
 docker exec php /scripts/startup.sh
   
 
@@ -95,6 +92,6 @@ docker run \
   -d \
   --rm ghcr.io/automattic/vip-container-images/nginx:1.21.3
 
-  while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do 
-    sleep 3; 
-  done
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do 
+  sleep 3; 
+done
