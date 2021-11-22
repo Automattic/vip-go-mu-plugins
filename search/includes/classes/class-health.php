@@ -838,15 +838,15 @@ class Health {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$last_db_id = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
 
-		$indexable  = \ElasticPress\Indexables::factory()->get( 'post' );
-		$query_args = [
-			'posts_per_page' => 1,
-			'orderby'        => 'ID',
-			'fields'         => 'ids',
-		];
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
 		$es_result = false;
 		if ( $indexable ) {
+			$query_args     = [
+				'posts_per_page' => 1,
+				'orderby'        => 'ID',
+				'fields'         => 'ids',
+			];
 			$query          = self::query_objects( $query_args, 'post' );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 			$es_result      = $indexable->query_es( $formatted_args, $query->query_vars );
