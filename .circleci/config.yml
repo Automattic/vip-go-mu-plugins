@@ -342,5 +342,5 @@ jobs:
           version: 19.03.13
           docker_layer_caching: false
       - run: npm ci
-      - run: chmod +x ./__tests__/e2e/php-startup.sh
+      - run: chown -R $USER:$USER /scripts
       - run: npm run test-e2e --env="--restart"
