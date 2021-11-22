@@ -139,6 +139,8 @@ $internal_cron_events = array(
 	),
 );
 
+define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
+
 // Enable Jetpack private connection by default on non production sites
 if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
 	define( 'VIP_JETPACK_IS_PRIVATE', true );
@@ -148,16 +150,6 @@ if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' 
 if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
 	define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', WPCOM_IS_VIP_ENV );
 }
-
-if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) && true === VIP_JETPACK_AUTO_MANAGE_CONNECTION ) {
-	$internal_cron_events[] = array(
-		'schedule' => 'hourly',
-		'action'   => 'wpcom_vip_run_jetpack_connection_pilot',
-		'callback' => array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ),
-	);
-}
-
-define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
 // Interaction with the filesystem will always be direct.
 // Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
