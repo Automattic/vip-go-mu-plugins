@@ -338,8 +338,11 @@ jobs:
       - image: cimg/node:16.10.0
     steps:
       - checkout
+      - run: git submodule init
       - setup_remote_docker:
           version: 20.10.7
           docker_layer_caching: false
       - run: npm ci
       - run: npm run test-e2e --env="--restart"
+      - store_artifacts:
+          path: $(pwd)/test-results
