@@ -4,6 +4,8 @@ namespace Automattic\VIP\Search;
 
 use ElasticPress\Features;
 use ElasticPress\Indexables;
+use stdClass;
+use WP_Post;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
@@ -21,10 +23,10 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	private $search_instance;
 
 	public function setUp(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		unset( $_GET['ep_debug'] );
+		parent::setUp();
 
-		$this->search_instance = new Search();
+		$this->search_instance = Search::instance();
+		// Reinitialize hooks, because of the way how `_backup_hooks()` and `_restore_hooks()` work
 		$this->search_instance->init();
 
 		do_action( 'plugins_loaded' );
@@ -289,14 +291,19 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	}
 
 	public function test__send_vary_headers__sent_for_group() {
-		$_GET['ep_debug'] = true;
+		try {
+			$_GET['ep_debug'] = true;
 
-		apply_filters( 'ep_valid_response', array(), array(), array(), array(), null );
+			apply_filters( 'ep_valid_response', array(), array(), array(), array(), null );
 
-		do_action( 'send_headers' );
+			do_action( 'send_headers' );
 
-		$headers = headers_list();
-		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', $headers, '', true );
+			$headers = headers_list();
+			$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', $headers, '', true );
+		} finally {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			unset( $_GET['ep_debug'] );
+		}
 	}
 
 	public function test__vip_search_filter__ep_facet_taxonomies_size() {
@@ -754,9 +761,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	}
 
 	public function test__limit_field_limit_absolute_maximum_is_20000() {
-		// Don't trigger an error since it's expected
-		add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
-
+		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
 		$this->assertEquals( 20000, $this->search_instance->limit_field_limit( 1000000 ) );
 	}
 
@@ -765,8 +770,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	}
 
 	public function test__ep_total_field_limit_should_limit_total_fields() {
-		// Don't trigger an error since it's expected
-		add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
 
 		add_filter(
 			'ep_total_field_limit',
@@ -818,7 +822,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	 * @dataProvider get_filter__ep_sync_taxonomies_default_data
 	 */
 	public function test__filter__ep_sync_taxonomies_default( $input_taxonomies ) {
-		$post = new \stdClass();
+		$post = new stdClass();
 
 		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $input_taxonomies, $post );
 
@@ -830,7 +834,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_sync_taxonomies_added() {
-		$post = new \stdClass();
+		$post = new stdClass();
 
 		$start_taxonomies = array(
 			(object) array(
@@ -863,7 +867,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter__ep_sync_taxonomies_removed() {
-		$post = new \stdClass();
+		$post = new stdClass();
 
 		$start_taxonomies = array(
 			(object) array(
@@ -925,7 +929,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 
 		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
-		$post     = new \WP_Post( new \StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		$meta = $this->search_instance->filter__ep_prepare_meta_data( $post_meta, $post );
@@ -974,7 +978,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 
 		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
-		$post     = new \WP_Post( new \StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		$meta = $this->search_instance->filter__ep_prepare_meta_data( $post_meta, $post );
@@ -1028,7 +1032,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
 		$this->assertTrue( $this->search_instance->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
 	}
@@ -1159,7 +1163,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'testing', $es->add_attachment_to_ep_indexable_post_types( 'testing' ) );
 		$this->assertEquals( 65, $es->add_attachment_to_ep_indexable_post_types( 65 ) );
 		$this->assertEquals( null, $es->add_attachment_to_ep_indexable_post_types( null ) );
-		$this->assertEquals( new \StdClass(), $es->add_attachment_to_ep_indexable_post_types( new \StdClass() ) );
+		$this->assertEquals( new stdClass(), $es->add_attachment_to_ep_indexable_post_types( new stdClass() ) );
 	}
 
 	public function test__add_attachment_to_ep_indexable_post_types_should_append_attachment_to_array() {
@@ -1185,7 +1189,7 @@ class Search_Lite_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
 		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
 		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
-		$this->assertEquals( new \StdClass(), apply_filters( 'ep_indexable_post_types', new \StdClass() ) );
+		$this->assertEquals( new stdClass(), apply_filters( 'ep_indexable_post_types', new stdClass() ) );
 	}
 
 	public function test__is_protected_content_enabled_should_return_true_if_protected_content_enabled() {
@@ -1274,27 +1278,22 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	 * @dataProvider get_post_meta_allow_list__combinations_not_jetpack_migration_data
 	 */
 	public function test__get_post_meta_allow_list__combinations_not_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
-		$es       = Search::instance();
-		$post     = new \WP_Post( new \StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
-		remove_all_filters( 'vip_search_post_meta_allow_list' );
-		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
-		$es->init();
-
 		if ( is_array( $vip_search_keys ) ) {
-			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+			add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
 				return array_merge( $post_meta, $vip_search_keys );
 			});
 		}
 
 		if ( is_array( $jetpack_added ) ) {
-			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+			add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
 				return array_merge( $post_meta, $jetpack_added );
 			});
 		}
 
-		$result = $es->get_post_meta_allow_list( $post );
+		$result = $this->search_instance->get_post_meta_allow_list( $post );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -1326,24 +1325,17 @@ class Search_Lite_Test extends WP_UnitTestCase {
 	 * @dataProvider get_post_meta_allow_list__processing_array_data
 	 */
 	public function test__get_post_meta_allow_list__processing_array( $returned_by_filter, $expected ) {
-		$es       = Search::instance();
-		$post     = new \WP_Post( new \StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
-		remove_all_filters( 'vip_search_post_meta_allow_list' );
-		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
-		$es->init();
-
 		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
-			return [];
-		} );
+		add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
 
-		\add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
+		add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
 			return $returned_by_filter;
 		}, 0);
 
-		$result = $es->get_post_meta_allow_list( $post );
+		$result = $this->search_instance->get_post_meta_allow_list( $post );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -1372,28 +1364,25 @@ class Search_Lite_Test extends WP_UnitTestCase {
 		];
 	}
 
+	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
+		$this->assertFalse( $this->search_instance->is_protected_content_enabled() );
+	}
+
 	/**
 	 * @dataProvider filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_ep_protected_keys, $added_keys, $expected ) {
-		$post     = new \WP_Post( new \StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
-		remove_all_filters( 'vip_search_post_meta_allow_list' );
-		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
-		remove_all_filters( 'ep_prepare_meta_allowed_protected_keys' );
-		Search::instance()->init();
-
 		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
-			return [];
-		} );
+		add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
 
-		\add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
+		add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
 			return array_merge( $meta_keys, $added_keys );
 		}, 0);
 
-		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $post );
+		$result = apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $post );
 
 		$this->assertEquals( $expected, $result );
 	}
