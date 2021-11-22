@@ -832,6 +832,11 @@ class Health {
 		}
 	}
 
+	/**
+	 * Get the last post ID.
+	 * 
+	 * @return int $last The latter post ID between database and ES.
+	 */
 	public static function get_last_post_id() {
 		global $wpdb;
 
@@ -845,7 +850,7 @@ class Health {
 			$query_args     = [
 				'posts_per_page' => 1,
 				'orderby'        => 'ID',
-				'order'        => 'desc',
+				'order'          => 'desc',
 				'fields'         => 'ids',
 			];
 			$query          = self::query_objects( $query_args, 'post' );
