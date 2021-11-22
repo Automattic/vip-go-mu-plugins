@@ -339,7 +339,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 19.03.13
+          version: 20.10.11
           docker_layer_caching: false
       - run: npm ci
       - run: npm run test-e2e --env="--restart"
