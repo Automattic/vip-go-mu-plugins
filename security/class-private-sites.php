@@ -34,14 +34,14 @@ class Private_Sites {
 
 	public static function is_jetpack_private() {
 		// If constant is defined and is set to `false`, bypass any other logic; site has opted out
-		$is_opted_out = defined( 'VIP_JETPACK_IS_PRIVATE' ) && false === VIP_JETPACK_IS_PRIVATE;
+		$is_opted_out = defined( 'VIP_JETPACK_IS_PRIVATE' ) && false === constant( 'VIP_JETPACK_IS_PRIVATE' );
 		if ( $is_opted_out ) {
 			return false;
 		}
 
-		$by_constant        = defined( 'VIP_JETPACK_IS_PRIVATE' ) && true === VIP_JETPACK_IS_PRIVATE;
-		$by_basic_auth      = defined( 'WPCOM_VIP_BASIC_AUTH' ) && true === WPCOM_VIP_BASIC_AUTH;
-		$by_ip_restrictions = defined( 'WPCOM_VIP_IP_ALLOW_LIST' ) && true === WPCOM_VIP_IP_ALLOW_LIST;
+		$by_constant        = defined( 'VIP_JETPACK_IS_PRIVATE' ) && true === constant( 'VIP_JETPACK_IS_PRIVATE' );
+		$by_basic_auth      = defined( 'WPCOM_VIP_BASIC_AUTH' ) && true === constant( 'WPCOM_VIP_BASIC_AUTH' );
+		$by_ip_restrictions = defined( 'WPCOM_VIP_IP_ALLOW_LIST' ) && true === constant( 'WPCOM_VIP_IP_ALLOW_LIST' );
 
 		// For now, this is only enabled on sites that have defined the constant
 		return $by_constant || $by_basic_auth || $by_ip_restrictions;
