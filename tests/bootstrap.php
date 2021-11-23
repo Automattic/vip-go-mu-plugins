@@ -32,6 +32,7 @@ function _manually_load_plugin() {
 	require_once __DIR__ . '/../vip-jetpack/vip-jetpack.php';
 
 	// Proxy lib
+	require_once __DIR__ . '/proxy-helpers.php'; // Needs to be included before ip-forward.php
 	require_once __DIR__ . '/../lib/proxy/ip-forward.php';
 	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
