@@ -733,6 +733,7 @@ class Search {
 			'delete_index',
 			'refresh_indices',
 			'put_mapping',
+			'bulk_index',
 		];
 		if ( ! in_array( $type, $index_actions, true ) ) {
 			return $request;
