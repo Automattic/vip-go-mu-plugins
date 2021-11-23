@@ -11,7 +11,7 @@ class HealthJob {
 	/**
 	 * The name of the scheduled cron event to run the health check
 	 */
-	const CRON_EVENT_NAME = 'vip_search_healthcheck';
+	const CRON_EVENT_HEALTHCHECK_NAME = 'vip_search_healthcheck';
 
 	/**
 	 * The name of the scheduled cron event to run the validate contnets check
@@ -21,7 +21,7 @@ class HealthJob {
 	/**
 	 * Custom cron interval name
 	 */
-	const CRON_INTERVAL_NAME = 'vip_search_healthcheck_interval';
+	const CRON_INTERVAL_HEALTHCHECK_NAME = 'vip_search_healthcheck_interval';
 
 	/**
 	 * Custom cron interval value
@@ -74,7 +74,7 @@ class HealthJob {
 	 */
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+		add_action( self::CRON_EVENT_HEALTHCHECK_NAME, [ $this, 'check_health' ] );
 		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME, [ $this, 'validate_contents' ] );
 
 		if ( ! $this->is_enabled() ) {
@@ -94,9 +94,9 @@ class HealthJob {
 	 * Add the event name to WP cron schedule and then add the action
 	 */
 	public function schedule_job() {
-		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+		if ( ! wp_next_scheduled( self::CRON_EVENT_HEALTHCHECK_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
-			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
+			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_HEALTHCHECK_NAME, self::CRON_EVENT_HEALTHCHECK_NAME );
 		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
@@ -110,8 +110,8 @@ class HealthJob {
 	 * Remove the ES health check job from the events list
 	 */
 	public function disable_job() {
-		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+		if ( wp_next_scheduled( self::CRON_EVENT_HEALTHCHECK_NAME ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_HEALTHCHECK_NAME );
 		}
 		if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME );
@@ -128,12 +128,12 @@ class HealthJob {
 	 * @return  mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
+		if ( isset( $schedule[ self::CRON_INTERVAL_HEALTHCHECK_NAME ] ) ) {
 			return $schedule;
 		}
 
-		$schedule[ self::CRON_INTERVAL_NAME ] = [
-			'interval' => self::CRON_INTERVAL,
+		$schedule[ self::CRON_INTERVAL_HEALTHCHECK_NAME ] = [
+			'interval' => self::CRON_INTERVAL_HEALTHCHECK_NAME,
 			'display'  => __( 'VIP Search Healthcheck time interval' ),
 		];
 
