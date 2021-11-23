@@ -833,19 +833,27 @@ class Health {
 	}
 
 	/**
-	 * Get the last post ID.
+	 * Get the last post ID from the database.
 	 * 
-	 * @return int $last The latter post ID between database and ES.
+	 * @return int $last_db_id The last post ID from the database.
 	 */
-	public static function get_last_post_id() {
+	public static function get_last_db_post_id() {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$last_db_id = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
 
+		return (int) $last_db_id;
+	}
+
+	/**
+	 * Get the last post ID from Elasticsearch.
+	 * 
+	 * @return int $last_es_id The last post ID from ES.
+	 */
+	public static function get_last_es_post_id() {
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
-		$es_result = false;
 		if ( $indexable ) {
 			$query_args     = [
 				'posts_per_page' => 1,
@@ -857,10 +865,22 @@ class Health {
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 			$es_result      = $indexable->query_es( $formatted_args, $query->query_vars );
 		}
-		$last_es_id = $es_result && isset( $es_result['documents'][0]['post_id'] ) ? $es_result['documents'][0]['post_id'] : 0;
+		$last_es_id = $es_result['documents'][0]['post_id'] ?? false;
 
-		$last = max( $last_db_id, $last_es_id );
-		return (int) $last;
+		return (int) $last_es_id;
+	}
+
+	/**
+	 * Get the latter post ID between the database and Elasticsearch.
+	 * 
+	 * @return int $last The latter post ID.
+	 */
+	public static function get_last_post_id() {
+		$last_db_id = self::get_last_db_post_id();
+		$last_es_id = self::get_last_es_post_id();
+		$last       = max( $last_db_id, $last_es_id );
+		
+		return $last;
 	}
 
 	public static function get_document_ids_for_batch( $start_post_id, $last_post_id ) {
