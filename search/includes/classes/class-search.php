@@ -417,6 +417,8 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'get_cached_index_exists_request' ], 9998, 5 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'invalidate_cached_index_exists_request' ], 9998, 5 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
@@ -686,6 +688,76 @@ class Search {
 	 */
 	public function filter__ep_bulk_items_per_page() {
 		return 500;
+	}
+
+	/**
+	 * Filter to return value of option that caches index_exists request (if it doesn't exist, cache it).
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function get_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( 'index_exists' !== $type ) {
+			return $request;
+		}
+
+		$option_name = $this->get_index_exists_option_name( $query['url'] );
+		$request     = get_option( $option_name );
+		if ( false === $request ) {
+			// Option doesn't exist, do the request and cache it.
+			$request = vip_safe_wp_remote_request( $query['url'] );
+			if ( ! is_wp_error( $request ) ) {
+				update_option( $option_name, $request );
+			}
+		}
+		
+		return $request;
+	}
+
+	/**
+	 * Invalidate cached index_exists request option on certain index actions.
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function invalidate_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		$index_actions = [
+			'delete_index',
+			'refresh_indices',
+			'put_mapping',
+		];
+		if ( ! in_array( $type, $index_actions, true ) ) {
+			return $request;
+		}
+
+		$option_name = $this->get_index_exists_option_name( $query['url'] );
+		$option      = get_option( $option_name );
+		if ( false !== $option ) {
+			delete_option( $option_name );
+		}
+
+		return $request;
+	}
+
+	/**
+	 * Generate option name for cached index_exists request.
+	 * 
+	 * @return string $option_name Name of generated option.
+	 */
+	private function get_index_exists_option_name( $url ) {
+		$parsed_url  = wp_parse_url( $url );
+		$index_name  = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+		$option_name = "es_index_exists_{$index_name}";
+
+		return $option_name;
 	}
 
 	/**
