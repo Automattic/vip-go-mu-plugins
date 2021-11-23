@@ -348,6 +348,12 @@ jobs:
       - run: npm run lint --prefix search/search-dev-tools
       # This build is only used to verify that the src is buildable, not to persist build artifacts
       - run: npm run build --prefix search/search-dev-tools
+      - run:
+          command:
+            if [ grep -q webpack-dev-server search/search-dev-tools/build/bundle.js ]; then
+              echo "Attempt to commit a development version of search-dev-tools"
+              exit 1
+            fi
 
   push-code-to-build:
       docker:
