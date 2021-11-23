@@ -21,7 +21,7 @@ class HealthJob {
 	/**
 	 * Custom cron interval name
 	 */
-	const CRON_INTERVAL_NAME = 'vip_search_healthcheck_interval';
+	const CRON_INTERVAL_HEALTHCHECK_NAME = 'vip_search_healthcheck_interval';
 
 	/**
 	 * Custom cron interval value
@@ -96,7 +96,7 @@ class HealthJob {
 	public function schedule_job() {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_HEALTHCHECK_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
-			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_NAME, self::CRON_EVENT_HEALTHCHECK_NAME );
+			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_HEALTHCHECK_NAME, self::CRON_EVENT_HEALTHCHECK_NAME );
 		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
@@ -128,12 +128,12 @@ class HealthJob {
 	 * @return  mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
+		if ( isset( $schedule[ self::CRON_INTERVAL_HEALTHCHECK_NAME ] ) ) {
 			return $schedule;
 		}
 
-		$schedule[ self::CRON_INTERVAL_NAME ] = [
-			'interval' => self::CRON_INTERVAL,
+		$schedule[ self::CRON_INTERVAL_HEALTHCHECK_NAME ] = [
+			'interval' => self::CRON_INTERVAL_HEALTHCHECK_NAME,
 			'display'  => __( 'VIP Search Healthcheck time interval' ),
 		];
 
