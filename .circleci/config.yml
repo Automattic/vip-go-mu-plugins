@@ -347,7 +347,7 @@ jobs:
       - run:
           command: |
             if grep -q webpack-dev-server search/search-dev-tools/build/bundle.js; then
-              echo "Attempt to commit a development version of search-dev-tools"
+              echo "Attempted to commit a development version of search-dev-tools, please rebuild with npm run build"
               exit 1
             fi
       - run: npm ci --prefix search/search-dev-tools
