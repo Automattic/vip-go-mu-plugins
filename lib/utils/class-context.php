@@ -14,12 +14,12 @@ class Context {
 	public static function is_vip_env() {
 		// VIP_GO_ENV will have a string value with the environment on Go servers.
 		// Will be `false` or undefined on non-Go servers.
-		return defined( 'VIP_GO_ENV' ) && false !== VIP_GO_ENV;
+		return defined( 'VIP_GO_ENV' ) && false !== constant( 'VIP_GO_ENV' );
 	}
 
 	public static function is_maintenance_mode() {
 		return defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' )
-			&& true === WPCOM_VIP_SITE_MAINTENANCE_MODE;
+			&& true === constant( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' );
 	}
 
 	public static function is_healthcheck() {
@@ -44,26 +44,26 @@ class Context {
 	}
 
 	public static function is_wp_cli() {
-		return defined( 'WP_CLI' ) && WP_CLI;
+		return defined( 'WP_CLI' ) && constant( 'WP_CLI' );
 	}
 
 	public static function is_rest_api() {
-		return defined( 'REST_REQUEST' ) && true === REST_REQUEST;
+		return defined( 'REST_REQUEST' ) && true === constant( 'REST_REQUEST' );
 	}
 
 	public static function is_cron() {
-		return defined( 'DOING_CRON' ) && true === DOING_CRON;
+		return defined( 'DOING_CRON' ) && true === constant( 'DOING_CRON' );
 	}
 
 	public static function is_xmlrpc_api() {
-		return defined( 'XMLRPC_REQUEST' ) && true === XMLRPC_REQUEST;
+		return defined( 'XMLRPC_REQUEST' ) && true === constant( 'XMLRPC_REQUEST' );
 	}
 
 	public static function is_ajax() {
-		return defined( 'DOING_AJAX' ) && true === DOING_AJAX;
+		return defined( 'DOING_AJAX' ) && true === constant( 'DOING_AJAX' );
 	}
 
 	public static function is_installing() {
-		return defined( 'WP_INSTALLING' ) && true === WP_INSTALLING;
+		return defined( 'WP_INSTALLING' ) && true === constant( 'WP_INSTALLING' );
 	}
 }
