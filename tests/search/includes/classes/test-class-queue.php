@@ -273,7 +273,8 @@ class Queue_Test extends WP_UnitTestCase {
 		// Insert first job, set it to scheduled, so that we get some queued objects that are rate limited
 		$this->queue->queue_object( $objects[0]['id'], $objects[0]['type'] );
 		$this->queue->set_last_index_time( $objects[0]['id'], $objects[0]['type'], $now );
-		$this->queue->update_job( $objects[0]['id'], array( 'status' => 'scheduled' ) );
+		$job_id = $this->get_min_object_id_from_queue();
+		$this->queue->update_job( $job_id, array( 'status' => 'scheduled' ) );
 
 		// Insert the jobs
 		foreach ( $objects as $object ) {
