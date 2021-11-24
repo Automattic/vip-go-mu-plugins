@@ -302,6 +302,7 @@ class Queue {
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 * @param array $options
+	 * @return int ID of the queued object, 0 on failure
 	 */
 	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
 		global $wpdb;
@@ -335,6 +336,8 @@ class Queue {
 		);
 		// phpcs:enable
 
+		$insert_id = $wpdb->insert_id;
+
 		/**
 		 * Fires when an object is requested to be queued. Note that this fires regardless of if the object is actually queued
 		 * as it may have already been in the queue (and a new db row was not actually created)
@@ -349,6 +352,8 @@ class Queue {
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
+
+		return $insert_id;
 	}
 
 	/**

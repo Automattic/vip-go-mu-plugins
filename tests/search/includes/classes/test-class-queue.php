@@ -276,9 +276,11 @@ class Queue_Test extends WP_UnitTestCase {
 		$job_id = $this->get_min_object_id_from_queue();
 		$this->queue->update_job( $job_id, array( 'status' => 'scheduled' ) );
 
+		$expected_job_ids = [];
+
 		// Insert the jobs
 		foreach ( $objects as $object ) {
-			$this->queue->queue_object( $object['id'], $object['type'] );
+			$expected_job_ids[] = $this->queue->queue_object( $object['id'], $object['type'] );
 		}
 
 		$expected_scheduled_time = gmdate( 'Y-m-d H:i:s' );
@@ -298,10 +300,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_object_ids, $object_ids, 'Checked out jobs ids do not match what was expected' );
 
-		// And each of those should be now marked as "running"
-		$ids_escaped = array_map( 'esc_sql', $expected_object_ids );
-
-		$ids_where_string = implode( ', ', $ids_escaped );
+		$ids_where_string = implode( ', ', $expected_job_ids );
 
 		$not_scheduled_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'scheduled'" );
 
