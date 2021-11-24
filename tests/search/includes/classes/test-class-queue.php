@@ -29,7 +29,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
-		\Automattic\VIP\Search\Search::instance();
+		\Automattic\VIP\Search\Search::instance()->init();
 
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
@@ -1230,14 +1230,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$filter
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
 	}
 
@@ -1252,14 +1245,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$too_low_message
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
 	}
 
@@ -1278,14 +1264,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$too_high_message
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
 	}
 
