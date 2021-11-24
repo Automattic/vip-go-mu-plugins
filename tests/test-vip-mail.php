@@ -8,6 +8,19 @@ use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 class VIP_Mail_Test extends WP_UnitTestCase {
 	use AssertionRenames;
 
+	public static $wp_version = '';
+
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+
+		// Get the unmodified version
+		// When tests run in a random order, an unknown test messes up `global $wp_version` :-(
+		require ABSPATH . WPINC . '/version.php';
+
+		/** @var string $wp_version */
+		self::$wp_version = $wp_version;
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 		reset_phpmailer_instance();
@@ -69,9 +82,8 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 	}
 
 	public function test_load_VIP_PHPMailer() {
-		global $wp_version;
-		$should_be_loaded = version_compare( $wp_version, '5.5', '>=' );
-		$this->assertEquals( $should_be_loaded, class_exists( 'VIP_PHPMailer' ), 'VIP_PHPMailer should be loaded only for WP >= 5.5. Version: ' . $wp_version );
+		$should_be_loaded = version_compare( self::$wp_version, '5.5', '>=' );
+		$this->assertEquals( $should_be_loaded, class_exists( 'VIP_PHPMailer', false ), 'VIP_PHPMailer should be loaded only for WP >= 5.5. Version: ' . self::$wp_version );
 	}
 
 	/**
@@ -80,8 +92,7 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test__attachments_path_validation() {
-		global $wp_version;
-		if ( version_compare( $wp_version, '5.5', '<' ) ) {
+		if ( version_compare( self::$wp_version, '5.5', '<' ) ) {
 			$this->markTestSkipped( 'Skipping VIP_PHPMailer logic validation on WP < 5.5' );
 		}
 
