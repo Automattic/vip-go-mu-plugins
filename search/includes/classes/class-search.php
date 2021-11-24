@@ -740,10 +740,7 @@ class Search {
 		}
 
 		$option_name = $this->get_index_exists_option_name( $query['url'] );
-		$option      = get_option( $option_name );
-		if ( false !== $option ) {
-			delete_option( $option_name );
-		}
+		delete_option( $option_name );
 
 		return $request;
 	}
