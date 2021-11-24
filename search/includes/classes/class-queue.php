@@ -507,7 +507,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->query( "TRUNCATE TABLE {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
+		return $wpdb->query( "DELETE FROM {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 	}
 
 	public function count_jobs( $status, $object_type = 'post', $options = array() ) {
