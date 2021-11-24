@@ -83,6 +83,10 @@ class HealthJob {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
 			wp_schedule_event( time() + ( mt_rand( 1, 7 ) * DAY_IN_SECONDS ) + ( mt_rand( 1, 24 ) * HOUR_IN_SECONDS ), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
+
+		if ( wp_next_scheduled( 'vip_search_healthcheck' ) ) {
+			wp_clear_scheduled_hook( 'vip_search_healthcheck' );
+		}
 	}
 
 	/**
