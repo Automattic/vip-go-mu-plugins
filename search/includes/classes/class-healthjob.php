@@ -11,7 +11,7 @@ class HealthJob {
 	/**
 	 * The name of the scheduled cron event to run the health check
 	 */
-	const CRON_EVENT_NAME = 'vip_search_healthcheck';
+	const CRON_EVENT_HEALTHCHECK_NAME = 'vip_search_healthcheck';
 
 	/**
 	 * The name of the scheduled cron event to run the validate contnets check
@@ -21,7 +21,7 @@ class HealthJob {
 	/**
 	 * Custom cron interval name
 	 */
-	const CRON_INTERVAL_NAME = 'vip_search_healthcheck_interval';
+	const CRON_INTERVAL_HEALTHCHECK_NAME = 'vip_search_healthcheck_interval';
 
 	/**
 	 * Custom cron interval value
@@ -37,6 +37,16 @@ class HealthJob {
 	 * @var int the percentage after which the alert should be sent for autoheal - 0.1 = 10%
 	 */
 	const AUTOHEALED_ALERT_THRESHOLD = 0.1;
+
+	/**
+	 * @var string The lock name for healthchecks.
+	 */
+	const HEALTHCHECK_LOCK_NAME = 'vip_search_healthcheck_lock';
+
+	/**
+	 * @var int The timeout for the lock.
+	 */
+	const HEALTHCHECK_LOCK_TIMEOUT = 5 * MINUTE_IN_SECONDS;
 
 	public $health_check_disabled_sites = array();
 
@@ -74,7 +84,7 @@ class HealthJob {
 	 */
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
+		add_action( self::CRON_EVENT_HEALTHCHECK_NAME, [ $this, 'check_health' ] );
 		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME, [ $this, 'validate_contents' ] );
 
 		if ( ! $this->is_enabled() ) {
@@ -94,9 +104,9 @@ class HealthJob {
 	 * Add the event name to WP cron schedule and then add the action
 	 */
 	public function schedule_job() {
-		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
+		if ( ! wp_next_scheduled( self::CRON_EVENT_HEALTHCHECK_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
-			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
+			wp_schedule_event( time() + ( mt_rand( 1, 60 ) * MINUTE_IN_SECONDS ), self::CRON_INTERVAL_HEALTHCHECK_NAME, self::CRON_EVENT_HEALTHCHECK_NAME );
 		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
@@ -110,8 +120,8 @@ class HealthJob {
 	 * Remove the ES health check job from the events list
 	 */
 	public function disable_job() {
-		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+		if ( wp_next_scheduled( self::CRON_EVENT_HEALTHCHECK_NAME ) ) {
+			wp_clear_scheduled_hook( self::CRON_EVENT_HEALTHCHECK_NAME );
 		}
 		if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME );
@@ -128,12 +138,12 @@ class HealthJob {
 	 * @return  mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
+		if ( isset( $schedule[ self::CRON_INTERVAL_HEALTHCHECK_NAME ] ) ) {
 			return $schedule;
 		}
 
-		$schedule[ self::CRON_INTERVAL_NAME ] = [
-			'interval' => self::CRON_INTERVAL,
+		$schedule[ self::CRON_INTERVAL_HEALTHCHECK_NAME ] = [
+			'interval' => self::CRON_INTERVAL_HEALTHCHECK_NAME,
 			'display'  => __( 'VIP Search Healthcheck time interval' ),
 		];
 
@@ -204,8 +214,8 @@ class HealthJob {
 			return;
 		}
 
-		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+		// Don't run the checks if the index is not built or there is already a healthcheck ongoing.
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() || $this->is_healthcheck_ongoing() ) {
 			return;
 		}
 
@@ -213,6 +223,8 @@ class HealthJob {
 	}
 
 	public function check_document_count_health() {
+		$this->set_healthcheck_lock();
+
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
@@ -240,6 +252,8 @@ class HealthJob {
 
 			$this->process_document_count_health_results( $post_results );
 		}
+
+		$this->remove_healthcheck_lock();
 	}
 
 	/**
@@ -347,5 +361,19 @@ class HealthJob {
 		 * @param bool $enable True to enable the healthcheck cron job
 		 */
 		return apply_filters( 'enable_vip_search_healthchecks', $enabled );
+	}
+
+	public function set_healthcheck_lock() {
+		\set_transient( self::HEALTHCHECK_LOCK_NAME, true, self::HEALTHCHECK_LOCK_TIMEOUT );
+	}
+
+	public function remove_healthcheck_lock() {
+		\delete_transient( self::HEALTHCHECK_LOCK_NAME );
+	}
+
+	public function is_healthcheck_ongoing(): bool {
+		$is_locked = \get_transient( self::HEALTHCHECK_LOCK_NAME, false );
+
+		return (bool) $is_locked;
 	}
 }
