@@ -67,3 +67,15 @@ namespace Automattic\VIP {
 		return Constant_Mocker::constant( $constant );
 	}
 }
+
+namespace Automattic\VIP\Files\Acl {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}

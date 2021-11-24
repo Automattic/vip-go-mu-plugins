@@ -17,7 +17,7 @@ const FILE_IS_PRIVATE_AND_DENIED  = 'FILE_IS_PRIVATE_AND_DENIED';
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
-	$is_files_acl_enabled            = defined( 'VIP_FILES_ACL_ENABLED' ) && true === VIP_FILES_ACL_ENABLED;
+	$is_files_acl_enabled            = defined( 'VIP_FILES_ACL_ENABLED' ) && true === constant( 'VIP_FILES_ACL_ENABLED' );
 	$is_restrict_all_enabled         = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
 	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
 
