@@ -15,6 +15,7 @@ require_once __DIR__ . '/../../files/class-image-sizes.php';
  * @group srcset
  */
 class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
+	private static $wp_additional_image_sizes;
 
 	/**
 	 * The test image.
@@ -40,7 +41,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
-
 	}
 
 	/**
@@ -60,6 +60,18 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		Automattic\VIP\Files\ImageSizes::$sizes = null;
 
 		parent::tearDown();
+	}
+
+	protected function _backup_hooks() {    // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		global $_wp_additional_image_sizes;
+		parent::_backup_hooks();
+		self::$wp_additional_image_sizes = $_wp_additional_image_sizes;
+	}
+
+	protected function _restore_hooks() {   // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		global $_wp_additional_image_sizes;
+		$_wp_additional_image_sizes = self::$wp_additional_image_sizes;
+		parent::_restore_hooks();
 	}
 
 	/**
