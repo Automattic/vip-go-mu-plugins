@@ -344,6 +344,12 @@ jobs:
       - image: cimg/node:16.10.0
     steps:
       - checkout
+      - run:
+          command: |
+            if grep -q webpack-dev-server search/search-dev-tools/build/bundle.js; then
+              echo "Attempted to commit a development version of search-dev-tools, please rebuild with npm run build"
+              exit 1
+            fi
       - run: npm ci --prefix search/search-dev-tools
       - run: npm run lint --prefix search/search-dev-tools
       # This build is only used to verify that the src is buildable, not to persist build artifacts
