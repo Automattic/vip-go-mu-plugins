@@ -38,6 +38,16 @@ class HealthJob {
 	 */
 	const AUTOHEALED_ALERT_THRESHOLD = 0.1;
 
+	/**
+	 * @var string The lock name for healthchecks.
+	 */
+	const HEALTHCHECK_LOCK_NAME = 'vip_search_healthcheck_lock';
+
+	/**
+	 * @var int The timeout for the lock.
+	 */
+	const HEALTHCHECK_LOCK_TIMEOUT = 5 * MINUTE_IN_SECONDS;
+
 	public $health_check_disabled_sites = array();
 
 	/**
@@ -204,8 +214,8 @@ class HealthJob {
 			return;
 		}
 
-		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+		// Don't run the checks if the index is not built or there is already a healthcheck ongoing.
+		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() || $this->is_healthcheck_ongoing() ) {
 			return;
 		}
 
@@ -213,6 +223,8 @@ class HealthJob {
 	}
 
 	public function check_document_count_health() {
+		$this->set_healthcheck_lock();
+
 		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
 
 		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
@@ -240,6 +252,8 @@ class HealthJob {
 
 			$this->process_document_count_health_results( $post_results );
 		}
+
+		$this->remove_healthcheck_lock();
 	}
 
 	/**
@@ -347,5 +361,19 @@ class HealthJob {
 		 * @param bool $enable True to enable the healthcheck cron job
 		 */
 		return apply_filters( 'enable_vip_search_healthchecks', $enabled );
+	}
+
+	public function set_healthcheck_lock() {
+		\set_transient( self::HEALTHCHECK_LOCK_NAME, true, self::HEALTHCHECK_LOCK_TIMEOUT );
+	}
+
+	public function remove_healthcheck_lock() {
+		\delete_transient( self::HEALTHCHECK_LOCK_NAME );
+	}
+
+	public function is_healthcheck_ongoing(): bool {
+		$is_locked = \get_transient( self::HEALTHCHECK_LOCK_NAME, false );
+
+		return (bool) $is_locked;
 	}
 }
