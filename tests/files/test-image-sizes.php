@@ -15,8 +15,6 @@ require_once __DIR__ . '/../../files/class-image-sizes.php';
  * @group srcset
  */
 class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
-	private static $wp_additional_image_sizes;
-
 	/**
 	 * The test image.
 	 *
@@ -60,18 +58,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		Automattic\VIP\Files\ImageSizes::$sizes = null;
 
 		parent::tearDown();
-	}
-
-	protected function _backup_hooks() {    // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
-		global $_wp_additional_image_sizes;
-		parent::_backup_hooks();
-		self::$wp_additional_image_sizes = $_wp_additional_image_sizes;
-	}
-
-	protected function _restore_hooks() {   // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
-		global $_wp_additional_image_sizes;
-		$_wp_additional_image_sizes = self::$wp_additional_image_sizes;
-		parent::_restore_hooks();
 	}
 
 	/**
@@ -558,27 +544,31 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		$width            = 200;
 		$height           = 180;
 		add_image_size( $custom_size_name, $width, $height, true );
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		try {
+			$attachment_id = self::factory()->attachment->create_object(
+				$this->test_image, 0, [
+					'post_mime_type' => 'image/jpeg',
+					'post_type'      => 'attachment',
+				]
+			);
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$metadata = wp_get_attachment_metadata( $attachment_id );
+			$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'The newly registered image size has not been created.' );
+			$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'The newly registered image size has not been created.' );
 
-		// Has all the sizes, including the new one, have correct dimensions?
-		foreach ( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
-			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
+			// Has all the sizes, including the new one, have correct dimensions?
+			foreach ( $this->default_sizes() as $size => $properties ) {
+				$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
+				$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
+			}
+
+			// Does the custom size have the correct dimensions?
+			$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
+			$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
+		} finally {
+			remove_image_size( $custom_size_name );
 		}
-
-		// Does the custom size have the correct dimensions?
-		$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
-		$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
 	}
 
 	/**
@@ -587,26 +577,30 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	public function test__correctness_of_the_urls() {
 		// Register the custom size.
 		$custom_size_name = 'custom_size';
-		add_image_size( $custom_size_name, 200, 180, true );
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		try {
+			add_image_size( $custom_size_name, 200, 180, true );
+			$attachment_id = self::factory()->attachment->create_object(
+				$this->test_image, 0, [
+					'post_mime_type' => 'image/jpeg',
+					'post_type'      => 'attachment',
+				]
+			);
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$metadata = wp_get_attachment_metadata( $attachment_id );
+			$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		$filename = wp_basename( $this->test_image );
+			$filename = wp_basename( $this->test_image );
 
-		// Check the default sizes.
-		foreach ( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'], sprintf( 'Incorrect file or query params for %s size.', $size ) );
+			// Check the default sizes.
+			foreach ( $this->default_sizes() as $size => $properties ) {
+				$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'], sprintf( 'Incorrect file or query params for %s size.', $size ) );
+			}
+
+			// Check the custom size.
+			$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][ $custom_size_name ]['file'], 'Incorrect file for custom size.' );
+		} finally {
+			remove_image_size( $custom_size_name );
 		}
-
-		// Check the custom size.
-		$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][ $custom_size_name ]['file'], 'Incorrect file for custom size.' );
 	}
 
 	/**
