@@ -47,6 +47,24 @@ class HealthJob_Test extends WP_UnitTestCase {
 		$job->check_health();
 	}
 
+	public function test_check_document_count_health__should_set_and_clear_lock() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		/** @var \Automattic\VIP\Search\Health&MockObject */
+		$mocked_health = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
+			->setConstructorArgs( [ $es ] )
+			->setMethods( [ 'set_healthcheck_lock', 'remove_healthcheck_lock', 'process_document_count_health_results' ] )
+			->getMock();
+
+		$mocked_health->method( 'process_document_count_health_results' )->willReturn( [] );
+
+		$mocked_health->expects( $this->once() )->method( 'set_healthcheck_lock' );
+		$mocked_health->expects( $this->once() )->method( 'remove_healthcheck_lock' );
+
+		$mocked_health->check_document_count_health();
+	}
+
 	public function test__vip_search_healthjob_check_health_with_inactive_features() {
 		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
 		update_option( 'ep_last_sync', time() ); // So EP thinks we've done an index before
@@ -66,7 +84,7 @@ class HealthJob_Test extends WP_UnitTestCase {
 		// Mock the health job
 		$job = $this->getMockBuilder( \Automattic\VIP\Search\HealthJob::class )
 			->setConstructorArgs( [ $es ] )
-			->setMethods( array( 'process_document_count_health_results', 'send_alert' ) )
+			->setMethods( array( 'process_document_count_health_results', 'send_alert', 'set_healthcheck_lock', 'remove_healthcheck_lock', 'is_healthcheck_ongoing' ) )
 			->getMock();
 
 		// Only expect it to process 1 set of results (for regular posts)
