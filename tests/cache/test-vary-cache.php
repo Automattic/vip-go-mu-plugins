@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Cache;
 
+use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
@@ -25,6 +26,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		header_remove();
 
 		Vary_Cache::load();
+		Constant_Mocker::clear();
 	}
 
 	public function tearDown(): void {
@@ -395,32 +397,23 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertNull( $actual_result );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__enable_encryption_invalid_empty_constants() {
 		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
 		$this->expectError();
 
-		define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
-		define( 'VIP_GO_AUTH_COOKIE_IV', '' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '' );
 
 		$actual_result = Vary_Cache::enable_encryption();
 		$this->assertNull( $actual_result );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__enable_encryption_true_valid() {
-		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
-		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
 
 		$actual_result = Vary_Cache::enable_encryption();
 		$this->assertNull( $actual_result );
-
 	}
 
 	public function get_test_data__validate_cookie_value_invalid() {
@@ -489,13 +482,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		self::assertContains( 'Vary: yay', $headers, true );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__send_vary_headers__sent_for_group_with_encryption() {
-		define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
-		define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
 		Vary_Cache::register_group( 'dev-group' );
 		Vary_Cache::enable_encryption();
 
@@ -697,17 +686,15 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider get_test_data__parse_group_cookies
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result ) {
 		$_SERVER                       = array_merge( $_SERVER, $headers );
 		$_COOKIE                       = $initial_cookie;
 		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
 		if ( ! empty( $secrets ) ) {
-			define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets['key'] );
-			define( 'VIP_GO_AUTH_COOKIE_IV', $secrets['iv'] );
-			define( 'VIP_GO_APP_ID', $secrets['siteid'] );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets['key'] );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', $secrets['iv'] );
+			Constant_Mocker::define( 'VIP_GO_APP_ID', $secrets['siteid'] );
 			Vary_Cache::enable_encryption();
 		}
 		$get_parse_group_cookie_method->invokeArgs( null, [] );
