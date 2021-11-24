@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search\Queue;
 
+use WP_Site;
+
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
@@ -17,7 +19,7 @@ class Schema {
 	public function setup_hooks() {
 		// Create tables during installation.
 		add_action( 'wp_install', array( $this, 'create_table_during_install' ) );
-		add_action( 'wpmu_new_blog', array( $this, 'create_tables_during_multisite_install' ) );
+		add_action( 'wp_initialize_site', array( $this, 'create_tables_during_multisite_install' ) );
 
 		// Remove table when a multisite subsite is deleted.
 		add_filter( 'wpmu_drop_tables', array( $this, 'remove_multisite_table' ) );
@@ -48,10 +50,10 @@ class Schema {
 	/**
 	 * Create table when new subsite is added to a multisite
 	 *
-	 * @param int $bid Blog ID.
+	 * @param WP_Site $site New site.
 	 */
-	public function create_tables_during_multisite_install( $bid ) {
-		switch_to_blog( $bid );
+	public function create_tables_during_multisite_install( WP_Site $site ) {
+		switch_to_blog( $site->id );
 
 		if ( ! $this->is_installed() ) {
 			$this->_prepare_table();
