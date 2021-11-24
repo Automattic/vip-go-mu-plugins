@@ -22,6 +22,7 @@ class Queue_Test extends WP_UnitTestCase {
 	private $queue;
 
 	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
@@ -38,7 +39,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function setUp(): void {
-		wp_cache_flush();
+		parent::setUp();
 
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
@@ -47,6 +48,7 @@ class Queue_Test extends WP_UnitTestCase {
 		require_once __DIR__ . '/../../../../search/search.php';
 
 		$this->es = \Automattic\VIP\Search\Search::instance();
+		$this->es->init();
 
 		$this->queue = $this->es->queue;
 

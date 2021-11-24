@@ -135,14 +135,18 @@ class Schema {
 
 		dbDelta( $schema, true );
 
-		// Confirm that the table was created, and set the option to prevent further updates.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
+		// Skip verification when running tests. We need to do this because WordPress Test Library
+		// turns CREATE TABLE into CREATE TEMPORARY TABLE, and SHOW TABLES does not list temporary tables
+		if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
+			// Confirm that the table was created, and set the option to prevent further updates.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
-		if ( 1 === $table_count ) {
-			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
-		} else {
-			trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
+			if ( 1 === $table_count ) {
+				set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
+			} else {
+				trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
+			}
 		}
 	}
 
