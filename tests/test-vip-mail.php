@@ -3,7 +3,7 @@
 use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- we are testinng it
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- we are testing it
 
 class VIP_Mail_Test extends WP_UnitTestCase {
 	use AssertionRenames;
@@ -68,30 +68,10 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 
-	/**
-	 * @preserveGlobalState disabled
-	 * @runInSeparateProcess
-	 */
-	public function test_load_VIP_PHPMailer_gte_55() {
+	public function test_load_VIP_PHPMailer() {
 		global $wp_version;
-		if ( version_compare( $wp_version, '5.5', '<' ) ) {
-			$this->markTestSkipped( 'Not testing WP < 5.5' );
-		}
-
-		$this->assertEquals( true, class_exists( 'VIP_PHPMailer' ), 'VIP_PHPMailer should be loaded on >= 5.5. Version: ' . $wp_version );
-	}
-
-	/**
-	 * @preserveGlobalState disabled
-	 * @runInSeparateProcess
-	 */
-	public function test_dont_load_VIP_PHPMailer_lt_55() {
-		global $wp_version;
-		if ( version_compare( $wp_version, '5.5', '>=' ) ) {
-			$this->markTestSkipped( 'Not testing WP < 5.5' );
-		}
-
-		$this->assertEquals( false, class_exists( 'VIP_PHPMailer' ), 'VIP_PHPMailer should not be loaded on < 5.5. Version: ' . $wp_version );
+		$should_be_loaded = version_compare( $wp_version, '5.5', '>=' );
+		$this->assertEquals( $should_be_loaded, class_exists( 'VIP_PHPMailer' ), 'VIP_PHPMailer should be loaded only for WP >= 5.5. Version: ' . $wp_version );
 	}
 
 	/**

@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files\Acl;
 
+use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
@@ -14,6 +15,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		header_remove();
+
+		Constant_Mocker::clear();
 	}
 
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
@@ -35,12 +38,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_all_option() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
 		maybe_load_restrictions();
@@ -49,12 +48,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have the correct callback attached' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_unpublished_enabled', 1 );
 
 		maybe_load_restrictions();
@@ -64,12 +59,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_all_option_false() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_all_enabled', false );
 
 		maybe_load_restrictions();
@@ -77,12 +68,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option_false() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_unpublished_enabled', false );
 
 		maybe_load_restrictions();

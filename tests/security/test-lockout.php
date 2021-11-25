@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Security;
 
+use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../security/class-lockout.php';
@@ -10,10 +11,6 @@ require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Lockout_Test extends WP_UnitTestCase {
 
 	/**
@@ -25,6 +22,8 @@ class Lockout_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->lockout = new Lockout();
+
+		Constant_Mocker::clear();
 	}
 
 	/**
@@ -38,7 +37,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__user_seen_notice__warning() {
-		define( 'VIP_LOCKOUT_STATE', 'warning' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
 
 		$user = $this->factory->user->create_and_get();
 
@@ -47,7 +46,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$this->assertEquals(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
-			VIP_LOCKOUT_STATE
+			Constant_Mocker::constant( 'VIP_LOCKOUT_STATE' )
 		);
 		$this->assertNotEmpty(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, true )
@@ -55,7 +54,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__user_seen_notice__locked() {
-		define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$user = $this->factory->user->create_and_get();
 
@@ -64,7 +63,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$this->assertEquals(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
-			VIP_LOCKOUT_STATE
+			Constant_Mocker::constant( 'VIP_LOCKOUT_STATE' )
 		);
 		$this->assertNotEmpty(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, true )
@@ -72,7 +71,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__user_seen_notice__already_seen() {
-		define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$user = $this->factory->user->create_and_get();
 
@@ -94,7 +93,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_user_has_cap__locked() {
-		define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$user = $this->factory->user->create_and_get( [
 			'role' => 'editor',
@@ -109,7 +108,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_user_has_cap__warning() {
-		define( 'VIP_LOCKOUT_STATE', 'warning' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
 
 		$user = $this->factory->user->create_and_get( [
 			'role' => 'editor',
@@ -135,7 +134,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_user_has_cap__locked_vip_support() {
-		define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$user_id = \Automattic\VIP\Support_User\User::add( [
 			'user_email' => 'user@automattic.com',
@@ -153,7 +152,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_site_admin_option__locked() {
-		define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
 		$pre_option = [ 'test1', 'test2' ];
 
@@ -163,7 +162,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_site_admin_option__warning() {
-		define( 'VIP_LOCKOUT_STATE', 'warning' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
 
 		$pre_option = [ 'test1', 'test2' ];
 
@@ -186,8 +185,8 @@ class Lockout_Test extends WP_UnitTestCase {
 		$user = $this->factory->user->create_and_get();
 		grant_super_admin( $user->ID );
 
-		define( 'VIP_LOCKOUT_STATE', 'locked' );
-		define( 'VIP_LOCKOUT_MESSAGE', 'Oh no!' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_MESSAGE', 'Oh no!' );
 
 		// Recreate Lockout to re-init filters
 		$this->lockout = new Lockout();
