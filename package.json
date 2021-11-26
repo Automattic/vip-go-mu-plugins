@@ -14,7 +14,7 @@
   "author": "Automattic",
   "devDependencies": {
     "husky": "7.0.4",
-    "lint-staged": "11.2.6",
+    "lint-staged": "12.1.2",
     "phplint": "2.0.5"
   }
 }
