@@ -61,7 +61,7 @@ parameters:
 
 job-references:
   db_image: &db_image
-    circleci/mariadb:10.3
+    ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
