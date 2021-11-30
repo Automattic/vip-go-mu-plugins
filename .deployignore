@@ -125,3 +125,4 @@ yarn.lock
 /wp-parsely-*/CODE_OF_CONDUCT.md
 /wp-parsely-*/init.py
 /wp-parsely-*/tests
+/wp-parsely-*/phpunit-integration.xml.dist
