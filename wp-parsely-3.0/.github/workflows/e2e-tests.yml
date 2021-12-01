@@ -1,14 +1,8 @@
 name: End-to-end (e2e) Tests
 
 on:
-  # Run on all pushes and on all pull requests.
-  # Prevent the "push" build from running when there are only irrelevant changes.
-  push:
-    paths-ignore:
-      - '**.md'
+  # Run on all pull requests.
   pull_request:
-  # Allow manually triggering the workflow.
-  workflow_dispatch:
 
 jobs:
   test:
@@ -27,9 +21,6 @@ jobs:
         with:
           node-version: lts/*
           cache: 'npm'
-
-      - name: Update npm to latest
-        run: npm i -g npm
 
       - name: Installing dependencies
         run: npm ci
