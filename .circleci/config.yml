@@ -347,7 +347,7 @@ jobs:
       - run: npm ci
       - run: npm install --prefix=$HOME/.local -g @automattic/vip
       - run: |
-          echo $'\t' | ./vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="./" --wordpress="5.8.1" --multisite=false
+          echo $'\t' | vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="./" --wordpress="5.8.1" --multisite=false
       - run: npm run test-e2e
       - store_artifacts:
           path: $(pwd)/test-results
