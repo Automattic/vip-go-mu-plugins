@@ -345,7 +345,7 @@ jobs:
           version: 20.10.7
           docker_layer_caching: false
       - run: npm ci
-      - run: npm install @automattic/vip
+      - run: npm install -g @automattic/vip
       - run: |
           echo $'\t' | vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="./" --wordpress="5.8.1" --multisite=false
       - run: npm run test-e2e
