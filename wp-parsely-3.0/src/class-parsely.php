@@ -788,7 +788,7 @@ class Parsely {
 						$post_author   = $coauthors_plus->get_coauthor_by( 'user_nicename', $coauthor_slug );
 						// In case the user has been deleted while plugin was deactivated.
 						if ( ! empty( $post_author ) ) {
-							$coauthors[] = $post_author;
+							$coauthors[] = new WP_User( $post_author );
 						}
 					}
 				} elseif ( ! $coauthors_plus->force_guest_authors ) {
@@ -856,11 +856,12 @@ class Parsely {
 		 *
 		 * @since 1.14.0
 		 *
-		 * @param array   $authors One or more authors as WP_User objects (may also be `false`).
-		 * @param WP_Post $post    Post object.
+		 * @param WP_User[] $authors One or more authors as WP_User objects.
+		 * @param WP_Post   $post    Post object.
 		 */
 		$authors = apply_filters( 'wp_parsely_pre_authors', $authors, $post );
 
+		// Getting the author name for each author.
 		$authors = array_map( array( $this, 'get_author_name' ), $authors );
 
 		/**

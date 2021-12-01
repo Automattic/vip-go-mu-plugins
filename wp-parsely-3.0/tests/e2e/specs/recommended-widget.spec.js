@@ -11,9 +11,7 @@ import {
  * Internal dependencies
  */
 import {
-	activatePluginApiKey,
-	deactivatePluginApiKey,
-	deactivatePluginApiSecret,
+	changeKeysState,
 	waitForWpAdmin,
 } from '../utils';
 
@@ -52,8 +50,6 @@ const checkForNonActiveWidgetText = async () => {
 };
 
 describe( 'Recommended widget', () => {
-	jest.setTimeout( 30000 );
-
 	beforeAll( () => {
 		page.once( 'dialog', async function( dialog ) {
 			await dialog.accept();
@@ -63,8 +59,7 @@ describe( 'Recommended widget', () => {
 	it( 'Widget should be available but inactive without api key and secret', async () => {
 		await loginUser();
 		await activatePlugin( 'wp-parsely' );
-		await deactivatePluginApiKey();
-		await deactivatePluginApiSecret();
+		await changeKeysState( false, false );
 
 		await visitAdminPage( '/widgets.php', '' );
 		await waitForWpAdmin();
@@ -79,8 +74,7 @@ describe( 'Recommended widget', () => {
 	it( 'Widget should be available but inactive without api secret', async () => {
 		await loginUser();
 		await activatePlugin( 'wp-parsely' );
-		await activatePluginApiKey();
-		await deactivatePluginApiSecret();
+		await changeKeysState( true, false );
 
 		await visitAdminPage( '/widgets.php', '' );
 		await waitForWpAdmin();
