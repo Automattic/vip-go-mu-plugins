@@ -11,7 +11,7 @@ const config: PlaywrightTestConfig = {
       video: 'retain-on-failure',
       trace: 'retain-on-failure',
       storageState: 'e2eStorageState.json',
-      baseURL: 'http://localhost',
+      baseURL: 'http://e2e-test-site.vipdev.lndo.site',
     },
 };
 
