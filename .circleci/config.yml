@@ -335,14 +335,15 @@ jobs:
 
   e2e-tests:
     docker:
-      - image: cimg/node:16.10.0
+      - image: cimg/node:16.13.0-browsers
+        user: root
       
     steps:
       - checkout
       - run: git submodule init
       - run: git submodule update
       - setup_remote_docker:
-          version: 20.10.7
+          version: 20.10.9
           docker_layer_caching: false
       - run: npm ci
       - run: npm install --prefix=$HOME/.local -g @automattic/vip
