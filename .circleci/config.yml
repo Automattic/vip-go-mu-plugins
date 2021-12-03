@@ -336,8 +336,6 @@ jobs:
   e2e-tests:
     docker:
       - image: cimg/node:16.13.0-browsers
-      - image: cimg/node:16.13.0
-        name: test-env
       
     steps:
       - checkout
@@ -348,8 +346,11 @@ jobs:
       - setup_remote_docker:
           version: 20.10.7
           docker_layer_caching: false
-      - run: docker cp $(pwd) test-env:/code/
-      - run: docker exec test-env /code/__tests__/e2e/create-env.sh
-      - run: npm run test-e2e
+      - run: docker run --name e2e ghcr.io/automattic/vip-container-images/php-fpm:7.4
+      - run: docker cp $(pwd) e2e:/code/
+      - run: docker exec e2e npm install --prefix=$HOME/.local -g @automattic/vip
+      - run: docker exec e2e /code/__tests__/e2e/create-env.sh
+      - run: docker exec npm run test-e2e
+      - run: docker cp e2e:/code/test-results $(pwd/test-results)
       - store_artifacts:
           path: $(pwd)/test-results
