@@ -342,11 +342,13 @@ jobs:
       - run: git submodule init
       - run: git submodule update
       - run: npm ci
+      - run: git clone https://github.com/Automattic/vip-go-skeleton.git /vip-go-skeleton
       - setup_remote_docker:
           version: 20.10.7
           docker_layer_caching: false
       - run: docker run --name e2e -d -it --entrypoint /bin/sh cimg/node:16.13.0-browsers 
       - run: docker cp $(pwd) e2e:/code/
+      - run: docker cp /vip-go-skeleton e2e:/vip-go-skeleton/
       - run: docker exec e2e npm install --prefix=$HOME/.local -g @automattic/vip
       - run: docker exec e2e /code/__tests__/e2e/create-env.sh
       - run: docker exec npm run test-e2e
