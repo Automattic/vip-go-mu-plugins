@@ -337,10 +337,19 @@ jobs:
     docker:
       - image: cimg/node:16.13.0-browsers
       - image: cimg/node:16.13.0
-        command: ./__tests__/e2e/create-env.sh
+        name: test-env
       
     steps:
       - checkout
+      - run: git submodule init
+      - run: git submodule update
+      - run: npm ci
+      - run: npm install --prefix=$HOME/.local -g @automattic/vip
+      - setup_remote_docker:
+          version: 20.10.7
+          docker_layer_caching: false
+      - run: docker cp $(pwd) test-env:/code/
+      - run: docker exec test-env /code/__tests__/e2e/create-env.sh
       - run: npm run test-e2e
       - store_artifacts:
           path: $(pwd)/test-results
