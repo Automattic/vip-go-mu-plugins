@@ -64,8 +64,6 @@ docker run \
   --network $NETWORK_NAME \
   --name $FPM_CONTAINER_NAME \
   -v $SHARED_VOLUME:/wp \
-  -v /scripts \
-  -v /wp/wp-content \
   -e WP_VERSION="$WP_VERSION" \
   -e WORDPRESS_DB_HOST="$DB_CONTAINER_NAME" \
   -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
@@ -75,23 +73,32 @@ docker run \
   -d \
   --rm ghcr.io/automattic/vip-container-images/php-fpm:7.4
 
+docker exec $FPM_CONTAINER_NAME mkdir /scripts /wp/wp-content
 docker cp $(pwd)/. $FPM_CONTAINER_NAME:/wp/wp-content/mu-plugins
 docker cp $(pwd)/__tests__/e2e/wp-config-e2e.php $FPM_CONTAINER_NAME:/wp/wp-config.php
 docker cp $(pwd)/__tests__/e2e/php-startup.sh $FPM_CONTAINER_NAME:/scripts/startup.sh
 
 docker exec php /scripts/startup.sh
-  
 
 [[ $(docker ps -f "name=$NG_CONTAINER_NAME" --format '{{.Names}}') == $NG_CONTAINER_NAME ]] ||
 docker run \
   --network $NETWORK_NAME \
   --name $NG_CONTAINER_NAME \
   -v $SHARED_VOLUME:/wp \
-  -v $(pwd):/wp/wp-content/mu-plugins \
-  -p 80:80 \
   -d \
   --rm ghcr.io/automattic/vip-container-images/nginx:1.21.3
 
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do 
-  sleep 3; 
-done
+#while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do 
+  sleep 20; 
+#done
+
+docker run \
+  --network $NETWORK_NAME \
+  --name e2e \
+  -d \
+  -it \
+  -w /code \
+  --rm cimg/node:16.13.0-browsers /bin/sh
+
+docker cp $(pwd)/. e2e:/code
+docker exec --user root e2e npm run test-e2e
