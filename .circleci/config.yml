@@ -342,11 +342,10 @@ jobs:
       - run: git submodule init
       - run: git submodule update
       - run: npm ci
-      - run: npm install --prefix=$HOME/.local -g @automattic/vip
       - setup_remote_docker:
           version: 20.10.7
           docker_layer_caching: false
-      - run: docker run --name e2e ghcr.io/automattic/vip-container-images/php-fpm:7.4
+      - run: docker run --name e2e cimg/node:16.13.0-browsers
       - run: docker cp $(pwd) e2e:/code/
       - run: docker exec e2e npm install --prefix=$HOME/.local -g @automattic/vip
       - run: docker exec e2e /code/__tests__/e2e/create-env.sh
