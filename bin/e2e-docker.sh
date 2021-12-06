@@ -101,4 +101,5 @@ docker run \
   --rm cimg/node:16.13.0-browsers /bin/sh
 
 docker cp $(pwd)/. e2e:/code
+docker exec --user root e2e npx playwright install
 docker exec --user root e2e npm run test-e2e
