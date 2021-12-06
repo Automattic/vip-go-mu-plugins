@@ -248,7 +248,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// If a filename meta exists, use it.
 	if ( ! empty( $archive_filename ) ) {
 		$archive_pathname = $exports_dir . $archive_filename;
-	} elseif ( ! empty( $archive_pathname ) ) {
+	} elseif ( ! empty( $archive_pathname ) && is_file( $archive_pathname ) ) {
 		// If a full path meta exists, use it and create the new meta value.
 		$archive_filename = basename( $archive_pathname );
 
@@ -267,7 +267,7 @@ function generate_personal_data_export_file( $request_id ) {
 
 	$archive_url = $exports_url . $archive_filename;
 
-	if ( ! empty( $archive_pathname ) && file_exists( $archive_pathname ) ) {
+	if ( ! empty( $archive_pathname ) && is_file( $archive_pathname ) ) {
 		wp_delete_file( $archive_pathname );
 	}
 

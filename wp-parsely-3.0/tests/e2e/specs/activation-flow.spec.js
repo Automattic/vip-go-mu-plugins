@@ -13,7 +13,6 @@ import {
 import { activatePluginApiKey, deactivatePluginApiKey, waitForWpAdmin } from '../utils';
 
 describe( 'Activation flow', () => {
-	jest.setTimeout( 30000 );
 	it( 'Should progress as intended', async () => {
 		await loginUser();
 		await activatePlugin( 'wp-parsely' );
