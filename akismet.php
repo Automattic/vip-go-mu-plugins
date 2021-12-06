@@ -16,6 +16,11 @@ if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
 	return;
 }
 
+// Avoid loading Akismet if VIP_AKISMET_SKIP_LOAD is set to true
+if ( defined( 'VIP_AKISMET_SKIP_LOAD' ) && true === VIP_AKISMET_SKIP_LOAD ) {
+	return;
+}
+
 // Load the core Akismet plugin
 require_once __DIR__ . '/akismet/akismet.php';
 
