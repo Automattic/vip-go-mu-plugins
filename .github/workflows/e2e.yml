@@ -17,8 +17,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - run: npm install
+      - run: cd ./vip-go-mu-plugins && npm install
       - run: npm install --prefix=$HOME/.local -g @automattic/vip
-      - run: vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="/vip-go-mu-plugins" --wordpress="5.8.1" --multisite=false --client-code="/vip-go-skeleton"
+      - run: vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="./vip-go-mu-plugins" --wordpress="5.8.1" --multisite=false --client-code="./vip-go-skeleton"
       - run: vip --slug=e2e-test-site dev-env start
-      - run: npm run test-e2e
+      - run: cd ./vip-go-mu-plugins && npm run test-e2e
