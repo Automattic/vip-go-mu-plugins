@@ -346,5 +346,8 @@ jobs:
           version: 20.10.7
           docker_layer_caching: false
       - run: ./bin/e2e-docker.sh
+      - run: docker exec --user root e2e npx playwright install
+      - run: docker exec --user root e2e npm run test-e2e
+      - run: docker cp e2e:/code/test-results/ $(pwd)
       - store_artifacts:
           path: test-results
