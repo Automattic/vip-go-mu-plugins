@@ -347,4 +347,4 @@ jobs:
           docker_layer_caching: false
       - run: ./bin/e2e-docker.sh
       - store_artifacts:
-          path: $(pwd)/test-results
+          path: test-results
