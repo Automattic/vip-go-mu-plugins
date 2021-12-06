@@ -1,0 +1,18 @@
+name: Run e2e Tests
+on: [push]
+jobs:
+  Run e2e tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Check out skeleton code
+        uses: actions/checkout@v2
+        with:
+          repository: Automattic/vip-go-skeleton
+      - run: npm install --prefix=$HOME/.local -g @automattic/vip
+      - run: vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="/vip-go-mu-plugins" --wordpress="5.8.1" --multisite=false --client-code="/vip-go-skeleton"
+      - run: vip --slug=e2e-test-site dev-env start
+      - run: npm run test-e2e
