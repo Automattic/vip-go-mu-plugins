@@ -3,6 +3,8 @@ on: [push]
 jobs:
   Run_e2e_tests:
     runs-on: ubuntu-latest
+    env:
+      working_dir: ./vip-go-mu-plugins
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -14,9 +16,11 @@ jobs:
           repository: Automattic/vip-go-skeleton
       - uses: actions/setup-node@v2
         with:
-        node-version: '16'
+          node-version: '16'
       - run: npm install
+        working-directory: ${{working_dir}}
       - run: npm install --prefix=$HOME/.local -g @automattic/vip
       - run: vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="/vip-go-mu-plugins" --wordpress="5.8.1" --multisite=false --client-code="/vip-go-skeleton"
       - run: vip --slug=e2e-test-site dev-env start
       - run: npm run test-e2e
+        working-directory: ${{working_dir}}
