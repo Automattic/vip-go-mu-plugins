@@ -10,12 +10,14 @@ use WP_UnitTestCase;
  */
 class Cache_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
 	}
 
 	public function setUp(): void {
+		parent::setUp();
 		require_once __DIR__ . '/../../../../search/search.php';
 		include_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
 
