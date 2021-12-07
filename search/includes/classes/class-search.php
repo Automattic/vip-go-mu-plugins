@@ -860,8 +860,12 @@ class Search {
 
 		$start_time = microtime( true );
 
-		if ( ! $this->ensure_index_existence( $query['url'], $args ) ) {
-			return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
+		if ( ( is_multisite() && defined( 'EP_IS_NETWORK' ) && true === EP_IS_NETWORK ) || ! is_multisite() ) {
+			// Only ensure index existence for multisites with the network constant or single sites
+			$index_existence = $this->ensure_index_existence( $query['url'], $args );
+			if ( ! $index_existence ) {
+				return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
+			}
 		}
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
