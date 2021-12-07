@@ -2,13 +2,26 @@
 
 namespace Automattic\VIP\Files\Acl;
 
+use Automattic\Test\Constant_Mocker;
+use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
+require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../files/acl/acl.php';
 
+/**
+ * @property WP_UnitTest_Factory $factory
+ */
 class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
+
+	public function setUp(): void {
+		parent::setUp();
+		header_remove();
+
+		Constant_Mocker::clear();
+	}
 
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
 		// no setup
@@ -29,12 +42,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_all_option() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
 		maybe_load_restrictions();
@@ -43,12 +52,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_All_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have the correct callback attached' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_unpublished_enabled', 1 );
 
 		maybe_load_restrictions();
@@ -58,12 +63,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_all_option_false() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_all_enabled', false );
 
 		maybe_load_restrictions();
@@ -71,12 +72,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option_false() {
-		define( 'VIP_FILES_ACL_ENABLED', true );
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_unpublished_enabled', false );
 
 		maybe_load_restrictions();
@@ -171,10 +168,6 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 * @requires function xdebug_get_headers
-	 *
 	 * @dataProvider data_provider__send_visibility_headers
 	 */
 	public function test__send_visibility_headers( $file_visibility, $file_path, $expected_status_code, $private_header_value ) {
@@ -182,26 +175,21 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_status_code, http_response_code(), 'Status code does not match expected' );
 
-		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), xdebug_get_headers(), 'Sent headers do not include X-Private header or its value is unexpected' );
+		$headers = headers_list();
+		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), $headers, 'Sent headers do not include X-Private header or its value is unexpected', true );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 * @requires function xdebug_get_headers
-	 */
 	public function test__send_visibility_headers__invalid_visibility() {
-		define( 'NOT_A_VISIBILITY', 'NOT_A_VISIBILITY' );
-
 		$this->expectWarning();
 		$this->expectWarningMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
 
-		send_visibility_headers( NOT_A_VISIBILITY, '/wp-content/uploads/invalid.jpg' );
+		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
 
 		$this->assertEquals( 500, http_response_code(), 'Status code does not match expected' );
 
-		$this->assertNotContains( 'X-Private: true', xdebug_get_headers(), 'Sent headers include X-Private: true header but should not.' );
-		$this->assertNotContains( 'X-Private: false', xdebug_get_headers(), 'Sent headers include X-Private:false header but should not.' );
+		$headers = headers_list();
+		$this->assertNotContains( 'X-Private: true', $headers, 'Sent headers include X-Private: true header but should not.', true );
+		$this->assertNotContains( 'X-Private: false', $headers, 'Sent headers include X-Private:false header but should not.', true );
 	}
 
 	public function test__is_valid_path_for_site__always_true_for_not_multisite() {

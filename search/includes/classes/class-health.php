@@ -36,6 +36,8 @@ class Health {
 		'index.routing.allocation.include.dc',
 	);
 
+	const REINDEX_JOB_DEFAULT_PRIORITY = 15;
+
 	/**
 	 * Instance of Search class
 	 *
@@ -104,7 +106,7 @@ class Health {
 
 			$db_total = (int) $db_result['total_objects'];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->get_error_message() ) );
+			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
 		}
 
 		$diff = 0;
@@ -147,8 +149,7 @@ class Health {
 
 			$es_result = $indexable->query_es( $formatted_args, $query->query_vars );
 		} catch ( \Exception $e ) {
-			$source = method_exists( $e, 'get_error_message' ) ? $e->get_error_message() : $e->getMessage();
-			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $source ) );
+			return new WP_Error( 'es_query_error', sprintf( 'failure querying ES: %s #vip-search', $e->getMessage() ) );
 		}
 
 		// There is not other useful information out of query_es(): it just returns false in case of failure.
@@ -622,6 +623,11 @@ class Health {
 
 		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
 		                : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+		// Filter out any that are extra or missing in index
+		$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
+			$key = self::get_post_key( $document['ID'] );
+			return ! array_key_exists( $key, $diffs );
+		} );
 
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
@@ -731,12 +737,13 @@ class Health {
 				continue;
 			}
 
+			$prepared_value = $prepared_document[ $key ] ?? null;
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, $prepared_document[ $key ] );
+				$recursive_diff = self::simplified_diff_document_and_prepared_document( $value, is_array( $prepared_value ) ? $prepared_value : [] );
 				if ( $recursive_diff ) {
 					return true;
 				}
-			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( $prepared_value != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				return true;
 			}
 		}
@@ -761,13 +768,14 @@ class Health {
 				continue;
 			}
 
+			$prepared_value = $prepared_document[ $key ] ?? null;
 			if ( is_array( $value ) ) {
-				$recursive_diff = self::diff_document_and_prepared_document( $value, $prepared_document[ $key ] ?? [] );
+				$recursive_diff = self::diff_document_and_prepared_document( $value, is_array( $prepared_value ) ? $prepared_value : [] );
 
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
-			} elseif ( ( $prepared_document[ $key ] ?? null ) != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
+			} elseif ( $prepared_value != $value ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
 					'expected' => $prepared_document[ $key ] ?? null,
 					'actual'   => $value,
@@ -806,7 +814,16 @@ class Health {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 				case 'inconsistent':
-					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					/**
+					 * Filter to determine the priority of the reindex job
+					 *
+					 * @param int $priority         Job priority
+					 * @param int $object_id        Object ID
+					 * @param string $object_type   Object type
+					 * @return int                  Job priority
+					 */
+					$priority = apply_filters( 'vip_healthcheck_reindex_priority', self::REINDEX_JOB_DEFAULT_PRIORITY, $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'], [ 'priority' => $priority ] );
 					break;
 				case 'extra_in_index':
 					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );
@@ -815,13 +832,55 @@ class Health {
 		}
 	}
 
-	public static function get_last_post_id() {
+	/**
+	 * Get the last post ID from the database.
+	 * 
+	 * @return int $last_db_id The last post ID from the database.
+	 */
+	public static function get_last_db_post_id() {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$last = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
+		$last_db_id = $wpdb->get_var( "SELECT MAX( `ID` ) FROM $wpdb->posts" );
 
-		return (int) $last;
+		return (int) $last_db_id;
+	}
+
+	/**
+	 * Get the last post ID from Elasticsearch.
+	 * 
+	 * @return int $last_es_id The last post ID from ES.
+	 */
+	public static function get_last_es_post_id() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		if ( $indexable ) {
+			$query_args     = [
+				'posts_per_page' => 1,
+				'orderby'        => 'ID',
+				'order'          => 'desc',
+				'fields'         => 'ids',
+			];
+			$query          = self::query_objects( $query_args, 'post' );
+			$formatted_args = $indexable->format_args( $query->query_vars, $query );
+			$es_result      = $indexable->query_es( $formatted_args, $query->query_vars );
+		}
+		$last_es_id = $es_result['documents'][0]['post_id'] ?? false;
+
+		return (int) $last_es_id;
+	}
+
+	/**
+	 * Get the latter post ID between the database and Elasticsearch.
+	 * 
+	 * @return int $last The latter post ID.
+	 */
+	public static function get_last_post_id() {
+		$last_db_id = self::get_last_db_post_id();
+		$last_es_id = self::get_last_es_post_id();
+		$last       = max( $last_db_id, $last_es_id );
+		
+		return $last;
 	}
 
 	public static function get_document_ids_for_batch( $start_post_id, $last_post_id ) {

@@ -25,6 +25,7 @@ function _manually_load_plugin() {
 
 	require_once __DIR__ . '/../async-publish-actions.php';
 	require_once __DIR__ . '/../performance.php';
+
 	require_once __DIR__ . '/../security.php';
 
 	require_once __DIR__ . '/../schema.php';
@@ -32,6 +33,7 @@ function _manually_load_plugin() {
 	require_once __DIR__ . '/../vip-jetpack/vip-jetpack.php';
 
 	// Proxy lib
+	require_once __DIR__ . '/proxy-helpers.php'; // Needs to be included before ip-forward.php
 	require_once __DIR__ . '/../lib/proxy/ip-forward.php';
 	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
@@ -111,5 +113,9 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		echo "Expecting wp-parsely plugin to be disabled.\n";
 		break;
 }
+
+require_once __DIR__ . '/mock-constants.php';
+require_once __DIR__ . '/mock-header.php';
+require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
 
 require $_tests_dir . '/includes/bootstrap.php';

@@ -162,7 +162,10 @@ class Search {
 	public $versioning_cleanup;
 	public $field_count_gauge;
 	public $queue_wait_time;
+	/** @var Queue */
 	public $queue;
+	/** @var Versioning */
+	public $versioning;
 	public $statsd;
 	public $indexables;
 	public $alerts;
@@ -190,9 +193,12 @@ class Search {
 		$this->maybe_enable_ep_query_logging();
 		$this->load_dependencies();
 		$this->setup_hooks();
-		$this->load_commands();
-		$this->setup_cron_jobs();
-		$this->setup_regular_stat_collection();
+
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			$this->load_commands();
+			$this->setup_cron_jobs();
+			$this->setup_regular_stat_collection();
+		}
 	}
 
 	/**
@@ -480,7 +486,9 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 3 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'get_cached_index_exists_request' ], 9998, 5 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'invalidate_cached_index_exists_request' ], 9998, 5 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
@@ -605,25 +613,19 @@ class Search {
 		}
 	}
 
-	protected function setup_cron_jobs() {
+	/**
+	 * Setup the needed cron jobs (this fires in WP_CLI context)
+	 *
+	 * @return void
+	 */
+	public function setup_cron_jobs() {
 		$this->healthcheck          = new HealthJob( $this );
 		$this->settings_healthcheck = new SettingsHealthJob( $this );
 		$this->versioning_cleanup   = new VersioningCleanupJob( $this->indexables, $this->versioning );
 
-		/**
-		 * Hook into admin_init action to ensure cron-control has already been loaded.
-		 *
-		 * Hook into wp_loaded in WPCLI contexts.
-		 */
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
-			add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
-			add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
-		} else {
-			add_action( 'admin_init', [ $this->healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->settings_healthcheck, 'init' ], 0 );
-			add_action( 'admin_init', [ $this->versioning_cleanup, 'init' ], 0 );
-		}
+		add_action( 'wp_loaded', [ $this->healthcheck, 'init' ], 0 );
+		add_action( 'wp_loaded', [ $this->settings_healthcheck, 'init' ], 0 );
+		add_action( 'wp_loaded', [ $this->versioning_cleanup, 'init' ], 0 );
 	}
 
 	protected function setup_regular_stat_collection() {
@@ -759,7 +761,85 @@ class Search {
 		return 500;
 	}
 
-	public function filter__ep_do_intercept_request( $request, $query, $args ) {
+	/**
+	 * Filter to return value of option that caches index_exists request (if it doesn't exist, cache it).
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function get_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( 'index_exists' !== $type ) {
+			return $request;
+		}
+
+		$option_name = $this->get_index_exists_option_name( $query['url'] );
+		$request     = get_option( $option_name );
+		if ( false === $request ) {
+			// Option doesn't exist, do the request and cache it.
+			$request = vip_safe_wp_remote_request( $query['url'] );
+			if ( ! is_wp_error( $request ) ) {
+				update_option( $option_name, $request );
+			}
+		}
+		
+		return $request;
+	}
+
+	/**
+	 * Invalidate cached index_exists request option on certain index actions.
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function invalidate_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		$index_actions = [
+			'delete_index',
+			'refresh_indices',
+			'put_mapping',
+			'bulk_index',
+		];
+		if ( ! in_array( $type, $index_actions, true ) ) {
+			return $request;
+		}
+
+		$option_name = $this->get_index_exists_option_name( $query['url'] );
+		delete_option( $option_name );
+
+		return $request;
+	}
+
+	/**
+	 * Generate option name for cached index_exists request.
+	 * 
+	 * @return string $option_name Name of generated option.
+	 */
+	private function get_index_exists_option_name( $url ) {
+		$parsed_url  = wp_parse_url( $url );
+		$index_name  = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+		$option_name = "es_index_exists_{$index_name}";
+
+		return $option_name;
+	}
+
+	/**
+	 * Filter to intercept EP remote requests.
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -796,7 +876,7 @@ class Search {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -901,7 +981,16 @@ class Search {
 		return true;
 	}
 
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix ) {
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
+		// Not real failed requests, we should not be logging.
+		$skiplist = [
+			'index_exists',
+			'get',
+		];
+		if ( in_array( $type, $skiplist, true ) ) {
+			return;
+		}
+
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
@@ -1514,7 +1603,7 @@ class Search {
 
 		// Assume all host names are in the format es-ha-$dc.vipv2.net
 		$matches = array();
-		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
+		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', (string) $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
 			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
 		} else {
@@ -1863,8 +1952,11 @@ class Search {
 		return $dc;
 	}
 
+	/**
+	 * @return string|null
+	 */
 	public function get_origin_dc_from_es_endpoint( $url ) {
-		$dc = null;
+		$dc = '';
 
 		if ( ! $url ) {
 			return null;

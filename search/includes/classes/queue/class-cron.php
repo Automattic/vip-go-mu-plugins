@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue as Queue;
+use Automattic\WP\Cron_Control\Events_Store;
 use \ElasticPress\Indexables as Indexables;
 use WP_Error;
 
@@ -147,10 +148,22 @@ class Cron {
 	 *
 	 * This is the cron hook for indexing a batch of objects
 	 *
-	 * @param array $options Containing max_id and min_id keys
+	 * @param array $options Containing either max_id and min_id or option keys
 	 */
 	public function process_jobs( $options ) {
-		$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
+		if ( ! empty( $options['option'] ) ) {
+			$job_ids = get_option( $options['option'] );
+			delete_option( $options['option'] );
+
+			// Should not normally happen
+			if ( ! is_array( $job_ids ) ) {
+				return;
+			}
+
+			$jobs = $this->queue->get_jobs_by_ids( $job_ids );
+		} else {
+			$jobs = $this->queue->get_jobs_by_range( $options['min_id'], $options['max_id'] );
+		}
 
 		if ( empty( $jobs ) ) {
 			return;
@@ -270,13 +283,15 @@ class Cron {
 	 */
 	public function get_processor_job_count() {
 		// If cron control isn't available, only schedule one job
-		if ( ! class_exists( 'Automattic\\WP\\Cron_Control\\Events_Store' ) ) {
+		if ( ! class_exists( Events_Store::class ) ) {
 			return new \WP_Error( 'vip-search-cron-no-events-store', 'Automattic\\WP\\Cron_Control\\Events_Store is not defined' );
 		}
 
 		global $wpdb;
 
-		$table_name = \Automattic\WP\Cron_Control\Events_Store::instance()->get_table_name();
+		/** @var Events_Store */
+		$event_store = Events_Store::instance();
+		$table_name  = $event_store->get_table_name();
 
 		$current_processor_job_count = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE action = 'vip_search_queue_processor' AND status != 'complete'" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 
@@ -303,9 +318,14 @@ class Cron {
 
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
+		$base = 'vip:esqp_';
+		do {
+			$random = wp_generate_uuid4();
+			$option = $base . $random;
+		} while ( false === add_option( $option, $job_ids, '', false ) );
+
 		$options = [
-			'min_id' => min( $job_ids ),
-			'max_id' => max( $job_ids ),
+			'option' => $option,
 		];
 
 		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );

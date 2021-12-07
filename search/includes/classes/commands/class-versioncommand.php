@@ -205,7 +205,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 				restore_current_blog();
 
 				if ( is_wp_error( $site_versions ) ) {
-					return WP_CLI::error( $result->get_error_message() );
+					return WP_CLI::error( $site_versions->get_error_message() );
 				}
 
 				foreach ( $site_versions as &$version ) {
@@ -221,7 +221,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			$versions = $search->versioning->get_versions( $indexable );
 
 			if ( is_wp_error( $versions ) ) {
-				return WP_CLI::error( $result->get_error_message() );
+				return WP_CLI::error( $versions->get_error_message() );
 			}
 
 			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );

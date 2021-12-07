@@ -5,13 +5,15 @@ namespace Automattic\VIP\Search;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
-class Health_Test extends WP_UnitTestCase {
-	public static function setUpBeforeClass(): void {
-		require_once __DIR__ . '/../../../../search/search.php';
-		require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
-		require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
-	}
+require_once __DIR__ . '/../../../../search/search.php';
+require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
+require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class Health_Test extends WP_UnitTestCase {
 	public function test_get_missing_docs_or_posts_diff() {
 		$found_post_ids     = array( 1, 3, 5 );
 		$found_document_ids = array( 1, 3, 7 );
@@ -226,27 +228,54 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_diff, $diff );
 	}
 
-	public function test_diff_document_and_prepared_document_does_not_generate_notices(): void {
-		$document = [
-			'meta' => [
-				'_dt_aop_include_in_feed' => [
-					[
-						'value'    => '',
-						'raw'      => '',
-						'boolean'  => false,
-						'date'     => '1971-01-01',
-						'datetime' => '1971-01-01 00:00:01',
-						'time'     => '00:00:01', 
+	/**
+	 * @dataProvider data_diff_document_and_prepared_document_does_not_generate_notices
+	 */
+	public function test_diff_document_and_prepared_document_does_not_generate_notices( array $document, array $prepared_document ): void {
+		self::assertNull( \Automattic\VIP\Search\Health::diff_document_and_prepared_document( $document, $prepared_document ) );
+	}
+
+	/**
+	 * @dataProvider data_diff_document_and_prepared_document_does_not_generate_notices
+	 */
+	public function test_simplified_diff_document_and_prepared_document_does_not_generate_notices( array $document, array $prepared_document ): void {
+		self::assertFalse( \Automattic\VIP\Search\Health::simplified_diff_document_and_prepared_document( $document, $prepared_document ) );
+	}
+
+	public function data_diff_document_and_prepared_document_does_not_generate_notices(): iterable {
+		return [
+			[
+				[
+					'meta' => [
+						'_dt_aop_include_in_feed' => [
+							[
+								'value'    => '',
+								'raw'      => '',
+								'boolean'  => false,
+								'date'     => '1971-01-01',
+								'datetime' => '1971-01-01 00:00:01',
+								'time'     => '00:00:01', 
+							],
+						],
 					],
+				],
+				[
+					'meta' => [],
+				],
+			],
+			[
+				[
+					'meta' => [
+						[
+							'value' => '',
+						],
+					],
+				],
+				[
+					'meta' => 'value',
 				],
 			],
 		];
-		
-		$prepared_document = [
-			'meta' => [],
-		];
-
-		self::assertNull( \Automattic\VIP\Search\Health::diff_document_and_prepared_document( $document, $prepared_document ) );
 	}
 
 	public function test_get_document_ids_for_batch() {
@@ -258,9 +287,20 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_last_post_id() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+
+		$last_db_post_id = $post->ID;
+		$last_es_post_id = 0;
 
 		$last_post_id = \Automattic\VIP\Search\Health::get_last_post_id();
+
+		$this->assertEquals( $last_post_id, max( $last_db_post_id, $last_es_post_id ) );
+	}
+
+	public function test_get_last_db_post_id() {
+		$post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+
+		$last_post_id = \Automattic\VIP\Search\Health::get_last_db_post_id();
 
 		$this->assertEquals( $post->ID, $last_post_id );
 	}
@@ -1047,9 +1087,13 @@ class Health_Test extends WP_UnitTestCase {
 		/** @var Search&MockObject */
 		$mock_search = $this->createMock( Search::class );
 
-		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
-			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
+		/** @var Versioning&MockObject */
+		$versioning = $this->getMockBuilder( Versioning::class )
+			->enableProxyingToOriginalMethods()
+			->setMethods( [ 'get_current_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
 			->getMock();
+
+		$mock_search->versioning = $versioning;
 
 		// If we're healing a specific version, make sure we actually switch
 		if ( isset( $options['index_version'] ) ) {
@@ -1060,6 +1104,8 @@ class Health_Test extends WP_UnitTestCase {
 			$mock_search->versioning->expects( $this->once() )
 				->method( 'reset_current_version_number' );
 		}
+
+		$versioning->method( 'get_current_version_number' )->willReturn( $options['index_version'] ?? 1 );
 
 		$health = new Health( $mock_search );
 
