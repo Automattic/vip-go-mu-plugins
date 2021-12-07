@@ -27,11 +27,16 @@ class WP_Version_Condition_Test extends \PHPUnit\Framework\TestCase {
 	 * @dataProvider evaluate_data
 	 */
 	public function test__evaluate( $min, $max, $current, $expected_result ) {
-		$GLOBALS['wp_version'] = $current;
+		$orig_wp_version = $GLOBALS['wp_version'];
+		try {
+			$GLOBALS['wp_version'] = $current;
 
-		$condition = new WP_Version_Condition( $min, $max );
+			$condition = new WP_Version_Condition( $min, $max );
 
-		$this->assertEquals( $expected_result, $condition->evaluate() );
+			$this->assertEquals( $expected_result, $condition->evaluate() );
+		} finally {
+			$GLOBALS['wp_version'] = $orig_wp_version;
+		}
 	}
 }
 

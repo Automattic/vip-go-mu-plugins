@@ -92,9 +92,9 @@ job-references:
     command: |
       if [ "$DISABLE_JETPACK" = "1" ]; then
         echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-        /usr/local/bin/runner --exclude-group jetpack-required
+        /usr/local/bin/runner --exclude-group jetpack-required  --order-by=random
       else
-        /usr/local/bin/runner
+        /usr/local/bin/runner --order-by=random
       fi
     environment:
       MYSQL_HOST: << pipeline.parameters.db_host >>

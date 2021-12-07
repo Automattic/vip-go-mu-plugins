@@ -97,6 +97,8 @@ class Search {
 	public $queue_wait_time;
 	/** @var Queue */
 	public $queue;
+	/** @var Versioning */
+	public $versioning;
 	public $statsd;
 	public $indexables;
 	public $alerts;

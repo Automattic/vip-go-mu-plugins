@@ -63,13 +63,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_parsely_ui_hooks() {
-		global $parsely;
-
-		$expected = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
-		$this->assertSame( $expected, has_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) ) );
-		$this->assertSame( $expected, has_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) ) );
-		$this->assertSame( $expected, has_action( 'widgets_init', 'parsely_recommended_widget_register' ) );
-
+		$expected         = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
 		$reverse_expected = 'option_enabled' == self::$test_mode ? 10 : false;
 		$this->assertSame( $reverse_expected, has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' ) );
 
