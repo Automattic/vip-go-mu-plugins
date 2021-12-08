@@ -199,6 +199,10 @@ class CoreCommand extends \ElasticPress\Command {
 		 * Side-step the issue by spawning child proccesses for each subsite.
 		 */
 		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			if ( isset( $assoc_args['setup'] ) && 100 < get_blog_count() ) {
+				WP_CLI::Error( 'Please create indexes on a per-site basis by removing the --network-wide flag and passing in the --url parameter instead. For more information, see https://docs.wpvip.com/how-tos/vip-search/index-with-vip-search/#h-network-wide.' );
+			}
+
 			$start = microtime( true );
 			WP_CLI::line( 'Operating in network mode!' );
 
