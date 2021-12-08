@@ -48,9 +48,11 @@ class CLI {
 			return false;
 		}
 
-		$ak_connection = Controls::connect_akismet();
-		if ( ! $ak_connection ) {
-			WP_CLI::warning( '❌ Could not connect Akismet.' );
+		if ( ! defined( 'VIP_AKISMET_SKIP_LOAD' ) || true !== VIP_AKISMET_SKIP_LOAD ) {
+			$ak_connection = Controls::connect_akismet();
+			if ( ! $ak_connection ) {
+				WP_CLI::warning( '❌ Could not connect Akismet.' );
+			}
 		}
 
 		$vp_connection = Controls::connect_vaultpress();

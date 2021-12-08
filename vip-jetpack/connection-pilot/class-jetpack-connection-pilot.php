@@ -120,9 +120,11 @@ class Connection_Pilot {
 			$this->update_heartbeat();
 
 			// Attempting Akismet connection given that Jetpack is connected
-			$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
-			if ( ! $akismet_connection_attempt ) {
-				$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+			if ( ! defined( 'VIP_AKISMET_SKIP_LOAD' ) || true !== VIP_AKISMET_SKIP_LOAD ) {
+				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
+				if ( ! $akismet_connection_attempt ) {
+					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+				}
 			}
 
 			// Attempting VaultPress connection given that Jetpack is connected
