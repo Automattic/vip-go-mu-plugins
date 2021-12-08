@@ -111,6 +111,7 @@ class Logger {
 		'file',
 		'http_host',
 		'http_response_code',
+		'http_user_agent',
 		'index',
 		'line',
 		'message',
@@ -290,20 +291,17 @@ class Logger {
 	protected static function parse_params( array $params ) : array {
 		// Prepare data.
 		$default_params = [
-			'site_id'   => get_current_network_id(),                  // Required.
-			'blog_id'   => get_current_blog_id(),                     // Required.
-			'http_host' => strtolower( $_SERVER['HTTP_HOST'] ?? '' ), // phpcs:ignore -- Optional.
-
-			'severity'  => '',                                        // Optional.
-			'feature'   => '',                                        // Required.
-			'message'   => '',                                        // Required.
-
-			'user_id'   => get_current_user_id(),                     // Optional.
-
-			'extra'     => [],                                        // Optional.
-			'timestamp' => gmdate( 'Y-m-d H:i:s' ),                   // Required.
-			'index'     => 'log2logstash',                            // Required,
-			'user_ua'   => self::get_user_agent(),
+			'site_id'         => get_current_network_id(),                    // Required.
+			'blog_id'         => get_current_blog_id(),                       // Required.
+			'http_host'       => strtolower( $_SERVER['HTTP_HOST'] ?? '' ),   // phpcs:ignore -- Optional.
+			'severity'        => '',                                          // Optional.
+			'feature'         => '',                                          // Required.
+			'message'         => '',                                          // Required.
+			'user_id'         => get_current_user_id(),                       // Optional.
+			'extra'           => [],                                          // Optional.
+			'timestamp'       => gmdate( 'Y-m-d H:i:s' ),                     // Required.
+			'index'           => 'log2logstash',                              // Required,
+			'http_user_agent' => self::get_user_agent(),
 		];
 
 		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
@@ -396,7 +394,7 @@ class Logger {
 	 *
 	 * @internal          The following user-specific keys are set for you automatically:
 	 *                    - `user_id` : Optional. Default is current user ID.
-	 *                    - `user_ua` : Optional. Default is current user-agent.
+	 *                    - `http_user_agent` : Optional. Default is current user-agent or "cli"
 	 */
 	public static function log2logstash( array $data ) : void {
 		// Prepare data.
