@@ -558,10 +558,10 @@ class Logger {
 	public static function get_user_agent() {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return 'cli';
-		} else {
-			// Match handling in other places
-			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-			return substr( sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ?? '' ), 0, 255 );
 		}
+		
+		// Match handling in other places
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		return substr( sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ?? '' ), 0, 255 );
 	}
 }
