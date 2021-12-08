@@ -58,7 +58,7 @@ class Logger_Test extends WP_UnitTestCase {
 			'site_id'         => 1,
 			'blog_id'         => 1,
 			'http_host'       => 'example.org',
-			'http_user_agent' => '',
+			'http_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '', // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			'user_id'         => 0,
 			'extra'           => '[]',
 			'index'           => 'log2logstash',
