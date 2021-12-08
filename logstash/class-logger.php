@@ -33,7 +33,7 @@ class Logger {
 	 *
 	 * @var int
 	 */
-	protected const MAX_ENTRIES = 30;
+	protected const MAX_ENTRIES = 100;
 
 	/**
 	 * Maximum entries to send in one API request.
@@ -302,7 +302,8 @@ class Logger {
 
 			'extra'     => [],                                        // Optional.
 			'timestamp' => gmdate( 'Y-m-d H:i:s' ),                   // Required.
-			'index'     => 'log2logstash',                            // Required
+			'index'     => 'log2logstash',                            // Required,
+			'user_ua'   => self::get_user_agent(),
 		];
 
 		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
@@ -399,12 +400,16 @@ class Logger {
 	 */
 	public static function log2logstash( array $data ) : void {
 		// Prepare data.
-		$data = static::parse_params( $data );
+		$data               = static::parse_params( $data );
+		static $has_alerted = false;
 
 		// Data validations.
 		// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		if ( count( static::$entries ) + 1 > static::MAX_ENTRIES ) {
-			trigger_error( 'Excessive calls to ' . esc_html( __METHOD__ ) . '(). Maximum is ' . esc_html( static::MAX_ENTRIES ) . ' log entries.', E_USER_WARNING );
+		if ( count( static::$entries ) + 1 > static::get_log_entry_limit() ) {
+			if ( ! $has_alerted ) {
+				trigger_error( 'Excessive calls to ' . esc_html( __METHOD__ ) . '(). Maximum is ' . esc_html( static::get_log_entry_limit() ) . ' log entries.', E_USER_WARNING );
+				$has_alerted = true;
+			}
 			return; // Failed validation.
 
 		} elseif ( empty( $data['site_id'] ) || ! is_int( $data['site_id'] ) || $data['site_id'] <= 0 ) {
@@ -533,6 +538,30 @@ class Logger {
 				__CLASS__ . ': ' . wp_json_encode( $entry, JSON_PRETTY_PRINT ) . "\n",
 				FILE_APPEND
 			);
+		}
+	}
+
+	/**
+	 * Get maximum log entry count, any additional log entry after that will be silently discarded.
+	 *
+	 * @return int max number of entries
+	 */
+	public static function get_log_entry_limit() {
+		return defined( 'WP_CLI' ) && WP_CLI ? self::MAX_ENTRIES * 5 : self::MAX_ENTRIES;
+	}
+
+	/**
+	 * Get user agent for request if available
+	 *
+	 * @return string
+	 */
+	public static function get_user_agent() {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return 'cli';
+		} else {
+			// Match handling in other places
+			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+			return substr( sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ?? '' ), 0, 255 );
 		}
 	}
 }
