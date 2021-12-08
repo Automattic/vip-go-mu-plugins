@@ -7,8 +7,6 @@
  * License: GPL2+
  */
 
-require_once __DIR__ . '/logging.php';
+// Note: Special Action Scheduler functionality can be found in /cron/action-scheduler-dynamic-queue.php.
 
-if ( file_exists( __DIR__ . '/action-scheduler.php' ) ) {
-	require_once __DIR__ . '/action-scheduler.php';
-}
+require_once __DIR__ . '/logging.php';

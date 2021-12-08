@@ -1,22 +1,24 @@
 <?php
 
-namespace Automattic\VIP\WooCommerce;
+namespace Automattic\VIP\Cron;
+
+use Automattic\WP\Cron_Control;
+use ActionScheduler_Store;
+use WP_Error;
 
 /*
  * Dynamic queue adjustments for autoscaling Action Scheduler.
  *
- * Every few minutes, this checks to see if the AS queue has exceeded a certain
- * threshold of "due now" actions. And if so, will schedule additional queues to run
- * concurrently in cron until the queue is caught up.
+ * Every few minutes, this checks to see if the AS queue has exceeded a certain threshold
+ * of "due now" actions. And if so, will schedule additional queues to run concurrently
+ * in cron until the queue is caught up. Scales directly off of cron control's JOB_CONCURRENCY_LIMIT.
  *
- * Scales directly off of cron control's JOB_CONCURRENCY_LIMIT.
+ * 1) Cron jobs are registered when needed.
+ * 2) Cron-control picks up each job when it can, triggering an AS queue to start.
+ * 3) This new AS queue processes actions until it comes up on the timeout limit.
+ * 4) The queue/job end. The cycle repeats itself until no additional queues are needed.
  */
-
-add_action( 'after_setup_theme', function() {
-	( new Action_Scheduler_Dynamic_Cron_Queue() )->init();
-}, 9 );
-
-class Action_Scheduler_Dynamic_Cron_Queue {
+class Action_Scheduler_Dynamic_Queue {
 	const QUEUE_PROCESSOR_CRON_EVENT = 'vip_action_scheduler_run_queue';
 
 	// Safety cap.
@@ -45,7 +47,7 @@ class Action_Scheduler_Dynamic_Cron_Queue {
 	}
 
 	private function is_enabled() {
-		$dependencies_exist = class_exists( 'WooCommerce' ) && class_exists( 'ActionScheduler' ) && class_exists( '\Automattic\WP\Cron_Control\Events_Store' );
+		$dependencies_exist = class_exists( 'ActionScheduler_Store' ) && class_exists( 'Automattic\WP\Cron_Control\Events_Store' );
 		return apply_filters( 'vip_action_schedule_dynamic_queue_enabled', $dependencies_exist );
 	}
 
@@ -67,7 +69,7 @@ class Action_Scheduler_Dynamic_Cron_Queue {
 	}
 
 	private function get_max_allowed_queue_jobs() {
-		$total_cron_control_concurrency_limit = defined( '\Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT' ) ? \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT : 10;
+		$total_cron_control_concurrency_limit = defined( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT' ) ? Cron_Control\JOB_CONCURRENCY_LIMIT : 10;
 
 		// Allow up to 33% of the cron-control queue to be used for action scheduler processing.
 		return (int) min( ceil( $total_cron_control_concurrency_limit / 3 ), self::MAX_ALLOWED_DYNAMIC_QUEUES );
@@ -83,6 +85,7 @@ class Action_Scheduler_Dynamic_Cron_Queue {
 	 */
 	public function maybe_dispatch_new_queues() {
 		$dispatch_interval = max( $this->get_queue_timeout_limit() - 10, 60 );
+		// @codingStandardsIgnoreLine - cache time expiration is variable, but safeguarded already.
 		if ( ! wp_cache_add( 'dynamic-queue-scheduler-lock', 'locked', 'vip', $dispatch_interval ) ) {
 			// Only dispatch new queues around the time it takes to finish the previous round, or once a minute minimum.
 			return;
@@ -114,13 +117,14 @@ class Action_Scheduler_Dynamic_Cron_Queue {
 	 */
 	private function get_pending_queue_job_count() {
 		global $wpdb;
-		$table_name = \Automattic\WP\Cron_Control\Events_Store::instance()->get_table_name();
+		$table_name = Cron_Control\Events_Store::instance()->get_table_name();
 
 		// Note: A job is marked as 'completed' as it begins to run, so we unfortunately are unable to tell directly if they are still running or completed.
-		$current_processor_job_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE action = %s and status = 'pending'", self::QUEUE_PROCESSOR_CRON_EVENT ) ); // Cannot prepare table name. @codingStandardsIgnoreLine
+		// @codingStandardsIgnoreLine - cannot prepare table name.
+		$current_processor_job_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE action = %s and status = 'pending'", self::QUEUE_PROCESSOR_CRON_EVENT ) );
 
 		if ( is_null( $current_processor_job_count ) ) {
-			return new \WP_Error( 'vip-action-scheduler-dynamic-queue', 'Could not find the current queue count.' );
+			return new WP_Error( 'vip-action-scheduler-dynamic-queue', 'Could not find the current queue count.' );
 		}
 
 		return intval( $current_processor_job_count );
@@ -130,12 +134,19 @@ class Action_Scheduler_Dynamic_Cron_Queue {
 	 * Determine how many queues to dispatch by calculating how many actions need processing.
 	 */
 	private function number_of_queues_to_dispatch( $pending_cron_jobs_count ) {
-		$store = \ActionScheduler_Store::instance();
-		$unclaimed_pending_actions_due = (int) $store->query_actions( [
-			'date'    => as_get_datetime_object(),
-			'status'  => \ActionScheduler_Store::STATUS_PENDING,
-			'claimed' => false,
-		], 'count' );
+		// Extra future-proofing safety here since we can't control what version of AS is running on a site.
+		$unclaimed_pending_actions_due = 0;
+		if ( method_exists( 'ActionScheduler_Store', 'instance' ) ) {
+			$store = ActionScheduler_Store::instance();
+
+			if ( method_exists( $store, 'query_actions' ) && function_exists( 'as_get_datetime_object' ) ) {
+				$unclaimed_pending_actions_due = (int) $store->query_actions( [
+					'date'    => as_get_datetime_object(),
+					'status'  => ActionScheduler_Store::STATUS_PENDING,
+					'claimed' => false,
+				], 'count' );
+			}
+		}
 
 		// This is tough to determine. Depends on how many actions can be processed within the time limit, as a queue will keep grabbing new batches.
 		// For now, we'll assume that the queue can do at least 2 full batches.
@@ -149,7 +160,7 @@ class Action_Scheduler_Dynamic_Cron_Queue {
 			return 0;
 		}
 
-		$number_of_extra_queues_needed = max( ceil( $actions_needing_a_queue / $average_actions_processed_per_queue ) - $pending_cron_jobs_count, 0 );
+		$number_of_extra_queues_needed  = max( ceil( $actions_needing_a_queue / $average_actions_processed_per_queue ) - $pending_cron_jobs_count, 0 );
 		$number_of_extra_queues_allowed = max( $this->get_max_allowed_queue_jobs() - $pending_cron_jobs_count, 0 );
 		return min( $number_of_extra_queues_needed, $number_of_extra_queues_allowed );
 	}
