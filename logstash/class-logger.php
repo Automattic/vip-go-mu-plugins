@@ -300,8 +300,8 @@ class Logger {
 			'user_id'         => get_current_user_id(),                       // Optional.
 			'extra'           => [],                                          // Optional.
 			'timestamp'       => gmdate( 'Y-m-d H:i:s' ),                     // Required.
-			'index'           => 'log2logstash',                              // Required,
-			'http_user_agent' => self::get_user_agent(),
+			'index'           => 'log2logstash',                              // Required.
+			'http_user_agent' => self::get_user_agent(),                      // Optional.
 		];
 
 		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
