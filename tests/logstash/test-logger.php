@@ -69,7 +69,7 @@ class Logger_Test extends WP_UnitTestCase {
 	}
 
 	public function test__log2logstash__too_many_entries() {
-		$entries = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 ];
+		$entries = range( 0, 101 );
 		$data    = [
 			'severity' => 'alert',
 			'feature'  => 'test',
@@ -80,7 +80,7 @@ class Logger_Test extends WP_UnitTestCase {
 
 		Logger::log2logstash( $data );
 
-		$this->assertError( 'Excessive calls to Automattic\VIP\Logstash\Logger::log2logstash(). Maximum is 30 log entries.', E_USER_WARNING );
+		$this->assertError( 'Excessive calls to Automattic\VIP\Logstash\Logger::log2logstash(). Maximum is 100 log entries.', E_USER_WARNING );
 
 		// No new entries added
 		$this->assertEquals( $entries, Testable_Logger::get_entries() );
