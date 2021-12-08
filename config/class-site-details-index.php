@@ -236,7 +236,7 @@ class Site_Details_Index {
 	 * @return int The current timestamp or the value of $this->timestamp.
 	 */
 	public function get_current_timestamp() {
-		return $this->timestamp ?? time();
+		return $this->timestamp ?? microtime();
 	}
 
 	/**
