@@ -54,13 +54,14 @@ class Logger_Test extends WP_UnitTestCase {
 		];
 
 		$expected = array_merge( $data, [
-			'feature'   => 'a8c_vip_test',
-			'site_id'   => 1,
-			'blog_id'   => 1,
-			'http_host' => 'example.org',
-			'user_id'   => 0,
-			'extra'     => '[]',
-			'index'     => 'log2logstash',
+			'feature'         => 'a8c_vip_test',
+			'site_id'         => 1,
+			'blog_id'         => 1,
+			'http_host'       => 'example.org',
+			'http_user_agent' => '',
+			'user_id'         => 0,
+			'extra'           => '[]',
+			'index'           => 'log2logstash',
 		] );
 
 		Logger::log2logstash( $data );
