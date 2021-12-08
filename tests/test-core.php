@@ -4,6 +4,7 @@
 
 class VIP_Go__Core__Disable_Update_Caps_Test extends WP_UnitTestCase {
 	public function setUp(): void {
+		parent::setUp();
 		wpcom_vip_init_core_restrictions();
 	}
 

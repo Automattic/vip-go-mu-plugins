@@ -63,6 +63,73 @@ class Search {
 		'advanced_seo_description',
 	);
 
+	public const ES_QUERY_RESERVED_NAMES = array(
+		'author',
+		'author__in',
+		'author__not_in',
+		'author_id',
+		'author_name',
+		'cache_results',
+		'cat',
+		'category__and',
+		'category__in',
+		'category__not_in',
+		'category_name',
+		'comment_count',
+		'date_query',
+		'day',
+		'fields',
+		'has_password',
+		'hour',
+		'ignore_sticky_posts',
+		'm',
+		'meta_compare',
+		'meta_key',
+		'meta_query',
+		'meta_value',
+		'meta_value_num',
+		'minute',
+		'monthnum',
+		'name',
+		'nopaging',
+		'offset',
+		'order',
+		'orderby',
+		'p',
+		'page',
+		'page_id',
+		'paged',
+		'pagename',
+		'perm',
+		'post__in',
+		'post__not_in',
+		'post_mime_type',
+		'post_name__in',
+		'post_parent',
+		'post_parent__in',
+		'post_parent__not_in',
+		'post_password',
+		'post_status',
+		'post_type',
+		'posts_per_archive_page',
+		'posts_per_page',
+		's',
+		'second',
+		'tag',
+		'tag__and',
+		'tag__in',
+		'tag__not_in',
+		'tag_id',
+		'tag_slug__and',
+		'tag_slug__in',
+		'tax',
+		'tax_query',
+		'update_post_meta_cache',
+		'update_post_term_cache',
+		'w',
+		'year',
+	);
+
 	public const ALLOWED_DATACENTERS = [
 		'dca',
 		'dfw',
@@ -97,6 +164,8 @@ class Search {
 	public $queue_wait_time;
 	/** @var Queue */
 	public $queue;
+	/** @var Versioning */
+	public $versioning;
 	public $statsd;
 	public $indexables;
 	public $alerts;
@@ -530,6 +599,8 @@ class Search {
 
 		// Lock search algorithm to 3.5
 		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
+
+		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
 	}
 
 	protected function load_commands() {
@@ -1532,7 +1603,7 @@ class Search {
 
 		// Assume all host names are in the format es-ha-$dc.vipv2.net
 		$matches = array();
-		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
+		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', (string) $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
 			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
 		} else {
@@ -1881,8 +1952,11 @@ class Search {
 		return $dc;
 	}
 
+	/**
+	 * @return string|null
+	 */
 	public function get_origin_dc_from_es_endpoint( $url ) {
-		$dc = null;
+		$dc = '';
 
 		if ( ! $url ) {
 			return null;
@@ -2108,5 +2182,9 @@ class Search {
 
 			$this->versioning->set_current_version_number( $indexable, $normalized_version );
 		}
+	}
+
+	public function exclude_es_query_reserved_names( $taxonomies ) {
+		return array_merge( $taxonomies, self::ES_QUERY_RESERVED_NAMES );
 	}
 }
