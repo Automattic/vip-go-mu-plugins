@@ -78,41 +78,6 @@ function wpcom_vip_available_post_listing_months( $months, $post_type ) {
 }
 
 /**
- * Helper method to bust the "available months" cache when needed.
- *
- * Note that we only bust the cache when a new month is added,
- * For deletions, we just let the 24-hour TTL handle that.
- *
- * @param string $post_type
- * @return object[]
- */
-function wpcom_vip_maybe_bust_available_months_cache( $post_id ) {
-	$post_type = get_post_type( $post_id );
-	$cache_key = "available_filter_months_$post_type";
-
-	$existing_months = wp_cache_get( $cache_key, 'vip' );
-	if ( ! is_array( $existing_months ) ) {
-		// No cache to bust.
-		return false;
-	}
-
-	$post_year  = get_the_time( 'Y', $post_id );
-	$post_month = get_the_time( 'n', $post_id );
-
-	$found = false;
-	foreach ( $existing_months as $date ) {
-		if ( $post_year === $date->year && $post_month === $date->month ) {
-			$found = true;
-		}
-	}
-
-	if ( ! $found ) {
-		// The month/year doesn't exist yet, so just bust the cache and let it re-generate.
-		wp_cache_delete( $cache_key, 'vip' );
-	}
-}
-
-/**
  * Query wrapper that caches the results of available months given a particular post type.
  *
  * See WP_List_Table::months_dropdown() & wp_enqueue_media() in WP core.
@@ -152,4 +117,39 @@ function wpcom_vip_get_available_months_for_filters( $post_type ) {
 
 	wp_cache_set( $cache_key, $months, 'vip', DAY_IN_SECONDS );
 	return $months;
+}
+
+/**
+ * Helper method to bust the "available months" cache when needed.
+ *
+ * Note that we only bust the cache when a new month is added,
+ * For deletions, we just let the 24-hour TTL handle that.
+ *
+ * @param string $post_type
+ * @return object[]
+ */
+function wpcom_vip_maybe_bust_available_months_cache( $post_id ) {
+	$post_type = get_post_type( $post_id );
+	$cache_key = "available_filter_months_$post_type";
+
+	$existing_months = wp_cache_get( $cache_key, 'vip' );
+	if ( ! is_array( $existing_months ) ) {
+		// No cache to bust.
+		return false;
+	}
+
+	$post_year  = get_the_time( 'Y', $post_id );
+	$post_month = get_the_time( 'n', $post_id );
+
+	$found = false;
+	foreach ( $existing_months as $date ) {
+		if ( $post_year === $date->year && $post_month === $date->month ) {
+			$found = true;
+		}
+	}
+
+	if ( ! $found ) {
+		// The month/year doesn't exist yet, so just bust the cache and let it re-generate.
+		wp_cache_delete( $cache_key, 'vip' );
+	}
 }
