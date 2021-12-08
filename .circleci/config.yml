@@ -28,11 +28,10 @@ workflows:
           filters:
             branches:
               only: master
-      - create-changelog-draft
-      # - create-changelog-draft:
-      #     filters:
-      #       branches:
-      #         only: master
+      - create-changelog-draft:
+          filters:
+            branches:
+              only: master
 
 version: 2.1
 
@@ -303,7 +302,6 @@ jobs:
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
                 --wp-tag-ids=1784989 \
                 --wp-channel-ids=267076 \
-                --verify-commit-hash=false \
                 --debug
 
   search-dev-tools:
