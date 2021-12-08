@@ -28,10 +28,11 @@ workflows:
           filters:
             branches:
               only: master
-      - create-changelog-draft:
-          filters:
-            branches:
-              only: master
+      - create-changelog-draft
+      # - create-changelog-draft:
+      #     filters:
+      #       branches:
+      #         only: master
 
 version: 2.1
 
@@ -295,12 +296,14 @@ jobs:
     docker:
       - image: circleci/php:7.4-node
     steps:
-      - run: composer require automattic/vip-build-tools:1.0.6
+      - run: composer require automattic/vip-build-tools:1.0.7
       - run:
           command: |
             php $HOME/project/vendor/automattic/vip-build-tools/scripts/github-changelog.php \
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
                 --wp-tag-ids=1784989 \
+                --wp-channel-ids=267076 \
+                --verify-commit-hash=false \
                 --debug
 
   search-dev-tools:
