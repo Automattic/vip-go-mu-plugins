@@ -28,7 +28,8 @@ function wpcom_vip_enable_performance_tweaks() {
 	}
 
 	// Busts the month's filtering caches when needed for both attachments and posts/CPTs.
-	add_action( 'save_post', 'wpcom_vip_maybe_bust_available_months_cache', 10, 2 );
+	add_action( 'add_attachment', 'wpcom_vip_maybe_bust_available_months_cache' );
+	add_action( 'save_post', 'wpcom_vip_maybe_bust_available_months_cache' );
 }
 
 /**
