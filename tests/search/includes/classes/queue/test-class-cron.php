@@ -191,7 +191,7 @@ class Cron_Test extends WP_UnitTestCase {
 		return [
 			[
 				[ 0, 1, 2, 3, 4, 5 ],
-				5,
+				3,
 			],
 			[
 				[ new \WP_Error( 'not-good' ) ],
