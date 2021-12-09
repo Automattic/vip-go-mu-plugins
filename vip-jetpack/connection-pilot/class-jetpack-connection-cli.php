@@ -72,7 +72,7 @@ class CLI {
 		$skip_jp = defined( 'VIP_JETPACK_SKIP_LOAD' ) && VIP_JETPACK_SKIP_LOAD;
 		if ( $skip_jp ) {
 			WP_CLI::line( '☑️  Jetpack is skipped by: VIP_JETPACK_SKIP_LOAD' );
-			return true;
+			return false;
 		}
 
 		$jp_connection = Controls::connect_site( true, true );
