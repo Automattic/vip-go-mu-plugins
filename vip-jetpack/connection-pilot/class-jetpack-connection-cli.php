@@ -43,7 +43,6 @@ class CLI {
 	 */
 	private function connect_site() {
 		$jp_connection = $this->connect_jetpack();
-
 		if ( ! $jp_connection ) {
 			// Don't go further if JP is still disconnected.
 			return false;
