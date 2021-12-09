@@ -223,7 +223,7 @@ class Cron_Test extends WP_UnitTestCase {
 		$partially_mocked_cron->method( 'get_processor_job_count' )
 			->willReturnOnConsecutiveCalls( ...$job_counts );
 		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )
-			->willReturn( 5 );
+			->willReturn( 3 );
 
 		$partially_mocked_cron->sweep_jobs();
 	}
