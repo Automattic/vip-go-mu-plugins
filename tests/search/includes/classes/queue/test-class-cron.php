@@ -254,7 +254,7 @@ class Cron_Test extends WP_UnitTestCase {
 				20,
 				[ 'vip_search_queue_processor' => 3 ],
 			],
-			[ // max of 5 takes over
+			[ // max of 3 takes over
 				30,
 				[ 'vip_search_queue_processor' => 3 ],
 			],
