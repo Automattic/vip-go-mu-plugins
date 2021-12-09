@@ -7,10 +7,11 @@ use WP_UnitTestCase;
 class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
 
-		\Automattic\VIP\Search\Search::instance();
+		\Automattic\VIP\Search\Search::instance()->init();
 	}
 
 	public function test__heal_index_settings__reports_error() {

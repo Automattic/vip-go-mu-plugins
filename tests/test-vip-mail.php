@@ -1,5 +1,7 @@
 <?php
 
+use PHPUnit\Framework\ExpectationFailedException;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
@@ -68,19 +70,24 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 
+	/**
+	 * @global string $wp_version
+	 */
 	public function test_load_VIP_PHPMailer() {
 		global $wp_version;
 		$should_be_loaded = version_compare( $wp_version, '5.5', '>=' );
-		$this->assertEquals( $should_be_loaded, class_exists( 'VIP_PHPMailer' ), 'VIP_PHPMailer should be loaded only for WP >= 5.5. Version: ' . $wp_version );
+		$this->assertEquals( $should_be_loaded, class_exists( 'VIP_PHPMailer', false ), 'VIP_PHPMailer should be loaded only for WP >= 5.5. Version: ' . $wp_version );
 	}
 
 	/**
 	 * Test base cases here: local attachment and a remote (disallowed)
 	 *
 	 * @return void
+	 * @global string $wp_version
 	 */
 	public function test__attachments_path_validation() {
 		global $wp_version;
+
 		if ( version_compare( $wp_version, '5.5', '<' ) ) {
 			$this->markTestSkipped( 'Skipping VIP_PHPMailer logic validation on WP < 5.5' );
 		}

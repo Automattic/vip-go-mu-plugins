@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
+use wpdb;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -22,13 +23,14 @@ class Queue_Test extends WP_UnitTestCase {
 	private $queue;
 
 	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
 		}
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
-		\Automattic\VIP\Search\Search::instance();
+		\Automattic\VIP\Search\Search::instance()->init();
 
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
@@ -38,7 +40,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function setUp(): void {
-		wp_cache_flush();
+		parent::setUp();
 
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
@@ -47,6 +49,7 @@ class Queue_Test extends WP_UnitTestCase {
 		require_once __DIR__ . '/../../../../search/search.php';
 
 		$this->es = \Automattic\VIP\Search\Search::instance();
+		$this->es->init();
 
 		$this->queue = $this->es->queue;
 
@@ -270,11 +273,14 @@ class Queue_Test extends WP_UnitTestCase {
 		// Insert first job, set it to scheduled, so that we get some queued objects that are rate limited
 		$this->queue->queue_object( $objects[0]['id'], $objects[0]['type'] );
 		$this->queue->set_last_index_time( $objects[0]['id'], $objects[0]['type'], $now );
-		$this->queue->update_job( $objects[0]['id'], array( 'status' => 'scheduled' ) );
+		$job_id = $this->get_min_object_id_from_queue();
+		$this->queue->update_job( $job_id, array( 'status' => 'scheduled' ) );
+
+		$expected_job_ids = [];
 
 		// Insert the jobs
 		foreach ( $objects as $object ) {
-			$this->queue->queue_object( $object['id'], $object['type'] );
+			$expected_job_ids[] = $this->queue->queue_object( $object['id'], $object['type'] );
 		}
 
 		$expected_scheduled_time = gmdate( 'Y-m-d H:i:s' );
@@ -294,10 +300,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_object_ids, $object_ids, 'Checked out jobs ids do not match what was expected' );
 
-		// And each of those should be now marked as "running"
-		$ids_escaped = array_map( 'esc_sql', $expected_object_ids );
-
-		$ids_where_string = implode( ', ', $ids_escaped );
+		$ids_where_string = implode( ', ', $expected_job_ids );
 
 		$not_scheduled_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE `job_id` IN ({$ids_where_string}) AND `status` != 'scheduled'" );
 
@@ -438,7 +441,6 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$job = $this->queue->get_next_job_for_object( 1, 'post', array( 'index_version' => 2 ) );
 
-		$this->assertEquals( 2, $job->job_id );
 		$this->assertEquals( 1, $job->object_id );
 		$this->assertEquals( 'post', $job->object_type );
 		$this->assertEquals( 'queued', $job->status );
@@ -447,6 +449,9 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test_process_jobs() {
+		/** @var wpdb $wpdb */
+		global $wpdb;
+
 		$object_ids = array(
 			'12',
 			'45',
@@ -457,8 +462,11 @@ class Queue_Test extends WP_UnitTestCase {
 		// Add some jobs to the queue
 		$this->queue->queue_objects( $object_ids );
 
+		$min_id = $this->get_min_object_id_from_queue();
+		$max_id = $min_id + count( $object_ids ) - 1;
+
 		// Have to get by job id and not by object id
-		$jobs = $this->queue->get_jobs_by_range( 1, 4 );
+		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
 		$job_count = $this->queue->count_jobs( 'all' );
 
@@ -466,7 +474,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->queue->process_jobs( $jobs );
 
-		$jobs = $this->queue->get_jobs_by_range( 1, 4 );
+		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
@@ -488,7 +496,10 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->queue_object( 1000, 'post' );
 		$this->queue->queue_object( 2000, 'post' );
 
-		$jobs = $this->queue->get_jobs_by_range( 1, 2 );
+		$min_id = $this->get_min_object_id_from_queue();
+		$max_id = $min_id + 1;
+
+		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
 		$expected_object_ids = array( 1000, 2000 );
 		$actual_object_ids   = wp_list_pluck( $jobs, 'object_id' );
@@ -504,7 +515,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->queue_objects( 'Test' );
 		$this->queue->queue_objects( 42 );
 
-		$results = $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE 1", \ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$results = $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE 1", \ARRAY_N );
 
 		$this->assertEquals( 0, count( $results ), 'shouldn\'t add objects to queue if object id list isn\'t an array' );
 	}
@@ -1118,12 +1129,11 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->queue->delete_jobs_for_index_version( 'post', 2 );
 
-		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' );
+		$results = $wpdb->get_results( "SELECT object_id, object_type, priority, start_time, status, index_version, queued_time, scheduled_time FROM {$table_name} WHERE 1 ORDER BY job_id", 'ARRAY_A' );
 
 		$this->assertEquals(
 			array(
 				array(
-					'job_id'         => '1',
 					'object_id'      => '1',
 					'object_type'    => 'post',
 					'priority'       => '5',
@@ -1134,7 +1144,6 @@ class Queue_Test extends WP_UnitTestCase {
 					'scheduled_time' => null,
 				),
 				array(
-					'job_id'         => '2',
 					'object_id'      => '2',
 					'object_type'    => 'post',
 					'priority'       => '5',
@@ -1145,7 +1154,6 @@ class Queue_Test extends WP_UnitTestCase {
 					'scheduled_time' => null,
 				),
 				array(
-					'job_id'         => '4',
 					'object_id'      => '4',
 					'object_type'    => 'post',
 					'priority'       => '5',
@@ -1162,12 +1170,11 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->queue->delete_jobs_for_index_version( 'post', 1 );
 
-		$results = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE 1", 'ARRAY_A' );
+		$results = $wpdb->get_results( "SELECT object_id, object_type, priority, start_time, status, index_version, queued_time, scheduled_time FROM {$table_name} WHERE 1 ORDER BY job_id", 'ARRAY_A' );
 
 		$this->assertEquals(
 			array(
 				array(
-					'job_id'         => '4',
 					'object_id'      => '4',
 					'object_type'    => 'post',
 					'priority'       => '5',
@@ -1228,14 +1235,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$filter
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
 	}
 
@@ -1250,14 +1250,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$too_low_message
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
 	}
 
@@ -1276,14 +1269,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$too_high_message
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
 	}
 
@@ -1400,5 +1386,16 @@ class Queue_Test extends WP_UnitTestCase {
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
+	}
+
+	/**
+	 * @global wpdb $wpdb
+	 */
+	private function get_min_object_id_from_queue() {
+		/** @var wpdb $wpdb */
+		global $wpdb;
+
+		$table = $this->queue->schema->get_table_name();
+		return $wpdb->get_var( "SELECT MIN(job_id) FROM {$table}" );
 	}
 }
