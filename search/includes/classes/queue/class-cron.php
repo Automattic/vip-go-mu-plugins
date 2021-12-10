@@ -46,7 +46,7 @@ class Cron {
 	/**
 	 * The maximum number if processor jobs allowed at one time
 	 */
-	const MAX_PROCESSOR_JOB_COUNT = 5;
+	const MAX_PROCESSOR_JOB_COUNT = 3;
 
 	/**
 	 * Instance of Automattic\VIP\Search\Queue that created this Cron instance
@@ -194,6 +194,7 @@ class Cron {
 		// WP_Query args for looking up posts that match the term taxonomy id and indexable
 		// post types/statuses
 		$args = array(
+			// phpcs:ignored WordPress.WP.PostsPerPage.posts_per_page_posts_per_page
 			'posts_per_page'         => self::TERM_UPDATE_BATCH_SIZE,
 			'post_type'              => $indexable_post_types,
 			'post_status'            => $indexable_post_statuses,
@@ -254,21 +255,9 @@ class Cron {
 		while ( ! is_wp_error( $job_count ) && $job_count < $max_job_count ) {
 			$schedule_success = $this->schedule_batch_job();
 
-			// A WP_Error means the event couldn't be scheduled, let's log.
-			if ( is_wp_error( $schedule_success ) ) {
-				\Automattic\VIP\Logstash\log2logstash(
-					[
-						'severity' => 'warning',
-						'feature'  => 'search_queue_sweeper',
-						'message'  => 'Failed to schedule a processor job',
-						'extra'    => $schedule_success,
-					]
-				);
-				break;
-			}
-
+			// A WP_Error means the event couldn't be scheduled due to concurrency limit.
 			// FALSE means an empty queue, so there's nothing to do here anymore.
-			if ( false === $schedule_success ) {
+			if ( is_wp_error( $schedule_success ) || false === $schedule_success ) {
 				break;
 			}
 
