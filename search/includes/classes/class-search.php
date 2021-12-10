@@ -772,6 +772,10 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function get_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( is_wp_error( $request ) && 503 === $request->get_error_code() ) {
+			return $request;
+		}
+
 		if ( 'index_exists' !== $type ) {
 			return $request;
 		}
@@ -840,6 +844,10 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( is_wp_error( $request ) && 503 === $request->get_error_code() ) {
+			return $request;
+		}
+
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
