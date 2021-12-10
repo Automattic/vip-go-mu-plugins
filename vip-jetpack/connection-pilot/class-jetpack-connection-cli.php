@@ -48,15 +48,8 @@ class CLI {
 			return false;
 		}
 
-		$ak_connection = Controls::connect_akismet();
-		if ( ! $ak_connection ) {
-			WP_CLI::warning( '❌ Could not connect Akismet.' );
-		}
-
-		$vp_connection = Controls::connect_vaultpress();
-		if ( is_wp_error( $vp_connection ) ) {
-			WP_CLI::warning( sprintf( '❌ Could not connect VaultPress. Error (%s): %s', $vp_connection->get_error_code(), $vp_connection->get_error_message() ) );
-		}
+		$ak_connection = $this->connect_akismet();
+		$vp_connection = $this->connect_vaultpress();
 
 		return true === $ak_connection && true === $vp_connection;
 	}
@@ -74,6 +67,13 @@ class CLI {
 			return true;
 		}
 
+		// Do not connect to JP if the loading of the JP plugin has been skipped.
+		$skip_jp = defined( 'VIP_JETPACK_SKIP_LOAD' ) && VIP_JETPACK_SKIP_LOAD;
+		if ( $skip_jp ) {
+			WP_CLI::line( '☑️  Jetpack is skipped by: VIP_JETPACK_SKIP_LOAD' );
+			return false;
+		}
+
 		$jp_connection = Controls::connect_site( true, true );
 		if ( is_wp_error( $jp_connection ) ) {
 			WP_CLI::warning( sprintf( '❌ Could not connect Jetpack. Error (%s): %s', $jp_connection->get_error_code(), $jp_connection->get_error_message() ) );
@@ -81,6 +81,52 @@ class CLI {
 		}
 
 		WP_CLI::line( '✅  Jetpack was connected.' );
+		return true;
+	}
+
+	/**
+	 * Ensure Akismet is connected.
+	 *
+	 * @return bool true if there is a successful connection.
+	 * prints notice if Akismet is skipped.
+	 */
+	private function connect_akismet() {
+		// Do not connect to Akismet if the loading of the Akismet plugin has been skipped.
+		$skip_ak = defined( 'VIP_AKISMET_SKIP_LOAD' ) && VIP_AKISMET_SKIP_LOAD;
+		if ( $skip_ak ) {
+			WP_CLI::line( '☑️  Akismet is skipped by: VIP_AKISMET_SKIP_LOAD' );
+			return true;
+		}
+
+		$ak_connection = Controls::connect_akismet();
+		if ( ! $ak_connection ) {
+			WP_CLI::warning( '❌ Could not connect Akismet.' );
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Ensure Vaultpress is connected.
+	 *
+	 * @return bool true if there is a successful connection.
+	 * prints notice if Vaultpress is skipped.
+	 */
+	private function connect_vaultpress() {
+		// Do not connect to Vaultpress if the loading of the Vaultpress plugin has been skipped.
+		$skip_vp = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+		if ( $skip_vp ) {
+			WP_CLI::line( '☑️  Vaultpress is skipped by: VIP_VAULTPRESS_SKIP_LOAD' );
+			return true;
+		}
+
+		$vp_connection = Controls::connect_vaultpress();
+		if ( is_wp_error( $vp_connection ) ) {
+			WP_CLI::warning( sprintf( '❌ Could not connect VaultPress. Error (%s): %s', $vp_connection->get_error_code(), $vp_connection->get_error_message() ) );
+			return false;
+		}
+
 		return true;
 	}
 
