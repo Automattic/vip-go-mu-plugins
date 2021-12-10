@@ -5,6 +5,8 @@ namespace Automattic\VIP\Files;
 use WP_Error;
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/../../files/class-vip-filesystem.php';
+
 class VIP_Filesystem_Test extends WP_UnitTestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
@@ -13,10 +15,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 */
 	protected $vip_filesystem;
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-vip-filesystem.php' );
 
 		// make sure needed constants are defined
 		if ( ! defined( 'LOCAL_UPLOADS' ) ) {
@@ -27,7 +27,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->vip_filesystem = new VIP_Filesystem();
@@ -37,7 +37,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$add_filters->invoke( $this->vip_filesystem );
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		// remove the filters
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
@@ -51,7 +51,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -69,30 +69,30 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		return [
 			'local-uploads' => [
 				[
-					'path' => LOCAL_UPLOADS . '/2019/1',
-					'url' => 'http://test.com/wp-content/uploads/2019/1',
-					'subdir' => '/2019/1',
+					'path'    => LOCAL_UPLOADS . '/2019/1',
+					'url'     => 'http://test.com/wp-content/uploads/2019/1',
+					'subdir'  => '/2019/1',
 					'basedir' => LOCAL_UPLOADS,
 				],
 				[
-					'path' => 'vip://wp-content/uploads/2019/1',
-					'url' => 'http://test.com/wp-content/uploads/2019/1',
-					'subdir' => '/2019/1',
-					'basedir' => 'vip://wp-content/uploads'
+					'path'    => 'vip://wp-content/uploads/2019/1',
+					'url'     => 'http://test.com/wp-content/uploads/2019/1',
+					'subdir'  => '/2019/1',
+					'basedir' => 'vip://wp-content/uploads',
 				],
 			],
-			'wp-content' => [
+			'wp-content'    => [
 				[
-					'path' => WP_CONTENT_DIR . '/uploads/2019/1',
-					'url' => 'http://test.com/wp-content/uploads/2019/1',
-					'subdir' => '/2019/1',
-					'basedir' => WP_CONTENT_DIR . '/uploads'
+					'path'    => WP_CONTENT_DIR . '/uploads/2019/1',
+					'url'     => 'http://test.com/wp-content/uploads/2019/1',
+					'subdir'  => '/2019/1',
+					'basedir' => WP_CONTENT_DIR . '/uploads',
 				],
 				[
-					'path' => 'vip://wp-content/uploads/2019/1',
-					'url' => 'http://test.com/wp-content/uploads/2019/1',
-					'subdir' => '/2019/1',
-					'basedir' => 'vip://wp-content/uploads'
+					'path'    => 'vip://wp-content/uploads/2019/1',
+					'url'     => 'http://test.com/wp-content/uploads/2019/1',
+					'subdir'  => '/2019/1',
+					'basedir' => 'vip://wp-content/uploads',
 				],
 			],
 		];
@@ -112,7 +112,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 		$actual = $get_upload_path->invoke( $this->vip_filesystem );
 
-		$this->assertNotContains( 'vip://', $actual );
+		$this->assertStringNotContainsString( 'vip://', $actual );
 	}
 
 	public function get_test_data__clean_file_path() {
@@ -128,7 +128,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
 				'wp-content/uploads/2019/01/foo.jpg',
 				'wp-content/uploads/2019/01/foo.jpg',
-			]
+			],
 		];
 	}
 
@@ -147,12 +147,12 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		return [
 			'with query args' => [
 				'vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
-				'/wp-content/uploads/2019/01/IMG_4115.jpg'
+				'/wp-content/uploads/2019/01/IMG_4115.jpg',
 			],
-			'clean path' => [
+			'clean path'      => [
 				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
-				'/wp-content/uploads/2019/01/IMG_4115.jpg'
-			]
+				'/wp-content/uploads/2019/01/IMG_4115.jpg',
+			],
 		];
 	}
 
@@ -170,20 +170,20 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	public function get_test_data__filter_get_attached_file() {
 		$uploads = wp_get_upload_dir();
 		return [
-			'proper file path' => [
+			'proper file path'    => [
 				[
-					'file' => 'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
-					'attachment_id' => 1
+					'file'          => 'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+					'attachment_id' => 1,
 				],
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg'
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
 			],
 			'corrupted file path' => [
 				[
-					'file' => 'vip://wp-content/uploads/' . $uploads[ 'baseurl' ] . '/2019/01/IMG_4115.jpg',
-					'attachment_id' => 1
+					'file'          => 'vip://wp-content/uploads/' . $uploads['baseurl'] . '/2019/01/IMG_4115.jpg',
+					'attachment_id' => 1,
 				],
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg'
-			]
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+			],
 		];
 	}
 
@@ -191,14 +191,14 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__filter_get_attached_file
 	 */
 	public function test__filter_get_attached_file( $args, $expected ) {
-		$actual = $this->vip_filesystem->filter_get_attached_file( $args[ 'file' ], $args[ 'attachment_id' ] );
+		$actual = $this->vip_filesystem->filter_get_attached_file( $args['file'], $args['attachment_id'] );
 
 		$this->assertEquals( $expected, $actual );
 	}
 
 	public function get_test_data__filter_wp_generate_attachment_metadata() {
 		return [
-			'filesize-not-set' => [
+			'filesize-not-set'     => [
 				[],
 				[
 					'filesize' => 6941712,
@@ -233,7 +233,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_validate_file__valid_file() {
-		$file = [
+		$file     = [
 			'name' => 'testfile.txt',
 		];
 		$basepath = $this->get_upload_path();
@@ -275,7 +275,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_validate_file__invalid_file_type() {
-		$file = [
+		$file     = [
 			'name' => 'testfile.exe',
 		];
 		$basepath = $this->get_upload_path();

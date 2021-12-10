@@ -2,18 +2,17 @@
 
 namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
-use WP_Error;
+use WP_UnitTestCase;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
-class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../../files/acl/pre-wp-utils.php';
 
-		require_once( __DIR__ . '/../../../files/acl/pre-wp-utils.php' );
-	}
+class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
 
 	public function test__prepare_request__empty_request_uri() {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-		$this->expectExceptionMessage( 'VIP Files ACL failed due to empty URI' );
+		$this->expectWarning();
+		$this->expectWarningMessage( 'VIP Files ACL failed due to empty URI' );
 
 		$request_uri = '';
 
@@ -23,7 +22,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__prepare_request__invalid_request_uri() {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 		$this->expectExceptionMessage( 'VIP Files ACL failed due to relative path (for invalid/path.jpg)' );
 
 		$request_uri = 'invalid/path.jpg';
@@ -34,7 +33,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__prepare_request__valid() {
-		$request_uri = '/sub/wp-content/uploads/file.jpg';
+		$request_uri     = '/sub/wp-content/uploads/file.jpg';
 		$expected_result = [
 			'/sub',
 			'file.jpg',
@@ -47,17 +46,17 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 
 	public function get_data__validate_path__invalid() {
 		return [
-			'null-uri' => [
+			'null-uri'                     => [
 				null,
 				'VIP Files ACL failed due to empty path',
 			],
 	
-			'empty-uri' => [
+			'empty-uri'                    => [
 				'',
 				'VIP Files ACL failed due to empty path',
 			],
 	
-			'path-no-wp-content' => [
+			'path-no-wp-content'           => [
 				'/a/path/to/a/file.jpg',
 				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
 			],
@@ -71,11 +70,11 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	
 	public function get_data__validate_path__valid() {
 		return [
-			'valid-path' => [
+			'valid-path'                     => [
 				'/wp-content/uploads/kittens.gif',
 			],
 	
-			'valid-path-nested' => [
+			'valid-path-nested'              => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 			],
 
@@ -83,11 +82,11 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				'/subsite/wp-content/uploads/puppies.png',
 			],
 
-			'valid-multi-directory-subsite' => [
+			'valid-multi-directory-subsite'  => [
 				'/sub/site/wp-content/uploads/fishies.png',
 			],
 
-			'multi-wp-content-directories' => [
+			'multi-wp-content-directories'   => [
 				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 			],
 	
@@ -103,8 +102,8 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_data__validate_path__invalid
 	 */
 	public function test__validate_path__invalid( $file_path, $expected_warning ) {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
-		$this->expectExceptionMessage( $expected_warning );
+		$this->expectWarning();
+		$this->expectWarningMessage( $expected_warning );
 
 		$actual_is_valid = validate_path( $file_path );
 	
@@ -122,7 +121,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 
 	public function get_data__sanitize_and_split_path() {
 		return [
-			'valid-path' => [
+			'valid-path'                     => [
 				'/wp-content/uploads/kittens.gif',
 				[
 					'',
@@ -130,7 +129,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				],
 			],
 
-			'valid-path-nested' => [
+			'valid-path-nested'              => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 				[
 					'',
@@ -146,7 +145,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				],
 			],
 
-			'valid-multi-directory-subsite' => [
+			'valid-multi-directory-subsite'  => [
 				'/sub/site/wp-content/uploads/fishies.png',
 				[
 					'/sub/site',
@@ -154,7 +153,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				],
 			],
 
-			'multi-wp-content-directories' => [
+			'multi-wp-content-directories'   => [
 				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 				[
 					'',
@@ -162,6 +161,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends \WP_UnitTestCase {
 				],
 			],
 
+			// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
 			/* TODO: not supported yet
 			'resized-image' => [
 				'/wp-content/uploads/2021/01/dinos-100x100.jpg',

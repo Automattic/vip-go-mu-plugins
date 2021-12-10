@@ -9,19 +9,9 @@ require_once __DIR__ . '/class-health.php';
 class HealthJob {
 
 	/**
-	 * The name of the scheduled cron event to run the health check
-	 */
-	const CRON_EVENT_NAME = 'vip_search_healthcheck';
-
-	/**
 	 * The name of the scheduled cron event to run the validate contnets check
 	 */
 	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
-
-	/**
-	 * Custom cron interval name
-	 */
-	const CRON_INTERVAL_NAME = 'vip_search_healthcheck_interval';
 
 	/**
 	 * Custom cron interval value
@@ -29,9 +19,14 @@ class HealthJob {
 	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
 
 	/**
-	 * @var int the number after which the alert should be sent.
+	 * @var int the number after which the alert should be sent for inconsistencies found.
 	 */
 	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
+
+	/**
+	 * @var int the percentage after which the alert should be sent for autoheal - 0.1 = 10%
+	 */
+	const AUTOHEALED_ALERT_THRESHOLD = 0.1;
 
 	public $health_check_disabled_sites = array();
 
@@ -57,8 +52,8 @@ class HealthJob {
 	public $indexables;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search = $search;
-		$this->health = new Health( $search );
+		$this->search     = $search;
+		$this->health     = new Health( $search );
 		$this->indexables = \ElasticPress\Indexables::factory();
 	}
 
@@ -69,15 +64,11 @@ class HealthJob {
 	 */
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_EVENT_NAME, [ $this, 'check_health' ] );
 		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME, [ $this, 'validate_contents' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
 		}
-
-		// Add the custom cron schedule
-		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ], 10, 1 );
 
 		$this->schedule_job();
 	}
@@ -88,11 +79,13 @@ class HealthJob {
 	 * Add the event name to WP cron schedule and then add the action
 	 */
 	public function schedule_job() {
-		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
-		}
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
-			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
+			wp_schedule_event( time() + ( mt_rand( 1, 7 ) * DAY_IN_SECONDS ) + ( mt_rand( 1, 24 ) * HOUR_IN_SECONDS ), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+		}
+
+		if ( wp_next_scheduled( 'vip_search_healthcheck' ) ) {
+			wp_clear_scheduled_hook( 'vip_search_healthcheck' );
 		}
 	}
 
@@ -102,34 +95,9 @@ class HealthJob {
 	 * Remove the ES health check job from the events list
 	 */
 	public function disable_job() {
-		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
-		}
 		if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME );
 		}
-	}
-
-	/**
-	 * Filter `cron_schedules` output
-	 *
-	 * Add the custom interval to WP cron schedule
-	 *
-	 * @param       array   $schedule
-	 *
-	 * @return  mixed
-	 */
-	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
-			return $schedule;
-		}
-
-		$schedule[ self::CRON_INTERVAL_NAME ] = [
-			'interval' => self::CRON_INTERVAL,
-			'display'  => __( 'VIP Search Healthcheck time interval' ),
-		];
-
-		return $schedule;
 	}
 
 	/**
@@ -152,141 +120,37 @@ class HealthJob {
 
 		if ( is_wp_error( $results ) ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-		} else if ( ! empty( $results ) ) {
-			$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			wpcom_vip_irc( '#vip-go-es-alerts', $message, 2 );
+		} elseif ( ! empty( $results ) ) {
+			$self_healed_post_count = count( $results );
+			$total_post_count       = $this->count_indexable_posts();
+
+			$alert_threshold = $total_post_count * self::AUTOHEALED_ALERT_THRESHOLD;
+
+			if ( $self_healed_post_count > $alert_threshold ) {
+				$message = sprintf( 'Cron validate-contents for site %d (%s): Autohealing executed for %d records.', FILES_CLIENT_SITE_ID, home_url(), count( $results ) );
+				wpcom_vip_irc( '#vip-go-es-alerts', $message, 2 );
+			}
 		}
 
 	}
 
-	/**
-	 * Check index health
-	 */
-	public function check_health() {
-		// Check if job has been disabled
-		if ( ! $this->is_enabled() ) {
-			$this->disable_job();
+	private function count_indexable_posts() {
+		$post_indexable = $this->indexables->get( 'post' );
 
-			return;
-		}
+		$post_types    = $post_indexable->get_indexable_post_types();
+		$post_statuses = $post_indexable->get_indexable_post_status();
 
-		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
-			return;
-		}
 
-		$this->check_document_count_health();
-	}
-
-	public function check_document_count_health() {
-		$users_feature = \ElasticPress\Features::factory()->get_registered_feature( 'users' );
-
-		if ( $users_feature instanceof \ElasticPress\Feature && $users_feature->is_active() ) {
-			$users_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
-
-			$users_versions = $this->search->versioning->get_versions( $users_indexable );
-
-			foreach ( $users_versions as $version ) {
-				$user_results = Health::validate_index_users_count( array(
-					'index_version' => $version['number'],
-				) );
-
-				$this->process_document_count_health_results( $user_results );
+		$sum = 0;
+		foreach ( $post_types as $post_type ) {
+			$counts = wp_count_posts( $post_type );
+			foreach ( $post_statuses as $status ) {
+				$count = $counts->$status ?? 0;
+				$sum  += $count;
 			}
 		}
-
-		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-
-		$posts_versions = $this->search->versioning->get_versions( $post_indexable );
-
-		foreach ( $posts_versions as $version ) {
-			$post_results = Health::validate_index_posts_count( array(
-				'index_version' => $version['number'],
-			) );
-
-			$this->process_document_count_health_results( $post_results );
-		}
-	}
-
-	/**
-	 * Process the health check result
-	 *
-	 * @access  protected
-	 * @param   array       $result     Array of results from Health index validation
-	 */
-	public function process_document_count_health_results( $results ) {
-		// If the whole thing failed, error
-		if ( is_wp_error( $results ) ) {
-			$message = sprintf( 'Error while validating index for %s: %s', home_url(), $results->get_error_message() );
-
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-			return;
-		}
-
-		foreach ( $results as $result ) {
-			if ( array_key_exists( 'skipped', $result ) && $result['skipped'] ) {
-				// We don't want to alert for skipped indexes
-				continue;
-			}
-
-			// If there's an error, alert
-			if ( array_key_exists( 'error', $result ) ) {
-				$message = sprintf( 'Error while validating index for %s: %s (index_name: %s, index_version: %d)',
-					home_url(),
-					$result['error'],
-					$result['index_name'] ?? '<unknown>',
-					$result['index_version'] ?? 0
-				);
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-			}
-
-			// Only alert if more than the number of inconsistencies found.
-			if ( isset( $result['diff'] ) && self::INCONSISTENCIES_ALERT_THRESHOLD < abs( $result['diff'] ) ) {
-				$message = sprintf(
-					'Index inconsistencies found for %s: (entity: %s, type: %s, index_name: %s, index_version: %d, DB count: %s, ES count: %s, Diff: %s)',
-					home_url(),
-					$result['entity'],
-					$result['type'],
-					$result['index_name'] ?? '<unknown>',
-					$result['index_version'],
-					$result['db_total'],
-					$result['es_total'],
-					$result['diff']
-				);
-
-				$this->send_alert( '#vip-go-es-inconsistencies', $message, 2, "{$result['entity']}:{$result['type']}" );
-			}
-		}
-	}
-
-	/**
-	 * Send an alert
-	 *
-	 * @see wpcom_vip_irc()
-	 *
-	 * @param string $channel IRC / Slack channel to send message to
-	 * @param string $message The message to send
-	 * @param int $level Alert level
-	 * @param string $type content type
-	 *
-	 * @return bool Bool indicating if sending succeeded, failed or skipped
-	 */
-	public function send_alert( $channel, $message, $level, $type = '' ) {
-		// We only want to send an alert if a consistency check didn't correct itself in two intervals.
-		if ( $type ) {
-			$cache_key = "healthcheck_alert_seen:{$type}";
-			if ( false === wp_cache_get( $cache_key, Cache::CACHE_GROUP_KEY ) ) {
-				wp_cache_set( $cache_key, 1, Cache::CACHE_GROUP_KEY, round( self::CRON_INTERVAL * 1.5 ) );
-				return false;
-			}
-
-			wp_cache_delete( $cache_key, Cache::CACHE_GROUP_KEY );
-		}
-
-		return wpcom_vip_irc( $channel, $message, $level );
+		return $sum;
 	}
 
 	/**
@@ -299,10 +163,8 @@ class HealthJob {
 			return false;
 		}
 
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
-				return false;
-			}
+		if ( defined( 'VIP_GO_APP_ID' ) && in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
+			return false;
 		}
 
 		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );

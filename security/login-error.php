@@ -10,11 +10,11 @@ namespace Automattic\VIP\Security;
  * 
  * @since 1.1
  */
-function use_ambiguous_login_error( string $error ): string {
+function use_ambiguous_login_error( $error ): string {
 	global $errors;
 
 	if ( ! is_wp_error( $errors ) ) {
-		return $error;
+		return (string) $error;
 	}
 
 	$err_codes = $errors->get_error_codes();
@@ -32,8 +32,8 @@ function use_ambiguous_login_error( string $error ): string {
 			break;
 		}
 	}
- 
-	return $error;
+
+	return (string) $error;
 }
 
 add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 );

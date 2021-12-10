@@ -2,52 +2,50 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexable as Indexable;
-use \ElasticPress\Indexables as Indexables;
-
-use \WP_Query as WP_Query;
-use \WP_User_Query as WP_User_Query;
-use \WP_Error as WP_Error;
+use \ElasticPress\Indexables;
+use \WP_Error;
 
 class Queue {
-	const CACHE_GROUP = 'vip-search-index-queue';
+	const CACHE_GROUP                     = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
 	const MAX_BATCH_SIZE = 1000;
-	const DEADLOCK_TIME = 5 * MINUTE_IN_SECONDS;
+	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
+	/** @var Queue\Schema */
 	public $schema;
 	public $statsd;
 	public $indexables;
 	public $logger;
 
-	public const INDEX_COUNT_CACHE_GROUP = 'vip_search';
-	public const INDEX_COUNT_CACHE_KEY = 'index_op_count';
+	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
+	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
-	public const INDEX_QUEUEING_ENABLED_KEY = 'index_queueing_enabled';
-	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+	public const INDEX_QUEUEING_ENABLED_KEY         = 'index_queueing_enabled';
+	public const INDEX_DEFAULT_PRIORITY             = 5;
+	public static $stat_sampling_drop_value         = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
 	public static $max_indexing_op_count;
-	private const DEFAULT_MAX_INDEXING_OP_COUNT = 6000 + 1;
+	private const DEFAULT_MAX_INDEXING_OP_COUNT           = 6000 + 1;
 	private const LOWER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 10;
 	private const UPPER_BOUND_MAX_INDEXING_OPS_PER_SECOND = 250;
 
-	private const INDEX_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const INDEX_RATE_LIMITED_ALERT_LIMIT       = 7200; // 2 hours in seconds
 	private const INDEX_RATE_LIMITING_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
-	private const INDEX_RATE_LIMITING_ALERT_LEVEL = 2; // Level 2 = 'alert'
+	private const INDEX_RATE_LIMITING_ALERT_LEVEL      = 2; // Level 2 = 'alert'
 
 	private static $index_count_ttl;
-	private const DEFAULT_INDEX_COUNT_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const DEFAULT_INDEX_COUNT_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_INDEX_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
 	private const UPPER_BOUND_INDEX_COUNT_TTL = 2 * \HOUR_IN_SECONDS;
 
 	private static $index_queueing_ttl;
-	private const DEFAULT_INDEX_QUEUEING_TTL = 5 * \MINUTE_IN_SECONDS;
+	private const DEFAULT_INDEX_QUEUEING_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_INDEX_QUEUEING_TTL = 1 * \MINUTE_IN_SECONDS;
 	private const UPPER_BOUND_INDEX_QUEUEING_TTL = 20 * \MINUTE_IN_SECONDS;
 
 	private static $max_sync_indexing_count;
-	private const DEFAULT_MAX_SYNC_INDEXING_COUNT = 10000;
+	private const DEFAULT_MAX_SYNC_INDEXING_COUNT     = 10000;
 	private const LOWER_BOUND_MAX_SYNC_INDEXING_COUNT = 2500;
 	private const UPPER_BOUND_MAX_SYNC_INDEXING_COUNT = 25000;
 
@@ -58,8 +56,8 @@ class Queue {
 
 		$this->apply_settings();
 
-		require_once( __DIR__ . '/queue/class-schema.php' );
-		require_once( __DIR__ . '/queue/class-cron.php' );
+		require_once __DIR__ . '/queue/class-schema.php';
+		require_once __DIR__ . '/queue/class-cron.php';
 
 		$this->schema = new Queue\Schema();
 		$this->schema->init();
@@ -70,7 +68,7 @@ class Queue {
 
 		$this->statsd = new \Automattic\VIP\StatsD();
 
-		$this->indexables = \ElasticPress\Indexables::factory();
+		$this->indexables = Indexables::factory();
 
 		// Logger - can be set explicitly for mocking purposes
 		if ( ! $this->logger ) {
@@ -281,7 +279,7 @@ class Queue {
 		$index_version = isset( $options['index_version'] ) ? $options['index_version'] : null;
 
 		if ( ! is_int( $index_version ) ) {
-			$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
+			$indexable = Indexables::factory()->get( $object_type );
 
 			if ( ! $indexable ) {
 				return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $object_type ) );
@@ -303,6 +301,8 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
+	 * @param array $options
+	 * @return int ID of the queued object, 0 on failure
 	 */
 	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
 		global $wpdb;
@@ -315,12 +315,11 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+		$index_version      = $this->get_index_version_number_from_options( $object_type, $options );
+		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
+		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
 
 		$table_name = $this->schema->get_table_name();
-
-		// Have to escape this separately so we can insert NULL if no start time specified
-		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
 
 		$original_suppress = $wpdb->suppress_errors;
 
@@ -328,15 +327,16 @@ class Queue {
 		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
-		$result = $wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO $table_name ( `object_id`, `object_type`, `start_time`, `status`, `index_version` ) VALUES ( %d, %s, {$start_time_escaped}, %s, %d )", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$object_id,
-				$object_type,
-				'queued',
-				$index_version
+		// phpcs:disable WordPress.DB -- the code below breaks literally all DB rules :-)
+		$wpdb->query(
+			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
+				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
+				[ $object_id, $object_type, $index_version, $priority, $priority ]
 			)
 		);
+		// phpcs:enable
+
+		$insert_id = $wpdb->insert_id;
 
 		/**
 		 * Fires when an object is requested to be queued. Note that this fires regardless of if the object is actually queued
@@ -352,6 +352,8 @@ class Queue {
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
+
+		return $insert_id;
 	}
 
 	/**
@@ -364,6 +366,7 @@ class Queue {
 	 *
 	 * @param array $object_ids The ids of the objects
 	 * @param string $object_type The type of objects
+	 * @param array $options
 	 */
 	public function queue_objects( $object_ids, $object_type = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
@@ -429,6 +432,7 @@ class Queue {
 	public function set_last_index_time( $object_id, $object_type, $time, $options = array() ) {
 		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type, $options );
 
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		wp_cache_set( $cache_key, $time, self::CACHE_GROUP, self::OBJECT_LAST_INDEX_TIMESTAMP_TTL );
 	}
 
@@ -465,6 +469,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->update( $table_name, $data, array( 'job_id' => $job_id ) );
 	}
 
@@ -507,7 +512,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->query( "TRUNCATE TABLE {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
+		return $wpdb->query( "DELETE FROM {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 	}
 
 	public function count_jobs( $status, $object_type = 'post', $options = array() ) {
@@ -552,6 +557,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = 'queued' AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )", // Cannot prepare table name. @codingStandardsIgnoreLine
@@ -567,6 +573,7 @@ class Queue {
 
 		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$job = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `index_version` = %d AND `status` = 'queued' LIMIT 1", // Cannot prepare table name. @codingStandardsIgnoreLine
@@ -594,6 +601,7 @@ class Queue {
 		$min_job_id_value = intval( $min_id );
 		$max_job_id_value = intval( $max_id );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table_name} WHERE `job_id` >= %d AND `job_id` <= %d",  // Cannot prepare table name. @codingStandardsIgnoreLine
@@ -606,9 +614,28 @@ class Queue {
 	}
 
 	/**
+	 * @param array $ids IDs of the jobs to retrieve
+	 * @return array Array of job objects
+	 */
+	public function get_jobs_by_ids( array $ids ) {
+		global $wpdb;
+		$result = [];
+
+		if ( ! empty( $ids ) ) {
+			$table_name    = $this->schema->get_table_name();
+			$sanitized_ids = join( ', ', array_map( 'intval', $ids ) );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL
+			$result = $wpdb->get_results( "SELECT * FROM {$table_name} WHERE `job_id` IN ({$sanitized_ids})" );
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Grab $count jobs that are due now and mark them as running
 	 *
-	 * @param {int} $count How many jobs to check out
+	 * @param int $count How many jobs to check out
 	 * @return array Array of jobs (db rows) that were checked out
 	 */
 	public function checkout_jobs( $count = 250 ) {
@@ -621,10 +648,10 @@ class Queue {
 		$table_name = $this->schema->get_table_name();
 
 		// TODO transaction
-
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `job_id` LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$count
 			)
 		);
@@ -639,13 +666,13 @@ class Queue {
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
 		$this->update_jobs( $job_ids, array(
-			'status' => 'scheduled',
+			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
 		) );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
-			$job->status = 'scheduled';
+			$job->status         = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
@@ -671,6 +698,7 @@ class Queue {
 		// If job was scheduled before this time, it is considered deadlocked
 		$deadlocked_time = time() - self::DEADLOCK_TIME;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results( $wpdb->prepare(
 			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
@@ -701,7 +729,7 @@ class Queue {
 			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
 
 			$this->update_jobs( $deadlocked_job_ids, array(
-				'status' => 'queued',
+				'status'         => 'queued',
 				'scheduled_time' => null,
 			) );
 		}
@@ -715,9 +743,9 @@ class Queue {
 	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
 	 */
 	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
-		$found_objects = [];
+		$found_objects            = [];
 		$filtered_deadlocked_jobs = [];
-		$jobs_to_be_deleted = [];
+		$jobs_to_be_deleted       = [];
 
 		foreach ( $all_deadlocked_jobs as $job ) {
 			$unique_key = sprintf( '%s_%s_%s',
@@ -754,6 +782,7 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs_to_be_deleted = $wpdb->get_results(
 			 // Cannot prepare table name. @codingStandardsIgnoreStart
 			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE `job_id` IN ( {$escaped_ids} ) AND EXISTS (
@@ -780,7 +809,7 @@ class Queue {
 
 		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
 
-		$indexables = \ElasticPress\Indexables::factory();
+		$indexables = Indexables::factory();
 
 		// Organize by version and type, so we can process each unique batch in bulk
 		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
@@ -900,10 +929,10 @@ class Queue {
 	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled,
 	 * queue all of the posts for indexing.
 	 *
-	 * @param {array} $document_ids IDs of the documents that were to be indexed
-	 * @param {string} $slug Indexable slug
-	 * @param {array|boolean} $return Elasticsearch response. False on error.
-	 * @return {bool} Whether anything was done
+	 * @param array $document_ids IDs of the documents that were to be indexed
+	 * @param string $slug Indexable slug
+	 * @param array|boolean $return Elasticsearch response. False on error.
+	 * @return bool Whether anything was done
 	 */
 	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
 		if ( false === $this->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
@@ -921,10 +950,10 @@ class Queue {
 	 * Hook pre_ep_index_sync_queue for indexing operation ratelimiting.
 	 * If ratelimited, bail and offload indexing to queue.
 	 *
-	 * @param {bool} $bail Current value of bail
-	 * @param {object} $sync_manager Instance of Sync_Manager
-	 * @param {string} $indexable_slug Indexable slug
-	 * @return {bool} Whether to bail on indexing or not
+	 * @param bool $bail Current value of bail
+	 * @param object $sync_manager Instance of Sync_Manager
+	 * @param string $indexable_slug Indexable slug
+	 * @return bool Whether to bail on indexing or not
 	 */
 	public function ratelimit_indexing( $bail, $sync_manager, $indexable_slug ) {
 		// Only posts supported right now
@@ -937,7 +966,7 @@ class Queue {
 		}
 
 		// Increment first to prevent overrunning ratelimiting
-		$increment = count( $sync_manager->sync_queue );
+		$increment             = count( $sync_manager->sync_queue );
 		$index_count_in_period = self::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
@@ -959,11 +988,7 @@ class Queue {
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
-		if ( true === $bail || true === self::is_indexing_ratelimited() ) {
-			return true;
-		} else {
-			return false;
-		}
+		return true === $bail || true === self::is_indexing_ratelimited();
 	}
 
 	public function record_ratelimited_stat( $count, $indexable_slug ) {
@@ -976,13 +1001,10 @@ class Queue {
 		// Since we're ratelimting indexing, it seems safe to define this
 		$statsd_mode = 'index_ratelimited';
 
-		// Pull index name using the indexable slug from the EP indexable singleton
-		$statsd_index_name = $indexable->get_index_name();
-
 		// For url parsing operations
 		$es = \Automattic\VIP\Search\Search::instance();
 
-		$url = $es->get_current_host();
+		$url  = $es->get_current_host();
 		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
 
 		$this->maybe_update_stat( $stat, $count );
@@ -1015,8 +1037,8 @@ class Queue {
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
 				'severity' => 'warning',
-				'feature' => 'vip_search_indexing_rate_limiting',
-				'message' => $message,
+				'feature'  => 'search_indexing_rate_limiting',
+				'message'  => $message,
 			)
 		);
 	}
@@ -1036,6 +1058,7 @@ class Queue {
 	 * @return {bool} True on success, false on failure
 	 */
 	public static function turn_on_index_ratelimiting() {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
 	}
 
@@ -1060,17 +1083,16 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$queue_stats = $wpdb->get_row(
-			// Cannot prepare table name. @codingStandardsIgnoreStart
-			$wpdb->prepare(
+				// Query does not need preparation. @codingStandardsIgnoreStart
 				"SELECT
 					FLOOR( AVG( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS average_wait_time,
 					FLOOR( MAX( TIMESTAMPDIFF( SECOND, queued_time, NOW() ) ) ) AS longest_wait_time,
 					COUNT( * ) AS queue_count
 				FROM $table_name
 				WHERE 1"
-			)
-			// @codingStandardsIgnoreEnd
+				// @codingStandardsIgnoreEnd
 		);
 
 		// Null value will usually mean empty table
@@ -1078,13 +1100,13 @@ class Queue {
 			return (object) [
 				'average_wait_time' => 0,
 				'longest_wait_time' => 0,
-				'queue_count' => 0,
+				'queue_count'       => 0,
 			];
 		}
 
 		$queue_stats->average_wait_time = intval( $queue_stats->average_wait_time );
 		$queue_stats->longest_wait_time = intval( $queue_stats->longest_wait_time );
-		$queue_stats->queue_count = intval( $queue_stats->queue_count );
+		$queue_stats->queue_count       = intval( $queue_stats->queue_count );
 
 		return $queue_stats;
 	}
@@ -1130,6 +1152,7 @@ class Queue {
 	 */
 	private static function index_count_incr( $increment = 1 ) {
 		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
 		}
 
@@ -1165,6 +1188,7 @@ class Queue {
 			return;
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand
 		if ( self::$stat_sampling_drop_value <= rand( 1, 10 ) ) {
 			return;
 		}
@@ -1187,7 +1211,7 @@ class Queue {
 
 		$this->logger->log(
 			'warning',
-			'vip_search_indexing_rate_limiting',
+			'search_indexing_rate_limiting',
 			$message
 		);
 	}

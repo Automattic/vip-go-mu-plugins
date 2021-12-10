@@ -16,7 +16,7 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'2.6',
-	'2.5',
+	'3.0',
 ];
 
 /**
@@ -55,7 +55,8 @@ function maybe_load_plugin() {
 	}
 
 	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
-	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features' );
+	// We need priority 0 so it's executed before `widgets_init`
+	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
 
 	$versions_to_try = SUPPORTED_VERSIONS;
 
@@ -70,6 +71,7 @@ function maybe_load_plugin() {
 			array_unshift( $versions_to_try, $specified_version );
 			$versions_to_try = array_unique( $versions_to_try );
 		} else {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error(
 				sprintf( 'Invalid value configured via wpvip_parsely_version filter: %s', esc_html( $specified_version ) ),
 				E_USER_WARNING
@@ -83,7 +85,14 @@ function maybe_load_plugin() {
 			continue;
 		}
 
-		require $entry_file;
+		// Requiring actual Parse.ly plugin
+		require_once $entry_file;
+
+		// Requiring VIP's customizations over Parse.ly
+		$vip_parsely_plugin = __DIR__ . '/vip-parsely/vip-parsely.php';
+		if ( is_readable( $vip_parsely_plugin ) ) {
+			require_once $vip_parsely_plugin;
+		}
 
 		return;
 	}
@@ -100,6 +109,9 @@ function maybe_disable_some_features() {
 
 			// ..& default to "repeated metas"
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
+
+			// Remove the Parse.ly Recommended Widget
+			unregister_widget( 'Parsely_Recommended_Widget' );
 		} else {
 			// If we have the UI, we want to load the experimental "Open on Parsely links"
 			add_filter( 'wp_parsely_enable_row_action_links', '__return_true' );

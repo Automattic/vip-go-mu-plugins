@@ -2,15 +2,18 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use Parsely\UI\Row_Actions;
+use WP_UnitTestCase;
+
 function test_mode() {
 	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
-	return $mode ? $mode : 'disabled';
+	return $mode ?: 'disabled';
 }
 
-class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
+class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	protected static $test_mode;
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
 		self::$test_mode = test_mode();
 		if ( 'disabled' !== self::$test_mode ) {
 			echo 'Running Parsely Integration Tests in mode: ' . esc_html( self::$test_mode ) . "\n";
@@ -60,24 +63,18 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 	}
 
 	public function test_parsely_ui_hooks() {
-		global $parsely;
+		$expected         = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
+		$reverse_expected = 'option_enabled' == self::$test_mode ? 10 : false;
+		$this->assertSame( $reverse_expected, has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' ) );
 
-		$expected = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
-		$this->assertSame( $expected, has_action( 'admin_menu', array( $parsely, 'add_settings_sub_menu' ) ) );
-		$this->assertSame( $expected, has_action( 'admin_footer', array( $parsely, 'display_admin_warning' ) ) );
-		$this->assertSame( $expected, has_action( 'widgets_init', 'parsely_recommended_widget_register' ) );
+		// Class should only exist if Parse.ly is enabled
+		if ( 'disabled' !== self::$test_mode ) {
+			$row_actions = new Row_Actions( $GLOBALS['parsely'] );
+			$row_actions->run();
 
-		$this->assertSame(
-			// reversing expected, since all hooks above remove stuff and this one adds
-			in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) && false === $expected ? 10 : false,
-			has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' )
-		);
-
-		/*
-			TODO: put these in when landing the quick links
-			$this->assertSame( $expected, has_filter( 'page_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
-			$this->assertSame( $expected, has_filter( 'post_row_actions', array( $parsely, 'row_actions_add_parsely_link' ) ) );
-		*/
+			$this->assertSame( $expected, has_filter( 'page_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
+			$this->assertSame( $expected, has_filter( 'post_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
+		}
 	}
 
 	public function test_alter_option_use_repeated_metas() {
@@ -87,7 +84,7 @@ class MU_Parsely_Integration_Test extends \WP_UnitTestCase {
 		$options = alter_option_use_repeated_metas( array( 'some_option' => 'value' ) );
 		$this->assertSame( array(
 			'some_option' => 'value',
-			'meta_type' => 'repeated_metas',
+			'meta_type'   => 'repeated_metas',
 		), $options );
 
 		$options = alter_option_use_repeated_metas( array( 'meta_type' => 'json_ld' ) );

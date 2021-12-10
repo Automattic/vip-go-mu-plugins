@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/../../files/class-image.php';
+require_once __DIR__ . '/../../files/class-image-sizes.php';
+
 /**
  * Class A8C_Files_ImageSizes_Test
  *
@@ -11,8 +14,7 @@
  *
  * @group srcset
  */
-class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
-
+class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	/**
 	 * The test image.
 	 *
@@ -28,26 +30,15 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	public $test_pdf = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/pdf.pdf';
 
 	/**
-	 * Load the Automattic\VIP\Files\ImageSizes class.
-	 */
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-image.php' );
-		require_once( __DIR__ . '/../../files/class-image-sizes.php' );
-	}
-
-	/**
 	 * Set the test to the original initial state of the VIP Go.
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
-
 	}
 
 	/**
@@ -55,7 +46,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 *
 	 * Remove added uploads.
 	 */
-	public function tearDown() {
+	public function tearDown(): void {
 
 		$this->remove_added_uploads();
 
@@ -77,9 +68,9 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 * @return ReflectionMethod
 	 */
 	protected static function getMethod( $name ) {
-		$class = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
+		$class  = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible(true);
+		$method->setAccessible( true );
 		return $method;
 	}
 
@@ -128,35 +119,35 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		return [
 			[
 				[
-					'thumbnail' => [
-						'width' => '150',
+					'thumbnail'    => [
+						'width'  => '150',
 						'height' => '150',
-						'crop' => '1',
+						'crop'   => '1',
 					],
-					'medium' => [
-						'width' => '300',
+					'medium'       => [
+						'width'  => '300',
 						'height' => '300',
-						'crop' => false,
+						'crop'   => false,
 					],
 					'medium_large' => [
-						'width' => '768',
+						'width'  => '768',
 						'height' => '0',
-						'crop' => false,
+						'crop'   => false,
 					],
-					'large' => [
-						'width' => '1024',
+					'large'        => [
+						'width'  => '1024',
 						'height' => '1024',
-						'crop' => false,
+						'crop'   => false,
 					],
-					'1536x1536' => [
-						'width' => '1536',
+					'1536x1536'    => [
+						'width'  => '1536',
 						'height' => '1536',
-						'crop' => false,
+						'crop'   => false,
 					],
-					'2048x2048' => [
-						'width' => '2048',
+					'2048x2048'    => [
+						'width'  => '2048',
 						'height' => '2048',
-						'crop' => false,
+						'crop'   => false,
 					],
 				],
 			],
@@ -180,13 +171,13 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		);
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		$postmeta    = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 		// Disable the static property generated during construction.
-		$imageSizes::$sizes = null;
+		$image_sizes::$sizes = null;
 
-		$generate_sizes = self::getMethod( 'generate_sizes' );
-		$generated_sizes = $generate_sizes->invokeArgs( $imageSizes, [] );
+		$generate_sizes  = self::getMethod( 'generate_sizes' );
+		$generated_sizes = $generate_sizes->invokeArgs( $image_sizes, [] );
 
 		$this->assertEquals( $expected_sizes, $generated_sizes, 'Mismatching arrayof generated sizes meta.' );
 	}
@@ -221,17 +212,17 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
-		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 
 		$generate_sizes = self::getMethod( 'resize' );
 
 		$expected_resize = [
-			'file' => 'image.jpg?resize=150,150',
-			'width' => intval( $data['width'] ),
-			'height' => intval( $data['height'] ),
+			'file'      => 'image.jpg?resize=150,150',
+			'width'     => intval( $data['width'] ),
+			'height'    => intval( $data['height'] ),
 			'mime-type' => 'image/jpeg',
 		];
-		$this->assertEquals( $expected_resize, $generate_sizes->invokeArgs( $imageSizes, [ $data ] ) );
+		$this->assertEquals( $expected_resize, $generate_sizes->invokeArgs( $image_sizes, [ $data ] ) );
 	}
 
 	/**
@@ -243,44 +234,44 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		return [
 			[
 				[
-					'thumbnail' => [
-						'file' => 'image.jpg?resize=150,150',
-						'width' => 150,
-						'height' => 150,
+					'thumbnail'    => [
+						'file'      => 'image.jpg?resize=150,150',
+						'width'     => 150,
+						'height'    => 150,
 						'mime-type' => 'image/jpeg',
 					],
-					'medium' => [
-						'file' => 'image.jpg?resize=300,169',
-						'width' => 300,
-						'height' => 169,
+					'medium'       => [
+						'file'      => 'image.jpg?resize=300,169',
+						'width'     => 300,
+						'height'    => 169,
 						'mime-type' => 'image/jpeg',
 					],
 					'medium_large' => [
-						'file' => 'image.jpg?resize=768,432',
-						'width' => 768,
-						'height' => 432,
+						'file'      => 'image.jpg?resize=768,432',
+						'width'     => 768,
+						'height'    => 432,
 						'mime-type' => 'image/jpeg',
 					],
-					'large' => [
-						'file' => 'image.jpg?resize=1024,576',
-						'width' => 1024,
-						'height' => 576,
+					'large'        => [
+						'file'      => 'image.jpg?resize=1024,576',
+						'width'     => 1024,
+						'height'    => 576,
 						'mime-type' => 'image/jpeg',
 					],
-					'1536x1536' => [
-						'file' => 'image.jpg?resize=1536,865',
-						'width' => 1536,
-						'height' => 865,
+					'1536x1536'    => [
+						'file'      => 'image.jpg?resize=1536,865',
+						'width'     => 1536,
+						'height'    => 865,
 						'mime-type' => 'image/jpeg',
 					],
-					'2048x2048' => [
-						'file' => 'image.jpg?resize=2048,1153',
-						'width' => 2048,
-						'height' => 1153,
+					'2048x2048'    => [
+						'file'      => 'image.jpg?resize=2048,1153',
+						'width'     => 2048,
+						'height'    => 1153,
 						'mime-type' => 'image/jpeg',
 					],
-				]
-			]
+				],
+			],
 		];
 	}
 
@@ -299,9 +290,9 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		);
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
-		$image_sizes_meta = $imageSizes->generate_sizes_meta();
+		$postmeta         = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+		$image_sizes      = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		$image_sizes_meta = $image_sizes->generate_sizes_meta();
 
 		$this->assertEquals( $expected_sizes_meta, $image_sizes_meta );
 	}
@@ -314,40 +305,38 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 					'width' => 10,
 				],
 				[
-					'width' => 10,
+					'width'  => 10,
 					'height' => null,
-					'crop' => false,
-				]
+					'crop'   => false,
+				],
 			],
 			[
 				[
 					'height' => 10,
 				],
 				[
-					'width' => null,
+					'width'  => null,
 					'height' => 10,
-					'crop' => false,
-				]
+					'crop'   => false,
+				],
 			],
 			[
 				[
 					'crop' => false,
 				],
-				[
-
-				]
+				[],
 			],
 			[
 				[
-					'width' => 10,
+					'width'  => 10,
 					'height' => 10,
 				],
 				[
-					'width' => 10,
+					'width'  => 10,
 					'height' => 10,
-					'crop' => false,
-				]
-			]
+					'crop'   => false,
+				],
+			],
 		];
 	}
 
@@ -366,9 +355,9 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		);
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$imageSizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
-		$standardised_size_data = $imageSizes->standardize_size_data( $size_data );
+		$postmeta               = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+		$image_sizes            = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		$standardised_size_data = $image_sizes->standardize_size_data( $size_data );
 
 		$this->assertEquals( $expected, $standardised_size_data );
 	}
@@ -380,69 +369,69 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 */
 	public function default_sizes() {
 		return [
-			'thumbnail' => [
-				'width' => 150,
-				'height' => 150,
+			'thumbnail'    => [
+				'width'                 => 150,
+				'height'                => 150,
 				'calculated_dimensions' => [
-					'width' => 150,
+					'width'  => 150,
 					'height' => 150,
 				],
-				'params' => [
+				'params'                => [
 					'resize' => '150,150',
 				],
 			],
-			'medium' => [
-				'width' => 300,
-				'height' => 300,
+			'medium'       => [
+				'width'                 => 300,
+				'height'                => 300,
 				'calculated_dimensions' => [
-					'width' => 300,
+					'width'  => 300,
 					'height' => 169,
 				],
-				'params' => [
+				'params'                => [
 					'resize' => '300,169',
 				],
 			],
 			'medium_large' => [
-				'width' => 768,
-				'height' => 0,
+				'width'                 => 768,
+				'height'                => 0,
 				'calculated_dimensions' => [
-					'width' => 768,
+					'width'  => 768,
 					'height' => 432,
 				],
-				'params' => [
+				'params'                => [
 					'resize' => '768,432',
 				],
 			],
-			'large' => [
-				'width' => 1024,
-				'height' => 1024,
+			'large'        => [
+				'width'                 => 1024,
+				'height'                => 1024,
 				'calculated_dimensions' => [
-					'width' => 1024,
+					'width'  => 1024,
 					'height' => 576,
 				],
-				'params' => [
+				'params'                => [
 					'resize' => '1024,576',
 				],
 			],
-			'1536x1536' => [
-				'width' => 1536,
-				'height' => 1536,
+			'1536x1536'    => [
+				'width'                 => 1536,
+				'height'                => 1536,
 				'calculated_dimensions' => [
-					'width' => 1536,
+					'width'  => 1536,
 					'height' => 865,
 				],
-				'params' => [
+				'params'                => [
 					'resize' => '1536,865',
 				],
 			],
-			'2048x2048' => [
-				'width' => 2048,
-				'height' => 2048,
+			'2048x2048'    => [
+				'width'                 => 2048,
+				'height'                => 2048,
 				'calculated_dimensions' => [
-					'width' => 2048,
+					'width'  => 2048,
 					'height' => 1153,
 				],
-				'params' => [
+				'params'                => [
 					'resize' => '2048,1153',
 				],
 			],
@@ -540,7 +529,7 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		$this->assertEquals( array_keys( $this->default_sizes() ), array_keys( $metadata['sizes'] ), 'Some registered sizes have not been created.' );
 
 		// Have all sizes have the right dimensions?
-		foreach( $this->default_sizes() as $size => $properties ) {
+		foreach ( $this->default_sizes() as $size => $properties ) {
 			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
 			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
 		}
@@ -551,28 +540,35 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 */
 	public function test__custom_size() {
 		// Register the custom size.
-		add_image_size( $custom_size_name = 'custom_size', $width = 200, $height = 180, $crop = true );
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$custom_size_name = 'custom_size';
+		$width            = 200;
+		$height           = 180;
+		add_image_size( $custom_size_name, $width, $height, true );
+		try {
+			$attachment_id = self::factory()->attachment->create_object(
+				$this->test_image, 0, [
+					'post_mime_type' => 'image/jpeg',
+					'post_type'      => 'attachment',
+				]
+			);
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$metadata = wp_get_attachment_metadata( $attachment_id );
+			$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'The newly registered image size has not been created.' );
+			$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'The newly registered image size has not been created.' );
 
-		// Has all the sizes, including the new one, have correct dimensions?
-		foreach( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
-			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
+			// Has all the sizes, including the new one, have correct dimensions?
+			foreach ( $this->default_sizes() as $size => $properties ) {
+				$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
+				$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
+			}
+
+			// Does the custom size have the correct dimensions?
+			$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
+			$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
+		} finally {
+			remove_image_size( $custom_size_name );
 		}
-
-		// Does the custom size have the correct dimensions?
-		$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
-		$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
 	}
 
 	/**
@@ -580,26 +576,31 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 	 */
 	public function test__correctness_of_the_urls() {
 		// Register the custom size.
-		add_image_size( $custom_size_name = 'custom_size', $width = 200, $height = 180, $crop = true );
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$custom_size_name = 'custom_size';
+		try {
+			add_image_size( $custom_size_name, 200, 180, true );
+			$attachment_id = self::factory()->attachment->create_object(
+				$this->test_image, 0, [
+					'post_mime_type' => 'image/jpeg',
+					'post_type'      => 'attachment',
+				]
+			);
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
-		$metadata = wp_get_attachment_metadata( $attachment_id );
+			$metadata = wp_get_attachment_metadata( $attachment_id );
 
-		$filename = wp_basename( $this->test_image );
+			$filename = wp_basename( $this->test_image );
 
-		// Check the default sizes.
-		foreach( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'], sprintf( 'Incorrect file or query params for %s size.', $size ) );
+			// Check the default sizes.
+			foreach ( $this->default_sizes() as $size => $properties ) {
+				$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'], sprintf( 'Incorrect file or query params for %s size.', $size ) );
+			}
+
+			// Check the custom size.
+			$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][ $custom_size_name ]['file'], 'Incorrect file for custom size.' );
+		} finally {
+			remove_image_size( $custom_size_name );
 		}
-
-		// Check the custom size.
-		$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][$custom_size_name]['file'], 'Incorrect file for custom size.' );
 	}
 
 	/**
@@ -617,16 +618,15 @@ class A8C_Files_ImageSizes_Test extends \WP_UnitTestCase {
 		// Test medium size.
 		$expected_srcset =
 			'http://example.org/wp-content/uploads/' . $this->test_image . '?resize=300,169 300w'
-			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=768,432 768w'
-			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1024,576 1024w'
-			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1536,865 1536w'
-			.', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=2048,1153 2048w';
+			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=768,432 768w'
+			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1024,576 1024w'
+			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1536,865 1536w'
+			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=2048,1153 2048w';
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id ) );
 
 		// Test custom size passed by dimensions.
-		$expected_srcset = 'http://example.org/wp-content/uploads/' . $this->test_image . ' 5472w'
-		                   . ", {$expected_srcset}";
+		$expected_srcset = 'http://example.org/wp-content/uploads/' . $this->test_image . ' 5472w' . ", {$expected_srcset}";
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id, [ 400, 200 ] ), 'Incorrectly generated srcset.' );
 	}

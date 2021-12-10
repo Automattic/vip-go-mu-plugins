@@ -2,21 +2,23 @@
 
 namespace Automattic\VIP\Search;
 
+use WP_UnitTestCase;
+
 require_once __DIR__ . '/../../search/search.php';
 require_once __DIR__ . '/../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
-class Search_Dev_Tools_Test extends \WP_UnitTestCase {
+
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	/**
 	 * Make tests run in separate processes since we're testing state
 	 * related to plugin init, including various constants.
 	 */
 
-	// phpcs:disable WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $preserveGlobalState      = false;
-	protected $runTestInSeparateProcess = true;
-	// phpcs:enable
-
-	public function setUp() {
+	public function setUp(): void {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';

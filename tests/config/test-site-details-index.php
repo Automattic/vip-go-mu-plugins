@@ -2,32 +2,21 @@
 
 namespace Automattic\VIP\Config;
 
-class Site_Details_Index_Test extends \WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
-	protected $preserveGlobalState = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+use WP_UnitTestCase;
 
-	public function setUp() {
-		require_once __DIR__ . '/../../config/class-site-details-index.php';
-	}
+require_once __DIR__ . '/../../config/class-site-details-index.php';
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function test__cron_event_should_not_be_hooked_if_no_init() {
 		$sdi = new Site_Details_Index();
 
 		$this->assertFalse( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__cron_event_should_be_hooked_if_init() {
 		// Getting the instance should call init which should add set_env_and_core to the hook
 		$sdi = Site_Details_Index::instance();
@@ -35,20 +24,16 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertTrue( is_integer( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__set_env_and_core() {
 		global $wp_version;
 
 		$plugins = array(
 			'hello.php' => array(
-				'Name' => 'Hello Tests',
+				'Name'    => 'Hello Tests',
 				'Version' => '4.5',
 			),
 			'world.php' => array(
-				'Name' => 'Testing World',
+				'Name'    => 'Testing World',
 				'Version' => '8.6',
 			),
 		);
@@ -76,17 +61,17 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
-					'path' => 'hello.php',
-					'name' => 'Hello Tests',
-					'version' => '4.5',
-					'active' => false,
+					'path'         => 'hello.php',
+					'name'         => 'Hello Tests',
+					'version'      => '4.5',
+					'active'       => false,
 					'activated_by' => null,
 				),
 				array(
-					'path' => 'world.php',
-					'name' => 'Testing World',
-					'version' => '8.6',
-					'active' => true,
+					'path'         => 'world.php',
+					'name'         => 'Testing World',
+					'version'      => '8.6',
+					'active'       => true,
 					'activated_by' => 'option',
 				),
 			),
@@ -113,20 +98,16 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals( is_multisite(), $site_details['core']['is_multisite'], 'is_multisite should be equal to is_multisite()' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__vip_site_details_index_data() {
 		global $wp_version;
 
 		$plugins = array(
 			'hello.php' => array(
-				'Name' => 'Hello Tests',
+				'Name'    => 'Hello Tests',
 				'Version' => '4.5',
 			),
 			'world.php' => array(
-				'Name' => 'Testing World',
+				'Name'    => 'Testing World',
 				'Version' => '8.6',
 			),
 		);
@@ -156,17 +137,17 @@ class Site_Details_Index_Test extends \WP_UnitTestCase {
 		$this->assertEquals(
 			array(
 				array(
-					'path' => 'hello.php',
-					'name' => 'Hello Tests',
-					'version' => '4.5',
-					'active' => true,
+					'path'         => 'hello.php',
+					'name'         => 'Hello Tests',
+					'version'      => '4.5',
+					'active'       => true,
 					'activated_by' => 'option',
 				),
 				array(
-					'path' => 'world.php',
-					'name' => 'Testing World',
-					'version' => '8.6',
-					'active' => false,
+					'path'         => 'world.php',
+					'name'         => 'Testing World',
+					'version'      => '8.6',
+					'active'       => false,
 					'activated_by' => null,
 				),
 			),

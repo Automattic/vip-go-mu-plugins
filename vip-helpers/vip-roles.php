@@ -10,11 +10,12 @@
  * @return array Array of caps for the role
  */
 function wpcom_vip_get_role_caps( $role ) {
-	$caps = array();
+	$caps     = array();
 	$role_obj = get_role( $role );
 
-	if ( $role_obj && isset( $role_obj->capabilities ) )
+	if ( $role_obj && isset( $role_obj->capabilities ) ) {
 		$caps = $role_obj->capabilities;
+	}
 
 	return $caps;
 }
@@ -32,6 +33,7 @@ function wpcom_vip_add_role( $role, $name, $capabilities ) {
 	$role_obj = get_role( $role );
 
 	if ( ! $role_obj ) {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.custom_role_add_role
 		add_role( $role, $name, $capabilities );
 
 		_wpcom_vip_maybe_refresh_current_user_caps( $role );
@@ -51,17 +53,19 @@ function wpcom_vip_add_role( $role, $name, $capabilities ) {
 function wpcom_vip_merge_role_caps( $role, $caps ) {
 	$role_obj = get_role( $role );
 
-	if ( ! $role_obj )
+	if ( ! $role_obj ) {
 		return;
+	}
 
 	$current_caps = (array) wpcom_vip_get_role_caps( $role );
-	$new_caps = array_merge( $current_caps, (array) $caps );
+	$new_caps     = array_merge( $current_caps, (array) $caps );
 
 	foreach ( $new_caps as $cap => $role_can ) {
-		if ( $role_can )
+		if ( $role_can ) {
 			$role_obj->add_cap( $cap );
-		else
+		} else {
 			$role_obj->remove_cap( $cap );
+		}
 	}
 
 	_wpcom_vip_maybe_refresh_current_user_caps( $role );
@@ -78,8 +82,9 @@ function wpcom_vip_merge_role_caps( $role, $caps ) {
 function wpcom_vip_override_role_caps( $role, $caps ) {
 	$role_obj = get_role( $role );
 
-	if ( ! $role_obj )
+	if ( ! $role_obj ) {
 		return;
+	}
 
 	$role_obj->capabilities = (array) $caps;
 

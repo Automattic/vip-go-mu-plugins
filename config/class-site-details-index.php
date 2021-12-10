@@ -151,7 +151,8 @@ class Site_Details_Index {
 			if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
 				$jetpack_info['vip_loaded_version'] = VIP_JETPACK_LOADED_VERSION;
 			}
-			$jetpack_info['active_modules'] = \Jetpack::get_active_modules();
+			$jetpack_info['active_modules']         = \Jetpack::get_active_modules();
+			$jetpack_info['instant_search_enabled'] = class_exists( 'Jetpack_Search_Options' ) ? \Jetpack_Search_Options::is_instant_enabled() : true === (bool) get_option( 'instant_search_enabled' );
 		} else {
 			$jetpack_info['available'] = false;
 		}

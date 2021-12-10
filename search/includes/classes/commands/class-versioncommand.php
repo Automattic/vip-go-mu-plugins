@@ -137,7 +137,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 				}
 
 				$version['blog_id'] = $site['blog_id'];
-				$version['url'] = $site['domain'] . $site['path'];
+				$version['url']     = $site['domain'] . $site['path'];
 
 				$versions[] = $version;
 			}
@@ -205,12 +205,12 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 				restore_current_blog();
 
 				if ( is_wp_error( $site_versions ) ) {
-					return WP_CLI::error( $result->get_error_message() );
+					return WP_CLI::error( $site_versions->get_error_message() );
 				}
 
 				foreach ( $site_versions as &$version ) {
 					$version['blog_id'] = $site['blog_id'];
-					$version['url'] = $site['domain'] . $site['path'];
+					$version['url']     = $site['domain'] . $site['path'];
 				}
 
 				$versions = array_merge( $versions, $site_versions );
@@ -221,7 +221,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			$versions = $search->versioning->get_versions( $indexable );
 
 			if ( is_wp_error( $versions ) ) {
-				return WP_CLI::error( $result->get_error_message() );
+				return WP_CLI::error( $versions->get_error_message() );
 			}
 
 			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
@@ -251,7 +251,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	 * @subcommand activate
 	 */
 	public function activate( $args, $assoc_args ) {
-		$type = $args[0];
+		$type                   = $args[0];
 		$desired_version_number = $args[1];
 		if ( $assoc_args['skip-confirm'] ?? '' ) {
 			// WP_CLI::confirm looks for 'yes', but we use skip-confirm to be consistent with other commands

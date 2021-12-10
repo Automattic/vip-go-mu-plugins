@@ -15,17 +15,17 @@
 namespace Automattic\VIP\Security;
 
 class Private_Sites {
-	private static $_instance;
+	private static $instance;
 
 	const FEEDBOT_USER_AGENT = 'wp.com feedbot';
 
 	public static function instance() {
-		if ( ! ( static::$_instance instanceof Private_Sites ) ) {
-			static::$_instance = new Private_Sites();
-			static::$_instance->init();
+		if ( ! ( static::$instance instanceof Private_Sites ) ) {
+			static::$instance = new Private_Sites();
+			static::$instance->init();
 		}
 
-		return static::$_instance;
+		return static::$instance;
 	}
 
 	public static function has_privacy_restrictions() {
@@ -34,14 +34,14 @@ class Private_Sites {
 
 	public static function is_jetpack_private() {
 		// If constant is defined and is set to `false`, bypass any other logic; site has opted out
-		$is_opted_out = defined( 'VIP_JETPACK_IS_PRIVATE' ) && false === VIP_JETPACK_IS_PRIVATE;
+		$is_opted_out = defined( 'VIP_JETPACK_IS_PRIVATE' ) && false === constant( 'VIP_JETPACK_IS_PRIVATE' );
 		if ( $is_opted_out ) {
 			return false;
 		}
 
-		$by_constant = defined( 'VIP_JETPACK_IS_PRIVATE' ) && true === VIP_JETPACK_IS_PRIVATE;
-		$by_basic_auth = defined( 'WPCOM_VIP_BASIC_AUTH' ) && true === WPCOM_VIP_BASIC_AUTH;
-		$by_ip_restrictions = defined( 'WPCOM_VIP_IP_ALLOW_LIST' ) && true === WPCOM_VIP_IP_ALLOW_LIST;
+		$by_constant        = defined( 'VIP_JETPACK_IS_PRIVATE' ) && true === constant( 'VIP_JETPACK_IS_PRIVATE' );
+		$by_basic_auth      = defined( 'WPCOM_VIP_BASIC_AUTH' ) && true === constant( 'WPCOM_VIP_BASIC_AUTH' );
+		$by_ip_restrictions = defined( 'WPCOM_VIP_IP_ALLOW_LIST' ) && true === constant( 'WPCOM_VIP_IP_ALLOW_LIST' );
 
 		// For now, this is only enabled on sites that have defined the constant
 		return $by_constant || $by_basic_auth || $by_ip_restrictions;
@@ -85,14 +85,14 @@ class Private_Sites {
 			return;
 		}
 
-		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && false !== stripos( $_SERVER['HTTP_USER_AGENT'], self::FEEDBOT_USER_AGENT ) ) {
 			wp_die( 'Feeds are disabled in Jetpack Private Mode', 403 );
 		}
 	}
 
 	public function action_do_feed() {
-		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( vip_is_jetpack_request() || ( isset( $_SERVER['HTTP_USER_AGENT'] ) && false !== stripos( $_SERVER['HTTP_USER_AGENT'], self::FEEDBOT_USER_AGENT ) ) ) {
 			wp_die( 'Feeds are disabled in Jetpack Private Mode', 403 );
 		}

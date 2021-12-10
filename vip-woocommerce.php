@@ -7,6 +7,4 @@
  * License: GPL2+
  */
 
-if ( file_exists( __DIR__ . '/vip-woocommerce/vip-woocommerce.php' ) ) {
-	require_once( __DIR__ . '/vip-woocommerce/vip-woocommerce.php' );
-}
+require_once __DIR__ . '/vip-woocommerce/vip-woocommerce.php';

@@ -2,16 +2,16 @@
 
 namespace Automattic\VIP\Search;
 
-class SettingsHealthJob_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
 
-	public static function setUpBeforeClass() {
+class SettingsHealthJob_Test extends WP_UnitTestCase {
+
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 		require_once __DIR__ . '/../../../../search/search.php';
-
-		\Automattic\VIP\Search\Search::instance();
-	}
-
-	public function setUp() {
 		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
+
+		\Automattic\VIP\Search\Search::instance()->init();
 	}
 
 	public function test__heal_index_settings__reports_error() {
@@ -104,9 +104,9 @@ class SettingsHealthJob_Test extends \WP_UnitTestCase {
 			->getMock();
 
 		$health_mock->method( 'heal_index_settings_for_indexable' )->willReturn( array(
-			'result' => true,
+			'result'        => true,
 			'index_version' => 1,
-			'index_name' => 'foo-index',
+			'index_name'    => 'foo-index',
 		) );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )

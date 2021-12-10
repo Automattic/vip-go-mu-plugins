@@ -2,13 +2,15 @@
 
 namespace Automattic\VIP\Search\Queue;
 
+use WP_Site;
+
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION = 3;
-	const DB_VERSION_TRANSIENT = 'vip_search_queue_db_version';
+	const DB_VERSION               = 3;
+	const DB_VERSION_TRANSIENT     = 'vip_search_queue_db_version';
 	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
-	const TABLE_CREATE_LOCK = 'vip_search_queue_creating_table';
+	const TABLE_CREATE_LOCK        = 'vip_search_queue_creating_table';
 
 	public function init() {
 		$this->setup_hooks();
@@ -17,7 +19,7 @@ class Schema {
 	public function setup_hooks() {
 		// Create tables during installation.
 		add_action( 'wp_install', array( $this, 'create_table_during_install' ) );
-		add_action( 'wpmu_new_blog', array( $this, 'create_tables_during_multisite_install' ) );
+		add_action( 'wp_initialize_site', array( $this, 'create_tables_during_multisite_install' ) );
 
 		// Remove table when a multisite subsite is deleted.
 		add_filter( 'wpmu_drop_tables', array( $this, 'remove_multisite_table' ) );
@@ -48,12 +50,12 @@ class Schema {
 	/**
 	 * Create table when new subsite is added to a multisite
 	 *
-	 * @param int $bid Blog ID.
+	 * @param WP_Site $site New site.
 	 */
-	public function create_tables_during_multisite_install( $bid ) {
-		switch_to_blog( $bid );
+	public function create_tables_during_multisite_install( WP_Site $site ) {
+		switch_to_blog( $site->id );
 
-		if ( ! self::is_installed() ) {
+		if ( ! $this->is_installed() ) {
 			$this->_prepare_table();
 		}
 
@@ -91,7 +93,7 @@ class Schema {
 	 */
 	public function prepare_table() {
 		// Table installed and current version
-		if ( self::is_installed() ) {
+		if ( $this->is_installed() ) {
 			return;
 		}
 
@@ -108,7 +110,7 @@ class Schema {
 	/**
 	 * Create the plugin's DB table when necessary
 	 */
-	protected function _prepare_table() {
+	protected function _prepare_table() { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
 		// Use Core's method of creating/updating tables.
 		if ( ! function_exists( 'dbDelta' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/upgrade.php';
@@ -128,20 +130,25 @@ class Schema {
 			`status` varchar(45) NOT NULL COMMENT 'Status of the indexing job',
 			`index_version` int(11) NOT NULL DEFAULT 1,
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  			`scheduled_time` datetime DEFAULT NULL,
+			`scheduled_time` datetime DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
 			UNIQUE KEY `unique_object_status_version` (`object_id`,`object_type`,`status`,`index_version`)
 		) ENGINE=InnoDB";
 
 		dbDelta( $schema, true );
 
-		// Confirm that the table was created, and set the option to prevent further updates.
-		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
+		// Skip verification when running tests. We need to do this because WordPress Test Library
+		// turns CREATE TABLE into CREATE TEMPORARY TABLE, and SHOW TABLES does not list temporary tables
+		if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
+			// Confirm that the table was created, and set the option to prevent further updates.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
 
-		if ( 1 === $table_count ) {
-			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
-		} else {
-			trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
+			if ( 1 === $table_count ) {
+				set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
+			} else {
+				trigger_error( esc_html( "VIP Search Queue index table ($table_name) not found after dbDelta()" ), \E_USER_WARNING );
+			}
 		}
 	}
 

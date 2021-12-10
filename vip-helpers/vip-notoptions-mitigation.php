@@ -44,14 +44,14 @@ function notoptions_mitigation() {
 		$flushed = wp_cache_delete( 'notoptions', 'options' );
 
 		// begin prepping notification
-		$is_vip_env    = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
-		$environment   = ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && VIP_GO_APP_ENVIRONMENT ) ? VIP_GO_APP_ENVIRONMENT : 'unknown' );
-		$site_id       = defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : false;
+		$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
+		$environment = ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && VIP_GO_APP_ENVIRONMENT ) ? VIP_GO_APP_ENVIRONMENT : 'unknown' );
+		$site_id     = defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : false;
 
 		// Send notices to VIP staff if this is happening on VIP-hosted sites
 		if ( $is_vip_env && $site_id ) {
 
-			$irc_alert_level = 3; // CRITICAL
+			$irc_alert_level      = 3; // CRITICAL
 			$opsgenie_alert_level = 'P3';
 
 			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) - Invalid values found in notoptions. Cache flush was %ssuccessful.';
@@ -113,7 +113,7 @@ function do_user_role_backup() {
 	$backup_roles  = get_option( 'vip_backup_user_roles', [] );
 
 	$backup_roles[ time() ] = $current_roles; // adds to end of array
-	$backup_roles = array_slice( $backup_roles, ( USER_ROLE_BACKUP_LENGTH * -1 ), null, true ); // retain last 3
+	$backup_roles           = array_slice( $backup_roles, ( USER_ROLE_BACKUP_LENGTH * -1 ), null, true ); // retain last 3
 
 	update_option( 'vip_backup_user_roles', $backup_roles, 'no' );
 }

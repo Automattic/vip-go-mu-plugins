@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 
 namespace Automattic\VIP\Core\Privacy;
 
@@ -9,9 +10,9 @@ use WP_Error;
 add_filter( 'vip_show_login_privacy_policy', '__return_false', 0 );
 
 // Display a link to the VIP/Automattic Privacy Policy if the site doesn't already define one.
-add_action( 'the_privacy_policy_link', __NAMESPACE__ . '\the_vip_privacy_policy_link', PHP_INT_MAX, 2 ); // Hook in later so we don't override existing filters
+add_action( 'the_privacy_policy_link', __NAMESPACE__ . '\the_vip_privacy_policy_link', PHP_INT_MAX ); // Hook in later so we don't override existing filters
 
-function the_vip_privacy_policy_link( $link, $privacy_policy_url ) {
+function the_vip_privacy_policy_link( $link ) {
 	// Don't change if the link has already been rendered.
 	if ( $link ) {
 		return $link;
@@ -20,7 +21,7 @@ function the_vip_privacy_policy_link( $link, $privacy_policy_url ) {
 	// Allow customers to opt-out of the privacy notice.
 	$show_vip_privacy_policy = apply_filters( 'vip_show_login_privacy_policy', true );
 	if ( ! $show_vip_privacy_policy ) {
-		return;
+		return '';
 	}
 
 	$link = sprintf(
@@ -89,7 +90,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// Create the exports folder if needed.
 	$exports_dir = wp_privacy_exports_dir();
 	$exports_url = wp_privacy_exports_url();
-	$temp_dir = get_temp_dir();
+	$temp_dir    = get_temp_dir();
 
 	if ( ! wp_mkdir_p( $exports_dir ) ) {
 		wp_send_json_error( __( 'Unable to create export folder.' ) );
@@ -159,6 +160,7 @@ function generate_personal_data_export_file( $request_id ) {
 	/*
 	 * Handle the JSON export.
 	 */
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
 	$file = fopen( $json_report_pathname, 'w' );
 
 	if ( false === $file ) {
@@ -174,6 +176,7 @@ function generate_personal_data_export_file( $request_id ) {
 	/*
 	 * Handle the HTML export.
 	 */
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
 	$file = fopen( $html_report_pathname, 'w' );
 
 	if ( false === $file ) {
@@ -245,7 +248,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// If a filename meta exists, use it.
 	if ( ! empty( $archive_filename ) ) {
 		$archive_pathname = $exports_dir . $archive_filename;
-	} elseif ( ! empty( $archive_pathname ) ) {
+	} elseif ( ! empty( $archive_pathname ) && is_file( $archive_pathname ) ) {
 		// If a full path meta exists, use it and create the new meta value.
 		$archive_filename = basename( $archive_pathname );
 
@@ -264,7 +267,7 @@ function generate_personal_data_export_file( $request_id ) {
 
 	$archive_url = $exports_url . $archive_filename;
 
-	if ( ! empty( $archive_pathname ) && file_exists( $archive_pathname ) ) {
+	if ( ! empty( $archive_pathname ) && is_file( $archive_pathname ) ) {
 		wp_delete_file( $archive_pathname );
 	}
 
@@ -284,6 +287,7 @@ function generate_personal_data_export_file( $request_id ) {
 		$local_archive_dirname     = dirname( $local_archive_pathname );
 		$local_archive_dir_created = wp_mkdir_p( $local_archive_dirname );
 		if ( is_wp_error( $local_archive_dir_created ) ) {
+			/** @var WP_Error $local_archive_dir_created */
 			wp_send_json_error( $local_archive_dir_created->get_error_message() );
 		}
 	}
@@ -327,10 +331,7 @@ function generate_personal_data_export_file( $request_id ) {
 		/** This filter is documented in wp-admin/includes/file.php */
 		do_action( 'wp_privacy_personal_data_export_file_created', $local_archive_pathname, $archive_url, $html_report_pathname, $request_id, $json_report_pathname );
 
-		$upload_result = _upload_archive_file( $local_archive_pathname );
-		if ( is_wp_error( $upload_result ) ) {
-			$error = sprintf( __( 'Failed to upload export file (archive): %s' ), $upload_result->get_error_message() );
-		}
+		_upload_archive_file( $local_archive_pathname );
 	}
 }
 
@@ -342,18 +343,18 @@ function _upload_archive_file( $archive_path ) {
 	}
 
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+		require WPMU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
 	// Build the `/wp-content/` version of the exports path since `LOCAL_UPLOADS` gives us a `/tmp` path.
 	// Hard-coded and full of assumptions for now.
 	// TODO: need a cleaner approach for this. Can probably borrow `WP_Filesystem_VIP_Uploads::sanitize_uploads_path()`.
-	$archive_file = basename( $archive_path );
-	$exports_url = wp_privacy_exports_url();
+	$archive_file      = basename( $archive_path );
+	$exports_url       = wp_privacy_exports_url();
 	$wp_content_strpos = strpos( $exports_url, '/wp-content/uploads/' );
-	$upload_path = trailingslashit( substr( $exports_url, $wp_content_strpos ) ) . $archive_file;
+	$upload_path       = trailingslashit( substr( $exports_url, $wp_content_strpos ) ) . $archive_file;
 
-	$api_client = \Automattic\VIP\Files\new_api_client();
+	$api_client    = \Automattic\VIP\Files\new_api_client();
 	$upload_result = $api_client->upload_file( $archive_path, $upload_path );
 
 	// Delete the local copy of the archive since it's been uploaded.
@@ -363,7 +364,7 @@ function _upload_archive_file( $archive_path ) {
 }
 
 function _delete_archive_file( $archive_url ) {
-	$archive_path = parse_url( $archive_url, PHP_URL_PATH );
+	$archive_path = wp_parse_url( $archive_url, PHP_URL_PATH );
 
 	// For local usage, just delete locally.
 	if ( true !== WPCOM_IS_VIP_ENV ) {
@@ -372,7 +373,7 @@ function _delete_archive_file( $archive_url ) {
 	}
 
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require( WPMU_PLUGIN_DIR . '/files/class-api-client.php' );
+		require WPMU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
@@ -380,7 +381,7 @@ function _delete_archive_file( $archive_url ) {
 }
 
 function _ziparchive_create_file( $archive_path, $html_report_path ) {
-	$archive = new \ZipArchive;
+	$archive = new \ZipArchive();
 
 	$archive_created = $archive->open( $archive_path, \ZipArchive::CREATE );
 	if ( true !== $archive_created ) {
@@ -401,16 +402,16 @@ function _ziparchive_create_file( $archive_path, $html_report_path ) {
 
 function _pclzip_create_file( $archive_path, $html_report_path ) {
 	if ( ! class_exists( 'PclZip' ) ) {
-		require_once( ABSPATH . 'wp-admin/includes/class-pclzip.php' );
+		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
 	}
 
 	$archive = new \PclZip( $archive_path );
 
 	$result = $archive->create( [
 		[
-			PCLZIP_ATT_FILE_NAME => $html_report_path,
+			PCLZIP_ATT_FILE_NAME           => $html_report_path,
 			PCLZIP_ATT_FILE_NEW_SHORT_NAME => 'index.html',
-		]
+		],
 	], PCLZIP_OPT_REMOVE_ALL_PATH );
 	if ( 0 === $result ) {
 		return new WP_Error( 'pclzip-create-failed', __( 'Failed to create a `zip` file using `PclZip`' ) );
@@ -428,19 +429,20 @@ function delete_old_export_files() {
 	global $wpdb;
 
 	/** This filter is documented in wp-includes/functions.php */
-	$expiration = apply_filters( 'wp_privacy_export_expiration', 3 * DAY_IN_SECONDS );
+	$expiration           = apply_filters( 'wp_privacy_export_expiration', 3 * DAY_IN_SECONDS );
 	$expiration_timestamp = time() - $expiration;
 
-	// Direct query to avoid the unnecessary overhead of WP_Query.
-	$sql = $wpdb->prepare( "SELECT pm.meta_value FROM $wpdb->postmeta AS pm
-	INNER JOIN $wpdb->postmeta AS expiry
-		ON expiry.post_id = pm.post_id
-		AND expiry.meta_key = '_vip_export_generated_time'
-		AND expiry.meta_value <= %d
-	WHERE pm.meta_key = '_export_file_url'
-	LIMIT 100", $expiration_timestamp );
-
-	$file_urls = $wpdb->get_col( $sql );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- direct query to avoid the unnecessary overhead of WP_Query.
+	$file_urls = $wpdb->get_col(
+		$wpdb->prepare( "SELECT pm.meta_value FROM $wpdb->postmeta AS pm
+			INNER JOIN $wpdb->postmeta AS expiry
+				ON expiry.post_id = pm.post_id
+				AND expiry.meta_key = '_vip_export_generated_time'
+				AND expiry.meta_value <= %d
+			WHERE pm.meta_key = '_export_file_url'
+			LIMIT 100", $expiration_timestamp 
+		)
+	);
 
 	if ( empty( $file_urls ) ) {
 		return;
@@ -449,10 +451,11 @@ function delete_old_export_files() {
 	foreach ( $file_urls as $file_url ) {
 		$delete_result = _delete_archive_file( $file_url );
 		if ( is_wp_error( $delete_result ) ) {
-			/** translators: 1: archive file URL 2: error message */
+			/* translators: 1: archive file URL 2: error message */
 			$message = sprintf( __( 'Failed to delete expired personal data export (%1$s): %2$s' ), $file_url, $delete_result->get_error_message() );
 
-			trigger_error( $message, E_USER_WARNING );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			trigger_error( esc_html( $message ), E_USER_WARNING );
 		}
 	}
 }

@@ -3,31 +3,28 @@
 namespace Automattic\VIP\Helpers;
 
 use WP_Error;
+use WP_UnitTestCase;
 
-class User_Cleanup_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../vip-helpers/class-user-cleanup.php';
 
-		require_once( __DIR__ . '/../../vip-helpers/class-user-cleanup.php' );
-	}
-
+class User_Cleanup_Test extends WP_UnitTestCase {
 	public function data_provider__parse_emails_string() {
 		return [
-			'empty' => [ '', [] ],
-			'null' => [ null, [] ],
-			'false' => [ false, [] ],
+			'empty'                       => [ '', [] ],
+			'null'                        => [ null, [] ],
+			'false'                       => [ false, [] ],
 
-			'spaces' => [ '  ', [] ],
-			'spaces and commas' => [ ' , ', [] ],
+			'spaces'                      => [ '  ', [] ],
+			'spaces and commas'           => [ ' , ', [] ],
 
-			'single email' => [
+			'single email'                => [
 				'user@example.com',
 				[
 					'user@example.com',
 				],
 			],
 
-			'multiple emails' => [
+			'multiple emails'             => [
 				'user@example.com,another@example.net',
 				[
 					'user@example.com',
@@ -35,7 +32,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 				],
 			],
 
-			'multiples with spaces' => [
+			'multiples with spaces'       => [
 				' user@example.com,   another@example.net',
 				[
 					'user@example.com',
@@ -64,7 +61,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function data_provider__split_email() {
 		return [
-			'basic email' => [
+			'basic email'  => [
 				'user@example.com',
 				[
 					'user',
@@ -93,7 +90,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match() {
 		$user_1_email = 'user@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -104,9 +101,9 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match_multiples() {
 		$user_1_email = 'user@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 		$user_2_email = 'user2@other.com';
-		$user_2_id = $this->factory->user->create( array( 'user_email' => $user_2_email ) );
+		$user_2_id    = $this->factory->user->create( array( 'user_email' => $user_2_email ) );
 
 		$expected_ids = [ $user_1_id, $user_2_id ];
 
@@ -117,7 +114,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match_with_plus() {
 		$user_1_email = 'user+extra@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -128,7 +125,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__email_with_plus() {
 		$user_1_email = 'user+extra@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -139,7 +136,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__username_match_different_host() {
 		$user_1_email = 'user+extra@different.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = []; // emails will not match
 
@@ -150,7 +147,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__host_match_different_username() {
 		$user_1_email = 'different+extra@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = []; // emails will not match
 
@@ -161,7 +158,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__no_caps() {
 		$user_1_email = 'user@example.com';
-		$user_1_id = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
 
 		get_userdata( $user_1_id )->remove_all_caps();
 
@@ -178,7 +175,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Test specific to single site installations' );
 		}
 
-		$this->_backup_super_admins();
+		$this->backup_super_admins();
 
 		$user_id_1 = $this->factory->user->create();
 		$user_id_2 = $this->factory->user->create();
@@ -195,7 +192,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 
 		$this->assertEquals( $expected_results, $actual_results );
 
-		$this->_restore_super_admins();
+		$this->restore_super_admins();
 	}
 
 	public function test__revoke_super_admin_for_users__multisite__one_user() {
@@ -203,7 +200,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Test specific to multisite installations.' );
 		}
 
-		$this->_backup_super_admins();
+		$this->backup_super_admins();
 
 		$user_id_1 = $this->factory->user->create();
 		grant_super_admin( $user_id_1 );
@@ -219,7 +216,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_results, $actual_results );
 		$this->assertEquals( $expected_super_admins, get_super_admins(), 'get_super_admins() is incorrect' );
 
-		$this->_restore_super_admins();
+		$this->restore_super_admins();
 	}
 
 	public function test__revoke_super_admin_for_users__multisite__all_super_admins() {
@@ -227,7 +224,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Test specific to multisite installations.' );
 		}
 
-		$this->_backup_super_admins();
+		$this->backup_super_admins();
 
 		$user_id_1 = $this->factory->user->create();
 		$user_id_2 = $this->factory->user->create();
@@ -246,7 +243,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_results, $actual_results, 'Return value from revoke_super_admin_for_users was incorrect' );
 		$this->assertEquals( $expected_super_admins, get_super_admins(), 'get_super_admins() is incorrect' );
 
-		$this->_restore_super_admins();
+		$this->restore_super_admins();
 	}
 
 	public function test__revoke_super_admin_for_users__multisite__some_super_admins() {
@@ -254,7 +251,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Test specific to multisite installations.' );
 		}
 
-		$this->_backup_super_admins();
+		$this->backup_super_admins();
 
 		$user_id_1 = $this->factory->user->create();
 		$user_id_2 = $this->factory->user->create();
@@ -273,7 +270,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_results, $actual_results, 'Return value from revoke_super_admin_for_users was incorrect' );
 		$this->assertEquals( $expected_super_admins, get_super_admins(), 'get_super_admins() is incorrect' );
 
-		$this->_restore_super_admins();
+		$this->restore_super_admins();
 	}
 
 	public function test__revoke_super_admin_for_users__multisite__existing_super_admins() {
@@ -281,7 +278,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Test specific to multisite installations.' );
 		}
 
-		$this->_backup_super_admins();
+		$this->backup_super_admins();
 
 		// 3 super admins, and we only revoke two of them
 		$user_id_1 = $this->factory->user->create();
@@ -303,7 +300,7 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_results, $actual_results, 'Return value from revoke_super_admin_for_users was incorrect' );
 		$this->assertEquals( $expected_super_admins, array_values( get_super_admins() ), 'get_super_admins() is incorrect' );
 
-		$this->_restore_super_admins();
+		$this->restore_super_admins();
 	}
 
 	public function test__revoke_roles_for_users() {
@@ -328,23 +325,24 @@ class User_Cleanup_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__revoke_roles_for_users_nonexisting() {
-		$user_id = -1;
+		$user_id        = -1;
 		$actual_results = User_Cleanup::revoke_roles_for_users( [ $user_id ] );
 		$this->assertIsArray( $actual_results );
 		$this->assertArrayHasKey( $user_id, $actual_results );
 		$this->assertInstanceOf( WP_Error::class, $actual_results[ $user_id ] );
 	}
 
-	private function _backup_super_admins() {
+	private function backup_super_admins() {
 		if ( isset( $GLOBALS['super_admins'] ) ) {
 			$this->_old_superadmins = $GLOBALS['super_admins'];
 			unset( $GLOBALS['super_admins'] );
 		}
 	}
 
-	private function _restore_super_admins() {
+	private function restore_super_admins() {
 		if ( isset( $this->_old_superadmins ) ) {
-			$GLOBALS['super_admins'] = $$this->_old_superadmins;
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$GLOBALS['super_admins'] = $this->_old_superadmins;
 		}
 	}
 }

@@ -9,7 +9,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 
 	public function test__display() {
 		$message = 'Test Message';
-		$notice = new Admin_Notice( $message );
+		$notice  = new Admin_Notice( $message );
 
 		$expected_html = "#<div data-vip-admin-notice=\"\" class=\"notice notice-info vip-notice\"><p>$message</p></div>#";
 		$this->expectOutputRegex( $expected_html );
@@ -18,9 +18,9 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function test__display_dismissible() {
-		$message = 'Test Message';
+		$message    = 'Test Message';
 		$dismiss_id = 'dismiss_id';
-		$notice = new Admin_Notice( $message, [], $dismiss_id );
+		$notice     = new Admin_Notice( $message, [], $dismiss_id );
 
 		$expected_html = "#<div data-vip-admin-notice=\"$dismiss_id\" class=\"notice notice-info vip-notice is-dismissible\"><p>$message</p></div>#";
 		$this->expectOutputRegex( $expected_html );

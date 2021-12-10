@@ -10,10 +10,14 @@ if ( defined( 'VIP_SKIP_USER_CLEANUP' ) && true === VIP_SKIP_USER_CLEANUP ) {
 }
 
 class User_Cleanup {
+	/**
+	 * @param string|null|false $emails_string
+	 * @return array
+	 */
 	public static function parse_emails_string( $emails_string ) {
 		$emails = [];
 
-		$emails_string = trim( $emails_string );
+		$emails_string = trim( (string) $emails_string );
 
 		if ( false !== strpos( $emails_string, ',' ) ) {
 			$emails_raw = explode( ',', $emails_string );
@@ -55,12 +59,14 @@ class User_Cleanup {
 			$username_wildcard = $wpdb->esc_like( $email_username . '+' ) . '%';
 			$hostname_wildcard = '%' . $wpdb->esc_like( '@' . $email_hostname );
 
+			// phpcs:disable Squiz.PHP.CommentedOutCode.Found
 			$email_sql_where_array[] = $wpdb->prepare(
 				'( user_email = %s OR ( user_email LIKE %s AND user_email LIKE %s ) )',
 				$email, // search for exact match
 				$username_wildcard, // search for `username+*`
-				$hostname_wildcard // search for `*@example.com`
+				$hostname_wildcard  // search for `*@example.com`
 			);
+			// phpcs:enable
 		}
 
 		$email_sql_where = implode( ' OR ', $email_sql_where_array );
@@ -73,8 +79,9 @@ class User_Cleanup {
 			AND ( {$email_sql_where} )";
 		//phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->get_col( $sql );
-		//phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
+		//phpcs:enable
 	}
 
 	public static function revoke_super_admin_for_users( $user_ids ) {

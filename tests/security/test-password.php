@@ -2,17 +2,13 @@
 
 namespace Automattic\VIP\Security;
 
-use Automattic\VIP\Feature;
 use WP_Error;
+use WP_UnitTestCase;
 
-class Current_Password_Change_Test extends \WP_UnitTestCase {
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
+require_once __DIR__ . '/../../security/password.php';
 
-		require_once __DIR__ . '/../../security/password.php';
-	}
-
-	public function setUp() {
+class Current_Password_Change_Test extends WP_UnitTestCase {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->factory->user->create( [
@@ -22,10 +18,11 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		] );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
+	public function clean_up_global_scope() {
+		parent::clean_up_global_scope();
+		$_REQUEST = [];
+	}
+
 	public function test__should_return_if_creating_user() {
 		$errors = new WP_Error();
 		$user   = get_user_by( 'login', 'john' );
@@ -34,10 +31,6 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $errors->has_errors() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__should_return_in_user_edit() {
 		$errors = new WP_Error();
 		$user   = get_user_by( 'login', 'john' );
@@ -47,10 +40,6 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $errors->has_errors() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__should_return_if_no_pass_update() {
 		$errors               = new WP_Error();
 		$user                 = get_user_by( 'login', 'john' );
@@ -61,10 +50,6 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$this->assertFalse( $errors->has_errors() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__should_return_error_if_no_current_pass() {
 		$_POST                = [
 			'pass1' => 'somepassword',
@@ -81,10 +66,6 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_error, $errors->get_error_message( 0 ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__should_return_error_if_current_pass_incorrect() {
 		$_POST                = [
 			'pass1'        => 'somepassword',
@@ -102,10 +83,6 @@ class Current_Password_Change_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected_error, $errors->get_error_message( 0 ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__should_succeed_with_correct_password() {
 		$_POST                = [
 			'pass1'        => 'somepassword',

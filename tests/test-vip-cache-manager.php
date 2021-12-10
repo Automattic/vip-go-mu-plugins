@@ -1,13 +1,13 @@
 <?php
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+	use ExpectPHPException;
+
 	public $cache_manager;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
@@ -20,17 +20,17 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 			// 1: input URL
 			// 2: array of expected purge_urls list
 
-			'normal_url' => [
+			'normal_url'                     => [
 				'http://example.com/path/to/files',
 				[ 'http://example.com/path/to/files' ],
 			],
 
-			'strip_querystring' => [
+			'strip_querystring'              => [
 				'https://example.com/path/to/file?query',
 				[ 'https://example.com/path/to/file' ],
 			],
 
-			'strip_fragment' => [
+			'strip_fragment'                 => [
 				'https://example.com/post#fragment',
 				[ 'https://example.com/post' ],
 			],
@@ -70,7 +70,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		$this->expectException( \PHPUnit\Framework\Error\Warning::class );
+		$this->expectWarning();
 
 		$actual_output = $this->cache_manager->queue_purge_url( $queue_url );
 
@@ -81,7 +81,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	public function test__page_for_posts_post_purge_url() {
 		$page_for_posts = $this->factory->post->create_and_get(
 			[
-				'post_type' => 'page',
+				'post_type'  => 'page',
 				'post_title' => 'blog-archive',
 			]
 		);
@@ -94,7 +94,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 
 		wp_update_post( $post );
 
-		$this->assertInternalType( 'array', $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls variable is an array' );
+		$this->assertIsArray( $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls variable is an array' );
 
 		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
 	}

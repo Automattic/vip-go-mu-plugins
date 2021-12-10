@@ -62,7 +62,7 @@ function wpcom_vip_get_client_mu_plugins_data( $directory = WPCOM_VIP_CLIENT_MU_
 		}
 
 		$plugin_filename = basename( $plugin_path );
-		$plugin_data = get_plugin_data( $plugin_path, false, false ); // Do not apply markup/translate as it'll be cached.
+		$plugin_data     = get_plugin_data( $plugin_path, false, false ); // Do not apply markup/translate as it'll be cached.
 
 		if ( empty( $plugin_data['Name'] ) ) {
 			$plugin_data['Name'] = $plugin_filename;
@@ -95,14 +95,14 @@ function wpcom_vip_filter_client_mu_plugins_url( $url, $url_path, $plugin_path )
 
 	if ( ! isset( $mu_plugins_url ) ) {
 		$mu_plugins_basename = basename( WPCOM_VIP_CLIENT_MU_PLUGIN_DIR );
-		$mu_plugins_url = content_url( $mu_plugins_basename );
+		$mu_plugins_url      = content_url( $mu_plugins_basename );
 	}
 
 	// Only override client-mu-plugins paths
 	if ( 0 === strpos( $plugin_path, $mu_plugins_dir ) ) {
 		// Let's get the root of the plugin's path and replace the root bits of the path with the URL
 		// E.g. starting with a plugin path (`/var/www/wp-content/client-mu-plugins/plugin/file.php`), replace the root path (`/var/www/wp-content/client-mu-plugins`) with the URL (https://example.com/wp-content/client-mu-plugins).
-		$plugin_dirname = dirname( $plugin_path );
+		$plugin_dirname  = dirname( $plugin_path );
 		$plugin_url_base = str_replace( $mu_plugins_dir, $mu_plugins_url, $plugin_dirname );
 
 		$url = trailingslashit( $plugin_url_base ) . ltrim( $url_path, '/\\' );
@@ -116,7 +116,7 @@ add_filter( 'plugins_url', 'wpcom_vip_filter_client_mu_plugins_url', 10, 3 );
 if ( wpcom_vip_should_load_plugins() ) {
 	// Let's load the plugins
 	foreach ( wpcom_vip_get_client_mu_plugins() as $client_mu_plugin ) {
-		include_once( $client_mu_plugin );
+		include_once $client_mu_plugin;
 	}
 	unset( $client_mu_plugin );
 }

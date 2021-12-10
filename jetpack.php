@@ -5,7 +5,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 10.2
+ * Version: 10.3
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -23,7 +23,7 @@ if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
 	} elseif ( version_compare( $wp_version, '5.7', '<' ) ) {
 		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.8' );
 	} else {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.2' );
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.3' );
 	}
 }
 
@@ -34,7 +34,7 @@ if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
-if ( ! @constant( 'WPCOM_IS_VIP_ENV' ) ) {
+if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || ! constant( 'WPCOM_IS_VIP_ENV' ) ) {
 	add_filter( 'jetpack_is_staging_site', '__return_true' );
 }
 
@@ -76,7 +76,7 @@ function vip_jetpack_token_send_signature_error_headers( $error ) {
 
 	header( sprintf(
 		'X-Jetpack-Signature-Error-Details: %s',
-		base64_encode( json_encode( $error_data['signature_details'] ) )
+		base64_encode( wp_json_encode( $error_data['signature_details'] ) )
 	) );
 }
 
@@ -120,7 +120,7 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
-			require_once( $path );
+			require_once $path;
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
 		}
@@ -139,7 +139,9 @@ function vip_jetpack_load() {
 		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
 
-	require_once( __DIR__ . '/vip-jetpack/vip-jetpack.php' );
+	if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) && 'none' !== VIP_JETPACK_LOADED_VERSION ) {
+		require_once __DIR__ . '/vip-jetpack/vip-jetpack.php';
+	}
 }
 
 vip_jetpack_load();

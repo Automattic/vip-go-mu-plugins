@@ -2,20 +2,23 @@
 
 namespace Automattic\VIP\Search;
 
-use \WP_Error as WP_Error;
+use PHPUnit\Framework\MockObject\MockObject;
+use WP_Error;
+use WP_UnitTestCase;
 
-class Versioning_Test extends \WP_UnitTestCase {
-	/**
-	* Make tests run in separate processes since we're testing state
-	* related to plugin init, including various constants.
-	*/
-	protected $preserveGlobalState      = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-	protected $runTestInSeparateProcess = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+// phpcs:disable Squiz.PHP.CommentedOutCode.Found -- false positives
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class Versioning_Test extends WP_UnitTestCase {
 	public static $version_instance;
 	public static $search;
 
-	public static function setUpBeforeClass() {
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 				'https://es-endpoint1',
@@ -1007,10 +1010,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
-		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
-			ARRAY_A
-		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
 
 		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
 
@@ -1123,10 +1124,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
-		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
-			ARRAY_A
-		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
 
 		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
 
@@ -1170,10 +1169,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
-		$jobs = $wpdb->get_results(
-			"SELECT * FROM {$queue_table_name}", // Cannot prepare table name. @codingStandardsIgnoreLine
-			ARRAY_A
-		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
 
 		$expected_jobs = array(
 			array(
@@ -1212,19 +1209,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 		// Add a filter that we can use to count how many deletes are actually sent to ES
 		$delete_count = 0;
+		$get_count    = 0;
 
-		add_filter( 'ep_do_intercept_request', function( $request, $query, $args, $failures ) use ( &$delete_count ) {
+		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
 			}
 
+			if ( 'GET' === $args['method'] ) {
+				$get_count++;
+			}
+
 			// For linting, always have to return something
 			return null;
-		}, 10, 4 );
+		}, 10, 3 );
 
 		$indexable->delete( 1 );
 
-		$this->assertEquals( $delete_count, 2 );
+		$this->assertEquals( $delete_count, 1 );
+		$this->assertEquals( $get_count, 1 );
 	}
 
 	public function normalize_version_data() {
@@ -1285,9 +1288,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 
 	private $default_versions = [
 		1 => [
-			'number' => 1,
-			'active' => true,
-			'created_time' => null,
+			'number'         => 1,
+			'active'         => true,
+			'created_time'   => null,
 			'activated_time' => null,
 		],
 	];
@@ -1317,9 +1320,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 				],
 				[
 					2 => [
-						'number' => 2,
-						'active' => true,
-						'created_time' => null,
+						'number'         => 2,
+						'active'         => true,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 				],
@@ -1372,9 +1375,9 @@ class Versioning_Test extends \WP_UnitTestCase {
 				],
 				[
 					2 => [
-						'number' => 2,
-						'active' => true,
-						'created_time' => null,
+						'number'         => 2,
+						'active'         => true,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 				],
@@ -1402,12 +1405,12 @@ class Versioning_Test extends \WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	private $get_versions__combine_globals_local = [
+	private $get_versions__combine_globals_local  = [
 		'foo' => [
 			1 => [
-				'number' => 1,
-				'active' => true,
-				'created_time' => null,
+				'number'         => 1,
+				'active'         => true,
+				'created_time'   => null,
 				'activated_time' => null,
 			],
 		],
@@ -1415,17 +1418,17 @@ class Versioning_Test extends \WP_UnitTestCase {
 	private $get_versions__combine_globals_global = [
 		'foo' => [
 			2 => [
-				'number' => 2,
-				'active' => true,
-				'created_time' => null,
+				'number'         => 2,
+				'active'         => true,
+				'created_time'   => null,
 				'activated_time' => null,
 			],
 		],
 		'bar' => [
 			1 => [
-				'number' => 1,
-				'active' => true,
-				'created_time' => null,
+				'number'         => 1,
+				'active'         => true,
+				'created_time'   => null,
 				'activated_time' => null,
 			],
 		],
@@ -1460,8 +1463,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $this->get_versions__combine_globals_local );
 		update_site_option( Versioning::INDEX_VERSIONS_OPTION_GLOBAL, $this->get_versions__combine_globals_global );
 
-		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
-		$indexable_mock->slug = $slug;
+		$indexable_mock         = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock->slug   = $slug;
 		$indexable_mock->global = $global;
 
 		$result = self::$version_instance->get_versions( $indexable_mock );
@@ -1507,7 +1510,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 	 */
 	public function test__maybe_self_heal_reconstruct( $indexables, $versioning, $expected_reconstructions ) {
 		$indexables_mocks = array_map( function( $slug ) {
-			$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+			$indexable_mock       = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
 			$indexable_mock->slug = $slug;
 			return $indexable_mock;
 		}, $indexables);
@@ -1517,6 +1520,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			->getMock();
 		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
 
+		/** @var MockObject&\Automattic\VIP\Search\Versioning */
 		$partially_mocked_versioning = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
 			->setMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
 			->getMock();
@@ -1531,7 +1535,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			->method( 'reconstruct_versions_for_indexable' );
 
 		$partially_mocked_versioning->elastic_search_indexables = $indexables_mock;
-		$partially_mocked_versioning->alerts = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+		$partially_mocked_versioning->alerts                    = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
 
 		$partially_mocked_versioning->maybe_self_heal();
 	}
@@ -1549,21 +1553,21 @@ class Versioning_Test extends \WP_UnitTestCase {
 			[
 				[
 					'response' => [ 'code' => 200 ],
-					'body' => 'malformed_body',
+					'body'     => 'malformed_body',
 				],
 				[],
 			],
 			[
 				[
 					'response' => [ 'code' => 200 ],
-					'body' => '{"valid_json": "with_invalid_structure"}',
+					'body'     => '{"valid_json": "with_invalid_structure"}',
 				],
 				[],
 			],
 			[
 				[
 					'response' => [ 'code' => 200 ],
-					'body' => '[{"index": "ix1"}, {"index": "ix2"}]',
+					'body'     => '[{"index": "ix1"}, {"index": "ix2"}]',
 				],
 				[ 'ix1', 'ix2' ],
 			],
@@ -1582,7 +1586,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			->willReturn( $response );
 
 
-		$instance = new Versioning();
+		$instance                          = new Versioning();
 		$instance->elastic_search_instance = $es_mock;
 
 
@@ -1596,7 +1600,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			[
 				[],
 				[
-					'slug' => 'post',
+					'slug'   => 'post',
 					'global' => false,
 				],
 				[],
@@ -1604,7 +1608,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			[
 				'invalid_input',
 				[
-					'slug' => 'post',
+					'slug'   => 'post',
 					'global' => false,
 				],
 				[],
@@ -1612,7 +1616,7 @@ class Versioning_Test extends \WP_UnitTestCase {
 			[
 				[ 'invalid_ix_format' ],
 				[
-					'slug' => 'post',
+					'slug'   => 'post',
 					'global' => false,
 				],
 				[],
@@ -1621,26 +1625,26 @@ class Versioning_Test extends \WP_UnitTestCase {
 				// correctly parse and pick the lowest
 				[ 'vip-200508-post-1-v3', 'vip-200508-post-1', 'vip-200508-post-1-v2' ],
 				[
-					'slug' => 'post',
+					'slug'   => 'post',
 					'global' => false,
 				],
 				[
 					1 => [
-						'number' => 1,
-						'active' => true,
-						'created_time' => null,
+						'number'         => 1,
+						'active'         => true,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 					2 => [
-						'number' => 2,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 					3 => [
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 				],
@@ -1649,20 +1653,20 @@ class Versioning_Test extends \WP_UnitTestCase {
 				//  ignore other indexables
 				[ 'vip-200508-post-1-v2', 'vip-200508-user-v3', 'vip-200508-post2-1-v5', 'vip-200508-post-1-v3' ],
 				[
-					'slug' => 'post',
+					'slug'   => 'post',
 					'global' => false,
 				],
 				[
 					2 => [
-						'number' => 2,
-						'active' => true,
-						'created_time' => null,
+						'number'         => 2,
+						'active'         => true,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 					3 => [
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 				],
@@ -1671,14 +1675,14 @@ class Versioning_Test extends \WP_UnitTestCase {
 				//  ignore different blog id
 				[ 'vip-200508-post-1-v2', 'vip-200508-post-2-v3' ],
 				[
-					'slug' => 'post',
+					'slug'   => 'post',
 					'global' => false,
 				],
 				[
 					2 => [
-						'number' => 2,
-						'active' => true,
-						'created_time' => null,
+						'number'         => 2,
+						'active'         => true,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 				],
@@ -1687,20 +1691,20 @@ class Versioning_Test extends \WP_UnitTestCase {
 				//  handle globals correctly (ignores the ones with blog_id)
 				[ 'vip-200508-user', 'vip-200508-user-1-v2', 'vip-200508-user-v3' ],
 				[
-					'slug' => 'user',
+					'slug'   => 'user',
 					'global' => true,
 				],
 				[
 					1 => [
-						'number' => 1,
-						'active' => true,
-						'created_time' => null,
+						'number'         => 1,
+						'active'         => true,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 					3 => [
-						'number' => 3,
-						'active' => false,
-						'created_time' => null,
+						'number'         => 3,
+						'active'         => false,
+						'created_time'   => null,
 						'activated_time' => null,
 					],
 				],
@@ -1712,8 +1716,8 @@ class Versioning_Test extends \WP_UnitTestCase {
 	 * @dataProvider reconstruct_versions_for_indexable_data
 	 */
 	public function test__reconstruct_versions_for_indexable( $indicies, $indexable_data, $expected ) {
-		$indexable_mock = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
-		$indexable_mock->slug = $indexable_data['slug'];
+		$indexable_mock         = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock->slug   = $indexable_data['slug'];
 		$indexable_mock->global = $indexable_data['global'];
 
 		$result = self::$version_instance->reconstruct_versions_for_indexable( $indicies, $indexable_mock );
@@ -1727,25 +1731,25 @@ class Versioning_Test extends \WP_UnitTestCase {
 				'vip-200-post-1-v3',
 				[
 					'environment_id' => 200,
-					'slug' => 'post',
-					'blog_id' => 1,
-					'version' => 3,
+					'slug'           => 'post',
+					'blog_id'        => 1,
+					'version'        => 3,
 				],
 			],
 			[
 				'vip-200-post-v3',
 				[
 					'environment_id' => 200,
-					'slug' => 'post',
-					'version' => 3,
+					'slug'           => 'post',
+					'version'        => 3,
 				],
 			],
 			[
 				'vip-200-post',
 				[
 					'environment_id' => 200,
-					'slug' => 'post',
-					'version' => 1,
+					'slug'           => 'post',
+					'version'        => 1,
 				],
 			],
 			[

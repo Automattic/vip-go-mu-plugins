@@ -91,14 +91,14 @@ function wpcom_vip_qm_require() {
 
 	$wpcom_vip_qm_file = __DIR__ . '/query-monitor/query-monitor.php';
 
-	require_once( $wpcom_vip_qm_file );
+	require_once $wpcom_vip_qm_file;
 
 	// Something stopped QueryMonitor from loading; bail.
 	if ( ! class_exists( 'QueryMonitor' ) ) {
 		return;
 	}
 
-	require_once( __DIR__ . '/vip-helpers/vip-query-monitor.php' );
+	require_once __DIR__ . '/vip-helpers/vip-query-monitor.php';
 
 	// Because we're including Query Monitor as an MU plugin, we need to
 	// manually call the `activate` method on `activation`.
@@ -114,11 +114,11 @@ function wpcom_vip_qm_require() {
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 
 	if ( function_exists( 'wpcom_vip_save_query_callback' ) ) {
-		add_filter('qm/collectors', function (array $collectors, QueryMonitor $qm) {
+		add_filter('qm/collectors', function ( array $collectors ) {
 			$collectors['db_queries'] = new WPCOM_VIP_QM_Collector_DB_Queries();
 
 			return $collectors;
-		}, 99, 2);
+		}, 99 );
 	}
 
 }
@@ -131,8 +131,8 @@ add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
  */
 function wpcom_vip_qm_disable_on_404() {
 	if ( is_404() && ! is_user_logged_in() && isset( $_COOKIE[ QM_COOKIE ] ) ) {
-		add_filter( "qm/dispatch/ajax", '__return_false' );
-		add_filter( "qm/dispatch/html", '__return_false' );
+		add_filter( 'qm/dispatch/ajax', '__return_false' );
+		add_filter( 'qm/dispatch/html', '__return_false' );
 	}
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
@@ -161,3 +161,10 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	return $dispatchers;
 }
 add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
+
+/**
+ * Load QM plugins
+ */
+if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
+	require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
+}

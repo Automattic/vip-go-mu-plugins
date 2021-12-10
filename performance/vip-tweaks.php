@@ -36,11 +36,11 @@ function wpcom_vip_bust_media_months_cache( $post_id ) {
 	$media_months = get_transient( 'wpcom_media_months_array' );
 
 	// Make sure month and year exists in transient before comparing
-	$cached_latest_year = ( ! empty( $media_months[0]->year ) ) ? $media_months[0]->year : '';
+	$cached_latest_year  = ( ! empty( $media_months[0]->year ) ) ? $media_months[0]->year : '';
 	$cached_latest_month = ( ! empty( $media_months[0]->month ) ) ? $media_months[0]->month : '';
 
 	// If the transient exists, and the attachment uploaded doesn't match the first (latest) month or year in the transient, lets clear it.
-	$matches_latest_year = get_the_time( 'Y', $post_id ) === $cached_latest_year;
+	$matches_latest_year  = get_the_time( 'Y', $post_id ) === $cached_latest_year;
 	$matches_latest_month = get_the_time( 'n', $post_id ) === $cached_latest_month;
 	if ( false !== $media_months && ( ! $matches_latest_year || ! $matches_latest_month ) ) {
 		// the new attachment is not in the same month/year as the data in our transient
@@ -59,12 +59,13 @@ if ( is_admin() ) {
 		$months = get_transient( 'wpcom_media_months_array' );
 
 		if ( false === $months ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$months = $wpdb->get_results( $wpdb->prepare( "
-            		     SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
-            			FROM $wpdb->posts
-            			WHERE post_type = %s
-            			ORDER BY post_date DESC
-        			", 'attachment' ) );
+				SELECT DISTINCT YEAR( post_date ) AS year, MONTH( post_date ) AS month
+					FROM $wpdb->posts
+					WHERE post_type = %s
+					ORDER BY post_date DESC
+				", 'attachment' ) );
 			set_transient( 'wpcom_media_months_array', $months );
 		}
 

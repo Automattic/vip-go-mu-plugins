@@ -52,7 +52,7 @@ class Alerts {
 	 *
 	 * @return array|WP_Error Response details from wp_remote_post
 	 */
-	private function send( array $body ) {
+	protected function send( array $body ) {
 		$fallback_error = new WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
 
 		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
@@ -101,7 +101,7 @@ class Alerts {
 	 *
 	 * @return string|WP_Error Validated and cleaned channel or user name or a WP_Error object
 	 */
-	private function validate_channel_or_user( $channel_or_user ) {
+	protected function validate_channel_or_user( $channel_or_user ) {
 		$channel_or_user = preg_replace( '/[^0-9a-z#@|.-]/', '', $channel_or_user );
 
 		if ( ! $channel_or_user ) {
@@ -120,7 +120,7 @@ class Alerts {
 	 *
 	 * @return string|WP_Error Validated and trimmed message or a WP_Error object
 	 */
-	private function validate_message( $message ) {
+	protected function validate_message( $message ) {
 		if ( ! is_string( $message ) || ! trim( $message ) ) {
 			return new WP_Error( 'invalid-alert-message', 'Invalid $message: Alerts\:\:chat( ' . print_r( $message, true ) . ' );' );
 		}
@@ -135,7 +135,7 @@ class Alerts {
 	 *
 	 * @return array|WP_Error
 	 */
-	private function validate_opsgenie_details( $details ) {
+	protected function validate_opsgenie_details( $details ) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
 		if ( ! is_array( $details ) ) {
@@ -272,32 +272,54 @@ class Alerts {
 	/**
 	 * Get an instance of this Alerts class
 	 *
-	 * @return Alerts|WP_Error
+	 * @return static|WP_Error
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
-			$alerts = new Alerts();
+			$alerts = new static();
 
-			if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
+			$service_address = static::get_service_address();
+			if ( null === $service_address ) {
 				return new WP_Error( 'missing-service-address', 'Missing alerts service host configuration in ALERT_SERVICE_ADDRESS constant' );
 			}
 
-			if ( ! defined( 'ALERT_SERVICE_PORT' ) || ! ALERT_SERVICE_PORT ) {
+			$service_port = static::get_service_port();
+			if ( null === $service_port ) {
 				return new WP_Error( 'missing-service-port', 'Missing alerts service port configuration in ALERT_SERVICE_PORT constant' );
 			}
 
-			if ( ! is_int( ALERT_SERVICE_PORT ) || ALERT_SERVICE_PORT > 65535 || ALERT_SERVICE_PORT < 1 ) {
+			if ( ! is_int( $service_port ) || $service_port > 65535 || $service_port < 1 ) {
 				return new WP_Error( 'incorrect-service-port', 'Service port must be an integer value in the 1-65535 range.' );
 			}
 
-			$alerts->service_address = ALERT_SERVICE_ADDRESS;
-			$alerts->service_port    = ALERT_SERVICE_PORT;
+			$alerts->service_address = $service_address;
+			$alerts->service_port    = $service_port;
 			$alerts->service_url     = sprintf( 'http://%s:%s/v1.0/alert', $alerts->service_address, $alerts->service_port );
 
 			self::$instance = $alerts;
 		}
 
 		return self::$instance;
+	}
+
+	protected static function clear_instance() {
+		self::$instance = null;
+	}
+
+	protected static function get_service_address() {
+		if ( ! defined( 'ALERT_SERVICE_ADDRESS' ) || ! ALERT_SERVICE_ADDRESS ) {
+			return null;
+		}
+
+		return (string) ALERT_SERVICE_ADDRESS;
+	}
+
+	protected static function get_service_port() {
+		if ( ! defined( 'ALERT_SERVICE_PORT' ) || ! ALERT_SERVICE_PORT ) {
+			return null;
+		}
+
+		return ALERT_SERVICE_PORT;
 	}
 
 	/**

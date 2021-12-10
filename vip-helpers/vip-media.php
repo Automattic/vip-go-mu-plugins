@@ -15,7 +15,8 @@
  * @return $thumbnail_id id of the thumbnail attachment post id
  */
 function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '', $post_data = array() ) {
-	if ( isset( $_SERVER['REQUEST_METHOD'] ) && strtoupper( $_SERVER['REQUEST_METHOD'] ) == 'GET' ) {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( isset( $_SERVER['REQUEST_METHOD'] ) && strtoupper( $_SERVER['REQUEST_METHOD'] ) === 'GET' ) {
 		return new WP_Error( 'invalid-request-method', 'Media sideloading is not supported via GET. Use POST.' );
 	}
 
@@ -31,7 +32,7 @@ function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '', 
 		return new WP_Error( 'not-a-url', 'Please specify a valid URL.' );
 	}
 
-	$image_url_path = parse_url( $image_url, PHP_URL_PATH );
+	$image_url_path  = wp_parse_url( $image_url, PHP_URL_PATH );
 	$image_path_info = pathinfo( $image_url_path );
 
 	if ( ! in_array( strtolower( $image_path_info['extension'] ), array( 'jpg', 'jpe', 'jpeg', 'gif', 'png' ) ) ) {
@@ -46,7 +47,7 @@ function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '', 
 		return $downloaded_url;
 	}
 
-	$file_array['name'] = $image_path_info['basename'];
+	$file_array['name']     = $image_path_info['basename'];
 	$file_array['tmp_name'] = $downloaded_url;
 
 	if ( empty( $description ) ) {
@@ -58,6 +59,7 @@ function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '', 
 
 	// If error storing permanently, unlink and return the error
 	if ( is_wp_error( $attachment_id ) ) {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink, WordPress.PHP.NoSilencedErrors.Discouraged
 		@unlink( $file_array['tmp_name'] ); // unlink can throw errors if the file isn't there
 		return $attachment_id;
 	}
@@ -92,7 +94,7 @@ function wpcom_vip_set_image_quality( $quality, $strip = false ) {
 	// Photon
 	add_filter('jetpack_photon_pre_args', function( $args ) use ( $quality, $strip ) {
 		$args['quality'] = $quality;
-		$args['strip'] = $strip;
+		$args['strip']   = $strip;
 		return $args;
 	});
 }
@@ -107,21 +109,24 @@ function wpcom_vip_set_image_quality( $quality, $strip = false ) {
  */
 function wpcom_vip_set_image_quality_for_url( $attachment_url, $quality = 100, $strip = false ) {
 	$query = array();
-	$url = parse_url( $attachment_url );
-	$ext = pathinfo( $url['path'], PATHINFO_EXTENSION );
+	$url   = wp_parse_url( $attachment_url );
+	$ext   = pathinfo( $url['path'], PATHINFO_EXTENSION );
 
-	if ( ! in_array( $ext, array( 'jpg', 'jpeg' ) ) )
+	if ( ! in_array( $ext, array( 'jpg', 'jpeg' ) ) ) {
 		return $attachment_url;
+	}
 
-	if ( isset( $url['query'] ) )
+	if ( isset( $url['query'] ) ) {
 		parse_str( $url['query'], $query );
+	}
 
 	$query['quality'] = absint( $quality );
 
-	if ( true === $strip )
+	if ( true === $strip ) {
 		$query['strip'] = 'all';
-	elseif ( $strip )
+	} elseif ( $strip ) {
 		$query['strip'] = $strip;
+	}
 
 	return add_query_arg( $query, $url['scheme'] . '://' . $url['host'] . $url['path'] );
 }

@@ -70,7 +70,7 @@ function rest_callback( \WP_REST_Request $request ) {
 
 	$ep     = \ElasticPress\Elasticsearch::factory();
 	$result = $ep->remote_request(
-		trim( parse_url( $request['url'], PHP_URL_PATH ), '/' ),
+		trim( wp_parse_url( $request['url'], PHP_URL_PATH ), '/' ),
 		[
 			'body'   => $request['query'],
 			'method' => 'POST',
@@ -138,8 +138,11 @@ function enqueue_assets() {
 		return;
 	}
 
-	wp_enqueue_script( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.js', [], current_time( 'timestamp' ), true );
-	wp_enqueue_style( 'vip-search-dev-tools', plugin_dir_url( __FILE__ ) . 'build/bundle.css', [], current_time( 'timestamp' ) );
+	$assets_dir = __DIR__ . '/build';
+	$assets_url = plugin_dir_url( __FILE__ ) . 'build';
+
+	wp_enqueue_script( 'vip-search-dev-tools', $assets_url . '/bundle.js', [], filemtime( $assets_dir . '/bundle.js' ), true );
+	wp_enqueue_style( 'vip-search-dev-tools', $assets_url . '/bundle.css', [], filemtime( $assets_dir . '/bundle.css' ) );
 }
 
 /**
@@ -170,24 +173,24 @@ function print_data() {
 				// Network error.
 			} elseif ( is_wp_error( $query['request'] ) ) {
 				$query['request'] = [
-					'body' => [
-						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+					'body'     => [
+						'took'  => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
 						'error' => $query['request'],
 					],
 					'response' => [
-						'code' => 'timeout',
+						'code'    => 'timeout',
 						'message' => 'Request failure',
 					],
 				];
 				// Handle any other weirdness by including catch all.
 			} else {
 				$query['request'] = [
-					'body' => [
-						'took' => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
+					'body'     => [
+						'took'  => intval( ( $query['time_finish'] - $query['time_start'] ) * 1000 ),
 						'error' => 'Unknown error, please contact VIP for further investigation',
 					],
 					'response' => [
-						'code' => 'unknown',
+						'code'    => 'unknown',
 						'message' => 'Request failure',
 					],
 				];
@@ -333,12 +336,12 @@ function sanitize_query_response( object $response_body ): object {
  * @return array meta keys in the allow list
  */
 function get_meta_for_all_indexable_post_types(): array {
-	$ret = [];
+	$ret        = [];
 	$post_types = \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types();
 
 	foreach ( $post_types as $post_type ) {
 		$fake_post = new \WP_Post( (object) [ 'post_type' => $post_type ] );
-		$ret[] = Search::instance()->get_post_meta_allow_list( $fake_post );
+		$ret[]     = Search::instance()->get_post_meta_allow_list( $fake_post );
 	}
 
 	// Flatten and return unique values.

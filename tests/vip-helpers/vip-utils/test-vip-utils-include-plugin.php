@@ -2,7 +2,7 @@
 
 const TEST_GLOBAL_VARIABLE = 'include_plugin_test_variable';
 
-class WPCOM_VIP_Utils_Include_Plugin_Test extends \WP_UnitTestCase {
+class WPCOM_VIP_Utils_Include_Plugin_Test extends WP_UnitTestCase {
 
 	public function test__wpcom_vip_include_plugin__will_move_variables_to_global() {
 

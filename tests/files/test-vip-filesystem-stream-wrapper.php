@@ -2,33 +2,34 @@
 
 namespace Automattic\VIP\Files;
 
-use \WP_Error;
+use PHPUnit\Framework\MockObject\MockObject;
+use WP_Error;
+use WP_UnitTestCase;
 
-class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
+require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
+
+class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	private $stream_wrapper;
 
+	/** @var MockObject&Api_Client */
 	private $api_client_mock;
 
 	private $errors = [];
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		require_once( __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php' );
-	}
-
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
+		/** @var MockObject&Api_Client */
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
-		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock ); 
+		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
-	public function tearDown() {
-		$this->stream_wrapper = null;
+	public function tearDown(): void {
+		$this->stream_wrapper  = null;
 		$this->api_client_mock = null;
 
 		$this->errors = [];
@@ -42,7 +43,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem_Stream_Wrapper' );
+		$class  = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem_Stream_Wrapper' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -51,8 +52,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	/**
 	 * Helper functions to test for trigger_error calls
 	 */
-	public function errorHandler( $errno, $errstr, $errfile, $errline, $errcontext ) {
-		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline', 'errcontext' );
+	public function errorHandler( $errno, $errstr, $errfile, $errline ) {
+		$this->errors[] = compact( 'errno', 'errstr', 'errfile', 'errline' );
 	}
 
 	public function assertError( $errstr, $errno ) {
@@ -63,12 +64,13 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 			}
 		}
 
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		$this->fail( 'Error with level ' . $errno . " and message '" . $errstr . "' not found in " . var_export( $this->errors, true ) );
 	}
 
 	public function test__rename__same_path() {
 		$path_from = 'vip://wp-content/uploads/file.txt';
-		$path_to = 'vip://wp-content/uploads/file.txt';
+		$path_to   = 'vip://wp-content/uploads/file.txt';
 
 		// We bail early so Api_Client should not be touched. 
 		$this->api_client_mock
@@ -82,8 +84,9 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 
 	public function test__rename__sucess() {
 		$path_from = 'vip://wp-content/uploads/old.txt';
-		$path_to = 'vip://wp-content/uploads/new.txt';
+		$path_to   = 'vip://wp-content/uploads/new.txt';
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
 		$tmp_file = tempnam( sys_get_temp_dir(), 'phpunit' );
 
 		$this->api_client_mock
@@ -114,7 +117,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 			'read mode'   => [ 'r' ],
 			'write mode'  => [ 'w' ],
 			'append mode' => [ 'a' ],
-			'x mode' => [ 'x' ],
+			'x mode'      => [ 'x' ],
 		];
 	}
 
@@ -127,8 +130,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 
 	public function get_test_data__validate_invalid_mode() {
 		return [ 
-			'c mode'   => [ 'c' ],
-			'e mode'  => [ 'e' ],
+			'c mode' => [ 'c' ],
+			'e mode' => [ 'e' ],
 		];
 	}
 
@@ -138,7 +141,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends \WP_UnitTestCase {
 	public function test__validate__invalid_mode( $mode ) {
 		$result = $this->stream_wrapper->validate( '/test/path', $mode );
 
-		$this->assertError( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'.", E_USER_NOTICE );
+		$this->assertError( esc_html( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." ), E_USER_NOTICE );
 		$this->assertFalse( $result );
 	}
 

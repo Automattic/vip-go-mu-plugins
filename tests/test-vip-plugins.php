@@ -2,13 +2,15 @@
 
 namespace Automattic\VIP\Tests;
 
-class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
 
-	protected $option_active_plugins = [];
+class VIP_Go_Plugins_Test extends WP_UnitTestCase {
+
+	protected $option_active_plugins          = [];
 	protected $option_active_sitewide_plugins = [];
-	protected $code_activated_plugins = [];
+	protected $code_activated_plugins         = [];
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		// emulate the active plugins option
@@ -26,10 +28,10 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 
 		// emulate the network active plugins option
 		$this->option_active_sitewide_plugins = [
-			'akismet/akismet.php' => 1507904154,
-			'hello.php' => 1507904134,
+			'akismet/akismet.php'         => 1507904154,
+			'hello.php'                   => 1507904134,
 			'msm-sitemap/msm-sitemap.php' => 1507904154,
-			'shortcake/shortcode-ui.php' => 1507904134,
+			'shortcake/shortcode-ui.php'  => 1507904134,
 		];
 
 		ksort( $this->option_active_sitewide_plugins );
@@ -69,7 +71,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Update the option with our list of active plugins
 		 */
-		update_option( 'active_plugins' , $this->option_active_plugins );
+		update_option( 'active_plugins', $this->option_active_plugins );
 
 		/**
 		 * Check that option matches what we started with
@@ -98,18 +100,20 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check that updating the option is OK, add an extra plugin
 		 */
-		$plugin_change = array_merge( get_option( 'active_plugins' ) , array( 'amp-wp/amp.php' ) );
+		$plugin_change = array_merge( get_option( 'active_plugins' ), array( 'amp-wp/amp.php' ) );
 		$option_update = update_option( 'active_plugins', $plugin_change );
 		$this->assertTrue( $option_update );
 
 		/**
 		 * Check the raw value in the DB matches what we sent above - skips any filters
 		 */
-		$option_db = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'active_plugins' LIMIT 1" );
-		$option_db = maybe_unserialize( $option_db );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$option_db     = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'active_plugins' LIMIT 1" );
+		$option_db     = maybe_unserialize( $option_db );
 		$plugin_change = array_merge( $this->option_active_plugins, array( 'amp-wp/amp.php' ) );
 		// because this was a dupe plugin we will be smart enough to remove it from the option
-		if ( ( $key = array_search( 'msm-sitemap/msm-sitemap.php', $plugin_change, true ) ) !== false ) {
+		$key = array_search( 'msm-sitemap/msm-sitemap.php', $plugin_change, true );
+		if ( false !== $key ) {
 			unset( $plugin_change[ $key ] );
 		}
 		sort( $plugin_change );
@@ -139,7 +143,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Update the option with our list of active network plugins
 		 */
-		update_site_option( 'active_sitewide_plugins' , $this->option_active_sitewide_plugins );
+		update_site_option( 'active_sitewide_plugins', $this->option_active_sitewide_plugins );
 
 		/**
 		 * Check that option is not empty
@@ -175,6 +179,7 @@ class VIP_Go_Plugins_Test extends \WP_UnitTestCase {
 		/**
 		 * Check the raw value in the DB matches what we sent above - skips any filters
 		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$option_db = $wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'active_sitewide_plugins' LIMIT 1" );
 		$option_db = maybe_unserialize( $option_db );
 		ksort( $plugin_change );

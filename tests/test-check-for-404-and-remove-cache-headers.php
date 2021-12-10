@@ -1,15 +1,12 @@
 <?php
 
+require_once __DIR__ . '/../misc.php';
+
 class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase {
 
-	public static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-		require_once( __DIR__ . '/../misc.php' );
-	}
-
-	public function tearDown() {
+	public function tearDown(): void {
+		wp_reset_postdata();
 		parent::tearDown();
-		wp_reset_query();
 	}
 
 	/**
@@ -19,7 +16,7 @@ class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase
 	 * @param bool $is_wp_query_set Is the global $wp_query object set for a particular test case.
 	 * @param bool $is_404_set Is this page a 404.
 	 */
-	function test_check_for_404_and_remove_cache_headers( $is_wp_query_set, $is_404_set, $expected_headers ) {
+	public function test_check_for_404_and_remove_cache_headers( $is_wp_query_set, $is_404_set, $expected_headers ) {
 		global $wp_query;
 		$headers = array(
 			'Expires'       => 1,
@@ -44,7 +41,7 @@ class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase
 	 *
 	 * @return array
 	 */
-	function data_provider() {
+	public function data_provider() {
 		return array(
 			'wp_query-set-and-is_404'         => array(
 				true,

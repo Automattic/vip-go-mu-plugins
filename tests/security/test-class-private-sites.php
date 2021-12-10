@@ -2,73 +2,61 @@
 
 namespace Automattic\VIP\Security;
 
-class Private_Sites_Test extends \WP_UnitTestCase {
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__is_jetpack_private_regular_site() {
-		define( 'WPCOM_VIP_BASIC_AUTH', false );
-		define( 'WPCOM_VIP_IP_ALLOW_LIST', false );
+use Automattic\Test\Constant_Mocker;
+use WP_UnitTestCase;
 
-		$is_jp_private = \Automattic\VIP\Security\Private_Sites::is_jetpack_private();
+class Private_Sites_Test extends WP_UnitTestCase {
+	public function setUp(): void {
+		parent::setUp();
+		Constant_Mocker::clear();
+	}
+
+	public function test__is_jetpack_private_regular_site() {
+		Constant_Mocker::define( 'WPCOM_VIP_BASIC_AUTH', false );
+		Constant_Mocker::define( 'WPCOM_VIP_IP_ALLOW_LIST', false );
+
+		$is_jp_private = Private_Sites::is_jetpack_private();
 
 		$this->assertFalse( $is_jp_private );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_private_when_constant_set_false() {
-		define( 'VIP_JETPACK_IS_PRIVATE', false );
+		Constant_Mocker::define( 'VIP_JETPACK_IS_PRIVATE', false );
 
 		// But also set other constants that would otherwise set it to private
-		define( 'WPCOM_VIP_BASIC_AUTH', true );
+		Constant_Mocker::define( 'WPCOM_VIP_BASIC_AUTH', true );
 
-		$is_jp_private = \Automattic\VIP\Security\Private_Sites::is_jetpack_private();
+		$is_jp_private = Private_Sites::is_jetpack_private();
 
 		$this->assertFalse( $is_jp_private );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_private_when_constant_set_true() {
-		define( 'VIP_JETPACK_IS_PRIVATE', true );
+		Constant_Mocker::define( 'VIP_JETPACK_IS_PRIVATE', true );
 
 		// But also set other constants that would otherwise not set it to private
-		define( 'WPCOM_VIP_BASIC_AUTH', false );
-		define( 'WPCOM_VIP_IP_ALLOW_LIST', false );
+		Constant_Mocker::define( 'WPCOM_VIP_BASIC_AUTH', false );
+		Constant_Mocker::define( 'WPCOM_VIP_IP_ALLOW_LIST', false );
 
-		$is_jp_private = \Automattic\VIP\Security\Private_Sites::is_jetpack_private();
+		$is_jp_private = Private_Sites::is_jetpack_private();
 
 		$this->assertTrue( $is_jp_private );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_private_with_ip_restrictions() {
-		define( 'WPCOM_VIP_BASIC_AUTH', false );
-		define( 'WPCOM_VIP_IP_ALLOW_LIST', true );
+		Constant_Mocker::define( 'WPCOM_VIP_BASIC_AUTH', false );
+		Constant_Mocker::define( 'WPCOM_VIP_IP_ALLOW_LIST', true );
 
-		$is_jp_private = \Automattic\VIP\Security\Private_Sites::is_jetpack_private();
+		$is_jp_private = Private_Sites::is_jetpack_private();
 
 		$this->assertTrue( $is_jp_private );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_private_with_http_basic_auth() {
-		define( 'WPCOM_VIP_BASIC_AUTH', true );
-		define( 'WPCOM_VIP_IP_ALLOW_LIST', false );
+		Constant_Mocker::define( 'WPCOM_VIP_BASIC_AUTH', true );
+		Constant_Mocker::define( 'WPCOM_VIP_IP_ALLOW_LIST', false );
 
-		$is_jp_private = \Automattic\VIP\Security\Private_Sites::is_jetpack_private();
+		$is_jp_private = Private_Sites::is_jetpack_private();
 
 		$this->assertTrue( $is_jp_private );
 	}
@@ -81,7 +69,7 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 			'something-else',
 		);
 
-		$private = \Automattic\VIP\Security\Private_Sites::instance();
+		$private = Private_Sites::instance();
 
 		$filtered = $private->filter_jetpack_active_modules( $modules );
 
@@ -90,32 +78,26 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 
 	public function test__filter_jetpack_get_available_modules() {
 		$modules = array(
-			'json-api' => true,
+			'json-api'              => true,
 			'enhanced-distribution' => true,
-			'search' => true,
-			'something-else' => true,
+			'search'                => true,
+			'something-else'        => true,
 		);
 
-		$private = \Automattic\VIP\Security\Private_Sites::instance();
+		$private = Private_Sites::instance();
 
 		$filtered = $private->filter_jetpack_get_available_modules( $modules );
 
 		$expected = array(
-			'search' => true,
+			'search'         => true,
 			'something-else' => true,
 		);
 
 		$this->assertEquals( $expected, $filtered );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter_blog_public_option_for_sync() {
-		define( 'VIP_JETPACK_IS_TRUE', true );
-
-		$private = \Automattic\VIP\Security\Private_Sites::instance();
+		$private = Private_Sites::instance();
 
 		$input = array( 'blog_public', 'foo', '1' );
 
@@ -124,14 +106,8 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 		$this->assertEquals( '-1', $filtered[2] );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter_blog_public_option_for_sync_other_option() {
-		define( 'VIP_JETPACK_IS_TRUE', true );
-
-		$private = \Automattic\VIP\Security\Private_Sites::instance();
+		$private = Private_Sites::instance();
 
 		$input = array( 'foo', 'bar', '1' );
 
@@ -142,20 +118,18 @@ class Private_Sites_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__filter_blog_public_option_for_full_sync() {
-		define( 'VIP_JETPACK_IS_TRUE', true );
-
-		$private = \Automattic\VIP\Security\Private_Sites::instance();
+		$private = Private_Sites::instance();
 
 		$input = array(
 			'blog_public' => 1,
-			'foo' => 'bar',
+			'foo'         => 'bar',
 		);
 
 		$filtered = $private->filter_blog_public_option_for_full_sync( $input );
 
 		$expected = array(
 			'blog_public' => '-1',
-			'foo' => 'bar',
+			'foo'         => 'bar',
 		);
 
 		$this->assertEquals( $expected, $filtered );

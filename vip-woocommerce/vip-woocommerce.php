@@ -7,6 +7,4 @@
  * License: GPL2+
  */
 
-if ( file_exists( __DIR__ . '/logging.php' ) ) {
-	require_once( __DIR__ . '/logging.php' );
-}
+require_once __DIR__ . '/logging.php';

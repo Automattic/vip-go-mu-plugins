@@ -3,8 +3,9 @@
 namespace Automattic\VIP\Jetpack;
 
 use DateTime;
+use WP_UnitTestCase;
 
-class Connection_Pilot_Test extends \WP_UnitTestCase {
+class Connection_Pilot_Test extends WP_UnitTestCase {
 	protected static function getMethod( $name ) {
 		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );
 		$method = $class->getMethod( $name );
@@ -64,7 +65,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 	 * @dataProvider get_test_data__should_back_off
 	 */
 	public function test__should_back_off( ?int $backoff_factor, DateTime $dt, bool $expected ) {
-		if ( $backoff_factor != null ) {
+		if ( null !== $backoff_factor ) {
 			$option = array(
 				'site_url'        => get_site_url(),
 				'hashed_site_url' => md5( get_site_url() ),
@@ -103,7 +104,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 0,
-				)
+				),
 			],
 			'zero' => [
 				0,
@@ -113,7 +114,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 0,
-				)
+				),
 			],
 			'one'  => [
 				1,
@@ -123,7 +124,7 @@ class Connection_Pilot_Test extends \WP_UnitTestCase {
 					'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', - 1 ),
 					'timestamp'       => time(),
 					'backoff_factor'  => 1,
-				)
+				),
 			],
 		];
 	}

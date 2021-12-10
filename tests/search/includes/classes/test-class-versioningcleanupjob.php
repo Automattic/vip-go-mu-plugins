@@ -2,9 +2,12 @@
 
 namespace Automattic\VIP\Search;
 
-class VersioningCleanupJob_Test extends \WP_UnitTestCase {
+use WP_UnitTestCase;
 
-	public function setUp() {
+class VersioningCleanupJob_Test extends WP_UnitTestCase {
+
+	public function setUp(): void {
+		parent::setUp();
 		require_once __DIR__ . '/../../../../search/includes/classes/class-versioningcleanupjob.php';
 	}
 

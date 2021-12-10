@@ -12,14 +12,14 @@ function render_vip_dashboard_widget_contact() {
 		<div id="vip_dashboard_message_container"></div>
 
 		<form id="vip_dashboard_contact_form" action="<?php echo esc_url( $ajaxurl ); ?>" class="widget__contact-form"
-			  method="get">
+			method="get">
 			<div class="contact-form__row">
 				<div class="contact-form__label">
 					<label for="contact-form__name">Name</label>
 				</div>
 				<div class="contact-form__input">
 					<input type="text" value="<?php echo esc_attr( $current_user->display_name ); ?>"
-						   id="contact-form__name" placeholder="First and last name"/>
+						id="contact-form__name" placeholder="First and last name"/>
 				</div>
 			</div>
 			<div class="contact-form__row">
@@ -28,7 +28,7 @@ function render_vip_dashboard_widget_contact() {
 				</div>
 				<div class="contact-form__input">
 					<input type="text" value="<?php echo esc_attr( $current_user->user_email ); ?>"
-						   id="contact-form__email" placeholder="Email address"/>
+						id="contact-form__email" placeholder="Email address"/>
 				</div>
 			</div>
 			<div class="contact-form__row">
@@ -41,23 +41,11 @@ function render_vip_dashboard_widget_contact() {
 			</div>
 			<div class="contact-form__row">
 				<div class="contact-form__label">
-					<label for="contact-form__type">Type</label>
-				</div>
-				<div class="contact-form__input">
-					<select id="contact-form__type">
-						<option value="Technical">Technical</option>
-						<option value="Business">Business/Project Management</option>
-						<option value="Review">Theme/Plugin Review</option>
-					</select>
-				</div>
-			</div>
-			<div class="contact-form__row">
-				<div class="contact-form__label">
 					<label for="contact-form__details">Details</label>
 				</div>
 				<div class="contact-form__input">
 					<textarea name="details" rows="4" id="contact-form__details"
-							  placeholder="Please be descriptive"></textarea>
+							placeholder="Please be descriptive"></textarea>
 				</div>
 			</div>
 			<div class="contact-form__row">
