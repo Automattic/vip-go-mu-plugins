@@ -2172,6 +2172,7 @@ class Search {
 			$kill = true;
 		}
 		return $kill;
+	}
 
 	public function action__init() {
 		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
