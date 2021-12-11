@@ -191,7 +191,7 @@ class Cron_Test extends WP_UnitTestCase {
 		return [
 			[
 				[ 0, 1, 2, 3, 4, 5 ],
-				5,
+				3,
 			],
 			[
 				[ new \WP_Error( 'not-good' ) ],
@@ -223,7 +223,7 @@ class Cron_Test extends WP_UnitTestCase {
 		$partially_mocked_cron->method( 'get_processor_job_count' )
 			->willReturnOnConsecutiveCalls( ...$job_counts );
 		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )
-			->willReturn( 5 );
+			->willReturn( 3 );
 
 		$partially_mocked_cron->sweep_jobs();
 	}
@@ -252,11 +252,11 @@ class Cron_Test extends WP_UnitTestCase {
 			],
 			[
 				20,
-				[ 'vip_search_queue_processor' => 5 ],
+				[ 'vip_search_queue_processor' => 3 ],
 			],
-			[ // max of 5 takes over
+			[ // max of 3 takes over
 				30,
-				[ 'vip_search_queue_processor' => 5 ],
+				[ 'vip_search_queue_processor' => 3 ],
 			],
 		];
 	}

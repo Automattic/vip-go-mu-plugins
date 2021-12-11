@@ -54,13 +54,14 @@ class Logger_Test extends WP_UnitTestCase {
 		];
 
 		$expected = array_merge( $data, [
-			'feature'   => 'a8c_vip_test',
-			'site_id'   => 1,
-			'blog_id'   => 1,
-			'http_host' => 'example.org',
-			'user_id'   => 0,
-			'extra'     => '[]',
-			'index'     => 'log2logstash',
+			'feature'         => 'a8c_vip_test',
+			'site_id'         => 1,
+			'blog_id'         => 1,
+			'http_host'       => 'example.org',
+			'http_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '', // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			'user_id'         => 0,
+			'extra'           => '[]',
+			'index'           => 'log2logstash',
 		] );
 
 		Logger::log2logstash( $data );
@@ -69,7 +70,7 @@ class Logger_Test extends WP_UnitTestCase {
 	}
 
 	public function test__log2logstash__too_many_entries() {
-		$entries = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 ];
+		$entries = range( 0, 101 );
 		$data    = [
 			'severity' => 'alert',
 			'feature'  => 'test',
@@ -80,7 +81,7 @@ class Logger_Test extends WP_UnitTestCase {
 
 		Logger::log2logstash( $data );
 
-		$this->assertError( 'Excessive calls to Automattic\VIP\Logstash\Logger::log2logstash(). Maximum is 30 log entries.', E_USER_WARNING );
+		$this->assertError( 'Excessive calls to Automattic\VIP\Logstash\Logger::log2logstash(). Maximum is 100 log entries.', E_USER_WARNING );
 
 		// No new entries added
 		$this->assertEquals( $entries, Testable_Logger::get_entries() );
