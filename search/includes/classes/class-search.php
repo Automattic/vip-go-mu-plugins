@@ -478,6 +478,8 @@ class Search {
 	protected function setup_hooks() {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
+		add_action( 'init', [ $this, 'action__init' ] );
+
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 		add_filter( 'ep_global_alias', [ $this, 'filter__ep_global_alias' ], PHP_INT_MAX, 2 );
 
@@ -2152,5 +2154,9 @@ class Search {
 
 	public function exclude_es_query_reserved_names( $taxonomies ) {
 		return array_merge( $taxonomies, self::ES_QUERY_RESERVED_NAMES );
+	}
+
+	public function action__init() {
+		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
 	}
 }
