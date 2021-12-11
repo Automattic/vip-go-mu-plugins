@@ -600,6 +600,8 @@ class Search {
 		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
 
 		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
+
+		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
 	}
 
 	protected function load_commands() {
@@ -2154,6 +2156,22 @@ class Search {
 
 	public function exclude_es_query_reserved_names( $taxonomies ) {
 		return array_merge( $taxonomies, self::ES_QUERY_RESERVED_NAMES );
+	}
+
+	/**
+	 * Do not sync if index does not exist for Indexable.
+	 * 
+	 * @param {boolean} $kill Whether to kill the sync or not.
+	 * @param {string} $indexable_slug Indexable slug.
+	 * 
+	 * @return bool 
+	 */
+	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		if ( $indexable && ! $indexable->index_exists() ) {
+			$kill = true;
+		}
+		return $kill;
 	}
 
 	public function action__init() {
