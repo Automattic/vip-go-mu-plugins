@@ -594,9 +594,6 @@ class Search {
 
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
-		// Log details of failed requests
-		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
-
 		// Lock search algorithm to 3.5
 		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
 
@@ -1028,6 +1025,13 @@ class Search {
 			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
 
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+			
+			if ( ! $is_cli ) {
+				global $wp;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+				$url = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+			}
+
 			$this->logger->log(
 				'error',
 				'search_query_error',
@@ -1040,6 +1044,7 @@ class Search {
 					'is_cli'     => $is_cli,
 					'request'    => $encoded_request,
 					'response'   => $response_body,
+					'url'        => $url ?? null,
 				]
 			);
 		}
@@ -2112,45 +2117,6 @@ class Search {
 	 */
 	public static function get_query_count(): int {
 		return (int) wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::SEARCH_CACHE_GROUP );
-	}
-
-	/**
-	 * Log failed Elasticpress Query to Logstash
-	 *
-	 * @param $request array Remote request response
-	 * @param $query array Prepared Elasticsearch query
-	 * @param $query_args array Current WP Query arguments
-	 * @param $query_object mixed an instance of one of WP_*_Query classes
-	 *
-	 * @return void
-	 */
-	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
-		$encoded_query = wp_json_encode( $query );
-
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			// Logging a failed query on the CLI.
-			$message = sprintf(
-				'Application %d - ES Query has failed in CLI: %s',
-				FILES_CLIENT_SITE_ID,
-				$encoded_query
-			);
-		} else {
-			// Logging a failed query on a web request.
-			global $wp;
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-			$url     = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
-			$message = sprintf(
-				'Application %d - ES Query in URL %s has failed: %s',
-				FILES_CLIENT_SITE_ID,
-				$url,
-				$encoded_query
-			);
-		}
-
-		$this->logger->log( 'warning', 'search_query_failure', $message, [
-			'request'    => $request,
-			'query_args' => $query_args,
-		] );
 	}
 
 	/**
