@@ -2,6 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
+use Automattic\VIP\Search\ConcurrencyLimiter\APCu_Backend;
+use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
+use Automattic\VIP\Search\ConcurrencyLimiter\Semaphore_Backend;
 use ElasticPress\Elasticsearch;
 use WP_Error;
 use WP_UnitTestCase;
@@ -10,14 +13,20 @@ require_once __DIR__ . '/class-concurrency-limiter-helper.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 
-/**
- * @requires extension apcu
- */
 class Test_Concurrency_Limiter extends WP_UnitTestCase {
-	public function test_concurrency_limiting(): void {
-		if ( ! apcu_enabled() ) {
-			self::markTestSkipped( 'APCu is not enabled' );
+	/**
+	 * @dataProvider data_concurrency_limiting
+	 * @param string $backend
+	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
+	 */
+	public function test_concurrency_limiting( $backend ): void {
+		if ( ! $backend::is_supported() ) {
+			self::markTestSkipped( sprintf( 'Bakend "%s" is not supported', $backend ) );
 		}
+
+		add_filter( 'vip_es_concurrency_limit_backend', function() use ( $backend ) {
+			return $backend;
+		} );
 
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'vip_es_max_concurrent_requests', function() {
@@ -41,17 +50,18 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		$es      = new Elasticsearch();
 		$client1 = new Concurrency_Limiter();
 
-		$this->check_apcu_oom();
+		self::assertInstanceOf( $backend, $client1->get_backend() );
 
 		$response2 = null;
 
 		// This is how we simulate a concurrent request
 		// We need to inject into `ep_remote_request` as early as possible, before `Concurrency_Limiter` has a chance to mark the first request as completed.
 		// The first thing we need to do is to remove ourselves from the hook list to avoid infinite loops.
-		$send_request = function() use ( $es, &$response2, &$send_request ) {
+		$send_request = function() use ( $es, &$response2, &$send_request, $backend ) {
 			remove_action( 'ep_remote_request', $send_request, 0 );
 			$client2   = new Concurrency_Limiter();
 			$response2 = $es->remote_request( '' );
+			self::assertInstanceOf( $backend, $client2->get_backend() );
 			$client2->cleanup();
 		};
 
@@ -66,50 +76,15 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		self::assertSame( 503, $response2->get_error_code() );
 	}
 
-	public function test_destruction(): void {
-		if ( ! apcu_enabled() ) {
-			self::markTestSkipped( 'APCu is not enabled' );
-		}
-
-		$client   = new Concurrency_Limiter_Helper();
-		$verifier = new Concurrency_Limiter_Helper();
-
-		$this->check_apcu_oom();
-
-		self::assertSame( 0, $client->get_key() );
-		self::assertSame( $verifier->get_key(), $client->get_key() );
-		$client->ep_do_intercept_request( new WP_Error( 400 ) );
-
-		self::assertSame( 1, $client->get_key() );
-		self::assertSame( $verifier->get_key(), $client->get_key() );
-		// The destructor is called when there are no references to the class.
-		// We, therefore, need to clean up all hooks we installed. This is what PHP does during the shutdown sequence.
-		$client->cleanup();
-		
-		self::assertSame( 1, $client->get_key() );
-		self::assertSame( $verifier->get_key(), $client->get_key() );
-
-		unset( $client );
-		self::assertSame( 0, $verifier->get_key() );
-	}
-
-	public function test_get_key_fixes_value_type(): void {
-		if ( ! apcu_enabled() ) {
-			self::markTestSkipped( 'APCu is not enabled' );
-		}
-
-		apcu_delete( Concurrency_Limiter::KEY_NAME );
-		apcu_store( Concurrency_Limiter::KEY_NAME, 'something wrong', 15 );
-
-		$this->check_apcu_oom();
-
-		$verifier = new Concurrency_Limiter_Helper();
-		self::assertSame( 0, $verifier->get_key() );
-	}
-
-	private function check_apcu_oom(): void {
-		if ( ! apcu_exists( Concurrency_Limiter::KEY_NAME ) ) {
-			self::markTestSkipped( 'APCu is out of memory' );
-		}
+	/**
+	 * @psalm-return iterable<[class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface>]>
+	 * @return iterable 
+	 */
+	public function data_concurrency_limiting(): iterable {
+		return [
+			[ APCu_Backend::class ],
+			[ Object_Cache_Backend::class ],
+			[ Semaphore_Backend::class ],
+		];
 	}
 }
