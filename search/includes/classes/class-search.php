@@ -170,6 +170,8 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	/** @var Concurrency_Limiter */
+	public $concurrency_limiter;
 	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -246,6 +248,8 @@ class Search {
 
 		require_once __DIR__ . '/class-queue.php';
 
+		require_once __DIR__ . '/class-concurrency-limiter.php';
+
 		$this->queue = new Queue();
 		$this->queue->init();
 
@@ -275,6 +279,10 @@ class Search {
 		// Logger - can be set explicitly for mocking purposes
 		if ( ! $this->logger ) {
 			$this->logger = new \Automattic\VIP\Logstash\Logger();
+		}
+
+		if ( ! $this->concurrency_limiter ) {
+			$this->concurrency_limiter = new Concurrency_Limiter();
 		}
 
 		/**
