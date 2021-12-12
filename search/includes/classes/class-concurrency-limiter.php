@@ -39,6 +39,11 @@ class Concurrency_Limiter {
 		add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
 	}
 
+	public function cleanup(): void {
+		remove_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
+		remove_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
+	}
+
 	/**
 	 * Called when ElasticPress calls ElasticSearch API.
 	 * 
@@ -54,7 +59,7 @@ class Concurrency_Limiter {
 			$value = $this->get_key();
 		}
 
-		return $value < $this->max_concurrent_requests ? $response : new WP_Error( 503, 'Concurrency limit exceeded' );
+		return $value <= $this->max_concurrent_requests ? $response : new WP_Error( 503, 'Concurrency limit exceeded' );
 	}
 
 	/**
@@ -67,10 +72,11 @@ class Concurrency_Limiter {
 		}
 	}
 
-	private function get_key(): int {
+	protected function get_key(): int {
 		$value = apcu_entry( self::KEY_NAME, '__return_zero', $this->cache_ttl );
 		if ( ! is_int( $value ) ) {
-			$success = apcu_store( self::KEY_NAME, 0, $this->cache_ttl );
+			$value   = 0;
+			$success = apcu_store( self::KEY_NAME, $value, $this->cache_ttl );
 			if ( ! $success ) {
 				// Out of memory
 				$value = PHP_INT_MAX;
@@ -80,7 +86,7 @@ class Concurrency_Limiter {
 		return $value;
 	}
 
-	private function inc_key(): int {
+	protected function inc_key(): int {
 		$success = null;
 		$value   = apcu_inc( self::KEY_NAME, 1, $success, $this->cache_ttl );
 		if ( $success ) {
@@ -90,7 +96,7 @@ class Concurrency_Limiter {
 		return PHP_INT_MAX;
 	}
 
-	private function dec_key(): void {
+	protected function dec_key(): void {
 		$success = null;
 		apcu_dec( self::KEY_NAME, 1, $success, $this->cache_ttl );
 	}
