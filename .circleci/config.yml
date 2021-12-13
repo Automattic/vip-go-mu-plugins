@@ -306,7 +306,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.13.1
+      - image: cimg/node:17.2.0
     steps:
       - checkout
       - run:
