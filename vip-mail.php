@@ -90,7 +90,7 @@ class VIP_SMTP {
 	}
 
 	public function filter_wp_mail_from() {
-		return 'donotreply@wordpress.com';
+		return 'donotreply@wpvip.com';
 	}
 
 	protected function get_tracking_header( $key ) {

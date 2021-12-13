@@ -73,6 +73,7 @@ class Site_Details_Index {
 		$site_details['core']['php_version']  = PHP_VERSION;
 		$site_details['core']['blog_id']      = get_current_blog_id();
 		$site_details['core']['site_url']     = get_site_url();
+		$site_details['core']['home_url']     = get_home_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
 		$site_details['plugins'] = $this->get_plugin_info();
