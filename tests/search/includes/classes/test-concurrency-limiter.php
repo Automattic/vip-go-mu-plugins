@@ -9,7 +9,6 @@ use ElasticPress\Elasticsearch;
 use WP_Error;
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/class-concurrency-limiter-helper.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 
