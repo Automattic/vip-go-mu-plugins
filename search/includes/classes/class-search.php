@@ -477,6 +477,8 @@ class Search {
 	protected function setup_hooks() {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
+		add_action( 'init', [ $this, 'action__init' ] );
+
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 		add_filter( 'ep_global_alias', [ $this, 'filter__ep_global_alias' ], PHP_INT_MAX, 2 );
 
@@ -593,13 +595,12 @@ class Search {
 
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
-		// Log details of failed requests
-		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
-
 		// Lock search algorithm to 3.5
 		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
 
 		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
+
+		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
 	}
 
 	protected function load_commands() {
@@ -966,6 +967,13 @@ class Search {
 			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
 
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+			
+			if ( ! $is_cli ) {
+				global $wp;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+				$url = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+			}
+
 			$this->logger->log(
 				'error',
 				'search_query_error',
@@ -978,6 +986,7 @@ class Search {
 					'is_cli'     => $is_cli,
 					'request'    => $encoded_request,
 					'response'   => $response_body,
+					'url'        => $url ?? null,
 				]
 			);
 		}
@@ -2053,45 +2062,6 @@ class Search {
 	}
 
 	/**
-	 * Log failed Elasticpress Query to Logstash
-	 *
-	 * @param $request array Remote request response
-	 * @param $query array Prepared Elasticsearch query
-	 * @param $query_args array Current WP Query arguments
-	 * @param $query_object mixed an instance of one of WP_*_Query classes
-	 *
-	 * @return void
-	 */
-	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
-		$encoded_query = wp_json_encode( $query );
-
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			// Logging a failed query on the CLI.
-			$message = sprintf(
-				'Application %d - ES Query has failed in CLI: %s',
-				FILES_CLIENT_SITE_ID,
-				$encoded_query
-			);
-		} else {
-			// Logging a failed query on a web request.
-			global $wp;
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-			$url     = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
-			$message = sprintf(
-				'Application %d - ES Query in URL %s has failed: %s',
-				FILES_CLIENT_SITE_ID,
-				$url,
-				$encoded_query
-			);
-		}
-
-		$this->logger->log( 'warning', 'search_query_failure', $message, [
-			'request'    => $request,
-			'query_args' => $query_args,
-		] );
-	}
-
-	/**
 	 * Filter out default algorithm version to be used.
 	 *
 	 * @return string
@@ -2124,5 +2094,25 @@ class Search {
 
 	public function exclude_es_query_reserved_names( $taxonomies ) {
 		return array_merge( $taxonomies, self::ES_QUERY_RESERVED_NAMES );
+	}
+
+	/**
+	 * Do not sync if index does not exist for Indexable.
+	 * 
+	 * @param {boolean} $kill Whether to kill the sync or not.
+	 * @param {string} $indexable_slug Indexable slug.
+	 * 
+	 * @return bool 
+	 */
+	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		if ( $indexable && ! $indexable->index_exists() ) {
+			$kill = true;
+		}
+		return $kill;
+	}
+
+	public function action__init() {
+		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
 	}
 }
