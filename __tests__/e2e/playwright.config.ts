@@ -4,6 +4,7 @@ const config: PlaywrightTestConfig = {
     retries: 1,
     globalSetup: require.resolve('./global-setup'),
     timeout: 120000,
+    reporter: process.env.CI ? 'github' : 'list',
     use: {
       headless: true,
       viewport: { width: 1280, height: 1000 },
