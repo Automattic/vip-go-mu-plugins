@@ -26,13 +26,6 @@ class VIP_User_CLI_Command extends WPCOM_VIP_CLI_Command {
 	 * wp vip user cleanup --emails="user@example.com,another@example.net"
 	 */
 	public function cleanup( $args, $assoc_args ) {
-		// Allow sites (e.g. Automattic internal) to bypass this cleanup if they have manual cleanup routines.
-		$should_do_cleanup = apply_filters( 'vip_do_user_cleanup', true );
-		if ( false === $should_do_cleanup ) {
-			\WP_CLI::success( 'Cleanup has been bypassed by the environment.' );
-			return;
-		}
-
 		$emails_arg = \WP_CLI\Utils\get_flag_value( $assoc_args, 'emails' );
 
 		$emails = User_Cleanup::parse_emails_string( $emails_arg );
