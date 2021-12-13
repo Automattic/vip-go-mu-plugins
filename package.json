@@ -10,8 +10,7 @@
     "lint": "npm run phplint && npm run phpcs",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
     "prepare": "husky install",
-    "test-e2e": "npx playwright test -c '__tests__/e2e/playwright.config.ts'",
-    "test-e2e:gutenberg": "wp-scripts test-e2e --config ./node_modules/@wordpress/e2e-tests/jest.config.js --wordpress-base-url=http://localhost --wordpress-username=e2e_tester --wordpress-password=aut0matedTe$ter"
+    "test-e2e": "npx playwright test -c '__tests__/e2e/playwright.config.ts'"
   },
   "author": "Automattic",
   "devDependencies": {

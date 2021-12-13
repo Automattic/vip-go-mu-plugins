@@ -36,7 +36,7 @@ const selectors = {
 	closePublishPanel: 'button[aria-label="Close panel"]',
 
 	// Welcome tour
-	welcomeTourCloseButton: '.components-modal__header button',
+	welcomeTourCloseButton: '.edit-post-welcome-guide .components-modal__header button',
 
 	// Block editor sidebar
 	desktopEditorSidebarButton: 'button[aria-label="Block editor sidebar"]:visible',
