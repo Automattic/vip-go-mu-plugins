@@ -237,7 +237,7 @@ class Site_Details_Index {
 	 */
 	public function get_current_timestamp() {
 		$get_microtime_as_float    = true;
-		$timestamp_in_milliseconds = microtime( $get_microtime_as_float ) * 1000;
+		$timestamp_in_milliseconds = intval( microtime( $get_microtime_as_float ) * 1000 );
 		return $this->timestamp ?? $timestamp_in_milliseconds;
 	}
 
