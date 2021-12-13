@@ -3,7 +3,7 @@ import { PlaywrightTestConfig } from '@playwright/test';
 const config: PlaywrightTestConfig = {
     retries: 1,
     globalSetup: require.resolve('./global-setup'),
-    timeout: 60000,
+    timeout: 120000,
     use: {
       headless: true,
       viewport: { width: 1280, height: 1000 },

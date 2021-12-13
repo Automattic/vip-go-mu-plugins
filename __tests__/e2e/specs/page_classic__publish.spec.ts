@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { WPAdminPage } from '../lib/pages/wp-admin-page';
 import { WPAdminSidebarComponent } from '../lib/components/wp-admin-sidebar.component';
-import { EditorPage } from '../lib/pages/wp-editor-page';
+import { ClassicEditorPage } from '../lib/pages/wp-classic-editor-page';
 import { PublishedPagePage } from '../lib/pages/published-page-page';
 import * as DataHelper from '../lib/data-helper';
 
 test( 'Publish a Page', async ( {page} ) => {
-    let editorPage: EditorPage;
+    let classicEditorPage: ClassicEditorPage;
     const titleText = DataHelper.getRandomPhrase();
     const bodyText = '"Be who you are and say what you feel, because \n \
     those who mind don’t matter and those who matter don’t mind." \n \
@@ -18,20 +18,18 @@ test( 'Publish a Page', async ( {page} ) => {
         await expect( wpAdminPage.adminBar ).toBeVisible();
     } );
 
-    await test.step( 'Select add new Page', async () => {
-        const wpAdminSidebarComponent = new WPAdminSidebarComponent( page );
-        await wpAdminSidebarComponent.clickMenuItem( 'Pages' );
-        await wpAdminSidebarComponent.clickSubMenuItem( 'Add New' );
+    await test.step( 'Add new page in classic editor', async () => {
+        await page.goto( '/wp-admin/post-new.php?post_type=page&classic-editor&classic-editor__forget' );
     } );
 
     await test.step( 'Write Page', async () => {
-        editorPage = new EditorPage( page );
-        await editorPage.enterTitle( titleText );
-        await editorPage.enterText( bodyText );
+        classicEditorPage = new ClassicEditorPage( page );
+        await classicEditorPage.enterTitle( titleText );
+        await classicEditorPage.enterText( bodyText );
     } );
 
     await test.step( 'Publish and visit page', async () => {
-        const publishedURL = await editorPage.publish( { visit: true } );
+        const publishedURL = await classicEditorPage.publish( { visit: true } );
         expect( publishedURL ).toBe( page.url() );
     } );
 

@@ -22,6 +22,16 @@ export class PublishedPostPage {
 	 * @param {string} text Text to search for in post page
 	 */
 	async validateTextInPost( text: string ): Promise< void > {
-		await this.page.waitForSelector( `text=${ text }` );
+		// If text isn't found the first time, reload and check again up to 2 more times.
+		let i = 0;
+		while( i < 3 ){
+			await this.page.waitForSelector( '.entry-title' );
+			if ( await this.page.locator( `text=${ text }` ) ) {
+				break;
+			} else {
+				await this.page.reload();
+				i++;
+			}
+		}
 	}
 }

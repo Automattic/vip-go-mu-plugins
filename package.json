@@ -15,11 +15,11 @@
   },
   "author": "Automattic",
   "devDependencies": {
-    "@playwright/test": "1.16.3",
+    "@playwright/test": "1.17.1",
     "asana-phrase": "0.0.8",
     "husky": "7.0.4",
     "lint-staged": "12.1.2",
     "phplint": "2.0.5",
-    "playwright": "1.16.3"
+    "playwright": "1.17.1"
   }
 }

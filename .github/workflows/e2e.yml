@@ -1,5 +1,10 @@
 name: Run e2e tests
 on: [push]
+inputs: 
+  wpVersion:
+    description: 'WordPress version to run tests against'
+    required: false
+    default: 'latest'
 jobs:
   Run_e2e_tests:
     runs-on: ubuntu-latest
@@ -21,4 +26,10 @@ jobs:
       - run: npm install --prefix=$HOME/.local -g @automattic/vip
       - run: vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="./vip-go-mu-plugins" --wordpress="5.8.1" --multisite=false --client-code="./vip-go-skeleton"
       - run: vip --slug=e2e-test-site dev-env start
+      - run: docker exec e2etestsite_php_1 wp core update --version=$INPUT_WPVERSION --allow-root
       - run: cd ./vip-go-mu-plugins && npm run test-e2e
+      - name: Archive test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: vip-go-mu-plugins/test-results
