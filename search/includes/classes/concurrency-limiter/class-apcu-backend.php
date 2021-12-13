@@ -8,16 +8,25 @@ class APCu_Backend implements BackendInterface {
 	const KEY_NAME = 'vip_es_request_count';
 
 	/** @var int */
+	private static $instances = 0;
+
+	/** @var int */
 	private $limit;
 
 	/** @var int */
 	private $ttl;
 
+	/** @var int */
 	private $increments = 0;
 
 	public function __destruct() {
 		if ( $this->increments > 0 ) {
 			apcu_dec( self::KEY_NAME, $this->increments, null, $this->ttl );
+		}
+
+		--self::$instances;
+		if ( defined( 'WP_TESTS_DOMAIN' ) && 0 === self::$instances ) {
+			apcu_delete( self::KEY_NAME );
 		}
 	}
 
@@ -29,6 +38,8 @@ class APCu_Backend implements BackendInterface {
 		if ( ! is_int( $value ) ) {
 			apcu_cas( self::KEY_NAME, $value, 0 );
 		}
+
+		++self::$instances;
 	}
 
 	public static function is_supported(): bool {

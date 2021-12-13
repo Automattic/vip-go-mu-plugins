@@ -16,10 +16,9 @@ require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
-		$sem_backend = new Semaphore_Backend();
-		$sem_backend->initialize( 100, 100 );
-		// We need to kill the semaphore because it is not possible to change `max_acquire` value once the semaphore is created
-		$sem_backend->cleanup();
+
+		remove_all_filters( 'ep_do_intercept_request' );
+		remove_all_actions( 'ep_remote_request' );
 	}
 
 	/**
@@ -54,7 +53,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		};
 
 		add_filter( 'ep_do_intercept_request', $interceptor, 50 );
-		
+
 		$es      = new Elasticsearch();
 		$client1 = new Concurrency_Limiter();
 
@@ -86,7 +85,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 
 	/**
 	 * @psalm-return iterable<string, array{class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface>}>
-	 * @return iterable 
+	 * @return iterable
 	 */
 	public function data_concurrency_limiting(): iterable {
 		return [

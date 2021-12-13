@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\ConcurrencyLimiter\APCu_Backend;
 use Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface;
+use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
 use Automattic\VIP\Search\ConcurrencyLimiter\Semaphore_Backend;
 use WP_Error;
 
@@ -32,7 +33,12 @@ class Concurrency_Limiter {
 	}
 
 	public function init(): bool {
-		$backend_class = 'Windows' === PHP_OS_FAMILY ? APCu_Backend::class : Semaphore_Backend::class;
+		if ( defined( 'WP_TESTS_DOMAIN' ) ) {
+			$backend_class = Object_Cache_Backend::class;
+		} else {
+			$backend_class = 'Windows' === PHP_OS_FAMILY ? APCu_Backend::class : Semaphore_Backend::class;
+		}
+
 		$backend_class = apply_filters( 'vip_es_concurrency_limit_backend', $backend_class );
 
 		if ( ! empty( $backend_class ) && is_subclass_of( $backend_class, BackendInterface::class, true ) ) {

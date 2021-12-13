@@ -10,8 +10,13 @@ require_once __DIR__ . '/backendinterface.php';
  * to change the number of allowed connections).
  */
 class Semaphore_Backend implements BackendInterface {
+	/** @var int */
+	private static $instances = 0;
+
+	/** @var resource|false|\SysvSemaphore */
 	private $sem;
 
+	/** @var int */
 	private $increments = 0;
 
 	public function __destruct() {
@@ -21,18 +26,16 @@ class Semaphore_Backend implements BackendInterface {
 				--$this->increments;
 			}
 		}
+
+		--self::$instances;
+		if ( defined( 'WP_TESTS_DOMAIN' ) && $this->sem && 0 === self::$instances ) {
+			sem_remove( $this->sem );
+		}
 	}
 
 	public function initialize( int $limit, int $ttl ): void {
 		$this->sem = sem_get( ftok( __FILE__, 'e' ), $limit, 0600 );
-	}
-
-	public function cleanup(): void {
-		if ( $this->sem ) {
-			sem_remove( $this->sem );
-			$this->increments = 0;
-			$this->sem        = false;
-		}
+		++self::$instances;
 	}
 
 	public static function is_supported(): bool {

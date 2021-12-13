@@ -11,6 +11,7 @@ class Object_Cache_Backend implements BackendInterface {
 	/** @var int */
 	private $limit;
 
+	/** @var int */
 	private $increments = 0;
 
 	public function __destruct() {
