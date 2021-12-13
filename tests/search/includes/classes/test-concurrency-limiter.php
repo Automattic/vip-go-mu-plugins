@@ -14,6 +14,14 @@ require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasti
 require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 
 class Test_Concurrency_Limiter extends WP_UnitTestCase {
+	public function setUp(): void {
+		parent::setUp();
+		$sem_backend = new Semaphore_Backend();
+		$sem_backend->initialize( 100, 100 );
+		// We need to kill the semaphore because it is not possible to change `max_acquire` value once the semaphore is created
+		$sem_backend->cleanup();
+	}
+
 	/**
 	 * @dataProvider data_concurrency_limiting
 	 * @param string $backend
@@ -21,7 +29,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	 */
 	public function test_concurrency_limiting( $backend ): void {
 		if ( ! $backend::is_supported() ) {
-			self::markTestSkipped( sprintf( 'Bakend "%s" is not supported', $backend ) );
+			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
 		}
 
 		add_filter( 'vip_es_concurrency_limit_backend', function() use ( $backend ) {
@@ -77,14 +85,14 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @psalm-return iterable<[class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface>]>
+	 * @psalm-return iterable<string, array{class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface>}>
 	 * @return iterable 
 	 */
 	public function data_concurrency_limiting(): iterable {
 		return [
-			[ APCu_Backend::class ],
-			[ Object_Cache_Backend::class ],
-			[ Semaphore_Backend::class ],
+			'APCu'        => [ APCu_Backend::class ],
+			'ObjectCache' => [ Object_Cache_Backend::class ],
+			'Semaphore'   => [ Semaphore_Backend::class ],
 		];
 	}
 }
