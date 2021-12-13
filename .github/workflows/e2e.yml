@@ -29,7 +29,7 @@ jobs:
       - run: vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="./vip-go-mu-plugins" --wordpress="5.8.1" --multisite=false --client-code="./vip-go-skeleton"
       - run: vip --slug=e2e-test-site dev-env start
       - run: docker exec e2etestsite_php_1 wp core update --version=${{ github.event.inputs.wpversion }} --allow-root --force
-      - run: docker exec e2etestsite_php_1 docker exec e2etestsite_php_1 wp plugin install --activate --allow-root classic-editor
+      - run: docker exec e2etestsite_php_1 wp plugin install --activate --allow-root classic-editor
       - run: cd ./vip-go-mu-plugins && npm run test-e2e
       - name: Archive test results
         uses: actions/upload-artifact@v2
