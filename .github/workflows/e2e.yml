@@ -33,6 +33,7 @@ jobs:
       - run: cd ./vip-go-mu-plugins && npm run test-e2e -- __tests__/e2e/specs/post__edit.spec.ts
       - name: Archive test results
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: test-results
           path: vip-go-mu-plugins/test-results
