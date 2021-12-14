@@ -5,7 +5,6 @@
  */
 add_action( 'after_setup_theme', 'wpcom_vip_enable_performance_tweaks' );
 function wpcom_vip_enable_performance_tweaks() {
-
 	// Disables the adjacent_post links in the header that are almost never beneficial and are very slow to compute.
 	remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
 
@@ -18,12 +17,8 @@ function wpcom_vip_enable_performance_tweaks() {
 	}
 
 	if ( is_admin() ) {
-		// Prevent expensive media library queries, and cache the available months for filtering.
-		add_filter( 'media_library_show_video_playlist', '__return_true' );
-		add_filter( 'media_library_show_audio_playlist', '__return_true' );
+		// Cache the available months for filtering on posts/attachments/CPTs.
 		add_filter( 'media_library_months_with_files', 'wpcom_vip_media_library_months_with_files' );
-
-		// Cache the available months for filtering on posts/CPTs.
 		add_filter( 'pre_months_dropdown_query', 'wpcom_vip_available_post_listing_months', 10, 2 );
 	}
 
@@ -146,6 +141,7 @@ function wpcom_vip_maybe_bust_available_months_cache( $post_id ) {
 	foreach ( $existing_months as $date ) {
 		if ( $post_year === $date->year && $post_month === $date->month ) {
 			$found = true;
+			break;
 		}
 	}
 
