@@ -22,6 +22,7 @@ async function globalSetup( config: FullConfig ) {
   // Dismiss editor welcome
   await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
   const editorPage = new EditorPage( page );
+  await page.screenshot( { path: './screenshots/screenshot.png'});
   await editorPage.dismissWelcomeTour();
 
   // Save signed-in state
