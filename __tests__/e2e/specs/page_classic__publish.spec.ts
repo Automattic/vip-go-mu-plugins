@@ -12,6 +12,8 @@ test( 'Publish a Page', async ( {page} ) => {
     those who mind don’t matter and those who matter don’t mind." \n \
     – Bernard M. Baruch'
 
+    test.skip( process.env.E2E_CLASSIC_TESTS === 'false', 'Classic Tests skipped, plugin not installed')
+
     await test.step( 'Go to WP-admin', async () => {
         const wpAdminPage = new WPAdminPage( page );
         await wpAdminPage.visit();

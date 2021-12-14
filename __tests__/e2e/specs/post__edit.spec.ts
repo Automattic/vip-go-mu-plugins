@@ -3,7 +3,7 @@ import { EditorPage } from '../lib/pages/wp-editor-page';
 import { PublishedPostPage } from '../lib/pages/published-post-page';
 import { PostListPage } from '../lib/pages/post-list-page';
 import * as DataHelper from '../lib/data-helper';
-import * as HookHelper from '../lib/hook-helper'
+import * as WPAPIHelper from '../lib/wp-api-helper'
 
 let titleText = DataHelper.getRandomPhrase();
 let bodyText = '<!-- wp:paragraph --><p>"Sometimes you will never know the value of a moment, until it becomes a memory."</p><!-- /wp:paragraph --> \
@@ -13,7 +13,7 @@ let postURL: string;
 
 test.beforeAll( async ( { request } ) => {
     // Create new post to edit
-    const response = await HookHelper.createPost( request, { 
+    const response = await WPAPIHelper.createPost( request, { 
         title: titleText,
         body: bodyText,
         postType: 'post'
@@ -27,7 +27,7 @@ test.beforeAll( async ( { request } ) => {
 
 test.afterAll( async ( { request } ) => {
     // Delete created page
-    const response = await HookHelper.deletePost( request, postID, 'post' );
+    const response = await WPAPIHelper.deletePost( request, postID, 'post' );
     expect( response.ok() ).toBeTruthy();
 } );
 

@@ -19,11 +19,16 @@ async function globalSetup( config: FullConfig ) {
   // Save API Nonce to Env Var
   process.env.WP_E2E_NONCE = await page.evaluate('wpApiSettings.nonce');
   
-  // Adjust Classic Editor plugin settings
+  // Adjust Classic Editor plugin settings if is available
   await page.goto( baseURL + '/wp-admin/options-writing.php' )
-  await page.click( '#classic-editor-block' );
-  await page.click( '#classic-editor-allow' );
-  await page.click( '#submit' );
+
+  if ( await page.isVisible( '#classic-editor-block' ) ) {   
+    await page.click( '#classic-editor-block' );
+    await page.click( '#classic-editor-allow' );
+    await page.click( '#submit' );
+  } else {
+    process.env.E2E_CLASSIC_TESTS = 'false';
+  }
 
   // Dismiss editor welcome
   await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
