@@ -26,7 +26,6 @@ test( 'Publish a Post', async ( {page} ) => {
 
     await test.step( 'Write Post', async () => {
         editorPage = new EditorPage( page );
-        await editorPage.dismissWelcomeTour();
         await editorPage.enterTitle( titleText );
         await editorPage.enterText( bodyText );
     } );

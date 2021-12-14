@@ -49,7 +49,6 @@ test( 'Edit a Page', async ( {page} ) => {
         bodyText = '"Many of life’s failures are people who did not realize how close they were to success when they gave up. \n \
         – Thomas A. Edison';
         editorPage = new EditorPage( page );
-        await editorPage.dismissWelcomeTour();
         await editorPage.clearText();
         await editorPage.clearTitle();
         await editorPage.enterTitle( titleText );
