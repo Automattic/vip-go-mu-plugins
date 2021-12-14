@@ -65,9 +65,12 @@ export class EditorPage {
 	 */
 	async dismissWelcomeTour(): Promise< void > {
 		try {
-			await this.page.click( selectors.welcomeTourCloseButton );
-		} catch ( err ) {
-			// noop - welcome tour was not found, which is great.
+			const closeButton = await this.page.locator( selectors.welcomeTourCloseButton ).elementHandle( { timeout: 5000 } );
+			if( closeButton ) {
+				await closeButton.click();
+			}
+		} catch (err){
+			// Just continue, the welcome tour wasn't there
 		}
 	}
 
