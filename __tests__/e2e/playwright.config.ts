@@ -5,6 +5,7 @@ const config: PlaywrightTestConfig = {
     globalSetup: require.resolve('./global-setup'),
     timeout: 120000,
     reporter: process.env.CI ? 'github' : 'list',
+    reportSlowTests: null,
     use: {
       headless: true,
       viewport: { width: 1280, height: 1000 },
@@ -12,8 +13,8 @@ const config: PlaywrightTestConfig = {
       video: 'retain-on-failure',
       trace: 'retain-on-failure',
       storageState: 'e2eStorageState.json',
-      baseURL: 'http://e2e-test-site.vipdev.lndo.site',
-    },
+      baseURL: process.env.WP_BASE_URL ? process.env.WP_BASE_URL : 'http://e2e-test-site.vipdev.lndo.site',
+    }
 };
 
 export default config;

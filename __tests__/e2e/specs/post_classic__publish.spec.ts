@@ -34,6 +34,6 @@ test( 'Publish a Post', async ( {page} ) => {
 
     await test.step( 'Validate published post', async () => {
         const publishedPostPage = new PublishedPostPage( page );
-        publishedPostPage.validateTextInPost( titleText );
+        await publishedPostPage.validateTextInPost( titleText );
     } );
 } )

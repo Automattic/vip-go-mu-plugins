@@ -5,6 +5,7 @@ type PreviewOptions = 'Desktop' | 'Mobile' | 'Tablet';
 const selectors = {
 	// Editor
 	editorTitle: '.editor-post-title__input',
+	editorTitleContainer: '.edit-post-visual-editor__post-title-wrapper',
 
 	// Block inserter
 	blockInserterToggle: 'button.edit-post-header-toolbar__inserter-toggle',
@@ -75,7 +76,7 @@ export class EditorPage {
      * @param {string} title Page/Post Title
      */
     async enterTitle( title: string ): Promise< void > {
-      	await this.page.click( selectors.editorTitle );
+      	await this.page.click( selectors.editorTitleContainer );
     	await this.page.fill( selectors.editorTitle, title );
     }
 
@@ -149,8 +150,6 @@ export class EditorPage {
 
 	/**
 	 * Updates the post or page.
-	 *
-	 *
 	 */
 	async update(): Promise< void > {
 		await this.page.click( selectors.updateButton );
@@ -158,7 +157,7 @@ export class EditorPage {
 
   	/**
 	 * Visits the published entry from the post-publish sidebar.
-	 *
+	 * @param {string} url Url to visit
 	 */
 	private async visitPublishedPost( url: string ): Promise< void > {
 		await Promise.all( [

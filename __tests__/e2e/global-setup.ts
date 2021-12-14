@@ -7,12 +7,14 @@ async function globalSetup( config: FullConfig ) {
   const { baseURL, storageState } = config.projects[0].use;
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  const user = process.env.WP_USER ? process.env.WP_USER : 'vipgo';
+  const pass = process.env.WP_PASSWORD ? process.env.WP_PASSWORD : 'password';
   page.setDefaultNavigationTimeout( timeout );
 
   // Log in to wp-admin
   await page.goto( baseURL + '/wp-login.php', { waitUntil: 'networkidle' } );
   const loginPage = new LoginPage( page );
-  await loginPage.login( 'vipgo', 'password' );
+  await loginPage.login( user, pass );
 
   // Save API Nonce to Env Var
   process.env.WP_E2E_NONCE = await page.evaluate('wpApiSettings.nonce');
