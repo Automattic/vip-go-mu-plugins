@@ -487,8 +487,6 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'get_cached_index_exists_request' ], 9998, 5 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'invalidate_cached_index_exists_request' ], 9998, 5 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
@@ -762,61 +760,6 @@ class Search {
 	}
 
 	/**
-	 * Filter to return value of option that caches index_exists request (if it doesn't exist, cache it).
-	 * 
-	 * @param  array  $request  New remote request response
-	 * @param  array  $query    Remote request arguments
-	 * @param  array  $args     Request arguments
-	 * @param  array  $failures Number of failures
-	 * @param  string $type     Type of request
-	 * @return array  $request  New request
-	 */
-	public function get_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
-		if ( 'index_exists' !== $type ) {
-			return $request;
-		}
-
-		$option_name = $this->get_index_exists_option_name( $query['url'] );
-		$request     = get_option( $option_name );
-		if ( false === $request ) {
-			// Option doesn't exist, do the request and cache it.
-			$request = vip_safe_wp_remote_request( $query['url'] );
-			if ( ! is_wp_error( $request ) ) {
-				update_option( $option_name, $request );
-			}
-		}
-		
-		return $request;
-	}
-
-	/**
-	 * Invalidate cached index_exists request option on certain index actions.
-	 * 
-	 * @param  array  $request  New remote request response
-	 * @param  array  $query    Remote request arguments
-	 * @param  array  $args     Request arguments
-	 * @param  array  $failures Number of failures
-	 * @param  string $type     Type of request
-	 * @return array  $request  New request
-	 */
-	public function invalidate_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
-		$index_actions = [
-			'delete_index',
-			'refresh_indices',
-			'put_mapping',
-			'bulk_index',
-		];
-		if ( ! in_array( $type, $index_actions, true ) ) {
-			return $request;
-		}
-
-		$option_name = $this->get_index_exists_option_name( $query['url'] );
-		delete_option( $option_name );
-
-		return $request;
-	}
-
-	/**
 	 * Generate option name for cached index_exists request.
 	 * 
 	 * @return string $option_name Name of generated option.
@@ -840,6 +783,26 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
+		$index_exists_invalidation_actions = [
+			'delete_index',
+			'refresh_indices',
+			'put_mapping',
+			'bulk_index',
+		];
+		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
+			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
+			$cached_index_exists_request = get_option( $index_exists_option_name );
+			if ( false !== $cached_index_exists_request ) {
+				if ( 'index_exists' === $type ) {
+					// Return cached index_exists option.
+					return $cached_index_exists_request;
+				} else {
+					// Invalidate index_exists caching on certain actions.
+					delete_option( $index_exists_option_name );
+				}
+			}
+		}
+		
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -863,6 +826,10 @@ class Search {
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
 		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		if ( 'index_exists' === $type && ! is_wp_error( $response ) ) {
+			// Cache index_exists into option since we didn't return a cached value earlier.
+			update_option( $index_exists_option_name, $response );
+		}
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
