@@ -64,8 +64,11 @@ export class EditorPage {
 	 * Dismisses the Welcome Tour (card) if it is present.
 	 */
 	async dismissWelcomeTour(): Promise< void > {
-		const locator = this.page.locator( selectors.welcomeTourCloseButton );
-		await locator.click( { timeout: 10000 } );
+		try {
+			await this.page.click( selectors.welcomeTourCloseButton );
+		} catch ( err ) {
+			// noop - welcome tour was not found, which is great.
+		}
 	}
 
     /**
