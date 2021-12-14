@@ -911,11 +911,15 @@ class Search {
 	public function is_url_query_cacheable( string $url, $args ): bool {
 		$is_cacheable = false;
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-debug'] ) && 'true' === $_GET['vip-debug'] ) {
+			return $is_cacheable;
+		}
+
 		// Explicitly disable in production for now.
 		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) {
 			return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
 		}
-
 
 		foreach ( [ '_search', '_mget', '_doc' ] as $needle ) {
 			if ( wp_in( $needle, $url ) ) {
@@ -924,6 +928,15 @@ class Search {
 			}
 		}
 
+		/**
+		 * Filter if request is cacheable
+		 * 
+		 * @hook vip_search_cache_es_response
+		 * 
+		 * @param  $url  Remote request URL
+		 * @param  $args Remote request arguments
+		 * @return $is_cacheable bool New cacheable status
+		 */
 		return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
 	}
 
