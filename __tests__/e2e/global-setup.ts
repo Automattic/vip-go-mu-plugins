@@ -18,21 +18,20 @@ async function globalSetup( config: FullConfig ) {
 
   // Save API Nonce to Env Var
   process.env.WP_E2E_NONCE = await page.evaluate('wpApiSettings.nonce');
-
-  // Dismiss editor welcome
-  await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
-  const editorPage = new EditorPage( page );
-  await page.screenshot( { path: './screenshots/screenshot.png'});
-  await editorPage.dismissWelcomeTour();
-
-  // Save signed-in state
-  await page.context().storageState( { path: storageState as string } );
   
   // Adjust Classic Editor plugin settings
   await page.goto( baseURL + '/wp-admin/options-writing.php' )
   await page.click( '#classic-editor-block' );
   await page.click( '#classic-editor-allow' );
   await page.click( '#submit' );
+
+  // Dismiss editor welcome
+  await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
+  const editorPage = new EditorPage( page );
+  await editorPage.dismissWelcomeTour();
+   
+  // Save signed-in state
+  await page.context().storageState( { path: storageState as string } );
   
   await browser.close();
 }
