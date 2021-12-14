@@ -826,10 +826,6 @@ class Search {
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
 		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
-		if ( 'index_exists' === $type && ! is_wp_error( $response ) ) {
-			// Cache index_exists into option since we didn't return a cached value earlier.
-			update_option( $index_exists_option_name, $response );
-		}
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
@@ -883,6 +879,10 @@ class Search {
 			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 		} else {
+			if ( 'index_exists' === $type ) {
+				// Cache index_exists into option since we didn't return a cached value earlier.
+				update_option( $index_exists_option_name, $response );
+			}
 			return $response;
 		}
 	}
