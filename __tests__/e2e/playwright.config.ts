@@ -6,6 +6,7 @@ const config: PlaywrightTestConfig = {
     timeout: 120000,
     reporter: process.env.CI ? 'github' : 'list',
     reportSlowTests: null,
+    workers: 6,
     use: {
       headless: true,
       viewport: { width: 1280, height: 1000 },
