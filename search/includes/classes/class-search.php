@@ -14,7 +14,6 @@ class Search {
 	public const SEARCH_ALERT_SLACK_CHAT            = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL                 = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW                  = 10000;
-	public const INDEX_EXISTENCE_CACHE_KEY_PREFIX   = 'index_exists_';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -63,6 +62,73 @@ class Search {
 		'advanced_seo_description',
 	);
 
+	public const ES_QUERY_RESERVED_NAMES = array(
+		'author',
+		'author__in',
+		'author__not_in',
+		'author_id',
+		'author_name',
+		'cache_results',
+		'cat',
+		'category__and',
+		'category__in',
+		'category__not_in',
+		'category_name',
+		'comment_count',
+		'date_query',
+		'day',
+		'fields',
+		'has_password',
+		'hour',
+		'ignore_sticky_posts',
+		'm',
+		'meta_compare',
+		'meta_key',
+		'meta_query',
+		'meta_value',
+		'meta_value_num',
+		'minute',
+		'monthnum',
+		'name',
+		'nopaging',
+		'offset',
+		'order',
+		'orderby',
+		'p',
+		'page',
+		'page_id',
+		'paged',
+		'pagename',
+		'perm',
+		'post__in',
+		'post__not_in',
+		'post_mime_type',
+		'post_name__in',
+		'post_parent',
+		'post_parent__in',
+		'post_parent__not_in',
+		'post_password',
+		'post_status',
+		'post_type',
+		'posts_per_archive_page',
+		'posts_per_page',
+		's',
+		'second',
+		'tag',
+		'tag__and',
+		'tag__in',
+		'tag__not_in',
+		'tag_id',
+		'tag_slug__and',
+		'tag_slug__in',
+		'tax',
+		'tax_query',
+		'update_post_meta_cache',
+		'update_post_term_cache',
+		'w',
+		'year',
+	);
+
 	public const ALLOWED_DATACENTERS = [
 		'dca',
 		'dfw',
@@ -97,6 +163,8 @@ class Search {
 	public $queue_wait_time;
 	/** @var Queue */
 	public $queue;
+	/** @var Versioning */
+	public $versioning;
 	public $statsd;
 	public $indexables;
 	public $alerts;
@@ -409,6 +477,8 @@ class Search {
 	protected function setup_hooks() {
 		add_action( 'plugins_loaded', [ $this, 'action__plugins_loaded' ] );
 
+		add_action( 'init', [ $this, 'action__init' ] );
+
 		add_filter( 'ep_index_name', [ $this, 'filter__ep_index_name' ], PHP_INT_MAX, 3 ); // We want to enforce the naming, so run this really late.
 		add_filter( 'ep_global_alias', [ $this, 'filter__ep_global_alias' ], PHP_INT_MAX, 2 );
 
@@ -417,6 +487,8 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'get_cached_index_exists_request' ], 9998, 5 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'invalidate_cached_index_exists_request' ], 9998, 5 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
@@ -523,11 +595,12 @@ class Search {
 
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX ); // Try to apply Search settings after other actions in this hook.
 
-		// Log details of failed requests
-		add_action( 'ep_invalid_response', [ $this, 'log_ep_invalid_response' ], PHP_INT_MAX, 4 );
-
 		// Lock search algorithm to 3.5
 		add_filter( 'ep_search_algorithm_version', [ $this, 'filter__ep_search_algorithm_version' ] );
+
+		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
+
+		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
 	}
 
 	protected function load_commands() {
@@ -689,6 +762,74 @@ class Search {
 	}
 
 	/**
+	 * Filter to return value of option that caches index_exists request (if it doesn't exist, cache it).
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function get_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( 'index_exists' !== $type ) {
+			return $request;
+		}
+
+		$option_name = $this->get_index_exists_option_name( $query['url'] );
+		$request     = get_option( $option_name );
+		if ( false === $request ) {
+			// Option doesn't exist, do the request and cache it.
+			$request = vip_safe_wp_remote_request( $query['url'] );
+			if ( ! is_wp_error( $request ) ) {
+				update_option( $option_name, $request );
+			}
+		}
+		
+		return $request;
+	}
+
+	/**
+	 * Invalidate cached index_exists request option on certain index actions.
+	 * 
+	 * @param  array  $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 * @return array  $request  New request
+	 */
+	public function invalidate_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
+		$index_actions = [
+			'delete_index',
+			'refresh_indices',
+			'put_mapping',
+			'bulk_index',
+		];
+		if ( ! in_array( $type, $index_actions, true ) ) {
+			return $request;
+		}
+
+		$option_name = $this->get_index_exists_option_name( $query['url'] );
+		delete_option( $option_name );
+
+		return $request;
+	}
+
+	/**
+	 * Generate option name for cached index_exists request.
+	 * 
+	 * @return string $option_name Name of generated option.
+	 */
+	private function get_index_exists_option_name( $url ) {
+		$parsed_url  = wp_parse_url( $url );
+		$index_name  = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+		$option_name = "es_index_exists_{$index_name}";
+
+		return $option_name;
+	}
+
+	/**
 	 * Filter to intercept EP remote requests.
 	 * 
 	 * @param  array  $request  New remote request response
@@ -718,10 +859,6 @@ class Search {
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		$start_time = microtime( true );
-
-		if ( ! $this->ensure_index_existence( $query['url'], $args ) ) {
-			return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
-		}
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
@@ -783,63 +920,6 @@ class Search {
 		}
 	}
 
-	/**
-	 * We want to ensure that index exists before doing certain type of operation on it.
-	 *
-	 * The reason is that indexing a document, before mappings were put, would result in index with default, incorrect mapping.
-	 * This method avoids this issue by creating the index with correct mapping if the index doesn't exist yet.
-	 */
-	public function ensure_index_existence( $url, $args ) {
-		$method                  = strtoupper( $args['method'] ?? '' );
-		$methods_that_need_index = [ 'POST', 'PUT' ];
-		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
-			// bailing out on methods that would not create index with incorrect mapping
-			return true;
-		}
-
-		$index_name = $this->get_index_name_for_url( $url );
-		if ( ! $index_name ) {
-			return true;
-		}
-
-		$url_without_extra_characters = trim( trim( $url ), '/' );
-		if ( wp_endswith( $url_without_extra_characters, $index_name ) ) {
-			// if the request is towards the index itself (e.g. putting mappings) we will not try to add mapping to avoid infinite cycle
-			return true;
-		}
-
-		$cache_key        = self::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $index_name;
-		$already_verified = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
-
-		if ( $already_verified ) {
-			return true;
-		}
-
-		$index_info = $this->versioning->parse_index_name( $index_name );
-		$indexable  = $this->indexables->get( $index_info['slug'] ?? '' );
-		if ( ! $indexable ) {
-			return true;
-		}
-
-		if ( $index_name != $indexable->get_index_name() ) {
-			// If the indexable we got is using different indexable than the current bail.
-			// This should not happen because the indexable name should have been used to do the request in the first place,
-			// but pushing mapping to a different index would potentiolly corrupt the other index so we are extra carefull
-			return true;
-		}
-
-		if ( ! $indexable->index_exists() ) {
-			$result = $indexable->put_mapping();
-			if ( $result ) {
-				wp_cache_set( $cache_key, true, self::SEARCH_CACHE_GROUP );
-			}
-			return $result;
-		}
-
-		wp_cache_set( $cache_key, true, self::SEARCH_CACHE_GROUP );
-		return true;
-	}
-
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
 		// Not real failed requests, we should not be logging.
 		$skiplist = [
@@ -887,6 +967,13 @@ class Search {
 			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
 
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
+			
+			if ( ! $is_cli ) {
+				global $wp;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+				$url = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+			}
+
 			$this->logger->log(
 				'error',
 				'search_query_error',
@@ -899,6 +986,7 @@ class Search {
 					'is_cli'     => $is_cli,
 					'request'    => $encoded_request,
 					'response'   => $response_body,
+					'url'        => $url ?? null,
 				]
 			);
 		}
@@ -1462,7 +1550,7 @@ class Search {
 
 		// Assume all host names are in the format es-ha-$dc.vipv2.net
 		$matches = array();
-		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', $host, $matches ) ) {
+		if ( preg_match( '/^es-ha[-.](.*)\.vipv2\.net$/', (string) $host, $matches ) ) {
 			$key_parts[] = $matches[1]; // DC of ES node
 			$key_parts[] = 'ha' . $port . '_vipgo'; // HA endpoint e.g. ha9235_vipgo
 		} else {
@@ -1811,8 +1899,11 @@ class Search {
 		return $dc;
 	}
 
+	/**
+	 * @return string|null
+	 */
 	public function get_origin_dc_from_es_endpoint( $url ) {
-		$dc = null;
+		$dc = '';
 
 		if ( ! $url ) {
 			return null;
@@ -1971,45 +2062,6 @@ class Search {
 	}
 
 	/**
-	 * Log failed Elasticpress Query to Logstash
-	 *
-	 * @param $request array Remote request response
-	 * @param $query array Prepared Elasticsearch query
-	 * @param $query_args array Current WP Query arguments
-	 * @param $query_object mixed an instance of one of WP_*_Query classes
-	 *
-	 * @return void
-	 */
-	public function log_ep_invalid_response( $request, $query, $query_args, $query_object ) {
-		$encoded_query = wp_json_encode( $query );
-
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			// Logging a failed query on the CLI.
-			$message = sprintf(
-				'Application %d - ES Query has failed in CLI: %s',
-				FILES_CLIENT_SITE_ID,
-				$encoded_query
-			);
-		} else {
-			// Logging a failed query on a web request.
-			global $wp;
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-			$url     = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
-			$message = sprintf(
-				'Application %d - ES Query in URL %s has failed: %s',
-				FILES_CLIENT_SITE_ID,
-				$url,
-				$encoded_query
-			);
-		}
-
-		$this->logger->log( 'warning', 'search_query_failure', $message, [
-			'request'    => $request,
-			'query_args' => $query_args,
-		] );
-	}
-
-	/**
 	 * Filter out default algorithm version to be used.
 	 *
 	 * @return string
@@ -2038,5 +2090,29 @@ class Search {
 
 			$this->versioning->set_current_version_number( $indexable, $normalized_version );
 		}
+	}
+
+	public function exclude_es_query_reserved_names( $taxonomies ) {
+		return array_merge( $taxonomies, self::ES_QUERY_RESERVED_NAMES );
+	}
+
+	/**
+	 * Do not sync if index does not exist for Indexable.
+	 * 
+	 * @param {boolean} $kill Whether to kill the sync or not.
+	 * @param {string} $indexable_slug Indexable slug.
+	 * 
+	 * @return bool 
+	 */
+	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		if ( $indexable && ! $indexable->index_exists() ) {
+			$kill = true;
+		}
+		return $kill;
+	}
+
+	public function action__init() {
+		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
 	}
 }

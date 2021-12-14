@@ -144,18 +144,31 @@ function set_remote_address( $ip ) {
 	$_SERVER['REMOTE_ADDR'] = $ip;
 }
 
+if ( ! function_exists( __NAMESPACE__ . '\\_get_wpcom_vip_proxy_verification' ) ) {
+	/**
+	 * @access private
+	 * @internal
+	 * @return null|string 
+	 */
+	function _get_wpcom_vip_proxy_verification(): ?string {
+		if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
+			return (string) WPCOM_VIP_PROXY_VERIFICATION;
+		}
+
+		return null;
+	}
+}
+
 /**
  * Return the defined verification key for a site
  *
  * @return string The verification key if available, or a string of random numbers if no key is configured.
  */
 function get_proxy_verification_key() {
-	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
-		return (string) WPCOM_VIP_PROXY_VERIFICATION;
-	}
+	$key = _get_wpcom_vip_proxy_verification();
 
 	// If not properly defined for some reason, return a string of random chars to avoid guessing the key.
-	return bin2hex( random_bytes( 32 ) );
+	return $key ?? bin2hex( random_bytes( 32 ) );
 }
 
 /**

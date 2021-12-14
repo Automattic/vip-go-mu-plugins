@@ -2,18 +2,18 @@
 
 namespace Automattic\VIP\Search;
 
-use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\MockObject\MockObject;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use WP_UnitTestCase;
 
-class Health_Test extends WP_UnitTestCase {
-	public static function setUpBeforeClass(): void {
-		require_once __DIR__ . '/../../../../search/search.php';
-		require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
-		require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
-	}
+require_once __DIR__ . '/../../../../search/search.php';
+require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
+require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+class Health_Test extends WP_UnitTestCase {
 	public function test_get_missing_docs_or_posts_diff() {
 		$found_post_ids     = array( 1, 3, 5 );
 		$found_document_ids = array( 1, 3, 7 );
@@ -287,9 +287,20 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_last_post_id() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+
+		$last_db_post_id = $post->ID;
+		$last_es_post_id = 0;
 
 		$last_post_id = \Automattic\VIP\Search\Health::get_last_post_id();
+
+		$this->assertEquals( $last_post_id, max( $last_db_post_id, $last_es_post_id ) );
+	}
+
+	public function test_get_last_db_post_id() {
+		$post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+
+		$last_post_id = \Automattic\VIP\Search\Health::get_last_db_post_id();
 
 		$this->assertEquals( $post->ID, $last_post_id );
 	}
@@ -1076,9 +1087,13 @@ class Health_Test extends WP_UnitTestCase {
 		/** @var Search&MockObject */
 		$mock_search = $this->createMock( Search::class );
 
-		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
-			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
+		/** @var Versioning&MockObject */
+		$versioning = $this->getMockBuilder( Versioning::class )
+			->enableProxyingToOriginalMethods()
+			->setMethods( [ 'get_current_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
 			->getMock();
+
+		$mock_search->versioning = $versioning;
 
 		// If we're healing a specific version, make sure we actually switch
 		if ( isset( $options['index_version'] ) ) {
@@ -1089,6 +1104,8 @@ class Health_Test extends WP_UnitTestCase {
 			$mock_search->versioning->expects( $this->once() )
 				->method( 'reset_current_version_number' );
 		}
+
+		$versioning->method( 'get_current_version_number' )->willReturn( $options['index_version'] ?? 1 );
 
 		$health = new Health( $mock_search );
 

@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP;
 
+use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
@@ -9,17 +10,15 @@ require_once __DIR__ . '/../../../lib/environment/class-environment.php';
 
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Environment_Test extends TestCase {
 	use ExpectPHPException;
 
 	private $error_reporting;
 
 	protected function setUp(): void {
+		parent::setUp();
 		$this->error_reporting = error_reporting();
+		Constant_Mocker::clear();
 	}
 
 	protected function tearDown(): void {
@@ -28,11 +27,11 @@ class Environment_Test extends TestCase {
 	}
 
 	public function get_var_standard_env() {
-		define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
+		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
 	public function get_var_legacy_env() {
-		define( 'MY_VAR', 'MY_VAR' );
+		Constant_Mocker::define( 'MY_VAR', 'MY_VAR' );
 	}
 
 	// tests the use-case where $key parameter is not found

@@ -7,4 +7,6 @@
  * License: GPL2+
  */
 
+// Note: Special Action Scheduler functionality can be found in /cron/action-scheduler-dynamic-queue.php.
+
 require_once __DIR__ . '/logging.php';
