@@ -30,10 +30,10 @@ jobs:
       - run: vip --slug=e2e-test-site dev-env start
       - run: docker exec e2etestsite_php_1 wp core update --version=${{ github.event.inputs.wpversion }} --allow-root --force
       - run: docker exec e2etestsite_php_1 wp plugin install --activate --allow-root classic-editor
-      - run: cd ./vip-go-mu-plugins && npm run test-e2e -- __tests__/e2e/specs/post__edit.spec.ts
+      - run: cd ./vip-go-mu-plugins && npm run test-e2e
       - name: Archive test results
         uses: actions/upload-artifact@v2
-        if: always()
+        if: failure()
         with:
           name: test-results
           path: vip-go-mu-plugins/test-results
