@@ -15,7 +15,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
  * so let's just tell CF7 to put them in `/tmp/cf7/`.
  */
 if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
-	define( 'WPCF7_UPLOADS_TMP_DIR', get_temp_dir() . '/cf7/' );
+	define( 'WPCF7_UPLOADS_TMP_DIR', get_temp_dir() . 'cf7/' );
 }
 
 /**
