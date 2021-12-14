@@ -65,7 +65,7 @@ export class EditorPage {
 	 */
 	async dismissWelcomeTour(): Promise< void > {
 		const closeButton = await this.page.locator( selectors.welcomeTourCloseButton );
-		if ( await closeButton.isVisible( { timeout: 5000 } ) ) {
+		if ( await closeButton.isVisible( { timeout: 10000 } ) ) {
 			await closeButton.click();
 		}
 	}
