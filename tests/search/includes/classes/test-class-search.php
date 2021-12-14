@@ -1073,6 +1073,30 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertFalse( $enabled );
 	}
 
+	/**
+	 * Ensure we only cache specific endpoints.
+	 */
+	public function test__is_url_query_cacheable() {
+		$es = new \Automattic\VIP\Search\Search();
+		$es->init();
+
+		$urls = [
+			'http://vip-search:9200/vip-200508-post-1/_search',
+			'http://vip-search:9200/_mget?fields=blog_id,post_id,author_id',
+			'http://vip-search:9200/vip-200508-post-1/_doc/48',
+		];
+		$args = [];
+
+		foreach ( $urls as $url ) {
+			$cacheable = $es->is_url_query_cacheable( $url, $args );
+			$this->assertTrue( $cacheable );
+		}
+
+		$_GET['vip-debug'] = true;
+		$cacheable         = $es->is_url_query_cacheable( $url[0], $args );
+		$this->assertFalse( $cacheable );
+	}
+
 	/*
 	 * Ensure that is_query_integration_enabled() is false by default with no options/constants
 	 */

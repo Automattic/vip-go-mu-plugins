@@ -895,8 +895,8 @@ class Search {
 				// Cache index_exists into option since we didn't return a cached value earlier.
 				update_option( $index_exists_option_name, $response );
 			} elseif ( $is_cacheable ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
-				wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, mt_rand( 60, 70 ) );
+				// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+				wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, wp_rand( 60, 70 ) );
 			}
 			return $response;
 		}
