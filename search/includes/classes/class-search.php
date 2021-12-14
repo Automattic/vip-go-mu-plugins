@@ -948,15 +948,8 @@ class Search {
 				$this->maybe_increment_stat( $statsd_prefix . $stat );
 			}
 
-			$this->logger->log(
-				'error',
-				'search_http_error',
-				implode( ';', $error_messages ),
-				[
-					'is_cli'  => $is_cli,
-					'request' => $encoded_request,
-				]
-			);
+			$error_message = implode( ';', $error_messages );
+			$error_type    = 'search_http_error';
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
@@ -964,32 +957,31 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
-			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
-
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-			
-			if ( ! $is_cli ) {
-				global $wp;
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-				$url = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
-			}
-
-			$this->logger->log(
-				'error',
-				'search_query_error',
-				$error_message,
-				[
-					'error_type' => $response_error['type'] ?? 'Unknown error type',
-					'root_cause' => $response_error['root_cause'] ?? null,
-					'query'      => $query_for_logging,
-					'backtrace'  => wp_debug_backtrace_summary(),   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
-					'is_cli'     => $is_cli,
-					'request'    => $encoded_request,
-					'response'   => $response_body,
-					'url'        => $url ?? null,
-				]
-			);
+			$error_type    = 'search_query_error';
 		}
+
+		if ( ! $is_cli ) {
+			global $wp;
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+		}
+		$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
+		$this->logger->log(
+			'error',
+			$error_type,
+			$error_message,
+			[
+				'error_type' => $response_error['type'] ?? 'Unknown error type',
+				'root_cause' => $response_error['root_cause'] ?? null,
+				'query'      => $query_for_logging,
+				'backtrace'  => wp_debug_backtrace_summary(),   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+				'is_cli'     => $is_cli,
+				'request'    => $encoded_request,
+				'response'   => $response_body ?? null,
+				'url'        => $request_url_for_logging ?? null,
+			]
+		);
 	}
 
 	/**
