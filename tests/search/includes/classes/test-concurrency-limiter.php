@@ -10,6 +10,8 @@ use WP_Error;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../../../search/includes/classes/class-concurrency-limiter.php';
+require_once __DIR__ . '/../../../../search/includes/classes/concurrency-limiter/class-apcu-backend.php';
+require_once __DIR__ . '/../../../../search/includes/classes/concurrency-limiter/class-semaphore-backend.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 

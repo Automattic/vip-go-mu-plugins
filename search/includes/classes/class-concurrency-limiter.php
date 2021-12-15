@@ -2,15 +2,11 @@
 
 namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Search\ConcurrencyLimiter\APCu_Backend;
 use Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface;
 use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
-use Automattic\VIP\Search\ConcurrencyLimiter\Semaphore_Backend;
 use WP_Error;
 
-require_once __DIR__ . '/concurrency-limiter/class-apcu-backend.php';
 require_once __DIR__ . '/concurrency-limiter/class-object-cache-backend.php';
-require_once __DIR__ . '/concurrency-limiter/class-semaphore-backend.php';
 
 class Concurrency_Limiter {
 	/** @var int */
@@ -33,16 +29,11 @@ class Concurrency_Limiter {
 	}
 
 	public function init(): bool {
-		if ( defined( 'WP_TESTS_DOMAIN' ) ) {
-			$backend_class = Object_Cache_Backend::class;
-		} else {
-			$backend_class = 'Windows' === PHP_OS_FAMILY ? APCu_Backend::class : Semaphore_Backend::class;
-		}
-
+		$backend_class = Object_Cache_Backend::class;
 		$backend_class = apply_filters( 'vip_es_concurrency_limit_backend', $backend_class );
 
 		if ( ! empty( $backend_class ) && is_subclass_of( $backend_class, BackendInterface::class, true ) ) {
-			/** @psalm-var class-string $backend_class */
+			/** @psalm-var class-string<BackendInterface> $backend_class */
 			if ( $backend_class::is_supported() ) {
 				$this->max_concurrent_requests = (int) apply_filters( 'vip_es_max_concurrent_requests', $this->max_concurrent_requests );
 				$this->cache_ttl               = (int) apply_filters( 'vip_es_cache_ttl', $this->cache_ttl );
