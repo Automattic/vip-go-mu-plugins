@@ -883,7 +883,8 @@ class Search {
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 		}
 
-		if ( 'index_exists' === $type ) {
+		$valid_index_exists_response_codes = [ 200, 404 ];
+		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
 			update_option( $index_exists_option_name, $response );
 		}
