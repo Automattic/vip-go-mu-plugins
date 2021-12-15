@@ -860,6 +860,9 @@ class Search {
 					$warning_messages = array( $warning_messages );
 				}
 
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+				$backtrace       = wp_debug_backtrace_summary();
+				$sanitized_query = $this->sanitize_ep_query_for_logging( $query );
 				foreach ( $warning_messages as $message ) {
 					trigger_error( esc_html( $message ), \E_USER_WARNING );
 					\Automattic\VIP\Logstash\log2logstash( array(
@@ -867,8 +870,8 @@ class Search {
 						'feature'  => 'search_es_warning',
 						'message'  => $message,
 						'extra'    => [
-							'query'     => $this->sanitize_ep_query_for_logging( $query ),
-							'backtrace' => wp_debug_backtrace_summary(),    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+							'query'     => $sanitized_query,
+							'backtrace' => $backtrace,
 						],
 					) );
 				}
@@ -878,13 +881,14 @@ class Search {
 		if ( is_wp_error( $response ) ) {
 			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
-		} else {
-			if ( 'index_exists' === $type ) {
-				// Cache index_exists into option since we didn't return a cached value earlier.
-				update_option( $index_exists_option_name, $response );
-			}
-			return $response;
 		}
+
+    if ( 'index_exists' === $type ) {
+			// Cache index_exists into option since we didn't return a cached value earlier.
+			update_option( $index_exists_option_name, $response );
+		}
+
+		return $response;
 	}
 
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
@@ -963,11 +967,9 @@ class Search {
 	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
 	 */
 	public function sanitize_ep_query_for_logging( $query ) {
-		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
-			return $query;
+		if ( isset( $query['args']['headers']['Authorization'] ) ) {
+			$query['args']['headers']['Authorization'] = '<redacted>';
 		}
-
-		$query['args']['headers']['Authorization'] = '<redacted>';
 
 		return $query;
 	}

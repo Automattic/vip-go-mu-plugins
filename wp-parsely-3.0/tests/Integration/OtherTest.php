@@ -197,4 +197,18 @@ final class OtherTest extends TestCase {
 		self::set_options( array( 'apikey' => '' ) );
 		self::assertSame( '', self::$parsely->get_api_key() );
 	}
+
+	/**
+	 * Test if the `get_options` method can handle a corrupted (not an array) value in the database.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @covers \Parsely\Parsely::get_options
+	 */
+	public function test_corrupted_options(): void {
+		update_option( Parsely::OPTIONS_KEY, 'someinvalidvalue' );
+
+		$options = self::$parsely->get_options();
+		self::assertSame( self::EMPTY_DEFAULT_OPTIONS, $options );
+	}
 }
