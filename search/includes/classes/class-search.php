@@ -14,7 +14,6 @@ class Search {
 	public const SEARCH_ALERT_SLACK_CHAT            = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL                 = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW                  = 10000;
-	public const INDEX_EXISTENCE_CACHE_KEY_PREFIX   = 'index_exists_';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -861,10 +860,6 @@ class Search {
 
 		$start_time = microtime( true );
 
-		if ( ! $this->ensure_index_existence( $query['url'], $args ) ) {
-			return new \WP_Error( 'vip-search-index-not-created', 'There was an error ensuring the index exists before ES request' );
-		}
-
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
 		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
@@ -923,63 +918,6 @@ class Search {
 		} else {
 			return $response;
 		}
-	}
-
-	/**
-	 * We want to ensure that index exists before doing certain type of operation on it.
-	 *
-	 * The reason is that indexing a document, before mappings were put, would result in index with default, incorrect mapping.
-	 * This method avoids this issue by creating the index with correct mapping if the index doesn't exist yet.
-	 */
-	public function ensure_index_existence( $url, $args ) {
-		$method                  = strtoupper( $args['method'] ?? '' );
-		$methods_that_need_index = [ 'POST', 'PUT' ];
-		if ( ! in_array( $method, $methods_that_need_index, true ) ) {
-			// bailing out on methods that would not create index with incorrect mapping
-			return true;
-		}
-
-		$index_name = $this->get_index_name_for_url( $url );
-		if ( ! $index_name ) {
-			return true;
-		}
-
-		$url_without_extra_characters = trim( trim( $url ), '/' );
-		if ( wp_endswith( $url_without_extra_characters, $index_name ) ) {
-			// if the request is towards the index itself (e.g. putting mappings) we will not try to add mapping to avoid infinite cycle
-			return true;
-		}
-
-		$cache_key        = self::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $index_name;
-		$already_verified = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
-
-		if ( $already_verified ) {
-			return true;
-		}
-
-		$index_info = $this->versioning->parse_index_name( $index_name );
-		$indexable  = $this->indexables->get( $index_info['slug'] ?? '' );
-		if ( ! $indexable ) {
-			return true;
-		}
-
-		if ( $index_name != $indexable->get_index_name() ) {
-			// If the indexable we got is using different indexable than the current bail.
-			// This should not happen because the indexable name should have been used to do the request in the first place,
-			// but pushing mapping to a different index would potentiolly corrupt the other index so we are extra carefull
-			return true;
-		}
-
-		if ( ! $indexable->index_exists() ) {
-			$result = $indexable->put_mapping();
-			if ( $result ) {
-				wp_cache_set( $cache_key, true, self::SEARCH_CACHE_GROUP );
-			}
-			return $result;
-		}
-
-		wp_cache_set( $cache_key, true, self::SEARCH_CACHE_GROUP );
-		return true;
 	}
 
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
