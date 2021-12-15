@@ -2,11 +2,15 @@
 
 namespace Automattic\VIP\Search;
 
+use Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface;
+use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
 use WP_Error;
 
-class Concurrency_Limiter {
-	const KEY_NAME = 'vip_es_request_count';
+use function Automattic\VIP\Logstash\log2logstash;
 
+require_once __DIR__ . '/concurrency-limiter/class-object-cache-backend.php';
+
+class Concurrency_Limiter {
 	/** @var int */
 	private $cache_ttl = 60;
 
@@ -16,27 +20,49 @@ class Concurrency_Limiter {
 	/** @var bool */
 	private $doing_request = false;
 
+	/** @var bool */
+	private $should_fail = false;
+
+	/** @var BackendInterface|null */
+	private $backend = null;
+
 	public function __construct() {
-		if ( function_exists( 'apcu_enabled' ) && apcu_enabled() ) {
-			$this->init();
-		}
+		$this->init();
 	}
 
-	public function __destruct() {
-		if ( $this->doing_request ) {
-			$this->dec_key();
+	public function init(): bool {
+		$backend_class = Object_Cache_Backend::class;
+		$backend_class = apply_filters( 'vip_es_concurrency_limit_backend', $backend_class );
+
+		if ( ! empty( $backend_class ) && is_subclass_of( $backend_class, BackendInterface::class, true ) ) {
+			/** @psalm-var class-string<BackendInterface> $backend_class */
+			if ( $backend_class::is_supported() ) {
+				$this->max_concurrent_requests = (int) apply_filters( 'vip_es_max_concurrent_requests', $this->max_concurrent_requests );
+				$this->cache_ttl               = (int) apply_filters( 'vip_es_cache_ttl', $this->cache_ttl );
+
+				/** @var BackendInterface */
+				$this->backend = new $backend_class();
+				$this->backend->initialize( $this->max_concurrent_requests, $this->cache_ttl );
+
+				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
+				add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
+				// We will remove this one once we have enough stats
+				apply_filters( 'vip_es_should_fail_excessive_request', [ $this, 'vip_es_should_fail_excessive_request' ] );
+				return true;
+			}
+
+			trigger_error( esc_html( sprintf( 'Backend "%s" is not supported.', $backend_class ) ), E_USER_WARNING );
 		}
+
+		return false;
 	}
 
-	public function init(): void {
-		// Ensure the key exists and is numeric
-		$this->get_key();
+	public function is_enabled(): bool {
+		return null !== $this->backend;
+	}
 
-		$this->max_concurrent_requests = (int) apply_filters( 'vip_es_max_concurrent_requests', $this->max_concurrent_requests );
-		$this->cache_ttl               = (int) apply_filters( 'vip_es_cache_ttl', $this->cache_ttl );
-
-		add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
-		add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
+	public function get_backend(): ?BackendInterface {
+		return $this->backend;
 	}
 
 	public function cleanup(): void {
@@ -54,12 +80,11 @@ class Concurrency_Limiter {
 		// This filter can be called inside a loop; we need to make sure not to increment the counter more than once
 		if ( ! $this->doing_request ) {
 			$this->doing_request = true;
-			$value               = $this->inc_key();
-		} else {
-			$value = $this->get_key();
+			$this->should_fail   = ! $this->backend->inc_value();
 		}
 
-		return $value <= $this->max_concurrent_requests ? $response : new WP_Error( 503, 'Concurrency limit exceeded' );
+		$fail = apply_filters( 'vip_es_should_fail_excessive_request', $this->should_fail );
+		return $fail ? new WP_Error( 503, 'Concurrency limit exceeded' ) : $response;
 	}
 
 	/**
@@ -67,37 +92,30 @@ class Concurrency_Limiter {
 	 */
 	public function ep_remote_request(): void {
 		if ( $this->doing_request ) {
-			$this->dec_key();
+			$this->backend->dec_value();
 			$this->doing_request = false;
+			$this->should_fail   = false;
 		}
 	}
 
-	protected function get_key(): int {
-		$value = apcu_entry( self::KEY_NAME, '__return_zero', $this->cache_ttl );
-		if ( ! is_int( $value ) ) {
-			$value   = 0;
-			$success = apcu_store( self::KEY_NAME, $value, $this->cache_ttl );
-			if ( ! $success ) {
-				// Out of memory
-				$value = PHP_INT_MAX;
-			}
+	/**
+	 * We use this filter to log limit overruns to logstash.
+	 * Currently, we allow all requests to ES while we are gathering stats.
+	 * 
+	 * @param bool $should_fail 
+	 * @return bool 
+	 */
+	public function vip_es_should_fail_excessive_request( bool $should_fail ): bool {
+		if ( $should_fail ) {
+			log2logstash( [
+				'severity' => 'warning',
+				'feature'  => 'es_concurrency_limiter',
+				'message'  => 'Concurrency limit exceeded',
+			] );
+
+			$should_fail = false;
 		}
 
-		return $value;
-	}
-
-	protected function inc_key(): int {
-		$success = null;
-		$value   = apcu_inc( self::KEY_NAME, 1, $success, $this->cache_ttl );
-		if ( $success ) {
-			return $value;
-		}
-
-		return PHP_INT_MAX;
-	}
-
-	protected function dec_key(): void {
-		$success = null;
-		apcu_dec( self::KEY_NAME, 1, $success, $this->cache_ttl );
+		return $should_fail;
 	}
 }
