@@ -647,6 +647,11 @@ class Parsely {
 	 */
 	public function get_options(): array {
 		$options = get_option( self::OPTIONS_KEY, $this->option_defaults );
+
+		if ( ! is_array( $options ) ) {
+			return $this->option_defaults;
+		}
+
 		return array_merge( $this->option_defaults, $options );
 	}
 
