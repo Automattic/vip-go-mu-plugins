@@ -1,28 +1,33 @@
-import { Page } from "@playwright/test";
+/**
+ * External dependencies
+ */
+import { Page } from '@playwright/test';
 
 export class PostListPage {
     readonly page: Page;
 
     /**
-     * @param {import('playwright').Page} page 
+     *  Constructs an instance of the component.
+     *
+     * @param { Page } page The underlying page
      */
-    constructor(page: Page) {
-      this.page = page;
+    constructor( page: Page ) {
+        this.page = page;
     }
 
     /**
      * Navigate to Post List page
-     * @returns {Promise<void>} No return value.
      */
-    async visit(): Promise< void > {
-      await this.page.goto( '/wp-admin/edit.php' );
+    async visit(): Promise<void> {
+        await this.page.goto( '/wp-admin/edit.php' );
     }
 
     /**
      * Edit Post by ID
-     * @returns {Promise<void>} No return value.
+     *
+     * @param {string} postID ID of the post to be edited
      */
-    async editPostByID( postID: string): Promise< void > {
-      await this.page.click( `#post-${postID} a.row-title` );
+    async editPostByID( postID: string ): Promise<void> {
+        await this.page.click( `#post-${ postID } a.row-title` );
     }
 }

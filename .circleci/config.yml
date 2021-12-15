@@ -21,7 +21,6 @@ workflows:
       - php80-build-multisite-nightly
       - php80-build-singlesite-nightly
       - search-dev-tools
-      - e2e-tests
 
   after-master-merge:
     jobs:

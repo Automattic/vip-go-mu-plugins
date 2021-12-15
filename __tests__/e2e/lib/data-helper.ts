@@ -1,3 +1,6 @@
+/**
+ * External dependencies
+ */
 import phrase from 'asana-phrase';
 
 /**
@@ -6,16 +9,16 @@ import phrase from 'asana-phrase';
  * @param {string[]|string} words Either string or array of strings to be converted to TitleCase.
  * @returns {string} String with each distinct word converted to TitleCase.
  */
- export function toTitleCase( words: string[] | string ): string {
-	if ( typeof words === 'string' ) {
-		words = words.trim().split( ' ' );
-	}
+export function toTitleCase( words: string[] | string ): string {
+    if ( typeof words === 'string' ) {
+        words = words.trim().split( ' ' );
+    }
 
-	const result = words.map( function ( word ) {
-		return word.charAt( 0 ).toUpperCase() + word.slice( 1 );
-	} );
+    const result = words.map( word => {
+        return word.charAt( 0 ).toUpperCase() + word.slice( 1 );
+    } );
 
-	return result.join( ' ' );
+    return result.join( ' ' );
 }
 
 /**
@@ -24,6 +27,6 @@ import phrase from 'asana-phrase';
  * @returns {string} Generated text.
  */
 export function getRandomPhrase(): string {
-	const generated: Array< string > = phrase.default32BitFactory().randomPhrase();
-	return toTitleCase( generated );
+    const generated: Array<string> = phrase.default32BitFactory().randomPhrase();
+    return toTitleCase( generated );
 }
