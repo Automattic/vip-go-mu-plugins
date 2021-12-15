@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - 2021-11-26
+## [3.0.0] - 2021-12-15
 
 ## Important information about this release
 
@@ -71,6 +71,7 @@ If you are using the plugin without any code-level customizations (for instance,
   - The function used to return different return types, now it always returns `void`.
 - Consistent return type on `insert_parsely_page`. [#443](https://github.com/Parsely/wp-parsely/pull/443)
   - The function used to return `string|null|array`, now it returns `void`. 
+- Fixed fatal error when the option in the database was corrupted. [#540](https://github.com/Parsely/wp-parsely/pull/540)
 - Tests: Stop using deprecated `setMethods()` method. [#427](https://github.com/Parsely/wp-parsely/pull/427)
 - e2e tests: fix watch command. [#476](https://github.com/Parsely/wp-parsely/pull/476)
 - Fix non-working README code example. [#439](https://github.com/Parsely/wp-parsely/pull/439)
