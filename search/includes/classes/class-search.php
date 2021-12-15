@@ -495,8 +495,6 @@ class Search {
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'get_cached_index_exists_request' ], 9998, 5 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'invalidate_cached_index_exists_request' ], 9998, 5 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
@@ -770,65 +768,6 @@ class Search {
 	}
 
 	/**
-	 * Filter to return value of option that caches index_exists request (if it doesn't exist, cache it).
-	 * 
-	 * @param  array  $request  New remote request response
-	 * @param  array  $query    Remote request arguments
-	 * @param  array  $args     Request arguments
-	 * @param  array  $failures Number of failures
-	 * @param  string $type     Type of request
-	 * @return array  $request  New request
-	 */
-	public function get_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
-		if ( is_wp_error( $request ) && 503 === $request->get_error_code() ) {
-			return $request;
-		}
-
-		if ( 'index_exists' !== $type ) {
-			return $request;
-		}
-
-		$option_name = $this->get_index_exists_option_name( $query['url'] );
-		$request     = get_option( $option_name );
-		if ( false === $request ) {
-			// Option doesn't exist, do the request and cache it.
-			$request = vip_safe_wp_remote_request( $query['url'] );
-			if ( ! is_wp_error( $request ) ) {
-				update_option( $option_name, $request );
-			}
-		}
-		
-		return $request;
-	}
-
-	/**
-	 * Invalidate cached index_exists request option on certain index actions.
-	 * 
-	 * @param  array  $request  New remote request response
-	 * @param  array  $query    Remote request arguments
-	 * @param  array  $args     Request arguments
-	 * @param  array  $failures Number of failures
-	 * @param  string $type     Type of request
-	 * @return array  $request  New request
-	 */
-	public function invalidate_cached_index_exists_request( $request, $query, $args, $failures = 0, $type = null ) {
-		$index_actions = [
-			'delete_index',
-			'refresh_indices',
-			'put_mapping',
-			'bulk_index',
-		];
-		if ( ! in_array( $type, $index_actions, true ) ) {
-			return $request;
-		}
-
-		$option_name = $this->get_index_exists_option_name( $query['url'] );
-		delete_option( $option_name );
-
-		return $request;
-	}
-
-	/**
 	 * Generate option name for cached index_exists request.
 	 * 
 	 * @return string $option_name Name of generated option.
@@ -856,6 +795,26 @@ class Search {
 			return $request;
 		}
 
+		$index_exists_invalidation_actions = [
+			'delete_index',
+			'refresh_indices',
+			'put_mapping',
+			'bulk_index',
+		];
+		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
+			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
+			$cached_index_exists_request = get_option( $index_exists_option_name );
+			if ( false !== $cached_index_exists_request ) {
+				if ( 'index_exists' === $type ) {
+					// Return cached index_exists option.
+					return $cached_index_exists_request;
+				} else {
+					// Invalidate index_exists caching on certain actions.
+					delete_option( $index_exists_option_name );
+				}
+			}
+		}
+		
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -913,6 +872,9 @@ class Search {
 					$warning_messages = array( $warning_messages );
 				}
 
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+				$backtrace       = wp_debug_backtrace_summary();
+				$sanitized_query = $this->sanitize_ep_query_for_logging( $query );
 				foreach ( $warning_messages as $message ) {
 					trigger_error( esc_html( $message ), \E_USER_WARNING );
 					\Automattic\VIP\Logstash\log2logstash( array(
@@ -920,8 +882,8 @@ class Search {
 						'feature'  => 'search_es_warning',
 						'message'  => $message,
 						'extra'    => [
-							'query'     => $this->sanitize_ep_query_for_logging( $query ),
-							'backtrace' => wp_debug_backtrace_summary(),    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+							'query'     => $sanitized_query,
+							'backtrace' => $backtrace,
 						],
 					) );
 				}
@@ -931,9 +893,14 @@ class Search {
 		if ( is_wp_error( $response ) ) {
 			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
-		} else {
-			return $response;
 		}
+
+		if ( 'index_exists' === $type ) {
+			// Cache index_exists into option since we didn't return a cached value earlier.
+			update_option( $index_exists_option_name, $response );
+		}
+
+		return $response;
 	}
 
 	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
@@ -964,15 +931,8 @@ class Search {
 				$this->maybe_increment_stat( $statsd_prefix . $stat );
 			}
 
-			$this->logger->log(
-				'error',
-				'search_http_error',
-				implode( ';', $error_messages ),
-				[
-					'is_cli'  => $is_cli,
-					'request' => $encoded_request,
-				]
-			);
+			$error_message = implode( ';', $error_messages );
+			$error_type    = 'search_http_error';
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
@@ -980,43 +940,39 @@ class Search {
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
-			$query_for_logging = $this->sanitize_ep_query_for_logging( $query );
-
 			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-			
-			if ( ! $is_cli ) {
-				global $wp;
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-				$url = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
-			}
-
-			$this->logger->log(
-				'error',
-				'search_query_error',
-				$error_message,
-				[
-					'error_type' => $response_error['type'] ?? 'Unknown error type',
-					'root_cause' => $response_error['root_cause'] ?? null,
-					'query'      => $query_for_logging,
-					'backtrace'  => wp_debug_backtrace_summary(),   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
-					'is_cli'     => $is_cli,
-					'request'    => $encoded_request,
-					'response'   => $response_body,
-					'url'        => $url ?? null,
-				]
-			);
+			$error_type    = 'search_query_error';
 		}
+
+		if ( ! $is_cli ) {
+			global $wp;
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+		}
+		$this->logger->log(
+			'error',
+			$error_type,
+			$error_message,
+			[
+				'error_type' => $response_error['type'] ?? 'Unknown error type',
+				'root_cause' => $response_error['root_cause'] ?? null,
+				'query'      => $this->sanitize_ep_query_for_logging( $query ),
+				'backtrace'  => wp_debug_backtrace_summary(),   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+				'is_cli'     => $is_cli,
+				'request'    => $encoded_request,
+				'response'   => $response_body ?? null,
+				'url'        => $request_url_for_logging ?? null,
+			]
+		);
 	}
 
 	/**
 	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
 	 */
 	public function sanitize_ep_query_for_logging( $query ) {
-		if ( ! isset( $query['args']['headers']['Authorization'] ) ) {
-			return $query;
+		if ( isset( $query['args']['headers']['Authorization'] ) ) {
+			$query['args']['headers']['Authorization'] = '<redacted>';
 		}
-
-		$query['args']['headers']['Authorization'] = '<redacted>';
 
 		return $query;
 	}
