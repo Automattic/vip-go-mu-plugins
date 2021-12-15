@@ -21,6 +21,8 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 
 		remove_all_filters( 'ep_do_intercept_request' );
 		remove_all_actions( 'ep_remote_request' );
+
+		remove_all_actions( 'vip_es_should_fail_excessive_request' );
 	}
 
 	/**

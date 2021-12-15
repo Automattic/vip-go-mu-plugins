@@ -6,6 +6,8 @@ use Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface;
 use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
 use WP_Error;
 
+use function Automattic\VIP\Logstash\log2logstash;
+
 require_once __DIR__ . '/concurrency-limiter/class-object-cache-backend.php';
 
 class Concurrency_Limiter {
@@ -44,6 +46,8 @@ class Concurrency_Limiter {
 
 				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
 				add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
+				// We will remove this one once we have enough stats
+				apply_filters( 'vip_es_should_fail_excessive_request', [ $this, 'vip_es_should_fail_excessive_request' ] );
 				return true;
 			}
 
@@ -79,7 +83,8 @@ class Concurrency_Limiter {
 			$this->should_fail   = ! $this->backend->inc_value();
 		}
 
-		return $this->should_fail ? new WP_Error( 503, 'Concurrency limit exceeded' ) : $response;
+		$fail = apply_filters( 'vip_es_should_fail_excessive_request', $this->should_fail );
+		return $fail ? new WP_Error( 503, 'Concurrency limit exceeded' ) : $response;
 	}
 
 	/**
@@ -91,5 +96,26 @@ class Concurrency_Limiter {
 			$this->doing_request = false;
 			$this->should_fail   = false;
 		}
+	}
+
+	/**
+	 * We use this filter to log limit overruns to logstash.
+	 * Currently, we allow all requests to ES while we are gathering stats.
+	 * 
+	 * @param bool $should_fail 
+	 * @return bool 
+	 */
+	public function vip_es_should_fail_excessive_request( bool $should_fail ): bool {
+		if ( $should_fail ) {
+			log2logstash( [
+				'severity' => 'warning',
+				'feature'  => 'es_concurrency_limiter',
+				'message'  => 'Concurrency limit exceeded',
+			] );
+
+			$should_fail = false;
+		}
+
+		return $should_fail;
 	}
 }
