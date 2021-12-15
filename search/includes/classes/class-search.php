@@ -789,11 +789,13 @@ class Search {
 			'put_mapping',
 			'bulk_index',
 		];
+		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
 			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
 			$cached_index_exists_request = get_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
-				if ( 'index_exists' === $type ) {
+				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
+				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
 					// Return cached index_exists option.
 					return $cached_index_exists_request;
 				} else {
@@ -883,7 +885,6 @@ class Search {
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 		}
 
-		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
 			update_option( $index_exists_option_name, $response );
