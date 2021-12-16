@@ -2,5 +2,6 @@
     "*.php": [
         "phplint",
         "vendor/bin/phpcs"
-    ]
+    ],
+    "__tests__/e2e/*": "lint-e2e"
 }
