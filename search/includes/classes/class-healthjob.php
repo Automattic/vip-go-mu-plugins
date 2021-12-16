@@ -118,7 +118,7 @@ class HealthJob {
 
 		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
 
-		if ( is_wp_error( $results ) ) {
+		if ( is_wp_error( $results ) && 'content_validation_already_ongoing' !== $results->get_error_code() ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			wpcom_vip_irc( '#vip-go-es-alerts', $message, 2 );
 		} elseif ( ! empty( $results ) ) {
