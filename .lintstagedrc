@@ -3,5 +3,7 @@
         "phplint",
         "vendor/bin/phpcs"
     ],
-    "__tests__/e2e/*": "lint-e2e"
+    "__tests__/e2e/**/*.{js,ts}": [
+        "npm run lint-e2e"
+    ]
 }

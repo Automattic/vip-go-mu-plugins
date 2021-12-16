@@ -8,7 +8,7 @@
     "phpcs": "vendor/bin/phpcs --cache",
     "phpcs:fix": "vendor/bin/phpcbf",
     "lint": "npm run phplint && npm run phpcs",
-    "lint-e2e": "eslint -c __tests__/e2e/.eslintrc.js",
+    "lint-e2e": "eslint -c __tests__/e2e/.eslintrc.js --fix",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
     "prepare": "husky install",
     "setup-e2e-env": "./__tests__/e2e/bin/setup-env.sh",
