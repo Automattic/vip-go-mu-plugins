@@ -245,6 +245,10 @@ class Search {
 
 		require_once __DIR__ . '/class-queue.php';
 
+		require_once __DIR__ . '/class-syncmanager-helper.php';
+
+		SyncManager_Helper::instance();
+
 		$this->queue = new Queue();
 		$this->queue->init();
 
@@ -890,6 +894,27 @@ class Search {
 			update_option( $index_exists_option_name, $response );
 		}
 
+		if ( 'index_exists' === $type && 401 === $response_code ) {
+			if ( ! $is_cli ) {
+				global $wp;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+				$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+			}
+			\Automattic\VIP\Logstash\log2logstash( array(
+				'severity' => 'warning',
+				'feature'  => 'search_401_response',
+				'message'  => '401 response returned',
+				'extra'    => [
+					'query'       => wp_json_encode( $query ),
+					'args'        => wp_json_encode( $args ),
+					'backtrace'   => wp_debug_backtrace_summary(), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+					'is_cli'      => defined( 'WP_CLI' ) && WP_CLI,
+					'request_url' => $request_url_for_logging ?? null,
+					'es_shield'   => defined( 'ES_SHIELD' ) && ES_SHIELD,
+				],
+			) );
+		}
+
 		return $response;
 	}
 
@@ -1157,15 +1182,21 @@ class Search {
 		$queue_stats = $this->queue->get_queue_stats();
 
 		if ( $queue_stats->average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
-			$message = sprintf(
-				'Average index queue wait time for application %d - %s is currently %d seconds. There are %d items in the queue and the oldest item is %d seconds old',
-				FILES_CLIENT_SITE_ID,
-				home_url(),
-				$queue_stats->average_wait_time,
-				$queue_stats->queue_count,
-				$queue_stats->longest_wait_time
-			);
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			$cached_queue_count = wp_cache_get( 'vip_search_queue_count_alert', 'vip' );
+			if ( false === $cached_queue_count || ( $cached_queue_count && $cached_queue_count <= $queue_stats->queue_count ) ) {
+				// Alert if we don't have a queue count value cached OR if the queue count isn't decreasing.
+				$message = sprintf(
+					'Average index queue wait time for application %d - %s is currently %d seconds. There are %d items in the queue and the oldest item is %d seconds old',
+					FILES_CLIENT_SITE_ID,
+					home_url(),
+					$queue_stats->average_wait_time,
+					$queue_stats->queue_count,
+					$queue_stats->longest_wait_time
+				);
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 45 * MINUTE_IN_SECONDS );
+			}
 		}
 	}
 
