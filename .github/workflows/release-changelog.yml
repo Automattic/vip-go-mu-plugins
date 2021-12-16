@@ -5,6 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v2.4.1
+        with:
+          node-version: 14
+          cache: npm
       - name: Install dependencies
         working-directory: ./bin
         run: npm ci
