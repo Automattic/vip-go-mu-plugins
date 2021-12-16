@@ -16,7 +16,7 @@ done
 # Destroy existing test site
 vip dev-env destroy --slug=e2e-test-site
 
-#Create and run test site
+# Create and run test site
 vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins=$pluginPath --wordpress="5.8.1" --multisite=false --client-code=$clientCodePath
 vip --slug=e2e-test-site dev-env start
 

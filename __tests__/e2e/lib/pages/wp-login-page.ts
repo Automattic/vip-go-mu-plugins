@@ -3,6 +3,12 @@
  */
 import { Page } from '@playwright/test';
 
+const selectors = {
+    userField: '#user_login',
+    passwordField: '#user_pass',
+    submitButton: '#wp-submit',
+};
+
 export class LoginPage {
     private page: Page;
 
@@ -18,7 +24,6 @@ export class LoginPage {
     /**
      * Navigate to login page
      *
-     * @returns {Promise<void>} No return value.
      */
     async visit(): Promise<void> {
         await this.page.goto( '/wp-login.php' );
@@ -29,11 +34,10 @@ export class LoginPage {
      *
      * @param {string} username Username to login as
      * @param {string} password Password for account
-     * @returns {Promise<void>} No return value.
      */
     async login( username: string, password: string ): Promise<void> {
-        await this.page.fill( '#user_login', username );
-        await this.page.fill( '#user_pass', password );
-        await Promise.all( [ this.page.waitForNavigation(), this.page.click( '#wp-submit' ) ] );
+        await this.page.fill( selectors.userField, username );
+        await this.page.fill( selectors.passwordField, password );
+        await Promise.all( [ this.page.waitForNavigation(), this.page.click( selectors.submitButton ) ] );
     }
 }

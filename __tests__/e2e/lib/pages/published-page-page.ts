@@ -3,6 +3,11 @@
  */
 import { Page } from 'playwright';
 
+const selectors = {
+    entryTitle: '.entry-title',
+    pageText: ( text: string ) => `text=${ text }`,
+};
+
 /**
  * Represents the site's published page.
  */
@@ -27,8 +32,8 @@ export class PublishedPagePage {
         // If text isn't found the first time, reload and check again up to 2 more times.
         let postTry = 0;
         while ( postTry < 3 ) {
-            await this.page.waitForSelector( '.entry-title' );
-            if ( await this.page.locator( `text=${ text }` ) ) {
+            await this.page.waitForSelector( selectors.entryTitle );
+            if ( await this.page.locator( selectors.pageText( text ) ) ) {
                 break;
             } else {
                 await this.page.reload();

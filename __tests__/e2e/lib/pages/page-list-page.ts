@@ -3,6 +3,10 @@
  */
 import { Page } from '@playwright/test';
 
+const selectors = {
+    pageLink: ( pageID: string ) => `#post-${ pageID } a.row-title`,
+};
+
 export class PageListPage {
     readonly page: Page;
 
@@ -28,6 +32,6 @@ export class PageListPage {
      * @param { string } pageID ID of the page to be edited
      */
     async editPageByID( pageID: string ): Promise<void> {
-        await this.page.click( `#post-${ pageID } a.row-title` );
+        await this.page.click( selectors.pageLink( pageID ) );
     }
 }

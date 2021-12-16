@@ -8,6 +8,7 @@ import { chromium, FullConfig } from '@playwright/test';
  */
 import { EditorPage } from './pages/wp-editor-page';
 import { LoginPage } from './pages/wp-login-page';
+import { SettingsWritingPage } from './pages/settings-writing-page';
 
 async function globalSetup( config: FullConfig ) {
     const timeout = 30000;
@@ -29,10 +30,9 @@ async function globalSetup( config: FullConfig ) {
     // Adjust Classic Editor plugin settings if is available
     await page.goto( baseURL + '/wp-admin/options-writing.php' );
 
-    if ( await page.isVisible( '#classic-editor-block' ) ) {
-        await page.click( '#classic-editor-block' );
-        await page.click( '#classic-editor-allow' );
-        await page.click( '#submit' );
+    const settingsWritingPage = new SettingsWritingPage( page );
+    if ( settingsWritingPage.hasClassicEditor() ) {
+        settingsWritingPage.allowBothEditors();
     } else {
         process.env.E2E_CLASSIC_TESTS = 'false';
     }

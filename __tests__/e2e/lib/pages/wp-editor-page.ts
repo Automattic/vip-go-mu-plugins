@@ -3,8 +3,6 @@
  */
 import { Page } from '@playwright/test';
 
-type PreviewOptions = 'Desktop' | 'Mobile' | 'Tablet';
-
 const selectors = {
     // Editor
     editorTitle: '.editor-post-title__input',
@@ -45,10 +43,6 @@ const selectors = {
     desktopEditorSidebarButton: 'button[aria-label="Block editor sidebar"]:visible',
     desktopDashboardLink: 'a[aria-description="Returns to the dashboard"]:visible',
     mobileDashboardLink: 'a[aria-current="page"]:visible',
-
-    // Preview
-    previewMenuItem: ( target: PreviewOptions ) => `button[role="menuitem"] span:text("${ target }")`,
-    previewPane: ( target: PreviewOptions ) => `.is-${ target.toLowerCase() }-preview`,
 };
 
 export class EditorPage {

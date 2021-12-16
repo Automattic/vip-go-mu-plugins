@@ -3,6 +3,11 @@
  */
 import { Page } from '@playwright/test';
 
+const selectors = {
+    menuItem: ( target: string ) => `#adminmenu li :text( '${ target }' )`,
+    submenuItem: ( target: string ) => `.wp-menu-open .wp-submenu :text( '${ target }' )`,
+};
+
 export class WPAdminSidebarComponent {
     readonly page: Page;
 
@@ -21,7 +26,7 @@ export class WPAdminSidebarComponent {
      * @param {string} itemName Name of the item to be hovered over
      */
     async hoverMenuItem( itemName: string ): Promise<void> {
-        await this.page.hover( `#adminmenu li :text('${ itemName }')` );
+        await this.page.hover( selectors.menuItem( itemName ) );
     }
 
     /**
@@ -30,7 +35,7 @@ export class WPAdminSidebarComponent {
      * @param {string} itemName Name of the item to be clicked
      */
     async clickMenuItem( itemName: string ): Promise<void> {
-        await this.page.click( `#adminmenu li :text('${ itemName }')` );
+        await this.page.click( selectors.menuItem( itemName ) );
     }
 
     /**
@@ -39,7 +44,7 @@ export class WPAdminSidebarComponent {
      * @param {string} itemName Name of the item to be hovered over
      */
     async hoverSubMenuItem( itemName: string ): Promise<void> {
-        await this.page.hover( `.wp-menu-open .wp-submenu :text('${ itemName }')` );
+        await this.page.hover( selectors.submenuItem( itemName ) );
     }
 
     /**
@@ -48,6 +53,6 @@ export class WPAdminSidebarComponent {
      * @param {string} itemName Name of the item to be clicked
      */
     async clickSubMenuItem( itemName: string ): Promise<void> {
-        await this.page.click( `.wp-menu-open .wp-submenu :text('${ itemName }')` );
+        await this.page.click( selectors.submenuItem( itemName ) );
     }
 }
