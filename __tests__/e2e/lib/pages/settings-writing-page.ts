@@ -34,15 +34,16 @@ export class SettingsWritingPage {
      * @returns { boolean } Whether classic editor settings are visible
      */
     async hasClassicEditor(): Promise<boolean> {
-        return await this.page.isVisible( selectors.classicEditorBlock );
+        const editorSettings = await this.page.locator( selectors.classicEditorBlock );
+        return await editorSettings.isVisible();
     }
 
     /**
      * Select settings to allow either block or classic editor
      */
     async allowBothEditors(): Promise<void> {
-        await this.page.click( '#classic-editor-block' );
-        await this.page.click( '#classic-editor-allow' );
-        await this.page.click( '#submit' );
+        await this.page.click( selectors.classicEditorBlock );
+        await this.page.click( selectors.classicEditorAllow );
+        await this.page.click( selectors.saveButton );
     }
 }

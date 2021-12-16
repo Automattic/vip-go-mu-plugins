@@ -31,8 +31,8 @@ async function globalSetup( config: FullConfig ) {
     await page.goto( baseURL + '/wp-admin/options-writing.php' );
 
     const settingsWritingPage = new SettingsWritingPage( page );
-    if ( settingsWritingPage.hasClassicEditor() ) {
-        settingsWritingPage.allowBothEditors();
+    if ( await settingsWritingPage.hasClassicEditor() ) {
+        await settingsWritingPage.allowBothEditors();
     } else {
         process.env.E2E_CLASSIC_TESTS = 'false';
     }

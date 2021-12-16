@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
  * Internal dependencies
  */
 import { WPAdminPage } from '../lib/pages/wp-admin-page';
-import { WPAdminSidebarComponent } from '../lib/components/wp-admin-sidebar.component';
+import { WPAdminSidebarComponent } from '../lib/components/wp-admin-sidebar-component';
 import { EditorPage } from '../lib/pages/wp-editor-page';
 import { PublishedPagePage } from '../lib/pages/published-page-page';
 import * as DataHelper from '../lib/data-helper';
