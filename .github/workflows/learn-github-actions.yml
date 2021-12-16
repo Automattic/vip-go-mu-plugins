@@ -1,7 +1,7 @@
 name: learn-github-actions
-on: [push]
+on: workflow_dispatch
 jobs:
-  check-bats-version:
+  release-changelog:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Hello"
