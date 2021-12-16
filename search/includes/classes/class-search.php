@@ -1170,7 +1170,7 @@ class Search {
 				);
 				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 
-				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 15 * MINUTE_IN_SECONDS );
+				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 45 * MINUTE_IN_SECONDS );
 			}
 		}
 	}
