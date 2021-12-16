@@ -1,7 +1,0 @@
-name: mu-plugins-release-changelog
-on: workflow_dispatch
-jobs:
-  release-changelog:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Hello"
