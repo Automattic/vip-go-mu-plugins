@@ -22,7 +22,11 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		remove_all_filters( 'ep_do_intercept_request' );
 		remove_all_actions( 'ep_remote_request' );
 
-		remove_all_actions( 'vip_search_should_fail_excessive_request' );
+		add_filter( 'vip_search_should_fail_excessive_request', [ $this, 'vip_search_should_fail_excessive_request' ], PHP_INT_MAX, 2 );
+	}
+
+	public function vip_search_should_fail_excessive_request( bool $result, bool $orig_should_fail ): bool {
+		return $orig_should_fail;
 	}
 
 	/**
@@ -45,7 +49,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		} );
 
 		$interceptor = function( $request ) {
-			if ( is_wp_error( $request ) && 503 === $request->get_error_code() ) {
+			if ( is_wp_error( $request ) && ( 429 === $request->get_error_code() || 503 === $request->get_error_code() ) ) {
 				return $request;
 			}
 

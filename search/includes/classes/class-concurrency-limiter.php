@@ -47,7 +47,7 @@ class Concurrency_Limiter {
 				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
 				add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
 				// We will remove this one once we have enough stats
-				apply_filters( 'vip_search_should_fail_excessive_request', [ $this, 'vip_search_should_fail_excessive_request' ] );
+				add_filter( 'vip_search_should_fail_excessive_request', [ $this, 'vip_search_should_fail_excessive_request' ] );
 				return true;
 			}
 
@@ -83,7 +83,7 @@ class Concurrency_Limiter {
 			$this->should_fail   = ! $this->backend->inc_value();
 		}
 
-		$fail = apply_filters( 'vip_search_should_fail_excessive_request', $this->should_fail );
+		$fail = apply_filters( 'vip_search_should_fail_excessive_request', $this->should_fail, $this->should_fail );
 		return $fail ? new WP_Error( 429, 'Concurrency limit exceeded' ) : $response;
 	}
 
