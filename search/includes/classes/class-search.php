@@ -791,7 +791,7 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
-		if ( is_wp_error( $request ) && 503 === $request->get_error_code() ) {
+		if ( is_wp_error( $request ) && ( 503 === $request->get_error_code() || 429 === $request->get_error_code() ) ) {
 			return $request;
 		}
 

@@ -32,13 +32,13 @@ class Concurrency_Limiter {
 
 	public function init(): bool {
 		$backend_class = Object_Cache_Backend::class;
-		$backend_class = apply_filters( 'vip_es_concurrency_limit_backend', $backend_class );
+		$backend_class = apply_filters( 'vip_search_concurrency_limit_backend', $backend_class );
 
 		if ( ! empty( $backend_class ) && is_subclass_of( $backend_class, BackendInterface::class, true ) ) {
 			/** @psalm-var class-string<BackendInterface> $backend_class */
 			if ( $backend_class::is_supported() ) {
-				$this->max_concurrent_requests = (int) apply_filters( 'vip_es_max_concurrent_requests', $this->max_concurrent_requests );
-				$this->cache_ttl               = (int) apply_filters( 'vip_es_cache_ttl', $this->cache_ttl );
+				$this->max_concurrent_requests = (int) apply_filters( 'vip_search_max_concurrent_requests', $this->max_concurrent_requests );
+				$this->cache_ttl               = (int) apply_filters( 'vip_search_cache_ttl', $this->cache_ttl );
 
 				/** @var BackendInterface */
 				$this->backend = new $backend_class();
@@ -47,7 +47,7 @@ class Concurrency_Limiter {
 				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
 				add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
 				// We will remove this one once we have enough stats
-				apply_filters( 'vip_es_should_fail_excessive_request', [ $this, 'vip_es_should_fail_excessive_request' ] );
+				apply_filters( 'vip_search_should_fail_excessive_request', [ $this, 'vip_search_should_fail_excessive_request' ] );
 				return true;
 			}
 
@@ -83,8 +83,8 @@ class Concurrency_Limiter {
 			$this->should_fail   = ! $this->backend->inc_value();
 		}
 
-		$fail = apply_filters( 'vip_es_should_fail_excessive_request', $this->should_fail );
-		return $fail ? new WP_Error( 503, 'Concurrency limit exceeded' ) : $response;
+		$fail = apply_filters( 'vip_search_should_fail_excessive_request', $this->should_fail );
+		return $fail ? new WP_Error( 429, 'Concurrency limit exceeded' ) : $response;
 	}
 
 	/**
@@ -105,11 +105,11 @@ class Concurrency_Limiter {
 	 * @param bool $should_fail 
 	 * @return bool 
 	 */
-	public function vip_es_should_fail_excessive_request( bool $should_fail ): bool {
+	public function vip_search_should_fail_excessive_request( bool $should_fail ): bool {
 		if ( $should_fail ) {
 			log2logstash( [
 				'severity' => 'warning',
-				'feature'  => 'es_concurrency_limiter',
+				'feature'  => 'search_concurrency_limiter',
 				'message'  => 'Concurrency limit exceeded',
 			] );
 

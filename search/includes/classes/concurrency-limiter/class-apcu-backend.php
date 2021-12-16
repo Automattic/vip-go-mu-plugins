@@ -5,7 +5,7 @@ namespace Automattic\VIP\Search\ConcurrencyLimiter;
 require_once __DIR__ . '/backendinterface.php';
 
 class APCu_Backend implements BackendInterface {
-	const KEY_NAME = 'vip_es_request_count';
+	const KEY_NAME = 'vip_search_concurrent_requests_count';
 
 	/** @var int */
 	private static $instances = 0;

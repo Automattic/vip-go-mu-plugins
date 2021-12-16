@@ -5,8 +5,8 @@ namespace Automattic\VIP\Search\ConcurrencyLimiter;
 require_once __DIR__ . '/backendinterface.php';
 
 class Object_Cache_Backend implements BackendInterface {
-	const KEY_NAME   = 'vip_es_request_count';
-	const GROUP_NAME = 'vip_es';
+	const KEY_NAME   = 'vip_search_concurrent_requests_count';
+	const GROUP_NAME = 'vip_search';
 
 	/** @var int */
 	private $limit;
