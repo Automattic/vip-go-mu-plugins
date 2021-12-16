@@ -84,7 +84,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		self::assertIsArray( $response1 );
 		self::assertInstanceOf( WP_Error::class, $response2 );
 		/** @var WP_Error $response2 */
-		self::assertSame( 503, $response2->get_error_code() );
+		self::assertSame( 429, $response2->get_error_code() );
 	}
 
 	/**
