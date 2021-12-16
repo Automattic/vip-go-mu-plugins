@@ -245,6 +245,10 @@ class Search {
 
 		require_once __DIR__ . '/class-queue.php';
 
+		require_once __DIR__ . '/class-syncmanager-helper.php';
+
+		SyncManager_Helper::instance();
+
 		$this->queue = new Queue();
 		$this->queue->init();
 
