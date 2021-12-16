@@ -28,7 +28,7 @@ async function globalSetup( config: FullConfig ) {
     process.env.WP_E2E_NONCE = await page.evaluate( 'wpApiSettings.nonce' );
 
     // Adjust Classic Editor plugin settings if is available
-    await page.goto( baseURL + '/wp-admin/options-writing.php' );
+    await page.goto( baseURL + '/wp-admin/options-writing.php', { waitUntil: 'networkidle' } );
 
     const settingsWritingPage = new SettingsWritingPage( page );
     if ( await settingsWritingPage.hasClassicEditor() ) {
