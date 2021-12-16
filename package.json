@@ -12,6 +12,7 @@
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
     "prepare": "husky install",
     "setup-e2e-env": "./__tests__/e2e/bin/setup-env.sh",
+    "destroy-e2e-env": "vip dev-env destroy --slug=e2e-test-site",
     "test-e2e": "playwright test -c '__tests__/e2e/playwright.config.ts'"
   },
   "author": "Automattic",
