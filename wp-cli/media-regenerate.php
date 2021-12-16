@@ -4,14 +4,32 @@
  */
 namespace Automattic\VIP\Commands;
 
-use WP_CLI\Utils;
+use WP_CLI;
 
-$media_regenerate_before_invoke = function( $args, $assoc_args ) {
-	$skip_delete = Utils\get_flag_value( $assoc_args, 'skip-delete' );
+$runner     = WP_CLI::get_runner();
+$assoc_args = $runner->assoc_args;
 
-	if ( true !== $skip_delete ) {
-		WP_CLI::error( 'VIP sites require the --skip-delete flag when running "media regenerate"' );
+$media_regenerate_before_invoke = function() use ( &$runner, &$assoc_args ) {
+	// If skip-delete is not set or not true
+	if ( ! isset( $assoc_args['skip-delete'] ) || true !== $assoc_args['skip-delete'] ) {
+
+		// add skip-delete to the assoc_args array
+		$assoc_args = wp_parse_args(
+			$assoc_args,
+			[ 'skip-delete' => true ]
+		);
+
+		WP_CLI::line( 'Added --skip-delete to media regenerate. VIP systems require --skip-delete flag' );
+
+		// Run the command with the forced skip-delete argument
+		$runner->run_command( $runner->arguments, $assoc_args );
+
+		// Exit the run loop to prevent continuing to the invoked command
+		exit;
 	}
+
+	WP_CLI::line( 'Re-running...' );
+
 };
 
 WP_CLI::add_hook( 'before_invoke:media regenerate', $media_regenerate_before_invoke );
