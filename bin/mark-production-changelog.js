@@ -21,7 +21,7 @@ const fetchPage = async page => {
 		page,
 	}
 
-	const argString = Object.keys(queryArgs).map(argument => `${argument}=${queryArgs[argument]}`).join('&');
+	const argString = new URLSearchParams(queryArgs).toString();
 
 	const result = await fetch(`${CHANGELOG_ENDPOINT}?${argString}`, { headers });
 	if (!result.ok) {
