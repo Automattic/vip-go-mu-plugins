@@ -41,7 +41,7 @@ final class SyncManager_Helper {
 		 * - (term cache gets cleaned here, get_term() will return the updated value)
 		 * - edited_term 
 		 * -    <====== we use this action to get the fully updated term (priority=0)
-		 * -    <====== EP uses this hook with priority=10 to sync the term (priority=10)
+		 * -    <====== EP uses this hook to sync the term index (priority=10)
 		 * - edited_{$taxonomy}
 		 * - saved_term <====== we use this action to clean up after edit_terms
 		 * - saved_{$taxonomy}
