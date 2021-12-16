@@ -12,7 +12,6 @@ $assoc_args = $runner->assoc_args;
 $media_regenerate_before_invoke = function() use ( &$runner, &$assoc_args ) {
 	// If skip-delete is not set or not true
 	if ( ! isset( $assoc_args['skip-delete'] ) || true !== $assoc_args['skip-delete'] ) {
-
 		// add skip-delete to the assoc_args array
 		$assoc_args = wp_parse_args(
 			$assoc_args,
@@ -29,7 +28,6 @@ $media_regenerate_before_invoke = function() use ( &$runner, &$assoc_args ) {
 	}
 
 	WP_CLI::line( 'Re-running...' );
-
 };
 
 WP_CLI::add_hook( 'before_invoke:media regenerate', $media_regenerate_before_invoke );
