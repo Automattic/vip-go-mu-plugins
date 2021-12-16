@@ -890,6 +890,27 @@ class Search {
 			update_option( $index_exists_option_name, $response );
 		}
 
+		if ( 'index_exists' === $type && 401 === $response_code ) {
+			if ( ! $is_cli ) {
+				global $wp;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+				$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+			}
+			\Automattic\VIP\Logstash\log2logstash( array(
+				'severity' => 'warning',
+				'feature'  => 'search_401_response',
+				'message'  => '401 response returned',
+				'extra'    => [
+					'query'       => wp_json_encode( $query ),
+					'args'        => wp_json_encode( $args ),
+					'backtrace'   => wp_debug_backtrace_summary(), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+					'is_cli'      => defined( 'WP_CLI' ) && WP_CLI,
+					'request_url' => $request_url_for_logging ?? null,
+					'es_shield'   => defined( 'ES_SHIELD' ) && ES_SHIELD,
+				],
+			) );
+		}
+
 		return $response;
 	}
 
