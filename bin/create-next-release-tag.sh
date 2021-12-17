@@ -1,5 +1,7 @@
 #!/bin/sh
 
+### This script is run by GitHub Actions CI
+
 current_date=$(date '+v%Y%m%d.')
 minor_version=0
 

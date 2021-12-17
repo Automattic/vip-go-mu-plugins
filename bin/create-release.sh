@@ -1,5 +1,7 @@
 #!/bin/sh
 
+### This script is run by GitHub Actions CI
+
 tag=$1
 
 notes_file="/tmp/$tag.md"
