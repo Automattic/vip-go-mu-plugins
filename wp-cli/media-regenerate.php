@@ -19,6 +19,7 @@ $media_regenerate_before_invoke = function() use ( &$runner, &$assoc_args ) {
 		);
 
 		WP_CLI::line( 'Added --skip-delete to media regenerate. VIP systems require --skip-delete flag' );
+		WP_CLI::line( 'Re-running...' );
 
 		// Run the command with the forced skip-delete argument
 		$runner->run_command( $runner->arguments, $assoc_args );
@@ -26,8 +27,6 @@ $media_regenerate_before_invoke = function() use ( &$runner, &$assoc_args ) {
 		// Exit the run loop to prevent continuing to the invoked command
 		exit;
 	}
-
-	WP_CLI::line( 'Re-running...' );
 };
 
 WP_CLI::add_hook( 'before_invoke:media regenerate', $media_regenerate_before_invoke );
