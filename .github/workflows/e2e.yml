@@ -1,0 +1,57 @@
+name: Run e2e tests
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      wpversion:
+        description: 'WordPress version to run tests against'
+        required: false
+        default: 'latest'
+      url:
+        description: 'Alternative Test URL'
+        required: false
+        default: ''
+      user:
+        description: 'Alternative User Name'
+        required: false
+        default: ''
+      password:
+        description: 'Alternative Password'
+        required: false
+        default: ''
+jobs:
+  Run_e2e_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: vip-go-mu-plugins
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: cd ./vip-go-mu-plugins && npm install
+      - name: Install VIP Cli
+        run: npm install --prefix=$HOME/.local -g @automattic/vip
+      - name: Setup test environment
+        if: ${{ github.event.inputs.url == '' }}
+        run: cd ./vip-go-mu-plugins && npm run setup-e2e-env
+      - name: Setup test env variables
+        if: ${{ github.event.inputs.url != '' }}
+        run: |
+          echo "E2E_BASE_URL=${{ github.event.inputs.url }}" >> $GITHUB_ENV
+          echo "E2E_USER=${{ github.event.inputs.user }}" >> $GITHUB_ENV
+          echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
+      - name: Run e2e tests
+        run: cd ./vip-go-mu-plugins && npm run test-e2e
+      - name: Archive test results
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: test-results
+          path: |
+            vip-go-mu-plugins/test-results
+            vip-go-mu-plugins/screenshots

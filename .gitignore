@@ -25,3 +25,7 @@ node_modules
 # Jetpack dev files
 jetpack-*/tools
 jetpack-*/bin
+
+# e2e outputs
+/test-results/
+e2eStorageState.json
