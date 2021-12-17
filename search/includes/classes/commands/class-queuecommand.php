@@ -15,15 +15,6 @@ require_once __DIR__ . '/../class-health.php';
  * @package Automattic\VIP\Search
  */
 class QueueCommand extends \WPCOM_VIP_CLI_Command {
-	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
-	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
-
-	public function __construct() {
-		require_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-		parent::__construct();
-	}
-
 	/**
 	 * Purge the queue
 	 *
