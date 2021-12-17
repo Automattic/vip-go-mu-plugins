@@ -5,6 +5,8 @@ namespace Automattic\VIP\Search\Commands;
 use \WP_CLI;
 use \WP_CLI\Utils;
 
+use \Automattic\VIP\Search\Queue\Schema;
+
 require_once __DIR__ . '/../class-health.php';
 
 /**
@@ -44,8 +46,14 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		$search = \Automattic\VIP\Search\Search::instance();
 		$queue  = $search->queue;
-
+		$schema = new Schema();
 		$result = $queue->empty_queue();
-		WP_CLI::success( sprintf( 'Total items removed from queue: %d', is_int( $result ) ? $result : 'error' ) );
+
+		// int means the query is successful and indicates the number of rows affected
+		if ( is_int( $result ) ) {
+			WP_CLI::success( sprintf( 'Total items removed from queue: %d', $result ) );
+		} else {
+			WP_CLI::error( 'Purge has failed, please inspect the ' . $schema->get_table_name() . ' table manually.' );
+		}
 	}
 }
