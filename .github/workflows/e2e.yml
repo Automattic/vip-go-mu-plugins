@@ -38,7 +38,7 @@ jobs:
         run: npm install --prefix=$HOME/.local -g @automattic/vip
       - name: Setup test environment
         if: ${{ github.event.inputs.url == '' }}
-        run: cd ./vip-go-mu-plugins && npm run setup-e2e-env
+        run: cd ./vip-go-mu-plugins && npm run setup-e2e-env -- -v ${{ github.event.inputs.wpversion }}
       - name: Setup test env variables
         if: ${{ github.event.inputs.url != '' }}
         run: |
