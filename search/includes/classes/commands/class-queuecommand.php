@@ -23,118 +23,29 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
-	 * Run repeated re-indexing of many posts and record/report on 
-	 * how many re-index operations occur
+	 * Purge the queue
 	 *
 	 * ## OPTIONS
-	 * 
-	 *[--truncate]
-	 * : Should we truncate the existing queue before starting?
-	 * ---
+	 *
+	 *[--skip-confirm]
+	 * : Skip confirmation and purge the queue
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-search queue stress-test
+	 *     wp vip-search queue purge
+	 *     wp vip-search queue purge --skip-confirm
 	 *
-	 * @subcommand stress-test
+	 * @subcommand purge
 	 */
-	public function stress_test( $args, $assoc_args ) {
-		// TODO limit to only some sites
+
+	public function purge( $args, $assoc_args ) {
+		if ( ! isset( $assoc_args['skip-confirm'] ) ) {
+			WP_CLI::confirm( 'Are you sure you want to truncate the existing indexing queue? Any items currently queued will be dropped' );
+		}
 
 		$search = \Automattic\VIP\Search\Search::instance();
 		$queue  = $search->queue;
 
-		$object_type = 'post';
-
-		// Is the async queue enabled?
-		if ( ! $queue->is_enabled() ) {
-			WP_CLI::error( 'Async indexing is not enabled, aborting' );
-
-			exit();
-		}
-
-		WP_CLI::confirm( 'This command queues hundreds of posts for indexing as a stress test and is not recommended to be run in production. Continue?' );
-
-		if ( $assoc_args['truncate'] ) {
-			WP_CLI::confirm( 'Are you sure you want to truncate the existing indexing queue? Any items currently queued will be dropped' );
-
-			$queue->empty_queue();
-		}
-
-		$queue->offload_indexing_to_queue();
-
-		$starting_queued_count         = $queue->count_jobs( 'queued', $object_type );
-		$starting_queued_count_due_now = $queue->count_jobs( 'queued', $object_type );
-
-		WP_CLI::line( sprintf( 'Async queue currently contains %d queued jobs, with %d due now', $starting_queued_count, $starting_queued_count_due_now ) );
-
-		$batch_size = 100;
-	
-		// Get a bunch of posts
-		$q = new \WP_Query( array(
-			'posts_per_page' => $batch_size,
-			'post_type'      => 'post',
-			'post_status'    => 'publish', // Keep it simple
-		) );
-
-		$indexable = \ElasticPress\Indexables::factory()->get( $object_type );
-
-		WP_CLI::line( sprintf( 'Queuing %d objects via ElasticPress', count( $q->posts ) ) );
-
-		// Queue up batch of posts
-		foreach ( $q->posts as $post ) {
-			$indexable->sync_manager->add_to_queue( $post->ID );
-		}
-
-		// Now process the items in the EP queue. If async indexing is enabled, this will
-		// send the posts to the async queue and bail early
-		WP_CLI::line( 'Triggering indexing of ElasticPress queue (normally happens on shutdown)' );
-
-		$indexable->sync_manager->index_sync_queue();
-
-		$current_queued_count = $queue->count_jobs( 'queued', $object_type );
-
-		WP_CLI::line( sprintf( 'EP queue processed, now there are %d queued async jobs', $current_queued_count ) );
-
-		WP_CLI::line( 'Processing a batch of queued async jobs' );
-
-		$jobs = $queue->checkout_jobs( $batch_size );
-
-		$queue->process_jobs( $jobs );
-
-		WP_CLI::line( sprintf( 'Processed %d jobs from the index', $batch_size ) );
-
-		// Queue up same posts again
-		$requeue_times = 5;
-
-		for ( $i = 0; $i < $requeue_times; $i++ ) {
-			WP_CLI::line( sprintf( 'Requeuing same %d objects for re-indexing', count( $q->posts ) ) );
-
-			foreach ( $q->posts as $post ) {
-				$indexable->sync_manager->add_to_queue( $post->ID );
-			}
-
-			WP_CLI::line( 'Triggering indexing of ElasticPress queue (normally happens on shutdown)' );
-
-			$indexable->sync_manager->index_sync_queue();
-		}
-
-		$after_requeue_queued_count         = $queue->count_jobs( 'scheduled', $object_type );
-		$after_requeue_queued_due_now_count = $queue->count_jobs_due_now( $object_type );
-
-		$total_times_queued = count( $q->posts ) * ( $requeue_times + 1 ); // +1 b/c of the initial batch we queued before retrying
-		
-		WP_CLI::line( '-------------' );
-
-		WP_CLI::line( sprintf( 'After 1 initial queue, processing those jobs, then requeuing the same posts an additional %d times, there are %d async jobs queued, with %d due now', $requeue_times, $after_requeue_queued_count, $after_requeue_queued_due_now_count ) );
-		WP_CLI::line( sprintf( 'Without index debouncing and rate limiting, would expect %d index operations', $total_times_queued ) );
-
-		// Find next index timestamp for the first object, to show when it can be next re-indexed
-		$next_job_for_first_post = $queue->get_next_job_for_object( $q->posts[0]->ID, 'post' );
-
-		$next_job_start_time = strtotime( $next_job_for_first_post->start_time );
-
-		$next_job_start_time_diff = $next_job_start_time - time();
-
-		WP_CLI::line( sprintf( 'The first post in the batch is scheduled to be re-indexed at %s, %d seconds from now', $next_job_for_first_post->start_time, $next_job_start_time_diff ) );
+		$result = $queue->empty_queue();
+		WP_CLI::success( sprintf( 'Total items removed from queue: %d', is_int( $result ) ? $result : 'error' ) );
 	}
 }
