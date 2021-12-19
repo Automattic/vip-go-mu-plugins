@@ -197,4 +197,54 @@ final class OtherTest extends TestCase {
 		self::set_options( array( 'apikey' => '' ) );
 		self::assertSame( '', self::$parsely->get_api_key() );
 	}
+
+	/**
+	 * Test if the `get_options` method can handle a corrupted (not an array) value in the database.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @covers \Parsely\Parsely::get_options
+	 */
+	public function test_corrupted_options(): void {
+		update_option( Parsely::OPTIONS_KEY, 'someinvalidvalue' );
+
+		$options = self::$parsely->get_options();
+		self::assertSame( self::EMPTY_DEFAULT_OPTIONS, $options );
+	}
+
+	/**
+	 * Test if post is trackable when it is password protected.
+	 *
+	 * @since 3.0.1
+	 *
+	 * @covers \Parsely\Parsely::post_has_trackable_status
+	 */
+	public function test_post_has_trackable_status_password_protected(): void {
+		$post_id = $this->factory->post->create();
+		$post    = get_post( $post_id );
+
+		$post->post_password = 'somepassword';
+
+		$result = Parsely::post_has_trackable_status( $post );
+		self::assertFalse( $result );
+	}
+
+	/**
+	 * Test if post is trackable when it is password protected and a filter disables it.
+	 *
+	 * @since 3.0.1
+	 *
+	 * @covers \Parsely\Parsely::post_has_trackable_status
+	 */
+	public function test_post_has_trackable_status_password_protected_with_filter(): void {
+		add_filter( 'wp_parsely_skip_post_password_check', '__return_true' );
+
+		$post_id = $this->factory->post->create();
+		$post    = get_post( $post_id );
+
+		$post->post_password = 'somepassword';
+
+		$result = Parsely::post_has_trackable_status( $post );
+		self::assertTrue( $result );
+	}
 }

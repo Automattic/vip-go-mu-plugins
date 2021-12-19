@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build # Remove or modify this step as needed
         run: |
-          npm install
+          npm ci
           npm run build
       - name: WordPress Plugin Deploy
         uses: 10up/action-wordpress-plugin-deploy@stable
