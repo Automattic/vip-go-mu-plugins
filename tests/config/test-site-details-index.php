@@ -173,4 +173,9 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertTrue( is_bool( $site_details['core']['is_multisite'] ), 'is_multisite should be bool' );
 		$this->assertEquals( is_multisite(), $site_details['core']['is_multisite'], 'is_multisite should be equal to is_multisite()' );
 	}
+
+	public function test__default_timestamp() {
+		Site_Details_Index::instance();
+		$this->assertEquals( date( "d-m-Y", $site_details['timestamp'] / 1000 ), date( "d-m-Y", round( microtime( true ) ) ) );
+	}
 }
