@@ -174,8 +174,9 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertEquals( is_multisite(), $site_details['core']['is_multisite'], 'is_multisite should be equal to is_multisite()' );
 	}
 
-	public function test__default_timestamp() {
-		Site_Details_Index::instance();
-		$this->assertEquals( gmdate( 'd-m-Y', $site_details['timestamp'] / 1000 ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
+	public function test__get_default_current_timestamp() {
+		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
+
+		$this->assertEquals( gmdate( 'd-m-Y', $timestamp / 1000 ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
 	}
 }
