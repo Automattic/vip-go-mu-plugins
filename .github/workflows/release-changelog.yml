@@ -1,0 +1,20 @@
+name: release-changelog
+on: workflow_dispatch
+jobs:
+  release-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v2.4.1
+        with:
+          node-version: 14
+          cache: npm
+      - name: Install dependencies
+        working-directory: ./bin
+        run: npm ci
+      - name: Promote changelog entries
+        env:
+          CHANGELOG_BEARER_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
+        working-directory: ./bin
+        run: node ./mark-production-changelog.js

@@ -24,6 +24,7 @@
 
 	<!-- Other directories -->
 	<exclude-pattern>\.git/*</exclude-pattern>
+	<exclude-pattern>/__tests__/*</exclude-pattern>
 	<exclude-pattern>/akismet/*</exclude-pattern>
 	<exclude-pattern>/bin/*</exclude-pattern>
 	<exclude-pattern>/debug-bar/*</exclude-pattern>
