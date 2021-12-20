@@ -23,6 +23,7 @@ function wpcom_do_sandbox_bar() {
 			'your ip' => $_SERVER['REMOTE_ADDR'] ?? '', // phpcs:ignore
 		);
 
+		$debug_info = apply_filters( 'wpcom_sandbox_bar_debug_info', $debug_info );
 
 		?>
 		<div id="wpcom-sandboxed-bar">
