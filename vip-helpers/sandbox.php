@@ -23,7 +23,6 @@ function wpcom_do_sandbox_bar() {
 			'your ip' => $_SERVER['REMOTE_ADDR'] ?? '', // phpcs:ignore
 		);
 
-		$debug_info = apply_filters( 'wpcom_sandbox_bar_debug_info', $debug_info );
 
 		?>
 		<div id="wpcom-sandboxed-bar">
@@ -88,3 +87,21 @@ function wpcom_do_sandbox_bar() {
 	endif;
 }
 add_filter( 'wpcom_show_sandbox_bar', '__return_true' );
+
+/**
+ * Filters plugin URLs to use sandboxed hostnames.
+ *
+ * @param string $url The complete URL to the plugins directory including scheme and path.
+ *
+ * @return string Filtered URL using sandboxed hostname.
+ */
+function wpvip_filter_sandbox_plugins_url( $url ) {
+	if ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) {
+		global $sandbox_vhosts;
+
+		$url = str_replace( array_values( $sandbox_vhosts ), array_keys( $sandbox_vhosts ), $url );
+	}
+
+	return $url;
+}
+add_filter( 'plugins_url', 'wpvip_filter_sandbox_plugins_url', 1000, 1 );
