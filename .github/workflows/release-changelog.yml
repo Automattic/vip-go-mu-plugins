@@ -14,9 +14,15 @@ jobs:
     needs: get-release-tag
     steps:
       - uses: actions/checkout@v2
-      - run: ./bin/create-release.sh ${{needs.get-release-tag.outputs.id}}
+      - run: git tag ${{needs.get-release-tag.outputs.id}}
+      - run: git push --tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: softprops/action-gh-release@v0.1.14
+        with:
+          generate_release_notes: true
+          draft: true
+          tag_name: ${{needs.get-release-tag.outputs.id}}
   release-changelog:
     runs-on: ubuntu-latest
     steps:
