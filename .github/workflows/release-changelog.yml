@@ -21,7 +21,6 @@ jobs:
       - uses: softprops/action-gh-release@v0.1.14
         with:
           generate_release_notes: true
-          draft: true
           tag_name: ${{needs.get-release-tag.outputs.id}}
   release-changelog:
     runs-on: ubuntu-latest
