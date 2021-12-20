@@ -169,6 +169,8 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	/** @var Concurrency_Limiter */
+	public $concurrency_limiter;
 	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -245,6 +247,12 @@ class Search {
 
 		require_once __DIR__ . '/class-queue.php';
 
+		require_once __DIR__ . '/class-syncmanager-helper.php';
+
+		SyncManager_Helper::instance();
+
+		require_once __DIR__ . '/class-concurrency-limiter.php';
+
 		$this->queue = new Queue();
 		$this->queue->init();
 
@@ -274,6 +282,10 @@ class Search {
 		// Logger - can be set explicitly for mocking purposes
 		if ( ! $this->logger ) {
 			$this->logger = new \Automattic\VIP\Logstash\Logger();
+		}
+
+		if ( ! $this->concurrency_limiter ) {
+			$this->concurrency_limiter = new Concurrency_Limiter();
 		}
 
 		/**
@@ -783,17 +795,23 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( is_wp_error( $request ) && ( 503 === $request->get_error_code() || 429 === $request->get_error_code() ) ) {
+			return $request;
+		}
+
 		$index_exists_invalidation_actions = [
 			'delete_index',
 			'refresh_indices',
 			'put_mapping',
 			'bulk_index',
 		];
+		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
 			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
 			$cached_index_exists_request = get_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
-				if ( 'index_exists' === $type ) {
+				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
+				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
 					// Return cached index_exists option.
 					return $cached_index_exists_request;
 				} else {
@@ -1204,15 +1222,21 @@ class Search {
 		$queue_stats = $this->queue->get_queue_stats();
 
 		if ( $queue_stats->average_wait_time > self::STALE_QUEUE_WAIT_LIMIT ) {
-			$message = sprintf(
-				'Average index queue wait time for application %d - %s is currently %d seconds. There are %d items in the queue and the oldest item is %d seconds old',
-				FILES_CLIENT_SITE_ID,
-				home_url(),
-				$queue_stats->average_wait_time,
-				$queue_stats->queue_count,
-				$queue_stats->longest_wait_time
-			);
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			$cached_queue_count = wp_cache_get( 'vip_search_queue_count_alert', 'vip' );
+			if ( false === $cached_queue_count || ( $cached_queue_count && $cached_queue_count <= $queue_stats->queue_count ) ) {
+				// Alert if we don't have a queue count value cached OR if the queue count isn't decreasing.
+				$message = sprintf(
+					'Average index queue wait time for application %d - %s is currently %d seconds. There are %d items in the queue and the oldest item is %d seconds old',
+					FILES_CLIENT_SITE_ID,
+					home_url(),
+					$queue_stats->average_wait_time,
+					$queue_stats->queue_count,
+					$queue_stats->longest_wait_time
+				);
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 45 * MINUTE_IN_SECONDS );
+			}
 		}
 	}
 
