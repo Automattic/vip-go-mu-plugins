@@ -852,7 +852,12 @@ class Search {
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		if ( 'query' === $type ) {
+			// We want to only use the graceful failure method for search requests.
+			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		} else {
+			$response = wp_remote_request( $query['url'] );
+		}
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;

@@ -26,7 +26,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
-			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
+			->setMethods( [ 'mock_vip_safe_wp_remote_request', 'mock_wp_remote_request' ] )
 			->getMock();
 
 		header_remove();
@@ -2194,7 +2194,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->once() )
@@ -2232,7 +2232,7 @@ class Search_Test extends WP_UnitTestCase {
 			->willReturn( $stats_prefix );
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2267,7 +2267,7 @@ class Search_Test extends WP_UnitTestCase {
 		$partially_mocked_search->statsd = $statsd_mock;
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2298,7 +2298,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 3 ) )
@@ -2324,7 +2324,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -3126,6 +3126,10 @@ class Search_Test extends WP_UnitTestCase {
 	public function mock_vip_safe_wp_remote_request() {
 		/* Empty */
 	}
+
+	public function mock_wp_remote_request() {
+		/* Empty */
+	}
 }
 
 /**
@@ -3133,4 +3137,11 @@ class Search_Test extends WP_UnitTestCase {
  */
 function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
 	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
+}
+
+/**
+ * Overwriting global function so that no real remote request is called
+ */
+function wp_remote_request( $url, $args = array() ) {
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request();
 }
