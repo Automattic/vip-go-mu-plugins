@@ -862,7 +862,8 @@ class Search {
 		if ( 'query' === $type ) {
 			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
 		} else {
-			$response = wp_remote_request( $query['url'] );
+			$args['timeout'] = $timeout;
+			$response        = wp_remote_request( $query['url'], $args );
 		}
 
 		$end_time = microtime( true );
