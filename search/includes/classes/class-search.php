@@ -908,16 +908,40 @@ class Search {
 		if ( is_wp_error( $response ) ) {
 			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
-		} else {
-			if ( 'index_exists' === $type ) {
-				// Cache index_exists into option since we didn't return a cached value earlier.
-				update_option( $index_exists_option_name, $response );
-			} elseif ( $is_cacheable ) {
-				// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-				wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, wp_rand( 60, 70 ) );
-			}
-			return $response;
 		}
+
+		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
+			// Cache index_exists into option since we didn't return a cached value earlier.
+			update_option( $index_exists_option_name, $response );
+		}
+
+		if ( 'index_exists' === $type && 401 === $response_code ) {
+			if ( ! $is_cli ) {
+				global $wp;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+				$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
+			}
+			\Automattic\VIP\Logstash\log2logstash( array(
+				'severity' => 'warning',
+				'feature'  => 'search_401_response',
+				'message'  => '401 response returned',
+				'extra'    => [
+					'query'       => wp_json_encode( $query ),
+					'args'        => wp_json_encode( $args ),
+					'backtrace'   => wp_debug_backtrace_summary(), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+					'is_cli'      => defined( 'WP_CLI' ) && WP_CLI,
+					'request_url' => $request_url_for_logging ?? null,
+					'es_shield'   => defined( 'ES_SHIELD' ) && ES_SHIELD,
+				],
+			) );
+		}
+
+		if ( $is_cacheable ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, wp_rand( 60, 70 ) );
+		}
+
+		return $response;
 	}
 
 	/**
