@@ -847,7 +847,12 @@ class Search {
 		 * Serve cached response right away, if available and not stale and the query is cacheable
 		 */
 		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
-		if ( isset( $cached_response['response'] ) && microtime( true ) - $cached_response['timestamp'] <= $staleness_threshold_sec ) {
+
+		// Disabled for testing
+		// TODO: switch to Feature gradual rollout
+		if ( ! ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) &&
+			isset( $cached_response['response'] ) && 
+			microtime( true ) - $cached_response['timestamp'] <= $staleness_threshold_sec ) {
 			return $cached_response['response'];
 		}
 
@@ -979,11 +984,6 @@ class Search {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['vip-debug'] ) && 'true' === $_GET['vip-debug'] ) {
 			return $is_cacheable;
-		}
-
-		// Explicitly disable in production for now.
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) {
-			return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
 		}
 
 		foreach ( [ '_search', '_mget', '_doc' ] as $needle ) {
