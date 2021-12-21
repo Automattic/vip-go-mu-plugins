@@ -840,20 +840,25 @@ class Search {
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 		$is_cacheable           = $this->is_url_query_cacheable( $query['url'], $args );
 		$cache_key              = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
+
+		$staleness_threshold_sec = apply_filters( 'vip_search_stale_request_threshold', 30, $args );
 		/**
-		 * Serve cached response right away, if available and the query is cacheable
+		 * Serve cached response right away, if available and not stale and the query is cacheable
 		 */
-		$response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
-		if ( $response ) {
-			return $response;
+		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
+		if ( isset( $cached_response['response'] ) && microtime( true ) - $cached_response['timestamp'] <= $staleness_threshold_sec ) {
+			return $cached_response['response'];
 		}
 
 		$start_time = microtime( true );
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
+		/**
+		 * Skip vip_safe_wp_remote_request for non-query (search) requests
+		 * Any timeouts happening in non-search/non-query context shouldn't count towards the request disabling threshold.
+		 */
 		if ( 'query' === $type ) {
-			// We want to only use the graceful failure method for search requests.
 			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
 		} else {
 			$response = wp_remote_request( $query['url'] );
@@ -866,8 +871,14 @@ class Search {
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
+		/**
+		 * If request resulted in an error flag it as such but try to return the fallback value if available.
+		 */
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
 			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
+			if ( isset( $cached_response['response'] ) ) {
+				return $cached_response['response'];
+			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -942,8 +953,12 @@ class Search {
 		}
 
 		if ( $is_cacheable ) {
+			$entry = [
+				'timestamp' => $end_time,
+				'response'  => $response,
+			];
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, wp_rand( 60, 70 ) );
+			wp_cache_set( $cache_key, $entry, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 		}
 
 		return $response;
