@@ -991,12 +991,18 @@ class Search {
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
-			$response_error     = $response_body['error'] ?? [];
+			if ( isset( $response_body['error']['reason'] ) ) {
+				$error_message = $response_body['error']['reason'];
+			} else {
+				$response_code    = wp_remote_retrieve_response_code( $response );
+				$response_message = wp_remote_retrieve_response_message( $response );
+				$error_message    = $response_code && ! empty( $response_message ) ? 
+				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
+			}
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
-			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-			$error_type    = 'search_query_error';
+			$error_type = 'search_query_error';
 		}
 
 		if ( ! $is_cli ) {

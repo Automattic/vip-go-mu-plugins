@@ -2251,7 +2251,8 @@ class Search_Test extends WP_UnitTestCase {
 		$stats_prefix    = 'foo';
 		$mocked_response = [
 			'response' => [
-				'code' => 400,
+				'code'    => 400,
+				'message' => 'Bad Request',
 			],
 		];
 
@@ -2704,9 +2705,13 @@ class Search_Test extends WP_UnitTestCase {
 			],
 			[
 				[
-					'body' => '{ "error": {} }',
+					'body'     => '{ "error": {} }',
+					'response' => [
+						'code'    => 401,
+						'message' => 'Unauthorized',
+					],
 				],
-				'Unknown Elasticsearch query error',
+				'401 Unauthorized',
 			],
 			[
 				[
