@@ -1,5 +1,7 @@
 #! /bin/node
 
+// This script is run by GitHub Actions CI
+
 import fetch from 'node-fetch';
 
 const CHANGELOG_BEARER_TOKEN = process.env.CHANGELOG_BEARER_TOKEN;
