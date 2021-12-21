@@ -169,6 +169,8 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	/** @var Concurrency_Limiter */
+	public $concurrency_limiter;
 	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -249,6 +251,8 @@ class Search {
 
 		SyncManager_Helper::instance();
 
+		require_once __DIR__ . '/class-concurrency-limiter.php';
+
 		$this->queue = new Queue();
 		$this->queue->init();
 
@@ -278,6 +282,10 @@ class Search {
 		// Logger - can be set explicitly for mocking purposes
 		if ( ! $this->logger ) {
 			$this->logger = new \Automattic\VIP\Logstash\Logger();
+		}
+
+		if ( ! $this->concurrency_limiter ) {
+			$this->concurrency_limiter = new Concurrency_Limiter();
 		}
 
 		/**
@@ -787,6 +795,10 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( is_wp_error( $request ) && ( 503 === $request->get_error_code() || 429 === $request->get_error_code() ) ) {
+			return $request;
+		}
+
 		$index_exists_invalidation_actions = [
 			'delete_index',
 			'refresh_indices',
@@ -951,12 +963,18 @@ class Search {
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
-			$response_error     = $response_body['error'] ?? [];
+			if ( isset( $response_body['error']['reason'] ) ) {
+				$error_message = $response_body['error']['reason'];
+			} else {
+				$response_code    = wp_remote_retrieve_response_code( $response );
+				$response_message = wp_remote_retrieve_response_message( $response );
+				$error_message    = $response_code && ! empty( $response_message ) ? 
+				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
+			}
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
-			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-			$error_type    = 'search_query_error';
+			$error_type = 'search_query_error';
 		}
 
 		if ( ! $is_cli ) {
