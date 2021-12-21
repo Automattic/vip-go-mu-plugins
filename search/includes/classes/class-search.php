@@ -877,7 +877,7 @@ class Search {
 		 * If request resulted in an error flag it as such but try to return the fallback value if available.
 		 */
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_response );
 			if ( isset( $cached_response['response'] ) ) {
 				return $cached_response['response'];
 			}
@@ -1005,7 +1005,18 @@ class Search {
 		return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
 	}
 
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
+	/**
+	 * Handle failed requests 
+	 *
+	 * @param mixed $request
+	 * @param mixed $response
+	 * @param array $query
+	 * @param string $statsd_prefix
+	 * @param string $type
+	 * @param mixed $cached_request
+	 * @return void
+	 */
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_request = null ) {
 		// Not real failed requests, we should not be logging.
 		$skiplist = [
 			'index_exists',
@@ -1034,7 +1045,7 @@ class Search {
 			}
 
 			$error_message = implode( ';', $error_messages );
-			$error_type    = 'search_http_error';
+			$error_type    = $cached_request ? 'search_http_error_with_fallback' : 'search_http_error';
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
