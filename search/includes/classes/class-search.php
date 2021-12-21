@@ -838,9 +838,10 @@ class Search {
 		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
-		$is_cacheable           = $this->is_url_query_cacheable( $query['url'], $args );
-		$cache_key              = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
 
+		// Cache handling
+		$is_cacheable            = $this->is_url_query_cacheable( $query['url'], $args );
+		$cache_key               = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
 		$staleness_threshold_sec = apply_filters( 'vip_search_stale_request_threshold', 30, $args );
 		/**
 		 * Serve cached response right away, if available and not stale and the query is cacheable
