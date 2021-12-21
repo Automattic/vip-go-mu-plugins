@@ -842,7 +842,7 @@ class Search {
 		// Cache handling
 		$is_cacheable            = $this->is_url_query_cacheable( $query['url'], $args );
 		$cache_key               = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
-		$staleness_threshold_sec = apply_filters( 'vip_search_stale_request_threshold', 30, $args );
+		$staleness_threshold_sec = apply_filters( 'vip_search_stale_request_threshold', 45, $args );
 		/**
 		 * Serve cached response right away, if available and not stale and the query is cacheable
 		 */
