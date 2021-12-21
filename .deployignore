@@ -125,3 +125,6 @@ yarn.lock
 /wp-parsely-*/init.py
 /wp-parsely-*/tests
 /wp-parsely-*/phpunit-integration.xml.dist
+
+# JS tests
+/__tests__/
