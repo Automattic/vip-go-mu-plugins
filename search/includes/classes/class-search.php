@@ -934,6 +934,7 @@ class Search {
 		}
 
 		if ( 'index_exists' === $type && 401 === $response_code ) {
+			$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 			if ( ! $is_cli ) {
 				global $wp;
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
@@ -947,7 +948,7 @@ class Search {
 					'query'       => wp_json_encode( $query ),
 					'args'        => wp_json_encode( $args ),
 					'backtrace'   => wp_debug_backtrace_summary(), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
-					'is_cli'      => defined( 'WP_CLI' ) && WP_CLI,
+					'is_cli'      => $is_cli,
 					'request_url' => $request_url_for_logging ?? null,
 					'es_shield'   => defined( 'ES_SHIELD' ) && ES_SHIELD,
 				],
