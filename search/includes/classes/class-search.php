@@ -839,11 +839,37 @@ class Search {
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
+		// Cache handling
+		$is_cacheable            = $this->is_url_query_cacheable( $query['url'], $args );
+		$cache_key               = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
+		$staleness_threshold_sec = apply_filters( 'vip_search_stale_request_threshold', 45, $args );
+		/**
+		 * Serve cached response right away, if available and not stale and the query is cacheable
+		 */
+		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
+
+		// Disabled for testing
+		// TODO: switch to Feature gradual rollout
+		if ( ! ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) &&
+			isset( $cached_response['response'] ) && 
+			microtime( true ) - $cached_response['timestamp'] <= $staleness_threshold_sec ) {
+			return $cached_response['response'];
+		}
+
 		$start_time = microtime( true );
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		/**
+		 * Skip vip_safe_wp_remote_request for non-query (search) requests
+		 * Any timeouts happening in non-search/non-query context shouldn't count towards the request disabling threshold.
+		 */
+		if ( 'query' === $type ) {
+			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		} else {
+			$args['timeout'] = $timeout;
+			$response        = wp_remote_request( $query['url'], $args );
+		}
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
@@ -852,8 +878,14 @@ class Search {
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
+		/**
+		 * If request resulted in an error flag it as such but try to return the fallback value if available.
+		 */
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_response );
+			if ( isset( $cached_response['response'] ) ) {
+				return $cached_response['response'];
+			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -928,10 +960,63 @@ class Search {
 			) );
 		}
 
+		if ( $is_cacheable ) {
+			$entry = [
+				'timestamp' => $end_time,
+				'response'  => $response,
+			];
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			wp_cache_set( $cache_key, $entry, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+		}
+
 		return $response;
 	}
 
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
+	/**
+	 * Check whether this particular ES query response can be cached.
+	 *
+	 * @param string $url
+	 * @return boolean
+	 */
+	public function is_url_query_cacheable( string $url, $args ): bool {
+		$is_cacheable = false;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-debug'] ) && 'true' === $_GET['vip-debug'] ) {
+			return $is_cacheable;
+		}
+
+		foreach ( [ '_search', '_mget', '_doc' ] as $needle ) {
+			if ( wp_in( $needle, $url ) ) {
+				$is_cacheable = true;
+				break;
+			}
+		}
+
+		/**
+		 * Filter if request is cacheable
+		 * 
+		 * @hook vip_search_cache_es_response
+		 * 
+		 * @param  $url  Remote request URL
+		 * @param  $args Remote request arguments
+		 * @return $is_cacheable bool New cacheable status
+		 */
+		return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
+	}
+
+	/**
+	 * Handle failed requests 
+	 *
+	 * @param mixed $request
+	 * @param mixed $response
+	 * @param array $query
+	 * @param string $statsd_prefix
+	 * @param string $type
+	 * @param mixed $cached_request
+	 * @return void
+	 */
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_request = null ) {
 		// Not real failed requests, we should not be logging.
 		$skiplist = [
 			'index_exists',
@@ -960,7 +1045,7 @@ class Search {
 			}
 
 			$error_message = implode( ';', $error_messages );
-			$error_type    = 'search_http_error';
+			$error_type    = $cached_request ? 'search_http_error_with_fallback' : 'search_http_error';
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
