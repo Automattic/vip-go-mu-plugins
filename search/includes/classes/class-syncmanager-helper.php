@@ -52,6 +52,9 @@ final class SyncManager_Helper {
 		add_action( 'saved_term', [ $this, 'saved_term' ] );
 
 		add_filter( 'ep_skip_action_edited_term', [ $this, 'ep_skip_action_edited_term' ], 10, 4 );
+
+		// Invalidate the request cache on these hooks
+		add_action( 'save_post', [ $this, 'bump_last_changed' ] );
 	}
 
 	public function cleanup(): void {
@@ -62,6 +65,15 @@ final class SyncManager_Helper {
 		remove_action( 'saved_term', [ $this, 'saved_term' ] );
 
 		remove_filter( 'ep_skip_action_edited_term', [ $this, 'ep_skip_action_edited_term' ], 10 );
+	}
+
+	/**
+	 * Bump last updated what we can use to invalidate any cached requests
+	 *
+	 * @return void
+	 */
+	public function bump_last_changed() {
+		wp_cache_set( 'last_changed', microtime(), Search::SEARCH_CACHE_GROUP );
 	}
 
 	/**
