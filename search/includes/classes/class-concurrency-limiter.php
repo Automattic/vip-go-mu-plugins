@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface;
 use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
+use Automattic\VIP\Utils\Context;
 use WP_Error;
 
 use function Automattic\VIP\Logstash\log2logstash;
@@ -31,7 +32,7 @@ class Concurrency_Limiter {
 	}
 
 	public function init(): bool {
-		$backend_class = Object_Cache_Backend::class;
+		$backend_class = Context::is_wp_cli() || Context::is_cron() ? '' : Object_Cache_Backend::class;
 		$backend_class = apply_filters( 'vip_search_concurrency_limit_backend', $backend_class );
 
 		if ( ! empty( $backend_class ) && is_subclass_of( $backend_class, BackendInterface::class, true ) ) {
