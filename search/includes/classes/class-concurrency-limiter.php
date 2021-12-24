@@ -16,7 +16,7 @@ class Concurrency_Limiter {
 	private $cache_ttl = 60;
 
 	/** @var int */
-	private $max_concurrent_requests = 100;
+	private $max_concurrent_requests = 250;
 
 	/** @var bool */
 	private $doing_request = false;
