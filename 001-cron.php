@@ -157,10 +157,14 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 	add_action( 'a8c_cron_control_uncacheable_cron_option', 'wpcom_vip_log_cron_control_uncacheable_cron_option', 10, 3 );
 
-	$cron_control_next_version = __DIR__ . '/cron-control-next/cron-control.php';
+	$cron_control_next_version    = __DIR__ . '/cron-control-next/cron-control.php';
+	$cron_control_next_version_v2 = __DIR__ . '/cron-control-next-v2/cron-control.php';
 
-	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
+	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION_V2' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION_V2 && file_exists( $cron_control_next_version_v2 ) ) {
 		// Use latest version for testing
+		require_once $cron_control_next_version_v2;
+	} elseif ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
+		// Keep using the prev iteration of "cron control next"
 		require_once $cron_control_next_version;
 	} else {
 		// Use regular version
