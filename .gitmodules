@@ -43,3 +43,6 @@
 [submodule "search/debug-bar-elasticpress"]
 	path = search/debug-bar-elasticpress
 	url = https://github.com/10up/debug-bar-elasticpress.git
+[submodule "cron-control-next-v2"]
+	path = cron-control-next-v2
+	url = https://github.com/Automattic/Cron-Control.git

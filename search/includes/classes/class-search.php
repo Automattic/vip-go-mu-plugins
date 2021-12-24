@@ -840,9 +840,9 @@ class Search {
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		// Cache handling
-		$is_cacheable            = $this->is_url_query_cacheable( $query['url'], $args );
-		$cache_key               = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) );
-		$staleness_threshold_sec = apply_filters( 'vip_search_stale_request_threshold', 45, $args );
+		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
+		$cache_key    = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+
 		/**
 		 * Serve cached response right away, if available and not stale and the query is cacheable
 		 */
@@ -850,10 +850,8 @@ class Search {
 
 		// Disabled for testing
 		// TODO: switch to Feature gradual rollout
-		if ( ! ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) &&
-			isset( $cached_response['response'] ) && 
-			microtime( true ) - $cached_response['timestamp'] <= $staleness_threshold_sec ) {
-			return $cached_response['response'];
+		if ( ! ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) && $cached_response ) {
+			return $cached_response;
 		}
 
 		$start_time = microtime( true );
@@ -961,12 +959,8 @@ class Search {
 		}
 
 		if ( $is_cacheable ) {
-			$entry = [
-				'timestamp' => $end_time,
-				'response'  => $response,
-			];
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $entry, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 		}
 
 		return $response;
