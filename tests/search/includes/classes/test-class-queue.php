@@ -283,14 +283,15 @@ class Queue_Test extends WP_UnitTestCase {
 			$expected_job_ids[] = $this->queue->queue_object( $object['id'], $object['type'] );
 		}
 
-		$expected_scheduled_time = gmdate( 'Y-m-d H:i:s' );
-
-		$jobs = $this->queue->checkout_jobs( 10 );
+		$expected_scheduled_time_low  = gmdate( 'Y-m-d H:i:s' );
+		$jobs                         = $this->queue->checkout_jobs( 10 );
+		$expected_scheduled_time_high = gmdate( 'Y-m-d H:i:s' );
 
 		// Should have the right status and scheduled_time set
 		foreach ( $jobs as $job ) {
-			$this->assertEquals( 'scheduled', $job->status, "Job $job->job_id was expected to have status 'scheduled'" );
-			$this->assertEquals( $expected_scheduled_time, $job->scheduled_time, "Job $job->job_id has the wrong scheduled_time" );
+			self::assertEquals( 'scheduled', $job->status, "Job $job->job_id was expected to have status 'scheduled'" );
+			self::assertGreaterThanOrEqual( $expected_scheduled_time_low, $job->scheduled_time, "Job {$job->job_id} has the wrong scheduled_time" );
+			self::assertLessThanOrEqual( $expected_scheduled_time_high, $job->scheduled_time, "Job {$job->job_id} has the wrong scheduled_time" );
 		}
 
 		$object_ids = wp_list_pluck( $jobs, 'object_id' );
