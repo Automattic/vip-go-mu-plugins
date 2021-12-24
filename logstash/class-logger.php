@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Logstash;
 
+use Automattic\VIP\Utils\Context;
+
 /**
  * VIP Logstash Logger.
  *
@@ -545,7 +547,7 @@ class Logger {
 	 * @return int max number of entries
 	 */
 	public static function get_log_entry_limit() {
-		return defined( 'WP_CLI' ) && WP_CLI ? self::MAX_ENTRIES * 5 : self::MAX_ENTRIES;
+		return Context::is_wp_cli() ? self::MAX_ENTRIES * 5 : self::MAX_ENTRIES;
 	}
 
 	/**
@@ -554,7 +556,7 @@ class Logger {
 	 * @return string
 	 */
 	public static function get_user_agent() {
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		if ( Context::is_wp_cli() ) {
 			return 'cli';
 		}
 
