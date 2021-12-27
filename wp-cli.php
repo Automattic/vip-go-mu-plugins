@@ -8,8 +8,6 @@
 
 namespace Automattic\VIP\WP_CLI;
 
-use Automattic\VIP\Utils\Context;
-
 function init_is_ssl_toggle() {
 	maybe_toggle_is_ssl();
 
@@ -68,7 +66,7 @@ function disable_display_errors() {
 	ini_set( 'display_errors', 0 );
 }
 
-if ( Context::is_wp_cli() ) {
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	disable_display_errors();
 
 	init_is_ssl_toggle();
