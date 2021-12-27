@@ -13,6 +13,9 @@
  * Lowest incremental sync queue size allowed on VIP - JP default is 1000, but we're bumping to 10000 to give VIPs more
  * headroom as they tend to publish more than average
  */
+
+use Automattic\VIP\Utils\Context;
+
 define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
 
 /**
@@ -573,15 +576,7 @@ add_action( 'did_jetpack_search_query', 'wpcom_vip_did_jetpack_search_query' );
 function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load ) {
 	// Don't run listener for frontend, non-cron GET requests
 
-	if ( is_admin() ) {
-		return $should_load;
-	}
-
-	if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-		return $should_load;
-	}
-
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	if ( is_admin() || Context::is_cron() || Context::is_wp_cli() ) {
 		return $should_load;
 	}
 

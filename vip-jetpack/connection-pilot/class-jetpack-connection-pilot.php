@@ -2,11 +2,12 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use Automattic\VIP\Utils\Context;
 use DateTime;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
-if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+if ( Context::is_wp_cli() ) {
 	require_once __DIR__ . '/class-jetpack-connection-cli.php';
 }
 
@@ -74,7 +75,7 @@ class Connection_Pilot {
 	 */
 	public function init_actions() {
 		// Ensure the cron job has been added.
-		if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && \WP_CLI ) ) {
+		if ( wp_doing_cron() || Context::is_wp_cli() ) {
 			add_action( 'wp_loaded', array( $this, 'schedule_cron' ) );
 		}
 
