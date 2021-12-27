@@ -6,6 +6,8 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+use Automattic\VIP\Utils\Context;
+
 // Custom list of providers
 require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 
@@ -80,13 +82,13 @@ function wpcom_vip_is_jetpack_authorize_request() {
 		// XML-RPC Jetpack authorize request
 		// This works with the classic core XML-RPC endpoint, but not
 		// Jetpack's alternate endpoint.
-		defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST
+		Context::is_xmlrpc_api()
 		&& isset( $_GET['for'] ) && 'jetpack' === $_GET['for']  // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		&& isset( $GLOBALS['wp_xmlrpc_server'], $GLOBALS['wp_xmlrpc_server']->message, $GLOBALS['wp_xmlrpc_server']->message->methodName )
 		&& 'jetpack.remoteAuthorize' === $GLOBALS['wp_xmlrpc_server']->message->methodName
 	) || (
 		// REST Jetpack authorize request
-		defined( 'REST_REQUEST' ) && REST_REQUEST
+		Context::is_rest_api()
 		&& isset( $GLOBALS['wp_rest_server'] )
 		&& wpcom_vip_is_jetpack_authorize_rest_request()
 	);
