@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Config;
 
-use Automattic\VIP\Utils\Context;
-
 class Sync {
 	private static $instance;
 
@@ -32,7 +30,7 @@ class Sync {
 		add_action( self::CRON_EVENT_NAME, [ $this, 'do_cron' ] );
 
 		// Only register cron event from admin or CLI, to keep it out of frontend request path
-		$is_cli = Context::is_wp_cli();
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( ! is_admin() && ! $is_cli ) {
 			return;

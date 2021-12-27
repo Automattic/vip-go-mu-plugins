@@ -114,9 +114,6 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		break;
 }
 
-// This file is loaded from `wp-config.php`
-require_once __DIR__ . '/../000-pre-vip-config/requires.php';
-
 require_once __DIR__ . '/mock-constants.php';
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
