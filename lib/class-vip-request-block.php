@@ -55,10 +55,7 @@ class VIP_Request_Block {
 		}
 
 		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$ips = array_map( function ( string $s ): string {
-				return strtolower( trim( $s ) );
-			}, explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
-
+			$ips = array_map( fn ( string $s ): string => strtolower( trim( $s ) ), explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
 			$bin = array_map( 'inet_pton', $ips );
 			if ( in_array( $value, $ips, true ) || in_array( $ip, $bin, true ) ) {
 				return self::block_and_log( $value, 'x-forwarded-for' );
