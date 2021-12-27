@@ -57,6 +57,8 @@ done
 : "${PHPUNIT_VERSION:=""}"
 : "${DOCKER_OPTIONS:=""}"
 
+PHP_OPTIONS="-d apc.enable_cli=1 ${PHP_OPTIONS}"
+
 export WP_VERSION
 export WP_MULTISITE
 export PHP_VERSION

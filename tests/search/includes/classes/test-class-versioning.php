@@ -19,6 +19,8 @@ class Versioning_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
+		remove_all_actions( 'init' );
+
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 				'https://es-endpoint1',

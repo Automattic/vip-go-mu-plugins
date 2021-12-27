@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
+use Automattic\VIP\Utils\Context;
 use \WP_CLI;
 use WP_Post;
 
@@ -169,6 +170,8 @@ class Search {
 	public $indexables;
 	public $alerts;
 	public $logger;
+	/** @var Concurrency_Limiter */
+	public $concurrency_limiter;
 	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 
@@ -193,7 +196,7 @@ class Search {
 		$this->load_dependencies();
 		$this->setup_hooks();
 
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+		if ( Context::is_wp_cli() ) {
 			$this->load_commands();
 			$this->setup_cron_jobs();
 			$this->setup_regular_stat_collection();
@@ -249,6 +252,8 @@ class Search {
 
 		SyncManager_Helper::instance();
 
+		require_once __DIR__ . '/class-concurrency-limiter.php';
+
 		$this->queue = new Queue();
 		$this->queue->init();
 
@@ -280,10 +285,14 @@ class Search {
 			$this->logger = new \Automattic\VIP\Logstash\Logger();
 		}
 
+		if ( ! $this->concurrency_limiter ) {
+			$this->concurrency_limiter = new Concurrency_Limiter();
+		}
+
 		/**
 		 * Load CLI commands
 		 */
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		if ( Context::is_wp_cli() ) {
 			require_once __DIR__ . '/commands/class-corecommand.php';
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
@@ -442,7 +451,7 @@ class Search {
 		}
 
 		// Disable DB and ES query logs for CLI commands to keep memory under control
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		if ( Context::is_wp_cli() ) {
 			if ( ! defined( 'SAVEQUERIES' ) ) {
 				define( 'SAVEQUERIES', false );
 			}
@@ -606,7 +615,7 @@ class Search {
 	}
 
 	protected function load_commands() {
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		if ( Context::is_wp_cli() ) {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
@@ -787,6 +796,10 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
+		if ( is_wp_error( $request ) && ( 503 === $request->get_error_code() || 429 === $request->get_error_code() ) ) {
+			return $request;
+		}
+
 		$index_exists_invalidation_actions = [
 			'delete_index',
 			'refresh_indices',
@@ -827,11 +840,35 @@ class Search {
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
+		// Cache handling
+		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
+		$cache_key    = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+
+		/**
+		 * Serve cached response right away, if available and not stale and the query is cacheable
+		 */
+		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
+
+		// Disabled for testing
+		// TODO: switch to Feature gradual rollout
+		if ( ! ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) && $cached_response ) {
+			return $cached_response;
+		}
+
 		$start_time = microtime( true );
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
-		$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		/**
+		 * Skip vip_safe_wp_remote_request for non-query (search) requests
+		 * Any timeouts happening in non-search/non-query context shouldn't count towards the request disabling threshold.
+		 */
+		if ( 'query' === $type ) {
+			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+		} else {
+			$args['timeout'] = $timeout;
+			$response        = wp_remote_request( $query['url'], $args );
+		}
 
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
@@ -840,8 +877,14 @@ class Search {
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
+		/**
+		 * If request resulted in an error flag it as such but try to return the fallback value if available.
+		 */
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_response );
+			if ( isset( $cached_response['response'] ) ) {
+				return $cached_response['response'];
+			}
 		} else {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
@@ -895,6 +938,7 @@ class Search {
 		}
 
 		if ( 'index_exists' === $type && 401 === $response_code ) {
+			$is_cli = Context::is_wp_cli();
 			if ( ! $is_cli ) {
 				global $wp;
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
@@ -908,17 +952,66 @@ class Search {
 					'query'       => wp_json_encode( $query ),
 					'args'        => wp_json_encode( $args ),
 					'backtrace'   => wp_debug_backtrace_summary(), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
-					'is_cli'      => defined( 'WP_CLI' ) && WP_CLI,
+					'is_cli'      => $is_cli,
 					'request_url' => $request_url_for_logging ?? null,
 					'es_shield'   => defined( 'ES_SHIELD' ) && ES_SHIELD,
 				],
 			) );
 		}
 
+		if ( $is_cacheable ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+		}
+
 		return $response;
 	}
 
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type ) {
+	/**
+	 * Check whether this particular ES query response can be cached.
+	 *
+	 * @param string $url
+	 * @return boolean
+	 */
+	public function is_url_query_cacheable( string $url, $args ): bool {
+		$is_cacheable = false;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-debug'] ) && 'true' === $_GET['vip-debug'] ) {
+			return $is_cacheable;
+		}
+
+		foreach ( [ '_search', '_mget', '_doc' ] as $needle ) {
+			if ( wp_in( $needle, $url ) ) {
+				$is_cacheable = true;
+				break;
+			}
+		}
+
+		/**
+		 * Filter if request is cacheable
+		 * 
+		 * @hook vip_search_cache_es_response
+		 * 
+		 * @param  $url  Remote request URL
+		 * @param  $args Remote request arguments
+		 * @return $is_cacheable bool New cacheable status
+		 */
+		return apply_filters( 'vip_search_cache_es_response', $is_cacheable, $url, $args );
+	}
+
+	/**
+	 * Handle failed requests 
+	 *
+	 * @param mixed $request
+	 * @param mixed $response
+	 * @param array $query
+	 * @param string $statsd_prefix
+	 * @param string $type
+	 * @param mixed $cached_request
+	 * @return void
+	 */
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_request = null ) {
 		// Not real failed requests, we should not be logging.
 		$skiplist = [
 			'index_exists',
@@ -928,7 +1021,7 @@ class Search {
 			return;
 		}
 
-		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
+		$is_cli = Context::is_wp_cli();
 
 		if ( is_wp_error( $request ) ) {
 			$encoded_request = $request->get_error_messages();
@@ -947,16 +1040,22 @@ class Search {
 			}
 
 			$error_message = implode( ';', $error_messages );
-			$error_type    = 'search_http_error';
+			$error_type    = $cached_request ? 'search_http_error_with_fallback' : 'search_http_error';
 		} else {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
-			$response_error     = $response_body['error'] ?? [];
+			if ( isset( $response_body['error']['reason'] ) ) {
+				$error_message = $response_body['error']['reason'];
+			} else {
+				$response_code    = wp_remote_retrieve_response_code( $response );
+				$response_message = wp_remote_retrieve_response_message( $response );
+				$error_message    = $response_code && ! empty( $response_message ) ? 
+				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
+			}
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
-			$error_message = $response_error['reason'] ?? 'Unknown Elasticsearch query error';
-			$error_type    = 'search_query_error';
+			$error_type = 'search_query_error';
 		}
 
 		if ( ! $is_cli ) {
@@ -1000,7 +1099,7 @@ class Search {
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
-		$is_cli  = defined( 'WP_CLI' ) && WP_CLI;
+		$is_cli  = Context::is_wp_cli();
 		$timeout = $is_cli ? 5 : 2;
 
 		$query_path      = wp_parse_url( $query['url'], PHP_URL_PATH );

@@ -9,6 +9,8 @@
  * Remember vip-init.php? This is like that, but better!
  */
 
+use Automattic\VIP\Utils\Context;
+
 /**
  * By virtue of the filename, this file is included first of
  * all the files in the VIP Go MU plugins directory. All
@@ -47,7 +49,7 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 	$allow_front_end = WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE && ! REST_REQUEST && ! WP_ADMIN;
 
 	// WP CLI is allowed, but disable cron
-	if ( ( defined( 'WP_CLI' ) && WP_CLI ) || $allow_front_end ) {
+	if ( Context::is_wp_cli() || $allow_front_end ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
 			return 1;
 		}, 9999 );
@@ -93,8 +95,8 @@ if ( ! defined( 'WPCOM_IS_VIP_ENV' ) ) {
 	define( 'WPCOM_IS_VIP_ENV', false );
 }
 
-define( 'WPCOM_SANDBOXED', \Automattic\VIP\Environment::is_sandbox_container( gethostname(), $_ENV ) );
-define( 'VIP_GO_IS_CLI_CONTAINER', \Automattic\VIP\Environment::is_batch_container( gethostname(), $_ENV ) );
+define( 'WPCOM_SANDBOXED', \Automattic\VIP\Environment::is_sandbox_container( gethostname(), getenv() ) );
+define( 'VIP_GO_IS_CLI_CONTAINER', \Automattic\VIP\Environment::is_batch_container( gethostname(), getenv() ) );
 
 // Used to verify emails sent via our SMTP servers
 if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
@@ -192,7 +194,7 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 }
 
 // Load WP_CLI helpers
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
+if ( Context::is_wp_cli() ) {
 	require_once __DIR__ . '/vip-helpers/vip-wp-cli.php';
 	require_once __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php';
 }
