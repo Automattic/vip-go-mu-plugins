@@ -24,7 +24,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 	public function test__invalid_ip_should_not_raise_error() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
-		
+
 		$actual = VIP_Request_Block::ip( '1' );
 		self::assertFalse( $actual );
 	}
@@ -48,5 +48,12 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 		$actual = VIP_Request_Block::ip( '8.8.8.8' );
 		self::assertTrue( $actual );
+	}
+
+	public function test_partial_match_xff(): void {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '11.1.1.11, 8.8.8.8';
+
+		$actual = VIP_Request_Block::ip( '1.1.1.1' );
+		self::assertFalse( $actual );
 	}
 }
