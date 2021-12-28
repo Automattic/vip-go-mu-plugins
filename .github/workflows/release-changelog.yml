@@ -14,6 +14,8 @@ jobs:
     needs: get-release-tag
     steps:
       - uses: actions/checkout@v2
+      - name: Retrieve tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - run: git tag ${{needs.get-release-tag.outputs.id}}
       - run: git push --tag
         env:
