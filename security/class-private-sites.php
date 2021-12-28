@@ -14,8 +14,6 @@
 
 namespace Automattic\VIP\Security;
 
-use Automattic\VIP\Utils\Context;
-
 class Private_Sites {
 	private static $instance;
 
@@ -82,7 +80,7 @@ class Private_Sites {
 	 * Blocks the entire site, including custom feeds, to the WP.com reader
 	 */
 	public function block_unnecessary_access() {
-		if ( Context::is_xmlrpc_api() ) {
+		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
 			// Don't block xml-rpc requests for Jetpack's sake
 			return;
 		}

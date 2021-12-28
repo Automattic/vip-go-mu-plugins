@@ -9,8 +9,6 @@
  * Remember vip-init.php? This is like that, but better!
  */
 
-use Automattic\VIP\Utils\Context;
-
 /**
  * By virtue of the filename, this file is included first of
  * all the files in the VIP Go MU plugins directory. All
@@ -49,7 +47,7 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 	$allow_front_end = WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE && ! REST_REQUEST && ! WP_ADMIN;
 
 	// WP CLI is allowed, but disable cron
-	if ( Context::is_wp_cli() || $allow_front_end ) {
+	if ( ( defined( 'WP_CLI' ) && WP_CLI ) || $allow_front_end ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
 			return 1;
 		}, 9999 );
@@ -194,7 +192,7 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 }
 
 // Load WP_CLI helpers
-if ( Context::is_wp_cli() ) {
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once __DIR__ . '/vip-helpers/vip-wp-cli.php';
 	require_once __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php';
 }
