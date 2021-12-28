@@ -16,7 +16,10 @@ class Object_Cache_Backend implements BackendInterface {
 
 	public function __destruct() {
 		if ( $this->increments > 0 ) {
-			wp_cache_decr( self::KEY_NAME, $this->increments, self::GROUP_NAME );
+			$value = wp_cache_decr( self::KEY_NAME, $this->increments, self::GROUP_NAME );
+			if ( $value < 0 ) {
+				$this->reset();
+			}
 		}
 	}
 
@@ -71,6 +74,9 @@ class Object_Cache_Backend implements BackendInterface {
 			$result = wp_cache_decr( self::KEY_NAME, 1, self::GROUP_NAME );
 			if ( false !== $result ) {
 				--$this->increments;
+				if ( $result < 0 ) {
+					$this->reset();
+				}
 			} else {
 				log2logstash( [
 					'severity' => 'warning',
@@ -79,5 +85,10 @@ class Object_Cache_Backend implements BackendInterface {
 				] );
 			}
 		}
+	}
+
+	private function reset(): void {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		wp_cache_set( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
 	}
 }
