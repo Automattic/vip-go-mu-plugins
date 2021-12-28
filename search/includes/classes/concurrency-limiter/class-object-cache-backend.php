@@ -10,11 +10,9 @@ class Object_Cache_Backend implements BackendInterface {
 	const KEY_NAME   = 'vip_search_concurrent_requests_count';
 	const GROUP_NAME = 'vip_search';
 
-	/** @var int */
-	private $limit;
-
-	/** @var int */
-	private $increments = 0;
+	private int $limit;
+	private int $ttl;
+	private int $increments = 0;
 
 	public function __destruct() {
 		if ( $this->increments > 0 ) {
@@ -24,12 +22,13 @@ class Object_Cache_Backend implements BackendInterface {
 
 	public function initialize( int $limit, int $ttl ): void {
 		$this->limit = $limit;
+		$this->ttl   = $ttl;
 
 		$found = false;
 		$value = wp_cache_get( self::KEY_NAME, self::GROUP_NAME, false, $found );
 		if ( ! $found || ! is_int( $value ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( self::KEY_NAME, 0, self::GROUP_NAME, $ttl );
+			wp_cache_set( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
 		}
 	}
 
@@ -38,6 +37,8 @@ class Object_Cache_Backend implements BackendInterface {
 	}
 
 	public function inc_value(): bool {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		wp_cache_add( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
 		$value = wp_cache_incr( self::KEY_NAME, 1, self::GROUP_NAME );
 		if ( false !== $value ) {
 			++$this->increments;
