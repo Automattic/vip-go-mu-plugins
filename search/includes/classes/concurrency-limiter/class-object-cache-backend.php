@@ -29,9 +29,11 @@ class Object_Cache_Backend implements BackendInterface {
 
 		$found = false;
 		$value = wp_cache_get( self::KEY_NAME, self::GROUP_NAME, false, $found );
-		if ( ! $found || ! is_int( $value ) ) {
+		if ( ! $found ) {
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
+			wp_cache_add( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
+		} elseif ( ! is_int( $value ) ) {
+			$this->reset();
 		}
 	}
 
