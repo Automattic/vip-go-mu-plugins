@@ -1067,8 +1067,8 @@ class Search {
 			$error_type,
 			$error_message,
 			[
-				'error_type' => $response_error['type'] ?? 'Unknown error type',
-				'root_cause' => $response_error['root_cause'] ?? null,
+				'error_type' => $response['error']['type'] ?? 'Unknown error type',
+				'root_cause' => $response['error']['root_cause'] ?? null,
 				'query'      => $this->sanitize_ep_query_for_logging( $query ),
 				'backtrace'  => wp_debug_backtrace_summary(),   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
 				'is_cli'     => $is_cli,
