@@ -7,6 +7,8 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - uses: actions/checkout@v2
+      - name: Retrieve tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - id: id-generator
         run: |
           current_date=$(date '+v%Y%m%d.')
