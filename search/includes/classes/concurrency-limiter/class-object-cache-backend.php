@@ -66,9 +66,13 @@ class Object_Cache_Backend implements BackendInterface {
 			'severity' => 'warning',
 			'feature'  => 'search_concurrency_limiter',
 			'message'  => 'Failed to increment the counter',
+			'extra'    => [
+				'counter'        => wp_cache_get( self::KEY_NAME, self::GROUP_NAME ),
+				'counter_remote' => wp_cache_get( self::KEY_NAME, self::GROUP_NAME, true ),
+			],
 		] );
 
-		return false;
+		return true;
 	}
 
 	public function dec_value(): void {
@@ -84,6 +88,10 @@ class Object_Cache_Backend implements BackendInterface {
 					'severity' => 'warning',
 					'feature'  => 'search_concurrency_limiter',
 					'message'  => 'Failed to decrement the counter',
+					'extra'    => [
+						'counter'        => wp_cache_get( self::KEY_NAME, self::GROUP_NAME ),
+						'counter_remote' => wp_cache_get( self::KEY_NAME, self::GROUP_NAME, true ),
+					],
 				] );
 			}
 		}
