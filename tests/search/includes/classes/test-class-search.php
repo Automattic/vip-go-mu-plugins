@@ -153,7 +153,7 @@ class Search_Test extends WP_UnitTestCase {
 				// The expected result
 				true,
 			),
-			// Regular search
+			// Regular multiget
 			array(
 				// The $query object
 				array(
@@ -162,7 +162,7 @@ class Search_Test extends WP_UnitTestCase {
 				// The expected result
 				true,
 			),
-			// Regular search
+			// Regular entity multiget
 			array(
 				// The $query object
 				array(
