@@ -26,6 +26,8 @@ class VIP_Request_Block {
 	 * @return bool|void
 	 */
 	public static function ip( string $value ) {
+		$value = strtolower( $value );
+		$ip    = inet_pton( $value );
 		// Don't try to block if the passed value is not a valid IP.
 		if ( ! filter_var( $value, FILTER_VALIDATE_IP ) ) {
 			if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
@@ -36,21 +38,31 @@ class VIP_Request_Block {
 			return false;
 		}
 
-		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
-		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
-		if ( isset( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) && $value === $_SERVER['HTTP_TRUE_CLIENT_IP'] ) {
-			return self::block_and_log( $value, 'true-client-ip' );
+		// In case this is an IPv6 address and PHP is compiled without the IPV6 support, make sure `false`'s won't match.
+		if ( false === $ip ) {
+			$ip = ''; 
 		}
 
-		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
-		if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$ips = array_map( 'trim', explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
-			if ( in_array( $value, $ips, true ) ) {
+		// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
+		if ( ! empty( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) ) {
+			$hdr = strtolower( $_SERVER['HTTP_TRUE_CLIENT_IP'] );
+			$bin = inet_pton( $hdr );
+			if ( $bin === $ip || $hdr === $value ) {
+				return self::block_and_log( $value, 'true-client-ip' );
+			}
+		}
+
+		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+			$ips = array_map( fn ( string $s ): string => strtolower( trim( $s ) ), explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
+			$bin = array_map( 'inet_pton', $ips );
+			if ( in_array( $value, $ips, true ) || in_array( $ip, $bin, true ) ) {
 				return self::block_and_log( $value, 'x-forwarded-for' );
 			}
 		}
 
+		// phpcs:enable
 		return false;
 	}
 

@@ -7,13 +7,25 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - uses: actions/checkout@v2
+      - name: Retrieve tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - id: id-generator
-        run: echo "::set-output name=id::$(./bin/create-next-release-tag.sh)"
+        run: |
+          current_date=$(date '+v%Y%m%d.')
+          minor_version=0
+          tag=$(git tag -l "${current_date}*" --sort=-version:refname | head -n 1)
+          if [ -n "${tag}" ]; then
+              minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
+          fi
+
+          echo "::set-output name=id::${current_date}${minor_version}"
   tag-release:
     runs-on: ubuntu-latest
     needs: get-release-tag
     steps:
       - uses: actions/checkout@v2
+      - name: Retrieve tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - run: git tag ${{needs.get-release-tag.outputs.id}}
       - run: git push --tag
         env:

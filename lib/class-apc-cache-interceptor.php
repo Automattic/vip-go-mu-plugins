@@ -1,7 +1,5 @@
 <?php
 
-use Automattic\VIP\Utils\Context;
-
 /**
  * Setup the apcu hot cache
  *
@@ -19,7 +17,7 @@ function do_apcu_hot_cache_init( $hc ) {
 	// Every command runs as a new process, so the benefits
 	// of apc are very minimal when combined with our regular
 	// object cache dropin
-	if ( Context::is_wp_cli() ) {
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		return;
 	}
 
@@ -28,7 +26,7 @@ function do_apcu_hot_cache_init( $hc ) {
 
 	// Bypass APCu offloading in the REST API for some cases where there could
 	// be concerns about stale data after writes
-	if ( ! Context::is_rest_api() ) {
+	if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
 
 		// Cache subsite information for 10 seconds unless we're in the
 		// network admin, where we may be editing this information.

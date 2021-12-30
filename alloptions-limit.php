@@ -9,7 +9,6 @@
 namespace Automattic\VIP\AllOptions;
 
 use Automattic\VIP\Utils\Alerts;
-use Automattic\VIP\Utils\Context;
 
 require_once __DIR__ . '/lib/utils/class-alerts.php';
 
@@ -22,7 +21,7 @@ define( 'VIP_ALLOPTIONS_ERROR_THRESHOLD', 1000000 );
  * Because WP would keep trying to set the data to Memcached, potentially resulting in Memcached (and site's) performance degradation.
  */
 function run_alloptions_safeguard() {
-	if ( Context::is_wp_cli() ) {
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		return;
 	}
 
