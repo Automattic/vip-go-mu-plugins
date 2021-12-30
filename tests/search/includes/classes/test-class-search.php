@@ -209,7 +209,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__is_url_query_cacheable( $query, $expected_is_cacheable ) {
 		$es = new \Automattic\VIP\Search\Search();
 
-		$is_cacheable = $es->is_url_query_cacheable( $query, array() );
+		$is_cacheable = $es->is_url_query_cacheable( $query['url'], array() );
 
 		$this->assertEquals( $expected_is_cacheable, $is_cacheable );
 	}
