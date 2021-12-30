@@ -230,14 +230,16 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Returns the current value of $this->timestamp or time() if null.
+	 * Returns the current value of $this->timestamp or microtime() if null.
 	 *
 	 * Used for mocking in tests.
 	 *
 	 * @return int The current timestamp or the value of $this->timestamp.
 	 */
 	public function get_current_timestamp() {
-		return $this->timestamp ?? time();
+		$get_microtime_as_float    = true;
+		$timestamp_in_milliseconds = round( microtime( $get_microtime_as_float ) * 1000 );
+		return $this->timestamp ?? $timestamp_in_milliseconds;
 	}
 
 	/**
