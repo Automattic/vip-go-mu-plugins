@@ -87,8 +87,6 @@ class SettingsHealthJob {
 		}
 
 		$this->process_indexables_settings_health_results( $unhealthy_indexables );
-
-		$this->heal_index_settings( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {
@@ -128,14 +126,11 @@ class SettingsHealthJob {
 				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
 			}
 		}
+
+		$this->heal_index_settings( $results );
 	}
 
 	public function heal_index_settings( $unhealthy_indexables ) {
-		// If the whole thing failed, return
-		if ( is_wp_error( $unhealthy_indexables ) ) {
-			return;
-		}
-
 		foreach ( $unhealthy_indexables as $indexable_slug => $versions ) {
 			if ( is_wp_error( $versions ) ) {
 				continue;
