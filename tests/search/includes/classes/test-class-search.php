@@ -196,7 +196,7 @@ class Search_Test extends WP_UnitTestCase {
 					'url' => 'https://foo.com/index/type/_anything',
 				),
 				// The expected result
-				2,
+				false,
 			),
 		);
 	}
