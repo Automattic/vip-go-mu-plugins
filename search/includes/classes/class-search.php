@@ -1524,7 +1524,7 @@ class Search {
 		// TODO: remove temporary rollout environment check
 		// Force the timeout for post search queries.
 		$is_prod = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
-		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', $is_prod ) ) {
+		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', ! $is_prod ) ) {
 			$formatted_args['timeout'] = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 		}
 
