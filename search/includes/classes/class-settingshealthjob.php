@@ -238,14 +238,7 @@ class SettingsHealthJob {
 		if ( false === $new_index_lock ) {
 			// No lock, check if event has been scheduled already.
 			if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME ) ) {
-				$scheduled_event = wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
-
-				if ( is_wp_error( $scheduled_event ) ) {
-					// Send alert that failed to schedule event.
-					$error_message = $scheduled_event->get_error_message() ?? 'Event could not be scheduled';
-					$message       = sprintf( 'Failed to schedule event for building new %s index version on %s to meet shard requirements: %s', $indexable->slug, home_url(), $error_message );
-					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-				}
+				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
 			}
 		}
 	}
