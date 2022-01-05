@@ -165,28 +165,27 @@ class SettingsHealthJob {
 				if ( empty( $result['diff'] ) ) {
 					continue;
 				}
-				// Check if index needs to be re-built in the background or just do auto-healing.
+				// Check if index needs to be re-built in the background.
 				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
 					$this->maybe_build_new_index( $indexable );
-				} else {
-					$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
-					if ( empty( $diff ) ) {
-						continue;
-					}
+				}
 
-					$options = array();
+				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+				if ( empty( $diff ) ) {
+					continue;
+				}
 
-					if ( isset( $result['index_version'] ) ) {
-						$options['index_version'] = $result['index_version'];
-					}
+				$options = array();
+				if ( isset( $result['index_version'] ) ) {
+					$options['index_version'] = $result['index_version'];
+				}
 
-					$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
+				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 
-					if ( is_wp_error( $result['result'] ) ) {
-						$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
+				if ( is_wp_error( $result['result'] ) ) {
+					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
 
-						$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-					}
+					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 				}
 			}
 		}
@@ -234,11 +233,11 @@ class SettingsHealthJob {
 		}
 
 		// Check if lock is set. Bail if new build is already ongoing.
-		$new_index_lock = get_option( 'vip_search_new_version_building_for_shards' );
+		$new_index_lock = get_option( self::BUILD_LOCK_NAME );
 		if ( false === $new_index_lock ) {
 			// No lock, check if event has been scheduled already.
 			if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME ) ) {
-				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
+				wp_schedule_single_event( time() + 45, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
 			}
 		}
 	}
