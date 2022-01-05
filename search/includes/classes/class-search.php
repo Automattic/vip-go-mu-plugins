@@ -1523,9 +1523,10 @@ class Search {
 
 		// TODO: remove temporary rollout environment check
 		// Force the timeout for post search queries.
-		$is_prod = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
+		$is_prod        = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
+		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', ! $is_prod ) ) {
-			$formatted_args['timeout'] = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
+			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
 		}
 
 		return $formatted_args;
