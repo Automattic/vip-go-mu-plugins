@@ -87,8 +87,6 @@ class SettingsHealthJob {
 		}
 
 		$this->process_indexables_settings_health_results( $unhealthy_indexables );
-
-		$this->heal_index_settings( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {
@@ -128,25 +126,13 @@ class SettingsHealthJob {
 				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
 			}
 		}
+
+		$this->heal_index_settings( $results );
 	}
 
 	public function heal_index_settings( $unhealthy_indexables ) {
-		// If the whole thing failed, error
-		if ( is_wp_error( $unhealthy_indexables ) ) {
-			$message = sprintf( 'Error while attempting to heal index settings for %s: %s', home_url(), $unhealthy_indexables->get_error_message() );
-
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-			return;
-		}
-
 		foreach ( $unhealthy_indexables as $indexable_slug => $versions ) {
-			// If there's an error, alert
 			if ( is_wp_error( $versions ) ) {
-				$message = sprintf( 'Error while attempting to heal index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
 				continue;
 			}
 
@@ -181,19 +167,7 @@ class SettingsHealthJob {
 					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
 
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-					continue;
 				}
-
-				$message = sprintf(
-					'Index settings updated for %s: (indexable: %s, index_version: %d, index_name: %s)',
-					home_url(),
-					$indexable_slug,
-					$result['index_version'] ?? '<missing index version>',
-					$result['index_name'] ?? '<missing name>'
-				);
-
-				$this->send_alert( '#vip-go-es-alerts', $message, 2, "{$indexable_slug}" );
 			}
 		}
 	}

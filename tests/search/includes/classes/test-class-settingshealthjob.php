@@ -14,7 +14,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		\Automattic\VIP\Search\Search::instance()->init();
 	}
 
-	public function test__heal_index_settings__reports_error() {
+	public function test__process_indexables_settings_health_results__reports_error() {
 		$error = new \WP_Error( 'foo', 'Bar' );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
@@ -25,10 +25,10 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$stub->expects( $this->once() )
 			->method( 'send_alert' );
 
-		$stub->heal_index_settings( $error );
+		$stub->process_indexables_settings_health_results( $error );
 	}
 
-	public function test__heal_index_settings__reports_error_per_indexable() {
+	public function test__process_indexables_settings_health_results__reports_error_per_indexable() {
 		$error                = new \WP_Error( 'foo', 'Bar' );
 		$unhealthy_indexables = [
 			'post' => $error,
@@ -43,7 +43,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$stub->expects( $this->exactly( count( $unhealthy_indexables ) ) )
 			->method( 'send_alert' );
 
-		$stub->heal_index_settings( $unhealthy_indexables );
+		$stub->process_indexables_settings_health_results( $unhealthy_indexables );
 	}
 
 	public function test__heal_index_settings__reports_error_per_failed_indexable_retrieval() {
@@ -116,9 +116,6 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub->indexables = $indexables_mock;
 		$stub->health     = $health_mock;
-
-		$stub->expects( $this->exactly( $indexable_versions_with_non_empty_diff ) )
-			->method( 'send_alert' );
 
 		$health_mock->expects( $this->exactly( $indexable_versions_with_non_empty_diff ) )
 			->method( 'heal_index_settings_for_indexable' );
