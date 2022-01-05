@@ -17,7 +17,7 @@ class SettingsHealthJob {
 	/**
 	 * The name of the scheduled cron event to build the new index version out to meet minimum shard requirements
 	 */
-	const CRON_EVENT_BUILD_NAME = 'vip_search_build_new_index_version_for_shards';
+	const CRON_EVENT_BUILD_NAME = 'vip_search_build_new_index_version';
 
 	/**
 	 * The name of the option lock when an new index version is already being built
@@ -167,7 +167,7 @@ class SettingsHealthJob {
 				}
 				// Check if index needs to be re-built in the background.
 				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
-					$this->maybe_build_new_index( $indexable );
+					$this->maybe_schedule_build_new_index( $indexable );
 				}
 
 				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
@@ -221,24 +221,37 @@ class SettingsHealthJob {
 	}
 
 	/**
-	 * Determine whether to build new index as part of auto healing.
+	 * Determine whether to schedule event to build new index as part of auto healing.
 	 *
 	 * @param object $indexable The Indexable we want to rebuild.
 	 */
-	public function maybe_build_new_index( $indexable ) {
+	public function maybe_schedule_build_new_index( $indexable ) {
 		// Only do for non-production for now.
 		$is_prod = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
 		if ( $is_prod ) {
 			return;
 		}
-
-		// Check if lock is set. Bail if new build is already ongoing.
+		
+		// Bail if new index build is already occurring.
 		$new_index_lock = get_option( self::BUILD_LOCK_NAME );
-		if ( false === $new_index_lock ) {
-			// No lock, check if event has been scheduled already.
-			if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME ) ) {
-				wp_schedule_single_event( time() + 45, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
-			}
+		if ( false !== $new_index_lock ) {
+			return;
+		}
+
+		// Do not schedule new index build if index version limit is reached (2 versions per Indexable).
+		$search           = \Automattic\VIP\Search\Search::instance();
+		$current_versions = $search->versioning->get_versions( $indexable );
+		if ( count( $current_versions ) > 1 ) {
+			$message = sprintf(
+				'Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 index versions.',
+				$indexable->slug,
+				home_url()
+			);
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+			
+			return;
+		} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable ] ) ) {
+			wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
 		}
 	}
 
@@ -248,22 +261,6 @@ class SettingsHealthJob {
 	 * @param object $indexable The Indexable we want to rebuild.
 	 */
 	public function build_new_index( $indexable ) {
-		$search           = \Automattic\VIP\Search\Search::instance();
-		$current_versions = $search->versioning->get_versions( $indexable );
-
-		// Do not attempt build if limit is reached (2 versions per Indexable).
-		if ( count( $current_versions ) > 1 ) {
-			$message = sprintf(
-				'Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 %s index versions.',
-				$indexable->slug,
-				home_url(),
-				$indexable->slug,
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-			
-			return;
-		}
-
 		update_option( self::BUILD_LOCK_NAME, time() ); // Set lock for starting rebuild.
 
 		// Do the indexing.
