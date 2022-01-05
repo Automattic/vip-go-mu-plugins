@@ -1,0 +1,1 @@
+!function(){var o;window.wpPostLikeCount=window.wpPostLikeCount||{},o=jQuery,window.wpPostLikeCount=jQuery.extend(window.wpPostLikeCount,{request:function(n){return o.ajax({type:"GET",url:window.wpPostLikeCount.jsonAPIbase+n.path,dataType:"jsonp",data:n.data,success:function(o){n.success(o)},error:function(o){n.error(o)}})}})}();
