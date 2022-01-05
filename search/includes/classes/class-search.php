@@ -985,12 +985,8 @@ class Search {
 			return $is_cacheable;
 		}
 
-		foreach ( [ '_search', '_mget', '_doc' ] as $needle ) {
-			if ( wp_in( $needle, $url ) ) {
-				$is_cacheable = true;
-				break;
-			}
-		}
+		$is_cacheable = (bool) preg_match( '#/_(search|mget|doc)#', $url );
+
 
 		/**
 		 * Filter if request is cacheable
