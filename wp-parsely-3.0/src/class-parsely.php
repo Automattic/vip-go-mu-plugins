@@ -447,14 +447,9 @@ class Parsely {
 				'@type' => 'ImageObject',
 				'url'   => $image_url,
 			);
-			$parsely_page['dateCreated']      = gmdate( 'Y-m-d\TH:i:s\Z', get_post_time( 'U', true, $post ) );
-			$parsely_page['datePublished']    = gmdate( 'Y-m-d\TH:i:s\Z', get_post_time( 'U', true, $post ) );
-			if ( get_the_modified_date( 'U', true ) >= get_post_time( 'U', true, $post ) ) {
-				$parsely_page['dateModified'] = gmdate( 'Y-m-d\TH:i:s\Z', get_the_modified_date( 'U', true ) );
-			} else {
-				// Use the post time as the earliest possible modification date.
-				$parsely_page['dateModified'] = gmdate( 'Y-m-d\TH:i:s\Z', get_post_time( 'U', true, $post ) );
-			}
+
+			$this->set_metadata_post_times( $parsely_page, $post );
+
 			$parsely_page['articleSection'] = $category;
 			$author_objects                 = array();
 			foreach ( $authors as $author ) {
@@ -490,6 +485,34 @@ class Parsely {
 		 * @param array   $parsely_options The Parsely options.
 		 */
 		return apply_filters( 'wp_parsely_metadata', $parsely_page, $post, $parsely_options );
+	}
+
+	/**
+	 * Sets all metadata values related to post time.
+	 *
+	 * @since 3.0.2
+	 *
+	 * @param array   $metadata Array containing all metadata. It will be potentially mutated to add keys: dateCreated, dateModified, & datePublished.
+	 * @param WP_Post $post     Post object from which to extract time data.
+	 * @return void
+	 */
+	private function set_metadata_post_times( array &$metadata, WP_Post $post ): void {
+		$date_format      = 'Y-m-d\TH:i:s\Z';
+		$post_created_gmt = get_post_time( $date_format, true, $post );
+
+		if ( false === $post_created_gmt ) {
+			return;
+		}
+
+		$metadata['dateCreated']   = $post_created_gmt;
+		$metadata['datePublished'] = $post_created_gmt;
+		$metadata['dateModified']  = $post_created_gmt;
+
+		$post_modified_gmt = get_post_modified_time( $date_format, true, $post );
+
+		if ( false !== $post_modified_gmt && $post_modified_gmt > $post_created_gmt ) {
+			$metadata['dateModified'] = $post_modified_gmt;
+		}
 	}
 
 	/**
