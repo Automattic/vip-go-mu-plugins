@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+require_once __DIR__ . '/includes/functions/helpers.php';
 require_once __DIR__ . '/includes/classes/class-search.php';
 
 if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {

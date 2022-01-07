@@ -1110,7 +1110,7 @@ class Search {
 		}
 
 		// Bulk index request so increase timeout
-		if ( wp_endswith( $query_path, '_bulk' ) ) {
+		if ( str_ends_with( $query_path, '_bulk' ) ) {
 			$timeout = 5;
 
 			if ( $is_cli && $is_post_request ) {
@@ -1493,7 +1493,7 @@ class Search {
 		foreach ( $widgets as $index => $file ) {
 			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
 			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+			if ( str_ends_with( $file, '/jetpack/modules/widgets/search.php' ) ) {
 				unset( $widgets[ $index ] );
 			}
 		}
@@ -1634,7 +1634,7 @@ class Search {
 		$index_name = $path[0];
 
 		// If it starts with underscore, then we didn't detect the index name and should return null
-		if ( wp_startswith( $index_name, '_' ) ) {
+		if ( str_starts_with( $index_name, '_' ) ) {
 			return null;
 		}
 
