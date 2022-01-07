@@ -260,7 +260,8 @@ class Queue {
 	}
 
 	public function setup_hooks() {
-		add_action( 'saved_term', [ $this, 'offload_term_indexing_to_queue' ], 0, 3 );
+		add_action( 'saved_term', [ $this, 'offload_term_indexing_to_queue' ], 0, 3 ); // saved_term fires after SyncManager_Helper actions
+
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
 		// For handling indexing failures
@@ -893,7 +894,7 @@ class Queue {
 		}
 
 		if ( true === apply_filters( 'ep_skip_action_edited_term', false, $term_id, $tt_id, $taxonomy ) ) {
-			return; // Do not offload if we are skipping actions on the edited term.
+			return; // Do not offload if SyncManager_Helper is skipping actions on immaterial term changes
 		}
 
 		// If the number of affected posts is low enough, process them now rather than send them to cron
