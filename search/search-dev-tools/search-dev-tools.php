@@ -74,10 +74,19 @@ function rest_callback( \WP_REST_Request $request ) {
 		[
 			'body'   => $request['query'],
 			'method' => 'POST',
-		]
+		],
+		[],
+		'query'
 	);
 
-	$result['body'] = sanitize_query_response( json_decode( $result['body'] ) );
+	if ( ! is_wp_error( $result ) ) {
+		$result = sanitize_query_response( json_decode( $result['body'] ) );
+	} else {
+		$result = [
+			'body' => $result->get_error_messages(),
+		];
+	}
+
 	return rest_ensure_response( [ 'result' => $result ] );
 }
 
