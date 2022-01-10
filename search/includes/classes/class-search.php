@@ -156,6 +156,10 @@ class Search {
 	private const LOWER_BOUND_QUERY_DB_FALLBACK_VALUE = 1;
 	private const UPPER_BOUND_QUERY_DB_FALLBACK_VALUE = 10;
 
+	// Global timeouts used both for ES query timeout and the Search client timeout.
+	private const GLOBAL_QUERY_TIMEOUT_WEB_SEC = 2;
+	private const GLOBAL_QUERY_TIMEOUT_CLI_SEC = 5;
+
 	public $healthcheck;
 	public $settings_healthcheck;
 	public $versioning_cleanup;
@@ -526,7 +530,8 @@ class Search {
 		add_filter( 'ep_facet_include_taxonomies', '__return_empty_array' );
 
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
-		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ) );
+		// Adjust the post query ES arguments (the whole payload)
+		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
 
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
@@ -980,12 +985,8 @@ class Search {
 			return $is_cacheable;
 		}
 
-		foreach ( [ '_search', '_mget', '_doc' ] as $needle ) {
-			if ( wp_in( $needle, $url ) ) {
-				$is_cacheable = true;
-				break;
-			}
-		}
+		$is_cacheable = (bool) preg_match( '#/_(search|mget|doc)#', $url );
+
 
 		/**
 		 * Filter if request is cacheable
@@ -1099,7 +1100,7 @@ class Search {
 
 	public function get_http_timeout_for_query( $query, $args ) {
 		$is_cli  = defined( 'WP_CLI' ) && WP_CLI;
-		$timeout = $is_cli ? 5 : 2;
+		$timeout = $is_cli ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 
 		$query_path      = wp_parse_url( $query['url'], PHP_URL_PATH );
 		$is_post_request = false;
@@ -1502,13 +1503,26 @@ class Search {
 	}
 
 	/**
-	 * Filter for formatted_args in post queries
+	 * Filter for formatted_args in post queries (adjust the final query arguments before it gets passed to the request handler)
+	 *
+	 * @param array $formatted_args the prepared query arguments (payload)
+	 * @param array $args query vars
+	 * @param array $wp_query an instance of WP_Query
+	 * @return array
 	 */
-	public function filter__ep_post_formatted_args( $formatted_args ) {
+	public function filter__ep_post_formatted_args( $formatted_args, $args, $wp_query ) {
 		// Check if track_total_hits is set
 		// Don't override it if it is
 		if ( ! array_key_exists( 'track_total_hits', $formatted_args ) ) {
 			$formatted_args['track_total_hits'] = true;
+		}
+
+		// TODO: remove temporary rollout environment check
+		// Force the timeout for post search queries.
+		$is_prod        = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
+		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
+		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', ! $is_prod ) ) {
+			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
 		}
 
 		return $formatted_args;
