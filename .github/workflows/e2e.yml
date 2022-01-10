@@ -43,7 +43,7 @@ jobs:
       - name: Install VIP CLI
         run: |
           npm install --prefix=$HOME/.local -g @automattic/vip
-          cd $HOME/.local/lib/node_modules/@automattic/vip && npm i colors@1.4.1
+          cd $HOME/.local/lib/node_modules/@automattic/vip && npm i colors@1.4.1 --force
 
       - name: Determine WP version
         id: wpver
