@@ -1,18 +1,19 @@
 <?php
 
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
-
 require_once __DIR__ . '/../../lib/class-vip-request-block.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 
 class VIP_Request_Block_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
-
 	/*
 	 * The $_SERVER headers that are used in this class to test
 	 * are defined in the tests/bootstrap.php file.
 	 */
+
+	public function tearDown(): void {
+		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'] );
+		parent::tearDown();
+	}
 
 	public function test__no_error_raised_when_ip_is_not_present() {
 		$_SERVER['HTTP_TRUE_CLIENT_IP']  = '4.4.4.4';
@@ -55,5 +56,26 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 		$actual = VIP_Request_Block::ip( '1.1.1.1' );
 		self::assertFalse( $actual );
+	}
+
+	/**
+	 * @dataProvider data_ipv6_corner_cases
+	 */
+	public function test_ipv6_corner_cases( string $index, string $value, string $block ): void {
+		$_SERVER[ $index ] = $value;
+
+		$actual = VIP_Request_Block::ip( $block );
+		self::assertTrue( $actual );
+	}
+
+	public function data_ipv6_corner_cases(): iterable {
+		return [
+			[ 'HTTP_TRUE_CLIENT_IP', '::ffff:127.0.0.1', '::FFFF:127.0.0.1' ],
+			[ 'HTTP_X_FORWARDED_FOR', '::ffff:127.0.0.1', '::FFFF:127.0.0.1' ],
+			[ 'HTTP_TRUE_CLIENT_IP', '2001:4860:4860::8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
+			[ 'HTTP_TRUE_CLIENT_IP', '2001:4860:4860:0:0:0:0:8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
+			[ 'HTTP_X_FORWARDED_FOR', '2001:4860:4860::8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
+			[ 'HTTP_X_FORWARDED_FOR', '2001:4860:4860:0:0:0:0:8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
+		];
 	}
 }

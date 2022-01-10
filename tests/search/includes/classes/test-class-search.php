@@ -142,6 +142,78 @@ class Search_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function vip_search_is_url_query_cacheable_data() {
+		return array(
+			// Regular search
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_search',
+				),
+				// The expected result
+				true,
+			),
+			// Regular multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_mget',
+				),
+				// The expected result
+				true,
+			),
+			// Regular entity multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_doc/_mget',
+				),
+				// The expected result
+				true,
+			),
+			// Bulk index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_bulk',
+				),
+				// The expected result
+				false,
+			),
+			// Url containing _bulk
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_bulk/bar?_mget',
+				),
+				// The expected result
+				false,
+			),
+			// Random other url
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_anything',
+				),
+				// The expected result
+				false,
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly calculate the HTTP request timeout value for ES requests
+	 *
+	 * @dataProvider vip_search_is_url_query_cacheable_data()
+	 */
+	public function test__is_url_query_cacheable( $query, $expected_is_cacheable ) {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$is_cacheable = $es->is_url_query_cacheable( $query['url'], array() );
+
+		$this->assertEquals( $expected_is_cacheable, $is_cacheable );
+	}
+
 	/**
 	 * Test `ep_index_name` filter with versioning
 	 *
@@ -1071,30 +1143,6 @@ class Search_Test extends WP_UnitTestCase {
 		$enabled = apply_filters( 'ep_allow_post_content_filtered_index', true );
 
 		$this->assertFalse( $enabled );
-	}
-
-	/**
-	 * Ensure we only cache specific endpoints.
-	 */
-	public function test__is_url_query_cacheable() {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
-
-		$urls = [
-			'http://vip-search:9200/vip-200508-post-1/_search',
-			'http://vip-search:9200/_mget?fields=blog_id,post_id,author_id',
-			'http://vip-search:9200/vip-200508-post-1/_doc/48',
-		];
-		$args = [];
-
-		foreach ( $urls as $url ) {
-			$cacheable = $es->is_url_query_cacheable( $url, $args );
-			$this->assertTrue( $cacheable );
-		}
-
-		$_GET['vip-debug'] = true;
-		$cacheable         = $es->is_url_query_cacheable( $url[0], $args );
-		$this->assertFalse( $cacheable );
 	}
 
 	/*
