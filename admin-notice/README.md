@@ -21,7 +21,7 @@ add_action(
 					new Date_Condition( '2022-01-01', '2022-02-01' ),
 					new WP_Version_Condition( '5.8', '5.9' ),
 				],
-				'wp-5.9-test'
+				'wp-5.9'
 			)
 		);
 	}
