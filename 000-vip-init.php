@@ -43,6 +43,10 @@ if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
 	define( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE', false );
 }
 
+if ( ! class_exists( Context::class ) ) {
+	require_once __DIR__ . '/lib/utils/class-context.php';
+}
+
 // Sites can be blocked for various reasons - usually maintenance, so exit
 // early if the constant has been set (defined by VIP Go in config/wp-config.php)
 if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
