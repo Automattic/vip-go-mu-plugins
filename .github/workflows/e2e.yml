@@ -28,25 +28,48 @@ jobs:
         with:
           submodules: true
           path: vip-go-mu-plugins
+
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
           node-version: '16'
+          cache: npm
+          cache-dependency-path: vip-go-mu-plugins/package-lock.json
+
       - name: Install dependencies
-        run: cd ./vip-go-mu-plugins && npm install
-      - name: Install VIP Cli
-        run: npm install --prefix=$HOME/.local -g @automattic/vip
+        run: npm ci
+        working-directory: vip-go-mu-plugins
+
+      - name: Install VIP CLI
+        run: |
+          npm install --prefix=$HOME/.local -g @automattic/vip
+          cd $HOME/.local/lib/node_modules/@automattic/vip && npm i colors@1.4.1 --force
+
+      - name: Determine WP version
+        id: wpver
+        run: |
+          if [ -z "${{ github.event.inputs.wpversion }}" ]; then
+            echo ::set-output name=wpversion::latest
+          else
+            echo ::set-output name=wpversion::${{ github.event.inputs.wpversion }}
+          fi
+
       - name: Setup test environment
         if: ${{ github.event.inputs.url == '' }}
-        run: cd ./vip-go-mu-plugins && npm run setup-e2e-env -- -v ${{ github.event.inputs.wpversion }}
+        run: npm run setup-e2e-env -- -v ${{ steps.wpver.outputs.wpversion }}
+        working-directory: vip-go-mu-plugins
+
       - name: Setup test env variables
         if: ${{ github.event.inputs.url != '' }}
         run: |
           echo "E2E_BASE_URL=${{ github.event.inputs.url }}" >> $GITHUB_ENV
           echo "E2E_USER=${{ github.event.inputs.user }}" >> $GITHUB_ENV
           echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
+
       - name: Run e2e tests
-        run: cd ./vip-go-mu-plugins && npm run test-e2e
+        run: npm run test-e2e
+        working-directory: vip-go-mu-plugins
+
       - name: Archive test results
         uses: actions/upload-artifact@v2
         if: failure()
