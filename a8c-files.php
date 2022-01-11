@@ -37,6 +37,7 @@ require_once __DIR__ . '/files/class-meta-updater.php';
 
 use Automattic\VIP\Files\VIP_Filesystem;
 use Automattic\VIP\Files\Meta_Updater;
+use Automattic\VIP\Utils\Context;
 
 class A8C_Files {
 
@@ -91,7 +92,7 @@ class A8C_Files {
 			// add new cron schedule for filesize update
 			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 
-			if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			if ( wp_doing_cron() || Context::is_wp_cli() ) {
 				// Schedule meta update job
 				$this->schedule_update_job();
 			}

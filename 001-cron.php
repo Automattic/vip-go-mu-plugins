@@ -8,6 +8,8 @@ Version: 2.0
 Text Domain: automattic-cron-control
 */
 
+use Automattic\VIP\Utils\Context;
+
 if ( file_exists( __DIR__ . '/cron/cron.php' ) ) {
 	require_once __DIR__ . '/cron/cron.php';
 }
@@ -71,8 +73,8 @@ function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
  * Cron runs sync itself, and running sync on shutdown slows the endpoint response, sometimes beyond the 10-second timeout
  */
 function wpcom_vip_disable_jetpack_sync_on_cron_shutdown( $load_sync ) {
-	if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-		return false;
+	if ( Context::is_cron() ) {
+		$load_sync = false;
 	}
 
 	return $load_sync;

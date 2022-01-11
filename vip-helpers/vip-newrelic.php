@@ -4,6 +4,8 @@
  * These helper functions can be used inside your VIP code to modify how New Relic works on your site.
  */
 
+use Automattic\VIP\Utils\Context;
+
 /**
  * Disable New Relic's browser metrics
  *
@@ -75,8 +77,7 @@ function wpcom_vip_cron_for_newrelic() {
  * We don't want to count ongoing WP-CLI requests as part of the apdex because it is not a user facing function and if a WP-CLI request is slow it doesn't imply that the site's performance is impacted. Without removing these WP-CLI requests from the apdex calculation it could flag the site as having performance problems, which would cause false positives in the monitoring.
  */
 function wpcom_vip_wpcli_for_newrelic() {
-	if ( defined( 'WP_CLI' )
-		&& WP_CLI
+	if ( Context::is_wp_cli()
 		&& ! wp_doing_cron()  // Cron is going to be run via WP-CLI in the near term. We want to keep Cron and WP-CLI separated for better monitoring so we're not going to flag WP_CLI requests that are actually cron requests as WP-CLI.
 		&& function_exists( 'newrelic_ignore_apdex' )
 		&& function_exists( 'newrelic_add_custom_parameter' )
@@ -110,7 +111,7 @@ function wpcom_vip_wpcli_for_newrelic() {
  */
 function wpcom_vip_rest_routes_for_newrelic( $dispatch_results, $request, $route ) {
 	$functions_exist = function_exists( 'newrelic_add_custom_parameter' ) && function_exists( 'newrelic_name_transaction' );
-	$is_cli          = defined( 'WP_CLI' ) && WP_CLI;
+	$is_cli          = Context::is_wp_cli();
 
 	if ( $functions_exist && ! wp_doing_cron() && ! $is_cli ) {
 		newrelic_name_transaction( $route );

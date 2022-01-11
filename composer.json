@@ -7,7 +7,7 @@
         "erusev/parsedown": "1.7.4",
         "dms/phpunit-arraysubset-asserts": "0.3.1",
         "yoast/phpunit-polyfills": "1.0.3",
-        "johnpbloch/wordpress-core": "5.8.2",
+        "johnpbloch/wordpress-core": "5.8.3",
         "wp-phpunit/wp-phpunit": "5.8.2",
         "wp-cli/wp-cli": "2.5.0"
     },
