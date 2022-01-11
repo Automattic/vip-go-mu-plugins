@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
+use Automattic\VIP\Utils\Context;
 use WP_Error;
 
 require __DIR__ . '/class-curl-streamer.php';
@@ -37,10 +38,10 @@ class API_Client {
 		$this->files_token   = $files_token;
 
 		// Add some context to the UA to simplify debugging issues
-		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+		if ( Context::is_cron() ) {
 			// current_filter may not be totally accurate but still better than nothing
 			$current_context = sprintf( 'Cron (%s)', current_filter() );
-		} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
+		} elseif ( Context::is_wp_cli() ) {
 			$current_context = 'WP_CLI';
 		} else {
 			$current_context = add_query_arg( [] );
