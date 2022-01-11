@@ -32,10 +32,11 @@ add_action(
 	function( $admin_notice_controller ) {
 		$admin_notice_controller->add(
 			new Admin_Notice(
-				'WordPress 5.9 is scheduled to be released on Tuesday, January 25th',
+				'WordPress 5.9 is targeted for release on January 25, 2022. The latest Release Candidate (RC) is available now. Open a ticket to upgrade a non-prod environment to the latest version for testing.',
 				[
 					new Date_Condition( '2022-01-01', '2022-02-01' ),
 					new WP_Version_Condition( '5.8', '5.9' ),
+					new Capability_Condition( 'administrator' ),
 				],
 				'wp-5.9'
 			)
