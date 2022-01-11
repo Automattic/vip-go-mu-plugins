@@ -9,8 +9,6 @@ Author URI: http://automattic.com/
 
 namespace Automattic\VIP\Async_Publish_Actions;
 
-use Automattic\VIP\Utils\Context;
-
 const ASYNC_TRANSITION_EVENT = 'wpcom_vip_async_transition_post_status';
 
 /**
@@ -26,10 +24,10 @@ function should_offload() {
 	if ( wp_doing_cron() ) {
 		$context = 'cron';
 		$offload = false;
-	} elseif ( Context::is_wp_cli() ) {
+	} elseif ( defined( 'WP_CLI' ) && \WP_CLI ) {
 		$context = 'wp-cli';
 		$offload = false;
-	} elseif ( Context::is_xmlrpc_api() ) {
+	} elseif ( defined( 'XMLRPC_REQUEST' ) && \XMLRPC_REQUEST ) {
 		$context = 'xml-rpc';
 		$offload = false;
 	} elseif ( defined( 'WP_IMPORTING' ) && \WP_IMPORTING ) {

@@ -9,11 +9,10 @@
 namespace Automattic\VIP;
 
 use Automattic\VIP\Utils\Alerts;
-use Automattic\VIP\Utils\Context;
 
 define( 'USER_ROLE_BACKUP_LENGTH', 3 );
 
-if ( is_admin() || Context::is_wp_cli() ) {
+if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 	add_action( 'muplugins_loaded', __NAMESPACE__ . '\notoptions_mitigation', -999 );
 	add_action( 'wp_loaded', __NAMESPACE__ . '\user_role_backup_scheduling' );
 }
