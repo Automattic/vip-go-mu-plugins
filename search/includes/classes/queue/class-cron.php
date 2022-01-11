@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Queue;
 
 use Automattic\VIP\Search\Queue as Queue;
+use Automattic\VIP\Utils\Context;
 use Automattic\WP\Cron_Control\Events_Store;
 use \ElasticPress\Indexables as Indexables;
 use WP_Error;
@@ -76,7 +77,7 @@ class Cron {
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] );
 
 		// Hook into init actions(except for init) to ensure cron-control has already been loaded
-		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+		if ( Context::is_wp_cli() ) {
 			add_action( 'wp_loaded', [ $this, 'schedule_sweeper_job' ], 0 );
 		} else {
 			add_action( 'admin_init', [ $this, 'schedule_sweeper_job' ], 0 );
