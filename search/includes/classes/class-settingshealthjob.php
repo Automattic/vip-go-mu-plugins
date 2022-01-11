@@ -275,6 +275,7 @@ class SettingsHealthJob {
 			[
 				'return'     => 'all',
 				'exit_error' => false,
+				'launch'     => false,
 			],
 		);
 
