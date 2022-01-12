@@ -2,7 +2,6 @@
 
 namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Utils\Context;
 use \ElasticPress\Indexables as Indexables;
 
 use \WP_Query as WP_Query;
@@ -469,7 +468,7 @@ class Health {
 			return new WP_Error( 'es_posts_query_error', 'Failure retrieving post indexable #vip-search' );
 		}
 
-		$is_cli = Context::is_wp_cli();
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		$results = [];
 
