@@ -201,18 +201,23 @@ class Meta_Updater {
 
 		$response = wp_remote_head( $attachment_url );
 		if ( is_wp_error( $response ) ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error( sprintf( '%s: failed to HEAD attachment %s because %s', __METHOD__, esc_html( $attachment_url ), esc_html( $response->get_error_message() ) ), E_USER_WARNING );
 			return -1;
 		}
 
 		$status = wp_remote_retrieve_response_code( $response );
-		if ( 404 === $status ) {
-			return 0;
+		if ( 200 !== $status ) {
+			trigger_error( sprintf( '%s: HEAD attachment %s failed with HTTP error %d', __METHOD__, esc_html( $attachment_url ), (int) $status ), E_USER_WARNING );
+			return ( 404 === $status ) ? 0 : -1;
 		}
 
 		$length = wp_remote_retrieve_header( $response, 'Content-Length' );
-		return is_numeric( $length ) ? (int) $length : -1;
+		if ( is_numeric( $length ) ) {
+			return (int) $length;
+		}
+
+		trigger_error( sprintf( '%s: HEAD attachment %s: no Content-Length present', __METHOD__, esc_html( $attachment_url ) ), E_USER_WARNING );
+		return -1;
 	}
 
 	/**
