@@ -175,7 +175,7 @@ class Meta_Updater {
 
 		$filesize = $this->get_filesize_from_file( $attachment_id );
 
-		if ( 0 >= $filesize ) {
+		if ( $filesize < 0 ) {
 			return [ 'fail-get-filesize', 'failed to get filesize' ];
 		}
 
@@ -203,10 +203,16 @@ class Meta_Updater {
 		if ( is_wp_error( $response ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error( sprintf( '%s: failed to HEAD attachment %s because %s', __METHOD__, esc_html( $attachment_url ), esc_html( $response->get_error_message() ) ), E_USER_WARNING );
+			return -1;
+		}
+
+		$status = wp_remote_retrieve_response_code( $response );
+		if ( 404 === $status ) {
 			return 0;
 		}
 
-		return (int) wp_remote_retrieve_header( $response, 'Content-Length' );
+		$length = wp_remote_retrieve_header( $response, 'Content-Length' );
+		return is_numeric( $length ) ? (int) $length : -1;
 	}
 
 	/**
