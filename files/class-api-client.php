@@ -304,7 +304,7 @@ class API_Client {
 		if ( 503 === $response_code ) {
 			return new WP_Error(
 				'file-service-readonly',
-				__( 'Uploads are temporarily disabled due to Files service maintenance. Please try again in a few minutes.' )
+				__( 'Uploads are temporarily disabled due to platform maintenance. Please try again in a few minutes.' )
 			);
 		}
 
