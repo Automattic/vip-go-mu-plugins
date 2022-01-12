@@ -616,6 +616,9 @@ class Search {
 		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
 
 		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
+
+		// Disable search weighting engine for a simplified ES search query
+		add_filter( 'ep_disable_search_weighting', '__return_true' );
 	}
 
 	protected function load_commands() {
