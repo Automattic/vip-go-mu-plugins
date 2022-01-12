@@ -165,7 +165,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.5.7"
+      WP_VERSION: "5.5.8"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -174,7 +174,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.6.6"
+      WP_VERSION: "5.6.7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -183,7 +183,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.7.4"
+      WP_VERSION: "5.7.5"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -192,7 +192,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.8.2"
+      WP_VERSION: "5.8.3"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image

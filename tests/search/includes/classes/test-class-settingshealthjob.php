@@ -152,7 +152,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub->maybe_schedule_build_new_index( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable ] );
+		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertIsInt( $event );
 	}
 
@@ -171,7 +171,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub->maybe_schedule_build_new_index( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable ] );
+		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
 	}
 
@@ -190,14 +190,14 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub->maybe_schedule_build_new_index( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable ] );
+		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
 
 		delete_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME );
 
 		$stub->maybe_schedule_build_new_index( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable ] );
+		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertIsInt( $event );
 	}
 }
