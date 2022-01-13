@@ -33,6 +33,26 @@ abstract class TestCase extends WPIntegrationTestCase {
 		'logo'                      => '',
 	);
 
+	public const EMPTY_DEFAULT_OPTIONS = array(
+		'apikey'                      => '',
+		'content_id_prefix'           => '',
+		'api_secret'                  => '',
+		'use_top_level_cats'          => false,
+		'custom_taxonomy_section'     => 'category',
+		'cats_as_tags'                => false,
+		'track_authenticated_users'   => true,
+		'lowercase_tags'              => true,
+		'force_https_canonicals'      => false,
+		'track_post_types'            => array( 'post' ),
+		'track_page_types'            => array( 'page' ),
+		'disable_javascript'          => false,
+		'disable_amp'                 => false,
+		'meta_type'                   => 'json_ld',
+		'logo'                        => '',
+		'metadata_secret'             => '',
+		'parsely_wipe_metadata_cache' => false,
+	);
+
 	/**
 	 * Utility function to update Parse.ly options with a merge of default values and custom values.
 	 *

@@ -1,14 +1,18 @@
 name: End-to-end (e2e) Tests
 
 on:
-  # Run on all pushes and on all pull requests.
-  # Prevent the "push" build from running when there are only irrelevant changes.
-  push:
-    paths-ignore:
-      - '**.md'
+  # Run on all pull requests.
   pull_request:
-  # Allow manually triggering the workflow.
-  workflow_dispatch:
+  push:
+    branches:
+      - trunk
+
+# Cancels all previous workflow runs for pull requests that have not completed.
+concurrency:
+  # The concurrency group contains the workflow name and the branch name for pull requests
+  # or the commit hash for any other events.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -19,28 +23,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Spin up WordPress
-        run: docker-compose -f tests/e2e/docker-compose.yml up &
-
-      - name: Use node lts/*
+      - name: Use desired version of NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: lts/*
-          cache: 'npm'
+          node-version: 16
+          cache: npm
 
-      - name: Update npm to latest
-        run: npm i -g npm
+      - name: Npm install
+        run: |
+          npm ci
+          npm install -g @wordpress/env
 
-      - name: Installing dependencies
-        run: npm ci
+      - name: Install WordPress
+        run: |
+          wp-env start
 
-      - name: Wait for WP
-        run: until docker-compose -f tests/e2e/docker-compose.yml run cli wp db check &> /dev/null; do >&2 echo "Waiting for the back end to provision..."; sleep 2; done; >&2 echo "WordPress is ready!"
-        shell: bash
-
-      - name: Run e2e tests
-        run: npm run test:e2e
-
-      - name: Clean up
-        if: ${{ always() }}
-        run: docker-compose -f tests/e2e/docker-compose.yml down -v
+      - name: Running the tests
+        run: |
+          $( npm bin )/wp-scripts test-e2e --listTests > ~/.jest-e2e-tests
+          $( npm bin )/wp-scripts test-e2e --cacheDirectory="$HOME/.jest-cache"

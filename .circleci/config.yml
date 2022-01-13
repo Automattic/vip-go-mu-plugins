@@ -36,15 +36,6 @@ workflows:
 version: 2.1
 
 parameters:
-  wp_test_dir:
-    type: string
-    default: /tmp/wordpress-tests-lib
-  wp_core_dir:
-    type: string
-    default: /tmp/wordpress
-  wp_core_develop_dir:
-    type: string
-    default: /tmp/wordpress-develop
   db_host:
     type: string
     default: 127.0.0.1
@@ -75,13 +66,6 @@ job-references:
       npm ci
       composer install -n
 
-  install_core_tests_dependencies: &install_core_tests_dependencies
-    name: "Install Dependencies"
-    command: |
-      sudo apt-get update && sudo apt-get -y install subversion libgcc-10-dev default-mysql-client nodejs npm
-      sudo npm install npm@latest -g
-      composer install -n
-
   prepare_repo: &prepare_repo
     name: "Prepare Repo"
     command: |
@@ -92,9 +76,9 @@ job-references:
     command: |
       if [ "$DISABLE_JETPACK" = "1" ]; then
         echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-        /usr/local/bin/runner --exclude-group jetpack-required
+        /usr/local/bin/runner --exclude-group jetpack-required  --order-by=random
       else
-        /usr/local/bin/runner
+        /usr/local/bin/runner --order-by=random
       fi
     environment:
       MYSQL_HOST: << pipeline.parameters.db_host >>
@@ -113,41 +97,23 @@ job-references:
 
   php_core_job: &php_core_job
     steps:
-      - run:
-          name: Add missing packages
-          command: sudo apt-get update && sudo apt-get -y install git ssh
       - checkout
-      - run: *install_core_tests_dependencies
-      - run: *prepare_repo
       - run:
           name: "Run Tests"
           command: |
-            rm -rf << pipeline.parameters.wp_core_develop_dir >>
-            bash bin/install-wp-develop.sh << pipeline.parameters.db_name >> << pipeline.parameters.db_user >> "<< pipeline.parameters.db_pass>>"  << pipeline.parameters.db_host >> "$WP_VERSION"
-            cd << pipeline.parameters.wp_core_develop_dir >>
-            npm ci
-            npm run build
-            export WP_TESTS_DIR=<< pipeline.parameters.wp_core_develop_dir >>/tests/phpunit
-            if [[ "$INCLUDE_MU_TESTS" == "1" ]]; then
-              cp -r $HOME/project/ build/wp-content/mu-plugins
-              rm -rf tests/phpunit/data/plugins/wordpress-importer
-              source $HOME/project/bin/utils.sh
-              update_core_tests "$WP_TESTS_DIR"
-              exclude_core_tests tests/phpunit/multisite.xml
-              exclude_core_tests phpunit.xml.dist tests/phpunit/
-            fi
-            if [[ "$WP_MULTISITE" == "1" ]]; then
-              $HOME/project/vendor/bin/phpunit -c tests/phpunit/multisite.xml
-            else
-              $HOME/project/vendor/bin/phpunit
-            fi
+            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/build/wp-content/mu-plugins"
+            /usr/local/bin/runner
+          environment:
+            MYSQL_HOST: << pipeline.parameters.db_host >>
+            MYSQL_USER: << pipeline.parameters.db_user >>
+            MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
+            MYSQL_DB: << pipeline.parameters.db_name >>
 
   lint_job: &lint_job
     steps:
       - checkout
       - run: *prepare_repo
-      - run: npm ci
-      - run: composer install -n
+      - run: *install_dependencies
       - run:
           name: "Lint"
           command: npm run lint
@@ -156,21 +122,19 @@ jobs:
   php74-core-tests:
     <<: *php_core_job
     environment:
-      INCLUDE_MU_TESTS: "1"
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.4-fpm
+      - image: ghcr.io/automattic/vip-container-images/wp-core-test-runner
       - image: *db_image
 
   php74-core-multisite-tests:
     <<: *php_core_job
     environment:
-      INCLUDE_MU_TESTS: "1"
       WP_MULTISITE: "1"
       WP_VERSION: "latest"
     docker:
-      - image: wordpressdevelop/php:7.4-fpm
+      - image: ghcr.io/automattic/vip-container-images/wp-core-test-runner
       - image: *db_image
 
   php74-lint:
@@ -201,7 +165,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.5.7"
+      WP_VERSION: "5.5.8"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -210,7 +174,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.6.6"
+      WP_VERSION: "5.6.7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -219,7 +183,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.7.4"
+      WP_VERSION: "5.7.5"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -228,7 +192,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.8.2"
+      WP_VERSION: "5.8.3"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -331,17 +295,18 @@ jobs:
     docker:
       - image: circleci/php:7.4-node
     steps:
-      - run: composer require automattic/vip-build-tools:1.0.6
+      - run: composer require automattic/vip-build-tools:1.0.7
       - run:
           command: |
             php $HOME/project/vendor/automattic/vip-build-tools/scripts/github-changelog.php \
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
                 --wp-tag-ids=1784989 \
+                --wp-channel-ids=267076 \
                 --debug
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.13.0
+      - image: cimg/node:16.13.1
     steps:
       - checkout
       - run:

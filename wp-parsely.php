@@ -58,6 +58,12 @@ function maybe_load_plugin() {
 	// We need priority 0 so it's executed before `widgets_init`
 	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
 
+	/**
+	 * Hot fix: Password protected posts prior to 3.0.1 potentially leak post info via metadata.
+	 * This can be removed once we no longer source an earlier version.
+	 */
+	add_filter( 'wp_parsely_metadata', __NAMESPACE__ . '\clear_protected_metadata_prior_to_3_0_1', 9, 2 );
+
 	$versions_to_try = SUPPORTED_VERSIONS;
 
 	/**
@@ -100,7 +106,7 @@ function maybe_load_plugin() {
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
 
 function maybe_disable_some_features() {
-	if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely' ) ) {
+	if ( isset( $GLOBALS['parsely'] ) && ( is_a( $GLOBALS['parsely'], 'Parsely' ) || is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) ) {
 		// If the plugin was loaded solely by the option, hide the UI (for now)
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
 			remove_action( 'admin_menu', array( $GLOBALS['parsely'], 'add_settings_sub_menu' ) );
@@ -117,4 +123,25 @@ function maybe_disable_some_features() {
 			add_filter( 'wp_parsely_enable_row_action_links', '__return_true' );
 		}
 	}
+}
+
+/*
+ * Password protected posts prior to 3.0.1 potentially leak post info via metadata.
+ * This is a hot fix that clears the metadata when appropriate, otherwise, it returns the input value.
+ * @see https://github.com/Parsely/wp-parsely/blob/3.0.1/src/class-parsely.php#L280-L294
+ * @see https://github.com/Parsely/wp-parsely/pull/547
+ * @return array By default, return the input value. Return an empty array when:
+ *   - the wp-parsely plugin version is less than 3.0.1
+ *   - the password check is not explicitly bypassed via `wp_parsely_skip_post_password_check` filter
+ *   - a password is required, but not provided
+ */
+function clear_protected_metadata_prior_to_3_0_1( $parsely_page, $post ) {
+	if (
+		version_compare( $GLOBALS['parsely']::VERSION, '3.0.1', '<' ) &&
+		! apply_filters( 'wp_parsely_skip_post_password_check', false, $post ) &&
+		post_password_required( $post )
+	) {
+		return [];
+	}
+	return $parsely_page;
 }

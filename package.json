@@ -8,13 +8,27 @@
     "phpcs": "vendor/bin/phpcs --cache",
     "phpcs:fix": "vendor/bin/phpcbf",
     "lint": "npm run phplint && npm run phpcs",
+    "lint-e2e": "eslint -c __tests__/e2e/.eslintrc.js --fix",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "setup-e2e-env": "./__tests__/e2e/bin/setup-env.sh",
+    "destroy-e2e-env": "vip dev-env destroy --slug=e2e-test-site",
+    "test-e2e": "playwright test -c '__tests__/e2e/playwright.config.ts'"
   },
   "author": "Automattic",
   "devDependencies": {
+    "@playwright/test": "1.17.2",
+    "@typescript-eslint/eslint-plugin": "^5.7.0",
+    "@typescript-eslint/parser": "^5.7.0",
+    "asana-phrase": "0.0.8",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-wpvip": "github:automattic/eslint-config-wpvip#252c443",
+    "eslint-plugin-playwright": "^0.7.0",
+    "eslint-plugin-prettier": "^4.0.0",
     "husky": "7.0.4",
-    "lint-staged": "12.1.2",
-    "phplint": "2.0.5"
+    "lint-staged": "12.1.7",
+    "phplint": "2.0.5",
+    "playwright": "1.17.2"
   }
 }

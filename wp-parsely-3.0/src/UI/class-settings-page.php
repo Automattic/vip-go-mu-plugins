@@ -760,9 +760,9 @@ final class Settings_Page {
 
 		foreach ( $select_options as $key => $val ) {
 			$selected = in_array( $val, $options[ $args['option_key'] ], true );
-			echo sprintf( "<p><input type='checkbox' name='%s[]' id='%s' value='%s' ", esc_attr( $name ), esc_attr( $name ), esc_attr( $key ) );
+			echo sprintf( '<p><input type="checkbox" name="%1$s[]" id="%1$s-%2$s" value="%2$s" ', esc_attr( $name ), esc_attr( $key ) );
 			echo checked( true === $selected, true, false );
-			echo sprintf( " /> <label for='%s'>%s</label></p>", esc_attr( $name ), esc_attr( $val ) );
+			echo sprintf( ' /> <label for="%1$s-%2$s">%2$s</label></p>', esc_attr( $name ), esc_attr( $val ) );
 		}
 
 		if ( isset( $args['help_text'] ) ) {

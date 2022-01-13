@@ -260,7 +260,8 @@ class Queue {
 	}
 
 	public function setup_hooks() {
-		add_action( 'edited_terms', [ $this, 'offload_term_indexing_to_queue' ], 0, 2 );
+		add_action( 'saved_term', [ $this, 'offload_term_indexing_to_queue' ], 0, 3 ); // saved_term fires after SyncManager_Helper actions
+
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
 		// For handling indexing failures
@@ -302,6 +303,7 @@ class Queue {
 	 * @param int $object_id The id of the object
 	 * @param string $object_type The type of object
 	 * @param array $options
+	 * @return int ID of the queued object, 0 on failure
 	 */
 	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
 		global $wpdb;
@@ -335,6 +337,8 @@ class Queue {
 		);
 		// phpcs:enable
 
+		$insert_id = $wpdb->insert_id;
+
 		/**
 		 * Fires when an object is requested to be queued. Note that this fires regardless of if the object is actually queued
 		 * as it may have already been in the queue (and a new db row was not actually created)
@@ -349,6 +353,8 @@ class Queue {
 		$wpdb->suppress_errors( $original_suppress );
 
 		// TODO handle errors other than duplicate entry
+
+		return $insert_id;
 	}
 
 	/**
@@ -507,7 +513,7 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		return $wpdb->query( "TRUNCATE TABLE {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
+		return $wpdb->query( "DELETE FROM {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 	}
 
 	public function count_jobs( $status, $object_type = 'post', $options = array() ) {
@@ -695,7 +701,7 @@ class Queue {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND `scheduled_time` <= %s LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
+			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND (`scheduled_time` <= %s OR `scheduled_time` IS NULL) LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
 			$count
 		) );
@@ -880,11 +886,15 @@ class Queue {
 	/**
 	 * Offload term indexing to the queue
 	 */
-	public function offload_term_indexing_to_queue( $term_id, $taxonomy ) {
+	public function offload_term_indexing_to_queue( $term_id, $tt_id, $taxonomy ) {
 		$term = \get_term( $term_id, $taxonomy );
 
 		if ( is_wp_error( $term ) || ! is_object( $term ) ) {
 			return;
+		}
+
+		if ( true === apply_filters( 'ep_skip_action_edited_term', false, $term_id, $tt_id, $taxonomy ) ) {
+			return; // Do not offload if SyncManager_Helper is skipping actions on immaterial term changes
 		}
 
 		// If the number of affected posts is low enough, process them now rather than send them to cron

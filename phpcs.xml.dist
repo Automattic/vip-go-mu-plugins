@@ -15,6 +15,7 @@
 	<exclude-pattern>/advanced-post-cache/*</exclude-pattern>
 	<exclude-pattern>/cron-control/*</exclude-pattern>
 	<exclude-pattern>/cron-control-next/*</exclude-pattern>
+	<exclude-pattern>/cron-control-next-v2/*</exclude-pattern>
 	<exclude-pattern>/debug-bar-cron/*</exclude-pattern>
 	<exclude-pattern>/http-concat/*</exclude-pattern>
 	<exclude-pattern>/jetpack/*</exclude-pattern>
@@ -24,6 +25,7 @@
 
 	<!-- Other directories -->
 	<exclude-pattern>\.git/*</exclude-pattern>
+	<exclude-pattern>/__tests__/*</exclude-pattern>
 	<exclude-pattern>/akismet/*</exclude-pattern>
 	<exclude-pattern>/bin/*</exclude-pattern>
 	<exclude-pattern>/debug-bar/*</exclude-pattern>

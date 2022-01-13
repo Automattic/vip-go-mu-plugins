@@ -3,12 +3,16 @@
 namespace Automattic\VIP\Files\Acl;
 
 use Automattic\Test\Constant_Mocker;
+use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../files/acl/acl.php';
 
+/**
+ * @property WP_UnitTest_Factory $factory
+ */
 class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	use ExpectPHPException;
 

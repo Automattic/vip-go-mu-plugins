@@ -11,4 +11,7 @@
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>
+	<extensions>
+		<extension class="SpeedUp_Isolated_WP_Tests"/>
+	</extensions>
 </phpunit>

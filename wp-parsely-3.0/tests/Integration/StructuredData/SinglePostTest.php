@@ -431,6 +431,191 @@ final class SinglePostTest extends TestCase {
 	}
 
 	/**
+	 * Check post modified date in Parsely metadata.
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @uses \Parsely\Parsely::get_author_name
+	 * @uses \Parsely\Parsely::get_author_names
+	 * @uses \Parsely\Parsely::get_bottom_level_term
+	 * @uses \Parsely\Parsely::get_category_name
+	 * @uses \Parsely\Parsely::get_clean_parsely_page_value
+	 * @uses \Parsely\Parsely::get_coauthor_names
+	 * @uses \Parsely\Parsely::get_current_url
+	 * @uses \Parsely\Parsely::get_first_image
+	 * @uses \Parsely\Parsely::get_options
+	 * @uses \Parsely\Parsely::get_tags
+	 * @uses \Parsely\Parsely::post_has_trackable_status
+	 * @uses \Parsely\Parsely::update_metadata_endpoint
+	 * @group metadata
+	 */
+	public function test_metadata_post_modified_date(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create a post with a date in the past.
+		$time_format      = 'Y-m-d\TH:i:s\Z';
+		$time_yesterday   = time() - DAY_IN_SECONDS;
+		$date_created     = gmdate( $time_format, $time_yesterday );
+		$date_created_gmt = gmdate( $time_format, ( $time_yesterday + get_option( 'gmt_offset' ) * HOUR_IN_SECONDS ) );
+		$post_id          = self::factory()->post->create(
+			array(
+				'post_date'     => $date_created,
+				'post_date_gmt' => $date_created_gmt,
+			)
+		);
+
+		// In the metadata, check that the post's created date is correct and
+		// that the last modified date is identical.
+		$post     = get_post( $post_id );
+		$metadata = $parsely->construct_parsely_metadata( $parsely_options, $post );
+		self::assertSame( $date_created, $metadata['dateCreated'] );
+		self::assertSame( $date_created, $metadata['dateModified'] );
+
+		// Update the post and reload metadata.
+		wp_update_post( array( 'ID' => $post_id ) );
+		$post_updated     = get_post( $post_id );
+		$metadata_updated = $parsely->construct_parsely_metadata( $parsely_options, $post_updated );
+
+		// In the metadata, check that the last modified date has been updated.
+		self::assertSame( $date_created, $metadata_updated['dateCreated'] );
+		self::assertNotSame( $date_created, $metadata_updated['dateModified'] );
+	}
+
+	/**
+	 * Check that post objects with valid creation date work with construct_parsely_metadata.
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @covers \Parsely\Parsely::set_metadata_post_times
+	 * @group metadata
+	 */
+	public function test_empty_post_date_has_dates_omitted_from_metadata(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create a single post.
+		$post_id = $this->factory->post->create();
+		$post    = get_post( $post_id );
+
+		unset( $post->post_date );
+		unset( $post->post_date_gmt );
+
+		// Create the structured data for that post.
+		$structured_data = $parsely->construct_parsely_metadata( $parsely_options, $post );
+
+		// Without a post date, there should not be the following in the metadata.
+		self::assertArrayNotHasKey( 'dateCreated', $structured_data );
+		self::assertArrayNotHasKey( 'datePublished', $structured_data );
+		self::assertArrayNotHasKey( 'dateModified', $structured_data );
+	}
+
+	/**
+	 * Check that post objects with identical creation & modified dates produce expected metadata.
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @covers \Parsely\Parsely::set_metadata_post_times
+	 * @group metadata
+	 */
+	public function test_post_date_with_same_create_modified_dates_included_in_metadata(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create the post.
+		$post_id = $this->factory->post->create();
+		$post    = get_post( $post_id );
+
+		// Annotate it with the timestamps to test against.
+		$singular_datetime       = '2021-12-30 20:11:42';
+		$post->post_date         = $singular_datetime;
+		$post->post_date_gmt     = $singular_datetime;
+		$post->post_modified     = $singular_datetime;
+		$post->post_modified_gmt = $singular_datetime;
+
+		// Create the structured data for that post.
+		$structured_data = $parsely->construct_parsely_metadata( $parsely_options, $post );
+
+		// Identical post creation and modified dates should be present in the metadata.
+		$expected_singular_datetime = '2021-12-30T20:11:42Z';
+
+		self::assertSame( $expected_singular_datetime, $structured_data['dateCreated'] );
+		self::assertSame( $expected_singular_datetime, $structured_data['datePublished'] );
+		self::assertSame( $expected_singular_datetime, $structured_data['dateModified'] );
+	}
+
+	/**
+	 * Check that posts with modified before creation date "promotes" modified in metadata.
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @covers \Parsely\Parsely::set_metadata_post_times
+	 * @group metadata
+	 */
+	public function test_post_date_with_modified_before_created_date_in_metadata(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create the post.
+		$post_id = $this->factory->post->create();
+		$post    = get_post( $post_id );
+
+		// Annotate it with the timestamps to test against.
+		$modified_datetime       = '2021-12-30 20:11:41';
+		$created_datetime        = '2021-12-30 20:11:42';
+		$post->post_date         = $created_datetime;
+		$post->post_date_gmt     = $created_datetime;
+		$post->post_modified     = $modified_datetime;
+		$post->post_modified_gmt = $modified_datetime;
+
+		// Create the structured data for that post.
+		$structured_data = $parsely->construct_parsely_metadata( $parsely_options, $post );
+
+		// Modified dates earlier than created dates should be "promoted" to the latter.
+		$expected_singular_datetime = '2021-12-30T20:11:42Z';
+
+		self::assertSame( $expected_singular_datetime, $structured_data['dateCreated'] );
+		self::assertSame( $expected_singular_datetime, $structured_data['datePublished'] );
+		self::assertSame( $expected_singular_datetime, $structured_data['dateModified'] );
+	}
+
+	/**
+	 * Check that posts with modified after creation date has both in metadata.
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @covers \Parsely\Parsely::set_metadata_post_times
+	 * @group metadata
+	 */
+	public function test_post_date_with_modified_after_created_date_in_metadata(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create the post.
+		$post_id = $this->factory->post->create();
+		$post    = get_post( $post_id );
+
+		// Annotate it with the timestamps to test against.
+		$created_datetime        = '2021-12-30 20:11:42';
+		$modified_datetime       = '2021-12-30 20:11:43';
+		$post->post_date         = $created_datetime;
+		$post->post_date_gmt     = $created_datetime;
+		$post->post_modified     = $modified_datetime;
+		$post->post_modified_gmt = $modified_datetime;
+
+		// Create the structured data for that post.
+		$structured_data = $parsely->construct_parsely_metadata( $parsely_options, $post );
+
+		// Modified dates later than created dates should be present in the metadata.
+		$expected_created_datetime  = '2021-12-30T20:11:42Z';
+		$expected_modified_datetime = '2021-12-30T20:11:43Z';
+
+		self::assertSame( $expected_created_datetime, $structured_data['dateCreated'] );
+		self::assertSame( $expected_created_datetime, $structured_data['datePublished'] );
+		self::assertSame( $expected_modified_datetime, $structured_data['dateModified'] );
+	}
+
+	/**
 	 * Utility method to check metadata properties correctly set.
 	 *
 	 * @param array $structured_data Array of metadata to check.
@@ -444,6 +629,35 @@ final class SinglePostTest extends TestCase {
 				self::assertArrayHasKey( $property, $structured_data, 'Data does not have required property: ' . $property );
 			}
 		);
+	}
+
+	/**
+	 * Tests if keywords in Parse.ly metadata are generated correctly when categories are tags and the post has no categories.
+	 *
+	 * @since 3.0.3
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @uses \Parsely\Parsely::get_categories
+	 */
+	public function test_post_with_categories_as_tags_without_categories(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create a single post.
+		$post_id = self::factory()->post->create();
+		$post    = get_post( $post_id );
+
+		// Set Parsely to not force https canonicals.
+		$parsely_options['cats_as_tags'] = true;
+		update_option( 'parsely', $parsely_options );
+
+		wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
+
+		$expected = array();
+		$metadata = $parsely->construct_parsely_metadata( $parsely_options, $post );
+
+		self::assertSame( $expected, $metadata['keywords'] );
 	}
 
 	/**

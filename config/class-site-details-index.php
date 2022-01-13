@@ -73,6 +73,7 @@ class Site_Details_Index {
 		$site_details['core']['php_version']  = PHP_VERSION;
 		$site_details['core']['blog_id']      = get_current_blog_id();
 		$site_details['core']['site_url']     = get_site_url();
+		$site_details['core']['home_url']     = get_home_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
 		$site_details['plugins'] = $this->get_plugin_info();
@@ -229,14 +230,16 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Returns the current value of $this->timestamp or time() if null.
+	 * Returns the current value of $this->timestamp or microtime() if null.
 	 *
 	 * Used for mocking in tests.
 	 *
 	 * @return int The current timestamp or the value of $this->timestamp.
 	 */
 	public function get_current_timestamp() {
-		return $this->timestamp ?? time();
+		$get_microtime_as_float    = true;
+		$timestamp_in_milliseconds = round( microtime( $get_microtime_as_float ) * 1000 );
+		return $this->timestamp ?? $timestamp_in_milliseconds;
 	}
 
 	/**
