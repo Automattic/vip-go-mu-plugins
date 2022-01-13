@@ -152,17 +152,17 @@
         },
         {
             "name": "automattic/jetpack-assets",
-            "version": "v1.16.0",
-            "version_normalized": "1.16.0.0",
+            "version": "v1.16.1",
+            "version_normalized": "1.16.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Automattic/jetpack-assets.git",
-                "reference": "2d96bf2f12279a0551b1d5e9bb9f546bbbd8d1bf"
+                "reference": "5a6959969bed4559e080269cafbd69d476249822"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Automattic/jetpack-assets/zipball/2d96bf2f12279a0551b1d5e9bb9f546bbbd8d1bf",
-                "reference": "2d96bf2f12279a0551b1d5e9bb9f546bbbd8d1bf",
+                "url": "https://api.github.com/repos/Automattic/jetpack-assets/zipball/5a6959969bed4559e080269cafbd69d476249822",
+                "reference": "5a6959969bed4559e080269cafbd69d476249822",
                 "shasum": ""
             },
             "require": {
@@ -174,7 +174,7 @@
                 "wikimedia/testing-access-wrapper": "^1.0 | ^2.0",
                 "yoast/phpunit-polyfills": "1.0.3"
             },
-            "time": "2022-01-04T21:11:41+00:00",
+            "time": "2022-01-05T21:46:22+00:00",
             "type": "jetpack-library",
             "extra": {
                 "autotagger": true,
@@ -202,7 +202,7 @@
             ],
             "description": "Asset management utilities for Jetpack ecosystem packages",
             "support": {
-                "source": "https://github.com/Automattic/jetpack-assets/tree/v1.16.0"
+                "source": "https://github.com/Automattic/jetpack-assets/tree/v1.16.1"
             },
             "install-path": "../../jetpack_vendor/automattic/jetpack-assets"
         },
@@ -830,17 +830,17 @@
         },
         {
             "name": "automattic/jetpack-identity-crisis",
-            "version": "v0.6.0",
-            "version_normalized": "0.6.0.0",
+            "version": "v0.6.1",
+            "version_normalized": "0.6.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Automattic/jetpack-identity-crisis.git",
-                "reference": "f42be7ab651cc4cee47199d29657cdd17802f2ce"
+                "reference": "62f19cd6b289f719ed0ae4fb366b0bf44c5f5be9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Automattic/jetpack-identity-crisis/zipball/f42be7ab651cc4cee47199d29657cdd17802f2ce",
-                "reference": "f42be7ab651cc4cee47199d29657cdd17802f2ce",
+                "url": "https://api.github.com/repos/Automattic/jetpack-identity-crisis/zipball/62f19cd6b289f719ed0ae4fb366b0bf44c5f5be9",
+                "reference": "62f19cd6b289f719ed0ae4fb366b0bf44c5f5be9",
                 "shasum": ""
             },
             "require": {
@@ -857,7 +857,7 @@
                 "automattic/wordbless": "@dev",
                 "yoast/phpunit-polyfills": "1.0.3"
             },
-            "time": "2022-01-04T21:12:00+00:00",
+            "time": "2022-01-11T16:37:39+00:00",
             "type": "jetpack-library",
             "extra": {
                 "autotagger": true,
@@ -885,7 +885,7 @@
             ],
             "description": "Identity Crisis.",
             "support": {
-                "source": "https://github.com/Automattic/jetpack-identity-crisis/tree/v0.6.0"
+                "source": "https://github.com/Automattic/jetpack-identity-crisis/tree/v0.6.1"
             },
             "install-path": "../../jetpack_vendor/automattic/jetpack-identity-crisis"
         },

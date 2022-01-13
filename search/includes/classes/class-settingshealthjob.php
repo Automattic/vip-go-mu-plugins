@@ -251,23 +251,23 @@ class SettingsHealthJob {
 			
 			return;
 		} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable ] ) ) {
-			wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable ] );
+			wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		}
 	}
 
 	/**
 	 * Build new index and hot-swap it afterwards as part of auto healing to ensure shard requirements are met.
 	 *
-	 * @param object $indexable The Indexable we want to rebuild.
+	 * @param string $indexable_slug The slug of the Indexable we want to rebuild.
 	 */
-	public function build_new_index( $indexable ) {
+	public function build_new_index( $indexable_slug ) {
 		update_option( self::BUILD_LOCK_NAME, time() ); // Set lock for starting rebuild.
 
 		// Do the indexing.
 		$assoc_args = [
 			'using-versions' => true,
 			'skip-confirm'   => true,
-			'indexables'     => $indexable->slug,
+			'indexables'     => $indexable_slug,
 		];
 		$cmd        = 'vip-search index ' . WP_CLI\Utils\assoc_args_to_str( $assoc_args );
 		$result     = WP_CLI::runcommand(
@@ -280,10 +280,10 @@ class SettingsHealthJob {
 
 		if ( '' !== $result->stderr ) {
 			// Surface any error messages that occurred into an alert.
-			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable->slug, home_url(), $result->stderr );
+			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $result->stderr );
 		} else {
 			// TODO: Remove this alert eventually.
-			$message = sprintf( 'Successfully built new %s index for shard requirements on %s!', $indexable->slug, home_url() );
+			$message = sprintf( 'Successfully built new %s index for shard requirements on %s!', $indexable_slug, home_url() );
 		}
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
