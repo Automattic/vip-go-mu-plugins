@@ -109,8 +109,13 @@ function maybe_disable_some_features() {
 	if ( isset( $GLOBALS['parsely'] ) && ( is_a( $GLOBALS['parsely'], 'Parsely' ) || is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) ) {
 		// If the plugin was loaded solely by the option, hide the UI (for now)
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
-			remove_action( 'admin_menu', array( $GLOBALS['parsely'], 'add_settings_sub_menu' ) );
-			remove_action( 'admin_footer', array( $GLOBALS['parsely'], 'display_admin_warning' ) );
+			if ( version_compare( $GLOBALS['parsely']::VERSION, '3.0.0', '<' ) ) {
+				remove_action( 'admin_menu', array( $GLOBALS['parsely'], 'add_settings_sub_menu' ) );
+				remove_action( 'admin_footer', array( $GLOBALS['parsely'], 'display_admin_warning' ) );
+			} else {
+				remove_action( 'admin_menu', array( 'Parsely\UI\Settings_Page', 'add_settings_sub_menu' ) );
+				remove_action( 'admin_footer', array( 'Parsely\UI\Admin_Warning', 'display_admin_warning' ) );
+			}
 			remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
 
 			// ..& default to "repeated metas"
