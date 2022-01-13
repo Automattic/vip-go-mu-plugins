@@ -55,7 +55,7 @@ function maybe_load_plugin() {
 	}
 
 	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
-	// We need priority 0 so it's executed before `widgets_init`
+	// We need priority 0, so it's executed before `widgets_init`
 	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
 
 	/**
@@ -106,7 +106,7 @@ function maybe_load_plugin() {
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' );
 
 function maybe_disable_some_features() {
-	if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely' ) ) {
+	if ( isset( $GLOBALS['parsely'] ) && ( is_a( $GLOBALS['parsely'], 'Parsely' ) || is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) ) {
 		// If the plugin was loaded solely by the option, hide the UI (for now)
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
 			remove_action( 'admin_menu', array( $GLOBALS['parsely'], 'add_settings_sub_menu' ) );
