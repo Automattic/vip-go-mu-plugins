@@ -632,6 +632,35 @@ final class SinglePostTest extends TestCase {
 	}
 
 	/**
+	 * Tests if keywords in Parse.ly metadata are generated correctly when categories are tags and the post has no categories.
+	 *
+	 * @since 3.0.3
+	 *
+	 * @covers \Parsely\Parsely::construct_parsely_metadata
+	 * @uses \Parsely\Parsely::get_categories
+	 */
+	public function test_post_with_categories_as_tags_without_categories(): void {
+		// Setup Parsely object.
+		$parsely         = new Parsely();
+		$parsely_options = get_option( Parsely::OPTIONS_KEY );
+
+		// Create a single post.
+		$post_id = self::factory()->post->create();
+		$post    = get_post( $post_id );
+
+		// Set Parsely to not force https canonicals.
+		$parsely_options['cats_as_tags'] = true;
+		update_option( 'parsely', $parsely_options );
+
+		wp_remove_object_terms( $post_id, 'uncategorized', 'category' );
+
+		$expected = array();
+		$metadata = $parsely->construct_parsely_metadata( $parsely_options, $post );
+
+		self::assertSame( $expected, $metadata['keywords'] );
+	}
+
+	/**
 	 * These are the required properties for posts.
 	 *
 	 * @return string[]
