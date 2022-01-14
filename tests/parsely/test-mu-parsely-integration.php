@@ -143,12 +143,14 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'post_password' => 'hunter2',
 		];
 
-		$post_id  = wp_insert_post( $post, true );
-		$metadata = $this->get_post_metadata( $post_id );
+		$post_id           = wp_insert_post( $post, true );
+		$metadata          = $this->get_post_metadata( $post_id );
+		$expected_metadata = array(
+			'@context' => 'http://schema.org',
+			'@type'    => 'WebPage',
+		);
 
-		$this->assertIsArray( $metadata, 'post metadata should be an array' );
-		$this->assertEmpty( $metadata, 'post metadata should be empty' );
-
+		$this->assertSame( $expected_metadata, $metadata, 'Metadata should only show basic fields' );
 	}
 
 	private function get_post_metadata( int $post_id ) {
