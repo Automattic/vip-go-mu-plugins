@@ -50,17 +50,22 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_parsely_class_existance() {
-		global $parsely;
-
 		$class_should_exist = 'disabled' !== self::$test_mode;
 
-		if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
-			$class_name = 'Parsely';
-		} else {
-			$class_name = 'Parsely\Parsely';
-		}
+		if ( $class_should_exist ) {
+			global $parsely;
 
-		$this->assertSame( $class_should_exist, class_exists( $class_name ) );
+			if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
+				$class_name = 'Parsely';
+			} else {
+				$class_name = 'Parsely\Parsely';
+			}
+
+			$this->assertTrue( class_exists( $class_name ) );
+		} else {
+			$this->assertFalse( class_exists( 'Parsely' ) );
+			$this->assertFalse( class_exists( 'Parsely\Parsely' ) );
+		}
 	}
 
 	public function test_parsely_global() {
