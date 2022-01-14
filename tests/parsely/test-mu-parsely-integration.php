@@ -50,8 +50,17 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_parsely_class_existance() {
+		global $parsely;
+
 		$class_should_exist = 'disabled' !== self::$test_mode;
-		$this->assertSame( $class_should_exist, class_exists( 'Parsely\Parsely' ) );
+
+		if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
+			$class_name = 'Parsely';
+		} else {
+			$class_name = 'Parsely\Parsely';
+		}
+
+		$this->assertSame( $class_should_exist, class_exists( $class_name ) );
 	}
 
 	public function test_parsely_global() {
@@ -132,6 +141,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_protected_post_do_not_show_meta() {
+		global $parsely;
+
 		if ( 'disabled' === self::$test_mode ) {
 			$this->markTestSkipped();
 		}
@@ -143,12 +154,17 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'post_password' => 'hunter2',
 		];
 
-		$post_id           = wp_insert_post( $post, true );
-		$metadata          = $this->get_post_metadata( $post_id );
-		$expected_metadata = array(
-			'@context' => 'http://schema.org',
-			'@type'    => 'WebPage',
-		);
+		$post_id  = wp_insert_post( $post, true );
+		$metadata = $this->get_post_metadata( $post_id );
+
+		if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
+			$expected_metadata = array();
+		} else {
+			$expected_metadata = array(
+				'@context' => 'http://schema.org',
+				'@type'    => 'WebPage',
+			);
+		}
 
 		$this->assertSame( $expected_metadata, $metadata, 'Metadata should only show basic fields' );
 	}
