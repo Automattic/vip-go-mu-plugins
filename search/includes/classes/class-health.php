@@ -139,6 +139,13 @@ class Health {
 	public function get_index_entity_count_from_elastic_search( array $query_args, \ElasticPress\Indexable $indexable ) {
 		// Get total count in ES index
 		try {
+			$protected_content         = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
+			$protected_content_enabled = $protected_content ? $protected_content->is_active() : false;
+			// Include password-protected posts in health count query if protected_content feature is used.
+			if ( $protected_content_enabled ) {
+				add_filter( 'ep_exclude_password_protected_from_search', '__return_false' );
+			}
+
 			$query          = self::query_objects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 
