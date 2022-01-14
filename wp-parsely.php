@@ -112,11 +112,12 @@ function maybe_disable_some_features() {
 			if ( version_compare( $GLOBALS['parsely']::VERSION, '3.0.0', '<' ) ) {
 				remove_action( 'admin_menu', array( $GLOBALS['parsely'], 'add_settings_sub_menu' ) );
 				remove_action( 'admin_footer', array( $GLOBALS['parsely'], 'display_admin_warning' ) );
+				remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
 			} else {
 				remove_action( 'admin_menu', array( 'Parsely\UI\Settings_Page', 'add_settings_sub_menu' ) );
 				remove_action( 'admin_footer', array( 'Parsely\UI\Admin_Warning', 'display_admin_warning' ) );
+				remove_action( 'widgets_init', 'Parsely\parsely_recommended_widget_register' );
 			}
-			remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
 
 			// ..& default to "repeated metas"
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
