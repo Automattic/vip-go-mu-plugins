@@ -2,8 +2,6 @@
 
 // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 
-use Automattic\VIP\Utils\Context;
-
 /**
  * Utility function to trigger a callback on a hook with priority or execute immediately if the hook has already been fired previously.
  *
@@ -154,7 +152,7 @@ function vip_contrib_add_upload_cap() {
  * @see vip_contrib_add_upload_cap()
  */
 function _vip_contrib_add_upload_cap() {
-	if ( ! is_admin() && ! Context::is_xmlrpc_api() ) {
+	if ( ! is_admin() && ! defined( 'XMLRPC_REQUEST' ) ) {
 		return;
 	}
 
@@ -814,7 +812,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 	$timeout         = (int) $timeout;
 	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
 
-	if ( Context::is_wp_cli() && $is_post_request ) {
+	if ( defined( 'WP_CLI' ) && WP_CLI && $is_post_request ) {
 		if ( 30 < $timeout ) {
 			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 30 seconds in WP-CLI for performance and stability reasons.', null );
 			$timeout = 30;
@@ -1274,7 +1272,7 @@ function wpcom_vip_should_load_plugins() {
 	$should_load_plugins = true;
 
 	// WP-CLI loaded with --skip-plugins flag
-	if ( Context::is_wp_cli() ) {
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		$skipped_plugins = \WP_CLI::get_runner()->config['skip-plugins'];
 		if ( $skipped_plugins ) {
 			$should_load_plugins = false;
@@ -1481,7 +1479,7 @@ function is_proxied_request() {
  */
 function vip_is_jetpack_request() {
 	// Filter by env
-	if ( Context::is_wp_cli() ) {
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		return false;
 	}
 

@@ -8,16 +8,21 @@
 
 $mu_plugins_base = dirname( __DIR__ );
 
-$files = [
-	'/lib/wpcom-error-handler/wpcom-error-handler.php',
-	'/lib/class-vip-request-block.php',
-	'/lib/environment/class-environment.php',
-	'/lib/helpers/environment.php',
-	'/lib/utils/class-context.php',
-];
+// Load custom error logging functions, if available
+if ( file_exists( $mu_plugins_base . '/lib/wpcom-error-handler/wpcom-error-handler.php' ) ) {
+	require_once $mu_plugins_base . '/lib/wpcom-error-handler/wpcom-error-handler.php';
+}
 
-foreach ( $files as $file ) {
-	if ( file_exists( $mu_plugins_base . $file ) ) {
-		require_once $mu_plugins_base . $file;
-	}
+// Load VIP_Request_Block utility class, if available
+if ( file_exists( $mu_plugins_base . '/lib/class-vip-request-block.php' ) ) {
+	require_once $mu_plugins_base . '/lib/class-vip-request-block.php';
+}
+
+// Load Environment utility class and its helpers, if available
+if ( file_exists( $mu_plugins_base . '/lib/environment/class-environment.php' ) ) {
+	require_once $mu_plugins_base . '/lib/environment/class-environment.php';
+}
+
+if ( file_exists( $mu_plugins_base . '/lib/helpers/environment.php' ) ) {
+	require_once $mu_plugins_base . '/lib/helpers/environment.php';
 }
