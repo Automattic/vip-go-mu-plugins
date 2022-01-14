@@ -224,6 +224,7 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -234,6 +235,7 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -244,6 +246,7 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
