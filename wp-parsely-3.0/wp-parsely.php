@@ -65,8 +65,8 @@ function parsely_admin_init_register(): void {
 	$admin_warning = new Admin_Warning( $GLOBALS['parsely'] );
 	$admin_warning->run();
 
-	$plugins_actions = new Plugins_Actions();
-	$plugins_actions->run();
+	$GLOBALS['parsely_ui_plugins_actions'] = new Plugins_Actions();
+	$GLOBALS['parsely_ui_plugins_actions']->run();
 
 	$row_actions = new Row_Actions( $GLOBALS['parsely'] );
 	$row_actions->run();
