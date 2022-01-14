@@ -176,9 +176,9 @@ function print_data() {
 
 	$mapped_queries = array_map(
 		function( $query ) {
-			// The happy path: we sanitize query response
+			// The happy path: we sanitize query response, and if a body is empty we populate an empty object
 			if ( is_array( $query['request'] ) ) {
-				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
+				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) ?? (object) [] );
 				// Network error.
 			} elseif ( is_wp_error( $query['request'] ) ) {
 				$query['request'] = [
