@@ -51,7 +51,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 	public function test_parsely_class_existance() {
 		$class_should_exist = 'disabled' !== self::$test_mode;
-		$this->assertSame( $class_should_exist, class_exists( 'Parsely' ) );
+		$this->assertSame( $class_should_exist, class_exists( 'Parsely\Parsely' ) );
 	}
 
 	public function test_parsely_global() {
@@ -116,7 +116,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_unprotected_published_posts_show_meta() {
 		if ( 'disabled' === self::$test_mode ) {
 			$this->markTestSkipped();
-			return;
 		}
 
 		$post = [
@@ -135,7 +134,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_protected_post_do_not_show_meta() {
 		if ( 'disabled' === self::$test_mode ) {
 			$this->markTestSkipped();
-			return;
 		}
 
 		$post = [
