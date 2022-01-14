@@ -572,7 +572,7 @@ class API_Client_Test extends WP_UnitTestCase {
 				],
 				new WP_Error(
 					'file-service-readonly',
-					__( 'Uploads are temporarily disabled due to Files service maintenance. Please try again later.' )
+					__( 'Uploads are temporarily disabled due to platform maintenance. Please try again in a few minutes.' )
 				),
 			],
 		];
