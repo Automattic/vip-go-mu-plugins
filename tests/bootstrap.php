@@ -57,7 +57,7 @@ function _remove_init_hook_for_cache_manager() {
 }
 
 /**
- * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered. 
+ * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered.
  *
  * Temporarily unhook it.
  *
@@ -90,6 +90,26 @@ function _configure_wp_parsely_specified_version() {
 			return $specified;
 		} );
 	}
+}
+
+switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' ) ) {
+	case '2.6':
+		tests_add_filter(
+			'wpvip_parsely_version',
+			function() {
+				return '2.6';
+			}
+		);
+		break;
+	case '3.0':
+	default:
+		tests_add_filter(
+			'wpvip_parsely_version',
+			function() {
+				return '3.0';
+			}
+		);
+		break;
 }
 
 switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
