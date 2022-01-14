@@ -122,6 +122,9 @@ function maybe_disable_some_features() {
 			// ..& default to "repeated metas"
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
 
+			// If we're disabled, we want to make sure we don't show the row action links.
+			add_filter( 'wp_parsely_enable_row_action_links', '__return_false' );
+
 			// Remove the Parse.ly Recommended Widget
 			unregister_widget( 'Parsely_Recommended_Widget' );
 		} else {
