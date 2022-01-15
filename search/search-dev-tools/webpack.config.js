@@ -1,6 +1,6 @@
 const { resolve, join } = require( 'path' );
 const webpack = require( 'webpack' );
-const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' );
+const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' ).default;
 const TerserPlugin = require( 'terser-webpack-plugin' );
 const CssMinimizerPlugin = require( 'css-minimizer-webpack-plugin' );
 const HtmlWebpackPlugin = require( 'html-webpack-plugin' );
