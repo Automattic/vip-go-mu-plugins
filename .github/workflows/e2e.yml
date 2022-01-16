@@ -19,20 +19,31 @@ on:
         description: 'Alternative Password'
         required: false
         default: ''
+
+permissions: read-all
+
 jobs:
   Run_e2e_tests:
+    name: Run E2E Tests
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@14dc64f30986eaa2ad2dddcec073f5aab18e5a24 # v1
+        with:
+          egress-policy: audit
+
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
         with:
           submodules: true
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # v2
         with:
-          node-version: '16'
+          node-version: 'lts/*'
           cache: npm
           cache-dependency-path: vip-go-mu-plugins/package-lock.json
 
@@ -69,7 +80,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Archive test results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # v2
         if: failure()
         with:
           name: test-results
