@@ -34,6 +34,8 @@ jobs:
         with:
           egress-policy: audit
 
+      - run: cat /etc/resolv.conf
+
       - name: Check out repository code
         uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
         with:
