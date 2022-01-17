@@ -271,57 +271,74 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
-	 * Validate DB and ES index contents for all objects
+	 * Validate DB and ES index contents for all objects.
 	 *
 	 * ## OPTIONS
 	 *
 	 * [--inspect]
-	 * : Optional gives more verbose output for index inconsistencies
+	 * : Whether to give more verbose output for index inconsistencies.
 	 *
 	 * [--start_post_id=<int>]
-	 * : Optional starting post id (defaults to 1)
+	 * : Starting post id to check.
 	 * ---
 	 * default: 1
 	 * ---
 	 *
 	 * [--last_post_id=<int>]
-	 * : Optional last post id to check
+	 * : Last post id to check.
 	 *
 	 * [--batch_size=<int>]
-	 * : Optional batch size
+	 * : Batch size.
 	 * ---
 	 * default: 500
 	 * ---
 	 *
 	 * [--max_diff_size=<int>]
-	 * : Optional max count of diff before exiting
+	 * : Max count of objects before exiting.
 	 * ---
 	 * default: 1000
 	 * ---
 	 *
 	 * [--format=<string>]
-	 * : Optional one of: table json csv yaml ids count
+	 * : Format of output display.
 	 * ---
 	 * default: csv
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
+	 *   - ids
+	 *   - count
 	 * ---
 	 *
 	 * [--do_not_heal]
-	 * : Optional Don't try to correct inconsistencies
+	 * : Whether to not to correct inconsistencies.
 	 *
 	 * [--silent]
-	 * : Optional silences all non-error output except for the final results
+	 * : Whether to silence all non-error output except for the final results.
 	 *
 	 * [--force_parallel_execution]
-	 * : Optional Force execution even if the process is already ongoing
+	 * : Whether to force execution even if the process is already ongoing.
 	 *
-	 * [--missing_only]
-	 * : Optional Validate only posts missing from ES index or DB.
-	 * 
-	 * [--inconsistent_only]
-	 * : Optional Validate only posts with inconsistent content.
+	 * [--mode=<string>]
+	 * : Mode to target validation to a specific subset of index inconsistencies.
+	 * ---
+	 * options:
+	 *   - missing
+	 *   - mismatch
 	 * 
 	 * ## EXAMPLES
-	 *     wp vip-search health validate-contents
+	 * 
+	 *     # Simultaneously check for and fix any index inconsistencies (e.g. missing posts and content mismatches) between DB and ES.
+	 *     $ wp vip-search health validate-contents
+	 *     ...✘
+	 *     Warning: Inconsistencies fixed:
+	 *     type,id,issue
+	 *     post,5,missing_from_index
+	 *     post,1,mismatch
+	 * 
+	 * @link https://docs.wpvip.com/how-tos/vip-search/check-index-health/
 	 *
 	 * @subcommand validate-contents
 	 */

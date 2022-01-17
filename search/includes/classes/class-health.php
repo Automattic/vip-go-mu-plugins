@@ -396,40 +396,7 @@ class Health {
 	/**
 	 * Validate DB and ES index post content
 	 *
-	 * ## OPTIONS
-	 *
-	 * [inspect]
-	 * : Optional gives more verbose output for index inconsistencies
-	 *
-	 * [start_post_id=<int>]
-	 * : Optional starting post id (defaults to 1)
-	 *
-	 * [last_post_id=<int>]
-	 * : Optional last post id to check
-	 *
-	 * [batch_size=<int>]
-	 * : Optional batch size (max is 5000)
-	 *
-	 * [max_diff_size=<int>]
-	 * : Optional max count of diff before exiting
-	 *
-	 * [do_not_heal]
-	 * : Optional Don't try to correct inconsistencies
-	 *
-	 * [silent]
-	 * : Optional silences all non-error output except for the final results
-	 *
-	 * [force_parallel_execution]
-	 * : Optional Force execution even if the process is already ongoing
-	 *
-	 * [missing_only]
-	 * : Optional Validate only posts missing from ES index or DB.
-	 *
-	 * [inconsistent_only]
-	 * : Optional Validate only posts with inconsistent content.
-	 *
 	 * @param array $options list of options
-	 *
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
@@ -609,9 +576,8 @@ class Health {
 	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $options ) {
 		global $wpdb;
 
-		$inspect           = isset( $options['inspect'] );
-		$missing_only      = isset( $options['missing_only'] );
-		$inconsistent_only = isset( $options['inconsistent_only'] );
+		$inspect = isset( $options['inspect'] );
+		$mode    = $options['mode'] ?? null;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
@@ -639,28 +605,32 @@ class Health {
 		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
 		                : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
-		if ( ! $missing_only || $inconsistent_only ) {
-			// Filter out any that are extra or missing in index
-			$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
-				$key = self::get_post_key( $document['ID'] );
-				return ! array_key_exists( $key, $diffs );
-			} );
+		if ( $mode && 'missing' === $mode ) {
+			// No need to continue looking for inconsistencies, since we have the ids for missing.
+			return $diffs;
+		}
 
-			if ( ! $missing_only && $inconsistent_only ) {
-				$diffs = [];
-			}
+		// Filter out any that are extra or missing in index
+		$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
+			$key = self::get_post_key( $document['ID'] );
+			return ! array_key_exists( $key, $diffs );
+		} );
 
-			// Compare each indexed document with what it _should_ be if it were re-indexed now
-			foreach ( $documents as $document ) {
-				$prepared_document = $indexable->prepare_document( $document['post_id'] );
+		if ( $mode && 'mismatch' === $mode ) {
+			// Clear out previous data for missing posts from $diffs since we only want mismatched.
+			$diffs = [];
+		}
 
-				$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
-								: self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+		// Compare each indexed document with what it _should_ be if it were re-indexed now
+		foreach ( $documents as $document ) {
+			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
-				if ( $diff ) {
-					$key           = self::get_post_key( $document['ID'] );
-					$diffs[ $key ] = $inspect ? $diff : self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
-				}
+			$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
+							: self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+
+			if ( $diff ) {
+				$key           = self::get_post_key( $document['ID'] );
+				$diffs[ $key ] = $inspect ? $diff : self::simplified_format_post_diff( $document['ID'], 'mismatch' );
 			}
 		}
 
@@ -825,17 +795,17 @@ class Health {
 	/**
 	 * Iterate over an array of inconsistencies and address accordingly.
 	 *
-	 * If an object is missing from the index or inconsistent - add it to the queue for the sweep.
+	 * If an object is missing from the index or mismatched - add it to the queue for the sweep.
 	 *
 	 * If an object is missing from the DB, remove it from the index.
 	 *
-	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index|inconsistent> ].
+	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index|mismatch> ].
 	 */
 	public static function reconcile_diff( array $diff ) {
 		foreach ( $diff as $obj_to_reconcile ) {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
-				case 'inconsistent':
+				case 'mismatch':
 					/**
 					 * Filter to determine the priority of the reindex job
 					 *
