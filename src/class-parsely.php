@@ -648,11 +648,13 @@ class Parsely {
 	 * @return array The tags of the post represented by the post id.
 	 */
 	private function get_tags( int $post_id ): array {
-		$tags = array();
-		foreach ( wp_get_post_tags( $post_id ) as $wp_tag ) {
-			array_push( $tags, $wp_tag->name );
+		$tags      = array();
+		$post_tags = wp_get_post_tags( $post_id );
+		if ( ! is_wp_error( $post_tags ) ) {
+			foreach ( $post_tags as $wp_tag ) {
+				$tags[] = $wp_tag->name;
+			}
 		}
-
 		return $tags;
 	}
 
@@ -666,13 +668,17 @@ class Parsely {
 	private function get_categories( int $post_id, string $delimiter = '/' ): array {
 		$tags = array();
 		foreach ( get_the_category( $post_id ) as $category ) {
-			$hierarchy = get_category_parents( $category, false, $delimiter );
-			$hierarchy = rtrim( $hierarchy, '/' );
-			array_push( $tags, $hierarchy );
+			$hierarchy = get_category_parents( $category->term_id, false, $delimiter );
+			if ( ! is_wp_error( $hierarchy ) ) {
+				$tags[] = rtrim( $hierarchy, '/' );
+			}
 		}
 		// take last element in the hierarchy, a string representing the full parent->child tree,
 		// and split it into individual category names.
-		$tags = explode( '/', end( $tags ) );
+		$last_tag = end( $tags );
+		if ( $last_tag ) {
+			$tags = explode( '/', $last_tag );
+		}
 		// remove uncategorized value from tags.
 		return array_diff( $tags, array( 'Uncategorized' ) );
 	}
@@ -708,7 +714,7 @@ class Parsely {
 		// as the category value if 'use_top_level_cats' option is checked.
 		// Assign as "Uncategorized" if no value is checked for the chosen taxonomy.
 		$category = 'Uncategorized';
-		if ( ! empty( $taxonomy_dropdown_choice ) ) {
+		if ( ! empty( $taxonomy_dropdown_choice ) && ! is_wp_error( $taxonomy_dropdown_choice ) ) {
 			if ( $parsely_options['use_top_level_cats'] ) {
 				$first_term = array_shift( $taxonomy_dropdown_choice );
 				$term_name  = $this->get_top_level_term( $first_term->term_id, $first_term->taxonomy );
