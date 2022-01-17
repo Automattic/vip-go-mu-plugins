@@ -314,6 +314,12 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * [--force_parallel_execution]
 	 * : Optional Force execution even if the process is already ongoing
 	 *
+	 * [--missing_only]
+	 * : Optional Validate only posts missing from ES index or DB.
+	 * 
+	 * [--inconsistent_only]
+	 * : Optional Validate only posts with inconsistent content.
+	 * 
 	 * ## EXAMPLES
 	 *     wp vip-search health validate-contents
 	 *
