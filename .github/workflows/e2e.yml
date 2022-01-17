@@ -32,7 +32,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@14dc64f30986eaa2ad2dddcec073f5aab18e5a24 # v1
         with:
-          egress-policy: audit
+          egress-policy: block
           allowed-endpoints: 
             1.gravatar.com:80
             2.gravatar.com:80
