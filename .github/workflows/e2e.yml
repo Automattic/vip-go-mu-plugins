@@ -58,6 +58,7 @@ jobs:
             vaultpress.com:443
             wordpress.org:443
             dns.google:53
+            e2e-test-site.vipdev.lndo.site:80
 
       - name: Check out repository code
         uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
