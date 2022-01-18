@@ -70,7 +70,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * : Validate all sites in a multisite network
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-es health validate-posts-count
+	 *     wp vip-search health validate-posts-count
 	 *
 	 * @subcommand validate-posts-count
 	 */
@@ -88,7 +88,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * : Validate all sites in a multisite network
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-es health validate-terms-count
+	 *     wp vip-search health validate-terms-count
 	 *
 	 * @subcommand validate-terms-count
 	 */
@@ -106,7 +106,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * : Validate all sites in a multisite network
 	 *
 	 * ## EXAMPLES
-	 *     wp vip-es health validate-comments-count
+	 *     wp vip-search health validate-comments-count
 	 *
 	 * @subcommand validate-comments-count
 	 */
