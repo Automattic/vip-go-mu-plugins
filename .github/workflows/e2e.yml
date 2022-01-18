@@ -20,13 +20,12 @@ on:
         required: false
         default: ''
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   Run_e2e_tests:
     name: Run E2E Tests
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner

@@ -2,7 +2,8 @@ name: release-changelog
 
 on: workflow_dispatch
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   tag-release:
@@ -50,8 +51,6 @@ jobs:
 
   release-changelog:
     name: Publish Changelog
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
