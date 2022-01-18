@@ -51,7 +51,21 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 	public function test_parsely_class_existance() {
 		$class_should_exist = 'disabled' !== self::$test_mode;
-		$this->assertSame( $class_should_exist, class_exists( 'Parsely' ) );
+
+		if ( $class_should_exist ) {
+			global $parsely;
+
+			if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
+				$class_name = 'Parsely';
+			} else {
+				$class_name = 'Parsely\Parsely';
+			}
+
+			$this->assertTrue( class_exists( $class_name ) );
+		} else {
+			$this->assertFalse( class_exists( 'Parsely' ) );
+			$this->assertFalse( class_exists( 'Parsely\Parsely' ) );
+		}
 	}
 
 	public function test_parsely_global() {
@@ -85,17 +99,17 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_parsely_ui_hooks() {
-		$expected         = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
-		$reverse_expected = 'option_enabled' == self::$test_mode ? 10 : false;
-		$this->assertSame( $reverse_expected, has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' ) );
+		$repeated_metas_expected = 'option_enabled' == self::$test_mode ? 10 : false;
+		$this->assertSame( $repeated_metas_expected, has_action( 'option_parsely', 'Automattic\VIP\WP_Parsely_Integration\alter_option_use_repeated_metas' ) );
 
 		// Class should only exist if Parse.ly is enabled
 		if ( 'disabled' !== self::$test_mode ) {
 			$row_actions = new Row_Actions( $GLOBALS['parsely'] );
 			$row_actions->run();
 
-			$this->assertSame( $expected, has_filter( 'page_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
-			$this->assertSame( $expected, has_filter( 'post_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
+			$row_actions_expected = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
+			$this->assertSame( $row_actions_expected, has_filter( 'page_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
+			$this->assertSame( $row_actions_expected, has_filter( 'post_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
 		}
 	}
 
@@ -116,7 +130,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_unprotected_published_posts_show_meta() {
 		if ( 'disabled' === self::$test_mode ) {
 			$this->markTestSkipped();
-			return;
 		}
 
 		$post = [
@@ -133,9 +146,10 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_protected_post_do_not_show_meta() {
+		global $parsely;
+
 		if ( 'disabled' === self::$test_mode ) {
 			$this->markTestSkipped();
-			return;
 		}
 
 		$post = [
@@ -148,9 +162,16 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$post_id  = wp_insert_post( $post, true );
 		$metadata = $this->get_post_metadata( $post_id );
 
-		$this->assertIsArray( $metadata, 'post metadata should be an array' );
-		$this->assertEmpty( $metadata, 'post metadata should be empty' );
+		if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
+			$expected_metadata = array();
+		} else {
+			$expected_metadata = array(
+				'@context' => 'http://schema.org',
+				'@type'    => 'WebPage',
+			);
+		}
 
+		$this->assertSame( $expected_metadata, $metadata, 'Metadata should only show basic fields' );
 	}
 
 	private function get_post_metadata( int $post_id ) {

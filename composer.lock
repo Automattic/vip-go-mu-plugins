@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e6f3aeafc98745d1bc34f3bb3a49059f",
+    "content-hash": "9b171fa903214baa6943ab388efee213",
     "packages": [],
     "packages-dev": [
         {
@@ -2796,7 +2796,7 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "5.8.2",
+            "version": "5.8.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
