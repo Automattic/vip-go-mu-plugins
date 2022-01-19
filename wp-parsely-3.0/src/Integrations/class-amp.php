@@ -76,14 +76,10 @@ class Amp implements Integration {
 	 *
 	 * @since 2.6.0
 	 *
-	 * @param array|null $analytics The analytics registry.
+	 * @param array $analytics The analytics registry.
 	 * @return array The analytics registry.
 	 */
-	public function register_parsely_for_amp_analytics( ?array $analytics ): array {
-		if ( $analytics === null ) {
-			$analytics = array();
-		}
-
+	public function register_parsely_for_amp_analytics( array $analytics ): array {
 		$options = get_option( Parsely::OPTIONS_KEY );
 
 		if ( empty( $options['apikey'] ) ) {
@@ -108,14 +104,10 @@ class Amp implements Integration {
 	 *
 	 * @since 2.6.0
 	 *
-	 * @param array|null $analytics The analytics registry.
+	 * @param array $analytics The analytics registry.
 	 * @return array The analytics registry.
 	 */
-	public function register_parsely_for_amp_native_analytics( ?array $analytics ): array {
-		if ( $analytics === null ) {
-			$analytics = array();
-		}
-
+	public function register_parsely_for_amp_native_analytics( array $analytics ): array {
 		$options = get_option( Parsely::OPTIONS_KEY );
 
 		if ( ! empty( $options['disable_amp'] ) && true === $options['disable_amp'] ) {
