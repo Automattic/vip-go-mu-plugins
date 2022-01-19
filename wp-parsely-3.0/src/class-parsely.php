@@ -795,8 +795,13 @@ class Parsely {
 		foreach ( $terms_not_parents as $index => $value ) {
 			$terms_not_parents_cleaned[] = $value;
 		}
-		// if you assign multiple child terms in a custom taxonomy, will only return the first.
-		return $terms_not_parents_cleaned[0]->name;
+
+		if ( ! empty( $terms_not_parents_cleaned ) ) {
+			// if you assign multiple child terms in a custom taxonomy, will only return the first.
+			return $terms_not_parents_cleaned[0]->name ?? '';
+		}
+
+		return '';
 	}
 
 	/**
