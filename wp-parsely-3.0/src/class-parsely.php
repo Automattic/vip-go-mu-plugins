@@ -186,15 +186,7 @@ class Parsely {
 
 		// Assign default values for LD+JSON
 		// TODO: Mapping of an install's post types to Parse.ly post types (namely page/post).
-		if ( is_int( $post ) ) {
-			$parsed_post = WP_Post::get_instance( $post );
-			if ( $parsed_post === false ) {
-				return;
-			}
-			$parsely_page = $this->construct_parsely_metadata( $parsely_options, $parsed_post );
-		} else {
-			$parsely_page = $this->construct_parsely_metadata( $parsely_options, $post );
-		}
+		$parsely_page = $this->construct_parsely_metadata( $parsely_options, get_post( $post ) );
 
 		// Something went wrong - abort.
 		if ( empty( $parsely_page ) || ! isset( $parsely_page['headline'] ) ) {
