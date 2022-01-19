@@ -98,8 +98,6 @@ function wpcom_vip_qm_require() {
 		return;
 	}
 
-	require_once __DIR__ . '/vip-helpers/vip-query-monitor.php';
-
 	// Because we're including Query Monitor as an MU plugin, we need to
 	// manually call the `activate` method on `activation`.
 	if ( 0 === get_option( 'wpcom_vip_qm_activated', 0 ) ) {
@@ -112,15 +110,6 @@ function wpcom_vip_qm_require() {
 
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
-
-	if ( function_exists( 'wpcom_vip_save_query_callback' ) ) {
-		add_filter('qm/collectors', function ( array $collectors ) {
-			$collectors['db_queries'] = new WPCOM_VIP_QM_Collector_DB_Queries();
-
-			return $collectors;
-		}, 99 );
-	}
-
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
