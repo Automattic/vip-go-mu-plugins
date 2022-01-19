@@ -495,7 +495,11 @@ class Parsely {
 		 * @param WP_Post $post            Post object.
 		 * @param array   $parsely_options The Parsely options.
 		 */
-		return apply_filters( 'wp_parsely_metadata', $parsely_page, $post, $parsely_options );
+		$filtered = apply_filters( 'wp_parsely_metadata', $parsely_page, $post, $parsely_options );
+		if ( is_array( $filtered ) ) {
+			return $filtered;
+		}
+		return array();
 	}
 
 	/**
@@ -953,10 +957,14 @@ class Parsely {
 	 *
 	 * @since 2.6.0
 	 *
-	 * @param string $val The content you'd like sanitized.
+	 * @param string|null $val The content you'd like sanitized.
 	 * @return string
 	 */
-	public function get_clean_parsely_page_value( string $val ): string {
+	public function get_clean_parsely_page_value( ?string $val ): string {
+		if ( $val === null) {
+			return '';
+		}
+
 		$val = str_replace( "\n", '', $val );
 		$val = str_replace( "\r", '', $val );
 		$val = wp_strip_all_tags( $val );
