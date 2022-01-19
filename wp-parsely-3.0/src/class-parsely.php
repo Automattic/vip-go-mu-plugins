@@ -254,7 +254,13 @@ class Parsely {
 		$this->insert_page_header_metadata();
 
 		global $post;
-		return $this->construct_parsely_metadata( $this->get_options(), $post );
+
+		$parsed_post = get_post( $post );
+		if ( ! $parsed_post instanceof WP_Post ) {
+			return array();
+		}
+
+		return $this->construct_parsely_metadata( $this->get_options(), $parsed_post );
 	}
 
 	/**
