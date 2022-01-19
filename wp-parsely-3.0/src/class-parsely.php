@@ -774,7 +774,7 @@ class Parsely {
 	 * @return string|false Name of the custom taxonomy.
 	 */
 	private function get_bottom_level_term( int $post_id, string $taxonomy_name ) {
-		$terms    = get_the_terms( $post_id, $taxonomy_name );
+		$terms = get_the_terms( $post_id, $taxonomy_name );
 
 		if ( ! is_array( $terms ) ) {
 			return false;
