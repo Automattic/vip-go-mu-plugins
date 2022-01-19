@@ -733,7 +733,7 @@ class Parsely {
 				$term_name = $this->get_bottom_level_term( $post_obj->ID, $parsely_options['custom_taxonomy_section'] );
 			}
 
-			if ( is_string( $term_name ) ) {
+			if ( '' === $term_name ) {
 				$category = $term_name;
 			}
 		}
@@ -774,13 +774,13 @@ class Parsely {
 	 *
 	 * @param int    $post_id The post id you're interested in.
 	 * @param string $taxonomy_name The name of the taxonomy.
-	 * @return string|false Name of the custom taxonomy.
+	 * @return string Name of the custom taxonomy.
 	 */
-	private function get_bottom_level_term( int $post_id, string $taxonomy_name ) {
+	private function get_bottom_level_term( int $post_id, string $taxonomy_name ): string {
 		$terms = get_the_terms( $post_id, $taxonomy_name );
 
 		if ( ! is_array( $terms ) ) {
-			return false;
+			return '';
 		}
 
 		$term_ids = wp_list_pluck( $terms, 'term_id' );
