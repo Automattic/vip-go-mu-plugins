@@ -184,9 +184,14 @@ class Parsely {
 			return;
 		}
 
+		$parsed_post = get_post( $post );
+		if ( ! $parsed_post instanceof WP_Post ) {
+			return;
+		}
+
 		// Assign default values for LD+JSON
 		// TODO: Mapping of an install's post types to Parse.ly post types (namely page/post).
-		$parsely_page = $this->construct_parsely_metadata( $parsely_options, $post );
+		$parsely_page = $this->construct_parsely_metadata( $parsely_options, $parsed_post );
 
 		// Something went wrong - abort.
 		if ( empty( $parsely_page ) || ! isset( $parsely_page['headline'] ) ) {
@@ -249,7 +254,13 @@ class Parsely {
 		$this->insert_page_header_metadata();
 
 		global $post;
-		return $this->construct_parsely_metadata( $this->get_options(), $post );
+
+		$parsed_post = get_post( $post );
+		if ( ! $parsed_post instanceof WP_Post ) {
+			return array();
+		}
+
+		return $this->construct_parsely_metadata( $this->get_options(), $parsed_post );
 	}
 
 	/**
@@ -726,7 +737,7 @@ class Parsely {
 				$term_name = $this->get_bottom_level_term( $post_obj->ID, $parsely_options['custom_taxonomy_section'] );
 			}
 
-			if ( $term_name ) {
+			if ( is_string( $term_name ) && 0 < strlen( $term_name ) ) {
 				$category = $term_name;
 			}
 		}
@@ -770,9 +781,14 @@ class Parsely {
 	 * @return string Name of the custom taxonomy.
 	 */
 	private function get_bottom_level_term( int $post_id, string $taxonomy_name ): string {
-		$terms    = get_the_terms( $post_id, $taxonomy_name );
-		$term_ids = is_array( $terms ) ? wp_list_pluck( $terms, 'term_id' ) : array();
-		$parents  = is_array( $terms ) ? array_filter( wp_list_pluck( $terms, 'parent' ) ) : array();
+		$terms = get_the_terms( $post_id, $taxonomy_name );
+
+		if ( ! is_array( $terms ) ) {
+			return '';
+		}
+
+		$term_ids = wp_list_pluck( $terms, 'term_id' );
+		$parents  = array_filter( wp_list_pluck( $terms, 'parent' ) );
 
 		// Get array of IDs of terms which are not parents.
 		$term_ids_not_parents = array_diff( $term_ids, $parents );
@@ -781,7 +797,7 @@ class Parsely {
 		// remove array index keys.
 		$terms_not_parents_cleaned = array();
 		foreach ( $terms_not_parents as $index => $value ) {
-			array_push( $terms_not_parents_cleaned, $value );
+			$terms_not_parents_cleaned[] = $value;
 		}
 		// if you assign multiple child terms in a custom taxonomy, will only return the first.
 		return $terms_not_parents_cleaned[0]->name;
