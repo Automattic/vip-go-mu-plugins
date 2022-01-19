@@ -733,7 +733,7 @@ class Parsely {
 				$term_name = $this->get_bottom_level_term( $post_obj->ID, $parsely_options['custom_taxonomy_section'] );
 			}
 
-			if ( '' === $term_name ) {
+			if ( is_string( $term_name ) && 0 < strlen( $term_name ) ) {
 				$category = $term_name;
 			}
 		}
