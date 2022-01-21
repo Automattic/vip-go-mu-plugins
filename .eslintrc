@@ -1,0 +1,14 @@
+{
+	"env": { "browser": true },
+	"extends": [ "plugin:@wordpress/eslint-plugin/recommended-with-formatting" ],
+	"settings": {
+		"jest": { "version": "latest" }
+	},
+	"rules": {
+		"@wordpress/i18n-text-domain": [ "error", { "allowedTextDomain": [ "wp-parsely" ] } ]
+	},
+	"globals": {
+		// Page variable for Puppeteer tests
+		"page": true
+	}
+}
