@@ -34,15 +34,9 @@
 [submodule "gutenberg-ramp"]
 	path = gutenberg-ramp
 	url = https://github.com/Automattic/gutenberg-ramp.git
-[submodule "cron-control-next"]
-	path = cron-control-next
-	url = https://github.com/Automattic/Cron-Control.git
 [submodule "search/elasticpress"]
 	path = search/elasticpress
 	url = https://github.com/Automattic/ElasticPress.git
 [submodule "search/debug-bar-elasticpress"]
 	path = search/debug-bar-elasticpress
 	url = https://github.com/10up/debug-bar-elasticpress.git
-[submodule "cron-control-next-v2"]
-	path = cron-control-next-v2
-	url = https://github.com/Automattic/Cron-Control.git
