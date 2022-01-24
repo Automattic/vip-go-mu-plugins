@@ -55,7 +55,9 @@ git config user.email "builds@circleci.com"
 git config push.default "current"
 
 git add -A .
-# If you get an SSH prompt to enter a passphrase, you likely encrypted then
-# key against the wrong repository
-git commit -am "Built from vip-go-mu-plugins@${GIT_REVISION}"
-git push
+if [ -n "$(git diff --stat --cached)" ]; then
+    # If you get an SSH prompt to enter a passphrase, you likely encrypted then
+    # key against the wrong repository
+    git commit -am "Built from vip-go-mu-plugins@${GIT_REVISION}"
+    git push
+fi
