@@ -34,10 +34,10 @@ jobs:
           - "option_enabled"
         include:
           - php: "7.4"
-          - wp: "latest"
-          - multisite: "0"
-          - parsely: "3.0"
-          - mode: "filter_and_option_enabled"
+            wp: "latest"
+            multisite: "0"
+            parsely: "3.0"
+            mode: "filter_and_option_enabled"
     steps:
       - name: Check out source code
         uses: actions/checkout@v2
