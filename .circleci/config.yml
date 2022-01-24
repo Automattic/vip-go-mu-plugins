@@ -18,6 +18,8 @@ workflows:
       - php74-build-singlesite-parsely-filter
       - php74-build-singlesite-parsely-option
       - php74-build-singlesite-parsely-filter-option
+      - php74-build-singlesite-parsely-filter-2-6
+      - php74-build-singlesite-parsely-option-2-6
       - php80-build-multisite-nightly
       - php80-build-singlesite-nightly
       - search-dev-tools
@@ -222,6 +224,7 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -232,6 +235,7 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -242,6 +246,29 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-parsely-filter-2-6:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-parsely-option-2-6:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
+      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -306,7 +333,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.13.1
+      - image: cimg/node:16.13.2
     steps:
       - checkout
       - run:
