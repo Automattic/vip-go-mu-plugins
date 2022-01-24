@@ -20,8 +20,6 @@ workflows:
       - php74-build-singlesite-parsely-filter-option
       - php74-build-singlesite-parsely-filter-2-6
       - php74-build-singlesite-parsely-option-2-6
-      - php80-build-multisite-nightly
-      - php80-build-singlesite-nightly
       - search-dev-tools
 
   after-master-merge:
@@ -289,28 +287,6 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "nightly"
       PHPUNIT_VERSION: "9"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php80-build-multisite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "1"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-      PHP_VERSION: "8.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php80-build-singlesite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-      PHP_VERSION: "8.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
