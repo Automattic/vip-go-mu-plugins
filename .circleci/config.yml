@@ -15,11 +15,6 @@ workflows:
       - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
-      - php74-build-singlesite-parsely-filter
-      - php74-build-singlesite-parsely-option
-      - php74-build-singlesite-parsely-filter-option
-      - php74-build-singlesite-parsely-filter-2-6
-      - php74-build-singlesite-parsely-option-2-6
       - search-dev-tools
 
   after-master-merge:
@@ -212,61 +207,6 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-option:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter-option:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter-2-6:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-option-2-6:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
