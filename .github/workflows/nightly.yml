@@ -1,4 +1,4 @@
-name: Run Tests on PHP 8.x
+name: WordPress Nightly
 
 on:
   push:
@@ -15,15 +15,14 @@ permissions:
 
 jobs:
   test:
-    name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, PHP ${{ matrix.php }}"
+    name: "WordPress nightly, multisite: ${{ matrix.multisite }}, PHP ${{ matrix.php }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         php:
+          - "7.4"
           - "8.0"
-        wp:
-          - nightly
         multisite:
           - "0"
           - "1"
@@ -43,4 +42,4 @@ jobs:
         uses: ramsey/composer-install@2.1.0
 
       - name: Run tests
-        run: ./bin/test.sh --wp ${{ matrix.wp }} --php ${{ matrix.php }} --multisite ${{ matrix.multisite }} --phpunit 9 --order-by=random
+        run: ./bin/test.sh --wp nightly --php ${{ matrix.php }} --multisite ${{ matrix.multisite }} --phpunit 9 --order-by=random

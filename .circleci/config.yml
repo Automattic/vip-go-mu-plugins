@@ -11,8 +11,6 @@ workflows:
       - php74-build-singlesite-56
       - php74-build-singlesite-55
       - php74-build-multisite
-      - php74-build-multisite-nightly
-      - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
       - search-dev-tools
@@ -207,26 +205,6 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-multisite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "1"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
