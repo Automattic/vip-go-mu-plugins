@@ -52,4 +52,4 @@ jobs:
         uses: ramsey/composer-install@2.1.0
 
       - name: Run tests
-        run: ./bin/test.sh --wp ${{ matrix.wp }} --php ${{ matrix.php }} --multisite ${{ matrix.multisite }} --order-by=random
+        run: ./bin/test.sh --wp ${{ matrix.wp }} --php ${{ matrix.php }} --multisite ${{ matrix.multisite }} --phpunit 9 --order-by=random

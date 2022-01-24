@@ -106,9 +106,15 @@ cleanup() {
 
 trap cleanup EXIT
 
-# shellcheck disable=SC2086 # ARGS and DOCKER_OPTIONS must not be quoted
+if [ -z "${CI}" ]; then
+    interactive="-it"
+else
+    interactive=""
+fi
+
+# shellcheck disable=SC2086,SC2248,SC2312 # ARGS and DOCKER_OPTIONS must not be quoted
 docker run \
-    -it \
+    ${interactive} \
     --rm \
     --network "${NETWORK_NAME}" \
     -e WP_VERSION \
