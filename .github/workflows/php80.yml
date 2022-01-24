@@ -39,15 +39,6 @@ jobs:
           coverage: none
           php-version: ${{ matrix.php }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v2
-        with:
-          node-version: lts/*
-          cache: npm
-
-      - name: Install JS dependencies
-        run: npm ci
-
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@2.1.0
 
