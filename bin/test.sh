@@ -124,7 +124,7 @@ docker run \
     -e PHPUNIT_VERSION \
     -e MYSQL_USER \
     -e MYSQL_PASSWORD \
-    -e MYSQL_DATABASE \
+    -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
     ${DOCKER_OPTIONS} \
