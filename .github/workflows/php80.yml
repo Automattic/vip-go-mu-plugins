@@ -1,4 +1,4 @@
-name: PHP 8.x
+name: Run Tests on PHP 8.x
 
 on:
   push:
