@@ -1,0 +1,64 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests.
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+
+on:
+  pull_request:
+  push:
+    paths:
+      - .github/workflows/*.js.yml
+      - '**/*[tj]sx?'
+      - package*.json
+
+# Cancels all previous workflow runs for the same branch that have not yet completed.
+concurrency:
+  # The concurrency group contains the workflow name and the branch name.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Lint CSS code
+        run: npm run lint:css
+
+      - name: Lint package.json file
+        run: npm run lint:pkg-json
+
+      - name: Lint JS code
+        run: npm run lint:js
+
+      - name: Build application
+        run: npm run build
+
+      - name: Confirm the build is up-to-date
+        run: |
+          REPOSTATUS=`git status --porcelain 2>/dev/null`;
+          if [[ -n "$REPOSTATUS" ]]; then
+            echo "Repo is not clean. Did you forget to commit changes to the /build dir?";
+            echo "$REPOSTATUS";
+            exit 1;
+          else
+            echo "The repo file system is clean (build files are present and up to date).";
+          fi
+
+      - name: Run tests
+        run: npm test
