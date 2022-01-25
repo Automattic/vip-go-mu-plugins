@@ -1110,7 +1110,7 @@ class Search {
 		}
 
 		// Bulk index request so increase timeout
-		if ( wp_endswith( $query_path, '_bulk' ) ) {
+		if ( wp_endswith( $query_path, '_bulk' ) || wp_endswith( $query_path, '_open' ) ) {
 			$timeout = 5;
 
 			if ( $is_cli && $is_post_request ) {

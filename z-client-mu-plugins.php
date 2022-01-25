@@ -82,7 +82,7 @@ function wpcom_vip_get_client_mu_plugins_data( $directory = WPCOM_VIP_CLIENT_MU_
 }
 
 /**
- * This callback hooked on `plugins_url` enables, allows us call `plugins_url` with a client-mu-plugins path (or inside any file in that path).
+ * This callback is hooked on `plugins_url` enables, allows us call `plugins_url` with a client-mu-plugins path (or inside any file in that path).
  *
  * e.g. plugins_url( 'file.js', WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/plugin/file.php' );
  */
