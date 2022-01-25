@@ -4,7 +4,7 @@ Plugin Name: Cron Control
 Plugin URI:
 Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
 Author: Erick Hitter, Automattic
-Version: 2.0
+Version: 3.1
 Text Domain: automattic-cron-control
 */
 
@@ -13,27 +13,13 @@ if ( file_exists( __DIR__ . '/cron/cron.php' ) ) {
 }
 
 /**
- * Determine if Cron Control is called for
+ * Determine if we should load cron control, which disables core WP cron running by default.
  *
- * Inactive multisite subsites and local environments are generally unavailable
- *
- * @return bool
+ * @return bool True if we should not load cron control.
  */
 function wpcom_vip_use_core_cron() {
 	// Do not load outside of VIP environments, unless explicitly requested
 	if ( false === WPCOM_IS_VIP_ENV && ( ! defined( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY' ) || ! WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY ) ) {
-		return true;
-	}
-
-	// Bail early for anything else that isn't a multisite subsite
-	if ( ! is_multisite() || is_main_site() ) {
-		return false;
-	}
-
-	$details = get_blog_details( get_current_blog_id(), false );
-
-	// get_blog_details() uses numeric strings for backcompat
-	if ( in_array( '1', array( $details->archived, $details->spam, $details->deleted ), true ) ) {
 		return true;
 	}
 
