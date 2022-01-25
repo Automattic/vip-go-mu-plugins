@@ -28,6 +28,10 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( array_key_exists( 'using-versions', $assoc_args ) && isset( $assoc_args['network-wide'] ) ) {
 			WP_CLI::error( 'The --using-versions argument is not supported together with --network-wide' );
 		}
+
+		if ( array_key_exists( 'blog-ids', $assoc_args ) && isset( $assoc_args['network-wide'] ) ) {
+			WP_CLI::error( 'The --blog-ids argument is not supported together with --network-wide' );
+		}
 	}
 
 	private function shift_version_after_index( $assoc_args ) {
@@ -139,6 +143,9 @@ class CoreCommand extends \ElasticPress\Command {
 	 * [--network-wide]
 	 * : Sequentially index every site in your multisite network.
 	 *
+	 * [--blog-ids]
+	 * : Index a list of specific blog ids in your multisite work.
+	 * 
 	 * [--version]
 	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version.
 	 *
@@ -173,7 +180,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * [--skip-confirm]
 	 * : Skip Enterprise Search confirmation prompts for destructive operations.
 	 *
-	 * @synopsis [--setup] [--network-wide] [--per-page] [--nobulk] [--show-errors] [--offset] [--upper-limit-object-id] [--lower-limit-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--version] [--skip-confirm] [--using-versions]
+	 * @synopsis [--setup] [--network-wide] [--blog-ids] [--per-page] [--nobulk] [--show-errors] [--offset] [--upper-limit-object-id] [--lower-limit-object-id] [--indexables] [--show-bulk-errors] [--show-nobulk-errors] [--post-type] [--include] [--post-ids] [--version] [--skip-confirm] [--using-versions]
 	 *
 	 * @param array $args Positional CLI args.
 	 * @since 0.1.2
@@ -190,25 +197,55 @@ class CoreCommand extends \ElasticPress\Command {
 
 		$this->maybe_setup_index_version( $assoc_args );
 
-
-
+		$network_mode = isset( $assoc_args['network-wide'] );
+		$batch_mode   = isset( $assoc_args['blog-ids'] );
 		/**
 		 * EP's `--network-wide` mode uses switch_to_blog to index the content,
 		 * that may not be reliable if the codebase differs between subsites.
 		 *
 		 * Side-step the issue by spawning child proccesses for each subsite.
 		 */
-		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+		if ( is_multisite() && ( $network_mode || $batch_mode ) ) {
+			if ( $network_mode ) {
+				if ( isset( $assoc_args['setup'] ) && 100 < get_blog_count() ) {
+					WP_CLI::Error( 'Blog limit reached for --network-wide! Please create indexes on per-site or batch by removing the --network-wide flag and passing in the --url or --blog-ids parameter instead. For more information, see https://docs.wpvip.com/how-tos/vip-search/index-with-vip-search/#h-network-wide.' );
+				}
+				WP_CLI::line( 'Operating in network mode!' );
+				unset( $assoc_args['network-wide'] );
+			} else {
+				WP_CLI::line( 'Starting batch...' );
+			}
+
 			$start = microtime( true );
-			WP_CLI::line( 'Operating in network mode!' );
 
-			unset( $assoc_args['network-wide'] );
+			$all_sites = get_sites( [ 'fields' => 'ids' ] );
 
-			foreach ( get_sites() as $site ) {
-				switch_to_blog( $site->blog_id );
+			if ( $batch_mode ) {
+				$blog_ids = $assoc_args['blog-ids'];
+				unset( $assoc_args['blog-ids'] );
+				if ( false !== strpos( $blog_ids, ',' ) ) {
+					$sites = explode( ',', $blog_ids );
+				} else {
+					// Single blog ID passed in.
+					if ( ! is_numeric( $blog_ids ) ) {
+						WP_CLI::Error( "Invalid input for blog ID {$blog_ids}!" );
+					}
+					$sites = [ $blog_ids ];
+				}
+				foreach ( $sites as $site ) {
+					// Verify it's a valid blog ID before proceeding.
+					if ( ! in_array( (int) $site, $all_sites, true ) ) {
+						WP_CLI::error( "Blog ID {$site} does not exist!" );
+					}
+				}
+			} else {
+				$sites = $all_sites;
+			}
+
+			foreach ( $sites as $blog_id ) {
+				switch_to_blog( (int) $blog_id );
 				$assoc_args['url'] = home_url();
-
-				WP_CLI::line( 'Indexing ' . $assoc_args['url'] );
+				WP_CLI::line( "* Indexing blog {$blog_id}: {$assoc_args['url']}" );
 				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ), [
 					'exit_error' => false,
 				] );
@@ -216,7 +253,7 @@ class CoreCommand extends \ElasticPress\Command {
 				restore_current_blog();
 			}
 
-			WP_CLI::line( WP_CLI::colorize( '%CNetwork-wide run took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
+			WP_CLI::line( WP_CLI::colorize( '%CRun took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
 			// Unset our arguments since they don't exist in ElasticPress and causes
 			// an error for indexing operations exclusively for some reason.

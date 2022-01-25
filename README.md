@@ -48,35 +48,18 @@ npm run phpcs
 
 ##### PHPUnit
 
-If you're using the Lando-based environvment and it's already running, you can run unit tests by calling:
-
-```bash
-lando test
-```
-
 If you don't have the Lando-based environment running (e.g. in a CI context), we have a script that runs unit tests in a self-contained Docker environment. To run these tests, execute the following from the project root:
 
 ```bash
-./bin/phpunit-docker.sh
+./bin/test.sh
 ```
 
-You can either pass a version number to test against a specific version, or leave it blank to test against the latest version.
-
+You can also filter by test name.
 ```bash
-./bin/phpunit-docker.sh --wp 5.4.4
+./bin/test.sh --filter test__rate_limit_ep_query_integration__clears_start_correctly
 ```
 
-You can also pass the path to a specific test as well as extra PHPUnit arguments:
-
-```bash
-./bin/phpunit-docker.sh tests/path/to/the/test-something.php --stop-on-failure [...args]
-```
-
-Finally, you also have the option to choose if the tests run on a multisite environment:
-
-```bash
-./bin/phpunit-docker.sh --wp 5.4.4 --multisite 1
-```
+See [`./bin/test.sh`](./bin/test.sh) for more options.
 
 ##### CI
 
@@ -139,4 +122,3 @@ bin/create-release.sh
 This is a repo primarily meant for local non-development use.
 
 Every commit merged into `master` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh) script, which builds pushes a copy of this repo and expanded submodules.
-

@@ -2,7 +2,8 @@
 	"extends": [
 		"github>whitesource/merge-confidence:beta",
 		"config:base",
-		"schedule:weekly"
+		"schedule:weekly",
+		":preserveSemverRanges"
 	],
 	"reviewers": ["team:Automattic/vip-platform-cantina"],
 	"packageRules": [

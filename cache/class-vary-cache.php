@@ -4,8 +4,6 @@ namespace Automattic\VIP\Cache;
 
 use WP_Error;
 
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-
 class Vary_Cache {
 	const COOKIE_NOCACHE = 'vip-go-cb';
 	const COOKIE_SEGMENT = 'vip-go-seg';
@@ -334,8 +332,8 @@ class Vary_Cache {
 	 */
 	public static function enable_encryption() {
 		// Validate that we have the secret values.
-		if ( ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
-			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) ) {
+		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
+			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) {
 			trigger_error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.', E_USER_ERROR );
 		}
 
@@ -433,7 +431,7 @@ class Vary_Cache {
 			}
 
 			// Remove the site prefix at the beginning
-			$prefix = VIP_GO_APP_ID . '.';
+			$prefix = constant( 'VIP_GO_APP_ID' ) . '.';
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
 				$value = substr( $auth_cookie, strlen( $prefix ) );
 			}
@@ -600,7 +598,7 @@ class Vary_Cache {
 				header( 'Vary: X-VIP-Go-Segmentation', false );
 			}
 
-			if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
+			if ( defined( 'WP_DEBUG' ) && true === constant( 'WP_DEBUG' ) ) {
 				header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
 			}
 		}
@@ -646,9 +644,6 @@ class Vary_Cache {
 
 		return true;
 	}
-
-
-
 }
 
 Vary_Cache::load();

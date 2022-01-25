@@ -4,36 +4,25 @@ namespace Automattic\VIP\Utils;
 
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/../../../lib/utils/class-alerts.php';
+require_once __DIR__ . '/class-testable-alerts.php';
 
 class Alerts_Test extends WP_UnitTestCase {
-	public function mock_http_response( $mocked_response, $response_time = 1 ) {
-		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response, $response_time ) {
-			usleep( $response_time * 1000000 );
+	public function setUp(): void {
+		parent::setUp();
 
+		Testable_Alerts::$svc_address = 'test.host';
+		Testable_Alerts::$svc_port    = 9999;
+		Testable_Alerts::clear_instance();
+	}
+
+	public function mock_http_response( $mocked_response ) {
+		add_filter( 'pre_http_request', function() use ( $mocked_response ) {
 			return $mocked_response;
 		}, 10, 3 );
 	}
 
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_alerts_method( $name ) {
-		$class  = new \ReflectionClass( Alerts::class );
-		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
-		return $method;
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__instance() {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
-
-		$alerts = Alerts::instance();
+		$alerts = Testable_Alerts::instance();
 
 		$this->assertTrue( $alerts instanceof Alerts );
 		$this->assertEquals( 'test.host', $alerts->service_address, 'Wrong alerts service address' );
@@ -41,25 +30,19 @@ class Alerts_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'http://test.host:9999/v1.0/alert', $alerts->service_url, 'Wrong alerts service URL' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__instance__missing_config() {
-		$alerts = Alerts::instance();
+		Testable_Alerts::$svc_address = null;
+
+		$alerts = Testable_Alerts::instance();
 
 		$this->assertWPError( $alerts );
 		$this->assertEquals( 'missing-service-address', $alerts->get_error_code(), 'Wrong error code' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__instance__missing_port() {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
+		Testable_Alerts::$svc_port = null;
 
-		$alerts = Alerts::instance();
+		$alerts = Testable_Alerts::instance();
 
 		$this->assertWPError( $alerts );
 		$this->assertEquals( 'missing-service-port', $alerts->get_error_code(), 'Wrong error code' );
@@ -79,19 +62,12 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__valid_channel_or_user
 	 */
 	public function test__validate_channel_or_user( $channel_or_user, $expected ) {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
+		$alerts = Testable_Alerts::instance();
 
-		$alerts = Alerts::instance();
-
-		$validate_channel_or_user_method = self::get_alerts_method( 'validate_channel_or_user' );
-
-		$result = $validate_channel_or_user_method->invokeArgs( $alerts, [ $channel_or_user ] );
+		$result = $alerts->validate_channel_or_user( $channel_or_user );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -108,37 +84,21 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__invalid_channel_or_user
 	 */
 	public function test__validate_channel_or_user__invalid_data( $channel_or_user ) {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
+		$alerts = Testable_Alerts::instance();
 
-		$alerts = Alerts::instance();
-
-		$validate_channel_or_user_method = self::get_alerts_method( 'validate_channel_or_user' );
-
-		$result = $validate_channel_or_user_method->invokeArgs( $alerts, [ $channel_or_user ] );
+		$result = $alerts->validate_channel_or_user( $channel_or_user );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-channel-or-user', $result->get_error_code() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__validate_message() {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
+		$alerts = Testable_Alerts::instance();
 
-		$alerts = Alerts::instance();
-
-		$validate_message_method = self::get_alerts_method( 'validate_message' );
-
-		$result = $validate_message_method->invokeArgs( $alerts, [ 'Test message ' ] );
+		$result = $alerts->validate_message( 'Test message ' );
 
 		$this->assertEquals( 'Test message', $result );
 	}
@@ -155,32 +115,18 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__invalid_message
 	 */
 	public function test__validate_message__invalid_message( $message ) {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
+		$alerts = Testable_Alerts::instance();
 
-		$alerts = Alerts::instance();
-
-		$validate_message_method = self::get_alerts_method( 'validate_message' );
-
-		$result = $validate_message_method->invokeArgs( $alerts, [ $message ] );
+		$result = $alerts->validate_message( $message );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-alert-message', $result->get_error_code(), 'Wrong error code' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__validate_opsgenie_details() {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
-
 		$details = [
 			'alias'       => 'test/alert',
 			'description' => 'Test alert',
@@ -189,11 +135,9 @@ class Alerts_Test extends WP_UnitTestCase {
 			'source'      => 'test',
 		];
 
-		$alerts = Alerts::instance();
+		$alerts = Testable_Alerts::instance();
 
-		$validate_opsgenie_details_method = self::get_alerts_method( 'validate_opsgenie_details' );
-
-		$result = $validate_opsgenie_details_method->invokeArgs( $alerts, [ $details ] );
+		$result = $alerts->validate_opsgenie_details( $details );
 
 		$this->assertEquals( $details, $result );
 	}
@@ -226,19 +170,12 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__invalid_details
 	 */
 	public function test__validate_opsgenie_details__invalid_details( $details ) {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
+		$alerts = Testable_Alerts::instance();
 
-		$alerts = Alerts::instance();
-
-		$validate_opsgenie_details_method = self::get_alerts_method( 'validate_opsgenie_details' );
-
-		$result = $validate_opsgenie_details_method->invokeArgs( $alerts, [ $details ] );
+		$result = $alerts->validate_opsgenie_details( $details );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'invalid-opsgenie-details', $result->get_error_code(), 'Wrong error code' );
@@ -270,21 +207,14 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__invalid_send_responses
 	 */
 	public function test__send_function_failed_requests( $mock_response ) {
-		define( 'ALERT_SERVICE_ADDRESS', 'test.host' );
-		define( 'ALERT_SERVICE_PORT', 9999 );
-
 		$this->mock_http_response( $mock_response );
 
-		$alerts      = Alerts::instance();
-		$send_method = self::get_alerts_method( 'send' );
-
+		$alerts = Testable_Alerts::instance();
 		$body   = [ 'somekey' => 'someproperty' ];
-		$result = $send_method->invokeArgs( $alerts, [ $body ] );
+		$result = $alerts->send( $body );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'The request returned an invalid response: ' . $mock_response['response']['message'], $result->get_error_message() );

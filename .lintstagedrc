@@ -1,3 +1,9 @@
 {
-    "*.php": "phplint"
+    "*.php": [
+        "phplint",
+        "vendor/bin/phpcs"
+    ],
+    "__tests__/e2e/**/*.{js,ts}": [
+        "npm run lint-e2e"
+    ]
 }

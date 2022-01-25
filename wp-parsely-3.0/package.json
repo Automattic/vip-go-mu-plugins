@@ -1,0 +1,50 @@
+{
+  "private": true,
+  "directories": {
+    "test": "tests"
+  },
+  "engines": {
+    "node": ">=16",
+    "npm": ">=7"
+  },
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "dev:start": "wp-env start",
+    "dev:stop": "wp-env stop",
+    "test": "npm run test:unit",
+    "test:e2e": "wp-scripts test-e2e",
+    "test:e2e:debug": "wp-scripts --inspect-brk test-e2e --puppeteer-devtools",
+    "test:e2e:help": "wp-scripts test-e2e --help",
+    "test:e2e:watch": "npm run test:e2e -- --watch",
+    "test:e2e:interactive": "npm run test:e2e -- --puppeteer-interactive",
+    "test:unit": "wp-scripts test-unit-js",
+    "test:unit:help": "wp-scripts test-unit-js --help",
+    "test:unit:watch": "wp-scripts test-unit-js --watch",
+    "test:unit:debug": "wp-scripts --inspect-brk test-unit-js --runInBand --no-cache"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Parsely/wp-parsely.git"
+  },
+  "license": "GPL-2.0-or-later",
+  "bugs": {
+    "url": "https://github.com/Parsely/wp-parsely/issues"
+  },
+  "homepage": "https://github.com/Parsely/wp-parsely#readme",
+  "browserslist": [
+    "defaults"
+  ],
+  "devDependencies": {
+    "@wordpress/e2e-test-utils": "^5.4.8",
+    "@wordpress/env": "^4.1.3",
+    "@wordpress/eslint-plugin": "^9.3.0",
+    "@wordpress/scripts": "^19.2.1",
+    "prettier": "^2.4.1"
+  },
+  "dependencies": {
+    "@wordpress/dom-ready": "^2.13.2",
+    "@wordpress/i18n": "^3.20.0",
+    "js-cookie": "^3.0.0"
+  }
+}

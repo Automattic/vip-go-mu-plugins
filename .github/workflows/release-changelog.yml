@@ -1,0 +1,78 @@
+name: release-changelog
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  tag-release:
+    name: Tag Release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.id-generator.outputs.id }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@14dc64f30986eaa2ad2dddcec073f5aab18e5a24 # v1
+        with:
+          egress-policy: audit
+
+      - name: Check out source code
+        uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
+
+      - name: Retrieve tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Get tag name
+        id: id-generator
+        run: |
+          current_date=$(date '+v%Y%m%d.')
+          minor_version=0
+          tag=$(git tag -l "${current_date}*" --sort=-version:refname | head -n 1)
+          if [ -n "${tag}" ]; then
+              minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
+          fi
+
+          echo "::set-output name=id::${current_date}${minor_version}"
+
+      - name: Tag release
+        run: git tag ${{ steps.id-generator.outputs.id }}
+
+      - name: Push tags
+        run: git push --tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: softprops/action-gh-release@6232f0b438cb856c39d14f8743e3a7c99fc879af # v0.1.14
+        with:
+          generate_release_notes: true
+          tag_name: ${{ steps.id-generator.outputs.id }}
+
+  release-changelog:
+    name: Publish Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@14dc64f30986eaa2ad2dddcec073f5aab18e5a24 # v1
+        with:
+          egress-policy: audit
+
+      - name: Check out source code
+        uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # v2.5.1
+        with:
+          node-version: 14
+          cache: npm
+
+      - name: Install dependencies
+        working-directory: ./bin
+        run: npm ci
+
+      - name: Promote changelog entries
+        env:
+          CHANGELOG_BEARER_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
+        working-directory: ./bin
+        run: node ./mark-production-changelog.js

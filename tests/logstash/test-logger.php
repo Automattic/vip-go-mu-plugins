@@ -5,6 +5,7 @@ namespace Automattic\VIP\Logstash;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../logstash/class-logger.php';
+require_once __DIR__ . '/class-testable-logger.php';
 
 class Logger_Test extends WP_UnitTestCase {
 	private $errors;
@@ -17,9 +18,7 @@ class Logger_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		set_error_handler( [ $this, 'errorHandler' ] );
 
-		// Reset Logger::$entries prop
-		$entries_prop = $this->get_property( 'entries' );
-		$entries_prop->setValue( [] );
+		Testable_Logger::set_entries( [] );
 	}
 
 	public function tearDown(): void {
@@ -44,16 +43,6 @@ class Logger_Test extends WP_UnitTestCase {
 		$this->fail( 'Error with level ' . $errno . " and message '" . $errstr . "' not found in " . var_export( $this->errors, true ) );
 	}
 
-	/**
-	 * Helper function for accessing protected static properties.
-	 */
-	protected function get_property( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Logger' );
-		$prop  = $class->getProperty( $name );
-		$prop->setAccessible( true );
-		return $prop;
-	}
-
 	public function test__log2logstash() {
 		$data = [
 			'severity'  => 'alert',
@@ -65,41 +54,37 @@ class Logger_Test extends WP_UnitTestCase {
 		];
 
 		$expected = array_merge( $data, [
-			'feature'   => 'a8c_vip_test',
-			'site_id'   => 1,
-			'blog_id'   => 1,
-			'http_host' => 'example.org',
-			'user_id'   => 0,
-			'extra'     => '[]',
-			'index'     => 'log2logstash',
+			'feature'         => 'a8c_vip_test',
+			'site_id'         => 1,
+			'blog_id'         => 1,
+			'http_host'       => 'example.org',
+			'http_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '', // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			'user_id'         => 0,
+			'extra'           => '[]',
+			'index'           => 'log2logstash',
 		] );
 
 		Logger::log2logstash( $data );
 
-		$entries_prop = $this->get_property( 'entries' );
-
-		$this->assertEquals( [ $expected ], $entries_prop->getValue() );
+		$this->assertEquals( [ $expected ], Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__too_many_entries() {
-		$entries = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 ];
+		$entries = range( 0, 101 );
 		$data    = [
 			'severity' => 'alert',
 			'feature'  => 'test',
 			'message'  => 'Test alert',
 		];
 
-		$entries_prop = $this->get_property( 'entries' );
-		$entries_prop->setValue( $entries );
+		Testable_Logger::set_entries( $entries );
 
 		Logger::log2logstash( $data );
 
-		$this->assertError( 'Excessive calls to Automattic\VIP\Logstash\Logger::log2logstash(). Maximum is 30 log entries.', E_USER_WARNING );
-
-		$entries_prop = $this->get_property( 'entries' );
+		$this->assertError( 'Excessive calls to Automattic\VIP\Logstash\Logger::log2logstash(). Maximum is 100 log entries.', E_USER_WARNING );
 
 		// No new entries added
-		$this->assertEquals( $entries, $entries_prop->getValue() );
+		$this->assertEquals( $entries, Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__invalid_site_id() {
@@ -114,10 +99,8 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->assertError( 'Invalid `site_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer > 0.', E_USER_WARNING );
 
-		$entries_prop = $this->get_property( 'entries' );
-
 		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
+		$this->assertEquals( [], Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__invalid_blog_id() {
@@ -132,10 +115,8 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->assertError( 'Invalid `blog_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer > 0.', E_USER_WARNING );
 
-		$entries_prop = $this->get_property( 'entries' );
-
 		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
+		$this->assertEquals( [], Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__invalid_http_host_size() {
@@ -150,10 +131,8 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->assertError( 'Invalid `http_host` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 255 bytes or less.', E_USER_WARNING );
 
-		$entries_prop = $this->get_property( 'entries' );
-
 		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
+		$this->assertEquals( [], Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__invalid_severity() {
@@ -167,10 +146,8 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->assertError( 'Invalid `severity` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be one of: ``, `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, `debug`.', E_USER_WARNING );
 
-		$entries_prop = $this->get_property( 'entries' );
-
 		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
+		$this->assertEquals( [], Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__invalid_feature_size() {
@@ -184,10 +161,8 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->assertError( 'Invalid `feature` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 200 bytes or less.', E_USER_WARNING );
 
-		$entries_prop = $this->get_property( 'entries' );
-
 		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
+		$this->assertEquals( [], Testable_Logger::get_entries() );
 	}
 
 	public function test__log2logstash__invalid_extra() {
@@ -202,19 +177,11 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$this->assertError( 'Invalid `extra` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an object, array, or scalar value.', E_USER_WARNING );
 
-		$entries_prop = $this->get_property( 'entries' );
-
 		// No new entries added
-		$this->assertEquals( [], $entries_prop->getValue() );
+		$this->assertEquals( [], Testable_Logger::get_entries() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__process_entries_on_shutdown() {
-		define( 'WP_DEBUG_LOG', '/tmp/test.log' );
-
 		$entries = [
 			[
 				'feature'   => 'a8c_vip_test',
@@ -233,10 +200,9 @@ class Logger_Test extends WP_UnitTestCase {
 			],
 		];
 
-		$entries_prop = $this->get_property( 'entries' );
-		$entries_prop->setValue( $entries );
+		Testable_Logger::set_entries( $entries );
+		Testable_Logger::process_entries_on_shutdown();
 
-		// Assert no errors thrown. Function does nothing on non VIP Go env
-		$this->assertNull( Logger::process_entries_on_shutdown() );
+		self::assertEquals( $entries, Testable_Logger::$logged_entries );
 	}
 }

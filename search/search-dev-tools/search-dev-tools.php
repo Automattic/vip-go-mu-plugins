@@ -74,10 +74,19 @@ function rest_callback( \WP_REST_Request $request ) {
 		[
 			'body'   => $request['query'],
 			'method' => 'POST',
-		]
+		],
+		[],
+		'query'
 	);
 
-	$result['body'] = sanitize_query_response( json_decode( $result['body'] ) );
+	if ( ! is_wp_error( $result ) ) {
+		$result = sanitize_query_response( json_decode( $result['body'] ) );
+	} else {
+		$result = [
+			'body' => $result->get_error_messages(),
+		];
+	}
+
 	return rest_ensure_response( [ 'result' => $result ] );
 }
 
@@ -167,9 +176,9 @@ function print_data() {
 
 	$mapped_queries = array_map(
 		function( $query ) {
-			// The happy path: we sanitize query response
+			// The happy path: we sanitize query response, and if a body is empty we populate an empty object
 			if ( is_array( $query['request'] ) ) {
-				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) );
+				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) ?? (object) [] );
 				// Network error.
 			} elseif ( is_wp_error( $query['request'] ) ) {
 				$query['request'] = [

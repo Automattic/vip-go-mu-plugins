@@ -2,12 +2,16 @@
 
 namespace Automattic\VIP\Search\Queue;
 
-use Automattic\VIP\Search\Queue\Cron as Cron;
+use Automattic\VIP\Search\Queue\Cron;
+use Automattic\VIP\Search\Search;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use wpdb;
 
 class Cron_Test extends WP_UnitTestCase {
+	/** @var Search */
+	private $es;
+
 	public function setUp(): void {
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
@@ -15,7 +19,8 @@ class Cron_Test extends WP_UnitTestCase {
 
 		require_once __DIR__ . '/../../../../../search/search.php';
 
-		$this->es = \Automattic\VIP\Search\Search::instance();
+		$this->es = Search::instance();
+		$this->es->init();
 
 		$this->queue = $this->es->queue;
 
@@ -29,7 +34,9 @@ class Cron_Test extends WP_UnitTestCase {
 	public function test_filter_cron_schedules() {
 		$schedules = wp_get_schedules();
 
-		$this->assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
+		self::assertArrayHasKey( Cron::SWEEPER_CRON_INTERVAL_NAME, $schedules );
+		self::assertArrayHasKey( 'interval', $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ] );
+		self::assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
 	}
 
 	/**
@@ -184,7 +191,7 @@ class Cron_Test extends WP_UnitTestCase {
 		return [
 			[
 				[ 0, 1, 2, 3, 4, 5 ],
-				5,
+				3,
 			],
 			[
 				[ new \WP_Error( 'not-good' ) ],
@@ -216,7 +223,7 @@ class Cron_Test extends WP_UnitTestCase {
 		$partially_mocked_cron->method( 'get_processor_job_count' )
 			->willReturnOnConsecutiveCalls( ...$job_counts );
 		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )
-			->willReturn( 5 );
+			->willReturn( 3 );
 
 		$partially_mocked_cron->sweep_jobs();
 	}
@@ -245,11 +252,11 @@ class Cron_Test extends WP_UnitTestCase {
 			],
 			[
 				20,
-				[ 'vip_search_queue_processor' => 5 ],
+				[ 'vip_search_queue_processor' => 3 ],
 			],
-			[ // max of 5 takes over
+			[ // max of 3 takes over
 				30,
-				[ 'vip_search_queue_processor' => 5 ],
+				[ 'vip_search_queue_processor' => 3 ],
 			],
 		];
 	}

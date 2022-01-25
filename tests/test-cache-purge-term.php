@@ -3,20 +3,15 @@
 namespace Automattic\VIP\Tests;
 
 use WP_Test_REST_TestCase;
+use WPCOM_VIP_Cache_Manager;
 
-// phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
-
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
-class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
+class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 	const TEST_TAXONOMY_SLUG = 'my-cool-taxonomy';
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->cache_manager = \WPCOM_VIP_Cache_Manager::instance();
+		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->clear_queued_purge_urls();
 
 		// When we create our test term, these fire and pollute our tests :)
@@ -34,11 +29,9 @@ class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
 		register_taxonomy( self::TEST_TAXONOMY_SLUG, 'post', $taxonomy_args );
 
 		$factory = new \WP_UnitTest_Factory_For_Term( null, self::TEST_TAXONOMY_SLUG );
-		$term_id = $factory->create_object( [
+		return $factory->create_object( [
 			'name' => 'my-cool-term',
 		] );
-
-		return $term_id;
 	}
 
 	public function test__invalid_taxonomy() {
@@ -62,7 +55,7 @@ class Cache_Manager__Term_Purge__Test extends WP_Test_REST_TestCase {
 	}
 
 	public function test__invalid_term() {
-		$term_id = $this->register_taxonomy_and_term();
+		$this->register_taxonomy_and_term();
 		$this->cache_manager->queue_terms_purges( PHP_INT_MAX, self::TEST_TAXONOMY_SLUG );
 
 		$queued_purge_urls = $this->cache_manager->get_queued_purge_urls();

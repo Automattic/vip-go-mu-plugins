@@ -22,14 +22,12 @@ class Search_Test extends WP_UnitTestCase {
 	public $test_index_name = 'vip-1234-post-0-v3';
 
 	public function setUp(): void {
+		parent::setUp();
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
-			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
+			->setMethods( [ 'mock_vip_safe_wp_remote_request', 'mock_wp_remote_request' ] )
 			->getMock();
-
-		$cache_key = \Automattic\VIP\Search\Search::INDEX_EXISTENCE_CACHE_KEY_PREFIX . $this->test_index_name;
-		wp_cache_delete( $cache_key, \Automattic\VIP\Search\Search::SEARCH_CACHE_GROUP );
 
 		header_remove();
 	}
@@ -142,6 +140,78 @@ class Search_Test extends WP_UnitTestCase {
 				'vip-123-post',
 			),
 		);
+	}
+
+	public function vip_search_is_url_query_cacheable_data() {
+		return array(
+			// Regular search
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_search',
+				),
+				// The expected result
+				true,
+			),
+			// Regular multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_mget',
+				),
+				// The expected result
+				true,
+			),
+			// Regular entity multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_doc/_mget',
+				),
+				// The expected result
+				true,
+			),
+			// Bulk index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_bulk',
+				),
+				// The expected result
+				false,
+			),
+			// Url containing _bulk
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_bulk/bar?_mget',
+				),
+				// The expected result
+				false,
+			),
+			// Random other url
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_anything',
+				),
+				// The expected result
+				false,
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly calculate the HTTP request timeout value for ES requests
+	 *
+	 * @dataProvider vip_search_is_url_query_cacheable_data()
+	 */
+	public function test__is_url_query_cacheable( $query, $expected_is_cacheable ) {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$is_cacheable = $es->is_url_query_cacheable( $query['url'], array() );
+
+		$this->assertEquals( $expected_is_cacheable, $is_cacheable );
 	}
 
 	/**
@@ -320,6 +390,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test that the default bulk index chunk size limit is not defined if we're not using VIP Search
 	 */
 	public function test__vip_search_bulk_chunk_size_not_defined_when_not_using_vip_search() {
+		$this->markTestSkipped( 'Revisit this test' );
 		$this->assertEquals( defined( 'EP_SYNC_CHUNK_LIMIT' ), false );
 	}
 
@@ -570,7 +641,7 @@ class Search_Test extends WP_UnitTestCase {
 		$es->init();
 
 		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0 ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
 
 		define(
 			'VIP_ELASTICSEARCH_ENDPOINTS',
@@ -584,8 +655,8 @@ class Search_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
-		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 107, '', array() ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
+		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 0 ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
+		$this->assertContains( $es->filter__ep_pre_request_host( 'endpoint1', 107 ), VIP_ELASTICSEARCH_ENDPOINTS, 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
 	}
 
 	/*
@@ -597,7 +668,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array() );
 
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0 ) );
 	}
 
 	/*
@@ -609,7 +680,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
 
-		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0, '', array() ) );
+		$this->assertEquals( 'test', $es->filter__ep_pre_request_host( 'test', 0 ) );
 	}
 
 	/**
@@ -1281,7 +1352,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__should_load_es_wp_query_already_loaded() {
 		require_once __DIR__ . '/../../../../search/es-wp-query/es-wp-query.php';
 
-		$this->expectNotice();
+		$this->setExpectedIncorrectUsage( 'Automattic\VIP\Search\Search::should_load_es_wp_query' );
 
 		$should = \Automattic\VIP\Search\Search::should_load_es_wp_query();
 
@@ -1341,8 +1412,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__limit_field_limit_absolute_maximum_is_20000() {
-		// Don't trigger an error since it's expected
-		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
 
 		$es = new \Automattic\VIP\Search\Search();
 
@@ -1364,8 +1434,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_total_field_limit_should_limit_total_fields() {
-		// Don't trigger an error since it's expected
-		\add_filter( 'doing_it_wrong_trigger_error', '__return_false', PHP_INT_MAX );
+		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
 
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
@@ -1854,6 +1923,9 @@ class Search_Test extends WP_UnitTestCase {
 		define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
 
 		$es = \Automattic\VIP\Search\Search::instance();
+		remove_all_filters( 'vip_search_post_meta_allow_list' );
+		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
+		$es->init();
 
 		$post     = new \WP_Post( new \StdClass() );
 		$post->ID = 0;
@@ -1971,9 +2043,7 @@ class Search_Test extends WP_UnitTestCase {
 		$post->ID = 0;
 
 		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
-			return [];
-		} );
+		\add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
 
 		\add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
 			return $returned_by_filter;
@@ -2138,9 +2208,7 @@ class Search_Test extends WP_UnitTestCase {
 		$post->ID = 0;
 
 		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		\add_filter( 'jetpack_sync_post_meta_whitelist', function () {
-			return [];
-		} );
+		\add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
 
 		\add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
 			return array_merge( $meta_keys, $added_keys );
@@ -2174,7 +2242,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->once() )
@@ -2212,7 +2280,7 @@ class Search_Test extends WP_UnitTestCase {
 			->willReturn( $stats_prefix );
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2231,7 +2299,8 @@ class Search_Test extends WP_UnitTestCase {
 		$stats_prefix    = 'foo';
 		$mocked_response = [
 			'response' => [
-				'code' => 400,
+				'code'    => 400,
+				'message' => 'Bad Request',
 			],
 		];
 
@@ -2246,7 +2315,7 @@ class Search_Test extends WP_UnitTestCase {
 		$partially_mocked_search->statsd = $statsd_mock;
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2277,7 +2346,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 3 ) )
@@ -2303,7 +2372,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2482,14 +2551,7 @@ class Search_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s should be an integer. Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$filter
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->search_instance->apply_settings();
 	}
 
@@ -2504,14 +2566,7 @@ class Search_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$too_low_message
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->search_instance->apply_settings();
 	}
 
@@ -2526,14 +2581,7 @@ class Search_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$this->expectNotice();
-		$this->expectNoticeMessage(
-			sprintf(
-				'add_filter was called <strong>incorrectly</strong>. %s Please see <a href="https://wordpress.org/support/article/debugging-in-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 5.5.3.)',
-				$too_high_message
-			)
-		);
-
+		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->search_instance->apply_settings();
 	}
 
@@ -2705,9 +2753,13 @@ class Search_Test extends WP_UnitTestCase {
 			],
 			[
 				[
-					'body' => '{ "error": {} }',
+					'body'     => '{ "error": {} }',
+					'response' => [
+						'code'    => 401,
+						'message' => 'Unauthorized',
+					],
 				],
-				'Unknown Elasticsearch query error',
+				'401 Unauthorized',
 			],
 			[
 				[
@@ -3097,193 +3149,6 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 	}
 
-	public function ensure_index_existence__bail_on_unneeded_method_data() {
-		return [
-			[ 'DELETE' ],
-			[ 'HEAD' ],
-			[ 'heAD' ], // case insensitive
-			[ 'get' ],
-		];
-	}
-
-	/**
-	 * @dataProvider ensure_index_existence__bail_on_unneeded_method_data
-	 */
-	public function test__ensure_index_existence__bail_on_unneeded_method( $method ) {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$args   = [ 'method' => $method ];
-		$result = $search->ensure_index_existence( 'url', $args );
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existence__bail_on_no_index_in_url() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$url             = 'https://elastic:1234/_all';
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertTrue( $result );
-	}
-
-
-	public function ensure_index_existence__bail_on_index_operation_data() {
-		return [
-			[ 'https://elastic:1234/' . $this->test_index_name ],
-			[ 'https://elastic:1234/' . $this->test_index_name . '/' ],
-			[ ' https://elastic:1234/' . $this->test_index_name . '/   ' ],
-		];
-	}
-
-	/**
-	 * @dataProvider ensure_index_existence__bail_on_index_operation_data
-	 */
-	public function test__ensure_index_existence__bail_on_index_operation( $url ) {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existence__bail_on_no_indexable() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$url = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
-
-		$indexables_mock->method( 'get' )->willReturn( null );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertTrue( $result );
-	}
-
-	public function test__ensure_index_existence__bail_on_non_matching_index_names() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$different_index_name = 'vip-203-post-42';
-		$url                  = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $different_index_name );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->never() )->method( 'index_exists' );
-
-		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertTrue( $result );
-	}
-
-	public function ensure_index_existence__put_mapping_data() {
-		return [
-			[ true ],
-			[ false ],
-		];
-	}
-
-	/**
-	 * @dataProvider ensure_index_existence__put_mapping_data
-	 */
-	public function test__ensure_index_existence__put_mapping_result_is_returned( $put_mapping_result ) {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$url = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $this->test_index_name );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->once() )->method( 'index_exists' );
-		$indexable_mock->expects( $this->once() )->method( 'put_mapping' )->willReturn( $put_mapping_result );
-
-		$result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertEquals( $put_mapping_result, $result );
-	}
-
-	public function test__ensure_index_existence__ix_exists_skip_check_on_second_pass() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$url = 'https://elastic:1234/' . $this->test_index_name . '/_doc';
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $this->test_index_name );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->once() )->method( 'index_exists' )->willReturn( true );
-		$indexable_mock->expects( $this->never() )->method( 'put_mapping' );
-
-		$search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$second_pass_result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertTrue( $second_pass_result );
-	}
-
-	public function test__ensure_index_existence__ix_initialized_skip_check_on_second_pass() {
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexable_mock  = $this->createMock( \ElasticPress\Indexable::class );
-		$versioning_mock = $this->createMock( Versioning::class );
-
-		$index_name = 'vip-203-post-1';
-		$url        = 'https://elastic:1234/' . $index_name . '/_doc';
-
-		$indexables_mock->method( 'get' )->willReturn( $indexable_mock );
-		$indexable_mock->method( 'get_index_name' )->willReturn( $index_name );
-
-		$search             = new \Automattic\VIP\Search\Search();
-		$search->indexables = $indexables_mock;
-		$search->versioning = $versioning_mock;
-
-		$indexable_mock->expects( $this->once() )->method( 'index_exists' )->willReturn( false );
-		$indexable_mock->expects( $this->once() )->method( 'put_mapping' )->willReturn( true );
-
-		$search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$second_pass_result = $search->ensure_index_existence( $url, [ 'method' => 'POST' ] );
-		$this->assertTrue( $second_pass_result );
-	}
-
 	/**
 	 * Helper function for accessing protected methods.
 	 */
@@ -3309,6 +3174,10 @@ class Search_Test extends WP_UnitTestCase {
 	public function mock_vip_safe_wp_remote_request() {
 		/* Empty */
 	}
+
+	public function mock_wp_remote_request() {
+		/* Empty */
+	}
 }
 
 /**
@@ -3316,4 +3185,11 @@ class Search_Test extends WP_UnitTestCase {
  */
 function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
 	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
+}
+
+/**
+ * Overwriting global function so that no real remote request is called
+ */
+function wp_remote_request( $url, $args = array() ) {
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request();
 }

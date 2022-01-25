@@ -4,16 +4,15 @@ namespace Automattic\VIP\Helpers;
 
 use WP_Error;
 
-// If the constant is set, don't run the cleanup
-if ( defined( 'VIP_SKIP_USER_CLEANUP' ) && true === VIP_SKIP_USER_CLEANUP ) {
-	add_filter( 'vip_do_user_cleanup', '__return_false' );
-}
-
 class User_Cleanup {
+	/**
+	 * @param string|null|false $emails_string
+	 * @return array
+	 */
 	public static function parse_emails_string( $emails_string ) {
 		$emails = [];
 
-		$emails_string = trim( $emails_string );
+		$emails_string = trim( (string) $emails_string );
 
 		if ( false !== strpos( $emails_string, ',' ) ) {
 			$emails_raw = explode( ',', $emails_string );

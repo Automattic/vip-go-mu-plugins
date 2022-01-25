@@ -37,6 +37,11 @@ while [ $# -gt 0 ]; do
             MYSQL_HOST_OVERRIDE="$1"
         ;;
 
+        --docker-options)
+            shift
+            DOCKER_OPTIONS="$1"
+        ;;
+
         *)
             ARGS="${ARGS} $1"
         ;;
@@ -50,6 +55,9 @@ done
 : "${PHP_VERSION:=""}"
 : "${PHP_OPTIONS:=""}"
 : "${PHPUNIT_VERSION:=""}"
+: "${DOCKER_OPTIONS:=""}"
+
+PHP_OPTIONS="-d apc.enable_cli=1 ${PHP_OPTIONS}"
 
 export WP_VERSION
 export WP_MULTISITE
@@ -98,7 +106,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-# shellcheck disable=SC2086 # ARGS must not be quoted
+# shellcheck disable=SC2086 # ARGS and DOCKER_OPTIONS must not be quoted
 docker run \
     -it \
     --rm \
@@ -113,6 +121,7 @@ docker run \
     -e MYSQL_DATABASE \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
+    ${DOCKER_OPTIONS} \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
     ${ARGS}

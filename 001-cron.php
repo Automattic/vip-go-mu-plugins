@@ -8,6 +8,10 @@ Version: 2.0
 Text Domain: automattic-cron-control
 */
 
+if ( file_exists( __DIR__ . '/cron/cron.php' ) ) {
+	require_once __DIR__ . '/cron/cron.php';
+}
+
 /**
  * Determine if Cron Control is called for
  *
@@ -116,26 +120,9 @@ function wpcom_vip_cron_control_event_object_to_string( $event ) {
 }
 
 /**
- * Callback for 'a8c_cron_control_uncacheable_cron_option' action. Send an alert to IRC and Slack in case of cron option being too big.
- *
- * @param $event object
- */
-function wpcom_vip_log_cron_control_uncacheable_cron_option( $option_size, $buckets, $option_flat_count ) {
-	$message = sprintf( 'Cron Control Cron Option Uncacheable Alert - home: %s | option size: %d | buckets: %d | option flat count: %d', home_url( '/' ), $option_size, $buckets, $option_flat_count );
-	wpcom_vip_irc( 'vip-go-criticals', $message, 2, 'cache-control-uncacheable-cron-option', 900 );
-}
-
-/**
  * Should Cron Control load
  */
 if ( ! wpcom_vip_use_core_cron() ) {
-	/**
-	 * Don't skip empty events, as it causes them to be rescheduled infinitely
-	 *
-	 * Functionality will be fixed or removed, but this stops the runaway event creation in the meantime
-	 */
-	add_filter( 'a8c_cron_control_run_event_with_no_callbacks', '__return_true' );
-
 	/**
 	 * Prevent plugins/themes from blocking access to our routes
 	 */
@@ -151,15 +138,6 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	 */
 	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
 	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
-	add_action( 'a8c_cron_control_uncacheable_cron_option', 'wpcom_vip_log_cron_control_uncacheable_cron_option', 10, 3 );
-	
-	$cron_control_next_version = __DIR__ . '/cron-control-next/cron-control.php';
 
-	if ( defined( 'VIP_CRON_CONTROL_USE_NEXT_VERSION' ) && true === VIP_CRON_CONTROL_USE_NEXT_VERSION && file_exists( $cron_control_next_version ) ) {
-		// Use latest version for testing
-		require_once $cron_control_next_version;
-	} else {
-		// Use regular version
-		require_once __DIR__ . '/cron-control/cron-control.php';
-	}
+	require_once __DIR__ . '/cron-control/cron-control.php';
 }

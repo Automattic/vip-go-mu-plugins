@@ -25,6 +25,7 @@ function _manually_load_plugin() {
 
 	require_once __DIR__ . '/../async-publish-actions.php';
 	require_once __DIR__ . '/../performance.php';
+
 	require_once __DIR__ . '/../security.php';
 
 	require_once __DIR__ . '/../schema.php';
@@ -32,6 +33,7 @@ function _manually_load_plugin() {
 	require_once __DIR__ . '/../vip-jetpack/vip-jetpack.php';
 
 	// Proxy lib
+	require_once __DIR__ . '/proxy-helpers.php'; // Needs to be included before ip-forward.php
 	require_once __DIR__ . '/../lib/proxy/ip-forward.php';
 	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
@@ -55,7 +57,7 @@ function _remove_init_hook_for_cache_manager() {
 }
 
 /**
- * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered. 
+ * Core functionality causes `WP_Block_Type_Registry::register was called <strong>incorrectly</strong>. Block type "core/legacy-widget" is already registered.
  *
  * Temporarily unhook it.
  *
@@ -90,6 +92,26 @@ function _configure_wp_parsely_specified_version() {
 	}
 }
 
+switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' ) ) {
+	case '2.6':
+		tests_add_filter(
+			'wpvip_parsely_version',
+			function() {
+				return '2.6';
+			}
+		);
+		break;
+	case '3.0':
+	default:
+		tests_add_filter(
+			'wpvip_parsely_version',
+			function() {
+				return '3.0';
+			}
+		);
+		break;
+}
+
 switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 	case 'filter_enabled':
 		echo "Expecting wp-parsely plugin to be enabled by the filter.\n";
@@ -112,6 +134,8 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		break;
 }
 
+require_once __DIR__ . '/mock-constants.php';
 require_once __DIR__ . '/mock-header.php';
+require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
 
 require $_tests_dir . '/includes/bootstrap.php';

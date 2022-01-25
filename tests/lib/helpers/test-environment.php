@@ -4,24 +4,24 @@ namespace Automattic\VIP\Helpers;
 
 require_once __DIR__ . '/../../../lib/helpers/environment.php';
 
+use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Environment_Test extends TestCase {
 	use ExpectPHPException;
 
+	public function setUp(): void {
+		parent::setUp();
+		Constant_Mocker::clear();
+	}
+
 	public function get_var_standard_env() {
-		define( 'VIP_ENV_VAR_MY_VAR', 'FOO' );
+		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'FOO' );
 	}
 
 	public function get_var_legacy_env() {
-		define( 'MY_VAR', 'FOO' );
+		Constant_Mocker::define( 'MY_VAR', 'FOO' );
 	}
 
 	// tests the use-case where $key parameter is not found
@@ -34,8 +34,6 @@ class Environment_Test extends TestCase {
 
 	/**
 	 * tests the use-case where $key parameter does not have the prefix
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_legacy_key() {
 		$this->get_var_legacy_env();
@@ -45,8 +43,6 @@ class Environment_Test extends TestCase {
 
 	/**
 	 * tests the use-case where $key parameter is lower case
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_lower_key() {
 		$this->get_var_standard_env();
@@ -56,8 +52,6 @@ class Environment_Test extends TestCase {
 
 	/**
 	 * tests the use-case where $key parameter is ''
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test_get_var_empty_key() {
 		$this->expectNotice();
@@ -67,10 +61,6 @@ class Environment_Test extends TestCase {
 		$this->assertEquals( 'BAR', $val );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_get_var() {
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
