@@ -64,7 +64,7 @@ class Connection_Pilot {
 		}
 
 		// Making sure each time CP is called it reads the correct heartbeat
-		self::$instance->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME );
+		self::$instance->last_heartbeat = get_option( self::HEARTBEAT_OPTION_NAME, [] );
 
 		return self::$instance;
 	}
@@ -208,7 +208,7 @@ class Connection_Pilot {
 	 * @return void
 	 */
 	private function update_backoff_factor(): void {
-		$backoff_factor = (int) $this->last_heartbeat['backoff_factor'];
+		$backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
 
 		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
 			return;
