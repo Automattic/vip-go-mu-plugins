@@ -853,9 +853,10 @@ class Search {
 		 */
 		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
 
-		// Disabled for testing
-		// TODO: switch to Feature gradual rollout
-		if ( ! ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT ) && $cached_response ) {
+		// Only enable for subset of sites and all non-prod environements
+		$feature_enabled = \Automattic\VIP\Feature::is_enabled_by_percentage( 'es-query-cache' );
+		$is_non_prod     = ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== VIP_GO_APP_ENVIRONMENT;
+		if ( ( $feature_enabled || $is_non_prod ) && $cached_response ) {
 			return $cached_response;
 		}
 
