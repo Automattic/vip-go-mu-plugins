@@ -149,6 +149,7 @@ jobs:
     environment:
       WP_MULTISITE: "1"
       WP_VERSION: "latest"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -159,6 +160,7 @@ jobs:
       WP_MULTISITE: "1"
       WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -204,6 +206,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -214,6 +217,7 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -225,6 +229,7 @@ jobs:
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
       WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -236,6 +241,7 @@ jobs:
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
       WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -247,6 +253,7 @@ jobs:
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
       WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -258,6 +265,7 @@ jobs:
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
       WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -269,6 +277,7 @@ jobs:
       WP_VERSION: "latest"
       WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
       WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
+      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
