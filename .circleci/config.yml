@@ -168,6 +168,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.5.8"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -177,6 +178,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.6.7"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -186,6 +188,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.7.5"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -195,6 +198,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.8.3"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -278,7 +282,6 @@ jobs:
     environment:
       WP_MULTISITE: "1"
       WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -288,7 +291,6 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -298,7 +300,6 @@ jobs:
     environment:
       WP_MULTISITE: "1"
       WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
       PHP_VERSION: "8.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
@@ -309,7 +310,6 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
       PHP_VERSION: "8.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
