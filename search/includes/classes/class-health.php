@@ -9,7 +9,7 @@ use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
 
 class Health {
-	const CONTENT_VALIDATION_BATCH_SIZE        = 500;
+	const CONTENT_VALIDATION_BATCH_SIZE        = 300;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE     = 1000;
 	const CONTENT_VALIDATION_LOCK_NAME         = 'vip_search_content_validation_lock';
 	const CONTENT_VALIDATION_LOCK_TIMEOUT      = 900; // 15 min
