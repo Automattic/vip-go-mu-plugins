@@ -11,17 +11,8 @@ workflows:
       - php74-build-singlesite-56
       - php74-build-singlesite-55
       - php74-build-multisite
-      - php74-build-multisite-nightly
-      - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
-      - php74-build-singlesite-parsely-filter
-      - php74-build-singlesite-parsely-option
-      - php74-build-singlesite-parsely-filter-option
-      - php74-build-singlesite-parsely-filter-2-6
-      - php74-build-singlesite-parsely-option-2-6
-      - php80-build-multisite-nightly
-      - php80-build-singlesite-nightly
       - search-dev-tools
 
   after-master-merge:
@@ -168,6 +159,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.5.8"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -177,6 +169,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.6.7"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -186,6 +179,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.7.5"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -195,6 +189,7 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.8.3"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -214,103 +209,6 @@ jobs:
       WP_MULTISITE: "0"
       WP_VERSION: "latest"
       DISABLE_JETPACK: "1"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-option:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter-option:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "3.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter-2-6:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-option-2-6:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
-      WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: "2.6"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-multisite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "1"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php80-build-multisite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "1"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-      PHP_VERSION: "8.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php80-build-singlesite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-      PHP_VERSION: "8.0"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image

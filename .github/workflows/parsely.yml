@@ -1,0 +1,63 @@
+name: Run Tests with Parse.ly
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, Parse.ly: ${{ matrix.parsely }} ${{ matrix.mode }}, PHP ${{ matrix.php }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - "7.4"
+        wp:
+          - "latest"
+        multisite:
+          - "0"
+        parsely:
+          - "2.6"
+          - "3.0"
+        mode:
+          - "filter_enabled"
+          - "option_enabled"
+        include:
+          - php: "7.4"
+            wp: "latest"
+            multisite: "0"
+            parsely: "3.0"
+            mode: "filter_and_option_enabled"
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          php-version: ${{ matrix.php }}
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@2.1.0
+
+      - name: Run tests
+        run: |
+          ./bin/test.sh \
+            --wp ${{ matrix.wp }} \
+            --php ${{ matrix.php }} \
+            --multisite ${{ matrix.multisite }} \
+            --docker-options "-e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION=${{ matrix.parsely }} -e WPVIP_PARSELY_INTEGRATION_TEST_MODE=${{ matrix.mode }}" \
+            --order-by=random
