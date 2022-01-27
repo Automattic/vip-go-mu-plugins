@@ -80,7 +80,9 @@ function rest_callback( \WP_REST_Request $request ) {
 	);
 
 	if ( ! is_wp_error( $result ) ) {
-		$result = sanitize_query_response( json_decode( $result['body'] ) );
+		$result = [
+			'body' => sanitize_query_response( json_decode( $result['body'] ) ),
+		];
 	} else {
 		$result = [
 			'body' => $result->get_error_messages(),
