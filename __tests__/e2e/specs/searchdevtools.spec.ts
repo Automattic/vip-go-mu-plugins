@@ -2,7 +2,6 @@
  * External dependencies
  */
 import { expect, test } from '@playwright/test';
-import { promisify } from 'util';
 
 /**
  * Internal dependencies
@@ -33,7 +32,7 @@ test( 'Search Dev Tools', async ( { page } ) => {
     await test.step( 'Run a new query', async () => {
         const newQuery = query.replace( /"Hello"/g, '"world"' );
         await searchPage.editQuery( newQuery );
-        await searchPage.runQuery();
+        return searchPage.runQuery();
     } );
     await test.step( 'Close DevTools', () => searchPage.closeSearchDevTools() );
 } );

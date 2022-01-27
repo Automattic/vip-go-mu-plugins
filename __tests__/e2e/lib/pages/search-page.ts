@@ -23,6 +23,7 @@ const selectors = {
     queryColumn: () => 'div[class^="query_src__"]',
     sourceQuery: () => 'textarea',
     queryActionsButton: () => 'div[class^="query_actions"] > button',
+    queryResult: () => 'div[class^="query_result__"] > pre > code',
 };
 
 export class SearchPage {
@@ -38,6 +39,7 @@ export class SearchPage {
     private readonly queryColumnLocator: Locator;
     private readonly sourceQueryLocator: Locator;
     private readonly queryActionsLocator: Locator;
+    private readonly queryResultLocator: Locator;
 
     constructor( page: Page ) {
         this.page = page;
@@ -52,6 +54,7 @@ export class SearchPage {
         this.queryColumnLocator = this.queryWrapLocator.locator( selectors.queryColumn() );
         this.sourceQueryLocator = this.queryColumnLocator.locator( selectors.sourceQuery() );
         this.queryActionsLocator = this.queryColumnLocator.locator( selectors.queryActionsButton() );
+        this.queryResultLocator = this.queryWrapLocator.locator( selectors.queryResult() );
     }
 
     async visit( searchTerm: string ): Promise<unknown> {
@@ -126,7 +129,7 @@ export class SearchPage {
         return this.getQuery();
     }
 
-    async runQuery(): Promise<unknown> {
+    async runQuery(): Promise<string> {
         await this.ensureDevToolsOpen();
         await expect( this.queryActionsLocator.count() ).resolves.toBe( 2 );
 
@@ -139,11 +142,18 @@ export class SearchPage {
 
         const text = await response.text();
         const json = JSON.parse( text );
-        return expect( json ).toMatchObject( {
+        expect( json ).toMatchObject( {
             result: expect.objectContaining( {
                 body: expect.any( Object ),
             } ),
         } );
+
+        await expect( this.queryResultLocator ).not.toBeEmpty();
+        const responseText = await this.queryResultLocator.innerText();
+        const responseJson = JSON.parse( responseText );
+        expect( json.result.body ).toEqual( responseJson );
+
+        return responseText;
     }
 
     async closeSearchDevTools(): Promise<unknown> {
