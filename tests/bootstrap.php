@@ -71,6 +71,15 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
 
+// Disable calls to wordpress.org to get translations
+tests_add_filter( 'translations_api', function ( $res ) {
+	if ( false === $res ) {
+		$res = [ 'translations' => [] ];
+	}
+
+	return $res;
+} );
+
 // Begin wp-parsely integration config
 function _configure_wp_parsely_env_load_via_filter() {
 	echo "[WP_PARSELY_INTEGRATION] Enabling the plugin via filter\n";
