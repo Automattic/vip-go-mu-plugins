@@ -1,0 +1,19 @@
+{
+  "name": "automattic/vip-support",
+  "description": "Manages the WordPress.com Support Users on your site",
+  "license": "GPL-2.0",
+  "require": {
+    "php": ">=5.2.4"
+  },
+  "require-dev": {
+    "behat/behat": "2.4.*@stable",
+    "behat/mink": "1.4.*@stable",
+    "behat/mink-extension": "*",
+    "behat/mink-goutte-driver": "*",
+    "behat/mink-selenium2-driver": "*",
+    "phpunit/phpunit": "7.5.20",
+    "wp-phpunit/wp-phpunit": "5.8.2",
+    "wp-cli/wp-cli": "*",
+    "yoast/phpunit-polyfills": "1.0.3"
+  }
+}
