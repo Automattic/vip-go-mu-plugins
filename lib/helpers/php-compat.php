@@ -31,17 +31,13 @@ if ( ! function_exists( 'str_starts_with' ) ) {
 	 * Performs a case-sensitive check indicating if
 	 * the haystack begins with needle.
 	 *
-	 * @since 5.9.0
 	 *
 	 * @param string $haystack The string to search in.
 	 * @param string $needle   The substring to search for in the `$haystack`.
 	 * @return bool True if `$haystack` starts with `$needle`, otherwise false.
 	 */
 	function str_starts_with( $haystack, $needle ) {
-		if ( '' === $needle ) {
-			return true;
-		}
-		return 0 === strpos( $haystack, $needle );
+		return 0 === strncmp( $haystack, $needle, strlen( $needle ) );
 	}
 }
 
