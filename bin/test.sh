@@ -57,6 +57,8 @@ done
 : "${PHPUNIT_VERSION:=""}"
 : "${DOCKER_OPTIONS:=""}"
 
+PHP_OPTIONS="-d apc.enable_cli=1 ${PHP_OPTIONS}"
+
 export WP_VERSION
 export WP_MULTISITE
 export PHP_VERSION
@@ -104,9 +106,15 @@ cleanup() {
 
 trap cleanup EXIT
 
-# shellcheck disable=SC2086 # ARGS and DOCKER_OPTIONS must not be quoted
+if [ -z "${CI}" ]; then
+    interactive="-it"
+else
+    interactive=""
+fi
+
+# shellcheck disable=SC2086,SC2248,SC2312 # ARGS and DOCKER_OPTIONS must not be quoted
 docker run \
-    -it \
+    ${interactive} \
     --rm \
     --network "${NETWORK_NAME}" \
     -e WP_VERSION \
@@ -116,7 +124,7 @@ docker run \
     -e PHPUNIT_VERSION \
     -e MYSQL_USER \
     -e MYSQL_PASSWORD \
-    -e MYSQL_DATABASE \
+    -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
     ${DOCKER_OPTIONS} \

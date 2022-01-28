@@ -9,7 +9,7 @@ use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
 
 class Health {
-	const CONTENT_VALIDATION_BATCH_SIZE        = 500;
+	const CONTENT_VALIDATION_BATCH_SIZE        = 300;
 	const CONTENT_VALIDATION_MAX_DIFF_SIZE     = 1000;
 	const CONTENT_VALIDATION_LOCK_NAME         = 'vip_search_content_validation_lock';
 	const CONTENT_VALIDATION_LOCK_TIMEOUT      = 900; // 15 min
@@ -139,6 +139,13 @@ class Health {
 	public function get_index_entity_count_from_elastic_search( array $query_args, \ElasticPress\Indexable $indexable ) {
 		// Get total count in ES index
 		try {
+			$protected_content         = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
+			$protected_content_enabled = $protected_content ? $protected_content->is_active() : false;
+			// Include password-protected posts in health count query if protected_content feature is used.
+			if ( $protected_content_enabled ) {
+				add_filter( 'ep_exclude_password_protected_from_search', '__return_false' );
+			}
+
 			$query          = self::query_objects( $query_args, $indexable->slug );
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 
@@ -389,35 +396,7 @@ class Health {
 	/**
 	 * Validate DB and ES index post content
 	 *
-	 * ## OPTIONS
-	 *
-	 * [inspect]
-	 * : Optional gives more verbose output for index inconsistencies
-	 *
-	 * [start_post_id=<int>]
-	 * : Optional starting post id (defaults to 1)
-	 *
-	 * [last_post_id=<int>]
-	 * : Optional last post id to check
-	 *
-	 * [batch_size=<int>]
-	 * : Optional batch size (max is 5000)
-	 *
-	 * [max_diff_size=<int>]
-	 * : Optional max count of diff before exiting
-	 *
-	 * [do_not_heal]
-	 * : Optional Don't try to correct inconsistencies
-	 *
-	 * [silent]
-	 * : Optional silences all non-error output except for the final results
-	 *
-	 * [force_parallel_execution]
-	 * : Optional Force execution even if the process is already ongoing
-	 *
-	 *
 	 * @param array $options list of options
-	 *
 	 *
 	 * @return array Array containing counts and ids of posts with inconsistent content
 	 */
@@ -427,7 +406,6 @@ class Health {
 		$batch_size               = $options['batch_size'] ?? null;
 		$max_diff_size            = $options['max_diff_size'] ?? null;
 		$silent                   = isset( $options['silent'] );
-		$inspect                  = isset( $options['inspect'] );
 		$do_not_heal              = isset( $options['do_not_heal'] );
 		$force_parallel_execution = isset( $options['force_parallel_execution'] );
 
@@ -503,7 +481,7 @@ class Health {
 			}
 
 			/** @var array|WP_Error */
-			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect );
+			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $options );
 
 			if ( is_wp_error( $result ) ) {
 				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
@@ -595,8 +573,11 @@ class Health {
 		delete_transient( self::CONTENT_VALIDATION_LOCK_NAME );
 	}
 
-	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $inspect ) {
+	public function validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $options ) {
 		global $wpdb;
+
+		$inspect = isset( $options['inspect'] );
+		$mode    = $options['mode'] ?? null;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
@@ -623,22 +604,33 @@ class Health {
 
 		$diffs = $inspect ? self::get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids )
 		                : self::simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+
+		if ( $mode && 'missing' === $mode ) {
+			// No need to continue looking for inconsistencies, since we have the ids for missing.
+			return $diffs;
+		}
+
 		// Filter out any that are extra or missing in index
 		$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
 			$key = self::get_post_key( $document['ID'] );
 			return ! array_key_exists( $key, $diffs );
 		} );
 
+		if ( $mode && 'mismatch' === $mode ) {
+			// Clear out previous data for missing posts from $diffs since we only want mismatched.
+			$diffs = [];
+		}
+
 		// Compare each indexed document with what it _should_ be if it were re-indexed now
 		foreach ( $documents as $document ) {
 			$prepared_document = $indexable->prepare_document( $document['post_id'] );
 
 			$diff = $inspect ? self::diff_document_and_prepared_document( $document, $prepared_document )
-			                : self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
+							: self::simplified_diff_document_and_prepared_document( $document, $prepared_document ); // phpcs:ignore Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
 
 			if ( $diff ) {
 				$key           = self::get_post_key( $document['ID'] );
-				$diffs[ $key ] = $inspect ? $diff : self::simplified_format_post_diff( $document['ID'], 'inconsistent' );
+				$diffs[ $key ] = $inspect ? $diff : self::simplified_format_post_diff( $document['ID'], 'mismatch' );
 			}
 		}
 
@@ -803,17 +795,17 @@ class Health {
 	/**
 	 * Iterate over an array of inconsistencies and address accordingly.
 	 *
-	 * If an object is missing from the index or inconsistent - add it to the queue for the sweep.
+	 * If an object is missing from the index or mismatched - add it to the queue for the sweep.
 	 *
 	 * If an object is missing from the DB, remove it from the index.
 	 *
-	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index|inconsistent> ].
+	 * @param array $diff array of inconsistenices in the following shape: [ id => string, type => string (Indexable), issue => <missing_from_index|extra_in_index|mismatch> ].
 	 */
 	public static function reconcile_diff( array $diff ) {
 		foreach ( $diff as $obj_to_reconcile ) {
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
-				case 'inconsistent':
+				case 'mismatch':
 					/**
 					 * Filter to determine the priority of the reindex job
 					 *
@@ -933,7 +925,7 @@ class Health {
 		$unhealthy = array();
 
 		foreach ( $indexables as $indexable ) {
-			$diff = $this->get_index_versions_settings_diff_for_indexable( $indexable );
+			$diff = $this->get_active_index_settings_diff_for_indexable( $indexable );
 
 			if ( is_wp_error( $diff ) ) {
 				$unhealthy[ $indexable->slug ] = $diff;
@@ -951,20 +943,16 @@ class Health {
 		return $unhealthy;
 	}
 
-	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$versions = $this->search->versioning->get_versions( $indexable );
+	public function get_active_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
+		$version = $this->search->versioning->get_active_version_number( $indexable );
 
-		$diff = array();
+		$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
+			'index_version' => $version,
+		) );
 
-		foreach ( $versions as $version ) {
-			$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
-				'index_version' => $version['number'],
-			) );
+		$diff = [];
 
-			if ( empty( $version_result ) ) {
-				continue;
-			}
-
+		if ( ! empty( $version_result ) ) {
 			$diff[] = $version_result;
 		}
 

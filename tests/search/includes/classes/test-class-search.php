@@ -26,7 +26,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance = new \Automattic\VIP\Search\Search();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
-			->setMethods( [ 'mock_vip_safe_wp_remote_request' ] )
+			->setMethods( [ 'mock_vip_safe_wp_remote_request', 'mock_wp_remote_request' ] )
 			->getMock();
 
 		header_remove();
@@ -140,6 +140,78 @@ class Search_Test extends WP_UnitTestCase {
 				'vip-123-post',
 			),
 		);
+	}
+
+	public function vip_search_is_url_query_cacheable_data() {
+		return array(
+			// Regular search
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_search',
+				),
+				// The expected result
+				true,
+			),
+			// Regular multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_mget',
+				),
+				// The expected result
+				true,
+			),
+			// Regular entity multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_doc/_mget',
+				),
+				// The expected result
+				true,
+			),
+			// Bulk index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_bulk',
+				),
+				// The expected result
+				false,
+			),
+			// Url containing _bulk
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/_bulk/bar?_mget',
+				),
+				// The expected result
+				false,
+			),
+			// Random other url
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_anything',
+				),
+				// The expected result
+				false,
+			),
+		);
+	}
+
+	/**
+	 * Test that we correctly calculate the HTTP request timeout value for ES requests
+	 *
+	 * @dataProvider vip_search_is_url_query_cacheable_data()
+	 */
+	public function test__is_url_query_cacheable( $query, $expected_is_cacheable ) {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$is_cacheable = $es->is_url_query_cacheable( $query['url'], array() );
+
+		$this->assertEquals( $expected_is_cacheable, $is_cacheable );
 	}
 
 	/**
@@ -2170,7 +2242,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->once() )
@@ -2208,7 +2280,7 @@ class Search_Test extends WP_UnitTestCase {
 			->willReturn( $stats_prefix );
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2227,7 +2299,8 @@ class Search_Test extends WP_UnitTestCase {
 		$stats_prefix    = 'foo';
 		$mocked_response = [
 			'response' => [
-				'code' => 400,
+				'code'    => 400,
+				'message' => 'Bad Request',
 			],
 		];
 
@@ -2242,7 +2315,7 @@ class Search_Test extends WP_UnitTestCase {
 		$partially_mocked_search->statsd = $statsd_mock;
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2273,7 +2346,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 3 ) )
@@ -2299,7 +2372,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->init();
 
-		self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )
+		self::$mock_global_functions->method( 'mock_wp_remote_request' )
 			->willReturn( $mocked_response );
 
 		$partially_mocked_search->expects( $this->exactly( 2 ) )
@@ -2680,9 +2753,13 @@ class Search_Test extends WP_UnitTestCase {
 			],
 			[
 				[
-					'body' => '{ "error": {} }',
+					'body'     => '{ "error": {} }',
+					'response' => [
+						'code'    => 401,
+						'message' => 'Unauthorized',
+					],
 				],
-				'Unknown Elasticsearch query error',
+				'401 Unauthorized',
 			],
 			[
 				[
@@ -3097,6 +3174,10 @@ class Search_Test extends WP_UnitTestCase {
 	public function mock_vip_safe_wp_remote_request() {
 		/* Empty */
 	}
+
+	public function mock_wp_remote_request() {
+		/* Empty */
+	}
 }
 
 /**
@@ -3104,4 +3185,11 @@ class Search_Test extends WP_UnitTestCase {
  */
 function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
 	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
+}
+
+/**
+ * Overwriting global function so that no real remote request is called
+ */
+function wp_remote_request( $url, $args = array() ) {
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request();
 }

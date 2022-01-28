@@ -184,9 +184,14 @@ class Parsely {
 			return;
 		}
 
+		$parsed_post = get_post( $post );
+		if ( ! $parsed_post instanceof WP_Post ) {
+			return;
+		}
+
 		// Assign default values for LD+JSON
 		// TODO: Mapping of an install's post types to Parse.ly post types (namely page/post).
-		$parsely_page = $this->construct_parsely_metadata( $parsely_options, $post );
+		$parsely_page = $this->construct_parsely_metadata( $parsely_options, $parsed_post );
 
 		// Something went wrong - abort.
 		if ( empty( $parsely_page ) || ! isset( $parsely_page['headline'] ) ) {
@@ -249,7 +254,13 @@ class Parsely {
 		$this->insert_page_header_metadata();
 
 		global $post;
-		return $this->construct_parsely_metadata( $this->get_options(), $post );
+
+		$parsed_post = get_post( $post );
+		if ( ! $parsed_post instanceof WP_Post ) {
+			return array();
+		}
+
+		return $this->construct_parsely_metadata( $this->get_options(), $parsed_post );
 	}
 
 	/**
@@ -447,14 +458,9 @@ class Parsely {
 				'@type' => 'ImageObject',
 				'url'   => $image_url,
 			);
-			$parsely_page['dateCreated']      = gmdate( 'Y-m-d\TH:i:s\Z', get_post_time( 'U', true, $post ) );
-			$parsely_page['datePublished']    = gmdate( 'Y-m-d\TH:i:s\Z', get_post_time( 'U', true, $post ) );
-			if ( get_the_modified_date( 'U', true ) >= get_post_time( 'U', true, $post ) ) {
-				$parsely_page['dateModified'] = gmdate( 'Y-m-d\TH:i:s\Z', get_the_modified_date( 'U', true ) );
-			} else {
-				// Use the post time as the earliest possible modification date.
-				$parsely_page['dateModified'] = gmdate( 'Y-m-d\TH:i:s\Z', get_post_time( 'U', true, $post ) );
-			}
+
+			$this->set_metadata_post_times( $parsely_page, $post );
+
 			$parsely_page['articleSection'] = $category;
 			$author_objects                 = array();
 			foreach ( $authors as $author ) {
@@ -489,7 +495,39 @@ class Parsely {
 		 * @param WP_Post $post            Post object.
 		 * @param array   $parsely_options The Parsely options.
 		 */
-		return apply_filters( 'wp_parsely_metadata', $parsely_page, $post, $parsely_options );
+		$filtered = apply_filters( 'wp_parsely_metadata', $parsely_page, $post, $parsely_options );
+		if ( is_array( $filtered ) ) {
+			return $filtered;
+		}
+		return array();
+	}
+
+	/**
+	 * Sets all metadata values related to post time.
+	 *
+	 * @since 3.0.2
+	 *
+	 * @param array   $metadata Array containing all metadata. It will be potentially mutated to add keys: dateCreated, dateModified, & datePublished.
+	 * @param WP_Post $post     Post object from which to extract time data.
+	 * @return void
+	 */
+	private function set_metadata_post_times( array &$metadata, WP_Post $post ): void {
+		$date_format      = 'Y-m-d\TH:i:s\Z';
+		$post_created_gmt = get_post_time( $date_format, true, $post );
+
+		if ( false === $post_created_gmt ) {
+			return;
+		}
+
+		$metadata['dateCreated']   = $post_created_gmt;
+		$metadata['datePublished'] = $post_created_gmt;
+		$metadata['dateModified']  = $post_created_gmt;
+
+		$post_modified_gmt = get_post_modified_time( $date_format, true, $post );
+
+		if ( false !== $post_modified_gmt && $post_modified_gmt > $post_created_gmt ) {
+			$metadata['dateModified'] = $post_modified_gmt;
+		}
 	}
 
 	/**
@@ -625,11 +663,13 @@ class Parsely {
 	 * @return array The tags of the post represented by the post id.
 	 */
 	private function get_tags( int $post_id ): array {
-		$tags = array();
-		foreach ( wp_get_post_tags( $post_id ) as $wp_tag ) {
-			array_push( $tags, $wp_tag->name );
+		$tags      = array();
+		$post_tags = wp_get_post_tags( $post_id );
+		if ( ! is_wp_error( $post_tags ) ) {
+			foreach ( $post_tags as $wp_tag ) {
+				$tags[] = $wp_tag->name;
+			}
 		}
-
 		return $tags;
 	}
 
@@ -643,13 +683,17 @@ class Parsely {
 	private function get_categories( int $post_id, string $delimiter = '/' ): array {
 		$tags = array();
 		foreach ( get_the_category( $post_id ) as $category ) {
-			$hierarchy = get_category_parents( $category, false, $delimiter );
-			$hierarchy = rtrim( $hierarchy, '/' );
-			array_push( $tags, $hierarchy );
+			$hierarchy = get_category_parents( $category->term_id, false, $delimiter );
+			if ( ! is_wp_error( $hierarchy ) ) {
+				$tags[] = rtrim( $hierarchy, '/' );
+			}
 		}
 		// take last element in the hierarchy, a string representing the full parent->child tree,
 		// and split it into individual category names.
-		$tags = explode( '/', end( $tags ) );
+		$last_tag = end( $tags );
+		if ( $last_tag ) {
+			$tags = explode( '/', $last_tag );
+		}
 		// remove uncategorized value from tags.
 		return array_diff( $tags, array( 'Uncategorized' ) );
 	}
@@ -685,7 +729,7 @@ class Parsely {
 		// as the category value if 'use_top_level_cats' option is checked.
 		// Assign as "Uncategorized" if no value is checked for the chosen taxonomy.
 		$category = 'Uncategorized';
-		if ( ! empty( $taxonomy_dropdown_choice ) ) {
+		if ( ! empty( $taxonomy_dropdown_choice ) && ! is_wp_error( $taxonomy_dropdown_choice ) ) {
 			if ( $parsely_options['use_top_level_cats'] ) {
 				$first_term = array_shift( $taxonomy_dropdown_choice );
 				$term_name  = $this->get_top_level_term( $first_term->term_id, $first_term->taxonomy );
@@ -693,7 +737,7 @@ class Parsely {
 				$term_name = $this->get_bottom_level_term( $post_obj->ID, $parsely_options['custom_taxonomy_section'] );
 			}
 
-			if ( $term_name ) {
+			if ( is_string( $term_name ) && 0 < strlen( $term_name ) ) {
 				$category = $term_name;
 			}
 		}
@@ -737,9 +781,14 @@ class Parsely {
 	 * @return string Name of the custom taxonomy.
 	 */
 	private function get_bottom_level_term( int $post_id, string $taxonomy_name ): string {
-		$terms    = get_the_terms( $post_id, $taxonomy_name );
-		$term_ids = is_array( $terms ) ? wp_list_pluck( $terms, 'term_id' ) : array();
-		$parents  = is_array( $terms ) ? array_filter( wp_list_pluck( $terms, 'parent' ) ) : array();
+		$terms = get_the_terms( $post_id, $taxonomy_name );
+
+		if ( ! is_array( $terms ) ) {
+			return '';
+		}
+
+		$term_ids = wp_list_pluck( $terms, 'term_id' );
+		$parents  = array_filter( wp_list_pluck( $terms, 'parent' ) );
 
 		// Get array of IDs of terms which are not parents.
 		$term_ids_not_parents = array_diff( $term_ids, $parents );
@@ -748,10 +797,15 @@ class Parsely {
 		// remove array index keys.
 		$terms_not_parents_cleaned = array();
 		foreach ( $terms_not_parents as $index => $value ) {
-			array_push( $terms_not_parents_cleaned, $value );
+			$terms_not_parents_cleaned[] = $value;
 		}
-		// if you assign multiple child terms in a custom taxonomy, will only return the first.
-		return $terms_not_parents_cleaned[0]->name;
+
+		if ( ! empty( $terms_not_parents_cleaned ) ) {
+			// if you assign multiple child terms in a custom taxonomy, will only return the first.
+			return $terms_not_parents_cleaned[0]->name ?? '';
+		}
+
+		return '';
 	}
 
 	/**
@@ -903,10 +957,14 @@ class Parsely {
 	 *
 	 * @since 2.6.0
 	 *
-	 * @param string $val The content you'd like sanitized.
+	 * @param string|null $val The content you'd like sanitized.
 	 * @return string
 	 */
-	public function get_clean_parsely_page_value( string $val ): string {
+	public function get_clean_parsely_page_value( ?string $val ): string {
+		if ( $val === null ) {
+			return '';
+		}
+
 		$val = str_replace( "\n", '', $val );
 		$val = str_replace( "\r", '', $val );
 		$val = wp_strip_all_tags( $val );

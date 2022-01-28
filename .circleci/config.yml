@@ -11,15 +11,8 @@ workflows:
       - php74-build-singlesite-56
       - php74-build-singlesite-55
       - php74-build-multisite
-      - php74-build-multisite-nightly
-      - php74-build-singlesite-nightly
       - php74-build-singlesite-no-jetpack
       - php74-build-multisite-no-jetpack
-      - php74-build-singlesite-parsely-filter
-      - php74-build-singlesite-parsely-option
-      - php74-build-singlesite-parsely-filter-option
-      - php80-build-multisite-nightly
-      - php80-build-singlesite-nightly
       - search-dev-tools
 
   after-master-merge:
@@ -165,7 +158,8 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.5.7"
+      WP_VERSION: "5.5.8"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -174,7 +168,8 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.6.6"
+      WP_VERSION: "5.6.7"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -183,7 +178,8 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.7.4"
+      WP_VERSION: "5.7.5"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -192,7 +188,8 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.8.2"
+      WP_VERSION: "5.8.3"
+      PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
@@ -216,78 +213,6 @@ jobs:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
 
-  php74-build-singlesite-parsely-filter:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_enabled"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-option:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "option_enabled"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-parsely-filter-option:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "latest"
-      WPVIP_PARSELY_INTEGRATION_TEST_MODE: "filter_and_option_enabled"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-multisite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "1"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php74-build-singlesite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php80-build-multisite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "1"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-      PHP_VERSION: "8.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
-  php80-build-singlesite-nightly:
-    <<: *php_job
-    environment:
-      WP_MULTISITE: "0"
-      WP_VERSION: "nightly"
-      PHPUNIT_VERSION: "9"
-      PHP_VERSION: "8.0"
-    docker:
-      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
-      - image: *db_image
-
   create-changelog-draft:
     environment:
       CIRCLE_PROJECT_USERNAME: Automattic
@@ -306,7 +231,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.13.1
+      - image: cimg/node:16.13.2
     steps:
       - checkout
       - run:

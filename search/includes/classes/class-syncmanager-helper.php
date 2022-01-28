@@ -52,6 +52,11 @@ final class SyncManager_Helper {
 		add_action( 'saved_term', [ $this, 'saved_term' ] );
 
 		add_filter( 'ep_skip_action_edited_term', [ $this, 'ep_skip_action_edited_term' ], 10, 4 );
+
+		// Invalidate the request cache on these hooks
+
+		add_action( 'ep_after_bulk_index', [ $this, 'ep_after_bulk_index' ], 10, 3 );
+		add_action( 'ep_after_index', [ $this, 'ep_after_index' ], 10, 2 );
 	}
 
 	public function cleanup(): void {
@@ -62,6 +67,43 @@ final class SyncManager_Helper {
 		remove_action( 'saved_term', [ $this, 'saved_term' ] );
 
 		remove_filter( 'ep_skip_action_edited_term', [ $this, 'ep_skip_action_edited_term' ], 10 );
+	}
+
+
+	/**
+	 * Bump the last_changed  after bulk index
+	 *
+	 * @param array $object_ids
+	 * @param string $indexable_slug
+	 * @param mixed $result
+	 * @return void
+	 */
+	public function ep_after_bulk_index( $object_ids, $indexable_slug, $result ) {
+		if ( ! is_wp_error( $result ) && $result ) {
+			$this->bump_last_changed();
+		}
+	}
+
+	/**
+	 * Bump the last_changed after indexing single document
+	 *
+	 * @param array $document
+	 * @param mixed $return
+	 * @return void
+	 */
+	public function ep_after_index( $document, $return ) {
+		if ( ! is_wp_error( $return ) && $return ) {
+			$this->bump_last_changed();
+		}
+	}
+
+	/**
+	 * Bump last updated what we can use to invalidate any cached requests
+	 *
+	 * @return bool 
+	 */
+	private function bump_last_changed() {
+		return wp_cache_set( 'last_changed', microtime(), Search::SEARCH_CACHE_GROUP );
 	}
 
 	/**
