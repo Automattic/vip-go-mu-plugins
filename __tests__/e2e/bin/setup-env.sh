@@ -30,4 +30,3 @@ docker exec e2etestsite_php_1 wp core update --allow-root --version="${version}"
 docker exec e2etestsite_wordpress_1 sh -c 'echo "define( \"VIP_ENABLE_VIP_SEARCH\", true );" | tee -a /app/config/wp-config.php'
 docker exec e2etestsite_wordpress_1 sh -c 'echo "define( \"VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION\", true );" | tee -a /app/config/wp-config.php'
 docker exec e2etestsite_php_1 wp --allow-root vip-search index --setup --skip-confirm
-docker exec e2etestsite_php_1 wp --allow-root vip-search index
