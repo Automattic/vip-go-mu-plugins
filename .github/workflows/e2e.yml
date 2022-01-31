@@ -67,7 +67,7 @@ jobs:
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # v2
+        uses: actions/setup-node@f099707f6e7a91b89cdebdeca599fc76cc8bf088
         with:
           node-version: 'lts/*'
           cache: npm
