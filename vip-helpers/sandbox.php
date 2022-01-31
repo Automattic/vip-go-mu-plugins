@@ -1,6 +1,6 @@
 <?php
 
-if ( ! WPCOM_SANDBOXED ) {
+if ( ! defined( 'WPCOM_SANDBOXED' ) || ! WPCOM_SANDBOXED ) {
 	return;
 }
 
@@ -97,12 +97,24 @@ add_filter( 'wpcom_show_sandbox_bar', '__return_true' );
  * @return string Filtered URL using sandboxed hostname.
  */
 function wpvip_filter_sandbox_plugins_url( $url ) {
-	if ( defined( 'WPCOM_SANDBOXED' ) && WPCOM_SANDBOXED ) {
-		global $sandbox_vhosts;
+	/** @var array<string,string> */
+	global $sandbox_vhosts;
 
-		$url = str_replace( array_values( $sandbox_vhosts ), array_keys( $sandbox_vhosts ), $url );
+	/*
+	 * $sandbox_vhosts is something like ['subdomain.uuid.sbx-sid.ingress-api.vip-ditto.k8s.dfw.vipv2.net' => 'subdomain.go-vip.net']
+	 * `sandbox-hosts-config.php` replaces the "sandbox" (key) domain with the "original" (value) domain in `$_SERVER['HTTP_HOST']`.
+	 * In this filter, we need to reverse that for the given `$url`
+	 *
+	 * 1. We need to look up the key matching `$_SERVER['HTTP_HOST']` in `$sandbox_vhosts`
+	 * 2. We need to replace `://{$_SERVER['HTTP_HOST']}` with `://{$key}`  in `$url`
+	 */
+	if ( ! empty( $_SERVER['HTTP_HOST'] ) && in_array( $sandbox_vhosts, $_SERVER['HTTP_HOST'], true ) ) {
+		$host    = $_SERVER['HTTP_HOST']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$flipped = array_flip( $sandbox_vhosts );
+		$key     = $flipped[ $host ];
+		$url     = str_replace( '://' . $host, '://' . $key, $url );
 	}
 
 	return $url;
 }
-add_filter( 'plugins_url', 'wpvip_filter_sandbox_plugins_url', 1000, 1 );
+add_filter( 'plugins_url', 'wpvip_filter_sandbox_plugins_url', 1000 );
