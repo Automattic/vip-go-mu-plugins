@@ -20,7 +20,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
+        uses: actions/checkout@230611dbd0eb52da1e1f4f7bc8bb0c3a339fc8b7
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -59,7 +59,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
+        uses: actions/checkout@230611dbd0eb52da1e1f4f7bc8bb0c3a339fc8b7
 
       - name: Set up Node.js environment
         uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # v2.5.1
