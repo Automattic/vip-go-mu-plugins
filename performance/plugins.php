@@ -4,12 +4,6 @@
 
 namespace Automattic\VIP\Performance;
 
-// AMP: disable reverse attachment lookups since they usually don't work (querystrings) and are slow
-// This is fixed in AMP > v0.4
-add_action( 'amp_extract_image_dimensions_callbacks_registered', function() {
-	remove_filter( 'amp_extract_image_dimensions', array( 'AMP_Image_Dimension_Extractor', 'extract_from_attachment_metadata' ) );
-} );
-
 /**
  * By default, the Co-Authors Plus plugin will query in a compatibility mode where it uses an expensive JOIN for post_author in it.
  * This filter disables it and uses a simpler, taxonomy-only query.
