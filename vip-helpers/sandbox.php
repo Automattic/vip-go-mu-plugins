@@ -99,6 +99,7 @@ add_filter( 'wpcom_show_sandbox_bar', '__return_true' );
 function wpvip_filter_sandbox_plugins_url( $url ) {
 	/** @var array<string,string> */
 	global $sandbox_vhosts;
+	$host = $_SERVER['HTTP_HOST'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 	/*
 	 * $sandbox_vhosts is something like ['subdomain.uuid.sbx-sid.ingress-api.vip-ditto.k8s.dfw.vipv2.net' => 'subdomain.go-vip.net']
@@ -108,8 +109,7 @@ function wpvip_filter_sandbox_plugins_url( $url ) {
 	 * 1. We need to look up the key matching `$_SERVER['HTTP_HOST']` in `$sandbox_vhosts`
 	 * 2. We need to replace `://{$_SERVER['HTTP_HOST']}` with `://{$key}`  in `$url`
 	 */
-	if ( ! empty( $_SERVER['HTTP_HOST'] ) && in_array( $sandbox_vhosts, $_SERVER['HTTP_HOST'], true ) ) {
-		$host    = $_SERVER['HTTP_HOST']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( ! empty( $_SERVER['HTTP_HOST'] ) && in_array( $host, $sandbox_vhosts, true ) ) {
 		$flipped = array_flip( $sandbox_vhosts );
 		$key     = $flipped[ $host ];
 		$url     = str_replace( '://' . $host, '://' . $key, $url );
