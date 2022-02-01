@@ -17,10 +17,7 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = array(
-		// Roughly half because not all sites have Search enabled
-		'es-query-cache' => 0.5,
-	);
+	public static $feature_percentages = [];
 
 	public static $site_id = false;
 
