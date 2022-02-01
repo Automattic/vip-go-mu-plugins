@@ -15,7 +15,7 @@ namespace Automattic\VIP\Performance;
  * 
  * @return void
  */
-function vip_coauthors_plus_should_query_post_author() {
+function vip_coauthors_plus_should_query_post_author(): void {
 	if ( class_exists( 'CoAuthors_Plus' ) ) {
 		add_filter( 'coauthors_plus_should_query_post_author', '__return_false' );
 	}
