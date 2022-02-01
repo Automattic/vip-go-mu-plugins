@@ -5,6 +5,8 @@
 namespace Automattic\VIP\Performance;
 
 /**
+ * Disable an expensive term-counting query for Co-Authors Plus.
+ *
  * By default, the Co-Authors Plus plugin will query in a compatibility mode where it uses an expensive JOIN for post_author in it.
  * This filter disables it and uses a simpler, taxonomy-only query.
  * Run `wp co-authors-plus create-terms-for-posts` to ensure all authors have an author taxonomy attached to them.
