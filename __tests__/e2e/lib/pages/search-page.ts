@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { expect, Locator, Page, Request } from '@playwright/test';
+import { Locator, Page } from '@playwright/test';
 
 /**
  * Internal dependencies
@@ -24,12 +24,12 @@ const selectors = {
     sourceQuery: () => 'textarea',
     queryActionsButton: () => 'div[class^="query_actions"] > button',
     queryResult: () => 'div[class^="query_result__"] > pre > code',
+    queryResultText: ( text: string ) => `#search-dev-tools-portal div[class^="query_result__"] > pre:has-text(${ text })`,
 };
 
 export class SearchPage {
     private readonly page: Page;
     private readonly devToolsMenuLocator: Locator;
-    private readonly devToolsPortalLocator: Locator;
     private readonly devToolsContainerLocator: Locator;
     private readonly devToolsCloseButtonLocator: Locator;
     private readonly queryWrapLocator: Locator;
@@ -44,7 +44,6 @@ export class SearchPage {
     constructor( page: Page ) {
         this.page = page;
         this.devToolsMenuLocator = page.locator( selectors.devToolsMenu() );
-        this.devToolsPortalLocator = page.locator( selectors.devToolsPortal() );
         this.devToolsContainerLocator = page.locator( selectors.devToolsContainer() );
         this.devToolsCloseButtonLocator = this.devToolsContainerLocator.locator( selectors.devToolsClose() );
         this.queryWrapLocator = this.devToolsContainerLocator.locator( selectors.queryWrap() );
@@ -57,128 +56,88 @@ export class SearchPage {
         this.queryResultLocator = this.queryWrapLocator.locator( selectors.queryResult() );
     }
 
-    async visit( searchTerm: string ): Promise<unknown> {
-        await this.page.goto( `/?s=${ encodeURIComponent( searchTerm ) }` );
-        return expect( this.devToolsMenuLocator ).toBeVisible();
+    visit( searchTerm: string ): Promise<unknown> {
+        return this.page.goto( `/?s=${ encodeURIComponent( searchTerm ) }` );
     }
 
     async openSearchDevTools(): Promise<unknown> {
-        await expect( this.devToolsMenuLocator ).toBeVisible();
+        await this.devToolsMenuLocator.waitFor( { state: 'visible' } );
         await this.devToolsMenuLocator.click();
-        return this.ensureDevToolsOpen();
+        return this.devToolsContainerLocator.waitFor( { state: 'visible' } );
     }
 
     async getNumberOfQueries(): Promise<number> {
-        await this.ensureDevToolsOpen();
-
         const text = ( await this.devToolsContainerLocator.locator( selectors.queryCount() ).innerText() ).trim();
         const matches = /^(\d+)/.exec( text );
-        expect( matches ).not.toBeNull();
-        return +matches[ 1 ];
+        return matches ? +matches[ 1 ] : -1;
     }
 
     async getNumberOfResults(): Promise<number> {
-        await this.ensureDevToolsOpen();
-
         const text = ( await this.devToolsContainerLocator.locator( selectors.resultCount() ).innerText() ).trim();
         const matches = /^(\d+)/.exec( text );
-        expect( matches ).not.toBeNull();
-        return +matches[ 1 ];
+        return matches ? +matches[ 1 ] : -1;
     }
 
-    async expandResults(): Promise<unknown> {
-        await this.ensureDevToolsOpen();
-
+    async expandResults(): Promise<boolean> {
         const queryHandleLocator = this.queryWrapLocator.locator( selectors.queryHandle() );
 
         let classes = await getClassList( this.queryWrapLocator );
         const isCollapsed = classes.some( className => className.startsWith( 'query_collapsed' ) );
-        expect( isCollapsed ).toBe( true );
+        if ( isCollapsed ) {
+            await queryHandleLocator.click();
 
-        await queryHandleLocator.click();
+            classes = await getClassList( this.queryWrapLocator );
+            return ! classes.every( className => className.startsWith( 'query_collapsed' ) );
+        }
 
-        classes = classes = await getClassList( this.queryWrapLocator );
-        const isExpanded = ! classes.every( className => className.startsWith( 'query_collapsed' ) );
-        return expect( isExpanded ).toBe( true );
+        return false;
     }
 
     async getWPQuery(): Promise<string> {
-        await this.ensureDevToolsOpen();
         return this.getQueryExtrasHelper( 0 );
     }
 
     async getTrace(): Promise<string> {
-        await this.ensureDevToolsOpen();
         return this.getQueryExtrasHelper( 1 );
     }
 
     async getQuery(): Promise<string> {
-        await this.ensureDevToolsOpen();
         return this.sourceQueryLocator.inputValue();
     }
 
     async editQuery( newQuery: string ): Promise<unknown> {
-        await this.ensureDevToolsOpen();
         return this.sourceQueryLocator.fill( newQuery );
     }
 
     async resetQuery(): Promise<string> {
-        await this.ensureDevToolsOpen();
-        await expect( this.queryActionsLocator.count() ).resolves.toBe( 2 );
         await this.queryActionsLocator.nth( 1 ).click();
         return this.getQuery();
     }
 
     async runQuery(): Promise<string> {
-        await this.ensureDevToolsOpen();
-        await expect( this.queryActionsLocator.count() ).resolves.toBe( 2 );
-
         const [ response ] = await Promise.all( [
-            this.page.waitForResponse( resp => /\/wp-json\/vip\/v1\/search\/dev-tools$/.test( resp.url() ) && resp.request().method() === 'POST' && resp.status() === 200, {
-                timeout: 1000,
-            } ),
-            this.queryActionsLocator.nth( 0 ).click(),
+            this.page.waitForResponse( resp => /\/wp-json\/vip\/v1\/search\/dev-tools$/.test( resp.url() ) && resp.request().method() === 'POST' && resp.status() === 200 ),
+            this.queryActionsLocator.first().click(),
         ] );
 
-        const text = await response.text();
-        const json = JSON.parse( text );
-        expect( json ).toMatchObject( {
-            result: expect.objectContaining( {
-                body: expect.any( Object ),
-            } ),
-        } );
+        return response.json();
+    }
 
-        await expect( this.queryResultLocator ).not.toBeEmpty();
-        const responseText = await this.queryResultLocator.innerText();
-        const responseJson = JSON.parse( responseText );
-        expect( json.result.body ).toEqual( responseJson );
-
-        return responseText;
+    ensureQueryResponse( substring: string ): Promise<unknown> {
+        return this.page.waitForSelector( selectors.queryResultText( substring ) );
     }
 
     async closeSearchDevTools(): Promise<unknown> {
-        await this.ensureDevToolsOpen();
-        await expect( this.devToolsCloseButtonLocator ).toBeVisible();
-        await this.devToolsCloseButtonLocator.click();
-        return this.ensureDevToolsClosed();
-    }
-
-    private async ensureDevToolsOpen(): Promise<void> {
-        await expect( this.devToolsPortalLocator ).not.toBeEmpty();
-        await expect( this.devToolsContainerLocator ).toBeVisible();
-    }
-
-    private ensureDevToolsClosed(): Promise<Locator> {
-        return expect( this.devToolsPortalLocator ).toBeEmpty();
+        await this.devToolsCloseButtonLocator.waitFor( { state: 'visible' } );
+        return this.devToolsCloseButtonLocator.click();
     }
 
     private async getQueryExtrasHelper( index: number ): Promise<string> {
-        await expect( this.queryExtrasListLocator.nth( index ) ).not.toBeVisible();
         await this.queryExtrasExpandLocator.nth( index ).click();
-        await expect( this.queryExtrasListLocator.nth( index ) ).toBeVisible();
+        await this.queryExtrasListLocator.nth( index ).waitFor( { state: 'visible' } );
         const result = await this.queryExtrasListLocator.nth( index ).innerText();
         await this.queryExtrasExpandLocator.nth( index ).click();
-        await expect( this.queryExtrasListLocator.nth( index ) ).not.toBeVisible();
+        await this.queryExtrasListLocator.nth( index ).waitFor( { state: 'hidden' } );
         return result;
     }
 }
