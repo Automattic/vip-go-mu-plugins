@@ -12,8 +12,6 @@ namespace Automattic\VIP\Performance;
  * Run `wp co-authors-plus create-terms-for-posts` to ensure all authors have an author taxonomy attached to them.
  * 
  * @see https://lobby.vip.wordpress.com/2017/11/07/co-authors-plus-global-filter/
- * 
- * @return void
  */
 add_filter( 'coauthors_plus_should_query_post_author', '__return_false' );
 
