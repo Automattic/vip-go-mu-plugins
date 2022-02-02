@@ -125,6 +125,10 @@ class API_Client {
 			$file_mime = '';
 		}
 
+		if ( empty( $file_mime ) ) {
+			$file_mime = self::detect_mime_type( $file_name );
+		}
+
 		$request_timeout = $this->calculate_upload_timeout( $file_size );
 
 		$curl_streamer = new Curl_Streamer( $local_path );  // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_streamer
@@ -178,6 +182,18 @@ class API_Client {
 		// Uploads take longer so we need a custom timeout.
 		// Use default timeout plus 1 second per 500kb.
 		return self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) );
+	}
+
+	private static function detect_mime_type( string $filename ): string {
+		if ( extension_loaded( 'fileinfo' ) ) {
+			$finfo = finfo_open( FILEINFO_MIME_TYPE );
+			$mime  = finfo_file( $finfo, $filename );
+			finfo_close( $finfo );
+
+			return is_string( $mime ) ? $mime : '';
+		}
+
+		return '';
 	}
 
 	public function get_file( $file_path ) {
