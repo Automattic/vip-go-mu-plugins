@@ -260,7 +260,7 @@ class SettingsHealthJob {
 	 * @param string $indexable_slug The slug of the Indexable we want to rebuild.
 	 */
 	public function build_new_index( $indexable_slug ) {
-		update_option( self::BUILD_LOCK_NAME, time() ); // Set lock for starting rebuild.
+		update_option( self::BUILD_LOCK_NAME, time(), false ); // Set lock for starting rebuild.
 
 		$indexable = $this->indexables->get( $slug );
 		if ( ! $indexable ) {
