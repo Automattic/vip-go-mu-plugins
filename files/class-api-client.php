@@ -112,6 +112,12 @@ class API_Client {
 		$file_size = filesize( $local_path );
 		$file_name = basename( $local_path );
 
+		/**
+		 * `wp_check_filetype()` indirectly calls `wp_get_current_user()`, which is loaded from `pluggable.php`
+		 * `pluggable.php` is loaded after all plugins. Therefore, if a plugin creates a file under `wp-content/uploads`
+		 * before `pluggable.php` is loaded, we should not call `wp_check_filetype()` because it will generate
+		 * a fatal error.
+		 */
 		if ( function_exists( 'wp_get_current_user' ) ) {
 			$file_info = wp_check_filetype( $file_name );
 			$file_mime = $file_info['type'] ?? '';
