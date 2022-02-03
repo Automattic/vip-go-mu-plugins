@@ -42,24 +42,27 @@ class Object_Cache_Backend implements BackendInterface {
 	}
 
 	public function inc_value(): bool {
-		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		wp_cache_add( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
-		$value = wp_cache_incr( self::KEY_NAME, 1, self::GROUP_NAME );
-		if ( false !== $value ) {
-			++$this->increments;
+		for ( $attempt = 1; $attempt <= 3; ++$attempt ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			wp_cache_add( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );
+			$value = wp_cache_incr( self::KEY_NAME, 1, self::GROUP_NAME );
+			if ( false !== $value ) {
+				++$this->increments;
 
-			if ( $value > $this->limit ) {
-				log2logstash( [
-					'severity' => 'warning',
-					'feature'  => 'search_concurrency_limiter',
-					'message'  => 'Reached concurrency limit',
-					'extra'    => [
-						'counter' => $value,
-					],
-				] );
+				if ( $value > $this->limit ) {
+					log2logstash( [
+						'severity' => 'warning',
+						'feature'  => 'search_concurrency_limiter',
+						'message'  => 'Reached concurrency limit',
+						'extra'    => [
+							'counter' => $value,
+							'attempt' => $attempt,
+						],
+					] );
+				}
+		
+				return $value <= $this->limit;
 			}
-	
-			return $value <= $this->limit;
 		}
 
 		log2logstash( [
