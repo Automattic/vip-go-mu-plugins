@@ -147,6 +147,8 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->setMethods( [ 'wp_schedule_single_event', 'send_alert' ] )
 			->getMock();
 
+		$stub->search = self::$search;
+
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
 
@@ -166,6 +168,8 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->setMethods( [ 'wp_schedule_single_event', 'send_alert' ] )
 			->getMock();
 
+		$stub->search = self::$search;
+
 		$stub->expects( $this->once() )
 			->method( 'send_alert' );
 
@@ -184,6 +188,8 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->setMethods( [ 'send_alert' ] )
 			->getMock();
+
+		$stub->search = self::$search;
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
