@@ -423,4 +423,26 @@ class CoreCommand extends \ElasticPress\Command {
 		}
 		return false;
 	}
+
+	/**
+	 * Dectivate a feature.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <feature-slug>
+	 * : The feature slug
+	 *
+	 * @subcommand deactivate-feature
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function deactivate_feature( $args, $assoc_args ) {
+		if ( 'search' === $args[0] ) {
+			WP_CLI::confirm( "Are you sure you want to deactivate $args[0]? This will break all search-related functionality!" );
+		}
+
+		array_unshift( $args, 'elasticpress', 'deactivate-feature' );
+		WP_CLI::run_command( $args, $assoc_args );
+	}
 }
