@@ -417,7 +417,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * @return bool Whether feature is unsupported or not.
 	 */
 	private function is_unsupported_feature( $feature ) {
-		$unsupported_features = [ 'autosuggest', 'documents' ];
+		$unsupported_features = [ 'autosuggest', 'documents', 'comments' ];
 		if ( in_array( $feature, $unsupported_features, true ) ) {
 			return true;
 		}
