@@ -114,6 +114,11 @@ class VersioningCleanupJob {
 	 */
 	public function delete_stale_inactive_version( $indexable, $version ) {
 
+		if ( ! defined( 'VIP_GO_ENV' ) || 'production' === VIP_GO_ENV ) {
+			// Only do for non-production environments for the time being.
+			return;
+		}
+
 		$delete_version = $this->versioning->delete_version( $indexable, $version );
 
 		if ( is_wp_error( $delete_version ) ) {
