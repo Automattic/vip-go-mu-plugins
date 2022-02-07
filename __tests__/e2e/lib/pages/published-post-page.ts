@@ -5,6 +5,7 @@ import { Page } from 'playwright';
 
 const selectors = {
     entryTitle: '.entry-title',
+    postImage: '.entry-content img',
     postText: ( text: string ) => `text=${ text }`,
 };
 
@@ -40,5 +41,14 @@ export class PublishedPostPage {
                 pageTry++;
             }
         }
+    }
+
+    /**
+     * Returns boolean of whether or not image was found in post
+     *
+     * @returns {boolean} True if image is found, otherwise false
+     */
+    async isImageDisplayed(): Promise<boolean> {
+        return this.page.isVisible( selectors.postImage );
     }
 }
